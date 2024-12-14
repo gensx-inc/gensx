@@ -35,18 +35,20 @@ async function runNestedWorkflow() {
   const title = "Programmatic Secrets with ESC";
   const prompt = "Write an article...";
 
+  let blogPost = "";
+  let tweet = "";
+
   const workflow = (
     <Workflow>
       <BlogWritingWorkflow
         title={new Promise((resolve) => resolve(title))}
         prompt={prompt}
       >
-        {(blogPost) => (
-          <TweetWritingWorkflow content={blogPost}>
-            {(tweet) => {
-              console.log("\n=== Nested Workflow Results ===");
-              console.log("Tweet:", tweet);
-              console.log("Blog Post:", blogPost);
+        {(blogPostResult) => (
+          <TweetWritingWorkflow content={blogPostResult}>
+            {(tweetResult) => {
+              blogPost = blogPostResult;
+              tweet = tweetResult;
               return null;
             }}
           </TweetWritingWorkflow>
@@ -57,6 +59,10 @@ async function runNestedWorkflow() {
 
   const context = new WorkflowContext(workflow);
   await context.execute();
+
+  console.log("\n=== Nested Workflow Results ===");
+  console.log("Blog Post:", blogPost);
+  console.log("Tweet:", tweet);
 }
 
 async function main() {
