@@ -4,7 +4,7 @@ import { BlogWritingWorkflow } from "./examples/blog/BlogWritingWorkflow";
 import { TweetWritingWorkflow } from "./examples/tweet/TweetWritingWorkflow";
 import { WorkflowContext } from "./core/components/Workflow";
 import { createWorkflowOutput } from "./core/hooks/useWorkflowOutput";
-
+import { getTopHNTextPosts } from "./examples/hackernewsAnalyzer/hnAnalyzer";
 async function runParallelWorkflow() {
   const title = "Programmatic Secrets with ESC";
   const prompt = "Write an article...";
@@ -65,10 +65,16 @@ async function runNestedWorkflow() {
   console.log("Tweet:", tweet);
 }
 
+async function runHackerNewsWorkflow() {
+  const topHNPosts = await getTopHNTextPosts();
+  console.log(topHNPosts);
+}
+
 async function main() {
   try {
-    await runParallelWorkflow();
-    await runNestedWorkflow();
+    // await runParallelWorkflow();
+    // await runNestedWorkflow();
+    await runHackerNewsWorkflow();
   } catch (error) {
     console.error("Workflow execution failed:", error);
     process.exit(1);
