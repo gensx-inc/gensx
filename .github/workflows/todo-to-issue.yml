@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: "TODO to Issue"
-        uses: "alstr/todo-to-issue-action@v4"
+        uses: "alstr/todo-to-issue-action@v5"
         with:
           ISSUE_TEMPLATE: |
             ##  ✅ Codebase TODO  ✅
