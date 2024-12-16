@@ -1,7 +1,7 @@
 import React from "react";
 import { createWorkflow } from "../../core/utils/workflow-builder";
 import { Workflow } from "../../core/components/Workflow";
-import { Map } from "../../core/components/Map";
+import { Join } from "../../core/components/Join";
 
 export type HackerNewsAnalyzerProps = {};
 
@@ -13,12 +13,13 @@ export const HackerNewsAnalyzer = createWorkflow<
 >(async (props, render) => {
   const topHNPosts = await getTopHNTextPosts();
   return (
-    <Map
+    <Join
       items={topHNPosts}
       map={(post) => <HackerNewsPostSummarizer post={post} />}
+      concurrency="parallel"
     >
       {(summaries) => render(summaries.join("\n"))}
-    </Map>
+    </Join>
   );
 });
 

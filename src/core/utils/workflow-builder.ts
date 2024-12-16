@@ -15,7 +15,7 @@ type WorkflowImplementation<TProps, TOutput> = (
   | null
   | Promise<React.ReactElement | null>;
 
-type WorkflowComponentProps<TProps, TOutput> = TProps & {
+export type WorkflowComponentProps<TProps, TOutput> = TProps & {
   children?: (output: TOutput) => React.ReactNode;
   setOutput?: (value: TOutput) => void;
 };
@@ -40,9 +40,13 @@ async function resolveValue<T>(value: T | Promise<T>): Promise<T> {
 // Keep track of processed results to prevent infinite loops
 const processedResults = new Set<string>();
 
+export type WorkflowComponent<TProps, TOutput> = React.ComponentType<
+  WorkflowComponentProps<PromiseProps<TProps>, TOutput>
+>;
+
 export function createWorkflow<TProps extends Record<string, any>, TOutput>(
   implementation: WorkflowImplementation<TProps, TOutput>
-): React.ComponentType<WorkflowComponentProps<PromiseProps<TProps>, TOutput>> {
+): WorkflowComponent<TProps, TOutput> {
   const WorkflowComponent = (
     props: WorkflowComponentProps<PromiseProps<TProps>, TOutput>
   ): React.ReactElement | null => {

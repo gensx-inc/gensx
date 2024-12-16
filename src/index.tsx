@@ -5,6 +5,7 @@ import { TweetWritingWorkflow } from "./examples/tweet/TweetWritingWorkflow";
 import { WorkflowContext } from "./core/components/Workflow";
 import { createWorkflowOutput } from "./core/hooks/useWorkflowOutput";
 import { getTopHNTextPosts } from "./examples/hackernewsAnalyzer/hnAnalyzer";
+import { JoinWorkflow } from "./examples/join/joinExample";
 async function runParallelWorkflow() {
   const title = "Programmatic Secrets with ESC";
   const prompt = "Write an article...";
@@ -65,6 +66,30 @@ async function runNestedWorkflow() {
   console.log("Tweet:", tweet);
 }
 
+async function runJoinWorkflow() {
+  let joinedResult = 0;
+
+  const workflow = (
+    <Workflow>
+      <JoinWorkflow
+        numbers={[1, 2, 3, 4, 5]}
+        strings={["a", "b", "c", "d", "e"]}
+      >
+        {(joinResult) => {
+          joinedResult = joinResult;
+          return null;
+        }}
+      </JoinWorkflow>
+    </Workflow>
+  );
+
+  const context = new WorkflowContext(workflow);
+  await context.execute();
+
+  console.log("\n=== Join Workflow Results ===");
+  console.log("Joined result:", joinedResult);
+}
+
 async function runHackerNewsWorkflow() {
   const topHNPosts = await getTopHNTextPosts();
   console.log(topHNPosts);
@@ -74,7 +99,8 @@ async function main() {
   try {
     // await runParallelWorkflow();
     // await runNestedWorkflow();
-    await runHackerNewsWorkflow();
+    // await runHackerNewsWorkflow();
+    await runJoinWorkflow();
   } catch (error) {
     console.error("Workflow execution failed:", error);
     process.exit(1);
