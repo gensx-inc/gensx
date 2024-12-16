@@ -30,7 +30,7 @@ export function renderWorkflow(element: React.ReactElement): Step[] {
         // Generate a unique key for this workflow instance
         const workflowKey = `${type.name}_${
           type.displayName || ""
-        }_${Object.entries(el.props)
+        }_${Object.entries(el.props as Record<string, unknown>)
           .map(
             ([key, value]) =>
               `${key}:${value instanceof Promise ? "Promise" : (value as string)}`,
@@ -45,7 +45,9 @@ export function renderWorkflow(element: React.ReactElement): Step[] {
             async execute(context) {
               const resolvedProps = {} as any;
               // Resolve any promise props
-              for (const [key, value] of Object.entries(el.props)) {
+              for (const [key, value] of Object.entries(
+                el.props as Record<string, unknown>,
+              )) {
                 resolvedProps[key] =
                   value instanceof Promise ? await value : value;
               }
@@ -79,19 +81,20 @@ export function renderWorkflow(element: React.ReactElement): Step[] {
     }
 
     // Check if this is a WorkflowStep
-    if (el.props["data-workflow-step"]) {
-      steps.push(el.props.step);
+    const props = el.props as Record<string, any>;
+    if (props["data-workflow-step"]) {
+      steps.push(props.step);
       return;
     }
 
     // Process children
-    if (el.props?.children) {
-      if (Array.isArray(el.props.children)) {
-        el.props.children.forEach((child: React.ReactNode) => {
+    if (props.children) {
+      if (Array.isArray(props.children)) {
+        props.children.forEach((child: React.ReactNode) => {
           processElement(child);
         });
       } else {
-        processElement(el.props.children);
+        processElement(props.children);
       }
     }
   }
