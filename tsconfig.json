@@ -1,24 +1,34 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "baseUrl": ".",
-    "module": "esnext",
     "target": "esnext",
+    "useDefineForClassFields": true,
+    "module": "esnext",
+    "lib": [
+      "ESNext",
+    ],
+    "skipLibCheck": true,
+    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "emitDeclarationOnly": true,
-    "esModuleInterop": true,
-    "strict": true,
+    "declaration": true,
     "outDir": "dist",
     "sourceMap": true,
     "inlineSources": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "declaration": true,
+    "esModuleInterop": true,
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "preact",
+    "jsxImportSource": "@",
+    "baseUrl": ".",
     "paths": {
-      "@/src/*": [
+      "@/*": [
         "src/*"
       ],
       "@/tests/*": [

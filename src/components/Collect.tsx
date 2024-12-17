@@ -1,6 +1,6 @@
 import { ComponentChild } from "preact";
 
-import { executeJsxWorkflow } from "../execute";
+import { executeJsxWorkflow } from "../workflow/execute";
 
 export interface CollectProps<T> {
   children: (ComponentChild | Promise<T>)[];

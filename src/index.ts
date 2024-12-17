@@ -12,10 +12,10 @@
 7. Support parallel execution of steps (either dynamic via something liek a collector, or static via a few explicitly defined siblings)
  */
 
-import { executeJsxWorkflow } from "./execute";
+import { executeJsxWorkflow } from "./workflow/execute";
 import {
   withWorkflowComponent,
   withWorkflowFunction,
-} from "./withWorkflowStep";
+} from "./workflow/withWorkflowStep";
 
 export { executeJsxWorkflow, withWorkflowComponent, withWorkflowFunction };
