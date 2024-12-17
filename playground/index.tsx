@@ -1,27 +1,9 @@
-import { ComponentChild } from "preact";
-
+import { Collect } from "@/src/components/Collect";
 import {
   executeJsxWorkflow,
   withWorkflowComponent,
   withWorkflowFunction,
 } from "@/src/index";
-
-// Parallel execution component
-const Collect = async ({
-  children,
-}: {
-  children: ComponentChild[];
-}): Promise<string[]> => {
-  console.log("📦 Collect input:", children);
-  const results = await Promise.all(
-    (Array.isArray(children) ? children : [children]).map(child => {
-      console.log("📦 Collect executing child:", child);
-      return executeJsxWorkflow<string>(child);
-    }),
-  );
-  console.log("📦 Collect results:", results);
-  return results;
-};
 
 // Pure workflow steps
 const pureResearchBrainstorm = async ({ prompt }: { prompt: string }) => {
@@ -58,8 +40,8 @@ const LLMWriter = withWorkflowFunction(pureWriter);
 const LLMEditor = withWorkflowFunction(pureEditor);
 
 // Research collection component
-const ResearchCollection = withWorkflowComponent<{ prompt: string }, string[]>(
-  ({ prompt }) => (
+const ResearchCollection = withWorkflowComponent(
+  ({ prompt }: { prompt: string }) => (
     <LLMResearchBrainstorm prompt={prompt}>
       {topics => (
         <Collect>
