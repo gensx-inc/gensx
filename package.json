@@ -44,8 +44,8 @@
   },
   "dependencies": {
     "openai": "^4.76.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "preact": "^10.25.2",
+    "preact-render-to-string": "^6.5.12"
   },
   "devDependencies": {
     "@swc/cli": "^0.5.2",

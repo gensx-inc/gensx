@@ -16,6 +16,7 @@
     "resolveJsonModule": true,
     "declaration": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "preact",
     "paths": {
       "@/src/*": [
         "src/*"

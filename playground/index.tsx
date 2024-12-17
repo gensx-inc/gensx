@@ -1,85 +1,98 @@
-import { Workflow } from "@/src/components/Workflow";
-import { WorkflowContext } from "@/src/components/Workflow";
-import { createWorkflowOutput } from "@/src/hooks/useWorkflowOutput";
+import { ComponentChild } from "preact";
 
-import { BlogWritingWorkflow } from "./blog/BlogWritingWorkflow";
-import { TweetWritingWorkflow } from "./tweet/TweetWritingWorkflow";
+import {
+  executeJsxWorkflow,
+  withWorkflowComponent,
+  withWorkflowFunction,
+} from "@/src/index";
 
-async function runParallelWorkflow() {
-  const title = "Programmatic Secrets with ESC";
-  const prompt = "Write an article...";
-
-  const [blogPost, setBlogPost] = createWorkflowOutput("");
-  const [tweet, setTweet] = createWorkflowOutput("");
-
-  const workflow = (
-    <Workflow>
-      <BlogWritingWorkflow
-        title={title}
-        prompt={prompt}
-        setOutput={setBlogPost}
-      />
-      <TweetWritingWorkflow content={blogPost} setOutput={setTweet} />
-    </Workflow>
+// Parallel execution component
+const Collect = async ({
+  children,
+}: {
+  children: ComponentChild[];
+}): Promise<string[]> => {
+  console.log("📦 Collect input:", children);
+  const results = await Promise.all(
+    (Array.isArray(children) ? children : [children]).map(child => {
+      console.log("📦 Collect executing child:", child);
+      return executeJsxWorkflow<string>(child);
+    }),
   );
+  console.log("📦 Collect results:", results);
+  return results;
+};
 
-  const context = new WorkflowContext(workflow);
-  await context.execute();
+// Pure workflow steps
+const pureResearchBrainstorm = async ({ prompt }: { prompt: string }) => {
+  console.log("🔍 Starting research for:", prompt);
+  const topics = await Promise.resolve(["topic 1", "topic 2", "topic 3"]);
+  return topics;
+};
 
-  console.log("\n=== Parallel Workflow Results ===");
-  console.log("Blog Post:", await blogPost);
-  console.log("Tweet:", await tweet);
-}
+const pureResearch = async ({ topic }: { topic: string }) => {
+  console.log("📚 Researching topic:", topic);
+  return await Promise.resolve(`research results for ${topic}`);
+};
 
-async function runNestedWorkflow() {
-  const title = "Programmatic Secrets with ESC";
-  const prompt = "Write an article...";
+const pureWriter = async ({
+  research,
+  prompt,
+}: {
+  research: string;
+  prompt: string;
+}): Promise<string> => {
+  console.log("✍️  Writing draft based on research");
+  return await Promise.resolve(`**draft\n${research}\n${prompt}\n**end draft`);
+};
 
-  let blogPost = "";
-  let tweet = "";
+const pureEditor = async ({ draft }: { draft: string }) => {
+  console.log("✨ Polishing final draft");
+  return await Promise.resolve(`edited result: ${draft}`);
+};
 
-  const workflow = (
-    <Workflow>
-      <BlogWritingWorkflow
-        title={
-          new Promise(resolve => {
-            resolve(title);
-          })
-        }
-        prompt={prompt}
-      >
-        {blogPostResult => (
-          <TweetWritingWorkflow content={blogPostResult}>
-            {tweetResult => {
-              blogPost = blogPostResult;
-              tweet = tweetResult;
-              return null;
-            }}
-          </TweetWritingWorkflow>
-        )}
-      </BlogWritingWorkflow>
-    </Workflow>
+// Wrapped workflow steps
+const LLMResearchBrainstorm = withWorkflowFunction(pureResearchBrainstorm);
+const LLMResearch = withWorkflowFunction(pureResearch);
+const LLMWriter = withWorkflowFunction(pureWriter);
+const LLMEditor = withWorkflowFunction(pureEditor);
+
+// Research collection component
+const ResearchCollection = withWorkflowComponent<{ prompt: string }, string[]>(
+  ({ prompt }) => (
+    <LLMResearchBrainstorm prompt={prompt}>
+      {topics => (
+        <Collect>
+          {topics.map(topic => (
+            <LLMResearch topic={topic} />
+          ))}
+        </Collect>
+      )}
+    </LLMResearchBrainstorm>
+  ),
+);
+
+const BlogWritingWorkflow = ({ prompt }: { prompt: string }) => {
+  return (
+    <ResearchCollection prompt={prompt}>
+      {research => {
+        console.log("🧠 Research:", research, typeof research);
+        return (
+          <LLMWriter research={research.join("\n")} prompt={prompt}>
+            {draft => <LLMEditor draft={draft} />}
+          </LLMWriter>
+        );
+      }}
+    </ResearchCollection>
   );
-
-  const context = new WorkflowContext(workflow);
-  await context.execute();
-
-  console.log("\n=== Nested Workflow Results ===");
-  console.log("Blog Post:", blogPost);
-  console.log("Tweet:", tweet);
-}
+};
 
 async function main() {
-  try {
-    await runParallelWorkflow();
-    await runNestedWorkflow();
-  } catch (error) {
-    console.error("Workflow execution failed:", error);
-    process.exit(1);
-  }
+  console.log("🚀 Starting blog writing workflow");
+  const result = await executeJsxWorkflow(
+    <BlogWritingWorkflow prompt="Write a blog post about the future of AI" />,
+  );
+  console.log("✅ Final result:", result);
 }
 
-main().catch((error: unknown) => {
-  console.error("Unhandled error:", error);
-  process.exit(1);
-});
+await main();
