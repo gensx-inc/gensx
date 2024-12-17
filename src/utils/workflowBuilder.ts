@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 
 import { Step } from "../components/Step";
@@ -6,8 +9,15 @@ import { renderWorkflow } from "../utils/renderWorkflow";
 
 type WorkflowRenderFunction<T> = (value: T) => React.ReactElement | null;
 
-type WorkflowImplementation<TProps, TOutput> = (
-  props: ResolvedProps<TProps>,
+type WorkflowImplementation<
+  TProps,
+  TOutput,
+  TChildren = (output: TOutput) => React.ReactNode,
+> = (
+  props: ResolvedProps<TProps> & {
+    children?: TChildren;
+    __rawChildren?: TChildren;
+  },
   render: WorkflowRenderFunction<TOutput>,
 ) =>
   | React.ReactElement
@@ -15,39 +25,44 @@ type WorkflowImplementation<TProps, TOutput> = (
   | null
   | Promise<React.ReactElement | null>;
 
-type WorkflowComponentProps<TProps, TOutput> = TProps & {
-  children?: (output: TOutput) => React.ReactNode;
+type WorkflowComponentProps<
+  TProps,
+  TOutput,
+  TChildren = (output: TOutput) => React.ReactNode,
+> = TProps & {
+  children?: TChildren;
+  __rawChildren?: TChildren; // Just pass through raw children
   setOutput?: (value: TOutput) => void;
 };
 
-// Type to convert a props type to allow promises
 type PromiseProps<TProps> = {
   [K in keyof TProps]: TProps[K] | Promise<TProps[K]>;
 };
 
-// Type to ensure implementation gets resolved props
 type ResolvedProps<TProps> = {
   [K in keyof TProps]: TProps[K] extends Promise<infer U> ? U : TProps[K];
 };
 
-// This function resolves value in a promise.
-// You can await a promise or a plain value and the effect is the same.
-// Even though this function might seem unnecessary, using it makes our intent more clear.
 async function resolveValue<T>(value: T | Promise<T>): Promise<T> {
   return await value;
 }
 
-// Keep track of processed results to prevent infinite loops
 const processedResults = new Set<string>();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createWorkflow<TProps extends Record<string, any>, TOutput>(
-  implementation: WorkflowImplementation<TProps, TOutput>,
-): React.ComponentType<WorkflowComponentProps<PromiseProps<TProps>, TOutput>> {
+export function createWorkflow<
+  TProps extends Record<string, any>,
+  TOutput,
+  TChildren = (output: TOutput) => React.ReactNode,
+>(
+  implementation: WorkflowImplementation<TProps, TOutput, TChildren>,
+): React.ComponentType<
+  WorkflowComponentProps<PromiseProps<TProps>, TOutput, TChildren>
+> {
   const WorkflowComponent = (
-    props: WorkflowComponentProps<PromiseProps<TProps>, TOutput>,
+    props: WorkflowComponentProps<PromiseProps<TProps>, TOutput, TChildren>,
   ): React.ReactElement | null => {
-    const { children, setOutput, ...componentProps } = props;
+    const { children, setOutput, __rawChildren, ...componentProps } = props;
+
     const [, setWorkflowOutput] = createWorkflowOutput<TOutput>(
       null as unknown as TOutput,
     );
@@ -55,36 +70,36 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
     const step: Step = {
       async execute(context) {
         try {
-          // Resolve all props in parallel
           const resolvedProps = {} as ResolvedProps<TProps>;
           await Promise.all(
             Object.entries(componentProps).map(async ([key, value]) => {
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               resolvedProps[key as keyof TProps] = await resolveValue(value);
             }),
           );
 
-          // Create render function that sets output and returns element
+          const propsWithChildren = {
+            ...resolvedProps,
+            children,
+            __rawChildren: children,
+          };
+
           const render: WorkflowRenderFunction<TOutput> = value => {
             setWorkflowOutput(value);
             if (setOutput) {
               setOutput(value);
             }
-            if (children) {
+            if (children && typeof children === "function") {
               return children(value) as React.ReactElement;
             }
             return null;
           };
 
-          // Get the workflow result with resolved props
           const element = await Promise.resolve(
-            implementation(resolvedProps, render),
+            implementation(propsWithChildren, render),
           );
 
-          // Process the element chain
           if (element) {
             const elementSteps = renderWorkflow(element);
-            // Execute steps sequentially to ensure proper chaining
             for (const step of elementSteps) {
               await step.execute(context);
             }
@@ -104,13 +119,11 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
     });
   };
 
-  // For execution phase, we need a way to get the workflow result without React
   WorkflowComponent.getWorkflowResult = async (
-    props: WorkflowComponentProps<PromiseProps<TProps>, TOutput>,
+    props: WorkflowComponentProps<PromiseProps<TProps>, TOutput, TChildren>,
   ): Promise<React.ReactElement | null> => {
-    const { children, setOutput, ...componentProps } = props;
+    const { children, setOutput, __rawChildren, ...componentProps } = props;
 
-    // Generate a unique key for this result
     const resultKey = JSON.stringify(componentProps);
     if (processedResults.has(resultKey)) {
       return null;
@@ -122,28 +135,29 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
     );
 
     try {
-      // Resolve all props before passing to implementation
       const resolvedProps = {} as ResolvedProps<TProps>;
       for (const [key, value] of Object.entries(componentProps)) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         resolvedProps[key as keyof TProps] = await resolveValue(value);
       }
 
-      // Create render function that sets output and returns element
+      const propsWithChildren = {
+        ...resolvedProps,
+        children,
+        __rawChildren: children,
+      };
+
       const render: WorkflowRenderFunction<TOutput> = value => {
         setWorkflowOutput(value);
         if (setOutput) {
           setOutput(value);
         }
-        if (children) {
+        if (children && typeof children === "function") {
           return children(value) as React.ReactElement;
         }
         return null;
       };
 
-      // Get the workflow result
-      const implementationResult = await implementation(resolvedProps, render);
-      return implementationResult;
+      return await implementation(propsWithChildren, render);
     } catch (error) {
       console.error("Error in getWorkflowResult:", error);
       throw error;

@@ -3,6 +3,7 @@ import { WorkflowContext } from "@/src/components/Workflow";
 import { createWorkflowOutput } from "@/src/hooks/useWorkflowOutput";
 
 import { BlogWritingWorkflow } from "./blog/BlogWritingWorkflow";
+import { CollectWorkflow } from "./collect/CollectExamples";
 import { TweetWritingWorkflow } from "./tweet/TweetWritingWorkflow";
 
 async function runParallelWorkflow() {
@@ -40,14 +41,7 @@ async function runNestedWorkflow() {
 
   const workflow = (
     <Workflow>
-      <BlogWritingWorkflow
-        title={
-          new Promise(resolve => {
-            resolve(title);
-          })
-        }
-        prompt={prompt}
-      >
+      <BlogWritingWorkflow title={title} prompt={prompt}>
         {blogPostResult => (
           <TweetWritingWorkflow content={blogPostResult}>
             {tweetResult => {
@@ -69,10 +63,38 @@ async function runNestedWorkflow() {
   console.log("Tweet:", tweet);
 }
 
+async function runCollectWorkflow() {
+  const nums = [1, 2, 3, 4, 5];
+  const strs = ["a", "b", "c", "d", "e"];
+
+  let numResult = 0;
+  let strResult = "";
+
+  const workflow = (
+    <Workflow>
+      <CollectWorkflow numbers={nums} strings={strs}>
+        {({ num, str }) => {
+          numResult = num;
+          strResult = str;
+          return null;
+        }}
+      </CollectWorkflow>
+    </Workflow>
+  );
+
+  const context = new WorkflowContext(workflow);
+  await context.execute();
+
+  console.log("\n=== Collector Workflow Results ===");
+  console.log("Number:", numResult);
+  console.log("String:", strResult);
+}
+
 async function main() {
   try {
     await runParallelWorkflow();
     await runNestedWorkflow();
+    await runCollectWorkflow();
   } catch (error) {
     console.error("Workflow execution failed:", error);
     process.exit(1);
