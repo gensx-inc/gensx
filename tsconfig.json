@@ -24,8 +24,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "@",
     "baseUrl": ".",
     "paths": {
       "@/*": [

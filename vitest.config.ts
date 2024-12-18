@@ -8,13 +8,13 @@ export default defineConfig({
     globals: true,
     isolate: false,
     passWithNoTests: false,
-    include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
+    include: ["tests/unit/**/*.test.ts"],
     env: loadEnv("test", process.cwd(), ""),
     coverage: {
       provider: "istanbul",
       reporter: ["text", "json", "html"],
       reportsDirectory: "coverage/unit",
-      include: ["src/**/*.ts", "src/**/*.tsx"],
+      include: ["src/**/*.ts"],
     },
   },
   // TODO: Get swc working to speed things up
