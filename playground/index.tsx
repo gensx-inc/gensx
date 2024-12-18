@@ -1,4 +1,3 @@
-import { Collect } from "@/components/Collect";
 import {
   executeJsxWorkflow,
   withWorkflowComponent,
@@ -9,7 +8,7 @@ import {
 const pureResearchBrainstorm = async ({ prompt }: { prompt: string }) => {
   console.log("🔍 Starting research for:", prompt);
   const topics = await Promise.resolve(["topic 1", "topic 2", "topic 3"]);
-  return topics.join(",");
+  return topics;
 };
 
 const pureWriter = async ({
@@ -38,29 +37,44 @@ const LLMResearch = withWorkflowFunction(
 );
 const LLMWriter = withWorkflowFunction(pureWriter);
 const LLMEditor = withWorkflowFunction(pureEditor);
-
-// Research collection component
-const ResearchCollection = withWorkflowComponent(
-  ({ prompt }: { prompt: string }) => (
-    <LLMResearchBrainstorm prompt={prompt}>
-      {topics => (
-        <Collect>
-          {topics.split(",").map(topic => (
-            <LLMResearch topic={topic} />
-          ))}
-        </Collect>
-      )}
-    </LLMResearchBrainstorm>
-  ),
+const WebResearcher = withWorkflowFunction(
+  async ({ prompt }: { prompt: string }) => {
+    console.log("🌐 Researching web for:", prompt);
+    const results = await Promise.resolve([
+      "web result 1",
+      "web result 2",
+      "web result 3",
+    ]);
+    return results;
+  },
 );
 
-const BlogWritingWorkflow = withWorkflowComponent(
+// Research collection component
+const ResearchCollection = withWorkflowComponent<
+  [string[], string[]],
+  { prompt: string }
+>(({ prompt }: { prompt: string }) => (
+  <>
+    <LLMResearchBrainstorm prompt={prompt}>
+      {topics => (
+        <>
+          {topics.map(topic => (
+            <LLMResearch topic={topic} />
+          ))}
+        </>
+      )}
+    </LLMResearchBrainstorm>
+    <WebResearcher prompt={prompt} />
+  </>
+));
+
+const BlogWritingWorkflow = withWorkflowComponent<string, { prompt: string }>(
   ({ prompt }: { prompt: string }) => (
     <ResearchCollection prompt={prompt}>
-      {research => {
-        console.log("🧠 Research:", research, typeof research);
+      {([catalogResearch, webResearch]) => {
+        console.log("🧠 Research:", { catalogResearch, webResearch });
         return (
-          <LLMWriter research={research.split(",").join("\n")} prompt={prompt}>
+          <LLMWriter research={catalogResearch.join("\n")} prompt={prompt}>
             {draft => <LLMEditor draft={draft} />}
           </LLMWriter>
         );
@@ -68,17 +82,9 @@ const BlogWritingWorkflow = withWorkflowComponent(
     </ResearchCollection>
   ),
 );
-
 async function main() {
   console.log("🚀 Starting blog writing workflow");
-  // const comp = jsx(
-  //   LLMResearch,
-  //   {
-  //     topic: "Write a blog post about the future of AI",
-  //   },
-  //   output => <LLMEditor draft={output} />,
-  // );
-  const result = await executeJsxWorkflow(
+  const result = await executeJsxWorkflow<string>(
     <BlogWritingWorkflow prompt="Write a blog post about the future of AI" />,
   );
   console.log("✅ Final result:", result);

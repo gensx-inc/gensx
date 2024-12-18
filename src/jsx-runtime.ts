@@ -1,20 +1,36 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-// type Primitive = string | number | boolean | null | undefined; // TODO: Add array and object
-
 declare global {
   namespace JSX {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export type ElementType = (props: any) => Promise<string>;
+    export type ElementType<T = unknown> = (props: any) => Promise<T>;
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface IntrinsicElements {}
-    export type Element = Promise<string>;
+    export type Element = Promise<unknown>;
     export interface ElementChildrenAttribute {
-      children: (output: string) => MaybePromise<string>;
+      children: (output: unknown) => MaybePromise<unknown>;
     }
   }
 }
 
 export type MaybePromise<T> = T | Promise<T>;
+
+export type Child<T = unknown> = JSX.Element | ((output: T) => JSX.Element);
+export type Children<T = unknown> = Child<T> | Child<T>[];
+
+export const Fragment = (props: { children: Children }): Promise<unknown[]> => {
+  if (Array.isArray(props.children)) {
+    return Promise.all(
+      props.children.map(child => {
+        if (child instanceof Function) {
+          return child(null);
+        }
+        return child;
+      }),
+    );
+  }
+
+  return Promise.all([props.children]);
+};
 
 // export interface Component<TOutput, TProps> {
 //   type: (props: TProps) => MaybePromise<TOutput>;
@@ -22,16 +38,15 @@ export type MaybePromise<T> = T | Promise<T>;
 // }
 
 export const jsx = <
+  TOutput,
   TProps extends Record<string, unknown> & {
-    children?: (output: string) => MaybePromise<string>;
+    children?: Children<TOutput>;
   },
 >(
-  component: (props: TProps) => MaybePromise<string>,
+  component: (props: TProps) => MaybePromise<TOutput>,
   props: TProps | null,
-  children?:
-    | ((output: string) => MaybePromise<string>)
-    | ((output: string) => MaybePromise<string>)[],
-): Promise<string> => {
+  children?: Children<TOutput>,
+): Promise<TOutput | TOutput[]> => {
   console.log("jsx", { component, props, children });
   if (!children && props?.children) {
     children = props.children;
@@ -50,11 +65,27 @@ export const jsx = <
           }),
         ).then(result => {
           console.log("jsx children is array result", { result });
-          return result.join("\n");
+          return result as TOutput[];
         });
       }
-      return children(result);
+      if (children instanceof Function) {
+        return children(result) as TOutput;
+      }
+      return children as TOutput;
     }
-    return result;
+    return result as TOutput;
   });
+};
+
+export const jsxs = <
+  TOutput,
+  TProps extends Record<string, unknown> & {
+    children?: Children<TOutput>;
+  },
+>(
+  component: (props: TProps) => MaybePromise<TOutput>,
+  props: TProps | null,
+  children?: Children<TOutput>,
+): Promise<TOutput | TOutput[]> => {
+  return jsx(component, props, children);
 };

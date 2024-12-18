@@ -1,8 +1,9 @@
+import { MaybePromise } from "../jsx-runtime";
 import { executeJsxWorkflow } from "../workflow/execute";
 
-export function Collect(props: {
-  children: string[] | Promise<string>[];
-}): Promise<string> {
+export function Collect<TOutput>(props: {
+  children: MaybePromise<TOutput>[];
+}): Promise<TOutput> {
   const promise = Promise.all(
     props.children.map(child =>
       child instanceof Promise
@@ -13,5 +14,5 @@ export function Collect(props: {
   return Promise.resolve(promise).then(result => {
     console.log("Collect result", result);
     return result.join("\n");
-  });
+  }) as Promise<TOutput>;
 }
