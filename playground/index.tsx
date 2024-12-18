@@ -9,7 +9,7 @@ import {
 const pureResearchBrainstorm = async ({ prompt }: { prompt: string }) => {
   console.log("🔍 Starting research for:", prompt);
   const topics = await Promise.resolve(["topic 1", "topic 2", "topic 3"]);
-  return topics;
+  return topics.join(",");
 };
 
 const pureWriter = async ({
@@ -45,7 +45,7 @@ const ResearchCollection = withWorkflowComponent(
     <LLMResearchBrainstorm prompt={prompt}>
       {topics => (
         <Collect>
-          {topics.map(topic => (
+          {topics.split(",").map(topic => (
             <LLMResearch topic={topic} />
           ))}
         </Collect>
@@ -60,7 +60,7 @@ const BlogWritingWorkflow = withWorkflowComponent(
       {research => {
         console.log("🧠 Research:", research, typeof research);
         return (
-          <LLMWriter research={research.join("\n")} prompt={prompt}>
+          <LLMWriter research={research.split(",").join("\n")} prompt={prompt}>
             {draft => <LLMEditor draft={draft} />}
           </LLMWriter>
         );
@@ -71,11 +71,15 @@ const BlogWritingWorkflow = withWorkflowComponent(
 
 async function main() {
   console.log("🚀 Starting blog writing workflow");
-  // const comp = jsx(LLMResearch, {
-  //   topic: "Write a blog post about the future of AI",
-  // });
+  // const comp = jsx(
+  //   LLMResearch,
+  //   {
+  //     topic: "Write a blog post about the future of AI",
+  //   },
+  //   output => <LLMEditor draft={output} />,
+  // );
   const result = await executeJsxWorkflow(
-    <LLMResearch topic="Write a blog post about the future of AI" />,
+    <BlogWritingWorkflow prompt="Write a blog post about the future of AI" />,
   );
   console.log("✅ Final result:", result);
 }
