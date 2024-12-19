@@ -14,7 +14,7 @@ interface WriterOutput {
 }
 
 export const LLMWriter = createWorkflow<WriterProps, WriterOutput>(
-  async (props, render) => {
+  async (props, { resolve }) => {
     const processedContent = await Promise.resolve(
       `Written content based on: ${props.content}`,
     );
@@ -24,9 +24,10 @@ export const LLMWriter = createWorkflow<WriterProps, WriterOutput>(
       keywords: ["sample", "content", "test"],
     };
 
-    return render({
+    return resolve({
       content: processedContent,
       metadata: processedMetadata,
     });
   },
+  "LLMWriter",
 );

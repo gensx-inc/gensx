@@ -28,6 +28,7 @@
   "packageManager": "pnpm@9.14.2",
   "type": "module",
   "scripts": {
+    "run": "tsx playground/index.tsx",
     "dev": "nodemon",
     "prepublishOnly": "pnpm i && pnpm build",
     "build": "pnpm validate-typescript && pnpm build:clean && pnpm generate-dist",

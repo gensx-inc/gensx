@@ -12,14 +12,18 @@ interface ResearcherOutput {
 }
 
 export const LLMResearcher = createWorkflow<ResearcherProps, ResearcherOutput>(
-  async (props, render) => {
-    const result = {
-      research: await Promise.resolve(
-        `Research based on title: ${props.title}, prompt: ${props.prompt}`,
-      ),
-      sources: ["source1.com", "source2.com"],
-      summary: "Brief summary of findings",
-    };
-    return render(result);
+  async (props, { resolve }) => {
+    const processedResearch = await Promise.resolve(
+      `Research based on title: ${props.title}, prompt: ${props.prompt}`,
+    );
+    const processedSources = ["source1.com", "source2.com"];
+    const processedSummary = "Brief summary of findings";
+
+    return resolve({
+      research: processedResearch,
+      sources: processedSources,
+      summary: processedSummary,
+    });
   },
+  "LLMResearcher",
 );

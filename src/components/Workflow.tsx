@@ -14,10 +14,13 @@ export class WorkflowContext {
   private steps: Step[] = [];
   private dynamicSteps = new Map<string, Step[]>();
   private executedSteps = new Set<string>();
+  readonly id: string;
 
   constructor(workflow: React.ReactElement) {
+    this.id = `workflow_${Math.random().toString(36).slice(2)}`;
     const wrappedWorkflow = React.createElement(React.Fragment, null, workflow);
     this.steps = renderWorkflow(wrappedWorkflow);
+    WorkflowContext.current = this;
   }
 
   notifyUpdate(componentId: string) {
@@ -52,8 +55,6 @@ export class WorkflowContext {
   }
 
   async execute() {
-    WorkflowContext.current = this;
-
     try {
       // Execute all initial steps in parallel
       await Promise.all(

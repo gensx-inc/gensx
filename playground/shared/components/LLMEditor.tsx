@@ -5,8 +5,9 @@ interface EditorProps {
 }
 
 export const LLMEditor = createWorkflow<EditorProps, string>(
-  async (props, render) => {
+  async (props, { resolve }) => {
     const editedContent = await Promise.resolve(`Edited: ${props.content}`);
-    return render(editedContent);
+    return resolve(editedContent);
   },
+  "LLMEditor",
 );

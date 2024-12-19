@@ -1,3 +1,5 @@
+import { WorkflowContext } from "../components/Workflow";
+
 type WorkflowOutput<T> = Map<
   string,
   {
@@ -7,8 +9,8 @@ type WorkflowOutput<T> = Map<
   }
 >;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const workflowOutputs: WorkflowOutput<any> = new Map();
+// Map of workflow context ID to its outputs
+const contextOutputs = new Map<string, WorkflowOutput<any>>();
 
 let counter = 0;
 function generateStableId() {
@@ -19,6 +21,13 @@ export function createWorkflowOutput<T>(
   _initialValue: T,
 ): [Promise<T>, (value: T) => void] {
   const outputId = generateStableId();
+  const contextId = WorkflowContext.current?.id || "root";
+
+  // Get or create the outputs map for this context
+  if (!contextOutputs.has(contextId)) {
+    contextOutputs.set(contextId, new Map());
+  }
+  const workflowOutputs = contextOutputs.get(contextId)!;
 
   if (!workflowOutputs.has(outputId)) {
     let resolvePromise: (value: T) => void;
@@ -33,9 +42,13 @@ export function createWorkflowOutput<T>(
     if (process.env.WORKFLOW_TIMEOUT === "true") {
       timeoutId = setTimeout(() => {
         if (!workflowOutputs.get(outputId)?.hasResolved) {
-          console.error(`Output ${outputId} timed out without being resolved`);
+          console.error(
+            `Output ${outputId} in context ${contextId} timed out without being resolved`,
+          );
           rejectPromise(
-            new Error(`Output ${outputId} timed out waiting for resolution`),
+            new Error(
+              `Output ${outputId} in context ${contextId} timed out waiting for resolution`,
+            ),
           );
         }
       }, 5000);
@@ -48,7 +61,9 @@ export function createWorkflowOutput<T>(
           clearTimeout(timeoutId);
         }
         if (workflowOutputs.get(outputId)?.hasResolved) {
-          throw new Error("Cannot set value multiple times");
+          throw new Error(
+            `Cannot set value multiple times for output ${outputId} in context ${contextId}`,
+          );
         }
         resolvePromise(value);
         workflowOutputs.get(outputId)!.hasResolved = true;
@@ -58,6 +73,5 @@ export function createWorkflowOutput<T>(
   }
 
   const output = workflowOutputs.get(outputId)!;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return [output.promise, output.resolve] as const;
 }
