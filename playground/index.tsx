@@ -72,7 +72,7 @@ async function runNestedWorkflow() {
 async function main() {
   try {
     await runParallelWorkflow();
-    // await runNestedWorkflow();
+    await runNestedWorkflow();
   } catch (error) {
     console.error("Workflow execution failed:", error);
     process.exit(1);

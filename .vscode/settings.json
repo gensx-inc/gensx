@@ -3,5 +3,8 @@
     "source.fixAll.eslint": "always",
     "source.removeUnusedImports": "always"
   },
-  "cSpell.words": ["gensx"]
+  "cSpell.words": [
+    "gensx"
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib"
 }
