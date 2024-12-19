@@ -41,14 +41,7 @@ async function runNestedWorkflow() {
 
   const workflow = (
     <Workflow>
-      <BlogWritingWorkflow
-        title={
-          new Promise(resolve => {
-            resolve(title);
-          })
-        }
-        prompt={prompt}
-      >
+      <BlogWritingWorkflow title={title} prompt={prompt}>
         {blogPostResult => (
           <TweetWritingWorkflow content={blogPostResult}>
             {tweetResult => {
