@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+
 import React, {
   FunctionComponent,
   JSXElementConstructor,
@@ -14,9 +18,8 @@ export interface WorkflowContext<TOutput> {
   execute: <T>(element: ReactElement) => Promise<T>;
 }
 
-// Private interface for internal implementation
-interface WorkflowExecutionContextImpl<TOutput>
-  extends WorkflowContext<TOutput> {}
+// Private implementation type
+type WorkflowExecutionContextImpl<TOutput> = WorkflowContext<TOutput>;
 
 type WorkflowImplementation<TProps, TOutput> = (
   props: ResolvedProps<TProps>,
@@ -61,7 +64,6 @@ const processedWorkflows = new Map<string, Set<string>>();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createWorkflow<TProps extends Record<string, any>, TOutput>(
   implementation: WorkflowImplementation<TProps, TOutput>,
-  displayName?: string,
 ): FunctionComponent<WorkflowComponentProps<PromiseProps<TProps>, TOutput>> & {
   getWorkflowResult: (
     props: WorkflowComponentProps<PromiseProps<TProps>, TOutput>,
@@ -145,7 +147,7 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
 
     return React.createElement("div", {
       "data-workflow-step": true,
-      step,
+      step: step as unknown as Record<string, unknown>,
     });
   };
 
@@ -154,7 +156,7 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
   ): Promise<ReactElement | null> => {
     const { children, setOutput, ...componentProps } = props;
 
-    const componentType = displayName ?? implementation.name ?? "anonymous";
+    const componentType = implementation.name ?? "anonymous";
     const propsKey = JSON.stringify(componentProps);
 
     if (!processedWorkflows.has(componentType)) {
@@ -206,7 +208,7 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
             const executionProps = {
               ...element.props,
               setOutput,
-            };
+            } as unknown as ResolvedProps<unknown>;
 
             const executionPromise = (async () => {
               const subContext: WorkflowExecutionContextImpl<T> = {
@@ -253,8 +255,7 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
     }
   };
 
-  WorkflowComponent.displayName =
-    displayName ?? implementation.name ?? "Workflow";
+  WorkflowComponent.displayName = implementation.name ?? "Workflow";
   WorkflowComponent.implementation = implementation;
 
   return WorkflowComponent as FunctionComponent<

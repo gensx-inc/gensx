@@ -18,7 +18,7 @@ function generateStableId() {
 }
 
 export function createWorkflowOutput<T>(
-  initialValue: T,
+  _initialValue: T,
 ): [Promise<T>, (value: T) => void] {
   const context = WorkflowContext.current ?? {
     id: generateStableId(),
