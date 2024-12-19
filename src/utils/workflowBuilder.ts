@@ -16,14 +16,14 @@ import { renderWorkflow } from "../utils/renderWorkflow";
 // Public interface that components will use
 export interface WorkflowContext<TOutput> {
   resolve: (value: TOutput) => ReactElement | null;
-  execute: <TOutput>(
-    element: ReactElement<
-      { setOutput?: (value: TOutput) => void } & Record<string, unknown>,
-      ComponentType<unknown> & {
-        implementation?: WorkflowImplementation<unknown, TOutput>;
-      }
-    >,
-  ) => Promise<TOutput>;
+  execute: <TProps, TComponentOutput>(
+    component: FunctionComponent<
+      WorkflowComponentProps<PromiseProps<TProps>, TComponentOutput>
+    > & {
+      implementation?: WorkflowImplementation<TProps, TComponentOutput>;
+    },
+    props: Omit<TProps, "setOutput" | "children">,
+  ) => Promise<TComponentOutput>;
 }
 
 // Private implementation type
@@ -51,13 +51,6 @@ async function resolveValue<T>(value: T | Promise<T>): Promise<T> {
   return await value;
 }
 
-type ComponentWithImplementation<TProps, TOutput> =
-  FunctionComponent<TProps> & {
-    displayName?: string;
-    name?: string;
-    implementation?: WorkflowImplementation<TProps, TOutput>;
-  };
-
 function getComponentName(
   type: string | JSXElementConstructor<unknown>,
 ): string {
@@ -77,6 +70,7 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
     props: WorkflowComponentProps<PromiseProps<TProps>, TOutput>,
   ) => Promise<ReactElement | null>;
   implementation: typeof implementation;
+  __outputType?: TOutput; // Add type marker to component
 } {
   const WorkflowComponent = (
     props: WorkflowComponentProps<PromiseProps<TProps>, TOutput>,
@@ -107,27 +101,43 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
               }
               return null;
             },
-            execute: async <TOutput>(
-              element: ReactElement<
-                { setOutput?: (value: TOutput) => void } & Record<
-                  string,
-                  unknown
-                >,
-                ComponentType<unknown> & {
-                  implementation?: WorkflowImplementation<unknown, TOutput>;
-                }
-              >,
-            ): Promise<TOutput> => {
-              const componentName = getComponentName(element.type);
-              const [output, setOutput] = createWorkflowOutput<TOutput>(
-                null as unknown as TOutput,
+            execute: async <TProps, TComponentOutput>(
+              component: FunctionComponent<
+                WorkflowComponentProps<PromiseProps<TProps>, TComponentOutput>
+              > & {
+                implementation?: WorkflowImplementation<
+                  TProps,
+                  TComponentOutput
+                >;
+              },
+              props: Omit<TProps, "setOutput" | "children">,
+            ): Promise<TComponentOutput> => {
+              const componentName = getComponentName(
+                component as ComponentType<unknown>,
               );
+              const [output, setOutput] =
+                createWorkflowOutput<TComponentOutput>(
+                  null as unknown as TComponentOutput,
+                );
 
               try {
-                const elementWithOutput = React.cloneElement(element, {
-                  ...(element.props as Record<string, unknown>),
+                if (!component.implementation) {
+                  throw new Error(
+                    `Component ${componentName} does not have an implementation`,
+                  );
+                }
+
+                const resolvedProps = {
+                  ...props,
                   setOutput,
-                } as { setOutput: typeof setOutput } & Record<string, unknown>);
+                } as unknown as ResolvedProps<TProps>;
+
+                const elementWithOutput = React.createElement(
+                  component as ComponentType<
+                    TProps & { setOutput: typeof setOutput }
+                  >,
+                  resolvedProps as TProps & { setOutput: typeof setOutput },
+                );
 
                 const elementSteps = renderWorkflow(elementWithOutput);
                 await Promise.all(
@@ -206,45 +216,44 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
           }
           return null;
         },
-        execute: async <TOutput>(
-          element: ReactElement<
-            { setOutput?: (value: TOutput) => void } & Record<string, unknown>,
-            ComponentType<unknown> & {
-              implementation?: WorkflowImplementation<unknown, TOutput>;
-            }
-          >,
-        ): Promise<TOutput> => {
-          const componentName = getComponentName(element.type);
-          const [output, setOutput] = createWorkflowOutput<TOutput>(
-            null as unknown as TOutput,
+        execute: async <TProps, TComponentOutput>(
+          component: FunctionComponent<
+            WorkflowComponentProps<PromiseProps<TProps>, TComponentOutput>
+          > & {
+            implementation?: WorkflowImplementation<TProps, TComponentOutput>;
+          },
+          props: Omit<TProps, "setOutput" | "children">,
+        ): Promise<TComponentOutput> => {
+          const componentName = getComponentName(
+            component as ComponentType<unknown>,
+          );
+          const [output, setOutput] = createWorkflowOutput<TComponentOutput>(
+            null as unknown as TComponentOutput,
           );
 
           try {
-            const component = element.type as ComponentWithImplementation<
-              unknown,
-              TOutput
-            >;
             if (!component.implementation) {
               throw new Error(
                 `Component ${componentName} does not have an implementation`,
               );
             }
 
-            const executionProps = {
-              ...(element.props as Record<string, unknown>),
+            const resolvedProps = {
+              ...props,
               setOutput,
-            } as { setOutput: typeof setOutput } & ResolvedProps<unknown>;
+            } as unknown as ResolvedProps<TProps>;
 
             const executionPromise = (async () => {
-              const subContext: WorkflowExecutionContextImpl<TOutput> = {
-                resolve: (value: TOutput) => {
-                  setOutput(value);
-                  return null;
-                },
-                execute: workflowContext.execute,
-              };
+              const subContext: WorkflowExecutionContextImpl<TComponentOutput> =
+                {
+                  resolve: (value: TComponentOutput) => {
+                    setOutput(value);
+                    return null;
+                  },
+                  execute: workflowContext.execute,
+                };
 
-              await component.implementation!(executionProps, subContext);
+              await component.implementation!(resolvedProps, subContext);
               const result = await output;
               return result;
             })();

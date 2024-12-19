@@ -15,10 +15,10 @@ export const FanoutWorkflow = createWorkflow<
   FanoutWorkflowOutputs
 >(async (props, { resolve, execute }) => {
   const doubledNums = props.numbers.map(n =>
-    execute<number>(<DoubleNumber input={n} />),
+    execute(DoubleNumber, { input: n }),
   );
   const doubledStrings = props.strings.map(s =>
-    execute<string>(<DoubleString input={s} />),
+    execute(DoubleString, { input: s }),
   );
 
   const resolvedNums = await Promise.all(doubledNums);
