@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 
 import React, {
+  ComponentType,
   FunctionComponent,
   JSXElementConstructor,
   ReactElement,
@@ -15,7 +16,14 @@ import { renderWorkflow } from "../utils/renderWorkflow";
 // Public interface that components will use
 export interface WorkflowContext<TOutput> {
   resolve: (value: TOutput) => ReactElement | null;
-  execute: <T>(element: ReactElement) => Promise<T>;
+  execute: <TOutput>(
+    element: ReactElement<
+      { setOutput?: (value: TOutput) => void } & Record<string, unknown>,
+      ComponentType<unknown> & {
+        implementation?: WorkflowImplementation<unknown, TOutput>;
+      }
+    >,
+  ) => Promise<TOutput>;
 }
 
 // Private implementation type
@@ -99,17 +107,27 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
               }
               return null;
             },
-            execute: async <T>(element: ReactElement): Promise<T> => {
+            execute: async <TOutput>(
+              element: ReactElement<
+                { setOutput?: (value: TOutput) => void } & Record<
+                  string,
+                  unknown
+                >,
+                ComponentType<unknown> & {
+                  implementation?: WorkflowImplementation<unknown, TOutput>;
+                }
+              >,
+            ): Promise<TOutput> => {
               const componentName = getComponentName(element.type);
-              const [output, setOutput] = createWorkflowOutput<T>(
-                null as unknown as T,
+              const [output, setOutput] = createWorkflowOutput<TOutput>(
+                null as unknown as TOutput,
               );
 
               try {
                 const elementWithOutput = React.cloneElement(element, {
                   ...(element.props as Record<string, unknown>),
                   setOutput,
-                });
+                } as { setOutput: typeof setOutput } & Record<string, unknown>);
 
                 const elementSteps = renderWorkflow(elementWithOutput);
                 await Promise.all(
@@ -188,16 +206,23 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
           }
           return null;
         },
-        execute: async <T>(element: ReactElement): Promise<T> => {
+        execute: async <TOutput>(
+          element: ReactElement<
+            { setOutput?: (value: TOutput) => void } & Record<string, unknown>,
+            ComponentType<unknown> & {
+              implementation?: WorkflowImplementation<unknown, TOutput>;
+            }
+          >,
+        ): Promise<TOutput> => {
           const componentName = getComponentName(element.type);
-          const [output, setOutput] = createWorkflowOutput<T>(
-            null as unknown as T,
+          const [output, setOutput] = createWorkflowOutput<TOutput>(
+            null as unknown as TOutput,
           );
 
           try {
             const component = element.type as ComponentWithImplementation<
               unknown,
-              T
+              TOutput
             >;
             if (!component.implementation) {
               throw new Error(
@@ -208,11 +233,11 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
             const executionProps = {
               ...(element.props as Record<string, unknown>),
               setOutput,
-            } as unknown as ResolvedProps<unknown>;
+            } as { setOutput: typeof setOutput } & ResolvedProps<unknown>;
 
             const executionPromise = (async () => {
-              const subContext: WorkflowExecutionContextImpl<T> = {
-                resolve: (value: T) => {
+              const subContext: WorkflowExecutionContextImpl<TOutput> = {
+                resolve: (value: TOutput) => {
                   setOutput(value);
                   return null;
                 },
