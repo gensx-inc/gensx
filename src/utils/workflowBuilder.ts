@@ -107,7 +107,7 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
 
               try {
                 const elementWithOutput = React.cloneElement(element, {
-                  ...element.props,
+                  ...(element.props as Record<string, unknown>),
                   setOutput,
                 });
 
@@ -206,7 +206,7 @@ export function createWorkflow<TProps extends Record<string, any>, TOutput>(
             }
 
             const executionProps = {
-              ...element.props,
+              ...(element.props as Record<string, unknown>),
               setOutput,
             } as unknown as ResolvedProps<unknown>;
 
