@@ -9,5 +9,4 @@ export const LLMEditor = createWorkflow<EditorProps, string>(
     const editedContent = await Promise.resolve(`Edited: ${props.content}`);
     return resolve(editedContent);
   },
-  "LLMEditor",
 );

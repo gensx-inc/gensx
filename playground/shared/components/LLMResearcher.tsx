@@ -25,5 +25,4 @@ export const LLMResearcher = createWorkflow<ResearcherProps, ResearcherOutput>(
       summary: processedSummary,
     });
   },
-  "LLMResearcher",
 );

@@ -32,4 +32,4 @@ export const TweetWritingWorkflow = createWorkflow<
     console.error("[TweetWorkflow] Error in workflow:", error);
     throw error;
   }
-}, "TweetWritingWorkflow");
+});

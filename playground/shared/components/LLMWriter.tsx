@@ -29,5 +29,4 @@ export const LLMWriter = createWorkflow<WriterProps, WriterOutput>(
       metadata: processedMetadata,
     });
   },
-  "LLMWriter",
 );
