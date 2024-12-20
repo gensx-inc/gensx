@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/cortexclick/gensx/compare/v0.1.0...v0.1.1) (2024-12-20)
+
+
+### 🐛 Bug Fixes
+
+* remove @types/react dep. ([500ab88](https://github.com/cortexclick/gensx/commit/500ab88368c50dc6629bcdcb1f58891d12e5fe94))
+* Tweak the example in README.md ([0498f60](https://github.com/cortexclick/gensx/commit/0498f6095fccd7b3d56d949c36f726356c046fb7))
+
 ## [0.1.0](https://github.com/cortexclick/gensx/compare/v0.0.1...v0.1.0) (2024-12-20)
 
 

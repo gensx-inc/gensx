@@ -1,6 +1,6 @@
 {
   "name": "gensx",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Make LLMs work good",
   "main": "dist/index.cjs",
   "module": "lib/index.js",
