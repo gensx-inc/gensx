@@ -44,6 +44,7 @@ const WebResearcher = Component(async ({ prompt }: { prompt: string }) => {
 // When building a workflow out of components, there are two options:
 // 1. Use the Component function to wrap it and specify the input and output types. This gets you a function with type safe inputs and outputs (if you just call it as a function).
 // 2. Don't wrap it in the Component function, and do not specify the output type (see BlogWritingWorkflow below). You get a function that is the same type as the JSX.Element signature, so it has an unknown output type. If you try to specify the output type on the function signature, you get a type error (unknown is not assignable to X).
+// If you choose not to wrap it in a Component, you can't pass children to it, but we could easily expose the types for that to enable it, similar to the React.PropsWithChildren type.
 const ParallelResearch = Component<{ prompt: string }, [string[], string[]]>(
   ({ prompt }: { prompt: string }) => (
     <>
