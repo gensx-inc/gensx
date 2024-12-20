@@ -6,75 +6,71 @@ export namespace JSX {
   // interface IntrinsicElements {}
   export type Element = Promise<unknown>;
   export interface ElementChildrenAttribute {
-    children: (output: unknown) => MaybePromise<unknown>;
+    children: (output: unknown) => JSX.Element | JSX.Element[];
   }
 }
 
 export type MaybePromise<T> = T | Promise<T>;
 
-export type Child<T = unknown> = JSX.Element | ((output: T) => JSX.Element);
-export type Children<T = unknown> = Child<T> | Child<T>[];
-
-export const Fragment = (props: { children: Children }): Promise<unknown[]> => {
+export const Fragment = (props: {
+  children: JSX.Element[] | JSX.Element;
+}): JSX.Element[] => {
+  console.log("🚀 ~ Fragment ~ props:", props);
   if (Array.isArray(props.children)) {
-    return Promise.all(
-      props.children.map(child => {
-        if (child instanceof Function) {
-          return child(null);
-        }
-        return child;
-      }),
-    );
+    return props.children;
   }
 
-  return Promise.all([props.children]);
+  return [props.children];
 };
 
 export const jsx = <
   TOutput,
   TProps extends Record<string, unknown> & {
-    children?: Children<TOutput>;
+    children?: (output: TOutput) => MaybePromise<JSX.Element | JSX.Element[]>;
   },
 >(
   component: (props: TProps) => MaybePromise<TOutput>,
   props: TProps | null,
-  children?: Children<TOutput>,
+  children?: (output: TOutput) => MaybePromise<JSX.Element | JSX.Element[]>,
 ): Promise<TOutput | TOutput[]> => {
   if (!children && props?.children) {
     children = props.children;
   }
+  console.log("🚀 ~ jsx ~ children:", {
+    children,
+    props,
+    component,
+    childrenIsArray: Array.isArray(children),
+  });
   return Promise.resolve(component(props ?? ({} as TProps))).then(result => {
     if (children) {
+      // If its an array of elements, this is an edge case for a Fragment.
       if (Array.isArray(children)) {
-        return Promise.all(
-          children.map(child => {
-            if (child instanceof Function) {
-              return child(result);
-            }
-            return child;
-          }),
-        ).then(result => {
-          return result as TOutput[];
-        });
+        return Promise.all(children);
       }
-      if (children instanceof Function) {
-        return children(result) as TOutput;
+      if (typeof children === "function") {
+        // If the components child function returns an array of elements, we need to resolve them all
+        const childrenResult = children(result);
+        if (Array.isArray(childrenResult)) {
+          return Promise.all(childrenResult);
+        }
+        return Promise.resolve(childrenResult);
       }
-      return children as TOutput;
+      return Promise.resolve(children);
     }
-    return result as TOutput;
-  });
+    return result;
+  }) as Promise<TOutput | TOutput[]>;
 };
 
 export const jsxs = <
   TOutput,
   TProps extends Record<string, unknown> & {
-    children?: Children<TOutput>;
+    children?: (output: TOutput) => MaybePromise<JSX.Element | JSX.Element[]>;
   },
 >(
   component: (props: TProps) => MaybePromise<TOutput>,
   props: TProps | null,
-  children?: Children<TOutput>,
+  children?: (output: TOutput) => MaybePromise<JSX.Element | JSX.Element[]>,
 ): Promise<TOutput | TOutput[]> => {
   return jsx(component, props, children);
 };

@@ -5,10 +5,17 @@ export function Component<TInput, TOutput>(
 ) {
   function WorkflowFunction(
     props: TInput & {
-      children?: (output: TOutput) => MaybePromise<TOutput> | JSX.Element;
+      children?: (
+        output: TOutput,
+      ) => MaybePromise<TOutput | JSX.Element | JSX.Element[]>;
     },
   ): Promise<TOutput> {
     return Promise.resolve(fn(props)) as Promise<TOutput>;
+  }
+  if (fn.name) {
+    Object.defineProperty(WorkflowFunction, "name", {
+      value: `WorkflowFunction[${fn.name}]`,
+    });
   }
   return WorkflowFunction;
 }
