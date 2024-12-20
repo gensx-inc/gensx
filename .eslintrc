@@ -122,11 +122,17 @@
       "plugins": [
         "vitest"
       ],
-      "extends": [
-        "plugin:vitest/recommended"
-      ],
+      "env": {
+        "jest": true,
+        "node": true
+      },
       "rules": {
         "@typescript-eslint/unbound-method": "off",
+        "vitest/valid-expect": "error",
+        "vitest/valid-title": "error",
+        "vitest/no-focused-tests": "error",
+        "vitest/no-identical-title": "error",
+        "vitest/no-disabled-tests": "warn",
         "vitest/expect-expect": "off",
         "vitest/no-standalone-expect": "off"
       }
