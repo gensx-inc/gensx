@@ -75,13 +75,7 @@ const ParallelResearch = gsx.Component<
 >(({ prompt }) => (
   <>
     <LLMResearchBrainstorm prompt={prompt}>
-      {topics => (
-        <>
-          {topics.map(topic => (
-            <LLMResearch topic={topic} />
-          ))}
-        </>
-      )}
+      {topics => topics.map(topic => <LLMResearch topic={topic} />)}
     </LLMResearchBrainstorm>
     <WebResearcher prompt={prompt} />
   </>
@@ -99,7 +93,12 @@ const BlogWritingWorkflow = gsx.Component<
     {([catalogResearch, webResearch]) => {
       console.log("🧠 Research:", { catalogResearch, webResearch });
       return (
-        <LLMWriter research={catalogResearch.join("\n")} prompt={prompt}>
+        <LLMWriter
+          research={[catalogResearch.join("\n"), webResearch.join("\n")].join(
+            "\n\n",
+          )}
+          prompt={prompt}
+        >
           {draft => <LLMEditor draft={draft} />}
         </LLMWriter>
       );
