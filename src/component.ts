@@ -1,6 +1,6 @@
 import { JSX, MaybePromise } from "./jsx-runtime";
 
-export function Component<TInput extends Record<string, unknown>, TOutput>(
+export function Component<TInput, TOutput>(
   fn: (input: TInput) => MaybePromise<TOutput> | JSX.Element,
 ) {
   function WorkflowFunction(

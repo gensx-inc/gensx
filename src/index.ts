@@ -13,6 +13,6 @@
  */
 
 import { Component } from "./component";
-import { gensx } from "./gensx";
+import { execute } from "./gensx";
 
-export { Component, gensx };
+export { Component, execute };
