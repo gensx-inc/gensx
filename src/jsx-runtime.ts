@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-declare global {
-  namespace JSX {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export type ElementType<T = unknown> = (props: any) => Promise<T>;
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    interface IntrinsicElements {}
-    export type Element = Promise<unknown>;
-    export interface ElementChildrenAttribute {
-      children: (output: unknown) => MaybePromise<unknown>;
-    }
+export namespace JSX {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type ElementType = (props: any) => Promise<unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
+  // interface IntrinsicElements {}
+  export type Element = Promise<unknown>;
+  export interface ElementChildrenAttribute {
+    children: (output: unknown) => MaybePromise<unknown>;
   }
 }
 
@@ -31,11 +29,6 @@ export const Fragment = (props: { children: Children }): Promise<unknown[]> => {
 
   return Promise.all([props.children]);
 };
-
-// export interface Component<TOutput, TProps> {
-//   type: (props: TProps) => MaybePromise<TOutput>;
-//   props: TProps;
-// }
 
 export const jsx = <
   TOutput,
