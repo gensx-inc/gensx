@@ -28,6 +28,7 @@
   "packageManager": "pnpm@9.14.2",
   "type": "module",
   "scripts": {
+    "build:watch": "pnpm build:clean && pnpm generate-dist --watch",
     "dev": "nodemon",
     "prepublishOnly": "pnpm i && pnpm build",
     "build": "pnpm validate-typescript && pnpm build:clean && pnpm generate-dist",
@@ -38,7 +39,7 @@
     "lint:fix": "eslint --ignore-path .gitignore . --ext .js,.ts --fix",
     "lint:file": "eslint --ignore-path .gitignore",
     "validate-typescript": "tsc -p tsconfig.prod.json --noEmit",
-    "generate-dist": "tsup src/index.ts --minify --tsconfig tsconfig.prod.json --dts --format cjs,esm --out-dir dist",
+    "generate-dist": "tsup src/index.ts --minify --tsconfig tsconfig.prod.json --dts --format cjs,esm --out-dir dist --entry.jsx-runtime=src/jsx-runtime.ts --entry.jsx-dev-runtime=src/jsx-dev-runtime.ts --entry.index=src/index.ts",
     "build:clean": "rimraf dist; exit 0",
     "prepare": "[ -f .husky/install.mjs ] && node .husky/install.mjs || true"
   },
@@ -92,7 +93,13 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./jsx-runtime": "./dist/jsx-runtime.js"
+    "./jsx-runtime": {
+      "import": "./dist/jsx-runtime.js",
+      "require": "./dist/jsx-runtime.cjs"
+    },
+    "./jsx-dev-runtime": {
+      "import": "./dist/jsx-dev-runtime.js",
+      "require": "./dist/jsx-dev-runtime.cjs"
+    }
   }
 }
-
