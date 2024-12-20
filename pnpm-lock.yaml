@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       openai:
-        specifier: ^4.76.0
-        version: 4.76.3
+        specifier: ^4.77.0
+        version: 4.77.0
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu':
         specifier: ^4.28.1
@@ -2150,8 +2150,8 @@ packages:
     resolution: {integrity: sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ==}
     engines: {node: '>=18'}
 
-  openai@4.76.3:
-    resolution: {integrity: sha512-BISkI90m8zT7BAMljK0j00TzOoLvmc7AulPxv6EARa++3+hhIK5G6z4xkITurEaA9bvDhQ09kSNKA3DL+rDMwA==}
+  openai@4.77.0:
+    resolution: {integrity: sha512-WWacavtns/7pCUkOWvQIjyOfcdr9X+9n9Vvb0zFeKVDAqwCMDHB+iSr24SVaBAhplvSG6JrRXFpcNM9gWhOGIw==}
     hasBin: true
     peerDependencies:
       zod: ^3.23.8
@@ -4749,7 +4749,7 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  openai@4.76.3:
+  openai@4.77.0:
     dependencies:
       '@types/node': 18.19.68
       '@types/node-fetch': 2.6.12

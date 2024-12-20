@@ -44,7 +44,7 @@
     "prepare": "[ -f .husky/install.mjs ] && node .husky/install.mjs || true"
   },
   "dependencies": {
-    "openai": "^4.76.0"
+    "openai": "^4.77.0"
   },
   "devDependencies": {
     "@swc/cli": "^0.5.2",
