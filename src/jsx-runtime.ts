@@ -47,15 +47,12 @@ export const jsx = <
   props: TProps | null,
   children?: Children<TOutput>,
 ): Promise<TOutput | TOutput[]> => {
-  console.log("jsx", { component, props, children });
   if (!children && props?.children) {
     children = props.children;
   }
   return Promise.resolve(component(props ?? ({} as TProps))).then(result => {
-    console.log("jsx result", { result, children });
     if (children) {
       if (Array.isArray(children)) {
-        console.log("jsx children is array", { children });
         return Promise.all(
           children.map(child => {
             if (child instanceof Function) {
@@ -64,7 +61,6 @@ export const jsx = <
             return child;
           }),
         ).then(result => {
-          console.log("jsx children is array result", { result });
           return result as TOutput[];
         });
       }
