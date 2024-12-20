@@ -15,7 +15,6 @@ export type MaybePromise<T> = T | Promise<T>;
 export const Fragment = (props: {
   children: JSX.Element[] | JSX.Element;
 }): JSX.Element[] => {
-  console.log("🚀 ~ Fragment ~ props:", props);
   if (Array.isArray(props.children)) {
     return props.children;
   }
@@ -36,12 +35,6 @@ export const jsx = <
   if (!children && props?.children) {
     children = props.children;
   }
-  console.log("🚀 ~ jsx ~ children:", {
-    children,
-    props,
-    component,
-    childrenIsArray: Array.isArray(children),
-  });
   return Promise.resolve(component(props ?? ({} as TProps))).then(result => {
     if (children) {
       // If its an array of elements, this is an edge case for a Fragment.
@@ -56,6 +49,8 @@ export const jsx = <
         }
         return Promise.resolve(childrenResult);
       }
+
+      // If its a single element, this is an edge case for a Fragment.
       return Promise.resolve(children);
     }
     return result;
