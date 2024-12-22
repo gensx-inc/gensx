@@ -8,6 +8,10 @@ const llm = createLLMService({
   temperature: 0.7,
 });
 
+// Add HN URL helper
+const getHNPostUrl = (id: number | string) =>
+  `https://news.ycombinator.com/item?id=${id}`;
+
 interface PGTweetWriterProps {
   context: string;
   prompt: string;
@@ -49,19 +53,22 @@ You are Paul Graham, founder of Y Combinator and long-time essayist. Given a tec
 4. A focus on fundamental principles
 5. Your characteristic mix of technical depth and philosophical breadth
 
-Maintain your voice while preserving the key insights from the analysis.
+IMPORTANT: You MUST preserve all markdown links from the input exactly as they appear.
+For example, if the input mentions "[Project X](https://news.ycombinator.com/item?id=123)", 
+you must include this exact link when discussing that project.
+
+Maintain your voice while preserving the key insights and all links from the analysis.
     `.trim();
 
-    const result = await llm.chat([
+    return await llm.chat([
       { role: "system", content: PROMPT },
       { role: "user", content: content },
     ]);
-    return result;
   },
 );
 
 interface CommentsAnalyzerProps {
-  postId: string;
+  postId: number;
   comments: Array<{ text: string; score: number }>;
 }
 
@@ -81,7 +88,6 @@ ANALYSIS: [Your detailed analysis of key points of agreement/disagreement]
 Example output:
 SENTIMENT: Community is cautiously optimistic about the technical approach.
 DEMONSTRATIVE_COMMENT: [Score: 42] The real innovation here is the combination of existing techniques.
-ANALYSIS: The discussion shows strong agreement about scalability concerns...
 
 Focus on substance rather than surface-level reactions. Quote the demonstrative comment exactly as provided in the input.
     `.trim();
@@ -92,7 +98,10 @@ Focus on substance rather than surface-level reactions. Quote the demonstrative 
 
   return await llm.chat([
     { role: "system", content: PROMPT },
-    { role: "user", content: commentsText },
+    {
+      role: "user",
+      content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
+    },
   ]);
 });
 
@@ -109,11 +118,15 @@ You are an expert at summarizing Hacker News posts. Given a post's title, text, 
 2. Any notable discussion points from comments
 3. The overall reception (based on score and comment sentiment)
 
+IMPORTANT: You MUST start your summary with a link to the post in this EXACT format:
+[${story.title}](${getHNPostUrl(story.id)})
+
 Keep the summary clear and objective. Focus on facts and insights rather than opinions.
     `.trim();
 
     const context = `
 Title: ${story.title}
+URL: ${getHNPostUrl(story.id)}
 Text: ${story.text}
 Score: ${story.score}
 Comments: ${story.comments.map(c => `[Score: ${c.score}] ${c.text}`).join("\n")}
@@ -123,6 +136,11 @@ Comments: ${story.comments.map(c => `[Score: ${c.score}] ${c.text}`).join("\n")}
       { role: "system", content: PROMPT },
       { role: "user", content: context },
     ]);
+
+    // Ensure the summary starts with the link
+    if (!result.includes(getHNPostUrl(story.id))) {
+      return `[${story.title}](${getHNPostUrl(story.id)})\n\n${result}`;
+    }
 
     return result;
   },
@@ -138,7 +156,7 @@ const HNPostAnalyzer = gsx.Component<HNPostAnalyzerProps, HNPostAnalyzerOutput>(
   async ({ story }) => (
     <>
       <PostSummarizer story={story} />
-      <CommentsAnalyzer postId={story.title} comments={story.comments} />
+      <CommentsAnalyzer postId={story.id} comments={story.comments} />
     </>
   ),
 );
@@ -178,18 +196,25 @@ type TrendReport = string;
 const TrendAnalyzer = gsx.Component<TrendAnalyzerProps, TrendReport>(
   async ({ analyses }) => {
     const PROMPT = `
-
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
 You will be given input summarizing the top posts from hacker news, and an analysis of the comments on each post. 
 
-You are to write a blog post about the top trends in technology based on this input. You should be sure to cover the following sections: 
+You should write a blog post about the top trends in technology based on this input. You should be sure to cover the following sections: 
 
 - Positive themes: 3 ideas/technologies people are excited about
 - Negative themes: 3 concerns or criticisms
 - Surprising themes: 3 unexpected insights or connections
 - Overall sentiment: a single sentence describing the overall mood of software developers as a whole. 
 
-Where appropriate, you shoudl interleve demonstrative comments to help support your points, build connection with the reader, and make the post more engaging.
+IMPORTANT: Your output MUST preserve all links from the input. When you reference a post or discussion, you MUST include its link.
+For example, if the input contains "[Interesting Project](https://news.ycombinator.com/item?id=123)", you must include this exact link when discussing that project.
+
+Important formatting requirements:
+1. When referencing specific posts or discussions, preserve the markdown links provided in the input: [Title](URL)
+2. When quoting comments, include them as block quotes using ">" at the start of the line
+3. Use markdown formatting for sections (## for headings) and lists
+
+Where appropriate, interleave demonstrative comments to help support your points, build connection with the reader, and make the post more engaging.
 
 Shoot for 1000 words.
     `.trim();
@@ -197,8 +222,11 @@ Shoot for 1000 words.
     const context = analyses
       .map(([summary, analysis]) =>
         `
-Post Summary: ${summary}
-Comment Analysis: ${analysis}
+### Post Summary
+${summary}
+
+### Comment Analysis
+${analysis}
     `.trim(),
       )
       .join("\n\n");

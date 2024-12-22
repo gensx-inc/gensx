@@ -64,6 +64,7 @@ export async function getComments(
 }
 
 export interface HNStory {
+  id: number;
   title: string;
   text: string;
   comments: {
@@ -93,6 +94,7 @@ export async function getFullStory(id: number): Promise<HNStory | null> {
     const comments = await getComments(id);
 
     return {
+      id: story.id,
       title: story.title || "",
       text: story.text, // No longer need URL fallback
       comments: comments.map(comment => ({
