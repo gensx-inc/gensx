@@ -37,7 +37,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   }
 }
 
-export async function getTopStories(limit: number = 500): Promise<number[]> {
+export async function getTopStories(limit = 500): Promise<number[]> {
   const stories = await fetchJson<number[]>(`${HN_API_BASE}/topstories.json`);
   return stories.slice(0, limit);
 }
@@ -48,7 +48,7 @@ export async function getItem(id: number): Promise<HNItem> {
 
 export async function getComments(
   parentId: number,
-  limit: number = 10,
+  limit = 10,
 ): Promise<HNItem[]> {
   const parent = await getItem(parentId);
   if (!parent.kids || parent.kids.length === 0) {
@@ -95,14 +95,14 @@ export async function getFullStory(id: number): Promise<HNStory | null> {
 
     return {
       id: story.id,
-      title: story.title || "",
+      title: story.title ?? "",
       text: story.text, // No longer need URL fallback
       comments: comments.map(comment => ({
-        text: comment.text || "",
-        score: comment.score || 0,
+        text: comment.text ?? "",
+        score: comment.score ?? 0,
       })),
       url: story.url, // Keep URL as optional metadata
-      score: story.score || 0,
+      score: story.score ?? 0,
       by: story.by,
       time: story.time,
     };
@@ -113,8 +113,8 @@ export async function getFullStory(id: number): Promise<HNStory | null> {
 }
 
 export async function getTopStoryDetails(
-  limit: number = 500,
-  batchSize: number = 10,
+  limit = 500,
+  batchSize = 10,
 ): Promise<HNStory[]> {
   const storyIds = await getTopStories(limit);
   const stories: HNStory[] = [];

@@ -89,5 +89,8 @@
       "import": "./dist/jsx-dev-runtime.js",
       "require": "./dist/jsx-dev-runtime.cjs"
     }
+  },
+  "dependencies": {
+    "openai": "^4.77.0"
   }
 }
