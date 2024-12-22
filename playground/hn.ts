@@ -80,10 +80,10 @@ export async function getFullStory(id: number): Promise<HNStory | null> {
   try {
     const story = await getItem(id);
 
-    // Skip non-text stories or deleted/dead stories
+    // Skip non-text stories, link-only stories, or deleted/dead stories
     if (
       story.type !== "story" ||
-      (!story.text && !story.url) ||
+      !story.text || // Must have text content
       story.deleted ||
       story.dead
     ) {
@@ -94,12 +94,12 @@ export async function getFullStory(id: number): Promise<HNStory | null> {
 
     return {
       title: story.title || "",
-      text: story.text || `URL: ${story.url}`,
+      text: story.text, // No longer need URL fallback
       comments: comments.map(comment => ({
         text: comment.text || "",
         score: comment.score || 0,
       })),
-      url: story.url,
+      url: story.url, // Keep URL as optional metadata
       score: story.score || 0,
       by: story.by,
       time: story.time,

@@ -1,6 +1,12 @@
 import * as gsx from "@/index";
-import { promises as fs } from "fs";
 import { getTopStoryDetails, type HNStory } from "./hn";
+import { createLLMService } from "../src/llm";
+
+// Initialize LLM service
+const llm = createLLMService({
+  model: "gpt-4o",
+  temperature: 0.7,
+});
 
 interface PGTweetWriterProps {
   context: string;
@@ -10,19 +16,21 @@ interface PGTweetWriterProps {
 type PGTweetWriterOutput = string;
 const PGTweetWriter = gsx.Component<PGTweetWriterProps, PGTweetWriterOutput>(
   async ({ context, prompt }) => {
-    return await Promise.resolve(`PG tweet: ${prompt}`);
-  },
-);
+    const PROMPT = `
+You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
+1. Captures the most interesting insight
+2. Uses your characteristic direct style
+3. Provokes thought or discussion
+4. Stays under 280 characters
 
-interface BlogPostWriterProps {
-  context: string;
-  prompt: string;
-}
+Focus on the most surprising or counterintuitive point rather than trying to summarize everything.
+    `.trim();
 
-type HNReportWriterOutput = string;
-const HNReportWriter = gsx.Component<BlogPostWriterProps, HNReportWriterOutput>(
-  async ({ prompt }) => {
-    return await Promise.resolve(`PG tweet: ${prompt}`);
+    const result = await llm.chat([
+      { role: "system", content: PROMPT },
+      { role: "user", content: `Context:\n${context}\n\nPrompt: ${prompt}` },
+    ]);
+    return result;
   },
 );
 
@@ -33,52 +41,104 @@ interface PGEditorProps {
 type PGEditorOutput = string;
 const PGEditor = gsx.Component<PGEditorProps, PGEditorOutput>(
   async ({ content }) => {
-    return await Promise.resolve(`PG tweet: ${content}`);
+    const PROMPT = `
+You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
+1. Clear, direct language
+2. Concrete examples and analogies
+3. Contrarian insights that challenge conventional wisdom
+4. A focus on fundamental principles
+5. Your characteristic mix of technical depth and philosophical breadth
+
+Maintain your voice while preserving the key insights from the analysis.
+    `.trim();
+
+    const result = await llm.chat([
+      { role: "system", content: PROMPT },
+      { role: "user", content: content },
+    ]);
+    return result;
   },
 );
 
 interface CommentsAnalyzerProps {
   postId: string;
+  comments: Array<{ text: string; score: number }>;
 }
 
-interface CommentsAnalyzerOutput {
-  postId: string;
-  demonstrativeComment: string;
-  sentiment: string;
-}
+type CommentsAnalyzerOutput = string;
+
 const CommentsAnalyzer = gsx.Component<
   CommentsAnalyzerProps,
   CommentsAnalyzerOutput
->(async ({ postId }) => {
-  return await Promise.resolve({
-    postId,
-    demonstrativeComment: "This is a demonstrative comment",
-    sentiment: "positive",
-  });
+>(async ({ postId, comments }) => {
+  const PROMPT = `
+You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
+
+SENTIMENT: [Write a single sentence describing the overall sentiment in 10 words or less]
+DEMONSTRATIVE_COMMENT: [Select the single most insightful or representative comment, quoted exactly as provided]
+ANALYSIS: [Your detailed analysis of key points of agreement/disagreement]
+
+Example output:
+SENTIMENT: Community is cautiously optimistic about the technical approach.
+DEMONSTRATIVE_COMMENT: [Score: 42] The real innovation here is the combination of existing techniques.
+ANALYSIS: The discussion shows strong agreement about scalability concerns...
+
+Focus on substance rather than surface-level reactions. Quote the demonstrative comment exactly as provided in the input.
+    `.trim();
+
+  const commentsText = comments
+    .map(c => `[Score: ${c.score}] ${c.text}`)
+    .join("\n\n");
+
+  return await llm.chat([
+    { role: "system", content: PROMPT },
+    { role: "user", content: commentsText },
+  ]);
 });
 
 interface PostSummarizerProps {
-  postId: string;
+  story: HNStory;
 }
 
 type PostSummarizerOutput = string;
 const PostSummarizer = gsx.Component<PostSummarizerProps, PostSummarizerOutput>(
-  async ({ postId }) => {
-    return await Promise.resolve(`Post summarizer: ${postId}`);
+  async ({ story }) => {
+    const PROMPT = `
+You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
+1. The main point or key insight
+2. Any notable discussion points from comments
+3. The overall reception (based on score and comment sentiment)
+
+Keep the summary clear and objective. Focus on facts and insights rather than opinions.
+    `.trim();
+
+    const context = `
+Title: ${story.title}
+Text: ${story.text}
+Score: ${story.score}
+Comments: ${story.comments.map(c => `[Score: ${c.score}] ${c.text}`).join("\n")}
+    `.trim();
+
+    const result = await llm.chat([
+      { role: "system", content: PROMPT },
+      { role: "user", content: context },
+    ]);
+
+    return result;
   },
 );
 
 interface HNPostAnalyzerProps {
-  postId: string;
+  story: HNStory;
 }
 
-type HNPostAnalyzerOutput = [PostSummarizerOutput, CommentsAnalyzerOutput];
+type HNPostAnalyzerOutput = [string, string]; // [summary, commentAnalysis]
 
 const HNPostAnalyzer = gsx.Component<HNPostAnalyzerProps, HNPostAnalyzerOutput>(
-  async ({ postId }) => (
+  async ({ story }) => (
     <>
-      <PostSummarizer postId={postId} />
-      <CommentsAnalyzer postId={postId} />
+      <PostSummarizer story={story} />
+      <CommentsAnalyzer postId={story.title} comments={story.comments} />
     </>
   ),
 );
@@ -90,32 +150,63 @@ interface HNCollectorProps {
 type HNCollectorOutput = HNStory[]; // Array of stories
 const HNCollector = gsx.Component<HNCollectorProps, HNCollectorOutput>(
   async ({ limit }) => {
-    console.log(`📚 Collecting ${limit} HN posts...`);
-    return await getTopStoryDetails(limit);
+    // We can only get up to 500 stories from the API
+    const MAX_HN_STORIES = 500;
+    const requestLimit = Math.min(limit, MAX_HN_STORIES);
+
+    console.log(
+      `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
+    );
+    const stories = await getTopStoryDetails(requestLimit);
+    console.log(
+      `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
+      stories.length < limit
+        ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
+        : "",
+    );
+
+    return stories;
   },
 );
 
 interface TrendAnalyzerProps {
-  analyses: Array<[string, CommentsAnalyzerOutput]>; // Array of [summary, analysis]
+  analyses: Array<[string, string]>; // Array of [summary, commentAnalysis]
 }
 
-interface TrendReport {
-  positiveThemes: string[];
-  negativeThemes: string[];
-  surprisingThemes: string[];
-  overallSentiment: string;
-}
+type TrendReport = string;
 
 const TrendAnalyzer = gsx.Component<TrendAnalyzerProps, TrendReport>(
   async ({ analyses }) => {
-    console.log("🔍 Analyzing trends across posts...");
-    // In real implementation, this would use the LLM to analyze trends
-    return {
-      positiveThemes: ["Theme 1", "Theme 2"],
-      negativeThemes: ["Theme 3"],
-      surprisingThemes: ["Theme 4"],
-      overallSentiment: "mostly positive",
-    };
+    const PROMPT = `
+
+You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
+You will be given input summarizing the top posts from hacker news, and an analysis of the comments on each post. 
+
+You are to write a blog post about the top trends in technology based on this input. You should be sure to cover the following sections: 
+
+- Positive themes: 3 ideas/technologies people are excited about
+- Negative themes: 3 concerns or criticisms
+- Surprising themes: 3 unexpected insights or connections
+- Overall sentiment: a single sentence describing the overall mood of software developers as a whole. 
+
+Where appropriate, you shoudl interleve demonstrative comments to help support your points, build connection with the reader, and make the post more engaging.
+
+Shoot for 1000 words.
+    `.trim();
+
+    const context = analyses
+      .map(([summary, analysis]) =>
+        `
+Post Summary: ${summary}
+Comment Analysis: ${analysis}
+    `.trim(),
+      )
+      .join("\n\n");
+
+    return await llm.chat([
+      { role: "system", content: PROMPT },
+      { role: "user", content: context },
+    ]);
   },
 );
 
@@ -129,7 +220,7 @@ const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
   async ({ stories }) => (
     <>
       {stories.map(story => (
-        <HNPostAnalyzer postId={story.title} />
+        <HNPostAnalyzer story={story} />
       ))}
     </>
   ),
@@ -149,7 +240,7 @@ interface HNAnalyzerWorkflowProps {
   postCount: number;
 }
 
-interface HNAnalyzerWorkflowOutput {
+export interface HNAnalyzerWorkflowOutput {
   report: string;
   tweet: string;
 }
@@ -164,7 +255,7 @@ export const HNAnalyzerWorkflow = gsx.Component<
         {postAnalyses => (
           <TrendAnalyzer analyses={postAnalyses}>
             {report => (
-              <PGEditor content={JSON.stringify(report)}>
+              <PGEditor content={report}>
                 {editedReport => (
                   <PGTweetWriter
                     context={editedReport}
@@ -183,20 +274,3 @@ export const HNAnalyzerWorkflow = gsx.Component<
     )}
   </HNCollector>
 ));
-
-// Main execution
-export async function main() {
-  console.log("🚀 Starting HN analysis workflow...");
-
-  const { report, tweet } = await gsx.execute<HNAnalyzerWorkflowOutput>(
-    <HNAnalyzerWorkflow postCount={500} />,
-  );
-
-  // Write outputs to files
-  await fs.writeFile("hn_analysis_report.md", report);
-  await fs.writeFile("hn_analysis_tweet.txt", tweet);
-
-  console.log(
-    "✅ Analysis complete! Check hn_analysis_report.md and hn_analysis_tweet.txt",
-  );
-}

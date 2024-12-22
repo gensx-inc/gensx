@@ -30,7 +30,7 @@ class LLMError extends Error {
 
 export function createLLMService(config: LLMConfig) {
   const {
-    model = "gpt-4",
+    model = "gpt-4o",
     temperature = 0.7,
     maxTokens,
     maxRetries = 3,
