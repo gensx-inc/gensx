@@ -82,17 +82,32 @@ const CommentsAnalyzer = gsx.Component<
 You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
 
 SENTIMENT: [Write a single sentence describing the overall sentiment in 10 words or less]
-DEMONSTRATIVE_COMMENT: [Select the single most insightful or representative comment, quoted exactly as provided]
-ANALYSIS: [Your detailed analysis of key points of agreement/disagreement]
 
-Example output:
-SENTIMENT: Community is cautiously optimistic about the technical approach.
-DEMONSTRATIVE_COMMENT: [Score: 42] The real innovation here is the combination of existing techniques.
+STATISTICS:
+- Total comments analyzed: ${comments.length}
+- Average comment score: ${(
+    comments.reduce((sum, c) => sum + c.score, 0) / comments.length
+  ).toFixed(1)}
+- Highest scored comment: ${Math.max(...comments.map(c => c.score))} points
+- Lowest scored comment: ${Math.min(...comments.map(c => c.score))} points
 
-Focus on substance rather than surface-level reactions. Quote the demonstrative comment exactly as provided in the input.
+DEMONSTRATIVE_COMMENTS:
+1. Most upvoted: [Quote the highest-scored comment]
+2. Most controversial: [Quote a comment that sparked debate]
+3. Most insightful: [Quote a comment that provides unique perspective]
+
+ANALYSIS: [Your detailed analysis of key points of agreement/disagreement, using comment scores to indicate community consensus]
+
+Include a link to the discussion in your analysis section using this format: [Discussion](${getHNPostUrl(
+    postId,
+  )})
+
+Focus on substance rather than surface-level reactions. When referencing comments, include their scores to show the weight of different opinions.
     `.trim();
 
-  const commentsText = comments
+  // Sort comments by score for easier analysis
+  const sortedComments = [...comments].sort((a, b) => b.score - a.score);
+  const commentsText = sortedComments
     .map(c => `[Score: ${c.score}] ${c.text}`)
     .join("\n\n");
 
@@ -115,11 +130,18 @@ const PostSummarizer = gsx.Component<PostSummarizerProps, PostSummarizerOutput>(
     const PROMPT = `
 You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
 1. The main point or key insight
-2. Any notable discussion points from comments
-3. The overall reception (based on score and comment sentiment)
+2. Notable discussion points from comments (include comment scores to show community agreement)
+3. The overall reception, specifically analyzing:
+   - Post score (${story.score} points indicates community interest)
+   - Comment sentiment and quality
+   - Level of debate or consensus in comments
 
 IMPORTANT: You MUST start your summary with a link to the post in this EXACT format:
 [${story.title}](${getHNPostUrl(story.id)})
+
+When referencing comments, include their scores to show weight of opinion, e.g.:
+"One highly-upvoted comment (42 points) argues..."
+"While some disagree (15 points)..."
 
 Keep the summary clear and objective. Focus on facts and insights rather than opinions.
     `.trim();
@@ -128,8 +150,12 @@ Keep the summary clear and objective. Focus on facts and insights rather than op
 Title: ${story.title}
 URL: ${getHNPostUrl(story.id)}
 Text: ${story.text}
-Score: ${story.score}
-Comments: ${story.comments.map(c => `[Score: ${c.score}] ${c.text}`).join("\n")}
+Score: ${story.score} points
+Comments (sorted by score):
+${story.comments
+  .sort((a, b) => b.score - a.score)
+  .map(c => `[Score: ${c.score}] ${c.text}`)
+  .join("\n\n")}
     `.trim();
 
     const result = await llm.chat([
