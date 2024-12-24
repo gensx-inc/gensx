@@ -1,21 +1,22 @@
-import { JSX, MaybePromise } from "./jsx-runtime";
+import { ComponentProps, MaybePromise, WorkflowComponent } from "./types";
+import { JSX } from "./jsx-runtime";
 
-export function Component<TInput, TOutput>(
-  fn: (input: TInput) => MaybePromise<TOutput> | JSX.Element,
-) {
-  function WorkflowFunction(
-    props: TInput & {
-      children?: (
-        output: TOutput,
-      ) => MaybePromise<TOutput | JSX.Element | JSX.Element[]>;
-    },
-  ): Promise<TOutput> {
-    return Promise.resolve(fn(props)) as Promise<TOutput>;
+export function Component<P, O>(
+  fn: (props: P) => MaybePromise<O | JSX.Element | JSX.Element[]>,
+): WorkflowComponent<P, O> {
+  function WorkflowFunction(props: ComponentProps<P, O>): MaybePromise<O> {
+    return Promise.resolve(fn(props)) as Promise<O>;
   }
+
   if (fn.name) {
     Object.defineProperty(WorkflowFunction, "name", {
       value: `WorkflowFunction[${fn.name}]`,
     });
   }
-  return WorkflowFunction;
+
+  // Mark as workflow component and JSX element type
+  const component = WorkflowFunction as WorkflowComponent<P, O>;
+  component.isWorkflowComponent = true;
+
+  return component;
 }

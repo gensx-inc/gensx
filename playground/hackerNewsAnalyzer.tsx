@@ -172,21 +172,6 @@ ${story.comments
   },
 );
 
-interface HNPostAnalyzerProps {
-  story: HNStory;
-}
-
-type HNPostAnalyzerOutput = [string, string]; // [summary, commentAnalysis]
-
-const HNPostAnalyzer = gsx.Component<HNPostAnalyzerProps, HNPostAnalyzerOutput>(
-  async ({ story }) => (
-    <>
-      <PostSummarizer story={story} />
-      <CommentsAnalyzer postId={story.id} comments={story.comments} />
-    </>
-  ),
-);
-
 interface HNCollectorProps {
   limit: number;
 }
@@ -214,7 +199,10 @@ const HNCollector = gsx.Component<HNCollectorProps, HNCollectorOutput>(
 );
 
 interface TrendAnalyzerProps {
-  analyses: Array<[string, string]>; // Array of [summary, commentAnalysis]
+  analyses: Array<{
+    summary: string;
+    commentAnalysis: string;
+  }>;
 }
 
 type TrendReport = string;
@@ -246,13 +234,13 @@ Shoot for 1000 words.
     `.trim();
 
     const context = analyses
-      .map(([summary, analysis]) =>
+      .map(({ summary, commentAnalysis }) =>
         `
 ### Post Summary
 ${summary}
 
 ### Comment Analysis
-${analysis}
+${commentAnalysis}
     `.trim(),
       )
       .join("\n\n");
@@ -268,27 +256,23 @@ interface AnalyzeHNPostsProps {
   stories: HNStory[];
 }
 
-type AnalyzeHNPostsOutput = HNPostAnalyzerOutput[];
-
-const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
-  async ({ stories }) => (
-    <>
-      {stories.map(story => (
-        <HNPostAnalyzer story={story} />
-      ))}
-    </>
-  ),
-);
-
-interface CombineOutputProps {
-  report: string;
-  tweet: string;
+interface AnalyzeHNPostsOutput {
+  analyses: Array<{
+    summary: string;
+    commentAnalysis: string;
+  }>;
 }
 
-const CombineOutput = gsx.Component<
-  CombineOutputProps,
-  HNAnalyzerWorkflowOutput
->(async ({ report, tweet }) => ({ report, tweet }));
+const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
+  async ({ stories }) => ({
+    analyses: stories.map(story => ({
+      summary: <PostSummarizer story={story} />,
+      commentAnalysis: (
+        <CommentsAnalyzer postId={story.id} comments={story.comments} />
+      ),
+    })),
+  }),
+);
 
 interface HNAnalyzerWorkflowProps {
   postCount: number;
@@ -306,8 +290,8 @@ export const HNAnalyzerWorkflow = gsx.Component<
   <HNCollector limit={postCount}>
     {stories => (
       <AnalyzeHNPosts stories={stories}>
-        {postAnalyses => (
-          <TrendAnalyzer analyses={postAnalyses}>
+        {({ analyses }) => (
+          <TrendAnalyzer analyses={analyses}>
             {report => (
               <PGEditor content={report}>
                 {editedReport => (
@@ -315,9 +299,7 @@ export const HNAnalyzerWorkflow = gsx.Component<
                     context={editedReport}
                     prompt="Summarize the HN trends in a tweet"
                   >
-                    {tweet => (
-                      <CombineOutput report={editedReport} tweet={tweet} />
-                    )}
+                    {tweet => ({ report: editedReport, tweet })}
                   </PGTweetWriter>
                 )}
               </PGEditor>

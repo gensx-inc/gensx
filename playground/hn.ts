@@ -128,7 +128,7 @@ export async function getTopStoryDetails(
 
     // Small delay between batches
     if (i + batchSize < storyIds.length) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 250));
     }
   }
 
