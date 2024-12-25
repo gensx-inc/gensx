@@ -1,4 +1,5 @@
 import * as gsx from "@/index";
+import { BlogWritingWorkflow } from "./blogWriter";
 import {
   HNAnalyzerWorkflow,
   HNAnalyzerWorkflowOutput,
@@ -6,13 +7,13 @@ import {
 import * as fs from "fs/promises";
 
 async function main() {
-  // console.log("🚀 Starting blog writing workflow");
+  console.log("🚀 Starting blog writing workflow");
 
-  // // Use the gensx function to execute the workflow and annotate with the output type.
-  // const result = await gsx.execute<string>(
-  //   <BlogWritingWorkflow prompt="Write a blog post about the future of AI" />,
-  // );
-  // console.log("✅ Final result:", { result });
+  // Use the gensx function to execute the workflow and annotate with the output type.
+  const result = await gsx.execute<string>(
+    <BlogWritingWorkflow prompt="Write a blog post about the future of AI" />,
+  );
+  console.log("✅ Final result:", { result });
   console.log("🚀 Starting HN analysis workflow...");
 
   // Request all 500 stories since we're filtering to text-only posts

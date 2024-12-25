@@ -13,8 +13,8 @@
  */
 
 import { Component } from "./component";
-import { Element, ExecutableValue } from "./types";
 import { execute } from "./resolve";
+import { Element, ExecutableValue } from "./types";
 
 // Collect component props
 export interface CollectProps {
@@ -45,8 +45,16 @@ export async function Collect<T extends Record<string, unknown>>(
   // Execute all children in parallel
   const results = await Promise.all(
     children.map(child => {
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+      /* eslint-disable @typescript-eslint/no-unsafe-argument */
       const outputName = (child as any)?.props?.output;
       return executeWithName(child, outputName);
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment */
+      /* eslint-enable @typescript-eslint/no-explicit-any */
+      /* eslint-enable @typescript-eslint/no-unsafe-member-access */
+      /* eslint-enable @typescript-eslint/no-unsafe-argument */
     }),
   );
 

@@ -15,10 +15,14 @@ export interface WorkflowComponent<P, O> extends JSX.ElementType {
 }
 
 // Allow children function to return plain objects that will be executed
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 export type ExecutableValue =
   | Element
   | Element[]
   | Record<string, Element | any>;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+/* eslint-enable @typescript-eslint/no-redundant-type-constituents */
 
 export type ComponentProps<P, O> = P &
   OutputProps & {

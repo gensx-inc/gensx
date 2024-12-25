@@ -1,5 +1,5 @@
-import { ComponentProps, MaybePromise, WorkflowComponent } from "./types";
 import { JSX } from "./jsx-runtime";
+import { ComponentProps, MaybePromise, WorkflowComponent } from "./types";
 
 export function Component<P, O>(
   fn: (props: P) => MaybePromise<O | JSX.Element | JSX.Element[]>,

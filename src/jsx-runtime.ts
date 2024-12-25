@@ -39,35 +39,31 @@ export const jsx = <
 
   // Return a promise that will be handled by execute()
   return (async (): Promise<Awaited<TOutput> | Awaited<TOutput>[]> => {
-    try {
-      // Execute component and deeply resolve its result
-      const rawResult = await component(props ?? ({} as TProps));
-      const result = (await resolveDeep(rawResult)) as Awaited<TOutput>;
+    // Execute component and deeply resolve its result
+    const rawResult = await component(props ?? ({} as TProps));
+    const result = (await resolveDeep(rawResult)) as TOutput;
 
-      // If there are no children, return the resolved result
-      if (!children) {
-        return result;
-      }
-
-      // Handle array of children (Fragment edge case)
-      if (Array.isArray(children)) {
-        const resolvedChildren = await Promise.all(
-          children.map(child => resolveDeep(child)),
-        );
-        return resolvedChildren as Awaited<TOutput>[];
-      }
-
-      // Handle child function
-      if (typeof children === "function") {
-        const childrenResult = await children(result);
-        return resolveDeep(childrenResult) as Awaited<TOutput>;
-      }
-
-      // Handle single child (Fragment edge case)
-      return resolveDeep(children) as Awaited<TOutput>;
-    } catch (error) {
-      throw error;
+    // If there are no children, return the resolved result
+    if (!children) {
+      return result as Awaited<TOutput>;
     }
+
+    // Handle array of children (Fragment edge case)
+    if (Array.isArray(children)) {
+      const resolvedChildren = await Promise.all(
+        children.map(child => resolveDeep(child)),
+      );
+      return resolvedChildren as Awaited<TOutput>[];
+    }
+
+    // Handle child function
+    if (typeof children === "function") {
+      const childrenResult = await children(result);
+      return resolveDeep(childrenResult) as Awaited<TOutput>;
+    }
+
+    // Handle single child (Fragment edge case)
+    return resolveDeep(children) as Awaited<TOutput>;
   })();
 };
 
