@@ -288,25 +288,47 @@ export const HNAnalyzerWorkflow = gsx.Component<
   HNAnalyzerWorkflowOutput
 >(async ({ postCount }) => (
   <HNCollector limit={postCount}>
-    {stories => (
-      <AnalyzeHNPosts stories={stories}>
-        {({ analyses }) => (
-          <TrendAnalyzer analyses={analyses}>
-            {report => (
-              <PGEditor content={report}>
-                {editedReport => (
-                  <PGTweetWriter
-                    context={editedReport}
-                    prompt="Summarize the HN trends in a tweet"
-                  >
-                    {tweet => ({ report: editedReport, tweet })}
-                  </PGTweetWriter>
-                )}
-              </PGEditor>
-            )}
-          </TrendAnalyzer>
-        )}
-      </AnalyzeHNPosts>
-    )}
+    {stories => {
+      console.log("🔍 Stories collected:", stories.length);
+      return (
+        <AnalyzeHNPosts stories={stories}>
+          {({ analyses }) => {
+            console.log("📊 Analyses generated:", {
+              analysesLength: analyses?.length,
+              firstAnalysis: analyses?.[0],
+            });
+            return (
+              <TrendAnalyzer analyses={analyses}>
+                {report => {
+                  console.log("📝 Trend report generated:", {
+                    reportLength: report?.length,
+                  });
+                  return (
+                    <PGEditor content={report}>
+                      {editedReport => {
+                        console.log("✍️ Edited report:", {
+                          editedReportLength: editedReport?.length,
+                        });
+                        return (
+                          <PGTweetWriter
+                            context={editedReport}
+                            prompt="Summarize the HN trends in a tweet"
+                          >
+                            {tweet => {
+                              console.log("🐦 Tweet generated:", { tweet });
+                              return { report: editedReport, tweet };
+                            }}
+                          </PGTweetWriter>
+                        );
+                      }}
+                    </PGEditor>
+                  );
+                }}
+              </TrendAnalyzer>
+            );
+          }}
+        </AnalyzeHNPosts>
+      );
+    }}
   </HNCollector>
 ));
