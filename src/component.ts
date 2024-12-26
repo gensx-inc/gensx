@@ -1,5 +1,11 @@
 import { JSX } from "./jsx-runtime";
-import { ComponentProps, MaybePromise, WorkflowComponent } from "./types";
+import type {
+  ComponentProps,
+  MaybePromise,
+  WorkflowComponent,
+  StreamComponent,
+  Streamable,
+} from "./types";
 
 export function Component<P, O>(
   fn: (props: P) => MaybePromise<O | JSX.Element | JSX.Element[]>,
@@ -17,6 +23,28 @@ export function Component<P, O>(
   // Mark as workflow component and JSX element type
   const component = WorkflowFunction as WorkflowComponent<P, O>;
   component.isWorkflowComponent = true;
+
+  return component;
+}
+
+export function StreamComponent<P, O>(
+  fn: (props: P) => MaybePromise<Streamable<O>>,
+): StreamComponent<P, O> {
+  function StreamWorkflowFunction(
+    props: ComponentProps<P, O>,
+  ): MaybePromise<Streamable<O>> {
+    return Promise.resolve(fn(props));
+  }
+
+  if (fn.name) {
+    Object.defineProperty(StreamWorkflowFunction, "name", {
+      value: `StreamWorkflowFunction[${fn.name}]`,
+    });
+  }
+
+  // Mark as stream component
+  const component = StreamWorkflowFunction as StreamComponent<P, O>;
+  component.isStreamComponent = true;
 
   return component;
 }

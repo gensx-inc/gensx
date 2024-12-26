@@ -1,22 +1,25 @@
-import * as gsx from "@/index";
-import { BlogWritingWorkflow } from "./blogWriter";
+import { gsx } from "@/index";
 import {
   HNAnalyzerWorkflow,
   HNAnalyzerWorkflowOutput,
 } from "./hackerNewsAnalyzer";
-import * as fs from "fs/promises";
+import { BlogWritingWorkflow } from "./blogWriter";
+import { ChatCompletion } from "./chatCompletion";
+import fs from "fs/promises";
+import type { Streamable } from "@/types";
 
-async function main() {
-  console.log("🚀 Starting blog writing workflow");
-
-  // Use the gensx function to execute the workflow and annotate with the output type.
+// Example 1: Simple blog writing workflow
+async function runBlogWritingExample() {
+  console.log("\n🚀 Starting blog writing workflow");
   const result = await gsx.execute<string>(
     <BlogWritingWorkflow prompt="Write a blog post about the future of AI" />,
   );
-  console.log("✅ Final result:", { result });
-  console.log("🚀 Starting HN analysis workflow...");
+  console.log("✅ Blog writing complete:", { result });
+}
 
-  // Request all 500 stories since we're filtering to text-only posts
+// Example 2: HN analysis workflow with parallel execution
+async function runHNAnalysisExample() {
+  console.log("\n🚀 Starting HN analysis workflow...");
   const { report, tweet } = await gsx.execute<HNAnalyzerWorkflowOutput>(
     <HNAnalyzerWorkflow postCount={500} />,
   );
@@ -24,10 +27,48 @@ async function main() {
   // Write outputs to files
   await fs.writeFile("hn_analysis_report.md", report);
   await fs.writeFile("hn_analysis_tweet.txt", tweet);
-
   console.log(
     "✅ Analysis complete! Check hn_analysis_report.md and hn_analysis_tweet.txt",
   );
 }
 
-await main();
+// Example 3: Streaming vs non-streaming chat completion
+async function runStreamingExample() {
+  const prompt =
+    "Write a 250 word story about an AI that discovers the meaning of friendship through a series of small interactions with humans. Be concise but meaningful.";
+
+  console.log("\n🚀 Starting streaming example with prompt:", prompt);
+
+  console.log("\n📝 Non-streaming version (waiting for full response):");
+  const finalResult = await gsx.execute<string>(
+    <ChatCompletion prompt={prompt} />,
+  );
+  console.log("✅ Complete response:", finalResult);
+
+  console.log("\n📝 Streaming version (processing tokens as they arrive):");
+  await gsx.execute(
+    <gsx.Stream>
+      <ChatCompletion prompt={prompt}>
+        {async (response: Streamable<string>) => {
+          // Print tokens as they arrive
+          for await (const token of {
+            [Symbol.asyncIterator]: () => response.stream(),
+          }) {
+            process.stdout.write(token);
+          }
+          process.stdout.write("\n");
+          console.log("✅ Streaming complete");
+        }}
+      </ChatCompletion>
+    </gsx.Stream>,
+  );
+}
+
+// Main function to run examples
+async function main() {
+  await runBlogWritingExample();
+  await runHNAnalysisExample();
+  await runStreamingExample();
+}
+
+main().catch(console.error);

@@ -8,6 +8,9 @@ export interface OutputProps {
   output?: string;
 }
 
+// Base props type without children
+type BaseProps<P> = P & OutputProps;
+
 // Make components valid JSX elements
 export interface WorkflowComponent<P, O> extends JSX.ElementType {
   (props: ComponentProps<P, O>): MaybePromise<O>;
@@ -24,7 +27,22 @@ export type ExecutableValue =
 /* eslint-enable @typescript-eslint/no-explicit-any */
 /* eslint-enable @typescript-eslint/no-redundant-type-constituents */
 
-export type ComponentProps<P, O> = P &
-  OutputProps & {
-    children?: (output: O) => MaybePromise<ExecutableValue>;
-  };
+// Component props as a type alias instead of interface
+export type ComponentProps<P, O> = BaseProps<P> & {
+  children?: (output: O) => MaybePromise<ExecutableValue>;
+};
+
+export interface Streamable<T> {
+  value: Promise<T>;
+  stream: () => AsyncIterator<T>;
+}
+
+// Stream component props as a type alias
+export type StreamComponentProps<P, O> = BaseProps<P> & {
+  children?: (output: Streamable<O>) => MaybePromise<ExecutableValue>;
+};
+
+export interface StreamComponent<P, O> extends JSX.ElementType {
+  (props: StreamComponentProps<P, O>): MaybePromise<Streamable<O>>;
+  isStreamComponent?: true;
+}

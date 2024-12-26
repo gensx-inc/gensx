@@ -1,28 +1,46 @@
 import { JSX } from "./jsx-runtime";
-import { ComponentProps, ExecutableValue, WorkflowComponent } from "./types";
+import type {
+  ComponentProps,
+  ExecutableValue,
+  WorkflowComponent,
+  StreamComponent,
+  Streamable,
+} from "./types";
+import { isInStreamingContext } from "./stream";
+
+type ComponentType<P, O> = WorkflowComponent<P, O> | StreamComponent<P, O>;
 
 // Helper to check if something is a JSX element
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 function isJSXElement<P, O>(
   element: unknown,
 ): element is JSX.Element & {
-  type: WorkflowComponent<P, O>;
+  type: ComponentType<P, O>;
   props: ComponentProps<P, O>;
 } {
+  const el = element as { type: ComponentType<P, O> };
   return (
     typeof element === "object" &&
     element !== null &&
     "type" in element &&
     "props" in element &&
-    typeof (element as any).type === "function" &&
-    (element as any).type.isWorkflowComponent
+    typeof el.type === "function" &&
+    (("isWorkflowComponent" in el.type &&
+      el.type.isWorkflowComponent === true) ||
+      ("isStreamComponent" in el.type && el.type.isStreamComponent === true))
   );
 }
-/* eslint-enable @typescript-eslint/no-unsafe-return */
-/* eslint-enable @typescript-eslint/no-explicit-any */
-/* eslint-enable @typescript-eslint/no-unsafe-member-access */
+
+// Helper to check if something is a streamable value
+function isStreamable<T>(value: unknown): value is Streamable<T> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "stream" in value &&
+    "value" in value &&
+    typeof (value as Streamable<T>).stream === "function" &&
+    value.value instanceof Promise
+  );
+}
 
 /**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.
@@ -31,10 +49,17 @@ function isJSXElement<P, O>(
 export async function resolveDeep<T>(value: unknown): Promise<T> {
   // Handle promises first
   if (value instanceof Promise) {
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     const resolved = await value;
     return resolveDeep(resolved);
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment */
+  }
+
+  // Handle streamable values
+  if (isStreamable(value)) {
+    if (isInStreamingContext()) {
+      return value as T;
+    }
+    const finalValue = await value.value;
+    return finalValue as T;
   }
 
   // Handle arrays
@@ -69,24 +94,23 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
  * This is the main entry point for executing workflow components.
  */
 export async function execute<T>(element: ExecutableValue): Promise<T> {
-  /* eslint-disable @typescript-eslint/no-unnecessary-condition */
   if (element === null || element === undefined) {
     throw new Error("Cannot execute null or undefined element");
   }
-  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
   // Handle JSX elements specially to support children functions
   if (isJSXElement(element)) {
     const componentResult = await element.type(element.props);
-    const resolvedResult = await resolveDeep(componentResult);
 
-    // Handle children after fully resolving the component's result
+    // Handle children
     if (element.props.children) {
+      const resolvedResult = await resolveDeep(componentResult);
       const childrenResult = await element.props.children(resolvedResult);
       return execute(childrenResult as ExecutableValue);
     }
 
-    return resolvedResult as T;
+    // No children, just resolve the result
+    return resolveDeep(componentResult);
   }
 
   // For all other cases, use the shared resolver
