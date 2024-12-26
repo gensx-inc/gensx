@@ -2,8 +2,8 @@
   "name": "gensx",
   "version": "0.1.1",
   "description": "Make LLMs work good",
-  "main": "dist/index.cjs",
-  "module": "lib/index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "",
   "license": "MIT",
@@ -23,7 +23,7 @@
     "build:watch": "pnpm build:clean && tsc -p tsconfig.prod.json --watch",
     "dev": "nodemon",
     "prepublishOnly": "pnpm i && pnpm build",
-    "build": "pnpm validate-typescript && pnpm build:clean && pnpm generate-dist",
+    "build": "pnpm validate-typescript && pnpm build:clean && pnpm build:dist",
     "test": "rimraf coverage && pnpm test:unit",
     "test:watch": "vitest",
     "test:unit": "vitest run --coverage",
@@ -31,8 +31,8 @@
     "lint:fix": "eslint --ignore-path .gitignore . --ext .js,.ts --fix",
     "lint:file": "eslint --ignore-path .gitignore",
     "validate-typescript": "tsc -p tsconfig.prod.json --noEmit",
-    "generate-dist": "tsc -p tsconfig.prod.json --outDir dist --declaration --declarationDir dist",
-    "build:clean": "rimraf dist; exit 0",
+    "build:clean": "rimraf dist",
+    "build:dist": "tsc -p tsconfig.prod.json --outDir dist --declaration",
     "prepare": "[ -f .husky/install.mjs ] && node .husky/install.mjs || true"
   },
   "devDependencies": {
@@ -71,22 +71,16 @@
   ],
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./jsx-runtime": {
-      "import": "./dist/jsx-runtime.js",
-      "require": "./dist/jsx-runtime.cjs"
+      "types": "./dist/jsx-runtime.d.ts",
+      "default": "./dist/jsx-runtime.js"
     },
     "./jsx-dev-runtime": {
-      "import": "./dist/jsx-dev-runtime.js",
-      "require": "./dist/jsx-dev-runtime.cjs"
+      "types": "./dist/jsx-dev-runtime.d.ts",
+      "default": "./dist/jsx-dev-runtime.js"
     }
   },
   "dependencies": {
