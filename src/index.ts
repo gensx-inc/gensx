@@ -14,8 +14,8 @@
 
 import { Component, StreamComponent } from "./component";
 import { execute } from "./resolve";
-import { Element, ExecutableValue, Streamable } from "./types";
 import { Stream } from "./stream";
+import { Element, ExecutableValue, Streamable } from "./types";
 
 // Collect component props
 export interface CollectProps {
@@ -32,7 +32,7 @@ export const gsx = {
 };
 
 // Export Component and execute directly for use in type definitions
-export { Component, StreamComponent, execute, Stream };
+export { Component, execute, Stream, StreamComponent };
 
 // Also export types
 export type { Element, ExecutableValue, Streamable };

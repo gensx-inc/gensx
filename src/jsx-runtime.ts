@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace */
+import type { Streamable } from "./types";
+
 import { resolveDeep } from "./resolve";
 import { isInStreamingContext } from "./stream";
-import type { Streamable } from "./types";
 
 export namespace JSX {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

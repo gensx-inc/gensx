@@ -42,34 +42,6 @@ export function createLLMService(config: LLMConfig) {
     retryDelay = 1000,
   } = config;
 
-  // Helper to create a streaming response
-  function createStreamingResponse(
-    getStream: () => AsyncIterable<string>,
-    getValue: () => Promise<string>,
-  ): StreamResult<string> {
-    return {
-      stream: () => {
-        const stream = getStream();
-        return {
-          async next() {
-            try {
-              const { done, value } =
-                await stream[Symbol.asyncIterator]().next();
-              return { done, value: value || "" };
-            } catch (error) {
-              console.error("Stream error:", error);
-              return { done: true, value: undefined };
-            }
-          },
-          [Symbol.asyncIterator]() {
-            return this;
-          },
-        };
-      },
-      value: getValue(),
-    };
-  }
-
   // Chat with streaming support
   async function chatStream(
     messages: ChatMessage[],
@@ -84,6 +56,7 @@ export function createLLMService(config: LLMConfig) {
     });
 
     // Split the stream into two
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const [stream1, stream2] = response.tee();
 
     // Create a promise that will resolve with the full text
@@ -106,7 +79,7 @@ export function createLLMService(config: LLMConfig) {
     (async () => {
       try {
         for await (const chunk of stream1) {
-          const content = chunk.choices[0]?.delta?.content || "";
+          const content = chunk.choices[0]?.delta?.content ?? "";
           if (content) {
             fullText += content;
           }
@@ -115,13 +88,13 @@ export function createLLMService(config: LLMConfig) {
       } catch (e) {
         rejectValue(e instanceof Error ? e : new Error(String(e)));
       }
-    })();
+    })().catch(rejectValue); // Handle floating promise
 
     // Create a stream generator function that yields chunks immediately from stream2
     const getStream = async function* () {
       try {
         for await (const chunk of stream2) {
-          const content = chunk.choices[0]?.delta?.content || "";
+          const content = chunk.choices[0]?.delta?.content ?? "";
           if (content) {
             yield content;
           }

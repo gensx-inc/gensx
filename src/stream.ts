@@ -1,4 +1,5 @@
-import { Element, ExecutableValue, StreamComponent } from "./types";
+import type { Element, ExecutableValue, StreamComponent } from "./types";
+
 import { execute } from "./resolve";
 
 // Global state to track streaming context

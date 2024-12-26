@@ -1,11 +1,12 @@
-import { JSX } from "./jsx-runtime";
 import type {
   ComponentProps,
   MaybePromise,
-  WorkflowComponent,
-  StreamComponent,
   Streamable,
+  StreamComponent,
+  WorkflowComponent,
 } from "./types";
+
+import { JSX } from "./jsx-runtime";
 
 export function Component<P, O>(
   fn: (props: P) => MaybePromise<O | JSX.Element | JSX.Element[]>,

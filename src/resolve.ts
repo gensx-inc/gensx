@@ -1,11 +1,12 @@
-import { JSX } from "./jsx-runtime";
 import type {
   ComponentProps,
   ExecutableValue,
-  WorkflowComponent,
-  StreamComponent,
   Streamable,
+  StreamComponent,
+  WorkflowComponent,
 } from "./types";
+
+import { JSX } from "./jsx-runtime";
 import { isInStreamingContext } from "./stream";
 
 type ComponentType<P, O> = WorkflowComponent<P, O> | StreamComponent<P, O>;
@@ -18,6 +19,7 @@ function isJSXElement<P, O>(
   props: ComponentProps<P, O>;
 } {
   const el = element as { type: ComponentType<P, O> };
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return (
     typeof element === "object" &&
     element !== null &&
@@ -49,11 +51,13 @@ function isStreamable<T>(value: unknown): value is Streamable<T> {
 export async function resolveDeep<T>(value: unknown): Promise<T> {
   // Handle promises first
   if (value instanceof Promise) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const resolved = await value;
     return resolveDeep(resolved);
   }
 
   // Handle streamable values
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (isStreamable(value)) {
     if (isInStreamingContext()) {
       return value as T;
@@ -63,6 +67,7 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   }
 
   // Handle arrays
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (Array.isArray(value)) {
     const resolvedArray = await Promise.all(
       value.map(item => resolveDeep(item)),
@@ -77,6 +82,7 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   }
 
   // Handle objects (but not null)
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (typeof value === "object" && value !== null) {
     const entries = Object.entries(value);
     const resolvedEntries = await Promise.all(
@@ -94,11 +100,13 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
  * This is the main entry point for executing workflow components.
  */
 export async function execute<T>(element: ExecutableValue): Promise<T> {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (element === null || element === undefined) {
     throw new Error("Cannot execute null or undefined element");
   }
 
   // Handle JSX elements specially to support children functions
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (isJSXElement(element)) {
     const componentResult = await element.type(element.props);
 
