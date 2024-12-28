@@ -97,8 +97,8 @@ async function runStreamingExample() {
 
 // Main function to run examples
 async function main() {
-  // await runBlogWritingExample();
-  // await runHNAnalysisExample();
+  await runBlogWritingExample();
+  await runHNAnalysisExample();
   await runStreamingWithChildrenExample();
   await runStreamingExample();
 }
