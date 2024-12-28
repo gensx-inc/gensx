@@ -16,7 +16,7 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps, string>(
     const result = await llm.completeStream(prompt);
 
     return {
-      stream: result.stream,
+      stream: () => result.stream(),
       value: result.value,
     };
   },

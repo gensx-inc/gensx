@@ -33,17 +33,20 @@ async function runHNAnalysisExample() {
 }
 
 // Example 3: Streaming vs non-streaming chat completion
-async function runStreamingExample() {
+async function runStreamingWithChildrenExample() {
   const prompt =
     "Write a 250 word story about an AI that discovers the meaning of friendship through a series of small interactions with humans. Be concise but meaningful.";
 
   console.log("\n🚀 Starting streaming example with prompt:", prompt);
 
   console.log("\n📝 Non-streaming version (waiting for full response):");
-  const finalResult = await gsx.execute<string>(
-    <ChatCompletion prompt={prompt} />,
+  await gsx.execute<string>(
+    <ChatCompletion prompt={prompt}>
+      {async (response: string) => {
+        console.log(response);
+      }}
+    </ChatCompletion>,
   );
-  console.log("✅ Complete response:", finalResult);
 
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
   await gsx.execute(
@@ -64,10 +67,39 @@ async function runStreamingExample() {
   );
 }
 
+async function runStreamingExample() {
+  const prompt =
+    "Write a 250 word story about an AI that discovers the meaning of friendship through a series of small interactions with humans. Be concise but meaningful.";
+
+  console.log("\n🚀 Starting streaming example with prompt:", prompt);
+
+  console.log("\n📝 Non-streaming version (waiting for full response):");
+  const finalResult = await gsx.execute<Streamable<string>>(
+    <ChatCompletion prompt={prompt} />,
+  );
+  console.log("✅ Complete response:", await finalResult.value);
+
+  console.log("\n📝 Streaming version (processing tokens as they arrive):");
+  const response: Streamable<string> = await gsx.execute(
+    <gsx.Stream>
+      <ChatCompletion prompt={prompt} />
+    </gsx.Stream>,
+  );
+
+  for await (const token of {
+    [Symbol.asyncIterator]: () => response.stream(),
+  }) {
+    process.stdout.write(token);
+  }
+  process.stdout.write("\n");
+  console.log("✅ Streaming complete");
+}
+
 // Main function to run examples
 async function main() {
-  await runBlogWritingExample();
-  await runHNAnalysisExample();
+  // await runBlogWritingExample();
+  // await runHNAnalysisExample();
+  await runStreamingWithChildrenExample();
   await runStreamingExample();
 }
 

@@ -41,12 +41,18 @@ function isStreamable<T>(value: unknown): value is Streamable<T> {
 export const jsx = <
   TOutput,
   TProps extends Record<string, unknown> & {
-    children?: (output: TOutput) => MaybePromise<JSX.Element | JSX.Element[]>;
+    children?:
+      | ((output: TOutput) => MaybePromise<JSX.Element | JSX.Element[]>)
+      | JSX.Element
+      | JSX.Element[];
   },
 >(
   component: (props: TProps) => MaybePromise<TOutput>,
   props: TProps | null,
-  children?: (output: TOutput) => MaybePromise<JSX.Element | JSX.Element[]>,
+  children?:
+    | ((output: TOutput) => MaybePromise<JSX.Element | JSX.Element[]>)
+    | JSX.Element
+    | JSX.Element[],
 ): Promise<Awaited<TOutput> | Awaited<TOutput>[]> => {
   if (!children && props?.children) {
     children = props.children;
@@ -59,50 +65,49 @@ export const jsx = <
 
     // If this is a streaming result, handle it specially
     if (isStreamable<TOutput>(rawResult)) {
-      if (!children) {
-        // When no children, return the value to be resolved later
-        return rawResult.value as Promise<Awaited<TOutput>>;
+      const hasChildFunction = typeof children === "function";
+
+      if (!hasChildFunction) {
+        // When no function children, preserve the streamable in streaming context
+        if (isInStreamingContext()) {
+          return rawResult as Awaited<TOutput>;
+        }
+        // Outside streaming context, resolve the value
+        return (await rawResult.value) as Awaited<TOutput>;
       }
+
       if (isInStreamingContext()) {
-        // In streaming context, pass the streamable to children and return their result
-        // No need to await the value here - the stream completion is sufficient
-        const childrenResult = await children(rawResult);
+        // In streaming context, pass the streamable to children function
+        const childrenResult = await (children as Function)(rawResult);
         const resolvedResult = await resolveDeep(childrenResult);
         return resolvedResult as Awaited<TOutput>;
       } else {
         // Outside streaming context, resolve the value first
         const resolvedValue = await rawResult.value;
-        const childrenResult = await children(resolvedValue as TOutput);
+        const childrenResult = await (children as Function)(
+          resolvedValue as TOutput,
+        );
         const resolvedResult = await resolveDeep(childrenResult);
         return resolvedResult as Awaited<TOutput>;
       }
     }
 
-    // For non-streaming results, resolve deeply
-    const result = (await resolveDeep(rawResult)) as TOutput;
+    // For non-streaming results, resolve deeply but preserve streamables
+    const result = await resolveDeep(rawResult);
 
-    // If there are no children, return the resolved result
-    if (!children) {
+    // Check again after deep resolution in case we got a streamable
+    if (isStreamable<TOutput>(result) && isInStreamingContext()) {
       return result as Awaited<TOutput>;
     }
 
-    // Handle array of children (Fragment edge case)
-    if (Array.isArray(children)) {
-      const resolvedChildren = await Promise.all(
-        children.map(child => resolveDeep(child)),
-      );
-      return resolvedChildren as Awaited<TOutput>[];
+    // If there are no function children, return the resolved result
+    if (typeof children !== "function") {
+      return result as Awaited<TOutput>;
     }
 
     // Handle child function
-    if (typeof children === "function") {
-      const childrenResult = await children(result);
-      const resolvedResult = await resolveDeep(childrenResult);
-      return resolvedResult as Awaited<TOutput>;
-    }
-
-    // Handle single child (Fragment edge case)
-    const resolvedResult = await resolveDeep(children);
+    const childrenResult = await children(result as TOutput);
+    const resolvedResult = await resolveDeep(childrenResult);
     return resolvedResult as Awaited<TOutput>;
   })();
 };

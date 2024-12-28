@@ -8,6 +8,7 @@ import type {
 
 import { JSX } from "./jsx-runtime";
 import { isInStreamingContext } from "./stream";
+import { setStreamingContext } from "./stream";
 
 type ComponentType<P, O> = WorkflowComponent<P, O> | StreamComponent<P, O>;
 
@@ -62,8 +63,10 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
     if (isInStreamingContext()) {
       return value as T;
     }
+    // Outside streaming context, resolve the value
     const finalValue = await value.value;
-    return finalValue as T;
+    // Recursively resolve in case the value itself is a Streamable
+    return resolveDeep(finalValue);
   }
 
   // Handle arrays
@@ -105,22 +108,43 @@ export async function execute<T>(element: ExecutableValue): Promise<T> {
     throw new Error("Cannot execute null or undefined element");
   }
 
-  // Handle JSX elements specially to support children functions
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (isJSXElement(element)) {
-    const componentResult = await element.type(element.props);
+  // Get initial streaming context state
+  const initialStreamingContext = isInStreamingContext();
 
-    // Handle children
-    if (element.props.children) {
-      const resolvedResult = await resolveDeep(componentResult);
-      const childrenResult = await element.props.children(resolvedResult);
-      return execute(childrenResult as ExecutableValue);
+  try {
+    // Handle JSX elements specially to support children functions
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (isJSXElement(element)) {
+      const componentResult = await element.type(element.props);
+
+      // Check if result is streamable in streaming context first
+      if (isStreamable(componentResult) && isInStreamingContext()) {
+        if (element.props.children) {
+          // With children, let them handle the streamable
+          const childrenResult = await element.props.children(componentResult);
+          return execute(childrenResult as ExecutableValue);
+        }
+        // No children, preserve the streamable
+        return componentResult as T;
+      }
+
+      // Handle non-streaming cases
+      if (element.props.children) {
+        const resolvedResult = await resolveDeep(componentResult);
+        const childrenResult = await element.props.children(resolvedResult);
+        return execute(childrenResult as ExecutableValue);
+      }
+
+      // No children, resolve the result
+      return resolveDeep(componentResult);
     }
 
-    // No children, just resolve the result
-    return resolveDeep(componentResult);
+    // For all other cases, use the shared resolver
+    return resolveDeep(element);
+  } finally {
+    // Only restore streaming context if it changed during execution
+    if (isInStreamingContext() !== initialStreamingContext) {
+      setStreamingContext(initialStreamingContext);
+    }
   }
-
-  // For all other cases, use the shared resolver
-  return resolveDeep(element);
 }
