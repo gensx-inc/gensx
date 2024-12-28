@@ -50,12 +50,6 @@ function isStreamable<T>(value: unknown): value is Streamable<T> {
  */
 export async function resolveDeep<T>(value: unknown): Promise<T> {
   const context = getCurrentContext();
-  console.log("resolveDeep entry:", {
-    contextInfo: context.getContextInfo(),
-    isInStreamingContext: isInStreamingContext(),
-    type: value?.constructor?.name,
-    isStreamable: isStreamable(value),
-  });
 
   // Handle promises first
   if (value instanceof Promise) {
@@ -65,28 +59,11 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
 
   // Handle streamable values
   if (isStreamable(value)) {
-    console.log("resolveDeep found streamable:", {
-      inStreamingContext: isInStreamingContext(),
-      hasStream: typeof value.stream === "function",
-      contextInfo: context.getContextInfo(),
-      value,
-    });
     if (isInStreamingContext() || context.hadStreamingInChain()) {
-      console.log("resolveDeep preserving streamable:", {
-        reason: isInStreamingContext()
-          ? "in streaming context"
-          : "had streaming child",
-        contextInfo: context.getContextInfo(),
-      });
       return value as T;
     }
     // Outside streaming context, resolve the value and check if result is also streamable
     const finalValue = await value.value;
-    console.log("resolveDeep resolved streamable value:", {
-      contextInfo: context.getContextInfo(),
-      isStreamable: isStreamable(finalValue),
-      value: finalValue,
-    });
     if (
       isStreamable(finalValue) &&
       (isInStreamingContext() || context.hadStreamingInChain())
@@ -108,16 +85,6 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   // Handle JSX elements
   if (isJSXElement(value)) {
     const componentResult = await value.type(value.props);
-    console.log("resolveDeep JSX result:", {
-      isStreamable: isStreamable(componentResult),
-      hasStream:
-        componentResult &&
-        typeof (componentResult as any).stream === "function",
-      inStreamingContext: isInStreamingContext(),
-      isStreamComponent:
-        "isStreamComponent" in value.type &&
-        value.type.isStreamComponent === true,
-    });
 
     // If this is a Stream component and result is streamable, preserve it
     const isStreamComponent =
@@ -163,20 +130,10 @@ export async function execute<T>(
   // Use provided context or current context
   const executionContext = context || getCurrentContext();
   const wasInStreamingContext = isInStreamingContext();
-  console.log("Execute entry:", {
-    contextInfo: executionContext.getContextInfo(),
-    wasInStreaming: wasInStreamingContext,
-    isJSX: isJSXElement(element),
-    isStreamable: isStreamable(element),
-  });
 
   try {
     // Handle JSX elements specially to support children functions
     if (isJSXElement(element)) {
-      console.log("execute JSX - streaming context:", {
-        current: isInStreamingContext(),
-        wasInStreaming: wasInStreamingContext,
-      });
       const componentResult = await element.type(element.props);
 
       // If this is a Stream component or we're in a streaming context chain, preserve streamable results
@@ -184,11 +141,6 @@ export async function execute<T>(
         isStreamable(componentResult) &&
         (wasInStreamingContext || executionContext.hasStreamingInChain())
       ) {
-        console.log("execute preserving streamable from context chain:", {
-          hasStream: typeof componentResult.stream === "function",
-          wasInStreaming: wasInStreamingContext,
-          inChain: executionContext.hasStreamingInChain(),
-        });
         return componentResult as unknown as T;
       }
 
@@ -211,44 +163,18 @@ export async function execute<T>(
       (wasInStreamingContext || executionContext.hasStreamingInChain())
     ) {
       // Preserve streamables in streaming context chain
-      console.log("execute preserving top-level streamable:", {
-        hasStream: typeof element.stream === "function",
-        wasInStreaming: wasInStreamingContext,
-        inChain: executionContext.hasStreamingInChain(),
-        contextInfo: executionContext.getContextInfo(),
-      });
       return element as T;
     }
 
     const result = await resolveDeep(element);
-    console.log("execute after resolveDeep:", {
-      contextInfo: executionContext.getContextInfo(),
-      wasInStreaming: wasInStreamingContext,
-      isStreamable: isStreamable(result),
-      hasStream: result && typeof (result as any).stream === "function",
-    });
 
     if (
       isStreamable(result) &&
       (wasInStreamingContext || executionContext.hasStreamingInChain())
     ) {
-      console.log("execute preserving streamable after resolution:", {
-        hasStream: typeof result.stream === "function",
-        wasInStreaming: wasInStreamingContext,
-        inChain: executionContext.hasStreamingInChain(),
-        contextInfo: executionContext.getContextInfo(),
-      });
       return result as T;
     }
 
-    console.log("execute final result:", {
-      isStreamable: isStreamable(result),
-      hasStream: result && typeof (result as any).stream === "function",
-      wasInStreaming: wasInStreamingContext,
-      inChain: executionContext.hasStreamingInChain(),
-      contextInfo: executionContext.getContextInfo(),
-      result,
-    });
     // eslint-disable-next-line @typescript-eslint/return-await
     return result as T;
   } finally {

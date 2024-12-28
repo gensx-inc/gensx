@@ -62,25 +62,10 @@ export const jsx = <
   // Return a promise that will be handled by execute()
   return (async (): Promise<Awaited<TOutput> | Awaited<TOutput>[]> => {
     const parentContext = getCurrentContext();
-    console.log("jsx runtime - component entry:", {
-      componentName: component.name,
-      isStreamComponent:
-        "isStreamComponent" in component &&
-        component.isStreamComponent === true,
-      parentContext: parentContext.getContextInfo(),
-      inStreamingContext: isInStreamingContext(),
-    });
 
     // Execute component
     const rawResult = await component(props ?? ({} as TProps));
     const currentContext = getCurrentContext();
-    console.log("jsx runtime - after execution:", {
-      componentName: component.name,
-      contextBeforeExecution: parentContext.getContextInfo(),
-      contextAfterExecution: currentContext.getContextInfo(),
-      hadStreamingChild: currentContext !== parentContext,
-      isStreamable: isStreamable(rawResult),
-    });
 
     // If this is a streaming result, handle it specially
     if (isStreamable<TOutput>(rawResult)) {
@@ -92,38 +77,21 @@ export const jsx = <
         const shouldPreserveStream =
           isInStreamingContext() || currentContext.hadStreamingInChain();
         if (shouldPreserveStream) {
-          console.log("jsx runtime - preserving streamable:", {
-            reason: isInStreamingContext()
-              ? "in streaming context"
-              : "had streaming child",
-            contextInfo: currentContext.getContextInfo(),
-            parentContextInfo: parentContext.getContextInfo(),
-          });
           return rawResult as Awaited<TOutput>;
         }
         // Outside streaming context, resolve the value
-        console.log("jsx runtime - resolving streamable:", {
-          reason: "outside streaming context",
-          contextInfo: currentContext.getContextInfo(),
-          parentContextInfo: parentContext.getContextInfo(),
-        });
         return await rawResult.value;
       }
 
       if (isInStreamingContext() || currentContext.hadStreamingInChain()) {
         // In streaming context or had streaming child, pass the streamable to children function
-        console.log(
-          "jsx runtime - passing streamable to children in streaming context",
-        );
+
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-function-type
         const childrenResult = await (children as Function)(rawResult);
         const resolvedResult = await resolveDeep(childrenResult);
         return resolvedResult as Awaited<TOutput>;
       } else {
         // Outside streaming context, resolve the value first
-        console.log(
-          "jsx runtime - resolving value for children outside streaming context",
-        );
         const resolvedValue = await rawResult.value;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-function-type
         const childrenResult = await (children as Function)(
@@ -139,11 +107,6 @@ export const jsx = <
 
     // Check again after deep resolution in case we got a streamable
     if (isStreamable<TOutput>(result)) {
-      console.log("jsx runtime - checking streamable after deep resolution:", {
-        inStreamingContext: isInStreamingContext(),
-        hasStream: typeof result.stream === "function",
-        result,
-      });
       if (isInStreamingContext()) {
         return result as Awaited<TOutput>;
       }

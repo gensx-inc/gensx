@@ -41,11 +41,6 @@ export { Component, execute, Stream, StreamComponent };
 // Also export types
 export type { Element, ExecutableValue, Streamable };
 
-console.log("gsx exports:", {
-  hasStream: typeof gsx.Stream === "function",
-  streamIsStreamComponent: "isStreamComponent" in gsx.Stream,
-});
-
 // Collect component for parallel execution with named outputs
 export async function Collect<T extends Record<string, unknown>>(
   props: CollectProps,

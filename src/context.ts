@@ -93,23 +93,11 @@ export async function withContext<T>(
 ): Promise<T> {
   const prevContext = getCurrentContext();
   const newContext = prevContext.withContext(context);
-  console.log("Context transition:", {
-    from: prevContext.getContextInfo(),
-    to: newContext.getContextInfo(),
-  });
   setCurrentContext(newContext);
   try {
     const result = await fn();
-    console.log(
-      "Context execution complete:",
-      getCurrentContext().getContextInfo(),
-    );
     return result;
   } finally {
-    console.log("Context restore:", {
-      from: getCurrentContext().getContextInfo(),
-      to: prevContext.getContextInfo(),
-    });
     setCurrentContext(prevContext);
   }
 }
