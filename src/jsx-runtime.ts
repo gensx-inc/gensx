@@ -7,7 +7,7 @@ import { isInStreamingContext } from "./stream";
 export namespace JSX {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export type ElementType = (props: any) => Promise<unknown>;
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   // interface IntrinsicElements {}
   export type Element = Promise<unknown>;
   export interface ElementChildrenAttribute {

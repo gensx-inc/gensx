@@ -25,8 +25,6 @@ export function isStreamComponent(
 export async function Stream<T>(props: {
   children: Element;
 }): Promise<T | Streamable<T>> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const prevIsStreaming = isInStreamingContext();
   setStreamingContext(true);
 
   try {
