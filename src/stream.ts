@@ -1,7 +1,7 @@
 import type { Element, Streamable, StreamComponent } from "./types";
 
-import { execute } from "./resolve";
 import { getCurrentContext, withContext } from "./context";
+import { execute } from "./resolve";
 
 // Helper to check if a component is a stream component
 export function isStreamComponent(

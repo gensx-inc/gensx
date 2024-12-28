@@ -1,6 +1,7 @@
 import type { Element } from "./types";
-import { execute } from "./resolve";
+
 import { getCurrentContext } from "./context";
+import { execute } from "./resolve";
 
 export async function Parallel<T>(props: {
   children: Element[] | Element;

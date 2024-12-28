@@ -6,9 +6,9 @@ import type {
   WorkflowComponent,
 } from "./types";
 
+import { ExecutionContext, getCurrentContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { isInStreamingContext } from "./stream";
-import { ExecutionContext, getCurrentContext } from "./context";
 
 type ComponentType<P, O> = WorkflowComponent<P, O> | StreamComponent<P, O>;
 
@@ -53,6 +53,7 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
 
   // Handle promises first
   if (value instanceof Promise) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const resolved = await value;
     return resolveDeep(resolved);
   }
@@ -123,12 +124,13 @@ export async function execute<T>(
   element: ExecutableValue,
   context?: ExecutionContext,
 ): Promise<T> {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (element === null || element === undefined) {
     throw new Error("Cannot execute null or undefined element");
   }
 
   // Use provided context or current context
-  const executionContext = context || getCurrentContext();
+  const executionContext = context ?? getCurrentContext();
   const wasInStreamingContext = isInStreamingContext();
 
   try {

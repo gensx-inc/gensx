@@ -12,10 +12,10 @@
 7. Support parallel execution of steps (either dynamic via something liek a collector, or static via a few explicitly defined siblings)
  */
 
-import { jsx, jsxs, Fragment } from "./jsx-runtime";
 import { Component, StreamComponent } from "./component";
-import { Stream } from "./stream";
+import { Fragment, jsx, jsxs } from "./jsx-runtime";
 import { execute } from "./resolve";
+import { Stream } from "./stream";
 import { Element, ExecutableValue, Streamable } from "./types";
 
 // Collect component props

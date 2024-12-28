@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import type { Streamable } from "./types";
 
+import { getCurrentContext } from "./context";
 import { resolveDeep } from "./resolve";
 import { isInStreamingContext } from "./stream";
-import { getCurrentContext } from "./context";
 
 export namespace JSX {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,8 +61,6 @@ export const jsx = <
 
   // Return a promise that will be handled by execute()
   return (async (): Promise<Awaited<TOutput> | Awaited<TOutput>[]> => {
-    const parentContext = getCurrentContext();
-
     // Execute component
     const rawResult = await component(props ?? ({} as TProps));
     const currentContext = getCurrentContext();
@@ -111,7 +109,7 @@ export const jsx = <
         return result as Awaited<TOutput>;
       }
       // Outside streaming context, resolve the value
-      return (await result.value) as Awaited<TOutput>;
+      return await result.value;
     }
 
     // If there are no function children, return the resolved result
