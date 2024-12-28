@@ -122,9 +122,11 @@ export async function execute<T>(element: ExecutableValue): Promise<T> {
         if (element.props.children) {
           // With children, let them handle the streamable
           const childrenResult = await element.props.children(componentResult);
+          // eslint-disable-next-line @typescript-eslint/return-await
           return execute(childrenResult as ExecutableValue);
         }
         // No children, preserve the streamable
+        // eslint-disable-next-line @typescript-eslint/return-await
         return componentResult as T;
       }
 
@@ -132,14 +134,17 @@ export async function execute<T>(element: ExecutableValue): Promise<T> {
       if (element.props.children) {
         const resolvedResult = await resolveDeep(componentResult);
         const childrenResult = await element.props.children(resolvedResult);
+        // eslint-disable-next-line @typescript-eslint/return-await
         return execute(childrenResult as ExecutableValue);
       }
 
       // No children, resolve the result
+      // eslint-disable-next-line @typescript-eslint/return-await
       return resolveDeep(componentResult);
     }
 
     // For all other cases, use the shared resolver
+    // eslint-disable-next-line @typescript-eslint/return-await
     return resolveDeep(element);
   } finally {
     // Only restore streaming context if it changed during execution

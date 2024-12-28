@@ -1,4 +1,4 @@
-import type { Element, StreamComponent, Streamable } from "./types";
+import type { Element, Streamable, StreamComponent } from "./types";
 
 import { execute } from "./resolve";
 
@@ -25,6 +25,7 @@ export function isStreamComponent(
 export async function Stream<T>(props: {
   children: Element;
 }): Promise<T | Streamable<T>> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const prevIsStreaming = isInStreamingContext();
   setStreamingContext(true);
 

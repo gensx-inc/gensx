@@ -73,17 +73,19 @@ export const jsx = <
           return rawResult as Awaited<TOutput>;
         }
         // Outside streaming context, resolve the value
-        return (await rawResult.value) as Awaited<TOutput>;
+        return await rawResult.value;
       }
 
       if (isInStreamingContext()) {
         // In streaming context, pass the streamable to children function
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-function-type
         const childrenResult = await (children as Function)(rawResult);
         const resolvedResult = await resolveDeep(childrenResult);
         return resolvedResult as Awaited<TOutput>;
       } else {
         // Outside streaming context, resolve the value first
         const resolvedValue = await rawResult.value;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-function-type
         const childrenResult = await (children as Function)(
           resolvedValue as TOutput,
         );
