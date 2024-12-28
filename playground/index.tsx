@@ -74,13 +74,13 @@ async function runStreamingExample() {
   console.log("\n🚀 Starting streaming example with prompt:", prompt);
 
   console.log("\n📝 Non-streaming version (waiting for full response):");
-  const finalResult = await gsx.execute<Streamable<string>>(
+  const finalResult = await gsx.execute<string>(
     <ChatCompletion prompt={prompt} />,
   );
-  console.log("✅ Complete response:", await finalResult.value);
+  console.log("✅ Complete response:", finalResult);
 
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
-  const response: Streamable<string> = await gsx.execute(
+  const response = await gsx.execute<Streamable<string>>(
     <gsx.Stream>
       <ChatCompletion prompt={prompt} />
     </gsx.Stream>,

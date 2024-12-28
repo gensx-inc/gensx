@@ -12,9 +12,10 @@
 7. Support parallel execution of steps (either dynamic via something liek a collector, or static via a few explicitly defined siblings)
  */
 
+import { jsx, jsxs, Fragment } from "./jsx-runtime";
 import { Component, StreamComponent } from "./component";
-import { execute } from "./resolve";
 import { Stream } from "./stream";
+import { execute } from "./resolve";
 import { Element, ExecutableValue, Streamable } from "./types";
 
 // Collect component props
@@ -24,11 +25,14 @@ export interface CollectProps {
 
 // Export everything through gsx namespace
 export const gsx = {
+  jsx,
+  jsxs,
+  Fragment,
   Component,
   StreamComponent,
+  Stream,
   execute,
   Collect,
-  Stream,
 };
 
 // Export Component and execute directly for use in type definitions
@@ -36,6 +40,11 @@ export { Component, execute, Stream, StreamComponent };
 
 // Also export types
 export type { Element, ExecutableValue, Streamable };
+
+console.log("gsx exports:", {
+  hasStream: typeof gsx.Stream === "function",
+  streamIsStreamComponent: "isStreamComponent" in gsx.Stream,
+});
 
 // Collect component for parallel execution with named outputs
 export async function Collect<T extends Record<string, unknown>>(
