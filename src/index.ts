@@ -15,7 +15,6 @@
 import { Component, StreamComponent } from "./component";
 import { Fragment, jsx, jsxs } from "./jsx-runtime";
 import { execute } from "./resolve";
-import { Stream } from "./stream";
 import { Element, ExecutableValue, Streamable } from "./types";
 
 // Collect component props
@@ -30,13 +29,12 @@ export const gsx = {
   Fragment,
   Component,
   StreamComponent,
-  Stream,
   execute,
   Collect,
 };
 
 // Export Component and execute directly for use in type definitions
-export { Component, execute, Stream, StreamComponent };
+export { Component, execute, StreamComponent };
 
 // Also export types
 export type { Element, ExecutableValue, Streamable };

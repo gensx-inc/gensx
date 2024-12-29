@@ -50,20 +50,18 @@ async function runStreamingWithChildrenExample() {
 
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
   await gsx.execute(
-    <gsx.Stream>
-      <ChatCompletion prompt={prompt}>
-        {async (response: Streamable<string>) => {
-          // Print tokens as they arrive
-          for await (const token of {
-            [Symbol.asyncIterator]: () => response.stream(),
-          }) {
-            process.stdout.write(token);
-          }
-          process.stdout.write("\n");
-          console.log("✅ Streaming complete");
-        }}
-      </ChatCompletion>
-    </gsx.Stream>,
+    <ChatCompletion stream={true} prompt={prompt}>
+      {async (response: Streamable<string>) => {
+        // Print tokens as they arrive
+        for await (const token of {
+          [Symbol.asyncIterator]: () => response.stream(),
+        }) {
+          process.stdout.write(token);
+        }
+        process.stdout.write("\n");
+        console.log("✅ Streaming complete");
+      }}
+    </ChatCompletion>,
   );
 }
 
@@ -81,9 +79,7 @@ async function runStreamingExample() {
 
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
   const response = await gsx.execute<Streamable<string>>(
-    <gsx.Stream>
-      <ChatCompletion prompt={prompt} />
-    </gsx.Stream>,
+    <ChatCompletion stream={true} prompt={prompt} />,
   );
 
   for await (const token of {

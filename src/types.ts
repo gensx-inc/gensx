@@ -39,6 +39,7 @@ export interface Streamable<T> {
 
 // Stream component props as a type alias
 export type StreamComponentProps<P, O> = BaseProps<P> & {
+  stream?: boolean;
   children?: (output: Streamable<O>) => MaybePromise<ExecutableValue>;
 };
 

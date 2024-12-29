@@ -3,10 +3,12 @@ import type {
   MaybePromise,
   Streamable,
   StreamComponent,
+  StreamComponentProps,
   WorkflowComponent,
 } from "./types";
 
 import { JSX } from "./jsx-runtime";
+import { withContext } from "./context";
 
 export function Component<P, O>(
   fn: (props: P) => MaybePromise<O | JSX.Element | JSX.Element[]>,
@@ -32,9 +34,11 @@ export function StreamComponent<P, O>(
   fn: (props: P) => MaybePromise<Streamable<O>>,
 ): StreamComponent<P, O> {
   function StreamWorkflowFunction(
-    props: ComponentProps<P, O>,
+    props: StreamComponentProps<P, O>,
   ): MaybePromise<Streamable<O>> {
-    return Promise.resolve(fn(props));
+    return withContext({ streaming: props.stream ?? false }, async () =>
+      Promise.resolve(fn(props)),
+    );
   }
 
   if (fn.name) {

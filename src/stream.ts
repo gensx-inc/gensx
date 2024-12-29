@@ -1,7 +1,6 @@
-import type { Element, Streamable, StreamComponent } from "./types";
+import type { Streamable, StreamComponent } from "./types";
 
-import { getCurrentContext, withContext } from "./context";
-import { execute } from "./resolve";
+import { getCurrentContext } from "./context";
 
 // Helper to check if a component is a stream component
 export function isStreamComponent(
@@ -14,23 +13,8 @@ export function isStreamComponent(
   );
 }
 
-// Component to enable streaming for its children
-export async function Stream<T>(props: {
-  children: Element;
-}): Promise<T | Streamable<T>> {
-  return withContext({ streaming: true }, async () => {
-    const result = await execute<T | Streamable<T>>(props.children);
-    // Always preserve streamable results in streaming context
-    if (isStreamable(result)) {
-      return result;
-    }
-    // Non-streamable results pass through
-    return result as T;
-  });
-}
-
 // Helper to check if something is a streamable value
-function isStreamable<T>(value: unknown): value is Streamable<T> {
+export function isStreamable<T>(value: unknown): value is Streamable<T> {
   return (
     typeof value === "object" &&
     value !== null &&
