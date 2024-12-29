@@ -120,6 +120,7 @@ export async function execute<T>(
 
         // Only preserve streaming if this component explicitly declares stream=true
         if (shouldStream && isStreamable(componentResult)) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
           return componentResult as unknown as T;
         }
       }
@@ -127,17 +128,22 @@ export async function execute<T>(
       // Handle children function
       if (element.props.children) {
         const resolvedResult = await resolveDeep(componentResult);
+
         const childrenResult = await element.props.children(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
           resolvedResult as any,
         );
+        // eslint-disable-next-line @typescript-eslint/return-await
         return execute(childrenResult as ExecutableValue, context);
       }
 
       // No children, resolve the result
+      // eslint-disable-next-line @typescript-eslint/return-await
       return resolveDeep(componentResult);
     }
 
     // For all other cases, use the shared resolver
+    // eslint-disable-next-line @typescript-eslint/return-await
     return resolveDeep(element);
   } finally {
     // Context cleanup handled by withContext
