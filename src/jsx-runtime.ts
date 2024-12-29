@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import type { Streamable } from "./types";
 
-import { getCurrentContext } from "./context";
 import { resolveDeep } from "./resolve";
-import { isInStreamingContext } from "./stream";
 
 export namespace JSX {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,33 +61,32 @@ export const jsx = <
   return (async (): Promise<Awaited<TOutput> | Awaited<TOutput>[]> => {
     // Execute component
     const rawResult = await component(props ?? ({} as TProps));
-    const currentContext = getCurrentContext();
 
     // If this is a streaming result, handle it specially
     if (isStreamable<TOutput>(rawResult)) {
       const hasChildFunction = typeof children === "function";
+      const isStreamingComponent =
+        "isStreamComponent" in component &&
+        component.isStreamComponent === true;
+      const shouldStream = isStreamingComponent && (props?.stream ?? false);
 
       if (!hasChildFunction) {
-        // When no function children, preserve the streamable if we're in a streaming context
-        // or if we had a streaming child
-        const shouldPreserveStream =
-          isInStreamingContext() || currentContext.hadStreamingInChain();
-        if (shouldPreserveStream) {
+        // When no function children, preserve the streamable if explicitly streaming
+        if (shouldStream) {
           return rawResult as Awaited<TOutput>;
         }
-        // Outside streaming context, resolve the value
+        // Not streaming, resolve the value
         return await rawResult.value;
       }
 
-      if (isInStreamingContext() || currentContext.hadStreamingInChain()) {
-        // In streaming context or had streaming child, pass the streamable to children function
-
+      if (shouldStream) {
+        // Pass the streamable to children function
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-function-type
         const childrenResult = await (children as Function)(rawResult);
         const resolvedResult = await resolveDeep(childrenResult);
         return resolvedResult as Awaited<TOutput>;
       } else {
-        // Outside streaming context, resolve the value first
+        // Not streaming, resolve the value first
         const resolvedValue = await rawResult.value;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-function-type
         const childrenResult = await (children as Function)(
@@ -105,10 +102,14 @@ export const jsx = <
 
     // Check again after deep resolution in case we got a streamable
     if (isStreamable<TOutput>(result)) {
-      if (isInStreamingContext()) {
+      const isStreamingComponent =
+        "isStreamComponent" in component &&
+        component.isStreamComponent === true;
+      const shouldStream = isStreamingComponent && (props?.stream ?? false);
+      if (shouldStream) {
         return result as Awaited<TOutput>;
       }
-      // Outside streaming context, resolve the value
+      // Not streaming, resolve the value
       return await result.value;
     }
 

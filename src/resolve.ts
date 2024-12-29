@@ -3,12 +3,12 @@ import type {
   ExecutableValue,
   Streamable,
   StreamComponent,
+  StreamComponentProps,
   WorkflowComponent,
 } from "./types";
 
-import { ExecutionContext, getCurrentContext } from "./context";
+import { ExecutionContext } from "./context";
 import { JSX } from "./jsx-runtime";
-import { isInStreamingContext } from "./stream";
 
 type ComponentType<P, O> = WorkflowComponent<P, O> | StreamComponent<P, O>;
 
@@ -17,7 +17,7 @@ function isJSXElement<P, O>(
   element: unknown,
 ): element is JSX.Element & {
   type: ComponentType<P, O>;
-  props: ComponentProps<P, O>;
+  props: ComponentProps<P, O> | StreamComponentProps<P, O>;
 } {
   const el = element as { type: ComponentType<P, O> };
   return (
@@ -33,14 +33,14 @@ function isJSXElement<P, O>(
 }
 
 // Helper to check if something is a streamable value
-function isStreamable<T>(value: unknown): value is Streamable<T> {
+function isStreamable(value: unknown): value is Streamable<unknown> {
   return (
     typeof value === "object" &&
     value !== null &&
     "stream" in value &&
     "value" in value &&
-    typeof (value as Streamable<T>).stream === "function" &&
-    value.value instanceof Promise
+    typeof (value as { stream: unknown }).stream === "function" &&
+    (value as { value: unknown }).value instanceof Promise
   );
 }
 
@@ -49,8 +49,6 @@ function isStreamable<T>(value: unknown): value is Streamable<T> {
  * This is the core resolution logic used by both execute() and the JSX runtime.
  */
 export async function resolveDeep<T>(value: unknown): Promise<T> {
-  const context = getCurrentContext();
-
   // Handle promises first
   if (value instanceof Promise) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -58,21 +56,9 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
     return resolveDeep(resolved);
   }
 
-  // Handle streamable values
+  // Pass through streamable values - they are handled by execute
   if (isStreamable(value)) {
-    if (isInStreamingContext() || context.hadStreamingInChain()) {
-      return value as T;
-    }
-    // Outside streaming context, resolve the value and check if result is also streamable
-    const finalValue = await value.value;
-    if (
-      isStreamable(finalValue) &&
-      (isInStreamingContext() || context.hadStreamingInChain())
-    ) {
-      return finalValue as T;
-    }
-    // Recursively resolve in case the value itself needs further resolution
-    return resolveDeep(finalValue);
+    return value as unknown as T;
   }
 
   // Handle arrays
@@ -86,20 +72,6 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   // Handle JSX elements
   if (isJSXElement(value)) {
     const componentResult = await value.type(value.props);
-
-    // If this is a Stream component and result is streamable, preserve it
-    const isStreamComponent =
-      "isStreamComponent" in value.type &&
-      value.type.isStreamComponent === true;
-    if (isStreamComponent && isStreamable(componentResult)) {
-      return componentResult as T;
-    }
-
-    // If result is streamable and we're in streaming context, preserve it
-    if (isStreamable(componentResult) && isInStreamingContext()) {
-      return componentResult as T;
-    }
-
     return resolveDeep(componentResult);
   }
 
@@ -129,56 +101,44 @@ export async function execute<T>(
     throw new Error("Cannot execute null or undefined element");
   }
 
-  // Use provided context or current context
-  const executionContext = context ?? getCurrentContext();
-  const wasInStreamingContext = isInStreamingContext();
-
   try {
     // Handle JSX elements specially to support children functions
     if (isJSXElement(element)) {
       const componentResult = await element.type(element.props);
 
-      // If this is a Stream component or we're in a streaming context chain, preserve streamable results
-      if (
-        isStreamable(componentResult) &&
-        (wasInStreamingContext || executionContext.hasStreamingInChain())
-      ) {
-        return componentResult as unknown as T;
+      // If this is a Stream component, check stream prop
+      const isStreamComponent =
+        "isStreamComponent" in element.type &&
+        element.type.isStreamComponent === true;
+
+      if (isStreamComponent) {
+        const streamProps = element.props as StreamComponentProps<
+          unknown,
+          unknown
+        >;
+        const shouldStream = streamProps.stream ?? false;
+
+        // Only preserve streaming if this component explicitly declares stream=true
+        if (shouldStream && isStreamable(componentResult)) {
+          return componentResult as unknown as T;
+        }
       }
 
-      // Handle non-streaming cases
+      // Handle children function
       if (element.props.children) {
         const resolvedResult = await resolveDeep(componentResult);
-        const childrenResult = await element.props.children(resolvedResult);
-        // eslint-disable-next-line @typescript-eslint/return-await
-        return execute(childrenResult as ExecutableValue, executionContext);
+        const childrenResult = await element.props.children(
+          resolvedResult as any,
+        );
+        return execute(childrenResult as ExecutableValue, context);
       }
 
       // No children, resolve the result
-      // eslint-disable-next-line @typescript-eslint/return-await
       return resolveDeep(componentResult);
     }
 
     // For all other cases, use the shared resolver
-    if (
-      isStreamable(element) &&
-      (wasInStreamingContext || executionContext.hasStreamingInChain())
-    ) {
-      // Preserve streamables in streaming context chain
-      return element as T;
-    }
-
-    const result = await resolveDeep(element);
-
-    if (
-      isStreamable(result) &&
-      (wasInStreamingContext || executionContext.hasStreamingInChain())
-    ) {
-      return result as T;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/return-await
-    return result as T;
+    return resolveDeep(element);
   } finally {
     // Context cleanup handled by withContext
   }

@@ -7,8 +7,8 @@ import type {
   WorkflowComponent,
 } from "./types";
 
-import { JSX } from "./jsx-runtime";
 import { withContext } from "./context";
+import { JSX } from "./jsx-runtime";
 
 export function Component<P, O>(
   fn: (props: P) => MaybePromise<O | JSX.Element | JSX.Element[]>,
