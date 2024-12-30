@@ -1,12 +1,12 @@
 <h1 align="center">&lt;GenSX /&gt;</h1>
 
 <p align="center">
-  Make LLMs work good
+  Create LLM workflows from components.
 </p>
 
 ## LLM + JSX = ⚡️
 
-GenSX is a library for building LLM workflows, using JSX for simple and fast development.
+`<GenSX />` is a framework for building LLM workflows and AI agents with JSX on the backend. Every `<GenSX />` component is a pure function, and thus easily shareable by default.
 
 ```jsx
 import * as gsx from "gensx";
@@ -45,7 +45,7 @@ npm install gensx
 
 #### Dependencies
 
-This project does not have a dependency on `react`, or any other JSX library. It provides a custom JSX runtime that can be used by the Typescript compiler, or whichever bundler you're using to bundle your code.
+This project does not have a dependency on `react`, or any other JSX-based library. It provides a custom JSX runtime that can be used by the Typescript compiler, or whichever bundler you're using to bundle your code.
 
 ### Configure your project
 
