@@ -37,6 +37,38 @@ async function runHNAnalysisExample() {
   );
 }
 
+async function runStreamingWithChildrenExample() {
+  const prompt =
+    "Write a 250 word story about an AI that discovers the meaning of friendship through a series of small interactions with humans. Be concise but meaningful.";
+
+  console.log("\n🚀 Starting streaming example with prompt:", prompt);
+
+  console.log("\n📝 Non-streaming version (waiting for full response):");
+  await gsx.execute<string>(
+    <ChatCompletion prompt={prompt}>
+      {async (response: string) => {
+        console.log(response);
+      }}
+    </ChatCompletion>,
+  );
+
+  console.log("\n📝 Streaming version (processing tokens as they arrive):");
+  await gsx.execute(
+    <ChatCompletion stream={true} prompt={prompt}>
+      {async (response: Streamable<string>) => {
+        // Print tokens as they arrive
+        for await (const token of {
+          [Symbol.asyncIterator]: () => response.stream(),
+        }) {
+          process.stdout.write(token);
+        }
+        process.stdout.write("\n");
+        console.log("✅ Streaming complete");
+      }}
+    </ChatCompletion>,
+  );
+}
+
 // Example 3: Streaming vs non-streaming chat completion
 async function runStreamingExample() {
   const prompt =
@@ -89,7 +121,7 @@ async function runRAGExample() {
 async function main() {
   await runBlogWritingExample();
   await runHNAnalysisExample();
-  // TODO add back streaming with children example...
+  await runStreamingWithChildrenExample();
   await runStreamingExample();
   await runRAGExample();
 }
