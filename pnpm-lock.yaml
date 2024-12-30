@@ -12,8 +12,8 @@ importers:
         specifier: ^4.29.1
         version: 4.29.1
       '@swc/core-linux-x64-gnu':
-        specifier: ^1.10.1
-        version: 1.10.1
+        specifier: ^1.10.4
+        version: 1.10.4
     devDependencies:
       '@swc/cli':
         specifier: ^0.5.2
@@ -1070,6 +1070,12 @@ packages:
 
   '@swc/core-linux-x64-gnu@1.10.1':
     resolution: {integrity: sha512-yyYEwQcObV3AUsC79rSzN9z6kiWxKAVJ6Ntwq2N9YoZqSPYph+4/Am5fM1xEQYf/kb99csj0FgOelomJSobxQA==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@swc/core-linux-x64-gnu@1.10.4':
+    resolution: {integrity: sha512-qJXh9D6Kf5xSdGWPINpLGixAbB5JX8JcbEJpRamhlDBoOcQC79dYfOMEIxWPhTS1DGLyFakAx2FX/b2VmQmj0g==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
@@ -3555,6 +3561,9 @@ snapshots:
     optional: true
 
   '@swc/core-linux-x64-gnu@1.10.1':
+    optional: true
+
+  '@swc/core-linux-x64-gnu@1.10.4':
     optional: true
 
   '@swc/core-linux-x64-musl@1.10.1':
