@@ -123,7 +123,13 @@ type PerformResearchOutput = string;
 const PerformResearch = gsx.Component<ResearchProps, ResearchOutput>(
   async ({ topic }) => {
     console.log("📚 Researching topic:", topic);
-    return await Promise.resolve(`research results for ${topic}`);
+    // Make a call to your vector DB, or an API, or invoke a model like OpenAI, Anthropic, Perplexity, and more.
+    const results = await Promise.resolve([
+      "research result 1",
+      "research result 2",
+      "research result 3",
+    ]);
+    return results;
   },
 );
 
@@ -135,9 +141,11 @@ type WriteDraftOutput = string;
 const WriteDraft = gsx.Component<WriteDraftProps, WriteDraftOutput>(
   async ({ research, prompt }) => {
     console.log("✍️  Writing draft based on research");
-    return await Promise.resolve(
+    // Invoke a model like OpenAI, Anthropic, Perplexity, and more.
+    const draft = await Promise.resolve(
       `**draft\n${research}\n${prompt}\n**end draft`,
     );
+    return draft;
   },
 );
 
@@ -148,7 +156,9 @@ type EditDraftOutput = string;
 const EditDraft = gsx.Component<EditDraftProps, EditDraftOutput>(
   async ({ draft }) => {
     console.log("✨ Polishing final draft");
-    return await Promise.resolve(`edited result: ${draft}`);
+    // Invoke a model like OpenAI, Anthropic, Perplexity, and more.
+    const editedDraft = await Promise.resolve(`edited result: ${draft}`);
+    return editedDraft;
   },
 );
 
@@ -159,6 +169,7 @@ type WebResearcherOutput = string[];
 const WebResearcher = gsx.Component<WebResearcherProps, WebResearcherOutput>(
   async ({ prompt }) => {
     console.log("🌐 Researching web for:", prompt);
+    // Make a call to your vector DB, or an API, or invoke a model like OpenAI, Anthropic, Perplexity, and more.
     const results = await Promise.resolve([
       "web result 1",
       "web result 2",
