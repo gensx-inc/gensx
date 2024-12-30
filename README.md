@@ -27,7 +27,9 @@ const [tweet, blogPost] = await gsx.execute(
 );
 ```
 
-## 📦 Installing
+## Getting started
+
+### 📦 Installing
 
 ```bash
 pnpm install gensx
@@ -41,6 +43,51 @@ yarn add gensx
 npm install gensx
 ```
 
+### Configure Typescript
+
+```ts
+// tsconfig.json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "gensx"
+  }
+}
+```
+
+#### For a React project with Typescript
+
+If you're using React, and can't change the `jsxImportSource` in your `tsconfig.json` without breaking your project, you can use a [per-file pragma](https://www.typescriptlang.org/tsconfig/#jsxImportSource) to enable the `gensx` runtime for specific files.
+
+```tsx
+/** @jsxImportSource gensx */
+
+// ...
+```
+
+Unfortunately, you cannot use both `gensx` and `react` in the same file, as they require different `jsxImportSource` values.
+
+#### For a Babel project
+
+If you're using babel to bundle JSX into Javascript, you can use the `@babel/plugin-transform-react-jsx` plugin to enable JSX support, and use the pragma to specify the `gensx` runtime.
+
+```bash
+pnpm install @babel/plugin-transform-react-jsx
+```
+
+```js
+// babel.config.js
+module.exports = {
+  plugins: ["@babel/plugin-transform-react-jsx"],
+};
+```
+
+```jsx
+/** @jsxImportSource gensx */
+
+// ...
+```
+
 ## Building a workflow, the declarative way!
 
 ```jsx
@@ -51,7 +98,11 @@ interface ResearchBrainstormProps {
 }
 type ResearchBrainstormOutput = string[];
 
-// A component can be any normal function, async or not. Similar to a React component, but it needs to be wrapped in a call to gsx.Component.
+/**
+ * A `gsx.Component` is just function. Within them you can do things like make calls to your vector DB, call APIs, or invoke models like OpenAI, Claude, Perplexity, and more.
+ *
+ * Every `gsx.Component` automatically supports accessing it's outputs by nesting a `child` function with no additional work required. For instance:
+ */
 const ResearchBrainstorm = gsx.Component<
   ResearchBrainstormProps,
   ResearchBrainstormOutput
@@ -169,34 +220,4 @@ async function main() {
 }
 
 await main();
-```
-
-## ⚙️ Developing the library
-
-### 📦 Building
-
-```bash
-pnpm build
-```
-
-### 🧪 Testing
-
-If you want to run the tests of the project, you can execute the following command:
-
-```bash
-pnpm test
-```
-
-### 💅 Linting
-
-To run the linter you can execute:
-
-```bash
-pnpm lint
-```
-
-And for trying to fix lint issues automatically, you can run:
-
-```bash
-pnpm lint:fix
 ```
