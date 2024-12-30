@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 import type { Streamable } from "./types";
 
 import { resolveDeep } from "./resolve";
 
 export namespace JSX {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export type ElementType = (props: any) => Promise<unknown>;
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  // interface IntrinsicElements {}
   export type Element = Promise<unknown>;
   export interface ElementChildrenAttribute {
     children: (output: unknown) => JSX.Element | JSX.Element[];
@@ -81,14 +83,12 @@ export const jsx = <
 
       if (shouldStream) {
         // Pass the streamable to children function
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-function-type
         const childrenResult = await (children as Function)(rawResult);
         const resolvedResult = await resolveDeep(childrenResult);
         return resolvedResult as Awaited<TOutput>;
       } else {
         // Not streaming, resolve the value first
         const resolvedValue = await rawResult.value;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-function-type
         const childrenResult = await (children as Function)(
           resolvedValue as TOutput,
         );

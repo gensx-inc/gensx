@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable @typescript-eslint/return-await */
+
 import type { ExecutableValue, Streamable } from "./types";
 
 // Helper to check if something is a streamable value
@@ -19,7 +23,6 @@ function isStreamable(value: unknown): value is Streamable<unknown> {
 export async function resolveDeep<T>(value: unknown): Promise<T> {
   // Handle promises first
   if (value instanceof Promise) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const resolved = await value;
     return resolveDeep(resolved);
   }
@@ -55,14 +58,12 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
  * This is the main entry point for executing workflow components.
  */
 export async function execute<T>(element: ExecutableValue): Promise<T> {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (element === null || element === undefined) {
     throw new Error("Cannot execute null or undefined element");
   }
 
   try {
     // use the shared resolver
-    // eslint-disable-next-line @typescript-eslint/return-await
     return resolveDeep(element);
   } finally {
     // Context cleanup handled by withContext

@@ -13,19 +13,18 @@ import { JSX } from "./jsx-runtime";
 export function Component<P, O>(
   fn: (props: P) => MaybePromise<O | JSX.Element | JSX.Element[]>,
 ): WorkflowComponent<P, O> {
-  function WorkflowFunction(props: ComponentProps<P, O>): MaybePromise<O> {
+  function GsxComponent(props: ComponentProps<P, O>): MaybePromise<O> {
     return Promise.resolve(fn(props)) as Promise<O>;
   }
 
   if (fn.name) {
-    Object.defineProperty(WorkflowFunction, "name", {
-      value: `WorkflowFunction[${fn.name}]`,
+    Object.defineProperty(GsxComponent, "name", {
+      value: `GsxComponent[${fn.name}]`,
     });
   }
 
   // Mark as workflow component and JSX element type
-  const component = WorkflowFunction as WorkflowComponent<P, O>;
-  component.isWorkflowComponent = true;
+  const component = GsxComponent as WorkflowComponent<P, O>;
 
   return component;
 }
@@ -33,7 +32,7 @@ export function Component<P, O>(
 export function StreamComponent<P, O>(
   fn: (props: P) => MaybePromise<Streamable<O>>,
 ): StreamComponent<P, O> {
-  function StreamWorkflowFunction(
+  function GsxStreamComponent(
     props: StreamComponentProps<P, O>,
   ): MaybePromise<Streamable<O>> {
     return withContext({ streaming: props.stream ?? false }, async () =>
@@ -42,13 +41,13 @@ export function StreamComponent<P, O>(
   }
 
   if (fn.name) {
-    Object.defineProperty(StreamWorkflowFunction, "name", {
-      value: `StreamWorkflowFunction[${fn.name}]`,
+    Object.defineProperty(GsxStreamComponent, "name", {
+      value: `GsxStreamComponent[${fn.name}]`,
     });
   }
 
   // Mark as stream component
-  const component = StreamWorkflowFunction as StreamComponent<P, O>;
+  const component = GsxStreamComponent as StreamComponent<P, O>;
   component.isStreamComponent = true;
 
   return component;

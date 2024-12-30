@@ -14,7 +14,6 @@ type BaseProps<P> = P & OutputProps;
 // Make components valid JSX elements
 export interface WorkflowComponent<P, O> extends JSX.ElementType {
   (props: ComponentProps<P, O>): MaybePromise<O>;
-  isWorkflowComponent?: true;
 }
 
 // Allow children function to return plain objects that will be executed
