@@ -13,72 +13,18 @@
  */
 
 import { Component, StreamComponent } from "./component";
-import { Fragment, jsx, jsxs } from "./jsx-runtime";
 import { execute } from "./resolve";
-import { Element, ExecutableValue, Streamable } from "./types";
-
-// Collect component props
-export interface CollectProps {
-  children: Element[];
-}
+import { Streamable } from "./types";
 
 // Export everything through gsx namespace
 export const gsx = {
-  jsx,
-  jsxs,
-  Fragment,
   Component,
   StreamComponent,
   execute,
-  Collect,
 };
 
 // Export Component and execute directly for use in type definitions
 export { Component, execute, StreamComponent };
 
 // Also export types
-export type { Element, ExecutableValue, Streamable };
-
-// Collect component for parallel execution with named outputs
-export async function Collect<T extends Record<string, unknown>>(
-  props: CollectProps,
-): Promise<T> {
-  const children = Array.isArray(props.children)
-    ? props.children
-    : [props.children];
-
-  // Execute all children in parallel
-  const results = await Promise.all(
-    children.map(child => {
-      /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-      /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-      /* eslint-disable @typescript-eslint/no-unsafe-argument */
-      const outputName = (child as any)?.props?.output;
-      return executeWithName(child, outputName);
-      /* eslint-enable @typescript-eslint/no-unsafe-assignment */
-      /* eslint-enable @typescript-eslint/no-explicit-any */
-      /* eslint-enable @typescript-eslint/no-unsafe-member-access */
-      /* eslint-enable @typescript-eslint/no-unsafe-argument */
-    }),
-  );
-
-  // Combine results into an object
-  const output = {} as Record<string, unknown> as T;
-  for (const [name, value] of results) {
-    if (name) {
-      (output as Record<string, unknown>)[name] = value;
-    }
-  }
-
-  return output;
-}
-
-// Execute with output name tracking
-async function executeWithName<T>(
-  element: Element,
-  outputName?: string,
-): Promise<[string | undefined, T]> {
-  const result = await execute<T>(element as ExecutableValue);
-  return [outputName, result];
-}
+export type { Streamable };
