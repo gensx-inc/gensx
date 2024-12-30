@@ -84,6 +84,7 @@
     }
   },
   "dependencies": {
+    "@turbopuffer/turbopuffer": "^0.5.13",
     "openai": "^4.77.0"
   }
 }

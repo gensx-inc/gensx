@@ -5,6 +5,11 @@ import {
 } from "./hackerNewsAnalyzer";
 import { BlogWritingWorkflow } from "./blogWriter";
 import { ChatCompletion } from "./chatCompletion";
+import {
+  PerplexityResearch,
+  TurboPufferResearch,
+  RAGWorkflow,
+} from "./ragExample";
 import fs from "fs/promises";
 import type { Streamable } from "@/types";
 
@@ -33,38 +38,6 @@ async function runHNAnalysisExample() {
 }
 
 // Example 3: Streaming vs non-streaming chat completion
-async function runStreamingWithChildrenExample() {
-  const prompt =
-    "Write a 250 word story about an AI that discovers the meaning of friendship through a series of small interactions with humans. Be concise but meaningful.";
-
-  console.log("\n🚀 Starting streaming example with prompt:", prompt);
-
-  console.log("\n📝 Non-streaming version (waiting for full response):");
-  await gsx.execute<string>(
-    <ChatCompletion prompt={prompt}>
-      {async (response: string) => {
-        console.log(response);
-      }}
-    </ChatCompletion>,
-  );
-
-  console.log("\n📝 Streaming version (processing tokens as they arrive):");
-  await gsx.execute(
-    <ChatCompletion stream={true} prompt={prompt}>
-      {async (response: Streamable<string>) => {
-        // Print tokens as they arrive
-        for await (const token of {
-          [Symbol.asyncIterator]: () => response.stream(),
-        }) {
-          process.stdout.write(token);
-        }
-        process.stdout.write("\n");
-        console.log("✅ Streaming complete");
-      }}
-    </ChatCompletion>,
-  );
-}
-
 async function runStreamingExample() {
   const prompt =
     "Write a 250 word story about an AI that discovers the meaning of friendship through a series of small interactions with humans. Be concise but meaningful.";
@@ -91,12 +64,34 @@ async function runStreamingExample() {
   console.log("✅ Streaming complete");
 }
 
+// Example 4: RAG workflow with different research providers
+async function runRAGExample() {
+  console.log("\n🔍 Running RAG example with different providers...");
+
+  const query = "What are the key principles of modern software architecture?";
+
+  // Using Perplexity for research
+  console.log("\nUsing Perplexity:");
+  const perplexityAnswer = await gsx.execute<string>(
+    <RAGWorkflow query={query} researchProvider={PerplexityResearch} />,
+  );
+  console.log("✅ Perplexity-based answer:", perplexityAnswer);
+
+  // Using TurboPuffer for research
+  console.log("\nUsing TurboPuffer:");
+  const turboPufferAnswer = await gsx.execute<string>(
+    <RAGWorkflow query={query} researchProvider={TurboPufferResearch} />,
+  );
+  console.log("✅ TurboPuffer-based answer:", turboPufferAnswer);
+}
+
 // Main function to run examples
 async function main() {
   await runBlogWritingExample();
   await runHNAnalysisExample();
-  await runStreamingWithChildrenExample();
+  // TODO add back streaming with children example...
   await runStreamingExample();
+  await runRAGExample();
 }
 
 main().catch(console.error);

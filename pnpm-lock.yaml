@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@turbopuffer/turbopuffer':
+        specifier: ^0.5.13
+        version: 0.5.13
       openai:
         specifier: ^4.77.0
         version: 4.77.0
@@ -970,6 +973,9 @@ packages:
 
   '@tokenizer/token@0.3.0':
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
+
+  '@turbopuffer/turbopuffer@0.5.13':
+    resolution: {integrity: sha512-LnWe3nRm1dBhJ4tBULW2rEob0BcTN1/yF1DvrkZSX7R/cpiXFAE4h3aqanWd6Z8pHwAJQq6Ml4Sx68EbjKqiuA==}
 
   '@types/estree@1.0.6':
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
@@ -2116,6 +2122,9 @@ packages:
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
 
+  pako@2.1.0:
+    resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
+
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
     engines: {node: '>=6'}
@@ -2514,6 +2523,10 @@ packages:
 
   undici-types@6.20.0:
     resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
+
+  undici@6.21.0:
+    resolution: {integrity: sha512-BUgJXc752Kou3oOIuU1i+yZZypyZRqNPW0vqoMPl8VaoalSfeR0D8/t4iAS3yirs79SSMTxTag+ZC86uswv+Cw==}
+    engines: {node: '>=18.17'}
 
   universalify@2.0.1:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
@@ -3303,6 +3316,11 @@ snapshots:
       defer-to-connect: 2.0.1
 
   '@tokenizer/token@0.3.0': {}
+
+  '@turbopuffer/turbopuffer@0.5.13':
+    dependencies:
+      pako: 2.1.0
+      undici: 6.21.0
 
   '@types/estree@1.0.6': {}
 
@@ -4594,6 +4612,8 @@ snapshots:
 
   package-json-from-dist@1.0.1: {}
 
+  pako@2.1.0: {}
+
   parent-module@1.0.1:
     dependencies:
       callsites: 3.1.0
@@ -4941,6 +4961,8 @@ snapshots:
   undici-types@5.26.5: {}
 
   undici-types@6.20.0: {}
+
+  undici@6.21.0: {}
 
   universalify@2.0.1: {}
 
