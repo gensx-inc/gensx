@@ -43,7 +43,11 @@ yarn add gensx
 npm install gensx
 ```
 
-### Configure Typescript
+#### Dependencies
+
+This project does not have a dependency on `react`, or any other JSX library. It provides a custom JSX runtime that can be used by the Typescript compiler, or whichever bundler you're using to bundle your code.
+
+### Configure your project
 
 ```ts
 // tsconfig.json
