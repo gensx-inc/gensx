@@ -13,7 +13,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
@@ -22,6 +22,17 @@ jobs:
       - name: Checkout 🛬
         if: ${{ steps.release.outputs.releases_created }}
         uses: actions/checkout@v4
+      - name: Create package-specific tags 🏷️
+        if: ${{ steps.release.outputs.releases_created }}
+        run: |
+          if [[ "${{ steps.release.outputs.gensx--release_created }}" == "true" ]]; then
+            git tag "gensx@${{ steps.release.outputs.gensx--version }}"
+            git push origin "gensx@${{ steps.release.outputs.gensx--version }}"
+          fi
+          if [[ "${{ steps.release.outputs['packages/gensx-openai--release_created'] }}" == "true" ]]; then
+            git tag "@gensx/openai@${{ steps.release.outputs['packages/gensx-openai--version'] }}"
+            git push origin "@gensx/openai@${{ steps.release.outputs['packages/gensx-openai--version'] }}"
+          fi
       - name: Setup Node ⚙️
         if: ${{ steps.release.outputs.releases_created }}
         uses: ./.github/actions/setup-node
