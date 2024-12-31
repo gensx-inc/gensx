@@ -23,9 +23,7 @@ export function Component<P, O>(
     });
   }
 
-  // Mark as workflow component and JSX element type
   const component = GsxComponent as WorkflowComponent<P, O>;
-
   return component;
 }
 
@@ -54,9 +52,6 @@ export function StreamComponent<P>(
     });
   }
 
-  // Mark as stream component
   const component = GsxStreamComponent as StreamingComponent<P, boolean>;
-  component.__isStreamingGsxComponent = true;
-
   return component;
 }

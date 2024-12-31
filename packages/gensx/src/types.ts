@@ -49,5 +49,4 @@ export interface StreamingComponent<P, Stream extends boolean | undefined>
   (
     props: StreamComponentProps<P, Stream>,
   ): MaybePromise<Stream extends true ? Streamable : string>;
-  __isStreamingGsxComponent?: true;
 }
