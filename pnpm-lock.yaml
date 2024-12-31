@@ -7,7 +7,10 @@ settings:
 importers:
 
   .:
-    dependencies:
+    devDependencies:
+      '@changesets/cli':
+        specifier: ^2.27.1
+        version: 2.27.11
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.0.0
         version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.2))(eslint@8.57.1)(typescript@5.7.2)
@@ -35,13 +38,15 @@ importers:
       prettier:
         specifier: ^3.0.0
         version: 3.4.2
-    devDependencies:
-      '@changesets/cli':
-        specifier: ^2.27.1
-        version: 2.27.11
       turbo:
         specifier: ^2.3.3
         version: 2.3.3
+      vite:
+        specifier: ^5.0.0
+        version: 5.4.11(@types/node@20.17.10)
+      vite-plugin-dts:
+        specifier: ^3.0.0
+        version: 3.9.1(@types/node@20.17.10)(rollup@4.27.4)(typescript@5.7.2)(vite@5.4.11(@types/node@20.17.10))
 
   examples/playground:
     dependencies:
@@ -85,20 +90,8 @@ importers:
       '@types/node':
         specifier: ^20.0.0
         version: 20.17.10
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^6.0.0
-        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.2))(eslint@8.57.1)(typescript@5.7.2)
-      '@typescript-eslint/parser':
-        specifier: ^6.0.0
-        version: 6.21.0(eslint@8.57.1)(typescript@5.7.2)
-      eslint:
-        specifier: ^8.0.0
-        version: 8.57.1
-      prettier:
-        specifier: ^3.0.0
-        version: 3.4.2
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.7.2
         version: 5.7.2
       vite:
         specifier: ^5.0.0
@@ -115,23 +108,11 @@ importers:
       '@types/node':
         specifier: ^20.0.0
         version: 20.17.10
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^6.0.0
-        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.2))(eslint@8.57.1)(typescript@5.7.2)
-      '@typescript-eslint/parser':
-        specifier: ^6.0.0
-        version: 6.21.0(eslint@8.57.1)(typescript@5.7.2)
-      eslint:
-        specifier: ^8.0.0
-        version: 8.57.1
       gensx:
         specifier: workspace:*
         version: link:../gensx
-      prettier:
-        specifier: ^3.0.0
-        version: 3.4.2
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.7.2
         version: 5.7.2
       vite:
         specifier: ^5.0.0

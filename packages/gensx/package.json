@@ -43,11 +43,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.0.0",
-    "prettier": "^3.0.0",
-    "typescript": "^5.0.0",
+    "typescript": "^5.7.2",
     "vite": "^5.0.0",
     "vite-plugin-dts": "^3.0.0",
     "vitest": "^1.0.0"
