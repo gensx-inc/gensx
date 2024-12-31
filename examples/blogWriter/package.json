@@ -10,7 +10,8 @@
     "dev": "nodemon",
     "build": "tsc",
     "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix"
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "test": "tsx ./index.tsx"
   },
   "dependencies": {
     "gensx": "workspace:*",
@@ -23,7 +24,6 @@
     "eslint": "^8.0.0",
     "nodemon": "^3.1.9",
     "prettier": "^3.0.0",
-    "ts-node-dev": "^2.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.0.0"
   }
