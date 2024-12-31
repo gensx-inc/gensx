@@ -1,10 +1,4 @@
-export interface WorkflowContext {
-  streaming?: boolean;
-  hadStreaming?: boolean; // Track if this context or any child ever had streaming
-  // Reserved for future contexts:
-  trace?: unknown;
-  transaction?: unknown;
-}
+import { type WorkflowContext } from "./types";
 
 export class ExecutionContext {
   constructor(

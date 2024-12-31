@@ -50,3 +50,20 @@ export interface StreamingComponent<P, Stream extends boolean | undefined>
     props: StreamComponentProps<P, Stream>,
   ): MaybePromise<Stream extends true ? Streamable : string>;
 }
+
+// Base workflow context that can be extended by other packages
+export interface BaseWorkflowContext {
+  streaming?: boolean;
+  hadStreaming?: boolean;
+  trace?: unknown;
+  transaction?: unknown;
+}
+
+// Extensible workflow context
+export interface WorkflowContext {
+  streaming?: boolean;
+  hadStreaming?: boolean;
+  trace?: unknown;
+  transaction?: unknown;
+  [key: string]: unknown;
+}

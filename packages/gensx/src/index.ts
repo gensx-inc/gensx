@@ -1,30 +1,15 @@
-/**
-# Requirements
-
-1. Type safety with mininal boilerplate from the user
-2. Fork/join patterns (Collect).
-3. Users always deal with plain types, and we handle promise resolution under the hood
-4. Components are purely functional, and don't have the be aware of how they are used.
-5. Keep track of inputs and outputs of each workflow step so that we can:
-   1. Cache the outputs
-   2. Render the workflow as a graph in some sort of UI that enables debugging, seeing inputs, outputs, etc.
-6. Dynamic children composition pattern - outputs of a component made available as a lambda within it's children
-7. Support parallel execution of steps (either dynamic via something liek a collector, or static via a few explicitly defined siblings)
- */
-
 import { Component, StreamComponent } from "./component";
+import { withContext } from "./context";
 import { execute } from "./resolve";
-import { Streamable } from "./types";
 
-// Export everything through gsx namespace
+export * from "./component";
+export * from "./context";
+export * from "./jsx-runtime";
+export * from "./types";
+
 export const gsx = {
   Component,
   StreamComponent,
+  withContext,
   execute,
 };
-
-// Export Component and execute directly for use in type definitions
-export { Component, execute, StreamComponent };
-
-// Also export types
-export type { Streamable };

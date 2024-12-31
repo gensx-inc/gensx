@@ -1,13 +1,7 @@
+import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 
 import { getTopStoryDetails, type HNStory } from "./hn.js";
-import { createLLMService } from "./llm.js";
-
-// Initialize LLM service
-const llm = createLLMService({
-  model: "gpt-4o",
-  temperature: 0.7,
-});
 
 // Add HN URL helper
 const getHNPostUrl = (id: number | string) =>
@@ -31,11 +25,19 @@ You are Paul Graham composing a tweet. Given a longer analysis, distill it into 
 Focus on the most surprising or counterintuitive point rather than trying to summarize everything.
     `.trim();
 
-    const result = await llm.chat([
-      { role: "system", content: PROMPT },
-      { role: "user", content: `Context:\n${context}\n\nPrompt: ${prompt}` },
-    ]);
-    return result;
+    return (
+      <ChatCompletion
+        messages={[
+          { role: "system", content: PROMPT },
+          {
+            role: "user",
+            content: `Context:\n${context}\n\nPrompt: ${prompt}`,
+          },
+        ]}
+        model="gpt-4"
+        temperature={0.7}
+      />
+    );
   },
 );
 
@@ -59,12 +61,18 @@ For example, if the input mentions "[Project X](https://news.ycombinator.com/ite
 you must include this exact link when discussing that project.
 
 Maintain your voice while preserving the key insights and all links from the analysis.
-    `.trim();
+  `.trim();
 
-    return await llm.chat([
-      { role: "system", content: PROMPT },
-      { role: "user", content: content },
-    ]);
+    return (
+      <ChatCompletion
+        messages={[
+          { role: "system", content: PROMPT },
+          { role: "user", content: content },
+        ]}
+        model="gpt-4"
+        temperature={0.7}
+      />
+    );
   },
 );
 
@@ -112,13 +120,19 @@ Focus on substance rather than surface-level reactions. When referencing comment
     .map((c) => `[Score: ${c.score}] ${c.text}`)
     .join("\n\n");
 
-  return await llm.chat([
-    { role: "system", content: PROMPT },
-    {
-      role: "user",
-      content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
-    },
-  ]);
+  return (
+    <ChatCompletion
+      messages={[
+        { role: "system", content: PROMPT },
+        {
+          role: "user",
+          content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
+        },
+      ]}
+      model="gpt-4"
+      temperature={0.7}
+    />
+  );
 });
 
 interface PostSummarizerProps {
@@ -159,43 +173,23 @@ ${story.comments
   .join("\n\n")}
     `.trim();
 
-    const result = await llm.chat([
-      { role: "system", content: PROMPT },
-      { role: "user", content: context },
-    ]);
-
-    // Ensure the summary starts with the link
-    if (!result.includes(getHNPostUrl(story.id))) {
-      return `[${story.title}](${getHNPostUrl(story.id)})\n\n${result}`;
-    }
-
-    return result;
-  },
-);
-
-interface HNCollectorProps {
-  limit: number;
-}
-
-type HNCollectorOutput = HNStory[]; // Array of stories
-const HNCollector = gsx.Component<HNCollectorProps, HNCollectorOutput>(
-  async ({ limit }) => {
-    // We can only get up to 500 stories from the API
-    const MAX_HN_STORIES = 500;
-    const requestLimit = Math.min(limit, MAX_HN_STORIES);
-
-    console.log(
-      `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
+    return (
+      <ChatCompletion
+        messages={[
+          { role: "system", content: PROMPT },
+          { role: "user", content: context },
+        ]}
+        model="gpt-4"
+        temperature={0.7}
+      >
+        {(response: string) => {
+          if (!response.includes(getHNPostUrl(story.id))) {
+            return `[${story.title}](${getHNPostUrl(story.id)})\n\n${response}`;
+          }
+          return response;
+        }}
+      </ChatCompletion>
     );
-    const stories = await getTopStoryDetails(requestLimit);
-    console.log(
-      `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
-      stories.length < limit
-        ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
-        : "",
-    );
-
-    return stories;
   },
 );
 
@@ -246,10 +240,42 @@ ${commentAnalysis}
       )
       .join("\n\n");
 
-    return await llm.chat([
-      { role: "system", content: PROMPT },
-      { role: "user", content: context },
-    ]);
+    return (
+      <ChatCompletion
+        messages={[
+          { role: "system", content: PROMPT },
+          { role: "user", content: context },
+        ]}
+        model="gpt-4"
+        temperature={0.7}
+      />
+    );
+  },
+);
+
+interface HNCollectorProps {
+  limit: number;
+}
+
+type HNCollectorOutput = HNStory[]; // Array of stories
+const HNCollector = gsx.Component<HNCollectorProps, HNCollectorOutput>(
+  async ({ limit }) => {
+    // We can only get up to 500 stories from the API
+    const MAX_HN_STORIES = 500;
+    const requestLimit = Math.min(limit, MAX_HN_STORIES);
+
+    console.log(
+      `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
+    );
+    const stories = await getTopStoryDetails(requestLimit);
+    console.log(
+      `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
+      stories.length < limit
+        ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
+        : "",
+    );
+
+    return stories;
   },
 );
 
@@ -288,26 +314,30 @@ export const HNAnalyzerWorkflow = gsx.Component<
   HNAnalyzerWorkflowProps,
   HNAnalyzerWorkflowOutput
 >(async ({ postCount }) => (
-  <HNCollector limit={postCount}>
-    {(stories) => (
-      <AnalyzeHNPosts stories={stories}>
-        {({ analyses }) => (
-          <TrendAnalyzer analyses={analyses}>
-            {(report) => (
-              <PGEditor content={report}>
-                {(editedReport) => (
-                  <PGTweetWriter
-                    context={editedReport}
-                    prompt="Summarize the HN trends in a tweet"
-                  >
-                    {(tweet) => ({ report: editedReport, tweet })}
-                  </PGTweetWriter>
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY!}>
+    {async () => (
+      <HNCollector limit={postCount}>
+        {(stories) => (
+          <AnalyzeHNPosts stories={stories}>
+            {({ analyses }) => (
+              <TrendAnalyzer analyses={analyses}>
+                {(report) => (
+                  <PGEditor content={report}>
+                    {(editedReport) => (
+                      <PGTweetWriter
+                        context={editedReport}
+                        prompt="Summarize the HN trends in a tweet"
+                      >
+                        {(tweet) => ({ report: editedReport, tweet })}
+                      </PGTweetWriter>
+                    )}
+                  </PGEditor>
                 )}
-              </PGEditor>
+              </TrendAnalyzer>
             )}
-          </TrendAnalyzer>
+          </AnalyzeHNPosts>
         )}
-      </AnalyzeHNPosts>
+      </HNCollector>
     )}
-  </HNCollector>
+  </OpenAIProvider>
 ));

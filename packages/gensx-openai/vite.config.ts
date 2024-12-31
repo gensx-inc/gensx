@@ -15,5 +15,11 @@ export default defineConfig(({ command }) => ({
     },
     watch: command === "serve" ? {} : undefined,
   },
-  plugins: [dts()],
+  plugins: [
+    dts({
+      include: ["src"],
+      outDir: "dist",
+      rollupTypes: true,
+    }),
+  ],
 }));

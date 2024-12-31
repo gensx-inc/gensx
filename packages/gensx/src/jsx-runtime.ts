@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 import { resolveDeep } from "./resolve";
+import { MaybePromise } from "./types";
 
 export namespace JSX {
   export type ElementType = (props: any) => Promise<unknown>;
@@ -13,8 +14,6 @@ export namespace JSX {
     children: (output: unknown) => JSX.Element | JSX.Element[];
   }
 }
-
-export type MaybePromise<T> = T | Promise<T>;
 
 export const Fragment = (props: {
   children: JSX.Element[] | JSX.Element;

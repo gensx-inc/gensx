@@ -30,7 +30,8 @@
   "author": "GenSX Team",
   "license": "MIT",
   "peerDependencies": {
-    "gensx": "^0.0.0"
+    "gensx": "^0.0.0",
+    "openai": "^4.71.1"
   },
   "devDependencies": {
     "@types/node": "^20.17.11",

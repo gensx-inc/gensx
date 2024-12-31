@@ -84,6 +84,9 @@ importers:
 
   examples/hackerNewsAnalyzer:
     dependencies:
+      '@gensx/openai':
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
       gensx:
         specifier: workspace:*
         version: link:../../packages/gensx
@@ -178,6 +181,10 @@ importers:
         version: 2.1.8(@types/node@20.17.11)
 
   packages/gensx-openai:
+    dependencies:
+      openai:
+        specifier: ^4.71.1
+        version: 4.77.0
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
