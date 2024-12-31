@@ -24,7 +24,7 @@ jobs:
           version: ${{ matrix.node-version }}
           npm_token: ${{ secrets.NPM_TOKEN }}
       - name: Build 📦
-        run: pnpm build && find dist/index.js
+        run: pnpm build
       - name: Lint code 💅
         run: pnpm lint
       - name: Run tests ✅
