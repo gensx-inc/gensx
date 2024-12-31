@@ -1,52 +1,19 @@
-area/source:
+core:
   - changed-files:
       - any-glob-to-any-file:
-          - src/**
-          - tests/**
-          - vitest.config.**.ts
-          - create-vitest-test-config.ts
-          - .env.test
-          - package.json
-          - pnpm-lock.yaml
+          - packages/gensx/**
 
-area/docs:
+package:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/gensx-*/**
+
+docs:
   - changed-files:
       - any-glob-to-any-file:
           - docs/**
-          - README.md
-          - images/**
 
-area/build:
+examples:
   - changed-files:
       - any-glob-to-any-file:
-          - docker-compose.yml
-          - .nvmrc
-          - .swcrc
-          - tsconfig.json
-          - tsconfig.prod.json
-          - .editorconfig
-          - .env.example
-          - .eslintignore
-          - .eslintrc
-          - .gitignore
-          - .npmignore
-          - .npmrc
-          - .nvmrc
-          - .prettierignore
-          - .swcrc
-          - commitlint.config.ts
-          - vitest.config.**.ts
-          - create-vitest-test-config.ts
-          - .env.test
-          - lint-staged.config.mjs
-          - prettier.config.mjs
-          - tsconfig.json
-          - tsconfig.prod.json
-          - nodemon.json
-          - .github/workflows/**
-          - .github/dependabot.yml
-          - .github/pr-scope-labeler.yml
-          - .husky/**
-          - .github/ISSUE_TEMPLATE/**
-          - .github/labels.yml
-          - .github/PULL_REQUEST_TEMPLATE.md
+          - examples/**

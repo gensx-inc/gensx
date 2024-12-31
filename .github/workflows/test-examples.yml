@@ -1,0 +1,26 @@
+name: "🐢 Lint and Test Examples"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "examples/*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛬
+        uses: actions/checkout@v4
+      - name: Setup Node ⚙️
+        uses: ./.github/actions/setup-node
+        with:
+          version: 22.x
+          npm_token: ${{ secrets.NPM_TOKEN }}
+      - name: Build 📦
+        run: pnpm build:examples
+      - name: Lint code 💅
+        run: pnpm lint:examples
+      - name: Run tests ✅
+        run: pnpm test:examples

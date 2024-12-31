@@ -1,7 +1,10 @@
-name: "🐢 Node"
+name: "🐢 Lint and Test"
 
 on:
-  push:
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/*"
 
 jobs:
   build:
@@ -10,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [22.x, 20.x]
+        node-version: [22.x, 20.x, 18.x]
 
     steps:
       - name: Checkout 🛬
@@ -20,7 +23,7 @@ jobs:
         with:
           version: ${{ matrix.node-version }}
           npm_token: ${{ secrets.NPM_TOKEN }}
-      - name: Build typescript 📦
+      - name: Build 📦
         run: pnpm build && find dist/index.js
       - name: Lint code 💅
         run: pnpm lint
