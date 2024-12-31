@@ -34,7 +34,7 @@ Focus on the most surprising or counterintuitive point rather than trying to sum
             content: `Context:\n${context}\n\nPrompt: ${prompt}`,
           },
         ]}
-        model="gpt-4"
+        model="gpt-4o"
         temperature={0.7}
       />
     );
@@ -69,7 +69,7 @@ Maintain your voice while preserving the key insights and all links from the ana
           { role: "system", content: PROMPT },
           { role: "user", content: content },
         ]}
-        model="gpt-4"
+        model="gpt-4o"
         temperature={0.7}
       />
     );
@@ -129,7 +129,7 @@ Focus on substance rather than surface-level reactions. When referencing comment
           content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
         },
       ]}
-      model="gpt-4"
+      model="gpt-4o"
       temperature={0.7}
     />
   );
@@ -179,7 +179,7 @@ ${story.comments
           { role: "system", content: PROMPT },
           { role: "user", content: context },
         ]}
-        model="gpt-4"
+        model="gpt-4o"
         temperature={0.7}
       >
         {(response: string) => {
@@ -246,7 +246,7 @@ ${commentAnalysis}
           { role: "system", content: PROMPT },
           { role: "user", content: context },
         ]}
-        model="gpt-4"
+        model="gpt-4o"
         temperature={0.7}
       />
     );

@@ -30,7 +30,7 @@ const ChatBot = gsx.Component(async ({ userInput }) => {
           { role: "system", content: "You are a helpful assistant." },
           { role: "user", content: userInput },
         ]}
-        model="gpt-4"
+        model="gpt-4o"
         temperature={0.7}
       />
     </OpenAIProvider>

@@ -3,7 +3,7 @@ import { gsx } from "gensx";
 import { createLLMService } from "./llm.js";
 
 const llm = createLLMService({
-  model: "gpt-4",
+  model: "gpt-4o",
   temperature: 0.7,
 });
 
