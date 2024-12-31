@@ -5,3 +5,5 @@ dist/
 .env
 coverage/
 .turbo
+vitest.config.ts.*
+vite.config.ts.*
