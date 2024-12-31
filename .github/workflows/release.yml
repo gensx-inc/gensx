@@ -13,35 +13,41 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: google-github-actions/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
       - name: Checkout 🛬
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.releases_created }}
         uses: actions/checkout@v4
-      - name: Tag major and minor versions 🏷️
-        if: ${{ steps.release.outputs.release_created }}
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/googleapis/release-please-action.git"
-          git tag -d v${{ steps.release.outputs.major }} || true
-          git tag -d v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
-          git push origin :v${{ steps.release.outputs.major }} || true
-          git push origin :v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
-          git tag -a v${{ steps.release.outputs.major }} -m "Release v${{ steps.release.outputs.major }}"
-          git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
-          git push origin v${{ steps.release.outputs.major }}
-          git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
       - name: Setup Node ⚙️
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.releases_created }}
         uses: ./.github/actions/setup-node
         with:
           npm_token: ${{ secrets.NPM_TOKEN }}
+      - name: Cache turbo build setup
+        if: ${{ steps.release.outputs.releases_created }}
+        uses: actions/cache@v3
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
       - name: Build Packages 🏗️
-        if: ${{ steps.release.outputs.release_created }}
-        run: pnpm install --frozen-lockfile
+        if: ${{ steps.release.outputs.releases_created }}
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm turbo run build
       - name: Publish to NPM 🚀
-        if: ${{ steps.release.outputs.release_created }}
-        run: pnpm publish
+        if: ${{ steps.release.outputs.releases_created }}
+        run: |
+          for pkg in $(pnpm recursive list --only-projects --json | jq -r '.[].name'); do
+            if [[ "$pkg" != "@gensx-examples/"* ]]; then
+              echo "Publishing $pkg"
+              cd "packages/$(echo $pkg | sed 's/@gensx\///')"
+              pnpm publish --no-git-checks --access public
+              cd ../..
+            fi
+          done
