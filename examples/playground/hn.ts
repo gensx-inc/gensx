@@ -55,11 +55,11 @@ export async function getComments(
     return [];
   }
 
-  const commentPromises = parent.kids.slice(0, limit).map(id => getItem(id));
+  const commentPromises = parent.kids.slice(0, limit).map((id) => getItem(id));
 
   const comments = await Promise.all(commentPromises);
   return comments.filter(
-    comment => comment.type === "comment" && comment.text && !comment.deleted,
+    (comment) => comment.type === "comment" && comment.text && !comment.deleted,
   );
 }
 
@@ -84,9 +84,7 @@ export async function getFullStory(id: number): Promise<HNStory | null> {
     // Skip non-text stories, link-only stories, or deleted/dead stories
     if (
       story.type !== "story" ||
-      !story.text || // Must have text content
-      story.deleted ||
-      story.dead
+      !(story.text ?? story.deleted ?? story.dead)
     ) {
       return null;
     }
@@ -96,8 +94,8 @@ export async function getFullStory(id: number): Promise<HNStory | null> {
     return {
       id: story.id,
       title: story.title ?? "",
-      text: story.text, // No longer need URL fallback
-      comments: comments.map(comment => ({
+      text: story.text ?? "", // No longer need URL fallback
+      comments: comments.map((comment) => ({
         text: comment.text ?? "",
         score: comment.score ?? 0,
       })),
@@ -122,13 +120,13 @@ export async function getTopStoryDetails(
   // Process in batches to avoid overwhelming the API
   for (let i = 0; i < storyIds.length; i += batchSize) {
     const batch = storyIds.slice(i, i + batchSize);
-    const batchResults = await Promise.all(batch.map(id => getFullStory(id)));
+    const batchResults = await Promise.all(batch.map((id) => getFullStory(id)));
 
     stories.push(...batchResults.filter((s): s is HNStory => s !== null));
 
     // Small delay between batches
     if (i + batchSize < storyIds.length) {
-      await new Promise(resolve => setTimeout(resolve, 250));
+      await new Promise((resolve) => setTimeout(resolve, 250));
     }
   }
 

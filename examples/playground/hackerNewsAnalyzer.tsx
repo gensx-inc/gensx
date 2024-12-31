@@ -1,6 +1,7 @@
 import * as gsx from "@/index";
-import { getTopStoryDetails, type HNStory } from "./hn";
+
 import { createLLMService } from "../src/llm";
+import { getTopStoryDetails, type HNStory } from "./hn";
 
 // Initialize LLM service
 const llm = createLLMService({
@@ -69,7 +70,7 @@ Maintain your voice while preserving the key insights and all links from the ana
 
 interface CommentsAnalyzerProps {
   postId: number;
-  comments: Array<{ text: string; score: number }>;
+  comments: { text: string; score: number }[];
 }
 
 type CommentsAnalyzerOutput = string;
@@ -88,8 +89,8 @@ STATISTICS:
 - Average comment score: ${(
     comments.reduce((sum, c) => sum + c.score, 0) / comments.length
   ).toFixed(1)}
-- Highest scored comment: ${Math.max(...comments.map(c => c.score))} points
-- Lowest scored comment: ${Math.min(...comments.map(c => c.score))} points
+- Highest scored comment: ${Math.max(...comments.map((c) => c.score))} points
+- Lowest scored comment: ${Math.min(...comments.map((c) => c.score))} points
 
 DEMONSTRATIVE_COMMENTS:
 1. Most upvoted: [Quote the highest-scored comment]
@@ -108,7 +109,7 @@ Focus on substance rather than surface-level reactions. When referencing comment
   // Sort comments by score for easier analysis
   const sortedComments = [...comments].sort((a, b) => b.score - a.score);
   const commentsText = sortedComments
-    .map(c => `[Score: ${c.score}] ${c.text}`)
+    .map((c) => `[Score: ${c.score}] ${c.text}`)
     .join("\n\n");
 
   return await llm.chat([
@@ -154,7 +155,7 @@ Score: ${story.score} points
 Comments (sorted by score):
 ${story.comments
   .sort((a, b) => b.score - a.score)
-  .map(c => `[Score: ${c.score}] ${c.text}`)
+  .map((c) => `[Score: ${c.score}] ${c.text}`)
   .join("\n\n")}
     `.trim();
 
@@ -199,10 +200,10 @@ const HNCollector = gsx.Component<HNCollectorProps, HNCollectorOutput>(
 );
 
 interface TrendAnalyzerProps {
-  analyses: Array<{
+  analyses: {
     summary: string;
     commentAnalysis: string;
-  }>;
+  }[];
 }
 
 type TrendReport = string;
@@ -257,15 +258,15 @@ interface AnalyzeHNPostsProps {
 }
 
 interface AnalyzeHNPostsOutput {
-  analyses: Array<{
+  analyses: {
     summary: string;
     commentAnalysis: string;
-  }>;
+  }[];
 }
 
 const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
   async ({ stories }) => ({
-    analyses: stories.map(story => ({
+    analyses: stories.map((story) => ({
       summary: <PostSummarizer story={story} />,
       commentAnalysis: (
         <CommentsAnalyzer postId={story.id} comments={story.comments} />
@@ -288,18 +289,18 @@ export const HNAnalyzerWorkflow = gsx.Component<
   HNAnalyzerWorkflowOutput
 >(async ({ postCount }) => (
   <HNCollector limit={postCount}>
-    {stories => (
+    {(stories) => (
       <AnalyzeHNPosts stories={stories}>
         {({ analyses }) => (
           <TrendAnalyzer analyses={analyses}>
-            {report => (
+            {(report) => (
               <PGEditor content={report}>
-                {editedReport => (
+                {(editedReport) => (
                   <PGTweetWriter
                     context={editedReport}
                     prompt="Summarize the HN trends in a tweet"
                   >
-                    {tweet => ({ report: editedReport, tweet })}
+                    {(tweet) => ({ report: editedReport, tweet })}
                   </PGTweetWriter>
                 )}
               </PGEditor>

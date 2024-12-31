@@ -1,16 +1,36 @@
 {
-  "name": "gensx-monorepo",
-  "private": true,
-  "scripts": {
-    "build": "turbo run build",
+"name": "gensx-monorepo",
+"private": true,
+"packageManager": "pnpm@9.12.2",
+"scripts": {
+    "build": "turbo run build --filter=\"./packages/*\"",
+    "build:examples": "turbo run build --filter=\"./examples/*\"",
+    "build:all": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "turbo run format",
+    "lint": "turbo run lint --filter=\"./packages/*\"",
+    "lint:examples": "turbo run lint --filter=\"./examples/*\"",
+    "lint:all": "turbo run lint",
+    "lint:fix": "turbo run lint:fix --filter=\"./packages/*\"",
+    "lint:fix:examples": "turbo run lint:fix --filter=\"./examples/*\"",
+    "lint:fix:all": "turbo run lint:fix",
     "test": "turbo run test",
+    "test:examples": "turbo run test --filter=\"./examples/*\"",
+    "test:all": "turbo run test",
     "clean": "turbo run clean"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
-    "turbo": "^1.11.2"
+    "turbo": "^2.3.3"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "eslint-plugin-vitest": "^0.3.0",
+    "prettier": "^3.0.0"
   }
 } 

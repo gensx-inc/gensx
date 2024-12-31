@@ -1,12 +1,12 @@
-import { gsx } from "@/index";
+import fs from "fs/promises";
+import { gsx } from "gensx";
+
+import { BlogWritingWorkflow } from "./blogWriter";
+import { ChatCompletion } from "./chatCompletion";
 import {
   HNAnalyzerWorkflow,
   HNAnalyzerWorkflowOutput,
 } from "./hackerNewsAnalyzer";
-import { BlogWritingWorkflow } from "./blogWriter";
-import { ChatCompletion } from "./chatCompletion";
-import fs from "fs/promises";
-import type { Streamable } from "@/types";
 
 // Example 1: Simple blog writing workflow
 async function runBlogWritingExample() {
@@ -51,7 +51,7 @@ async function runStreamingWithChildrenExample() {
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
   await gsx.execute(
     <ChatCompletion stream={true} prompt={prompt}>
-      {async (response: Streamable<string>) => {
+      {async (response: gsx.Streamable<string>) => {
         // Print tokens as they arrive
         for await (const token of {
           [Symbol.asyncIterator]: () => response.stream(),

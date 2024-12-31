@@ -2,11 +2,14 @@
   "name": "@gensx-examples/playground",
   "private": true,
   "version": "0.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only index.tsx",
     "build": "tsc",
-    "lint": "eslint .",
-    "format": "prettier --write ."
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
   "dependencies": {
     "gensx": "workspace:*"
@@ -20,4 +23,4 @@
     "eslint": "^8.0.0",
     "prettier": "^3.0.0"
   }
-} 
+}

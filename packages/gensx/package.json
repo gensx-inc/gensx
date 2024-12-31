@@ -1,6 +1,6 @@
 {
   "name": "gensx",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "Build AI workflows using JSX",
   "type": "module",
   "main": "./dist/index.js",
@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "lint": "eslint src --ext .ts,.tsx",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+    "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "keywords": [
     "ai",
@@ -23,16 +23,19 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "vite": "^5.0.0",
-    "vite-plugin-dts": "^3.0.0",
-    "vitest": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.0.0",
+    "vitest": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "openai": "^4.77.0"
   }
 }

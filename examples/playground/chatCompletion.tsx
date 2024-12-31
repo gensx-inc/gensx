@@ -1,4 +1,5 @@
-import { gsx } from "@/index";
+import { gsx } from "gensx";
+
 import { createLLMService } from "@/llm";
 
 const llm = createLLMService({
