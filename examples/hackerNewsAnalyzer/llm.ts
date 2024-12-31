@@ -18,9 +18,8 @@ export interface LLMConfig {
   retryDelay?: number;
 }
 
-export interface StreamResult<T> {
-  value: Promise<T>;
-  stream: () => AsyncIterator<string>;
+export interface StreamResult {
+  stream: () => AsyncIterableIterator<string>;
 }
 
 class LLMError extends Error {
@@ -43,9 +42,7 @@ export function createLLMService(config: LLMConfig) {
   } = config;
 
   // Chat with streaming support
-  async function chatStream(
-    messages: ChatMessage[],
-  ): Promise<StreamResult<string>> {
+  async function chatStream(messages: ChatMessage[]): Promise<StreamResult> {
     // Create a single streaming request
     const response = await openai.chat.completions.create({
       model,
@@ -55,45 +52,10 @@ export function createLLMService(config: LLMConfig) {
       stream: true,
     });
 
-    // Split the stream into two
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const [stream1, stream2] = response.tee();
-
-    // Create a promise that will resolve with the full text
-    let fullText = "";
-    const {
-      promise: valuePromise,
-      resolve: resolveValue,
-      reject: rejectValue,
-    } = (() => {
-      let resolve: (value: string) => void;
-      let reject: (error: Error) => void;
-      const promise = new Promise<string>((res, rej) => {
-        resolve = res;
-        reject = rej;
-      });
-      return { promise, resolve: resolve!, reject: reject! };
-    })();
-
-    // Accumulate the full text in the background using stream1
-    (async () => {
-      try {
-        for await (const chunk of stream1) {
-          const content = chunk.choices[0]?.delta?.content ?? "";
-          if (content) {
-            fullText += content;
-          }
-        }
-        resolveValue(fullText);
-      } catch (e) {
-        rejectValue(e instanceof Error ? e : new Error(String(e)));
-      }
-    })().catch(rejectValue); // Handle floating promise
-
     // Create a stream generator function that yields chunks immediately from stream2
     const getStream = async function* () {
       try {
-        for await (const chunk of stream2) {
+        for await (const chunk of response) {
           const content = chunk.choices[0]?.delta?.content ?? "";
           if (content) {
             yield content;
@@ -106,7 +68,6 @@ export function createLLMService(config: LLMConfig) {
 
     return {
       stream: getStream,
-      value: valuePromise,
     };
   }
 
@@ -156,7 +117,7 @@ export function createLLMService(config: LLMConfig) {
   }
 
   // Complete with streaming support
-  async function completeStream(prompt: string): Promise<StreamResult<string>> {
+  async function completeStream(prompt: string): Promise<StreamResult> {
     return chatStream([{ role: "user", content: prompt }]);
   }
 

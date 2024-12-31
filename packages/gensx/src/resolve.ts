@@ -2,19 +2,9 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /* eslint-disable @typescript-eslint/return-await */
 
-import type { ExecutableValue, Streamable } from "./types";
+import type { ExecutableValue } from "./types";
 
-// Helper to check if something is a streamable value
-function isStreamable(value: unknown): value is Streamable<unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "stream" in value &&
-    "value" in value &&
-    typeof (value as { stream: unknown }).stream === "function" &&
-    (value as { value: unknown }).value instanceof Promise
-  );
-}
+import { isStreamable } from "./stream";
 
 /**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.

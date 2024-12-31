@@ -31,18 +31,23 @@ export type ComponentProps<P, O> = BaseProps<P> & {
   children?: (output: O) => MaybePromise<ExecutableValue>;
 };
 
-export interface Streamable<T> {
-  value: Promise<T>;
-  stream: () => AsyncIterator<T>;
-}
+export type Streamable = AsyncIterableIterator<string>;
 
 // Stream component props as a type alias
-export type StreamComponentProps<P, O> = BaseProps<P> & {
-  stream?: boolean;
-  children?: (output: Streamable<O>) => MaybePromise<ExecutableValue>;
+export type StreamComponentProps<
+  P,
+  Stream extends boolean | undefined,
+> = BaseProps<P> & {
+  stream?: Stream;
+  children?: (
+    output: Stream extends true ? Streamable : string,
+  ) => MaybePromise<ExecutableValue>;
 };
 
-export interface StreamComponent<P, O> extends JSX.ElementType {
-  (props: StreamComponentProps<P, O>): MaybePromise<Streamable<O>>;
-  isStreamComponent?: true;
+export interface StreamingComponent<P, Stream extends boolean | undefined>
+  extends JSX.ElementType {
+  (
+    props: StreamComponentProps<P, Stream>,
+  ): MaybePromise<Stream extends true ? Streamable : string>;
+  __isStreamingGsxComponent?: true;
 }

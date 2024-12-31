@@ -1,11 +1,11 @@
-import type { Streamable, StreamComponent } from "./types";
+import type { Streamable, StreamingComponent } from "./types";
 
 import { getCurrentContext } from "./context";
 
 // Helper to check if a component is a stream component
 export function isStreamComponent(
   component: unknown,
-): component is StreamComponent<unknown, unknown> {
+): component is StreamingComponent<unknown, boolean> {
   return (
     typeof component === "function" &&
     "isStreamComponent" in component &&
@@ -14,14 +14,16 @@ export function isStreamComponent(
 }
 
 // Helper to check if something is a streamable value
-export function isStreamable<T>(value: unknown): value is Streamable<T> {
+export function isStreamable(value: unknown): value is Streamable {
   return (
     typeof value === "object" &&
     value !== null &&
-    "stream" in value &&
-    "value" in value &&
-    typeof (value as Streamable<T>).stream === "function" &&
-    value.value instanceof Promise
+    // Verify that it's an async iterator
+    "next" in value &&
+    typeof (value as AsyncIterator<string>).next === "function" &&
+    // Verify that it has the async iterator symbol
+    Symbol.asyncIterator in value &&
+    typeof value[Symbol.asyncIterator] === "function"
   );
 }
 

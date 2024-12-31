@@ -2,7 +2,6 @@ import { gsx, Streamable } from "gensx";
 
 import { ChatCompletion } from "./chatCompletion.js";
 
-// Example 3: Streaming vs non-streaming chat completion
 async function runStreamingWithChildrenExample() {
   const prompt =
     "Write a 250 word story about an AI that discovers the meaning of friendship through a series of small interactions with humans. Be concise but meaningful.";
@@ -21,11 +20,9 @@ async function runStreamingWithChildrenExample() {
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
   await gsx.execute(
     <ChatCompletion stream={true} prompt={prompt}>
-      {async (response: Streamable<string>) => {
+      {async (response: Streamable) => {
         // Print tokens as they arrive
-        for await (const token of {
-          [Symbol.asyncIterator]: () => response.stream(),
-        }) {
+        for await (const token of response) {
           process.stdout.write(token);
         }
         process.stdout.write("\n");
@@ -48,13 +45,11 @@ async function runStreamingExample() {
   console.log("✅ Complete response:", finalResult);
 
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
-  const response = await gsx.execute<Streamable<string>>(
+  const response = await gsx.execute<Streamable>(
     <ChatCompletion stream={true} prompt={prompt} />,
   );
 
-  for await (const token of {
-    [Symbol.asyncIterator]: () => response.stream(),
-  }) {
+  for await (const token of response) {
     process.stdout.write(token);
   }
   process.stdout.write("\n");

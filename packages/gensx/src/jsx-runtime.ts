@@ -4,8 +4,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
-import type { Streamable } from "./types";
-
 import { resolveDeep } from "./resolve";
 
 export namespace JSX {
@@ -26,18 +24,6 @@ export const Fragment = (props: {
   }
   return [props.children];
 };
-
-// Helper to check if something is a streamable result
-function isStreamable<T>(value: unknown): value is Streamable<T> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "stream" in value &&
-    "value" in value &&
-    typeof (value as Streamable<T>).stream === "function" &&
-    value.value instanceof Promise
-  );
-}
 
 export const jsx = <
   TOutput,
@@ -64,54 +50,8 @@ export const jsx = <
     // Execute component
     const rawResult = await component(props ?? ({} as TProps));
 
-    // If this is a streaming result, handle it specially
-    if (isStreamable<TOutput>(rawResult)) {
-      const hasChildFunction = typeof children === "function";
-      const isStreamingComponent =
-        "isStreamComponent" in component &&
-        component.isStreamComponent === true;
-      const shouldStream = isStreamingComponent && (props?.stream ?? false);
-
-      if (!hasChildFunction) {
-        // When no function children, preserve the streamable if explicitly streaming
-        if (shouldStream) {
-          return rawResult as Awaited<TOutput>;
-        }
-        // Not streaming, resolve the value
-        return await rawResult.value;
-      }
-
-      if (shouldStream) {
-        // Pass the streamable to children function
-        const childrenResult = await (children as Function)(rawResult);
-        const resolvedResult = await resolveDeep(childrenResult);
-        return resolvedResult as Awaited<TOutput>;
-      } else {
-        // Not streaming, resolve the value first
-        const resolvedValue = await rawResult.value;
-        const childrenResult = await (children as Function)(
-          resolvedValue as TOutput,
-        );
-        const resolvedResult = await resolveDeep(childrenResult);
-        return resolvedResult as Awaited<TOutput>;
-      }
-    }
-
     // For non-streaming results, resolve deeply but preserve streamables
     const result = await resolveDeep(rawResult);
-
-    // Check again after deep resolution in case we got a streamable
-    if (isStreamable<TOutput>(result)) {
-      const isStreamingComponent =
-        "isStreamComponent" in component &&
-        component.isStreamComponent === true;
-      const shouldStream = isStreamingComponent && (props?.stream ?? false);
-      if (shouldStream) {
-        return result as Awaited<TOutput>;
-      }
-      // Not streaming, resolve the value
-      return await result.value;
-    }
 
     // If there are no function children, return the resolved result
     if (typeof children !== "function") {

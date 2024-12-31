@@ -3,5 +3,9 @@
     "source.fixAll.eslint": "always",
     "source.removeUnusedImports": "always"
   },
-  "cSpell.words": ["gensx", "jsxs"]
+  "cSpell.words": [
+    "gensx",
+    "jsxs",
+    "Streamable"
+  ]
 }
