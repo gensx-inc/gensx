@@ -1,89 +1,38 @@
 {
   "name": "gensx",
-  "version": "0.2.0",
-  "description": "Make LLMs work good",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "author": "",
-  "license": "MIT",
-  "keywords": [
-    "typescript",
-    "library",
-    "template"
-  ],
-  "engines": {
-    "node": ">=20.0.0",
-    "npm": ">=9.0.0",
-    "pnpm": ">=9.x"
-  },
-  "packageManager": "pnpm@9.14.2",
+  "version": "0.0.0",
+  "description": "Build AI workflows using JSX",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "build:watch": "pnpm build:clean && tsc -p tsconfig.prod.json --watch",
-    "dev": "nodemon",
-    "prepublishOnly": "pnpm i && pnpm build",
-    "build": "pnpm validate-typescript && pnpm build:clean && pnpm build:dist",
-    "test": "rimraf coverage && pnpm test:unit",
-    "test:watch": "vitest",
-    "test:unit": "vitest run --coverage",
-    "lint": "eslint --ignore-path .gitignore . --ext .js,.ts",
-    "lint:fix": "eslint --ignore-path .gitignore . --ext .js,.ts --fix",
-    "lint:file": "eslint --ignore-path .gitignore",
-    "validate-typescript": "tsc -p tsconfig.prod.json --noEmit",
-    "build:clean": "rimraf dist",
-    "build:dist": "tsc -p tsconfig.prod.json --outDir dist --declaration",
-    "prepare": "[ -f .husky/install.mjs ] && node .husky/install.mjs || true"
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
-  "devDependencies": {
-    "@swc/cli": "^0.5.2",
-    "@swc/core": "^1.10.1",
-    "@types/fs-extra": "^11.0.4",
-    "@types/node": "^22.10.2",
-    "@typescript-eslint/eslint-plugin": "^8.18.2",
-    "@typescript-eslint/parser": "^8.18.2",
-    "@vitest/coverage-istanbul": "^2.1.8",
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "eslint-plugin-vitest": "^0.5.4",
-    "fs-extra": "^11.2.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^15.2.11",
-    "nodemon": "^3.1.9",
-    "prettier": "^3.4.2",
-    "rimraf": "^6.0.1",
-    "tsconfig-paths": "^4.2.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
-    "unplugin-swc": "^1.5.1",
-    "vite": "^6.0.6",
-    "vitest": "^2.1.8"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.29.1",
-    "@swc/core-linux-x64-gnu": "^1.10.4"
-  },
-  "files": [
-    "dist"
+  "keywords": [
+    "ai",
+    "jsx",
+    "workflow"
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./jsx-runtime": {
-      "types": "./dist/jsx-runtime.d.ts",
-      "default": "./dist/jsx-runtime.js"
-    },
-    "./jsx-dev-runtime": {
-      "types": "./dist/jsx-dev-runtime.d.ts",
-      "default": "./dist/jsx-dev-runtime.js"
-    }
+  "author": "GenSX Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.0.0",
+    "vitest": "^1.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
   },
-  "dependencies": {
-    "openai": "^4.77.0"
+  "publishConfig": {
+    "access": "public"
   }
 }
