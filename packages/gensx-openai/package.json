@@ -1,0 +1,42 @@
+{
+  "name": "@gensx/openai",
+  "version": "0.0.0",
+  "description": "OpenAI integration for GenSX",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+  },
+  "keywords": [
+    "gensx",
+    "openai",
+    "ai",
+    "gpt",
+    "jsx"
+  ],
+  "author": "GenSX Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "gensx": "^0.0.0"
+  },
+  "devDependencies": {
+    "gensx": "workspace:*",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+} 

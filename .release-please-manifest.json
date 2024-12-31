@@ -1,3 +1,4 @@
 {
-  "packages/gensx": "0.0.0"
+  "packages/gensx": "0.0.0",
+  "packages/gensx-openai": "0.0.0"
 }
