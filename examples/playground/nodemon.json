@@ -1,5 +1,5 @@
 {
   "watch": ["src", ".env", "playground"],
-  "exec": "tsx --inspect=0.0.0.0:9229 ./playground/index.tsx",
+  "exec": "tsx --inspect=0.0.0.0:9229 ./index.tsx",
   "ext": "ts, tsx, js, json"
 }

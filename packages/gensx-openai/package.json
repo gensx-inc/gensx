@@ -5,6 +5,9 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
@@ -20,6 +23,9 @@
     "ai",
     "gpt",
     "jsx"
+  ],
+  "files": [
+    "dist"
   ],
   "author": "GenSX Team",
   "license": "MIT",

@@ -1,6 +1,6 @@
 import { gsx } from "gensx";
 
-import { createLLMService } from "@/llm";
+import { createLLMService } from "./llm.js";
 
 const llm = createLLMService({
   model: "gpt-4",

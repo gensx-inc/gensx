@@ -1,7 +1,7 @@
-import * as gsx from "@/index";
+import { gsx } from "gensx";
 
-import { createLLMService } from "../src/llm";
-import { getTopStoryDetails, type HNStory } from "./hn";
+import { getTopStoryDetails, type HNStory } from "./hn.js";
+import { createLLMService } from "./llm.js";
 
 // Initialize LLM service
 const llm = createLLMService({

@@ -1,4 +1,4 @@
-import * as gsx from "@/index";
+import { gsx } from "gensx";
 
 interface LLMResearchBrainstormProps {
   prompt: string;

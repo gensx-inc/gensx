@@ -147,7 +147,7 @@ export function createLLMService(config: LLMConfig) {
         }
 
         // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
     }
 
