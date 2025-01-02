@@ -16,7 +16,7 @@ This example demonstrates how to use GenSX to create a workflow that analyzes Ha
 pnpm install
 
 # Run the example
-pnpm start
+pnpm run run
 ```
 
 The example will:

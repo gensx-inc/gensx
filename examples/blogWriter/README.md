@@ -15,7 +15,7 @@ This example demonstrates how to use GenSX to create an AI-powered blog writing 
 pnpm install
 
 # Run the example
-pnpm start
+pnpm run run
 ```
 
 The example will generate a blog post based on the prompt "Write a blog post about the future of AI". You can modify the prompt in `index.tsx` to generate different content.

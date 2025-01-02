@@ -16,7 +16,7 @@ This example demonstrates how to use GenSX's streaming capabilities with LLM res
 pnpm install
 
 # Run the example
-pnpm start
+pnpm run run
 ```
 
 The example will run two versions of the same prompt:
