@@ -1,0 +1,15 @@
+# Default owners for everything in the repo
+* @cortexclick/gensx
+
+# GitHub Actions workflow files
+.github/workflows/* @cortexclick/gensx
+.github/actions/* @cortexclick/gensx
+
+# Package files
+packages/gensx/* @cortexclick/gensx
+packages/gensx-openai/* @cortexclick/gensx
+
+# Critical configuration files
+package.json @cortexclick/gensx
+pnpm-lock.yaml @cortexclick/gensx
+turbo.json @cortexclick/gensx 

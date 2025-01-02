@@ -1,19 +1,31 @@
 version: 2
 updates:
+  # Enable version updates for npm
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"
-    labels:
-      - "area/source"
+      interval: "weekly"
     commit-message:
-      prefix: "fix"
-      prefix-development: "chore"
+      prefix: "chore"
       include: "scope"
     versioning-strategy: "increase"
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
-    labels:
-      - "area/build"
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      actions:
+        patterns:
+          - "*"
