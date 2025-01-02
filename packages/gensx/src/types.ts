@@ -48,7 +48,7 @@ export interface StreamingComponent<P, Stream extends boolean | undefined>
   extends JSX.ElementType {
   (
     props: StreamComponentProps<P, Stream>,
-  ): MaybePromise<Stream extends true ? Streamable : string>;
+  ): Promise<Stream extends true ? Streamable : string>;
 }
 
 // Base workflow context that can be extended by other packages

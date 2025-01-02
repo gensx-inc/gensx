@@ -8,10 +8,12 @@ import { resolveDeep } from "./resolve";
 import { MaybePromise } from "./types";
 
 export namespace JSX {
-  export type ElementType = (props: any) => Promise<unknown>;
-  export type Element = Promise<unknown>;
+  export type ElementType = (props: any) => Element;
+  export type Element = () => Promise<unknown>;
   export interface ElementChildrenAttribute {
-    children: (output: unknown) => JSX.Element | JSX.Element[];
+    children: (
+      output: unknown,
+    ) => JSX.Element | JSX.Element[] | Record<string, JSX.Element>;
   }
 }
 
@@ -35,33 +37,27 @@ export const jsx = <
 >(
   component: (props: TProps) => MaybePromise<TOutput>,
   props: TProps | null,
-  children?:
-    | ((output: TOutput) => MaybePromise<JSX.Element | JSX.Element[]>)
-    | JSX.Element
-    | JSX.Element[],
-): Promise<Awaited<TOutput> | Awaited<TOutput>[]> => {
-  if (!children && props?.children) {
-    children = props.children;
-  }
-
+): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
   // Return a promise that will be handled by execute()
-  return (async (): Promise<Awaited<TOutput> | Awaited<TOutput>[]> => {
+  async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
     // Execute component
     const rawResult = await component(props ?? ({} as TProps));
 
     // For non-streaming results, resolve deeply but preserve streamables
     const result = await resolveDeep(rawResult);
 
-    // If there are no function children, return the resolved result
-    if (typeof children !== "function") {
-      return result as Awaited<TOutput>;
-    }
+    // Don't need to worry about children here, we execute children inside the component wrappers.
 
-    // Handle child function
-    const childrenResult = await children(result as TOutput);
-    const resolvedResult = await resolveDeep(childrenResult);
-    return resolvedResult as Awaited<TOutput>;
-  })();
+    return result as Awaited<TOutput> | Awaited<TOutput>[];
+  }
+
+  if (component.name) {
+    Object.defineProperty(JsxWrapper, "name", {
+      value: `JsxWrapper[${component.name}]`,
+    });
+  }
+
+  return JsxWrapper;
 };
 
 export const jsxs = jsx;

@@ -7,6 +7,8 @@
     "lib": [
       "ESNext"
     ],
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "incremental": true,
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -14,6 +16,7 @@
     "isolatedModules": true,
     "emitDeclarationOnly": true,
     "declaration": true,
+    "declarationMap": true,
     "outDir": "dist",
     "sourceMap": true,
     "inlineSources": true,
@@ -37,6 +40,10 @@
       "vitest/globals"
     ]
   },
+  "include": [
+    "src/**/*",
+    "tests/**/*"
+  ],
   "exclude": [
     "node_modules",
     "dist"

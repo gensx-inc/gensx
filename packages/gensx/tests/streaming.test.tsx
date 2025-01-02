@@ -38,7 +38,7 @@ suite("streaming", () => {
       const iterator: AsyncIterableIterator<string> = {
         next: async () => {
           const result = generator.next();
-          await setTimeout(10);
+          await setTimeout(0);
           return result;
         },
         [Symbol.asyncIterator]: () => iterator,
@@ -98,7 +98,7 @@ suite("streaming", () => {
       yield "World";
       yield "!\n\n";
       for (const char of foo) {
-        await setTimeout(1);
+        await setTimeout(0);
         yield char;
       }
     });

@@ -1,4 +1,4 @@
-import { Component, StreamComponent } from "./component";
+import { Component, ContextProvider, StreamComponent } from "./component";
 import { withContext } from "./context";
 import { execute } from "./resolve";
 
@@ -9,6 +9,7 @@ export * from "./types";
 
 export const gsx = {
   Component,
+  Provider: ContextProvider,
   StreamComponent,
   withContext,
   execute,

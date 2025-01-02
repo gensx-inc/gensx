@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /* eslint-disable @typescript-eslint/return-await */
 
-import type { ExecutableValue } from "./types";
+import { ExecutableValue } from "@/types";
 
 import { isStreamable } from "./stream";
 
@@ -39,6 +39,10 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
     return Object.fromEntries(resolvedEntries) as T;
   }
 
+  if (typeof value === "function") {
+    return await resolveDeep(await value());
+  }
+
   // Base case: primitive value
   return value as T;
 }
@@ -48,13 +52,9 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
  * This is the main entry point for executing workflow components.
  */
 export async function execute<T>(element: ExecutableValue): Promise<T> {
-  if (element === null || element === undefined) {
-    throw new Error("Cannot execute null or undefined element");
-  }
-
   try {
     // use the shared resolver
-    return resolveDeep(element);
+    return (await resolveDeep(element)) as T;
   } finally {
     // Context cleanup handled by withContext
   }
