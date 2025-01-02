@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon",
+    "run": "tsx ./index.tsx",
     "build": "tsc",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
