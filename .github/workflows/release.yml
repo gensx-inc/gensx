@@ -59,7 +59,7 @@ jobs:
           npm_token: ${{ secrets.NPM_TOKEN }}
       - name: Cache turbo build setup
         if: ${{ steps.release.outputs.releases_created }}
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}
