@@ -19,16 +19,20 @@ export function Component<P, O>(
     O | JSX.Element | JSX.Element[] | Record<string, JSX.Element>
   >,
 ): WorkflowComponent<P, O> {
-  async function GsxComponent(props: ComponentProps<P, O>): Promise<unknown> {
-    const result = await resolveDeep(fn(props));
+  function GsxComponent(props: ComponentProps<P, O>): () => Promise<O> {
+    return async () => {
+      const result = await resolveDeep(fn(props));
 
-    let finalResult: unknown;
-    if (props.children) {
-      finalResult = await withContext({}, () => props.children?.(result as O));
-    } else {
-      finalResult = result;
-    }
-    return finalResult;
+      let finalResult: O;
+      if (props.children) {
+        finalResult = await withContext({}, () =>
+          props.children?.(result as O),
+        );
+      } else {
+        finalResult = result as O; // TODO: Extract type information from children.
+      }
+      return finalResult;
+    };
   }
 
   if (fn.name) {
@@ -37,19 +41,17 @@ export function Component<P, O>(
     });
   }
 
-  const component = GsxComponent as WorkflowComponent<P, O>;
+  const component = GsxComponent;
   return component;
 }
 
 export function StreamComponent<P>(
-  fn: (
-    props: P,
-  ) => MaybePromise<Streamable | AsyncGenerator<string> | Generator<string>>,
+  fn: (props: P) => MaybePromise<Streamable | JSX.Element>, // It does not make sense to stream from more than one child element
 ): StreamingComponent<P, boolean> {
   function GsxStreamComponent<Stream extends boolean = false>(
     props: StreamComponentProps<P, Stream>,
-  ): Promise<Stream extends true ? Streamable : string> {
-    return withContext({ streaming: props.stream ?? false }, async () => {
+  ): () => Promise<Stream extends true ? Streamable : string> {
+    return async () => {
       const iterator: Streamable = await resolveDeep(fn(props));
       if (props.stream) {
         if (props.children) {
@@ -72,7 +74,7 @@ export function StreamComponent<P>(
         );
       }
       return result as Stream extends true ? Streamable : string;
-    });
+    };
   }
 
   if (fn.name) {
@@ -81,23 +83,25 @@ export function StreamComponent<P>(
     });
   }
 
-  const component = GsxStreamComponent as StreamingComponent<P, boolean>;
+  const component = GsxStreamComponent;
   return component;
 }
 
 export function ContextProvider<P, C extends Partial<WorkflowContext>>(
   fn: (props: P) => MaybePromise<C>,
 ): WorkflowComponent<P, never> {
-  async function GsxContextProvider(
+  function GsxContextProvider(
     props: ComponentProps<P, never>,
-  ): Promise<unknown> {
-    const context = await fn(props);
-    const children = props.children;
-    if (!children) {
-      console.warn("Provider has no children");
-      return null;
-    }
-    return withContext(context, () => children(null as never));
+  ): () => Promise<never> {
+    return async () => {
+      const context = await fn(props);
+      const children = props.children;
+      if (!children) {
+        console.warn("Provider has no children");
+        return null as never;
+      }
+      return withContext(context, () => children(null as never));
+    };
   }
 
   if (fn.name) {
@@ -106,6 +110,6 @@ export function ContextProvider<P, C extends Partial<WorkflowContext>>(
     });
   }
 
-  const component = GsxContextProvider as WorkflowComponent<P, never>;
+  const component = GsxContextProvider;
   return component;
 }

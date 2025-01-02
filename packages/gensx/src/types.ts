@@ -8,13 +8,15 @@ export interface OutputProps {
   output?: string;
 }
 
+export type Primitive = string | number | boolean | null | undefined;
+
 // Base props type without children
 type BaseProps<P> = P & OutputProps;
 
 // Make components valid JSX elements
-export interface WorkflowComponent<P, O> extends JSX.ElementType {
-  (props: ComponentProps<P, O>): MaybePromise<O>;
-}
+export type WorkflowComponent<P, O> = (
+  props: ComponentProps<P, O>,
+) => () => Promise<O>;
 
 // Allow children function to return plain objects that will be executed
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -28,7 +30,7 @@ export type ExecutableValue =
 
 // Component props as a type alias instead of interface
 export type ComponentProps<P, O> = BaseProps<P> & {
-  children?: (output: O) => MaybePromise<ExecutableValue>;
+  children?: (output: O) => MaybePromise<ExecutableValue | Primitive>;
 };
 
 export type Streamable = AsyncIterableIterator<string>;
@@ -41,15 +43,12 @@ export type StreamComponentProps<
   stream?: Stream;
   children?: (
     output: Stream extends true ? Streamable : string,
-  ) => MaybePromise<ExecutableValue>;
+  ) => MaybePromise<ExecutableValue | Primitive>;
 };
 
-export interface StreamingComponent<P, Stream extends boolean | undefined>
-  extends JSX.ElementType {
-  (
-    props: StreamComponentProps<P, Stream>,
-  ): Promise<Stream extends true ? Streamable : string>;
-}
+export type StreamingComponent<P, Stream extends boolean | undefined> = (
+  props: StreamComponentProps<P, Stream>,
+) => () => Promise<Stream extends true ? Streamable : string>;
 
 // Base workflow context that can be extended by other packages
 export interface BaseWorkflowContext {
