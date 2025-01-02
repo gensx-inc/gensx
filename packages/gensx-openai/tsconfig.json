@@ -5,6 +5,7 @@
     "lib": [
       "ES2020"
     ],
+    "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -21,7 +22,7 @@
       "gensx": [
         "../gensx/src"
       ]
-    },
+    }
   },
   "exclude": [
     "node_modules",
