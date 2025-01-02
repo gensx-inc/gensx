@@ -50,6 +50,9 @@ importers:
 
   examples/blogWriter:
     dependencies:
+      '@gensx/openai':
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
       gensx:
         specifier: workspace:*
         version: link:../../packages/gensx
