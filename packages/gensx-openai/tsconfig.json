@@ -5,6 +5,8 @@
     "lib": [
       "ES2020"
     ],
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "incremental": true,
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,

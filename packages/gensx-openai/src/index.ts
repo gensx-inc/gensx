@@ -1,13 +1,16 @@
-import type { ExecutableValue, Streamable } from "gensx";
+import type { Streamable } from "gensx";
 
 import {
   Component,
+  ContextProvider,
   getCurrentContext,
   StreamComponent,
-  withContext,
 } from "gensx";
 import OpenAI from "openai";
-import { type ChatCompletionMessageParam } from "openai/resources/chat";
+import {
+  ChatCompletionCreateParamsNonStreaming,
+  type ChatCompletionMessageParam,
+} from "openai/resources/chat";
 
 declare module "gensx" {
   interface WorkflowContext {
@@ -16,39 +19,68 @@ declare module "gensx" {
 }
 
 export interface OpenAIConfig {
-  apiKey: string;
+  apiKey?: string;
   organization?: string;
 }
 
-export const OpenAIProvider = Component(
-  async ({
-    apiKey,
-    organization,
-    children,
-  }: OpenAIConfig & { children: () => Promise<ExecutableValue> }) => {
+export const OpenAIProvider = ContextProvider(
+  ({ apiKey, organization }: OpenAIConfig) => {
     const openai = new OpenAI({
       apiKey,
       organization,
     });
 
-    return await withContext({ openai }, children);
+    return { openai };
   },
 );
 
-export interface ChatCompletionProps {
+interface BaseChatCompletionProps {
   messages: ChatCompletionMessageParam[];
   model?: string;
   temperature?: number;
   maxTokens?: number;
 }
 
-export const ChatCompletion = StreamComponent(
+export interface ChatCompletionProps extends BaseChatCompletionProps {
+  responseFormat?: ChatCompletionCreateParamsNonStreaming["response_format"];
+}
+export const ChatCompletion = Component(
   async ({
     messages,
     model = "gpt-3.5-turbo",
     temperature = 1,
     maxTokens,
+    responseFormat,
   }: ChatCompletionProps) => {
+    const context = getCurrentContext();
+    const openai = context.get("openai");
+
+    if (!openai) {
+      throw new Error(
+        "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
+      );
+    }
+
+    const completion = await openai.chat.completions.create({
+      messages,
+      model,
+      temperature,
+      max_tokens: maxTokens,
+      response_format: responseFormat,
+    });
+
+    return completion.choices[0]?.message?.content;
+  },
+);
+
+export type ChatCompletionStreamProps = BaseChatCompletionProps;
+export const ChatCompletionStream = StreamComponent(
+  async ({
+    messages,
+    model = "gpt-3.5-turbo",
+    temperature = 1,
+    maxTokens,
+  }: ChatCompletionStreamProps) => {
     const context = getCurrentContext();
     const openai = context.get("openai");
 
