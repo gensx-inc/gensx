@@ -1,4 +1,5 @@
 import { gsx, Streamable } from "gensx";
+import { setTimeout } from "timers/promises";
 
 import { ChatCompletion } from "./chatCompletion.js";
 
@@ -56,10 +57,43 @@ async function runStreamingExample() {
   console.log("✅ Streaming complete");
 }
 
+const GeneratorComponent = gsx.StreamComponent<{
+  foo: string;
+  iterations: number;
+}>(async function* ({ foo, iterations }) {
+  await setTimeout(10);
+  for (let i = 1; i < iterations + 1; i++) {
+    console.log("🔥 GeneratorComponent", i);
+    yield `${i}: ${foo.repeat(i)}\n`;
+    await setTimeout(10);
+  }
+});
+
+async function streamingGeneratorExample() {
+  console.log("⚡️ StreamingGeneratorExample - return result from generator");
+  const response1 = await gsx.execute<string>(
+    <GeneratorComponent foo="bar" iterations={10} />,
+  );
+  console.log(`✅ Streaming complete:\n====\n${response1}====`);
+  console.log("⚡️ StreamingGeneratorExample - process generator result");
+  await gsx.execute<string>(
+    <GeneratorComponent stream={true} foo="bar" iterations={10}>
+      {async (response: Streamable) => {
+        for await (const token of response) {
+          process.stdout.write(token);
+        }
+        process.stdout.write("\n");
+        console.log("✅ Streaming complete");
+      }}
+    </GeneratorComponent>,
+  );
+}
+
 // Main function to run examples
 async function main() {
   await runStreamingWithChildrenExample();
   await runStreamingExample();
+  await streamingGeneratorExample();
 }
 
 main().catch(console.error);

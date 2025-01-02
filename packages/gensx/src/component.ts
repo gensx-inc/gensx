@@ -28,7 +28,9 @@ export function Component<P, O>(
 }
 
 export function StreamComponent<P>(
-  fn: (props: P) => MaybePromise<Streamable>,
+  fn: (
+    props: P,
+  ) => MaybePromise<Streamable | AsyncGenerator<string> | Generator<string>>,
 ): StreamingComponent<P, boolean> {
   function GsxStreamComponent<Stream extends boolean = false>(
     props: StreamComponentProps<P, Stream>,
