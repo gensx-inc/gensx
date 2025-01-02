@@ -12,11 +12,48 @@ import { withContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
+/**
+ * This allows an element to return either a plain object or an object with JSX.Element children
+ * This is useful for components that return a nested object structure, where each key can be a component
+ * that returns a plain object or an object with JSX.Element children.
+ *
+ * For example:
+ *
+ * interface ComponentOutput {
+ *   nested: {
+ *     foo: string;
+ *     bar: string;
+ *   }[];
+ * }
+ *
+ * interface ComponentProps {
+ *   input: string;
+ * }
+ *
+ * const Component = gsx.Component<ComponentProps, ComponentOutput>(
+ *   ({ input }) => ({
+ *     nested: [
+ *       { foo: <Foo input={input} />, bar: <Bar input={input} /> },
+ *       { foo: <Foo />, bar: <Bar /> },
+ *     ],
+ *   }),
+ * );
+ */
+type DeepJSXElement<T> = T extends (infer Item)[]
+  ? DeepJSXElement<Item>[]
+  : T extends object
+    ? { [K in keyof T]: DeepJSXElement<T[K]> }
+    : T | JSX.Element;
+
 export function Component<P, O>(
   fn: (
     props: P,
   ) => MaybePromise<
-    O | JSX.Element | JSX.Element[] | Record<string, JSX.Element>
+    | O
+    | JSX.Element
+    | JSX.Element[]
+    | Record<string, JSX.Element>
+    | DeepJSXElement<O>
   >,
 ): WorkflowComponent<P, O> {
   function GsxComponent(props: ComponentProps<P, O>): () => Promise<O> {

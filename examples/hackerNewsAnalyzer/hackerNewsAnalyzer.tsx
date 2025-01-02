@@ -291,7 +291,7 @@ interface AnalyzeHNPostsOutput {
 }
 
 const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
-  async ({ stories }) => ({
+  ({ stories }) => ({
     analyses: stories.map((story) => ({
       summary: <PostSummarizer story={story} />,
       commentAnalysis: (
