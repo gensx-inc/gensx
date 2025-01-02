@@ -4,14 +4,28 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "packages/**/*"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".release-please-manifest.json"
+      - "release-please-config.json"
 
+# Ensure this workflow has the necessary permissions
 permissions:
   contents: write
   pull-requests: write
+  id-token: write # needed for npm provenance
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    # Only run on pushes to the original repository and not on forks
+    if: |
+      github.repository == 'cortexclick/gensx' &&
+      github.event.repository.fork == false &&
+      github.actor != 'dependabot[bot]'
+
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -22,9 +36,14 @@ jobs:
       - name: Checkout 🛬
         if: ${{ steps.release.outputs.releases_created }}
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
       - name: Create package-specific tags 🏷️
         if: ${{ steps.release.outputs.releases_created }}
         run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           if [[ "${{ steps.release.outputs.gensx--release_created }}" == "true" ]]; then
             git tag "gensx@${{ steps.release.outputs.gensx--version }}"
             git push origin "gensx@${{ steps.release.outputs.gensx--version }}"
@@ -53,6 +72,9 @@ jobs:
           pnpm turbo run build
       - name: Publish to NPM 🚀
         if: ${{ steps.release.outputs.releases_created }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
         run: |
           for pkg in $(pnpm recursive list --only-projects --json | jq -r '.[].name'); do
             if [[ "$pkg" != "@gensx-examples/"* ]]; then
