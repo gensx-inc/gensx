@@ -33,6 +33,13 @@ export default defineConfig({
       reporter: ["text-summary", "json-summary", "json"],
       reportsDirectory: "coverage",
       include: ["src/**/*.ts", "src/**/*.tsx"],
+      exclude: [
+        "node_modules/**",
+        "dist/**",
+        "coverage/**",
+        "tests/**",
+        "**/*.d.ts",
+      ],
       all: true,
       enabled: true,
       clean: true,
