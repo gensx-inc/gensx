@@ -68,97 +68,9 @@ async function* streamWithDelay(foo: string) {
 }
 
 suite("streaming", () => {
-<<<<<<< HEAD
   test("returns the stream immediately without pre-resolving", async () => {
     const DelayedComponent = gsx.StreamComponent<{ foo: string }>(({ foo }) => {
       return streamWithDelay(foo);
-||||||| 4041a30
-  suite("for an AsyncIterableIterator", () => {
-    const Component = gsx.StreamComponent<{ foo: string }>(function ({ foo }) {
-      // const result = await llm.completeStream(prompt);
-      // return result.stream();
-      function* stream() {
-        yield "Hello ";
-        yield "World";
-        yield "!\n\n";
-        yield "H";
-        yield "e";
-        yield "r";
-        yield "e";
-        yield " ";
-        yield "i";
-        yield "s";
-        yield " ";
-        yield "t";
-        yield "h";
-        yield "e";
-        yield " ";
-        yield "p";
-        yield "r";
-        yield "o";
-        yield "m";
-        yield "p";
-        yield "t";
-        yield "\n";
-        for (const char of foo) {
-          yield char;
-        }
-      }
-      const generator = stream();
-      const iterator: AsyncIterableIterator<string> = {
-        next: async () => {
-          const result = generator.next();
-          await setTimeout(10);
-          return result;
-        },
-        [Symbol.asyncIterator]: () => iterator,
-      };
-
-      return iterator;
-=======
-  suite("for an AsyncIterableIterator", () => {
-    const Component = gsx.StreamComponent<{ foo: string }>(function ({ foo }) {
-      // const result = await llm.completeStream(prompt);
-      // return result.stream();
-      function* stream() {
-        yield "Hello ";
-        yield "World";
-        yield "!\n\n";
-        yield "H";
-        yield "e";
-        yield "r";
-        yield "e";
-        yield " ";
-        yield "i";
-        yield "s";
-        yield " ";
-        yield "t";
-        yield "h";
-        yield "e";
-        yield " ";
-        yield "p";
-        yield "r";
-        yield "o";
-        yield "m";
-        yield "p";
-        yield "t";
-        yield "\n";
-        for (const char of foo) {
-          yield char;
-        }
-      }
-      const generator = stream();
-      const iterator: AsyncIterableIterator<string> = {
-        next: async () => {
-          const result = generator.next();
-          await setTimeout(0);
-          return result;
-        },
-        [Symbol.asyncIterator]: () => iterator,
-      };
-
-      return iterator;
->>>>>>> main
     });
 
     const start = performance.now();
@@ -174,7 +86,6 @@ suite("streaming", () => {
     expect(timeToFirstToken).toBeLessThan(5);
   });
 
-<<<<<<< HEAD
   // Test both async and sync versions of the component
   for (const isAsync of [true, false]) {
     suite(
@@ -184,33 +95,6 @@ suite("streaming", () => {
           foo,
         }) {
           let iterator: Streamable;
-||||||| 4041a30
-  suite("for a Generator function", () => {
-    const Component = gsx.StreamComponent<{ foo: string }>(async function* ({
-      foo,
-    }) {
-      yield "Hello ";
-      yield "World";
-      yield "!\n\n";
-      for (const char of foo) {
-        await setTimeout(1);
-        yield char;
-      }
-    });
-=======
-  suite("for a Generator function", () => {
-    const Component = gsx.StreamComponent<{ foo: string }>(async function* ({
-      foo,
-    }) {
-      yield "Hello ";
-      yield "World";
-      yield "!\n\n";
-      for (const char of foo) {
-        await setTimeout(0);
-        yield char;
-      }
-    });
->>>>>>> main
 
           if (isAsync) {
             iterator = stream(foo);
