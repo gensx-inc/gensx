@@ -57,26 +57,16 @@ const EvaluateAIWordsStep = Component<
 const RemoveAIWordsStep = Component<
   { blog: string; aiWords: string[]; removalPrompt: string },
   string
->(
-  async ({
-    blog,
-    aiWords,
-    removalPrompt,
-  }: {
-    blog: string;
-    aiWords: string[];
-    removalPrompt: string;
-  }) => {
-    console.log("Removing AI words:", aiWords, removalPrompt);
-    const systemPrompt = `You are an expert at content that doesn't sound AI generated. You are given a blog post and a prompt to remove AI sounding words/phrases. Follow the prompt to remove the words/phrases and return the modified blog post.`;
-    const prompt = `${removalPrompt}\n\nHere's the blog to improve:\n${blog}`;
-    const result = await llm.invoke([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: prompt },
-    ]);
-    return result.content;
-  },
-);
+>(async ({ blog, aiWords, removalPrompt }) => {
+  console.log("Removing AI words:", aiWords, removalPrompt);
+  const systemPrompt = `You are an expert at content that doesn't sound AI generated. You are given a blog post and a prompt to remove AI sounding words/phrases. Follow the prompt to remove the words/phrases and return the modified blog post.`;
+  const prompt = `${removalPrompt}\n\nHere's the blog to improve:\n${blog}`;
+  const result = await llm.invoke([
+    { role: "system", content: systemPrompt },
+    { role: "user", content: prompt },
+  ]);
+  return result.content;
+});
 
 function Loop<I, O>(
   evaluateFn: (input: I) => Promise<[boolean, O]>,
@@ -113,27 +103,41 @@ const AIWordsRemovalLoop = Loop<
   { blog: string; aiWords: string[]; removalPrompt: string }
 >(
   // Evaluate
-  async (currentBlog: string) => {
-    console.log("Evaluating AI words", currentBlog);
-    const result = await EvaluateAIWordsStep({ blog: currentBlog });
-    console.log("Evaluate result", result);
-    return [
-      result.aiWords.length > 0,
-      {
-        blog: currentBlog,
-        aiWords: result.aiWords,
-        removalPrompt: result.removalPrompt,
-      },
-    ];
+  async (
+    currentBlog: string,
+  ): Promise<
+    [boolean, { blog: string; aiWords: string[]; removalPrompt: string }]
+  > => {
+    const response = (
+      <EvaluateAIWordsStep blog={currentBlog}>
+        {(result) => {
+          console.log("Evaluate result", result);
+          return [
+            result.aiWords.length > 0,
+            {
+              blog: currentBlog,
+              aiWords: result.aiWords,
+              removalPrompt: result.removalPrompt,
+            },
+          ];
+        }}
+      </EvaluateAIWordsStep>
+    );
+    return response as Promise<
+      [boolean, { blog: string; aiWords: string[]; removalPrompt: string }]
+    >;
   },
   // Improve
-  async (result) => {
+  async (result): Promise<string> => {
     console.log("Removing AI words", result);
-    return RemoveAIWordsStep({
-      blog: result.blog,
-      aiWords: result.aiWords,
-      removalPrompt: result.removalPrompt,
-    });
+    const response = (
+      <RemoveAIWordsStep
+        blog={result.blog}
+        aiWords={result.aiWords}
+        removalPrompt={result.removalPrompt}
+      />
+    );
+    return response as Promise<string>;
   },
   3,
 );
