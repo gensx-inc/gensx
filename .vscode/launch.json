@@ -6,10 +6,7 @@
       "request": "launch",
       "name": "Debug Gensx Tests",
       "autoAttachChildProcesses": true,
-      "skipFiles": [
-        "<node_internals>/**",
-        "**/node_modules/**"
-      ],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
       "program": "${workspaceRoot}/packages/gensx/node_modules/vitest/vitest.mjs",
       "args": [
         "--config",

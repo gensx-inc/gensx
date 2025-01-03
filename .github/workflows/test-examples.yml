@@ -40,5 +40,7 @@ jobs:
         run: pnpm build:examples
       - name: Lint code 💅
         run: pnpm lint:examples
+      - name: Format code 📝
+        run: pnpm format:check
       - name: Run tests ✅
         run: pnpm test:examples

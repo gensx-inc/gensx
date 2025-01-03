@@ -45,6 +45,8 @@ jobs:
         run: pnpm build
       - name: Lint code 💅
         run: pnpm lint
+      - name: Format code 📝
+        run: pnpm format:check
       - name: Run tests 🧪
         run: pnpm test
       - name: Report GenSX Coverage 📊

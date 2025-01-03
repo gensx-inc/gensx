@@ -1,8 +1,8 @@
 {
-"name": "gensx-monorepo",
-"private": true,
-"packageManager": "pnpm@9.12.2",
-"scripts": {
+  "name": "gensx-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.12.2",
+  "scripts": {
     "build": "turbo run build --filter=\"./packages/*\"",
     "build:examples": "turbo run build --filter=\"./examples/*\"",
     "build:all": "turbo run build",
@@ -16,7 +16,9 @@
     "test": "turbo run test --filter=\"./packages/*\"",
     "test:examples": "turbo run test --filter=\"./examples/*\"",
     "test:all": "turbo run test",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
@@ -33,4 +35,4 @@
     "vite-plugin-dts": "^3.0.0",
     "vite": "^5.0.0"
   }
-} 
+}
