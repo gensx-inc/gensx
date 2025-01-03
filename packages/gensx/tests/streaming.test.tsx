@@ -59,7 +59,33 @@ function* iterate(foo: string) {
   }
 }
 
+async function* streamWithDelay(foo: string) {
+  yield "Hello ";
+  // Add artificial delay only after first token
+  await setTimeout(1000);
+  yield "World";
+  yield "! " + foo;
+}
+
 suite("streaming", () => {
+  test("returns the stream immediately without pre-resolving", async () => {
+    const DelayedComponent = gsx.StreamComponent<{ foo: string }>(({ foo }) => {
+      return streamWithDelay(foo);
+    });
+
+    const start = performance.now();
+    const result = await gsx.execute<Streamable>(
+      <DelayedComponent stream={true} foo="bar" />,
+    );
+
+    // Get just the first token, the component delays for 1 second before yielding the first token
+    const firstToken = await result.next();
+    const timeToFirstToken = performance.now() - start;
+
+    expect(firstToken.value).toBe("Hello ");
+    expect(timeToFirstToken).toBeLessThan(5);
+  });
+
   // Test both async and sync versions of the component
   for (const isAsync of [true, false]) {
     suite(
