@@ -30,7 +30,7 @@ export default defineConfig({
     env: loadEnv("test", process.cwd(), ""),
     coverage: {
       provider: "istanbul",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "text-summary", "json", "html"],
       reportsDirectory: "coverage",
       include: ["src/**/*.ts", "src/**/*.tsx"],
     },

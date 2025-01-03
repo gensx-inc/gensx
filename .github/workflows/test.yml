@@ -45,5 +45,51 @@ jobs:
         run: pnpm build
       - name: Lint code 💅
         run: pnpm lint
-      - name: Run tests ✅
-        run: pnpm test
+      - name: Run tests with coverage 📊
+        id: coverage
+        run: |
+          OUTPUT=$(pnpm test --coverage)
+          COVERAGE_REPORT=$(echo "$OUTPUT" | grep -A 10 "^--------------------|---------|----------|---------|---------|-------------------$")
+          COVERAGE_REPORT="${COVERAGE_REPORT//'%'/'%25'}"
+          COVERAGE_REPORT="${COVERAGE_REPORT//$'\n'/'%0A'}"
+          COVERAGE_REPORT="${COVERAGE_REPORT//$'\r'/'%0D'}"
+          echo "report=$COVERAGE_REPORT" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR 💬
+        if: github.event_name == 'pull_request_target' && matrix.node-version == '20.x'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const coverageReport = `### Test Coverage Report 📊
+
+            \`\`\`
+            ${{ steps.coverage.outputs.report }}
+            \`\`\`
+            `;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Test Coverage Report')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: coverageReport
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: coverageReport
+              });
+            }
