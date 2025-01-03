@@ -2,7 +2,10 @@ import { ChatOpenAI } from "@langchain/openai";
 import { Component } from "gensx";
 import { z } from "zod";
 
-const llm = new ChatOpenAI({ model: "gpt-4o" });
+const llm = new ChatOpenAI({
+  model: "gpt-4o",
+  openAIApiKey: process.env.OPENAI_API_KEY,
+});
 
 const WriteBlogOutlineStep = Component<{ prompt: string }, string>(
   async ({ prompt }: { prompt: string }) => {
