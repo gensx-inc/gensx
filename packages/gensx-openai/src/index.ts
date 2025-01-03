@@ -1,7 +1,7 @@
 import type { Streamable } from "gensx";
 
 import { ContextProvider, getCurrentContext, StreamComponent } from "gensx";
-import OpenAI from "openai";
+import OpenAI, { ClientOptions } from "openai";
 import {
   ChatCompletionChunk,
   ChatCompletionCreateParams,
@@ -14,21 +14,11 @@ declare module "gensx" {
   }
 }
 
-export interface OpenAIConfig {
-  apiKey?: string;
-  organization?: string;
-}
+export const OpenAIProvider = ContextProvider((props: ClientOptions) => {
+  const openai = new OpenAI(props);
 
-export const OpenAIProvider = ContextProvider(
-  ({ apiKey, organization }: OpenAIConfig) => {
-    const openai = new OpenAI({
-      apiKey,
-      organization,
-    });
-
-    return { openai };
-  },
-);
+  return { openai };
+});
 
 export const ChatCompletion = StreamComponent<ChatCompletionCreateParams>(
   async (props) => {
