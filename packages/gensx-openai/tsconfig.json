@@ -21,11 +21,16 @@
     "jsxImportSource": "gensx",
     "baseUrl": ".",
     "paths": {
-      "gensx": [
-        "../gensx/src"
+      "@/*": [
+        "src/*"
       ]
     }
   },
+  "include": [
+    "src/**/*",
+    "vitest.config.ts",
+    "vite.config.ts"
+  ],
   "exclude": [
     "node_modules",
     "dist"

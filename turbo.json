@@ -8,9 +8,11 @@
       "outputs": ["dist/**"]
     },
     "lint": {
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
@@ -18,11 +20,12 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["build"],
+      "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
       "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
     },
     "lint:fix": {
+      "dependsOn": ["^build"],
       "outputs": []
     }
   }
