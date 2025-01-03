@@ -127,6 +127,9 @@ importers:
 
   examples/streaming:
     dependencies:
+      '@gensx/openai':
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
       gensx:
         specifier: workspace:*
         version: link:../../packages/gensx
@@ -152,9 +155,6 @@ importers:
       prettier:
         specifier: ^3.0.0
         version: 3.4.2
-      ts-node-dev:
-        specifier: ^2.0.0
-        version: 2.0.0(@swc/core@1.10.1)(@types/node@20.17.11)(typescript@5.7.2)
       tsx:
         specifier: ^4.19.2
         version: 4.19.2
