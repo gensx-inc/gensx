@@ -1,11 +1,14 @@
 {
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "always",
+    "source.fixAll.eslint": true,
     "source.removeUnusedImports": "always"
   },
-  "cSpell.words": [
-    "gensx",
-    "jsxs",
-    "Streamable"
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "javascriptreact",
+    "typescriptreact"
   ]
 }
