@@ -1,16 +1,12 @@
 import type { Streamable } from "gensx";
 
-import {
-  Component,
-  ContextProvider,
-  getCurrentContext,
-  StreamComponent,
-} from "gensx";
+import { ContextProvider, getCurrentContext, StreamComponent } from "gensx";
 import OpenAI from "openai";
 import {
-  ChatCompletionCreateParamsNonStreaming,
-  type ChatCompletionMessageParam,
+  ChatCompletionChunk,
+  ChatCompletionCreateParams,
 } from "openai/resources/chat";
+import { Stream } from "openai/streaming";
 
 declare module "gensx" {
   interface WorkflowContext {
@@ -34,25 +30,8 @@ export const OpenAIProvider = ContextProvider(
   },
 );
 
-interface BaseChatCompletionProps {
-  messages: ChatCompletionMessageParam[];
-  model?: string;
-  temperature?: number;
-  maxTokens?: number;
-}
-
-export interface ChatCompletionProps extends BaseChatCompletionProps {
-  responseFormat?: ChatCompletionCreateParamsNonStreaming["response_format"];
-}
-
-export const ChatCompletion = Component<ChatCompletionProps, string>(
-  async ({
-    messages,
-    model = "gpt-3.5-turbo",
-    temperature = 1,
-    maxTokens,
-    responseFormat,
-  }) => {
+export const ChatCompletion = StreamComponent<ChatCompletionCreateParams>(
+  async (props) => {
     const context = getCurrentContext();
     const openai = context.get("openai");
 
@@ -62,54 +41,35 @@ export const ChatCompletion = Component<ChatCompletionProps, string>(
       );
     }
 
-    const completion = await openai.chat.completions.create({
-      messages,
-      model,
-      temperature,
-      max_tokens: maxTokens,
-      response_format: responseFormat,
-    });
+    const stream = await openai.chat.completions.create(props);
 
-    return completion.choices[0]?.message?.content ?? "";
-  },
-);
-
-export type ChatCompletionStreamProps = BaseChatCompletionProps;
-export const ChatCompletionStream = StreamComponent(
-  async ({
-    messages,
-    model = "gpt-3.5-turbo",
-    temperature = 1,
-    maxTokens,
-  }: ChatCompletionStreamProps) => {
-    const context = getCurrentContext();
-    const openai = context.get("openai");
-
-    if (!openai) {
-      throw new Error(
-        "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-      );
-    }
-
-    const stream = await openai.chat.completions.create({
-      messages,
-      model,
-      temperature,
-      max_tokens: maxTokens,
-      stream: true,
-    });
-
-    async function* generateTokens(): AsyncGenerator<string, void, undefined> {
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content;
-        if (content) {
-          yield content;
+    if (stream instanceof Stream) {
+      // eslint-disable-next-line no-inner-declarations
+      async function* generateTokens(): AsyncGenerator<
+        string,
+        void,
+        undefined
+      > {
+        for await (const chunk of stream as Stream<ChatCompletionChunk>) {
+          const content = chunk.choices[0]?.delta?.content;
+          if (content) {
+            yield content;
+          }
         }
       }
+
+      const streamable: Streamable = generateTokens();
+
+      return streamable;
+    } else {
+      // Since our stream component API must always return a streamable, wrap the result
+      const content = stream.choices[0]?.message?.content ?? "";
+      // eslint-disable-next-line no-inner-declarations, @typescript-eslint/require-await
+      async function* generateTokens() {
+        yield content;
+      }
+
+      return generateTokens();
     }
-
-    const streamable: Streamable = generateTokens();
-
-    return streamable;
   },
 );

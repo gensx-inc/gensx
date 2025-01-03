@@ -1,8 +1,4 @@
-import {
-  ChatCompletion,
-  ChatCompletionStream,
-  OpenAIProvider,
-} from "@gensx/openai";
+import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 
 interface LLMResearchBrainstormProps {
@@ -27,7 +23,7 @@ Here is an example of the JSON output: { "topics": ["topic 1", "topic 2", "topic
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ]}
-      responseFormat={{ type: "json_object" }}
+      response_format={{ type: "json_object" }}
     >
       {
         // TODO: Figure out why this needs a type annotation, but other components do not.
@@ -72,7 +68,7 @@ Here is the research for the blog post: ${research.join("\n")}`;
 
     console.log("🚀 Writing blog post for:", { prompt, research });
     return (
-      <ChatCompletionStream
+      <ChatCompletion
         model="gpt-4o-mini"
         temperature={0}
         messages={[
@@ -92,7 +88,7 @@ const LLMEditor = gsx.StreamComponent<LLMEditorProps>(async ({ draft }) => {
   const systemPrompt = `You are a helpful assistant that edits blog posts. The user will provide a draft and you will edit it to make it more engaging and interesting.`;
 
   return (
-    <ChatCompletionStream
+    <ChatCompletion
       stream={true}
       model="gpt-4o-mini"
       temperature={0}
@@ -148,7 +144,7 @@ export const BlogWritingWorkflow =
         <ParallelResearch prompt={prompt}>
           {(research) => (
             <LLMWriter prompt={prompt} research={research.flat()}>
-              {(draft) => <LLMEditor stream={true} draft={draft} />}
+              {(draft) => <LLMEditor draft={draft} stream={true} />}
             </LLMWriter>
           )}
         </ParallelResearch>
