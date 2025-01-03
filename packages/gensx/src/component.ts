@@ -54,6 +54,7 @@ export function Component<P, O>(
     | JSX.Element[]
     | Record<string, JSX.Element>
     | DeepJSXElement<O>
+    | undefined
   >,
 ): WorkflowComponent<P, O> {
   function GsxComponent(props: ComponentProps<P, O>): () => Promise<O> {
@@ -83,7 +84,7 @@ export function Component<P, O>(
 }
 
 export function StreamComponent<P>(
-  fn: (props: P) => MaybePromise<Streamable | JSX.Element>, // It does not make sense to stream from more than one child element
+  fn: (props: P) => MaybePromise<Streamable | JSX.Element | undefined>, // It does not make sense to stream from more than one child element
 ): StreamingComponent<P, boolean> {
   function GsxStreamComponent<Stream extends boolean = false>(
     props: StreamComponentProps<P, Stream>,

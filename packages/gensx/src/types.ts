@@ -30,10 +30,16 @@ export type ExecutableValue =
 
 // Component props as a type alias instead of interface
 export type ComponentProps<P, O> = BaseProps<P> & {
-  children?: (output: O) => MaybePromise<ExecutableValue | Primitive>;
+  children?:
+    | ((output: O) => MaybePromise<ExecutableValue | Primitive>)
+    // support child functions that do not return anything, but maybe do some other side effect
+    | ((output: O) => void)
+    | ((output: O) => Promise<void>);
 };
 
-export type Streamable = AsyncIterableIterator<string>;
+export type Streamable =
+  | AsyncIterableIterator<string>
+  | IterableIterator<string>;
 
 // Stream component props as a type alias
 export type StreamComponentProps<
@@ -43,10 +49,17 @@ export type StreamComponentProps<
   stream?: Stream;
   children?:
     | ((output: Streamable) => MaybePromise<ExecutableValue | Primitive>)
-    | ((output: string) => MaybePromise<ExecutableValue | Primitive>)
+    | ((
+        output: string,
+      ) => MaybePromise<ExecutableValue | Primitive | undefined>)
     | ((
         output: string | Streamable,
-      ) => MaybePromise<ExecutableValue | Primitive>);
+      ) => MaybePromise<ExecutableValue | Primitive | undefined>)
+    // support child functions that do not return anything, but maybe do some other side effect
+    | ((output: string) => void)
+    | ((output: Streamable) => void)
+    | ((output: string) => Promise<void>)
+    | ((output: Streamable) => Promise<void>);
 };
 
 export type StreamingComponent<P, Stream extends boolean | undefined> = (
