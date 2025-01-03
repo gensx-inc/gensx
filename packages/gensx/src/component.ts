@@ -93,9 +93,7 @@ export function StreamComponent<P>(
       if (props.stream) {
         if (props.children) {
           return withContext({}, () =>
-            props.children?.(
-              iterator as Stream extends true ? Streamable : string,
-            ),
+            props.children?.(iterator as unknown as Streamable & string),
           );
         }
         return iterator as Stream extends true ? Streamable : string;
@@ -107,7 +105,7 @@ export function StreamComponent<P>(
       }
       if (props.children) {
         return withContext({}, () =>
-          props.children?.(result as Stream extends true ? Streamable : string),
+          props.children?.(result as unknown as Streamable & string),
         );
       }
       return result as Stream extends true ? Streamable : string;

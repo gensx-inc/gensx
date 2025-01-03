@@ -41,9 +41,12 @@ export type StreamComponentProps<
   Stream extends boolean | undefined,
 > = BaseProps<P> & {
   stream?: Stream;
-  children?: (
-    output: Stream extends true ? Streamable : string,
-  ) => MaybePromise<ExecutableValue | Primitive>;
+  children?:
+    | ((output: Streamable) => MaybePromise<ExecutableValue | Primitive>)
+    | ((output: string) => MaybePromise<ExecutableValue | Primitive>)
+    | ((
+        output: string | Streamable,
+      ) => MaybePromise<ExecutableValue | Primitive>);
 };
 
 export type StreamingComponent<P, Stream extends boolean | undefined> = (
