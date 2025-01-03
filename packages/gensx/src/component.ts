@@ -12,6 +12,10 @@ import { withContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
+// TODO: We execute the children inside the component wrappers in order to execute the children within the correct context.
+// This also requires that the Component/StreamComponent/ContextProvider wrappers return functions, instead of just the promises.
+// It's not the cleanest thing, and we might be able to simplify this if we migrate to AsyncLocalStorage for context instead.
+
 /**
  * This allows an element to return either a plain object or an object with JSX.Element children
  * This is useful for components that return a nested object structure, where each key can be a component
