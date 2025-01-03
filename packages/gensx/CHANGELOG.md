@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 (2025-01-03)
+## [0.2.1](https://github.com/cortexclick/gensx/compare/gensx-v0.2.0...gensx-v0.2.1) (2025-01-03)
 
 
 ### ✨ New Features
@@ -13,7 +13,3 @@
 ### 🐛 Bug Fixes
 
 * **gensx:** Remove openai dependency. ([30a1f1a](https://github.com/cortexclick/gensx/commit/30a1f1ab6f2ed40288e5179aa2babb2b64b9e9ed))
-
-## 0.0.0 (Initial Release)
-
-- Initial release of @gensx/openai
