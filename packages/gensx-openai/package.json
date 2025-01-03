@@ -37,6 +37,7 @@
     "@types/node": "^20.17.11",
     "@vitest/coverage-istanbul": "^2.1.8",
     "gensx": "workspace:*",
+    "openai": "^4.71.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.6",
     "vite-plugin-dts": "^3.0.0",

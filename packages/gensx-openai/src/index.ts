@@ -44,14 +44,15 @@ interface BaseChatCompletionProps {
 export interface ChatCompletionProps extends BaseChatCompletionProps {
   responseFormat?: ChatCompletionCreateParamsNonStreaming["response_format"];
 }
-export const ChatCompletion = Component(
+
+export const ChatCompletion = Component<ChatCompletionProps, string>(
   async ({
     messages,
     model = "gpt-3.5-turbo",
     temperature = 1,
     maxTokens,
     responseFormat,
-  }: ChatCompletionProps) => {
+  }) => {
     const context = getCurrentContext();
     const openai = context.get("openai");
 
@@ -69,7 +70,7 @@ export const ChatCompletion = Component(
       response_format: responseFormat,
     });
 
-    return completion.choices[0]?.message?.content;
+    return completion.choices[0]?.message?.content ?? "";
   },
 );
 

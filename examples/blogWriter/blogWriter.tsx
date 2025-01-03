@@ -29,7 +29,10 @@ Here is an example of the JSON output: { "topics": ["topic 1", "topic 2", "topic
       ]}
       responseFormat={{ type: "json_object" }}
     >
-      {(completion) => JSON.parse(completion ?? '{ "topics": [] }')}
+      {
+        // TODO: Figure out why this needs a type annotation, but other components do not.
+        (completion: string) => JSON.parse(completion ?? '{ "topics": [] }')
+      }
     </ChatCompletion>
   );
 });
@@ -51,9 +54,7 @@ const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
           { role: "system", content: systemPrompt },
           { role: "user", content: topic },
         ]}
-      >
-        {(research) => research}
-      </ChatCompletion>
+      />
     );
   },
 );

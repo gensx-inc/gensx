@@ -3,7 +3,8 @@
     "target": "ESNext",
     "module": "NodeNext",
     "lib": [
-      "ESNext"
+      "ESNext",
+      "DOM"
     ],
     "strict": true,
     "esModuleInterop": true,
