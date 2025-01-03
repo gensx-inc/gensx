@@ -76,10 +76,6 @@ suite("streaming", () => {
             iterator = iterate(foo);
           }
 
-          for (const token of iterate("var")) {
-            console.log("token", token);
-          }
-
           return iterator;
         });
 
