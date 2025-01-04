@@ -6,11 +6,7 @@ import { defineConfig } from "astro/config";
 
 // https://astro.build/config
 export default defineConfig({
-  image: {
-    service: {
-      entrypoint: "astro/assets/services/sharp",
-    },
-  },
+  output: "server",
   integrations: [
     tailwind(),
     starlight({
@@ -54,8 +50,11 @@ export default defineConfig({
     }),
   ],
   adapter: cloudflare({
-    platformProxy: {
-      enabled: true,
-    },
+    imageService: "cloudflare",
   }),
+  vite: {
+    ssr: {
+      external: ["node:buffer", "node:path", "node:url"],
+    },
+  },
 });
