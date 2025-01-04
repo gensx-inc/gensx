@@ -14,10 +14,25 @@ export default defineConfig({
   integrations: [
     tailwind(),
     starlight({
-      title: "GenSX",
+      title: "",
+      description: "Create LLM workflows from components",
       social: {
         github: "https://github.com/cortexclick/gensx",
       },
+      logo: {
+        src: "./src/assets/logo.png",
+      },
+      // TODO: Enable the edit link when we have some content.
+      //   editLink: {
+      //     baseUrl: "https://github.com/cortexclick/gensx/edit/main/docs/",
+      //   },
+      // TODO: Enable the search bar when we have some content.
+      pagefind: false,
+      customCss: [
+        "./src/tailwind.css",
+        // TODO: Remove this once we want links and the search bar and stuff.
+        "./src/styles/hideHeader.css",
+      ],
       sidebar: [
         // Commented out for future use
         /*
@@ -33,6 +48,9 @@ export default defineConfig({
         },
         */
       ],
+    }),
+    tailwind({
+      applyBaseStyles: false,
     }),
   ],
   adapter: cloudflare({
