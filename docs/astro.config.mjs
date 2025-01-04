@@ -16,7 +16,7 @@ export default defineConfig({
         github: "https://github.com/cortexclick/gensx",
       },
       logo: {
-        src: "./src/assets/logo.png",
+        src: "./public/logo.png",
       },
       // TODO: Enable the edit link when we have some content.
       //   editLink: {
