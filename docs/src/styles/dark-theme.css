@@ -1,0 +1,9 @@
+/* Force dark theme */
+:root {
+  color-scheme: dark;
+}
+
+/* Override any light theme classes */
+:root[data-theme="light"] {
+  color-scheme: dark;
+}
