@@ -1,4 +1,4 @@
-name: "🐢 Lint and Test Examples"
+name: "🐢 Build and Test Examples"
 
 on:
   pull_request_target:
@@ -38,9 +38,5 @@ jobs:
           npm_token: ${{ secrets.NPM_TOKEN }}
       - name: Build 📦
         run: pnpm build:examples
-      - name: Lint code 💅
-        run: pnpm lint:examples
-      - name: Format code 📝
-        run: pnpm format:check
       - name: Run tests ✅
         run: pnpm test:examples

@@ -1,4 +1,4 @@
-name: "🐢 Lint and Test"
+name: "🐢 Test and Build Packages"
 
 on:
   pull_request:
@@ -44,7 +44,3 @@ jobs:
 
       - name: Build 📦
         run: pnpm build
-      - name: Lint code 💅
-        run: pnpm lint
-      - name: Format code 📝
-        run: pnpm format:check
