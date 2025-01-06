@@ -4,9 +4,12 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug Gensx Tests",
+      "name": "Run Gensx Test File",
       "autoAttachChildProcesses": true,
-      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
       "program": "${workspaceRoot}/packages/gensx/node_modules/vitest/vitest.mjs",
       "args": [
         "--config",
@@ -20,6 +23,13 @@
       "env": {
         "NODE_ENV": "test"
       }
+    },
+    {
+      "command": "./node_modules/.bin/astro dev",
+      "name": "Docs Development server",
+      "request": "launch",
+      "type": "node-terminal",
+      "cwd": "${workspaceRoot}/docs"
     }
   ]
 }
