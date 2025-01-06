@@ -22,13 +22,7 @@ export default defineConfig({
       //   editLink: {
       //     baseUrl: "https://github.com/cortexclick/gensx/edit/main/docs/",
       //   },
-      // TODO: Enable the search bar when we have some content.
-      pagefind: false,
-      customCss: [
-        "./src/tailwind.css",
-        // TODO: Remove this once we want links and the search bar and stuff.
-        "./src/styles/hideHeader.css",
-      ],
+      customCss: ["./src/tailwind.css"],
       sidebar: [
         // Commented out for future use
         /*
