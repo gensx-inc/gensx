@@ -69,16 +69,4 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: |
-          # Only publish packages that had releases created
-          if [[ "${{ steps.release.outputs.gensx--release_created }}" == "true" ]]; then
-            echo "Publishing gensx"
-            cd packages/gensx
-            pnpm publish --no-git-checks --access public
-            cd ../..
-          fi
-          if [[ "${{ steps.release.outputs['packages/gensx-openai--release_created'] }}" == "true" ]]; then
-            echo "Publishing @gensx/openai"
-            cd packages/gensx-openai
-            pnpm publish --no-git-checks --access public
-            cd ../..
-          fi
+          pnpm publish --no-git-checks --access public -r
