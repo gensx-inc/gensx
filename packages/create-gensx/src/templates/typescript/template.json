@@ -1,0 +1,6 @@
+{
+  "name": "typescript",
+  "description": "A TypeScript-based GenSX project template",
+  "dependencies": ["gensx"],
+  "devDependencies": ["@types/node", "nodemon", "tsx", "typescript@5.7.2"]
+}

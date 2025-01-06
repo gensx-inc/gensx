@@ -1,0 +1,21 @@
+import { gsx } from "gensx";
+
+interface ComponentProps {
+  input: string;
+}
+type ComponentOutput = string;
+
+const Component = gsx.Component<ComponentProps, ComponentOutput>(
+  async ({ input }) => {
+    return input;
+  },
+);
+
+const App = gsx.Component<Record<string, never>, string>(async () => {
+  return await gsx.execute(
+    <Component input="Hello, World! Checkout the docs at https://gensx.dev" />,
+  );
+});
+
+const result = await gsx.execute(<App />);
+console.log(result);
