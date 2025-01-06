@@ -27,6 +27,9 @@
     "lint:fix": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "docs#lint": {
+      "dependsOn": ["^build", "build"]
     }
   }
 }

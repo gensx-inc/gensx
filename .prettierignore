@@ -2,3 +2,6 @@ dist/
 coverage/
 node_modules/
 CHANGELOG.md
+.astro
+.turbo
+.wrangler
