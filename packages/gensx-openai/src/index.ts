@@ -15,10 +15,10 @@ declare module "gensx" {
 }
 
 export const OpenAIProvider = ContextProvider(
-  (props: ClientOptions & { name?: string }) => {
+  (props: ClientOptions & { providerName?: string }) => {
     const openai = new OpenAI(props);
 
-    return { [props.name ?? "openai"]: openai };
+    return { [props.providerName ?? "openai"]: openai };
   },
 );
 
