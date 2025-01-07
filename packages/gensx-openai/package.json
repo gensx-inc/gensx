@@ -28,7 +28,7 @@
     "dist"
   ],
   "author": "GenSX Team",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "peerDependencies": {
     "gensx": "^0.0.0",
     "openai": "^4.71.1"
