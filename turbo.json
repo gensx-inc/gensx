@@ -30,6 +30,9 @@
     },
     "docs#lint": {
       "dependsOn": ["^build", "build"]
+    },
+    "create-gensx#test": {
+      "dependsOn": ["^build", "build", "gensx#build", "@gensx/openai#build"]
     }
   }
 }
