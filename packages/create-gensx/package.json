@@ -2,6 +2,7 @@
   "name": "create-gensx",
   "version": "0.1.1",
   "type": "module",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">=18.0.0"
   },
