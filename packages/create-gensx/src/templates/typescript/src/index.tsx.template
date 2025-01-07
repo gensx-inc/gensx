@@ -15,7 +15,7 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
 const App = gsx.Component<Record<string, never>, string>(async () => {
   return await gsx.execute(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <Respond userInput="Hi there! Tell me more about https://gensx.dev" />
+      <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
     </OpenAIProvider>,
   );
 });
