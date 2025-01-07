@@ -17,10 +17,10 @@
   "dependencies": {
     "@gensx/openai": "workspace:*",
     "gensx": "workspace:*",
-    "openai": "^4.77.0"
+    "openai": "^4.77.3"
   },
   "devDependencies": {
-    "@types/node": "^20.17.11",
+    "@types/node": "^20.17.12",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
