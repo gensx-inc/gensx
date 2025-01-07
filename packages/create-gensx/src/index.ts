@@ -15,6 +15,7 @@ interface Template {
   description: string;
   dependencies: string[];
   devDependencies: string[];
+  runCommand: string;
 }
 
 async function loadTemplate(templateName: string): Promise<Template> {
@@ -134,9 +135,8 @@ export async function createGensxProject(
 Successfully created GenSX project in ${absoluteProjectPath}
 
 To get started:
-${projectPath !== "." ? `  cd ${projectPath}` : ""}
-  npm install
-  npm run dev
+  ${projectPath !== "." ? `cd ${projectPath}` : ""}
+  ${template.runCommand}
 
 Edit src/index.tsx to start building your GenSX application.
 `);

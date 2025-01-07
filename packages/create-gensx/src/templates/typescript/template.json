@@ -1,6 +1,7 @@
 {
   "name": "typescript",
   "description": "A TypeScript-based GenSX project template",
-  "dependencies": ["gensx", "@gensx/openai"],
-  "devDependencies": ["@types/node", "nodemon", "tsx", "typescript@5.7.2"]
+  "dependencies": ["gensx", "@gensx/openai", "openai"],
+  "devDependencies": ["@types/node", "nodemon", "tsx", "typescript@5.7.2"],
+  "runCommand": "OPENAI_API_KEY=<your_api_key> npm run dev"
 }
