@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/cortexclick/gensx/compare/create-gensx-v0.1.2...create-gensx-v0.1.3) (2025-01-07)
+
+
+### 🐛 Bug Fixes
+
+* Copy templates ([957a282](https://github.com/cortexclick/gensx/commit/957a2822f7289f6048e46e37c425e5c3e5b22abb))
+
 ## [0.1.2](https://github.com/cortexclick/gensx/compare/create-gensx-v0.1.1...create-gensx-v0.1.2) (2025-01-07)
 
 
