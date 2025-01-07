@@ -55,4 +55,4 @@ For detailed documentation about GenSX, please refer to the [GenSX package READM
 
 ## License
 
-MIT
+Apache 2.0
