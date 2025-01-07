@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.4](https://github.com/cortexclick/gensx/compare/create-gensx-v0.1.3...create-gensx-v0.1.4) (2025-01-07)
+
+
+### 🐛 Bug Fixes
+
+* Always run the function in cli.js ([d38be04](https://github.com/cortexclick/gensx/commit/d38be04e19f2afaa8a09ed79aa0018f65566c17d))
+* Fix package test. ([#85](https://github.com/cortexclick/gensx/issues/85)) ([93f439f](https://github.com/cortexclick/gensx/commit/93f439feec62927544f3dc23284749f7996f94c4))
+* use a single bin. ([8a50f66](https://github.com/cortexclick/gensx/commit/8a50f66a726cd7f7489b471a0a6fbac35805d2bb))
+
 ## [0.1.3](https://github.com/cortexclick/gensx/compare/create-gensx-v0.1.2...create-gensx-v0.1.3) (2025-01-07)
 
 
