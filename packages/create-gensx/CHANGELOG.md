@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/cortexclick/gensx/compare/create-gensx-v0.1.1...create-gensx-v0.1.2) (2025-01-07)
+
+
+### 🐛 Bug Fixes
+
+* Add shebang for cli file. ([beae109](https://github.com/cortexclick/gensx/commit/beae10997c7bf650cdc809267cc5506bce27e055))
+
 ## [0.1.1](https://github.com/cortexclick/gensx/compare/create-gensx-v0.1.0...create-gensx-v0.1.1) (2025-01-07)
 
 
