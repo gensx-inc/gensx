@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/cortexclick/gensx/compare/gensx-openai-v0.1.0...gensx-openai-v0.1.1) (2025-01-07)
+
+
+### 🐛 Bug Fixes
+
+* fix peer dependency for gensx-openai. ([5900765](https://github.com/cortexclick/gensx/commit/59007651abaf2abc5840495758627c399c501e17))
+
 ## 0.1.0 (2025-01-07)
 
 
