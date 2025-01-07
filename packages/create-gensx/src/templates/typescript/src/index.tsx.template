@@ -1,19 +1,22 @@
 import { gsx } from "gensx";
+import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
 
-interface ComponentProps {
-  input: string;
+interface RespondProps {
+  userInput: string;
 }
-type ComponentOutput = string;
+type RespondOutput = string;
 
-const Component = gsx.Component<ComponentProps, ComponentOutput>(
-  async ({ input }) => {
-    return input;
+const Respond = gsx.Component<RespondProps, RespondOutput>(
+  async ({ userInput }) => {
+    return <ChatCompletion model="gpt-4o-mini" messages={[{ role: "system", content: "You are a helpful assistant. Respond to the user's input." }, { role: "user", content: userInput }]} />;
   },
 );
 
 const App = gsx.Component<Record<string, never>, string>(async () => {
   return await gsx.execute(
-    <Component input="Hello, World! Checkout the docs at https://gensx.dev" />,
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Respond userInput="Hi there! Tell me more about https://gensx.dev" />
+    </OpenAIProvider>,
   );
 });
 

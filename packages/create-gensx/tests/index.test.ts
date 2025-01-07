@@ -14,7 +14,7 @@ const exec = promisify(execCallback);
 // Get the absolute path to the gensx package
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const gensxPackagePath = path.resolve(__dirname, "../../gensx");
-
+const gensxOpenaiPackagePath = path.resolve(__dirname, "../../gensx-openai");
 suite("create-gensx", () => {
   let tempDir: string;
 
@@ -37,7 +37,7 @@ suite("create-gensx", () => {
       force: false,
     });
 
-    // Update package.json to use local version of gensx
+    // Update package.json to use local version of gensx and @gensx/openai
     const packageJsonPath = path.join(projectPath, "package.json");
     const packageJson: {
       dependencies: Record<string, string>;
@@ -47,6 +47,8 @@ suite("create-gensx", () => {
       [key: string]: unknown;
     };
     packageJson.dependencies.gensx = `file:${gensxPackagePath}`;
+    packageJson.dependencies["@gensx/openai"] =
+      `file:${gensxOpenaiPackagePath}`;
     await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
     // Verify the project was created
