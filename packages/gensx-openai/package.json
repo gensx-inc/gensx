@@ -1,6 +1,6 @@
 {
   "name": "@gensx/openai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "OpenAI integration for GenSX",
   "type": "module",
   "main": "./dist/index.js",
@@ -30,7 +30,7 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "peerDependencies": {
-    "gensx": "^0.0.0",
+    "gensx": ">=0.2.1",
     "openai": "^4.71.1"
   },
   "devDependencies": {

@@ -8,7 +8,7 @@
       "component": "gensx",
       "release-type": "node",
       "package-name": "gensx",
-      "changelog-path": "packages/gensx/CHANGELOG.md",
+      "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "draft": false,
@@ -27,7 +27,7 @@
       "component": "gensx-openai",
       "release-type": "node",
       "package-name": "@gensx/openai",
-      "changelog-path": "packages/gensx-openai/CHANGELOG.md",
+      "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "draft": false,
@@ -35,6 +35,26 @@
       "initial-version": "0.1.0",
       "include-component-in-tag": true,
       "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/create-gensx": {
+      "component": "create-gensx",
+      "release-type": "node",
+      "package-name": "create-gensx",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "initial-version": "0.1.0",
       "extra-files": [
         {
           "type": "json",
