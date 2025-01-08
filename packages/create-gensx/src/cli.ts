@@ -1,4 +1,3 @@
-
 import { Command } from "commander";
 
 import { createGensxProject, CreateOptions } from "./index.js";
