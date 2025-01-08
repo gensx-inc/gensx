@@ -5,7 +5,7 @@ import { ExecutableValue, type WorkflowContext } from "./types";
 interface AsyncLocalStorageType<T> {
   disable(): void;
   getStore(): T | undefined;
-  run<R>(store: T, callback: (...args: any[]) => R, ...args: any[]): R;
+  run<R>(store: T, callback: (...args: unknown[]) => R, ...args: unknown[]): R;
   enterWith(store: T): void;
 }
 
@@ -31,24 +31,24 @@ export class ExecutionContext {
   }
 }
 
-// Create a closure for context management
-const contextManager = (() => {
-  // Try to import AsyncLocalStorage if available (Node.js environment)
-  let AsyncLocalStorage: { new <T>(): AsyncLocalStorageType<T> } | undefined;
-  try {
-    const asyncHooks = require("node:async_hooks");
-    AsyncLocalStorage = asyncHooks.AsyncLocalStorage;
-  } catch {
+// Try to import AsyncLocalStorage if available (Node.js environment)
+let AsyncLocalStorage: (new <T>() => AsyncLocalStorageType<T>) | undefined;
+let storage: AsyncLocalStorageType<ExecutionContext> | null = null;
+import("node:async_hooks")
+  .then(asyncHooksModule => {
+    AsyncLocalStorage = asyncHooksModule.AsyncLocalStorage;
+    storage = new AsyncLocalStorage<ExecutionContext>();
+  })
+  .catch(() => {
     // AsyncLocalStorage not available (browser environment)
     console.warn(
       "Running in an environment without async_hooks - using global context state. This will only cause issues if concurrent workflows are executed simultaneously.",
     );
-  }
+  });
 
+// Create a closure for context management
+const contextManager = (() => {
   const rootContext = new ExecutionContext({});
-  const storage = AsyncLocalStorage
-    ? new AsyncLocalStorage<ExecutionContext>()
-    : null;
 
   // Private fallback state
   let globalContext = rootContext;
@@ -56,7 +56,7 @@ const contextManager = (() => {
   return {
     getCurrentContext(): ExecutionContext {
       if (storage) {
-        return storage.getStore() || rootContext;
+        return storage.getStore() ?? rootContext;
       }
       return globalContext;
     },

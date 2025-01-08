@@ -1,8 +1,8 @@
 import { resolve } from "path";
 
+import fs from "fs-extra";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
-import fs from "fs-extra";
 
 export default defineConfig(({ command }) => ({
   build: {

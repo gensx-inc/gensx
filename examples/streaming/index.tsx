@@ -1,5 +1,6 @@
-import { gsx, Streamable } from "gensx";
 import { setTimeout } from "timers/promises";
+
+import { gsx, Streamable } from "gensx";
 
 import { ChatCompletion } from "./chatCompletion.js";
 
@@ -13,6 +14,7 @@ async function runStreamingWithChildrenExample() {
   await gsx.execute<string>(
     <ChatCompletion prompt={prompt}>
       {async (response: string) => {
+        await setTimeout(0);
         console.log(response);
       }}
     </ChatCompletion>,

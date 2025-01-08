@@ -1,5 +1,5 @@
-import { gsx, ExecutableValue } from "gensx";
 import { ChatCompletion } from "@gensx/openai";
+import { ExecutableValue, gsx } from "gensx";
 
 export interface AgentProps {
   input: string;
@@ -10,14 +10,15 @@ export interface AgentProps {
 export interface Tool {
   name: string;
   description: string;
-  call: (input: Record<string, any>) => ExecutableValue;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  call: (input: any) => ExecutableValue;
   schema: string;
 }
 
-type ToolCall = {
+interface ToolCall {
   toolName: string;
-  input: Record<string, any>;
-};
+  input: unknown;
+}
 
 // implement a tool calling agent. This does not use the OpenAI tool API, and just uses a simple JSON format to call tools, as a demonstration of sub-workflow execution.
 export const ToolAgent = gsx.Component<AgentProps, string>(

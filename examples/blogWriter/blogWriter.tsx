@@ -10,7 +10,7 @@ interface LLMResearchBrainstormOutput {
 const LLMResearchBrainstorm = gsx.Component<
   LLMResearchBrainstormProps,
   LLMResearchBrainstormOutput
->(async ({ prompt }) => {
+>(({ prompt }) => {
   console.log("🔍 Starting research for:", prompt);
   const systemPrompt = `You are a helpful assistant that brainstorms topics for a researching a blog post. The user will provide a prompt and you will brainstorm topics based on the prompt. You should return 3 - 5 topics, as a JSON array.
 
@@ -27,7 +27,8 @@ Here is an example of the JSON output: { "topics": ["topic 1", "topic 2", "topic
     >
       {
         // TODO: Figure out why this needs a type annotation, but other components do not.
-        (completion: string) => JSON.parse(completion ?? '{ "topics": [] }')
+        (completion: string | null) =>
+          JSON.parse(completion ?? '{ "topics": [] }')
       }
     </ChatCompletion>
   );
@@ -38,7 +39,7 @@ interface LLMResearchProps {
 }
 type LLMResearchOutput = string;
 const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
-  async ({ topic }) => {
+  ({ topic }) => {
     console.log("📚 Researching topic:", topic);
     const systemPrompt = `You are a helpful assistant that researches topics. The user will provide a topic and you will research the topic. You should return a summary of the research, summarizing the most important points in a few sentences at most.`;
 
@@ -61,7 +62,7 @@ interface LLMWriterProps {
 }
 type LLMWriterOutput = string;
 const LLMWriter = gsx.Component<LLMWriterProps, LLMWriterOutput>(
-  async ({ prompt, research }) => {
+  ({ prompt, research }) => {
     const systemPrompt = `You are a helpful assistant that writes blog posts. The user will provide a prompt and you will write a blog post based on the prompt. Unless specified by the user, the blog post should be 200 words.
 
 Here is the research for the blog post: ${research.join("\n")}`;
@@ -83,7 +84,7 @@ Here is the research for the blog post: ${research.join("\n")}`;
 interface LLMEditorProps {
   draft: string;
 }
-const LLMEditor = gsx.StreamComponent<LLMEditorProps>(async ({ draft }) => {
+const LLMEditor = gsx.StreamComponent<LLMEditorProps>(({ draft }) => {
   console.log("🔍 Editing draft");
   const systemPrompt = `You are a helpful assistant that edits blog posts. The user will provide a draft and you will edit it to make it more engaging and interesting.`;
 
@@ -138,7 +139,7 @@ interface BlogWritingWorkflowProps {
   prompt: string;
 }
 export const BlogWritingWorkflow =
-  gsx.StreamComponent<BlogWritingWorkflowProps>(async ({ prompt }) => {
+  gsx.StreamComponent<BlogWritingWorkflowProps>(({ prompt }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <ParallelResearch prompt={prompt}>

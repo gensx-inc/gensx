@@ -1,5 +1,6 @@
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
+
 import { Tool, ToolAgent } from "./tools.js";
 
 interface BlogWriterProps {
@@ -13,7 +14,7 @@ const researchTool: Tool = {
   schema: `{
     "topic": "string - The topic to research"
   }`,
-  call: async (input) => {
+  call: (input: { topic: string }) => {
     console.log("📚 Researching topic:", input.topic);
     return (
       <ChatCompletion
@@ -39,7 +40,7 @@ const writeTool: Tool = {
     "research": "string - The research findings to base the blog post on",
     "prompt": "string - The original writing prompt"
   }`,
-  call: async (input) => {
+  call: (input: { research: string; prompt: string }) => {
     console.log("✍️ Writing blog post based on research");
     return (
       <ChatCompletion
@@ -67,7 +68,7 @@ const editTool: Tool = {
   schema: `{
     "draft": "string - The blog post draft to edit"
   }`,
-  call: async (input) => {
+  call: (input: { draft: string }) => {
     console.log("✨ Editing blog post");
     return (
       <ChatCompletion
@@ -87,7 +88,7 @@ const editTool: Tool = {
 };
 
 export const BlogWriter = gsx.Component<BlogWriterProps, string>(
-  async ({ prompt }) => {
+  ({ prompt }) => {
     console.log("🔧 Starting blog writing workflow");
 
     return (
