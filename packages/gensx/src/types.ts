@@ -19,14 +19,12 @@ export type WorkflowComponent<P, O> = (
 ) => () => Promise<O>;
 
 // Allow children function to return plain objects that will be executed
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+
 export type ExecutableValue =
   | Element
   | Element[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-redundant-type-constituents
   | Record<string, Element | any>;
-/* eslint-enable @typescript-eslint/no-explicit-any */
-/* eslint-enable @typescript-eslint/no-redundant-type-constituents */
 
 // Component props as a type alias instead of interface
 export type ComponentProps<P, O> = BaseProps<P> & {

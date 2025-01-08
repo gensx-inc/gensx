@@ -27,9 +27,6 @@
     "@astrojs/tailwind": "^5.1.4",
     "@cloudflare/workers-types": "^4.20241230.0",
     "@types/node": "^20.17.11",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.57.0",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
     "wrangler": "^3.99.0"

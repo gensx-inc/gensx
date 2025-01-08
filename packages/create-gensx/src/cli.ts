@@ -23,7 +23,7 @@ export async function runCLI() {
   await program.parseAsync();
 }
 
-runCLI().catch((error) => {
-  console.error("Error:", error);
+runCLI().catch((error: unknown) => {
+  console.error("Error:", (error as Error).message);
   process.exit(1);
 });

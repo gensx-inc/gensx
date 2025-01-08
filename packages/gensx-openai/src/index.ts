@@ -34,7 +34,6 @@ export const ChatCompletion = StreamComponent<ChatCompletionCreateParams>(
     const stream = await openai.chat.completions.create(props);
 
     if (stream instanceof Stream) {
-      // eslint-disable-next-line no-inner-declarations
       async function* generateTokens(): AsyncGenerator<
         string,
         void,
@@ -54,8 +53,8 @@ export const ChatCompletion = StreamComponent<ChatCompletionCreateParams>(
     } else {
       // Since our stream component API must always return a streamable, wrap the result
       const content = stream.choices[0]?.message?.content ?? "";
-      // eslint-disable-next-line no-inner-declarations, @typescript-eslint/require-await
-      async function* generateTokens() {
+
+      function* generateTokens() {
         yield content;
       }
 

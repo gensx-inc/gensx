@@ -11,6 +11,5 @@
     "javascriptreact",
     "typescriptreact"
   ],
-  "cSpell.words": ["gensx", "jsxs", "Streamable"],
-  "eslint.useFlatConfig": true
+  "cSpell.words": ["gensx", "jsxs", "Streamable"]
 }

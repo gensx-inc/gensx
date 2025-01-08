@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable @typescript-eslint/return-await */
-
 import { ExecutableValue } from "@/types";
 
 import { isStreamable } from "./stream";
@@ -13,7 +9,7 @@ import { isStreamable } from "./stream";
 export async function resolveDeep<T>(value: unknown): Promise<T> {
   // Handle promises first
   if (value instanceof Promise) {
-    const resolved = await value;
+    const resolved = (await value) as Promise<T>;
     return resolveDeep(resolved);
   }
 
@@ -40,6 +36,7 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   }
 
   if (typeof value === "function") {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     return await resolveDeep(await value());
   }
 

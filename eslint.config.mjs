@@ -1,7 +1,7 @@
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import prettierConfig from "eslint-config-prettier";
-import eslintPluginNode from "eslint-plugin-node";
+import eslintPluginN from "eslint-plugin-n";
 import eslintPluginPrettier from "eslint-plugin-prettier";
 import eslintPluginSimpleImportSort from "eslint-plugin-simple-import-sort";
 import eslintPluginVitest from "eslint-plugin-vitest";
@@ -16,7 +16,7 @@ export default [
       "@typescript-eslint": tseslint,
       "simple-import-sort": eslintPluginSimpleImportSort,
       prettier: eslintPluginPrettier,
-      node: eslintPluginNode,
+      n: eslintPluginN,
     },
     languageOptions: {
       ecmaVersion: "latest",
@@ -24,24 +24,24 @@ export default [
     },
     rules: {
       ...prettierConfig.rules,
-      ...eslintPluginNode.configs.recommended.rules,
+      ...eslintPluginN.configs.recommended.rules,
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
       "no-console": "off",
-      "node/no-missing-import": "off",
-      "node/no-unsupported-features/es-syntax": [
+      "n/no-missing-import": "off",
+      "n/no-unsupported-features/es-syntax": [
         "error",
         {
           ignores: ["modules", "dynamicImport", "restSpreadProperties"],
         },
       ],
-      "node/no-unsupported-features/es-builtins": [
+      "n/no-unsupported-features/es-builtins": [
         "error",
         {
           version: ">=18.0.0",
         },
       ],
-      "node/no-unpublished-import": "off",
+      "n/no-unpublished-import": "off",
       "no-process-exit": "off",
     },
   },
@@ -51,8 +51,8 @@ export default [
       "@typescript-eslint": tseslint,
       "simple-import-sort": eslintPluginSimpleImportSort,
       prettier: eslintPluginPrettier,
-      node: eslintPluginNode,
       vitest: eslintPluginVitest,
+      n: eslintPluginN,
     },
     languageOptions: {
       parser: tsParser,
@@ -83,14 +83,7 @@ export default [
         },
       ],
       "@typescript-eslint/no-non-null-assertion": "off",
-      "@typescript-eslint/ban-types": [
-        "error",
-        {
-          types: {
-            Function: false,
-          },
-        },
-      ],
+      "@typescript-eslint/explicit-function-return-type": "off",
       "simple-import-sort/imports": [
         "error",
         {

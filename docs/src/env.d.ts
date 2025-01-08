@@ -1,6 +1,11 @@
-type Runtime = import("@astrojs/cloudflare").Runtime<Env>;
+/// <reference types="astro/client" />
 
-declare namespace App {
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
-  interface Locals extends Runtime {}
+// This interface is used to augment the ImportMetaEnv type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface ImportMetaEnv extends Record<string, unknown> {
+  // Add environment variables here
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }
