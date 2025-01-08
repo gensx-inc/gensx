@@ -1,8 +1,5 @@
- 
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
- 
- 
 
 import { resolveDeep } from "./resolve";
 import { MaybePromise } from "./types";
