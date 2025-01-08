@@ -118,41 +118,47 @@ describe("context", () => {
 
     test("empty context does not create new context", async () => {
       const ctx1 = getCurrentContext();
-      await withContext(
-        {} satisfies Partial<TestContext>,
-        gsx.Component(() => {
-          const ctx2 = getCurrentContext();
-          expect(ctx2).toBe(ctx1);
-        }),
-      );
+      const Component = gsx.Component(() => {
+        const ctx2 = getCurrentContext();
+        expect(ctx2).toBe(ctx1);
+      });
+      await withContext({} satisfies Partial<TestContext>, <Component />);
     });
 
     test("nested contexts maintain proper hierarchy", async () => {
-      await withContext({ a: 1 } satisfies Partial<TestContext>, {
-        execute: async () => {
-          expect(getCurrentContext().get("a")).toBe(1);
-
-          await withContext({ b: 2 } satisfies Partial<TestContext>, {
-            execute: async () => {
-              expect(getCurrentContext().get("a")).toBe(1);
-              expect(getCurrentContext().get("b")).toBe(2);
-
-              await withContext(
-                { c: 3 } satisfies Partial<TestContext>,
-                gsx.Component(() => {
-                  expect(getCurrentContext().get("a")).toBe(1);
-                  expect(getCurrentContext().get("b")).toBe(2);
-                  expect(getCurrentContext().get("c")).toBe(3);
-                }),
-              );
-
-              expect(getCurrentContext().get("c")).toBe(undefined);
-            },
-          });
-
-          expect(getCurrentContext().get("b")).toBe(undefined);
-        },
+      const Component1 = gsx.Component(() => {
+        expect(getCurrentContext().get("a")).toBe(1);
       });
+      const Component2 = gsx.Component(() => {
+        expect(getCurrentContext().get("a")).toBe(1);
+        expect(getCurrentContext().get("b")).toBe(2);
+      });
+      const Component3 = gsx.Component(() => {
+        expect(getCurrentContext().get("a")).toBe(1);
+        expect(getCurrentContext().get("b")).toBe(2);
+        expect(getCurrentContext().get("c")).toBe(3);
+      });
+      await withContext(
+        { a: 1 } satisfies Partial<TestContext>,
+        <Component1>
+          {async () => {
+            await withContext(
+              { b: 2 } satisfies Partial<TestContext>,
+              <Component2>
+                {async () => {
+                  await withContext(
+                    { c: 3 } satisfies Partial<TestContext>,
+                    <Component3 />,
+                  );
+
+                  expect(getCurrentContext().get("c")).toBe(undefined);
+                }}
+              </Component2>,
+            );
+            expect(getCurrentContext().get("b")).toBe(undefined);
+          }}
+        </Component1>,
+      );
     });
   });
 });
@@ -187,14 +193,20 @@ describe("context in browser environment", () => {
       },
     );
 
+    const Component = gsx.Component<{ delay: number }, null>(
+      async ({ delay }) => {
+        await setTimeout(delay);
+        results.push(await gsx.execute(<ContextReader />));
+        return null;
+      },
+    );
+
     await Promise.all(
       delays.map((delay, i) =>
-        withContext({ value: `value${i}` } satisfies Partial<TestContext>, {
-          execute: async () => {
-            await setTimeout(delay);
-            results.push(await gsx.execute(<ContextReader />));
-          },
-        }),
+        withContext(
+          { value: `value${i}` } satisfies Partial<TestContext>,
+          <Component delay={delay} />,
+        ),
       ),
     );
 
