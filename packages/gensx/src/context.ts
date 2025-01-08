@@ -31,9 +31,6 @@ export class ExecutionContext {
   }
 }
 
-// Flag to disable the browser environment warning
-export let suppressBrowserWarning = false;
-
 // Create a closure for context management
 const contextManager = (() => {
   // Try to import AsyncLocalStorage if available (Node.js environment)
@@ -43,19 +40,15 @@ const contextManager = (() => {
     AsyncLocalStorage = asyncHooks.AsyncLocalStorage;
   } catch {
     // AsyncLocalStorage not available (browser environment)
+    console.warn(
+      "Running in an environment without async_hooks - using global context state. This will only cause issues if concurrent workflows are executed simultaneously.",
+    );
   }
 
   const rootContext = new ExecutionContext({});
   const storage = AsyncLocalStorage
     ? new AsyncLocalStorage<ExecutionContext>()
     : null;
-
-  if (!storage && !suppressBrowserWarning) {
-    console.warn(
-      "Running in browser environment - using global context. This may cause issues with concurrent operations. " +
-        "Set suppressBrowserWarning = true to disable this warning.",
-    );
-  }
 
   // Private fallback state
   let globalContext = rootContext;
