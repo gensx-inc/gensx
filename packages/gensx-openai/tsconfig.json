@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
-    "lib": ["ES2020"],
+    "lib": [
+      "ES2020"
+    ],
     "tsBuildInfoFile": ".tsbuildinfo",
     "incremental": true,
     "resolveJsonModule": true,
@@ -19,9 +21,19 @@
     "jsxImportSource": "gensx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["src/**/*", "vitest.config.ts", "vite.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "vitest.config.ts",
+    "vite.config.ts",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

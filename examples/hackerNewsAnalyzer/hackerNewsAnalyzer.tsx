@@ -14,7 +14,7 @@ interface PGTweetWriterProps {
 
 type PGTweetWriterOutput = string;
 const PGTweetWriter = gsx.Component<PGTweetWriterProps, PGTweetWriterOutput>(
-  async ({ context, prompt }) => {
+  ({ context, prompt }) => {
     const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
 1. Captures the most interesting insight
@@ -46,9 +46,8 @@ interface PGEditorProps {
 }
 
 type PGEditorOutput = string;
-const PGEditor = gsx.Component<PGEditorProps, PGEditorOutput>(
-  async ({ content }) => {
-    const PROMPT = `
+const PGEditor = gsx.Component<PGEditorProps, PGEditorOutput>(({ content }) => {
+  const PROMPT = `
 You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
 1. Clear, direct language
 2. Concrete examples and analogies
@@ -57,24 +56,23 @@ You are Paul Graham, founder of Y Combinator and long-time essayist. Given a tec
 5. Your characteristic mix of technical depth and philosophical breadth
 
 IMPORTANT: You MUST preserve all markdown links from the input exactly as they appear.
-For example, if the input mentions "[Project X](https://news.ycombinator.com/item?id=123)", 
+For example, if the input mentions "[Project X](https://news.ycombinator.com/item?id=123)",
 you must include this exact link when discussing that project.
 
 Maintain your voice while preserving the key insights and all links from the analysis.
   `.trim();
 
-    return (
-      <ChatCompletion
-        messages={[
-          { role: "system", content: PROMPT },
-          { role: "user", content: content },
-        ]}
-        model="gpt-4o"
-        temperature={0.7}
-      />
-    );
-  },
-);
+  return (
+    <ChatCompletion
+      messages={[
+        { role: "system", content: PROMPT },
+        { role: "user", content: content },
+      ]}
+      model="gpt-4o"
+      temperature={0.7}
+    />
+  );
+});
 
 interface CommentsAnalyzerProps {
   postId: number;
@@ -86,7 +84,7 @@ type CommentsAnalyzerOutput = string;
 const CommentsAnalyzer = gsx.Component<
   CommentsAnalyzerProps,
   CommentsAnalyzerOutput
->(async ({ postId, comments }) => {
+>(({ postId, comments }) => {
   const PROMPT = `
 You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
 
@@ -141,7 +139,7 @@ interface PostSummarizerProps {
 
 type PostSummarizerOutput = string;
 const PostSummarizer = gsx.Component<PostSummarizerProps, PostSummarizerOutput>(
-  async ({ story }) => {
+  ({ story }) => {
     const PROMPT = `
 You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
 1. The main point or key insight
@@ -203,17 +201,17 @@ interface TrendAnalyzerProps {
 type TrendReport = string;
 
 const TrendAnalyzer = gsx.Component<TrendAnalyzerProps, TrendReport>(
-  async ({ analyses }) => {
+  ({ analyses }) => {
     const PROMPT = `
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
-You will be given input summarizing the top posts from hacker news, and an analysis of the comments on each post. 
+You will be given input summarizing the top posts from hacker news, and an analysis of the comments on each post.
 
-You should write a blog post about the top trends in technology based on this input. You should be sure to cover the following sections: 
+You should write a blog post about the top trends in technology based on this input. You should be sure to cover the following sections:
 
 - Positive themes: 3 ideas/technologies people are excited about
 - Negative themes: 3 concerns or criticisms
 - Surprising themes: 3 unexpected insights or connections
-- Overall sentiment: a single sentence describing the overall mood of software developers as a whole. 
+- Overall sentiment: a single sentence describing the overall mood of software developers as a whole.
 
 IMPORTANT: Your output MUST preserve all links from the input. When you reference a post or discussion, you MUST include its link.
 For example, if the input contains "[Interesting Project](https://news.ycombinator.com/item?id=123)", you must include this exact link when discussing that project.
@@ -313,9 +311,9 @@ export interface HNAnalyzerWorkflowOutput {
 export const HNAnalyzerWorkflow = gsx.Component<
   HNAnalyzerWorkflowProps,
   HNAnalyzerWorkflowOutput
->(async ({ postCount }) => (
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY!}>
-    {async () => (
+>(({ postCount }) => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    {() => (
       <HNCollector limit={postCount}>
         {(stories) => (
           <AnalyzeHNPosts stories={stories}>

@@ -31,8 +31,8 @@
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",
-    "lint": "eslint src --ext .ts,.tsx",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "keywords": [
     "ai",

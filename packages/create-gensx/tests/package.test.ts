@@ -1,9 +1,10 @@
 import { exec as execCallback } from "child_process";
-import path from "path";
-import fs from "fs-extra";
 import os from "os";
-import { expect, it, beforeEach, afterEach } from "vitest";
+import path from "path";
 import { promisify } from "util";
+
+import fs from "fs-extra";
+import { afterEach, beforeEach, expect, it } from "vitest";
 
 const exec = promisify(execCallback);
 
@@ -58,7 +59,11 @@ it("package.json is correctly configured for npm create", async () => {
     expect(projectPkgExists).toBe(true);
   } catch (error) {
     // If execution fails, check the package.json configuration
-    const pkgJson = await fs.readJson(path.join(pkgDir, "package.json"));
+    const pkgJson = (await fs.readJson(path.join(pkgDir, "package.json"))) as {
+      bin: string;
+      files: string[];
+      type: string;
+    };
 
     // Verify essential fields
     expect(pkgJson.bin).toBeDefined();
