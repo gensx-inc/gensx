@@ -1,8 +1,11 @@
 import { setTimeout } from "timers/promises";
-import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
+
+import type { WorkflowContext } from "@/types";
+
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
 import { getCurrentContext, withContext } from "@/context";
 import { gsx } from "@/index";
-import type { WorkflowContext } from "@/types";
 
 // Extend WorkflowContext for our test cases
 interface TestContext extends WorkflowContext {
@@ -15,7 +18,7 @@ interface TestContext extends WorkflowContext {
 }
 
 // Helper component for testing context
-const ContextReader = gsx.Component<Record<string, never>, string>(async () => {
+const ContextReader = gsx.Component<Record<string, never>, string>(() => {
   const ctx = getCurrentContext();
   return ctx.get("value") as string;
 });
@@ -77,9 +80,9 @@ describe("context", () => {
       try {
         await withContext(
           { value: "test" } satisfies Partial<TestContext>,
-          () => Promise.reject("test error"),
+          () => Promise.reject(new Error("test error")),
         );
-      } catch (e) {
+      } catch {
         // Ignore error
       }
 
@@ -115,12 +118,13 @@ describe("context", () => {
 
     test("empty context does not create new context", async () => {
       const ctx1 = getCurrentContext();
-      await withContext({} satisfies Partial<TestContext>, {
-        execute: async () => {
+      await withContext(
+        {} satisfies Partial<TestContext>,
+        gsx.Component(() => {
           const ctx2 = getCurrentContext();
           expect(ctx2).toBe(ctx1);
-        },
-      });
+        }),
+      );
     });
 
     test("nested contexts maintain proper hierarchy", async () => {
@@ -133,13 +137,14 @@ describe("context", () => {
               expect(getCurrentContext().get("a")).toBe(1);
               expect(getCurrentContext().get("b")).toBe(2);
 
-              await withContext({ c: 3 } satisfies Partial<TestContext>, {
-                execute: async () => {
+              await withContext(
+                { c: 3 } satisfies Partial<TestContext>,
+                gsx.Component(() => {
                   expect(getCurrentContext().get("a")).toBe(1);
                   expect(getCurrentContext().get("b")).toBe(2);
                   expect(getCurrentContext().get("c")).toBe(3);
-                },
-              });
+                }),
+              );
 
               expect(getCurrentContext().get("c")).toBe(undefined);
             },
@@ -154,7 +159,7 @@ describe("context", () => {
 
 // Browser environment tests
 describe("context in browser environment", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     // Clear module cache to ensure fresh imports
     vi.resetModules();
 

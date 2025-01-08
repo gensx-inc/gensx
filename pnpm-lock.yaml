@@ -125,15 +125,6 @@ importers:
       '@types/node':
         specifier: ^20.17.11
         version: 20.17.11
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^6.0.0
-        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.2))(eslint@8.57.1)(typescript@5.7.2)
-      '@typescript-eslint/parser':
-        specifier: ^6.0.0
-        version: 6.21.0(eslint@8.57.1)(typescript@5.7.2)
-      eslint:
-        specifier: ^8.57.0
-        version: 8.57.1
       nodemon:
         specifier: ^3.1.9
         version: 3.1.9
