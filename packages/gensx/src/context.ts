@@ -1,5 +1,10 @@
 import { resolveDeep } from "./resolve";
-import { ComponentProps, ExecutableValue, WorkflowComponent } from "./types";
+import {
+  ComponentProps,
+  Context,
+  ExecutableValue,
+  WorkflowComponent,
+} from "./types";
 
 type WorkflowContext = Record<symbol, unknown>;
 
@@ -7,13 +12,6 @@ type WorkflowContext = Record<symbol, unknown>;
 let contextCounter = 0;
 function createContextSymbol() {
   return Symbol.for(`gensx.context.${contextCounter++}`);
-}
-
-export interface Context<T> {
-  readonly __type: "Context";
-  readonly defaultValue: T;
-  readonly symbol: symbol;
-  Provider: WorkflowComponent<{ value: T }, never>;
 }
 
 export function createContext<T>(defaultValue: T): Context<T> {
@@ -24,7 +22,7 @@ export function createContext<T>(defaultValue: T): Context<T> {
     defaultValue,
     symbol: contextSymbol,
     Provider: ((props: ComponentProps<{ value: T }, never>) => {
-      return async () => {
+      return () => {
         const children = props.children;
         if (!children) {
           console.warn("Provider has no children");

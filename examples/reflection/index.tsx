@@ -1,5 +1,6 @@
-import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { ChatCompletion, OpenAIContext } from "@gensx/openai";
 import { gsx } from "gensx";
+import OpenAI from "openai";
 
 const buzzwords: string[] = [
   "agile",
@@ -62,7 +63,9 @@ const CleanBuzzwords = gsx.Component<
 
 async function main() {
   const withoutBuzzwords = await gsx.execute<string>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <OpenAIContext.Provider
+      value={{ client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) }}
+    >
       <CleanBuzzwords
         text="We are a cutting-edge technology company leveraging bleeding-edge AI solutions to deliver best-in-class products to our customers. Our agile development methodology ensures we stay ahead of the curve with paradigm-shifting innovations.
 
@@ -70,7 +73,7 @@ Our mission-critical systems utilize cloud-native architectures and next-generat
 
 Through our holistic approach to disruptive innovation, we create game-changing solutions that move the needle and generate impactful results. Our best-of-breed technology stack combined with our customer-centric focus allows us to ideate and iterate rapidly in this fast-paced market."
       />
-    </OpenAIProvider>,
+    </OpenAIContext.Provider>,
   );
 
   console.log("result:\n", withoutBuzzwords);

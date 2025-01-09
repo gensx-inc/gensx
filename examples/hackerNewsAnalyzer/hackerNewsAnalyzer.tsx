@@ -1,5 +1,6 @@
-import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { ChatCompletion, OpenAIContext } from "@gensx/openai";
 import { gsx } from "gensx";
+import OpenAI from "openai";
 
 import { getTopStoryDetails, type HNStory } from "./hn.js";
 
@@ -312,7 +313,9 @@ export const HNAnalyzerWorkflow = gsx.Component<
   HNAnalyzerWorkflowProps,
   HNAnalyzerWorkflowOutput
 >(({ postCount }) => (
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+  <OpenAIContext.Provider
+    value={{ client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) }}
+  >
     {() => (
       <HNCollector limit={postCount}>
         {(stories) => (
@@ -337,5 +340,5 @@ export const HNAnalyzerWorkflow = gsx.Component<
         )}
       </HNCollector>
     )}
-  </OpenAIProvider>
+  </OpenAIContext.Provider>
 ));
