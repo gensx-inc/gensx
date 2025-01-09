@@ -1,5 +1,6 @@
 import { ExecutableValue } from "@/types";
 
+import { withContext } from "./context";
 import { isStreamable } from "./stream";
 
 /**
@@ -50,8 +51,11 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
  */
 export async function execute<T>(element: ExecutableValue): Promise<T> {
   try {
-    // use the shared resolver
-    return (await resolveDeep(element)) as T;
+    // Create a fresh context for each execution
+    return await withContext({}, async () => {
+      // use the shared resolver
+      return (await resolveDeep(element)) as T;
+    });
   } finally {
     // Context cleanup handled by withContext
   }
