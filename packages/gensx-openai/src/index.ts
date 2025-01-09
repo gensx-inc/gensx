@@ -1,39 +1,35 @@
 import type { Streamable } from "gensx";
 
-import { ContextProvider, getCurrentContext, StreamComponent } from "gensx";
-import OpenAI, { ClientOptions } from "openai";
+import { gsx, StreamComponent } from "gensx";
+import OpenAI from "openai";
 import {
   ChatCompletionChunk,
   ChatCompletionCreateParams,
-} from "openai/resources/chat";
+} from "openai/resources/index.mjs";
 import { Stream } from "openai/streaming";
 
-declare module "gensx" {
-  interface WorkflowContext {
-    openai?: OpenAI;
-  }
+// Create a context for OpenAI clients
+export interface OpenAIContext {
+  client?: OpenAI;
 }
 
-export const OpenAIProvider = ContextProvider((props: ClientOptions) => {
-  const openai = new OpenAI(props);
+// Create a provider component for OpenAI
+export const OpenAIContext = gsx.createContext<OpenAIContext>({});
 
-  return { openai };
-});
-
+// Create a component for chat completions
 export const ChatCompletion = StreamComponent<ChatCompletionCreateParams>(
   async (props) => {
-    const context = getCurrentContext();
-    const openai = context.get("openai");
+    const context = gsx.useContext(OpenAIContext);
 
-    if (!openai) {
+    if (!context.client) {
       throw new Error(
         "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
       );
     }
 
-    const stream = await openai.chat.completions.create(props);
+    if (props.stream) {
+      const stream = await context.client.chat.completions.create(props);
 
-    if (stream instanceof Stream) {
       async function* generateTokens(): AsyncGenerator<
         string,
         void,
@@ -48,11 +44,10 @@ export const ChatCompletion = StreamComponent<ChatCompletionCreateParams>(
       }
 
       const streamable: Streamable = generateTokens();
-
       return streamable;
     } else {
-      // Since our stream component API must always return a streamable, wrap the result
-      const content = stream.choices[0]?.message?.content ?? "";
+      const response = await context.client.chat.completions.create(props);
+      const content = response.choices[0]?.message?.content ?? "";
 
       function* generateTokens() {
         yield content;
