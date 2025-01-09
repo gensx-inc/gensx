@@ -1,6 +1,5 @@
-import { ChatCompletion, OpenAIContext } from "@gensx/openai";
+import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
-import OpenAI from "openai";
 
 interface LLMResearchBrainstormProps {
   prompt: string;
@@ -142,9 +141,7 @@ interface BlogWritingWorkflowProps {
 export const BlogWritingWorkflow =
   gsx.StreamComponent<BlogWritingWorkflowProps>(({ prompt }) => {
     return (
-      <OpenAIContext.Provider
-        value={{ client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) }}
-      >
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <ParallelResearch prompt={prompt}>
           {(research) => (
             <LLMWriter prompt={prompt} research={research.flat()}>
@@ -152,6 +149,6 @@ export const BlogWritingWorkflow =
             </LLMWriter>
           )}
         </ParallelResearch>
-      </OpenAIContext.Provider>
+      </OpenAIProvider>
     );
   });

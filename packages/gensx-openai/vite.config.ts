@@ -7,7 +7,7 @@ export default defineConfig(({ command }) => ({
   build: {
     sourcemap: true,
     lib: {
-      entry: resolve(__dirname, "src/index.ts"),
+      entry: resolve(__dirname, "src/index.tsx"),
       formats: ["es"],
       fileName: () => "index.js",
     },
