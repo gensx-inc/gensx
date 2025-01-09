@@ -16,6 +16,11 @@ export default defineConfig(({ command }) => ({
     },
     watch: command === "serve" ? {} : undefined,
   },
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "./src"),
+    },
+  },
   plugins: [
     dts({
       include: ["src"],
