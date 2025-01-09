@@ -1,4 +1,3 @@
-import { withContext } from "./context";
 import { isStreamable } from "./stream";
 import { ExecutableValue } from "./types";
 
@@ -49,13 +48,5 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
  * This is the main entry point for executing workflow components.
  */
 export async function execute<T>(element: ExecutableValue): Promise<T> {
-  try {
-    // Create a fresh context for each execution
-    return await withContext({}, async () => {
-      // use the shared resolver
-      return (await resolveDeep(element)) as T;
-    });
-  } finally {
-    // Context cleanup handled by withContext
-  }
+  return (await resolveDeep(element)) as T;
 }
