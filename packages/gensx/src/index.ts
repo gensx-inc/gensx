@@ -17,6 +17,7 @@ export type {
 // Re-export as gsx for backward compatibility
 import { Component, StreamComponent } from "./component";
 import { createContext, useContext } from "./context";
+import * as jsxRuntime from "./jsx-runtime";
 import { execute } from "./resolve";
 
 export const gsx = {
@@ -25,4 +26,5 @@ export const gsx = {
   createContext,
   execute,
   useContext,
+  "jsx-runtime": jsxRuntime,
 };

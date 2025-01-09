@@ -1,6 +1,8 @@
 import { setTimeout } from "timers/promises";
 
-import { createContext, gsx } from "@/index";
+import { expect, suite, test, vi } from "vitest";
+
+import { createContext, gsx } from "@/index.js";
 
 suite("component", () => {
   test("ContextProvider warns when no children provided", async () => {

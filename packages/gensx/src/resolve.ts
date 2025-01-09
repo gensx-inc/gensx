@@ -1,7 +1,6 @@
-import { ExecutableValue } from "@/types";
-
 import { withContext } from "./context";
 import { isStreamable } from "./stream";
+import { ExecutableValue } from "./types";
 
 /**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.

@@ -27,8 +27,7 @@
     "jsxImportSource": "@",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/tests/*": ["tests/*"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src/**/*", "tests/**/*", "vitest.config.ts", "vite.config.ts"],

@@ -1,6 +1,8 @@
 import { setTimeout } from "timers/promises";
 
-import { createContext, gsx, useContext } from "@/index";
+import { expect, suite, test } from "vitest";
+
+import { createContext, gsx, useContext } from "@/index.js";
 
 suite("context", () => {
   test("can create and use context with default value", async () => {
