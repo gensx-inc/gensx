@@ -2,16 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+html {
+  color-scheme: light;
 }
 
-/* If the user prefers light mode, 
-we still enforce color-scheme: dark, despite the user preference */
-@media (prefers-color-scheme: light) {
-  html {
-    color-scheme: dark;
-  }
+.social-icons::after {
+  display: none;
+}
+/* Dark mode colors. */
+:root {
+	--sl-color-accent-low: #2c2302;
+	--sl-color-accent: #7d6800;
+	--sl-color-accent-high: #d3c9a4;
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #eceef2;
+	--sl-color-gray-2: #c6c8ce;
+	--sl-color-gray-3: #a0a4ae;
+	--sl-color-gray-4: #545861;
+	--sl-color-gray-5: #353841;
+	--sl-color-gray-6: #24272f;
+	--sl-color-black: #17181c;
+}
+/* Light mode colors. */
+:root[data-theme='light'] {
+	--sl-color-accent-low: #ded7bb;
+	--sl-color-accent: #000000;
+	--sl-color-accent-high: #ffde59;
+	--sl-color-white: #17181c;
+	--sl-color-gray-1: #24272f;
+	--sl-color-gray-2: #353841;
+	--sl-color-gray-3: #545861;
+	--sl-color-gray-4: #888b96;
+	--sl-color-gray-5: #c0c2c7;
+	--sl-color-gray-6: #eceef2;
+	--sl-color-gray-7: #f5f6f8;
+	--sl-color-black: #ffffff;
 }
