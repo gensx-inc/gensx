@@ -1,0 +1,75 @@
+---
+title: Quickstart
+description: Getting started with GenSX
+---
+
+## Requirements
+
+- Node.js v20+
+
+## Create a new project
+
+Run the following command with your package manager of choice in an empty directory to create a new GenSX project:
+
+```bash
+# Using npm
+npm create gensx@latest my-app
+
+# Using npx
+npx create-gensx@latest my-app
+
+# Using yarn
+yarn create gensx my-app
+
+# Using pnpm
+pnpm create gensx my-app
+```
+
+This will create a simple OpenAI chat completion component:
+
+```tsx
+import { gsx } from "gensx";
+import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
+
+interface RespondProps {
+  userInput: string;
+}
+type RespondOutput = string;
+
+const Respond = gsx.Component<RespondProps, RespondOutput>(
+  async ({ userInput }) => {
+    return (
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          {
+            role: "system",
+            content:
+              "You are a helpful assistant. Respond to the user's input.",
+          },
+          { role: "user", content: userInput },
+        ]}
+      />
+    );
+  },
+);
+
+const App = gsx.Component<Record<string, never>, string>(async () => {
+  return await gsx.execute(
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
+    </OpenAIProvider>,
+  );
+});
+
+const result = await gsx.execute(<App />);
+console.log(result);
+```
+
+## Run your first workflow
+
+To run your workflow, you'll need to set the `OPENAI_API_KEY` environment variable.
+
+```bash
+OPENAI_API_KEY=<your-api-key> pnpm dev
+```

@@ -17,8 +17,8 @@ export default defineConfig({
         src: "./public/logo.svg",
       },
       components: {
-        ThemeSelect: './src/components/ThemeSelect.astro',
-        ThemeProvider: './src/components/ThemeProvider.astro'
+        ThemeSelect: "./src/components/ThemeSelect.astro",
+        ThemeProvider: "./src/components/ThemeProvider.astro",
       },
       expressiveCode: {
         themes: ["light-plus", "dark-plus"],
@@ -30,25 +30,40 @@ export default defineConfig({
       //   },
       customCss: ["./src/tailwind.css"],
       sidebar: [
-        // Commented out for future use
-        /*
         {
-          label: "Guides",
-          items: [
-            { label: "Example Guide", slug: "guides/example" },
-          ],
+          label: "Overview",
+          link: "/overview",
         },
         {
-          label: "Reference",
-          autogenerate: { directory: "reference" },
+          label: "Quickstart",
+          link: "/quickstart",
         },
-        */
+        {
+          label: "Why JSX?",
+          link: "/why-jsx",
+        },
+
+        // {
+        //   label: "Concepts",
+        //   autogenerate: { directory: "concepts" },
+        // },
+        // {
+        //   label: "LLM patterns",
+        //   autogenerate: { directory: "patterns" },
+        // },
+        // {
+        //   label: "Examples",
+        //   autogenerate: { directory: "examples" },
+        // },
+        // {
+        //   label: "Component reference",
+        //   autogenerate: { directory: "component-reference" },
+        // },
       ],
     }),
     tailwind({
       applyBaseStyles: false,
     }),
-    
   ],
   //   adapter: cloudflare({
   //     imageService: "compile",
