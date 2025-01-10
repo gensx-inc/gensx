@@ -14,7 +14,15 @@ export default defineConfig({
         github: "https://github.com/cortexclick/gensx",
       },
       logo: {
-        src: "./public/logo.png",
+        src: "./public/logo.svg",
+      },
+      components: {
+        ThemeSelect: './src/components/ThemeSelect.astro',
+        ThemeProvider: './src/components/ThemeProvider.astro'
+      },
+      expressiveCode: {
+        themes: ["light-plus", "dark-plus"],
+        useStarlightDarkModeSwitch: false,
       },
       // TODO: Enable the edit link when we have some content.
       //   editLink: {
@@ -40,6 +48,7 @@ export default defineConfig({
     tailwind({
       applyBaseStyles: false,
     }),
+    
   ],
   //   adapter: cloudflare({
   //     imageService: "compile",
