@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.2](https://github.com/cortexclick/gensx/compare/gensx-v0.2.1...gensx-v0.2.2) (2025-01-10)
+
+
+### ✨ New Features
+
+* `execute` for sub-workflows. ([#86](https://github.com/cortexclick/gensx/issues/86)) ([477784a](https://github.com/cortexclick/gensx/commit/477784a6bb6bc17b99335cd8131457a331507430))
+
+
+### 🐛 Bug Fixes
+
+* Add apache 2.0 license ([#78](https://github.com/cortexclick/gensx/issues/78)) ([ca56a98](https://github.com/cortexclick/gensx/commit/ca56a98760a1c3b9f4db51e464cc95e783523ae4))
+* Update jsx-dev-runtime ([#93](https://github.com/cortexclick/gensx/issues/93)) ([047bfe7](https://github.com/cortexclick/gensx/commit/047bfe78303d13077678248a126a3904e5c67280))
+
 ## [0.2.1](https://github.com/cortexclick/gensx/compare/gensx-v0.2.0...gensx-v0.2.1) (2025-01-06)
 
 
