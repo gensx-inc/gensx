@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/cortexclick/gensx/compare/gensx-openai-v0.1.1...gensx-openai-v0.1.2) (2025-01-11)
+
+
+### 🐛 Bug Fixes
+
+* Add apache 2.0 license ([#78](https://github.com/cortexclick/gensx/issues/78)) ([ca56a98](https://github.com/cortexclick/gensx/commit/ca56a98760a1c3b9f4db51e464cc95e783523ae4))
+
 ## [0.1.1](https://github.com/cortexclick/gensx/compare/gensx-openai-v0.1.0...gensx-openai-v0.1.1) (2025-01-07)
 
 
