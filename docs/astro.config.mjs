@@ -42,23 +42,22 @@ export default defineConfig({
           label: "Why JSX?",
           link: "/why-jsx",
         },
-
-        // {
-        //   label: "Concepts",
-        //   autogenerate: { directory: "concepts" },
-        // },
-        // {
-        //   label: "LLM patterns",
-        //   autogenerate: { directory: "patterns" },
-        // },
-        // {
-        //   label: "Examples",
-        //   autogenerate: { directory: "examples" },
-        // },
-        // {
-        //   label: "Component reference",
-        //   autogenerate: { directory: "component-reference" },
-        // },
+        {
+          label: "Concepts",
+          autogenerate: { directory: "concepts" },
+        },
+        {
+          label: "LLM patterns",
+          autogenerate: { directory: "patterns" },
+        },
+        {
+          label: "Examples",
+          autogenerate: { directory: "examples" },
+        },
+        {
+          label: "Component reference",
+          autogenerate: { directory: "component-reference" },
+        },
       ],
     }),
     tailwind({
