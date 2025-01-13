@@ -58,8 +58,8 @@ const program = ts.createProgram(fileNames, options);
 
 // Get transformers
 const customTransformers: ts.CustomTransformers = {
-  before: [createJsxNameTransformer()],
-  after: [], // Add any post-JSX transformers here if needed
+  before: [],
+  after: [createJsxNameTransformer()],
 };
 
 // Emit

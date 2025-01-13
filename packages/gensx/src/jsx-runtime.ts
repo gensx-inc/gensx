@@ -42,6 +42,8 @@ export const jsx = <
     // Execute component with props
     const baseProps = props ?? ({} as TProps);
 
+    console.log("elementName", elementName);
+
     // Store elementName in context for the component to access
     return withContext({ elementName }, async () => {
       // Execute component
