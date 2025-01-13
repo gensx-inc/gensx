@@ -65,9 +65,9 @@ export default defineConfig({
       applyBaseStyles: false,
     }),
   ],
-  //   adapter: cloudflare({
-  //     imageService: "compile",
-  //   }),
+  // adapter: cloudflare({
+  //   imageService: "compile",
+  // }),
   vite: {
     ssr: {
       external: ["node:buffer", "node:path", "node:url"],
