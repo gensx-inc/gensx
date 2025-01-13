@@ -63,21 +63,32 @@ export function Component<P, O>(
 ): WorkflowComponent<P, O> {
   console.log(`[Component] Creating component wrapper for:`, fn.name);
 
-  function GsxComponent(props: ComponentProps<P, O>): () => Promise<O> {
+  function GsxComponent(
+    props: ComponentProps<P, O> & { __elementName?: string },
+  ): () => Promise<O> {
     return async () => {
       const context = getCurrentContext();
       const tracker = context.get("tracker");
-      const elementName = context.get("elementName") as string | undefined;
 
-      // Use elementName from context if available, fallback to function name
+      // Get elementName from props instead of context
+      const elementName = props.__elementName;
+      console.log("elementName from props:", elementName);
+
+      // Use elementName from props if available, fallback to function name
       const componentName = elementName || fn.name || "Anonymous";
+
+      // Remove __elementName from props before passing to component
+      const componentProps = { ...props };
+      delete (componentProps as any).__elementName;
 
       // Start tracking this component using its actual name
       const nodeId = tracker
         ? await tracker.addNode({
             componentName,
             props: Object.fromEntries(
-              Object.entries(props).filter(([key]) => key !== "children"),
+              Object.entries(componentProps).filter(
+                ([key]) => key !== "children",
+              ),
             ),
           })
         : undefined;
