@@ -40,7 +40,6 @@ export const jsx = <
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
     // Execute component with props and elementName as separate parameters
     const baseProps = props ?? ({} as TProps);
-    console.log("elementName", elementName);
 
     // Execute component with elementName as second parameter
     const rawResult = await component(baseProps, elementName);

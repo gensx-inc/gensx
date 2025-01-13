@@ -1,17 +1,13 @@
 // Platform-agnostic file operations
 async function writeFileSafe(path: string, data: string): Promise<void> {
-  console.log(`[Tracker] Attempting to write file:`, { path });
   const isNode =
-    typeof process !== "undefined" &&
-    process.versions != null &&
-    process.versions.node != null;
+    typeof process !== "undefined" && process.versions.node != null;
 
   if (isNode) {
     // Node.js environment
     try {
       const { writeFile } = await import("fs/promises");
       await writeFile(path, data);
-      console.log(`[Tracker] Successfully wrote file:`, { path });
     } catch (error) {
       console.error(`[Tracker] Failed to write file:`, { path, error });
       throw error;
@@ -73,12 +69,11 @@ export interface ExecutionTracker {
 }
 
 export class DefaultExecutionTracker implements ExecutionTracker {
-  private nodes: Map<string, ExecutionNode> = new Map();
+  private nodes = new Map<string, ExecutionNode>();
   public root: ExecutionNode;
   public currentNode?: ExecutionNode;
 
-  constructor(private checkpointPath: string = "./execution.json") {
-    console.log(`[Tracker] Initializing tracker:`, { checkpointPath });
+  constructor(private checkpointPath = "./execution.json") {
     this.root = {
       id: "root",
       componentName: "Root",
@@ -91,10 +86,6 @@ export class DefaultExecutionTracker implements ExecutionTracker {
   }
 
   private async updateCheckpoint() {
-    console.log(`[Tracker] Updating checkpoint:`, {
-      path: this.checkpointPath,
-      currentNode: this.currentNode?.id,
-    });
     try {
       await writeFileSafe(
         this.checkpointPath,
@@ -106,7 +97,7 @@ export class DefaultExecutionTracker implements ExecutionTracker {
   }
 
   async addNode(partial: Partial<ExecutionNode>): Promise<string> {
-    const parentId = this.currentNode?.id || "root";
+    const parentId = this.currentNode?.id ?? "root";
     const node: ExecutionNode = {
       id: await generateUUID(),
       componentName: "Unknown",
@@ -117,25 +108,13 @@ export class DefaultExecutionTracker implements ExecutionTracker {
       ...partial,
     };
 
-    console.log(`[Tracker] Adding node:`, {
-      id: node.id,
-      componentName: node.componentName,
-      parentId,
-    });
-
     // Ensure children array exists and isn't overridden
-    node.children = node.children || [];
+    node.children = node.children ?? [];
 
     this.nodes.set(node.id, node);
     const parent = this.nodes.get(parentId);
     if (parent) {
       parent.children.push(node);
-      console.log(`[Tracker] Added to parent:`, {
-        parentId,
-        childCount: parent.children.length,
-      });
-    } else {
-      console.warn(`[Tracker] Parent node not found:`, { parentId });
     }
     this.currentNode = node;
 
@@ -144,7 +123,6 @@ export class DefaultExecutionTracker implements ExecutionTracker {
   }
 
   async completeNode(id: string, output: unknown) {
-    console.log(`[Tracker] Completing node:`, { id });
     const node = this.nodes.get(id);
     if (node) {
       node.endTime = Date.now();
@@ -152,13 +130,9 @@ export class DefaultExecutionTracker implements ExecutionTracker {
 
       if (node.parentId) {
         const parent = this.nodes.get(node.parentId);
-        console.log(`[Tracker] Returning to parent:`, {
-          parentId: node.parentId,
-          parentName: parent?.componentName,
-        });
+
         this.currentNode = parent;
       } else {
-        console.log(`[Tracker] No parent, returning to root`);
         this.currentNode = undefined;
       }
 
@@ -169,7 +143,6 @@ export class DefaultExecutionTracker implements ExecutionTracker {
   }
 
   async addMetadata(id: string, metadata: Record<string, unknown>) {
-    console.log(`[Tracker] Adding metadata:`, { id, metadata });
     const node = this.nodes.get(id);
     if (node) {
       node.metadata = { ...node.metadata, ...metadata };

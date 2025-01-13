@@ -62,8 +62,6 @@ export function Component<P, O>(
     | undefined
   >,
 ): WorkflowComponent<P, O> {
-  console.log(`[Component] Creating component wrapper for:`, fn.name);
-
   function GsxComponent(
     props: ComponentProps<P, O>,
     elementName?: string,
@@ -85,12 +83,6 @@ export function Component<P, O>(
           })
         : undefined;
 
-      console.log(`[Component] Added tracking node:`, {
-        componentName,
-        nodeId,
-        parentNode: tracker?.currentNode?.id,
-      });
-
       try {
         const result = await resolveDeep(fn(props, elementName));
 
@@ -106,17 +98,11 @@ export function Component<P, O>(
         // Complete tracking
         if (nodeId) {
           await tracker?.completeNode(nodeId, finalResult);
-          console.log(`[Component] Completed node:`, { nodeId, componentName });
         }
 
         return finalResult;
       } catch (error) {
         // Track errors too
-        console.error(`[Component] Error in component:`, {
-          componentName,
-          nodeId,
-          error,
-        });
         if (nodeId && error instanceof Error) {
           await tracker?.addMetadata(nodeId, { error: error.message });
           await tracker?.completeNode(nodeId, undefined);
