@@ -28,11 +28,12 @@ export type ExecutableValue =
 
 // Component props as a type alias instead of interface
 export type ComponentProps<P, O> = BaseProps<P> & {
-  children?:
+  children?: (
     | ((output: O) => MaybePromise<ExecutableValue | Primitive>)
     // support child functions that do not return anything, but maybe do some other side effect
     | ((output: O) => void)
-    | ((output: O) => Promise<void>);
+    | ((output: O) => Promise<void>)
+  ) & { __gsxChildExecuted?: boolean; __gsxIsChild?: boolean };
 };
 
 export type Streamable =
@@ -45,7 +46,7 @@ export type StreamComponentProps<
   Stream extends boolean | undefined,
 > = BaseProps<P> & {
   stream?: Stream;
-  children?:
+  children?: (
     | ((output: Streamable) => MaybePromise<ExecutableValue | Primitive>)
     | ((
         output: string,
@@ -57,7 +58,11 @@ export type StreamComponentProps<
     | ((output: string) => void)
     | ((output: Streamable) => void)
     | ((output: string) => Promise<void>)
-    | ((output: Streamable) => Promise<void>);
+    | ((output: Streamable) => Promise<void>)
+  ) & {
+    __gsxChildExecuted?: boolean;
+    __gsxIsChild?: boolean;
+  };
 };
 
 export type StreamingComponent<P, Stream extends boolean | undefined> = (

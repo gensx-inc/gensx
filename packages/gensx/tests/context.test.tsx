@@ -200,4 +200,50 @@ suite("context", () => {
 
     expect(result).toEqual({ value1: "outer1", value2: "outer2" });
   });
+
+  suite("can wrap children in a context provider", () => {
+    const TestContext = createContext("default");
+    const MyProvider = gsx.Component<{ value: string }, never>(
+      function MyProvider(props) {
+        const newValue = props.value + " wrapped";
+        return (
+          <TestContext.Provider value={newValue}>
+            {props.children}
+          </TestContext.Provider>
+        );
+      },
+    );
+
+    test("returns the value from the context", async () => {
+      const result = await gsx.execute<string>(
+        <MyProvider value="value">
+          {function Consumer() {
+            const value = useContext(TestContext);
+            return value;
+          }}
+        </MyProvider>,
+      );
+      expect(result).toBe("value wrapped");
+    });
+
+    test("can wrap children in sibling context providers", async () => {
+      const Wrapper = gsx.Component<{ value: string }, string>(props => {
+        return (
+          <>
+            <MyProvider value={props.value + " 1"}>{props.children}</MyProvider>
+            <MyProvider value={props.value + " 2"}>{props.children}</MyProvider>
+          </>
+        );
+      });
+      const result = await gsx.execute(
+        <Wrapper value="value">
+          {() => {
+            const value = useContext(TestContext);
+            return value;
+          }}
+        </Wrapper>,
+      );
+      expect(result).toEqual(["value 1 wrapped", "value 2 wrapped"]);
+    });
+  });
 });

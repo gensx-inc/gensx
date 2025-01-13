@@ -17,22 +17,37 @@ function createContextSymbol() {
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
 
+  function Provider(props: ComponentProps<{ value: T }, never>) {
+    return async function ProviderImplementation() {
+      const children = props.children;
+      if (!children) {
+        console.warn("Provider has no children");
+        return null as never;
+      }
+      console.log("provider props", props);
+      return withContext(
+        { [contextSymbol]: props.value },
+        async function ProviderContextWrapper() {
+          console.log("provider children", children);
+          const context = getCurrentContext();
+          console.log("provider context", context);
+          children.__gsxChildExecuted = true;
+          const result = await resolveDeep(children(null as never));
+          console.log("provider child result", result);
+          return result;
+        },
+      );
+    };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+  (Provider as any).__isGsxProvider = true;
+
   const context = {
     __type: "Context" as const,
     defaultValue,
     symbol: contextSymbol,
-    Provider: ((props: ComponentProps<{ value: T }, never>) => {
-      return () => {
-        const children = props.children;
-        if (!children) {
-          console.warn("Provider has no children");
-          return null as never;
-        }
-        return withContext({ [contextSymbol]: props.value }, () => {
-          return children(null as never);
-        });
-      };
-    }) as WorkflowComponent<{ value: T }, never>,
+    Provider: Provider as WorkflowComponent<{ value: T }, never>,
   };
 
   return context;

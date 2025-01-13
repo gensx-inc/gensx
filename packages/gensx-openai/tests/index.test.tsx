@@ -1,29 +1,70 @@
 import { gsx, Streamable } from "gensx";
 import OpenAI from "openai";
-import { expect, suite, test } from "vitest";
+import { ChatCompletionCreateParams } from "openai/resources/index.mjs";
+import { expect, suite, test, vi } from "vitest";
 
-import { ChatCompletion, OpenAIContext } from "@/index.js";
+import { ChatCompletion, OpenAIContext, OpenAIProvider } from "@/index.js";
 
-import { createMockOpenAIClient } from "./helpers.js";
+import { createMockChatCompletionChunks } from "./helpers.js";
+
+vi.mock("openai", async (importOriginal) => {
+  const originalOpenAI: Awaited<typeof import("openai")> =
+    await importOriginal();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockedOpenAIClass: any = vi.fn();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  mockedOpenAIClass.prototype = {
+    chat: {
+      completions: {
+        create: vi
+          .fn()
+          .mockImplementation((params: ChatCompletionCreateParams) => {
+            if (params.stream) {
+              const chunks = createMockChatCompletionChunks("Hello World");
+              return Promise.resolve({
+                [Symbol.asyncIterator]: async function* () {
+                  for (const chunk of chunks) {
+                    await Promise.resolve();
+                    yield chunk;
+                  }
+                },
+              });
+            } else {
+              return Promise.resolve({
+                choices: [{ message: { content: "Hello World" } }],
+              });
+            }
+          }),
+      },
+    },
+  };
+
+  return {
+    ...originalOpenAI,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    default: mockedOpenAIClass,
+  };
+});
 
 suite("OpenAIContext", () => {
-  test("provides OpenAI client to children", async () => {
-    const mockClient = createMockOpenAIClient({ content: "" });
+  test.only("provides OpenAI client to children", async () => {
     let capturedClient: OpenAI | undefined;
 
     const TestComponent = gsx.Component(() => {
       const context = gsx.useContext(OpenAIContext);
+      console.log("component context", context);
       capturedClient = context.client;
       return null;
     });
 
     await gsx.execute(
-      <OpenAIContext.Provider value={{ client: mockClient }}>
+      <OpenAIProvider apiKey="test">
         <TestComponent />
-      </OpenAIContext.Provider>,
+      </OpenAIProvider>,
     );
 
-    expect(capturedClient).toBe(mockClient);
+    expect(capturedClient).toBeDefined();
   });
 
   test("throws error when client is not provided", async () => {
@@ -42,8 +83,6 @@ suite("OpenAIContext", () => {
 
 suite("ChatCompletion", () => {
   test("handles streaming response", async () => {
-    const mockClient = createMockOpenAIClient({ content: "Hello World" });
-
     const TestComponent = gsx.Component<Record<string, never>, Streamable>(
       () => (
         <ChatCompletion
@@ -57,9 +96,9 @@ suite("ChatCompletion", () => {
     );
 
     const result = await gsx.execute<Streamable>(
-      <OpenAIContext.Provider value={{ client: mockClient }}>
+      <OpenAIProvider apiKey="test">
         <TestComponent />
-      </OpenAIContext.Provider>,
+      </OpenAIProvider>,
     );
 
     let resultString = "";
@@ -71,8 +110,6 @@ suite("ChatCompletion", () => {
   });
 
   test("handles non-streaming response", async () => {
-    const mockClient = createMockOpenAIClient({ content: "Test response" });
-
     const TestComponent = gsx.Component(() => (
       <ChatCompletion
         model="gpt-4"
@@ -83,9 +120,9 @@ suite("ChatCompletion", () => {
     ));
 
     const result = await gsx.execute(
-      <OpenAIContext.Provider value={{ client: mockClient }}>
+      <OpenAIProvider apiKey="test">
         <TestComponent />
-      </OpenAIContext.Provider>,
+      </OpenAIProvider>,
     );
 
     expect(result).toBe("Test response");

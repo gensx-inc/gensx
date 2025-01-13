@@ -1,41 +1,7 @@
-import type {
-  ChatCompletionChunk,
-  ChatCompletionCreateParams,
-} from "openai/resources/index.mjs";
-
-import OpenAI from "openai";
-import { vi } from "vitest";
+import type { ChatCompletionChunk } from "openai/resources/index.mjs";
 
 export interface MockChatCompletionOptions {
   content: string;
-}
-
-export function createMockOpenAIClient(
-  options: MockChatCompletionOptions = { content: "" },
-): OpenAI {
-  const mockClient = new OpenAI({ apiKey: "test" });
-
-  mockClient.chat.completions.create = vi
-    .fn()
-    .mockImplementation((params: ChatCompletionCreateParams) => {
-      if (params.stream) {
-        const chunks = createMockChatCompletionChunks(options.content);
-        return Promise.resolve({
-          [Symbol.asyncIterator]: async function* () {
-            for (const chunk of chunks) {
-              await Promise.resolve();
-              yield chunk;
-            }
-          },
-        });
-      } else {
-        return Promise.resolve({
-          choices: [{ message: { content: options.content } }],
-        });
-      }
-    });
-
-  return mockClient;
 }
 
 export function createMockChatCompletionChunks(

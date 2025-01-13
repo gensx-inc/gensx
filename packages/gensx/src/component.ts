@@ -49,7 +49,7 @@ type DeepJSXElement<T> = T extends (infer Item)[]
 
 export function Component<P, O>(
   fn: (
-    props: P,
+    props: ComponentProps<P, O>,
   ) => MaybePromise<
     | O
     | JSX.Element
@@ -65,6 +65,7 @@ export function Component<P, O>(
 
       let finalResult: O;
       if (props.children) {
+        props.children.__gsxChildExecuted = true;
         finalResult = await resolveDeep(props.children(result as O));
       } else {
         finalResult = result as O;
@@ -93,6 +94,7 @@ export function StreamComponent<P>(
       const iterator: Streamable = await resolveDeep(fn(props));
       if (props.stream) {
         if (props.children) {
+          props.children.__gsxChildExecuted = true;
           return await resolveDeep(
             props.children(iterator as unknown as Streamable & string),
           );
@@ -105,6 +107,7 @@ export function StreamComponent<P>(
         result += token;
       }
       if (props.children) {
+        props.children.__gsxChildExecuted = true;
         return await resolveDeep(
           props.children(result as unknown as Streamable & string),
         );
