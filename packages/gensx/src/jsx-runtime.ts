@@ -3,6 +3,7 @@
 
 import { resolveDeep } from "./resolve";
 import { MaybePromise } from "./types";
+import { withContext } from "./context";
 
 export namespace JSX {
   export type ElementType = (props: any) => Element;
@@ -34,18 +35,24 @@ export const jsx = <
 >(
   component: (props: TProps) => MaybePromise<TOutput>,
   props: TProps | null,
+  elementName?: string,
 ): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
   // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
-    // Execute component
-    const rawResult = await component(props ?? ({} as TProps));
+    // Execute component with props
+    const baseProps = props ?? ({} as TProps);
 
-    // For non-streaming results, resolve deeply but preserve streamables
-    const result = await resolveDeep(rawResult);
+    // Store elementName in context for the component to access
+    return withContext({ elementName }, async () => {
+      // Execute component
+      const rawResult = await component(baseProps);
 
-    // Don't need to worry about children here, we execute children inside the component wrappers.
+      // For non-streaming results, resolve deeply but preserve streamables
+      const result = await resolveDeep(rawResult);
 
-    return result as Awaited<TOutput> | Awaited<TOutput>[];
+      // Don't need to worry about children here, we execute children inside the component wrappers.
+      return result as Awaited<TOutput> | Awaited<TOutput>[];
+    }) as Awaited<TOutput> | Awaited<TOutput>[];
   }
 
   if (component.name) {

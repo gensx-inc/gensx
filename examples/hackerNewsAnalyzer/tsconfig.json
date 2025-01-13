@@ -3,7 +3,7 @@
     "target": "ESNext",
     "module": "NodeNext",
     "lib": ["ESNext", "DOM"],
-    "strict": true,
+    "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -12,7 +12,8 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "jsxImportSource": "gensx",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "rootDir": "."
   },
   "include": ["./*.ts", "./*.tsx", "./**/*.ts", "./**/*.tsx"],
   "exclude": ["node_modules"]

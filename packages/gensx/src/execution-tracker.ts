@@ -1,4 +1,28 @@
-import { writeFile } from "fs/promises";
+// Platform-agnostic file operations
+async function writeFileSafe(path: string, data: string): Promise<void> {
+  console.log(`[Tracker] Attempting to write file:`, { path });
+  const isNode =
+    typeof process !== "undefined" &&
+    process.versions != null &&
+    process.versions.node != null;
+
+  if (isNode) {
+    // Node.js environment
+    try {
+      const { writeFile } = await import("fs/promises");
+      await writeFile(path, data);
+      console.log(`[Tracker] Successfully wrote file:`, { path });
+    } catch (error) {
+      console.error(`[Tracker] Failed to write file:`, { path, error });
+      throw error;
+    }
+  } else {
+    // Browser environment - could implement browser-specific storage here
+    console.warn(
+      "[Tracker] File writing is not supported in browser environment",
+    );
+  }
+}
 
 // Cross-platform UUID generation
 async function generateUUID(): Promise<string> {
@@ -54,6 +78,7 @@ export class DefaultExecutionTracker implements ExecutionTracker {
   public currentNode?: ExecutionNode;
 
   constructor(private checkpointPath: string = "./execution.json") {
+    console.log(`[Tracker] Initializing tracker:`, { checkpointPath });
     this.root = {
       id: "root",
       componentName: "Root",
@@ -66,8 +91,17 @@ export class DefaultExecutionTracker implements ExecutionTracker {
   }
 
   private async updateCheckpoint() {
-    if (this.checkpointPath) {
-      await writeFile(this.checkpointPath, JSON.stringify(this.root, null, 2));
+    console.log(`[Tracker] Updating checkpoint:`, {
+      path: this.checkpointPath,
+      currentNode: this.currentNode?.id,
+    });
+    try {
+      await writeFileSafe(
+        this.checkpointPath,
+        JSON.stringify(this.root, null, 2),
+      );
+    } catch (error) {
+      console.error(`[Tracker] Failed to write checkpoint:`, { error });
     }
   }
 
@@ -83,23 +117,25 @@ export class DefaultExecutionTracker implements ExecutionTracker {
       ...partial,
     };
 
+    console.log(`[Tracker] Adding node:`, {
+      id: node.id,
+      componentName: node.componentName,
+      parentId,
+    });
+
     // Ensure children array exists and isn't overridden
     node.children = node.children || [];
-
-    console.log(`Adding node: ${node.componentName} (${node.id})`);
-    console.log(
-      `  Parent: ${this.nodes.get(parentId)?.componentName} (${parentId})`,
-    );
 
     this.nodes.set(node.id, node);
     const parent = this.nodes.get(parentId);
     if (parent) {
       parent.children.push(node);
-      console.log(
-        `  Added to parent's children. Parent now has ${parent.children.length} children`,
-      );
+      console.log(`[Tracker] Added to parent:`, {
+        parentId,
+        childCount: parent.children.length,
+      });
     } else {
-      console.warn(`  Parent node ${parentId} not found!`);
+      console.warn(`[Tracker] Parent node not found:`, { parentId });
     }
     this.currentNode = node;
 
@@ -108,30 +144,32 @@ export class DefaultExecutionTracker implements ExecutionTracker {
   }
 
   async completeNode(id: string, output: unknown) {
+    console.log(`[Tracker] Completing node:`, { id });
     const node = this.nodes.get(id);
     if (node) {
-      console.log(`Completing node: ${node.componentName} (${node.id})`);
       node.endTime = Date.now();
       node.output = output;
 
       if (node.parentId) {
         const parent = this.nodes.get(node.parentId);
-        console.log(
-          `  Returning to parent: ${parent?.componentName} (${node.parentId})`,
-        );
+        console.log(`[Tracker] Returning to parent:`, {
+          parentId: node.parentId,
+          parentName: parent?.componentName,
+        });
         this.currentNode = parent;
       } else {
-        console.log("  No parent, returning to root");
+        console.log(`[Tracker] No parent, returning to root`);
         this.currentNode = undefined;
       }
 
       await this.updateCheckpoint();
     } else {
-      console.warn(`Attempted to complete unknown node: ${id}`);
+      console.warn(`[Tracker] Attempted to complete unknown node:`, { id });
     }
   }
 
   async addMetadata(id: string, metadata: Record<string, unknown>) {
+    console.log(`[Tracker] Adding metadata:`, { id, metadata });
     const node = this.nodes.get(id);
     if (node) {
       node.metadata = { ...node.metadata, ...metadata };

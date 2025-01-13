@@ -61,20 +61,32 @@ export function Component<P, O>(
     | undefined
   >,
 ): WorkflowComponent<P, O> {
+  console.log(`[Component] Creating component wrapper for:`, fn.name);
+
   function GsxComponent(props: ComponentProps<P, O>): () => Promise<O> {
     return async () => {
       const context = getCurrentContext();
       const tracker = context.get("tracker");
+      const elementName = context.get("elementName") as string | undefined;
+
+      // Use elementName from context if available, fallback to function name
+      const componentName = elementName || fn.name || "Anonymous";
 
       // Start tracking this component using its actual name
       const nodeId = tracker
         ? await tracker.addNode({
-            componentName: fn.name || "Anonymous",
+            componentName,
             props: Object.fromEntries(
               Object.entries(props).filter(([key]) => key !== "children"),
             ),
           })
         : undefined;
+
+      console.log(`[Component] Added tracking node:`, {
+        componentName,
+        nodeId,
+        parentNode: tracker?.currentNode?.id,
+      });
 
       try {
         const result = await resolveDeep(fn(props));
@@ -91,11 +103,17 @@ export function Component<P, O>(
         // Complete tracking
         if (nodeId) {
           await tracker?.completeNode(nodeId, finalResult);
+          console.log(`[Component] Completed node:`, { nodeId, componentName });
         }
 
         return finalResult;
       } catch (error) {
         // Track errors too
+        console.error(`[Component] Error in component:`, {
+          componentName,
+          nodeId,
+          error,
+        });
         if (nodeId && error instanceof Error) {
           await tracker?.addMetadata(nodeId, { error: error.message });
           await tracker?.completeNode(nodeId, undefined);

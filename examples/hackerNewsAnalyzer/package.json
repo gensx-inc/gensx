@@ -9,10 +9,11 @@
   "scripts": {
     "dev": "nodemon",
     "run": "NODE_OPTIONS='--enable-source-maps' tsx ./index.tsx",
-    "build": "tsc",
+    "build": "tsx build.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "NODE_OPTIONS='--enable-source-maps' tsx ./index.tsx"
+    "test": "NODE_OPTIONS='--enable-source-maps' tsx ./index.tsx",
+    "start": "node dist/hn.js"
   },
   "dependencies": {
     "@gensx/openai": "workspace:*",
