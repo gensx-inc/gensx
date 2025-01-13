@@ -48,12 +48,11 @@ vi.mock("openai", async (importOriginal) => {
 });
 
 suite("OpenAIContext", () => {
-  test.only("provides OpenAI client to children", async () => {
+  test("provides OpenAI client to children", async () => {
     let capturedClient: OpenAI | undefined;
 
     const TestComponent = gsx.Component(() => {
       const context = gsx.useContext(OpenAIContext);
-      console.log("component context", context);
       capturedClient = context.client;
       return null;
     });
@@ -77,6 +76,22 @@ suite("OpenAIContext", () => {
 
     await expect(() => gsx.execute(<TestComponent />)).rejects.toThrow(
       "OpenAI client not found in context",
+    );
+  });
+
+  test("can provide a custom client", async () => {
+    const customClient = new OpenAI({ apiKey: "test" });
+
+    const TestComponent = gsx.Component(() => {
+      const context = gsx.useContext(OpenAIContext);
+      expect(context.client).toBe(customClient);
+      return null;
+    });
+
+    await gsx.execute(
+      <OpenAIContext.Provider value={{ client: customClient }}>
+        <TestComponent />
+      </OpenAIContext.Provider>,
     );
   });
 });
@@ -125,6 +140,6 @@ suite("ChatCompletion", () => {
       </OpenAIProvider>,
     );
 
-    expect(result).toBe("Test response");
+    expect(result).toBe("Hello World");
   });
 });

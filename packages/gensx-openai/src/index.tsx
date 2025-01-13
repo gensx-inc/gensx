@@ -15,9 +15,7 @@ export const OpenAIContext = gsx.createContext<{
 
 export const OpenAIProvider = gsx.Component<ClientOptions, never>((props) => {
   const { children, ...rest } = props;
-  console.log("children", children);
   const client = new OpenAI(rest);
-  console.log("client", client);
   return (
     <OpenAIContext.Provider value={{ client }}>
       {children}
@@ -29,7 +27,6 @@ export const OpenAIProvider = gsx.Component<ClientOptions, never>((props) => {
 export const ChatCompletion = StreamComponent<ChatCompletionCreateParams>(
   async (props) => {
     const context = gsx.useContext(OpenAIContext);
-    console.log(context);
 
     if (!context.client) {
       throw new Error(

@@ -245,5 +245,30 @@ suite("context", () => {
       );
       expect(result).toEqual(["value 1 wrapped", "value 2 wrapped"]);
     });
+
+    test("can nest children within multiple context providers", async () => {
+      const Context2 = createContext("default2");
+
+      const Providers = gsx.Component<{ value: string }, string>(props => {
+        return (
+          <TestContext.Provider value="outer1">
+            <Context2.Provider value="outer2">
+              {props.children}
+            </Context2.Provider>
+          </TestContext.Provider>
+        );
+      });
+
+      const result = await gsx.execute(
+        <Providers value="value">
+          {() => {
+            const testValue = useContext(TestContext);
+            const context2Value = useContext(Context2);
+            return [testValue, context2Value];
+          }}
+        </Providers>,
+      );
+      expect(result).toEqual(["outer1", "outer2"]);
+    });
   });
 });

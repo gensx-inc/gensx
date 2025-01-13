@@ -64,7 +64,7 @@ export function Component<P, O>(
       const result = await resolveDeep(fn(props));
 
       let finalResult: O;
-      if (props.children) {
+      if (props.children && !props.children.__gsxChildExecuted) {
         props.children.__gsxChildExecuted = true;
         finalResult = await resolveDeep(props.children(result as O));
       } else {
@@ -93,7 +93,7 @@ export function StreamComponent<P>(
     return async () => {
       const iterator: Streamable = await resolveDeep(fn(props));
       if (props.stream) {
-        if (props.children) {
+        if (props.children && !props.children.__gsxChildExecuted) {
           props.children.__gsxChildExecuted = true;
           return await resolveDeep(
             props.children(iterator as unknown as Streamable & string),
@@ -106,7 +106,7 @@ export function StreamComponent<P>(
       for await (const token of iterator) {
         result += token;
       }
-      if (props.children) {
+      if (props.children && !props.children.__gsxChildExecuted) {
         props.children.__gsxChildExecuted = true;
         return await resolveDeep(
           props.children(result as unknown as Streamable & string),

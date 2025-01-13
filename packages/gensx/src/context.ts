@@ -18,25 +18,17 @@ export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
 
   function Provider(props: ComponentProps<{ value: T }, never>) {
-    return async function ProviderImplementation() {
+    return async () => {
       const children = props.children;
       if (!children) {
         console.warn("Provider has no children");
         return null as never;
       }
-      console.log("provider props", props);
-      return withContext(
-        { [contextSymbol]: props.value },
-        async function ProviderContextWrapper() {
-          console.log("provider children", children);
-          const context = getCurrentContext();
-          console.log("provider context", context);
-          children.__gsxChildExecuted = true;
-          const result = await resolveDeep(children(null as never));
-          console.log("provider child result", result);
-          return result;
-        },
-      );
+      return withContext({ [contextSymbol]: props.value }, async () => {
+        children.__gsxChildExecuted = true;
+        const result = await resolveDeep(children(null as never));
+        return result;
+      });
     };
   }
 

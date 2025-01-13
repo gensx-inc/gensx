@@ -6,7 +6,6 @@ import { ExecutableValue } from "./types";
  * This is the core resolution logic used by both execute() and the JSX runtime.
  */
 export async function resolveDeep<T>(value: unknown): Promise<T> {
-  console.log("resolveDeep", value);
   // Handle promises first
   if (value instanceof Promise) {
     const resolved = (await value) as Promise<T>;

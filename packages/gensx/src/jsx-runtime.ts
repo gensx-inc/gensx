@@ -14,14 +14,17 @@ export namespace JSX {
   }
 }
 
-export const Fragment = (props: {
-  children: JSX.Element[] | JSX.Element;
-}): JSX.Element[] => {
-  console.log("Fragment", props.children, Array.isArray(props.children));
-  if (Array.isArray(props.children)) {
-    return props.children;
+export const Fragment = async (props: {
+  children?: JSX.Element[] | JSX.Element;
+}) => {
+  if (!props.children) {
+    return [];
   }
-  return [props.children];
+  if (Array.isArray(props.children)) {
+    return resolveDeep(props.children);
+  }
+  const result = await resolveDeep([props.children]);
+  return result;
 };
 
 export const jsx = <TOutput, TProps>(
@@ -30,7 +33,6 @@ export const jsx = <TOutput, TProps>(
 ): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
   // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
-    console.log(`component[${component.name}]`);
     const rawResult = await component(
       props ?? ({} as ComponentProps<TProps, TOutput>),
     );
@@ -39,18 +41,7 @@ export const jsx = <TOutput, TProps>(
       props.children.__gsxIsChild = true;
     }
 
-    console.log(`rawResult[${component.name}]`, rawResult);
     const result = await resolveDeep(rawResult);
-    console.log(`result[${component.name}]`, result, props?.children);
-
-    if (props?.children && !props.children.__gsxChildExecuted) {
-      props.children.__gsxChildExecuted = true;
-      const childrenResult = await resolveDeep(props.children);
-      console.log(`childrenResult[${component.name}]`, childrenResult);
-      return childrenResult as Awaited<TOutput> | Awaited<TOutput>[];
-    }
-
-    console.log(`returning result[${component.name}]`, result);
     return result as Awaited<TOutput> | Awaited<TOutput>[];
   }
 
