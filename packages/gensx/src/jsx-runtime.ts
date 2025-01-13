@@ -32,22 +32,18 @@ export const jsx = <
       | JSX.Element[];
   },
 >(
-  component: (props: TProps) => MaybePromise<TOutput>,
+  component: (props: TProps, elementName?: string) => MaybePromise<TOutput>,
   props: TProps | null,
   elementName?: string,
 ): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
   // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
-    // Execute component with props
-    const baseProps = {
-      ...(props ?? ({} as TProps)),
-      __elementName: elementName, // Pass elementName through props
-    };
-
+    // Execute component with props and elementName as separate parameters
+    const baseProps = props ?? ({} as TProps);
     console.log("elementName", elementName);
 
-    // Execute component
-    const rawResult = await component(baseProps);
+    // Execute component with elementName as second parameter
+    const rawResult = await component(baseProps, elementName);
 
     // For non-streaming results, resolve deeply but preserve streamables
     const result = await resolveDeep(rawResult);

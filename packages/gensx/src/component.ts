@@ -8,7 +8,7 @@ import type {
   WorkflowContext,
 } from "./types";
 
-import { withContext, getCurrentContext } from "./context";
+import { getCurrentContext, withContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
@@ -52,6 +52,7 @@ type DeepJSXElement<T> = T extends (infer Item)[]
 export function Component<P, O>(
   fn: (
     props: P,
+    elementName?: string,
   ) => MaybePromise<
     | O
     | JSX.Element
@@ -64,31 +65,22 @@ export function Component<P, O>(
   console.log(`[Component] Creating component wrapper for:`, fn.name);
 
   function GsxComponent(
-    props: ComponentProps<P, O> & { __elementName?: string },
+    props: ComponentProps<P, O>,
+    elementName?: string,
   ): () => Promise<O> {
     return async () => {
       const context = getCurrentContext();
       const tracker = context.get("tracker");
 
-      // Get elementName from props instead of context
-      const elementName = props.__elementName;
-      console.log("elementName from props:", elementName);
-
-      // Use elementName from props if available, fallback to function name
-      const componentName = elementName || fn.name || "Anonymous";
-
-      // Remove __elementName from props before passing to component
-      const componentProps = { ...props };
-      delete (componentProps as any).__elementName;
+      // Use elementName if provided, fallback to function name
+      const componentName = elementName ?? fn.name ?? "Anonymous";
 
       // Start tracking this component using its actual name
       const nodeId = tracker
         ? await tracker.addNode({
             componentName,
             props: Object.fromEntries(
-              Object.entries(componentProps).filter(
-                ([key]) => key !== "children",
-              ),
+              Object.entries(props).filter(([key]) => key !== "children"),
             ),
           })
         : undefined;
@@ -100,7 +92,7 @@ export function Component<P, O>(
       });
 
       try {
-        const result = await resolveDeep(fn(props));
+        const result = await resolveDeep(fn(props, elementName));
 
         let finalResult: O;
         if (props.children) {
@@ -150,6 +142,8 @@ export function StreamComponent<P>(
     props: StreamComponentProps<P, Stream>,
   ): () => Promise<Stream extends true ? Streamable : string> {
     return async () => {
+      // TODO: add element name and tracker...
+
       const iterator: Streamable = await resolveDeep(fn(props));
       if (props.stream) {
         if (props.children) {

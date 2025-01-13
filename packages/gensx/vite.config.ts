@@ -1,28 +1,30 @@
+import { resolve } from "path";
+
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
-import { jsxTransformerPlugin } from "./src/vite-jsx-transformer";
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   build: {
     sourcemap: true,
-    minify: false,
     lib: {
       entry: {
-        index: "./src/index.ts",
-        "jsx-runtime": "./src/jsx-runtime.ts",
-        "jsx-dev-runtime": "./src/jsx-dev-runtime.ts",
+        index: resolve(__dirname, "src/index.ts"),
+        "jsx-runtime": resolve(__dirname, "src/jsx-runtime.ts"),
+        "jsx-dev-runtime": resolve(__dirname, "src/jsx-dev-runtime.ts"),
       },
       formats: ["es"],
+      fileName: (_, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
-      external: ["node:crypto", "fs/promises"],
+      external: id => !id.startsWith(".") && !id.startsWith("/"),
     },
+    watch: command === "serve" ? {} : undefined,
   },
   plugins: [
     dts({
-      include: ["src/**/*.ts", "src/**/*.tsx"],
-      exclude: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+      include: ["src"],
+      outDir: "dist",
+      rollupTypes: true,
     }),
-    jsxTransformerPlugin(),
   ],
-});
+}));
