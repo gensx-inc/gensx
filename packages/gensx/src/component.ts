@@ -8,7 +8,7 @@ import type {
   WorkflowContext,
 } from "./types";
 
-import { withContext } from "./context";
+import { withContext, getCurrentContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
@@ -63,17 +63,45 @@ export function Component<P, O>(
 ): WorkflowComponent<P, O> {
   function GsxComponent(props: ComponentProps<P, O>): () => Promise<O> {
     return async () => {
-      const result = await resolveDeep(fn(props));
+      const context = getCurrentContext();
+      const tracker = context.get("tracker");
 
-      let finalResult: O;
-      if (props.children) {
-        finalResult = await withContext({}, () =>
-          props.children?.(result as O),
-        );
-      } else {
-        finalResult = result as O; // TODO: Extract type information from children.
+      // Start tracking this component using its actual name
+      const nodeId = tracker
+        ? await tracker.addNode({
+            componentName: fn.name || "Anonymous",
+            props: Object.fromEntries(
+              Object.entries(props).filter(([key]) => key !== "children"),
+            ),
+          })
+        : undefined;
+
+      try {
+        const result = await resolveDeep(fn(props));
+
+        let finalResult: O;
+        if (props.children) {
+          finalResult = await withContext({}, () =>
+            props.children?.(result as O),
+          );
+        } else {
+          finalResult = result as O;
+        }
+
+        // Complete tracking
+        if (nodeId) {
+          await tracker?.completeNode(nodeId, finalResult);
+        }
+
+        return finalResult;
+      } catch (error) {
+        // Track errors too
+        if (nodeId && error instanceof Error) {
+          await tracker?.addMetadata(nodeId, { error: error.message });
+          await tracker?.completeNode(nodeId, undefined);
+        }
+        throw error;
       }
-      return finalResult;
     };
   }
 
@@ -83,8 +111,7 @@ export function Component<P, O>(
     });
   }
 
-  const component = GsxComponent;
-  return component;
+  return GsxComponent as WorkflowComponent<P, O>;
 }
 
 export function StreamComponent<P>(

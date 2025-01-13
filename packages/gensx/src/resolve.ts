@@ -1,5 +1,6 @@
 import { ExecutableValue } from "@/types";
-
+import { DefaultExecutionTracker } from "./execution-tracker";
+import { withContext } from "./context";
 import { isStreamable } from "./stream";
 
 /**
@@ -44,14 +45,26 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   return value as T;
 }
 
+export interface ExecuteOptions {
+  checkpointPath?: string;
+}
+
 /**
  * Executes a JSX element or any other value, ensuring all promises and nested values are resolved.
  * This is the main entry point for executing workflow components.
  */
-export async function execute<T>(element: ExecutableValue): Promise<T> {
+export async function execute<T>(
+  element: ExecutableValue,
+  options: ExecuteOptions = {},
+): Promise<T> {
+  const tracker = new DefaultExecutionTracker(options.checkpointPath);
+
   try {
-    // use the shared resolver
-    return (await resolveDeep(element)) as T;
+    return await withContext({ tracker }, async () => {
+      const result = await resolveDeep(element);
+      await tracker.writeCheckpoint();
+      return result as T;
+    });
   } finally {
     // Context cleanup handled by withContext
   }

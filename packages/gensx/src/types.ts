@@ -1,4 +1,5 @@
 import { JSX } from "./jsx-runtime";
+import type { ExecutionTracker } from "./execution-tracker";
 
 export type MaybePromise<T> = T | Promise<T>;
 
@@ -68,5 +69,6 @@ export type StreamingComponent<P, Stream extends boolean | undefined> = (
 export interface WorkflowContext {
   trace?: unknown;
   transaction?: unknown;
+  tracker?: ExecutionTracker;
   [key: string]: unknown;
 }
