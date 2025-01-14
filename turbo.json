@@ -37,6 +37,9 @@
     "docs#lint": {
       "dependsOn": ["^build", "build"]
     },
+    "@gensx-examples/deep-research#test": {
+      "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY"]
+    },
     "create-gensx#test": {
       "dependsOn": ["^build", "build", "gensx#build", "@gensx/openai#build"],
       "env": ["OPENAI_API_KEY"]
