@@ -37,6 +37,12 @@ pnpm build:all
 pnpm test:all
 ```
 
+## Run an example
+
+```bash
+OPENAI_API_KEY=<my api key> turbo run run --filter="./examples/blogWriter"
+```
+
 ## Available Commands
 
 - `pnpm build` - Build core packages
@@ -51,7 +57,7 @@ pnpm test:all
 
 ## Documentation
 
-For detailed documentation about GenSX, please refer to the [GenSX package README](packages/gensx/README.md).
+For detailed documentation about GenSX, please refer check out the [docs](https://gensx.dev).
 
 ## License
 
