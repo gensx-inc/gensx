@@ -1,7 +1,8 @@
-import { ArxivEntry } from "./arxiv.js";
 import { ChatCompletion } from "@gensx/openai";
-import { Firecrawl } from "./firecrawl.js";
 import { gsx } from "gensx";
+
+import { ArxivEntry } from "./arxiv.js";
+import { Firecrawl } from "./firecrawl.js";
 
 export interface SummarizePaperProps {
   markdown: string;
@@ -66,7 +67,7 @@ export const FetchAndSummarize = gsx.Component<
         url: url,
         summary: (
           <Firecrawl url={url}>
-            {(markdown: string) =>
+            {(markdown: string | null) =>
               markdown && <SummarizePaper markdown={markdown} prompt={prompt} />
             }
           </Firecrawl>

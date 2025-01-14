@@ -1,5 +1,6 @@
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
+
 import { ArxivEntry, ArxivSearch } from "./arxiv.js";
 import { GradeDocuments } from "./grader.js";
 import { PromptToQuery } from "./promptToQuery.js";
@@ -15,9 +16,9 @@ export const FindResearch = gsx.Component<FindResearchProps, ArxivEntry[]>(
       <PromptToQuery prompt={prompt}>
         {({ queries }) => {
           console.log("\n=== Search Queries ===");
-          queries.forEach((query, i) =>
-            console.log(`Query ${i + 1}: ${query}`),
-          );
+          queries.forEach((query, i) => {
+            console.log(`Query ${i + 1}: ${query}`);
+          });
 
           return (
             <ArxivSearch queries={queries} maxResultsPerQuery={3}>
@@ -95,7 +96,7 @@ interface DeepResearchProps {
   prompt: string;
 }
 
-export const DeepResearchWorkflow = gsx.Component<DeepResearchProps, any>(
+export const DeepResearchWorkflow = gsx.Component<DeepResearchProps, string>(
   ({ prompt }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>

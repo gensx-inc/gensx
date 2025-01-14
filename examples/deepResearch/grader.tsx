@@ -1,6 +1,7 @@
-import { ArxivEntry } from "./arxiv.js";
 import { ChatCompletion } from "@gensx/openai";
 import { gsx } from "gensx";
+
+import { ArxivEntry } from "./arxiv.js";
 
 export interface GradeDocumentProps {
   prompt: string;

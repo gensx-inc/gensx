@@ -2,6 +2,14 @@ import { gsx } from "gensx";
 import fetch from "node-fetch";
 import { Parser } from "xml2js";
 
+interface RawArxivEntry {
+  title?: string[];
+  summary?: string[];
+  id?: string[];
+  published?: string[];
+  updated?: string[];
+}
+
 export interface ArxivEntry {
   title: string;
   summary: string;
@@ -29,7 +37,7 @@ export const ArxivSearch = gsx.Component<ArxivSearchProps, ArxivEntry[]>(
       const parsedResult = await parser.parseStringPromise(xml);
 
       const entries: ArxivEntry[] = (parsedResult.feed.entry || []).map(
-        (entry: any) => ({
+        (entry: RawArxivEntry) => ({
           title: entry.title?.[0] ?? "",
           summary: entry.summary?.[0] ?? "",
           url: entry.id?.[0] ?? "",
