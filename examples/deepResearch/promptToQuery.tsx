@@ -1,18 +1,18 @@
-import { gsx } from "gensx";
 import { ChatCompletion } from "@gensx/openai";
+import { gsx } from "gensx";
 
 export interface PromptToQueryProps {
   prompt: string;
 }
 
-export type PromptToQueryOutput = {
+export interface PromptToQueryOutput {
   queries: string[];
-};
+}
 
 export const PromptToQuery = gsx.Component<
   PromptToQueryProps,
   PromptToQueryOutput
->(async ({ prompt }) => {
+>(({ prompt }) => {
   const systemMessage = `You are a helpful research assistant. 
 
     Instructions:

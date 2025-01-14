@@ -1,5 +1,5 @@
-import { gsx } from "gensx";
 import FirecrawlApp from "@mendable/firecrawl-js";
+import { gsx } from "gensx";
 
 interface FirecrawlProps {
   url: string;

@@ -1,8 +1,8 @@
-import { gsx } from "gensx";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { gsx } from "gensx";
 import { ArxivEntry, ArxivSearch } from "./arxiv.js";
-import { PromptToQuery } from "./promptToQuery.js";
 import { GradeDocuments } from "./grader.js";
+import { PromptToQuery } from "./promptToQuery.js";
 import { FetchAndSummarize, FetchAndSummarizeOutput } from "./summarize.js";
 
 interface FindResearchProps {

@@ -1,6 +1,6 @@
-import { gsx } from "gensx";
 import { ArxivEntry } from "./arxiv.js";
 import { ChatCompletion } from "@gensx/openai";
+import { gsx } from "gensx";
 
 export interface GradeDocumentProps {
   prompt: string;
@@ -24,7 +24,7 @@ export interface GradeDocumentsOutput {
 }
 
 export const GradeDocument = gsx.Component<GradeDocumentProps, boolean>(
-  async ({ prompt, document }) => {
+  ({ prompt, document }) => {
     const systemMessage = `You are a helpful research assistant. 
   
 Instructions:
