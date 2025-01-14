@@ -38,3 +38,7 @@ html {
 	--sl-color-gray-7: #f5f6f8;
 	--sl-color-black: #ffffff;
 }
+
+.secondary {
+  background-color: white;
+}
