@@ -49,7 +49,7 @@ type DeepJSXElement<T> = T extends (infer Item)[]
 
 export function Component<P, O>(
   fn: (
-    props: ComponentProps<P, O>,
+    props: P,
   ) => MaybePromise<
     | O
     | JSX.Element
@@ -61,16 +61,7 @@ export function Component<P, O>(
 ): WorkflowComponent<P, O> {
   function GsxComponent(props: ComponentProps<P, O>): () => Promise<O> {
     return async () => {
-      const result = await resolveDeep(fn(props));
-
-      let finalResult: O;
-      if (props.children && !props.children.__gsxChildExecuted) {
-        props.children.__gsxChildExecuted = true;
-        finalResult = await resolveDeep(props.children(result as O));
-      } else {
-        finalResult = result as O;
-      }
-      return finalResult;
+      return await resolveDeep(fn(props));
     };
   }
 
@@ -93,24 +84,12 @@ export function StreamComponent<P>(
     return async () => {
       const iterator: Streamable = await resolveDeep(fn(props));
       if (props.stream) {
-        if (props.children && !props.children.__gsxChildExecuted) {
-          props.children.__gsxChildExecuted = true;
-          return await resolveDeep(
-            props.children(iterator as unknown as Streamable & string),
-          );
-        }
         return iterator as Stream extends true ? Streamable : string;
       }
 
       let result = "";
       for await (const token of iterator) {
         result += token;
-      }
-      if (props.children && !props.children.__gsxChildExecuted) {
-        props.children.__gsxChildExecuted = true;
-        return await resolveDeep(
-          props.children(result as unknown as Streamable & string),
-        );
       }
       return result as Stream extends true ? Streamable : string;
     };

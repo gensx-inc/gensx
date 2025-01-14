@@ -14,13 +14,8 @@ export const OpenAIContext = gsx.createContext<{
 }>({});
 
 export const OpenAIProvider = gsx.Component<ClientOptions, never>((props) => {
-  const { children, ...rest } = props;
-  const client = new OpenAI(rest);
-  return (
-    <OpenAIContext.Provider value={{ client }}>
-      {children}
-    </OpenAIContext.Provider>
-  );
+  const client = new OpenAI(props);
+  return <OpenAIContext.Provider value={{ client }} />;
 });
 
 // Create a component for chat completions

@@ -1,21 +1,10 @@
 import { setTimeout } from "timers/promises";
 
-import { expect, suite, test, vi } from "vitest";
+import { expect, suite, test } from "vitest";
 
-import { createContext, gsx } from "@/index.js";
+import { gsx } from "@/index.js";
 
 suite("component", () => {
-  test("ContextProvider warns when no children provided", async () => {
-    const mockConsoleWarn = vi
-      .spyOn(console, "warn")
-      .mockImplementation(() => undefined);
-    const context = createContext({ test: "value" });
-    await gsx.execute(<context.Provider value={{ test: "value" }} />);
-    await setTimeout(0);
-    expect(mockConsoleWarn).toHaveBeenCalledWith("Provider has no children");
-    mockConsoleWarn.mockRestore();
-  });
-
   test("Component preserves name for anonymous functions", async () => {
     const AnonymousComponent = gsx.Component(async () => {
       await setTimeout(0);

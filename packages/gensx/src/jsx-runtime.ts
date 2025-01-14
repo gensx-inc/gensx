@@ -1,8 +1,14 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { ExecutionContext, withContext } from "./context";
 import { resolveDeep } from "./resolve";
-import { ComponentProps, MaybePromise } from "./types";
+import {
+  ComponentProps,
+  ExecutableValue,
+  MaybePromise,
+  Primitive,
+} from "./types";
 
 export namespace JSX {
   export type ElementType = (props: any) => Element;
@@ -14,18 +20,18 @@ export namespace JSX {
   }
 }
 
-export const Fragment = async (props: {
-  children?: JSX.Element[] | JSX.Element;
-}) => {
+export const Fragment = (props: { children?: JSX.Element[] | JSX.Element }) => {
   if (!props.children) {
     return [];
   }
   if (Array.isArray(props.children)) {
-    return resolveDeep(props.children);
+    return props.children;
   }
-  const result = await resolveDeep([props.children]);
-  return result;
+  return [props.children];
 };
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+(Fragment as any).__gsxFragment = true;
 
 export const jsx = <TOutput, TProps>(
   component: (props: ComponentProps<TProps, TOutput>) => MaybePromise<TOutput>,
@@ -37,11 +43,24 @@ export const jsx = <TOutput, TProps>(
       props ?? ({} as ComponentProps<TProps, TOutput>),
     );
 
-    if (props?.children) {
-      props.children.__gsxIsChild = true;
-    }
-
     const result = await resolveDeep(rawResult);
+
+    // Need to special case Fragment, because it's children are actually executed in the resolveDeep above
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (props?.children && !(component as any).__gsxFragment) {
+      if (result instanceof ExecutionContext) {
+        return await withContext(result, () => {
+          if (props.children) {
+            return resolveDeep(resolveChildren(null as never, props.children));
+          }
+          return null as never;
+        });
+      } else {
+        return await resolveDeep(
+          resolveChildren(result as TOutput, props.children),
+        );
+      }
+    }
     return result as Awaited<TOutput> | Awaited<TOutput>[];
   }
 
@@ -55,3 +74,22 @@ export const jsx = <TOutput, TProps>(
 };
 
 export const jsxs = jsx;
+
+function resolveChildren<O>(
+  output: O,
+  children:
+    | JSX.Element
+    | JSX.Element[]
+    | ((output: O) => MaybePromise<ExecutableValue | Primitive>)
+    // support child functions that do not return anything, but maybe do some other side effect
+    | ((output: O) => void)
+    | ((output: O) => Promise<void>),
+) {
+  if (children instanceof Function) {
+    return children(output);
+  }
+  if (Array.isArray(children)) {
+    return resolveDeep(children);
+  }
+  return children;
+}

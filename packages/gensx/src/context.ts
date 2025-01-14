@@ -1,10 +1,5 @@
 import { resolveDeep } from "./resolve";
-import {
-  ComponentProps,
-  Context,
-  ExecutableValue,
-  WorkflowComponent,
-} from "./types";
+import { ComponentProps, Context, ExecutableValue } from "./types";
 
 type WorkflowContext = Record<symbol, unknown>;
 
@@ -17,29 +12,21 @@ function createContextSymbol() {
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
 
-  function Provider(props: ComponentProps<{ value: T }, never>) {
-    return async () => {
-      const children = props.children;
-      if (!children) {
-        console.warn("Provider has no children");
-        return null as never;
-      }
-      return withContext({ [contextSymbol]: props.value }, async () => {
-        children.__gsxChildExecuted = true;
-        const result = await resolveDeep(children(null as never));
-        return result;
-      });
+  function Provider(props: ComponentProps<{ value: T }, ExecutionContext>) {
+    return () => {
+      const currentContext = getCurrentContext();
+
+      return Promise.resolve(
+        currentContext.withContext({ [contextSymbol]: props.value }),
+      );
     };
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-  (Provider as any).__isGsxProvider = true;
 
   const context = {
     __type: "Context" as const,
     defaultValue,
     symbol: contextSymbol,
-    Provider: Provider as WorkflowComponent<{ value: T }, never>,
+    Provider,
   };
 
   return context;
@@ -64,7 +51,7 @@ interface AsyncLocalStorageType<T> {
   enterWith(store: T): void;
 }
 
-class ExecutionContext {
+export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
@@ -141,14 +128,12 @@ const contextManager = {
 
 // Helper to run code with a specific context
 export async function withContext<T>(
-  context: Partial<WorkflowContext>,
+  context: ExecutionContext,
   fn: ExecutableValue,
 ): Promise<T> {
   await configureAsyncLocalStorage;
-  const prevContext = contextManager.getCurrentContext();
-  const newContext = prevContext.withContext(context);
 
-  return contextManager.run(newContext, async () => {
+  return contextManager.run(context, async () => {
     const result = await resolveDeep(fn);
     return result as T;
   });

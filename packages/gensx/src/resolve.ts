@@ -1,3 +1,4 @@
+import { ExecutionContext } from "./context";
 import { isStreamable } from "./stream";
 import { ExecutableValue } from "./types";
 
@@ -10,6 +11,10 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   if (value instanceof Promise) {
     const resolved = (await value) as Promise<T>;
     return resolveDeep(resolved);
+  }
+
+  if (value instanceof ExecutionContext) {
+    return value as T;
   }
 
   // Pass through streamable values - they are handled by execute

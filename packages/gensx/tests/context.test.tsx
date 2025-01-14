@@ -203,21 +203,15 @@ suite("context", () => {
 
   suite("can wrap children in a context provider", () => {
     const TestContext = createContext("default");
-    const MyProvider = gsx.Component<{ value: string }, never>(
-      function MyProvider(props) {
-        const newValue = props.value + " wrapped";
-        return (
-          <TestContext.Provider value={newValue}>
-            {props.children}
-          </TestContext.Provider>
-        );
-      },
-    );
+    const MyProvider = gsx.Component<{ value: string }, never>(props => {
+      const newValue = props.value + " wrapped";
+      return <TestContext.Provider value={newValue} />;
+    });
 
     test("returns the value from the context", async () => {
       const result = await gsx.execute<string>(
         <MyProvider value="value">
-          {function Consumer() {
+          {() => {
             const value = useContext(TestContext);
             return value;
           }}
@@ -226,35 +220,13 @@ suite("context", () => {
       expect(result).toBe("value wrapped");
     });
 
-    test("can wrap children in sibling context providers", async () => {
-      const Wrapper = gsx.Component<{ value: string }, string>(props => {
-        return (
-          <>
-            <MyProvider value={props.value + " 1"}>{props.children}</MyProvider>
-            <MyProvider value={props.value + " 2"}>{props.children}</MyProvider>
-          </>
-        );
-      });
-      const result = await gsx.execute(
-        <Wrapper value="value">
-          {() => {
-            const value = useContext(TestContext);
-            return value;
-          }}
-        </Wrapper>,
-      );
-      expect(result).toEqual(["value 1 wrapped", "value 2 wrapped"]);
-    });
-
     test("can nest children within multiple context providers", async () => {
       const Context2 = createContext("default2");
 
       const Providers = gsx.Component<{ value: string }, string>(props => {
         return (
-          <TestContext.Provider value="outer1">
-            <Context2.Provider value="outer2">
-              {props.children}
-            </Context2.Provider>
+          <TestContext.Provider value={`${props.value} outer1`}>
+            <Context2.Provider value={`${props.value} outer2`} />
           </TestContext.Provider>
         );
       });
@@ -268,7 +240,7 @@ suite("context", () => {
           }}
         </Providers>,
       );
-      expect(result).toEqual(["outer1", "outer2"]);
+      expect(result).toEqual(["value outer1", "value outer2"]);
     });
   });
 });
