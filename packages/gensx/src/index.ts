@@ -6,7 +6,6 @@ export type { JSX } from "./jsx-runtime";
 export type {
   ComponentProps,
   Context,
-  ExecutableValue,
   MaybePromise,
   Streamable,
   StreamComponentProps,
@@ -14,10 +13,8 @@ export type {
   WorkflowComponent,
 } from "./types";
 
-// Re-export as gsx for backward compatibility
 import { Component, StreamComponent } from "./component";
 import { createContext, useContext } from "./context";
-import * as jsxRuntime from "./jsx-runtime";
 import { execute } from "./resolve";
 
 export const gsx = {
@@ -26,5 +23,4 @@ export const gsx = {
   createContext,
   execute,
   useContext,
-  "jsx-runtime": jsxRuntime,
 };
