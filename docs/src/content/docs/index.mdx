@@ -27,3 +27,34 @@ hero:
         rel: me
 editUrl: false
 ---
+
+<style>
+{`
+  .dot-background {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+  }
+
+  .dot-background-mask {
+    position: absolute;
+    inset: 0;
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 70%);
+    mask-image: radial-gradient(circle at center, black 40%, transparent 70%);
+  }
+
+  .dot-pattern {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at center, rgba(100,100,100,0.3) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+`}
+</style>
+
+<div class="dot-background">
+  <div class="dot-background-mask">
+    <div class="dot-pattern"></div>
+  </div>
+</div>
