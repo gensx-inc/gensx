@@ -43,4 +43,7 @@ jobs:
       - name: Build 📦
         run: pnpm build:examples
       - name: Run tests ✅
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: pnpm test:examples
