@@ -85,7 +85,8 @@ suite("streaming", () => {
     const timeToFirstToken = performance.now() - start;
 
     expect(firstToken.value).toBe("Hello ");
-    expect(timeToFirstToken).toBeLessThan(5);
+    // The delay is 1 second, so this gives us a big amount of leeway
+    expect(timeToFirstToken).toBeLessThan(100);
   });
 
   // Test both async and sync versions of the component
