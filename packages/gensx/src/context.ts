@@ -1,5 +1,5 @@
 import { resolveDeep } from "./resolve";
-import { ComponentProps, Context, ExecutableValue } from "./types";
+import { ComponentProps, Context } from "./types";
 
 type WorkflowContext = Record<symbol, unknown>;
 
@@ -129,7 +129,7 @@ const contextManager = {
 // Helper to run code with a specific context
 export async function withContext<T>(
   context: ExecutionContext,
-  fn: ExecutableValue,
+  fn: () => Promise<T>,
 ): Promise<T> {
   await configureAsyncLocalStorage;
 
