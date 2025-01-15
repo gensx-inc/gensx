@@ -59,17 +59,17 @@ async function runStreamingExample() {
   console.log("✅ Streaming complete");
 }
 
-const GeneratorComponent: gsx.StreamComponent<{
+const GeneratorComponent = gsx.StreamComponent<{
   foo: string;
   iterations: number;
-}> = async function* ({ foo, iterations }) {
+}>(async function* ({ foo, iterations }) {
   await setTimeout(10);
   for (let i = 1; i < iterations + 1; i++) {
     console.log("🔥 GeneratorComponent", i);
     yield `${i}: ${foo.repeat(i)}\n`;
     await setTimeout(10);
   }
-};
+});
 
 async function streamingGeneratorExample() {
   console.log("⚡️ StreamingGeneratorExample - return result from generator");

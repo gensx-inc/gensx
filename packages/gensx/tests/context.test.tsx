@@ -1,21 +1,20 @@
 import { setTimeout } from "timers/promises";
 
-import type { ExecutionContext } from "@/index.js";
-
 import { expect, suite, test } from "vitest";
 
+import { ExecutionContext } from "@/context";
 import { createContext, gsx, useContext } from "@/index.js";
-import { Component } from "@/types";
+import { Component, ComponentProps } from "@/types";
 
 suite("context", () => {
   test("can create and use context with default value", async () => {
     const TestContext = createContext("default");
 
-    const Consumer: Component<Record<string, never>, string> = async () => {
+    async function Consumer() {
       await setTimeout(0);
       const value = useContext(TestContext);
       return value;
-    };
+    }
 
     const result = await gsx.execute(<Consumer />);
     expect(result).toBe("default");
@@ -24,11 +23,11 @@ suite("context", () => {
   test("can provide and consume context value", async () => {
     const TestContext = createContext("default");
 
-    const Consumer: Component<Record<string, never>, string> = async () => {
+    async function Consumer() {
       await setTimeout(0);
       const value = useContext(TestContext);
       return value;
-    };
+    }
 
     const result = await gsx.execute(
       <TestContext.Provider value="provided">
@@ -42,11 +41,11 @@ suite("context", () => {
   test("context value can be nested", async () => {
     const TestContext = createContext("default");
 
-    const Consumer: Component<Record<string, never>, string> = async () => {
+    async function Consumer() {
       await setTimeout(0);
       const value = useContext(TestContext);
       return value;
-    };
+    }
 
     const result = await gsx.execute(
       <TestContext.Provider value="outer">
@@ -67,11 +66,11 @@ suite("context", () => {
 
     const UserContext = createContext<User>({ name: "default", age: 0 });
 
-    const Consumer: Component<Record<string, never>, string> = async () => {
+    async function Consumer() {
       await setTimeout(0);
       const user = useContext(UserContext);
       return user.name;
-    };
+    }
 
     const result = await gsx.execute(
       <UserContext.Provider value={{ name: "John", age: 30 }}>
@@ -86,15 +85,12 @@ suite("context", () => {
     const NameContext = createContext("default-name");
     const AgeContext = createContext(0);
 
-    const Consumer: Component<
-      Record<string, never>,
-      { name: string; age: number }
-    > = async () => {
+    async function Consumer() {
       await setTimeout(0);
       const name = useContext(NameContext);
       const age = useContext(AgeContext);
       return { name, age };
-    };
+    }
 
     const result = await gsx.execute(
       <NameContext.Provider value="John">
@@ -122,15 +118,14 @@ suite("context", () => {
     const Context1 = createContext("default1");
     const Context2 = createContext("default2");
 
-    const Consumer: Component<
-      Record<string, never>,
-      { value1: string; value2: string }
-    > = async () => {
+    async function Consumer(
+      _: ComponentProps<{}, { value1: string; value2: string }>,
+    ) {
       await setTimeout(0);
       const value1 = useContext(Context1);
       const value2 = useContext(Context2);
       return { value1, value2 };
-    };
+    }
 
     const result = await gsx.execute(
       <Context1.Provider value="outer1">
@@ -148,14 +143,11 @@ suite("context", () => {
   test("context values persist through async operations", async () => {
     const TestContext = createContext("default");
 
-    const AsyncConsumer: Component<
-      Record<string, never>,
-      string
-    > = async () => {
+    async function AsyncConsumer(_: ComponentProps<{}, string>) {
       await setTimeout(0);
       const value = useContext(TestContext);
       return value;
-    };
+    }
 
     const result = await gsx.execute(
       <TestContext.Provider value="async-test">
@@ -169,11 +161,11 @@ suite("context", () => {
   test("context values are isolated between executions", async () => {
     const TestContext = createContext("default");
 
-    const Consumer: Component<Record<string, never>, string> = async () => {
+    async function Consumer(_: ComponentProps<{}, string>) {
       await setTimeout(0);
       const value = useContext(TestContext);
       return value;
-    };
+    }
 
     // Run two executions in parallel
     const [result1, result2] = await Promise.all([
@@ -207,10 +199,12 @@ suite("context", () => {
       return { value1, value2 };
     };
 
-    const AsyncParent: Component<Record<string, never>, Element> = async () => {
+    async function AsyncParent(
+      _: ComponentProps<{}, { value1: string; value2: string }>,
+    ) {
       await setTimeout(0);
       return <AsyncChild />;
-    };
+    }
 
     const result = await gsx.execute(
       <Context1.Provider value="outer1">
@@ -225,14 +219,13 @@ suite("context", () => {
 
   suite("can wrap children in a context provider", () => {
     const TestContext = createContext("default");
-    const MyProvider: Component<
-      { value: string },
-      ExecutionContext
-    > = async props => {
+    async function MyProvider({
+      value,
+    }: ComponentProps<{ value: string }, ExecutionContext>) {
       await setTimeout(0);
-      const newValue = props.value + " wrapped";
+      const newValue = value + " wrapped";
       return <TestContext.Provider value={newValue} />;
-    };
+    }
 
     test("returns the value from the context", async () => {
       const result = await gsx.execute<string>(
@@ -249,17 +242,16 @@ suite("context", () => {
     test("can nest children within multiple context providers", async () => {
       const Context2 = createContext("default2");
 
-      const Providers: Component<
-        { value: string },
-        ExecutionContext
-      > = async props => {
+      async function Providers(
+        props: ComponentProps<{ value: string }, ExecutionContext>,
+      ) {
         await setTimeout(0);
         return (
           <TestContext.Provider value={`${props.value} outer1`}>
             <Context2.Provider value={`${props.value} outer2`} />
           </TestContext.Provider>
         );
-      };
+      }
 
       const result = await gsx.execute(
         <Providers value="value">

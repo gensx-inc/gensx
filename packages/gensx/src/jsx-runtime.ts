@@ -14,7 +14,9 @@ import {
 
 export namespace JSX {
   export type ElementType = Element;
-  export type Element = (props: any) => MaybePromise<unknown>;
+  export type Element = (
+    props: ComponentProps<any, unknown>,
+  ) => MaybePromise<unknown>;
   export interface ElementChildrenAttribute {
     children: (
       output: unknown,

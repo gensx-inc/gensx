@@ -9,7 +9,6 @@ export type {
   MaybePromise,
   Streamable,
   StreamComponentProps,
-  Component,
 } from "./types";
 
 import { StreamComponent } from "./component";
@@ -19,7 +18,6 @@ import * as types from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace gsx {
-  export type Component<P, O> = types.Component<P, O>;
   export type ComponentProps<P, O> = types.ComponentProps<P, O>;
   export type StreamComponentProps<P> = types.StreamComponentProps<P>;
 }

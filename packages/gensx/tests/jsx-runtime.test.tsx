@@ -17,7 +17,7 @@ suite("jsx-runtime", () => {
   });
 
   test("can create element from component with children", async () => {
-    const Component: Component<Record<string, never>, string> = async () => {
+    const Component: Component<{}, string> = async () => {
       await setTimeout(0);
       return "test";
     };

@@ -24,14 +24,20 @@ const buzzwords: string[] = [
   "transformative",
 ];
 
-const CountBuzzwords: gsx.Component<{ text: string }, number> = ({ text }) => {
+function CountBuzzwords({
+  text,
+}: gsx.ComponentProps<{ text: string }, number>) {
   return text.split(" ").filter((word) => buzzwords.includes(word)).length;
-};
+}
 
-const CleanBuzzwords: gsx.Component<
+async function CleanBuzzwords({
+  text: prompt,
+  iterations = 0,
+  maxIterations = 5,
+}: gsx.ComponentProps<
   { text: string; iterations?: number; maxIterations?: number },
   string
-> = async ({ text: prompt, iterations = 0, maxIterations = 5 }) => {
+>) {
   const numBuzzwords = await gsx.execute<number>(
     <CountBuzzwords text={prompt} />,
   );
@@ -58,7 +64,7 @@ const CleanBuzzwords: gsx.Component<
   }
 
   return prompt;
-};
+}
 
 async function main() {
   const withoutBuzzwords = await gsx.execute<string>(

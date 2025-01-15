@@ -313,34 +313,35 @@ export interface HNAnalyzerWorkflowOutput {
   tweet: string;
 }
 
-export const HNAnalyzerWorkflow: gsx.Component<
-  HNAnalyzerWorkflowProps,
-  HNAnalyzerWorkflowOutput
-> = ({ postCount }) => (
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    {() => (
-      <HNCollector limit={postCount}>
-        {(stories) => (
-          <AnalyzeHNPosts stories={stories}>
-            {({ analyses }) => (
-              <TrendAnalyzer analyses={analyses}>
-                {(report) => (
-                  <PGEditor content={report}>
-                    {(editedReport) => (
-                      <PGTweetWriter
-                        context={editedReport}
-                        prompt="Summarize the HN trends in a tweet"
-                      >
-                        {(tweet) => ({ report: editedReport, tweet })}
-                      </PGTweetWriter>
-                    )}
-                  </PGEditor>
-                )}
-              </TrendAnalyzer>
-            )}
-          </AnalyzeHNPosts>
-        )}
-      </HNCollector>
-    )}
-  </OpenAIProvider>
-);
+export function HNAnalyzerWorkflow({
+  postCount,
+}: gsx.ComponentProps<HNAnalyzerWorkflowProps, HNAnalyzerWorkflowOutput>) {
+  return (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      {() => (
+        <HNCollector limit={postCount}>
+          {(stories) => (
+            <AnalyzeHNPosts stories={stories}>
+              {({ analyses }) => (
+                <TrendAnalyzer analyses={analyses}>
+                  {(report) => (
+                    <PGEditor content={report}>
+                      {(editedReport) => (
+                        <PGTweetWriter
+                          context={editedReport}
+                          prompt="Summarize the HN trends in a tweet"
+                        >
+                          {(tweet) => ({ report: editedReport, tweet })}
+                        </PGTweetWriter>
+                      )}
+                    </PGEditor>
+                  )}
+                </TrendAnalyzer>
+              )}
+            </AnalyzeHNPosts>
+          )}
+        </HNCollector>
+      )}
+    </OpenAIProvider>
+  );
+}

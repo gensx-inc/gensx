@@ -6,17 +6,17 @@ interface RespondProps {
 }
 type RespondOutput = string;
 
-const Respond: gsx.Component<RespondProps, RespondOutput> = async ({ userInput }) => {
+function Respond({ userInput }: gsx.ComponentProps<RespondProps, RespondOutput>) {
   return <ChatCompletion model="gpt-4o-mini" messages={[{ role: "system", content: "You are a helpful assistant. Respond to the user's input." }, { role: "user", content: userInput }]} />;
 }
 
-const App: gsx.Component<Record<string, never>, string> = async () => {
+async function Workflow(_: gsx.ComponentProps<{}, string>) {
   return (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
     </OpenAIProvider>
   );
-};
+}
 
-const result = await gsx.execute<string>(<App />);
+const result = await gsx.execute<string>(<Workflow />);
 console.log(result);
