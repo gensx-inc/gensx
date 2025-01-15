@@ -27,6 +27,9 @@ jobs:
     if: |
       (github.event_name == 'push') ||
       (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == github.repository)
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
 
     steps:
       - name: Checkout 🛬
@@ -41,12 +44,6 @@ jobs:
           version: 22.x
           npm_token: ${{ secrets.NPM_TOKEN }}
       - name: Build 📦
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: pnpm build:examples
       - name: Run tests ✅
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
-        run: OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }} pnpm test:examples
+        run: pnpm test:examples
