@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["**/.env.*local"],
+  "globalEnv": ["**/.env.*local", "OPENAI_API_KEY", "FIRECRAWL_API_KEY"],
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
