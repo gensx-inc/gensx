@@ -49,4 +49,4 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
-        run: pnpm test:examples
+        run: OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }} pnpm test:examples
