@@ -20,7 +20,7 @@ interface ExtractEntitiesProps {
   text: string;
 }
 
-interface ExtractEntitiesOutput {
+interface ExtractEntitiesBasicOutput {
   people: string[];
   places: string[];
   organizations: string[];
@@ -30,9 +30,9 @@ interface ExtractEntitiesOutput {
 Next, define the component and use the `ChatCompletion` component to get the structured output.
 
 ```tsx
-const ExtractEntities = gsx.Component<
+const ExtractEntitiesBasic = gsx.Component<
   ExtractEntitiesProps,
-  ExtractEntitiesOutput
+  ExtractEntitiesBasicOutput
 >(async ({ text }) => {
   const prompt = `Please review the following text and extract all the people, places, and organizations mentioned.
 
@@ -116,12 +116,7 @@ const ExtractEntities = gsx.Component<
       response_format={zodResponseFormat(ExtractEntitiesSchema, "entities")}
     >
       {(response: string) => {
-        try {
-          return ExtractEntitiesSchema.parse(JSON.parse(response));
-        } catch (error) {
-          console.error(error);
-          throw error;
-        }
+        return ExtractEntitiesSchema.parse(JSON.parse(response));
       }}
     </ChatCompletion>
   );
@@ -153,3 +148,5 @@ This will output the following:
   "organizations": ["Google"]
 }
 ```
+
+You can find the complete example code in the [structured outputs example](https://github.com/cortexclick/gensx/tree/main/examples/basicExamples/structuredOutputs/index.tsx).
