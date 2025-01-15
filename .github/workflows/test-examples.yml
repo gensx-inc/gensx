@@ -42,14 +42,6 @@ jobs:
           npm_token: ${{ secrets.NPM_TOKEN }}
       - name: Build 📦
         run: pnpm build:examples
-      - name: Debug Environment Variables 🔍
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
-        run: |
-          # Print if the required env vars are set (without exposing values)
-          if [ -n "$OPENAI_API_KEY" ]; then echo "✓ OPENAI_API_KEY is set"; else echo "✗ OPENAI_API_KEY is not set"; fi
-          if [ -n "$FIRECRAWL_API_KEY" ]; then echo "✓ FIRECRAWL_API_KEY is set"; else echo "✗ FIRECRAWL_API_KEY is not set"; fi
       - name: Run tests ✅
         run: pnpm test:examples
         env:
