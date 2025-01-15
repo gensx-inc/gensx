@@ -41,6 +41,9 @@ jobs:
           version: 22.x
           npm_token: ${{ secrets.NPM_TOKEN }}
       - name: Build 📦
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: pnpm build:examples
       - name: Run tests ✅
         env:
