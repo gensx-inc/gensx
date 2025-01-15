@@ -3,34 +3,31 @@ import { setTimeout } from "timers/promises";
 import { expect, suite, test } from "vitest";
 
 import { gsx } from "@/index.js";
+import { Component } from "@/types";
 
 suite("component", () => {
-  test("Component preserves name for anonymous functions", async () => {
-    const AnonymousComponent = gsx.Component(async () => {
+  test("can create anonymous component", async () => {
+    const AnonymousComponent: Component<
+      Record<string, never>,
+      string
+    > = async () => {
       await setTimeout(0);
-      return "test";
-    });
-    await setTimeout(0);
-    expect(AnonymousComponent.name).toContain("GsxComponent");
+      return "hello";
+    };
+
+    const result = await gsx.execute(<AnonymousComponent />);
+    expect(result).toBe("hello");
   });
 
-  test("Component preserves name for named functions", async () => {
-    async function namedFn() {
+  test("can create named component", async () => {
+    async function namedFn(): Promise<string> {
       await setTimeout(0);
-      return "test";
+      return "hello";
     }
-    const NamedComponent = gsx.Component(namedFn);
-    await setTimeout(0);
-    expect(NamedComponent.name).toBe("GsxComponent[namedFn]");
-  });
 
-  test("StreamComponent preserves name for named functions", async () => {
-    async function* namedFn() {
-      await setTimeout(0);
-      yield "test";
-    }
-    const NamedComponent = gsx.StreamComponent(namedFn);
-    await setTimeout(0);
-    expect(NamedComponent.name).toBe("GsxStreamComponent[namedFn]");
+    const NamedComponent: Component<Record<string, never>, string> = namedFn;
+
+    const result = await gsx.execute(<NamedComponent />);
+    expect(result).toBe("hello");
   });
 });

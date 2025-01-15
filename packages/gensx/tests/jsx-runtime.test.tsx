@@ -2,40 +2,34 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "@/index";
+import { gsx } from "@/index.js";
+import { Component } from "@/types";
 
 suite("jsx-runtime", () => {
-  suite("Fragment", () => {
-    test("Fragment handles single child correctly", async () => {
-      const Component = gsx.Component<Record<string, never>, string>(
-        async function ComponentImpl() {
-          await setTimeout(0);
-          return "test";
-        },
-      );
-      const result = await gsx.execute(
-        <>
-          <Component />
-        </>,
-      );
-      expect(Array.isArray(result)).toBe(true);
-      expect(result).toEqual(["test"]);
-    });
+  test("can create element from component", async () => {
+    const Component: Component<Record<string, never>, string> = async () => {
+      await setTimeout(0);
+      return "test";
+    };
 
-    test("Fragment handles multiple children correctly", async () => {
-      const Component = gsx.Component<Record<string, never>, string>(
-        async () => {
+    const result = await gsx.execute(<Component />);
+    expect(result).toBe("test");
+  });
+
+  test("can create element from component with children", async () => {
+    const Component: Component<Record<string, never>, string> = async () => {
+      await setTimeout(0);
+      return "test";
+    };
+
+    const result = await gsx.execute(
+      <Component>
+        {async value => {
           await setTimeout(0);
-          return "test";
-        },
-      );
-      const result = await gsx.execute(
-        <>
-          <Component />
-          <Component />
-        </>,
-      );
-      expect(result).toEqual(["test", "test"]);
-    });
+          return value + " world";
+        }}
+      </Component>,
+    );
+    expect(result).toBe("test world");
   });
 });

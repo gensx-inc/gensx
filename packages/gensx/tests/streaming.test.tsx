@@ -94,9 +94,7 @@ suite("streaming", () => {
     suite(
       `for a ${isAsync ? "AsyncIterableIterator" : "IterableIterator"}`,
       () => {
-        const Component = gsx.StreamComponent<{ foo: string }>(function ({
-          foo,
-        }) {
+        const Component = gsx.StreamComponent<{ foo: string }>(({ foo }) => {
           let iterator: Streamable;
 
           if (isAsync) {
@@ -166,12 +164,13 @@ suite("streaming", () => {
         });
 
         test("stacked streaming components return a streamable for stream=true", async () => {
-          const StreamPassThrough = gsx.StreamComponent<{ input: string }>(
-            async ({ input }) => {
-              await setTimeout(0);
-              return <Component stream={true} foo={input} />;
-            },
-          );
+          const StreamPassThrough = gsx.StreamComponent<{
+            input: string;
+          }>(async ({ input }) => {
+            await setTimeout(0);
+            return <Component stream={true} foo={input} />;
+          });
+
           const result = await gsx.execute<Streamable>(
             <StreamPassThrough input="foo" stream={true} />,
           );

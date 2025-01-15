@@ -42,23 +42,23 @@ interface LLMResearchProps {
   topic: string;
 }
 type LLMResearchOutput = string;
-const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
-  async ({ topic }) => {
-    console.log("📚 Researching topic:", topic);
-    const systemPrompt = `You are a helpful assistant that researches topics...`;
+const LLMResearch: gsx.Component<LLMResearchProps, LLMResearchOutput> = async ({
+  topic,
+}) => {
+  console.log("📚 Researching topic:", topic);
+  const systemPrompt = `You are a helpful assistant that researches topics...`;
 
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: topic },
-        ]}
-      />
-    );
-  },
-);
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      temperature={0}
+      messages={[
+        { role: "system", content: systemPrompt },
+        { role: "user", content: topic },
+      ]}
+    />
+  );
+};
 ```
 
 Because components are pure functions, they are easy to test and eval in isolation. This enables you to move quickly and experiment with the structure of your workflow.

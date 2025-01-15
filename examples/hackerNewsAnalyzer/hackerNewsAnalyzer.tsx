@@ -13,9 +13,11 @@ interface PGTweetWriterProps {
 }
 
 type PGTweetWriterOutput = string;
-const PGTweetWriter = gsx.Component<PGTweetWriterProps, PGTweetWriterOutput>(
-  ({ context, prompt }) => {
-    const PROMPT = `
+const PGTweetWriter: gsx.Component<PGTweetWriterProps, PGTweetWriterOutput> = ({
+  context,
+  prompt,
+}) => {
+  const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
 1. Captures the most interesting insight
 2. Uses your characteristic direct style
@@ -25,28 +27,29 @@ You are Paul Graham composing a tweet. Given a longer analysis, distill it into 
 Focus on the most surprising or counterintuitive point rather than trying to summarize everything.
     `.trim();
 
-    return (
-      <ChatCompletion
-        messages={[
-          { role: "system", content: PROMPT },
-          {
-            role: "user",
-            content: `Context:\n${context}\n\nPrompt: ${prompt}`,
-          },
-        ]}
-        model="gpt-4o"
-        temperature={0.7}
-      />
-    );
-  },
-);
+  return (
+    <ChatCompletion
+      messages={[
+        { role: "system", content: PROMPT },
+        {
+          role: "user",
+          content: `Context:\n${context}\n\nPrompt: ${prompt}`,
+        },
+      ]}
+      model="gpt-4o"
+      temperature={0.7}
+    />
+  );
+};
 
 interface PGEditorProps {
   content: string;
 }
 
 type PGEditorOutput = string;
-const PGEditor = gsx.Component<PGEditorProps, PGEditorOutput>(({ content }) => {
+const PGEditor: gsx.Component<PGEditorProps, PGEditorOutput> = ({
+  content,
+}) => {
   const PROMPT = `
 You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
 1. Clear, direct language
@@ -72,7 +75,7 @@ Maintain your voice while preserving the key insights and all links from the ana
       temperature={0.7}
     />
   );
-});
+};
 
 interface CommentsAnalyzerProps {
   postId: number;
@@ -81,10 +84,10 @@ interface CommentsAnalyzerProps {
 
 type CommentsAnalyzerOutput = string;
 
-const CommentsAnalyzer = gsx.Component<
+const CommentsAnalyzer: gsx.Component<
   CommentsAnalyzerProps,
   CommentsAnalyzerOutput
->(({ postId, comments }) => {
+> = ({ postId, comments }) => {
   const PROMPT = `
 You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
 
@@ -131,16 +134,18 @@ Focus on substance rather than surface-level reactions. When referencing comment
       temperature={0.7}
     />
   );
-});
+};
 
 interface PostSummarizerProps {
   story: HNStory;
 }
 
 type PostSummarizerOutput = string;
-const PostSummarizer = gsx.Component<PostSummarizerProps, PostSummarizerOutput>(
-  ({ story }) => {
-    const PROMPT = `
+const PostSummarizer: gsx.Component<
+  PostSummarizerProps,
+  PostSummarizerOutput
+> = ({ story }) => {
+  const PROMPT = `
 You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
 1. The main point or key insight
 2. Notable discussion points from comments (include comment scores to show community agreement)
@@ -159,7 +164,7 @@ When referencing comments, include their scores to show weight of opinion, e.g.:
 Keep the summary clear and objective. Focus on facts and insights rather than opinions.
     `.trim();
 
-    const context = `
+  const context = `
 Title: ${story.title}
 URL: ${getHNPostUrl(story.id)}
 Text: ${story.text}
@@ -171,25 +176,24 @@ ${story.comments
   .join("\n\n")}
     `.trim();
 
-    return (
-      <ChatCompletion
-        messages={[
-          { role: "system", content: PROMPT },
-          { role: "user", content: context },
-        ]}
-        model="gpt-4o"
-        temperature={0.7}
-      >
-        {(response: string) => {
-          if (!response.includes(getHNPostUrl(story.id))) {
-            return `[${story.title}](${getHNPostUrl(story.id)})\n\n${response}`;
-          }
-          return response;
-        }}
-      </ChatCompletion>
-    );
-  },
-);
+  return (
+    <ChatCompletion
+      messages={[
+        { role: "system", content: PROMPT },
+        { role: "user", content: context },
+      ]}
+      model="gpt-4o"
+      temperature={0.7}
+    >
+      {(response: string) => {
+        if (!response.includes(getHNPostUrl(story.id))) {
+          return `[${story.title}](${getHNPostUrl(story.id)})\n\n${response}`;
+        }
+        return response;
+      }}
+    </ChatCompletion>
+  );
+};
 
 interface TrendAnalyzerProps {
   analyses: {
@@ -200,9 +204,10 @@ interface TrendAnalyzerProps {
 
 type TrendReport = string;
 
-const TrendAnalyzer = gsx.Component<TrendAnalyzerProps, TrendReport>(
-  ({ analyses }) => {
-    const PROMPT = `
+const TrendAnalyzer: gsx.Component<TrendAnalyzerProps, TrendReport> = ({
+  analyses,
+}) => {
+  const PROMPT = `
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
 You will be given input summarizing the top posts from hacker news, and an analysis of the comments on each post.
 
@@ -226,56 +231,55 @@ Where appropriate, interleave demonstrative comments to help support your points
 Shoot for 1000 words.
     `.trim();
 
-    const context = analyses
-      .map(({ summary, commentAnalysis }) =>
-        `
+  const context = analyses
+    .map(({ summary, commentAnalysis }) =>
+      `
 ### Post Summary
 ${summary}
 
 ### Comment Analysis
 ${commentAnalysis}
     `.trim(),
-      )
-      .join("\n\n");
+    )
+    .join("\n\n");
 
-    return (
-      <ChatCompletion
-        messages={[
-          { role: "system", content: PROMPT },
-          { role: "user", content: context },
-        ]}
-        model="gpt-4o"
-        temperature={0.7}
-      />
-    );
-  },
-);
+  return (
+    <ChatCompletion
+      messages={[
+        { role: "system", content: PROMPT },
+        { role: "user", content: context },
+      ]}
+      model="gpt-4o"
+      temperature={0.7}
+    />
+  );
+};
 
 interface HNCollectorProps {
   limit: number;
 }
 
 type HNCollectorOutput = HNStory[]; // Array of stories
-const HNCollector = gsx.Component<HNCollectorProps, HNCollectorOutput>(
-  async ({ limit }) => {
-    // We can only get up to 500 stories from the API
-    const MAX_HN_STORIES = 500;
-    const requestLimit = Math.min(limit, MAX_HN_STORIES);
+const HNCollector: gsx.Component<HNCollectorProps, HNCollectorOutput> = async ({
+  limit,
+}) => {
+  // We can only get up to 500 stories from the API
+  const MAX_HN_STORIES = 500;
+  const requestLimit = Math.min(limit, MAX_HN_STORIES);
 
-    console.log(
-      `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
-    );
-    const stories = await getTopStoryDetails(requestLimit);
-    console.log(
-      `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
-      stories.length < limit
-        ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
-        : "",
-    );
+  console.log(
+    `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
+  );
+  const stories = await getTopStoryDetails(requestLimit);
+  console.log(
+    `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
+    stories.length < limit
+      ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
+      : "",
+  );
 
-    return stories;
-  },
-);
+  return stories;
+};
 
 interface AnalyzeHNPostsProps {
   stories: HNStory[];
@@ -288,16 +292,17 @@ interface AnalyzeHNPostsOutput {
   }[];
 }
 
-const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
-  ({ stories }) => ({
-    analyses: stories.map((story) => ({
-      summary: <PostSummarizer story={story} />,
-      commentAnalysis: (
-        <CommentsAnalyzer postId={story.id} comments={story.comments} />
-      ),
-    })),
-  }),
-);
+const AnalyzeHNPosts: gsx.Component<
+  AnalyzeHNPostsProps,
+  AnalyzeHNPostsOutput
+> = ({ stories }) => ({
+  analyses: stories.map((story) => ({
+    summary: <PostSummarizer story={story} />,
+    commentAnalysis: (
+      <CommentsAnalyzer postId={story.id} comments={story.comments} />
+    ),
+  })),
+});
 
 interface HNAnalyzerWorkflowProps {
   postCount: number;
@@ -308,10 +313,10 @@ export interface HNAnalyzerWorkflowOutput {
   tweet: string;
 }
 
-export const HNAnalyzerWorkflow = gsx.Component<
+export const HNAnalyzerWorkflow: gsx.Component<
   HNAnalyzerWorkflowProps,
   HNAnalyzerWorkflowOutput
->(({ postCount }) => (
+> = ({ postCount }) => (
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     {() => (
       <HNCollector limit={postCount}>
@@ -338,4 +343,4 @@ export const HNAnalyzerWorkflow = gsx.Component<
       </HNCollector>
     )}
   </OpenAIProvider>
-));
+);

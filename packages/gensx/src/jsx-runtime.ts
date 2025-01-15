@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -8,11 +9,12 @@ import {
   ExecutableValue,
   MaybePromise,
   Primitive,
+  StreamComponentProps,
 } from "./types";
 
 export namespace JSX {
-  export type ElementType = (props: any) => Element;
-  export type Element = () => Promise<unknown>;
+  export type ElementType = Element;
+  export type Element = (props: any) => MaybePromise<unknown>;
   export interface ElementChildrenAttribute {
     children: (
       output: unknown,
@@ -30,11 +32,12 @@ export const Fragment = (props: { children?: JSX.Element[] | JSX.Element }) => {
   return [props.children];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 (Fragment as any).__gsxFragment = true;
 
 export const jsx = <TOutput, TProps>(
-  component: (props: ComponentProps<TProps, TOutput>) => MaybePromise<TOutput>,
+  component: (
+    props: ComponentProps<TProps, TOutput> | StreamComponentProps<TProps>,
+  ) => MaybePromise<TOutput>,
   props: ComponentProps<TProps, TOutput> | null,
 ): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
   // Return a promise that will be handled by execute()
@@ -46,7 +49,6 @@ export const jsx = <TOutput, TProps>(
     const result = await resolveDeep(rawResult);
 
     // Need to special case Fragment, because it's children are actually executed in the resolveDeep above
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (props?.children && !(component as any).__gsxFragment) {
       if (result instanceof ExecutionContext) {
         return await withContext(result, () => {

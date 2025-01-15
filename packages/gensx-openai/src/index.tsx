@@ -1,6 +1,6 @@
 import type { Streamable } from "gensx";
 
-import { gsx, StreamComponent } from "gensx";
+import { gsx } from "gensx";
 import OpenAI, { ClientOptions } from "openai";
 import {
   ChatCompletionChunk,
@@ -13,13 +13,13 @@ export const OpenAIContext = gsx.createContext<{
   client?: OpenAI;
 }>({});
 
-export const OpenAIProvider = gsx.Component<ClientOptions, never>((props) => {
+export const OpenAIProvider: gsx.Component<ClientOptions, never> = (props) => {
   const client = new OpenAI(props);
   return <OpenAIContext.Provider value={{ client }} />;
-});
+};
 
 // Create a component for chat completions
-export const ChatCompletion = StreamComponent<ChatCompletionCreateParams>(
+export const ChatCompletion = gsx.StreamComponent<ChatCompletionCreateParams>(
   async (props) => {
     const context = gsx.useContext(OpenAIContext);
 

@@ -7,10 +7,10 @@ interface LLMResearchBrainstormProps {
 interface LLMResearchBrainstormOutput {
   topics: string[];
 }
-const LLMResearchBrainstorm = gsx.Component<
+const LLMResearchBrainstorm: gsx.Component<
   LLMResearchBrainstormProps,
   LLMResearchBrainstormOutput
->(({ prompt }) => {
+> = ({ prompt }) => {
   console.log("🔍 Starting research for:", prompt);
   const systemPrompt = `You are a helpful assistant that brainstorms topics for a researching a blog post. The user will provide a prompt and you will brainstorm topics based on the prompt. You should return 3 - 5 topics, as a JSON array.
 
@@ -32,59 +32,60 @@ Here is an example of the JSON output: { "topics": ["topic 1", "topic 2", "topic
       }
     </ChatCompletion>
   );
-});
+};
 
 interface LLMResearchProps {
   topic: string;
 }
 type LLMResearchOutput = string;
-const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
-  ({ topic }) => {
-    console.log("📚 Researching topic:", topic);
-    const systemPrompt = `You are a helpful assistant that researches topics. The user will provide a topic and you will research the topic. You should return a summary of the research, summarizing the most important points in a few sentences at most.`;
+const LLMResearch: gsx.Component<LLMResearchProps, LLMResearchOutput> = ({
+  topic,
+}) => {
+  console.log("📚 Researching topic:", topic);
+  const systemPrompt = `You are a helpful assistant that researches topics. The user will provide a topic and you will research the topic. You should return a summary of the research, summarizing the most important points in a few sentences at most.`;
 
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: topic },
-        ]}
-      />
-    );
-  },
-);
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      temperature={0}
+      messages={[
+        { role: "system", content: systemPrompt },
+        { role: "user", content: topic },
+      ]}
+    />
+  );
+};
 
 interface LLMWriterProps {
   research: string[];
   prompt: string;
 }
 type LLMWriterOutput = string;
-const LLMWriter = gsx.Component<LLMWriterProps, LLMWriterOutput>(
-  ({ prompt, research }) => {
-    const systemPrompt = `You are a helpful assistant that writes blog posts. The user will provide a prompt and you will write a blog post based on the prompt. Unless specified by the user, the blog post should be 200 words.
+const LLMWriter: gsx.Component<LLMWriterProps, LLMWriterOutput> = ({
+  prompt,
+  research,
+}) => {
+  const systemPrompt = `You are a helpful assistant that writes blog posts. The user will provide a prompt and you will write a blog post based on the prompt. Unless specified by the user, the blog post should be 200 words.
 
 Here is the research for the blog post: ${research.join("\n")}`;
 
-    console.log("🚀 Writing blog post for:", { prompt, research });
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ]}
-      />
-    );
-  },
-);
+  console.log("🚀 Writing blog post for:", { prompt, research });
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      temperature={0}
+      messages={[
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ]}
+    />
+  );
+};
 
 interface LLMEditorProps {
   draft: string;
 }
-const LLMEditor = gsx.StreamComponent<LLMEditorProps>(({ draft }) => {
+const LLMEditor: gsx.StreamComponent<LLMEditorProps> = ({ draft }) => {
   console.log("🔍 Editing draft");
   const systemPrompt = `You are a helpful assistant that edits blog posts. The user will provide a draft and you will edit it to make it more engaging and interesting.`;
 
@@ -99,32 +100,33 @@ const LLMEditor = gsx.StreamComponent<LLMEditorProps>(({ draft }) => {
       ]}
     />
   );
-});
+};
 
 interface WebResearcherProps {
   prompt: string;
 }
 type WebResearcherOutput = string[];
-const WebResearcher = gsx.Component<WebResearcherProps, WebResearcherOutput>(
-  async ({ prompt }) => {
-    console.log("🌐 Researching web for:", prompt);
-    const results = await Promise.resolve([
-      "web result 1",
-      "web result 2",
-      "web result 3",
-    ]);
-    return results;
-  },
-);
+const WebResearcher: gsx.Component<
+  WebResearcherProps,
+  WebResearcherOutput
+> = async ({ prompt }) => {
+  console.log("🌐 Researching web for:", prompt);
+  const results = await Promise.resolve([
+    "web result 1",
+    "web result 2",
+    "web result 3",
+  ]);
+  return results;
+};
 
 type ParallelResearchOutput = [string[], string[]];
 interface ParallelResearchComponentProps {
   prompt: string;
 }
-const ParallelResearch = gsx.Component<
+const ParallelResearch: gsx.Component<
   ParallelResearchComponentProps,
   ParallelResearchOutput
->(({ prompt }) => (
+> = ({ prompt }) => (
   <>
     <LLMResearchBrainstorm prompt={prompt}>
       {({ topics }) => {
@@ -133,22 +135,23 @@ const ParallelResearch = gsx.Component<
     </LLMResearchBrainstorm>
     <WebResearcher prompt={prompt} />
   </>
-));
+);
 
 interface BlogWritingWorkflowProps {
   prompt: string;
 }
-export const BlogWritingWorkflow =
-  gsx.StreamComponent<BlogWritingWorkflowProps>(({ prompt }) => {
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <ParallelResearch prompt={prompt}>
-          {(research) => (
-            <LLMWriter prompt={prompt} research={research.flat()}>
-              {(draft) => <LLMEditor draft={draft} stream={true} />}
-            </LLMWriter>
-          )}
-        </ParallelResearch>
-      </OpenAIProvider>
-    );
-  });
+export const BlogWritingWorkflow: gsx.StreamComponent<
+  BlogWritingWorkflowProps
+> = ({ prompt }) => {
+  return (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ParallelResearch prompt={prompt}>
+        {(research) => (
+          <LLMWriter prompt={prompt} research={research.flat()}>
+            {(draft) => <LLMEditor draft={draft} stream={true} />}
+          </LLMWriter>
+        )}
+      </ParallelResearch>
+    </OpenAIProvider>
+  );
+};

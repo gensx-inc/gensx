@@ -5,19 +5,40 @@ export type MaybePromise<T> = T | Promise<T>;
 
 export type Element = JSX.Element;
 
-export interface OutputProps {
-  output?: string;
-}
-
 export type Primitive = string | number | boolean | null | undefined;
 
-// Base props type without children
-type BaseProps<P> = P & OutputProps;
-
-// Make components valid JSX elements
-export type WorkflowComponent<P, O> = (
-  props: ComponentProps<P, O>,
-) => () => Promise<O>;
+/**
+ * This allows an element to return either a plain object or an object with JSX.Element children
+ * This is useful for components that return a nested object structure, where each key can be a component
+ * that returns a plain object or an object with JSX.Element children.
+ *
+ * For example:
+ *
+ * interface ComponentOutput {
+ *   nested: {
+ *     foo: string;
+ *     bar: string;
+ *   }[];
+ * }
+ *
+ * interface ComponentProps {
+ *   input: string;
+ * }
+ *
+ * const Component = gsx.Component<ComponentProps, ComponentOutput>(
+ *   ({ input }) => ({
+ *     nested: [
+ *       { foo: <Foo input={input} />, bar: <Bar input={input} /> },
+ *       { foo: <Foo />, bar: <Bar /> },
+ *     ],
+ *   }),
+ * );
+ */
+type DeepJSXElement<T> = T extends (infer Item)[]
+  ? DeepJSXElement<Item>[]
+  : T extends object
+    ? { [K in keyof T]: DeepJSXElement<T[K]> }
+    : T | JSX.Element;
 
 // Allow children function to return plain objects that will be executed
 
@@ -28,7 +49,7 @@ export type ExecutableValue =
   | Record<string, Element | any>;
 
 // Component props as a type alias instead of interface
-export type ComponentProps<P, O> = BaseProps<P> & {
+export type ComponentProps<P, O> = P & {
   children?:
     | ((output: O) => MaybePromise<ExecutableValue | Primitive>)
     // support child functions that do not return anything, but maybe do some other side effect
@@ -36,16 +57,21 @@ export type ComponentProps<P, O> = BaseProps<P> & {
     | ((output: O) => Promise<void>);
 };
 
+export type Component<P, O> = (
+  props: ComponentProps<P, O>,
+) => MaybePromise<DeepJSXElement<O> | ExecutableValue>;
+
 export type Streamable =
   | AsyncIterableIterator<string>
   | IterableIterator<string>;
 
+export type StreamComponent<P> = (
+  props: StreamComponentProps<P>,
+) => MaybePromise<DeepJSXElement<Streamable | string> | ExecutableValue>;
+
 // Stream component props as a type alias
-export type StreamComponentProps<
-  P,
-  Stream extends boolean | undefined,
-> = BaseProps<P> & {
-  stream?: Stream;
+export type StreamComponentProps<P> = P & {
+  stream?: boolean;
   children?:
     | ((output: Streamable) => MaybePromise<ExecutableValue | Primitive>)
     | ((
@@ -61,13 +87,9 @@ export type StreamComponentProps<
     | ((output: Streamable) => Promise<void>);
 };
 
-export type StreamingComponent<P, Stream extends boolean | undefined> = (
-  props: StreamComponentProps<P, Stream>,
-) => () => Promise<Stream extends true ? Streamable : string>;
-
 export interface Context<T> {
   readonly __type: "Context";
   readonly defaultValue: T;
   readonly symbol: symbol;
-  Provider: WorkflowComponent<{ value: T }, ExecutionContext>;
+  Provider: Component<{ value: T }, ExecutionContext>;
 }
