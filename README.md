@@ -4,18 +4,18 @@ This monorepo contains GenSX and its related packages - a framework for building
 
 ## Repository Structure
 
-- `packages/`
-  - `gensx/` - Core GenSX package
-  - `gensx-openai/` - OpenAI integration for GenSX
+- `packages/` - Published packages
 - `examples/` - Example applications and use cases
-  - `blogWriter/` - Blog writing workflow example
-  - `hackerNewsAnalyzer/` - HackerNews analysis example
-  - `streaming/` - Streaming capabilities demo
+- `docs` - `https://gensx.dev` Documentation
 
 ## Prerequisites
 
 - Node.js (LTS version recommended)
 - pnpm (v9.12.2 or later)
+
+## Documentation
+
+For detailed documentation about GenSX, please refer check out the [docs](https://gensx.dev).
 
 ## Getting Started
 
@@ -31,33 +31,11 @@ pnpm install
 pnpm build:all
 ```
 
-3. Run tests:
-
-```bash
-pnpm test:all
-```
-
 ## Run an example
 
 ```bash
 OPENAI_API_KEY=<my api key> turbo run run --filter="./examples/blogWriter"
 ```
-
-## Available Commands
-
-- `pnpm build` - Build core packages
-- `pnpm build:examples` - Build example projects
-- `pnpm build:all` - Build everything
-- `pnpm dev` - Start development mode for core packages
-- `pnpm lint` - Lint core packages
-- `pnpm lint:examples` - Lint example projects
-- `pnpm lint:fix` - Fix linting issues in core packages
-- `pnpm test` - Run tests for core packages
-- `pnpm clean` - Clean build artifacts
-
-## Documentation
-
-For detailed documentation about GenSX, please refer check out the [docs](https://gensx.dev).
 
 ## License
 
