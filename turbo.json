@@ -22,12 +22,10 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
-      "inputs": [
-        "src/**/*.tsx",
-        "src/**/*.ts",
-        "test/**/*.ts",
-        "test/**/*.tsx"
-      ],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+    },
+    "test:examples": {
+      "dependsOn": ["^build"],
       "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY"]
     },
     "lint:fix": {
@@ -36,9 +34,6 @@
     },
     "docs#lint": {
       "dependsOn": ["^build", "build"]
-    },
-    "@gensx-examples/deep-research#test": {
-      "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY"]
     },
     "create-gensx#test": {
       "dependsOn": ["^build", "build", "gensx#build", "@gensx/openai#build"],
