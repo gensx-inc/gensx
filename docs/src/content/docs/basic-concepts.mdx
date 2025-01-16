@@ -14,7 +14,7 @@ Components are the building blocks of GenSX applications; they're pure TypeScrip
 - Don't depend on global state
 - Are strongly typed using TypeScript
 
-Components can return a primitive, an object, or other components. These outputs can then be used by other components or returned as the result of the workflow.
+Components can return a primitive, an object, or other components. Their outputs can be used by other components or returned as the result of the workflow.
 
 Here's an example of a simple component:
 
@@ -31,7 +31,7 @@ const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
 );
 ```
 
-Component outputs can be composed of other components using JSX:
+Here's an example of a component that returns another component:
 
 ```tsx
 const AIGreeting = gsx.Component<GreetingProps, string>(async ({ name }) => {
@@ -50,7 +50,7 @@ const AIGreeting = gsx.Component<GreetingProps, string>(async ({ name }) => {
 });
 ```
 
-Components can also return structured objects containing other components. The pattern works with array operations like `map` for processing items in parallel.
+Components can also return structured objects containing. The pattern works with array operations like `map` for processing items in parallel.
 
 ```tsx
 const AnalyzePosts = gsx.Component<AnalyzePostsProps, AnalyzePostsOutput>(
@@ -104,7 +104,7 @@ for await (const chunk of stream) {
 
 ## Executing Components
 
-Components are executed using `gsx.execute()`, which processes the JSX tree from top to bottom:
+Components are executed using `gsx.execute()`, which processes the JSX tree from top to bottom while executing components in parallel as much as possible.
 
 ```tsx
 const result = await gsx.execute(<MyComponent input="some data" />);
