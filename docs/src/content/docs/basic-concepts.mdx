@@ -110,13 +110,59 @@ Components are executed using `gsx.execute()`, which processes the JSX tree from
 const result = await gsx.execute(<MyComponent input="some data" />);
 ```
 
+You'll often use `gsx.execute()` to run a top level workflow as shown above, but you can also use it to run a sub-workflow within a component. This allows you to work with a component in TypeScript without having to drop into the JSX layer. This is especially useful for more complex operations like map/reduce:
+
+```tsx
+const AnalyzeReviews = gsx.Component<AnalyzeReviewsProps, AnalyzeReviewsOutput>(
+  async ({ reviews }) => {
+    // Map: Extract topics from each review in parallel
+    const topics = await Promise.all(
+      reviews.map((review) => gsx.execute(<GetTopic review={review} />)),
+    );
+    // Reduce: Count frequency of each topic
+    return topics.reduce(
+      (counts, topic) => ({ ...counts, [topic]: (counts[topic] || 0) + 1 }),
+      {},
+    );
+  },
+);
+```
+
 Components can be tested and evaluated in isolation, making it easy to debug and verify individual steps of your workflow. This is particularly valuable when building complex LLM applications that need robust evaluation.
 
 Rather than having to run an entire workflow to test a change to a single component, you can test just that component, dramatically speeding up your dev loop. This isolation also makes unit testing more manageable, as you can create specific test cases without having to worry about the rest of the workflow.
 
+## Contexts
+
+Contexts provide a way to share values across components without explicitly passing them through props. They're similar to React's Context system but adapted for GenSX workflows. Contexts are particularly useful for:
+
+- Sharing configuration across multiple components
+- Providing dependencies to deeply nested components
+- Managing state that needs to be accessed by multiple components
+
+Here's how to create and use a context:
+
+```tsx
+// Create a context with a default value
+const UserContext = gsx.createContext({ name: "default", age: 0 });
+
+// Use the context in a component
+const UserGreeting = gsx.Component(() => {
+  const user = gsx.useContext(UserContext);
+  return `Hello, ${user.name}!`;
+});
+
+// Provide a value to the context
+const result = await gsx.execute(
+  <UserContext.Provider value={{ name: "John", age: 30 }}>
+    <UserGreeting />
+  </UserContext.Provider>,
+);
+```
+
 ## Providers
 
-Providers are special components that manage configuration and dependencies for your workflow. They're similar to React's Context providers - they just pass configuration down to child components.
+Providers are a specialized use of contexts that focus on managing configuration and dependencies for your workflow. They're built using the context system described above, but provide a more focused API for configuration management.
 
 The main provider available today is the `OpenAIProvider`, which manages your OpenAI API key:
 
@@ -131,38 +177,9 @@ const result = await gsx.execute(
 );
 ```
 
-Providers allow you to:
+Providers offer several benefits:
 
-- Configure dependencies like API keys and other settings
-- Avoid passing configuration through multiple levels of components
-- Keep components pure and reusable by separating configuration from logic
-
-## Contexts
-
-Contexts provide a way to share values across components without explicitly passing them through props. They're similar to React's Context system but adapted for GenSX workflows. Contexts are particularly useful for:
-
-- Sharing configuration across multiple components
-- Providing dependencies to deeply nested components
-- Managing state that needs to be accessed by multiple components
-
-Here's how to create and use a context:
-
-```tsx
-import { createContext, useContext } from "gensx";
-
-// Create a context with a default value
-const UserContext = createContext({ name: "default", age: 0 });
-
-// Use the context in a component
-const UserGreeting = gsx.Component(() => {
-  const user = useContext(UserContext);
-  return `Hello, ${user.name}!`;
-});
-
-// Provide a value to the context
-const result = await gsx.execute(
-  <UserContext.Provider value={{ name: "John", age: 30 }}>
-    <UserGreeting />
-  </UserContext.Provider>,
-);
-```
+- Manage complex configuration like API clients and settings
+- Provide a simpler, more focused API than raw contexts
+- Keep configuration separate from business logic
+- Enable dependency injection for testing and development
