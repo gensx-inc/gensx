@@ -3,17 +3,18 @@ title: Basic Concepts
 description: Understanding the core concepts of GenSX
 ---
 
-GenSX is a workflow engine designed for building complex LLM applications. It's built around functional, reusable components that are composed using JSX to create and orchestrate complicated workflows.
+GenSX is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed using JSX to create and orchestrate workflows.
 
 ## Components
 
 Components are the building blocks of GenSX applications; they're pure TypeScript functions that:
 
 - Accept props as input
-- Return a single output or another component
-- Have zero side effects
-- Don't depend on external state
-- Are fully typed using TypeScript
+- Produce an output
+- Don't depend on global state
+- Are strongly typed using TypeScript
+
+Components can return a primitive, an object, or other components. These outputs can then be used by other components or returned as the result of the workflow.
 
 Here's an example of a simple component:
 
@@ -30,7 +31,7 @@ const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
 );
 ```
 
-Components can also return other components using JSX:
+Component outputs can be composed of other components using JSX:
 
 ```tsx
 const AIGreeting = gsx.Component<GreetingProps, string>(async ({ name }) => {
@@ -49,9 +50,28 @@ const AIGreeting = gsx.Component<GreetingProps, string>(async ({ name }) => {
 });
 ```
 
+Components can return structured objects containing other components. The pattern also works with array operations like `map` to process items in parallel.
+
+```tsx
+const AnalyzePosts = gsx.Component<AnalyzePostsProps, AnalyzePostsOutput>(
+  ({ posts }) => ({
+    analyses: posts.map((post) => ({
+      summary: <PostSummarizer post={post} />,
+      commentAnalysis: (
+        <CommentsAnalyzer postId={post.id} comments={post.comments} />
+      ),
+    })),
+  }),
+);
+```
+
+In this example, `AnalyzePosts` will produce an array of objects that contains the `summaries` and `commentAnalysis` for each post.
+
 ## JSX and Data Flow
 
-GenSX uses JSX to compose components into workflows. Data flows from parent to child through props allowing you to nest components and pass data between them. When components are combined, they will return the value of the innermost component.
+GenSX uses JSX to compose components into workflows. The output of a parent component can be passed to a child component through a child function. This pattern enables you to create chains of components where each step's output feeds into the next component's input.
+
+When components are combined, they will return the value of the innermost component.
 
 ```tsx
 // Parent receives output from ChildComponent through the child function
@@ -60,19 +80,19 @@ GenSX uses JSX to compose components into workflows. Data flows from parent to c
 </ParentComponent>
 ```
 
-Unlike React's concurrent rendering model, GenSX components execute sequentially from top to bottom. Each component completes before its children begin.
+Unlike React's concurrent rendering model, GenSX evaluates your workflow as a dependency graph. Components execute in parallel whenever possible, while automatically ensuring that all required inputs are available before a component starts executing.
 
 ## Component Types
 
 GenSX provides two main types of components:
 
-1. **Regular Components** (`gsx.Component`) - For standard synchronous or asynchronous operations
+1. **Components** (`gsx.Component`) - For standard synchronous or asynchronous operations
 2. **Streaming Components** (`gsx.StreamingComponent`) - For handling streaming responses from LLMs
 
 For streaming components, you can enable streaming by passing the `stream` prop and consuming the result as an async iterator:
 
 ```tsx
-const stream = await gsx.execute(
+const stream = await gsx.execute<Streamable>(
   <MyStreamingComponent input="some data" stream={true} />,
 );
 
@@ -92,9 +112,13 @@ const result = await gsx.execute(<MyComponent input="some data" />);
 
 Components can be tested and evaluated in isolation, making it easy to debug and verify individual steps of your workflow. This is particularly valuable when building complex LLM applications that need robust evaluation.
 
+## Contexts
+
+TODO - explain contexts
+
 ## Providers
 
-Providers are special components that manage configuration and dependencies for your workflow. They're similar to React's Context providers but simpler - they just pass configuration down to child components.
+Providers are special components that manage configuration and dependencies for your workflow. They're similar to React's Context providers - they just pass configuration down to child components.
 
 The main provider available today is the `OpenAIProvider`, which manages your OpenAI API key:
 
