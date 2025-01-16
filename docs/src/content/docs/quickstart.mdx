@@ -36,32 +36,37 @@ interface RespondProps {
 }
 type RespondOutput = string;
 
-const Respond: gsx.Component<RespondProps, RespondOutput> = async ({
-  userInput,
-}) => {
-  return (
-    <ChatCompletion
-      model="gpt-4o-mini"
-      messages={[
-        {
-          role: "system",
-          content: "You are a helpful assistant. Respond to the user's input.",
-        },
-        { role: "user", content: userInput },
-      ]}
-    />
-  );
-};
+const Respond = gsx.Component<RespondProps, RespondOutput>(
+  async ({ userInput }) => {
+    return (
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          {
+            role: "system",
+            content:
+              "You are a helpful assistant. Respond to the user's input.",
+          },
+          { role: "user", content: userInput },
+        ]}
+      />
+    );
+  },
+  { name: "Respond" },
+);
 
-const App: gsx.Component<Record<string, never>, string> = async () => {
-  return await gsx.execute(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
-    </OpenAIProvider>,
-  );
-};
+const Workflow = gsx.Component<Record<string, never>, string>(
+  async () => {
+    return await gsx.execute(
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
+      </OpenAIProvider>,
+    );
+  },
+  { name: "Workflow" },
+);
 
-const result = await gsx.execute(<App />);
+const result = await gsx.execute(<Workflow />);
 console.log(result);
 ```
 
