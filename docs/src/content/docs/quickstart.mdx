@@ -193,7 +193,7 @@ for await (const chunk of stream) {
 }
 ```
 
-While this is nice, the real power of this comes when you expand or refactor your workflow. Now you could easily add an `<Editor>` component to the workflow that streams the response to the user with minimal changes. There's no extra plumbing needed besides removing the `stream={true}` prop on the `Writer` component.
+While this is nice, the real power of streaming components comes when you expand or refactor your workflow. Now you could easily add an `<Editor>` component to the workflow that streams the response to the user with minimal changes. There's no extra plumbing needed besides removing the `stream={true}` prop on the `Writer` component.
 
 ```tsx
 const stream = await gsx.execute(
