@@ -3,13 +3,19 @@ title: Quickstart
 description: Getting started with GenSX
 ---
 
-## Requirements
+In this quickstart, you'll learn how to get up and running with GenSX. GenSX is a simple typescript framework for building complex LLM applications using JSX.
 
-- Node.js v20+
+## Prerequisites
+
+Before getting started, make sure you have the following:
+
+- [Node.js](https://nodejs.org/) version 20 or higher installed
+- An [OpenAI API key](https://platform.openai.com/api-keys) with access to the required models
+- A package manager of your choice ([npm](https://www.npmjs.com/), [yarn](https://yarnpkg.com/), or [pnpm](https://pnpm.io/))
 
 ## Create a new project
 
-Run the following command with your package manager of choice in an empty directory to create a new GenSX project:
+To get started, run the following command with your package manager of choice in an empty directory. This will create a new GenSX project to get you started.
 
 ```bash
 # Using npm
@@ -25,7 +31,7 @@ yarn create gensx my-app
 pnpm create gensx my-app
 ```
 
-This will create a simple OpenAI chat completion component:
+In `index.tsx`, you'll find a simple OpenAI chat completion component:
 
 ```tsx
 import { gsx } from "gensx";
@@ -54,22 +60,174 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
   },
 );
 
-const App = gsx.Component<Record<string, never>, string>(async () => {
-  return await gsx.execute(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
-    </OpenAIProvider>,
-  );
-});
+const result = await gsx.execute(
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
+  </OpenAIProvider>,
+);
 
-const result = await gsx.execute(<App />);
 console.log(result);
 ```
 
-## Run your first workflow
+The component is executed through `gsx.execute()`, which processes the JSX tree from top to bottom. In this example:
+
+1. First, the `OpenAIProvider` component is initialized with your API key
+2. Then, the `Respond` component receives the `userInput` prop
+3. Inside `Respond`, a `ChatCompletion` component is created with the specified model and messages
+4. The result flows back up through the tree, ultimately returning the AI's response
+
+Components in GenSX are pure functions that take props and return outputs, making them easy to test and compose. The JSX structure makes the data flow clear and explicit - each component's output can be used by its parent through standard TypeScript/JavaScript.
+
+### Running the workflow
 
 To run your workflow, you'll need to set the `OPENAI_API_KEY` environment variable.
 
 ```bash
-OPENAI_API_KEY=<your-api-key> pnpm dev
+# Set the environment variable
+export OPENAI_API_KEY=<your-api-key>
+
+# Run the workflow
+pnpm dev
 ```
+
+## Understanding components
+
+GenSX is built around functional, reusable components and uses [JSX](https://gensx.dev/why-jsx/) to define and orchestrate workflows.
+
+GenSX components are pure functions that take props and return outputs, similar to React components. Components can return values or other components.
+
+```tsx
+const HelloComponent = gsx.Component<{ name: string }, string>(
+  async ({ name }) => {
+    return `Hello, ${name}!`;
+  },
+);
+```
+
+## Combining components
+
+The example above is a simple workflow with a single component. In practice, you'll often want to combine multiple components to create more complex workflows.
+
+Components can be nested to create multi-step workflows. Each component's output can be accessed through a child function. For example, let's define two components:
+
+```tsx
+// Research component that gathers information
+const Research = gsx.Component<{ topic: string }, string>(async ({ topic }) => {
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        {
+          role: "system",
+          content:
+            "You are a research assistant. Provide key facts about the topic.",
+        },
+        { role: "user", content: topic },
+      ]}
+    />
+  );
+});
+
+// Writer component that uses research to write content
+const Writer = gsx.Component<{ topic: string; research: string }, string>(
+  async ({ topic, research }) => {
+    return (
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          {
+            role: "system",
+            content:
+              "You are a content writer. Use the research provided to write about the topic.",
+          },
+          { role: "user", content: `Topic: ${topic}\nResearch: ${research}` },
+        ]}
+      />
+    );
+  },
+);
+```
+
+Now we can combine these components using child functions.
+
+```tsx
+// Combine components using child functions
+const result = await gsx.execute(
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <Research topic="quantum computing">
+      {(research) => <Writer topic="quantum computing" research={research} />}
+    </Research>
+  </OpenAIProvider>,
+);
+
+console.log(result);
+```
+
+In this example, the `Research` component gathers information about the topic, and the `Writer` component uses that information to write an article about the `topic`. The `Research` component's output is passed as a prop to the `Writer` component, allowing for a seamless flow of data between components.
+
+### Streaming
+
+One common challenge with LLM workflows is handling streaming responses. Any given LLM call can return a response as a string or as a stream of tokens. Typically you'll want the last component of your workflow to stream the response.
+
+To take advantage of streaming, all you need to do is update the `Writer` component to use `StreamingComponent` and pass `stream={true}` when you invoke it.
+
+```tsx
+const Writer = gsx.StreamingComponent<
+  { topic: string; research: string },
+  string
+>(async ({ topic, research }) => {
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        {
+          role: "system",
+          content:
+            "You are a content writer. Use the research provided to write about the topic.",
+        },
+        { role: "user", content: `Topic: ${topic}\nResearch: ${research}` },
+      ]}
+    />
+  );
+});
+
+const stream = await gsx.execute(
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <Research topic="quantum computing">
+      {(research) => (
+        <Writer topic="quantum computing" research={research} stream={true} />
+      )}
+    </Research>
+  </OpenAIProvider>,
+);
+
+// Print the streaming response
+for await (const chunk of stream) {
+  process.stdout.write(chunk);
+}
+```
+
+While this is nice, the real power of this comes in when you expand or refactor your workflow. Now we could easily add a `<Editor>` component to the workflow that streams the response to the user with minimal changes. No extra plumbing needed besides removing the `stream={true}` prop on the `Writer` component.
+
+```tsx
+const stream = await gsx.execute(
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <Research topic="quantum computing">
+      {(research) => <Writer topic="quantum computing" research={research}>
+        {(content) => <Editor content={content} stream={true}/>}
+      </Writer>
+    </Research>
+  </OpenAIProvider>,
+```
+
+### Notes
+
+- Things to cover - some GenSX basics (what is a component)
+- Nesting components
+- How components are executed, when to use return
+
+Flow:
+
+- Run the basic example
+- Show stitching together components
+- Show streaming
