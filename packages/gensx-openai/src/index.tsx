@@ -13,10 +13,13 @@ export const OpenAIContext = gsx.createContext<{
   client?: OpenAI;
 }>({});
 
-export function OpenAIProvider(args: gsx.Args<ClientOptions, never>) {
-  const client = new OpenAI(args);
-  return <OpenAIContext.Provider value={{ client }} />;
-}
+export const OpenAIProvider = gsx.Component<ClientOptions, never>(
+  (args) => {
+    const client = new OpenAI(args);
+    return <OpenAIContext.Provider value={{ client }} />;
+  },
+  { name: "OpenAIProvider" },
+);
 
 // Create a component for chat completions
 export const ChatCompletion = gsx.StreamComponent<ChatCompletionCreateParams>(
@@ -58,4 +61,5 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionCreateParams>(
       return generateTokens();
     }
   },
+  { name: "ChatCompletion" },
 );

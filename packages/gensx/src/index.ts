@@ -2,16 +2,18 @@ export { createContext, useContext } from "./context";
 export { execute } from "./resolve";
 export { Fragment, jsx, jsxs } from "./jsx-runtime";
 export type { JSX } from "./jsx-runtime";
-export { StreamComponent } from "./component";
+export { StreamComponent, Component } from "./component";
 export type {
   Args,
   Context,
   MaybePromise,
   Streamable,
   StreamArgs,
+  GsxStreamComponent,
+  GsxComponent,
 } from "./types";
 
-import { StreamComponent } from "./component";
+import { Component, StreamComponent } from "./component";
 import { createContext, useContext } from "./context";
 import { execute } from "./resolve";
 import * as types from "./types";
@@ -24,6 +26,7 @@ export namespace gsx {
 
 export const gsx = {
   StreamComponent,
+  Component,
   createContext,
   execute,
   useContext,

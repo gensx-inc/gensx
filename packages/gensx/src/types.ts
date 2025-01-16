@@ -34,7 +34,7 @@ export type Primitive = string | number | boolean | null | undefined;
  *   }),
  * );
  */
-type DeepJSXElement<T> = T extends (infer Item)[]
+export type DeepJSXElement<T> = T extends (infer Item)[]
   ? DeepJSXElement<Item>[]
   : T extends object
     ? { [K in keyof T]: DeepJSXElement<T[K]> }
@@ -57,7 +57,7 @@ export type Args<P, O> = P & {
     | ((output: O) => Promise<void>);
 };
 
-export type Component<P, O> = (
+export type GsxComponent<P, O> = (
   props: Args<P, O>,
 ) => MaybePromise<DeepJSXElement<O> | ExecutableValue>;
 
@@ -65,7 +65,7 @@ export type Streamable =
   | AsyncIterableIterator<string>
   | IterableIterator<string>;
 
-export type StreamComponent<P> = (
+export type GsxStreamComponent<P> = (
   props: StreamArgs<P>,
 ) => MaybePromise<DeepJSXElement<Streamable | string> | ExecutableValue>;
 
@@ -91,5 +91,5 @@ export interface Context<T> {
   readonly __type: "Context";
   readonly defaultValue: T;
   readonly symbol: symbol;
-  Provider: Component<{ value: T }, ExecutionContext>;
+  Provider: GsxComponent<{ value: T }, ExecutionContext>;
 }

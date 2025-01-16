@@ -24,45 +24,51 @@ const buzzwords: string[] = [
   "transformative",
 ];
 
-function CountBuzzwords({ text }: gsx.Args<{ text: string }, number>) {
-  return text.split(" ").filter((word) => buzzwords.includes(word)).length;
-}
+const CountBuzzwords = gsx.Component<{ text: string }, number>(
+  ({ text }) => {
+    return text.split(" ").filter((word) => buzzwords.includes(word)).length;
+  },
+  { name: "CountBuzzwords" },
+);
 
-async function CleanBuzzwords({
-  text: prompt,
-  iterations = 0,
-  maxIterations = 5,
-}: gsx.Args<
-  { text: string; iterations?: number; maxIterations?: number },
+const CleanBuzzwords = gsx.Component<
+  {
+    text: string;
+    iterations?: number;
+    maxIterations?: number;
+  },
   string
->) {
-  const numBuzzwords = await gsx.execute<number>(
-    <CountBuzzwords text={prompt} />,
-  );
-
-  if (numBuzzwords > 0 && iterations < maxIterations) {
-    const systemPrompt = `Remove all buzzwords words from users message, but keep the meaning of the message. Return the cleaned message and nothing else.`;
-    const cleanedPrompt = await gsx.execute<string>(
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ]}
-      />,
+>(
+  async ({ text, iterations = 0, maxIterations = 5 }) => {
+    const numBuzzwords = await gsx.execute<number>(
+      <CountBuzzwords text={text} />,
     );
 
-    return (
-      <CleanBuzzwords
-        text={cleanedPrompt}
-        iterations={iterations + 1}
-        maxIterations={maxIterations}
-      />
-    );
-  }
+    if (numBuzzwords > 0 && iterations < maxIterations) {
+      const systemPrompt = `Remove all buzzwords words from users message, but keep the meaning of the message. Return the cleaned message and nothing else.`;
+      const cleanedPrompt = await gsx.execute<string>(
+        <ChatCompletion
+          model="gpt-4o-mini"
+          messages={[
+            { role: "system", content: systemPrompt },
+            { role: "user", content: text },
+          ]}
+        />,
+      );
 
-  return prompt;
-}
+      return (
+        <CleanBuzzwords
+          text={cleanedPrompt}
+          iterations={iterations + 1}
+          maxIterations={maxIterations}
+        />
+      );
+    }
+
+    return text;
+  },
+  { name: "CleanBuzzwords" },
+);
 
 async function main() {
   const withoutBuzzwords = await gsx.execute<string>(

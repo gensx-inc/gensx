@@ -18,4 +18,5 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
 
     return result.stream();
   },
+  { name: "ChatCompletion" },
 );
