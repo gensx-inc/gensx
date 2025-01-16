@@ -94,7 +94,7 @@ pnpm dev
 
 The example above is a simple workflow with a single component. In practice, you'll often want to combine multiple components to create more complex workflows.
 
-Components can be nested to create multi-step workflows with each component's output being passed through a child function. For example, let's define two components:
+Components can be nested to create multi-step workflows with each component's output being passed through a child function. For example, let's define two components: a `Research` component that gathers information about a topic, and a `Writer` component that uses that information to write a blog post.
 
 ```tsx
 // Research component that gathers information
@@ -149,7 +149,7 @@ const result = await gsx.execute(
 console.log(result);
 ```
 
-In this example, the `Research` component gathers information about the topic, and the `Writer` component uses that information to write an article about the `topic`. The `Research` component's output is passed as a prop to the `Writer` component, allowing for a seamless flow of data between components.
+In this example, the `Research` component gathers information about the topic which then passes the informaton to the `Writer` component. The `Writer` component uses that information to write an article about the topic which is then returned as the `result`.
 
 ### Streaming
 
