@@ -50,7 +50,7 @@ const AIGreeting = gsx.Component<GreetingProps, string>(async ({ name }) => {
 });
 ```
 
-Components can return structured objects containing other components. The pattern also works with array operations like `map` to process items in parallel.
+Components can also return structured objects containing other components. The pattern works with array operations like `map` for processing items in parallel.
 
 ```tsx
 const AnalyzePosts = gsx.Component<AnalyzePostsProps, AnalyzePostsOutput>(
@@ -86,10 +86,10 @@ Unlike React's concurrent rendering model, GenSX evaluates your workflow as a de
 
 GenSX provides two main types of components:
 
-1. **Components** (`gsx.Component`) - For standard synchronous or asynchronous operations
-2. **Streaming Components** (`gsx.StreamingComponent`) - For handling streaming responses from LLMs
+1. **Components** (`gsx.Component`) - Components that produce values and can handle both synchronous and asynchronous operations
+2. **Streaming Components** (`gsx.StreamingComponent`) - Components designed to handle responses from LLMs, working in both streaming and non-streaming contexts
 
-For streaming components, you can enable streaming by passing the `stream` prop and consuming the result as an async iterator:
+The power of a `StreamingComponent` is that a single implementation can be used interchangeably in both streaming and non-streaming contexts without any code changes - you just toggle the `stream` prop:
 
 ```tsx
 const stream = await gsx.execute<Streamable>(
@@ -112,9 +112,7 @@ const result = await gsx.execute(<MyComponent input="some data" />);
 
 Components can be tested and evaluated in isolation, making it easy to debug and verify individual steps of your workflow. This is particularly valuable when building complex LLM applications that need robust evaluation.
 
-## Contexts
-
-TODO - explain contexts
+Rather than having to run an entire workflow to test a change to a single component, you can test just that component, dramatically speeding up your dev loop. This isolation also makes unit testing more manageable, as you can create specific test cases without having to worry about the rest of the workflow.
 
 ## Providers
 
@@ -138,3 +136,33 @@ Providers allow you to:
 - Configure dependencies like API keys and other settings
 - Avoid passing configuration through multiple levels of components
 - Keep components pure and reusable by separating configuration from logic
+
+## Contexts
+
+Contexts provide a way to share values across components without explicitly passing them through props. They're similar to React's Context system but adapted for GenSX workflows. Contexts are particularly useful for:
+
+- Sharing configuration across multiple components
+- Providing dependencies to deeply nested components
+- Managing state that needs to be accessed by multiple components
+
+Here's how to create and use a context:
+
+```tsx
+import { createContext, useContext } from "gensx";
+
+// Create a context with a default value
+const UserContext = createContext({ name: "default", age: 0 });
+
+// Use the context in a component
+const UserGreeting = gsx.Component(() => {
+  const user = useContext(UserContext);
+  return `Hello, ${user.name}!`;
+});
+
+// Provide a value to the context
+const result = await gsx.execute(
+  <UserContext.Provider value={{ name: "John", age: 30 }}>
+    <UserGreeting />
+  </UserContext.Provider>,
+);
+```
