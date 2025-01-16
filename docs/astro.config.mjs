@@ -42,7 +42,6 @@ export default defineConfig({
           label: "Quickstart",
           link: "/quickstart",
         },
-
         {
           label: "Why JSX?",
           link: "/why-jsx",
