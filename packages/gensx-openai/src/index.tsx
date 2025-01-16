@@ -13,10 +13,8 @@ export const OpenAIContext = gsx.createContext<{
   client?: OpenAI;
 }>({});
 
-export function OpenAIProvider(
-  props: gsx.ComponentProps<ClientOptions, never>,
-) {
-  const client = new OpenAI(props);
+export function OpenAIProvider(args: gsx.Args<ClientOptions, never>) {
+  const client = new OpenAI(args);
   return <OpenAIContext.Provider value={{ client }} />;
 }
 

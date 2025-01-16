@@ -9,10 +9,7 @@ interface LLMResearchBrainstormOutput {
 }
 function LLMResearchBrainstorm({
   prompt,
-}: gsx.ComponentProps<
-  LLMResearchBrainstormProps,
-  LLMResearchBrainstormOutput
->) {
+}: gsx.Args<LLMResearchBrainstormProps, LLMResearchBrainstormOutput>) {
   console.log("🔍 Starting research for:", prompt);
   const systemPrompt = `You are a helpful assistant that brainstorms topics for a researching a blog post. The user will provide a prompt and you will brainstorm topics based on the prompt. You should return 3 - 5 topics, as a JSON array.
 
@@ -40,9 +37,7 @@ interface LLMResearchProps {
   topic: string;
 }
 type LLMResearchOutput = string;
-function LLMResearch({
-  topic,
-}: gsx.ComponentProps<LLMResearchProps, LLMResearchOutput>) {
+function LLMResearch({ topic }: gsx.Args<LLMResearchProps, LLMResearchOutput>) {
   console.log("📚 Researching topic:", topic);
   const systemPrompt = `You are a helpful assistant that researches topics. The user will provide a topic and you will research the topic. You should return a summary of the research, summarizing the most important points in a few sentences at most.`;
 
@@ -66,7 +61,7 @@ type LLMWriterOutput = string;
 function LLMWriter({
   prompt,
   research,
-}: gsx.ComponentProps<LLMWriterProps, LLMWriterOutput>) {
+}: gsx.Args<LLMWriterProps, LLMWriterOutput>) {
   const systemPrompt = `You are a helpful assistant that writes blog posts. The user will provide a prompt and you will write a blog post based on the prompt. Unless specified by the user, the blog post should be 200 words.
 
 Here is the research for the blog post: ${research.join("\n")}`;
@@ -87,7 +82,7 @@ Here is the research for the blog post: ${research.join("\n")}`;
 interface LLMEditorProps {
   draft: string;
 }
-function LLMEditor({ draft }: gsx.StreamComponentProps<LLMEditorProps>) {
+const LLMEditor = gsx.StreamComponent<LLMEditorProps>(({ draft }) => {
   console.log("🔍 Editing draft");
   const systemPrompt = `You are a helpful assistant that edits blog posts. The user will provide a draft and you will edit it to make it more engaging and interesting.`;
 
@@ -102,7 +97,7 @@ function LLMEditor({ draft }: gsx.StreamComponentProps<LLMEditorProps>) {
       ]}
     />
   );
-}
+});
 
 interface WebResearcherProps {
   prompt: string;
@@ -110,7 +105,7 @@ interface WebResearcherProps {
 type WebResearcherOutput = string[];
 async function WebResearcher({
   prompt,
-}: gsx.ComponentProps<WebResearcherProps, WebResearcherOutput>) {
+}: gsx.Args<WebResearcherProps, WebResearcherOutput>) {
   console.log("🌐 Researching web for:", prompt);
   const results = await Promise.resolve([
     "web result 1",
@@ -126,7 +121,7 @@ interface ParallelResearchComponentProps {
 }
 function ParallelResearch({
   prompt,
-}: gsx.ComponentProps<ParallelResearchComponentProps, ParallelResearchOutput>) {
+}: gsx.Args<ParallelResearchComponentProps, ParallelResearchOutput>) {
   return (
     <>
       <LLMResearchBrainstorm prompt={prompt}>
@@ -142,18 +137,17 @@ function ParallelResearch({
 interface BlogWritingWorkflowProps {
   prompt: string;
 }
-export function BlogWritingWorkflow({
-  prompt,
-}: gsx.StreamComponentProps<BlogWritingWorkflowProps>) {
-  return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <ParallelResearch prompt={prompt}>
-        {(research) => (
-          <LLMWriter prompt={prompt} research={research.flat()}>
-            {(draft) => <LLMEditor draft={draft} stream={true} />}
-          </LLMWriter>
-        )}
-      </ParallelResearch>
-    </OpenAIProvider>
-  );
-}
+export const BlogWritingWorkflow =
+  gsx.StreamComponent<BlogWritingWorkflowProps>(({ prompt }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <ParallelResearch prompt={prompt}>
+          {(research) => (
+            <LLMWriter prompt={prompt} research={research.flat()}>
+              {(draft) => <LLMEditor draft={draft} stream={true} />}
+            </LLMWriter>
+          )}
+        </ParallelResearch>
+      </OpenAIProvider>
+    );
+  });

@@ -24,9 +24,7 @@ const buzzwords: string[] = [
   "transformative",
 ];
 
-function CountBuzzwords({
-  text,
-}: gsx.ComponentProps<{ text: string }, number>) {
+function CountBuzzwords({ text }: gsx.Args<{ text: string }, number>) {
   return text.split(" ").filter((word) => buzzwords.includes(word)).length;
 }
 
@@ -34,7 +32,7 @@ async function CleanBuzzwords({
   text: prompt,
   iterations = 0,
   maxIterations = 5,
-}: gsx.ComponentProps<
+}: gsx.Args<
   { text: string; iterations?: number; maxIterations?: number },
   string
 >) {

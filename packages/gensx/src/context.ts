@@ -1,5 +1,5 @@
 import { resolveDeep } from "./resolve";
-import { ComponentProps, Context } from "./types";
+import { Args, Context } from "./types";
 
 type WorkflowContext = Record<symbol, unknown>;
 
@@ -12,7 +12,7 @@ function createContextSymbol() {
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
 
-  function Provider(props: ComponentProps<{ value: T }, ExecutionContext>) {
+  function Provider(props: Args<{ value: T }, ExecutionContext>) {
     return () => {
       const currentContext = getCurrentContext();
 

@@ -21,11 +21,11 @@ export type Primitive = string | number | boolean | null | undefined;
  *   }[];
  * }
  *
- * interface ComponentProps {
+ * interface Args {
  *   input: string;
  * }
  *
- * const Component = gsx.Component<ComponentProps, ComponentOutput>(
+ * const Component = gsx.Component<Args, ComponentOutput>(
  *   ({ input }) => ({
  *     nested: [
  *       { foo: <Foo input={input} />, bar: <Bar input={input} /> },
@@ -49,7 +49,7 @@ export type ExecutableValue =
   | Record<string, Element | any>;
 
 // Component props as a type alias instead of interface
-export type ComponentProps<P, O> = P & {
+export type Args<P, O> = P & {
   children?:
     | ((output: O) => MaybePromise<ExecutableValue | Primitive>)
     // support child functions that do not return anything, but maybe do some other side effect
@@ -58,7 +58,7 @@ export type ComponentProps<P, O> = P & {
 };
 
 export type Component<P, O> = (
-  props: ComponentProps<P, O>,
+  props: Args<P, O>,
 ) => MaybePromise<DeepJSXElement<O> | ExecutableValue>;
 
 export type Streamable =
@@ -66,11 +66,11 @@ export type Streamable =
   | IterableIterator<string>;
 
 export type StreamComponent<P> = (
-  props: StreamComponentProps<P>,
+  props: StreamArgs<P>,
 ) => MaybePromise<DeepJSXElement<Streamable | string> | ExecutableValue>;
 
 // Stream component props as a type alias
-export type StreamComponentProps<P> = P & {
+export type StreamArgs<P> = P & {
   stream?: boolean;
   children?:
     | ((output: Streamable) => MaybePromise<ExecutableValue | Primitive>)

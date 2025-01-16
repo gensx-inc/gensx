@@ -4,7 +4,7 @@ import { expect, suite, test } from "vitest";
 
 import { ExecutionContext } from "@/context";
 import { createContext, gsx, useContext } from "@/index.js";
-import { Component, ComponentProps } from "@/types";
+import { Args, Component } from "@/types";
 
 suite("context", () => {
   test("can create and use context with default value", async () => {
@@ -118,9 +118,7 @@ suite("context", () => {
     const Context1 = createContext("default1");
     const Context2 = createContext("default2");
 
-    async function Consumer(
-      _: ComponentProps<{}, { value1: string; value2: string }>,
-    ) {
+    async function Consumer(_: Args<{}, { value1: string; value2: string }>) {
       await setTimeout(0);
       const value1 = useContext(Context1);
       const value2 = useContext(Context2);
@@ -143,7 +141,7 @@ suite("context", () => {
   test("context values persist through async operations", async () => {
     const TestContext = createContext("default");
 
-    async function AsyncConsumer(_: ComponentProps<{}, string>) {
+    async function AsyncConsumer(_: Args<{}, string>) {
       await setTimeout(0);
       const value = useContext(TestContext);
       return value;
@@ -161,7 +159,7 @@ suite("context", () => {
   test("context values are isolated between executions", async () => {
     const TestContext = createContext("default");
 
-    async function Consumer(_: ComponentProps<{}, string>) {
+    async function Consumer(_: Args<{}, string>) {
       await setTimeout(0);
       const value = useContext(TestContext);
       return value;
@@ -200,7 +198,7 @@ suite("context", () => {
     };
 
     async function AsyncParent(
-      _: ComponentProps<{}, { value1: string; value2: string }>,
+      _: Args<{}, { value1: string; value2: string }>,
     ) {
       await setTimeout(0);
       return <AsyncChild />;
@@ -221,7 +219,7 @@ suite("context", () => {
     const TestContext = createContext("default");
     async function MyProvider({
       value,
-    }: ComponentProps<{ value: string }, ExecutionContext>) {
+    }: Args<{ value: string }, ExecutionContext>) {
       await setTimeout(0);
       const newValue = value + " wrapped";
       return <TestContext.Provider value={newValue} />;
@@ -243,7 +241,7 @@ suite("context", () => {
       const Context2 = createContext("default2");
 
       async function Providers(
-        props: ComponentProps<{ value: string }, ExecutionContext>,
+        props: Args<{ value: string }, ExecutionContext>,
       ) {
         await setTimeout(0);
         return (

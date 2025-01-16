@@ -16,7 +16,7 @@ type PGTweetWriterOutput = string;
 function PGTweetWriter({
   context,
   prompt,
-}: gsx.ComponentProps<PGTweetWriterProps, PGTweetWriterOutput>) {
+}: gsx.Args<PGTweetWriterProps, PGTweetWriterOutput>) {
   const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
 1. Captures the most interesting insight
@@ -47,9 +47,7 @@ interface PGEditorProps {
 }
 
 type PGEditorOutput = string;
-function PGEditor({
-  content,
-}: gsx.ComponentProps<PGEditorProps, PGEditorOutput>) {
+function PGEditor({ content }: gsx.Args<PGEditorProps, PGEditorOutput>) {
   const PROMPT = `
 You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
 1. Clear, direct language
@@ -87,7 +85,7 @@ type CommentsAnalyzerOutput = string;
 function CommentsAnalyzer({
   postId,
   comments,
-}: gsx.ComponentProps<CommentsAnalyzerProps, CommentsAnalyzerOutput>) {
+}: gsx.Args<CommentsAnalyzerProps, CommentsAnalyzerOutput>) {
   const PROMPT = `
 You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
 
@@ -143,7 +141,7 @@ interface PostSummarizerProps {
 type PostSummarizerOutput = string;
 function PostSummarizer({
   story,
-}: gsx.ComponentProps<PostSummarizerProps, PostSummarizerOutput>) {
+}: gsx.Args<PostSummarizerProps, PostSummarizerOutput>) {
   const PROMPT = `
 You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
 1. The main point or key insight
@@ -205,7 +203,7 @@ type TrendReport = string;
 
 function TrendAnalyzer({
   analyses,
-}: gsx.ComponentProps<TrendAnalyzerProps, TrendReport>) {
+}: gsx.Args<TrendAnalyzerProps, TrendReport>) {
   const PROMPT = `
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
 You will be given input summarizing the top posts from hacker news, and an analysis of the comments on each post.
@@ -261,7 +259,7 @@ interface HNCollectorProps {
 type HNCollectorOutput = HNStory[]; // Array of stories
 async function HNCollector({
   limit,
-}: gsx.ComponentProps<HNCollectorProps, HNCollectorOutput>) {
+}: gsx.Args<HNCollectorProps, HNCollectorOutput>) {
   // We can only get up to 500 stories from the API
   const MAX_HN_STORIES = 500;
   const requestLimit = Math.min(limit, MAX_HN_STORIES);
@@ -293,7 +291,7 @@ interface AnalyzeHNPostsOutput {
 
 function AnalyzeHNPosts({
   stories,
-}: gsx.ComponentProps<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>) {
+}: gsx.Args<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>) {
   return {
     analyses: stories.map((story) => ({
       summary: <PostSummarizer story={story} />,
@@ -315,7 +313,7 @@ export interface HNAnalyzerWorkflowOutput {
 
 export function HNAnalyzerWorkflow({
   postCount,
-}: gsx.ComponentProps<HNAnalyzerWorkflowProps, HNAnalyzerWorkflowOutput>) {
+}: gsx.Args<HNAnalyzerWorkflowProps, HNAnalyzerWorkflowOutput>) {
   return (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       {() => (

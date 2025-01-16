@@ -4,11 +4,11 @@ export { Fragment, jsx, jsxs } from "./jsx-runtime";
 export type { JSX } from "./jsx-runtime";
 export { StreamComponent } from "./component";
 export type {
-  ComponentProps,
+  Args,
   Context,
   MaybePromise,
   Streamable,
-  StreamComponentProps,
+  StreamArgs,
 } from "./types";
 
 import { StreamComponent } from "./component";
@@ -18,8 +18,8 @@ import * as types from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace gsx {
-  export type ComponentProps<P, O> = types.ComponentProps<P, O>;
-  export type StreamComponentProps<P> = types.StreamComponentProps<P>;
+  export type Args<P, O> = types.Args<P, O>;
+  export type StreamArgs<P> = types.StreamArgs<P>;
 }
 
 export const gsx = {

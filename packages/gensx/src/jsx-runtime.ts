@@ -5,18 +5,16 @@
 import { ExecutionContext, withContext } from "./context";
 import { resolveDeep } from "./resolve";
 import {
-  ComponentProps,
+  Args,
   ExecutableValue,
   MaybePromise,
   Primitive,
-  StreamComponentProps,
+  StreamArgs,
 } from "./types";
 
 export namespace JSX {
   export type ElementType = Element;
-  export type Element = (
-    props: ComponentProps<any, unknown>,
-  ) => MaybePromise<unknown>;
+  export type Element = (props: Args<any, unknown>) => MaybePromise<unknown>;
   export interface ElementChildrenAttribute {
     children: (
       output: unknown,
@@ -38,15 +36,13 @@ export const Fragment = (props: { children?: JSX.Element[] | JSX.Element }) => {
 
 export const jsx = <TOutput, TProps>(
   component: (
-    props: ComponentProps<TProps, TOutput> | StreamComponentProps<TProps>,
+    props: Args<TProps, TOutput> | StreamArgs<TProps>,
   ) => MaybePromise<TOutput>,
-  props: ComponentProps<TProps, TOutput> | null,
+  props: Args<TProps, TOutput> | null,
 ): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
   // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
-    const rawResult = await component(
-      props ?? ({} as ComponentProps<TProps, TOutput>),
-    );
+    const rawResult = await component(props ?? ({} as Args<TProps, TOutput>));
 
     const result = await resolveDeep(rawResult);
 
