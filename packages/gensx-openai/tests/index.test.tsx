@@ -51,7 +51,7 @@ suite("OpenAIContext", () => {
   test("provides OpenAI client to children", async () => {
     let capturedClient: OpenAI | undefined;
 
-    const TestComponent = gsx.Component<Record<string, never>, null>(
+    const TestComponent = gsx.Component<{}, null>(
       () => {
         const context = gsx.useContext(OpenAIContext);
         capturedClient = context.client;
@@ -70,7 +70,7 @@ suite("OpenAIContext", () => {
   });
 
   test("throws error when client is not provided", async () => {
-    const TestComponent = gsx.Component<Record<string, never>, string>(
+    const TestComponent = gsx.Component<{}, string>(
       () => (
         <ChatCompletion
           model="gpt-4"
@@ -88,7 +88,7 @@ suite("OpenAIContext", () => {
   test("can provide a custom client", async () => {
     const customClient = new OpenAI({ apiKey: "test" });
 
-    const TestComponent = gsx.Component<Record<string, never>, null>(
+    const TestComponent = gsx.Component<{}, null>(
       () => {
         const context = gsx.useContext(OpenAIContext);
         expect(context.client).toBe(customClient);
@@ -107,7 +107,7 @@ suite("OpenAIContext", () => {
 
 suite("ChatCompletion", () => {
   test("handles streaming response", async () => {
-    const TestComponent = gsx.StreamComponent<Record<string, never>>(
+    const TestComponent = gsx.StreamComponent<{}>(
       () => (
         <ChatCompletion
           stream={true}
@@ -135,7 +135,7 @@ suite("ChatCompletion", () => {
   });
 
   test("handles non-streaming response", async () => {
-    const TestComponent = gsx.Component<Record<string, never>, string>(
+    const TestComponent = gsx.Component<{}, string>(
       () => (
         <ChatCompletion
           model="gpt-4"

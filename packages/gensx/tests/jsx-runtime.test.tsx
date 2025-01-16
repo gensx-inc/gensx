@@ -6,7 +6,7 @@ import { gsx } from "@/index.js";
 
 suite("jsx-runtime", () => {
   test("can create element from component", async () => {
-    const MyComponent = gsx.Component<Record<string, never>, string>(
+    const MyComponent = gsx.Component<{}, string>(
       async () => {
         await setTimeout(0);
         return "test";

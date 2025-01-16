@@ -7,7 +7,7 @@ interface LLMResearchBrainstormProps {
 interface LLMResearchBrainstormOutput {
   topics: string[];
 }
-export const LLMResearchBrainstorm = gsx.Component<
+const LLMResearchBrainstorm = gsx.Component<
   LLMResearchBrainstormProps,
   LLMResearchBrainstormOutput
 >(
@@ -41,7 +41,7 @@ interface LLMResearchProps {
   topic: string;
 }
 type LLMResearchOutput = string;
-export const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
+const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
   ({ topic }) => {
     console.log("📚 Researching topic:", topic);
     const systemPrompt = `You are a helpful assistant that researches topics. The user will provide a topic and you will research the topic. You should return a summary of the research, summarizing the most important points in a few sentences at most.`;
@@ -65,7 +65,7 @@ interface LLMWriterProps {
   prompt: string;
 }
 type LLMWriterOutput = string;
-export const LLMWriter = gsx.Component<LLMWriterProps, LLMWriterOutput>(
+const LLMWriter = gsx.Component<LLMWriterProps, LLMWriterOutput>(
   ({ prompt, research }) => {
     const systemPrompt = `You are a helpful assistant that writes blog posts. The user will provide a prompt and you will write a blog post based on the prompt. Unless specified by the user, the blog post should be 200 words.
 
@@ -89,7 +89,7 @@ Here is the research for the blog post: ${research.join("\n")}`;
 interface LLMEditorProps {
   draft: string;
 }
-export const LLMEditor = gsx.StreamComponent<LLMEditorProps>(
+const LLMEditor = gsx.StreamComponent<LLMEditorProps>(
   ({ draft }) => {
     console.log("🔍 Editing draft");
     const systemPrompt = `You are a helpful assistant that edits blog posts. The user will provide a draft and you will edit it to make it more engaging and interesting.`;
@@ -133,7 +133,7 @@ type ParallelResearchOutput = [string[], string[]];
 interface ParallelResearchComponentProps {
   prompt: string;
 }
-export const ParallelResearch = gsx.Component<
+const ParallelResearch = gsx.Component<
   ParallelResearchComponentProps,
   ParallelResearchOutput
 >(

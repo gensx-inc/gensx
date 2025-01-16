@@ -210,10 +210,7 @@ suite("context", () => {
     const Context1 = createContext("default1");
     const Context2 = createContext("default2");
 
-    const AsyncChild = Component<
-      Record<string, never>,
-      { value1: string; value2: string }
-    >(
+    const AsyncChild = Component<{}, { value1: string; value2: string }>(
       async () => {
         await setTimeout(0);
         const value1 = useContext(Context1);

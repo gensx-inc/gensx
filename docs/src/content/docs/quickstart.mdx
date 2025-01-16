@@ -55,7 +55,7 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
   { name: "Respond" },
 );
 
-const Workflow = gsx.Component<Record<string, never>, string>(
+const Workflow = gsx.Component<{}, string>(
   async () => {
     return await gsx.execute(
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
