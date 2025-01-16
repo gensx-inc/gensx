@@ -1,0 +1,116 @@
+---
+title: Basic Concepts
+description: Understanding the core concepts of GenSX
+---
+
+GenSX is a workflow engine designed for building complex LLM applications. It's built around functional, reusable components that are composed using JSX to create and orchestrate complicated workflows.
+
+## Components
+
+Components are the building blocks of GenSX applications; they're pure TypeScript functions that:
+
+- Accept props as input
+- Return a single output or another component
+- Have zero side effects
+- Don't depend on external state
+- Are fully typed using TypeScript
+
+Here's an example of a simple component:
+
+```tsx
+interface GreetingProps {
+  name: string;
+}
+type GreetingOutput = string;
+
+const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
+  async ({ name }) => {
+    return `Hello, ${name}!`;
+  },
+);
+```
+
+Components can also return other components using JSX:
+
+```tsx
+const AIGreeting = gsx.Component<GreetingProps, string>(async ({ name }) => {
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        {
+          role: "system",
+          content: "You are a friendly assistant that greets people warmly.",
+        },
+        { role: "user", content: `Write a greeting for ${name}.` },
+      ]}
+    />
+  );
+});
+```
+
+## JSX and Data Flow
+
+GenSX uses JSX to compose components into workflows. Data flows from parent to child through props allowing you to nest components and pass data between them. When components are combined, they will return the value of the innermost component.
+
+```tsx
+// Parent receives output from ChildComponent through the child function
+<ParentComponent input="some data">
+  {(parentResult) => <ChildComponent data={parentResult} />}
+</ParentComponent>
+```
+
+Unlike React's concurrent rendering model, GenSX components execute sequentially from top to bottom. Each component completes before its children begin.
+
+## Component Types
+
+GenSX provides two main types of components:
+
+1. **Regular Components** (`gsx.Component`) - For standard synchronous or asynchronous operations
+2. **Streaming Components** (`gsx.StreamingComponent`) - For handling streaming responses from LLMs
+
+For streaming components, you can enable streaming by passing the `stream` prop and consuming the result as an async iterator:
+
+```tsx
+const stream = await gsx.execute(
+  <MyStreamingComponent input="some data" stream={true} />,
+);
+
+// Process the streaming response
+for await (const chunk of stream) {
+  process.stdout.write(chunk);
+}
+```
+
+## Executing Components
+
+Components are executed using `gsx.execute()`, which processes the JSX tree from top to bottom:
+
+```tsx
+const result = await gsx.execute(<MyComponent input="some data" />);
+```
+
+Components can be tested and evaluated in isolation, making it easy to debug and verify individual steps of your workflow. This is particularly valuable when building complex LLM applications that need robust evaluation.
+
+## Providers
+
+Providers are special components that manage configuration and dependencies for your workflow. They're similar to React's Context providers but simpler - they just pass configuration down to child components.
+
+The main provider available today is the `OpenAIProvider`, which manages your OpenAI API key:
+
+```tsx
+const result = await gsx.execute(
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[{ role: "user", content: "Hello!" }]}
+    />
+  </OpenAIProvider>,
+);
+```
+
+Providers allow you to:
+
+- Configure dependencies like API keys and other settings
+- Avoid passing configuration through multiple levels of components
+- Keep components pure and reusable by separating configuration from logic

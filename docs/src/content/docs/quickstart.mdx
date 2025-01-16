@@ -3,7 +3,7 @@ title: Quickstart
 description: Getting started with GenSX
 ---
 
-In this quickstart, you'll learn how to get up and running with GenSX. GenSX is a simple typescript framework for building complex LLM applications using JSX.
+In this quickstart, you'll learn how to get up and running with GenSX. GenSX is a simple typescript framework for building complex LLM applications using JSX. If you haven't already, check out the [basic concepts](./basic-concepts) to learn more about how GenSX works.
 
 ## Prerequisites
 
@@ -74,41 +74,27 @@ The component is executed through `gsx.execute()`, which processes the JSX tree 
 1. First, the `OpenAIProvider` component is initialized with your API key
 2. Then, the `Respond` component receives the `userInput` prop
 3. Inside `Respond`, a `ChatCompletion` component is created with the specified model and messages
-4. The result flows back up through the tree, ultimately returning the AI's response
+4. The result flows back up through the tree, ultimately returning the response from gpt-4o-mini.
 
-Components in GenSX are pure functions that take props and return outputs, making them easy to test and compose. The JSX structure makes the data flow clear and explicit - each component's output can be used by its parent through standard TypeScript/JavaScript.
+Components in GenSX are pure functions that take props and return outputs, making them easy to test and compose. The JSX structure makes the data flow clear and explicit - each component's output can be used by its children through standard TypeScript/JavaScript.
 
-### Running the workflow
+### Running the project
 
-To run your workflow, you'll need to set the `OPENAI_API_KEY` environment variable.
+To run the project, you'll need to set the `OPENAI_API_KEY` environment variable.
 
 ```bash
 # Set the environment variable
 export OPENAI_API_KEY=<your-api-key>
 
-# Run the workflow
+# Run the project
 pnpm dev
-```
-
-## Understanding components
-
-GenSX is built around functional, reusable components and uses [JSX](https://gensx.dev/why-jsx/) to define and orchestrate workflows.
-
-GenSX components are pure functions that take props and return outputs, similar to React components. Components can return values or other components.
-
-```tsx
-const HelloComponent = gsx.Component<{ name: string }, string>(
-  async ({ name }) => {
-    return `Hello, ${name}!`;
-  },
-);
 ```
 
 ## Combining components
 
 The example above is a simple workflow with a single component. In practice, you'll often want to combine multiple components to create more complex workflows.
 
-Components can be nested to create multi-step workflows. Each component's output can be accessed through a child function. For example, let's define two components:
+Components can be nested to create multi-step workflows with each component's output being passed through a child function. For example, let's define two components:
 
 ```tsx
 // Research component that gathers information
@@ -138,7 +124,7 @@ const Writer = gsx.Component<{ topic: string; research: string }, string>(
           {
             role: "system",
             content:
-              "You are a content writer. Use the research provided to write about the topic.",
+              "You are a content writer. Use the research provided to write a blog post about the topic.",
           },
           { role: "user", content: `Topic: ${topic}\nResearch: ${research}` },
         ]}
@@ -148,7 +134,7 @@ const Writer = gsx.Component<{ topic: string; research: string }, string>(
 );
 ```
 
-Now we can combine these components using child functions.
+Now you can combine these components using a child function:
 
 ```tsx
 // Combine components using child functions
@@ -183,7 +169,7 @@ const Writer = gsx.StreamingComponent<
         {
           role: "system",
           content:
-            "You are a content writer. Use the research provided to write about the topic.",
+            "You are a content writer. Use the research provided to write a blog post about the topic.",
         },
         { role: "user", content: `Topic: ${topic}\nResearch: ${research}` },
       ]}
@@ -207,7 +193,7 @@ for await (const chunk of stream) {
 }
 ```
 
-While this is nice, the real power of this comes in when you expand or refactor your workflow. Now we could easily add a `<Editor>` component to the workflow that streams the response to the user with minimal changes. No extra plumbing needed besides removing the `stream={true}` prop on the `Writer` component.
+While this is nice, the real power of this comes when you expand or refactor your workflow. Now you could easily add an `<Editor>` component to the workflow that streams the response to the user with minimal changes. There's no extra plumbing needed besides removing the `stream={true}` prop on the `Writer` component.
 
 ```tsx
 const stream = await gsx.execute(
@@ -220,14 +206,10 @@ const stream = await gsx.execute(
   </OpenAIProvider>,
 ```
 
-### Notes
+## Next steps
 
-- Things to cover - some GenSX basics (what is a component)
-- Nesting components
-- How components are executed, when to use return
+Now that you've gone through the quickstart, you should be able to start building with GenSX. Take a look at the following examples to see how you can build more complex workflows.
 
-Flow:
-
-- Run the basic example
-- Show stitching together components
-- Show streaming
+- [Blog Writer](https://github.com/cortexclick/gensx/tree/main/examples/blogWriter)
+- [Hacker News Analyzer](https://github.com/cortexclick/gensx/tree/main/examples/hackerNewsAnalyzer)
+- [Reflection](https://github.com/cortexclick/gensx/tree/main/examples/reflection)

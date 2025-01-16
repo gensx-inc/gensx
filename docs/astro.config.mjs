@@ -35,9 +35,14 @@ export default defineConfig({
           link: "/overview",
         },
         {
+          label: "Basic Concepts",
+          link: "/basic-concepts",
+        },
+        {
           label: "Quickstart",
           link: "/quickstart",
         },
+
         {
           label: "Why JSX?",
           link: "/why-jsx",
