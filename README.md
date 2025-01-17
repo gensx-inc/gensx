@@ -105,7 +105,7 @@ const result = await gsx.execute<string>(
 console.log(result);
 ```
 
-### Examples
+## Examples
 
 This repo contains a number of [examples](./examples) to help you get up and running with GenSX.
 
