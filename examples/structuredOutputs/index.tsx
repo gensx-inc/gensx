@@ -17,13 +17,13 @@ interface ExtractEntitiesBasicOutput {
 const ExtractEntitiesBasic = gsx.Component<
   ExtractEntitiesProps,
   ExtractEntitiesBasicOutput
->(async ({ text }) => {
+>("ExtractEntitiesBasic", ({ text }) => {
   const prompt = `Please review the following text and extract all the people, places, and organizations mentioned.
 
   <text>
   ${text}
   </text>
-    
+
   Please return json with the following format:
   {
     "people": ["person1", "person2", "person3"],
@@ -61,13 +61,13 @@ type ExtractEntitiesOutput = z.infer<typeof ExtractEntitiesSchema>;
 const ExtractEntities = gsx.Component<
   ExtractEntitiesProps,
   ExtractEntitiesOutput
->(async ({ text }) => {
+>("ExtractEntities", ({ text }) => {
   const prompt = `Please review the following text and extract all the people, places, and organizations mentioned.
 
   <text>
   ${text}
   </text>
-    
+
   Please return json with the following format:
   {
     "people": ["person1", "person2", "person3"],
