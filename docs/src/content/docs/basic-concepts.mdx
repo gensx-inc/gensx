@@ -50,7 +50,7 @@ const AIGreeting = gsx.Component<GreetingProps, string>(async ({ name }) => {
 });
 ```
 
-Components can also return arrays and structured objects containing other components. At runtime the framework takes care of resolving all components into a singular output. This pattern works with array operations like `map` for processing items in parallel.
+Components can also return arrays and structured objects containing other components. The pattern also works with array operations like `map` for processing items in parallel.
 
 ```tsx
 const AnalyzePosts = gsx.Component<AnalyzePostsProps, AnalyzePostsOutput>(
