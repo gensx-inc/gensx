@@ -33,6 +33,10 @@ npm install gensx @gensx/openai
 
 Check out the [Quickstart Guide](https://gensx.dev/quickstart) for more details on getting started.
 
+## Examples
+
+This repo contains a number of [examples](./examples) to help you get up and running with GenSX.
+
 ## Building a workflow, the declarative way!
 
 Most LLM frameworks are graph oriented--you express your workflow with nodes, edges, and a global state object. GenSX takes a different approach--you compose your workflow with components, and GenSX handles the execution for you.
@@ -104,10 +108,6 @@ const result = await gsx.execute<string>(
 
 console.log(result);
 ```
-
-## Examples
-
-This repo contains a number of [examples](./examples) to help you get up and running with GenSX.
 
 ## Working with this repo
 
