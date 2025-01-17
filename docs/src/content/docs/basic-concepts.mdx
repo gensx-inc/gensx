@@ -10,11 +10,16 @@ GenSX is a simple typescript framework for building complex LLM applications. It
 Components are the building blocks of GenSX applications; they're pure TypeScript functions that:
 
 - Accept props as input
-- Produce an output
+- Produce an output that can be used by other components or returned as the result of the workflow
 - Don't depend on global state
 - Are strongly typed using TypeScript
 
-Components can return data as well as other components. Their outputs can be used by other components or returned as the result of the workflow.
+When you define a component, you need to include four things:
+
+1. The input type, or props, for the component
+2. The output type for the component
+3. The name of the component that's used to give the component a unique identifier
+4. The function that implements the component's logic
 
 Here's an example of a simple component:
 
@@ -32,7 +37,7 @@ const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
 );
 ```
 
-Here's an example of a component that returns another component:
+Components can return data as well as other components. Here's an example of a component that returns another component:
 
 ```tsx
 const AIGreeting = gsx.Component<GreetingProps, GreetingOutput>(
