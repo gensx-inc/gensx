@@ -99,24 +99,28 @@ Components can be nested to create multi-step workflows with each component's ou
 
 ```tsx
 // Research component that gathers information
-const Research = gsx.Component<{ topic: string }, string>(async ({ topic }) => {
-  return (
-    <ChatCompletion
-      model="gpt-4o-mini"
-      messages={[
-        {
-          role: "system",
-          content:
-            "You are a research assistant. Provide key facts about the topic.",
-        },
-        { role: "user", content: topic },
-      ]}
-    />
-  );
-});
+const Research = gsx.Component<{ topic: string }, string>(
+  "Research",
+  async ({ topic }) => {
+    return (
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          {
+            role: "system",
+            content:
+              "You are a research assistant. Provide key facts about the topic.",
+          },
+          { role: "user", content: topic },
+        ]}
+      />
+    );
+  },
+);
 
 // Writer component that uses research to write content
 const Writer = gsx.Component<{ topic: string; research: string }, string>(
+  "Writer",
   async ({ topic, research }) => {
     return (
       <ChatCompletion
@@ -162,7 +166,7 @@ To take advantage of streaming, all you need to do is update the `Writer` compon
 const Writer = gsx.StreamingComponent<
   { topic: string; research: string },
   string
->(async ({ topic, research }) => {
+>("Writer", async ({ topic, research }) => {
   return (
     <ChatCompletion
       model="gpt-4o-mini"

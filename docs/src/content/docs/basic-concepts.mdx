@@ -25,6 +25,7 @@ interface GreetingProps {
 type GreetingOutput = string;
 
 const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
+  "Greeting",
   async ({ name }) => {
     return `Hello, ${name}!`;
   },
@@ -34,26 +35,30 @@ const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
 Here's an example of a component that returns another component:
 
 ```tsx
-const AIGreeting = gsx.Component<GreetingProps, string>(async ({ name }) => {
-  return (
-    <ChatCompletion
-      model="gpt-4o-mini"
-      messages={[
-        {
-          role: "system",
-          content: "You are a friendly assistant that greets people warmly.",
-        },
-        { role: "user", content: `Write a greeting for ${name}.` },
-      ]}
-    />
-  );
-});
+const AIGreeting = gsx.Component<GreetingProps, GreetingOutput>(
+  "AIGreeting",
+  async ({ name }) => {
+    return (
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          {
+            role: "system",
+            content: "You are a friendly assistant that greets people warmly.",
+          },
+          { role: "user", content: `Write a greeting for ${name}.` },
+        ]}
+      />
+    );
+  },
+);
 ```
 
 Components can also return arrays and structured objects containing other components. The pattern also works with array operations like `map` for processing items in parallel.
 
 ```tsx
 const AnalyzePosts = gsx.Component<AnalyzePostsProps, AnalyzePostsOutput>(
+  "AnalyzePosts",
   ({ posts }) => ({
     analyses: posts.map((post) => ({
       summary: <PostSummarizer post={post} />,
@@ -118,6 +123,7 @@ Sub-workflows are especially useful for more complex operations like map/reduce:
 
 ```tsx
 const AnalyzeReviews = gsx.Component<AnalyzeReviewsProps, AnalyzeReviewsOutput>(
+  "AnalyzeReviews",
   async ({ reviews }) => {
     // Map: Extract topics from each review in parallel
     const topics = await gsx.execute<GetTopicOutput[]>(
@@ -151,15 +157,18 @@ Here's how to create and use a context:
 const UserContext = gsx.createContext({ name: "default", age: 0 });
 
 // Use the context in a component
-const UserGreeting = gsx.Component(() => {
-  const user = gsx.useContext(UserContext);
-  return `Hello, ${user.name}!`;
-});
+const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
+  "Greeting",
+  () => {
+    const user = gsx.useContext(UserContext);
+    return `Hello, ${user.name}!`;
+  },
+);
 
 // Provide a value to the context
 const result = await gsx.execute(
   <UserContext.Provider value={{ name: "John", age: 30 }}>
-    <UserGreeting />
+    <Greeting />
   </UserContext.Provider>,
 );
 ```
