@@ -10,16 +10,16 @@ import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
 export function Component<P, O>(
+  name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
-  opts: { name?: string },
 ): GsxComponent<P, O> {
   const GsxComponent: GsxComponent<P, O> = async props => {
     return await resolveDeep(fn(props));
   };
 
-  if (opts.name) {
+  if (name) {
     Object.defineProperty(GsxComponent, "name", {
-      value: opts.name,
+      value: name,
     });
   }
 
@@ -27,8 +27,8 @@ export function Component<P, O>(
 }
 
 export function StreamComponent<P>(
+  name: string,
   fn: (props: P) => MaybePromise<Streamable | JSX.Element>,
-  opts?: { name?: string },
 ): GsxStreamComponent<P> {
   const GsxStreamComponent: GsxStreamComponent<P> = async props => {
     const iterator: Streamable = await resolveDeep(fn(props));
@@ -43,9 +43,9 @@ export function StreamComponent<P>(
     return result;
   };
 
-  if (opts?.name) {
+  if (name) {
     Object.defineProperty(GsxStreamComponent, "name", {
-      value: opts.name,
+      value: name,
     });
   }
 

@@ -7,11 +7,11 @@ import { gsx } from "@/index";
 suite("gensx", () => {
   test("returns a result", async () => {
     const MyComponent = gsx.Component<{ foo: string }, string>(
+      "MyComponent",
       async ({ foo }) => {
         await setTimeout(0);
         return foo;
       },
-      { name: "MyComponent" },
     );
     const result = await gsx.execute(<MyComponent foo="bar" />);
     expect(result).toBe("bar");
@@ -19,11 +19,11 @@ suite("gensx", () => {
 
   test("passes result to child function", async () => {
     const MyComponent = gsx.Component<{ foo: string }, string>(
+      "MyComponent",
       async ({ foo }) => {
         await setTimeout(0);
         return foo;
       },
-      { name: "MyComponent" },
     );
 
     const result = await gsx.execute(
@@ -39,11 +39,11 @@ suite("gensx", () => {
 
   test("returns result from nested child component", async () => {
     const MyComponent = gsx.Component<{ foo: string }, string>(
+      "MyComponent",
       async ({ foo }) => {
         await setTimeout(0);
         return "hello " + foo;
       },
-      { name: "MyComponent" },
     );
 
     const result = await gsx.execute(
@@ -58,30 +58,27 @@ suite("gensx", () => {
 
   test("returns results from an object of child components", async () => {
     const Doubler = gsx.Component<{ input: string }, string>(
+      "Doubler",
       async ({ input }) => {
         await setTimeout(0);
         return `${input}${input}`;
       },
-      { name: "Doubler" },
     );
 
     const MyComponent = gsx.Component<
       { input: string },
       { once: string; twice: string }
-    >(
-      async ({ input }) => {
-        await setTimeout(0);
-        return {
-          once: <Doubler input={input} />,
-          twice: (
-            <Doubler input={input}>
-              {result => <Doubler input={result} />}
-            </Doubler>
-          ),
-        };
-      },
-      { name: "MyComponent" },
-    );
+    >("MyComponent", async ({ input }) => {
+      await setTimeout(0);
+      return {
+        once: <Doubler input={input} />,
+        twice: (
+          <Doubler input={input}>
+            {result => <Doubler input={result} />}
+          </Doubler>
+        ),
+      };
+    });
 
     const result = await gsx.execute(<MyComponent input="foo" />);
     expect(result).toEqual({
@@ -92,14 +89,15 @@ suite("gensx", () => {
 
   test("returns results from a fragment child", async () => {
     const Doubler = gsx.Component<{ input: string }, string>(
+      "Doubler",
       async ({ input }) => {
         await setTimeout(0);
         return `${input}${input}`;
       },
-      { name: "Doubler" },
     );
 
     const MyComponent = gsx.Component<{ input: string }, string[]>(
+      "MyComponent",
       async ({ input }) => {
         await setTimeout(0);
         return (
@@ -111,7 +109,6 @@ suite("gensx", () => {
           </>
         );
       },
-      { name: "MyComponent" },
     );
 
     const result = await gsx.execute(<MyComponent input="foo" />);
@@ -120,14 +117,15 @@ suite("gensx", () => {
 
   test("returns results from an array of child components", async () => {
     const Doubler = gsx.Component<{ input: string }, string>(
+      "Doubler",
       async ({ input }) => {
         await setTimeout(0);
         return `${input}${input}`;
       },
-      { name: "Doubler" },
     );
 
     const MyComponent = gsx.Component<{ input: string }, [string, string]>(
+      "MyComponent",
       async ({ input }) => {
         await setTimeout(0);
         return [
@@ -137,7 +135,6 @@ suite("gensx", () => {
           </Doubler>,
         ];
       },
-      { name: "MyComponent" },
     );
 
     const result = await gsx.execute(<MyComponent input="foo" />);
@@ -146,19 +143,19 @@ suite("gensx", () => {
 
   test("returns results from a fragment", async () => {
     const Doubler = gsx.Component<{ input: string }, string>(
+      "Doubler",
       async ({ input }) => {
         await setTimeout(0);
         return `${input}${input}`;
       },
-      { name: "Doubler" },
     );
 
     const MyComponent = gsx.Component<{ input: string }, string>(
+      "MyComponent",
       async ({ input }) => {
         await setTimeout(0);
         return <Doubler input={input} />;
       },
-      { name: "MyComponent" },
     );
 
     const result = await gsx.execute(

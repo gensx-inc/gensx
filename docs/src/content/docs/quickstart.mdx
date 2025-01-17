@@ -37,6 +37,7 @@ interface RespondProps {
 type RespondOutput = string;
 
 const Respond = gsx.Component<RespondProps, RespondOutput>(
+  "Respond",
   async ({ userInput }) => {
     return (
       <ChatCompletion
@@ -52,19 +53,15 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
       />
     );
   },
-  { name: "Respond" },
 );
 
-const Workflow = gsx.Component<{}, string>(
-  async () => {
-    return await gsx.execute(
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
-      </OpenAIProvider>,
-    );
-  },
-  { name: "Workflow" },
-);
+const Workflow = gsx.Component<{}, string>("Workflow", async () => {
+  return await gsx.execute(
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
+    </OpenAIProvider>,
+  );
+});
 
 const result = await gsx.execute(<Workflow />);
 console.log(result);

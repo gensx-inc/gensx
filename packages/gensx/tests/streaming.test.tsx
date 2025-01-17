@@ -72,10 +72,10 @@ async function* streamWithDelay(foo: string) {
 suite("streaming", () => {
   test("returns the stream immediately without pre-resolving", async () => {
     const DelayedComponent = gsx.StreamComponent<{ foo: string }>(
+      "DelayedComponent",
       ({ foo }) => {
         return streamWithDelay(foo);
       },
-      { name: "DelayedComponent" },
     );
 
     const start = performance.now();
@@ -98,6 +98,7 @@ suite("streaming", () => {
       `for a ${isAsync ? "AsyncIterableIterator" : "IterableIterator"}`,
       () => {
         const MyComponent = gsx.StreamComponent<{ foo: string }>(
+          "MyComponent",
           ({ foo }) => {
             let iterator: Streamable;
 
@@ -109,7 +110,6 @@ suite("streaming", () => {
 
             return iterator;
           },
-          { name: "MyComponent" },
         );
 
         test("returns the results directly", async () => {
@@ -172,13 +172,10 @@ suite("streaming", () => {
         test("stacked streaming components return a streamable for stream=true", async () => {
           const StreamPassThrough = gsx.StreamComponent<{
             input: string;
-          }>(
-            async ({ input }) => {
-              await setTimeout(0);
-              return <MyComponent stream={true} foo={input} />;
-            },
-            { name: "StreamPassThrough" },
-          );
+          }>("StreamPassThrough", async ({ input }) => {
+            await setTimeout(0);
+            return <MyComponent stream={true} foo={input} />;
+          });
 
           const result = await gsx.execute<Streamable>(
             <StreamPassThrough input="foo" stream={true} />,
@@ -194,11 +191,11 @@ suite("streaming", () => {
 
         test("stacked streaming components return a string for stream=false", async () => {
           const StreamPassThrough = gsx.StreamComponent<{ input: string }>(
+            "StreamPassThrough",
             async ({ input }) => {
               await setTimeout(0);
               return <MyComponent stream={true} foo={input} />;
             },
-            { name: "StreamPassThrough" },
           );
           const result = await gsx.execute<string>(
             <StreamPassThrough input="foo" />,

@@ -26,6 +26,7 @@ export type Primitive = string | number | boolean | null | undefined;
  * }
  *
  * const Component = gsx.Component<Args, ComponentOutput>(
+ *   "Component",
  *   ({ input }) => ({
  *     nested: [
  *       { foo: <Foo input={input} />, bar: <Bar input={input} /> },

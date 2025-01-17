@@ -7,6 +7,7 @@ interface RespondProps {
 type RespondOutput = string;
 
 const Respond = gsx.Component<RespondProps, RespondOutput>(
+  "Respond",
   ({ userInput }) => (
     <ChatCompletion
       model="gpt-4o-mini"
@@ -16,17 +17,13 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
       ]}
     />
   ),
-  { name: "Respond" },
 );
 
-const Workflow = gsx.Component<{}, string>(
-  () => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
-    </OpenAIProvider>
-  ),
-  { name: "Workflow" },
-);
+const Workflow = gsx.Component<{}, string>("Workflow", () => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
+  </OpenAIProvider>
+));
 
 const result = await gsx.execute<string>(<Workflow />);
 console.log(result);

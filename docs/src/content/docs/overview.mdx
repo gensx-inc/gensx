@@ -43,6 +43,7 @@ interface LLMResearchProps {
 }
 type LLMResearchOutput = string;
 const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
+  "LLMResearch",
   async ({ topic }) => {
     console.log("📚 Researching topic:", topic);
     const systemPrompt = `You are a helpful assistant that researches topics...`;
@@ -58,7 +59,6 @@ const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
       />
     );
   },
-  { name: "LLMResearch" },
 );
 ```
 
@@ -73,6 +73,7 @@ All GenSX components support nesting, a pattern to access component outputs via 
 ```tsx
 export const BlogWritingWorkflow =
   gsx.StreamComponent<BlogWritingWorkflowProps>(
+    "BlogWritingWorkflow",
     async ({ prompt }) => {
       return (
         <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -86,7 +87,6 @@ export const BlogWritingWorkflow =
         </OpenAIProvider>
       );
     },
-    { name: "BlogWritingWorkflow" },
   );
 ```
 
@@ -150,6 +150,7 @@ A single component implementation can be used in both streaming and non-streamin
 
 ```tsx
 const LLMEditor = gsx.StreamComponent<LLMEditorProps>(
+  "LLMEditor",
   async ({ draft }) => {
     console.log("🔍 Editing draft");
     const systemPrompt = `You are a helpful assistant that edits blog posts...`;
@@ -166,7 +167,6 @@ const LLMEditor = gsx.StreamComponent<LLMEditorProps>(
       />
     );
   },
-  { name: "LLMEditor" },
 );
 ```
 

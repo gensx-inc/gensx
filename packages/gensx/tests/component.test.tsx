@@ -7,11 +7,11 @@ import { gsx } from "@/index.js";
 suite("component", () => {
   test("can create anonymous component", async () => {
     const AnonymousComponent = gsx.Component<{}, string>(
+      "AnonymousComponent",
       async () => {
         await setTimeout(0);
         return "hello";
       },
-      { name: "AnonymousComponent" },
     );
 
     const result = await gsx.execute(<AnonymousComponent />);
@@ -20,11 +20,11 @@ suite("component", () => {
 
   test("can create named component", async () => {
     const NamedComponent = gsx.Component<{}, string>(
-      async function NamedComponentFn() {
+      "NamedComponent",
+      async () => {
         await setTimeout(0);
         return "hello";
       },
-      { name: "NamedComponent" },
     );
 
     const result = await gsx.execute(<NamedComponent />);
