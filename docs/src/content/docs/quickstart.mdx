@@ -60,7 +60,7 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
   },
 );
 
-const result = await gsx.execute(
+const result = await gsx.execute<string>(
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
   </OpenAIProvider>,
@@ -138,7 +138,7 @@ Now you can combine these components using a child function:
 
 ```tsx
 // Combine components using child functions
-const result = await gsx.execute(
+const result = await gsx.execute<string>(
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     <Research topic="quantum computing">
       {(research) => <Writer topic="quantum computing" research={research} />}
@@ -177,7 +177,7 @@ const Writer = gsx.StreamingComponent<
   );
 });
 
-const stream = await gsx.execute(
+const stream = await gsx.execute<Streamable>(
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     <Research topic="quantum computing">
       {(research) => (
@@ -196,7 +196,7 @@ for await (const chunk of stream) {
 While this is nice, the real power of streaming components comes when you expand or refactor your workflow. Now you could easily add an `<Editor>` component to the workflow that streams the response to the user with minimal changes. There's no extra plumbing needed besides removing the `stream={true}` prop on the `Writer` component.
 
 ```tsx
-const stream = await gsx.execute(
+const stream = await gsx.execute<Streamable>(
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     <Research topic="quantum computing">
       {(research) => <Writer topic="quantum computing" research={research}>

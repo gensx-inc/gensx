@@ -12,7 +12,7 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
   },
 );
 
-const result = await gsx.execute(
+const result = await gsx.execute<string>(
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
   </OpenAIProvider>,
