@@ -12,18 +12,20 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
     <ChatCompletion
       model="gpt-4o-mini"
       messages={[
-        { role: "system", content: "You are a helpful assistant. Respond to the user's input." },
+        {
+          role: "system",
+          content: "You are a helpful assistant. Respond to the user's input.",
+        },
         { role: "user", content: userInput },
       ]}
     />
   ),
 );
 
-const Workflow = gsx.Component<{}, string>("Workflow", () => (
+const result = await gsx.execute<string>(
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
-  </OpenAIProvider>
-));
+  </OpenAIProvider>,
+);
 
-const result = await gsx.execute<string>(<Workflow />);
 console.log(result);

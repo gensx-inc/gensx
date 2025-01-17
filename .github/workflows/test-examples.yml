@@ -44,3 +44,5 @@ jobs:
         run: pnpm build:examples
       - name: Run tests ✅
         run: pnpm test:examples
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

@@ -1,0 +1,191 @@
+---
+title: Basic Concepts
+description: Understanding the core concepts of GenSX
+---
+
+GenSX is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed using JSX to create and orchestrate workflows.
+
+## Components
+
+Components are the building blocks of GenSX applications; they're pure TypeScript functions that:
+
+- Accept props as input
+- Produce an output
+- Don't depend on global state
+- Are strongly typed using TypeScript
+
+Components can return data as well as other components. Their outputs can be used by other components or returned as the result of the workflow.
+
+Here's an example of a simple component:
+
+```tsx
+interface GreetingProps {
+  name: string;
+}
+type GreetingOutput = string;
+
+const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
+  async ({ name }) => {
+    return `Hello, ${name}!`;
+  },
+);
+```
+
+Here's an example of a component that returns another component:
+
+```tsx
+const AIGreeting = gsx.Component<GreetingProps, string>(async ({ name }) => {
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        {
+          role: "system",
+          content: "You are a friendly assistant that greets people warmly.",
+        },
+        { role: "user", content: `Write a greeting for ${name}.` },
+      ]}
+    />
+  );
+});
+```
+
+Components can also return arrays and structured objects containing other components. The pattern also works with array operations like `map` for processing items in parallel.
+
+```tsx
+const AnalyzePosts = gsx.Component<AnalyzePostsProps, AnalyzePostsOutput>(
+  ({ posts }) => ({
+    analyses: posts.map((post) => ({
+      summary: <PostSummarizer post={post} />,
+      commentAnalysis: (
+        <CommentsAnalyzer postId={post.id} comments={post.comments} />
+      ),
+    })),
+  }),
+);
+```
+
+In this example, `AnalyzePosts` will produce an array of objects that contains the `summaries` and `commentAnalysis` for each post. GenSX handles resolving all of the nested components and collects them into a final value for you.
+
+## JSX and Data Flow
+
+GenSX uses JSX to compose components into workflows. The output of a parent component can be passed to a child component through a child function. This pattern enables you to create chains of components where each step's output feeds into the next component's input.
+
+When components are combined, they will return the value of the innermost component.
+
+```tsx
+// Parent receives output from ChildComponent through the child function
+<ParentComponent input="some data">
+  {(parentResult) => <ChildComponent data={parentResult} />}
+</ParentComponent>
+```
+
+Unlike React's concurrent rendering model, GenSX evaluates your workflow as a dependency graph. Components execute in parallel whenever possible, while automatically ensuring that all required inputs are available before a component starts executing.
+
+While GenSX uses a [tree-based structure with JSX](https://gensx.dev/why-jsx/#graphs-dags-and-trees), it still supports all the capabilities you'd expect from graph-based workflows including representing cyclic and agentic patterns.
+
+## Component Types
+
+GenSX provides two main types of components:
+
+1. **Components** (`gsx.Component`) - Components that produce an output value and can handle both synchronous and asynchronous operations
+2. **Streaming Components** (`gsx.StreamingComponent`) - Components designed to handle responses from LLMs, working in both streaming and non-streaming contexts
+
+The power of a `StreamingComponent` is that a single implementation can be used interchangeably in both streaming and non-streaming contexts without any code changes - you just toggle the `stream` prop:
+
+```tsx
+const stream = await gsx.execute<Streamable>(
+  <MyStreamingComponent input="some data" stream={true} />,
+);
+
+// Process the streaming response
+for await (const chunk of stream) {
+  process.stdout.write(chunk);
+}
+```
+
+## Executing Components
+
+Components are executed using `gsx.execute()`, which processes the JSX tree from top to bottom while executing components in parallel wherever possible.
+
+```tsx
+const result = await gsx.execute(<MyComponent input="some data" />);
+```
+
+You'll often use `gsx.execute()` to run a top level workflow as shown above, but you can also use it to run a sub-workflow within a component. This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `gsx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow.
+
+Sub-workflows are especially useful for more complex operations like map/reduce:
+
+```tsx
+const AnalyzeReviews = gsx.Component<AnalyzeReviewsProps, AnalyzeReviewsOutput>(
+  async ({ reviews }) => {
+    // Map: Extract topics from each review in parallel
+    const topics = await gsx.execute<GetTopicOutput[]>(
+      reviews.map((r) => <GetTopic review={r} />),
+    );
+    // Reduce: Count frequency of each topic
+    return topics.reduce(
+      (counts, topic) => ({ ...counts, [topic]: (counts[topic] || 0) + 1 }),
+      {},
+    );
+  },
+);
+```
+
+Components can be tested and evaluated in isolation, making it easy to debug and verify individual steps of your workflow. This is particularly valuable when building complex LLM applications that need robust evaluation.
+
+Rather than having to run an entire workflow to test a change to a single component, you can test just that component, dramatically speeding up your dev loop. This isolation also makes unit testing more manageable, as you can create specific test cases without having to worry about the rest of the workflow.
+
+## Contexts
+
+Contexts provide a way to share values across components without explicitly passing them through props. They're similar to React's Context system but adapted for GenSX workflows. Contexts are particularly useful for:
+
+- Sharing configuration across multiple components
+- Providing dependencies to deeply nested components
+- Managing state that needs to be accessed by multiple components
+
+Here's how to create and use a context:
+
+```tsx
+// Create a context with a default value
+const UserContext = gsx.createContext({ name: "default", age: 0 });
+
+// Use the context in a component
+const UserGreeting = gsx.Component(() => {
+  const user = gsx.useContext(UserContext);
+  return `Hello, ${user.name}!`;
+});
+
+// Provide a value to the context
+const result = await gsx.execute(
+  <UserContext.Provider value={{ name: "John", age: 30 }}>
+    <UserGreeting />
+  </UserContext.Provider>,
+);
+```
+
+Contexts are a useful way to pass configuration without prop drilling. However, they do make your components less reusable so it is recommended that you use them sparingly.
+
+## Providers
+
+Providers are a specialized use of contexts that focus on managing configuration and dependencies for your workflow. They're built using the context system described above, but provide a more focused API for configuration management.
+
+The main provider available today is the `OpenAIProvider`, which manages your OpenAI API key:
+
+```tsx
+const result = await gsx.execute(
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[{ role: "user", content: "Hello!" }]}
+    />
+  </OpenAIProvider>,
+);
+```
+
+Providers offer several benefits:
+
+- Manage complex configuration like API clients and settings
+- Provide a simpler, more focused API than raw contexts
+- Keep configuration separate from business logic
+- Enable dependency injection for testing and development
