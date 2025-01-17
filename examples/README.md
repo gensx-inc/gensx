@@ -24,15 +24,15 @@ Make sure to check what environment variables are required for each example.
 
 ## Basic Examples
 
-| Example               | Description                                               |
-| --------------------- | --------------------------------------------------------- |
-| 📊 Structured Outputs | Demonstrates using structured outputs with GenSX          |
-| 🔄 Reflection         | Shows how to use a self-reflection pattern with GenSX     |
-| 🌊 Streaming          | Demonstrates how to handle streaming responses with GenSX |
+| Example                                      | Description                                               |
+| -------------------------------------------- | --------------------------------------------------------- |
+| 📊 [Structured Outputs](./structuredOutputs) | Demonstrates using structured outputs with GenSX          |
+| 🔄 [Reflection](./reflection)                | Shows how to use a self-reflection pattern with GenSX     |
+| 🌊 [Streaming](./streaming)                  | Demonstrates how to handle streaming responses with GenSX |
 
 ## Full Examples
 
-| Example                 | Description                                                                                  |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| 🔍 Hacker News Analyzer | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
-| ✍️ Blog Writer          | Generates blogs through an end-to-end workflow including topic research and content creation |
+| Example                                         | Description                                                                                  |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 🔍 [Hacker News Analyzer](./hackerNewsAnalyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
+| ✍️ [Blog Writer](./blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |

@@ -4,7 +4,9 @@
 [![Website](https://img.shields.io/badge/Visit-gensx.dev-orange)](https://gensx.dev)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-[GenSX](https://gensx.dev/overview/) is a simple typescript framework for building complex LLM applications. It’s built around functional, reusable components that are composed using JSX to create and orchestrate workflows.
+[GenSX](https://gensx.dev/) is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed to create and orchestrate workflows.
+
+Built for backend development, GenSX is designed to make it easy to build powerful LLM workflows that can be turned into REST APIs or integrated into existing applications.
 
 ## Why GenSX?
 
@@ -15,7 +17,7 @@
 - 🌊 **Streaming Built-in**: Stream responses with a single prop change, no refactoring needed
 - 🚀 **Built for Scale**: Start simple and evolve to complex patterns like agents and reflection without changing your programming model
 
-Check out the [documentation](https://gensx.dev/basic-concepts) to learn more about building LLM applications with GenSX.
+Check out the [documentation](https://gensx.dev/overview) to learn more about building LLM applications with GenSX.
 
 ## Getting Started
 
@@ -32,10 +34,6 @@ npm install gensx @gensx/openai
 ```
 
 Check out the [Quickstart Guide](https://gensx.dev/quickstart) for more details on getting started.
-
-## Examples
-
-This repo contains a number of [examples](./examples) to help you get up and running with GenSX.
 
 ## Building a workflow, the declarative way!
 
@@ -108,6 +106,25 @@ const result = await gsx.execute<string>(
 
 console.log(result);
 ```
+
+## Examples
+
+This repo contains a number of [examples](./examples) to help you get up and running with GenSX.
+
+### Basic Examples
+
+| Example                                      | Description                                               |
+| -------------------------------------------- | --------------------------------------------------------- |
+| 📊 [Structured Outputs](./structuredOutputs) | Demonstrates using structured outputs with GenSX          |
+| 🔄 [Reflection](./reflection)                | Shows how to use a self-reflection pattern with GenSX     |
+| 🌊 [Streaming](./streaming)                  | Demonstrates how to handle streaming responses with GenSX |
+
+### Full Examples
+
+| Example                                         | Description                                                                                  |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 🔍 [Hacker News Analyzer](./hackerNewsAnalyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
+| ✍️ [Blog Writer](./blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |
 
 ## Working with this repo
 
