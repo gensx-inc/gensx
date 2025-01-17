@@ -6,7 +6,7 @@
 
 [GenSX](https://gensx.dev/) is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed to create and orchestrate workflows.
 
-Built for backend development, GenSX is designed to make it easy to build powerful LLM workflows that can be turned into REST APIs or integrated into existing applications.
+Designed for backend development, GenSX makes it easy to build and test powerful LLM workflows that can be turned into REST APIs or integrated into existing applications.
 
 ## Why GenSX?
 
