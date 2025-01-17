@@ -116,8 +116,8 @@ You'll often use `gsx.execute()` to run a top level workflow as shown above, but
 const AnalyzeReviews = gsx.Component<AnalyzeReviewsProps, AnalyzeReviewsOutput>(
   async ({ reviews }) => {
     // Map: Extract topics from each review in parallel
-    const topics = await Promise.all(
-      reviews.map((review) => gsx.execute(<GetTopic review={review} />)),
+    const topics = await gsx.execute<GetTopicOutput[]>(
+      reviews.map((r) => <GetTopic review={r} />),
     );
     // Reduce: Count frequency of each topic
     return topics.reduce(
