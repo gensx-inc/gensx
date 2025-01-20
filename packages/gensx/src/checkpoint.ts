@@ -39,7 +39,7 @@ export interface ExecutionNode {
 
 export interface CheckpointWriter {
   currentNode?: ExecutionNode;
-  root: ExecutionNode;
+  root?: ExecutionNode;
   addNode: (node: Partial<ExecutionNode>) => Promise<string>;
   completeNode: (id: string, output: unknown) => void;
   addMetadata: (id: string, metadata: Record<string, unknown>) => void;
@@ -49,7 +49,7 @@ export interface CheckpointWriter {
 
 export class CheckpointManager implements CheckpointWriter {
   private nodes = new Map<string, ExecutionNode>();
-  public root: ExecutionNode;
+  public root?: ExecutionNode;
   public currentNode?: ExecutionNode;
   public checkpointsEnabled: boolean;
 
@@ -58,16 +58,6 @@ export class CheckpointManager implements CheckpointWriter {
   private pendingUpdate = false;
 
   constructor() {
-    this.root = {
-      id: "root",
-      componentName: "Root",
-      startTime: Date.now(),
-      children: [],
-      props: {},
-    };
-    this.nodes.set("root", this.root);
-    this.currentNode = this.root;
-
     // Set checkpointsEnabled based on environment variable
     // Environment variables are strings, so check for common truthy values
     const checkpointsEnv = process.env.GENSX_CHECKPOINTS?.toLowerCase();
@@ -79,13 +69,13 @@ export class CheckpointManager implements CheckpointWriter {
 
   // updateCheckpoint POSTs the current component tree to the GenSX API.
   // Special care is taken to do this in a non-blocking manner, and in a way that
-  // minimized chattiness with the server.
+  // minimizes chattiness with the server.
   // We only write one checkpoint at a time. If another checkpoint comes in while
   // we're still processing, we just mark that we need another update and return.
   // When the current checkpoint write is complete, we check if there was a pending
   // update request, and if so, we trigger another write.
   private updateCheckpoint() {
-    if (!this.checkpointsEnabled) {
+    if (!this.checkpointsEnabled || !this.root) {
       return;
     }
 
@@ -109,6 +99,8 @@ export class CheckpointManager implements CheckpointWriter {
   }
 
   private async writeCheckpoint() {
+    if (!this.root) return;
+
     try {
       const response = await fetch("http://localhost:3000/api/execution", {
         method: "POST",
@@ -121,7 +113,7 @@ export class CheckpointManager implements CheckpointWriter {
       if (!response.ok) {
         console.error(`[Checkpoint] Failed to save checkpoint, server error:`, {
           status: response.status,
-          message: response.statusText,
+          message: await response.text(),
         });
       }
     } catch (error) {
@@ -130,25 +122,27 @@ export class CheckpointManager implements CheckpointWriter {
   }
 
   async addNode(partial: Partial<ExecutionNode>) {
-    const parentId = this.currentNode?.id ?? "root";
     const node: ExecutionNode = {
       id: await generateUUID(),
       componentName: "Unknown",
       startTime: Date.now(),
       children: [],
       props: {},
-      parentId,
       ...partial,
     };
 
     this.nodes.set(node.id, node);
-    const parent = this.nodes.get(parentId);
-    if (parent) {
-      parent.children.push(node);
-    }
-    this.currentNode = node;
 
-    // Don't await the checkpoint update
+    if (!this.root) {
+      // First node becomes the root
+      this.root = node;
+    } else if (this.currentNode) {
+      // Add as child to current node
+      node.parentId = this.currentNode.id;
+      this.currentNode.children.push(node);
+    }
+
+    this.currentNode = node;
     this.updateCheckpoint();
     return node.id;
   }
