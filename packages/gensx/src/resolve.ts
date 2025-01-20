@@ -55,6 +55,6 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
 export async function execute<T>(element: ExecutableValue): Promise<T> {
   const context = getCurrentContext().getWorkflowContext();
   const result = (await resolveDeep(element)) as T;
-  await context.checkpointManager.write();
+  context.checkpointManager.write();
   return result;
 }

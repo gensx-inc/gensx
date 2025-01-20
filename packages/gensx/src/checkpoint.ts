@@ -41,9 +41,9 @@ export interface CheckpointWriter {
   currentNode?: ExecutionNode;
   root: ExecutionNode;
   addNode: (node: Partial<ExecutionNode>) => Promise<string>;
-  completeNode: (id: string, output: unknown) => Promise<void>;
-  addMetadata: (id: string, metadata: Record<string, unknown>) => Promise<void>;
-  write: () => Promise<void>;
+  completeNode: (id: string, output: unknown) => void;
+  addMetadata: (id: string, metadata: Record<string, unknown>) => void;
+  write: () => void;
   checkpointsEnabled: boolean;
 }
 
@@ -52,6 +52,10 @@ export class CheckpointManager implements CheckpointWriter {
   public root: ExecutionNode;
   public currentNode?: ExecutionNode;
   public checkpointsEnabled: boolean;
+
+  // Track active checkpoint write
+  private activeCheckpoint: Promise<void> | null = null;
+  private pendingUpdate = false;
 
   constructor() {
     this.root = {
@@ -64,7 +68,7 @@ export class CheckpointManager implements CheckpointWriter {
     this.nodes.set("root", this.root);
     this.currentNode = this.root;
 
-    // Set shouldWrite based on environment variable
+    // Set checkpointsEnabled based on environment variable
     // Environment variables are strings, so check for common truthy values
     const checkpointsEnv = process.env.GENSX_CHECKPOINTS?.toLowerCase();
     this.checkpointsEnabled =
@@ -73,11 +77,38 @@ export class CheckpointManager implements CheckpointWriter {
       checkpointsEnv === "yes";
   }
 
-  private async updateCheckpoint() {
+  // updateCheckpoint POSTs the current component tree to the GenSX API.
+  // Special care is taken to do this in a non-blocking manner, and in a way that
+  // minimized chattiness with the server.
+  // We only write one checkpoint at a time. If another checkpoint comes in while
+  // we're still processing, we just mark that we need another update and return.
+  // When the current checkpoint write is complete, we check if there was a pending
+  // update request, and if so, we trigger another write.
+  private updateCheckpoint() {
     if (!this.checkpointsEnabled) {
       return;
     }
 
+    // If there's already a pending update, just mark that we need another update
+    if (this.activeCheckpoint) {
+      this.pendingUpdate = true;
+      return;
+    }
+
+    // Start a new checkpoint write
+    this.activeCheckpoint = this.writeCheckpoint().finally(() => {
+      this.activeCheckpoint = null;
+
+      // If there was a pending update requested while we were writing,
+      // trigger another write
+      if (this.pendingUpdate) {
+        this.pendingUpdate = false;
+        this.updateCheckpoint();
+      }
+    });
+  }
+
+  private async writeCheckpoint() {
     try {
       const response = await fetch("http://localhost:3000/api/execution", {
         method: "POST",
@@ -98,7 +129,7 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  async addNode(partial: Partial<ExecutionNode>): Promise<string> {
+  async addNode(partial: Partial<ExecutionNode>) {
     const parentId = this.currentNode?.id ?? "root";
     const node: ExecutionNode = {
       id: await generateUUID(),
@@ -117,11 +148,12 @@ export class CheckpointManager implements CheckpointWriter {
     }
     this.currentNode = node;
 
-    await this.updateCheckpoint();
+    // Don't await the checkpoint update
+    this.updateCheckpoint();
     return node.id;
   }
 
-  async completeNode(id: string, output: unknown) {
+  completeNode(id: string, output: unknown) {
     const node = this.nodes.get(id);
     if (node) {
       node.endTime = Date.now();
@@ -129,27 +161,26 @@ export class CheckpointManager implements CheckpointWriter {
 
       if (node.parentId) {
         const parent = this.nodes.get(node.parentId);
-
         this.currentNode = parent;
       } else {
         this.currentNode = undefined;
       }
 
-      await this.updateCheckpoint();
+      this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to complete unknown node:`, { id });
     }
   }
 
-  async addMetadata(id: string, metadata: Record<string, unknown>) {
+  addMetadata(id: string, metadata: Record<string, unknown>) {
     const node = this.nodes.get(id);
     if (node) {
       node.metadata = { ...node.metadata, ...metadata };
-      await this.updateCheckpoint();
+      this.updateCheckpoint();
     }
   }
 
-  async write() {
-    await this.updateCheckpoint();
+  write() {
+    this.updateCheckpoint();
   }
 }

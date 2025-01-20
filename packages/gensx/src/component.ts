@@ -25,6 +25,7 @@ export function Component<P, O>(
     const { checkpointManager } = workflowContext;
 
     // Create checkpoint node for this component execution
+    // only async due to dynamic import, but otherwise non-blocking
     const nodeId = await checkpointManager.addNode({
       componentName: name,
       props: Object.fromEntries(
@@ -36,14 +37,14 @@ export function Component<P, O>(
       const result = await resolveDeep(fn(props));
 
       // Complete the checkpoint node with the result
-      await checkpointManager.completeNode(nodeId, result);
+      checkpointManager.completeNode(nodeId, result);
 
       return result;
     } catch (error) {
       // Record error in checkpoint
       if (error instanceof Error) {
-        await checkpointManager.addMetadata(nodeId, { error: error.message });
-        await checkpointManager.completeNode(nodeId, undefined);
+        checkpointManager.addMetadata(nodeId, { error: error.message });
+        checkpointManager.completeNode(nodeId, undefined);
       }
       throw error;
     }
