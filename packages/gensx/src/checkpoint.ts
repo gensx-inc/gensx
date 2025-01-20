@@ -44,14 +44,14 @@ export interface CheckpointWriter {
   completeNode: (id: string, output: unknown) => Promise<void>;
   addMetadata: (id: string, metadata: Record<string, unknown>) => Promise<void>;
   write: () => Promise<void>;
-  shouldWrite: boolean;
+  checkpointsEnabled: boolean;
 }
 
 export class CheckpointManager implements CheckpointWriter {
   private nodes = new Map<string, ExecutionNode>();
   public root: ExecutionNode;
   public currentNode?: ExecutionNode;
-  public shouldWrite: boolean;
+  public checkpointsEnabled: boolean;
 
   constructor() {
     this.root = {
@@ -67,14 +67,14 @@ export class CheckpointManager implements CheckpointWriter {
     // Set shouldWrite based on environment variable
     // Environment variables are strings, so check for common truthy values
     const checkpointsEnv = process.env.GENSX_CHECKPOINTS?.toLowerCase();
-    this.shouldWrite =
+    this.checkpointsEnabled =
       checkpointsEnv === "true" ||
       checkpointsEnv === "1" ||
       checkpointsEnv === "yes";
   }
 
   private async updateCheckpoint() {
-    if (!this.shouldWrite) {
+    if (!this.checkpointsEnabled) {
       return;
     }
 
