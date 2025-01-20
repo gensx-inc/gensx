@@ -43,7 +43,7 @@ The workflow will create two files:
 
 The workflow uses the `<AnalyzeHNPosts>` component to process each post in parallel. To do this, it takes advantage of the ability to have components return arrays and structured objects containing other components.
 
-This component takes a list of stories and returns a list of analyses with each containing a summary and a comment analysis for the post.
+This component takes a list of stories and returns a list of `analyses` with each containing a summary and a comment analysis for the post.
 
 ```tsx
 const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
