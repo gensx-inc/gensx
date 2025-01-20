@@ -1,5 +1,3 @@
-import { setTimeout } from "timers/promises";
-
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx, Streamable } from "gensx";
 
@@ -16,8 +14,7 @@ async function runStreamingWithChildrenExample() {
         model="gpt-4o-mini"
         messages={[{ role: "user", content: prompt }]}
       >
-        {async (response: string) => {
-          await setTimeout(0);
+        {(response: string) => {
           console.log(response);
         }}
       </ChatCompletion>
@@ -83,12 +80,10 @@ async function runStreamingExample() {
 const GeneratorComponent = gsx.StreamComponent<{
   foo: string;
   iterations: number;
-}>("GeneratorComponent", async function* ({ foo, iterations }) {
-  await setTimeout(10);
+}>("GeneratorComponent", function* ({ foo, iterations }) {
   for (let i = 1; i < iterations + 1; i++) {
     console.log("🔥 GeneratorComponent", i);
     yield `${i}: ${foo.repeat(i)}\n`;
-    await setTimeout(10);
   }
 });
 
