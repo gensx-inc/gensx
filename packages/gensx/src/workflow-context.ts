@@ -9,11 +9,9 @@ export interface WorkflowExecutionContext {
   // Future: Add more workflow-level utilities here
 }
 
-export function createWorkflowContext(
-  checkpointPath: string,
-): WorkflowExecutionContext {
+export function createWorkflowContext(): WorkflowExecutionContext {
   return {
-    checkpointManager: new CheckpointManager(checkpointPath),
+    checkpointManager: new CheckpointManager(),
   };
 }
 

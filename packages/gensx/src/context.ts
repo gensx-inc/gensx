@@ -60,11 +60,9 @@ export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
-    checkpointPath = "./execution.json",
   ) {
     if (!this.context[WORKFLOW_CONTEXT_SYMBOL]) {
-      this.context[WORKFLOW_CONTEXT_SYMBOL] =
-        createWorkflowContext(checkpointPath);
+      this.context[WORKFLOW_CONTEXT_SYMBOL] = createWorkflowContext();
     }
   }
 

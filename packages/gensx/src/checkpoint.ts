@@ -1,24 +1,3 @@
-// Platform-agnostic file operations
-async function writeFileSafe(path: string, data: string): Promise<void> {
-  const isNode = typeof process !== "undefined";
-
-  if (isNode) {
-    // Node.js environment
-    try {
-      const { writeFile } = await import("fs/promises");
-      await writeFile(path, data);
-    } catch (error) {
-      console.error(`[Tracker] Failed to write file:`, { path, error });
-      throw error;
-    }
-  } else {
-    // Browser environment - could implement browser-specific storage here
-    console.warn(
-      "[Tracker] File writing is not supported in browser environment",
-    );
-  }
-}
-
 // Cross-platform UUID generation
 async function generateUUID(): Promise<string> {
   try {
@@ -72,7 +51,7 @@ export class CheckpointManager implements CheckpointWriter {
   public root: ExecutionNode;
   public currentNode?: ExecutionNode;
 
-  constructor(private checkpointPath = "./execution.json") {
+  constructor() {
     this.root = {
       id: "root",
       componentName: "Root",
@@ -86,12 +65,22 @@ export class CheckpointManager implements CheckpointWriter {
 
   private async updateCheckpoint() {
     try {
-      await writeFileSafe(
-        this.checkpointPath,
-        JSON.stringify(this.root, null, 2),
-      );
+      const response = await fetch("http://localhost:3000/api/execution", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(this.root),
+      });
+
+      if (!response.ok) {
+        console.error(`[Checkpoint] Failed to save checkpoint, server error:`, {
+          status: response.status,
+          message: response.statusText,
+        });
+      }
     } catch (error) {
-      console.error(`[Tracker] Failed to write checkpoint:`, { error });
+      console.error(`[Checkpoint] Failed to save checkpoint:`, { error });
     }
   }
 
