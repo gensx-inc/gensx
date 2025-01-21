@@ -291,6 +291,7 @@ suite("checkpoint", () => {
           children: [],
         },
       ],
+      output: { a: "a:first", b: "b:second" },
     });
   });
 

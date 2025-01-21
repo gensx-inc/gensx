@@ -1,3 +1,5 @@
+import { join } from "node:path";
+
 // Cross-platform UUID generation
 async function generateUUID(): Promise<string> {
   try {
@@ -100,7 +102,10 @@ export class CheckpointManager implements CheckpointWriter {
     if (!this.root) return;
 
     try {
-      const response = await fetch("http://localhost:3000/api/execution", {
+      const baseUrl =
+        process.env.GENSX_CHECKPOINT_URL ?? "http://localhost:3000";
+      const url = join(baseUrl, "api/execution");
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -119,14 +124,14 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  async addNode(partial: Partial<ExecutionNode>, parentId?: string) {
+  async addNode(partialNode: Partial<ExecutionNode>, parentId?: string) {
     const node: ExecutionNode = {
       id: await generateUUID(),
       componentName: "Unknown",
       startTime: Date.now(),
       children: [],
       props: {},
-      ...partial,
+      ...partialNode,
     };
 
     this.nodes.set(node.id, node);
