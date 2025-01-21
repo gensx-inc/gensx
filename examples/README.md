@@ -17,7 +17,7 @@ From there, follow the instructions in the README of the example you want to run
 Alternatively, you can run the examples directly from the root directory of the repo using the following command:
 
 ```bash
-OPENAI_API_KEY=<my api key> turbo run run --filter="./examples/blogWriter"
+OPENAI_API_KEY=<my api key> turbo run start --filter="./examples/blogWriter"
 ```
 
 Make sure to check what environment variables are required for each example.
