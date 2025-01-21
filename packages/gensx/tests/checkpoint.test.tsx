@@ -184,6 +184,7 @@ suite("checkpoint", () => {
       );
     }
     expect(countNodes(finalCheckpoint)).toBe(101);
+    expect(finalCheckpoint.children.length).toBe(100);
   });
 
   test("handles sequential execute calls within component", async () => {
@@ -219,11 +220,6 @@ suite("checkpoint", () => {
     const finalCheckpoint = checkpoints[checkpoints.length - 1];
     expect(finalCheckpoint.componentName).toBe("ParentComponent");
 
-    // TODO: Update gsx.execute to maintain proper parent context for sequential execution.
-    // Currently each execute() call creates a new nested node instead of appearing as
-    // a sibling in the parent's children array. This creates deeper nesting than desired
-    // and makes the execution tree harder to understand.
-
     // For now, verify we have the right number of total nodes (1 parent + 3 children)
     function countNodes(node: ExecutionNode): number {
       return (
@@ -231,6 +227,7 @@ suite("checkpoint", () => {
       );
     }
     expect(countNodes(finalCheckpoint)).toBe(4);
+    expect(finalCheckpoint.children.length).toBe(3);
   });
 
   test("handles component children with object return", async () => {
@@ -277,23 +274,21 @@ suite("checkpoint", () => {
     // Get final checkpoint state
     const finalCheckpoint = checkpoints[checkpoints.length - 1];
 
-    // TODO: this is not the parenting we would expect. We need to deterministically plumb in the parent context and remove the global currentNode context.
-
     // Verify checkpoint structure
     expect(finalCheckpoint).toMatchObject({
       componentName: "ParentComponent",
       children: [
         {
           componentName: "ComponentA",
-          children: [
-            {
-              componentName: "ComponentB",
-              output: "b:second",
-              props: { value: "second" },
-            },
-          ],
+          children: [],
           output: "a:first",
           props: { value: "first" },
+        },
+        {
+          componentName: "ComponentB",
+          output: "b:second",
+          props: { value: "second" },
+          children: [],
         },
       ],
     });

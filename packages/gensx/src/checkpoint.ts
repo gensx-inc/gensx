@@ -38,9 +38,8 @@ export interface ExecutionNode {
 }
 
 export interface CheckpointWriter {
-  currentNode?: ExecutionNode;
   root?: ExecutionNode;
-  addNode: (node: Partial<ExecutionNode>) => Promise<string>;
+  addNode: (node: Partial<ExecutionNode>, parentId?: string) => Promise<string>;
   completeNode: (id: string, output: unknown) => void;
   addMetadata: (id: string, metadata: Record<string, unknown>) => void;
   write: () => void;
@@ -50,7 +49,6 @@ export interface CheckpointWriter {
 export class CheckpointManager implements CheckpointWriter {
   private nodes = new Map<string, ExecutionNode>();
   public root?: ExecutionNode;
-  public currentNode?: ExecutionNode;
   public checkpointsEnabled: boolean;
 
   // Track active checkpoint write
@@ -121,7 +119,7 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  async addNode(partial: Partial<ExecutionNode>) {
+  async addNode(partial: Partial<ExecutionNode>, parentId?: string) {
     const node: ExecutionNode = {
       id: await generateUUID(),
       componentName: "Unknown",
@@ -133,16 +131,16 @@ export class CheckpointManager implements CheckpointWriter {
 
     this.nodes.set(node.id, node);
 
-    if (!this.root) {
-      // First node becomes the root
+    if (parentId) {
+      const parent = this.nodes.get(parentId);
+      if (parent) {
+        node.parentId = parentId;
+        parent.children.push(node);
+      }
+    } else if (!this.root) {
       this.root = node;
-    } else if (this.currentNode) {
-      // Add as child to current node
-      node.parentId = this.currentNode.id;
-      this.currentNode.children.push(node);
     }
 
-    this.currentNode = node;
     this.updateCheckpoint();
     return node.id;
   }
@@ -152,14 +150,6 @@ export class CheckpointManager implements CheckpointWriter {
     if (node) {
       node.endTime = Date.now();
       node.output = output;
-
-      if (node.parentId) {
-        const parent = this.nodes.get(node.parentId);
-        this.currentNode = parent;
-      } else {
-        this.currentNode = undefined;
-      }
-
       this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to complete unknown node:`, { id });

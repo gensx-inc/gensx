@@ -56,6 +56,8 @@ interface AsyncLocalStorageType<T> {
   enterWith(store: T): void;
 }
 
+export const CURRENT_NODE_SYMBOL = Symbol.for("gensx.currentNode");
+
 export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
@@ -92,6 +94,14 @@ export class ExecutionContext {
 
   getWorkflowContext(): WorkflowExecutionContext {
     return this.get(WORKFLOW_CONTEXT_SYMBOL) as WorkflowExecutionContext;
+  }
+
+  getCurrentNodeId(): string | undefined {
+    return this.get(CURRENT_NODE_SYMBOL) as string | undefined;
+  }
+
+  withCurrentNode<T>(nodeId: string, fn: () => Promise<T>): Promise<T> {
+    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
   }
 }
 

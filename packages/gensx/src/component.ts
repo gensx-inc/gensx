@@ -6,35 +6,35 @@ import type {
   Streamable,
 } from "./types";
 
+import { getCurrentContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
-import { getWorkflowContext } from "./workflow-context";
 
 export function Component<P, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
 ): GsxComponent<P, O> {
   const GsxComponent: GsxComponent<P, O> = async props => {
-    const workflowContext = getWorkflowContext();
-    if (!workflowContext) {
-      throw new Error(
-        "No workflow context found. Components must be executed within a workflow context.",
-      );
-    }
-
+    const context = getCurrentContext();
+    const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
 
     // Create checkpoint node for this component execution
     // only async due to dynamic import, but otherwise non-blocking
-    const nodeId = await checkpointManager.addNode({
-      componentName: name,
-      props: Object.fromEntries(
-        Object.entries(props).filter(([key]) => key !== "children"),
-      ),
-    });
+    const nodeId = await checkpointManager.addNode(
+      {
+        componentName: name,
+        props: Object.fromEntries(
+          Object.entries(props).filter(([key]) => key !== "children"),
+        ),
+      },
+      context.getCurrentNodeId(),
+    );
 
     try {
-      const result = await resolveDeep(fn(props));
+      const result = await context.withCurrentNode(nodeId, () =>
+        resolveDeep(fn(props)),
+      );
 
       // Complete the checkpoint node with the result
       checkpointManager.completeNode(nodeId, result);
