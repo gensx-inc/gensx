@@ -38,6 +38,15 @@ import { OpenAIProvider } from "@gensx/openai";
 />;
 ```
 
+By configuring the baseURL, you can also use the `OpenAIProvider` with other OpenAI compatible APIs like [x.AI](https://docs.x.ai/docs/overview#featured-models) and [Groq](https://console.groq.com/docs/openai).
+
+```tsx
+<OpenAIProvider
+  apiKey="your-api-key" // Your Groq API key
+  baseURL="https://api.groq.com/openai/v1"
+/>
+```
+
 ##### Props
 
 The `OpenAIProvider` accepts all configuration options from the [OpenAI Node.js client library](https://github.com/openai/openai-node) including:
