@@ -29,7 +29,7 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
-    "test": "vitest run checkpoint --coverage",
+    "test": "vitest run --coverage",
     "test:watch": "vitest watch",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
