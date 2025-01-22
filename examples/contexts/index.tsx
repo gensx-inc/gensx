@@ -2,15 +2,11 @@ import { gsx } from "gensx";
 
 interface User {
   name: string;
-  email: string;
-  organization: string;
 }
 
 // Create a context with a default value
 const UserContext = gsx.createContext<User>({
   name: "",
-  email: "",
-  organization: "",
 });
 
 type GreetingOutput = string;
@@ -30,8 +26,6 @@ async function main() {
     <UserContext.Provider
       value={{
         name: "John",
-        email: "john@example.com",
-        organization: "AI Innovation Inc.",
       }}
     >
       <Greeting />

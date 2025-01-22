@@ -5,22 +5,39 @@ sidebar:
   order: 4
 ---
 
-Contexts provide a way to share data across components without explicitly passing them through props. They're similar to React's Context system but adapted for GenSX workflows. Contexts are particularly useful for:
+Contexts provide a way to share data across components without explicitly passing them through props. They're similar to React's Context API but adapted for GenSX workflows.
+
+Contexts are particularly useful for:
 
 - Sharing configuration across multiple components
-- Providing dependencies to deeply nested components
+- Providing dependencies to deeply nested components without prop drilling
 - Managing state that needs to be accessed by multiple components
+
+GenSX also supports [Providers](../providers) which are a specialized use of contexts that focus on managing configuration and dependencies for your workflow. If you're managing external service configurations like API keys or client instances, you should use providers instead of raw contexts.
 
 ## Creating a Context
 
-Here's how to create and use a context:
+To create a context, start by defining the interface and then use `gsx.createContext<T>()` to create the context along with a default value. In this example, a simple "User" context is created to store the user's name:
 
 ```tsx
-// Create a context with a default value
-const UserContext = gsx.createContext({ name: "default", age: 0 });
+// Define the interface
+interface User {
+  name: string;
+}
 
+// Create a context with a default value
+const UserContext = gsx.createContext<User>({
+  name: "",
+});
+```
+
+## Using a Context
+
+To use a context, call `gsx.useContext(context)` in a component. Here a `Greeting` component is created that uses the `UserContext` to get the user's name:
+
+```tsx
 // Use the context in a component
-const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
+const Greeting = gsx.Component<Record<never, never>, GreetingOutput>(
   "Greeting",
   () => {
     const user = gsx.useContext(UserContext);
@@ -29,15 +46,18 @@ const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
 );
 ```
 
-## Using a Context
+When you invoke a component that uses a context, you need to wrap your component in a provider and pass in a value for the context:
 
 ```tsx
-// Provide a value to the context
 const result = await gsx.execute(
-  <UserContext.Provider value={{ name: "John", age: 30 }}>
+  <UserContext.Provider value={{ name: "John" }}>
     <Greeting />
   </UserContext.Provider>,
 );
 ```
 
-Contexts are a useful way to pass configuration without prop drilling. However, they do make your components less reusable so it is recommended that you use them sparingly.
+Contexts are a useful way to pass configuration without prop drilling. However, they do make your components less reusable so we recommend that you use them sparingly.
+
+## Additional Resources
+
+You can find the full example code from this page in the [context example on GitHub](https://github.com/cortexclick/gensx/tree/main/examples/contexts).
