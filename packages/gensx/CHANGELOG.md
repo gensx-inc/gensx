@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/cortexclick/gensx/compare/gensx-v0.2.4...gensx-v0.2.5) (2025-01-22)
+
+
+### 🐛 Bug Fixes
+
+* Fix checkpoint race condition by handling out of order arrival of nodes ([#170](https://github.com/cortexclick/gensx/issues/170)) ([13aaab0](https://github.com/cortexclick/gensx/commit/13aaab003b830374a31511ad70cbdf884cb8c8e9))
+
 ## [0.2.4](https://github.com/cortexclick/gensx/compare/gensx-v0.2.3...gensx-v0.2.4) (2025-01-22)
 
 
