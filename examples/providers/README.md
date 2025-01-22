@@ -1,16 +1,8 @@
-# Reflection Example
+# Providers Example
 
-This example demonstrates how to use GenSX's `gsx.execute` to execute sub-workflows, as well as recursive component execution. It implements a buzzword cleaning system that uses GPT to iteratively remove business jargon while preserving the original meaning of the text.
+This example shows how to create a provider and a related component. In particular, it creates a provider for the [Firecrawl](https://www.firecrawl.dev/) API and uses it to scrape a page and return the markdown.
 
-## What it demonstrates
-
-- Recursive component implementation using `gsx.execute`
-- Integration with OpenAI's GPT model
-- State management through component props
-- Complex workflow with multiple steps:
-  1. Buzzword detection
-  2. Text cleaning via GPT
-  3. Recursive verification
+For more details on providers, see the [Providers](https://gensx.dev/concepts/providers) page.
 
 ## Usage
 
@@ -18,11 +10,11 @@ This example demonstrates how to use GenSX's `gsx.execute` to execute sub-workfl
 # Install dependencies
 pnpm install
 
-# Set your OpenAI API key
-export OPENAI_API_KEY=<your_api_key>
+# Set your Firecrawl API key
+export FIRECRAWL_API_KEY=<your_api_key>
 
 # Run the example
 pnpm run start
 ```
 
-The example will clean a sample text containing business buzzwords. You can modify the input text in `index.tsx` to clean different content.
+When you run the example, it will scrape the page at `https://gensx.dev/overview/` and return the markdown.
