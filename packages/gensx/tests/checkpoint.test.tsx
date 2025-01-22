@@ -72,7 +72,7 @@ suite("checkpoint", () => {
     // Mock fetch for all tests
     global.fetch = vi
       .fn()
-      .mockImplementation(async (_input: FetchInput, _options?: FetchInit) => {
+      .mockImplementation((_input: FetchInput, _options?: FetchInit) => {
         return new Response(null, { status: 200 });
       });
   });

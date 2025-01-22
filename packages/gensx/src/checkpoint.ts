@@ -3,7 +3,6 @@ import { join } from "node:path";
 // Cross-platform UUID generation
 function generateUUID(): string {
   try {
-    // Try Node.js crypto first
     const crypto = globalThis.crypto;
     return crypto.randomUUID();
   } catch {
