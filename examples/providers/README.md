@@ -14,7 +14,7 @@ pnpm install
 export FIRECRAWL_API_KEY=<your_api_key>
 
 # Run the example
-pnpm run run
+pnpm run start
 ```
 
 When you run the example, it will scrape the page at `https://gensx.dev/overview/` and return the markdown.
