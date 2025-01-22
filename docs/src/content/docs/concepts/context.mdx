@@ -17,9 +17,11 @@ GenSX also supports [Providers](../providers) which are a specialized use of con
 
 ## Creating a Context
 
-To create a context, start by defining the interface and then use `gsx.createContext<T>()` to create the context along with a default value. In this example, a simple "User" context is created to store the user's name:
+To create a context, start by defining the interface and then use `gsx.createContext<T>()` to create the context along with a default value. In this example, a simple `User` context is created to store the user's name:
 
 ```tsx
+import { gsx } from "gensx";
+
 // Define the interface
 interface User {
   name: string;

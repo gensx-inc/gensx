@@ -119,6 +119,7 @@ This repo contains a number of [examples](./examples) to help you get up and run
 | 🔄 [Reflection](./examples/reflection)                | Shows how to use a self-reflection pattern with GenSX |
 | 🌊 [Streaming](./examples/streaming)                  | Shows how to handle streaming responses with GenSX    |
 | 🔌 [Providers](./examples/providers)                  | Shows how to create a custom provider for GenSX       |
+| 🗃️ [Contexts](./examples/contexts)                    | Shows how to use contexts to manage state in GenSX    |
 
 ### Full Examples
 

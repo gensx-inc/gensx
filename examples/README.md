@@ -30,6 +30,7 @@ Make sure to check what environment variables are required for each example.
 | 🔄 [Reflection](./reflection)                | Shows how to use a self-reflection pattern with GenSX     |
 | 🌊 [Streaming](./streaming)                  | Demonstrates how to handle streaming responses with GenSX |
 | 🔌 [Providers](./providers)                  | Shows how to create a custom provider for GenSX           |
+| 🗃️ [Contexts](./contexts)                    | Shows how to use contexts to manage state in GenSX        |
 
 ## Full Examples
 
