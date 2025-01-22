@@ -85,6 +85,9 @@ export function StreamComponent<P>(
       );
 
       if (props.stream) {
+        // Mark as streaming immediately
+        checkpointManager.completeNode(nodeId, "[streaming in progress]");
+
         // Create a wrapper iterator that captures the output while streaming
         const wrappedIterator = async function* () {
           let accumulated = "";
@@ -93,12 +96,20 @@ export function StreamComponent<P>(
               accumulated += token;
               yield token;
             }
-            // Complete the checkpoint with accumulated output
-            checkpointManager.completeNode(nodeId, accumulated);
+            // Update with final content if stream completes
+            checkpointManager.updateNode(nodeId, {
+              output: accumulated,
+              metadata: { streamCompleted: true },
+            });
           } catch (error) {
             if (error instanceof Error) {
-              checkpointManager.addMetadata(nodeId, { error: error.message });
-              checkpointManager.completeNode(nodeId, accumulated);
+              checkpointManager.updateNode(nodeId, {
+                output: accumulated,
+                metadata: {
+                  error: error.message,
+                  streamCompleted: false,
+                },
+              });
             }
             throw error;
           }

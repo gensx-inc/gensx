@@ -44,7 +44,9 @@ export interface CheckpointWriter {
   addNode: (node: Partial<ExecutionNode>, parentId?: string) => Promise<string>;
   completeNode: (id: string, output: unknown) => void;
   addMetadata: (id: string, metadata: Record<string, unknown>) => void;
+  updateNode: (id: string, updates: Partial<ExecutionNode>) => void;
   write: () => void;
+  waitForPendingUpdates: () => Promise<void>;
   checkpointsEnabled: boolean;
 }
 
@@ -169,7 +171,28 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
+  updateNode(id: string, updates: Partial<ExecutionNode>) {
+    const node = this.nodes.get(id);
+    if (node) {
+      Object.assign(node, updates);
+      this.updateCheckpoint();
+    } else {
+      console.warn(`[Tracker] Attempted to update unknown node:`, { id });
+    }
+  }
+
   write() {
     this.updateCheckpoint();
+  }
+
+  async waitForPendingUpdates(): Promise<void> {
+    // If there's an active checkpoint, wait for it
+    if (this.activeCheckpoint) {
+      await this.activeCheckpoint;
+    }
+    // If that checkpoint triggered another update, wait again
+    if (this.pendingUpdate || this.activeCheckpoint) {
+      await this.waitForPendingUpdates();
+    }
   }
 }
