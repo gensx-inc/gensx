@@ -14,6 +14,11 @@ import { createWorkflowContext } from "@/workflow-context.js";
 type FetchInput = Parameters<typeof fetch>[0];
 type FetchInit = Parameters<typeof fetch>[1];
 
+// Helper function to generate test IDs
+function generateTestId(): string {
+  return `test-${Math.random().toString(36).substring(7)}`;
+}
+
 /**
  * Helper to execute a workflow with checkpoint tracking
  * Returns both the execution result and recorded checkpoints for verification
@@ -64,6 +69,12 @@ suite("checkpoint", () => {
 
   beforeEach(() => {
     process.env.GENSX_CHECKPOINTS = "true";
+    // Mock fetch for all tests
+    global.fetch = vi
+      .fn()
+      .mockImplementation(async (_input: FetchInput, _options?: FetchInit) => {
+        return new Response(null, { status: 200 });
+      });
   });
 
   afterEach(() => {
@@ -361,6 +372,111 @@ suite("checkpoint", () => {
         },
       ],
     });
+  });
+
+  test("handles out of order node insertion and tree reconstruction", () => {
+    // Test case 1: Simple parent-child relationship
+    const cm1 = new CheckpointManager();
+    const parentId = generateTestId();
+    const child1Id = cm1.addNode({ componentName: "Child1" }, parentId);
+    cm1.addNode({ componentName: "Parent", id: parentId });
+
+    // Verify fetch was called with the correct tree structure
+    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
+    expect(fetchMock).toHaveBeenCalled();
+    const lastCall = fetchMock.mock.lastCall;
+    expect(lastCall).toBeDefined();
+    const options = lastCall![1] as FetchInit;
+    expect(options?.body).toBeDefined();
+    const lastCallBody = JSON.parse(options!.body! as string) as ExecutionNode;
+    expect(lastCallBody.componentName).toBe("Parent");
+    expect(lastCallBody.children[0].componentName).toBe("Child1");
+
+    // Rest of test case 1 assertions
+    expect(cm1.root?.componentName).toBe("Parent");
+    expect(cm1.root?.children).toHaveLength(1);
+    expect(cm1.root?.children[0].componentName).toBe("Child1");
+    expect(cm1.root?.children[0].id).toBe(child1Id);
+
+    // Test case 2: Multiple children waiting for same parent
+    const cm2 = new CheckpointManager();
+    const parent2Id = generateTestId();
+    cm2.addNode({ componentName: "Child2A" }, parent2Id);
+    cm2.addNode({ componentName: "Child2B" }, parent2Id);
+    cm2.addNode({ componentName: "Parent2", id: parent2Id });
+
+    expect(cm2.root?.componentName).toBe("Parent2");
+    expect(cm2.root?.children).toHaveLength(2);
+    expect(cm2.root?.children.map(c => c.componentName)).toContain("Child2A");
+    expect(cm2.root?.children.map(c => c.componentName)).toContain("Child2B");
+
+    // Test case 3: Deep tree with mixed ordering
+    const cm3 = new CheckpointManager();
+    const root3Id = generateTestId();
+    const branch3aId = generateTestId();
+    const branch3bId = generateTestId();
+
+    cm3.addNode({ componentName: "Leaf3A" }, branch3aId);
+    cm3.addNode({ componentName: "Leaf3B" }, branch3bId);
+    cm3.addNode({ componentName: "Root3", id: root3Id });
+    cm3.addNode({ componentName: "Branch3A", id: branch3aId }, root3Id);
+    cm3.addNode({ componentName: "Branch3B", id: branch3bId }, root3Id);
+
+    const root3 = cm3.root;
+    expect(root3?.componentName).toBe("Root3");
+    expect(root3?.children).toHaveLength(2);
+
+    const branch3a = root3?.children.find(c => c.componentName === "Branch3A");
+    const branch3b = root3?.children.find(c => c.componentName === "Branch3B");
+
+    expect(branch3a?.children[0].componentName).toBe("Leaf3A");
+    expect(branch3b?.children[0].componentName).toBe("Leaf3B");
+
+    // Test case 4: Root node arrives after its children
+    const cm4 = new CheckpointManager();
+    const root4Id = generateTestId();
+    const child4Id = cm4.addNode({ componentName: "Child4" }, root4Id);
+    cm4.addNode({ componentName: "Grandchild4" }, child4Id);
+    cm4.addNode({ componentName: "Root4", id: root4Id });
+
+    expect(cm4.root?.componentName).toBe("Root4");
+    expect(cm4.root?.children[0].componentName).toBe("Child4");
+    expect(cm4.root?.children[0].children[0].componentName).toBe("Grandchild4");
+
+    // Test case 5: Complex reordering with multiple levels
+    const cm5 = new CheckpointManager();
+    const root5Id = generateTestId();
+    const branch5aId = generateTestId();
+    const branch5bId = generateTestId();
+
+    cm5.addNode({ componentName: "Leaf5A" }, branch5aId);
+    cm5.addNode({ componentName: "Leaf5B" }, branch5bId);
+    cm5.addNode({ componentName: "Leaf5C" }, branch5aId);
+
+    cm5.addNode({ componentName: "Branch5B", id: branch5bId }, root5Id);
+    cm5.addNode({ componentName: "Root5", id: root5Id });
+    cm5.addNode({ componentName: "Branch5A", id: branch5aId }, root5Id);
+
+    const root5 = cm5.root;
+    expect(root5?.componentName).toBe("Root5");
+    expect(root5?.children).toHaveLength(2);
+
+    const branch5a = root5?.children.find(c => c.componentName === "Branch5A");
+    const branch5b = root5?.children.find(c => c.componentName === "Branch5B");
+
+    // Verify all nodes are connected properly
+    expect(branch5a?.children.map(c => c.componentName)).toContain("Leaf5A");
+    expect(branch5a?.children.map(c => c.componentName)).toContain("Leaf5C");
+    expect(branch5b?.children.map(c => c.componentName)).toContain("Leaf5B");
+
+    // Verify tree integrity - every node should have correct parent reference
+    function verifyNodeParentRefs(node: ExecutionNode) {
+      for (const child of node.children) {
+        expect(child.parentId).toBe(node.id);
+        verifyNodeParentRefs(child);
+      }
+    }
+    verifyNodeParentRefs(root5!);
   });
 
   test("handles streaming components", async () => {

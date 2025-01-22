@@ -48,7 +48,7 @@ export interface CheckpointWriter {
 
 export class CheckpointManager implements CheckpointWriter {
   private nodes = new Map<string, ExecutionNode>();
-  private pendingRootId: string | null = null;
+  private orphanedNodes = new Map<string, Set<ExecutionNode>>();
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
 
@@ -64,6 +64,46 @@ export class CheckpointManager implements CheckpointWriter {
       checkpointsEnv === "true" ||
       checkpointsEnv === "1" ||
       checkpointsEnv === "yes";
+  }
+
+  private attachToParent(node: ExecutionNode, parent: ExecutionNode) {
+    node.parentId = parent.id;
+    if (!parent.children.some(child => child.id === node.id)) {
+      parent.children.push(node);
+    }
+  }
+
+  private handleOrphanedNode(node: ExecutionNode, expectedParentId: string) {
+    let orphans = this.orphanedNodes.get(expectedParentId);
+    if (!orphans) {
+      orphans = new Set();
+      this.orphanedNodes.set(expectedParentId, orphans);
+    }
+    orphans.add(node);
+
+    // Add diagnostic timeout to detect stuck orphans
+    this.checkOrphanTimeout(node.id, expectedParentId);
+  }
+
+  private checkOrphanTimeout(nodeId: string, expectedParentId: string) {
+    setTimeout(() => {
+      const orphans = this.orphanedNodes.get(expectedParentId);
+      if (orphans?.has(this.nodes.get(nodeId)!)) {
+        console.warn(
+          `[Checkpoint] Node ${nodeId} (${this.nodes.get(nodeId)?.componentName}) still waiting for parent ${expectedParentId} after 5s`,
+          {
+            node: this.nodes.get(nodeId),
+            existingNodes: Array.from(this.nodes.entries()).map(
+              ([id, node]) => ({
+                id,
+                componentName: node.componentName,
+                parentId: node.parentId,
+              }),
+            ),
+          },
+        );
+      }
+    }, 5000);
   }
 
   // updateCheckpoint POSTs the current component tree to the GenSX API.
@@ -139,18 +179,37 @@ export class CheckpointManager implements CheckpointWriter {
     if (parentId) {
       const parent = this.nodes.get(parentId);
       if (parent) {
+        // Normal case - parent exists
+        this.attachToParent(node, parent);
+      } else {
+        // Parent doesn't exist yet - track as orphaned
         node.parentId = parentId;
-        parent.children.push(node);
+        this.handleOrphanedNode(node, parentId);
       }
     } else {
-      // If this is the first node to request being root, track it
-      if (!this.pendingRootId) {
-        this.pendingRootId = nodeId;
-      }
-      // Only set as root if this was the first to request it
-      if (this.pendingRootId === nodeId) {
+      // Handle root node case
+      if (!this.root) {
         this.root = node;
+      } else if (this.root.parentId === node.id) {
+        // Current root was waiting for this node as parent
+        this.attachToParent(this.root, node);
+        this.root = node;
+      } else {
+        console.warn(
+          `[Checkpoint] Multiple root nodes detected: existing=${this.root.componentName}, new=${node.componentName}`,
+        );
       }
+    }
+
+    // Check if this node is a parent any orphans are waiting for
+    const waitingChildren = this.orphanedNodes.get(node.id);
+    if (waitingChildren) {
+      // Attach all waiting children
+      for (const orphan of waitingChildren) {
+        this.attachToParent(orphan, node);
+      }
+      // Clear the orphans list for this parent
+      this.orphanedNodes.delete(node.id);
     }
 
     this.updateCheckpoint();
