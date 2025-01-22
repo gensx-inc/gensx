@@ -35,6 +35,10 @@ export default defineConfig({
           link: "/overview",
         },
         {
+          label: "Basic Concepts",
+          link: "/basic-concepts",
+        },
+        {
           label: "Quickstart",
           link: "/quickstart",
         },
@@ -51,14 +55,14 @@ export default defineConfig({
         //   label: "LLM patterns",
         //   autogenerate: { directory: "patterns" },
         // },
-        // {
-        //   label: "Examples",
-        //   autogenerate: { directory: "examples" },
-        // },
-        // {
-        //   label: "Component reference",
-        //   autogenerate: { directory: "component-reference" },
-        // },
+        {
+          label: "Examples",
+          autogenerate: { directory: "examples" },
+        },
+        {
+          label: "Component reference",
+          autogenerate: { directory: "component-reference" },
+        },
       ],
     }),
     tailwind({

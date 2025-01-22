@@ -15,8 +15,11 @@ This example demonstrates how to use GenSX to create a workflow that analyzes Ha
 # Install dependencies
 pnpm install
 
+# Set your OpenAI API key
+export OPENAI_API_KEY=<your_api_key>
+
 # Run the example
-pnpm run run
+pnpm run start
 ```
 
 The example will:

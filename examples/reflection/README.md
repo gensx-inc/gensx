@@ -18,8 +18,11 @@ This example demonstrates how to use GenSX's `gsx.execute` to execute sub-workfl
 # Install dependencies
 pnpm install
 
+# Set your OpenAI API key
+export OPENAI_API_KEY=<your_api_key>
+
 # Run the example
-OPENAI_API_KEY=<your_api_key> npm run run
+pnpm run start
 ```
 
 The example will clean a sample text containing business buzzwords. You can modify the input text in `index.tsx` to clean different content.

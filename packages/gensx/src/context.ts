@@ -1,5 +1,52 @@
 import { resolveDeep } from "./resolve";
-import { ExecutableValue, type WorkflowContext } from "./types";
+import { Args, Context } from "./types";
+import {
+  createWorkflowContext,
+  WORKFLOW_CONTEXT_SYMBOL,
+  WorkflowExecutionContext,
+} from "./workflow-context";
+
+type WorkflowContext = Record<symbol, unknown>;
+
+// Create unique symbols for each context
+let contextCounter = 0;
+function createContextSymbol() {
+  return Symbol.for(`gensx.context.${contextCounter++}`);
+}
+
+export function createContext<T>(defaultValue: T): Context<T> {
+  const contextSymbol = createContextSymbol();
+
+  function Provider(props: Args<{ value: T }, ExecutionContext>) {
+    return () => {
+      const currentContext = getCurrentContext();
+
+      return Promise.resolve(
+        currentContext.withContext({ [contextSymbol]: props.value }),
+      );
+    };
+  }
+
+  const context = {
+    __type: "Context" as const,
+    defaultValue,
+    symbol: contextSymbol,
+    Provider,
+  };
+
+  return context;
+}
+
+export function useContext<T>(context: Context<T>): T {
+  const executionContext = getCurrentContext();
+  const value = executionContext.get(context.symbol);
+
+  if (value === undefined) {
+    return context.defaultValue;
+  }
+
+  return value as T;
+}
 
 // Define AsyncLocalStorage type based on Node.js definitions
 interface AsyncLocalStorageType<T> {
@@ -9,18 +56,33 @@ interface AsyncLocalStorageType<T> {
   enterWith(store: T): void;
 }
 
+export const CURRENT_NODE_SYMBOL = Symbol.for("gensx.currentNode");
+
 export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
-  ) {}
-
-  withContext(context: Partial<WorkflowContext>): ExecutionContext {
-    return new ExecutionContext(context, this);
+  ) {
+    if (!this.context[WORKFLOW_CONTEXT_SYMBOL]) {
+      this.context[WORKFLOW_CONTEXT_SYMBOL] = createWorkflowContext();
+    }
   }
 
-  fork(): ExecutionContext {
-    return new ExecutionContext({ ...this.context }, this);
+  withContext(newContext: Partial<WorkflowContext>): ExecutionContext {
+    if (Object.getOwnPropertySymbols(newContext).length === 0) {
+      return this;
+    }
+
+    // Create a new context that inherits from the current one
+    const mergedContext = {} as WorkflowContext;
+    for (const key of Object.getOwnPropertySymbols(this.context)) {
+      mergedContext[key] = this.context[key];
+    }
+    // Override with new values
+    for (const key of Object.getOwnPropertySymbols(newContext)) {
+      mergedContext[key] = newContext[key];
+    }
+    return new ExecutionContext(mergedContext, this);
   }
 
   get<K extends keyof WorkflowContext>(key: K): WorkflowContext[K] | undefined {
@@ -29,66 +91,72 @@ export class ExecutionContext {
     }
     return this.parent?.get(key);
   }
+
+  getWorkflowContext(): WorkflowExecutionContext {
+    return this.get(WORKFLOW_CONTEXT_SYMBOL) as WorkflowExecutionContext;
+  }
+
+  getCurrentNodeId(): string | undefined {
+    return this.get(CURRENT_NODE_SYMBOL) as string | undefined;
+  }
+
+  withCurrentNode<T>(nodeId: string, fn: () => Promise<T>): Promise<T> {
+    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
+  }
 }
 
 // Try to import AsyncLocalStorage if available (Node.js environment)
 let AsyncLocalStorage: (new <T>() => AsyncLocalStorageType<T>) | undefined;
-let storage: AsyncLocalStorageType<ExecutionContext> | null = null;
-const configureAsyncLocalStorage = import("node:async_hooks")
-  .then(asyncHooksModule => {
+let contextStorage: AsyncLocalStorageType<ExecutionContext> | null = null;
+const configureAsyncLocalStorage = (async () => {
+  try {
+    const asyncHooksModule = await import("node:async_hooks");
     AsyncLocalStorage = asyncHooksModule.AsyncLocalStorage;
-    storage = new AsyncLocalStorage<ExecutionContext>();
-  })
-  .catch(() => {
-    // AsyncLocalStorage not available (browser environment)
+    contextStorage = new AsyncLocalStorage<ExecutionContext>();
+  } catch {
+    // This is probably an environment without async_hooks, so just use global state and warn the developer
     console.warn(
       "Running in an environment without async_hooks - using global context state. This will only cause issues if concurrent workflows are executed simultaneously.",
     );
-  });
-
-// Create a closure for context management
-const contextManager = (() => {
-  const rootContext = new ExecutionContext({});
-
-  // Private fallback state
-  let globalContext = rootContext;
-
-  return {
-    getCurrentContext(): ExecutionContext {
-      if (storage) {
-        return storage.getStore() ?? rootContext;
-      }
-      return globalContext;
-    },
-
-    run<T>(context: ExecutionContext, fn: () => Promise<T>): Promise<T> {
-      if (storage) {
-        return storage.run(context, fn);
-      }
-      const prevContext = globalContext;
-      globalContext = context;
-      try {
-        return fn();
-      } finally {
-        globalContext = prevContext;
-      }
-    },
-  };
+  }
 })();
+
+const rootContext = new ExecutionContext({});
+
+// Private fallback state
+let globalContext = rootContext;
+
+const contextManager = {
+  getCurrentContext(): ExecutionContext {
+    if (contextStorage) {
+      const store = contextStorage.getStore();
+      return store ?? rootContext;
+    }
+    return globalContext;
+  },
+
+  run<T>(context: ExecutionContext, fn: () => Promise<T>): Promise<T> {
+    if (contextStorage) {
+      return contextStorage.run(context, fn);
+    }
+    const prevContext = globalContext;
+    globalContext = context;
+    try {
+      return fn();
+    } finally {
+      globalContext = prevContext;
+    }
+  },
+};
 
 // Helper to run code with a specific context
 export async function withContext<T>(
-  context: Partial<WorkflowContext>,
-  fn: ExecutableValue,
+  context: ExecutionContext,
+  fn: () => Promise<T>,
 ): Promise<T> {
   await configureAsyncLocalStorage;
-  const prevContext = contextManager.getCurrentContext();
-  const newContext =
-    Object.keys(context).length > 0
-      ? prevContext.withContext(context)
-      : prevContext;
 
-  return contextManager.run(newContext, async () => {
+  return contextManager.run(context, async () => {
     const result = await resolveDeep(fn);
     return result as T;
   });

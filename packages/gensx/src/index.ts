@@ -1,16 +1,37 @@
-import { Component, ContextProvider, StreamComponent } from "./component";
-import { withContext } from "./context";
-import { execute } from "./resolve";
+export { createContext, useContext } from "./context";
+export { execute } from "./resolve";
+export { Fragment, jsx, jsxs } from "./jsx-runtime";
+export type { JSX } from "./jsx-runtime";
+export { StreamComponent, Component } from "./component";
+export { array } from "./array";
+export type {
+  Args,
+  Context,
+  MaybePromise,
+  Streamable,
+  StreamArgs,
+  GsxStreamComponent,
+  GsxComponent,
+} from "./types";
+export type { GsxArray } from "./array";
 
-export * from "./component";
-export * from "./context";
-export * from "./jsx-runtime";
-export * from "./types";
+import { array } from "./array";
+import { Component, StreamComponent } from "./component";
+import { createContext, useContext } from "./context";
+import { execute } from "./resolve";
+import * as types from "./types";
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace gsx {
+  export type Args<P, O> = types.Args<P, O>;
+  export type StreamArgs<P> = types.StreamArgs<P>;
+}
 
 export const gsx = {
-  Component,
-  Provider: ContextProvider,
   StreamComponent,
-  withContext,
+  Component,
+  createContext,
   execute,
+  useContext,
+  array,
 };

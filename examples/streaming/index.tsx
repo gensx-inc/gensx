@@ -1,8 +1,5 @@
-import { setTimeout } from "timers/promises";
-
+import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx, Streamable } from "gensx";
-
-import { ChatCompletion } from "./chatCompletion.js";
 
 async function runStreamingWithChildrenExample() {
   const prompt =
@@ -12,26 +9,36 @@ async function runStreamingWithChildrenExample() {
 
   console.log("\n📝 Non-streaming version (waiting for full response):");
   await gsx.execute<string>(
-    <ChatCompletion prompt={prompt}>
-      {async (response: string) => {
-        await setTimeout(0);
-        console.log(response);
-      }}
-    </ChatCompletion>,
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[{ role: "user", content: prompt }]}
+      >
+        {(response: string) => {
+          console.log(response);
+        }}
+      </ChatCompletion>
+    </OpenAIProvider>,
   );
 
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
   await gsx.execute(
-    <ChatCompletion stream={true} prompt={prompt}>
-      {async (response: Streamable) => {
-        // Print tokens as they arrive
-        for await (const token of response) {
-          process.stdout.write(token);
-        }
-        process.stdout.write("\n");
-        console.log("✅ Streaming complete");
-      }}
-    </ChatCompletion>,
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ChatCompletion
+        model="gpt-4o-mini"
+        stream={true}
+        messages={[{ role: "user", content: prompt }]}
+      >
+        {async (response: Streamable) => {
+          // Print tokens as they arrive
+          for await (const token of response) {
+            process.stdout.write(token);
+          }
+          process.stdout.write("\n");
+          console.log("✅ Streaming complete");
+        }}
+      </ChatCompletion>
+    </OpenAIProvider>,
   );
 }
 
@@ -43,13 +50,24 @@ async function runStreamingExample() {
 
   console.log("\n📝 Non-streaming version (waiting for full response):");
   const finalResult = await gsx.execute<string>(
-    <ChatCompletion prompt={prompt} />,
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[{ role: "user", content: prompt }]}
+      />
+    </OpenAIProvider>,
   );
   console.log("✅ Complete response:", finalResult);
 
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
   const response = await gsx.execute<Streamable>(
-    <ChatCompletion stream={true} prompt={prompt} />,
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ChatCompletion
+        model="gpt-4o-mini"
+        stream={true}
+        messages={[{ role: "user", content: prompt }]}
+      />
+    </OpenAIProvider>,
   );
 
   for await (const token of response) {
@@ -62,32 +80,34 @@ async function runStreamingExample() {
 const GeneratorComponent = gsx.StreamComponent<{
   foo: string;
   iterations: number;
-}>(async function* ({ foo, iterations }) {
-  await setTimeout(10);
+}>("GeneratorComponent", function* ({ foo, iterations }) {
   for (let i = 1; i < iterations + 1; i++) {
     console.log("🔥 GeneratorComponent", i);
     yield `${i}: ${foo.repeat(i)}\n`;
-    await setTimeout(10);
   }
 });
 
 async function streamingGeneratorExample() {
   console.log("⚡️ StreamingGeneratorExample - return result from generator");
   const response1 = await gsx.execute<string>(
-    <GeneratorComponent foo="bar" iterations={10} />,
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <GeneratorComponent foo="bar" iterations={10} />
+    </OpenAIProvider>,
   );
   console.log(`✅ Streaming complete:\n====\n${response1}====`);
   console.log("⚡️ StreamingGeneratorExample - process generator result");
   await gsx.execute<string>(
-    <GeneratorComponent stream={true} foo="bar" iterations={10}>
-      {async (response: Streamable) => {
-        for await (const token of response) {
-          process.stdout.write(token);
-        }
-        process.stdout.write("\n");
-        console.log("✅ Streaming complete");
-      }}
-    </GeneratorComponent>,
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <GeneratorComponent stream={true} foo="bar" iterations={10}>
+        {async (response: Streamable) => {
+          for await (const token of response) {
+            process.stdout.write(token);
+          }
+          process.stdout.write("\n");
+          console.log("✅ Streaming complete");
+        }}
+      </GeneratorComponent>
+    </OpenAIProvider>,
   );
 }
 

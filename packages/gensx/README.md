@@ -110,7 +110,7 @@ type ResearchBrainstormOutput = string[];
 const ResearchBrainstorm = gsx.Component<
   ResearchBrainstormProps,
   ResearchBrainstormOutput
->(async ({ prompt }) => {
+>("ResearchBrainstorm", async ({ prompt }) => {
   console.log("🔍 Starting research for:", prompt);
   const topics = await Promise.resolve(["topic 1", "topic 2", "topic 3"]);
   return topics;
@@ -121,6 +121,7 @@ interface PerformResearchProps {
 }
 type PerformResearchOutput = string;
 const PerformResearch = gsx.Component<ResearchProps, ResearchOutput>(
+  "PerformResearch",
   async ({ topic }) => {
     console.log("📚 Researching topic:", topic);
     // Make a call to your vector DB, or an API, or invoke a model like OpenAI, Anthropic, Perplexity, and more.
@@ -139,6 +140,7 @@ interface WriteDraftProps {
 }
 type WriteDraftOutput = string;
 const WriteDraft = gsx.Component<WriteDraftProps, WriteDraftOutput>(
+  "WriteDraft",
   async ({ research, prompt }) => {
     console.log("✍️  Writing draft based on research");
     // Invoke a model like OpenAI, Anthropic, Perplexity, and more.
@@ -154,6 +156,7 @@ interface EditDraftProps {
 }
 type EditDraftOutput = string;
 const EditDraft = gsx.Component<EditDraftProps, EditDraftOutput>(
+  "EditDraft",
   async ({ draft }) => {
     console.log("✨ Polishing final draft");
     // Invoke a model like OpenAI, Anthropic, Perplexity, and more.
@@ -167,6 +170,7 @@ interface WebResearcherProps {
 }
 type WebResearcherOutput = string[];
 const WebResearcher = gsx.Component<WebResearcherProps, WebResearcherOutput>(
+  "WebResearcher",
   async ({ prompt }) => {
     console.log("🌐 Researching web for:", prompt);
     // Make a call to your vector DB, or an API, or invoke a model like OpenAI, Anthropic, Perplexity, and more.
@@ -190,7 +194,7 @@ interface ParallelResearchComponentProps {
 const ParallelResearch = gsx.Component<
   ParallelResearchComponentProps,
   ParallelResearchOutput
->(({ prompt }) => (
+>("ParallelResearch", ({ prompt }) => (
   <>
     <ResearchBrainstorm prompt={prompt}>
       {topics => topics.map(topic => <PerformResearch topic={topic} />)}
@@ -206,7 +210,7 @@ type BlogWritingWorkflowOutput = string;
 const BlogWritingWorkflow = gsx.Component<
   BlogWritingWorkflowProps,
   BlogWritingWorkflowOutput
->(async ({ prompt }) => (
+>("BlogWritingWorkflow", ({ prompt }) => (
   <ParallelResearch prompt={prompt}>
     {([catalogResearch, webResearch]) => {
       console.log("🧠 Research:", { catalogResearch, webResearch });

@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.4](https://github.com/cortexclick/gensx/compare/gensx-v0.2.3...gensx-v0.2.4) (2025-01-22)
+
+
+### ✨ New Features
+
+* Add `gsx.array` plus `map`, `filter`, `reduce`, and `flatMap` ([#153](https://github.com/cortexclick/gensx/issues/153)) ([ad8f74b](https://github.com/cortexclick/gensx/commit/ad8f74b0500ab8b6190334bae396a18655041b6f))
+* Add checkpoint support for StreamComponent ([#155](https://github.com/cortexclick/gensx/issues/155)) ([830f43e](https://github.com/cortexclick/gensx/commit/830f43ea2b63f11639f911a258a75ca55e5dabe2))
+
+## [0.2.3](https://github.com/cortexclick/gensx/compare/gensx-v0.2.2...gensx-v0.2.3) (2025-01-21)
+
+
+### ✨ New Features
+
+* Add checkpointing ([#143](https://github.com/cortexclick/gensx/issues/143)) ([645d537](https://github.com/cortexclick/gensx/commit/645d53707efc50a7f8cf5426982cd7d269d92255))
+* Add support for component names ([#120](https://github.com/cortexclick/gensx/issues/120)) ([cc5d69c](https://github.com/cortexclick/gensx/commit/cc5d69c7c3d39f60ea85db351e445a6b1d3ef47b))
+* Implement `createContext` and `useContext` ([#90](https://github.com/cortexclick/gensx/issues/90)) ([4c30f67](https://github.com/cortexclick/gensx/commit/4c30f6726c680fdabcf62734eed5035b618b2b17)), closes [#89](https://github.com/cortexclick/gensx/issues/89)
+
+
+### 🐛 Bug Fixes
+
+* Update vite-plugin-dts. ([#122](https://github.com/cortexclick/gensx/issues/122)) ([b831a67](https://github.com/cortexclick/gensx/commit/b831a670d43b2b089847c8fd244fcd178a2b2afc))
+
 ## [0.2.2](https://github.com/cortexclick/gensx/compare/gensx-v0.2.1...gensx-v0.2.2) (2025-01-10)
 
 

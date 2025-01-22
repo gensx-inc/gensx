@@ -1,0 +1,152 @@
+---
+title: Structured outputs
+description: Getting structured output from LLMs with GenSX
+sidebar:
+  order: 4
+---
+
+Workflows regularly require getting structured outputs (JSON) from LLMs. This guide shows how to use structured outputs with GenSX and OpenAI models but you can follow a similar pattern with other LLM providers.
+
+All GenSX components include an input and output type. The most common use case is to use structured outputs to ensure that the response from the LLM matches the schema of the component's output type.
+
+## Basic usage
+
+The most basic way to get a structured output from an LLM is to use the `response_format={{ type: "json_object" }}` option and then parse the response in the child function as shown below.
+
+First, define the input and output types for the component.
+
+```tsx
+interface ExtractEntitiesProps {
+  text: string;
+}
+
+interface ExtractEntitiesBasicOutput {
+  people: string[];
+  places: string[];
+  organizations: string[];
+}
+```
+
+Next, define the component and use the `ChatCompletion` component to get the structured output.
+
+```tsx
+const ExtractEntitiesBasic = gsx.Component<
+  ExtractEntitiesProps,
+  ExtractEntitiesBasicOutput
+>(async ({ text }) => {
+  const prompt = `Please review the following text and extract all the people, places, and organizations mentioned.
+
+  <text>
+  ${text}
+  </text>
+    
+  Please return json with the following format:
+  {
+    "people": ["person1", "person2", "person3"],
+    "places": ["place1", "place2", "place3"],
+    "organizations": ["org1", "org2", "org3"]
+  }`;
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        {
+          role: "user",
+          content: prompt,
+        },
+      ]}
+      response_format={{ type: "json_object" }}
+    >
+      {(response: string) => {
+        return JSON.parse(response) as ExtractEntitiesOutput;
+      }}
+    </ChatCompletion>
+  );
+});
+```
+
+Using `response_format={{ type: "json_object" }}` ensure that we get valid JSON back, but it doesn't guarantee that the JSON will match the `ExtractEntitiesOutput` type. Parsing this way also doesn't provide any type safety.
+
+## Using Zod
+
+You can can take this one step further by using Zod to supply a JSON schema which guarantees that the model response will match the `ExtractEntitiesOutput` type.
+
+```tsx
+import { z } from "zod";
+import { zodResponseFormat } from "openai/helpers/zod";
+
+// Define the Zod schema
+const ExtractEntitiesSchema = z.object({
+  people: z.array(z.string()),
+  places: z.array(z.string()),
+  organizations: z.array(z.string()),
+});
+
+type ExtractEntitiesOutput = z.infer<typeof ExtractEntitiesSchema>;
+```
+
+After definining this, you just need to make a few small changes to the component to use the Zod schema.
+
+```tsx
+const ExtractEntities = gsx.Component<
+  ExtractEntitiesProps,
+  ExtractEntitiesOutput
+>(async ({ text }) => {
+  const prompt = `Please review the following text and extract all the people, places, and organizations mentioned.
+
+  <text>
+  ${text}
+  </text>
+    
+  Please return json with the following format:
+  {
+    "people": ["person1", "person2", "person3"],
+    "places": ["place1", "place2", "place3"],
+    "organizations": ["org1", "org2", "org3"]
+  }`;
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        {
+          role: "user",
+          content: prompt,
+        },
+      ]}
+      response_format={zodResponseFormat(ExtractEntitiesSchema, "entities")}
+    >
+      {(response: string) => {
+        return ExtractEntitiesSchema.parse(JSON.parse(response));
+      }}
+    </ChatCompletion>
+  );
+});
+```
+
+Following this pattern ensures that the response from the LLM will match the `ExtractEntitiesOutput` type or an error will be thrown.
+
+## Running the example
+
+You can run the example above using the following code:
+
+```tsx
+const result = await gsx.execute(
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <ExtractEntities text="John Doe is a software engineer at Google." />
+  </OpenAIProvider>,
+);
+
+console.log(result);
+```
+
+This will output the following:
+
+```json
+{
+  "people": ["John Doe"],
+  "places": [],
+  "organizations": ["Google"]
+}
+```
+
+You can find the complete example code in the [structured outputs example](https://github.com/cortexclick/gensx/tree/main/examples/basicExamples/structuredOutputs/index.tsx).

@@ -1,155 +1,145 @@
 import type {
-  ComponentProps,
+  DeepJSXElement,
+  GsxComponent,
+  GsxStreamComponent,
   MaybePromise,
   Streamable,
-  StreamComponentProps,
-  StreamingComponent,
-  WorkflowComponent,
-  WorkflowContext,
 } from "./types";
 
-import { withContext } from "./context";
+import { getCurrentContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
-// TODO: We execute the children inside the component wrappers in order to execute the children within the correct context.
-// This also requires that the Component/StreamComponent/ContextProvider wrappers return functions, instead of just the promises.
-// It's not the cleanest thing, and we might be able to simplify this if we migrate to AsyncLocalStorage for context instead.
-
-/**
- * This allows an element to return either a plain object or an object with JSX.Element children
- * This is useful for components that return a nested object structure, where each key can be a component
- * that returns a plain object or an object with JSX.Element children.
- *
- * For example:
- *
- * interface ComponentOutput {
- *   nested: {
- *     foo: string;
- *     bar: string;
- *   }[];
- * }
- *
- * interface ComponentProps {
- *   input: string;
- * }
- *
- * const Component = gsx.Component<ComponentProps, ComponentOutput>(
- *   ({ input }) => ({
- *     nested: [
- *       { foo: <Foo input={input} />, bar: <Bar input={input} /> },
- *       { foo: <Foo />, bar: <Bar /> },
- *     ],
- *   }),
- * );
- */
-type DeepJSXElement<T> = T extends (infer Item)[]
-  ? DeepJSXElement<Item>[]
-  : T extends object
-    ? { [K in keyof T]: DeepJSXElement<T[K]> }
-    : T | JSX.Element;
-
 export function Component<P, O>(
-  fn: (
-    props: P,
-  ) => MaybePromise<
-    | O
-    | JSX.Element
-    | JSX.Element[]
-    | Record<string, JSX.Element>
-    | DeepJSXElement<O>
-    | undefined
-  >,
-): WorkflowComponent<P, O> {
-  function GsxComponent(props: ComponentProps<P, O>): () => Promise<O> {
-    return async () => {
-      const result = await resolveDeep(fn(props));
+  name: string,
+  fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
+): GsxComponent<P, O> {
+  const GsxComponent: GsxComponent<P, O> = async props => {
+    const context = getCurrentContext();
+    const workflowContext = context.getWorkflowContext();
+    const { checkpointManager } = workflowContext;
 
-      let finalResult: O;
-      if (props.children) {
-        finalResult = await withContext({}, () =>
-          props.children?.(result as O),
-        );
-      } else {
-        finalResult = result as O; // TODO: Extract type information from children.
+    // Create checkpoint node for this component execution
+    // only async due to dynamic import, but otherwise non-blocking
+    const nodeId = await checkpointManager.addNode(
+      {
+        componentName: name,
+        props: Object.fromEntries(
+          Object.entries(props).filter(([key]) => key !== "children"),
+        ),
+      },
+      context.getCurrentNodeId(),
+    );
+
+    try {
+      const result = await context.withCurrentNode(nodeId, () =>
+        resolveDeep(fn(props)),
+      );
+
+      // Complete the checkpoint node with the result
+      checkpointManager.completeNode(nodeId, result);
+
+      return result;
+    } catch (error) {
+      // Record error in checkpoint
+      if (error instanceof Error) {
+        checkpointManager.addMetadata(nodeId, { error: error.message });
+        checkpointManager.completeNode(nodeId, undefined);
       }
-      return finalResult;
-    };
-  }
+      throw error;
+    }
+  };
 
-  if (fn.name) {
+  if (name) {
     Object.defineProperty(GsxComponent, "name", {
-      value: `GsxComponent[${fn.name}]`,
+      value: name,
     });
   }
 
-  const component = GsxComponent;
-  return component;
+  return GsxComponent;
 }
 
 export function StreamComponent<P>(
-  fn: (props: P) => MaybePromise<Streamable | JSX.Element>, // It does not make sense to stream from more than one child element
-): StreamingComponent<P, boolean> {
-  function GsxStreamComponent<Stream extends boolean = false>(
-    props: StreamComponentProps<P, Stream>,
-  ): () => Promise<Stream extends true ? Streamable : string> {
-    return async () => {
-      const iterator: Streamable = await resolveDeep(fn(props));
+  name: string,
+  fn: (props: P) => MaybePromise<Streamable | JSX.Element>,
+): GsxStreamComponent<P> {
+  const GsxStreamComponent: GsxStreamComponent<P> = async props => {
+    const context = getCurrentContext();
+    const workflowContext = context.getWorkflowContext();
+    const { checkpointManager } = workflowContext;
+
+    // Create checkpoint node for this component execution
+    const nodeId = await checkpointManager.addNode(
+      {
+        componentName: name,
+        props: Object.fromEntries(
+          Object.entries(props).filter(([key]) => key !== "children"),
+        ),
+      },
+      context.getCurrentNodeId(),
+    );
+
+    try {
+      const iterator: Streamable = await context.withCurrentNode(nodeId, () =>
+        resolveDeep(fn(props)),
+      );
+
       if (props.stream) {
-        if (props.children) {
-          return withContext({}, () =>
-            props.children?.(iterator as unknown as Streamable & string),
-          );
-        }
-        return iterator as Stream extends true ? Streamable : string;
+        // Mark as streaming immediately
+        checkpointManager.completeNode(nodeId, "[streaming in progress]");
+
+        // Create a wrapper iterator that captures the output while streaming
+        const wrappedIterator = async function* () {
+          let accumulated = "";
+          try {
+            for await (const token of iterator) {
+              accumulated += token;
+              yield token;
+            }
+            // Update with final content if stream completes
+            checkpointManager.updateNode(nodeId, {
+              output: accumulated,
+              metadata: { streamCompleted: true },
+            });
+          } catch (error) {
+            if (error instanceof Error) {
+              checkpointManager.updateNode(nodeId, {
+                output: accumulated,
+                metadata: {
+                  error: error.message,
+                  streamCompleted: false,
+                },
+              });
+            }
+            throw error;
+          }
+        };
+        return wrappedIterator();
       }
 
+      // Non-streaming case - accumulate all output then checkpoint
       let result = "";
       for await (const token of iterator) {
         result += token;
       }
-      if (props.children) {
-        return withContext({}, () =>
-          props.children?.(result as unknown as Streamable & string),
-        );
+      checkpointManager.completeNode(nodeId, result);
+      return result;
+    } catch (error) {
+      // Record error in checkpoint
+      if (error instanceof Error) {
+        checkpointManager.addMetadata(nodeId, { error: error.message });
+        checkpointManager.completeNode(nodeId, undefined);
       }
-      return result as Stream extends true ? Streamable : string;
-    };
-  }
+      throw error;
+    }
+  };
 
-  if (fn.name) {
+  if (name) {
     Object.defineProperty(GsxStreamComponent, "name", {
-      value: `GsxStreamComponent[${fn.name}]`,
+      value: name,
     });
   }
 
   const component = GsxStreamComponent;
-  return component;
-}
-
-export function ContextProvider<P, C extends Partial<WorkflowContext>>(
-  fn: (props: P) => MaybePromise<C>,
-): WorkflowComponent<P, never> {
-  function GsxContextProvider(
-    props: ComponentProps<P, never>,
-  ): () => Promise<never> {
-    return async () => {
-      const context = await fn(props);
-      const children = props.children;
-      if (!children) {
-        console.warn("Provider has no children");
-        return null as never;
-      }
-      return withContext(context, () => children(null as never));
-    };
-  }
-
-  if (fn.name) {
-    Object.defineProperty(GsxContextProvider, "name", {
-      value: `GsxContextProvider[${fn.name}]`,
-    });
-  }
-
-  const component = GsxContextProvider;
   return component;
 }

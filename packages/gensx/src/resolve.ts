@@ -1,6 +1,6 @@
-import { ExecutableValue } from "@/types";
-
+import { ExecutionContext, getCurrentContext } from "./context";
 import { isStreamable } from "./stream";
+import { ExecutableValue } from "./types";
 
 /**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.
@@ -11,6 +11,10 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   if (value instanceof Promise) {
     const resolved = (await value) as Promise<T>;
     return resolveDeep(resolved);
+  }
+
+  if (value instanceof ExecutionContext) {
+    return value as T;
   }
 
   // Pass through streamable values - they are handled by execute
@@ -49,10 +53,8 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
  * This is the main entry point for executing workflow components.
  */
 export async function execute<T>(element: ExecutableValue): Promise<T> {
-  try {
-    // use the shared resolver
-    return (await resolveDeep(element)) as T;
-  } finally {
-    // Context cleanup handled by withContext
-  }
+  const context = getCurrentContext().getWorkflowContext();
+  const result = (await resolveDeep(element)) as T;
+  context.checkpointManager.write();
+  return result;
 }

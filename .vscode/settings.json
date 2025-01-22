@@ -14,5 +14,11 @@
   "cSpell.words": ["gensx", "jsxs", "Streamable"],
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.associations": {
+    "*.tsx.template": "typescriptreact",
+    "*.ts.template": "typescript",
+    "*.json.template": "json",
+    "*.md.template": "markdown"
   }
 }

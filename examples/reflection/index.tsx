@@ -24,16 +24,23 @@ const buzzwords: string[] = [
   "transformative",
 ];
 
-const CountBuzzwords = gsx.Component<{ text: string }, number>(({ text }) => {
-  return text.split(" ").filter((word) => buzzwords.includes(word)).length;
-});
+const CountBuzzwords = gsx.Component<{ text: string }, number>(
+  "CountBuzzwords",
+  ({ text }) => {
+    return text.split(" ").filter((word) => buzzwords.includes(word)).length;
+  },
+);
 
 const CleanBuzzwords = gsx.Component<
-  { text: string; iterations?: number; maxIterations?: number },
+  {
+    text: string;
+    iterations?: number;
+    maxIterations?: number;
+  },
   string
->(async ({ text: prompt, iterations = 0, maxIterations = 5 }) => {
+>("CleanBuzzwords", async ({ text, iterations = 0, maxIterations = 5 }) => {
   const numBuzzwords = await gsx.execute<number>(
-    <CountBuzzwords text={prompt} />,
+    <CountBuzzwords text={text} />,
   );
 
   if (numBuzzwords > 0 && iterations < maxIterations) {
@@ -43,7 +50,7 @@ const CleanBuzzwords = gsx.Component<
         model="gpt-4o-mini"
         messages={[
           { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
+          { role: "user", content: text },
         ]}
       />,
     );
@@ -57,7 +64,7 @@ const CleanBuzzwords = gsx.Component<
     );
   }
 
-  return prompt;
+  return text;
 });
 
 async function main() {

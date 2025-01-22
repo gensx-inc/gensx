@@ -1,285 +1,276 @@
 import { setTimeout } from "timers/promises";
 
-import type { WorkflowContext } from "@/types";
+import { expect, suite, test } from "vitest";
 
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createContext, gsx, useContext } from "@/index.js";
 
-import { getCurrentContext, withContext } from "@/context";
-import { gsx } from "@/index";
+suite("context", () => {
+  test("can create and use context with default value", async () => {
+    const TestContext = createContext("default");
 
-// Extend WorkflowContext for our test cases
-interface TestContext extends WorkflowContext {
-  value?: string;
-  streaming?: boolean;
-  foo?: string;
-  a?: number;
-  b?: number;
-  c?: number;
-}
-
-// Helper component for testing context
-const ContextReader = gsx.Component<Record<string, never>, string>(() => {
-  const ctx = getCurrentContext();
-  return ctx.get("value") as string;
-});
-
-describe("context", () => {
-  test("forked context maintains independent state", async () => {
-    const Component = gsx.Component<Record<string, never>, string>(async () => {
-      const ctx = getCurrentContext();
+    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
       await setTimeout(0);
-      const fork = ctx.fork();
-      fork.withContext({ streaming: true });
-      expect(ctx.context.streaming).toBe(undefined);
-      return "";
+      const value = useContext(TestContext);
+      return value;
     });
-    await gsx.execute(<Component />);
+
+    const result = await gsx.execute(<Consumer />);
+    expect(result).toBe("default");
   });
 
-  test("child context inherits values from parent", async () => {
-    const Component = gsx.Component<Record<string, never>, string>(async () => {
-      const ctx = getCurrentContext();
+  test("can provide and consume context value", async () => {
+    const TestContext = createContext("default");
+
+    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
       await setTimeout(0);
-      const parent = ctx.withContext({ streaming: true });
-      const child = parent.withContext({ foo: "bar" });
-      expect(child.get("streaming")).toBe(true);
-      expect(child.get("foo")).toBe("bar");
-      return "";
+      const value = useContext(TestContext);
+      return value;
     });
-    await gsx.execute(<Component />);
+
+    const result = await gsx.execute(
+      <TestContext.Provider value="provided">
+        <Consumer />
+      </TestContext.Provider>,
+    );
+
+    expect(result).toBe("provided");
   });
 
-  describe("withContext", () => {
-    test("maintains context during async operations", async () => {
-      const values: string[] = [];
+  test("context value can be nested", async () => {
+    const TestContext = createContext("default");
 
-      await withContext({ value: "outer" } satisfies Partial<TestContext>, {
-        execute: async () => {
-          values.push(await gsx.execute(<ContextReader />));
-          await setTimeout(0);
-          values.push(await gsx.execute(<ContextReader />));
-
-          await withContext({ value: "inner" } satisfies Partial<TestContext>, {
-            execute: async () => {
-              values.push(await gsx.execute(<ContextReader />));
-              await setTimeout(0);
-              values.push(await gsx.execute(<ContextReader />));
-            },
-          });
-
-          values.push(await gsx.execute(<ContextReader />));
-        },
-      });
-
-      expect(values).toEqual(["outer", "outer", "inner", "inner", "outer"]);
+    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
+      await setTimeout(0);
+      const value = useContext(TestContext);
+      return value;
     });
 
-    test("restores context after error", async () => {
-      const initialValue = getCurrentContext().get("value");
+    const result = await gsx.execute(
+      <TestContext.Provider value="outer">
+        <TestContext.Provider value="inner">
+          <Consumer />
+        </TestContext.Provider>
+      </TestContext.Provider>,
+    );
 
-      try {
-        await withContext(
-          { value: "test" } satisfies Partial<TestContext>,
-          () => Promise.reject(new Error("test error")),
-        );
-      } catch {
-        // Ignore error
-      }
-
-      expect(getCurrentContext().get("value")).toBe(initialValue);
-    });
-
-    test("supports concurrent operations", async () => {
-      const results: string[] = [];
-
-      await Promise.all([
-        withContext({ value: "1" } satisfies Partial<TestContext>, {
-          execute: async () => {
-            await setTimeout(10);
-            results.push(await gsx.execute(<ContextReader />));
-          },
-        }),
-        withContext({ value: "2" } satisfies Partial<TestContext>, {
-          execute: async () => {
-            await setTimeout(5);
-            results.push(await gsx.execute(<ContextReader />));
-          },
-        }),
-        withContext({ value: "3" } satisfies Partial<TestContext>, {
-          execute: async () => {
-            results.push(await gsx.execute(<ContextReader />));
-          },
-        }),
-      ]);
-
-      // Order might vary but all values should be present
-      expect(results.sort()).toEqual(["1", "2", "3"]);
-    });
-
-    test("empty context does not create new context", async () => {
-      const ctx1 = getCurrentContext();
-      const Component = gsx.Component(() => {
-        const ctx2 = getCurrentContext();
-        expect(ctx2).toBe(ctx1);
-      });
-      await withContext({} satisfies Partial<TestContext>, <Component />);
-    });
-
-    test("nested contexts maintain proper hierarchy", async () => {
-      const Component1 = gsx.Component(() => {
-        expect(getCurrentContext().get("a")).toBe(1);
-      });
-      const Component2 = gsx.Component(() => {
-        expect(getCurrentContext().get("a")).toBe(1);
-        expect(getCurrentContext().get("b")).toBe(2);
-      });
-      const Component3 = gsx.Component(() => {
-        expect(getCurrentContext().get("a")).toBe(1);
-        expect(getCurrentContext().get("b")).toBe(2);
-        expect(getCurrentContext().get("c")).toBe(3);
-      });
-      await withContext(
-        { a: 1 } satisfies Partial<TestContext>,
-        <Component1>
-          {async () => {
-            await withContext(
-              { b: 2 } satisfies Partial<TestContext>,
-              <Component2>
-                {async () => {
-                  await withContext(
-                    { c: 3 } satisfies Partial<TestContext>,
-                    <Component3 />,
-                  );
-
-                  expect(getCurrentContext().get("c")).toBe(undefined);
-                }}
-              </Component2>,
-            );
-            expect(getCurrentContext().get("b")).toBe(undefined);
-          }}
-        </Component1>,
-      );
-    });
-  });
-});
-
-// Browser environment tests
-describe("context in browser environment", () => {
-  beforeEach(() => {
-    // Clear module cache to ensure fresh imports
-    vi.resetModules();
-
-    // Mock require to fail for node:async_hooks
-    vi.mock("node:async_hooks", () => {
-      throw new Error("Cannot find module node:async_hooks");
-    });
+    expect(result).toBe("inner");
   });
 
-  afterEach(() => {
-    vi.unmock("node:async_hooks");
+  test("can use typed context", async () => {
+    interface User {
+      name: string;
+      age: number;
+    }
+
+    const UserContext = createContext<User>({ name: "default", age: 0 });
+
+    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
+      await setTimeout(0);
+      const user = useContext(UserContext);
+      return user.name;
+    });
+
+    const result = await gsx.execute(
+      <UserContext.Provider value={{ name: "John", age: 30 }}>
+        <Consumer />
+      </UserContext.Provider>,
+    );
+
+    expect(result).toBe("John");
   });
 
-  test("maintains context in concurrent operations using global fallback", async () => {
-    const { withContext } = await import("@/context");
-    const { gsx } = await import("@/index");
+  test("multiple contexts work independently", async () => {
+    const NameContext = createContext("default-name");
+    const AgeContext = createContext(0);
 
-    const results: string[] = [];
-    const delays = [30, 20, 10]; // Different delays to ensure interleaving
-
-    const ContextReader = gsx.Component<Record<string, never>, string>(
+    const Consumer = gsx.Component<{}, { name: string; age: number }>(
+      "Consumer",
       async () => {
-        const ctx = (await import("@/context")).getCurrentContext();
-        return ctx.get("value") as string;
+        await setTimeout(0);
+        const name = useContext(NameContext);
+        const age = useContext(AgeContext);
+        return { name, age };
       },
     );
 
-    const Component = gsx.Component<{ delay: number }, null>(
-      async ({ delay }) => {
-        await setTimeout(delay);
-        results.push(await gsx.execute(<ContextReader />));
-        return null;
+    const result = await gsx.execute(
+      <NameContext.Provider value="John">
+        <AgeContext.Provider value={30}>
+          <Consumer />
+        </AgeContext.Provider>
+      </NameContext.Provider>,
+    );
+
+    expect(result).toEqual({ name: "John", age: 30 });
+
+    // Test that contexts can be nested in different orders
+    const result2 = await gsx.execute(
+      <AgeContext.Provider value={25}>
+        <NameContext.Provider value="Jane">
+          <Consumer />
+        </NameContext.Provider>
+      </AgeContext.Provider>,
+    );
+
+    expect(result2).toEqual({ name: "Jane", age: 25 });
+  });
+
+  test("contexts maintain independence when nested", async () => {
+    const Context1 = createContext("default1");
+    const Context2 = createContext("default2");
+
+    const Consumer = gsx.Component<{}, { value1: string; value2: string }>(
+      "Consumer",
+      async () => {
+        await setTimeout(0);
+        const value1 = useContext(Context1);
+        const value2 = useContext(Context2);
+        return { value1, value2 };
       },
     );
 
-    await Promise.all(
-      delays.map((delay, i) =>
-        withContext(
-          { value: `value${i}` } satisfies Partial<TestContext>,
-          <Component delay={delay} />,
-        ),
+    const result = await gsx.execute(
+      <Context1.Provider value="outer1">
+        <Context2.Provider value="outer2">
+          <Context1.Provider value="inner1">
+            <Consumer />
+          </Context1.Provider>
+        </Context2.Provider>
+      </Context1.Provider>,
+    );
+
+    expect(result).toEqual({ value1: "inner1", value2: "outer2" });
+  });
+
+  test("context values persist through async operations", async () => {
+    const TestContext = createContext("default");
+
+    const AsyncConsumer = gsx.Component<{}, string>(
+      "AsyncConsumer",
+      async () => {
+        await setTimeout(0);
+        const value = useContext(TestContext);
+        return value;
+      },
+    );
+
+    const result = await gsx.execute(
+      <TestContext.Provider value="async-test">
+        <AsyncConsumer />
+      </TestContext.Provider>,
+    );
+
+    expect(result).toBe("async-test");
+  });
+
+  test("context values are isolated between executions", async () => {
+    const TestContext = createContext("default");
+
+    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
+      await setTimeout(0);
+      const value = useContext(TestContext);
+      return value;
+    });
+
+    // Run two executions in parallel
+    const [result1, result2] = await Promise.all([
+      gsx.execute(
+        <TestContext.Provider value="value1">
+          <Consumer />
+        </TestContext.Provider>,
       ),
-    );
+      gsx.execute(
+        <TestContext.Provider value="value2">
+          <Consumer />
+        </TestContext.Provider>,
+      ),
+    ]);
 
-    // Results should match the execution order based on delays
-    expect(results).toEqual(["value2", "value1", "value0"]);
+    expect(result1).toBe("value1");
+    expect(result2).toBe("value2");
   });
 
-  test("context isolation works in browser environment", async () => {
-    const { withContext } = await import("@/context");
-    const { gsx } = await import("@/index");
+  test("context with complex nested async operations", async () => {
+    const Context1 = createContext("default1");
+    const Context2 = createContext("default2");
 
-    const ContextReader = gsx.Component<Record<string, never>, string>(
+    const AsyncChild = gsx.Component<{}, { value1: string; value2: string }>(
+      "AsyncChild",
       async () => {
-        const ctx = (await import("@/context")).getCurrentContext();
-        return ctx.get("value") as string;
+        await setTimeout(0);
+        const value1 = useContext(Context1);
+        const value2 = useContext(Context2);
+        return { value1, value2 };
       },
     );
 
-    const values: string[] = [];
-
-    await withContext(
-      { value: "browser-outer" } satisfies Partial<TestContext>,
-      {
-        execute: async () => {
-          values.push(await gsx.execute(<ContextReader />));
-
-          await withContext(
-            { value: "browser-inner" } satisfies Partial<TestContext>,
-            {
-              execute: async () => {
-                values.push(await gsx.execute(<ContextReader />));
-              },
-            },
-          );
-
-          values.push(await gsx.execute(<ContextReader />));
-        },
+    const AsyncParent = gsx.Component<{}, { value1: string; value2: string }>(
+      "AsyncParent",
+      async () => {
+        await setTimeout(0);
+        return <AsyncChild />;
       },
     );
 
-    expect(values).toEqual(["browser-outer", "browser-inner", "browser-outer"]);
+    const result = await gsx.execute(
+      <Context1.Provider value="outer1">
+        <Context2.Provider value="outer2">
+          <AsyncParent />
+        </Context2.Provider>
+      </Context1.Provider>,
+    );
+
+    expect(result).toEqual({ value1: "outer1", value2: "outer2" });
   });
 
-  test("error handling preserves context in browser environment", async () => {
-    const { withContext } = await import("@/context");
-    const { gsx } = await import("@/index");
-
-    const ContextReader = gsx.Component<Record<string, never>, string>(
-      async () => {
-        const ctx = (await import("@/context")).getCurrentContext();
-        return ctx.get("value") as string;
+  suite("can wrap children in a context provider", () => {
+    const TestContext = createContext("default");
+    const MyProvider = gsx.Component<{ value: string }, never>(
+      "MyProvider",
+      async ({ value }) => {
+        await setTimeout(0);
+        const newValue = value + " wrapped";
+        return <TestContext.Provider value={newValue} />;
       },
     );
 
-    const values: string[] = [];
-
-    await withContext({ value: "start" } satisfies Partial<TestContext>, {
-      execute: async () => {
-        values.push(await gsx.execute(<ContextReader />));
-
-        try {
-          await withContext(
-            { value: "error" } satisfies Partial<TestContext>,
-            () => Promise.reject(new Error("test error")),
-          );
-        } catch {
-          // Expected error
-        }
-
-        values.push(await gsx.execute(<ContextReader />));
-      },
+    test("returns the value from the context", async () => {
+      const result = await gsx.execute<string>(
+        <MyProvider value="value">
+          {() => {
+            const value = useContext(TestContext);
+            return value;
+          }}
+        </MyProvider>,
+      );
+      expect(result).toBe("value wrapped");
     });
 
-    expect(values).toEqual(["start", "start"]);
+    test("can nest children within multiple context providers", async () => {
+      const Context2 = createContext("default2");
+
+      const Providers = gsx.Component<{ value: string }, never>(
+        "Providers",
+        async props => {
+          await setTimeout(0);
+          return (
+            <TestContext.Provider value={`${props.value} outer1`}>
+              <Context2.Provider value={`${props.value} outer2`} />
+            </TestContext.Provider>
+          );
+        },
+      );
+
+      const result = await gsx.execute(
+        <Providers value="value">
+          {() => {
+            const testValue = useContext(TestContext);
+            const context2Value = useContext(Context2);
+            return [testValue, context2Value];
+          }}
+        </Providers>,
+      );
+      expect(result).toEqual(["value outer1", "value outer2"]);
+    });
   });
 });

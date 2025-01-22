@@ -14,6 +14,7 @@ interface PGTweetWriterProps {
 
 type PGTweetWriterOutput = string;
 const PGTweetWriter = gsx.Component<PGTweetWriterProps, PGTweetWriterOutput>(
+  "PGTweetWriter",
   ({ context, prompt }) => {
     const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
@@ -46,8 +47,10 @@ interface PGEditorProps {
 }
 
 type PGEditorOutput = string;
-const PGEditor = gsx.Component<PGEditorProps, PGEditorOutput>(({ content }) => {
-  const PROMPT = `
+const PGEditor = gsx.Component<PGEditorProps, PGEditorOutput>(
+  "PGEditor",
+  ({ content }) => {
+    const PROMPT = `
 You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
 1. Clear, direct language
 2. Concrete examples and analogies
@@ -62,17 +65,18 @@ you must include this exact link when discussing that project.
 Maintain your voice while preserving the key insights and all links from the analysis.
   `.trim();
 
-  return (
-    <ChatCompletion
-      messages={[
-        { role: "system", content: PROMPT },
-        { role: "user", content: content },
-      ]}
-      model="gpt-4o"
-      temperature={0.7}
-    />
-  );
-});
+    return (
+      <ChatCompletion
+        messages={[
+          { role: "system", content: PROMPT },
+          { role: "user", content: content },
+        ]}
+        model="gpt-4o"
+        temperature={0.7}
+      />
+    );
+  },
+);
 
 interface CommentsAnalyzerProps {
   postId: number;
@@ -84,7 +88,7 @@ type CommentsAnalyzerOutput = string;
 const CommentsAnalyzer = gsx.Component<
   CommentsAnalyzerProps,
   CommentsAnalyzerOutput
->(({ postId, comments }) => {
+>("CommentsAnalyzer", ({ postId, comments }) => {
   const PROMPT = `
 You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
 
@@ -139,6 +143,7 @@ interface PostSummarizerProps {
 
 type PostSummarizerOutput = string;
 const PostSummarizer = gsx.Component<PostSummarizerProps, PostSummarizerOutput>(
+  "PostSummarizer",
   ({ story }) => {
     const PROMPT = `
 You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
@@ -201,6 +206,7 @@ interface TrendAnalyzerProps {
 type TrendReport = string;
 
 const TrendAnalyzer = gsx.Component<TrendAnalyzerProps, TrendReport>(
+  "TrendAnalyzer",
   ({ analyses }) => {
     const PROMPT = `
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
@@ -257,6 +263,7 @@ interface HNCollectorProps {
 
 type HNCollectorOutput = HNStory[]; // Array of stories
 const HNCollector = gsx.Component<HNCollectorProps, HNCollectorOutput>(
+  "HNCollector",
   async ({ limit }) => {
     // We can only get up to 500 stories from the API
     const MAX_HN_STORIES = 500;
@@ -289,14 +296,17 @@ interface AnalyzeHNPostsOutput {
 }
 
 const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
-  ({ stories }) => ({
-    analyses: stories.map((story) => ({
-      summary: <PostSummarizer story={story} />,
-      commentAnalysis: (
-        <CommentsAnalyzer postId={story.id} comments={story.comments} />
-      ),
-    })),
-  }),
+  "AnalyzeHNPosts",
+  ({ stories }) => {
+    return {
+      analyses: stories.map((story) => ({
+        summary: <PostSummarizer story={story} />,
+        commentAnalysis: (
+          <CommentsAnalyzer postId={story.id} comments={story.comments} />
+        ),
+      })),
+    };
+  },
 );
 
 interface HNAnalyzerWorkflowProps {
@@ -311,9 +321,9 @@ export interface HNAnalyzerWorkflowOutput {
 export const HNAnalyzerWorkflow = gsx.Component<
   HNAnalyzerWorkflowProps,
   HNAnalyzerWorkflowOutput
->(({ postCount }) => (
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    {() => (
+>("HNAnalyzerWorkflow", ({ postCount }) => {
+  return (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <HNCollector limit={postCount}>
         {(stories) => (
           <AnalyzeHNPosts stories={stories}>
@@ -336,6 +346,6 @@ export const HNAnalyzerWorkflow = gsx.Component<
           </AnalyzeHNPosts>
         )}
       </HNCollector>
-    )}
-  </OpenAIProvider>
-));
+    </OpenAIProvider>
+  );
+});

@@ -43,6 +43,7 @@ interface LLMResearchProps {
 }
 type LLMResearchOutput = string;
 const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
+  "LLMResearch",
   async ({ topic }) => {
     console.log("📚 Researching topic:", topic);
     const systemPrompt = `You are a helpful assistant that researches topics...`;
@@ -71,19 +72,22 @@ All GenSX components support nesting, a pattern to access component outputs via 
 
 ```tsx
 export const BlogWritingWorkflow =
-  gsx.StreamComponent<BlogWritingWorkflowProps>(async ({ prompt }) => {
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <ParallelResearch prompt={prompt}>
-          {(research) => (
-            <LLMWriter prompt={prompt} research={research.flat()}>
-              {(draft) => <LLMEditor draft={draft} stream={true} />}
-            </LLMWriter>
-          )}
-        </ParallelResearch>
-      </OpenAIProvider>
-    );
-  });
+  gsx.StreamComponent<BlogWritingWorkflowProps>(
+    "BlogWritingWorkflow",
+    async ({ prompt }) => {
+      return (
+        <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+          <ParallelResearch prompt={prompt}>
+            {(research) => (
+              <LLMWriter prompt={prompt} research={research.flat()}>
+                {(draft) => <LLMEditor draft={draft} stream={true} />}
+              </LLMWriter>
+            )}
+          </ParallelResearch>
+        </OpenAIProvider>
+      );
+    },
+  );
 ```
 
 There is no need for a DSL or graph API to define the structure of your workflow. More complex patterns like cycles and agents can be encapsulated in components that use standard loops and conditionals. Typescript and JSX unifies workflow definition and execution in plain old typescript, with the ability to express all of the same patterns.
@@ -145,22 +149,25 @@ GenSX makes this easy to handle with `StreamComponent`.
 A single component implementation can be used in both streaming and non-streaming contexts by setting the `stream` prop:
 
 ```tsx
-const LLMEditor = gsx.StreamComponent<LLMEditorProps>(async ({ draft }) => {
-  console.log("🔍 Editing draft");
-  const systemPrompt = `You are a helpful assistant that edits blog posts...`;
+const LLMEditor = gsx.StreamComponent<LLMEditorProps>(
+  "LLMEditor",
+  async ({ draft }) => {
+    console.log("🔍 Editing draft");
+    const systemPrompt = `You are a helpful assistant that edits blog posts...`;
 
-  return (
-    <ChatCompletion
-      stream={true}
-      model="gpt-4o-mini"
-      temperature={0}
-      messages={[
-        { role: "system", content: systemPrompt },
-        { role: "user", content: draft },
-      ]}
-    />
-  );
-});
+    return (
+      <ChatCompletion
+        stream={true}
+        model="gpt-4o-mini"
+        temperature={0}
+        messages={[
+          { role: "system", content: systemPrompt },
+          { role: "user", content: draft },
+        ]}
+      />
+    );
+  },
+);
 ```
 
 From there you can use the component in a streaming context:
