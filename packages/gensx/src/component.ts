@@ -64,16 +64,63 @@ export function StreamComponent<P>(
   fn: (props: P) => MaybePromise<Streamable | JSX.Element>,
 ): GsxStreamComponent<P> {
   const GsxStreamComponent: GsxStreamComponent<P> = async props => {
-    const iterator: Streamable = await resolveDeep(fn(props));
-    if (props.stream) {
-      return iterator;
-    }
+    const context = getCurrentContext();
+    const workflowContext = context.getWorkflowContext();
+    const { checkpointManager } = workflowContext;
 
-    let result = "";
-    for await (const token of iterator) {
-      result += token;
+    // Create checkpoint node for this component execution
+    const nodeId = await checkpointManager.addNode(
+      {
+        componentName: name,
+        props: Object.fromEntries(
+          Object.entries(props).filter(([key]) => key !== "children"),
+        ),
+      },
+      context.getCurrentNodeId(),
+    );
+
+    try {
+      const iterator: Streamable = await context.withCurrentNode(nodeId, () =>
+        resolveDeep(fn(props)),
+      );
+
+      if (props.stream) {
+        // Create a wrapper iterator that captures the output while streaming
+        const wrappedIterator = async function* () {
+          let accumulated = "";
+          try {
+            for await (const token of iterator) {
+              accumulated += token;
+              yield token;
+            }
+            // Complete the checkpoint with accumulated output
+            checkpointManager.completeNode(nodeId, accumulated);
+          } catch (error) {
+            if (error instanceof Error) {
+              checkpointManager.addMetadata(nodeId, { error: error.message });
+              checkpointManager.completeNode(nodeId, accumulated);
+            }
+            throw error;
+          }
+        };
+        return wrappedIterator();
+      }
+
+      // Non-streaming case - accumulate all output then checkpoint
+      let result = "";
+      for await (const token of iterator) {
+        result += token;
+      }
+      checkpointManager.completeNode(nodeId, result);
+      return result;
+    } catch (error) {
+      // Record error in checkpoint
+      if (error instanceof Error) {
+        checkpointManager.addMetadata(nodeId, { error: error.message });
+        checkpointManager.completeNode(nodeId, undefined);
+      }
+      throw error;
     }
-    return result;
   };
 
   if (name) {

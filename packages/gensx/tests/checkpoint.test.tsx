@@ -357,4 +357,58 @@ suite("checkpoint", () => {
       ],
     });
   });
+
+  test("handles streaming components", async () => {
+    // Define a streaming component that yields tokens with delays
+    const StreamingComponent = gsx.StreamComponent<{ tokens: string[] }>(
+      "StreamingComponent",
+      ({ tokens }) => {
+        const stream = async function* () {
+          for (const token of tokens) {
+            await setTimeout(0); // Small delay between tokens
+            yield token;
+          }
+        };
+        return stream();
+      },
+    );
+
+    // Test non-streaming mode first
+    const { result: nonStreamingResult, checkpoints: nonStreamingCheckpoints } =
+      await executeWithCheckpoints<string>(
+        <StreamingComponent tokens={["Hello", " ", "World"]} stream={false} />,
+      );
+
+    // Verify non-streaming execution
+    expect(nonStreamingResult).toBe("Hello World");
+    const nonStreamingFinal =
+      nonStreamingCheckpoints[nonStreamingCheckpoints.length - 1];
+    expect(nonStreamingFinal).toMatchObject({
+      componentName: "StreamingComponent",
+      props: { tokens: ["Hello", " ", "World"] },
+      output: "Hello World",
+    });
+
+    // Test streaming mode
+    const { result: streamingResult, checkpoints: streamingCheckpoints } =
+      await executeWithCheckpoints<AsyncGenerator<string>>(
+        <StreamingComponent tokens={["Hello", " ", "World"]} stream={true} />,
+      );
+
+    // Collect streaming results
+    let streamedContent = "";
+    for await (const token of streamingResult) {
+      streamedContent += token;
+    }
+
+    // Verify streaming execution
+    expect(streamedContent).toBe("Hello World");
+    const streamingFinal =
+      streamingCheckpoints[streamingCheckpoints.length - 1];
+    expect(streamingFinal).toMatchObject({
+      componentName: "StreamingComponent",
+      props: { tokens: ["Hello", " ", "World"] },
+      output: "Hello World",
+    });
+  });
 });
