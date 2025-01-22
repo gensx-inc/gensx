@@ -422,7 +422,9 @@ suite("checkpoint", () => {
       output: "Hello World",
       metadata: { streamCompleted: true },
     });
+  });
 
+  test("handles errors in streaming components", async () => {
     const ErrorStreamingComponent = gsx.StreamComponent<{
       shouldError: boolean;
     }>("ErrorStreamingComponent", ({ shouldError }) => {
@@ -438,10 +440,13 @@ suite("checkpoint", () => {
     });
 
     // Execute with error
-    const { result: errorResult, checkpoints: errorCheckpoints } =
-      await executeWithCheckpoints<AsyncGenerator<string>>(
-        <ErrorStreamingComponent shouldError={true} stream={true} />,
-      );
+    const {
+      result: errorResult,
+      checkpoints: errorCheckpoints,
+      checkpointManager,
+    } = await executeWithCheckpoints<AsyncGenerator<string>>(
+      <ErrorStreamingComponent shouldError={true} stream={true} />,
+    );
 
     // Collect results until error
     let errorContent = "";
@@ -452,6 +457,9 @@ suite("checkpoint", () => {
     } catch (_error) {
       // Expected error, ignore
     }
+
+    // Wait for final checkpoint to be written
+    await checkpointManager.waitForPendingUpdates();
 
     // Verify error state
     expect(errorContent).toBe("start");
