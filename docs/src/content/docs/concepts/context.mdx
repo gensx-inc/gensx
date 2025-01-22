@@ -5,10 +5,39 @@ sidebar:
   order: 4
 ---
 
-GenSX is a simple framework for building complex generative AI and LLM workflows.
+Contexts provide a way to share data across components without explicitly passing them through props. They're similar to React's Context system but adapted for GenSX workflows. Contexts are particularly useful for:
 
-It uses `jsx` to define and orchestrate workflows with functional, reusable components:
+- Sharing configuration across multiple components
+- Providing dependencies to deeply nested components
+- Managing state that needs to be accessed by multiple components
+
+## Creating a Context
+
+Here's how to create and use a context:
 
 ```tsx
+// Create a context with a default value
+const UserContext = gsx.createContext({ name: "default", age: 0 });
 
+// Use the context in a component
+const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
+  "Greeting",
+  () => {
+    const user = gsx.useContext(UserContext);
+    return `Hello, ${user.name}!`;
+  },
+);
 ```
+
+## Using a Context
+
+```tsx
+// Provide a value to the context
+const result = await gsx.execute(
+  <UserContext.Provider value={{ name: "John", age: 30 }}>
+    <Greeting />
+  </UserContext.Provider>,
+);
+```
+
+Contexts are a useful way to pass configuration without prop drilling. However, they do make your components less reusable so it is recommended that you use them sparingly.
