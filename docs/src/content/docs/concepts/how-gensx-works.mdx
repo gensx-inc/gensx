@@ -5,10 +5,205 @@ sidebar:
   order: 1
 ---
 
-GenSX is a simple framework for building complex generative AI and LLM workflows.
+GenSX is a simple framework for building complex LLM workflows. While most LLM frameworks use graph-based APIs that require explicit node and edge definitions, GenSX takes a different approach. It uses JSX to create intuitive, composable workflows that are easy to understand and maintain.
 
-It uses `jsx` to define and orchestrate workflows with functional, reusable components:
+## JSX and Component Model
+
+Unlike React's UI components, GenSX uses JSX to compose data processing workflows. While the syntax is familiar to React developers, there are key differences:
+
+- Components are pure functions that transform data, not UI elements
+- There's no virtual DOM or reconciliation
+- Components execute once and produce a value, rather than rendering and re-rendering
+- The component tree represents data flow, not visual hierarchy
+
+Here's how a typical workflow looks:
 
 ```tsx
-
+const result = await gsx.execute(
+  <DataCollector source="hacker-news">
+    {(articles) => (
+      <BatchAnalyzer items={articles}>
+        {(analysis) => <ReportGenerator data={analysis} />}
+      </BatchAnalyzer>
+    )}
+  </DataCollector>,
+);
 ```
+
+## Core Programming Model
+
+At its heart, GenSX is built around pure functional components that:
+
+- Accept props as input
+- Return an output value or another component
+- Have no side effects or global state
+- Are strongly typed with TypeScript
+
+Here's a simple example:
+
+```tsx
+const BlogWriter = gsx.Component<BlogWriterProps, string>(
+  "BlogWriter",
+  async ({ prompt }) => {
+    return (
+      <ChatCompletion
+        model="gpt-4"
+        messages={[
+          { role: "system", content: "You are a blog writer..." },
+          { role: "user", content: prompt },
+        ]}
+      />
+    );
+  },
+);
+```
+
+## Component Resolution and Execution
+
+When you call `gsx.execute()` on a component tree, GenSX:
+
+1. Creates a dependency graph from your JSX tree
+2. Tracks dependencies between components through prop passing and child functions
+3. Executes components in parallel when their dependencies are satisfied
+4. Deeply resolves all values - including promises, arrays, objects, and nested components
+
+For example, when executing this workflow:
+
+```tsx
+const result = await gsx.execute(
+  <ParallelResearch prompt={prompt}>
+    {(research) => (
+      <LLMWriter prompt={prompt} research={research}>
+        {(draft) => <LLMEditor draft={draft} />}
+      </LLMWriter>
+    )}
+  </ParallelResearch>,
+);
+```
+
+GenSX will:
+
+- Start executing `ParallelResearch` immediately
+- Wait for its result to be available through the child function
+- Pass that result to `LLMWriter` and execute it
+- Finally execute `LLMEditor` with the draft from `LLMWriter`
+
+## Deep Resolution
+
+GenSX automatically handles resolution of:
+
+- Promises and async functions
+- Arrays of components or values
+- Objects containing components or values
+- Nested JSX elements
+- Child function results
+
+For example, consider this nested structure:
+
+```tsx
+const result = await gsx.execute({
+  summaries: [<Summarize text={text1} />, <Summarize text={text2} />],
+  metadata: {
+    sentiment: <AnalyzeSentiment text={text1 + text2} />,
+    topics: Promise.resolve(["ai", "tech"]),
+  },
+  timestamp: Date.now(),
+});
+```
+
+GenSX will:
+
+1. Execute both `Summarize` components in parallel
+2. Execute `AnalyzeSentiment` in parallel with the summaries
+3. Resolve the topics promise
+4. Maintain the object structure in the final output:
+
+```tsx
+{
+  summaries: [
+    "First summary...",
+    "Second summary..."
+  ],
+  metadata: {
+    sentiment: "positive",
+    topics: ['ai', 'tech']
+  },
+  timestamp: 1234567890
+}
+```
+
+## Automatic Dependency Tracking
+
+Components declare their dependencies through:
+
+1. Props they receive
+2. Child functions they call
+3. Components they render
+
+GenSX uses this information to:
+
+- Build a dependency graph
+- Execute independent components in parallel
+- Ensure components only execute when their dependencies are ready
+- Maintain proper data flow through your workflow
+
+## Streaming Support
+
+GenSX has first-class support for streaming through `StreamComponent`. A single implementation can handle both streaming and non-streaming use cases:
+
+```tsx
+const LLMEditor = gsx.StreamComponent<LLMEditorProps>(
+  "LLMEditor",
+  async ({ draft, stream }) => {
+    return (
+      <ChatCompletion
+        stream={stream}
+        model="gpt-4"
+        messages={[
+          { role: "system", content: "You are an editor..." },
+          { role: "user", content: draft },
+        ]}
+      />
+    );
+  },
+);
+```
+
+The component can be used in both contexts:
+
+```tsx
+// Streaming
+const stream = await gsx.execute(<LLMEditor draft={draft} stream={true} />);
+for await (const chunk of stream) {
+  process.stdout.write(chunk);
+}
+
+// Non-streaming
+const result = await gsx.execute(<LLMEditor draft={draft} />);
+```
+
+## Checkpointing and Tracing
+
+GenSX automatically tracks the execution of your workflow:
+
+- Each component execution is recorded with its inputs and outputs
+- Errors are captured and associated with the component that threw them
+- Streaming progress is tracked
+- The execution graph is preserved for debugging and visualization
+
+This enables:
+
+- Debugging complex workflows
+- Understanding component dependencies
+- Analyzing performance bottlenecks
+- Recovering from failures
+
+## Why This Matters
+
+This architecture enables:
+
+1. **Fast Iteration** - Components are pure functions that can be tested and evolved in isolation
+2. **Parallel Execution** - Independent components run in parallel automatically
+3. **Type Safety** - TypeScript ensures your workflow is well-typed end-to-end
+4. **Reusability** - Components can be shared and composed into larger workflows
+5. **Debugging** - The execution graph and checkpoints make it easy to understand what happened
