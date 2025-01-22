@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.4](https://github.com/cortexclick/gensx/compare/gensx-v0.2.3...gensx-v0.2.4) (2025-01-22)
+
+
+### ✨ New Features
+
+* Add `gsx.array` plus `map`, `filter`, `reduce`, and `flatMap` ([#153](https://github.com/cortexclick/gensx/issues/153)) ([ad8f74b](https://github.com/cortexclick/gensx/commit/ad8f74b0500ab8b6190334bae396a18655041b6f))
+* Add checkpoint support for StreamComponent ([#155](https://github.com/cortexclick/gensx/issues/155)) ([830f43e](https://github.com/cortexclick/gensx/commit/830f43ea2b63f11639f911a258a75ca55e5dabe2))
+
 ## [0.2.3](https://github.com/cortexclick/gensx/compare/gensx-v0.2.2...gensx-v0.2.3) (2025-01-21)
 
 
