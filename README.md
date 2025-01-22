@@ -113,18 +113,19 @@ This repo contains a number of [examples](./examples) to help you get up and run
 
 ### Basic Examples
 
-| Example                                      | Description                                               |
-| -------------------------------------------- | --------------------------------------------------------- |
-| 📊 [Structured Outputs](./structuredOutputs) | Demonstrates using structured outputs with GenSX          |
-| 🔄 [Reflection](./reflection)                | Shows how to use a self-reflection pattern with GenSX     |
-| 🌊 [Streaming](./streaming)                  | Demonstrates how to handle streaming responses with GenSX |
+| Example                                               | Description                                           |
+| ----------------------------------------------------- | ----------------------------------------------------- |
+| 📊 [Structured Outputs](./examples/structuredOutputs) | Shows how to use structured outputs with GenSX        |
+| 🔄 [Reflection](./examples/reflection)                | Shows how to use a self-reflection pattern with GenSX |
+| 🌊 [Streaming](./examples/streaming)                  | Shows how to handle streaming responses with GenSX    |
+| 🔌 [Providers](./examples/providers)                  | Shows how to create a custom provider for GenSX       |
 
 ### Full Examples
 
-| Example                                         | Description                                                                                  |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 🔍 [Hacker News Analyzer](./hackerNewsAnalyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
-| ✍️ [Blog Writer](./blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |
+| Example                                                  | Description                                                                                  |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 🔍 [Hacker News Analyzer](./examples/hackerNewsAnalyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
+| ✍️ [Blog Writer](./examples/blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |
 
 ## Working with this repo
 
