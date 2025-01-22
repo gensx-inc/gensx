@@ -1,16 +1,12 @@
 import { join } from "node:path";
 
 // Cross-platform UUID generation
-async function generateUUID(): Promise<string> {
+function generateUUID(): string {
   try {
     // Try Node.js crypto first
-    const crypto = await import("node:crypto");
+    const crypto = globalThis.crypto;
     return crypto.randomUUID();
   } catch {
-    // Fallback to browser crypto
-    if (typeof globalThis !== "undefined") {
-      return globalThis.crypto.randomUUID();
-    }
     // Simple fallback for environments without crypto
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
       const r = (Math.random() * 16) | 0;
@@ -41,7 +37,7 @@ export interface ExecutionNode {
 
 export interface CheckpointWriter {
   root?: ExecutionNode;
-  addNode: (node: Partial<ExecutionNode>, parentId?: string) => Promise<string>;
+  addNode: (node: Partial<ExecutionNode>, parentId?: string) => string;
   completeNode: (id: string, output: unknown) => void;
   addMetadata: (id: string, metadata: Record<string, unknown>) => void;
   updateNode: (id: string, updates: Partial<ExecutionNode>) => void;
@@ -52,6 +48,7 @@ export interface CheckpointWriter {
 
 export class CheckpointManager implements CheckpointWriter {
   private nodes = new Map<string, ExecutionNode>();
+  private pendingRootId: string | null = null;
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
 
@@ -126,9 +123,10 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  async addNode(partialNode: Partial<ExecutionNode>, parentId?: string) {
+  addNode(partialNode: Partial<ExecutionNode>, parentId?: string): string {
+    const nodeId = generateUUID();
     const node: ExecutionNode = {
-      id: await generateUUID(),
+      id: nodeId,
       componentName: "Unknown",
       startTime: Date.now(),
       children: [],
@@ -144,8 +142,15 @@ export class CheckpointManager implements CheckpointWriter {
         node.parentId = parentId;
         parent.children.push(node);
       }
-    } else if (!this.root) {
-      this.root = node;
+    } else {
+      // If this is the first node to request being root, track it
+      if (!this.pendingRootId) {
+        this.pendingRootId = nodeId;
+      }
+      // Only set as root if this was the first to request it
+      if (this.pendingRootId === nodeId) {
+        this.root = node;
+      }
     }
 
     this.updateCheckpoint();
