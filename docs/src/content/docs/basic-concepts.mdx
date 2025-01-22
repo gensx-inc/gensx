@@ -162,13 +162,10 @@ Here's how to create and use a context:
 const UserContext = gsx.createContext({ name: "default", age: 0 });
 
 // Use the context in a component
-const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
-  "Greeting",
-  () => {
-    const user = gsx.useContext(UserContext);
-    return `Hello, ${user.name}!`;
-  },
-);
+const Greeting = gsx.Component<Record<never, never>, string>("Greeting", () => {
+  const user = gsx.useContext(UserContext);
+  return `Hello, ${user.name}!`;
+});
 
 // Provide a value to the context
 const result = await gsx.execute(
