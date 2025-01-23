@@ -157,3 +157,45 @@ test("can use gsx.array operations in child functions", async () => {
   // After filtering > 5 we get [6,8,10]
   expect(result).toEqual([6, 8, 10]);
 });
+
+test("map works with raw number arrays", async () => {
+  const arr = gsx.array<number>([1, 2, 3]);
+  const result = await arr.map(n => <NumberDoubler value={n} />).toArray();
+
+  expect(result).toEqual([2, 4, 6]);
+});
+
+test("filter works with raw number arrays", async () => {
+  const arr = gsx.array<number>([1, 2, 3, 4, 5, 6]);
+  const result = await arr
+    .filter(n => <AsyncNumberFilter value={n} />)
+    .toArray();
+
+  expect(result).toEqual([6]);
+});
+
+test("reduce works with raw number arrays", async () => {
+  const arr = gsx.array<number>([1, 2, 3]);
+  const result = await arr
+    .map<number>(n => <NumberDoubler value={n} />)
+    .reduce<number>((acc: number, n: number) => <Value value={acc + n} />, 0);
+
+  expect(result).toEqual(12); // (1*2 + 2*2 + 3*2)
+});
+
+test("flatMap works with raw number arrays", async () => {
+  const arr = gsx.array<number>([1, 2]);
+  const result = await arr.flatMap(n => <TaskGenerator value={n} />).toArray();
+
+  expect(result).toEqual([1, 2, 2, 4]);
+});
+
+test("chains multiple operations with raw arrays", async () => {
+  const arr = gsx.array<number>([1, 2, 3, 4, 5]);
+  const result = await arr
+    .map<number>(n => <NumberDoubler value={n} />)
+    .filter((n: number) => <AsyncNumberFilter value={n} />)
+    .reduce<number>((acc: number, n: number) => <Value value={acc + n} />, 0);
+
+  expect(result).toEqual(24); // (6 + 8 + 10) where all values > 5 are kept
+});
