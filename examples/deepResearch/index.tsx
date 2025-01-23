@@ -12,7 +12,7 @@ async function main() {
   console.log("=".repeat(50));
   console.log("Final Report");
   console.log("=".repeat(50));
-  console.log(result);
+  console.log(JSON.stringify(result, null, 2));
 }
 
 main().catch(console.error);

@@ -1,16 +1,17 @@
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
+import { gsx, GsxArray } from "gensx";
 
 import { ArxivEntry, ArxivSearch } from "./arxiv.js";
 import { GradeDocuments } from "./grader.js";
 import { PromptToQuery } from "./promptToQuery.js";
-import { FetchAndSummarize, FetchAndSummarizeOutput } from "./summarize.js";
+import { FetchAndSummarizeOutput } from "./summarize.js";
 
 interface FindResearchProps {
   prompt: string;
 }
 
 export const FindResearch = gsx.Component<FindResearchProps, ArxivEntry[]>(
+  "FindResearch",
   ({ prompt }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <PromptToQuery prompt={prompt}>
@@ -49,6 +50,7 @@ interface CreateReportProps {
 }
 
 export const CreateReport = gsx.Component<CreateReportProps, string>(
+  "CreateReport",
   ({ results, prompt }) => {
     const systemMessage = `You are an experienced researcher. You have summaries of relevant research papers. Write a report answering the user's prompt using the papers provided. Make sure to provide links to the relevant papers.`;
 
@@ -97,20 +99,21 @@ interface DeepResearchProps {
 }
 
 export const DeepResearchWorkflow = gsx.Component<DeepResearchProps, string>(
+  "DeepResearchWorkflow",
   ({ prompt }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <FindResearch prompt={prompt}>
-          {(output) => {
-            return (
-              <FetchAndSummarize documents={output} prompt={prompt}>
-                {(summaries) => {
-                  return <CreateReport results={summaries} prompt={prompt} />;
-                }}
-              </FetchAndSummarize>
-            );
+        <PromptToQuery prompt={prompt}>
+          {async ({ queries }) => {
+            const documents: GsxArray<ArxivEntry> = await gsx
+              .array<string>(queries)
+              .flatMap<ArxivEntry>((query) => (
+                <ArxivSearch queries={[query]} maxResultsPerQuery={3} />
+              ));
+
+            return documents;
           }}
-        </FindResearch>
+        </PromptToQuery>
       </OpenAIProvider>
     );
   },

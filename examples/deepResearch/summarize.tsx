@@ -2,7 +2,7 @@ import { ChatCompletion } from "@gensx/openai";
 import { gsx } from "gensx";
 
 import { ArxivEntry } from "./arxiv.js";
-import { Firecrawl } from "./firecrawl.js";
+import { FirecrawlProvider, ScrapePage } from "./firecrawlProvider.js";
 
 export interface SummarizePaperProps {
   markdown: string;
@@ -10,6 +10,7 @@ export interface SummarizePaperProps {
 }
 
 export const SummarizePaper = gsx.Component<SummarizePaperProps, string>(
+  "SummarizePaper",
   ({ markdown, prompt }) => {
     const systemMessage = `Your job is to provide a contextual research summary of a research summary based on the prompt provided.`;
 
@@ -57,7 +58,7 @@ export interface ArxivSummaries {
 export const FetchAndSummarize = gsx.Component<
   FetchAndSummarizeProps,
   FetchAndSummarizeOutput
->(({ documents, prompt }) => {
+>("FetchAndSummarize", ({ documents, prompt }) => {
   console.log("Documents:", documents);
   return {
     summaries: documents.map((document) => {
@@ -66,11 +67,15 @@ export const FetchAndSummarize = gsx.Component<
         title: document.title,
         url: url,
         summary: (
-          <Firecrawl url={url}>
-            {(markdown: string | null) =>
-              markdown && <SummarizePaper markdown={markdown} prompt={prompt} />
-            }
-          </Firecrawl>
+          <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
+            <ScrapePage url={url}>
+              {(markdown: string | null) =>
+                markdown && (
+                  <SummarizePaper markdown={markdown} prompt={prompt} />
+                )
+              }
+            </ScrapePage>
+          </FirecrawlProvider>
         ),
       };
     }),

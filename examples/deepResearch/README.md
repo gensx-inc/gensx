@@ -31,5 +31,5 @@ You'll need the following API keys to run this example:
 pnpm install
 
 # Run the example
-FIRECRAWL_API_KEY=your_api_key OPENAI_API_KEY=your_api_key npm run run
+FIRECRAWL_API_KEY=your_api_key OPENAI_API_KEY=your_api_key npm run start
 ```

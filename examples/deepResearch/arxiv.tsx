@@ -24,6 +24,7 @@ export interface ArxivSearchProps {
 }
 
 export const ArxivSearch = gsx.Component<ArxivSearchProps, ArxivEntry[]>(
+  "ArxivSearch",
   async ({ queries, maxResultsPerQuery = 10 }) => {
     const uniqueResults = new Map<string, ArxivEntry>();
 

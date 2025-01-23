@@ -12,7 +12,7 @@ export interface PromptToQueryOutput {
 export const PromptToQuery = gsx.Component<
   PromptToQueryProps,
   PromptToQueryOutput
->(({ prompt }) => {
+>("PromptToQuery", ({ prompt }) => {
   const systemMessage = `You are a helpful research assistant. 
 
     Instructions:

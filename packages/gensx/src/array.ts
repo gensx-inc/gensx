@@ -5,7 +5,7 @@ import { execute } from "./resolve";
 export class GsxArray<T> {
   private promise: Promise<unknown[]>;
 
-  constructor(items: JSX.Element[] | Promise<unknown[]>) {
+  constructor(items: JSX.Element[] | T[] | Promise<unknown[]>) {
     this.promise = Promise.resolve(items);
   }
 
@@ -63,6 +63,6 @@ export class GsxArray<T> {
   }
 }
 
-export function array<T>(items: JSX.Element[]): GsxArray<T> {
+export function array<T>(items: JSX.Element[] | T[]): GsxArray<T> {
   return new GsxArray(items);
 }

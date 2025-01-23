@@ -25,6 +25,7 @@ export interface GradeDocumentsOutput {
 }
 
 export const GradeDocument = gsx.Component<GradeDocumentProps, boolean>(
+  "GradeDocument",
   ({ prompt, document }) => {
     const systemMessage = `You are a helpful research assistant. 
   
@@ -78,7 +79,7 @@ Here is the document:
 export const GradeDocuments = gsx.Component<
   GradeDocumentsProps,
   GradeDocumentsOutput
->(({ prompt, documents }) => ({
+>("GradeDocuments", ({ prompt, documents }) => ({
   documents: documents.map((document) => ({
     document,
     useful: <GradeDocument prompt={prompt} document={document} />,
