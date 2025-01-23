@@ -69,34 +69,29 @@ export const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
       console.log(`Query ${i + 1}: ${query}`);
     });
 
-    // get search results and grade documents
-    const documents: ArxivEntry[] = await gsx
+    // get search results, deduplicate by url, and grade documents
+    const documents: ArxivSummary[] = await gsx
       .array<string>(queries)
       .flatMap<ArxivEntry>((query) => (
         <ArxivSearch query={query} maxResults={3} />
       ))
+      .filter((document, index, array) => 
+        array!.findIndex(doc => doc.url === document.url) === index
+      )
       .filter((document) => (
         <GradeDocument prompt={prompt} document={document} />
       ))
-      .toArray();
-
-    // filter out and deduplicate documents
-    const uniqueDocuments = [
-      ...new Map(documents.map((doc) => [doc.url, doc])).values(),
-    ];
-
-    console.log("\n=== Documents ===");
-    uniqueDocuments.forEach((doc, i) => {
-      console.log(`Document ${i + 1}: ${doc.title}`);
-    });
-
-    // scrape and summarize the papers
-    return await gsx
-      .array(uniqueDocuments)
       .map<ArxivSummary>((document) => (
         <FetchAndSummarize document={document} prompt={prompt} />
       ))
       .toArray();
+
+    console.log("\n=== Documents ===");
+    documents.forEach((doc, i) => {
+      console.log(`Document ${i + 1}: ${doc.title}`);
+    });
+
+    return documents;
   },
 );
 

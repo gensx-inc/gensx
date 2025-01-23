@@ -31,15 +31,27 @@ export class GsxArray<T> {
     return new GsxArray(mapped);
   }
 
-  filter(predicate: (item: T) => JSX.Element): GsxArray<T> {
+  filter(
+    predicate: (item: T, index?: number, array?: T[]) => JSX.Element | boolean,
+  ): GsxArray<T> {
     const filtered = this.promise
       .then(items => execute<T[]>(items))
       .then(async resolvedItems => {
         const results = await Promise.all(
-          resolvedItems.map(async item => ({
-            item,
-            keep: await execute<boolean>(predicate(item)),
-          })),
+          resolvedItems.map(async (item, index) => {
+            const predicateResult = predicate(item, index, resolvedItems);
+            let keep: boolean;
+
+            if (typeof predicateResult === "boolean") {
+              keep = predicateResult;
+            } else {
+              // Execute the JSX element and await its result
+              const result = await execute<boolean>(predicateResult);
+              keep = result;
+            }
+
+            return { item, keep };
+          }),
         );
         return results.filter(({ keep }) => keep).map(({ item }) => item);
       });

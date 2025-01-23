@@ -24,7 +24,7 @@ const AsyncNumberFilter = gsx.Component<{ value: number }, boolean>(
   },
 );
 
-const Value = gsx.Component<{ value: number }, number>(
+const Value = gsx.Component<{ value: number | boolean }, number | boolean>(
   "Value",
   ({ value }) => value,
 );
@@ -156,4 +156,85 @@ test("can use gsx.array operations in child functions", async () => {
   // After doubling [1,2,3,4,5] we get [2,4,6,8,10]
   // After filtering > 5 we get [6,8,10]
   expect(result).toEqual([6, 8, 10]);
+});
+
+test("filter can be used with index and array parameters for deduplication", async () => {
+  const arr = gsx.array([1, 2, 2, 3, 3, 3, 4]);
+  const result = await arr
+    .filter((value, index, array) => (
+      <Value value={array!.indexOf(value) === index} />
+    ))
+    .toArray();
+
+  expect(result).toEqual([1, 2, 3, 4]);
+});
+
+test("filter with index and array works with objects", async () => {
+  const items = [
+    { id: 1, value: "a" },
+    { id: 2, value: "b" },
+    { id: 1, value: "c" }, // duplicate id
+    { id: 3, value: "d" },
+  ];
+
+  const result = await gsx
+    .array(items)
+    .filter((item, index, array) => (
+      <Value value={array!.findIndex(x => x.id === item.id) === index} />
+    ))
+    .toArray();
+
+  expect(result).toEqual([
+    { id: 1, value: "a" },
+    { id: 2, value: "b" },
+    { id: 3, value: "d" },
+  ]);
+});
+
+test("filter accepts boolean return type", async () => {
+  const arr = gsx.array([1, 2, 3, 4, 5]);
+  const result = await arr.filter(n => n > 3).toArray();
+
+  expect(result).toEqual([4, 5]);
+});
+
+test("filter accepts JSX.Element return type", async () => {
+  const arr = gsx.array([1, 2, 3, 4, 5, 6, 7]);
+  const result = await arr
+    .filter(n => <AsyncNumberFilter value={n} />)
+    .toArray();
+
+  expect(result).toEqual([6, 7]); // AsyncNumberFilter returns true for values > 5
+});
+
+test("filter with boolean return type works with index and array parameters", async () => {
+  const arr = gsx.array([1, 2, 2, 3, 3, 3, 4]);
+  const result = await arr
+    .filter((value, index, array) => array!.indexOf(value) === index)
+    .toArray();
+
+  expect(result).toEqual([1, 2, 3, 4]);
+});
+
+test("filter with JSX.Element return type works with index and array parameters", async () => {
+  const arr = gsx.array([1, 2, 2, 3, 3, 3, 4]);
+  const result = await arr
+    .filter((value, index, array) => (
+      <Value value={array!.indexOf(value) === index} />
+    ))
+    .toArray();
+
+  expect(result).toEqual([1, 2, 3, 4]);
+});
+
+test("filter can mix boolean and JSX.Element predicates in chain", async () => {
+  const arr = gsx.array([1, 2, 3, 4, 5, 6, 6, 7]);
+  const result = await arr
+    // First remove duplicates using boolean predicate
+    .filter((value, index, array) => array!.indexOf(value) === index)
+    // Then filter using JSX component
+    .filter(n => <AsyncNumberFilter value={n} />)
+    .toArray();
+
+  expect(result).toEqual([6, 7]); // unique numbers > 5
 });
