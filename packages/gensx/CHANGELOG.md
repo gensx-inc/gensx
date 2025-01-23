@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/cortexclick/gensx/compare/gensx-v0.2.5...gensx-v0.2.6) (2025-01-23)
+
+
+### ✨ New Features
+
+* adding support for generic arrays in gsx.array ([#173](https://github.com/cortexclick/gensx/issues/173)) ([3d8795a](https://github.com/cortexclick/gensx/commit/3d8795a451ca07b845a14a128d7625edbaa7372e))
+
 ## [0.2.5](https://github.com/cortexclick/gensx/compare/gensx-v0.2.4...gensx-v0.2.5) (2025-01-22)
 
 
