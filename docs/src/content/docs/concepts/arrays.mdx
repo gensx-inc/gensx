@@ -1,0 +1,98 @@
+---
+title: Arrays
+description: Learn how to work with gsx.Array and handle arrays in your workflows
+sidebar:
+  order: 5
+---
+
+When building LLM workflows,
+
+`gsx.Array` allows you to chain array operations like `map`, `filter`, `flatMap`, and `reduce` while maintaining async execution and component composition. This is particularly useful when working with LLM operations that need to be applied to multiple items.
+
+## Basic Operations
+
+### Creating Arrays
+
+```tsx
+import { gsx } from "gensx";
+
+// Create from raw values
+const numbers = gsx.array([1, 2, 3]);
+
+// Create from components
+const wrappedNumbers = gsx.array([
+  <NumberWrapper n={1} />,
+  <NumberWrapper n={2} />,
+  <NumberWrapper n={3} />,
+]);
+```
+
+### Map
+
+Transform each element in the array:
+
+```tsx
+const doubled = await numbers.map((n) => <NumberDoubler value={n} />).toArray();
+// Result: [2, 4, 6]
+```
+
+### Filter
+
+Keep only elements that match a condition:
+
+```tsx
+const filtered = await numbers
+  .filter((n) => <AsyncNumberFilter value={n} />)
+  .toArray();
+// Keeps only numbers that pass the filter
+```
+
+### FlatMap
+
+Generate multiple results from each input:
+
+```tsx
+const expanded = await numbers
+  .flatMap((n) => <TaskGenerator value={n} />)
+  .toArray();
+// Each input can generate multiple outputs
+```
+
+### Reduce
+
+Accumulate results into a single value:
+
+```tsx
+const sum = await numbers.reduce((acc, n) => <Value value={acc + n} />, 0);
+// Combines all values into one
+```
+
+##
+
+Here's a practical example that demonstrates how to use `gsx.Array` in a research workflow:
+
+```tsx
+const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
+  "Research",
+  async ({ queries, prompt }) => {
+    return await gsx
+      .array(queries)
+      .flatMap((query) => <ArxivSearch query={query} maxResults={3} />)
+      .filter((document) => (
+        <GradeDocument prompt={prompt} document={document} />
+      ))
+      .map((document) => (
+        <FetchAndSummarize document={document} prompt={prompt} />
+      ))
+      .toArray();
+  },
+);
+```
+
+## Things to cover
+
+- Explain how `gsx.Array` works (executes step by step)
+- Make a comparison to vanilla JS arrays
+- Highlight scenarios (mostly in intro)
+- Explain the use of `toArray()`
+- Explain that you can pass components and vanilla objects to `gsx.array()`
