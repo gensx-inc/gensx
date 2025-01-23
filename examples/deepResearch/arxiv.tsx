@@ -19,41 +19,37 @@ export interface ArxivEntry {
 }
 
 export interface ArxivSearchProps {
-  queries: string[];
-  maxResultsPerQuery?: number;
+  query: string;
+  maxResults?: number;
 }
 
 export const ArxivSearch = gsx.Component<ArxivSearchProps, ArxivEntry[]>(
   "ArxivSearch",
-  async ({ queries, maxResultsPerQuery = 10 }) => {
-    const uniqueResults = new Map<string, ArxivEntry>();
+  async ({ query, maxResults = 10 }) => {
+    const queryUrl = `https://export.arxiv.org/api/query?search_query=all:${query}&start=0&max_results=${maxResults}`;
+    const response = await fetch(queryUrl);
 
-    for (const query of queries) {
-      const queryUrl = `http://export.arxiv.org/api/query?search_query=all:${query}&start=0&max_results=${maxResultsPerQuery}`;
-
-      const response = await fetch(queryUrl);
-      const xml = await response.text();
-
-      const parser = new Parser();
-      const parsedResult = await parser.parseStringPromise(xml);
-
-      const entries: ArxivEntry[] = (parsedResult.feed.entry || []).map(
-        (entry: RawArxivEntry) => ({
-          title: entry.title?.[0] ?? "",
-          summary: entry.summary?.[0] ?? "",
-          url: entry.id?.[0] ?? "",
-          published: entry.published?.[0] ?? "",
-          updated: entry.updated?.[0] ?? "",
-        }),
+    if (!response.ok) {
+      throw new Error(
+        `ArXiv API request failed: ${response.status} ${response.statusText}`,
       );
-
-      // Add entries to map using URL as key to ensure uniqueness
-      entries.forEach((entry) => {
-        if (entry.url) {
-          uniqueResults.set(entry.url, entry);
-        }
-      });
     }
-    return Array.from(uniqueResults.values());
+
+    const xml = await response.text();
+
+    const parser = new Parser();
+    const parsedResult = await parser.parseStringPromise(xml);
+
+    const entries: ArxivEntry[] = (parsedResult.feed.entry || []).map(
+      (entry: RawArxivEntry) => ({
+        title: entry.title?.[0] ?? "",
+        summary: entry.summary?.[0] ?? "",
+        url: entry.id?.[0] ?? "",
+        published: entry.published?.[0] ?? "",
+        updated: entry.updated?.[0] ?? "",
+      }),
+    );
+
+    return entries;
   },
 );

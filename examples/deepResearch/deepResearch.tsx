@@ -1,51 +1,13 @@
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx, GsxArray } from "gensx";
+import { gsx } from "gensx";
 
 import { ArxivEntry, ArxivSearch } from "./arxiv.js";
-import { GradeDocuments } from "./grader.js";
-import { PromptToQuery } from "./promptToQuery.js";
-import { FetchAndSummarizeOutput } from "./summarize.js";
-
-interface FindResearchProps {
-  prompt: string;
-}
-
-export const FindResearch = gsx.Component<FindResearchProps, ArxivEntry[]>(
-  "FindResearch",
-  ({ prompt }) => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <PromptToQuery prompt={prompt}>
-        {({ queries }) => {
-          console.log("\n=== Search Queries ===");
-          queries.forEach((query, i) => {
-            console.log(`Query ${i + 1}: ${query}`);
-          });
-
-          return (
-            <ArxivSearch queries={queries} maxResultsPerQuery={3}>
-              {(documents: ArxivEntry[]) => {
-                console.log(`\n=== Search Results ===`);
-                console.log("Documents:", documents);
-                return (
-                  <GradeDocuments prompt={prompt} documents={documents}>
-                    {(results) => {
-                      return results.documents
-                        .filter((result) => result.useful)
-                        .map((result) => result.document);
-                    }}
-                  </GradeDocuments>
-                );
-              }}
-            </ArxivSearch>
-          );
-        }}
-      </PromptToQuery>
-    </OpenAIProvider>
-  ),
-);
+import { GradeDocument } from "./grader.js";
+import { QueryGenerator } from "./queryGenerator.js";
+import { ArxivSummary, FetchAndSummarize } from "./summarize.js";
 
 interface CreateReportProps {
-  results: FetchAndSummarizeOutput;
+  results: ArxivSummary[];
   prompt: string;
 }
 
@@ -60,7 +22,7 @@ export const CreateReport = gsx.Component<CreateReportProps, string>(
     </prompt>
 
     Here are the relevant research papers:
-    ${results.summaries
+    ${results
       .map(
         (paper) => `
     <paper>
@@ -94,6 +56,50 @@ export const CreateReport = gsx.Component<CreateReportProps, string>(
   },
 );
 
+interface ResearchProps {
+  prompt: string;
+  queries: string[];
+}
+
+export const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
+  "Research",
+  async ({ queries, prompt }) => {
+    console.log("\n=== Queries ===");
+    queries.forEach((query, i) => {
+      console.log(`Query ${i + 1}: ${query}`);
+    });
+
+    // get search results and grade documents
+    const documents: ArxivEntry[] = await gsx
+      .array<string>(queries)
+      .flatMap<ArxivEntry>((query) => (
+        <ArxivSearch query={query} maxResults={3} />
+      ))
+      .filter((document) => (
+        <GradeDocument prompt={prompt} document={document} />
+      ))
+      .toArray();
+
+    // filter out and deduplicate documents
+    const uniqueDocuments = [
+      ...new Map(documents.map((doc) => [doc.url, doc])).values(),
+    ];
+
+    console.log("\n=== Documents ===");
+    uniqueDocuments.forEach((doc, i) => {
+      console.log(`Document ${i + 1}: ${doc.title}`);
+    });
+
+    // scrape and summarize the papers
+    return await gsx
+      .array(uniqueDocuments)
+      .map<ArxivSummary>((document) => (
+        <FetchAndSummarize document={document} prompt={prompt} />
+      ))
+      .toArray();
+  },
+);
+
 interface DeepResearchProps {
   prompt: string;
 }
@@ -103,17 +109,13 @@ export const DeepResearchWorkflow = gsx.Component<DeepResearchProps, string>(
   ({ prompt }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <PromptToQuery prompt={prompt}>
-          {async ({ queries }) => {
-            const documents: GsxArray<ArxivEntry> = await gsx
-              .array<string>(queries)
-              .flatMap<ArxivEntry>((query) => (
-                <ArxivSearch queries={[query]} maxResultsPerQuery={3} />
-              ));
-
-            return documents;
-          }}
-        </PromptToQuery>
+        <QueryGenerator prompt={prompt}>
+          {({ queries }) => (
+            <Research queries={queries} prompt={prompt}>
+              {(results) => <CreateReport results={results} prompt={prompt} />}
+            </Research>
+          )}
+        </QueryGenerator>
       </OpenAIProvider>
     );
   },

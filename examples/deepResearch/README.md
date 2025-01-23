@@ -30,6 +30,10 @@ You'll need the following API keys to run this example:
 # Install dependencies
 pnpm install
 
+# Set your API keys
+export FIRECRAWL_API_KEY=your_api_key
+export OPENAI_API_KEY=your_api_key
+
 # Run the example
-FIRECRAWL_API_KEY=your_api_key OPENAI_API_KEY=your_api_key npm run start
+pnpm run start
 ```

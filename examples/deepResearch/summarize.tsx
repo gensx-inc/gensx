@@ -41,15 +41,11 @@ export const SummarizePaper = gsx.Component<SummarizePaperProps, string>(
 );
 
 export interface FetchAndSummarizeProps {
-  documents: ArxivEntry[];
+  document: ArxivEntry;
   prompt: string;
 }
 
-export interface FetchAndSummarizeOutput {
-  summaries: ArxivSummaries[];
-}
-
-export interface ArxivSummaries {
+export interface ArxivSummary {
   url: string;
   title: string;
   summary: string;
@@ -57,27 +53,20 @@ export interface ArxivSummaries {
 
 export const FetchAndSummarize = gsx.Component<
   FetchAndSummarizeProps,
-  FetchAndSummarizeOutput
->("FetchAndSummarize", ({ documents, prompt }) => {
-  console.log("Documents:", documents);
+  ArxivSummary
+>("FetchAndSummarize", ({ document, prompt }) => {
+  const url = document.url.replace("abs", "html"); //  getting the url to the html version of the paper
   return {
-    summaries: documents.map((document) => {
-      const url = document.url.replace("abs", "html");
-      return {
-        title: document.title,
-        url: url,
-        summary: (
-          <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
-            <ScrapePage url={url}>
-              {(markdown: string | null) =>
-                markdown && (
-                  <SummarizePaper markdown={markdown} prompt={prompt} />
-                )
-              }
-            </ScrapePage>
-          </FirecrawlProvider>
-        ),
-      };
-    }),
+    title: document.title,
+    url: url,
+    summary: (
+      <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
+        <ScrapePage url={url}>
+          {(markdown: string | null) =>
+            markdown && <SummarizePaper markdown={markdown} prompt={prompt} />
+          }
+        </ScrapePage>
+      </FirecrawlProvider>
+    ),
   };
 });

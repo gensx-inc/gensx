@@ -1,18 +1,18 @@
 import { ChatCompletion } from "@gensx/openai";
 import { gsx } from "gensx";
 
-export interface PromptToQueryProps {
+export interface QueryGeneratorProps {
   prompt: string;
 }
 
-export interface PromptToQueryOutput {
+export interface QueryGeneratorOutput {
   queries: string[];
 }
 
-export const PromptToQuery = gsx.Component<
-  PromptToQueryProps,
-  PromptToQueryOutput
->("PromptToQuery", ({ prompt }) => {
+export const QueryGenerator = gsx.Component<
+  QueryGeneratorProps,
+  QueryGeneratorOutput
+>("QueryGenerator", ({ prompt }) => {
   const systemMessage = `You are a helpful research assistant. 
 
     Instructions:
@@ -37,7 +37,7 @@ export const PromptToQuery = gsx.Component<
       response_format={{ type: "json_object" }}
     >
       {(response: string) => {
-        return JSON.parse(response) as PromptToQueryOutput;
+        return JSON.parse(response) as QueryGeneratorOutput;
       }}
     </ChatCompletion>
   );

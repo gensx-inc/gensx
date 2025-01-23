@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           # Important: For PR events, explicitly checkout the PR HEAD
-          ref: ${{ github.event_name == 'pull_request_target' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.ref }}
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.ref }}
           persist-credentials: false
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node

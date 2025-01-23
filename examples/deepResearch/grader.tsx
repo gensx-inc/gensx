@@ -12,18 +12,6 @@ export interface GradeDocumentOutput {
   useful: boolean;
 }
 
-export interface GradeDocumentsProps {
-  prompt: string;
-  documents: ArxivEntry[];
-}
-
-export interface GradeDocumentsOutput {
-  documents: {
-    document: ArxivEntry;
-    useful: boolean;
-  }[];
-}
-
 export const GradeDocument = gsx.Component<GradeDocumentProps, boolean>(
   "GradeDocument",
   ({ prompt, document }) => {
@@ -75,13 +63,3 @@ Here is the document:
     );
   },
 );
-
-export const GradeDocuments = gsx.Component<
-  GradeDocumentsProps,
-  GradeDocumentsOutput
->("GradeDocuments", ({ prompt, documents }) => ({
-  documents: documents.map((document) => ({
-    document,
-    useful: <GradeDocument prompt={prompt} document={document} />,
-  })),
-}));

@@ -34,7 +34,7 @@ export const ScrapePage = gsx.Component<ScrapePageProps, string>(
     }
     const result = await context.client.scrapeUrl(url, {
       formats: ["markdown"],
-      timeout: 30000,
+      timeout: 40000,
     });
 
     if (!result.success || !result.markdown) {

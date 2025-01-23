@@ -126,6 +126,7 @@ This repo contains a number of [examples](./examples) to help you get up and run
 | -------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | 🔍 [Hacker News Analyzer](./examples/hackerNewsAnalyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
 | ✍️ [Blog Writer](./examples/blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |
+| 🔬 [Deep Research](./examples/deepResearch)              | Generates a report from a prompt after researching and summarizing a list of research papers |
 
 ## Working with this repo
 
