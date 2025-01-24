@@ -5,76 +5,22 @@ sidebar:
   order: 5
 ---
 
-When building LLM workflows,
+When building sophisticated LLM workflows, you'll often need to call the same component for each element in an array. Some example of this include:
 
-`gsx.Array` allows you to chain array operations like `map`, `filter`, `flatMap`, and `reduce` while maintaining async execution and component composition. This is particularly useful when working with LLM operations that need to be applied to multiple items.
+- Evaluating the usefulness of each chunk returned by your vector database
+- Translating a single document into multiple languages
+- Analyzing key themes in a set of customer reviews
 
-## Basic Operations
+While you can accomplish this with standard GenSX components, it can lead to your components becoming more tightly coupled and less reusable. To solve this, GenSX supports `gsx.array` which allows you to chain together array operations like `map`, `filter`, `flatMap`, and `reduce`. The API follows the same conventions as arrays in JavaScript, making it familiar and intuitive to use.
 
-### Creating Arrays
+## Example
 
-```tsx
-import { gsx } from "gensx";
-
-// Create from raw values
-const numbers = gsx.array([1, 2, 3]);
-
-// Create from components
-const wrappedNumbers = gsx.array([
-  <NumberWrapper n={1} />,
-  <NumberWrapper n={2} />,
-  <NumberWrapper n={3} />,
-]);
-```
-
-### Map
-
-Transform each element in the array:
-
-```tsx
-const doubled = await numbers.map((n) => <NumberDoubler value={n} />).toArray();
-// Result: [2, 4, 6]
-```
-
-### Filter
-
-Keep only elements that match a condition:
-
-```tsx
-const filtered = await numbers
-  .filter((n) => <AsyncNumberFilter value={n} />)
-  .toArray();
-// Keeps only numbers that pass the filter
-```
-
-### FlatMap
-
-Generate multiple results from each input:
-
-```tsx
-const expanded = await numbers
-  .flatMap((n) => <TaskGenerator value={n} />)
-  .toArray();
-// Each input can generate multiple outputs
-```
-
-### Reduce
-
-Accumulate results into a single value:
-
-```tsx
-const sum = await numbers.reduce((acc, n) => <Value value={acc + n} />, 0);
-// Combines all values into one
-```
-
-##
-
-Here's a practical example that demonstrates how to use `gsx.Array` in a research workflow:
+Here's a practical example of using `gsx.array`. The `Research` component below receives a prompt and a list of queries, and returns a list of summaries from relevant research papers.
 
 ```tsx
 const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
   "Research",
-  async ({ queries, prompt }) => {
+  async ({ queries: string[], prompt: string }) => {
     return await gsx
       .array(queries)
       .flatMap((query) => <ArxivSearch query={query} maxResults={3} />)
@@ -89,10 +35,168 @@ const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
 );
 ```
 
-## Things to cover
+Walking through this step by step, it:
 
-- Explain how `gsx.Array` works (executes step by step)
-- Make a comparison to vanilla JS arrays
-- Highlight scenarios (mostly in intro)
-- Explain the use of `toArray()`
-- Explain that you can pass components and vanilla objects to `gsx.array()`
+1. Instantiates a `GsxArray<string>` from the `queries`
+2. Uses `flatMap` to call the `ArxivSearch` component for each query and flatten the output into a single array of documents
+3. Calls `filter` to filter out any documents that an LLM judge deems irrelevant. `GradeDocument` returns a boolean
+4. Chains another `map` operation to call the `FetchAndSummarize` component for each document
+5. Calls `toArray()` to convert the `GsxArray<ArxivSummary>` into a `ArxivSummary[]`
+
+The full code is available in the [Deep Research example](https://github.com/gensx-inc/gensx/tree/main/examples/).
+
+## Working with arrays
+
+Now that you've seen an example showing a lot of the functionality of `gsx.array`, let's explore each of these operations in more detail.
+
+### Creating an array
+
+To access the array operations, you first need to create a `GsxArray`. Here's how to create an array from raw values:
+
+```tsx
+import { gsx } from "gensx";
+
+// Create from raw values
+const numbers = gsx.array([1, 2, 3]);
+```
+
+You can also create arrays from components:
+
+```tsx
+const NumberWrapper = gsx.Component<number, number>(
+  "NumberWrapper",
+  ({ value }) => value,
+);
+
+// Create from components
+const wrappedNumbers = gsx.array([
+  <NumberWrapper n={1} />,
+  <NumberWrapper n={2} />,
+  <NumberWrapper n={3} />,
+]);
+```
+
+This shows a simplistic example of creating an array from components but in practice you can do this with any component, no matter how complex.
+
+To convert a `GsxArray` back to a plain array, you simply call the `toArray()` method.
+
+### Map and FlatMap
+
+`gsx.array` supports both `map` and `flatMap` operations. Both of these operations behave exactly as you'd expect if you're familiar with `array.map` and `array.flatMap` in JavaScript.
+
+#### Map
+
+Map is great for scenarios where you need to call a component for each element in the array:
+
+```tsx
+const numbers = gsx.array([1, 2, 3]);
+
+const doubled = await numbers.map((n) => <NumberDoubler value={n} />).toArray();
+// Result: [2, 4, 6]
+```
+
+#### FlatMap
+
+FlatMap is particularly useful when you have components that return arrays and you need to flatten the results back into a single array:
+
+```tsx
+const queries = gsx.array(["chain of thought", "reasoning models"]);
+
+const documents = await queries
+  .flatMap((query) => (
+    <WebSearch query={query} /> // returns a list of documents
+  ))
+  .toArray();
+```
+
+### Filter
+
+Filters allow you to filter out elements that don't match a given condition. Inside the filter predicate, you can pass either:
+
+- A component that returns a boolean
+- A plain boolean expression
+
+#### Filtering with a component
+
+When you filter with a component, the component needs to result in a boolean value.
+
+```tsx
+// Define a component that returns a boolean
+const EvenNumberFilter = gsx.Component<number, boolean>(
+  "EvenNumberFilter",
+  async ({ value }) => {
+    return value % 2 === 0;
+  },
+);
+
+// Use a component that returns a boolean to filter
+const evenNumbers = await gsx
+  .array([10, 11, 12, 13, 14])
+  .filter((n) => <EvenNumberFilter value={n} />)
+  .toArray();
+```
+
+You can also use the component's child function to convert the output of a component into a boolean:
+
+```tsx
+const evenNumbers = await gsx
+  .array([10, 11, 12, 13, 14])
+  .filter((n) => (
+    <EvenOrOdd value={n}>
+      {({ result: string }) => result.toLowerCase() === "even"}
+    </EvenOrOdd>
+  ))
+  .toArray();
+```
+
+#### Filter using a plain boolean expression
+
+When you filter with a boolean expression, you use the filter method
+
+```tsx
+const evenNumbers = await gsx
+  .array([10, 11, 12, 13, 14])
+  .filter((n) => n % 2 === 0)
+  .toArray();
+```
+
+#### Filter using index and array parameters
+
+Filter expressions can also access the current index and the entire array. This is useful for scenarios where you need to filter based on the position of an element in the array or find unique values.
+
+Here's a basic example of using this to remove duplicates from an array:
+
+```tsx
+const uniqueNumbers = await gsx
+  .array([1, 2, 2, 3, 3, 3, 4])
+  .filter((num, index, array) => array.indexOf(num) === index)
+  .toArray();
+// Result: [1, 2, 3, 4]
+```
+
+### Reduce
+
+The reduce operation allows you to process all of the items in an array to produce a single value.
+
+For example, if you wanted to translate a markdown document section by section and combine the results into a single document, it would look something like this:
+
+```tsx
+const markdownContent = "<some markdown content>";
+
+const translatedContent = await gsx
+  .array(markdownContent.split(/(?=^#{1,2} )/m))
+  .map((value) => <TranslateSection value={value} />)
+  .reduce((acc, value) => <CombineSections acc={acc} value={value} />, "");
+```
+
+To break down this example a bit more:
+
+- `acc` is the accumulator, which starts as the initial value, in this case an empty string
+- `value` is the current section of the markdown content
+- `CombineSections` is a component that does the combining given both the accumulator and the current value
+
+## How array operations work
+
+When you boil it down, `gsx.array` is essentially a wrapper around the `gsx.execute` function.
+
+Each operation in the chain will execute in sequence so if you have `gsx.array().map().map()`, all of the components in the first `map` will execute in parallel and will complete before the second `map` starts.
