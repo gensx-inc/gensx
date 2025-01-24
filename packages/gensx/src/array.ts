@@ -32,7 +32,7 @@ export class GsxArray<T> {
   }
 
   filter(
-    predicate: (item: T, index?: number, array?: T[]) => JSX.Element | boolean,
+    predicate: (item: T, index: number, array: T[]) => JSX.Element | boolean,
   ): GsxArray<T> {
     const filtered = this.promise
       .then(items => execute<T[]>(items))

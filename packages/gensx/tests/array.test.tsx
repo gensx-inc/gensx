@@ -158,11 +158,53 @@ test("can use gsx.array operations in child functions", async () => {
   expect(result).toEqual([6, 8, 10]);
 });
 
+test("map works with raw number arrays", async () => {
+  const arr = gsx.array<number>([1, 2, 3]);
+  const result = await arr.map(n => <NumberDoubler value={n} />).toArray();
+
+  expect(result).toEqual([2, 4, 6]);
+});
+
+test("filter works with raw number arrays", async () => {
+  const arr = gsx.array<number>([1, 2, 3, 4, 5, 6]);
+  const result = await arr
+    .filter(n => <AsyncNumberFilter value={n} />)
+    .toArray();
+
+  expect(result).toEqual([6]);
+});
+
+test("reduce works with raw number arrays", async () => {
+  const arr = gsx.array<number>([1, 2, 3]);
+  const result = await arr
+    .map<number>(n => <NumberDoubler value={n} />)
+    .reduce<number>((acc: number, n: number) => <Value value={acc + n} />, 0);
+
+  expect(result).toEqual(12); // (1*2 + 2*2 + 3*2)
+});
+
+test("flatMap works with raw number arrays", async () => {
+  const arr = gsx.array<number>([1, 2]);
+  const result = await arr.flatMap(n => <TaskGenerator value={n} />).toArray();
+
+  expect(result).toEqual([1, 2, 2, 4]);
+});
+
+test("chains multiple operations with raw arrays", async () => {
+  const arr = gsx.array<number>([1, 2, 3, 4, 5]);
+  const result = await arr
+    .map<number>(n => <NumberDoubler value={n} />)
+    .filter((n: number) => <AsyncNumberFilter value={n} />)
+    .reduce<number>((acc: number, n: number) => <Value value={acc + n} />, 0);
+
+  expect(result).toEqual(24); // (6 + 8 + 10) where all values > 5 are kept
+});
+
 test("filter can be used with index and array parameters for deduplication", async () => {
   const arr = gsx.array([1, 2, 2, 3, 3, 3, 4]);
   const result = await arr
     .filter((value, index, array) => (
-      <Value value={array!.indexOf(value) === index} />
+      <Value value={array.indexOf(value) === index} />
     ))
     .toArray();
 
@@ -180,7 +222,7 @@ test("filter with index and array works with objects", async () => {
   const result = await gsx
     .array(items)
     .filter((item, index, array) => (
-      <Value value={array!.findIndex(x => x.id === item.id) === index} />
+      <Value value={array.findIndex(x => x.id === item.id) === index} />
     ))
     .toArray();
 
@@ -210,7 +252,7 @@ test("filter accepts JSX.Element return type", async () => {
 test("filter with boolean return type works with index and array parameters", async () => {
   const arr = gsx.array([1, 2, 2, 3, 3, 3, 4]);
   const result = await arr
-    .filter((value, index, array) => array!.indexOf(value) === index)
+    .filter((value, index, array) => array.indexOf(value) === index)
     .toArray();
 
   expect(result).toEqual([1, 2, 3, 4]);
@@ -220,7 +262,7 @@ test("filter with JSX.Element return type works with index and array parameters"
   const arr = gsx.array([1, 2, 2, 3, 3, 3, 4]);
   const result = await arr
     .filter((value, index, array) => (
-      <Value value={array!.indexOf(value) === index} />
+      <Value value={array.indexOf(value) === index} />
     ))
     .toArray();
 
@@ -231,7 +273,7 @@ test("filter can mix boolean and JSX.Element predicates in chain", async () => {
   const arr = gsx.array([1, 2, 3, 4, 5, 6, 6, 7]);
   const result = await arr
     // First remove duplicates using boolean predicate
-    .filter((value, index, array) => array!.indexOf(value) === index)
+    .filter((value, index, array) => array.indexOf(value) === index)
     // Then filter using JSX component
     .filter(n => <AsyncNumberFilter value={n} />)
     .toArray();

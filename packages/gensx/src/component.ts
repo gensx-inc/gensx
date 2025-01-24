@@ -20,8 +20,7 @@ export function Component<P, O>(
     const { checkpointManager } = workflowContext;
 
     // Create checkpoint node for this component execution
-    // only async due to dynamic import, but otherwise non-blocking
-    const nodeId = await checkpointManager.addNode(
+    const nodeId = checkpointManager.addNode(
       {
         componentName: name,
         props: Object.fromEntries(
@@ -69,7 +68,7 @@ export function StreamComponent<P>(
     const { checkpointManager } = workflowContext;
 
     // Create checkpoint node for this component execution
-    const nodeId = await checkpointManager.addNode(
+    const nodeId = checkpointManager.addNode(
       {
         componentName: name,
         props: Object.fromEntries(

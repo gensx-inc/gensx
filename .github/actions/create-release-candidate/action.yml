@@ -71,7 +71,7 @@ runs:
           ## ☁️ Release Candidate Preview
           📘 Name | 🔑 Latest Commit | 📦 NPM | 🕒 Updated
           --- | --- | ---| ---
-          [gensx](https://github.com/cortexclick/gensx/tree/${{ inputs.branch }}) | [${{ steps.short-sha.outputs.sha }}](https://github.com/cortexclick/gensx/commit/${{ inputs.commit_sha }}) | [NPM](https://www.npmjs.com/package/gensx/v/${{ steps.npm.outputs.tag }}) | ${{ steps.date.outputs.utc }}
+          [gensx](https://github.com/gensx-inc/gensx/tree/${{ inputs.branch }}) | [${{ steps.short-sha.outputs.sha }}](https://github.com/gensx-inc/gensx/commit/${{ inputs.commit_sha }}) | [NPM](https://www.npmjs.com/package/gensx/v/${{ steps.npm.outputs.tag }}) | ${{ steps.date.outputs.utc }}
           ### 💻 Client installation
           To install the release candidate, you can run:
           ```bash
