@@ -1,8 +1,8 @@
 repository:
   name: gensx
-  description: Make LLMs work good
-  homepage: github.com/cortexclick/gensx
-  topics: nodejs, template, typescript, typescript-library, jsx
+  description: The AI framework for TypeScript developers. Lightning fast dev loop. Easy to learn. Easy to extend.
+  homepage: github.com/gensx-inc/gensx
+  topics: llms, generative-ai, llm-framework, workflow,nodejs, template, typescript, typescript-library, jsx
   has_wiki: false
   private: false
   has_issues: true

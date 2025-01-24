@@ -1,16 +1,11 @@
 import { join } from "node:path";
 
 // Cross-platform UUID generation
-async function generateUUID(): Promise<string> {
+function generateUUID(): string {
   try {
-    // Try Node.js crypto first
-    const crypto = await import("node:crypto");
+    const crypto = globalThis.crypto;
     return crypto.randomUUID();
   } catch {
-    // Fallback to browser crypto
-    if (typeof globalThis !== "undefined") {
-      return globalThis.crypto.randomUUID();
-    }
     // Simple fallback for environments without crypto
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
       const r = (Math.random() * 16) | 0;
@@ -41,7 +36,7 @@ export interface ExecutionNode {
 
 export interface CheckpointWriter {
   root?: ExecutionNode;
-  addNode: (node: Partial<ExecutionNode>, parentId?: string) => Promise<string>;
+  addNode: (node: Partial<ExecutionNode>, parentId?: string) => string;
   completeNode: (id: string, output: unknown) => void;
   addMetadata: (id: string, metadata: Record<string, unknown>) => void;
   updateNode: (id: string, updates: Partial<ExecutionNode>) => void;
@@ -52,6 +47,7 @@ export interface CheckpointWriter {
 
 export class CheckpointManager implements CheckpointWriter {
   private nodes = new Map<string, ExecutionNode>();
+  private orphanedNodes = new Map<string, Set<ExecutionNode>>();
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
 
@@ -69,15 +65,92 @@ export class CheckpointManager implements CheckpointWriter {
       checkpointsEnv === "yes";
   }
 
-  // updateCheckpoint POSTs the current component tree to the GenSX API.
-  // Special care is taken to do this in a non-blocking manner, and in a way that
-  // minimizes chattiness with the server.
-  // We only write one checkpoint at a time. If another checkpoint comes in while
-  // we're still processing, we just mark that we need another update and return.
-  // When the current checkpoint write is complete, we check if there was a pending
-  // update request, and if so, we trigger another write.
+  private attachToParent(node: ExecutionNode, parent: ExecutionNode) {
+    node.parentId = parent.id;
+    if (!parent.children.some(child => child.id === node.id)) {
+      parent.children.push(node);
+    }
+  }
+
+  private handleOrphanedNode(node: ExecutionNode, expectedParentId: string) {
+    let orphans = this.orphanedNodes.get(expectedParentId);
+    if (!orphans) {
+      orphans = new Set();
+      this.orphanedNodes.set(expectedParentId, orphans);
+    }
+    orphans.add(node);
+
+    // Add diagnostic timeout to detect stuck orphans
+    this.checkOrphanTimeout(node.id, expectedParentId);
+  }
+
+  private checkOrphanTimeout(nodeId: string, expectedParentId: string) {
+    setTimeout(() => {
+      const orphans = this.orphanedNodes.get(expectedParentId);
+      if (orphans?.has(this.nodes.get(nodeId)!)) {
+        console.warn(
+          `[Checkpoint] Node ${nodeId} (${this.nodes.get(nodeId)?.componentName}) still waiting for parent ${expectedParentId} after 5s`,
+          {
+            node: this.nodes.get(nodeId),
+            existingNodes: Array.from(this.nodes.entries()).map(
+              ([id, node]) => ({
+                id,
+                componentName: node.componentName,
+                parentId: node.parentId,
+              }),
+            ),
+          },
+        );
+      }
+    }, 5000);
+  }
+
+  /**
+   * Validates that the execution tree is in a complete state where:
+   * 1. Root node exists
+   * 2. No orphaned nodes are waiting for parents
+   * 3. All parent-child relationships are properly connected
+   */
+  private isTreeValid(): boolean {
+    // No root means tree isn't valid
+    if (!this.root) return false;
+
+    // If we have orphaned nodes, tree isn't complete
+    if (this.orphanedNodes.size > 0) return false;
+
+    // Verify all nodes in the tree have their parents
+    const verifyNode = (node: ExecutionNode): boolean => {
+      for (const child of node.children) {
+        if (child.parentId !== node.id) return false;
+        if (!verifyNode(child)) return false;
+      }
+      return true;
+    };
+
+    return verifyNode(this.root);
+  }
+
+  /**
+   * Updates the checkpoint in a non-blocking manner while ensuring consistency.
+   * Special care is taken to:
+   * 1. Queue updates instead of writing immediately to minimize API calls
+   * 2. Only write one checkpoint at a time to maintain order
+   * 3. Track pending updates to ensure no state is lost
+   * 4. Validate tree completeness before writing
+   *
+   * The flow is:
+   * 1. If a write is in progress, mark pendingUpdate = true
+   * 2. When write completes, check pendingUpdate and trigger another write if needed
+   * 3. Only write if tree is valid (has root and no orphans)
+   */
   private updateCheckpoint() {
-    if (!this.checkpointsEnabled || !this.root) {
+    if (!this.checkpointsEnabled) {
+      return;
+    }
+
+    // Only write if we have a valid tree
+    if (!this.isTreeValid()) {
+      this.pendingUpdate = true;
       return;
     }
 
@@ -126,9 +199,37 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  async addNode(partialNode: Partial<ExecutionNode>, parentId?: string) {
+  /**
+   * Due to the async nature of component execution, nodes can arrive in any order.
+   * For example, in a tree like:
+   *    BlogWriter
+   *      └─ OpenAIProvider
+   *         └─ Research
+   *
+   * The Research component might execute before OpenAIProvider due to:
+   * - Parallel execution of components
+   * - Different resolution times for promises
+   * - Network delays in API calls
+   *
+   * To handle this, we:
+   * 1. Track orphaned nodes (children with parentIds where parents aren't yet in the graph) because:
+   *    - We need to maintain the true hierarchy regardless of arrival order
+   *    - We can't write incomplete checkpoints that would show incorrect relationships
+   *    - The tree structure is important for debugging and monitoring
+   *
+   * 2. Allow root replacement because:
+   *    - The first node to arrive might not be the true root
+   *    - We need to maintain correct component hierarchy for visualization
+   *    - Checkpoint consumers expect a complete, properly ordered tree
+   *
+   * This approach ensures that even if components resolve out of order,
+   * the final checkpoint will always show the correct logical structure
+   * of the execution.
+   */
+  addNode(partialNode: Partial<ExecutionNode>, parentId?: string): string {
+    const nodeId = generateUUID();
     const node: ExecutionNode = {
-      id: await generateUUID(),
+      id: nodeId,
       componentName: "Unknown",
       startTime: Date.now(),
       children: [],
@@ -141,11 +242,37 @@ export class CheckpointManager implements CheckpointWriter {
     if (parentId) {
       const parent = this.nodes.get(parentId);
       if (parent) {
+        // Normal case - parent exists
+        this.attachToParent(node, parent);
+      } else {
+        // Parent doesn't exist yet - track as orphaned
         node.parentId = parentId;
-        parent.children.push(node);
+        this.handleOrphanedNode(node, parentId);
       }
-    } else if (!this.root) {
-      this.root = node;
+    } else {
+      // Handle root node case
+      if (!this.root) {
+        this.root = node;
+      } else if (this.root.parentId === node.id) {
+        // Current root was waiting for this node as parent
+        this.attachToParent(this.root, node);
+        this.root = node;
+      } else {
+        console.warn(
+          `[Checkpoint] Multiple root nodes detected: existing=${this.root.componentName}, new=${node.componentName}`,
+        );
+      }
+    }
+
+    // Check if this node is a parent any orphans are waiting for
+    const waitingChildren = this.orphanedNodes.get(node.id);
+    if (waitingChildren) {
+      // Attach all waiting children
+      for (const orphan of waitingChildren) {
+        this.attachToParent(orphan, node);
+      }
+      // Clear the orphans list for this parent
+      this.orphanedNodes.delete(node.id);
     }
 
     this.updateCheckpoint();
