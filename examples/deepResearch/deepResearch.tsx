@@ -75,8 +75,9 @@ export const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
       .flatMap<ArxivEntry>((query) => (
         <ArxivSearch query={query} maxResults={3} />
       ))
-      .filter((document, index, array) => 
-        array.findIndex(doc => doc.url === document.url) === index
+      .filter(
+        (document, index, array) =>
+          array.findIndex((doc) => doc.url === document.url) === index,
       )
       .filter((document) => (
         <GradeDocument prompt={prompt} document={document} />
