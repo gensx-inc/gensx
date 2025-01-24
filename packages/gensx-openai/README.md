@@ -1,6 +1,6 @@
 # @gensx/openai
 
-OpenAI integration for [GenSX](https://github.com/cortexclick/gensx) - Build AI workflows using JSX.
+OpenAI integration for [GenSX](https://github.com/gensx-inc/gensx) - Build AI workflows using JSX.
 
 ## Installation
 

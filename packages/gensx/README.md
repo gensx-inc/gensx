@@ -92,7 +92,7 @@ module.exports = {
 // ...
 ```
 
-## Building a workflow, the declarative way!
+## Building a workflow
 
 ```jsx
 import * as gsx from "gensx";
