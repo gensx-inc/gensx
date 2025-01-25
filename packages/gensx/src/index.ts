@@ -4,6 +4,7 @@ export { Fragment, jsx, jsxs } from "./jsx-runtime";
 export type { JSX } from "./jsx-runtime";
 export { StreamComponent, Component } from "./component";
 export { array } from "./array";
+export { Tool } from "./tools";
 export type {
   Args,
   Context,
@@ -12,6 +13,7 @@ export type {
   StreamArgs,
   GsxStreamComponent,
   GsxComponent,
+  GsxTool,
 } from "./types";
 export type { GsxArray } from "./array";
 
@@ -19,6 +21,7 @@ import { array } from "./array";
 import { Component, StreamComponent } from "./component";
 import { createContext, useContext } from "./context";
 import { execute } from "./resolve";
+import { Tool } from "./tools";
 import * as types from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -28,6 +31,7 @@ export namespace gsx {
 }
 
 export const gsx = {
+  Tool,
   StreamComponent,
   Component,
   createContext,

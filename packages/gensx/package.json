@@ -51,5 +51,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
   }
 }

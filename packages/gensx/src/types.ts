@@ -1,3 +1,5 @@
+import type { GsxTool } from "./tools";
+
 import { ExecutionContext } from "./context";
 import { JSX } from "./jsx-runtime";
 
@@ -61,6 +63,8 @@ export type Args<P, O> = P & {
 export type GsxComponent<P, O> = (
   props: Args<P, O>,
 ) => MaybePromise<DeepJSXElement<O> | ExecutableValue>;
+
+export { type GsxTool };
 
 export type Streamable =
   | AsyncIterableIterator<string>
