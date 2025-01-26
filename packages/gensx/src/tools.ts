@@ -9,7 +9,6 @@ export interface GsxTool<Schema extends z.ZodType, Response> {
   schema: Schema;
   description?: string;
   function: (params: z.infer<Schema>) => Promise<Response>;
-  // For OpenAI/other LLM providers
   toJSON: () => {
     name: string;
     description?: string;
@@ -17,12 +16,18 @@ export interface GsxTool<Schema extends z.ZodType, Response> {
   };
 }
 
+type GsxToolComponent<Schema extends z.ZodType, Response> = GsxComponent<
+  z.infer<Schema>,
+  Response
+> &
+  GsxTool<Schema, Response>;
+
 export function Tool<Schema extends z.ZodType, Response>(config: {
   name: string;
   schema: Schema;
   description?: string;
   function: (params: z.infer<Schema>) => Promise<Response>;
-}): GsxComponent<z.infer<Schema>, Response> & GsxTool<Schema, Response> {
+}): GsxToolComponent<Schema, Response> {
   const component = Component<z.infer<Schema>, Response>(
     config.name,
     async props => {
@@ -50,8 +55,7 @@ export function Tool<Schema extends z.ZodType, Response>(config: {
     }),
   });
 
-  return tool as GsxComponent<z.infer<Schema>, Response> &
-    GsxTool<Schema, Response>;
+  return tool as GsxToolComponent<Schema, Response>;
 }
 
 // Re-export for backwards compatibility
