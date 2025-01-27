@@ -11,11 +11,11 @@ import { gsx } from "@/index.js";
 import { createWorkflowContext } from "@/workflow-context.js";
 
 // Add types for fetch API
-type FetchInput = Parameters<typeof fetch>[0];
-type FetchInit = Parameters<typeof fetch>[1];
+export type FetchInput = Parameters<typeof fetch>[0];
+export type FetchInit = Parameters<typeof fetch>[1];
 
 // Helper function to generate test IDs
-function generateTestId(): string {
+export function generateTestId(): string {
   return `test-${Math.random().toString(36).substring(7)}`;
 }
 
@@ -25,7 +25,9 @@ function generateTestId(): string {
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-async function executeWithCheckpoints<T>(element: ExecutableValue): Promise<{
+export async function executeWithCheckpoints<T>(
+  element: ExecutableValue,
+): Promise<{
   result: T;
   checkpoints: ExecutionNode[];
   checkpointManager: CheckpointManager;

@@ -1,5 +1,7 @@
 import { join } from "node:path";
 
+import { ComponentOpts } from "./component";
+
 // Cross-platform UUID generation
 function generateUUID(): string {
   try {
@@ -32,6 +34,7 @@ export interface ExecutionNode {
     };
     [key: string]: unknown;
   };
+  componentOpts?: ComponentOpts;
 }
 
 export interface CheckpointWriter {
@@ -48,12 +51,26 @@ export interface CheckpointWriter {
 export class CheckpointManager implements CheckpointWriter {
   private nodes = new Map<string, ExecutionNode>();
   private orphanedNodes = new Map<string, Set<ExecutionNode>>();
+  private _secretValues = new Map<string, Set<unknown>>(); // Internal per-node secrets
+  private currentNodeChain: string[] = []; // Track current execution context
+  private readonly MIN_SECRET_LENGTH = 8;
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
 
   // Track active checkpoint write
   private activeCheckpoint: Promise<void> | null = null;
   private pendingUpdate = false;
+
+  // Provide unified view of all secrets
+  get secretValues(): Set<unknown> {
+    const allSecrets = new Set<unknown>();
+    for (const secrets of this._secretValues.values()) {
+      for (const secret of secrets) {
+        allSecrets.add(secret);
+      }
+    }
+    return allSecrets;
+  }
 
   constructor() {
     // Set checkpointsEnabled based on environment variable
@@ -180,12 +197,16 @@ export class CheckpointManager implements CheckpointWriter {
       const baseUrl =
         process.env.GENSX_CHECKPOINT_URL ?? "http://localhost:3000";
       const url = join(baseUrl, "api/execution");
+
+      // Create a deep copy of the execution tree for masking
+      const maskedRoot = this.maskExecutionTree(structuredClone(this.root));
+
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(this.root),
+        body: JSON.stringify(maskedRoot),
       });
 
       if (!response.ok) {
@@ -197,6 +218,217 @@ export class CheckpointManager implements CheckpointWriter {
     } catch (error) {
       console.error(`[Checkpoint] Failed to save checkpoint:`, { error });
     }
+  }
+
+  private maskExecutionTree(node: ExecutionNode): ExecutionNode {
+    // Mask props
+    node.props = this.scrubSecrets(node.props, node.id) as Record<
+      string,
+      unknown
+    >;
+
+    // Mask output if present
+    if (node.output !== undefined) {
+      node.output = this.scrubSecrets(node.output, node.id, "output");
+    }
+
+    // Mask metadata if present
+    if (node.metadata) {
+      node.metadata = this.scrubSecrets(
+        node.metadata,
+        node.id,
+        "metadata",
+      ) as Record<string, unknown>;
+    }
+
+    // Recursively mask children
+    node.children = node.children.map(child => this.maskExecutionTree(child));
+
+    return node;
+  }
+
+  private isEqual(a: unknown, b: unknown): boolean {
+    // Handle primitives
+    if (a === b) return true;
+
+    // If either isn't an object, they're not equal
+    if (!a || !b || typeof a !== "object" || typeof b !== "object") {
+      return false;
+    }
+
+    // Handle arrays
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return (
+        a.length === b.length &&
+        a.every((item, index) => this.isEqual(item, b[index]))
+      );
+    }
+
+    // Handle objects
+    if (!Array.isArray(a) && !Array.isArray(b)) {
+      const aKeys = Object.keys(a);
+      const bKeys = Object.keys(b);
+      return (
+        aKeys.length === bKeys.length &&
+        aKeys.every(key =>
+          this.isEqual(a[key as keyof typeof a], b[key as keyof typeof b]),
+        )
+      );
+    }
+
+    return false;
+  }
+
+  private withNode<T>(nodeId: string, fn: () => T): T {
+    this.currentNodeChain.push(nodeId);
+    try {
+      return fn();
+    } finally {
+      this.currentNodeChain.pop();
+    }
+  }
+
+  private getEffectiveSecrets(): Set<unknown> {
+    const allSecrets = new Set<unknown>();
+    // Collect secrets from current node and all ancestors
+    for (const nodeId of this.currentNodeChain) {
+      const nodeSecrets = this._secretValues.get(nodeId);
+      if (nodeSecrets) {
+        for (const secret of nodeSecrets) {
+          allSecrets.add(secret);
+        }
+      }
+    }
+    return allSecrets;
+  }
+
+  private registerSecrets(
+    props: Record<string, unknown>,
+    paths: string[],
+    nodeId: string,
+  ) {
+    this.withNode(nodeId, () => {
+      // Initialize secrets set for this node
+      let nodeSecrets = this._secretValues.get(nodeId);
+      if (!nodeSecrets) {
+        nodeSecrets = new Set();
+        this._secretValues.set(nodeId, nodeSecrets);
+      }
+
+      // Use paths purely for collection
+      for (const path of paths) {
+        const value = this.getValueAtPath(props, path);
+        if (value !== undefined) {
+          this.collectSecretValues(value, nodeSecrets);
+        }
+      }
+    });
+  }
+
+  private collectSecretValues(
+    data: unknown,
+    nodeSecrets: Set<unknown>,
+    visited = new WeakSet(),
+  ): void {
+    // Skip if already visited to prevent cycles
+    if (data && typeof data === "object") {
+      if (visited.has(data)) {
+        return;
+      }
+      visited.add(data);
+    }
+
+    // Handle primitive values
+    if (typeof data === "string") {
+      if (data.length >= this.MIN_SECRET_LENGTH) {
+        nodeSecrets.add(data);
+      }
+      return;
+    }
+
+    // Skip other primitives
+    if (!data || typeof data !== "object") {
+      return;
+    }
+
+    // Handle arrays and objects (excluding ArrayBuffer views)
+    if (Array.isArray(data) || !ArrayBuffer.isView(data)) {
+      const values = Array.isArray(data) ? data : Object.values(data);
+      values.forEach(value => {
+        this.collectSecretValues(value, nodeSecrets, visited);
+      });
+    }
+  }
+
+  private scrubSecrets(data: unknown, nodeId?: string, path = ""): unknown {
+    return this.withNode(nodeId ?? "", () => {
+      // Handle primitive values
+      if (typeof data === "string" || typeof data === "number") {
+        const strValue = String(data);
+        return this.scrubString(strValue);
+      }
+
+      // Skip other primitives
+      if (!data || typeof data !== "object") {
+        return data;
+      }
+
+      // Handle arrays
+      if (Array.isArray(data)) {
+        return data.map((item, index) =>
+          this.scrubSecrets(
+            item,
+            nodeId,
+            path ? `${path}.${index}` : `${index}`,
+          ),
+        );
+      }
+
+      // Handle objects (excluding ArrayBuffer views)
+      if (!ArrayBuffer.isView(data)) {
+        return Object.fromEntries(
+          Object.entries(data).map(([key, value]) => [
+            key,
+            this.scrubSecrets(value, nodeId, path ? `${path}.${key}` : key),
+          ]),
+        );
+      }
+
+      return data;
+    });
+  }
+
+  private scrubString(value: string): string {
+    const effectiveSecrets = this.getEffectiveSecrets();
+    let result = value;
+
+    // Sort secrets by length (longest first) to handle overlapping secrets correctly
+    const secrets = Array.from(effectiveSecrets)
+      .filter(s => typeof s === "string" && s.length >= this.MIN_SECRET_LENGTH)
+      .sort((a, b) => String(b).length - String(a).length);
+
+    // Replace each secret with [secret]
+    for (const secret of secrets) {
+      if (typeof secret === "string") {
+        // Only replace if the secret is actually in the string
+        if (result.includes(secret)) {
+          const escapedSecret = secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const regex = new RegExp(escapedSecret, "g");
+          result = result.replace(regex, "[secret]");
+        }
+      }
+    }
+
+    return result;
+  }
+
+  private getValueAtPath(obj: Record<string, unknown>, path: string): unknown {
+    return path.split(".").reduce<unknown>((curr: unknown, key: string) => {
+      if (curr && typeof curr === "object") {
+        return (curr as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, obj);
   }
 
   /**
@@ -237,6 +469,12 @@ export class CheckpointManager implements CheckpointWriter {
       ...partialNode,
     };
 
+    // Register any secrets from componentOpts
+    if (node.componentOpts?.secrets) {
+      this.registerSecrets(node.props, node.componentOpts.secrets, nodeId);
+    }
+
+    // Store raw values - masking happens at write time
     this.nodes.set(node.id, node);
 
     if (parentId) {
@@ -283,7 +521,21 @@ export class CheckpointManager implements CheckpointWriter {
     const node = this.nodes.get(id);
     if (node) {
       node.endTime = Date.now();
+      // Store raw output - masking happens at write time
       node.output = output;
+
+      // If output is marked as secret, collect secrets from it
+      if (node.componentOpts?.secrets?.includes("output")) {
+        this.withNode(id, () => {
+          let nodeSecrets = this._secretValues.get(id);
+          if (!nodeSecrets) {
+            nodeSecrets = new Set();
+            this._secretValues.set(id, nodeSecrets);
+          }
+          this.collectSecretValues(output, nodeSecrets);
+        });
+      }
+
       this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to complete unknown node:`, { id });
@@ -293,7 +545,11 @@ export class CheckpointManager implements CheckpointWriter {
   addMetadata(id: string, metadata: Record<string, unknown>) {
     const node = this.nodes.get(id);
     if (node) {
-      node.metadata = { ...node.metadata, ...metadata };
+      // Store raw metadata - masking happens at write time
+      node.metadata = {
+        ...node.metadata,
+        ...metadata,
+      };
       this.updateCheckpoint();
     }
   }
