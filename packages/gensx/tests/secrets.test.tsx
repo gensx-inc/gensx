@@ -144,6 +144,20 @@ const PartialComponent = gsx.Component<
   { secrets: ["prefix", "suffix", "middle", "combined"] },
 );
 
+const SecretStreamComponent = gsx.StreamComponent<{ apiKey: string }>(
+  "SecretStreamComponent",
+  ({ apiKey }) => {
+    const stream = function* () {
+      yield "Using API key: ";
+      yield apiKey;
+      yield "\nResponse: ";
+      yield "not sensitive";
+    };
+    return stream();
+  },
+  { secrets: ["apiKey"] }, // Mark both input and output as secret
+);
+
 suite("tree reconstruction", () => {
   beforeEach(() => {
     process.env.GENSX_CHECKPOINTS = "true";
@@ -634,5 +648,49 @@ suite("secrets", () => {
       "[secret]",
       "[secret]",
     ]);
+  });
+
+  test("handles secrets in stream components", async () => {
+    const apiKey = "sk-1234567890";
+    // test non-streaming, with no output masking
+    const { checkpoints, checkpointManager } =
+      await executeWithCheckpoints<string>(
+        <SecretStreamComponent apiKey={apiKey} />,
+      );
+
+    // Wait for any pending updates
+    await checkpointManager.waitForPendingUpdates();
+
+    const finalCheckpoint = checkpoints[checkpoints.length - 1];
+
+    // Verify input is masked
+    expect(finalCheckpoint.props.apiKey).toBe("[secret]");
+
+    // Verify output is masked
+    expect(finalCheckpoint.output).toBe(
+      "Using API key: [secret]\nResponse: not sensitive",
+    );
+
+    // Test streaming mode with output masking
+    const {
+      checkpoints: streamingCheckpoints,
+      checkpointManager: streamingManager,
+    } = await executeWithCheckpoints<AsyncGenerator<string>>(
+      <SecretStreamComponent
+        apiKey={apiKey}
+        stream={true}
+        componentOpts={{ secrets: ["output"] }}
+      />,
+    );
+
+    // Wait for streaming to complete
+    await streamingManager.waitForPendingUpdates();
+
+    const streamingFinal =
+      streamingCheckpoints[streamingCheckpoints.length - 1];
+
+    // Verify streaming output is also masked
+    expect(streamingFinal.output).toBe("[secret]");
+    expect(streamingFinal.props.apiKey).toBe("[secret]");
   });
 });

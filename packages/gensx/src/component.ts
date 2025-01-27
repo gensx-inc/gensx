@@ -83,11 +83,24 @@ export function Component<P, O>(
 export function StreamComponent<P>(
   name: string,
   fn: (props: P) => MaybePromise<Streamable | JSX.Element>,
+  defaultOpts?: ComponentOpts,
 ): GsxStreamComponent<P> {
   const GsxStreamComponent: GsxStreamComponent<P> = async props => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
+
+    // Merge component opts with unique secrets
+    const mergedOpts = {
+      ...defaultOpts,
+      ...props.componentOpts,
+      secrets: Array.from(
+        new Set([
+          ...(defaultOpts?.secrets ?? []),
+          ...(props.componentOpts?.secrets ?? []),
+        ]),
+      ),
+    };
 
     // Create checkpoint node for this component execution
     const nodeId = checkpointManager.addNode(
@@ -96,6 +109,7 @@ export function StreamComponent<P>(
         props: Object.fromEntries(
           Object.entries(props).filter(([key]) => key !== "children"),
         ),
+        componentOpts: mergedOpts,
       },
       context.getCurrentNodeId(),
     );
@@ -161,6 +175,5 @@ export function StreamComponent<P>(
     });
   }
 
-  const component = GsxStreamComponent;
-  return component;
+  return GsxStreamComponent;
 }
