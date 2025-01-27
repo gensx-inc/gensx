@@ -28,7 +28,7 @@
         "test/**/*.ts",
         "test/**/*.tsx"
       ],
-      "env": ["OPENAI_API_KEY"]
+      "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY"]
     },
     "lint:fix": {
       "dependsOn": ["^build"],

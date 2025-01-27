@@ -2,6 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/gensx.svg)](https://badge.fury.io/js/gensx)
 [![Website](https://img.shields.io/badge/Visit-gensx.dev-orange)](https://gensx.dev)
+[![Discord](https://img.shields.io/badge/Join-Discord-blue)](https://discord.gg/wRmwfz5tCy)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [GenSX](https://gensx.dev/) is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed to create and orchestrate workflows.
@@ -35,7 +36,7 @@ npm install gensx @gensx/openai
 
 Check out the [Quickstart Guide](https://gensx.dev/quickstart) for more details on getting started.
 
-## Building a workflow, the declarative way!
+## Building a workflow
 
 Most LLM frameworks are graph oriented--you express your workflow with nodes, edges, and a global state object. GenSX takes a different approach--you compose your workflow with components, and GenSX handles the execution for you.
 
@@ -126,6 +127,7 @@ This repo contains a number of [examples](./examples) to help you get up and run
 | -------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | 🔍 [Hacker News Analyzer](./examples/hackerNewsAnalyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
 | ✍️ [Blog Writer](./examples/blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |
+| 🔬 [Deep Research](./examples/deepResearch)              | Generates a report from a prompt after researching and summarizing a list of research papers |
 
 ## Working with this repo
 
