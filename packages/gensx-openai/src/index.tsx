@@ -1,12 +1,15 @@
 import type { Streamable } from "gensx";
 
-import { gsx } from "gensx";
+import { gsx, GsxTool } from "gensx";
 import OpenAI, { ClientOptions } from "openai";
+import { zodFunction } from "openai/helpers/zod";
 import {
   ChatCompletionChunk,
   ChatCompletionCreateParams,
+  ChatCompletionTool,
 } from "openai/resources/index.mjs";
 import { Stream } from "openai/streaming";
+import { z } from "zod";
 
 // Create a context for OpenAI
 export const OpenAIContext = gsx.createContext<{
@@ -21,8 +24,13 @@ export const OpenAIProvider = gsx.Component<ClientOptions, never>(
   },
 );
 
+type ChatCompletionProps = ChatCompletionCreateParams & {
+  gsxTools: GsxTool<z.ZodType, unknown>[];
+  gsxExecuteTools: boolean;
+};
+
 // Create a component for chat completions
-export const ChatCompletion = gsx.StreamComponent<ChatCompletionCreateParams>(
+export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
   "ChatCompletion",
   async (props) => {
     const context = gsx.useContext(OpenAIContext);
@@ -33,8 +41,25 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionCreateParams>(
       );
     }
 
+    // Convert GenSX tools to OpenAI tools
+    const openAITools: ChatCompletionTool[] | undefined = props.gsxTools.map(
+      (tool): ChatCompletionTool => {
+        const { name, description, parameters } = tool.toJSON();
+        return zodFunction({
+          name,
+          parameters,
+          description,
+        });
+      },
+    );
+
     if (props.stream) {
-      const stream = await context.client.chat.completions.create(props);
+      // Remove gsx related props and send the rest to OpenAI
+      const { gsxTools, gsxExecuteTools, ...otherProps } = props;
+      const stream = await context.client.chat.completions.create({
+        ...otherProps,
+        tools: openAITools,
+      });
 
       async function* generateTokens(): AsyncGenerator<
         string,
@@ -52,7 +77,12 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionCreateParams>(
       const streamable: Streamable = generateTokens();
       return streamable;
     } else {
-      const response = await context.client.chat.completions.create(props);
+      // Remove gsx related props and send the rest to OpenAI
+      const { gsxTools, gsxExecuteTools, ...otherProps } = props;
+      const response = await context.client.chat.completions.create({
+        ...otherProps,
+        tools: openAITools,
+      });
       const content = response.choices[0]?.message?.content ?? "";
 
       function* generateTokens() {
