@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.6...gensx-v0.2.7) (2025-01-28)
+
+
+### 🐛 Bug Fixes
+
+* Fix stream component type inference in child functions ([#198](https://github.com/gensx-inc/gensx/issues/198)) ([9b22035](https://github.com/gensx-inc/gensx/commit/9b220357798ec931bcdb2437bafc0cc74c234779))
+
 ## [0.2.6](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.5...gensx-v0.2.6) (2025-01-28)
 
 
