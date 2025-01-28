@@ -32,8 +32,9 @@ export function Tool<Schema extends z.ZodType, Response>(config: {
     config.name,
     async props => {
       // Validate props against schema
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const validatedProps = config.schema.parse(props);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return config.function(validatedProps);
     },
   );

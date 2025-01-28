@@ -51,7 +51,7 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
     }
 
     // Convert GenSX tools to OpenAI tools
-    const openAITools: ChatCompletionTool[] | undefined = props.gsxTools.map(
+    const openAITools: ChatCompletionTool[] | undefined = props.gsxTools?.map(
       (tool): ChatCompletionTool => {
         const { name, description, parameters } = tool.toJSON();
         return zodFunction({
