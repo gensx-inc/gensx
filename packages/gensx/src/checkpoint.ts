@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { ComponentOpts } from "./component";
+import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component";
 
 // Cross-platform UUID generation
 function generateUUID(): string {
@@ -470,8 +470,8 @@ export class CheckpointManager implements CheckpointWriter {
     };
 
     // Register any secrets from componentOpts
-    if (node.componentOpts?.secrets) {
-      this.registerSecrets(node.props, node.componentOpts.secrets, nodeId);
+    if (node.componentOpts?.secretProps) {
+      this.registerSecrets(node.props, node.componentOpts.secretProps, nodeId);
     }
 
     // Store raw values - masking happens at write time
@@ -524,8 +524,11 @@ export class CheckpointManager implements CheckpointWriter {
       // Store raw output - masking happens at write time
       node.output = output;
 
-      // If output is marked as secret, collect secrets from it
-      if (node.componentOpts?.secrets?.includes("output")) {
+      // If output is marked as secret and not the streaming placeholder, collect secrets
+      if (
+        node.componentOpts?.secretOutputs &&
+        output !== STREAMING_PLACEHOLDER
+      ) {
         this.withNode(id, () => {
           let nodeSecrets = this._secretValues.get(id);
           if (!nodeSecrets) {
@@ -557,6 +560,22 @@ export class CheckpointManager implements CheckpointWriter {
   updateNode(id: string, updates: Partial<ExecutionNode>) {
     const node = this.nodes.get(id);
     if (node) {
+      // If output is being updated and it's marked as secret (and not the placeholder), collect secrets
+      if (
+        "output" in updates &&
+        node.componentOpts?.secretOutputs &&
+        updates.output !== STREAMING_PLACEHOLDER
+      ) {
+        this.withNode(id, () => {
+          let nodeSecrets = this._secretValues.get(id);
+          if (!nodeSecrets) {
+            nodeSecrets = new Set();
+            this._secretValues.set(id, nodeSecrets);
+          }
+          this.collectSecretValues(updates.output, nodeSecrets);
+        });
+      }
+
       Object.assign(node, updates);
       this.updateCheckpoint();
     } else {

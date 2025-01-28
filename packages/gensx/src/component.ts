@@ -10,8 +10,11 @@ import { getCurrentContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
+export const STREAMING_PLACEHOLDER = "[streaming in progress]";
+
 export interface ComponentOpts {
-  secrets?: string[]; // Property paths to mask in checkpoints
+  secretProps?: string[]; // Property paths to mask in checkpoints
+  secretOutputs?: boolean; // Whether to mask the output of the component
 }
 
 export type WithComponentOpts<P> = P & {
@@ -32,12 +35,14 @@ export function Component<P, O>(
     const mergedOpts = {
       ...defaultOpts,
       ...props.componentOpts,
-      secrets: Array.from(
+      secretProps: Array.from(
         new Set([
-          ...(defaultOpts?.secrets ?? []),
-          ...(props.componentOpts?.secrets ?? []),
+          ...(defaultOpts?.secretProps ?? []),
+          ...(props.componentOpts?.secretProps ?? []),
         ]),
       ),
+      secretOutputs:
+        defaultOpts?.secretOutputs ?? props.componentOpts?.secretOutputs,
     };
 
     // Create checkpoint node for this component execution
@@ -94,12 +99,14 @@ export function StreamComponent<P>(
     const mergedOpts = {
       ...defaultOpts,
       ...props.componentOpts,
-      secrets: Array.from(
+      secretProps: Array.from(
         new Set([
-          ...(defaultOpts?.secrets ?? []),
-          ...(props.componentOpts?.secrets ?? []),
+          ...(defaultOpts?.secretProps ?? []),
+          ...(props.componentOpts?.secretProps ?? []),
         ]),
       ),
+      secretOutputs:
+        defaultOpts?.secretOutputs ?? props.componentOpts?.secretOutputs,
     };
 
     // Create checkpoint node for this component execution
@@ -121,7 +128,7 @@ export function StreamComponent<P>(
 
       if (props.stream) {
         // Mark as streaming immediately
-        checkpointManager.completeNode(nodeId, "[streaming in progress]");
+        checkpointManager.completeNode(nodeId, STREAMING_PLACEHOLDER);
 
         // Create a wrapper iterator that captures the output while streaming
         const wrappedIterator = async function* () {

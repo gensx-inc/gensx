@@ -47,7 +47,7 @@ const SecondComponent = gsx.Component<{}, string>(
       "long-secret-value", // nested.long - should be masked
     ].join(", ");
   },
-  { secrets: ["output"] }, // Mark the entire output as containing secrets
+  { secretOutputs: true }, // Mark the entire output as containing secrets
 );
 
 const ChildComponent = gsx.Component<
@@ -56,7 +56,7 @@ const ChildComponent = gsx.Component<
 >(
   "ChildComponent",
   ({ apiKey, additionalKey }) => `${apiKey}-${additionalKey}`,
-  { secrets: ["apiKey"] },
+  { secretProps: ["apiKey"] },
 );
 
 const ParentComponent = gsx.Component<
@@ -69,11 +69,11 @@ const ParentComponent = gsx.Component<
       apiKey={credentials.key}
       additionalKey={credentials.other}
       componentOpts={{
-        secrets: ["additionalKey"],
+        secretProps: ["additionalKey"],
       }}
     />
   ),
-  { secrets: ["credentials"] },
+  { secretProps: ["credentials"] },
 );
 
 const EdgeCaseComponent = gsx.Component<
@@ -93,20 +93,20 @@ const EdgeCaseComponent = gsx.Component<
       empty: config.emptyString,
       secret: config.actualSecret,
     }),
-  { secrets: ["config"] },
+  { secretProps: ["config"] },
 );
 
 const SpecialCharComponent = gsx.Component<
   { dotted: string; regex: string; unicode: string; url: string },
   string
 >("SpecialCharComponent", props => Object.values(props).join(", "), {
-  secrets: ["dotted", "regex", "unicode", "url"],
+  secretProps: ["dotted", "regex", "unicode", "url"],
 });
 
 const ArrayComponent = gsx.Component<{ config: ArrayConfig }, ArrayConfig>(
   "ArrayComponent",
   ({ config }) => config,
-  { secrets: ["config"] },
+  { secretProps: ["config"] },
 );
 
 const ReuseComponent = gsx.Component<{}, string[]>(
@@ -121,7 +121,7 @@ const ReuseComponent = gsx.Component<{}, string[]>(
       "unrelated-string",
     ];
   },
-  { secrets: ["output"] }, // Mark the entire output as containing secrets
+  { secretOutputs: true }, // Mark the entire output as containing secrets
 );
 
 const PartialComponent = gsx.Component<
@@ -137,7 +137,7 @@ const PartialComponent = gsx.Component<
   "PartialComponent",
   ({ prefix, suffix, middle, combined, unrelated }) =>
     `${prefix} and ${suffix} and ${middle} and ${combined} and ${unrelated}`,
-  { secrets: ["prefix", "suffix", "middle", "combined"] },
+  { secretProps: ["prefix", "suffix", "middle", "combined"] },
 );
 
 const SecretStreamComponent = gsx.StreamComponent<{ apiKey: string }>(
@@ -151,7 +151,7 @@ const SecretStreamComponent = gsx.StreamComponent<{ apiKey: string }>(
     };
     return stream();
   },
-  { secrets: ["apiKey"] }, // Mark both input and output as secret
+  { secretProps: ["apiKey"] }, // Mark both input and output as secret
 );
 
 suite("secrets", () => {
@@ -174,7 +174,7 @@ suite("secrets", () => {
     >(
       <SecretComponent
         config={{ apiKey: secretValue }}
-        componentOpts={{ secrets: ["config.apiKey"] }}
+        componentOpts={{ secretProps: ["config.apiKey"] }}
       />,
     );
 
@@ -201,7 +201,7 @@ suite("secrets", () => {
     const { checkpoints } = await executeWithCheckpoints(
       <SecretComponent
         config={{ message, secret: secretValue }}
-        componentOpts={{ secrets: ["config.secret"] }}
+        componentOpts={{ secretProps: ["config.secret"] }}
       />,
     );
 
@@ -226,7 +226,7 @@ suite("secrets", () => {
     const { checkpoints } = await executeWithCheckpoints<Partial<Config>>(
       <SecretComponent
         config={config}
-        componentOpts={{ secrets: ["config"] }}
+        componentOpts={{ secretProps: ["config"] }}
       />,
     );
 
@@ -258,7 +258,7 @@ suite("secrets", () => {
             },
           },
         }}
-        componentOpts={{ secrets: ["config"] }}
+        componentOpts={{ secretProps: ["config"] }}
       />,
     );
 
@@ -277,13 +277,13 @@ suite("secrets", () => {
       "SecretComponent",
       ({ config }) =>
         `Key is ${config.key} and reused here: ${config.key}, short: ${shortKey}`,
-      { secrets: ["config"] },
+      { secretProps: ["config"] },
     );
 
     const { checkpoints } = await executeWithCheckpoints<string>(
       <SecretComponent
         config={{ key: apiKey }}
-        componentOpts={{ secrets: ["config"] }}
+        componentOpts={{ secretProps: ["config"] }}
       />,
     );
 
@@ -308,7 +308,7 @@ suite("secrets", () => {
     const SecretComponent = gsx.Component<{ config: Config }, Config>(
       "SecretComponent",
       ({ config }) => config,
-      { secrets: ["config"] },
+      { secretProps: ["config"] },
     );
 
     const config = {
@@ -325,7 +325,7 @@ suite("secrets", () => {
     const { checkpoints } = await executeWithCheckpoints<Config>(
       <SecretComponent
         config={config}
-        componentOpts={{ secrets: ["config"] }}
+        componentOpts={{ secretProps: ["config"] }}
       />,
     );
 
@@ -547,17 +547,22 @@ suite("secrets", () => {
 
     // Test streaming mode with output masking
     const {
+      result,
       checkpoints: streamingCheckpoints,
       checkpointManager: streamingManager,
     } = await executeWithCheckpoints<AsyncGenerator<string>>(
       <SecretStreamComponent
         apiKey={apiKey}
         stream={true}
-        componentOpts={{ secrets: ["output"] }}
+        componentOpts={{ secretOutputs: true }}
       />,
     );
 
-    // Wait for streaming to complete
+    for await (const _ of result) {
+      // Wait for streaming to complete
+    }
+
+    // Wait for final checkpoint to complete
     await streamingManager.waitForPendingUpdates();
 
     const streamingFinal =
