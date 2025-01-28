@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.4](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.3...gensx-openai-v0.1.4) (2025-01-28)
+
+
+### ✨ New Features
+
+* Add secrets masking ([#182](https://github.com/gensx-inc/gensx/issues/182)) ([17826a7](https://github.com/gensx-inc/gensx/commit/17826a784eccb1641d05fe38a0ee7886a771e019))
+
+
+### 📚 Documentation
+
+* add discord links and update github links ([#179](https://github.com/gensx-inc/gensx/issues/179)) ([a919345](https://github.com/gensx-inc/gensx/commit/a9193453d49034e115152810292900d3caa3f084))
+
 ## [0.1.3](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.2...gensx-openai-v0.1.3) (2025-01-21)
 
 
