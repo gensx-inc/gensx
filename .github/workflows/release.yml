@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     # Only run on pushes to the original repository and not on forks
     if: |
-      github.repository == 'cortexclick/gensx' &&
+      github.repository == 'gensx-inc/gensx' &&
       github.event.repository.fork == false &&
       github.actor != 'dependabot[bot]'
 
