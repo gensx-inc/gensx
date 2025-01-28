@@ -47,11 +47,10 @@ export default defineConfig({
           label: "Why JSX?",
           link: "/why-jsx",
         },
-
-        // {
-        //   label: "Concepts",
-        //   autogenerate: { directory: "concepts" },
-        // },
+        {
+          label: "Concepts",
+          autogenerate: { directory: "concepts" },
+        },
         // {
         //   label: "LLM patterns",
         //   autogenerate: { directory: "patterns" },

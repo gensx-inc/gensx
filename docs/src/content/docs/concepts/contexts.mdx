@@ -1,35 +1,24 @@
 ---
-title: Contexts and Providers
+title: Contexts and providers
 description: Learn how to use contexts and providers in GenSX to share data across components.
 sidebar:
   order: 3
 ---
 
-Contexts and providers are a powerful tool in GenSX for sharing data and managing configuration across components without explicitly passing props through every level of your component tree. They work similarly to [React's Context API](https://react.dev/reference/react/useContext) and are adapted to work with GenSX workflows.
+Contexts and providers are powerful tools in GenSX for sharing data and managing configuration across components without explicitly passing props through every level of your component tree. They work similarly to [React's Context API](https://react.dev/reference/react/useContext) but are adapted to work with GenSX workflows.
 
 ## What are contexts and providers?
 
 Contexts and providers are two closely related concepts that work together to share data and manage dependencies across components.
 
-**Contexts** provide a way to share data (like state, configuration, or dependencies) across components without manually passing props down the component tree.
+- **Contexts** give you a way to share data (like state, configuration, or dependencies) across components without manually passing props down the component tree.
+- **Providers** are components that supply data or services to a context. Any component within a provider's subtree can access the context.
 
-Contexts are particularly useful for:
-
-- Sharing configuration across multiple components
-- Providing dependencies to deeply nested components without prop drilling
-- Managing state that needs to be accessed by multiple components
-
-**Providers** are components that supply data or services to a context. Any component within a provider's subtree can access the context.
-
-Providers are ideal for:
-
-- Centralizing configuration management (e.g., API keys, client instances).
-- Sharing data or services across components.
-- Scoping state or dependencies to specific parts of your workflow.
-
-The remainder of this document will show you how to create and use contexts and providers in GenSX.
+The two concepts are interdependent so you can't use one without the other. The remainder of this document will show you how to create and use both contexts and providers in GenSX.
 
 ## Creating and using contexts
+
+This next section walks through the steps needed to create and use a context in your GenSX workflow.
 
 ### Step 1: Create a context
 
@@ -54,7 +43,6 @@ const UserContext = gsx.createContext<User>({
 To use the context, call the `gsx.useContext(context)` hook inside of a component. Here a `Greeting` component is created that uses the `UserContext` to get the user's name:
 
 ```tsx
-// Use the context in a component
 const Greeting = gsx.Component<Record<never, never>, GreetingOutput>(
   "Greeting",
   () => {
@@ -78,7 +66,9 @@ const result = await gsx.execute(
 
 ## Using providers for configuration and dependencies
 
-Providers are a specialized use of contexts that focus on managing configuration and dependencies for your workflow. While you could use raw contexts for this purpose, providers offer a more focused API specifically for configuration management.
+Providers are a specialized way to use contexts that focus on managing configuration and dependencies for your workflow. They simplify the process of sharing data like API keys, client instances, or feature flags across your components.
+
+### Built-in providers
 
 The main provider available today is the `OpenAIProvider`, which manages your OpenAI API key and client:
 
@@ -93,18 +83,11 @@ const result = await gsx.execute(
 );
 ```
 
-Providers offer several benefits:
+### Creating a Custom Provider
 
-- **Centralized Configuration Management** - providers manage settings like API keys and feature flags keeping configuration separate from business logic
-- **Data Sharing** - providers give you an easy way to share data between components without prop drilling to simplify your code
-- **Reusability** - providers and their associated components can easily be reused in different parts of your application
-- **Scoped State Management** - providers can be used to manage state for parts of your workflow or the entire thing
+If you need a provider that isn't available out of the box, you can easily create your own. The example below shows how to create a provider for the [Firecrawl](https://www.firecrawl.dev/) API.
 
-## Creating a Custom Provider
-
-If you want to use a provider that isn't available out of the box, you can easily create your own. The example below shows how to create a provider for the [Firecrawl](https://www.firecrawl.dev/) API.
-
-### Step 1: Create a context
+#### Step 1: Create a context
 
 Start by importing `gsx` and the package you want to use:
 
@@ -124,7 +107,7 @@ export const FirecrawlContext = gsx.createContext<{
 
 The context contains the `client` that you'll use to interact with the Firecrawl API.
 
-### Step 2 Create the provider
+#### Step 2: Create the provider
 
 Next, wrap your context in a provider component:
 
@@ -143,9 +126,9 @@ export const FirecrawlProvider = gsx.Component<FirecrawlAppConfig, never>(
 
 The provider will take in the `apiKey` as a prop and use it to initialize the Firecrawl client.
 
-### Step 3: Use the provider in a component
+#### Step 3: Use the provider in a component
 
-Finally, you can build components that consume the context provided by the provider:
+Finally, you can build components that consume the context supplied by the provider:
 
 ```tsx
 export const ScrapePage = gsx.Component<ScrapePageProps, string>(
@@ -172,7 +155,7 @@ export const ScrapePage = gsx.Component<ScrapePageProps, string>(
 );
 ```
 
-### Step 4: Use the provider in your workflow
+#### Step 4: Use the provider in your workflow
 
 Now when you use the `ScrapePage` component in your workflow, you'll wrap it in the `FirecrawlProvider` and pass in the `apiKey`:
 
@@ -184,18 +167,9 @@ const markdown = await gsx.execute(
 );
 ```
 
-## Best Practices
-
-While contexts and providers are powerful tools, they do make your components less reusable since they create implicit dependencies. Here are some guidelines for using them effectively:
-
-1. Use providers for managing configuration and external service dependencies
-2. Use raw contexts sparingly and only when prop drilling would make your code significantly more complex
-3. Keep context values simple and focused on a single concern
-4. Document the contexts and providers that components depend on
-
 ## Additional Resources
 
-You can find example code demonstrating these concepts on GitHub:
+You can find the full example code demonstrating these concepts on GitHub:
 
 - [Context examples](https://github.com/cortexclick/gensx/tree/main/examples/contexts)
 - [Provider examples](https://github.com/cortexclick/gensx/tree/main/examples/providers)
