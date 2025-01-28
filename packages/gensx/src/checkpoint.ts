@@ -60,6 +60,9 @@ export class CheckpointManager implements CheckpointWriter {
   // Track active checkpoint write
   private activeCheckpoint: Promise<void> | null = null;
   private pendingUpdate = false;
+  private version = 1;
+  private org = "";
+  private apiKey = "";
 
   // Provide unified view of all secrets
   get secretValues(): Set<unknown> {
@@ -80,6 +83,25 @@ export class CheckpointManager implements CheckpointWriter {
       checkpointsEnv === "true" ||
       checkpointsEnv === "1" ||
       checkpointsEnv === "yes";
+
+    if (!this.checkpointsEnabled) {
+      return;
+    }
+
+    if (!process.env.GENSX_ORG) {
+      throw new Error(
+        "GENSX_ORG is not set, must be set to record checkpoints.",
+      );
+    }
+
+    this.org = process.env.GENSX_ORG;
+
+    if (!process.env.GENSX_API_KEY) {
+      throw new Error(
+        "GENSX_API_KEY is not set, must be set to record checkpoints.",
+      );
+    }
+    this.apiKey = process.env.GENSX_API_KEY;
   }
 
   private attachToParent(node: ExecutionNode, parent: ExecutionNode) {
@@ -194,22 +216,34 @@ export class CheckpointManager implements CheckpointWriter {
     if (!this.root) return;
 
     try {
-      const baseUrl =
-        process.env.GENSX_CHECKPOINT_URL ?? "http://localhost:3000";
-      const url = join(baseUrl, "api/execution");
-
       // Create a deep copy of the execution tree for masking
       const maskedRoot = this.maskExecutionTree(structuredClone(this.root));
-
+      const baseUrl =
+        process.env.GENSX_CHECKPOINT_URL ?? "http://localhost:3001";
+      const url = join(baseUrl, `/org/${this.org}/executions`);
+      const steps = this.countSteps(this.root);
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
         },
-        body: JSON.stringify(maskedRoot),
+        body: JSON.stringify({
+          executionId: this.root.id,
+          version: this.version,
+          schemaVersion: 1,
+          workflowName: this.root.componentName,
+          startedAt: this.root.startTime,
+          completedAt: this.root.endTime,
+          rawExecution: JSON.stringify(maskedRoot),
+          // we leave this up to the client so that we save ourselves the cost of deserializing the tree on write.
+          steps,
+        }),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        this.version++;
+      } else {
         console.error(`[Checkpoint] Failed to save checkpoint, server error:`, {
           status: response.status,
           message: await response.text(),
@@ -218,6 +252,13 @@ export class CheckpointManager implements CheckpointWriter {
     } catch (error) {
       console.error(`[Checkpoint] Failed to save checkpoint:`, { error });
     }
+  }
+
+  private countSteps(node: ExecutionNode): number {
+    return node.children.reduce(
+      (acc, child) => acc + this.countSteps(child),
+      1,
+    );
   }
 
   private maskExecutionTree(node: ExecutionNode): ExecutionNode {

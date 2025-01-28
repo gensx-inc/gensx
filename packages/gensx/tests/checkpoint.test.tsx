@@ -40,7 +40,10 @@ export async function executeWithCheckpoints<T>(
     // eslint-disable-next-line @typescript-eslint/require-await
     .mockImplementation(async (_input: FetchInput, options?: FetchInit) => {
       if (!options?.body) throw new Error("No body provided");
-      const checkpoint = JSON.parse(options.body as string) as ExecutionNode;
+      const checkpoint = JSON.parse(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+        JSON.parse(options.body as string).rawExecution,
+      ) as ExecutionNode;
       checkpoints.push(checkpoint);
       return new Response(null, { status: 200 });
     });
@@ -67,10 +70,16 @@ export async function executeWithCheckpoints<T>(
 
 suite("checkpoint", () => {
   const originalFetch = global.fetch;
-  const originalEnv = process.env.GENSX_CHECKPOINTS;
+  const originalEnv = {
+    GENSX_CHECKPOINTS: process.env.GENSX_CHECKPOINTS,
+    GENSX_ORG: process.env.GENSX_ORG,
+    GENSX_API_KEY: process.env.GENSX_API_KEY,
+  };
 
   beforeEach(() => {
     process.env.GENSX_CHECKPOINTS = "true";
+    process.env.GENSX_ORG = "test-org";
+    process.env.GENSX_API_KEY = "test-api-key";
     // Mock fetch for all tests
     global.fetch = vi
       .fn()
@@ -81,7 +90,9 @@ suite("checkpoint", () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
-    process.env.GENSX_CHECKPOINTS = originalEnv;
+    process.env.GENSX_CHECKPOINTS = originalEnv.GENSX_CHECKPOINTS;
+    process.env.GENSX_ORG = originalEnv.GENSX_ORG;
+    process.env.GENSX_API_KEY = originalEnv.GENSX_API_KEY;
     vi.restoreAllMocks();
   });
 
@@ -489,8 +500,17 @@ suite("checkpoint", () => {
 });
 
 suite("tree reconstruction", () => {
+  const originalFetch = global.fetch;
+  const originalEnv = {
+    GENSX_CHECKPOINTS: process.env.GENSX_CHECKPOINTS,
+    GENSX_ORG: process.env.GENSX_ORG,
+    GENSX_API_KEY: process.env.GENSX_API_KEY,
+  };
   beforeEach(() => {
     process.env.GENSX_CHECKPOINTS = "true";
+    process.env.GENSX_ORG = "test-org";
+    process.env.GENSX_API_KEY = "test-api-key";
+
     global.fetch = vi
       .fn()
       .mockImplementation((_input: FetchInput, _options?: FetchInit) => {
@@ -499,6 +519,10 @@ suite("tree reconstruction", () => {
   });
 
   afterEach(() => {
+    global.fetch = originalFetch;
+    process.env.GENSX_CHECKPOINTS = originalEnv.GENSX_CHECKPOINTS;
+    process.env.GENSX_ORG = originalEnv.GENSX_ORG;
+    process.env.GENSX_API_KEY = originalEnv.GENSX_API_KEY;
     vi.restoreAllMocks();
   });
 
@@ -515,7 +539,10 @@ suite("tree reconstruction", () => {
     expect(lastCall).toBeDefined();
     const options = lastCall![1] as FetchInit;
     expect(options?.body).toBeDefined();
-    const lastCallBody = JSON.parse(options!.body! as string) as ExecutionNode;
+    const lastCallBody = JSON.parse(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+      JSON.parse(options!.body! as string).rawExecution,
+    ) as ExecutionNode;
     expect(lastCallBody.componentName).toBe("Parent");
     expect(lastCallBody.children[0].componentName).toBe("Child1");
 
