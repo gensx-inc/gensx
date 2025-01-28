@@ -10,14 +10,40 @@ import { getCurrentContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
+export const STREAMING_PLACEHOLDER = "[streaming in progress]";
+
+export interface ComponentOpts {
+  secretProps?: string[]; // Property paths to mask in checkpoints
+  secretOutputs?: boolean; // Whether to mask the output of the component
+}
+
+export type WithComponentOpts<P> = P & {
+  componentOpts?: ComponentOpts;
+};
+
 export function Component<P, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
-): GsxComponent<P, O> {
-  const GsxComponent: GsxComponent<P, O> = async props => {
+  defaultOpts?: ComponentOpts,
+): GsxComponent<WithComponentOpts<P>, O> {
+  const GsxComponent: GsxComponent<WithComponentOpts<P>, O> = async props => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
+
+    // Merge component opts with unique secrets
+    const mergedOpts = {
+      ...defaultOpts,
+      ...props.componentOpts,
+      secretProps: Array.from(
+        new Set([
+          ...(defaultOpts?.secretProps ?? []),
+          ...(props.componentOpts?.secretProps ?? []),
+        ]),
+      ),
+      secretOutputs:
+        defaultOpts?.secretOutputs ?? props.componentOpts?.secretOutputs,
+    };
 
     // Create checkpoint node for this component execution
     const nodeId = checkpointManager.addNode(
@@ -26,6 +52,7 @@ export function Component<P, O>(
         props: Object.fromEntries(
           Object.entries(props).filter(([key]) => key !== "children"),
         ),
+        componentOpts: mergedOpts,
       },
       context.getCurrentNodeId(),
     );
@@ -61,11 +88,26 @@ export function Component<P, O>(
 export function StreamComponent<P>(
   name: string,
   fn: (props: P) => MaybePromise<Streamable | JSX.Element>,
+  defaultOpts?: ComponentOpts,
 ): GsxStreamComponent<P> {
   const GsxStreamComponent: GsxStreamComponent<P> = async props => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
+
+    // Merge component opts with unique secrets
+    const mergedOpts = {
+      ...defaultOpts,
+      ...props.componentOpts,
+      secretProps: Array.from(
+        new Set([
+          ...(defaultOpts?.secretProps ?? []),
+          ...(props.componentOpts?.secretProps ?? []),
+        ]),
+      ),
+      secretOutputs:
+        defaultOpts?.secretOutputs ?? props.componentOpts?.secretOutputs,
+    };
 
     // Create checkpoint node for this component execution
     const nodeId = checkpointManager.addNode(
@@ -74,6 +116,7 @@ export function StreamComponent<P>(
         props: Object.fromEntries(
           Object.entries(props).filter(([key]) => key !== "children"),
         ),
+        componentOpts: mergedOpts,
       },
       context.getCurrentNodeId(),
     );
@@ -85,7 +128,7 @@ export function StreamComponent<P>(
 
       if (props.stream) {
         // Mark as streaming immediately
-        checkpointManager.completeNode(nodeId, "[streaming in progress]");
+        checkpointManager.completeNode(nodeId, STREAMING_PLACEHOLDER);
 
         // Create a wrapper iterator that captures the output while streaming
         const wrappedIterator = async function* () {
@@ -139,6 +182,5 @@ export function StreamComponent<P>(
     });
   }
 
-  const component = GsxStreamComponent;
-  return component;
+  return GsxStreamComponent;
 }

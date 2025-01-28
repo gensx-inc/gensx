@@ -3,6 +3,7 @@ export { execute } from "./resolve";
 export { Fragment, jsx, jsxs } from "./jsx-runtime";
 export type { JSX } from "./jsx-runtime";
 export { StreamComponent, Component } from "./component";
+export type { ComponentOpts } from "./component";
 export { array } from "./array";
 export type {
   Args,

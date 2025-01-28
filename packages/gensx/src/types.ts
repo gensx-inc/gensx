@@ -1,3 +1,4 @@
+import { ComponentOpts } from "./component";
 import { ExecutionContext } from "./context";
 import { JSX } from "./jsx-runtime";
 
@@ -73,6 +74,7 @@ export type GsxStreamComponent<P> = (
 // Stream component props as a type alias
 export type StreamArgs<P> = P & {
   stream?: boolean;
+  componentOpts?: ComponentOpts;
   children?:
     | ((output: Streamable) => MaybePromise<ExecutableValue | Primitive>)
     | ((
