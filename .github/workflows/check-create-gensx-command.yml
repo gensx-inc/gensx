@@ -37,7 +37,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          npm create gensx@latest my-app --yes
+          npm create gensx@latest my-app
           cd my-app
           npm install
           npm run build
@@ -49,7 +49,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          npx create-gensx@latest my-app --yes
+          npx create-gensx@latest my-app
           cd my-app
           npm install
           npm run build
@@ -61,7 +61,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          yarn create gensx my-app --yes
+          yarn create gensx my-app
           cd my-app
           yarn install
           yarn build
@@ -73,7 +73,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          pnpm create gensx my-app --yes
+          pnpm create gensx my-app
           cd my-app
           pnpm install
           pnpm build
