@@ -1,18 +1,18 @@
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 
-export interface DeepSeekR1CompletionProps {
+export interface GroqDeepSeekR1CompletionProps {
   prompt: string;
 }
 
-export interface DeepSeekR1CompletionOutput {
+export interface GroqDeepSeekR1CompletionOutput {
   thinking: string;
   completion: string;
 }
-export const DeepSeekR1Completion = gsx.Component<
-  DeepSeekR1CompletionProps,
-  DeepSeekR1CompletionOutput
->("DeepSeekR1Completion", ({ prompt }) => {
+export const GroqDeepSeekR1Completion = gsx.Component<
+  GroqDeepSeekR1CompletionProps,
+  GroqDeepSeekR1CompletionOutput
+>("GroqDeepSeekR1Completion", ({ prompt }) => {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     throw new Error("GROQ_API_KEY environment variable is not set");
