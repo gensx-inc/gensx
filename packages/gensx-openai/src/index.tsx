@@ -34,8 +34,8 @@ export const OpenAIProvider = gsx.Component<ClientOptions, never>(
 );
 
 type ChatCompletionProps = ChatCompletionCreateParams & {
-  gsxTools: GsxTool<z.ZodType, unknown>[];
-  gsxExecuteTools: boolean;
+  gsxTools?: GsxTool<z.ZodType, unknown>[];
+  gsxExecuteTools?: boolean;
 };
 
 // Create a component for chat completions
