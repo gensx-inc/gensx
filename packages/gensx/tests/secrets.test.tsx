@@ -155,7 +155,16 @@ const SecretStreamComponent = gsx.StreamComponent<{ apiKey: string }>(
 );
 
 suite("secrets", () => {
+  const originalEnv = {
+    GENSX_CHECKPOINTS: process.env.GENSX_CHECKPOINTS,
+    GENSX_ORG: process.env.GENSX_ORG,
+    GENSX_API_KEY: process.env.GENSX_API_KEY,
+  };
   beforeEach(() => {
+    process.env.GENSX_CHECKPOINTS = "true";
+    process.env.GENSX_ORG = "test-org";
+    process.env.GENSX_API_KEY = "test-api-key";
+
     global.fetch = vi
       .fn()
       .mockImplementation((_input: FetchInput, _options?: FetchInit) => {
@@ -165,6 +174,9 @@ suite("secrets", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    process.env.GENSX_CHECKPOINTS = originalEnv.GENSX_CHECKPOINTS;
+    process.env.GENSX_ORG = originalEnv.GENSX_ORG;
+    process.env.GENSX_API_KEY = originalEnv.GENSX_API_KEY;
   });
 
   test("collects secrets at registration time", async () => {
