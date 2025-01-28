@@ -11,6 +11,15 @@ import {
 import { Stream } from "openai/streaming";
 import { z } from "zod";
 
+interface ToolCall {
+  id?: string;
+  type?: "function";
+  function?: {
+    name?: string;
+    arguments?: string;
+  };
+}
+
 // Create a context for OpenAI
 export const OpenAIContext = gsx.createContext<{
   client?: OpenAI;
@@ -62,14 +71,29 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
       });
 
       async function* generateTokens(): AsyncGenerator<
-        string,
+        string | { tool_call: ToolCall },
         void,
         undefined
       > {
         for await (const chunk of stream as Stream<ChatCompletionChunk>) {
           const content = chunk.choices[0]?.delta?.content;
+          const toolCall = chunk.choices[0]?.delta?.tool_calls?.[0];
+
           if (content) {
             yield content;
+          }
+
+          if (toolCall) {
+            yield {
+              tool_call: {
+                id: toolCall.id,
+                type: "function",
+                function: {
+                  name: toolCall.function?.name,
+                  arguments: toolCall.function?.arguments,
+                },
+              },
+            };
           }
         }
       }
@@ -83,13 +107,20 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
         ...otherProps,
         tools: openAITools,
       });
-      const content = response.choices[0]?.message?.content ?? "";
 
-      function* generateTokens() {
-        yield content;
-      }
-
-      return generateTokens();
+      // Return a structured response with both content and tool calls
+      return {
+        content: response.choices[0]?.message?.content ?? "",
+        tool_calls:
+          response.choices[0]?.message?.tool_calls?.map((toolCall) => ({
+            id: toolCall.id,
+            type: "function" as const,
+            function: {
+              name: toolCall.function.name,
+              arguments: toolCall.function.arguments,
+            },
+          })) ?? [],
+      };
     }
   },
 );

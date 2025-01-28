@@ -14,6 +14,9 @@ export type {
   GsxStreamComponent,
   GsxComponent,
   GsxTool,
+  ToolCall,
+  ChatResponse,
+  ChatResult,
 } from "./types";
 export type { GsxArray } from "./array";
 

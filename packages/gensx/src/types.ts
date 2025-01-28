@@ -51,6 +51,20 @@ export type ExecutableValue =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-redundant-type-constituents
   | Record<string, Element | any>;
 
+export interface ToolCall {
+  id?: string;
+  type?: "function";
+  function?: {
+    name?: string;
+    arguments?: string;
+  };
+}
+
+export interface ChatResponse {
+  content: string;
+  tool_calls: ToolCall[];
+}
+
 // Component props as a type alias instead of interface
 export type Args<P, O> = P & {
   children?:
@@ -66,13 +80,17 @@ export type GsxComponent<P, O> = (
 
 export { type GsxTool };
 
-export type Streamable =
-  | AsyncIterableIterator<string>
-  | IterableIterator<string>;
+export type StreamResponse = string | { tool_call: ToolCall };
 
-export type GsxStreamComponent<P> = (
+export type Streamable =
+  | AsyncIterableIterator<StreamResponse>
+  | IterableIterator<StreamResponse>;
+
+export type ChatResult = Streamable | ChatResponse;
+
+export type GsxStreamComponent<P, R = Streamable> = (
   props: StreamArgs<P>,
-) => MaybePromise<DeepJSXElement<Streamable | string> | ExecutableValue>;
+) => MaybePromise<DeepJSXElement<R> | ExecutableValue>;
 
 // Stream component props as a type alias
 export type StreamArgs<P> = P & {

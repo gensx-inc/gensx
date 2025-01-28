@@ -1,5 +1,5 @@
-import { gsx } from "gensx";
-import { ChatCompletion } from "gensx-openai";
+import { gsx, type Streamable, type ChatResponse } from "gensx";
+import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { z } from "zod";
 
 const EchoSchema = z.object({
@@ -46,6 +46,7 @@ const getWeatherTool = gsx.Tool<typeof GetWeatherSchema, GetWeatherResponse>({
 
 interface ToolExampleProps {
   message: string;
+  stream: boolean;
 }
 
 const BasicToolResponseExample = gsx.Component<
@@ -53,19 +54,22 @@ const BasicToolResponseExample = gsx.Component<
   GetWeatherResponse | string
 >("BasicToolResponseExample", (props) => {
   return (
-    <ChatCompletion
-      model="gpt-4o-mini"
-      tools={[getWeatherTool]}
-      messages={[
-        {
-          role: "system",
-          content:
-            "You are a helpful weather assistant. Use the getWeather tool when asked about weather.",
-        },
-        { role: "user", content: props.message },
-      ]}
-      //gsxExecuteTools={true}
-    />
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ChatCompletion
+        model="gpt-4o-mini"
+        gsxTools={[getWeatherTool]}
+        messages={[
+          {
+            role: "system",
+            content:
+              "You are a helpful weather assistant. Use the getWeather tool when asked about weather.",
+          },
+          { role: "user", content: props.message },
+        ]}
+        stream={props.stream}
+        gsxExecuteTools={false}
+      />
+    </OpenAIProvider>
   );
 });
 
@@ -80,17 +84,80 @@ async function main() {
   const result2 = await gsx.execute(<EchoTool message="Hello JSX!" />);
   console.log("JSX call result:", result2);
 
-  // Test a tool with a chat completion with a tool response
-  const chatResult = await gsx.execute(
-    <BasicToolResponseExample message="What is the weather in San Francisco?" />,
+  // log non-streamable result
+  const result3 = await gsx.execute<ChatResponse>(
+    <BasicToolResponseExample
+      message="What is the weather in San Francisco?"
+      stream={false}
+    />,
   );
-  console.log("Chat completion result:", chatResult);
+  console.log("Non-streaming tool result:", JSON.stringify(result3, null, 2));
+  console.log("Non-streaming tool result type:", typeof result3);
+  console.log("Has content:", "content" in result3);
+  console.log("Has tool_calls:", "tool_calls" in result3);
 
   // Test a tool with a chat completion with a tool response
-  const chatResult2 = await gsx.execute(
-    <BasicToolResponseExample message="Hello" />,
+  const stream1 = await gsx.execute<Streamable>(
+    <BasicToolResponseExample
+      message="What is the weather in San Francisco?"
+      stream={true}
+    />,
   );
-  console.log("Chat completion result:", chatResult2);
+
+  console.log("\nStreaming tool response:");
+  let currentToolCall: any = null;
+  let accumulatedArguments = "";
+
+  for await (const chunk of stream1) {
+    if (typeof chunk === "string") {
+      process.stdout.write(chunk);
+    } else {
+      // If this is a new tool call
+      if (!currentToolCall && chunk.tool_call.id) {
+        currentToolCall = chunk.tool_call;
+        accumulatedArguments = chunk.tool_call.function?.arguments || "";
+      }
+      // If we're accumulating arguments
+      else if (currentToolCall && chunk.tool_call.function?.arguments) {
+        accumulatedArguments += chunk.tool_call.function.arguments;
+        currentToolCall.function.arguments = accumulatedArguments;
+      }
+
+      // If we see a closing brace, print the complete tool call
+      if (accumulatedArguments.trim().endsWith("}")) {
+        process.stdout.write(
+          "\n" + JSON.stringify({ tool_call: currentToolCall }, null, 2) + "\n",
+        );
+        currentToolCall = null;
+        accumulatedArguments = "";
+      }
+    }
+  }
+
+  // log another non-streamable result
+  const result4 = await gsx.execute<ChatResponse>(
+    <BasicToolResponseExample
+      message="What is the weather in San Francisco?"
+      stream={false}
+    />,
+  );
+  console.log("\nNon-streaming result:", JSON.stringify(result4, null, 2));
+  console.log("Non-streaming result content:", result4.content);
+  console.log("Non-streaming result tool_calls:", result4.tool_calls);
+
+  // Test a tool with a chat completion with a regular response
+  const stream2 = await gsx.execute<Streamable>(
+    <BasicToolResponseExample message="Hello" stream={true} />,
+  );
+
+  console.log("\nStreaming response:");
+  for await (const chunk of stream2) {
+    if (typeof chunk === "string") {
+      process.stdout.write(chunk);
+    } else {
+      process.stdout.write("\n" + JSON.stringify(chunk, null, 2) + "\n");
+    }
+  }
 
   // Log the OpenAPI schema
   //console.log("\nTool schema:", EchoTool.getOpenApiSchema());
