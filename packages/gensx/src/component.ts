@@ -15,7 +15,11 @@ export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 export interface ComponentOpts {
   secretProps?: string[]; // Property paths to mask in checkpoints
   secretOutputs?: boolean; // Whether to mask the output of the component
+  name?: string; // Allows you to override the name of the component
 }
+
+// omit name from ComponentOpts
+export type DefaultOpts = Omit<ComponentOpts, "name">;
 
 export type WithComponentOpts<P> = P & {
   componentOpts?: ComponentOpts;
@@ -24,7 +28,7 @@ export type WithComponentOpts<P> = P & {
 export function Component<P, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
-  defaultOpts?: ComponentOpts,
+  defaultOpts?: DefaultOpts,
 ): GsxComponent<WithComponentOpts<P>, O> {
   const GsxComponent: GsxComponent<WithComponentOpts<P>, O> = async props => {
     const context = getCurrentContext();
@@ -48,7 +52,7 @@ export function Component<P, O>(
     // Create checkpoint node for this component execution
     const nodeId = checkpointManager.addNode(
       {
-        componentName: name,
+        componentName: props.componentOpts?.name ?? name,
         props: Object.fromEntries(
           Object.entries(props).filter(([key]) => key !== "children"),
         ),
@@ -88,9 +92,11 @@ export function Component<P, O>(
 export function StreamComponent<P>(
   name: string,
   fn: (props: P) => MaybePromise<Streamable | JSX.Element>,
-  defaultOpts?: ComponentOpts,
-): GsxStreamComponent<P> {
-  const GsxStreamComponent: GsxStreamComponent<P> = async props => {
+  defaultOpts?: DefaultOpts,
+): GsxStreamComponent<WithComponentOpts<P>> {
+  const GsxStreamComponent: GsxStreamComponent<
+    WithComponentOpts<P>
+  > = async props => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -112,7 +118,7 @@ export function StreamComponent<P>(
     // Create checkpoint node for this component execution
     const nodeId = checkpointManager.addNode(
       {
-        componentName: name,
+        componentName: props.componentOpts?.name ?? name,
         props: Object.fromEntries(
           Object.entries(props).filter(([key]) => key !== "children"),
         ),
@@ -122,9 +128,10 @@ export function StreamComponent<P>(
     );
 
     try {
-      const iterator: Streamable = await context.withCurrentNode(nodeId, () =>
-        resolveDeep(fn(props)),
-      );
+      const iterator: Streamable = await context.withCurrentNode(nodeId, () => {
+        const { componentOpts, ...componentProps } = props;
+        return resolveDeep(fn(componentProps as P));
+      });
 
       if (props.stream) {
         // Mark as streaming immediately

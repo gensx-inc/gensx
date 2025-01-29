@@ -1,4 +1,3 @@
-import { ComponentOpts } from "./component";
 import { ExecutionContext } from "./context";
 import { JSX } from "./jsx-runtime";
 
@@ -79,7 +78,6 @@ type StreamChildrenType<T> = T extends { stream: true }
 
 export type StreamArgs<P> = P & {
   stream?: boolean;
-  componentOpts?: ComponentOpts;
   children?: StreamChildrenType<P>;
 };
 
