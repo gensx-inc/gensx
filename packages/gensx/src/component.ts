@@ -62,9 +62,10 @@ export function Component<P, O>(
     );
 
     try {
-      const result = await context.withCurrentNode(nodeId, () =>
-        resolveDeep(fn(props)),
-      );
+      const result = await context.withCurrentNode(nodeId, () => {
+        const { componentOpts, ...componentProps } = props;
+        return resolveDeep(fn(componentProps as P));
+      });
 
       // Complete the checkpoint node with the result
       checkpointManager.completeNode(nodeId, result);
