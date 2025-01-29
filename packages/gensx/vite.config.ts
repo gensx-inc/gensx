@@ -30,6 +30,11 @@ export default defineConfig(({ command }) => ({
       include: ["src"],
       outDir: "dist",
       rollupTypes: true,
+      afterDiagnostic: diagnostics => {
+        if (diagnostics.length) {
+          throw new Error("Compile failure");
+        }
+      },
     }),
   ],
 }));
