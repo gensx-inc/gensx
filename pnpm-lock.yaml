@@ -264,6 +264,37 @@ importers:
       gensx:
         specifier: ^0.2.7
         version: 0.2.7
+      groq-sdk:
+        specifier: ^0.13.0
+        version: 0.13.0
+      openai:
+        specifier: ^4.80.1
+        version: 4.80.1(ws@8.18.0)(zod@3.24.1)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.12.0
+        version: 22.12.0
+      nodemon:
+        specifier: ^3.1.9
+        version: 3.1.9
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: ^5.7.2
+        version: 5.7.2
+
+  examples/slackComponents:
+    dependencies:
+      '@gensx/openai':
+        specifier: ^0.1.5
+        version: 0.1.5(gensx@0.2.7)(openai@4.80.1(ws@8.18.0)(zod@3.24.1))
+      '@slack/web-api':
+        specifier: ^7.8.0
+        version: 7.8.0
+      gensx:
+        specifier: ^0.2.7
+        version: 0.2.7
       openai:
         specifier: ^4.80.1
         version: 4.80.1(ws@8.18.0)(zod@3.24.1)
@@ -2903,6 +2934,9 @@ packages:
 
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
+
+  groq-sdk@0.13.0:
+    resolution: {integrity: sha512-zHzideA1DIXbJng3Sd9L5zovg+tGyvroUF1zpiUJK0NMnYJDuQyHi32bD6UYcXvoGwEk2/uQ8jZ8rpV7CMoiCg==}
 
   h3@1.13.0:
     resolution: {integrity: sha512-vFEAu/yf8UMUcB4s43OaDaigcqpQd14yanmOsn+NcRX3/guSKncyE2rOYhq8RIchgJrPSs/QiIddnTTR1ddiAg==}
@@ -7547,6 +7581,18 @@ snapshots:
   graceful-fs@4.2.11: {}
 
   graphemer@1.4.0: {}
+
+  groq-sdk@0.13.0:
+    dependencies:
+      '@types/node': 18.19.68
+      '@types/node-fetch': 2.6.12
+      abort-controller: 3.0.0
+      agentkeepalive: 4.6.0
+      form-data-encoder: 1.7.2
+      formdata-node: 4.4.1
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
 
   h3@1.13.0:
     dependencies:
