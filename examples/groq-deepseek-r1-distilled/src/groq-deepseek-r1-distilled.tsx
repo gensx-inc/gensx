@@ -24,7 +24,7 @@ export const GroqDeepSeekR1Completion = gsx.Component<
         model="deepseek-r1-distill-llama-70b"
         stream={false}
       >
-        {(response: string) => {
+        {(response) => {
           const thinkRegex = /<think>(.*?)<\/think>/s;
           const thinkExec = thinkRegex.exec(response);
           const thinking = thinkExec ? thinkExec[1].trim() : "";
