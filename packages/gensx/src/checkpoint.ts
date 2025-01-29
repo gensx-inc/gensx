@@ -76,32 +76,30 @@ export class CheckpointManager implements CheckpointWriter {
   }
 
   constructor() {
-    // Set checkpointsEnabled based on environment variable
-    // Environment variables are strings, so check for common truthy values
-    const checkpointsEnv = process.env.GENSX_CHECKPOINTS?.toLowerCase();
-    this.checkpointsEnabled =
-      checkpointsEnv === "true" ||
-      checkpointsEnv === "1" ||
-      checkpointsEnv === "yes";
+    // The presence of a GENSX_API_KEY is enough to enable checkpoints, but it can be disabled by setting GENSX_CHECKPOINTS=false
+    // GENSX_ORG must also be set to record checkpoints.
+    this.checkpointsEnabled = !!process.env.GENSX_API_KEY;
+    this.org = process.env.GENSX_ORG ?? "";
+    this.apiKey = process.env.GENSX_API_KEY ?? "";
+
+    if (
+      process.env.GENSX_CHECKPOINTS === "false" ||
+      process.env.GENSX_CHECKPOINTS === "0" ||
+      process.env.GENSX_CHECKPOINTS === "no" ||
+      process.env.GENSX_CHECKPOINTS === "off"
+    ) {
+      this.checkpointsEnabled = false;
+    }
 
     if (!this.checkpointsEnabled) {
       return;
     }
 
-    if (!process.env.GENSX_ORG) {
+    if (!this.org) {
       throw new Error(
-        "GENSX_ORG is not set, must be set to record checkpoints.",
+        "GENSX_ORG is not set, must be set to record checkpoints. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
       );
     }
-
-    this.org = process.env.GENSX_ORG;
-
-    if (!process.env.GENSX_API_KEY) {
-      throw new Error(
-        "GENSX_API_KEY is not set, must be set to record checkpoints.",
-      );
-    }
-    this.apiKey = process.env.GENSX_API_KEY;
   }
 
   private attachToParent(node: ExecutionNode, parent: ExecutionNode) {

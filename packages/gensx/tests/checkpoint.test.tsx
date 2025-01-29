@@ -71,13 +71,12 @@ export async function executeWithCheckpoints<T>(
 suite("checkpoint", () => {
   const originalFetch = global.fetch;
   const originalEnv = {
-    GENSX_CHECKPOINTS: process.env.GENSX_CHECKPOINTS,
     GENSX_ORG: process.env.GENSX_ORG,
     GENSX_API_KEY: process.env.GENSX_API_KEY,
+    GENSX_CHECKPOINTS: process.env.GENSX_CHECKPOINTS,
   };
 
   beforeEach(() => {
-    process.env.GENSX_CHECKPOINTS = "true";
     process.env.GENSX_ORG = "test-org";
     process.env.GENSX_API_KEY = "test-api-key";
     // Mock fetch for all tests
@@ -90,9 +89,9 @@ suite("checkpoint", () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
-    process.env.GENSX_CHECKPOINTS = originalEnv.GENSX_CHECKPOINTS;
     process.env.GENSX_ORG = originalEnv.GENSX_ORG;
     process.env.GENSX_API_KEY = originalEnv.GENSX_API_KEY;
+    process.env.GENSX_CHECKPOINTS = originalEnv.GENSX_CHECKPOINTS;
     vi.restoreAllMocks();
   });
 
@@ -135,7 +134,7 @@ suite("checkpoint", () => {
 
   test("no checkpoints when disabled", async () => {
     // Disable checkpoints
-    process.env.GENSX_CHECKPOINTS = undefined;
+    process.env.GENSX_CHECKPOINTS = "false";
 
     // Define a simple component that returns a string
     const SimpleComponent = gsx.Component<{ message: string }, string>(
