@@ -241,9 +241,7 @@ export class CheckpointManager implements CheckpointWriter {
         }),
       });
 
-      if (response.ok) {
-        this.version++;
-      } else {
+      if (!response.ok) {
         console.error(`[Checkpoint] Failed to save checkpoint, server error:`, {
           status: response.status,
           message: await response.text(),
@@ -252,6 +250,9 @@ export class CheckpointManager implements CheckpointWriter {
     } catch (error) {
       console.error(`[Checkpoint] Failed to save checkpoint:`, { error });
     }
+    // Always increment, just in case the write was received by the server. The version value does not need to be
+    // perfectly monotonic, just simply the next value needs to be greater than the previous value.
+    this.version++;
   }
 
   private countSteps(node: ExecutionNode): number {
