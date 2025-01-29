@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.4...gensx-openai-v0.1.5) (2025-01-29)
+
+
+### 🐛 Bug Fixes
+
+* update secret component opts for openAI provider ([#200](https://github.com/gensx-inc/gensx/issues/200)) ([f913e9e](https://github.com/gensx-inc/gensx/commit/f913e9e6d8a46066e02f3653f5897e2e0864449c))
+
 ## [0.1.4](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.3...gensx-openai-v0.1.4) (2025-01-28)
 
 
