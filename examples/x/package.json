@@ -1,0 +1,27 @@
+{
+  "name": "@gensx-examples/x",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon",
+    "start": "NODE_OPTIONS='--enable-source-maps' tsx ./index.tsx",
+    "build": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@mendable/firecrawl-js": "^1.15.7",
+    "gensx": "workspace:*",
+    "twitter-api-sdk": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.11",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.0.0"
+  }
+}

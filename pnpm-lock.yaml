@@ -319,6 +319,31 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
 
+  examples/x:
+    dependencies:
+      '@mendable/firecrawl-js':
+        specifier: ^1.15.7
+        version: 1.15.7(ws@8.18.0)
+      gensx:
+        specifier: workspace:*
+        version: link:../../packages/gensx
+      twitter-api-sdk:
+        specifier: ^1.2.1
+        version: 1.2.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.11
+        version: 20.17.11
+      nodemon:
+        specifier: ^3.1.9
+        version: 3.1.9
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.2
+
   packages/create-gensx:
     dependencies:
       commander:
@@ -4275,6 +4300,10 @@ packages:
   turbo@2.3.3:
     resolution: {integrity: sha512-DUHWQAcC8BTiUZDRzAYGvpSpGLiaOQPfYXlCieQbwUvmml/LRGIe3raKdrOPOoiX0DYlzxs2nH6BoWJoZrj8hA==}
     hasBin: true
+
+  twitter-api-sdk@1.2.1:
+    resolution: {integrity: sha512-tNQ6DGYucFk94JlnUMsHCkHg5o1wnCdHh71Y2ukygNVssOdD1gNVjOpaojJrdwbEAhoZvcWdGHerCa55F8HKxQ==}
+    engines: {node: '>=14'}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -9375,6 +9404,13 @@ snapshots:
       turbo-linux-arm64: 2.3.3
       turbo-windows-64: 2.3.3
       turbo-windows-arm64: 2.3.3
+
+  twitter-api-sdk@1.2.1:
+    dependencies:
+      abort-controller: 3.0.0
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
 
   type-check@0.4.0:
     dependencies:
