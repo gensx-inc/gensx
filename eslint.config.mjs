@@ -108,15 +108,19 @@ export default [
         },
       ],
     },
+    "@typescript-eslint/no-empty-object-type": "off",
   },
   {
     files: ["examples/**"],
     rules: {
       "no-console": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
-      "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "node/no-unsupported-features/es-syntax": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
     },
   },
   {
@@ -130,6 +134,7 @@ export default [
       "vitest/no-disabled-tests": "warn",
       "vitest/expect-expect": "off",
       "vitest/no-standalone-expect": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
     },
   },
 ];

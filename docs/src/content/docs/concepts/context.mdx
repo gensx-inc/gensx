@@ -49,13 +49,10 @@ const UserContext = gsx.createContext<User>({
 To use the context, call the `gsx.useContext(context)` hook inside of a component. Here a `Greeting` component is created that uses the `UserContext` to get the user's name:
 
 ```tsx
-const Greeting = gsx.Component<Record<never, never>, GreetingOutput>(
-  "Greeting",
-  () => {
-    const user = gsx.useContext(UserContext);
-    return `Hello, ${user.name}!`;
-  },
-);
+const Greeting = gsx.Component<{}, GreetingOutput>("Greeting", () => {
+  const user = gsx.useContext(UserContext);
+  return `Hello, ${user.name}!`;
+});
 ```
 
 ### Step 3: Provide the context value

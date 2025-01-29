@@ -166,7 +166,7 @@ interface User {
 const UserContext = gsx.createContext({ name: "" });
 
 // Use the context in a component
-const Greeting = gsx.Component<Record<never, never>, string>("Greeting", () => {
+const Greeting = gsx.Component<{}, string>("Greeting", () => {
   const user = gsx.useContext(UserContext);
   return `Hello, ${user.name}!`;
 });

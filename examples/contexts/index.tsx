@@ -12,13 +12,10 @@ const UserContext = gsx.createContext<User>({
 type GreetingOutput = string;
 
 // Use the context in a component
-const Greeting = gsx.Component<Record<never, never>, GreetingOutput>(
-  "Greeting",
-  () => {
-    const user = gsx.useContext(UserContext);
-    return `Hello, ${user.name}!`;
-  },
-);
+const Greeting = gsx.Component<{}, GreetingOutput>("Greeting", () => {
+  const user = gsx.useContext(UserContext);
+  return `Hello, ${user.name}!`;
+});
 
 async function main() {
   // Provide a value to the context
