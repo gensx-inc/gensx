@@ -1,0 +1,91 @@
+name: Test Create Commands
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs daily at midnight UTC
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  test-create-commands:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package-manager: ["npm", "npx", "yarn", "pnpm"]
+
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install pnpm
+        if: matrix.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install yarn
+        if: matrix.package-manager == 'yarn'
+        run: npm install -g yarn
+
+      - name: Create test directory
+        run: mkdir test-project
+
+      - name: Create project with npm
+        if: matrix.package-manager == 'npm'
+        working-directory: test-project
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          npm create gensx@latest my-app
+          cd my-app
+          npm install
+          npm run build
+          npm run start
+
+      - name: Create project with npx
+        if: matrix.package-manager == 'npx'
+        working-directory: test-project
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          npx create-gensx@latest my-app
+          cd my-app
+          npm install
+          npm run build
+          npm run start
+
+      - name: Create project with yarn
+        if: matrix.package-manager == 'yarn'
+        working-directory: test-project
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          yarn create gensx my-app
+          cd my-app
+          yarn install
+          yarn build
+          yarn start
+
+      - name: Create project with pnpm
+        if: matrix.package-manager == 'pnpm'
+        working-directory: test-project
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          pnpm create gensx my-app
+          cd my-app
+          pnpm install
+          pnpm build
+          pnpm start
+
+      - name: Send Slack notification on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "❌ Create Command Test Failed!\n*Package Manager:* ${{ matrix.package-manager }}\n*Workflow:* ${{ github.workflow }}\n*Run:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_CREATE_GENSX_TEST_NOTIFY_URL }}

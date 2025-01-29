@@ -29,6 +29,7 @@ it("package.json is correctly configured for npm create", async () => {
     path.resolve(__dirname, "../package.json"),
     path.join(pkgDir, "package.json"),
   );
+  await fs.chmod(path.join(pkgDir, "dist/cli.js"), 0o755);
 
   // Install dependencies in the package directory
   await exec("npm install", {
@@ -39,14 +40,11 @@ it("package.json is correctly configured for npm create", async () => {
   const testProjectDir = path.join(tempDir, "test-project");
 
   try {
-    // Try to execute the package directly
-    await exec(
-      `node "${path.join(pkgDir, "dist/cli.js")}" "${testProjectDir}"`,
-      {
-        cwd: pkgDir,
-        env: { ...process.env },
-      },
-    );
+    // Try to execute the package bin directly
+    await exec(`${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}"`, {
+      cwd: pkgDir,
+      env: { ...process.env },
+    });
 
     // Verify the project was created
     const exists = await fs.pathExists(testProjectDir);

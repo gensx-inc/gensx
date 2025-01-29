@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.7](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.6...gensx-v0.2.7) (2025-01-28)
+
+
+### 🐛 Bug Fixes
+
+* Fix stream component type inference in child functions ([#198](https://github.com/gensx-inc/gensx/issues/198)) ([9b22035](https://github.com/gensx-inc/gensx/commit/9b220357798ec931bcdb2437bafc0cc74c234779))
+
+## [0.2.6](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.5...gensx-v0.2.6) (2025-01-28)
+
+
+### ✨ New Features
+
+* Add secrets masking ([#182](https://github.com/gensx-inc/gensx/issues/182)) ([17826a7](https://github.com/gensx-inc/gensx/commit/17826a784eccb1641d05fe38a0ee7886a771e019))
+* adding deep research example ([#110](https://github.com/gensx-inc/gensx/issues/110)) ([d7c33f2](https://github.com/gensx-inc/gensx/commit/d7c33f2bcad706777bd35a64823ae50b3c0cf914))
+* adding support for generic arrays in gsx.array ([#173](https://github.com/gensx-inc/gensx/issues/173)) ([3d8795a](https://github.com/gensx-inc/gensx/commit/3d8795a451ca07b845a14a128d7625edbaa7372e))
+
+
+### 📚 Documentation
+
+* add discord links and update github links ([#179](https://github.com/gensx-inc/gensx/issues/179)) ([a919345](https://github.com/gensx-inc/gensx/commit/a9193453d49034e115152810292900d3caa3f084))
+
 ## [0.2.5](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.4...gensx-v0.2.5) (2025-01-22)
 
 

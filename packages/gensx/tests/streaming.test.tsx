@@ -202,6 +202,35 @@ suite("streaming", () => {
           );
           expect(result).toEqual("Hello World!\n\nHere is the prompt\nfoo");
         });
+
+        test("nested children with stream=true receive Streamable type", async () => {
+          await gsx.execute(
+            <MyComponent stream={true} foo="bar">
+              {async response => {
+                // TypeScript should infer response as Streamable
+                const stream: Streamable = response;
+                let accumulated = "";
+                for await (const token of stream) {
+                  accumulated += token;
+                }
+                // Use a string literal instead of stringifying the stream
+                return <MyComponent stream={true} foo={accumulated} />;
+              }}
+            </MyComponent>,
+          );
+        });
+
+        test("nested children with stream=false receive string type", async () => {
+          await gsx.execute(
+            <MyComponent foo="bar">
+              {response => {
+                // TypeScript should infer response as string
+                const str: string = response;
+                return <MyComponent foo={str} />;
+              }}
+            </MyComponent>,
+          );
+        });
       },
     );
   }

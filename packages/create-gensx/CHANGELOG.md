@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.6](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.5...create-gensx-v0.1.6) (2025-01-28)
+
+
+### 🐛 Bug Fixes
+
+* Fix create-gensx and add daily test ([#191](https://github.com/gensx-inc/gensx/issues/191)) ([e2c6848](https://github.com/gensx-inc/gensx/commit/e2c6848c24dfed7b4f387c1c7c387125a3c9e27e))
+
+
+### 📚 Documentation
+
+* add discord links and update github links ([#179](https://github.com/gensx-inc/gensx/issues/179)) ([a919345](https://github.com/gensx-inc/gensx/commit/a9193453d49034e115152810292900d3caa3f084))
+
 ## [0.1.5](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.4...create-gensx-v0.1.5) (2025-01-21)
 
 
