@@ -14,7 +14,13 @@ Contexts and providers are two closely related concepts that work together to sh
 - **Contexts** give you a way to share data (like state, configuration, or dependencies) across components without manually passing props down the component tree.
 - **Providers** are components that supply data or services to a context. Any component within a provider's subtree can access the context.
 
-The two concepts are interdependent so you can't use one without the other. The remainder of this document will show you how to create and use both contexts and providers in GenSX.
+The two concepts are interdependent so you can't use one without the other. Combined, they're great for:
+
+- Providing data to components without prop drilling
+- Sharing configuration and dependencies, such as clients, for your workflow
+- Managing state that needs to be accessed by multiple components
+
+The remainder of this document will show you how to create and use both contexts and providers in GenSX.
 
 ## Creating and using contexts
 
@@ -166,6 +172,24 @@ const markdown = await gsx.execute(
   </FirecrawlProvider>,
 );
 ```
+
+## Nesting Providers
+
+You can nest multiple providers to combine different services or configurations in your workflow. This is useful when a component needs access to multiple contexts. Here's an example that combines the OpenAI provider with our custom Firecrawl provider:
+
+```tsx
+const result = await gsx.execute(
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
+      <WebPageSummarizer url="https://gensx.com/overview/" />
+    </FirecrawlProvider>
+  </OpenAIProvider>,
+);
+```
+
+In this example, the `WebPageSummarizer` component can access both the OpenAI client and Firecrawl client through their respective contexts.
+
+The order of nesting doesn't matter as long as the component using a context is wrapped by its corresponding provider somewhere up the tree.
 
 ## Additional Resources
 
