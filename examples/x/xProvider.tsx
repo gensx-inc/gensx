@@ -57,8 +57,8 @@ export const TweetsByUsername = gsx.Component<TweetsByUsernameProps, Tweet[]>(
 
     return tweets.data.map((tweet) => ({
       id: tweet.id,
-      text: tweet.text ?? "",
-      created_at: tweet.created_at ?? "",
+      text: tweet.text,
+      created_at: tweet.created_at ?? new Date().toISOString(),
     }));
   },
 );
