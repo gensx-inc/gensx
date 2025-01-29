@@ -219,7 +219,7 @@ export class CheckpointManager implements CheckpointWriter {
       // Create a deep copy of the execution tree for masking
       const maskedRoot = this.maskExecutionTree(structuredClone(this.root));
       const baseUrl =
-        process.env.GENSX_CHECKPOINT_URL ?? "http://localhost:3001";
+        process.env.GENSX_CHECKPOINT_URL ?? "https://api.gensx.com";
       const url = join(baseUrl, `/org/${this.org}/executions`);
       const steps = this.countSteps(this.root);
       const response = await fetch(url, {
