@@ -20,7 +20,7 @@ export const OpenAIProvider = gsx.Component<ClientOptions, never>(
     return <OpenAIContext.Provider value={{ client }} />;
   },
   {
-    secrets: ["apiKey"],
+    secretProps: ["apiKey"],
   },
 );
 
