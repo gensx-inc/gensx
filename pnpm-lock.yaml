@@ -196,18 +196,12 @@ importers:
 
   examples/providers:
     dependencies:
-      '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
       '@mendable/firecrawl-js':
         specifier: ^1.15.7
         version: 1.15.7(ws@8.18.0)
       gensx:
         specifier: workspace:*
         version: link:../../packages/gensx
-      openai:
-        specifier: ^4.77.0
-        version: 4.77.4(zod@3.24.1)
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
