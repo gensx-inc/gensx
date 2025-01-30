@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
 import { CheckpointManager } from "@/checkpoint.js";
 import { gsx } from "@/index.js";
+
 import {
   executeWithCheckpoints,
   FetchInit,
@@ -488,7 +489,7 @@ suite("tree reconstruction", () => {
     expect(fetchMock).toHaveBeenCalled();
     const lastCall = fetchMock.mock.lastCall;
     expect(lastCall).toBeDefined();
-    const options = lastCall![1] as FetchInit;
+    const options = lastCall![1];
     expect(options?.body).toBeDefined();
     const lastCallBody = getExecutionFromBody(options?.body as string);
     expect(lastCallBody.componentName).toBe("Parent");

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
 import { gsx } from "@/index.js";
+
 import {
   executeWithCheckpoints,
   FetchInit,

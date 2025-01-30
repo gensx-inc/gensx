@@ -1,14 +1,14 @@
 import zlib from "node:zlib";
 
-import { withContext } from "@/context";
-import { CheckpointManager } from "@/checkpoint";
+import { vi } from "vitest";
 
+import { CheckpointManager } from "@/checkpoint";
 import { ExecutionNode } from "@/checkpoint";
+import { withContext } from "@/context";
 import { ExecutionContext } from "@/context";
+import { gsx } from "@/index";
 import { ExecutableValue } from "@/types";
 import { createWorkflowContext } from "@/workflow-context";
-import { gsx } from "@/index";
-import { vi } from "vitest";
 
 // Add types for fetch API
 export type FetchInput = Parameters<typeof fetch>[0];
@@ -61,8 +61,10 @@ export async function executeWithCheckpoints<T>(
 }
 
 export function getExecutionFromBody(bodyStr: string): ExecutionNode {
-  const body = JSON.parse(zlib.gunzipSync(bodyStr).toString());
+  const body = JSON.parse(zlib.gunzipSync(bodyStr).toString()) as {
+    rawExecution: string;
+  };
   const compressedExecution = Buffer.from(body.rawExecution, "base64");
   const decompressedExecution = zlib.gunzipSync(compressedExecution);
-  return JSON.parse(decompressedExecution.toString("utf-8"));
+  return JSON.parse(decompressedExecution.toString("utf-8")) as ExecutionNode;
 }
