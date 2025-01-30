@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import { gzip } from "node:zlib";
 import { promisify } from "node:util";
+import { gzip } from "node:zlib";
 
 import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component";
 
