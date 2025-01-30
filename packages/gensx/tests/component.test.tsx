@@ -5,7 +5,7 @@ import { expect, suite, test } from "vitest";
 import { gsx } from "@/index.js";
 import { JSX } from "@/jsx-runtime.js";
 
-import { executeWithCheckpoints } from "./checkpoint.test.js";
+import { executeWithCheckpoints } from "./utils/executeWithCheckpoints";
 
 suite("component", () => {
   test("can create anonymous component", async () => {
