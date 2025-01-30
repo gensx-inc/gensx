@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
 import { gsx } from "@/index.js";
-
 import {
   executeWithCheckpoints,
-  type FetchInit,
-  type FetchInput,
-} from "./checkpoint.test.js";
+  FetchInit,
+  FetchInput,
+} from "./utils/executeWithCheckpoints";
 
 // Test components
 interface ArrayConfig {
