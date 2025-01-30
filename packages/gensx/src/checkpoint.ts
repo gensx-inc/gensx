@@ -1,6 +1,10 @@
 import { join } from "node:path";
+import { gzip } from "node:zlib";
+import { promisify } from "node:util";
 
 import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component";
+
+const gzipAsync = promisify(gzip);
 
 // Cross-platform UUID generation
 function generateUUID(): string {
@@ -220,23 +224,36 @@ export class CheckpointManager implements CheckpointWriter {
         process.env.GENSX_CHECKPOINT_URL ?? "https://api.gensx.com";
       const url = join(baseUrl, `/org/${this.org}/executions`);
       const steps = this.countSteps(this.root);
+
+      // Separately gzip the rawExecution data
+      const compressedExecution = await gzipAsync(
+        Buffer.from(JSON.stringify(maskedRoot), "utf-8"),
+      );
+      const base64CompressedExecution =
+        Buffer.from(compressedExecution).toString("base64");
+
+      const payload = {
+        executionId: this.root.id,
+        version: this.version,
+        schemaVersion: 2,
+        workflowName: this.root.componentName,
+        startedAt: this.root.startTime,
+        completedAt: this.root.endTime,
+        rawExecution: base64CompressedExecution,
+        steps,
+      };
+
+      const compressedData = await gzipAsync(JSON.stringify(payload));
+
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Content-Encoding": "gzip",
           Authorization: `Bearer ${this.apiKey}`,
+          "accept-encoding": "gzip",
         },
-        body: JSON.stringify({
-          executionId: this.root.id,
-          version: this.version,
-          schemaVersion: 1,
-          workflowName: this.root.componentName,
-          startedAt: this.root.startTime,
-          completedAt: this.root.endTime,
-          rawExecution: JSON.stringify(maskedRoot),
-          // we leave this up to the client so that we save ourselves the cost of deserializing the tree on write.
-          steps,
-        }),
+        body: compressedData,
       });
 
       if (!response.ok) {
