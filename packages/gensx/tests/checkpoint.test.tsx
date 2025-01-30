@@ -475,14 +475,16 @@ suite("tree reconstruction", () => {
     vi.restoreAllMocks();
   });
 
-  test("handles simple parent-child relationship", () => {
+  test("handles simple parent-child relationship", async () => {
     const cm = new CheckpointManager();
     const parentId = generateTestId();
     const childId = cm.addNode({ componentName: "Child1" }, parentId);
     cm.addNode({ componentName: "Parent", id: parentId });
 
+    await cm.flush();
+
     // Verify fetch was called with the correct tree structure
-    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
+    const fetchMock = vi.mocked(global.fetch);
     expect(fetchMock).toHaveBeenCalled();
     const lastCall = fetchMock.mock.lastCall;
     expect(lastCall).toBeDefined();
