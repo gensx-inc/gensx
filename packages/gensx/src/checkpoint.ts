@@ -245,8 +245,6 @@ export class CheckpointManager implements CheckpointWriter {
 
       const compressedData = await gzipAsync(JSON.stringify(payload));
 
-      console.log("calling fetch");
-
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -257,8 +255,6 @@ export class CheckpointManager implements CheckpointWriter {
         },
         body: compressedData,
       });
-
-      console.log("fetch", response);
 
       if (!response.ok) {
         console.error(`[Checkpoint] Failed to save checkpoint, server error:`, {
@@ -279,12 +275,6 @@ export class CheckpointManager implements CheckpointWriter {
       (acc, child) => acc + this.countSteps(child),
       1,
     );
-  }
-
-  public async flush() {
-    if (this.activeCheckpoint) {
-      await this.activeCheckpoint;
-    }
   }
 
   private maskExecutionTree(node: ExecutionNode): ExecutionNode {

@@ -482,7 +482,7 @@ suite("tree reconstruction", () => {
     const childId = cm.addNode({ componentName: "Child1" }, parentId);
     cm.addNode({ componentName: "Parent", id: parentId });
 
-    await cm.flush();
+    await cm.waitForPendingUpdates();
 
     // Verify fetch was called with the correct tree structure
     const fetchMock = vi.mocked(global.fetch);
