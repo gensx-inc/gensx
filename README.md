@@ -3,6 +3,7 @@
 [![npm version](https://badge.fury.io/js/gensx.svg)](https://badge.fury.io/js/gensx)
 [![Website](https://img.shields.io/badge/Visit-gensx.dev-orange)](https://gensx.dev)
 [![Discord](https://img.shields.io/badge/Join-Discord-blue)](https://discord.gg/wRmwfz5tCy)
+[![X](https://img.shields.io/badge/Follow-X-blue)](https://x.com/gensx_inc)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [GenSX](https://gensx.dev/) is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed to create and orchestrate workflows.
