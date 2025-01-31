@@ -94,26 +94,31 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
   }
 }
 
-// Update the props types to use our new wrappers
-type BaseGSXCompletionProps = Omit<
-  ChatCompletionCreateParamsNonStreaming,
-  "stream" | "tools"
+// Update the props types to use our new wrappers and extend from full OpenAI types
+type StreamingProps = Omit<
+  ChatCompletionCreateParamsStreaming,
+  "stream" | "tools" | "response_format"
 > & {
-  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-};
-
-type StreamingProps = BaseGSXCompletionProps & {
   stream: true;
+  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
   structuredOutput?: never;
 };
 
-type StructuredProps<T> = BaseGSXCompletionProps & {
+type StructuredProps<T> = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools" | "response_format"
+> & {
   stream?: false;
+  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
   structuredOutput: GSXStructuredOutput<T>;
 };
 
-type StandardProps = BaseGSXCompletionProps & {
+type StandardProps = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools" | "response_format"
+> & {
   stream?: false;
+  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
   structuredOutput?: never;
 };
 
