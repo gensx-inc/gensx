@@ -1,16 +1,7 @@
 import { gsx } from "gensx";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { ChatCompletion as ChatCompletionOutput } from "openai/resources/chat/completions.js";
-import {
-  ChatCompletionChunk,
-  ChatCompletionCreateParamsNonStreaming,
-  ChatCompletionCreateParamsStreaming,
-  ChatCompletionTool,
-} from "openai/resources/index.mjs";
-import { Stream } from "openai/streaming";
+import { ChatCompletionTool } from "openai/resources/index.mjs";
 import { z } from "zod";
-
-import { OpenAIContext } from "./index.js";
 
 // Wrapper for structured output schemas
 export class GSXStructuredOutput<T> {
@@ -49,6 +40,8 @@ export class GSXStructuredOutput<T> {
 
 // Wrapper for tool parameter schemas
 export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
+  public readonly type = "function" as const;
+  public readonly function: ChatCompletionTool["function"];
   private readonly executionComponent: ReturnType<typeof gsx.Component>;
 
   constructor(
@@ -60,6 +53,26 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
       examples?: z.infer<TSchema>[];
     } = {},
   ) {
+    this.function = {
+      name: this.name,
+      description: this.description,
+      parameters: {
+        type: "object",
+        properties: Object.fromEntries(
+          Object.entries(this.parameters.shape).map(([key, value]) => [
+            key,
+            (value as z.ZodString).description
+              ? {
+                  type: "string",
+                  description: (value as z.ZodString).description,
+                }
+              : { type: "string" },
+          ]),
+        ),
+        required: Object.keys(this.parameters.shape),
+      },
+    };
+
     // Create a component that wraps the execute function
     this.executionComponent = gsx.Component<z.infer<TSchema>, unknown>(
       `Tool[${this.name}]`,
@@ -85,166 +98,4 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
   ): GSXTool<TSchema> {
     return new GSXTool(name, description, parameters, execute, options);
   }
-
-  toOpenAITool(): ChatCompletionTool {
-    return {
-      type: "function" as const,
-      function: {
-        name: this.name,
-        description: this.description,
-        parameters: {
-          type: "object",
-          properties: Object.fromEntries(
-            Object.entries(this.parameters.shape).map(([key, value]) => [
-              key,
-              (value as z.ZodString).description
-                ? {
-                    type: "string",
-                    description: (value as z.ZodString).description,
-                  }
-                : { type: "string" },
-            ]),
-          ),
-          required: Object.keys(this.parameters.shape),
-        },
-      },
-    };
-  }
 }
-
-// Update the props types to use our new wrappers and extend from full OpenAI types
-type StreamingProps = Omit<
-  ChatCompletionCreateParamsStreaming,
-  "stream" | "tools" | "response_format"
-> & {
-  stream: true;
-  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-  structuredOutput?: never;
-};
-
-type StructuredProps<T> = Omit<
-  ChatCompletionCreateParamsNonStreaming,
-  "stream" | "tools" | "response_format"
-> & {
-  stream?: false;
-  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-  structuredOutput: GSXStructuredOutput<T>;
-};
-
-type StandardProps = Omit<
-  ChatCompletionCreateParamsNonStreaming,
-  "stream" | "tools" | "response_format"
-> & {
-  stream?: false;
-  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-  structuredOutput?: never;
-};
-
-type ChatCompletionProps<T = unknown> =
-  | StreamingProps
-  | StructuredProps<T>
-  | StandardProps;
-
-type ChatCompletionReturn<P> = P extends StreamingProps
-  ? Stream<ChatCompletionChunk>
-  : P extends StructuredProps<infer T>
-    ? T
-    : ChatCompletionOutput;
-
-// Enhanced version with all GSX features
-export const ChatCompletion = gsx.Component<
-  ChatCompletionProps,
-  ChatCompletionReturn<ChatCompletionProps>
->("ChatCompletion", async (props) => {
-  const context = gsx.useContext(OpenAIContext);
-
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
-
-  // Handle streaming case
-  if (props.stream) {
-    const { tools, ...rest } = props;
-    const openAITools = tools?.map((tool) => tool.toOpenAITool());
-
-    const response = await context.client.chat.completions.create({
-      ...rest,
-      stream: true,
-      tools: openAITools,
-    } as ChatCompletionCreateParamsStreaming);
-
-    return response as Stream<ChatCompletionChunk>;
-  }
-
-  // Handle structured output case
-  if (props.structuredOutput) {
-    const { tools, structuredOutput, ...rest } = props;
-    const openAITools = tools?.map((tool) => tool.toOpenAITool());
-
-    const completion = await context.client.chat.completions.create({
-      ...rest,
-      response_format: structuredOutput.toResponseFormat(),
-      tools: openAITools,
-    } as ChatCompletionCreateParamsNonStreaming);
-
-    const content = completion.choices[0].message.content;
-    if (!content) {
-      throw new Error("No content returned from OpenAI");
-    }
-
-    try {
-      const parsed = JSON.parse(content) as unknown;
-      const validated = structuredOutput.safeParse(parsed);
-      if (!validated.success) {
-        throw new Error(
-          `Invalid structured output: ${validated.error.message}`,
-        );
-      }
-      return validated.data;
-    } catch (e) {
-      throw new Error(
-        `Failed to parse structured output: ${e instanceof Error ? e.message : String(e)}`,
-      );
-    }
-  }
-
-  // Handle standard case (with or without tools)
-  const { tools, ...rest } = props;
-  const openAITools = tools?.map((tool) => tool.toOpenAITool());
-
-  return context.client.chat.completions.create({
-    ...rest,
-    stream: false,
-    tools: openAITools,
-  } as ChatCompletionCreateParamsNonStreaming) as Promise<ChatCompletionOutput>;
-});
-
-// Direct OpenAI wrapper types
-type OpenAIChatCompletionProps =
-  | (Omit<ChatCompletionCreateParamsStreaming, "stream"> & { stream: true })
-  | (Omit<ChatCompletionCreateParamsNonStreaming, "stream"> & {
-      stream?: false;
-    });
-
-type OpenAIChatCompletionReturn<P> = P extends { stream: true }
-  ? Stream<ChatCompletionChunk>
-  : ChatCompletionOutput;
-
-// Direct wrapper over OpenAI's chat completion
-export const OpenAIChatCompletion = gsx.Component<
-  OpenAIChatCompletionProps,
-  OpenAIChatCompletionReturn<OpenAIChatCompletionProps>
->("OpenAIChatCompletion", async (props) => {
-  const context = gsx.useContext(OpenAIContext);
-
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
-
-  const response = await context.client.chat.completions.create(props);
-  return response as OpenAIChatCompletionReturn<typeof props>;
-});

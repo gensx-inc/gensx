@@ -10,6 +10,7 @@ import {
   ChatCompletionCreateParamsNonStreaming,
   ChatCompletionCreateParamsStreaming,
   ChatCompletionMessageParam,
+  ChatCompletionTool,
 } from "openai/resources/chat/completions";
 import { Stream } from "openai/streaming";
 
@@ -17,15 +18,21 @@ import { OpenAIContext } from "./index.js";
 import { GSXStructuredOutput, GSXTool } from "./newCompletion.js";
 
 // Base types for raw OpenAI chat completion
-type RawCompletionProps = Omit<
-  ChatCompletionCreateParamsNonStreaming,
-  "stream" | "tools" | "response_format"
->;
+type RawCompletionProps =
+  | (Omit<ChatCompletionCreateParamsNonStreaming, "tools"> & {
+      tools?: ChatCompletionTool[];
+    })
+  | (Omit<ChatCompletionCreateParamsStreaming, "tools"> & {
+      tools?: ChatCompletionTool[];
+    });
 
-type RawCompletionReturn = ChatCompletionOutput;
+type RawCompletionReturn = ChatCompletionOutput | Stream<ChatCompletionChunk>;
 
 // Stream transform component
-type StreamTransformProps = RawCompletionProps & {
+type StreamTransformProps = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools"
+> & {
   stream: true;
   tools?: GSXTool<any>[];
 };
@@ -42,17 +49,23 @@ interface ToolExecutorProps {
   model: string;
 }
 
-type ToolExecutorReturn = ChatCompletionOutput;
+type ToolExecutorReturn = ChatCompletionMessageParam[];
 
 // Tool transform component
-type ToolTransformProps = RawCompletionProps & {
+type ToolTransformProps = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools"
+> & {
   tools: GSXTool<any>[];
 };
 
 type ToolTransformReturn = RawCompletionReturn;
 
 // Structured output transform component
-type StructuredTransformProps<O = unknown> = RawCompletionProps & {
+type StructuredTransformProps<O = unknown> = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools"
+> & {
   structuredOutput: GSXStructuredOutput<O>;
   tools?: GSXTool<any>[];
 };
@@ -65,18 +78,27 @@ type RetryTransformProps<O = unknown> = StructuredTransformProps<O> & {
 };
 
 // Types for the composition-based implementation
-type StreamingProps = RawCompletionProps & {
+type StreamingProps = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools"
+> & {
   stream: true;
   tools?: GSXTool<any>[];
 };
 
-type StructuredProps<O = unknown> = RawCompletionProps & {
+type StructuredProps<O = unknown> = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools"
+> & {
   stream?: false;
   tools?: GSXTool<any>[];
   structuredOutput: GSXStructuredOutput<O>;
 };
 
-type StandardProps = RawCompletionProps & {
+type StandardProps = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools"
+> & {
   stream?: false;
   tools?: GSXTool<any>[];
   structuredOutput?: never;
@@ -105,10 +127,7 @@ export const RawCompletion = gsx.Component<
     );
   }
 
-  return context.client.chat.completions.create({
-    ...props,
-    stream: false,
-  } as ChatCompletionCreateParamsNonStreaming);
+  return context.client.chat.completions.create(props);
 });
 
 // Stream transform component
@@ -116,88 +135,51 @@ export const StreamTransform = gsx.Component<
   StreamTransformProps,
   StreamTransformReturn
 >("StreamTransform", async (props) => {
-  const context = gsx.useContext(OpenAIContext);
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
-
   const { stream, tools, ...rest } = props;
-  const openAITools = tools?.map((tool) => tool.toOpenAITool());
 
   // If we have tools, first make a synchronous call to get tool calls
   if (tools?.length) {
     // Make initial completion to get tool calls
-    const completion = await context.client.chat.completions.create({
-      ...rest,
-      tools: openAITools,
-      stream: false,
-    } as ChatCompletionCreateParamsNonStreaming);
+    const completion = await gsx.execute<ChatCompletionOutput>(
+      <RawCompletion {...rest} tools={tools} stream={false} />,
+    );
 
-    const toolCalls = completion.choices[0].message.tool_calls;
+    const toolCalls = completion.choices[0]?.message?.tool_calls;
     // If no tool calls, proceed with streaming the original response
     if (!toolCalls?.length) {
-      return context.client.chat.completions.create({
-        ...rest,
-        stream: true,
-      } as ChatCompletionCreateParamsStreaming);
+      return gsx.execute<Stream<ChatCompletionChunk>>(
+        <RawCompletion {...rest} stream={true} />,
+      );
     }
 
     // Execute tools
-    const toolResults = await Promise.all(
-      toolCalls.map(async (toolCall) => {
-        const tool = tools.find((t) => t.name === toolCall.function.name);
-        if (!tool) {
-          throw new Error(`Tool ${toolCall.function.name} not found`);
-        }
-
-        try {
-          const args = JSON.parse(toolCall.function.arguments) as Record<
-            string,
-            unknown
-          >;
-          const validated = tool.parameters.safeParse(args);
-          if (!validated.success) {
-            throw new Error(
-              `Invalid tool arguments: ${validated.error.message}`,
-            );
-          }
-          const result = await tool.execute(validated.data);
-          return {
-            tool_call_id: toolCall.id,
-            role: "tool" as const,
-            content:
-              typeof result === "string" ? result : JSON.stringify(result),
-          };
-        } catch (e) {
-          throw new Error(
-            `Failed to execute tool ${toolCall.function.name}: ${e instanceof Error ? e.message : String(e)}`,
-          );
-        }
-      }),
+    const toolResponses = await gsx.execute<ChatCompletionMessageParam[]>(
+      <ToolExecutor
+        tools={tools}
+        toolCalls={toolCalls}
+        messages={[...rest.messages, completion.choices[0].message]}
+        model={rest.model}
+      />,
     );
 
-    // Make final streaming call with tool results
-    const updatedMessages = [
-      ...rest.messages,
-      completion.choices[0].message,
-      ...toolResults,
-    ];
-
-    return context.client.chat.completions.create({
-      ...rest,
-      messages: updatedMessages,
-      stream: true,
-    } as ChatCompletionCreateParamsStreaming);
+    // Make final streaming call with all messages
+    return gsx.execute<Stream<ChatCompletionChunk>>(
+      <RawCompletion
+        {...rest}
+        messages={[
+          ...rest.messages,
+          completion.choices[0].message,
+          ...toolResponses,
+        ]}
+        stream={true}
+      />,
+    );
   }
 
   // No tools, just stream normally
-  return context.client.chat.completions.create({
-    ...rest,
-    tools: openAITools,
-    stream: true,
-  } as ChatCompletionCreateParamsStreaming);
+  return gsx.execute<Stream<ChatCompletionChunk>>(
+    <RawCompletion {...rest} tools={tools} stream={true} />,
+  );
 });
 
 // Tool execution component
@@ -205,7 +187,7 @@ export const ToolExecutor = gsx.Component<
   ToolExecutorProps,
   ToolExecutorReturn
 >("ToolExecutor", async (props) => {
-  const { tools, toolCalls, messages } = props;
+  const { tools, toolCalls } = props;
   const context = gsx.useContext(OpenAIContext);
   if (!context.client) {
     throw new Error(
@@ -214,7 +196,7 @@ export const ToolExecutor = gsx.Component<
   }
 
   // Execute each tool call
-  const toolResults = await Promise.all(
+  return await Promise.all(
     toolCalls.map(async (toolCall) => {
       const tool = tools.find((t) => t.name === toolCall.function.name);
       if (!tool) {
@@ -243,17 +225,6 @@ export const ToolExecutor = gsx.Component<
       }
     }),
   );
-
-  // Add tool results to messages and make another completion
-  const updatedMessages = [...messages, ...toolResults];
-
-  const completion = await context.client.chat.completions.create({
-    messages: updatedMessages,
-    model: props.model,
-    stream: false,
-  } as ChatCompletionCreateParamsNonStreaming);
-
-  return completion;
 });
 
 // Tool transform component
@@ -261,22 +232,12 @@ export const ToolTransform = gsx.Component<
   ToolTransformProps,
   ToolTransformReturn
 >("ToolTransform", async (props) => {
-  const context = gsx.useContext(OpenAIContext);
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
-
   const { tools, ...rest } = props;
-  const openAITools = tools.map((tool) => tool.toOpenAITool());
 
   // Make initial completion to get tool calls
-  const completion = await context.client.chat.completions.create({
-    ...rest,
-    tools: openAITools,
-    stream: false,
-  } as ChatCompletionCreateParamsNonStreaming);
+  const completion = await gsx.execute<ChatCompletionOutput>(
+    <RawCompletion {...rest} tools={tools} />,
+  );
 
   const toolCalls = completion.choices[0].message.tool_calls;
   // If no tool calls, return the completion
@@ -285,13 +246,13 @@ export const ToolTransform = gsx.Component<
   }
 
   // Execute tools and get final completion
-  return (
+  return gsx.execute<ChatCompletionOutput>(
     <ToolExecutor
       tools={tools}
       toolCalls={toolCalls}
       messages={[...rest.messages, completion.choices[0].message]}
       model={rest.model}
-    />
+    />,
   );
 });
 
@@ -300,23 +261,16 @@ export const StructuredTransform = gsx.Component<
   StructuredTransformProps,
   StructuredTransformReturn<unknown>
 >("StructuredTransform", async (props) => {
-  const context = gsx.useContext(OpenAIContext);
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
-
   const { structuredOutput, tools, ...rest } = props;
-  const openAITools = tools?.map((tool) => tool.toOpenAITool());
 
   // Make initial completion
-  const completion = await context.client.chat.completions.create({
-    ...rest,
-    tools: openAITools,
-    response_format: structuredOutput.toResponseFormat(),
-    stream: false,
-  } as ChatCompletionCreateParamsNonStreaming);
+  const completion = await gsx.execute<ChatCompletionOutput>(
+    <RawCompletion
+      {...rest}
+      tools={tools}
+      response_format={structuredOutput.toResponseFormat()}
+    />,
+  );
 
   const toolCalls = completion.choices[0].message.tool_calls;
   // If we have tool calls, execute them and make another completion
