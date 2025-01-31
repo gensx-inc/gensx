@@ -1,6 +1,6 @@
 ---
-title: Basic Concepts
-description: Understanding the core concepts of GenSX
+title: Basic concepts
+description: This guide covers the core concepts of GenSX
 ---
 
 GenSX is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed using JSX to create and orchestrate workflows.
@@ -77,7 +77,7 @@ const AnalyzePosts = gsx.Component<AnalyzePostsProps, AnalyzePostsOutput>(
 
 In this example, `AnalyzePosts` will produce an array of objects that contains the `summaries` and `commentAnalysis` for each post. GenSX handles resolving all of the nested components and collects them into a final value for you.
 
-## JSX and Data Flow
+## JSX and data flow
 
 GenSX uses JSX to compose components into workflows. The output of a parent component can be passed to a child component through a child function. This pattern enables you to create chains of components where each step's output feeds into the next component's input.
 
@@ -94,7 +94,7 @@ Unlike React's concurrent rendering model, GenSX evaluates your workflow as a de
 
 While GenSX uses a [tree-based structure with JSX](https://gensx.dev/why-jsx/#graphs-dags-and-trees), it still supports all the capabilities you'd expect from graph-based workflows including representing cyclic and agentic patterns.
 
-## Component Types
+## Component types
 
 GenSX provides two main types of components:
 
@@ -114,7 +114,7 @@ for await (const chunk of stream) {
 }
 ```
 
-## Executing Components
+## Executing components
 
 Components are executed using `gsx.execute()`, which processes the JSX tree from top to bottom while executing components in parallel wherever possible.
 
