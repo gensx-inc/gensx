@@ -126,6 +126,73 @@ export const StreamTransform = gsx.Component<
   const { stream, tools, ...rest } = props;
   const openAITools = tools?.map((tool) => tool.toOpenAITool());
 
+  // If we have tools, first make a synchronous call to get tool calls
+  if (tools?.length) {
+    // Make initial completion to get tool calls
+    const completion = await context.client.chat.completions.create({
+      ...rest,
+      tools: openAITools,
+      stream: false,
+    } as ChatCompletionCreateParamsNonStreaming);
+
+    const toolCalls = completion.choices[0].message.tool_calls;
+    // If no tool calls, proceed with streaming the original response
+    if (!toolCalls?.length) {
+      return context.client.chat.completions.create({
+        ...rest,
+        stream: true,
+      } as ChatCompletionCreateParamsStreaming);
+    }
+
+    // Execute tools
+    const toolResults = await Promise.all(
+      toolCalls.map(async (toolCall) => {
+        const tool = tools.find((t) => t.name === toolCall.function.name);
+        if (!tool) {
+          throw new Error(`Tool ${toolCall.function.name} not found`);
+        }
+
+        try {
+          const args = JSON.parse(toolCall.function.arguments) as Record<
+            string,
+            unknown
+          >;
+          const validated = tool.parameters.safeParse(args);
+          if (!validated.success) {
+            throw new Error(
+              `Invalid tool arguments: ${validated.error.message}`,
+            );
+          }
+          const result = await tool.execute(validated.data);
+          return {
+            tool_call_id: toolCall.id,
+            role: "tool" as const,
+            content:
+              typeof result === "string" ? result : JSON.stringify(result),
+          };
+        } catch (e) {
+          throw new Error(
+            `Failed to execute tool ${toolCall.function.name}: ${e instanceof Error ? e.message : String(e)}`,
+          );
+        }
+      }),
+    );
+
+    // Make final streaming call with tool results
+    const updatedMessages = [
+      ...rest.messages,
+      completion.choices[0].message,
+      ...toolResults,
+    ];
+
+    return context.client.chat.completions.create({
+      ...rest,
+      messages: updatedMessages,
+      stream: true,
+    } as ChatCompletionCreateParamsStreaming);
+  }
+
+  // No tools, just stream normally
   return context.client.chat.completions.create({
     ...rest,
     tools: openAITools,
