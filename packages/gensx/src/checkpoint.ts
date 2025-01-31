@@ -227,7 +227,13 @@ export class CheckpointManager implements CheckpointWriter {
 
       // Separately gzip the rawExecution data
       const compressedExecution = await gzipAsync(
-        Buffer.from(JSON.stringify(maskedRoot), "utf-8"),
+        Buffer.from(
+          JSON.stringify({
+            ...maskedRoot,
+            updatedAt: Date.now(),
+          }),
+          "utf-8",
+        ),
       );
       const base64CompressedExecution =
         Buffer.from(compressedExecution).toString("base64");
