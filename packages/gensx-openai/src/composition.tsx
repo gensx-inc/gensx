@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 import { gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
@@ -7,7 +12,6 @@ import {
   ChatCompletionMessageParam,
 } from "openai/resources/chat/completions";
 import { Stream } from "openai/streaming";
-import { z } from "zod";
 
 import { OpenAIContext } from "./index.js";
 import { GSXStructuredOutput, GSXTool } from "./newCompletion.js";
@@ -19,6 +23,75 @@ type RawCompletionProps = Omit<
 >;
 
 type RawCompletionReturn = ChatCompletionOutput;
+
+// Stream transform component
+type StreamTransformProps = RawCompletionProps & {
+  stream: true;
+  tools?: GSXTool<any>[];
+};
+
+type StreamTransformReturn = Stream<ChatCompletionChunk>;
+
+// Tool execution component
+interface ToolExecutorProps {
+  tools: GSXTool<any>[];
+  toolCalls: NonNullable<
+    ChatCompletionOutput["choices"][0]["message"]["tool_calls"]
+  >;
+  messages: ChatCompletionMessageParam[];
+  model: string;
+}
+
+type ToolExecutorReturn = ChatCompletionOutput;
+
+// Tool transform component
+type ToolTransformProps = RawCompletionProps & {
+  tools: GSXTool<any>[];
+};
+
+type ToolTransformReturn = RawCompletionReturn;
+
+// Structured output transform component
+type StructuredTransformProps<O = unknown> = RawCompletionProps & {
+  structuredOutput: GSXStructuredOutput<O>;
+  tools?: GSXTool<any>[];
+};
+
+type StructuredTransformReturn<T> = T;
+
+// Add RetryTransformProps type
+type RetryTransformProps<O = unknown> = StructuredTransformProps<O> & {
+  maxAttempts?: number;
+};
+
+// Types for the composition-based implementation
+type StreamingProps = RawCompletionProps & {
+  stream: true;
+  tools?: GSXTool<any>[];
+};
+
+type StructuredProps<O = unknown> = RawCompletionProps & {
+  stream?: false;
+  tools?: GSXTool<any>[];
+  structuredOutput: GSXStructuredOutput<O>;
+};
+
+type StandardProps = RawCompletionProps & {
+  stream?: false;
+  tools?: GSXTool<any>[];
+  structuredOutput?: never;
+};
+
+type CompositionCompletionProps<O = unknown> =
+  | StreamingProps
+  | StructuredProps<O>
+  | StandardProps;
+
+type CompositionCompletionReturn<P> = P extends StreamingProps
+  ? Stream<ChatCompletionChunk>
+  : P extends StructuredProps<infer O>
+    ? O
+    : ChatCompletionOutput;
 
 // Raw completion component that directly calls OpenAI
 export const RawCompletion = gsx.Component<
@@ -39,13 +112,6 @@ export const RawCompletion = gsx.Component<
 });
 
 // Stream transform component
-type StreamTransformProps = RawCompletionProps & {
-  stream: true;
-  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-};
-
-type StreamTransformReturn = Stream<ChatCompletionChunk>;
-
 export const StreamTransform = gsx.Component<
   StreamTransformProps,
   StreamTransformReturn
@@ -68,17 +134,6 @@ export const StreamTransform = gsx.Component<
 });
 
 // Tool execution component
-interface ToolExecutorProps {
-  tools: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-  toolCalls: NonNullable<
-    ChatCompletionOutput["choices"][0]["message"]["tool_calls"]
-  >;
-  messages: ChatCompletionMessageParam[];
-  model: string;
-}
-
-type ToolExecutorReturn = ChatCompletionOutput;
-
 export const ToolExecutor = gsx.Component<
   ToolExecutorProps,
   ToolExecutorReturn
@@ -100,10 +155,15 @@ export const ToolExecutor = gsx.Component<
       }
 
       try {
-        const args = JSON.parse(toolCall.function.arguments) as z.infer<
-          typeof tool.parameters
+        const args = JSON.parse(toolCall.function.arguments) as Record<
+          string,
+          unknown
         >;
-        const result = await tool.execute(args);
+        const validated = tool.parameters.safeParse(args);
+        if (!validated.success) {
+          throw new Error(`Invalid tool arguments: ${validated.error.message}`);
+        }
+        const result = await tool.execute(validated.data);
         return {
           tool_call_id: toolCall.id,
           role: "tool" as const,
@@ -111,9 +171,7 @@ export const ToolExecutor = gsx.Component<
         };
       } catch (e) {
         throw new Error(
-          `Failed to execute tool ${toolCall.function.name}: ${
-            e instanceof Error ? e.message : String(e)
-          }`,
+          `Failed to execute tool ${toolCall.function.name}: ${e instanceof Error ? e.message : String(e)}`,
         );
       }
     }),
@@ -132,12 +190,6 @@ export const ToolExecutor = gsx.Component<
 });
 
 // Tool transform component
-type ToolTransformProps = RawCompletionProps & {
-  tools: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-};
-
-type ToolTransformReturn = RawCompletionReturn;
-
 export const ToolTransform = gsx.Component<
   ToolTransformProps,
   ToolTransformReturn
@@ -177,15 +229,8 @@ export const ToolTransform = gsx.Component<
 });
 
 // Structured output transform component
-type StructuredTransformProps<T> = RawCompletionProps & {
-  structuredOutput: GSXStructuredOutput<T>;
-  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-};
-
-type StructuredTransformReturn<T> = T;
-
 export const StructuredTransform = gsx.Component<
-  StructuredTransformProps<unknown>,
+  StructuredTransformProps,
   StructuredTransformReturn<unknown>
 >("StructuredTransform", async (props) => {
   const context = gsx.useContext(OpenAIContext);
@@ -235,9 +280,7 @@ export const StructuredTransform = gsx.Component<
       return validated.data;
     } catch (e) {
       throw new Error(
-        `Failed to parse structured output after tool execution: ${
-          e instanceof Error ? e.message : String(e)
-        }`,
+        `Failed to parse structured output after tool execution: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
   }
@@ -263,12 +306,8 @@ export const StructuredTransform = gsx.Component<
 });
 
 // Retry transform component for structured output
-type RetryTransformProps<T> = StructuredTransformProps<T> & {
-  maxAttempts?: number;
-};
-
 export const RetryTransform = gsx.Component<
-  RetryTransformProps<unknown>,
+  RetryTransformProps,
   StructuredTransformReturn<unknown>
 >("RetryTransform", async (props) => {
   const { maxAttempts = 3, ...rest } = props;
@@ -302,35 +341,6 @@ export const RetryTransform = gsx.Component<
     }
   }
 });
-
-// Types for the composition-based implementation
-type StreamingProps = RawCompletionProps & {
-  stream: true;
-  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-};
-
-type StructuredProps<T> = RawCompletionProps & {
-  stream?: false;
-  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-  structuredOutput: GSXStructuredOutput<T>;
-};
-
-type StandardProps = RawCompletionProps & {
-  stream?: false;
-  tools?: GSXTool<z.ZodObject<z.ZodRawShape>>[];
-  structuredOutput?: never;
-};
-
-type CompositionCompletionProps<T = unknown> =
-  | StreamingProps
-  | StructuredProps<T>
-  | StandardProps;
-
-type CompositionCompletionReturn<P> = P extends StreamingProps
-  ? Stream<ChatCompletionChunk>
-  : P extends StructuredProps<infer T>
-    ? T
-    : ChatCompletionOutput;
 
 // The composition-based implementation that matches ChatCompletion's functionality
 export const CompositionCompletion = gsx.Component<

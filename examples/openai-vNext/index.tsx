@@ -31,14 +31,21 @@ async function basicCompletion() {
   return results;
 }
 
-async function structuredOutput() {
-  const tool = new GSXTool<z.ZodObject<{ location: z.ZodString }>>(
+async function tools() {
+  // Define the schema as a Zod object
+  const weatherSchema = z.object({
+    location: z.string(),
+  });
+
+  // Use z.infer to get the type for our parameters
+  type WeatherParams = z.infer<typeof weatherSchema>;
+
+  // Create the tool with the correct type - using the schema type, not the inferred type
+  const tool = new GSXTool<typeof weatherSchema>(
     "get_weather",
     "get the weather for a given location",
-    z.object({
-      location: z.string(),
-    }),
-    async ({ location }) => {
+    weatherSchema,
+    async ({ location }: WeatherParams) => {
       console.log("getting weather for", location);
       const weather = ["sunny", "cloudy", "rainy", "snowy"];
       return Promise.resolve({
@@ -46,6 +53,7 @@ async function structuredOutput() {
       });
     },
   );
+
   const results = await gsx.execute<ChatCompletionOutput>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <CompositionCompletion
@@ -108,7 +116,7 @@ async function main() {
   //   process.stdout.write(chunk.choices[0].delta.content ?? "");
   // }
 
-  const results = await structuredOutput();
+  const results = await tools();
   console.log(results.choices[0].message.content);
 }
 
