@@ -65,7 +65,7 @@ async function tools() {
           },
           {
             role: "user",
-            content: `What do you think of kubernetes in one paragraph? but also talk about the current weather`,
+            content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
           },
         ]}
         model="gpt-4o-mini"
