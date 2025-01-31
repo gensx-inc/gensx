@@ -40,6 +40,13 @@ export async function executeWithCheckpoints<T>(
       return new Response(null, { status: 200 });
     });
 
+  const originalEnv = {
+    GENSX_ORG: process.env.GENSX_ORG,
+    GENSX_API_KEY: process.env.GENSX_API_KEY,
+  };
+  process.env.GENSX_ORG = "test-org";
+  process.env.GENSX_API_KEY = "test-api-key";
+
   // Create and configure workflow context
   const checkpointManager = new CheckpointManager();
   const workflowContext = createWorkflowContext();
@@ -53,6 +60,9 @@ export async function executeWithCheckpoints<T>(
   const result = await withContext(contextWithWorkflow, () =>
     gsx.execute<T>(element),
   );
+
+  process.env.GENSX_ORG = originalEnv.GENSX_ORG;
+  process.env.GENSX_API_KEY = originalEnv.GENSX_API_KEY;
 
   // Wait for any pending checkpoints
   await checkpointManager.waitForPendingUpdates();

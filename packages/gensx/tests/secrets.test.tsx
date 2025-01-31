@@ -1,12 +1,8 @@
-import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
+import { expect, suite, test } from "vitest";
 
 import { gsx } from "@/index.js";
 
-import {
-  executeWithCheckpoints,
-  FetchInit,
-  FetchInput,
-} from "./utils/executeWithCheckpoints";
+import { executeWithCheckpoints } from "./utils/executeWithCheckpoints";
 
 // Test components
 interface ArrayConfig {
@@ -155,27 +151,6 @@ const SecretStreamComponent = gsx.StreamComponent<{ apiKey: string }>(
 );
 
 suite("secrets", () => {
-  const originalEnv = {
-    GENSX_ORG: process.env.GENSX_ORG,
-    GENSX_API_KEY: process.env.GENSX_API_KEY,
-  };
-  beforeEach(() => {
-    process.env.GENSX_ORG = "test-org";
-    process.env.GENSX_API_KEY = "test-api-key";
-
-    global.fetch = vi
-      .fn()
-      .mockImplementation((_input: FetchInput, _options?: FetchInit) => {
-        return new Response(null, { status: 200 });
-      });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-    process.env.GENSX_ORG = originalEnv.GENSX_ORG;
-    process.env.GENSX_API_KEY = originalEnv.GENSX_API_KEY;
-  });
-
   test("collects secrets at registration time", async () => {
     const secretValue = "secret-api-key-12345";
     const { checkpoints, checkpointManager } = await executeWithCheckpoints<
