@@ -131,7 +131,7 @@ export async function createGensxProject(
     await exec(`npm install -D ${template.devDependencies.join(" ")}`);
   }
 
-  console.log(`
+  console.info(`
 Successfully created GenSX project in ${absoluteProjectPath}
 
 To get started:

@@ -64,7 +64,7 @@ export default [
       ...tseslint.configs["strict-type-checked"].rules,
       ...tseslint.configs["stylistic-type-checked"].rules,
       ...prettierConfig.rules,
-      "no-console": ["error", { allow: ["warn", "error"] }],
+      "no-console": ["error", { allow: ["warn", "error", "info"] }],
       "@typescript-eslint/restrict-template-expressions": [
         "error",
         {
