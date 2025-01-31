@@ -66,6 +66,68 @@ export const StreamTransform = gsx.Component<
   } as ChatCompletionCreateParamsStreaming);
 });
 
+// Tool execution component
+interface ToolExecutorProps {
+  tools: GSXTool<z.ZodObject<z.ZodRawShape>>[];
+  toolCalls: NonNullable<
+    ChatCompletionOutput["choices"][0]["message"]["tool_calls"]
+  >;
+  messages: ChatCompletionMessageParam[];
+}
+
+type ToolExecutorReturn = ChatCompletionOutput;
+
+export const ToolExecutor = gsx.Component<
+  ToolExecutorProps,
+  ToolExecutorReturn
+>("ToolExecutor", async (props) => {
+  const { tools, toolCalls, messages } = props;
+  const context = gsx.useContext(OpenAIContext);
+  if (!context.client) {
+    throw new Error(
+      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
+    );
+  }
+
+  // Execute each tool call
+  const toolResults = await Promise.all(
+    toolCalls.map(async (toolCall) => {
+      const tool = tools.find((t) => t.name === toolCall.function.name);
+      if (!tool) {
+        throw new Error(`Tool ${toolCall.function.name} not found`);
+      }
+
+      try {
+        const args = JSON.parse(toolCall.function.arguments) as z.infer<
+          typeof tool.parameters
+        >;
+        const result = await tool.execute(args);
+        return {
+          tool_call_id: toolCall.id,
+          role: "tool" as const,
+          content: typeof result === "string" ? result : JSON.stringify(result),
+        };
+      } catch (e) {
+        throw new Error(
+          `Failed to execute tool ${toolCall.function.name}: ${
+            e instanceof Error ? e.message : String(e)
+          }`,
+        );
+      }
+    }),
+  );
+
+  // Add tool results to messages and make another completion
+  const updatedMessages = [...messages, ...toolResults];
+
+  const completion = await context.client.chat.completions.create({
+    messages: updatedMessages,
+    stream: false,
+  } as ChatCompletionCreateParamsNonStreaming);
+
+  return completion;
+});
+
 // Tool transform component
 type ToolTransformProps = RawCompletionProps & {
   tools: GSXTool<z.ZodObject<z.ZodRawShape>>[];
@@ -87,11 +149,27 @@ export const ToolTransform = gsx.Component<
   const { tools, ...rest } = props;
   const openAITools = tools.map((tool) => tool.toOpenAITool());
 
-  return context.client.chat.completions.create({
+  // Make initial completion to get tool calls
+  const completion = await context.client.chat.completions.create({
     ...rest,
     tools: openAITools,
     stream: false,
   } as ChatCompletionCreateParamsNonStreaming);
+
+  const toolCalls = completion.choices[0].message.tool_calls;
+  // If no tool calls, return the completion
+  if (!toolCalls?.length) {
+    return completion;
+  }
+
+  // Execute tools and get final completion
+  return (
+    <ToolExecutor
+      tools={tools}
+      toolCalls={toolCalls}
+      messages={[...rest.messages, completion.choices[0].message]}
+    />
+  );
 });
 
 // Structured output transform component
@@ -116,6 +194,7 @@ export const StructuredTransform = gsx.Component<
   const { structuredOutput, tools, ...rest } = props;
   const openAITools = tools?.map((tool) => tool.toOpenAITool());
 
+  // Make initial completion
   const completion = await context.client.chat.completions.create({
     ...rest,
     tools: openAITools,
@@ -123,6 +202,42 @@ export const StructuredTransform = gsx.Component<
     stream: false,
   } as ChatCompletionCreateParamsNonStreaming);
 
+  const toolCalls = completion.choices[0].message.tool_calls;
+  // If we have tool calls, execute them and make another completion
+  if (toolCalls?.length && tools) {
+    const toolResult = await gsx.execute<ChatCompletionOutput>(
+      <ToolExecutor
+        tools={tools}
+        toolCalls={toolCalls}
+        messages={[...rest.messages, completion.choices[0].message]}
+      />,
+    );
+
+    // Parse and validate the final result
+    const content = toolResult.choices[0]?.message.content;
+    if (!content) {
+      throw new Error("No content returned from OpenAI after tool execution");
+    }
+
+    try {
+      const parsed = JSON.parse(content) as unknown;
+      const validated = structuredOutput.safeParse(parsed);
+      if (!validated.success) {
+        throw new Error(
+          `Invalid structured output: ${validated.error.message}`,
+        );
+      }
+      return validated.data;
+    } catch (e) {
+      throw new Error(
+        `Failed to parse structured output after tool execution: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      );
+    }
+  }
+
+  // No tool calls, parse and validate the direct result
   const content = completion.choices[0].message.content;
   if (!content) {
     throw new Error("No content returned from OpenAI");

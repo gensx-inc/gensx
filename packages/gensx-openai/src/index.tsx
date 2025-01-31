@@ -57,6 +57,7 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     public readonly name: string,
     public readonly description: string,
     public readonly parameters: TSchema,
+    public readonly execute: (args: z.infer<TSchema>) => Promise<unknown>,
     public readonly options: {
       examples?: z.infer<TSchema>[];
     } = {},
@@ -66,11 +67,12 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     name: string,
     description: string,
     parameters: TSchema,
+    execute: (args: z.infer<TSchema>) => Promise<unknown>,
     options: {
       examples?: z.infer<TSchema>[];
     } = {},
   ): GSXTool<TSchema> {
-    return new GSXTool(name, description, parameters, options);
+    return new GSXTool(name, description, parameters, execute, options);
   }
 
   toOpenAITool(): ChatCompletionTool {
