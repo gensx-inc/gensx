@@ -68,3 +68,4 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionCreateParams>(
 );
 
 export { CompositionCompletion } from "./composition.js";
+export { GSXTool, GSXStructuredOutput } from "./newCompletion.js";

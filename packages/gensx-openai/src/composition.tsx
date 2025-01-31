@@ -74,6 +74,7 @@ interface ToolExecutorProps {
     ChatCompletionOutput["choices"][0]["message"]["tool_calls"]
   >;
   messages: ChatCompletionMessageParam[];
+  model: string;
 }
 
 type ToolExecutorReturn = ChatCompletionOutput;
@@ -123,6 +124,7 @@ export const ToolExecutor = gsx.Component<
 
   const completion = await context.client.chat.completions.create({
     messages: updatedMessages,
+    model: props.model,
     stream: false,
   } as ChatCompletionCreateParamsNonStreaming);
 
@@ -169,6 +171,7 @@ export const ToolTransform = gsx.Component<
       tools={tools}
       toolCalls={toolCalls}
       messages={[...rest.messages, completion.choices[0].message]}
+      model={rest.model}
     />
   );
 });
@@ -211,6 +214,7 @@ export const StructuredTransform = gsx.Component<
         tools={tools}
         toolCalls={toolCalls}
         messages={[...rest.messages, completion.choices[0].message]}
+        model={rest.model}
       />,
     );
 
