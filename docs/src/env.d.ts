@@ -1,8 +1,7 @@
 /// <reference types="astro/client" />
 
 // This interface is used to augment the ImportMetaEnv type
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface ImportMetaEnv extends Record<string, unknown> {
+interface ImportMetaEnv extends {} {
   // Add environment variables here
 }
 

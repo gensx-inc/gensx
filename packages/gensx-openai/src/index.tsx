@@ -19,6 +19,9 @@ export const OpenAIProvider = gsx.Component<ClientOptions, never>(
     const client = new OpenAI(args);
     return <OpenAIContext.Provider value={{ client }} />;
   },
+  {
+    secretProps: ["apiKey"],
+  },
 );
 
 // Create a component for chat completions

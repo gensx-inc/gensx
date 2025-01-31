@@ -1,77 +1,24 @@
 import { setTimeout } from "timers/promises";
 
 import type { ExecutionNode } from "@/checkpoint.js";
-import type { ExecutableValue } from "@/types.js";
 
-import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
+import { beforeEach, expect, suite, test, vi } from "vitest";
 
 import { CheckpointManager } from "@/checkpoint.js";
-import { ExecutionContext, withContext } from "@/context.js";
 import { gsx } from "@/index.js";
-import { createWorkflowContext } from "@/workflow-context.js";
 
-// Add types for fetch API
-type FetchInput = Parameters<typeof fetch>[0];
-type FetchInit = Parameters<typeof fetch>[1];
+import {
+  executeWithCheckpoints,
+  getExecutionFromBody,
+  mockFetch,
+} from "./utils/executeWithCheckpoints";
 
-/**
- * Helper to execute a workflow with checkpoint tracking
- * Returns both the execution result and recorded checkpoints for verification
- */
-
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-async function executeWithCheckpoints<T>(element: ExecutableValue): Promise<{
-  result: T;
-  checkpoints: ExecutionNode[];
-  checkpointManager: CheckpointManager;
-}> {
-  const checkpoints: ExecutionNode[] = [];
-
-  // Set up fetch mock to capture checkpoints
-  global.fetch = vi
-    .fn()
-    // eslint-disable-next-line @typescript-eslint/require-await
-    .mockImplementation(async (_input: FetchInput, options?: FetchInit) => {
-      if (!options?.body) throw new Error("No body provided");
-      const checkpoint = JSON.parse(options.body as string) as ExecutionNode;
-      checkpoints.push(checkpoint);
-      return new Response(null, { status: 200 });
-    });
-
-  // Create and configure workflow context
-  const checkpointManager = new CheckpointManager();
-  const workflowContext = createWorkflowContext();
-  workflowContext.checkpointManager = checkpointManager;
-  const executionContext = new ExecutionContext({});
-  const contextWithWorkflow = executionContext.withContext({
-    [Symbol.for("gensx.workflow")]: workflowContext,
-  });
-
-  // Execute with context
-  const result = await withContext(contextWithWorkflow, () =>
-    gsx.execute<T>(element),
-  );
-
-  // Wait for any pending checkpoints
-  await checkpointManager.waitForPendingUpdates();
-
-  return { result, checkpoints, checkpointManager };
+// Helper function to generate test IDs
+export function generateTestId(): string {
+  return `test-${Math.random().toString(36).substring(7)}`;
 }
 
 suite("checkpoint", () => {
-  const originalFetch = global.fetch;
-  const originalEnv = process.env.GENSX_CHECKPOINTS;
-
-  beforeEach(() => {
-    process.env.GENSX_CHECKPOINTS = "true";
-  });
-
-  afterEach(() => {
-    global.fetch = originalFetch;
-    process.env.GENSX_CHECKPOINTS = originalEnv;
-    vi.restoreAllMocks();
-  });
-
   test("basic component test", async () => {
     // Define a simple component that returns a string
     const SimpleComponent = gsx.Component<{ message: string }, string>(
@@ -111,7 +58,7 @@ suite("checkpoint", () => {
 
   test("no checkpoints when disabled", async () => {
     // Disable checkpoints
-    process.env.GENSX_CHECKPOINTS = undefined;
+    process.env.GENSX_CHECKPOINTS = "false";
 
     // Define a simple component that returns a string
     const SimpleComponent = gsx.Component<{ message: string }, string>(
@@ -126,6 +73,9 @@ suite("checkpoint", () => {
     const { result, checkpoints } = await executeWithCheckpoints<string>(
       <SimpleComponent message="world" />,
     );
+
+    // Restore checkpoints
+    process.env.GENSX_CHECKPOINTS = undefined;
 
     // Verify execution still works
     expect(result).toBe("hello world");
@@ -168,8 +118,7 @@ suite("checkpoint", () => {
     expect(result[99]).toBe("component 99");
 
     // Verify checkpoint behavior
-    const fetchCalls = (global.fetch as unknown as ReturnType<typeof vi.fn>)
-      .mock.calls.length;
+    const fetchCalls = vi.mocked(global.fetch).mock.calls.length;
 
     // We expect:
     // - Some minimum number of calls to capture the state (could be heavily batched)
@@ -472,5 +421,126 @@ suite("checkpoint", () => {
         streamCompleted: false,
       },
     });
+  });
+});
+
+suite("tree reconstruction", () => {
+  beforeEach(() => {
+    mockFetch(() => {
+      return new Response(null, { status: 200 });
+    });
+  });
+
+  test("handles simple parent-child relationship", async () => {
+    const cm = new CheckpointManager({
+      apiKey: "test-api-key",
+      org: "test-org",
+    });
+    const parentId = generateTestId();
+    const childId = cm.addNode({ componentName: "Child1" }, parentId);
+    cm.addNode({ componentName: "Parent", id: parentId });
+
+    await cm.waitForPendingUpdates();
+
+    // Verify fetch was called with the correct tree structure
+    const fetchMock = vi.mocked(global.fetch);
+    expect(fetchMock).toHaveBeenCalled();
+    const lastCall = fetchMock.mock.lastCall;
+    expect(lastCall).toBeDefined();
+    const options = lastCall![1];
+    expect(options?.body).toBeDefined();
+    const lastCallBody = getExecutionFromBody(options?.body as string);
+    expect(lastCallBody.componentName).toBe("Parent");
+    expect(lastCallBody.children[0].componentName).toBe("Child1");
+
+    // Verify tree structure
+    expect(cm.root?.componentName).toBe("Parent");
+    expect(cm.root?.children).toHaveLength(1);
+    expect(cm.root?.children[0].componentName).toBe("Child1");
+    expect(cm.root?.children[0].id).toBe(childId);
+  });
+
+  test("handles multiple children waiting for same parent", () => {
+    const cm = new CheckpointManager();
+    const parentId = generateTestId();
+    cm.addNode({ componentName: "Child2A" }, parentId);
+    cm.addNode({ componentName: "Child2B" }, parentId);
+    cm.addNode({ componentName: "Parent2", id: parentId });
+
+    expect(cm.root?.componentName).toBe("Parent2");
+    expect(cm.root?.children).toHaveLength(2);
+    expect(cm.root?.children.map(c => c.componentName)).toContain("Child2A");
+    expect(cm.root?.children.map(c => c.componentName)).toContain("Child2B");
+  });
+
+  test("handles deep tree with mixed ordering", () => {
+    const cm = new CheckpointManager();
+    const rootId = generateTestId();
+    const branchAId = generateTestId();
+    const branchBId = generateTestId();
+
+    cm.addNode({ componentName: "LeafA" }, branchAId);
+    cm.addNode({ componentName: "LeafB" }, branchBId);
+    cm.addNode({ componentName: "Root", id: rootId });
+    cm.addNode({ componentName: "BranchA", id: branchAId }, rootId);
+    cm.addNode({ componentName: "BranchB", id: branchBId }, rootId);
+
+    const root = cm.root;
+    expect(root?.componentName).toBe("Root");
+    expect(root?.children).toHaveLength(2);
+
+    const branchA = root?.children.find(c => c.componentName === "BranchA");
+    const branchB = root?.children.find(c => c.componentName === "BranchB");
+
+    expect(branchA?.children[0].componentName).toBe("LeafA");
+    expect(branchB?.children[0].componentName).toBe("LeafB");
+  });
+
+  test("handles root node arriving after children", () => {
+    const cm = new CheckpointManager();
+    const rootId = generateTestId();
+    const childId = cm.addNode({ componentName: "Child" }, rootId);
+    cm.addNode({ componentName: "Grandchild" }, childId);
+    cm.addNode({ componentName: "Root", id: rootId });
+
+    expect(cm.root?.componentName).toBe("Root");
+    expect(cm.root?.children[0].componentName).toBe("Child");
+    expect(cm.root?.children[0].children[0].componentName).toBe("Grandchild");
+  });
+
+  test("handles complex reordering with multiple levels", () => {
+    const cm = new CheckpointManager();
+    const rootId = generateTestId();
+    const branchAId = generateTestId();
+    const branchBId = generateTestId();
+
+    cm.addNode({ componentName: "LeafA" }, branchAId);
+    cm.addNode({ componentName: "LeafB" }, branchBId);
+    cm.addNode({ componentName: "LeafC" }, branchAId);
+
+    cm.addNode({ componentName: "BranchB", id: branchBId }, rootId);
+    cm.addNode({ componentName: "Root", id: rootId });
+    cm.addNode({ componentName: "BranchA", id: branchAId }, rootId);
+
+    const root = cm.root;
+    expect(root?.componentName).toBe("Root");
+    expect(root?.children).toHaveLength(2);
+
+    const branchA = root?.children.find(c => c.componentName === "BranchA");
+    const branchB = root?.children.find(c => c.componentName === "BranchB");
+
+    // Verify all nodes are connected properly
+    expect(branchA?.children.map(c => c.componentName)).toContain("LeafA");
+    expect(branchA?.children.map(c => c.componentName)).toContain("LeafC");
+    expect(branchB?.children.map(c => c.componentName)).toContain("LeafB");
+
+    // Verify tree integrity - every node should have correct parent reference
+    function verifyNodeParentRefs(node: ExecutionNode) {
+      for (const child of node.children) {
+        expect(child.parentId).toBe(node.id);
+        verifyNodeParentRefs(child);
+      }
+    }
+    verifyNodeParentRefs(root!);
   });
 });

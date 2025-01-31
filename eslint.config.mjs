@@ -27,7 +27,7 @@ export default [
       ...eslintPluginN.configs.recommended.rules,
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
-      "no-console": "off",
+      "no-console": ["error", { allow: ["warn", "error"] }],
       "n/no-missing-import": "off",
       "n/no-unsupported-features/es-syntax": [
         "error",
@@ -64,6 +64,7 @@ export default [
       ...tseslint.configs["strict-type-checked"].rules,
       ...tseslint.configs["stylistic-type-checked"].rules,
       ...prettierConfig.rules,
+      "no-console": ["error", { allow: ["warn", "error", "info"] }],
       "@typescript-eslint/restrict-template-expressions": [
         "error",
         {
@@ -107,16 +108,7 @@ export default [
           ],
         },
       ],
-    },
-  },
-  {
-    files: ["examples/**"],
-    rules: {
-      "no-console": "off",
-      "@typescript-eslint/no-unsafe-assignment": "off",
-      "@typescript-eslint/no-unsafe-member-access": "off",
-      "@typescript-eslint/no-unsafe-call": "off",
-      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
     },
   },
   {
@@ -130,6 +122,7 @@ export default [
       "vitest/no-disabled-tests": "warn",
       "vitest/expect-expect": "off",
       "vitest/no-standalone-expect": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
     },
   },
 ];

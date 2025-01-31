@@ -12,7 +12,8 @@ export default defineConfig({
       title: "",
       description: "Create LLM workflows from components",
       social: {
-        github: "https://github.com/cortexclick/gensx",
+        github: "https://github.com/gensx-inc/gensx",
+        discord: "https://discord.gg/wRmwfz5tCy",
       },
       logo: {
         src: "./public/logo.svg",
@@ -26,7 +27,7 @@ export default defineConfig({
         useStarlightDarkModeSwitch: false,
       },
       editLink: {
-        baseUrl: "https://github.com/cortexclick/gensx/edit/main/docs/",
+        baseUrl: "https://github.com/gensx-inc/gensx/edit/main/docs/",
       },
       customCss: ["./src/tailwind.css"],
       sidebar: [
@@ -46,11 +47,10 @@ export default defineConfig({
           label: "Why JSX?",
           link: "/why-jsx",
         },
-
-        // {
-        //   label: "Concepts",
-        //   autogenerate: { directory: "concepts" },
-        // },
+        {
+          label: "Concepts",
+          autogenerate: { directory: "concepts" },
+        },
         // {
         //   label: "LLM patterns",
         //   autogenerate: { directory: "patterns" },

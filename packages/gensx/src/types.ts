@@ -66,27 +66,27 @@ export type Streamable =
   | AsyncIterableIterator<string>
   | IterableIterator<string>;
 
-export type GsxStreamComponent<P> = (
-  props: StreamArgs<P>,
-) => MaybePromise<DeepJSXElement<Streamable | string> | ExecutableValue>;
+type StreamChildrenType<T> = T extends { stream: true }
+  ?
+      | ((output: Streamable) => MaybePromise<ExecutableValue | Primitive>)
+      | ((output: Streamable) => void)
+      | ((output: Streamable) => Promise<void>)
+  :
+      | ((output: string) => MaybePromise<ExecutableValue | Primitive>)
+      | ((output: string) => void)
+      | ((output: string) => Promise<void>);
 
-// Stream component props as a type alias
 export type StreamArgs<P> = P & {
   stream?: boolean;
-  children?:
-    | ((output: Streamable) => MaybePromise<ExecutableValue | Primitive>)
-    | ((
-        output: string,
-      ) => MaybePromise<ExecutableValue | Primitive | undefined>)
-    | ((
-        output: string | Streamable,
-      ) => MaybePromise<ExecutableValue | Primitive | undefined>)
-    // support child functions that do not return anything, but maybe do some other side effect
-    | ((output: string) => void)
-    | ((output: Streamable) => void)
-    | ((output: string) => Promise<void>)
-    | ((output: Streamable) => Promise<void>);
+  children?: StreamChildrenType<P>;
 };
+
+export type GsxStreamComponent<P> = <T extends P & { stream?: boolean }>(
+  props: StreamArgs<T>,
+) => MaybePromise<
+  | DeepJSXElement<T extends { stream: true } ? Streamable : string>
+  | ExecutableValue
+>;
 
 export interface Context<T> {
   readonly __type: "Context";

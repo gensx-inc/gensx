@@ -24,6 +24,11 @@ export default defineConfig(({ command }) => ({
     dts({
       outDir: "dist",
       rollupTypes: true,
+      afterDiagnostic: (diagnostics) => {
+        if (diagnostics.length) {
+          throw new Error("Compile failure");
+        }
+      },
     }),
     {
       name: "copy-templates",

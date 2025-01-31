@@ -149,7 +149,7 @@ Rather than having to run an entire workflow to test a change to a single compon
 
 ## Contexts
 
-Contexts provide a way to share values across components without explicitly passing them through props. They're similar to React's Context system but adapted for GenSX workflows. Contexts are particularly useful for:
+Contexts provide a way to share data across components without explicitly passing them through props. They're similar to React's Context API but adapted for GenSX workflows. Contexts are particularly useful for:
 
 - Sharing configuration across multiple components
 - Providing dependencies to deeply nested components
@@ -158,27 +158,30 @@ Contexts provide a way to share values across components without explicitly pass
 Here's how to create and use a context:
 
 ```tsx
+interface User {
+  name: string;
+}
+
 // Create a context with a default value
-const UserContext = gsx.createContext({ name: "default", age: 0 });
+const UserContext = gsx.createContext({ name: "" });
 
 // Use the context in a component
-const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
-  "Greeting",
-  () => {
-    const user = gsx.useContext(UserContext);
-    return `Hello, ${user.name}!`;
-  },
-);
+const Greeting = gsx.Component<{}, string>("Greeting", () => {
+  const user = gsx.useContext(UserContext);
+  return `Hello, ${user.name}!`;
+});
 
 // Provide a value to the context
 const result = await gsx.execute(
-  <UserContext.Provider value={{ name: "John", age: 30 }}>
+  <UserContext.Provider value={{ name: "John" }}>
     <Greeting />
   </UserContext.Provider>,
 );
 ```
 
-Contexts are a useful way to pass configuration without prop drilling. However, they do make your components less reusable so it is recommended that you use them sparingly.
+Contexts are a useful way to pass configuration without prop drilling. However, they do make your components less reusable so we recommend that you use them sparingly.
+
+For more details on providers, see the [Contexts](/docs/concepts/context) page.
 
 ## Providers
 
