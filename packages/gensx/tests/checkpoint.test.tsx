@@ -2,16 +2,15 @@ import { setTimeout } from "timers/promises";
 
 import type { ExecutionNode } from "@/checkpoint.js";
 
-import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
+import { beforeEach, expect, suite, test, vi } from "vitest";
 
 import { CheckpointManager } from "@/checkpoint.js";
 import { gsx } from "@/index.js";
 
 import {
   executeWithCheckpoints,
-  FetchInit,
-  FetchInput,
   getExecutionFromBody,
+  mockFetch,
 } from "./utils/executeWithCheckpoints";
 
 // Helper function to generate test IDs
@@ -20,32 +19,6 @@ export function generateTestId(): string {
 }
 
 suite("checkpoint", () => {
-  const originalFetch = global.fetch;
-  const originalEnv = {
-    GENSX_ORG: process.env.GENSX_ORG,
-    GENSX_API_KEY: process.env.GENSX_API_KEY,
-    GENSX_CHECKPOINTS: process.env.GENSX_CHECKPOINTS,
-  };
-
-  beforeEach(() => {
-    process.env.GENSX_ORG = "test-org";
-    process.env.GENSX_API_KEY = "test-api-key";
-    // Mock fetch for all tests
-    global.fetch = vi
-      .fn()
-      .mockImplementation((_input: FetchInput, _options?: FetchInit) => {
-        return new Response(null, { status: 200 });
-      });
-  });
-
-  afterEach(() => {
-    global.fetch = originalFetch;
-    process.env.GENSX_ORG = originalEnv.GENSX_ORG;
-    process.env.GENSX_API_KEY = originalEnv.GENSX_API_KEY;
-    process.env.GENSX_CHECKPOINTS = originalEnv.GENSX_CHECKPOINTS;
-    vi.restoreAllMocks();
-  });
-
   test("basic component test", async () => {
     // Define a simple component that returns a string
     const SimpleComponent = gsx.Component<{ message: string }, string>(
@@ -101,6 +74,9 @@ suite("checkpoint", () => {
       <SimpleComponent message="world" />,
     );
 
+    // Restore checkpoints
+    process.env.GENSX_CHECKPOINTS = undefined;
+
     // Verify execution still works
     expect(result).toBe("hello world");
 
@@ -142,8 +118,7 @@ suite("checkpoint", () => {
     expect(result[99]).toBe("component 99");
 
     // Verify checkpoint behavior
-    const fetchCalls = (global.fetch as unknown as ReturnType<typeof vi.fn>)
-      .mock.calls.length;
+    const fetchCalls = vi.mocked(global.fetch).mock.calls.length;
 
     // We expect:
     // - Some minimum number of calls to capture the state (could be heavily batched)
@@ -450,34 +425,17 @@ suite("checkpoint", () => {
 });
 
 suite("tree reconstruction", () => {
-  const originalFetch = global.fetch;
-  const originalEnv = {
-    GENSX_CHECKPOINTS: process.env.GENSX_CHECKPOINTS,
-    GENSX_ORG: process.env.GENSX_ORG,
-    GENSX_API_KEY: process.env.GENSX_API_KEY,
-  };
   beforeEach(() => {
-    process.env.GENSX_CHECKPOINTS = "true";
-    process.env.GENSX_ORG = "test-org";
-    process.env.GENSX_API_KEY = "test-api-key";
-
-    global.fetch = vi
-      .fn()
-      .mockImplementation((_input: FetchInput, _options?: FetchInit) => {
-        return new Response(null, { status: 200 });
-      });
-  });
-
-  afterEach(() => {
-    global.fetch = originalFetch;
-    process.env.GENSX_CHECKPOINTS = originalEnv.GENSX_CHECKPOINTS;
-    process.env.GENSX_ORG = originalEnv.GENSX_ORG;
-    process.env.GENSX_API_KEY = originalEnv.GENSX_API_KEY;
-    vi.restoreAllMocks();
+    mockFetch(() => {
+      return new Response(null, { status: 200 });
+    });
   });
 
   test("handles simple parent-child relationship", async () => {
-    const cm = new CheckpointManager();
+    const cm = new CheckpointManager({
+      apiKey: "test-api-key",
+      org: "test-org",
+    });
     const parentId = generateTestId();
     const childId = cm.addNode({ componentName: "Child1" }, parentId);
     cm.addNode({ componentName: "Parent", id: parentId });

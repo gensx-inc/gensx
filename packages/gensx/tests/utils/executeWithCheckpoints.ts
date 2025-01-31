@@ -1,6 +1,6 @@
 import zlib from "node:zlib";
 
-import { vi } from "vitest";
+import { afterEach, vi } from "vitest";
 
 import { CheckpointManager } from "@/checkpoint";
 import { ExecutionNode } from "@/checkpoint";
@@ -13,6 +13,12 @@ import { createWorkflowContext } from "@/workflow-context";
 // Add types for fetch API
 export type FetchInput = Parameters<typeof fetch>[0];
 export type FetchInit = Parameters<typeof fetch>[1];
+
+const originalFetch = global.fetch;
+afterEach(() => {
+  vi.clearAllMocks();
+  global.fetch = originalFetch;
+});
 
 /**
  * Helper to execute a workflow with checkpoint tracking
@@ -30,25 +36,18 @@ export async function executeWithCheckpoints<T>(
   const checkpoints: ExecutionNode[] = [];
 
   // Set up fetch mock to capture checkpoints
-  global.fetch = vi
-    .fn()
-    // eslint-disable-next-line @typescript-eslint/require-await
-    .mockImplementation(async (_input: FetchInput, options?: FetchInit) => {
-      if (!options?.body) throw new Error("No body provided");
-      const checkpoint = getExecutionFromBody(options.body as string);
-      checkpoints.push(checkpoint);
-      return new Response(null, { status: 200 });
-    });
-
-  const originalEnv = {
-    GENSX_ORG: process.env.GENSX_ORG,
-    GENSX_API_KEY: process.env.GENSX_API_KEY,
-  };
-  process.env.GENSX_ORG = "test-org";
-  process.env.GENSX_API_KEY = "test-api-key";
+  mockFetch((_input: FetchInput, options?: FetchInit) => {
+    if (!options?.body) throw new Error("No body provided");
+    const checkpoint = getExecutionFromBody(options.body as string);
+    checkpoints.push(checkpoint);
+    return new Response(null, { status: 200 });
+  });
 
   // Create and configure workflow context
-  const checkpointManager = new CheckpointManager();
+  const checkpointManager = new CheckpointManager({
+    apiKey: "test-api-key",
+    org: "test-org",
+  });
   const workflowContext = createWorkflowContext();
   workflowContext.checkpointManager = checkpointManager;
   const executionContext = new ExecutionContext({});
@@ -60,9 +59,6 @@ export async function executeWithCheckpoints<T>(
   const result = await withContext(contextWithWorkflow, () =>
     gsx.execute<T>(element),
   );
-
-  process.env.GENSX_ORG = originalEnv.GENSX_ORG;
-  process.env.GENSX_API_KEY = originalEnv.GENSX_API_KEY;
 
   // Wait for any pending checkpoints
   await checkpointManager.waitForPendingUpdates();
@@ -77,4 +73,13 @@ export function getExecutionFromBody(bodyStr: string): ExecutionNode {
   const compressedExecution = Buffer.from(body.rawExecution, "base64");
   const decompressedExecution = zlib.gunzipSync(compressedExecution);
   return JSON.parse(decompressedExecution.toString("utf-8")) as ExecutionNode;
+}
+
+export function mockFetch(
+  handler: (
+    input: FetchInput,
+    options?: FetchInit,
+  ) => Promise<Response> | Response,
+) {
+  global.fetch = vi.fn().mockImplementation(handler);
 }

@@ -79,14 +79,18 @@ export class CheckpointManager implements CheckpointWriter {
     return allSecrets;
   }
 
-  constructor() {
-    // The presence of a GENSX_API_KEY is enough to enable checkpoints, but it can be disabled by setting GENSX_CHECKPOINTS=false
-    // GENSX_ORG must also be set to record checkpoints.
-    this.checkpointsEnabled = !!process.env.GENSX_API_KEY;
-    this.org = process.env.GENSX_ORG ?? "";
-    this.apiKey = process.env.GENSX_API_KEY ?? "";
+  constructor(opts?: { apiKey: string; org: string; disabled?: boolean }) {
+    // The presence of a apiKey is enough to enable checkpoints, but it can be disabled by setting GENSX_CHECKPOINTS=false
+    // org must also be set to record checkpoints.
+    const apiKey = opts?.apiKey ?? process.env.GENSX_API_KEY;
+    const org = opts?.org ?? process.env.GENSX_ORG;
+
+    this.checkpointsEnabled = apiKey !== undefined;
+    this.org = org ?? "";
+    this.apiKey = apiKey ?? "";
 
     if (
+      opts?.disabled ||
       process.env.GENSX_CHECKPOINTS === "false" ||
       process.env.GENSX_CHECKPOINTS === "0" ||
       process.env.GENSX_CHECKPOINTS === "no" ||
@@ -94,6 +98,14 @@ export class CheckpointManager implements CheckpointWriter {
     ) {
       this.checkpointsEnabled = false;
     }
+
+    console.log(
+      "checkpointsEnabled",
+      this.checkpointsEnabled,
+      apiKey,
+      org,
+      opts?.disabled,
+    );
 
     if (!this.checkpointsEnabled) {
       return;
