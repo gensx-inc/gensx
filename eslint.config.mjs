@@ -27,7 +27,7 @@ export default [
       ...eslintPluginN.configs.recommended.rules,
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
-      "no-console": "off",
+      "no-console": ["error", { allow: ["warn", "error"] }],
       "n/no-missing-import": "off",
       "n/no-unsupported-features/es-syntax": [
         "error",
@@ -64,6 +64,7 @@ export default [
       ...tseslint.configs["strict-type-checked"].rules,
       ...tseslint.configs["stylistic-type-checked"].rules,
       ...prettierConfig.rules,
+      "no-console": ["error", { allow: ["warn", "error"] }],
       "@typescript-eslint/restrict-template-expressions": [
         "error",
         {

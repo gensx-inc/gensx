@@ -99,14 +99,6 @@ export class CheckpointManager implements CheckpointWriter {
       this.checkpointsEnabled = false;
     }
 
-    console.log(
-      "checkpointsEnabled",
-      this.checkpointsEnabled,
-      apiKey,
-      org,
-      opts?.disabled,
-    );
-
     if (!this.checkpointsEnabled) {
       return;
     }
