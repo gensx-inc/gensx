@@ -122,21 +122,22 @@ type StandardProps = Omit<
   structuredOutput?: never;
 };
 
-type GSXCompletionProps<T = unknown> =
+type ChatCompletionProps<T = unknown> =
   | StreamingProps
   | StructuredProps<T>
   | StandardProps;
 
-type GSXCompletionReturn<P> = P extends StreamingProps
+type ChatCompletionReturn<P> = P extends StreamingProps
   ? Stream<ChatCompletionChunk>
   : P extends StructuredProps<infer T>
     ? T
     : ChatCompletionOutput;
 
-export const GSXCompletion = gsx.Component<
-  GSXCompletionProps,
-  GSXCompletionReturn<GSXCompletionProps>
->("GSXCompletion", async (props) => {
+// Enhanced version with all GSX features
+export const ChatCompletion = gsx.Component<
+  ChatCompletionProps,
+  ChatCompletionReturn<ChatCompletionProps>
+>("ChatCompletion", async (props) => {
   const context = gsx.useContext(OpenAIContext);
 
   if (!context.client) {
@@ -202,6 +203,34 @@ export const GSXCompletion = gsx.Component<
   } as ChatCompletionCreateParamsNonStreaming) as Promise<ChatCompletionOutput>;
 });
 
+// Direct OpenAI wrapper types
+type OpenAIChatCompletionProps =
+  | (Omit<ChatCompletionCreateParamsStreaming, "stream"> & { stream: true })
+  | (Omit<ChatCompletionCreateParamsNonStreaming, "stream"> & {
+      stream?: false;
+    });
+
+type OpenAIChatCompletionReturn<P> = P extends { stream: true }
+  ? Stream<ChatCompletionChunk>
+  : ChatCompletionOutput;
+
+// Direct wrapper over OpenAI's chat completion
+export const OpenAIChatCompletion = gsx.Component<
+  OpenAIChatCompletionProps,
+  OpenAIChatCompletionReturn<OpenAIChatCompletionProps>
+>("OpenAIChatCompletion", async (props) => {
+  const context = gsx.useContext(OpenAIContext);
+
+  if (!context.client) {
+    throw new Error(
+      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
+    );
+  }
+
+  const response = await context.client.chat.completions.create(props);
+  return response as OpenAIChatCompletionReturn<typeof props>;
+});
+
 export const OpenAIProvider = gsx.Component<ClientOptions, never>(
   "OpenAIProvider",
   (args) => {
@@ -212,34 +241,3 @@ export const OpenAIProvider = gsx.Component<ClientOptions, never>(
     secretProps: ["apiKey"],
   },
 );
-
-// Create a component for chat completions
-export const ChatCompletion = gsx.Component<
-  ChatCompletionCreateParamsNonStreaming,
-  ChatCompletionOutput
->("ChatCompletion", async (props) => {
-  const context = gsx.useContext(OpenAIContext);
-
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
-
-  return await context.client.chat.completions.create(props);
-});
-
-export const StreamCompletion = gsx.Component<
-  ChatCompletionCreateParamsStreaming,
-  Stream<ChatCompletionChunk>
->("ChatCompletion", async (props) => {
-  const context = gsx.useContext(OpenAIContext);
-
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
-
-  return context.client.chat.completions.create(props);
-});
