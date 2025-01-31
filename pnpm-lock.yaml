@@ -372,6 +372,10 @@ importers:
         version: 2.1.8(@types/node@20.17.11)
 
   packages/gensx-openai:
+    dependencies:
+      zod:
+        specifier: ^3.24.1
+        version: 3.24.1
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
