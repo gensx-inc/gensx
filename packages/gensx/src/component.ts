@@ -25,6 +25,28 @@ export type WithComponentOpts<P> = P & {
   componentOpts?: ComponentOpts;
 };
 
+function replaceAsyncIterables(value: unknown): unknown {
+  // Handle async iterables
+  if (value && typeof value === "object" && Symbol.asyncIterator in value) {
+    return "[stream]";
+  }
+
+  // Handle arrays
+  if (Array.isArray(value)) {
+    return value.map(item => replaceAsyncIterables(item));
+  }
+
+  // Handle objects (but not null)
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, replaceAsyncIterables(v)]),
+    );
+  }
+
+  // Pass through everything else
+  return value;
+}
+
 export function Component<P, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
@@ -67,8 +89,9 @@ export function Component<P, O>(
         return resolveDeep(fn(componentProps as P));
       });
 
-      // Complete the checkpoint node with the result
-      checkpointManager.completeNode(nodeId, result);
+      // Replace any streams with placeholders before checkpointing
+      const checkpointValue = replaceAsyncIterables(result);
+      checkpointManager.completeNode(nodeId, checkpointValue);
 
       return result;
     } catch (error) {
