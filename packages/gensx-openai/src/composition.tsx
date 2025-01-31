@@ -9,7 +9,8 @@ import {
 import { Stream } from "openai/streaming";
 import { z } from "zod";
 
-import { GSXStructuredOutput, GSXTool, OpenAIContext } from "./index.js";
+import { OpenAIContext } from "./index.js";
+import { GSXStructuredOutput, GSXTool } from "./newCompletion.js";
 
 // Base types for raw OpenAI chat completion
 type RawCompletionProps = Omit<
