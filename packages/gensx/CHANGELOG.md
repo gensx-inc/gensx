@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.8](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.7...gensx-v0.2.8) (2025-01-31)
+
+
+### ✨ New Features
+
+* adding the ability to rename components via componentOpts ([#207](https://github.com/gensx-inc/gensx/issues/207)) ([516366e](https://github.com/gensx-inc/gensx/commit/516366e34ecf39e62645fde3ec6e677ded403889))
+* Update checkpoint call to match the new API shape. ([#189](https://github.com/gensx-inc/gensx/issues/189)) ([1884212](https://github.com/gensx-inc/gensx/commit/1884212cd8aee666c584460ab27a924ff24d241c))
+
 ## [0.2.7](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.6...gensx-v0.2.7) (2025-01-28)
 
 
