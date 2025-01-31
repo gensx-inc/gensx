@@ -24,9 +24,9 @@
     "openai": "^4.80.1"
   },
   "devDependencies": {
-    "@types/node": "^22.12.0",
+    "@types/node": "^20.17.16",
     "nodemon": "^3.1.9",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.3"
   }
 }
