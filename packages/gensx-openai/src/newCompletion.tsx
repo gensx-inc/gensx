@@ -1,5 +1,5 @@
 import { gsx } from "gensx";
-import { zodFunction, zodResponseFormat } from "openai/helpers/zod";
+import { zodResponseFormat } from "openai/helpers/zod";
 import { ChatCompletion as ChatCompletionOutput } from "openai/resources/chat/completions.js";
 import {
   ChatCompletionChunk,
@@ -49,15 +49,30 @@ export class GSXStructuredOutput<T> {
 
 // Wrapper for tool parameter schemas
 export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
+  private readonly executionComponent: ReturnType<typeof gsx.Component>;
+
   constructor(
     public readonly name: string,
     public readonly description: string,
     public readonly parameters: TSchema,
-    public readonly execute: (args: z.infer<TSchema>) => Promise<unknown>,
+    private readonly executeImpl: (args: z.infer<TSchema>) => Promise<unknown>,
     public readonly options: {
       examples?: z.infer<TSchema>[];
     } = {},
-  ) {}
+  ) {
+    // Create a component that wraps the execute function
+    this.executionComponent = gsx.Component<z.infer<TSchema>, unknown>(
+      `Tool[${this.name}]`,
+      async (props) => {
+        return this.executeImpl(props);
+      },
+    );
+  }
+
+  async execute(args: z.infer<TSchema>): Promise<unknown> {
+    // Execute the component through gsx.execute to get checkpointing
+    return gsx.execute(<this.executionComponent {...args} />);
+  }
 
   static create<TSchema extends z.ZodObject<z.ZodRawShape>>(
     name: string,
@@ -72,22 +87,27 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
   }
 
   toOpenAITool(): ChatCompletionTool {
-    // Use zodFunction to get the schema, but don't use its execution capabilities
-    const fn = zodFunction({
-      name: this.name,
-      description: this.description,
-      parameters: this.parameters,
-    });
-
-    // The function object has a type property that contains the OpenAI function definition
-    const tool = fn as {
-      type: "function";
-      function: ChatCompletionTool["function"];
-    };
-
     return {
-      type: "function",
-      function: tool.function,
+      type: "function" as const,
+      function: {
+        name: this.name,
+        description: this.description,
+        parameters: {
+          type: "object",
+          properties: Object.fromEntries(
+            Object.entries(this.parameters.shape).map(([key, value]) => [
+              key,
+              (value as z.ZodString).description
+                ? {
+                    type: "string",
+                    description: (value as z.ZodString).description,
+                  }
+                : { type: "string" },
+            ]),
+          ),
+          required: Object.keys(this.parameters.shape),
+        },
+      },
     };
   }
 }
