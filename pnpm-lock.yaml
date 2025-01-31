@@ -420,6 +420,9 @@ importers:
       '@types/node':
         specifier: ^20.12.12
         version: 20.17.11
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
 
   packages/gensx-openai:
     dependencies:
