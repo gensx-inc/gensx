@@ -236,39 +236,42 @@ export const ToolsCompletion = gsx.Component<
   ToolsCompletionOutput
 >("ToolsCompletion", async (props) => {
   const { tools, ...rest } = props;
+  const currentMessages = [...rest.messages];
 
-  // Make initial completion to get tool calls
-  const completion = await gsx.execute<ChatCompletionOutput>(
-    <OpenAIChatCompletion {...rest} tools={tools} />,
+  // Make initial completion
+  let completion = await gsx.execute<ChatCompletionOutput>(
+    <OpenAIChatCompletion {...rest} messages={currentMessages} tools={tools} />,
   );
 
-  const toolCalls = completion.choices[0].message.tool_calls;
-  // If no tool calls, return the completion
-  if (!toolCalls?.length) {
-    return completion;
+  // Keep processing tool calls until none are left
+  while (completion.choices[0].message.tool_calls?.length) {
+    // Add assistant's message to the conversation
+    currentMessages.push(completion.choices[0].message);
+
+    // Execute tools
+    const toolResponses = await gsx.execute<ChatCompletionMessageParam[]>(
+      <ToolExecutor
+        tools={tools}
+        toolCalls={completion.choices[0].message.tool_calls}
+        messages={currentMessages}
+        model={rest.model}
+      />,
+    );
+
+    // Add tool responses to the conversation
+    currentMessages.push(...toolResponses);
+
+    // Make next completion
+    completion = await gsx.execute<ChatCompletionOutput>(
+      <OpenAIChatCompletion
+        {...rest}
+        messages={currentMessages}
+        tools={tools}
+      />,
+    );
   }
 
-  // Execute tools
-  const toolResponses = await gsx.execute<ChatCompletionMessageParam[]>(
-    <ToolExecutor
-      tools={tools}
-      toolCalls={toolCalls}
-      messages={[...rest.messages, completion.choices[0].message]}
-      model={rest.model}
-    />,
-  );
-
-  // Make final completion with tool results
-  return gsx.execute<ChatCompletionOutput>(
-    <OpenAIChatCompletion
-      {...rest}
-      messages={[
-        ...rest.messages,
-        completion.choices[0].message,
-        ...toolResponses,
-      ]}
-    />,
-  );
+  return completion;
 });
 
 // Combined structured output component
