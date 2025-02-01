@@ -1,5 +1,5 @@
 import {
-  CompositionCompletion,
+  GSXCompletion,
   GSXStructuredOutput,
   GSXTool,
   OpenAIProvider,
@@ -15,7 +15,7 @@ import { z } from "zod";
 async function basicCompletion() {
   const results = await gsx.workflow<ChatCompletionOutput>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <CompositionCompletion
+      <GSXCompletion
         messages={[
           {
             role: "system",
@@ -61,7 +61,7 @@ async function tools() {
 
   const results = await gsx.workflow<ChatCompletionOutput>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <CompositionCompletion
+      <GSXCompletion
         messages={[
           {
             role: "system",
@@ -108,7 +108,7 @@ async function toolsStreaming() {
 
   const results = await gsx.workflow<Stream<ChatCompletionChunk>>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <CompositionCompletion
+      <GSXCompletion
         stream={true}
         messages={[
           {
@@ -134,7 +134,7 @@ async function toolsStreaming() {
 async function streamingCompletion() {
   const results = await gsx.workflow<Stream<ChatCompletionChunk>>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <CompositionCompletion
+      <GSXCompletion
         stream={true}
         messages={[
           {
@@ -197,7 +197,7 @@ async function structuredOutput() {
 
   const results = await gsx.workflow<TrashRating>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <CompositionCompletion
+      <GSXCompletion
         messages={[
           {
             role: "system",

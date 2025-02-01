@@ -107,12 +107,12 @@ type StandardProps = Omit<
   structuredOutput?: never;
 };
 
-type CompositionCompletionProps<O = unknown> =
+type GSXCompletionProps<O = unknown> =
   | StreamingProps
   | StructuredProps<O>
   | StandardProps;
 
-type CompositionCompletionReturn<P> = P extends StreamingProps
+type GSXCompletionReturn<P> = P extends StreamingProps
   ? Stream<ChatCompletionChunk>
   : P extends StructuredProps<infer O>
     ? O
@@ -375,10 +375,10 @@ export const StructuredOutput = gsx.Component<
 });
 
 // Update CompositionCompletion to use the renamed component
-export const CompositionCompletion = gsx.Component<
-  CompositionCompletionProps,
-  CompositionCompletionReturn<CompositionCompletionProps>
->("CompositionCompletion", (props) => {
+export const GSXCompletion = gsx.Component<
+  GSXCompletionProps,
+  GSXCompletionReturn<GSXCompletionProps>
+>("GSXCompletion", (props) => {
   // Handle streaming case
   if (props.stream) {
     const { tools, ...rest } = props;
