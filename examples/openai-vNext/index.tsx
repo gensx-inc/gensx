@@ -13,7 +13,7 @@ import { Stream } from "openai/streaming";
 import { z } from "zod";
 
 async function basicCompletion() {
-  const results = await gsx.execute<ChatCompletionOutput>(
+  const results = await gsx.workflow<ChatCompletionOutput>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <CompositionCompletion
         messages={[
@@ -59,7 +59,7 @@ async function tools() {
     },
   );
 
-  const results = await gsx.execute<ChatCompletionOutput>(
+  const results = await gsx.workflow<ChatCompletionOutput>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <CompositionCompletion
         messages={[
@@ -106,7 +106,7 @@ async function toolsStreaming() {
     },
   );
 
-  const results = await gsx.execute<Stream<ChatCompletionChunk>>(
+  const results = await gsx.workflow<Stream<ChatCompletionChunk>>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <CompositionCompletion
         stream={true}
@@ -132,7 +132,7 @@ async function toolsStreaming() {
 }
 
 async function streamingCompletion() {
-  const results = await gsx.execute<Stream<ChatCompletionChunk>>(
+  const results = await gsx.workflow<Stream<ChatCompletionChunk>>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <CompositionCompletion
         stream={true}
@@ -195,7 +195,7 @@ async function structuredOutput() {
     ],
   });
 
-  const results = await gsx.execute<TrashRating>(
+  const results = await gsx.workflow<TrashRating>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <CompositionCompletion
         messages={[

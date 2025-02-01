@@ -1,6 +1,10 @@
-import { ExecutionContext, getCurrentContext } from "./context";
+import { ExecutionContext, getCurrentContext, withContext } from "./context";
 import { isStreamable } from "./stream";
 import { ExecutableValue } from "./types";
+import {
+  createWorkflowContext,
+  WORKFLOW_CONTEXT_SYMBOL,
+} from "./workflow-context";
 
 /**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.
@@ -54,12 +58,31 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
 }
 
 /**
- * Executes a JSX element or any other value, ensuring all promises and nested values are resolved.
- * This is the main entry point for executing workflow components.
+ * Executes a JSX element or any other value in the current workflow context.
+ * This should be used within components to execute child components.
  */
 export async function execute<T>(element: ExecutableValue): Promise<T> {
   const context = getCurrentContext().getWorkflowContext();
   const result = (await resolveDeep(element)) as T;
   context.checkpointManager.write();
   return result;
+}
+
+/**
+ * Creates and executes a new workflow with its own isolated context.
+ * This should be used for top-level workflow execution.
+ */
+export async function workflow<T>(element: ExecutableValue): Promise<T> {
+  // Create a fresh context with new workflow
+  const workflowContext = createWorkflowContext();
+  const newContext = new ExecutionContext({
+    [WORKFLOW_CONTEXT_SYMBOL]: workflowContext,
+  });
+
+  // Run in new context
+  return await withContext(newContext, async () => {
+    const result = await resolveDeep(element);
+    workflowContext.checkpointManager.write();
+    return result as T;
+  });
 }
