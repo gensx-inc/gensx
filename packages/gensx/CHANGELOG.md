@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.9](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.8...gensx-v0.2.9) (2025-02-01)
+
+
+### 🐛 Bug Fixes
+
+* Remove console.log and fix eslint. ([#213](https://github.com/gensx-inc/gensx/issues/213)) ([a408e62](https://github.com/gensx-inc/gensx/commit/a408e62d6d15201b97351ef7d7f8c1f656941cef))
+
 ## [0.2.8](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.7...gensx-v0.2.8) (2025-01-31)
 
 
