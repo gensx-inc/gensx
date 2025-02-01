@@ -245,13 +245,25 @@ export const ToolTransform = gsx.Component<
     return completion;
   }
 
-  // Execute tools and get final completion
-  return gsx.execute<ChatCompletionOutput>(
+  // Execute tools
+  const toolResponses = await gsx.execute<ChatCompletionMessageParam[]>(
     <ToolExecutor
       tools={tools}
       toolCalls={toolCalls}
       messages={[...rest.messages, completion.choices[0].message]}
       model={rest.model}
+    />,
+  );
+
+  // Make final completion with tool results
+  return gsx.execute<ChatCompletionOutput>(
+    <RawCompletion
+      {...rest}
+      messages={[
+        ...rest.messages,
+        completion.choices[0].message,
+        ...toolResponses,
+      ]}
     />,
   );
 });
