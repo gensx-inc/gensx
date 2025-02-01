@@ -62,6 +62,8 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
  * This should be used within components to execute child components.
  */
 export async function execute<T>(element: ExecutableValue): Promise<T> {
+  // TODO: add checks to make sure we have an existing workflow context.
+  // https://github.com/gensx-inc/gensx/issues/222
   const context = getCurrentContext().getWorkflowContext();
   const result = (await resolveDeep(element)) as T;
   context.checkpointManager.write();

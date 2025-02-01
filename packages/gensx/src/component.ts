@@ -90,6 +90,7 @@ export function Component<P, O>(
       });
 
       // Replace any streams with placeholders before checkpointing
+      // TODO: https://github.com/gensx-inc/gensx/issues/220 - need to fork streams to capture outputs in checkpoints
       const checkpointValue = replaceAsyncIterables(result);
       checkpointManager.completeNode(nodeId, checkpointValue);
 
