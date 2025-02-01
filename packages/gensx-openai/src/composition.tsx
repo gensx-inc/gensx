@@ -17,8 +17,8 @@ import { Stream } from "openai/streaming";
 import { OpenAIContext } from "./index.js";
 import { GSXStructuredOutput, GSXTool } from "./newCompletion.js";
 
-// Base types for raw OpenAI chat completion
-type RawCompletionProps =
+// Base types for OpenAI chat completion
+type OpenAIChatCompletionProps =
   | (Omit<ChatCompletionCreateParamsNonStreaming, "tools"> & {
       tools?: ChatCompletionTool[];
     })
@@ -26,7 +26,9 @@ type RawCompletionProps =
       tools?: ChatCompletionTool[];
     });
 
-type RawCompletionReturn = ChatCompletionOutput | Stream<ChatCompletionChunk>;
+type OpenAIChatCompletionReturn =
+  | ChatCompletionOutput
+  | Stream<ChatCompletionChunk>;
 
 // Stream transform component
 type StreamTransformProps = Omit<
@@ -59,7 +61,7 @@ type ToolTransformProps = Omit<
   tools: GSXTool<any>[];
 };
 
-type ToolTransformReturn = RawCompletionReturn;
+type ToolTransformReturn = OpenAIChatCompletionReturn;
 
 // Updated type to include retry options
 type StructuredOutputProps<O = unknown> = Omit<
@@ -116,11 +118,11 @@ type CompositionCompletionReturn<P> = P extends StreamingProps
     ? O
     : ChatCompletionOutput;
 
-// Raw completion component that directly calls OpenAI
-export const RawCompletion = gsx.Component<
-  RawCompletionProps,
-  RawCompletionReturn
->("RawCompletion", async (props) => {
+// OpenAI chat completion component that directly calls the API
+export const OpenAIChatCompletion = gsx.Component<
+  OpenAIChatCompletionProps,
+  OpenAIChatCompletionReturn
+>("OpenAIChatCompletion", async (props) => {
   const context = gsx.useContext(OpenAIContext);
   if (!context.client) {
     throw new Error(
@@ -142,14 +144,14 @@ export const StreamTransform = gsx.Component<
   if (tools?.length) {
     // Make initial completion to get tool calls
     const completion = await gsx.execute<ChatCompletionOutput>(
-      <RawCompletion {...rest} tools={tools} stream={false} />,
+      <OpenAIChatCompletion {...rest} tools={tools} stream={false} />,
     );
 
     const toolCalls = completion.choices[0]?.message?.tool_calls;
     // If no tool calls, proceed with streaming the original response
     if (!toolCalls?.length) {
       return gsx.execute<Stream<ChatCompletionChunk>>(
-        <RawCompletion {...rest} stream={true} />,
+        <OpenAIChatCompletion {...rest} stream={true} />,
       );
     }
 
@@ -165,7 +167,7 @@ export const StreamTransform = gsx.Component<
 
     // Make final streaming call with all messages
     return gsx.execute<Stream<ChatCompletionChunk>>(
-      <RawCompletion
+      <OpenAIChatCompletion
         {...rest}
         messages={[
           ...rest.messages,
@@ -179,7 +181,7 @@ export const StreamTransform = gsx.Component<
 
   // No tools, just stream normally
   return gsx.execute<Stream<ChatCompletionChunk>>(
-    <RawCompletion {...rest} tools={tools} stream={true} />,
+    <OpenAIChatCompletion {...rest} tools={tools} stream={true} />,
   );
 });
 
@@ -237,7 +239,7 @@ export const ToolTransform = gsx.Component<
 
   // Make initial completion to get tool calls
   const completion = await gsx.execute<ChatCompletionOutput>(
-    <RawCompletion {...rest} tools={tools} />,
+    <OpenAIChatCompletion {...rest} tools={tools} />,
   );
 
   const toolCalls = completion.choices[0].message.tool_calls;
@@ -258,7 +260,7 @@ export const ToolTransform = gsx.Component<
 
   // Make final completion with tool results
   return gsx.execute<ChatCompletionOutput>(
-    <RawCompletion
+    <OpenAIChatCompletion
       {...rest}
       messages={[
         ...rest.messages,
@@ -292,7 +294,7 @@ export const StructuredOutput = gsx.Component<
 
       // Make initial completion
       const completion = await gsx.execute<ChatCompletionOutput>(
-        <RawCompletion
+        <OpenAIChatCompletion
           {...rest}
           messages={messages}
           tools={tools}
@@ -400,5 +402,5 @@ export const CompositionCompletion = gsx.Component<
   if (tools) {
     return <ToolTransform {...rest} tools={tools} />;
   }
-  return <RawCompletion {...rest} />;
+  return <OpenAIChatCompletion {...rest} />;
 });
