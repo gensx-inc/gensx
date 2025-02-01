@@ -26,12 +26,12 @@ type OpenAIChatCompletionProps =
       tools?: ChatCompletionTool[];
     });
 
-type OpenAIChatCompletionReturn =
+type OpenAIChatCompletionOutput =
   | ChatCompletionOutput
   | Stream<ChatCompletionChunk>;
 
-// Stream transform component
-type StreamTransformProps = Omit<
+// Stream completion component
+type StreamCompletionProps = Omit<
   ChatCompletionCreateParamsNonStreaming,
   "stream" | "tools"
 > & {
@@ -39,7 +39,7 @@ type StreamTransformProps = Omit<
   tools?: GSXTool<any>[];
 };
 
-type StreamTransformReturn = Stream<ChatCompletionChunk>;
+type StreamCompletionOutput = Stream<ChatCompletionChunk>;
 
 // Tool execution component
 interface ToolExecutorProps {
@@ -51,17 +51,17 @@ interface ToolExecutorProps {
   model: string;
 }
 
-type ToolExecutorReturn = ChatCompletionMessageParam[];
+type ToolExecutorOutput = ChatCompletionMessageParam[];
 
-// Tool transform component
-type ToolTransformProps = Omit<
+// Tools completion component
+type ToolsCompletionProps = Omit<
   ChatCompletionCreateParamsNonStreaming,
   "stream" | "tools"
 > & {
   tools: GSXTool<any>[];
 };
 
-type ToolTransformReturn = OpenAIChatCompletionReturn;
+type ToolsCompletionOutput = OpenAIChatCompletionOutput;
 
 // Updated type to include retry options
 type StructuredOutputProps<O = unknown> = Omit<
@@ -78,7 +78,7 @@ type StructuredOutputProps<O = unknown> = Omit<
   };
 };
 
-type StructuredOutputReturn<T> = T;
+type StructuredOutputOutput<T> = T;
 
 // Types for the composition-based implementation
 type StreamingProps = Omit<
@@ -112,7 +112,7 @@ type GSXCompletionProps<O = unknown> =
   | StructuredProps<O>
   | StandardProps;
 
-type GSXCompletionReturn<P> = P extends StreamingProps
+type GSXCompletionOutput<P> = P extends StreamingProps
   ? Stream<ChatCompletionChunk>
   : P extends StructuredProps<infer O>
     ? O
@@ -121,7 +121,7 @@ type GSXCompletionReturn<P> = P extends StreamingProps
 // OpenAI chat completion component that directly calls the API
 export const OpenAIChatCompletion = gsx.Component<
   OpenAIChatCompletionProps,
-  OpenAIChatCompletionReturn
+  OpenAIChatCompletionOutput
 >("OpenAIChatCompletion", async (props) => {
   const context = gsx.useContext(OpenAIContext);
   if (!context.client) {
@@ -133,11 +133,11 @@ export const OpenAIChatCompletion = gsx.Component<
   return context.client.chat.completions.create(props);
 });
 
-// Stream transform component
-export const StreamTransform = gsx.Component<
-  StreamTransformProps,
-  StreamTransformReturn
->("StreamTransform", async (props) => {
+// Stream completion component
+export const StreamCompletion = gsx.Component<
+  StreamCompletionProps,
+  StreamCompletionOutput
+>("StreamCompletion", async (props) => {
   const { stream, tools, ...rest } = props;
 
   // If we have tools, first make a synchronous call to get tool calls
@@ -188,7 +188,7 @@ export const StreamTransform = gsx.Component<
 // Tool execution component
 export const ToolExecutor = gsx.Component<
   ToolExecutorProps,
-  ToolExecutorReturn
+  ToolExecutorOutput
 >("ToolExecutor", async (props) => {
   const { tools, toolCalls } = props;
   const context = gsx.useContext(OpenAIContext);
@@ -230,11 +230,11 @@ export const ToolExecutor = gsx.Component<
   );
 });
 
-// Tool transform component
-export const ToolTransform = gsx.Component<
-  ToolTransformProps,
-  ToolTransformReturn
->("ToolTransform", async (props) => {
+// Tools completion component
+export const ToolsCompletion = gsx.Component<
+  ToolsCompletionProps,
+  ToolsCompletionOutput
+>("ToolsCompletion", async (props) => {
   const { tools, ...rest } = props;
 
   // Make initial completion to get tool calls
@@ -274,7 +274,7 @@ export const ToolTransform = gsx.Component<
 // Combined structured output component
 export const StructuredOutput = gsx.Component<
   StructuredOutputProps,
-  StructuredOutputReturn<unknown>
+  StructuredOutputOutput<unknown>
 >("StructuredOutput", async (props) => {
   const { structuredOutput, tools, retry, ...rest } = props;
   const maxAttempts = retry?.maxAttempts ?? 3;
@@ -377,12 +377,12 @@ export const StructuredOutput = gsx.Component<
 // Update CompositionCompletion to use the renamed component
 export const GSXCompletion = gsx.Component<
   GSXCompletionProps,
-  GSXCompletionReturn<GSXCompletionProps>
+  GSXCompletionOutput<GSXCompletionProps>
 >("GSXCompletion", (props) => {
   // Handle streaming case
   if (props.stream) {
     const { tools, ...rest } = props;
-    return <StreamTransform {...rest} tools={tools} stream={true} />;
+    return <StreamCompletion {...rest} tools={tools} stream={true} />;
   }
 
   // Handle structured output case
@@ -400,7 +400,7 @@ export const GSXCompletion = gsx.Component<
   // Handle standard case (with or without tools)
   const { tools, ...rest } = props;
   if (tools) {
-    return <ToolTransform {...rest} tools={tools} />;
+    return <ToolsCompletion {...rest} tools={tools} />;
   }
   return <OpenAIChatCompletion {...rest} />;
 });
