@@ -14,7 +14,7 @@ suite("context", () => {
       return value;
     });
 
-    const result = await gsx.execute(<Consumer />);
+    const result = await gsx.workflow(<Consumer />);
     expect(result).toBe("default");
   });
 
@@ -27,7 +27,7 @@ suite("context", () => {
       return value;
     });
 
-    const result = await gsx.execute(
+    const result = await gsx.workflow(
       <TestContext.Provider value="provided">
         <Consumer />
       </TestContext.Provider>,
@@ -45,7 +45,7 @@ suite("context", () => {
       return value;
     });
 
-    const result = await gsx.execute(
+    const result = await gsx.workflow(
       <TestContext.Provider value="outer">
         <TestContext.Provider value="inner">
           <Consumer />
@@ -70,7 +70,7 @@ suite("context", () => {
       return user.name;
     });
 
-    const result = await gsx.execute(
+    const result = await gsx.workflow(
       <UserContext.Provider value={{ name: "John", age: 30 }}>
         <Consumer />
       </UserContext.Provider>,
@@ -93,7 +93,7 @@ suite("context", () => {
       },
     );
 
-    const result = await gsx.execute(
+    const result = await gsx.workflow(
       <NameContext.Provider value="John">
         <AgeContext.Provider value={30}>
           <Consumer />
@@ -104,7 +104,7 @@ suite("context", () => {
     expect(result).toEqual({ name: "John", age: 30 });
 
     // Test that contexts can be nested in different orders
-    const result2 = await gsx.execute(
+    const result2 = await gsx.workflow(
       <AgeContext.Provider value={25}>
         <NameContext.Provider value="Jane">
           <Consumer />
@@ -129,7 +129,7 @@ suite("context", () => {
       },
     );
 
-    const result = await gsx.execute(
+    const result = await gsx.workflow(
       <Context1.Provider value="outer1">
         <Context2.Provider value="outer2">
           <Context1.Provider value="inner1">
@@ -154,7 +154,7 @@ suite("context", () => {
       },
     );
 
-    const result = await gsx.execute(
+    const result = await gsx.workflow(
       <TestContext.Provider value="async-test">
         <AsyncConsumer />
       </TestContext.Provider>,
@@ -174,12 +174,12 @@ suite("context", () => {
 
     // Run two executions in parallel
     const [result1, result2] = await Promise.all([
-      gsx.execute(
+      gsx.workflow(
         <TestContext.Provider value="value1">
           <Consumer />
         </TestContext.Provider>,
       ),
-      gsx.execute(
+      gsx.workflow(
         <TestContext.Provider value="value2">
           <Consumer />
         </TestContext.Provider>,
@@ -212,7 +212,7 @@ suite("context", () => {
       },
     );
 
-    const result = await gsx.execute(
+    const result = await gsx.workflow(
       <Context1.Provider value="outer1">
         <Context2.Provider value="outer2">
           <AsyncParent />
@@ -235,7 +235,7 @@ suite("context", () => {
     );
 
     test("returns the value from the context", async () => {
-      const result = await gsx.execute<string>(
+      const result = await gsx.workflow<string>(
         <MyProvider value="value">
           {() => {
             const value = useContext(TestContext);
@@ -261,7 +261,7 @@ suite("context", () => {
         },
       );
 
-      const result = await gsx.execute(
+      const result = await gsx.workflow(
         <Providers value="value">
           {() => {
             const testValue = useContext(TestContext);

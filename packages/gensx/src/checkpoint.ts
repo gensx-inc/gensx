@@ -223,7 +223,27 @@ export class CheckpointManager implements CheckpointWriter {
 
     try {
       // Create a deep copy of the execution tree for masking
-      const maskedRoot = this.maskExecutionTree(structuredClone(this.root));
+      const cloneWithoutFunctions = (obj: unknown): unknown => {
+        if (this.isNativeFunction(obj) || typeof obj === "function") {
+          return "[function]";
+        }
+        if (Array.isArray(obj)) {
+          return obj.map(cloneWithoutFunctions);
+        }
+        if (obj && typeof obj === "object" && !ArrayBuffer.isView(obj)) {
+          return Object.fromEntries(
+            Object.entries(obj).map(([key, value]) => [
+              key,
+              cloneWithoutFunctions(value),
+            ]),
+          );
+        }
+        return obj;
+      };
+
+      const treeCopy = cloneWithoutFunctions(this.root);
+      const maskedRoot = this.maskExecutionTree(treeCopy as ExecutionNode);
+
       const baseUrl =
         process.env.GENSX_CHECKPOINT_URL ?? "https://api.gensx.com";
       const url = join(baseUrl, `/org/${this.org}/executions`);
@@ -314,121 +334,25 @@ export class CheckpointManager implements CheckpointWriter {
     return node;
   }
 
-  private isEqual(a: unknown, b: unknown): boolean {
-    // Handle primitives
-    if (a === b) return true;
-
-    // If either isn't an object, they're not equal
-    if (!a || !b || typeof a !== "object" || typeof b !== "object") {
-      return false;
-    }
-
-    // Handle arrays
-    if (Array.isArray(a) && Array.isArray(b)) {
-      return (
-        a.length === b.length &&
-        a.every((item, index) => this.isEqual(item, b[index]))
-      );
-    }
-
-    // Handle objects
-    if (!Array.isArray(a) && !Array.isArray(b)) {
-      const aKeys = Object.keys(a);
-      const bKeys = Object.keys(b);
-      return (
-        aKeys.length === bKeys.length &&
-        aKeys.every(key =>
-          this.isEqual(a[key as keyof typeof a], b[key as keyof typeof b]),
-        )
-      );
-    }
-
-    return false;
-  }
-
-  private withNode<T>(nodeId: string, fn: () => T): T {
-    this.currentNodeChain.push(nodeId);
-    try {
-      return fn();
-    } finally {
-      this.currentNodeChain.pop();
-    }
-  }
-
-  private getEffectiveSecrets(): Set<unknown> {
-    const allSecrets = new Set<unknown>();
-    // Collect secrets from current node and all ancestors
-    for (const nodeId of this.currentNodeChain) {
-      const nodeSecrets = this._secretValues.get(nodeId);
-      if (nodeSecrets) {
-        for (const secret of nodeSecrets) {
-          allSecrets.add(secret);
-        }
-      }
-    }
-    return allSecrets;
-  }
-
-  private registerSecrets(
-    props: Record<string, unknown>,
-    paths: string[],
-    nodeId: string,
-  ) {
-    this.withNode(nodeId, () => {
-      // Initialize secrets set for this node
-      let nodeSecrets = this._secretValues.get(nodeId);
-      if (!nodeSecrets) {
-        nodeSecrets = new Set();
-        this._secretValues.set(nodeId, nodeSecrets);
-      }
-
-      // Use paths purely for collection
-      for (const path of paths) {
-        const value = this.getValueAtPath(props, path);
-        if (value !== undefined) {
-          this.collectSecretValues(value, nodeSecrets);
-        }
-      }
-    });
-  }
-
-  private collectSecretValues(
-    data: unknown,
-    nodeSecrets: Set<unknown>,
-    visited = new WeakSet(),
-  ): void {
-    // Skip if already visited to prevent cycles
-    if (data && typeof data === "object") {
-      if (visited.has(data)) {
-        return;
-      }
-      visited.add(data);
-    }
-
-    // Handle primitive values
-    if (typeof data === "string") {
-      if (data.length >= this.MIN_SECRET_LENGTH) {
-        nodeSecrets.add(data);
-      }
-      return;
-    }
-
-    // Skip other primitives
-    if (!data || typeof data !== "object") {
-      return;
-    }
-
-    // Handle arrays and objects (excluding ArrayBuffer views)
-    if (Array.isArray(data) || !ArrayBuffer.isView(data)) {
-      const values = Array.isArray(data) ? data : Object.values(data);
-      values.forEach(value => {
-        this.collectSecretValues(value, nodeSecrets, visited);
-      });
-    }
+  private isNativeFunction(value: unknown): boolean {
+    return (
+      typeof value === "function" &&
+      Function.prototype.toString.call(value).includes("[native code]")
+    );
   }
 
   private scrubSecrets(data: unknown, nodeId?: string, path = ""): unknown {
     return this.withNode(nodeId ?? "", () => {
+      // Handle native functions
+      if (this.isNativeFunction(data)) {
+        return "[native function]";
+      }
+
+      // Handle functions
+      if (typeof data === "function") {
+        return "[function]";
+      }
+
       // Handle primitive values
       if (typeof data === "string" || typeof data === "number") {
         const strValue = String(data);
@@ -662,6 +586,87 @@ export class CheckpointManager implements CheckpointWriter {
     // If that checkpoint triggered another update, wait again
     if (this.pendingUpdate || this.activeCheckpoint) {
       await this.waitForPendingUpdates();
+    }
+  }
+
+  private withNode<T>(nodeId: string, fn: () => T): T {
+    this.currentNodeChain.push(nodeId);
+    try {
+      return fn();
+    } finally {
+      this.currentNodeChain.pop();
+    }
+  }
+
+  private getEffectiveSecrets(): Set<unknown> {
+    const allSecrets = new Set<unknown>();
+    // Collect secrets from current node and all ancestors
+    for (const nodeId of this.currentNodeChain) {
+      const nodeSecrets = this._secretValues.get(nodeId);
+      if (nodeSecrets) {
+        for (const secret of nodeSecrets) {
+          allSecrets.add(secret);
+        }
+      }
+    }
+    return allSecrets;
+  }
+
+  private registerSecrets(
+    props: Record<string, unknown>,
+    paths: string[],
+    nodeId: string,
+  ) {
+    this.withNode(nodeId, () => {
+      // Initialize secrets set for this node
+      let nodeSecrets = this._secretValues.get(nodeId);
+      if (!nodeSecrets) {
+        nodeSecrets = new Set();
+        this._secretValues.set(nodeId, nodeSecrets);
+      }
+
+      // Use paths purely for collection
+      for (const path of paths) {
+        const value = this.getValueAtPath(props, path);
+        if (value !== undefined) {
+          this.collectSecretValues(value, nodeSecrets);
+        }
+      }
+    });
+  }
+
+  private collectSecretValues(
+    data: unknown,
+    nodeSecrets: Set<unknown>,
+    visited = new WeakSet(),
+  ): void {
+    // Skip if already visited to prevent cycles
+    if (data && typeof data === "object") {
+      if (visited.has(data)) {
+        return;
+      }
+      visited.add(data);
+    }
+
+    // Handle primitive values
+    if (typeof data === "string") {
+      if (data.length >= this.MIN_SECRET_LENGTH) {
+        nodeSecrets.add(data);
+      }
+      return;
+    }
+
+    // Skip other primitives
+    if (!data || typeof data !== "object") {
+      return;
+    }
+
+    // Handle arrays and objects (excluding ArrayBuffer views)
+    if (Array.isArray(data) || !ArrayBuffer.isView(data)) {
+      const values = Array.isArray(data) ? data : Object.values(data);
+      values.forEach(value => {
+        this.collectSecretValues(value, nodeSecrets, visited);
+      });
     }
   }
 }

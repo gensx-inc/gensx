@@ -6,7 +6,7 @@ import {
   WorkflowExecutionContext,
 } from "./workflow-context";
 
-type WorkflowContext = Record<symbol, unknown>;
+export type WorkflowContext = Record<symbol, unknown>;
 
 // Create unique symbols for each context
 let contextCounter = 0;
@@ -60,48 +60,51 @@ export const CURRENT_NODE_SYMBOL = Symbol.for("gensx.currentNode");
 
 export class ExecutionContext {
   constructor(
-    public context: WorkflowContext,
-    private parent?: ExecutionContext,
+    public readonly workflowContext: WorkflowContext = {},
+    public readonly isExecuteChildScope = false,
   ) {
-    if (!this.context[WORKFLOW_CONTEXT_SYMBOL]) {
-      this.context[WORKFLOW_CONTEXT_SYMBOL] = createWorkflowContext();
+    if (!this.workflowContext[WORKFLOW_CONTEXT_SYMBOL]) {
+      this.workflowContext[WORKFLOW_CONTEXT_SYMBOL] = createWorkflowContext();
     }
   }
 
-  withContext(newContext: Partial<WorkflowContext>): ExecutionContext {
-    if (Object.getOwnPropertySymbols(newContext).length === 0) {
-      return this;
-    }
-
+  withContext(newContext: WorkflowContext): ExecutionContext {
     // Create a new context that inherits from the current one
-    const mergedContext = {} as WorkflowContext;
-    for (const key of Object.getOwnPropertySymbols(this.context)) {
-      mergedContext[key] = this.context[key];
+    const mergedContext: WorkflowContext = {};
+    for (const key of Object.getOwnPropertySymbols(this.workflowContext)) {
+      mergedContext[key] = this.workflowContext[key];
     }
     // Override with new values
     for (const key of Object.getOwnPropertySymbols(newContext)) {
       mergedContext[key] = newContext[key];
     }
-    return new ExecutionContext(mergedContext, this);
+    return new ExecutionContext(mergedContext, this.isExecuteChildScope);
   }
 
-  get<K extends keyof WorkflowContext>(key: K): WorkflowContext[K] | undefined {
-    if (key in this.context) {
-      return this.context[key];
-    }
-    return this.parent?.get(key);
+  get<T>(key: symbol): T | undefined {
+    return this.workflowContext[key] as T | undefined;
   }
 
   getWorkflowContext(): WorkflowExecutionContext {
-    return this.get(WORKFLOW_CONTEXT_SYMBOL) as WorkflowExecutionContext;
+    return this.get(WORKFLOW_CONTEXT_SYMBOL)!;
   }
 
   getCurrentNodeId(): string | undefined {
-    return this.get(CURRENT_NODE_SYMBOL) as string | undefined;
+    return this.get(CURRENT_NODE_SYMBOL);
   }
 
-  withCurrentNode<T>(nodeId: string, fn: () => Promise<T>): Promise<T> {
-    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
+  withNode(nodeId: string): ExecutionContext {
+    return this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId });
+  }
+
+  withNodeScope<T>(nodeId: string, fn: () => Promise<T>): Promise<T> {
+    return withContext(this.withNode(nodeId), fn);
+  }
+
+  withWorkflowContext(
+    workflowContext: Record<string, unknown>,
+  ): ExecutionContext {
+    return new ExecutionContext(workflowContext, this.isExecuteChildScope);
   }
 }
 

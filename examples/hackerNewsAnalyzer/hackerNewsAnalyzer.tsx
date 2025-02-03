@@ -1,4 +1,4 @@
-import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { OpenAIProvider, TextCompletion } from "@gensx/openai";
 import { gsx } from "gensx";
 
 import { getTopStoryDetails, type HNStory } from "./hn.js";
@@ -27,7 +27,7 @@ Focus on the most surprising or counterintuitive point rather than trying to sum
     `.trim();
 
     return (
-      <ChatCompletion
+      <TextCompletion
         messages={[
           { role: "system", content: PROMPT },
           {
@@ -66,7 +66,7 @@ Maintain your voice while preserving the key insights and all links from the ana
   `.trim();
 
     return (
-      <ChatCompletion
+      <TextCompletion
         messages={[
           { role: "system", content: PROMPT },
           { role: "user", content: content },
@@ -123,7 +123,7 @@ Focus on substance rather than surface-level reactions. When referencing comment
     .join("\n\n");
 
   return (
-    <ChatCompletion
+    <TextCompletion
       messages={[
         { role: "system", content: PROMPT },
         {
@@ -177,7 +177,7 @@ ${story.comments
     `.trim();
 
     return (
-      <ChatCompletion
+      <TextCompletion
         messages={[
           { role: "system", content: PROMPT },
           { role: "user", content: context },
@@ -186,12 +186,16 @@ ${story.comments
         temperature={0.7}
       >
         {(response: string) => {
+          if (typeof response !== "string") {
+            console.log("response", response);
+          }
+
           if (!response.includes(getHNPostUrl(story.id))) {
             return `[${story.title}](${getHNPostUrl(story.id)})\n\n${response}`;
           }
           return response;
         }}
-      </ChatCompletion>
+      </TextCompletion>
     );
   },
 );
@@ -245,7 +249,7 @@ ${commentAnalysis}
       .join("\n\n");
 
     return (
-      <ChatCompletion
+      <TextCompletion
         messages={[
           { role: "system", content: PROMPT },
           { role: "user", content: context },
