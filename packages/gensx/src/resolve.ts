@@ -88,3 +88,26 @@ export async function workflow<T>(element: ExecutableValue): Promise<T> {
     return result as T;
   });
 }
+
+/**
+ * Executes a child component in an isolated context while maintaining the parent's resolution chain.
+ * This should be used within component children functions to execute nested components.
+ */
+export async function executeChild<T>(element: ExecutableValue): Promise<T> {
+  // Create new context with isolated scope
+  const currentContext = getCurrentContext();
+  const childContext = new ExecutionContext(
+    currentContext.workflowContext,
+    true, // Mark as executeChild scope
+  );
+
+  return await withContext(childContext, async () => {
+    // If it's a function, execute it directly
+    if (typeof element === "function") {
+      const result = await (element as () => Promise<T>)();
+      return result;
+    }
+    // Otherwise resolve it through the normal resolution chain
+    return resolveDeep<T>(element);
+  });
+}

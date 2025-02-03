@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ExecutionContext, withContext } from "./context";
+import { ExecutionContext, getCurrentContext, withContext } from "./context";
 import { resolveDeep } from "./resolve";
 import {
   Args,
@@ -12,6 +12,9 @@ import {
   StreamArgs,
 } from "./types";
 
+// Symbol to identify JSX elements
+const REACT_ELEMENT_TYPE = Symbol.for("react.element");
+
 export namespace JSX {
   export type ElementType = Element;
   export type Element = (props: Args<any, unknown>) => MaybePromise<unknown>;
@@ -20,6 +23,30 @@ export namespace JSX {
       output: unknown,
     ) => JSX.Element | JSX.Element[] | Record<string, JSX.Element>;
   }
+}
+
+interface JSXElement<T, P = any> {
+  type: (props: P) => MaybePromise<T>;
+  props: P;
+  $$typeof: symbol;
+}
+
+/**
+ * Execute a JSX element by running its component with props.
+ * Returns the raw result without resolution to allow children to transform it.
+ */
+async function executeJsxElement<T, P = any>(
+  element: JSXElement<T, P>,
+): Promise<T> {
+  // Check if it's a JSX element
+  if (typeof element !== "object" || element.$$typeof !== REACT_ELEMENT_TYPE) {
+    return element as T;
+  }
+
+  const Component = element.type;
+  const props = element.props;
+
+  return await Component(props);
 }
 
 export const Fragment = (props: { children?: JSX.Element[] | JSX.Element }) => {
@@ -40,28 +67,45 @@ export const jsx = <TOutput, TProps>(
   ) => MaybePromise<TOutput>,
   props: Args<TProps, TOutput> | null,
 ): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
-  // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
-    const rawResult = await component(props ?? ({} as Args<TProps, TOutput>));
+    // Get the current execution context
+    const context = getCurrentContext();
+    const isExecuteChildScope = context.isExecuteChildScope;
 
-    const result = await resolveDeep(rawResult);
+    // Get raw result from component execution
+    const rawResult = await executeJsxElement<
+      TOutput,
+      Args<TProps, TOutput> | StreamArgs<TProps>
+    >({
+      type: component,
+      props: props ?? ({} as Args<TProps, TOutput> | StreamArgs<TProps>),
+      $$typeof: REACT_ELEMENT_TYPE,
+    });
 
-    // Need to special case Fragment, because it's children are actually executed in the resolveDeep above
-    if (props?.children && !(component as any).__gsxFragment) {
-      if (result instanceof ExecutionContext) {
-        return await withContext(result, () => {
-          if (props.children) {
-            return resolveDeep(resolveChildren(null as never, props.children));
-          }
-          return null as never;
-        });
-      } else {
-        return await resolveDeep(
-          resolveChildren(result as TOutput, props.children),
-        );
-      }
+    // Special case Fragment since it's just a container
+    if ((component as any).__gsxFragment) {
+      return await resolveDeep(rawResult);
     }
-    return result as Awaited<TOutput> | Awaited<TOutput>[];
+
+    // Handle execution context
+    if (rawResult instanceof ExecutionContext) {
+      return await withContext(rawResult, () => {
+        if (props?.children && !isExecuteChildScope) {
+          const childResult = resolveChildren(null as never, props.children);
+          return resolveDeep(childResult);
+        }
+        return resolveDeep(null as never);
+      });
+    }
+
+    // For normal components:
+    // Only resolve children if we're not in an executeChild scope
+    if (props?.children && !isExecuteChildScope) {
+      const childResult = resolveChildren(rawResult as TOutput, props.children);
+      return await resolveDeep(childResult);
+    }
+
+    return await resolveDeep(rawResult);
   }
 
   if (component.name) {

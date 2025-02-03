@@ -84,7 +84,7 @@ export function Component<P, O>(
     );
 
     try {
-      const result = await context.withCurrentNode(nodeId, () => {
+      const result = await context.withNodeScope(nodeId, () => {
         const { componentOpts, ...componentProps } = props;
         return resolveDeep(fn(componentProps as P));
       });
@@ -153,7 +153,7 @@ export function StreamComponent<P>(
     );
 
     try {
-      const iterator: Streamable = await context.withCurrentNode(nodeId, () => {
+      const iterator: Streamable = await context.withNodeScope(nodeId, () => {
         const { componentOpts, ...componentProps } = props;
         return resolveDeep(fn(componentProps as P));
       });
