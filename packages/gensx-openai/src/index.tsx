@@ -1,12 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Streamable } from "gensx";
 
 import { gsx } from "gensx";
 import OpenAI, { ClientOptions } from "openai";
 import {
+  ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
   ChatCompletionCreateParams,
-} from "openai/resources/index.mjs";
+  ChatCompletionCreateParamsNonStreaming,
+} from "openai/resources/chat/completions";
 import { Stream } from "openai/streaming";
+
+import { GSXCompletion } from "./gsx-completion.js";
+import { GSXTool } from "./newCompletion.js";
 
 // Create a context for OpenAI
 export const OpenAIContext = gsx.createContext<{
@@ -21,6 +27,50 @@ export const OpenAIProvider = gsx.Component<ClientOptions, never>(
   },
   {
     secretProps: ["apiKey"],
+  },
+);
+
+// Base props type from OpenAI
+type TextCompletionProps = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools"
+> & {
+  stream?: boolean;
+  tools?: GSXTool<any>[];
+};
+
+export const TextCompletion = gsx.StreamComponent<TextCompletionProps>(
+  "TextCompletion",
+  async (props) => {
+    if (props.stream) {
+      const stream = await gsx.executeChild<Stream<ChatCompletionChunk>>(
+        <GSXCompletion {...props} stream={true} />,
+      );
+
+      // Transform Stream<ChatCompletionChunk> into AsyncIterableIterator<string>
+      const generateTokens = async function* () {
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content;
+          if (content) {
+            yield content;
+          }
+        }
+      };
+
+      return generateTokens();
+    } else {
+      const response = await gsx.executeChild<ChatCompletionOutput>(
+        <GSXCompletion {...props} stream={false} />,
+      );
+      const content = response.choices[0]?.message?.content ?? "";
+
+      // Use sync iterator for non-streaming case, matching ChatCompletion's behavior
+      function* generateTokens() {
+        yield content;
+      }
+
+      return generateTokens();
+    }
   },
 );
 

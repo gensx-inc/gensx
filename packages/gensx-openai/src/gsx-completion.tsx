@@ -143,20 +143,20 @@ export const StreamCompletion = gsx.Component<
   // If we have tools, first make a synchronous call to get tool calls
   if (tools?.length) {
     // Make initial completion to get tool calls
-    const completion = await gsx.execute<ChatCompletionOutput>(
+    const completion = await gsx.executeChild<ChatCompletionOutput>(
       <OpenAIChatCompletion {...rest} tools={tools} stream={false} />,
     );
 
     const toolCalls = completion.choices[0]?.message?.tool_calls;
     // If no tool calls, proceed with streaming the original response
     if (!toolCalls?.length) {
-      return gsx.execute<Stream<ChatCompletionChunk>>(
+      return gsx.executeChild<Stream<ChatCompletionChunk>>(
         <OpenAIChatCompletion {...rest} stream={true} />,
       );
     }
 
     // Execute tools
-    const toolResponses = await gsx.execute<ChatCompletionMessageParam[]>(
+    const toolResponses = await gsx.executeChild<ChatCompletionMessageParam[]>(
       <ToolExecutor
         tools={tools}
         toolCalls={toolCalls}
@@ -166,7 +166,7 @@ export const StreamCompletion = gsx.Component<
     );
 
     // Make final streaming call with all messages
-    return gsx.execute<Stream<ChatCompletionChunk>>(
+    return gsx.executeChild<Stream<ChatCompletionChunk>>(
       <OpenAIChatCompletion
         {...rest}
         messages={[
@@ -180,7 +180,7 @@ export const StreamCompletion = gsx.Component<
   }
 
   // No tools, just stream normally
-  return gsx.execute<Stream<ChatCompletionChunk>>(
+  return gsx.executeChild<Stream<ChatCompletionChunk>>(
     <OpenAIChatCompletion {...rest} tools={tools} stream={true} />,
   );
 });
@@ -239,7 +239,7 @@ export const ToolsCompletion = gsx.Component<
   const currentMessages = [...rest.messages];
 
   // Make initial completion
-  let completion = await gsx.execute<ChatCompletionOutput>(
+  let completion = await gsx.executeChild<ChatCompletionOutput>(
     <OpenAIChatCompletion {...rest} messages={currentMessages} tools={tools} />,
   );
 
@@ -249,7 +249,7 @@ export const ToolsCompletion = gsx.Component<
     currentMessages.push(completion.choices[0].message);
 
     // Execute tools
-    const toolResponses = await gsx.execute<ChatCompletionMessageParam[]>(
+    const toolResponses = await gsx.executeChild<ChatCompletionMessageParam[]>(
       <ToolExecutor
         tools={tools}
         toolCalls={completion.choices[0].message.tool_calls}
@@ -262,7 +262,7 @@ export const ToolsCompletion = gsx.Component<
     currentMessages.push(...toolResponses);
 
     // Make next completion
-    completion = await gsx.execute<ChatCompletionOutput>(
+    completion = await gsx.executeChild<ChatCompletionOutput>(
       <OpenAIChatCompletion
         {...rest}
         messages={currentMessages}
@@ -296,7 +296,7 @@ export const StructuredOutput = gsx.Component<
       }
 
       // Make initial completion
-      const completion = await gsx.execute<ChatCompletionOutput>(
+      const completion = await gsx.executeChild<ChatCompletionOutput>(
         <OpenAIChatCompletion
           {...rest}
           messages={messages}
@@ -308,7 +308,7 @@ export const StructuredOutput = gsx.Component<
       const toolCalls = completion.choices[0].message.tool_calls;
       // If we have tool calls, execute them and make another completion
       if (toolCalls?.length && tools) {
-        const toolResult = await gsx.execute<ChatCompletionOutput>(
+        const toolResult = await gsx.executeChild<ChatCompletionOutput>(
           <ToolExecutor
             tools={tools}
             toolCalls={toolCalls}
