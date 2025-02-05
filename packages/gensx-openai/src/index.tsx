@@ -1,12 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Streamable } from "gensx";
 
 import { gsx } from "gensx";
 import OpenAI, { ClientOptions } from "openai";
 import {
+  ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
   ChatCompletionCreateParams,
-} from "openai/resources/index.mjs";
+  ChatCompletionCreateParamsNonStreaming,
+} from "openai/resources/chat/completions";
 import { Stream } from "openai/streaming";
+
+import { GSXCompletion } from "./gsx-completion.js";
+import { GSXTool } from "./newCompletion";
 
 // Create a context for OpenAI
 export const OpenAIContext = gsx.createContext<{
@@ -21,6 +27,26 @@ export const OpenAIProvider = gsx.Component<ClientOptions, never>(
   },
   {
     secretProps: ["apiKey"],
+  },
+);
+
+// Base props type from OpenAI
+type TextCompletionProps = Omit<
+  ChatCompletionCreateParamsNonStreaming,
+  "stream" | "tools"
+> & {
+  stream?: boolean;
+  tools?: GSXTool<any>[];
+};
+
+export const TextCompletion = gsx.Component<TextCompletionProps, string>(
+  "TextCompletion",
+  async (props) => {
+    const response = await gsx.execute<ChatCompletionOutput>(
+      <GSXCompletion {...props} stream={false} />,
+    );
+    const content = response.choices[0]?.message?.content ?? "";
+    return content;
   },
 );
 
@@ -66,3 +92,6 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionCreateParams>(
     }
   },
 );
+
+export { GSXCompletion } from "./gsx-completion.js";
+export { GSXTool, GSXStructuredOutput } from "./newCompletion.js";
