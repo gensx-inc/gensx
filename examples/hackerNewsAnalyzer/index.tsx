@@ -10,7 +10,7 @@ import {
 async function main() {
   console.log("\n🚀 Starting HN analysis workflow...");
   const { report, tweet } = await gsx.execute<HNAnalyzerWorkflowOutput>(
-    <HNAnalyzerWorkflow postCount={15} />,
+    <HNAnalyzerWorkflow postCount={500} />,
   );
 
   // Write outputs to files
