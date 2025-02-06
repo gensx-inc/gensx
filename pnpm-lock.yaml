@@ -95,7 +95,7 @@ importers:
         version: link:../../packages/gensx
       openai:
         specifier: ^4.77.0
-        version: 4.77.0(zod@3.24.1)
+        version: 4.77.0(encoding@0.1.13)(zod@3.24.1)
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
@@ -148,7 +148,7 @@ importers:
         version: 3.3.2
       openai:
         specifier: ^4.77.0
-        version: 4.77.0(zod@3.24.1)
+        version: 4.77.0(encoding@0.1.13)(zod@3.24.1)
       xml2js:
         specifier: ^0.6.2
         version: 0.6.2
@@ -173,13 +173,13 @@ importers:
     dependencies:
       '@gensx/openai':
         specifier: ^0.1.5
-        version: 0.1.5(gensx@0.2.7)(openai@4.80.1(ws@8.18.0)(zod@3.24.1))
+        version: 0.1.5(gensx@0.2.7)(openai@4.80.1(encoding@0.1.13)(ws@8.18.0)(zod@3.24.1))
       gensx:
         specifier: ^0.2.7
         version: 0.2.7
       openai:
         specifier: ^4.80.1
-        version: 4.80.1(ws@8.18.0)(zod@3.24.1)
+        version: 4.80.1(encoding@0.1.13)(ws@8.18.0)(zod@3.24.1)
     devDependencies:
       '@types/node':
         specifier: ^22.12.0
@@ -204,7 +204,7 @@ importers:
         version: link:../../packages/gensx
       openai:
         specifier: ^4.77.0
-        version: 4.77.0(zod@3.24.1)
+        version: 4.77.0(encoding@0.1.13)(zod@3.24.1)
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
@@ -251,7 +251,7 @@ importers:
         version: link:../../packages/gensx
       openai:
         specifier: ^4.77.0
-        version: 4.77.0(zod@3.24.1)
+        version: 4.77.0(encoding@0.1.13)(zod@3.24.1)
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
@@ -276,7 +276,7 @@ importers:
         version: link:../../packages/gensx
       openai:
         specifier: ^4.77.0
-        version: 4.77.0(zod@3.24.1)
+        version: 4.77.0(encoding@0.1.13)(zod@3.24.1)
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
@@ -301,7 +301,7 @@ importers:
         version: link:../../packages/gensx
       openai:
         specifier: ^4.77.4
-        version: 4.77.4(zod@3.24.1)
+        version: 4.77.4(encoding@0.1.13)(zod@3.24.1)
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -388,7 +388,7 @@ importers:
         version: link:../gensx
       openai:
         specifier: ^4.77
-        version: 4.77.4(zod@3.24.1)
+        version: 4.77.4(encoding@0.1.13)(zod@3.24.1)
       typescript:
         specifier: ^5.7.2
         version: 5.7.2
@@ -2496,6 +2496,9 @@ packages:
   emoji-regex@9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
 
+  encoding@0.1.13:
+    resolution: {integrity: sha512-ETBauow1T35Y/WZMkio9jiM0Z5xjHHmJ4XmjZOq1l/dXz3lr2sRn87nJy20RupqSh1F2m3HHPSp8ShIPQJrJ3A==}
+
   enquirer@2.4.1:
     resolution: {integrity: sha512-rRqJg/6gd538VHvR3PSrdRBb/1Vy2YfzHqzvbhGIQpDRKIa4FgV/54b5Q1xYSxOOwKvjXweS26E0Q+nAMwp2pQ==}
     engines: {node: '>=8.6'}
@@ -2980,6 +2983,10 @@ packages:
 
   iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
+    engines: {node: '>=0.10.0'}
+
+  iconv-lite@0.6.3:
+    resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
 
   ignore-by-default@1.0.1:
@@ -5600,10 +5607,10 @@ snapshots:
 
   '@fastify/busboy@2.1.1': {}
 
-  '@gensx/openai@0.1.5(gensx@0.2.7)(openai@4.80.1(ws@8.18.0)(zod@3.24.1))':
+  '@gensx/openai@0.1.5(gensx@0.2.7)(openai@4.80.1(encoding@0.1.13)(ws@8.18.0)(zod@3.24.1))':
     dependencies:
       gensx: 0.2.7
-      openai: 4.80.1(ws@8.18.0)(zod@3.24.1)
+      openai: 4.80.1(encoding@0.1.13)(ws@8.18.0)(zod@3.24.1)
 
   '@humanfs/core@0.19.1': {}
 
@@ -6388,7 +6395,7 @@ snapshots:
   '@vitest/snapshot@2.1.8':
     dependencies:
       '@vitest/pretty-format': 2.1.8
-      magic-string: 0.30.13
+      magic-string: 0.30.17
       pathe: 1.1.2
 
   '@vitest/spy@2.1.8':
@@ -6973,6 +6980,11 @@ snapshots:
   emoji-regex@8.0.0: {}
 
   emoji-regex@9.2.2: {}
+
+  encoding@0.1.13:
+    dependencies:
+      iconv-lite: 0.6.3
+    optional: true
 
   enquirer@2.4.1:
     dependencies:
@@ -7700,6 +7712,11 @@ snapshots:
   iconv-lite@0.4.24:
     dependencies:
       safer-buffer: 2.1.2
+
+  iconv-lite@0.6.3:
+    dependencies:
+      safer-buffer: 2.1.2
+    optional: true
 
   ignore-by-default@1.0.1: {}
 
@@ -8492,9 +8509,11 @@ snapshots:
 
   node-fetch-native@1.6.4: {}
 
-  node-fetch@2.7.0:
+  node-fetch@2.7.0(encoding@0.1.13):
     dependencies:
       whatwg-url: 5.0.0
+    optionalDependencies:
+      encoding: 0.1.13
 
   node-fetch@3.3.2:
     dependencies:
@@ -8545,7 +8564,7 @@ snapshots:
       regex: 5.1.1
       regex-recursion: 5.1.1
 
-  openai@4.77.0(zod@3.24.1):
+  openai@4.77.0(encoding@0.1.13)(zod@3.24.1):
     dependencies:
       '@types/node': 18.19.68
       '@types/node-fetch': 2.6.12
@@ -8553,13 +8572,13 @@ snapshots:
       agentkeepalive: 4.6.0
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
-      node-fetch: 2.7.0
+      node-fetch: 2.7.0(encoding@0.1.13)
     optionalDependencies:
       zod: 3.24.1
     transitivePeerDependencies:
       - encoding
 
-  openai@4.77.4(zod@3.24.1):
+  openai@4.77.4(encoding@0.1.13)(zod@3.24.1):
     dependencies:
       '@types/node': 18.19.68
       '@types/node-fetch': 2.6.12
@@ -8567,13 +8586,13 @@ snapshots:
       agentkeepalive: 4.6.0
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
-      node-fetch: 2.7.0
+      node-fetch: 2.7.0(encoding@0.1.13)
     optionalDependencies:
       zod: 3.24.1
     transitivePeerDependencies:
       - encoding
 
-  openai@4.80.1(ws@8.18.0)(zod@3.24.1):
+  openai@4.80.1(encoding@0.1.13)(ws@8.18.0)(zod@3.24.1):
     dependencies:
       '@types/node': 18.19.68
       '@types/node-fetch': 2.6.12
@@ -8581,7 +8600,7 @@ snapshots:
       agentkeepalive: 4.6.0
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
-      node-fetch: 2.7.0
+      node-fetch: 2.7.0(encoding@0.1.13)
     optionalDependencies:
       ws: 8.18.0
       zod: 3.24.1

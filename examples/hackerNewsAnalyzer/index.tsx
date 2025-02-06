@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import fs from "node:fs/promises";
 
 import { gsx } from "gensx";
 
@@ -10,7 +10,7 @@ import {
 async function main() {
   console.log("\n🚀 Starting HN analysis workflow...");
   const { report, tweet } = await gsx.execute<HNAnalyzerWorkflowOutput>(
-    <HNAnalyzerWorkflow postCount={500} />,
+    <HNAnalyzerWorkflow postCount={15} />,
   );
 
   // Write outputs to files

@@ -38,27 +38,35 @@ export const jsx = <TOutput, TProps>(
   component: (
     props: Args<TProps, TOutput> | StreamArgs<TProps>,
   ) => MaybePromise<TOutput>,
-  props: Args<TProps, TOutput> | null,
+  fullProps: Args<TProps, TOutput> | null,
 ): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
+  if (fullProps?.children && !fullProps.children.name.startsWith("Children[")) {
+    Object.defineProperty(fullProps.children, "name", {
+      value: `Children[${component.name}]`,
+    });
+  }
+
   // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
-    const rawResult = await component(props ?? ({} as Args<TProps, TOutput>));
+    // We don't actually pass children to the component, because we want to handle them separately
+    const { children, ...props } = fullProps ?? ({} as Args<TProps, TOutput>);
+
+    const rawResult = await component(props as Args<TProps, TOutput>);
 
     const result = await resolveDeep(rawResult);
 
     // Need to special case Fragment, because it's children are actually executed in the resolveDeep above
-    if (props?.children && !(component as any).__gsxFragment) {
+    if (children && !(component as any).__gsxFragment) {
       if (result instanceof ExecutionContext) {
-        return await withContext(result, () => {
-          if (props.children) {
-            return resolveDeep(resolveChildren(null as never, props.children));
-          }
-          return null as never;
+        return await withContext(result, async () => {
+          const childResult = await resolveChildren(null as never, children);
+          const resolvedChildResult = await resolveDeep(childResult);
+          return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
         });
       } else {
-        return await resolveDeep(
-          resolveChildren(result as TOutput, props.children),
-        );
+        const childResult = await resolveChildren(result as TOutput, children);
+        const resolvedChildResult = await resolveDeep(childResult);
+        return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
       }
     }
     return result as Awaited<TOutput> | Awaited<TOutput>[];
@@ -84,12 +92,10 @@ function resolveChildren<O>(
     // support child functions that do not return anything, but maybe do some other side effect
     | ((output: O) => void)
     | ((output: O) => Promise<void>),
-) {
-  if (children instanceof Function) {
+): MaybePromise<unknown> {
+  if (typeof children === "function") {
     return children(output);
   }
-  if (Array.isArray(children)) {
-    return resolveDeep(children);
-  }
-  return children;
+
+  return children.map(child => child(output));
 }
