@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@mendable/firecrawl-js": "^1.15.7",
-    "gensx": "workspace:*"
+    "gensx": "workspace:*",
+    "@gensx/openai": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.17.11",
