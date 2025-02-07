@@ -190,7 +190,7 @@ The order of nesting doesn't matter as long as the component using a context is 
 
 ### Using multiple OpenAI compatible providers
 
-You can also nest multiple providers to use LLMs from different labs in the same workflow. When you nest multiple OpenAIproviders, components will always use the closest provider above it in the tree. The example below shows how you could use models from OpenAI and Groq in the same workflow using their OpenAI-compatible APIs.
+You can also nest multiple providers to use LLMs from different companies in the same workflow. When you nest multiple OpenAI providers, components will always use the closest provider above it in the tree. The example below shows how you could use models from OpenAI and Groq in the same workflow using their OpenAI compatible APIs.
 
 First, create a provider for [Groq](https://www.groq.com/) that wraps the `OpenAIProvider` and points to the correct base URL:
 
@@ -227,7 +227,7 @@ export const TutorialWriterWithEditorial = gsx.Component<
 });
 ```
 
-Note that you don't have to create the `GroqProvider` component; instead you could just use the `OpenAIProvider` and pass in the correct props. However, this approach can make your code cleaner and easier to manage.
+Note that you don't have to create the `GroqProvider` component; instead you could just use the `OpenAIProvider` and pass in the correct props. However, wrapping the provider can make your code cleaner and easier to manage.
 
 To make your components more reusable, you could also pass in the model name as a prop. For more details, see the guide on [creating reusable components](../reusable-component).
 

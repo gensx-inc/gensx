@@ -15,7 +15,6 @@ async function main() {
   const gpt4oProviderConfig = {
     clientOptions: {
       apiKey: process.env.OPENAI_API_KEY,
-      baseURL: "https://api.openai.com/v1",
     },
     model: "gpt-4o",
   };

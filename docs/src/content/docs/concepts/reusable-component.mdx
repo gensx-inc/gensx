@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-GenSX allows you to create reusable components that can be used with different models and providers. This is particularly useful if you want to be able to compare the behavior of different models for a component or want to share your components with others.
+GenSX allows you to create reusable components that can be used with different models and providers. This is particularly useful if you want to be able to compare the behavior of different models in a component or want to share your components with others.
 
 ## Creating a reusable component
 
@@ -52,7 +52,6 @@ Now, whenever your invoke the `DocumentSummarizer` component, you can pass in an
 const gpt4oProviderConfig = {
   clientOptions: {
     apiKey: process.env.OPENAI_API_KEY,
-    baseURL: "https://api.openai.com/v1",
   },
   model: "gpt-4o",
 };
@@ -98,7 +97,7 @@ interface DocumentProcessorProps {
 
 In this example, the `defaultProvider` is required, but the `smallModelProvider` is optional. If it's not provided, the `defaultProvider` will be used in all components.
 
-Now we can define the `DocumentProcessor` component and pass the provider configuration to the individual components:
+Now, we can define the `DocumentProcessor` component and pass the provider configuration to the individual components:
 
 ```tsx
 export const DocumentProcessor = gsx.Component<
@@ -132,13 +131,12 @@ export const DocumentProcessor = gsx.Component<
 
 You can find the full code for the `DocumentProcessor` component in the [reusable components example](https://github.com/gensx-inc/gensx/tree/main/examples/reusableComponents).
 
-Now, to run the workflow, you can invoke the `DocumentProcessor` component with the appropriate provider configurations:
+Finally, to run the workflow, you can invoke the `DocumentProcessor` component with the appropriate provider configurations:
 
 ```tsx
 const gpt4oProviderConfig = {
   clientOptions: {
     apiKey: process.env.OPENAI_API_KEY,
-    baseURL: "https://api.openai.com/v1",
   },
   model: "gpt-4o",
 };
