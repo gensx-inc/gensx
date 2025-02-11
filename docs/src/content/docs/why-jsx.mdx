@@ -68,7 +68,7 @@ Trees are just a special kind of graph - one where each node has a single parent
 Consider a cycle in a workflow:
 
 ```tsx
-const AgentWorkflow = gsx.component<{}, AgentWorkflowOutput>(
+const AgentWorkflow = gsx.Component<{}, AgentWorkflowOutput>(
   "AgentWorkflow",
   <AgentStep>
     {(result) =>
