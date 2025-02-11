@@ -75,16 +75,14 @@ const EvaluateText = gsx.Component<{ input: string }, ReflectionOutput>(
   },
 );
 
-export const CleanBuzzwordsWithReflection = gsx.Component<
+export const ImproveTextWithReflection = gsx.Component<
   {
     text: string;
     maxIterations?: number;
   },
   string
->("CleanBuzzwordsWithReflection", ({ text, maxIterations = 3 }) => {
-  const Reflection = createReflectionLoop<string>(
-    "CleanBuzzwordsWithReflection",
-  );
+>("ImproveTextWithReflection", ({ text, maxIterations = 3 }) => {
+  const Reflection = createReflectionLoop<string>("ImproveTextWithReflection");
   return (
     <Reflection
       input={text}
@@ -102,13 +100,13 @@ Our mission-critical systems utilize cloud-native architectures and next-generat
 
 Through our holistic approach to disruptive innovation, we create game-changing solutions that move the needle and generate impactful results. Our best-of-breed technology stack combined with our customer-centric focus allows us to ideate and iterate rapidly in this fast-paced market.`;
 
-  const cleanedText = await gsx.execute<string>(
+  const improvedText = await gsx.execute<string>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <CleanBuzzwordsWithReflection text={text} />
+      <ImproveTextWithReflection text={text} />
     </OpenAIProvider>,
   );
 
-  console.log("🎯 Final text:\n", cleanedText);
+  console.log("🎯 Final text:\n", improvedText);
 }
 
 main().catch(console.error);

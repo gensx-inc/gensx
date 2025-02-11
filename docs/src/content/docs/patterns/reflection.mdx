@@ -1,43 +1,116 @@
 ---
-title: Cycles and self-reflection
-description: Using cycles and self-reflection to improve the quality of LLM outputs
+title: Self-reflection
+description: Using self-reflection to improve the quality of LLM outputs
 sidebar:
   order: 5
 ---
 
-Cycles and self-reflection are two common prompting techniques used to improve the outputs of LLMs.
+Self-reflection is a common prompting technique used to improve the outputs of LLMs. With self-reflection, an LLM is used to evaluate it's own output and then improve it, similar to how a humans would review and edit their own work.
 
-With **cycles**, an LLM component is repeated in a loop to improve the output based on some criteria.
+Self reflection works well because it's easy for LLMs to make mistakes. LLMs are simply predicting tokens one after the next so a single bad token choice can create a cascading effect. Self-reflection allows the model to evaluate the output in its entirety allowing the model to catch and then correct any mistakes.
 
-With **self-reflection**, an LLM component analyzes and improves its own output through multiple iterations. This is particularly useful for:
+## Self-reflection in GenSX
 
-- Cleaning and refining text
-- Self-critique and improvement
-- Ensuring output quality meets specific criteria
-- Implementing recursive agent behaviors
+The nested approach to creating GenSX workflows might make it seem difficult to implement looping patterns like self-reflection. However, GenSX allows you to express dynamic, programmatic trees giving you all the flexibility you need.
 
-## Basic Implementation
+The [reflection example](https://github.com/gensx-inc/gensx/tree/main/examples/reflection) defines a helper function `createReflectionLoop` that you can use to implement self-reflection in your GenSX workflows.
 
-The reflection pattern consists of two main components:
+To implement self-reflection, you'll need:
 
-1. An evaluation function that assesses the output and provides feedback
-2. An improvement function that processes the input using the feedback to create better output
+1. **An evaluation component** that assesses the output and provides feedback
+2. **An improvement component** that processes the input using the feedback to create a better output
 
-Here's a simple example that improves text quality:
+The output you want to improve becomes the `input` to the reflection loop itself. You can choose to run a single round of self-reflection or multiple rounds to iteratively refine the output, based on your scenario.
+
+When you call `createReflectionLoop`, the function will:
+
+1. Use the evaluation component (`EvaluateFn`) to analyze the output and decide if further improvements are necessary.
+2. If improvements are warranted, execute the improvement component (`ImproveFn`) to refine the output.
+3. Recursively call itself with the improved output, continuing until the specified `maxIterations` is reached or no more improvements are needed.
+
+Here's the implementation of the `createReflectionLoop` function:
 
 ```tsx
-interface ReflectionOutput {
-  feedback: string;
-  continueProcessing: boolean;
-}
+export function createReflectionLoop<TInput>(name: string) {
+  return gsx.Component<ReflectionProps<TInput>, TInput>(
+    name,
+    async ({
+      input,
+      ImproveFn,
+      EvaluateFn,
+      iterations = 0,
+      maxIterations = 3,
+    }) => {
+      // Check if we should continue processing
+      const { feedback, continueProcessing } =
+        await gsx.execute<ReflectionOutput>(<EvaluateFn input={input} />);
 
+      if (continueProcessing && iterations < maxIterations) {
+        // Process the input
+        const newInput: TInput = await gsx.execute<TInput>(
+          <ImproveFn input={input} feedback={feedback} />,
+        );
+
+        // Recursive call with updated input and iteration count
+        const Reflection = createReflectionLoop<TInput>(
+          `${name}-${iterations + 1}`,
+        );
+        return (
+          <Reflection
+            input={newInput}
+            ImproveFn={ImproveFn}
+            EvaluateFn={EvaluateFn}
+            iterations={iterations + 1}
+            maxIterations={maxIterations}
+          />
+        );
+      }
+
+      // Return the final input when we're done processing
+      return input;
+    },
+  );
+}
+```
+
+## Implementing self-reflection
+
+Now that you've seen the pattern and the helper function for doing self-reflection, let's implement it. The example below shows how to use the `createReflectionLoop` function to evaluate and improve text.
+
+### Step 1: Define the evaluation component
+
+First, you need to define the component that will be used to evaluate the text. As its designed above, the evaluation component needs to return a string, `feedback`, and a boolean, `continueProcessing`.
+
+To get good results, you'll need to provide useful instructions on what feedback to provide. In this example, we focus on trying to make the text sound more authentic and less AI-generated.
+
+```tsx
 const EvaluateText = gsx.Component<{ input: string }, ReflectionOutput>(
   "EvaluateText",
   ({ input }) => {
-    const systemPrompt = `Evaluate the text and provide feedback. Return a JSON object with:
-    - feedback: String describing needed improvements (empty if none needed)
-    - continueProcessing: Boolean indicating if more improvements are needed`;
+    const systemPrompt = `You're a helpful assistant that evaluates text and suggests improvements if needed.
 
+    ## Evaluation Criteria
+
+    - Check for genuine language: flag any buzzwords, corporate jargon, or empty phrases like "cutting-edge solutions"
+    - Look for clear, natural expression: mark instances of flowery language or clichéd openers like "In today's landscape..."
+    - Review word choice: highlight where simpler alternatives could replace complex or technical terms
+    - Assess authenticity: note when writing tries to "sell" rather than inform clearly and factually
+    - Evaluate tone: identify where the writing becomes overly formal instead of warm and conversational
+    - Consider flow and engagement - flag where transitions feel choppy or content becomes dry and predictable
+
+
+    ## Output Format
+    Return your response as JSON with the following two properties:
+
+    - feedback: A string describing the improvements that can be made to the text. Return feedback as short bullet points. If no improvements are needed, return an empty string.
+    - continueProcessing: A boolean indicating whether the text should be improved further. If no improvements are needed, return false.
+
+    You will be given a piece of text. Your job is to evaluate the text and return a JSON object with the following format:
+    {
+      "feedback": "string",
+      "continueProcessing": "boolean"
+    }
+    `;
     return (
       <ChatCompletion
         model="gpt-4o-mini"
@@ -47,22 +120,42 @@ const EvaluateText = gsx.Component<{ input: string }, ReflectionOutput>(
         ]}
         response_format={{ type: "json_object" }}
       >
-        {(response: string) => JSON.parse(response) as ReflectionOutput}
+        {(response: string) => {
+          return JSON.parse(response) as ReflectionOutput;
+        }}
       </ChatCompletion>
     );
   },
 );
+```
 
+### Step 2: Define the improvement component
+
+Next, you need to define the component that will be used to improve the text. This component will take the `input` text and the `feedback` as input and return the improved text.
+
+```tsx
 const ImproveText = gsx.Component<{ input: string; feedback: string }, string>(
   "ImproveText",
   ({ input, feedback }) => {
-    const systemPrompt = `Improve the text based on the provided feedback.`;
+    console.log("\n📝 Current draft:\n", input);
+    console.log("\n🔍 Feedback:\n", feedback);
+    console.log("=".repeat(50));
+    const systemPrompt = `You're a helpful assistant that improves text by fixing typos, removing buzzwords, jargon, and making the writing sound more authentic.
+
+    You will be given a piece of text and feedback on the text. Your job is to improve the text based on the feedback. You should return the improved text and nothing else.`;
+    const prompt = `<feedback>
+    ${feedback}
+    </feedback>
+
+    <text>
+    ${input}
+    </text>`;
     return (
       <ChatCompletion
         model="gpt-4o-mini"
         messages={[
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Feedback: ${feedback}\n\nText: ${input}` },
+          { role: "user", content: prompt },
         ]}
       />
     );
@@ -70,33 +163,19 @@ const ImproveText = gsx.Component<{ input: string; feedback: string }, string>(
 );
 ```
 
-## Generic Reflection Loop
+### Step 3: Create the reflection loop
 
-GenSX provides a generic reflection loop implementation that can be used with any input type and evaluation/improvement functions:
+Now that you have the evaluation and improvement components, you can create the reflection loop.
 
 ```tsx
-interface ReflectionProps<TInput> {
-  // The initial input to process
-  input: TInput;
-  // Component to process the input and generate new output
-  ImproveFn: GsxComponent<{ input: TInput; feedback: string }, TInput>;
-  // Component to evaluate and provide feedback
-  EvaluateFn: GsxComponent<{ input: TInput }, ReflectionOutput>;
-  // Current iteration count
-  iterations?: number;
-  // Maximum number of iterations allowed
-  maxIterations?: number;
-}
-
-const Reflection = createReflectionLoop<string>("TextReflection");
-
-const ImproveTextWithReflection = gsx.Component<
+export const ImproveTextWithReflection = gsx.Component<
   {
     text: string;
     maxIterations?: number;
   },
   string
 >("ImproveTextWithReflection", ({ text, maxIterations = 3 }) => {
+  const Reflection = createReflectionLoop<string>("ImproveTextWithReflection");
   return (
     <Reflection
       input={text}
@@ -108,7 +187,7 @@ const ImproveTextWithReflection = gsx.Component<
 });
 ```
 
-## Running the Example
+### Step 4: Run the example
 
 You can run the text improvement example using the following code:
 
@@ -124,38 +203,4 @@ const improvedText = await gsx.execute<string>(
 console.log(improvedText);
 ```
 
-## Best Practices
-
-When implementing reflection patterns in GenSX:
-
-1. **Separate Concerns**: Keep evaluation and improvement logic in separate components for better reusability and testing
-2. **Type Safety**: Use TypeScript generics and interfaces to ensure type safety throughout the reflection process
-3. **Set Clear Exit Conditions**: Always include `maxIterations` to prevent infinite loops
-4. **Monitor Progress**: Add logging in your evaluation function to track progress through iterations
-5. **Keep Components Focused**: Each component should have a single responsibility - either evaluation or improvement
-
-## Advanced Patterns
-
-You can extend the basic reflection pattern in several ways:
-
-1. **Multi-criteria Reflection**: Combine multiple evaluation functions
-2. **Branching Reflection**: Use different improvement functions based on evaluation results
-3. **Parallel Reflection**: Generate multiple improvements and select the best one
-4. **Chain of Thought**: Include reasoning about improvements in each iteration
-
-The generic reflection loop makes it easy to implement these patterns by swapping out the evaluation and improvement functions as needed.
-
-```tsx
-// Example of multi-criteria evaluation
-const MultiCriteriaEvaluate = gsx.Component<{ input: string }, boolean>(
-  "MultiCriteriaEvaluate",
-  async ({ input }) => {
-    const [hasBuzzwords, hasJargon, isTooBrief] = await Promise.all([
-      gsx.execute(<HasBuzzwords input={input} />),
-      gsx.execute(<HasJargon input={input} />),
-      gsx.execute(<CheckLength input={input} />),
-    ]);
-    return hasBuzzwords || hasJargon || isTooBrief;
-  },
-);
-```
+You can find the complete example code in the [reflection example](https://github.com/gensx-inc/gensx/tree/main/examples/reflection).
