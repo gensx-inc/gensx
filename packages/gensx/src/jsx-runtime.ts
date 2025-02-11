@@ -40,7 +40,13 @@ export const jsx = <TOutput, TProps>(
   ) => MaybePromise<TOutput>,
   fullProps: Args<TProps, TOutput> | null,
 ): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
-  if (fullProps?.children && !fullProps.children.name.startsWith("Children[")) {
+  // Only set name if children is a function and doesn't already have our naming pattern
+  if (
+    fullProps?.children &&
+    typeof fullProps.children === "function" &&
+    fullProps.children.name &&
+    !fullProps.children.name.startsWith("Children[")
+  ) {
     Object.defineProperty(fullProps.children, "name", {
       value: `Children[${component.name}]`,
     });
@@ -48,11 +54,8 @@ export const jsx = <TOutput, TProps>(
 
   // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
-    // We don't actually pass children to the component, because we want to handle them separately
     const { children, ...props } = fullProps ?? ({} as Args<TProps, TOutput>);
-
     const rawResult = await component(props as Args<TProps, TOutput>);
-
     const result = await resolveDeep(rawResult);
 
     // Need to special case Fragment, because it's children are actually executed in the resolveDeep above
@@ -89,13 +92,15 @@ function resolveChildren<O>(
     | JSX.Element
     | JSX.Element[]
     | ((output: O) => MaybePromise<ExecutableValue | Primitive>)
-    // support child functions that do not return anything, but maybe do some other side effect
     | ((output: O) => void)
     | ((output: O) => Promise<void>),
 ): MaybePromise<unknown> {
   if (typeof children === "function") {
     return children(output);
   }
-
-  return children.map(child => child(output));
+  if (Array.isArray(children)) {
+    return Promise.all(children.map(child => child(output)));
+  }
+  // Single element case
+  return (children as JSX.Element)(output);
 }

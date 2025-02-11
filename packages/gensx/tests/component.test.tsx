@@ -3,7 +3,6 @@ import { setTimeout } from "timers/promises";
 import { expect, suite, test } from "vitest";
 
 import { gsx } from "@/index.js";
-import { JSX } from "@/jsx-runtime.js";
 
 import { executeWithCheckpoints } from "./utils/executeWithCheckpoints";
 
@@ -110,26 +109,20 @@ suite("component", () => {
   });
 
   test("nested components can each have custom names", async () => {
-    const ParentComponent = gsx.Component<{ children: JSX.Element }, string>(
-      "ParentOriginal",
-      async ({ children }) => {
-        await setTimeout(0);
-        return children;
-      },
-    );
+    const ParentComponent = gsx.Component<{}, string>("ParentOriginal", () => {
+      return "parent";
+    });
 
-    const ChildComponent = gsx.Component<{}, string>(
-      "ChildOriginal",
-      async () => {
-        await setTimeout(0);
-        return "hello";
-      },
-    );
+    const ChildComponent = gsx.Component<{}, string>("ChildOriginal", () => {
+      return "child";
+    });
 
     const { result, checkpoints, checkpointManager } =
       await executeWithCheckpoints<string>(
         <ParentComponent componentOpts={{ name: "CustomParent" }}>
-          <ChildComponent componentOpts={{ name: "CustomChild" }} />
+          {_parentResult => (
+            <ChildComponent componentOpts={{ name: "CustomChild" }} />
+          )}
         </ParentComponent>,
       );
 
@@ -141,7 +134,7 @@ suite("component", () => {
     expect(finalCheckpoint).toBeDefined();
     const childCheckpoint = finalCheckpoint.children[0];
 
-    expect(result).toBe("hello");
+    expect(result).toBe("child");
     expect(finalCheckpoint.componentName).toBe("CustomParent");
     expect(childCheckpoint.componentName).toBe("CustomChild");
   });
