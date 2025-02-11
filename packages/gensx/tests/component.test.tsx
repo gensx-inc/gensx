@@ -126,11 +126,15 @@ suite("component", () => {
       },
     );
 
-    const { result, checkpoints } = await executeWithCheckpoints<string>(
-      <ParentComponent componentOpts={{ name: "CustomParent" }}>
-        <ChildComponent componentOpts={{ name: "CustomChild" }} />
-      </ParentComponent>,
-    );
+    const { result, checkpoints, checkpointManager } =
+      await executeWithCheckpoints<string>(
+        <ParentComponent componentOpts={{ name: "CustomParent" }}>
+          <ChildComponent componentOpts={{ name: "CustomChild" }} />
+        </ParentComponent>,
+      );
+
+    // Wait for all checkpoint updates to complete
+    await checkpointManager.waitForPendingUpdates();
 
     expect(checkpoints).toBeDefined();
     const finalCheckpoint = checkpoints[checkpoints.length - 1];

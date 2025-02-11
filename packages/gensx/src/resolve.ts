@@ -30,18 +30,24 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
     return resolvedArray as T;
   }
 
-  // Handle objects (but not null)
+  // Handle primitive wrapper objects (Number, String, Boolean)
+  if (value instanceof Number) return value.valueOf() as T;
+  if (value instanceof String) return value.valueOf() as T;
+  if (value instanceof Boolean) return value.valueOf() as T;
+
+  // Handle functions first
+  if (typeof value === "function" && value.name !== "Object") {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    return await resolveDeep(value());
+  }
+
+  // Then handle objects (but not null)
   if (typeof value === "object" && value !== null) {
     const entries = Object.entries(value);
     const resolvedEntries = await Promise.all(
       entries.map(async ([key, val]) => [key, await resolveDeep(val)]),
     );
     return Object.fromEntries(resolvedEntries) as T;
-  }
-
-  if (typeof value === "function") {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    return await resolveDeep(await value());
   }
 
   // Base case: primitive value
