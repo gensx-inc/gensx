@@ -68,32 +68,34 @@ export const jsx = <TOutput, TProps>(
     const result = await resolveDeep(rawResult);
 
     if (children) {
-      // Get the parent's node ID from the checkpoint system
       const workflowContext = context.getWorkflowContext();
       const root = workflowContext.checkpointManager.root;
       const parentNodeId = root?.id;
 
       if (result instanceof ExecutionContext) {
+        // withContext handles wrapping internally
         return await withContext(result, async () => {
           const childResult = await resolveChildren(null as never, children);
-          const resolvedChildResult = await resolveDeep(childResult);
-          return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
+          return resolveDeep(childResult);
         });
       } else if (parentNodeId) {
-        // Execute children within the parent's node context
+        // withCurrentNode handles wrapping internally
         return await context.withCurrentNode(parentNodeId, async () => {
+          const awaitedResult = await result;
           const childResult = await resolveChildren(
-            result as TOutput,
+            awaitedResult as TOutput,
             children,
           );
-          const resolvedChildResult = await resolveDeep(childResult);
-          return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
+          return resolveDeep(childResult);
         });
       } else {
         // No context available, just execute children directly
-        const childResult = await resolveChildren(result as TOutput, children);
-        const resolvedChildResult = await resolveDeep(childResult);
-        return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
+        const awaitedResult = await result;
+        const childResult = await resolveChildren(
+          awaitedResult as TOutput,
+          children,
+        );
+        return await resolveDeep(childResult);
       }
     }
     return result as Awaited<TOutput> | Awaited<TOutput>[];
@@ -104,6 +106,10 @@ export const jsx = <TOutput, TProps>(
       value: `JsxWrapper[${component.name}]`,
     });
   }
+
+  Object.defineProperty(JsxWrapper, "__gsxFramework", {
+    value: true,
+  });
 
   return JsxWrapper;
 };

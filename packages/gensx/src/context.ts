@@ -101,7 +101,10 @@ export class ExecutionContext {
   }
 
   withCurrentNode<T>(nodeId: string, fn: () => Promise<T>): Promise<T> {
-    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
+    return withContext(
+      this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }),
+      wrapWithFramework(fn),
+    );
   }
 }
 
@@ -126,6 +129,18 @@ const rootContext = new ExecutionContext({});
 // Private fallback state
 let globalContext = rootContext;
 
+// Add type for framework functions
+type FrameworkFunction<T> = (() => Promise<T>) & {
+  __gsxFramework: boolean;
+};
+
+function wrapWithFramework<T>(fn: () => Promise<T>): FrameworkFunction<T> {
+  const wrapper = async () => fn();
+  (wrapper as FrameworkFunction<T>).__gsxFramework = true;
+  return wrapper as FrameworkFunction<T>;
+}
+
+// Update contextManager implementation
 const contextManager = {
   getCurrentContext(): ExecutionContext {
     if (contextStorage) {
@@ -136,28 +151,28 @@ const contextManager = {
   },
 
   run<T>(context: ExecutionContext, fn: () => Promise<T>): Promise<T> {
+    const wrappedFn = wrapWithFramework(fn);
     if (contextStorage) {
-      return contextStorage.run(context, fn);
+      return contextStorage.run(context, wrappedFn);
     }
     const prevContext = globalContext;
     globalContext = context;
     try {
-      return fn();
+      return wrappedFn();
     } finally {
       globalContext = prevContext;
     }
   },
 };
 
-// Helper to run code with a specific context
+// Update withContext to use contextManager.run
 export async function withContext<T>(
   context: ExecutionContext,
   fn: () => Promise<T>,
 ): Promise<T> {
   await configureAsyncLocalStorage;
-
   return contextManager.run(context, async () => {
-    const result = await resolveDeep(fn);
+    const result = await resolveDeep(wrapWithFramework(fn));
     return result as T;
   });
 }

@@ -42,8 +42,13 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
 
   // Handle functions first
   if (typeof value === "function" && value.name !== "Object") {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    return await resolveDeep(value());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    if ((value as any).__gsxFramework) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      return await resolveDeep(value());
+    }
+
+    return value as T;
   }
 
   // Then handle objects (but not null)

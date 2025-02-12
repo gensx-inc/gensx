@@ -191,5 +191,9 @@ export function StreamComponent<P>(
     });
   }
 
+  Object.defineProperty(GsxStreamComponent, "__gsxFramework", {
+    value: true,
+  });
+
   return GsxStreamComponent;
 }

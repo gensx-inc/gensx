@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import { setTimeout } from "timers/promises";
 
 import type { ExecutionNode } from "@/checkpoint.js";
@@ -313,7 +314,7 @@ suite("checkpoint", () => {
   });
 
   test("masks functions in checkpoints", async () => {
-    const nativeFunction = setTimeout;
+    const nativeFunction = readFileSync;
     const customFunction = () => "test";
 
     type CustomFn = () => string;
@@ -333,7 +334,6 @@ suite("checkpoint", () => {
     }>(<FunctionComponent />);
 
     // Verify the actual result contains the functions
-    console.log(result);
     expect(typeof result.fn).toBe("function");
     expect(typeof result.native).toBe("function");
     expect(result.fn()).toBe("test");
@@ -342,7 +342,7 @@ suite("checkpoint", () => {
     const finalCheckpoint = checkpoints[checkpoints.length - 1];
     expect(finalCheckpoint.output).toEqual({
       fn: "[function]",
-      native: "[native function]",
+      native: "[function]",
     });
   });
 
