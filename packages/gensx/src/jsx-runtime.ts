@@ -65,7 +65,6 @@ export const jsx = <TOutput, TProps>(
     // For regular components, we handle children separately
     const { children, ...props } = fullProps ?? ({} as Args<TProps, TOutput>);
     const rawResult = await component(props as Args<TProps, TOutput>);
-
     const result = await resolveDeep(rawResult);
 
     if (children) {

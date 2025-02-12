@@ -101,13 +101,7 @@ export class ExecutionContext {
   }
 
   withCurrentNode<T>(nodeId: string, fn: () => Promise<T>): Promise<T> {
-    return withContext(
-      this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }),
-      async () => {
-        const result = await fn();
-        return result;
-      },
-    );
+    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
   }
 }
 
