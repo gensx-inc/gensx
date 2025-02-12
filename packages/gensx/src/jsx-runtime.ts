@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ExecutionContext, withContext } from "./context";
+import { ExecutionContext, getCurrentContext, withContext } from "./context";
 import { resolveDeep } from "./resolve";
 import {
   Args,
@@ -54,6 +54,8 @@ export const jsx = <TOutput, TProps>(
 
   // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
+    const context = getCurrentContext();
+
     // For Fragment, we need to pass the children through
     if ((component as any).__gsxFragment) {
       const result = await component(fullProps!);
@@ -63,16 +65,33 @@ export const jsx = <TOutput, TProps>(
     // For regular components, we handle children separately
     const { children, ...props } = fullProps ?? ({} as Args<TProps, TOutput>);
     const rawResult = await component(props as Args<TProps, TOutput>);
+
     const result = await resolveDeep(rawResult);
 
     if (children) {
+      // Get the parent's node ID from the checkpoint system
+      const workflowContext = context.getWorkflowContext();
+      const root = workflowContext.checkpointManager.root;
+      const parentNodeId = root?.id;
+
       if (result instanceof ExecutionContext) {
         return await withContext(result, async () => {
           const childResult = await resolveChildren(null as never, children);
           const resolvedChildResult = await resolveDeep(childResult);
           return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
         });
+      } else if (parentNodeId) {
+        // Execute children within the parent's node context
+        return await context.withCurrentNode(parentNodeId, async () => {
+          const childResult = await resolveChildren(
+            result as TOutput,
+            children,
+          );
+          const resolvedChildResult = await resolveDeep(childResult);
+          return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
+        });
       } else {
+        // No context available, just execute children directly
         const childResult = await resolveChildren(result as TOutput, children);
         const resolvedChildResult = await resolveDeep(childResult);
         return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];

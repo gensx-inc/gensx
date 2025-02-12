@@ -34,6 +34,7 @@ export function Component<P, O>(
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
+    const currentNodeId = context.getCurrentNodeId();
 
     // Merge component opts with unique secrets
     const mergedOpts = {
@@ -58,7 +59,7 @@ export function Component<P, O>(
         ),
         componentOpts: mergedOpts,
       },
-      context.getCurrentNodeId(),
+      currentNodeId,
     );
 
     try {
