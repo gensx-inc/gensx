@@ -18,13 +18,13 @@ export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
 
   function Provider(props: Args<{ value: T }, ExecutionContext>) {
-    return () => {
+    return wrapWithFramework(() => {
       const currentContext = getCurrentContext();
 
       return Promise.resolve(
         currentContext.withContext({ [contextSymbol]: props.value }),
       );
-    };
+    });
   }
 
   const context = {
