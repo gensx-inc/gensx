@@ -54,12 +54,18 @@ export const jsx = <TOutput, TProps>(
 
   // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
+    // For Fragment, we need to pass the children through
+    if ((component as any).__gsxFragment) {
+      const result = await component(fullProps!);
+      return await resolveDeep(result);
+    }
+
+    // For regular components, we handle children separately
     const { children, ...props } = fullProps ?? ({} as Args<TProps, TOutput>);
     const rawResult = await component(props as Args<TProps, TOutput>);
     const result = await resolveDeep(rawResult);
 
-    // Need to special case Fragment, because it's children are actually executed in the resolveDeep above
-    if (children && !(component as any).__gsxFragment) {
+    if (children) {
       if (result instanceof ExecutionContext) {
         return await withContext(result, async () => {
           const childResult = await resolveChildren(null as never, children);
