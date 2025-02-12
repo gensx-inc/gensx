@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
-  "description": "Starter project for [GenSX](https://gensx.dev), created using `npx create-gensx`.",
+  "description": "Starter project for [GenSX](https://gensx.com), created using `npx create-gensx`.",
   "main": "index.js",
   "keywords": [],
   "author": "",
