@@ -30,7 +30,7 @@ export const CodeAgent = gsx.Component<CodeAgentProps, string>(
               content: getCodeAgentPrompt(message, repoPath),
             },
           ]}
-          model="gpt-4o-mini"
+          model="gpt-4o"
           temperature={0.7}
           tools={[confirmationTool, editTool, bashTool]}
         />

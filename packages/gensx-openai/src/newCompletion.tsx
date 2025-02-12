@@ -2,6 +2,7 @@ import { gsx } from "gensx";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { ChatCompletionTool } from "openai/resources/index.mjs";
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 // Wrapper for structured output schemas
 export class GSXStructuredOutput<T> {
@@ -56,21 +57,7 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     this.function = {
       name: this.name,
       description: this.description,
-      parameters: {
-        type: "object",
-        properties: Object.fromEntries(
-          Object.entries(this.parameters.shape).map(([key, value]) => [
-            key,
-            (value as z.ZodString).description
-              ? {
-                  type: "string",
-                  description: (value as z.ZodString).description,
-                }
-              : { type: "string" },
-          ]),
-        ),
-        required: Object.keys(this.parameters.shape),
-      },
+      parameters: zodToJsonSchema(this.parameters),
     };
 
     // Create a component that wraps the execute function

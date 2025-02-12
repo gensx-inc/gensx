@@ -24,10 +24,9 @@ const rl = createInterface({
 
 // Helper function to ask question and get response
 const askQuestion = (question: string): Promise<string> => {
+  console.log(question);
   return new Promise((resolve) => {
-    process.stdout.write(question);
-    process.stdout.write(""); // Force flush
-    rl.question("", (answer) => {
+    rl.question(question, (answer) => {
       resolve(answer.toLowerCase().trim());
     });
   });
@@ -43,16 +42,15 @@ export const confirmationTool = new GSXTool<typeof confirmationToolSchema>(
 * The details should provide any relevant additional information to help the user decide`,
   confirmationToolSchema,
   async ({ action, details }) => {
-    process.stdout.write("\n=== Confirmation Required ===\n");
-    process.stdout.write(`Action: ${action}\n`);
-    process.stdout.write(`Details: ${details}\n`);
-    process.stdout.write(""); // Force flush
+    console.log("\n=== Confirmation Required ===");
+    console.log(`Action: ${action}`);
+    console.log(`Details: ${details}`);
 
     let response = "";
     while (response !== "yes" && response !== "no") {
       response = await askQuestion("\nDo you approve this action? (yes/no): ");
       if (response !== "yes" && response !== "no") {
-        process.stdout.write('Please answer with "yes" or "no"\n');
+        console.log('Please answer with "yes" or "no"');
       }
     }
 
