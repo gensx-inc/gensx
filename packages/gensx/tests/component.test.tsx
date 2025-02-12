@@ -138,4 +138,36 @@ suite("component", () => {
     expect(finalCheckpoint.componentName).toBe("CustomParent");
     expect(childCheckpoint.componentName).toBe("CustomChild");
   });
+
+  test("does not consume asyncIterable during execution", async () => {
+    let iteratorConsumed = false;
+    const AsyncIterableComponent = gsx.Component<
+      {},
+      AsyncIterableIterator<string>
+    >("AsyncIterableComponent", async () => {
+      await setTimeout(0);
+      const iterator = (async function* () {
+        await setTimeout(0);
+        iteratorConsumed = true;
+        yield "test";
+      })();
+      return iterator;
+    });
+
+    const result = await gsx.execute<AsyncIterableIterator<string>>(
+      <AsyncIterableComponent />,
+    );
+
+    // Verify the iterator wasn't consumed during execution
+    expect(iteratorConsumed).toBe(false);
+
+    // Verify we can still consume the iterator after execution
+    let consumed = false;
+    for await (const value of result) {
+      expect(value).toBe("test");
+      consumed = true;
+    }
+    expect(consumed).toBe(true);
+    expect(iteratorConsumed).toBe(true);
+  });
 });

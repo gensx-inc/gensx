@@ -17,7 +17,12 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
     return value as T;
   }
 
-  // Pass through streamable values - they are handled by execute
+  // Pass through any async iterable without consuming it
+  if (value && typeof value === "object" && Symbol.asyncIterator in value) {
+    return value as T;
+  }
+
+  // Pass through streamable values - they are handled by execute (StreamComponent)
   if (isStreamable(value)) {
     return value as unknown as T;
   }

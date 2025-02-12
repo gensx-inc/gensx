@@ -312,6 +312,40 @@ suite("checkpoint", () => {
     });
   });
 
+  test("masks functions in checkpoints", async () => {
+    const nativeFunction = setTimeout;
+    const customFunction = () => "test";
+
+    type CustomFn = () => string;
+    type TimerFn = typeof setTimeout;
+
+    const FunctionComponent = gsx.Component<
+      {},
+      { fn: CustomFn; native: TimerFn }
+    >("FunctionComponent", () => ({
+      fn: customFunction,
+      native: nativeFunction,
+    }));
+
+    const { result, checkpoints } = await executeWithCheckpoints<{
+      fn: CustomFn;
+      native: TimerFn;
+    }>(<FunctionComponent />);
+
+    // Verify the actual result contains the functions
+    console.log(result);
+    expect(typeof result.fn).toBe("function");
+    expect(typeof result.native).toBe("function");
+    expect(result.fn()).toBe("test");
+
+    // Verify the checkpoint masks the functions
+    const finalCheckpoint = checkpoints[checkpoints.length - 1];
+    expect(finalCheckpoint.output).toEqual({
+      fn: "[function]",
+      native: "[native function]",
+    });
+  });
+
   test("handles streaming components", async () => {
     // Define a streaming component that yields tokens with delays
     const StreamingComponent = gsx.StreamComponent<{ tokens: string[] }>(

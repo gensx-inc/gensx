@@ -129,6 +129,13 @@ export class CheckpointManager implements CheckpointWriter {
     this.checkOrphanTimeout(node.id, expectedParentId);
   }
 
+  private isNativeFunction(value: unknown): boolean {
+    return (
+      typeof value === "function" &&
+      Function.prototype.toString.call(value).includes("[native code]")
+    );
+  }
+
   private checkOrphanTimeout(nodeId: string, expectedParentId: string) {
     setTimeout(() => {
       const orphans = this.orphanedNodes.get(expectedParentId);
@@ -223,7 +230,26 @@ export class CheckpointManager implements CheckpointWriter {
 
     try {
       // Create a deep copy of the execution tree for masking
-      const maskedRoot = this.maskExecutionTree(structuredClone(this.root));
+      const cloneWithoutFunctions = (obj: unknown): unknown => {
+        if (this.isNativeFunction(obj) || typeof obj === "function") {
+          return "[function]";
+        }
+        if (Array.isArray(obj)) {
+          return obj.map(cloneWithoutFunctions);
+        }
+        if (obj && typeof obj === "object" && !ArrayBuffer.isView(obj)) {
+          return Object.fromEntries(
+            Object.entries(obj).map(([key, value]) => [
+              key,
+              cloneWithoutFunctions(value),
+            ]),
+          );
+        }
+        return obj;
+      };
+
+      const treeCopy = cloneWithoutFunctions(this.root);
+      const maskedRoot = this.maskExecutionTree(treeCopy as ExecutionNode);
       const baseUrl =
         process.env.GENSX_CHECKPOINT_URL ?? "https://api.gensx.com";
       const url = join(baseUrl, `/org/${this.org}/executions`);
@@ -429,6 +455,16 @@ export class CheckpointManager implements CheckpointWriter {
 
   private scrubSecrets(data: unknown, nodeId?: string, path = ""): unknown {
     return this.withNode(nodeId ?? "", () => {
+      // Handle native functions
+      if (this.isNativeFunction(data)) {
+        return "[native function]";
+      }
+
+      // Handle functions
+      if (typeof data === "function") {
+        return "[function]";
+      }
+
       // Handle primitive values
       if (typeof data === "string" || typeof data === "number") {
         const strValue = String(data);
