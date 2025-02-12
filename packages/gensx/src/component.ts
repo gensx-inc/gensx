@@ -88,6 +88,10 @@ export function Component<P, O>(
     });
   }
 
+  Object.defineProperty(GsxComponent, "__gsxFramework", {
+    value: true,
+  });
+
   return GsxComponent;
 }
 
