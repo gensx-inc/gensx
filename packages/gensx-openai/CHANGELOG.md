@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.5...gensx-openai-v0.1.6) (2025-02-13)
+
+
+### ✨ New Features
+
+* GSXChatCompletion to support structured output, tools, streaming, and the complete matrix of overlap ([#237](https://github.com/gensx-inc/gensx/issues/237)) ([372c04f](https://github.com/gensx-inc/gensx/commit/372c04f1ee4681beeb8643c027f75616deb6b3c4))
+
 ## [0.1.5](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.4...gensx-openai-v0.1.5) (2025-01-29)
 
 
