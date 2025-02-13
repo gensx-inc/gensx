@@ -11,8 +11,14 @@ import {
 } from "openai/resources/chat/completions";
 import { Stream } from "openai/streaming";
 
-import { GSXCompletion } from "./gsx-completion.js";
+import {
+  GSXCompletion,
+  OpenAIChatCompletion,
+  ToolExecutor,
+} from "./gsx-completion.js";
 import { GSXTool } from "./new-completion.js";
+
+export { OpenAIChatCompletion, ToolExecutor };
 
 // Create a context for OpenAI
 export const OpenAIContext = gsx.createContext<{
