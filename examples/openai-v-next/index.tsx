@@ -1,6 +1,6 @@
 import {
-  GSXCompletion,
-  GSXStructuredOutput,
+  GSXChatCompletion,
+  GSXSchema,
   GSXTool,
   OpenAIProvider,
 } from "@gensx/openai";
@@ -15,7 +15,7 @@ import { z } from "zod";
 async function basicCompletion() {
   const results = await gsx.execute<ChatCompletionOutput>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXCompletion
+      <GSXChatCompletion
         messages={[
           {
             role: "system",
@@ -61,7 +61,7 @@ async function tools() {
 
   const results = await gsx.execute<ChatCompletionOutput>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXCompletion
+      <GSXChatCompletion
         messages={[
           {
             role: "system",
@@ -108,7 +108,7 @@ async function toolsStreaming() {
 
   const results = await gsx.execute<Stream<ChatCompletionChunk>>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXCompletion
+      <GSXChatCompletion
         stream={true}
         messages={[
           {
@@ -134,7 +134,7 @@ async function toolsStreaming() {
 async function streamingCompletion() {
   const results = await gsx.execute<Stream<ChatCompletionChunk>>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXCompletion
+      <GSXChatCompletion
         stream={true}
         messages={[
           {
@@ -177,27 +177,11 @@ async function structuredOutput() {
   type TrashRating = z.infer<typeof trashRatingSchema>;
 
   // Create a structured output wrapper
-  const structuredOutput = new GSXStructuredOutput(trashRatingSchema, {
-    description: "Rate and review different trash bins in a neighborhood",
-    examples: [
-      {
-        bins: [
-          {
-            location: "Behind the fancy restaurant",
-            rating: 9,
-            review: "Michelin star garbage, simply exquisite!",
-            bestFinds: ["day-old croissants", "barely touched sushi"],
-          },
-        ],
-        overallVerdict:
-          "High-class neighborhood with refined taste in leftovers",
-      },
-    ],
-  });
+  const structuredOutput = new GSXSchema(trashRatingSchema);
 
   const results = await gsx.execute<TrashRating>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXCompletion
+      <GSXChatCompletion
         messages={[
           {
             role: "system",
@@ -212,7 +196,7 @@ async function structuredOutput() {
         ]}
         model="gpt-4o-mini"
         temperature={0.7}
-        structuredOutput={structuredOutput}
+        outputSchema={structuredOutput}
       />
     </OpenAIProvider>,
   );
@@ -269,7 +253,7 @@ async function multiStepTools() {
 
   const results = await gsx.execute<ChatCompletionOutput>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXCompletion
+      <GSXChatCompletion
         messages={[
           {
             role: "system",
@@ -286,7 +270,7 @@ async function multiStepTools() {
 Please explain your thinking as you go through this analysis.`,
           },
         ]}
-        model="gpt-4"
+        model="gpt-4o-mini"
         temperature={0.7}
         tools={[weatherTool, servicesTool]}
       />
