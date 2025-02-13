@@ -103,9 +103,7 @@ suite("ChatCompletion", () => {
         stream={true}
         model="gpt-4"
         messages={[{ role: "user", content: "test" }]}
-      >
-        {(completion: string) => completion}
-      </ChatCompletion>
+      />
     ));
 
     const result = await gsx.execute<Streamable>(
