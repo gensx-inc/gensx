@@ -194,7 +194,7 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
 
-  examples/hackerNewsAnalyzer:
+  examples/gsxChatCompletion:
     dependencies:
       '@gensx/openai':
         specifier: workspace:*
@@ -204,7 +204,10 @@ importers:
         version: link:../../packages/gensx
       openai:
         specifier: ^4.77.0
-        version: 4.77.0(zod@3.24.1)
+        version: 4.80.1(ws@8.18.0)(zod@3.24.1)
+      zod:
+        specifier: ^3.24.1
+        version: 3.24.1
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
@@ -219,7 +222,7 @@ importers:
         specifier: ^5.0.0
         version: 5.7.2
 
-  examples/openai-v-next:
+  examples/hackerNewsAnalyzer:
     dependencies:
       '@gensx/openai':
         specifier: workspace:*
@@ -229,10 +232,7 @@ importers:
         version: link:../../packages/gensx
       openai:
         specifier: ^4.77.0
-        version: 4.80.1(ws@8.18.0)(zod@3.24.1)
-      zod:
-        specifier: ^3.24.1
-        version: 3.24.1
+        version: 4.77.0(zod@3.24.1)
     devDependencies:
       '@types/node':
         specifier: ^20.17.11
