@@ -1,5 +1,5 @@
 {
-  "name": "@gensx-examples/openai-v-next",
+  "name": "@gensx-examples/gsx-chat-completion",
   "private": true,
   "version": "0.0.0",
   "type": "module",
