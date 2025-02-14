@@ -4,7 +4,7 @@ import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
 
 import { GSXChatCompletion, OpenAIProvider } from "@/index.js";
-import { GSXSchema, StructuredOutput } from "@/structured-output.js";
+import { StructuredOutput } from "@/structured-output.js";
 
 vi.mock("openai", async (importOriginal) => {
   const originalOpenAI: Awaited<typeof import("openai")> =
@@ -56,12 +56,10 @@ vi.mock("openai", async (importOriginal) => {
 
 suite("StructuredOutput", () => {
   test("structured output works with `StructuredOutput` component", async () => {
-    const schema = new GSXSchema(
-      z.object({
-        name: z.string(),
-        age: z.number(),
-      }),
-    );
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+    });
 
     const TestComponent = gsx.Component("TestComponent", () => (
       <StructuredOutput
@@ -81,12 +79,10 @@ suite("StructuredOutput", () => {
   });
 
   test("structured output works with `GSXChatCompletion` component", async () => {
-    const schema = new GSXSchema(
-      z.object({
-        name: z.string(),
-        age: z.number(),
-      }),
-    );
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+    });
 
     const TestComponent = gsx.Component("TestComponent", () => (
       <GSXChatCompletion
