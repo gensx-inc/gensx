@@ -1,9 +1,4 @@
-import {
-  GSXChatCompletion,
-  GSXSchema,
-  GSXTool,
-  OpenAIProvider,
-} from "@gensx/openai";
+import { GSXChatCompletion, GSXTool, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
@@ -176,9 +171,6 @@ async function structuredOutput() {
 
   type TrashRating = z.infer<typeof trashRatingSchema>;
 
-  // Create a structured output wrapper
-  const structuredOutput = new GSXSchema(trashRatingSchema);
-
   const results = await gsx.execute<TrashRating>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <GSXChatCompletion
@@ -196,7 +188,7 @@ async function structuredOutput() {
         ]}
         model="gpt-4o-mini"
         temperature={0.7}
-        outputSchema={structuredOutput}
+        outputSchema={trashRatingSchema}
       />
     </OpenAIProvider>,
   );
