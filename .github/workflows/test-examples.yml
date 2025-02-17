@@ -40,6 +40,10 @@ jobs:
         with:
           version: 22.x
           npm_token: ${{ secrets.NPM_TOKEN }}
+      - name: Clean build artifacts 🧹
+        run: |
+          rm -rf examples/**/dist
+          rm -rf examples/**/.turbo
       - name: Build 📦
         run: pnpm build:examples
       - name: Run tests ✅
