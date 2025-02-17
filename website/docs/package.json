@@ -6,7 +6,10 @@
     "build": "next build",
     "dev": "next dev --turbopack -p 4000",
     "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind",
-    "start": "next start"
+    "start": "next start",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.6",

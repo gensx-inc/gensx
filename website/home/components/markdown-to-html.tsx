@@ -4,7 +4,7 @@ import React from "react";
 import remarkGfm from "remark-gfm";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import "highlight.js/styles/vs.css";  // Using Visual Studio light theme for good contrast
+import "highlight.js/styles/vs.css"; // Using Visual Studio light theme for good contrast
 
 interface CodeComponentProps extends React.HTMLAttributes<HTMLElement> {
   inline?: boolean;
@@ -12,7 +12,13 @@ interface CodeComponentProps extends React.HTMLAttributes<HTMLElement> {
   children?: React.ReactNode;
 }
 // This
-export default function MarkdownToHTML({ markdown, className }: { markdown: string; className?: string }) {
+export default function MarkdownToHTML({
+  markdown,
+  className,
+}: {
+  markdown: string;
+  className?: string;
+}) {
   return (
     <div className="[&_pre]:overflow-x-auto [&_pre]:bg-white [&_pre]:rounded-[0px] [&_pre]:max-w-[95vw] md:[&_pre]:max-w-[85vw]">
       <ReactMarkdown
@@ -22,8 +28,8 @@ export default function MarkdownToHTML({ markdown, className }: { markdown: stri
         components={{
           code(props: CodeComponentProps) {
             const { inline, children, className, ...rest } = props;
-            const language = className?.replace('hljs language-', '');
-            
+            const language = className?.replace("hljs language-", "");
+
             if (inline) {
               return (
                 <code className="text-sm" {...rest}>
@@ -40,13 +46,16 @@ export default function MarkdownToHTML({ markdown, className }: { markdown: stri
                   </div>
                 )}
                 <pre className="bg-white rounded-[0px] w-full px-2">
-                  <code {...rest} className={`${className} text-xs md:text-sm leading-relaxed`}>
+                  <code
+                    {...rest}
+                    className={`${className} text-xs md:text-sm leading-relaxed`}
+                  >
                     {children}
                   </code>
                 </pre>
               </div>
             );
-          }
+          },
         }}
       >
         {markdown}

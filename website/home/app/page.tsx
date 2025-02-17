@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { CodeBlock } from "@/components/ui/code-block";
 import { ArrowUpRight } from "lucide-react";
@@ -10,15 +10,18 @@ import { ScriptCopyBtn } from "@/components/ui/script-copy-btn";
 import Link from "next/link";
 
 export default function Home() {
-  type ExampleType = 'components' | 'workflows' | 'agents' | 'llms';
+  type ExampleType = "components" | "workflows" | "agents" | "llms";
 
   // State that remains when you click an example.
-  const [committedExample, setCommittedExample] = useState<ExampleType>('components');
+  const [committedExample, setCommittedExample] =
+    useState<ExampleType>("components");
   // Temporary state that updates on hover (overriding the committed one temporarily).
-  const [hoveredExample, setHoveredExample] = useState<ExampleType | null>(null);
+  const [hoveredExample, setHoveredExample] = useState<ExampleType | null>(
+    null,
+  );
   // The active example is the hovered one (if one exists) or the committed one.
   const activeExample = hoveredExample ?? committedExample;
-  
+
   const examples: Record<ExampleType, string> = {
     components: `import { Component } from 'gensx';
 import { OpenAIChatCompletion, OpenAIChatCompletionProps } from 'gensx/openai';
@@ -149,16 +152,22 @@ const agent = new Agent({
     
     return this.generateNewResponse(message);
   }
-});`
+});`,
   };
 
   // Define an array of button/tab details so we can map over them.
-  const examplesData: { type: ExampleType; title: string; description: string; mobileTitle: string }[] = [
+  const examplesData: {
+    type: ExampleType;
+    title: string;
+    description: string;
+    mobileTitle: string;
+  }[] = [
     {
       type: "components",
       title: "Define Components",
       mobileTitle: "Components",
-      description: "Create building blocks for your app with reusable components.",
+      description:
+        "Create building blocks for your app with reusable components.",
     },
     {
       type: "workflows",
@@ -176,19 +185,20 @@ const agent = new Agent({
       type: "llms",
       title: "Exchangable LLMs",
       mobileTitle: "LLMs",
-      description: "Switch between different LLMs to see which one works best for your use case.",
+      description:
+        "Switch between different LLMs to see which one works best for your use case.",
     },
   ];
 
   return (
     <div className="min-h-screen">
-      <motion.main 
+      <motion.main
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="flex flex-col gap-4 items-center w-full max-w-7xl mx-auto pt-32 px-4 md:px-8 pb-20 mt-0 md:mt-8"
       >
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.0, ease: "easeOut" }}
@@ -201,22 +211,25 @@ const agent = new Agent({
             Easy to learn. Lightning fast dev loop. Reusable components.
           </p>
           <div className="flex gap-4 mt-8 justify-center">
-            
-              <Link href="/docs/quickstart">
-              <Button variant="primary" >
+            <Link href="/docs/quickstart">
+              <Button variant="primary">
                 <div className="flex items-center">
                   <span>
-                    <HyperText delay={650} startOnView={false}>Start Building</HyperText>
+                    <HyperText delay={650} startOnView={false}>
+                      Start Building
+                    </HyperText>
                   </span>
                   <ArrowUpRight className="ml-2 w-4 h-4" />
                 </div>
               </Button>
             </Link>
-              <Link href="/docs">
-              <Button variant="secondary" >
+            <Link href="/docs">
+              <Button variant="secondary">
                 <div className="flex items-center">
                   <span>
-                    <HyperText delay={650} startOnView={false}>View Docs</HyperText>
+                    <HyperText delay={650} startOnView={false}>
+                      View Docs
+                    </HyperText>
                   </span>
                   <ArrowUpRight className="ml-2 w-4 h-4" />
                 </div>
@@ -227,7 +240,7 @@ const agent = new Agent({
         </motion.div>
 
         {/* Example Picker Section */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
@@ -268,7 +281,7 @@ const agent = new Agent({
                         transition={{
                           type: "spring",
                           bounce: 0.15,
-                          duration: 0.5
+                          duration: 0.5,
                         }}
                       />
                       <motion.div
@@ -279,7 +292,11 @@ const agent = new Agent({
                   )}
 
                   <span className="relative z-10">
-                    <HyperText delay={650} className="text-xs ml-0 pl-0 font-semibold" startOnView={false}>
+                    <HyperText
+                      delay={650}
+                      className="text-xs ml-0 pl-0 font-semibold"
+                      startOnView={false}
+                    >
                       {mobileTitle}
                     </HyperText>
                   </span>
@@ -292,10 +309,15 @@ const agent = new Agent({
                 layoutId="mobile-connector-box"
                 className="absolute -top-[10px] left-1/2 w-[2px] h-[10px] bg-[#ffe066]/80 transform -translate-x-1/2 "
                 style={{
-                  left: `${(100 / examplesData.length) * (examplesData.findIndex(ex => ex.type === activeExample) + 0.5)}%`
+                  left: `${(100 / examplesData.length) * (examplesData.findIndex((ex) => ex.type === activeExample) + 0.5)}%`,
                 }}
               />
-              <p className="text-sm text-gray-600">{examplesData.find(ex => ex.type === activeExample)?.description}</p>
+              <p className="text-sm text-gray-600">
+                {
+                  examplesData.find((ex) => ex.type === activeExample)
+                    ?.description
+                }
+              </p>
             </div>
             <div className="mt-4">
               <CodeBlock code={examples[activeExample]} />
@@ -365,13 +387,12 @@ const agent = new Agent({
         </motion.section>
         */}
       </motion.main>
-      <motion.footer 
+      <motion.footer
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
         className="flex gap-6 flex-wrap items-center justify-center pb-8"
-      >
-      </motion.footer>
+      ></motion.footer>
     </div>
   );
 }
@@ -382,7 +403,6 @@ function ScriptCopyBtnDemo() {
     npx: "npx create gensx my-app",
     yarn: "yarn create gensx my-app",
     pnpm: "pnpm create gensx my-app",
-
   };
   return (
     <ScriptCopyBtn

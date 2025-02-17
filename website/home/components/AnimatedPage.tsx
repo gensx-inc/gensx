@@ -17,4 +17,4 @@ export default function AnimatedPage({ children }: AnimatedPageProps) {
       {children}
     </motion.div>
   );
-} 
+}

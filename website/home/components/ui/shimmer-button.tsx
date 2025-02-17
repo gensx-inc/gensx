@@ -8,7 +8,7 @@ export interface ShimmerButtonProps extends ComponentPropsWithoutRef<"button"> {
   borderRadius?: string;
   shimmerDuration?: string;
   background?: string;
-  variant?: 'default' | 'ghost';
+  variant?: "default" | "ghost";
   className?: string;
   children?: React.ReactNode;
 }
@@ -24,15 +24,15 @@ export const ShimmerButton = React.forwardRef<
       shimmerDuration = "3s",
       borderRadius = "0px",
       background = "rgb(255, 255, 255)",
-      variant = 'default',
+      variant = "default",
       className,
       children,
       ...props
     },
     ref,
   ) => {
-    const isGhost = variant === 'ghost';
-    
+    const isGhost = variant === "ghost";
+
     return (
       <button
         style={
@@ -47,7 +47,9 @@ export const ShimmerButton = React.forwardRef<
         }
         className={cn(
           "group relative z-0 flex cursor-pointer items-center justify-center overflow-hidden whitespace-nowrap border px-6 py-2 [border-radius:var(--radius)]",
-          isGhost ? "border-black text-black hover:bg-black/5" : "border-[#ffde59]/90 dark:text-black bg-gradient-to-r from-[#ffde59]/50 to-[#ffe066]/20 transition-all",
+          isGhost
+            ? "border-black text-black hover:bg-black/5"
+            : "border-[#ffde59]/90 dark:text-black bg-gradient-to-r from-[#ffde59]/50 to-[#ffe066]/20 transition-all",
           "transform-gpu transition-transform duration-300 ease-in-out active:translate-y-px",
           className,
         )}
@@ -59,7 +61,7 @@ export const ShimmerButton = React.forwardRef<
           className={cn(
             "-z-30 blur-[2px]",
             "absolute inset-0 overflow-visible [container-type:size]",
-            isGhost && "opacity-50"
+            isGhost && "opacity-50",
           )}
         >
           {/* spark */}

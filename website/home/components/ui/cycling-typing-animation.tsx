@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import { useState, useEffect, useMemo } from "react";
 import { TypingAnimation } from "./typing-animation";
 import { cn } from "@/lib/utils";
@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 interface CyclingTypingAnimationProps {
   texts: string[];
   typingDuration?: number; // duration per character in ms
-  pauseDuration?: number;  // additional pause after finishing a word (in ms)
-  delay?: number;          // any initial delay before typing starts (in ms)
+  pauseDuration?: number; // additional pause after finishing a word (in ms)
+  delay?: number; // any initial delay before typing starts (in ms)
   className?: string;
   as?: React.ElementType;
 }
@@ -33,14 +33,18 @@ export function CyclingTypingAnimation({
 
   // Compute the longest text to reserve space.
   const maxText = useMemo(() => {
-    return texts.reduce((prev, cur) => (cur.length > prev.length ? cur : prev), "");
+    return texts.reduce(
+      (prev, cur) => (cur.length > prev.length ? cur : prev),
+      "",
+    );
   }, [texts]);
 
   useEffect(() => {
     // Determine the total time required to show the current text.
     // (text length * typingDuration) + pauseDuration + any additional delay.
     const currentText = texts[index];
-    const totalTime = currentText.length * typingDuration + pauseDuration + delay;
+    const totalTime =
+      currentText.length * typingDuration + pauseDuration + delay;
     const timer = setTimeout(() => {
       setIndex((prevIndex) => (prevIndex + 1) % texts.length);
     }, totalTime);
@@ -57,11 +61,16 @@ export function CyclingTypingAnimation({
       }}
     >
       {/* Invisible placeholder to reserve full width */}
-      <span style={{ visibility: "hidden", whiteSpace: "nowrap" }}>{maxText}</span>
+      <span style={{ visibility: "hidden", whiteSpace: "nowrap" }}>
+        {maxText}
+      </span>
       {/* The actual TypingAnimation is absolutely positioned on top */}
       <TypingAnimation
         style={{ position: "absolute", left: 0, top: 0 }}
-        className={cn("text-4xl font-bold leading-[5rem] tracking-[-0.02em]", className)}
+        className={cn(
+          "text-4xl font-bold leading-[5rem] tracking-[-0.02em]",
+          className,
+        )}
         duration={typingDuration}
         delay={delay}
         as={as}
@@ -71,4 +80,4 @@ export function CyclingTypingAnimation({
       </TypingAnimation>
     </span>
   );
-} 
+}

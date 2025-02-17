@@ -8,7 +8,10 @@ export interface AnimatedArticleProps {
   index?: number; // Allows you to stagger animations if desired
 }
 
-export default function AnimatedArticle({ children, index = 0 }: AnimatedArticleProps) {
+export default function AnimatedArticle({
+  children,
+  index = 0,
+}: AnimatedArticleProps) {
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
@@ -18,4 +21,4 @@ export default function AnimatedArticle({ children, index = 0 }: AnimatedArticle
       {children}
     </motion.article>
   );
-} 
+}

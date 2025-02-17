@@ -74,9 +74,7 @@ export function GridPattern({
 export function GridPatternDemo() {
   return (
     <div className="fixed top-0 left-0 h-full w-full bg-background -z-10">
-      <GridPattern
-        className="[mask-image:radial-gradient(800px_circle_at_center,white,transparent)] inset-0 skew-y-12"
-      />
+      <GridPattern className="[mask-image:radial-gradient(800px_circle_at_center,white,transparent)] inset-0 skew-y-12" />
     </div>
   );
 }

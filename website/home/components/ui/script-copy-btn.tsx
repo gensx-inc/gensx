@@ -30,15 +30,16 @@ export function ScriptCopyBtn({
 
   // Calculate max width needed for all commands
   useEffect(() => {
-    const tempElement = document.createElement('pre');
-    tempElement.style.visibility = 'hidden';
-    tempElement.style.position = 'absolute';
-    tempElement.style.fontSize = '0.75rem'; // text-xs
-    tempElement.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+    const tempElement = document.createElement("pre");
+    tempElement.style.visibility = "hidden";
+    tempElement.style.position = "absolute";
+    tempElement.style.fontSize = "0.75rem"; // text-xs
+    tempElement.style.fontFamily =
+      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
     document.body.appendChild(tempElement);
 
     let maxCommandWidth = 0;
-    Object.values(commandMap).forEach(cmd => {
+    Object.values(commandMap).forEach((cmd) => {
       tempElement.textContent = cmd;
       const width = tempElement.offsetWidth;
       maxCommandWidth = Math.max(maxCommandWidth, width);
@@ -50,7 +51,7 @@ export function ScriptCopyBtn({
 
   // Force light mode for now while keeping dark mode logic for later
   const forcedTheme = "light";
-  
+
   useEffect(() => {
     async function loadHighlightedCode() {
       try {
@@ -101,14 +102,14 @@ export function ScriptCopyBtn({
                   >
                     <span className="text-left text-xs">{pm}</span>
                     {packageManager === pm && (
-                      <motion.div 
+                      <motion.div
                         className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-400"
                         layoutId="activeTab"
                         initial={false}
                         transition={{
                           type: "spring",
                           stiffness: 500,
-                          damping: 30
+                          damping: 30,
                         }}
                       />
                     )}
@@ -119,14 +120,12 @@ export function ScriptCopyBtn({
           )}
         </div>
         <div className="relative flex items-center bg-white px-2">
-          <div 
+          <div
             className="w-full font-mono"
             style={{ minWidth: `${maxWidth}px` }}
           >
             <pre className="font-mono text-left">
-              <code className="text-xs text-gray-600">
-                {command}
-              </code>
+              <code className="text-xs text-gray-600">{command}</code>
             </pre>
           </div>
           <button

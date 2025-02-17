@@ -12,7 +12,6 @@ export default async function Post(props: Params) {
     return notFound();
   }
 
-
   return (
     <AnimatedPage>
       <div className="min-h-screen w-full max-w-7xl mx-auto pt-32 px-6 md:px-8 pb-20">
@@ -29,7 +28,10 @@ export default async function Post(props: Params) {
               </time>
             )}
           </div>
-          <MarkdownToHTML markdown={post.content || ""} className="prose md:prose-lg max-w-none" />
+          <MarkdownToHTML
+            markdown={post.content || ""}
+            className="prose md:prose-lg max-w-none"
+          />
         </article>
       </div>
     </AnimatedPage>

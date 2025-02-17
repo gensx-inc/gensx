@@ -24,4 +24,4 @@ export default function AnimatedTitle({ children }: AnimatedTitleProps) {
       {children}
     </motion.h1>
   );
-} 
+}

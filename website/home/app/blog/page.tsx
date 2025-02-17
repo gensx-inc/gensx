@@ -24,7 +24,7 @@ export default function BlogIndex() {
             <AnimatedArticle key={post.slug} index={index}>
               <Link
                 href={`/blog/${post.slug}`}
-                className="relative group flex flex-col md:flex-row gap-4 md:gap-6 items-start mb-12 md:mb-0" 
+                className="relative group flex flex-col md:flex-row gap-4 md:gap-6 items-start mb-12 md:mb-0"
               >
                 {post.coverImage ? (
                   <div className="w-full md:w-48 h-48 md:h-32 flex-shrink-0 overflow-hidden rounded-lg">
@@ -109,4 +109,4 @@ export default function BlogIndex() {
       </div>
     </div>
   );
-} 
+}
