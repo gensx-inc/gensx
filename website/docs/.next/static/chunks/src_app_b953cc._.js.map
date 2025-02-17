@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/dan/Documents/github/gensx-newcompletions/gensx/website/docs/website/docs/src/app/components/Logo.tsx"],"sourcesContent":["\"use client\";\n\nimport Image from \"next/image\";\nimport { useTheme } from \"nextra-theme-docs\";\n\nconst Logo = () => {\n  const { resolvedTheme } = useTheme();\n\n  return (\n    <Image\n      src={resolvedTheme === \"dark\" ? \"/logo.svg\" : \"/logo.svg\"}\n      alt=\"GenSX Logo\"\n      width={150}\n      height={50}\n      style={{ height: \"50px\" }}\n    />\n  );\n};\n\nexport default Logo;\n"],"names":[],"mappings":";;;;AAEA;AACA;;;AAHA;;;AAKA,MAAM,OAAO;;IACX,MAAM,EAAE,aAAa,EAAE,GAAG,CAAA,GAAA,2RAAA,CAAA,WAAQ,AAAD;IAEjC,qBACE,4TAAC,+PAAA,CAAA,UAAK;QACJ,KAAK,kBAAkB,SAAS,cAAc;QAC9C,KAAI;QACJ,OAAO;QACP,QAAQ;QACR,OAAO;YAAE,QAAQ;QAAO;;;;;;AAG9B;GAZM;;QACsB,2RAAA,CAAA,WAAQ;;;KAD9B;uCAcS"}},
-    {"offset": {"line": 47, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}}]
-}

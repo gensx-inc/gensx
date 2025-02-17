@@ -1,9 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/dan/Documents/github/gensx-newcompletions/gensx/website/docs/website/docs/src/content/_meta.ts"],"sourcesContent":["export default {\n  index: \"\",\n  \"get-started\": \"\",\n  features: \"\",\n  themes: \"\",\n  advanced: \"\",\n};\n"],"names":[],"mappings":";;;uCAAe;IACb,OAAO;IACP,eAAe;IACf,UAAU;IACV,QAAQ;IACR,UAAU;AACZ"}},
-    {"offset": {"line": 17, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}},
-    {"offset": {"line": 23, "column": 0}, "map": {"version":3,"sources":["file:///Users/dan/Documents/github/gensx-newcompletions/gensx/website/docs/website/docs/src/content/page.mdx.tsx"],"sourcesContent":["/*@jsxRuntime automatic*/\n/*@jsxImportSource react*/\n/*this file should not be treated as App Router page*/\nimport {useMDXComponents as _provideComponents} from \"next-mdx-import-source-file\";\nexport const metadata = {\n  \"title\": \"Just Page\",\n  \"filePath\": \"src/content/page.mdx\",\n  \"timestamp\": 1739823177092\n};\nfunction useTOC(props) {\n  return [];\n}\nexport const toc = useTOC({});\nfunction _createMdxContent(props) {\n  const _components = {\n    h1: \"h1\",\n    ..._provideComponents(),\n    ...props.components\n  };\n  return <><_components.h1>{\"Just Page\"}</_components.h1>{\"\\n\"}{}</>;\n}\nexport default _createMdxContent;\n"],"names":[],"mappings":"AAAA,uBAAuB,GACvB,wBAAwB,GACxB,oDAAoD;;;;;;AACpD;;;AACO,MAAM,WAAW;IACtB,SAAS;IACT,YAAY;IACZ,aAAa;AACf;AACA,SAAS,OAAO,KAAK;IACnB,OAAO,EAAE;AACX;AACO,MAAM,MAAM,OAAO,CAAC;AAC3B,SAAS,kBAAkB,KAAK;IAC9B,MAAM,cAAc;QAClB,IAAI;QACJ,GAAG,CAAA,GAAA,oIAAA,CAAA,mBAAkB,AAAD,GAAG;QACvB,GAAG,MAAM,UAAU;IACrB;IACA,qBAAO;;0BAAE,6WAAC,YAAY,EAAE;0BAAE;;;;;;YAA8B;;;AAC1D;uCACe"}},
-    {"offset": {"line": 61, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}}]
-}
