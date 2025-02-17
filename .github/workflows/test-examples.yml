@@ -1,8 +1,7 @@
 name: "🐢 Build and Test Examples"
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  pull_request:
     branches: [main]
     paths:
       - "examples/**/*"
@@ -25,28 +24,18 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Important security check for pull_request_target
-    if: |
-      (github.event_name == 'push') ||
-      (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
 
     steps:
-      - name: Checkout base branch 🛬
+      - name: Checkout code 🛬
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          fetch-depth: 0
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node
         with:
           version: 22.x
           npm_token: ${{ secrets.NPM_TOKEN }}
-      # Only checkout PR code after setup is complete
-      - name: Checkout PR code 🔄
-        if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          persist-credentials: false
       - name: Clean build artifacts 🧹
         run: |
           rm -rf examples/**/dist
