@@ -1,5 +1,5 @@
 export { createContext, useContext } from "./context";
-export { execute } from "./resolve";
+export { execute, workflow } from "./resolve";
 export { Fragment, jsx, jsxs } from "./jsx-runtime";
 export type { JSX } from "./jsx-runtime";
 export { StreamComponent, Component } from "./component";
@@ -19,7 +19,7 @@ export type { GsxArray } from "./array";
 import { array } from "./array";
 import { Component, StreamComponent } from "./component";
 import { createContext, useContext } from "./context";
-import { execute } from "./resolve";
+import { execute, workflow } from "./resolve";
 import * as types from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -33,6 +33,7 @@ export const gsx = {
   Component,
   createContext,
   execute,
+  workflow,
   useContext,
   array,
 };
