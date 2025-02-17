@@ -1,5 +1,7 @@
 import type {
+  BrandedGsxComponent,
   DeepJSXElement,
+  ExecutableValue,
   GsxComponent,
   GsxStreamComponent,
   MaybePromise,
@@ -29,7 +31,7 @@ export function Component<P, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
   defaultOpts?: DefaultOpts,
-): GsxComponent<WithComponentOpts<P>, O> {
+): BrandedGsxComponent<WithComponentOpts<P>, O> {
   const GsxComponent: GsxComponent<WithComponentOpts<P>, O> = async props => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
@@ -63,9 +65,12 @@ export function Component<P, O>(
     );
 
     try {
-      const result = await context.withCurrentNode(nodeId, () => {
+      const result = await context.withCurrentNode(nodeId, async () => {
         const { componentOpts, ...componentProps } = props;
-        return resolveDeep(fn(componentProps as P));
+        const fnResult = await fn(componentProps as P);
+        return resolveDeep<O | DeepJSXElement<O> | ExecutableValue<O>>(
+          fnResult,
+        );
       });
 
       // Complete the checkpoint node with the result
@@ -92,7 +97,8 @@ export function Component<P, O>(
     value: true,
   });
 
-  return GsxComponent;
+  // Brand the component with its output type
+  return GsxComponent as BrandedGsxComponent<WithComponentOpts<P>, O>;
 }
 
 export function StreamComponent<P>(
@@ -196,6 +202,10 @@ export function StreamComponent<P>(
   }
 
   Object.defineProperty(GsxStreamComponent, "__gsxFramework", {
+    value: true,
+  });
+
+  Object.defineProperty(GsxStreamComponent, "__gsxStreamComponent", {
     value: true,
   });
 

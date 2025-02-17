@@ -1,6 +1,7 @@
-import { ExecutionContext, getCurrentContext } from "./context";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { ExecutionContext, getCurrentContext, withContext } from "./context";
 import { isStreamable } from "./stream";
-import { ExecutableValue } from "./types";
+import { Args, BrandedGsxComponent, ExecutableValue } from "./types";
 
 /**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.
@@ -42,7 +43,7 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
 
   // Handle functions first
   if (typeof value === "function" && value.name !== "Object") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if ((value as any).__gsxFramework) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       return await resolveDeep(value());
@@ -73,4 +74,29 @@ export async function execute<T>(element: ExecutableValue): Promise<T> {
   const result = (await resolveDeep(element)) as T;
   context.checkpointManager.write();
   return result;
+}
+
+// function isGsxStreamComponent<P>(
+//   component: GsxComponent<P, unknown> | GsxStreamComponent<P>,
+// ): component is GsxStreamComponent<P> {
+//   return (
+//     "__gsxStreamComponent" in component &&
+//     component.__gsxStreamComponent === true
+//   );
+// }
+
+export function workflow<P, O>(
+  _name: string,
+  component: BrandedGsxComponent<P, O>,
+): (props: P) => Promise<O> {
+  return async props => {
+    const context = new ExecutionContext({});
+    const componentResult = await component(props as Args<P, O>);
+    const result = await withContext(context, async () => {
+      // We know the component will resolve to its output type
+      const resolved = await resolveDeep<O>(componentResult);
+      return resolved;
+    });
+    return result;
+  };
 }
