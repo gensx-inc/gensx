@@ -6,10 +6,12 @@ on:
     branches: [main]
     paths:
       - "examples/**/*"
+      - "packages/**/*"
   push:
     branches: [main]
     paths:
       - "examples/**/*"
+      - "packages/**/*"
 
 permissions:
   contents: read
@@ -29,17 +31,22 @@ jobs:
       (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == github.repository)
 
     steps:
-      - name: Checkout 🛬
+      - name: Checkout base branch 🛬
         uses: actions/checkout@v4
         with:
-          # Important: For PR events, explicitly checkout the PR HEAD
-          ref: ${{ github.event_name == 'pull_request_target' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.ref }}
           persist-credentials: false
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node
         with:
           version: 22.x
           npm_token: ${{ secrets.NPM_TOKEN }}
+      # Only checkout PR code after setup is complete
+      - name: Checkout PR code 🔄
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
       - name: Clean build artifacts 🧹
         run: |
           rm -rf examples/**/dist
