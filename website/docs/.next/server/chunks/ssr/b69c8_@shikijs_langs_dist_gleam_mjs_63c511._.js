@@ -1,0 +1,19 @@
+module.exports = {
+
+"[project]/node_modules/.pnpm/@shikijs+langs@2.4.2/node_modules/@shikijs/langs/dist/gleam.mjs [app-rsc] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
+
+var { r: __turbopack_require__, f: __turbopack_module_context__, i: __turbopack_import__, s: __turbopack_esm__, v: __turbopack_export_value__, n: __turbopack_export_namespace__, c: __turbopack_cache__, M: __turbopack_modules__, l: __turbopack_load__, j: __turbopack_dynamic__, P: __turbopack_resolve_absolute_path__, U: __turbopack_relative_url__, R: __turbopack_resolve_module_id_path__, b: __turbopack_worker_blob_url__, g: global, __dirname, x: __turbopack_external_require__, y: __turbopack_external_import__, z: __turbopack_require_stub__ } = __turbopack_context__;
+{
+__turbopack_esm__({
+    "default": (()=>__TURBOPACK__default__export__)
+});
+const lang = Object.freeze(JSON.parse("{\"displayName\":\"Gleam\",\"name\":\"gleam\",\"patterns\":[{\"include\":\"#comments\"},{\"include\":\"#keywords\"},{\"include\":\"#strings\"},{\"include\":\"#constant\"},{\"include\":\"#entity\"},{\"include\":\"#discards\"}],\"repository\":{\"binary_number\":{\"match\":\"\\\\b0[bB]0*1[01_]*\\\\b\",\"name\":\"constant.numeric.binary.gleam\",\"patterns\":[]},\"comments\":{\"patterns\":[{\"match\":\"//.*\",\"name\":\"comment.line.gleam\"}]},\"constant\":{\"patterns\":[{\"include\":\"#binary_number\"},{\"include\":\"#octal_number\"},{\"include\":\"#hexadecimal_number\"},{\"include\":\"#decimal_number\"},{\"include\":\"#boolean\"},{\"match\":\"[[:upper:]][[:alnum:]]*\",\"name\":\"entity.name.type.gleam\"}]},\"decimal_number\":{\"match\":\"\\\\b(0*[1-9][0-9_]*|0)(\\\\.(0*[1-9][0-9_]*|0)?(e-?0*[1-9][0-9]*)?)?\\\\b\",\"name\":\"constant.numeric.decimal.gleam\",\"patterns\":[]},\"discards\":{\"match\":\"\\\\b_(?:[[:word:]]+)?\\\\b\",\"name\":\"comment.unused.gleam\"},\"entity\":{\"patterns\":[{\"begin\":\"\\\\b([[:lower:]][[:word:]]*)\\\\b[[:space:]]*\\\\(\",\"captures\":{\"1\":{\"name\":\"entity.name.function.gleam\"}},\"end\":\"\\\\)\",\"patterns\":[{\"include\":\"$self\"}]},{\"match\":\"\\\\b([[:lower:]][[:word:]]*):\\\\s\",\"name\":\"variable.parameter.gleam\"},{\"match\":\"\\\\b([[:lower:]][[:word:]]*):\",\"name\":\"entity.name.namespace.gleam\"}]},\"hexadecimal_number\":{\"match\":\"\\\\b0[xX]0*[1-9a-zA-Z][0-9a-zA-Z]*\\\\b\",\"name\":\"constant.numeric.hexadecimal.gleam\",\"patterns\":[]},\"keywords\":{\"patterns\":[{\"match\":\"\\\\b(as|use|case|if|fn|import|let|assert|pub|type|opaque|const|todo|panic|else|try)\\\\b\",\"name\":\"keyword.control.gleam\"},{\"match\":\"(<\\\\-|\\\\->)\",\"name\":\"keyword.operator.arrow.gleam\"},{\"match\":\"\\\\|>\",\"name\":\"keyword.operator.pipe.gleam\"},{\"match\":\"\\\\.\\\\.\",\"name\":\"keyword.operator.splat.gleam\"},{\"match\":\"(==|!=)\",\"name\":\"keyword.operator.comparison.gleam\"},{\"match\":\"(<=\\\\.|>=\\\\.|<\\\\.|>\\\\.)\",\"name\":\"keyword.operator.comparison.float.gleam\"},{\"match\":\"(<=|>=|<|>)\",\"name\":\"keyword.operator.comparison.int.gleam\"},{\"match\":\"(&&|\\\\|\\\\|)\",\"name\":\"keyword.operator.logical.gleam\"},{\"match\":\"<>\",\"name\":\"keyword.operator.string.gleam\"},{\"match\":\"\\\\|\",\"name\":\"keyword.operator.other.gleam\"},{\"match\":\"(\\\\+\\\\.|\\\\-\\\\.|/\\\\.|\\\\*\\\\.)\",\"name\":\"keyword.operator.arithmetic.float.gleam\"},{\"match\":\"(\\\\+|\\\\-|/|\\\\*|%)\",\"name\":\"keyword.operator.arithmetic.int.gleam\"},{\"match\":\"=\",\"name\":\"keyword.operator.assignment.gleam\"}]},\"octal_number\":{\"match\":\"\\\\b0[oO]0*[1-7][0-7]*\\\\b\",\"name\":\"constant.numeric.octal.gleam\",\"patterns\":[]},\"strings\":{\"begin\":\"\\\"\",\"end\":\"\\\"\",\"name\":\"string.quoted.double.gleam\",\"patterns\":[{\"match\":\"\\\\\\\\.\",\"name\":\"constant.character.escape.gleam\"}]}},\"scopeName\":\"source.gleam\"}"));
+const __TURBOPACK__default__export__ = [
+    lang
+];
+}}),
+
+};
+
+//# sourceMappingURL=b69c8_%40shikijs_langs_dist_gleam_mjs_63c511._.js.map

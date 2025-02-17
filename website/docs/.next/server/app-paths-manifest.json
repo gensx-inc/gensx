@@ -1,0 +1,4 @@
+{
+  "/docs/[[...mdxPath]]/page": "app/docs/[[...mdxPath]]/page.js",
+  "/_not-found/page": "app/_not-found/page.js"
+}

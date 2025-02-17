@@ -1,0 +1,43 @@
+/* [project]/website/docs/src/app/styles.css [app-client] (css) */
+.nextra-sidebar-container > nav > a:first-child {
+  display: none !important;
+}
+
+.nextra-breadcrumb {
+  display: none !important;
+}
+
+.nextra-navbar {
+  background-color: #fff !important;
+}
+
+.nextra-navbar-blur {
+  background-color: #fff !important;
+}
+
+:root {
+  --nextra-primary-hue: 45deg;
+  --nextra-primary-saturation: 100%;
+  --nextra-primary-lightness: 50%;
+  --nextra-bg: 250, 250, 250;
+  --nextra-content-width: 90rem;
+  --nextra-primary-bg: #fff !important;
+}
+
+.dark {
+  --nextra-primary-hue: 45deg;
+  --nextra-primary-saturation: 100%;
+  --nextra-primary-lightness: 60%;
+  --nextra-bg: 17, 17, 17;
+  --nextra-primary-bg: #000 !important;
+}
+
+::selection {
+  background: hsla(var(--nextra-primary-hue), var(--nextra-primary-saturation), var(--nextra-primary-lightness), .3);
+}
+
+html {
+  background: rgb(var(--nextra-bg));
+}
+
+/*# sourceMappingURL=src_app_styles_b52d8e.css.map*/

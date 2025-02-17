@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/dan/Documents/github/gensx-newcompletions/gensx/website/docs/website/docs/src/app/_meta.ts"],"sourcesContent":["export default {};\n"],"names":[],"mappings":";;;uCAAe,CAAC"}},
+    {"offset": {"line": 11, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}}]
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/dan/Documents/github/gensx-newcompletions/gensx/website/docs/node_modules/.pnpm/%40shikijs%2Blangs%402.4.2/node_modules/%40shikijs/langs/dist/codeowners.mjs"],"sourcesContent":["const lang = Object.freeze(JSON.parse(\"{\\\"displayName\\\":\\\"CODEOWNERS\\\",\\\"name\\\":\\\"codeowners\\\",\\\"patterns\\\":[{\\\"include\\\":\\\"#comment\\\"},{\\\"include\\\":\\\"#pattern\\\"},{\\\"include\\\":\\\"#owner\\\"}],\\\"repository\\\":{\\\"comment\\\":{\\\"patterns\\\":[{\\\"begin\\\":\\\"^\\\\\\\\s*#\\\",\\\"captures\\\":{\\\"0\\\":{\\\"name\\\":\\\"punctuation.definition.comment.codeowners\\\"}},\\\"end\\\":\\\"$\\\",\\\"name\\\":\\\"comment.line.codeowners\\\"}]},\\\"owner\\\":{\\\"match\\\":\\\"\\\\\\\\S*@\\\\\\\\S+\\\",\\\"name\\\":\\\"storage.type.function.codeowners\\\"},\\\"pattern\\\":{\\\"match\\\":\\\"^\\\\\\\\s*(\\\\\\\\S+)\\\",\\\"name\\\":\\\"variable.other.codeowners\\\"}},\\\"scopeName\\\":\\\"text.codeowners\\\"}\"))\n\nexport default [\nlang\n]\n"],"names":[],"mappings":";;;AAAA,MAAM,OAAO,OAAO,MAAM,CAAC,KAAK,KAAK,CAAC;uCAEvB;IACf;CACC","ignoreList":[0]}},
+    {"offset": {"line": 14, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}}]
+}

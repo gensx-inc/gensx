@@ -1,0 +1,3 @@
+{
+  "/docs/[[...mdxPath]]/page": "app/docs/[[...mdxPath]]/page.js"
+}

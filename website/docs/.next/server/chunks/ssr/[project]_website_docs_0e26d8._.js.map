@@ -1,0 +1,9 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/dan/Documents/github/gensx-newcompletions/gensx/website/docs/website/docs/mdx-components.ts"],"sourcesContent":["import { useMDXComponents as getDocsMDXComponents } from 'nextra-theme-docs'\n\nconst docsComponents = getDocsMDXComponents()\n\nexport const useMDXComponents = components => ({\n  ...docsComponents,\n  ...components\n})\n"],"names":[],"mappings":";;;AAAA;;AAEA,MAAM,iBAAiB,CAAA,GAAA,kYAAA,CAAA,mBAAoB,AAAD;AAEnC,MAAM,mBAAmB,CAAA,aAAc,CAAC;QAC7C,GAAG,cAAc;QACjB,GAAG,UAAU;IACf,CAAC"}},
+    {"offset": {"line": 17, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}},
+    {"offset": {"line": 22, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":""}},
+    {"offset": {"line": 22, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}}]
+}

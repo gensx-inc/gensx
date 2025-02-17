@@ -1,0 +1,19 @@
+module.exports = {
+
+"[project]/node_modules/.pnpm/@shikijs+langs@2.4.2/node_modules/@shikijs/langs/dist/hy.mjs [app-rsc] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
+
+var { r: __turbopack_require__, f: __turbopack_module_context__, i: __turbopack_import__, s: __turbopack_esm__, v: __turbopack_export_value__, n: __turbopack_export_namespace__, c: __turbopack_cache__, M: __turbopack_modules__, l: __turbopack_load__, j: __turbopack_dynamic__, P: __turbopack_resolve_absolute_path__, U: __turbopack_relative_url__, R: __turbopack_resolve_module_id_path__, b: __turbopack_worker_blob_url__, g: global, __dirname, x: __turbopack_external_require__, y: __turbopack_external_import__, z: __turbopack_require_stub__ } = __turbopack_context__;
+{
+__turbopack_esm__({
+    "default": (()=>__TURBOPACK__default__export__)
+});
+const lang = Object.freeze(JSON.parse("{\"displayName\":\"Hy\",\"name\":\"hy\",\"patterns\":[{\"include\":\"#all\"}],\"repository\":{\"all\":{\"patterns\":[{\"include\":\"#comment\"},{\"include\":\"#constants\"},{\"include\":\"#keywords\"},{\"include\":\"#strings\"},{\"include\":\"#operators\"},{\"include\":\"#keysym\"},{\"include\":\"#builtin\"},{\"include\":\"#symbol\"}]},\"builtin\":{\"patterns\":[{\"match\":\"(?<![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*])(abs|all|any|ascii|bin|breakpoint|callable|chr|compile|delattr|dir|divmod|eval|exec|format|getattr|globals|hasattr|hash|hex|id|input|isinstance|issubclass|iter|aiter|len|locals|max|min|next|anext|oct|ord|pow|print|repr|round|setattr|sorted|sum|vars|False|None|True|NotImplemented|bool|memoryview|bytearray|bytes|classmethod|complex|dict|enumerate|filter|float|frozenset|property|int|list|map|object|range|reversed|set|slice|staticmethod|str|super|tuple|type|zip|open|quit|exit|copyright|credits|help)(?![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*])\",\"name\":\"storage.builtin.hy\"},{\"match\":\"(?<=\\\\(\\\\s*)\\\\.\\\\.\\\\.(?![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*])\",\"name\":\"storage.builtin.dots.hy\"}]},\"comment\":{\"patterns\":[{\"match\":\"(;).*$\",\"name\":\"comment.line.hy\"}]},\"constants\":{\"patterns\":[{\"match\":\"(?<=[\\\\{\\\\[\\\\(\\\\s])([0-9]+(\\\\.[0-9]+)?|(#x)[0-9a-fA-F]+|(#o)[0-7]+|(#b)[01]+)(?=[\\\\s;()'\\\",\\\\[\\\\]\\\\{\\\\}])\",\"name\":\"constant.numeric.hy\"}]},\"keysym\":{\"match\":\"(?<![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?\\\\/<>*]):[\\\\.:\\\\w_\\\\-=!@\\\\$%^&?\\\\/<>*]*\",\"name\":\"variable.other.constant\"},\"keywords\":{\"patterns\":[{\"match\":\"(?<![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*])(and|await|match|let|annotate|assert|break|chainc|cond|continue|deftype|do|except\\\\*?|finally|else|defreader|([dgls])?for|set[vx]|defclass|defmacro|del|export|eval-and-compile|eval-when-compile|get|global|if|import|(de)?fn|nonlocal|not-in|or|(quasi)?quote|require|return|cut|raise|try|unpack-iterable|unpack-mapping|unquote|unquote-splice|when|while|with|yield|local-macros|in|is|py(s)?|pragma|nonlocal|(is-)?not)(?![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*])\",\"name\":\"keyword.control.hy\"},{\"match\":\"(?<=\\\\(\\\\s*)\\\\.(?![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*])\",\"name\":\"keyword.control.dot.hy\"}]},\"operators\":{\"patterns\":[{\"match\":\"(?<![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*])(\\\\+=?|\\\\/\\\\/?=?|\\\\*\\\\*?=?|--?=?|[!<>]?=|@=?|%=?|<<?=?|>>?=?|&=?|\\\\|=?|\\\\^|~@|~=?|#\\\\*\\\\*?)(?![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*])\",\"name\":\"keyword.control.hy\"}]},\"strings\":{\"begin\":\"(f?\\\"|}(?=[^\\n]*?[{\\\"]))\",\"end\":\"(\\\"|(?<=[\\\"}][^\\n]*?){)\",\"name\":\"string.quoted.double.hy\",\"patterns\":[{\"match\":\"\\\\\\\\.\",\"name\":\"constant.character.escape.hy\"}]},\"symbol\":{\"match\":\"(?<![\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*#])[\\\\.a-zA-ZΑ-Ωα-ω_\\\\-=!@\\\\$%^<?/<>*#][\\\\.:\\\\w_\\\\-=!@\\\\$%^&?/<>*#]*\",\"name\":\"variable.other.hy\"}},\"scopeName\":\"source.hy\"}"));
+const __TURBOPACK__default__export__ = [
+    lang
+];
+}}),
+
+};
+
+//# sourceMappingURL=b69c8_%40shikijs_langs_dist_hy_mjs_3d9e96._.js.map
