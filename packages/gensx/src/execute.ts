@@ -61,6 +61,8 @@ export function workflow<P extends { stream?: boolean }, O>(
       });
 
       const workflowContext = context.getWorkflowContext();
+      workflowContext.checkpointManager.setWorkflowName(name);
+
       const rootId = workflowContext.checkpointManager.root?.id;
       if (rootId) {
         workflowContext.checkpointManager.addMetadata(
