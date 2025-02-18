@@ -45,8 +45,8 @@ export function workflow<P extends { stream?: boolean }, O>(
   return {
     run: async props => {
       const context = new ExecutionContext({});
-      const componentResult = await component(props);
       const result = await withContext(context, async () => {
+        const componentResult = await component(props);
         const resolved = await resolveDeep<O | Streamable | string>(
           componentResult,
         );
