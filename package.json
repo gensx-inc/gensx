@@ -6,7 +6,7 @@
     "build": "turbo run build --filter=\"./packages/*\"",
     "build:examples": "turbo run build --filter=\"./examples/*\"",
     "build:all": "turbo run build",
-    "dev": "turbo run dev --filter=\"./packages/*\"",
+    "dev": "turbo watch build --filter=\"./packages/*\"",
     "lint": "turbo run lint --filter=\"./packages/*\"",
     "lint:examples": "turbo run lint --filter=\"./examples/*\"",
     "lint:all": "turbo run lint",
