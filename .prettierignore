@@ -5,3 +5,5 @@ CHANGELOG.md
 .astro
 .turbo
 .wrangler
+public/
+.next/
