@@ -1,6 +1,6 @@
 /* eslint-env node */
 import { Footer, Layout, Navbar } from "nextra-theme-docs";
-import { Banner, Head } from "nextra/components";
+import { Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 
 import "nextra-theme-docs/style.css";
@@ -45,7 +45,6 @@ export default async function RootLayout({ children }) {
       <Head faviconGlyph="✦" />
       <body className={`${figtree.variable}`}>
         <Layout
-          banner={<Banner storageKey="GenSX">GenSX</Banner>}
           navbar={navbar}
           footer={
             <Footer>Apache 2.0 {new Date().getFullYear()} © GenSX.</Footer>
