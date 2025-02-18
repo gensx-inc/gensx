@@ -7,6 +7,7 @@ import { ExecutionNode } from "@/checkpoint";
 import { withContext } from "@/context";
 import { ExecutionContext } from "@/context";
 import { gsx } from "@/index";
+import { resolveDeep } from "@/resolve";
 import { ExecutableValue } from "@/types";
 import { createWorkflowContext } from "@/workflow-context";
 
@@ -18,6 +19,7 @@ const originalFetch = global.fetch;
 afterEach(() => {
   vi.clearAllMocks();
   global.fetch = originalFetch;
+  checkpoints = {};
 });
 
 /**
@@ -64,6 +66,54 @@ export async function executeWithCheckpoints<T>(
   await checkpointManager.waitForPendingUpdates();
 
   return { result, checkpoints, checkpointManager };
+}
+
+let checkpoints: Record<string, ExecutionNode> = {};
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+export async function executeWorkflowWithCheckpoints<T>(
+  element: ExecutableValue,
+  metadata?: Record<string, unknown>,
+): Promise<{
+  result: T;
+  checkpoints: Record<string, ExecutionNode>;
+}> {
+  const oldOrg = process.env.GENSX_ORG;
+  const oldApiKey = process.env.GENSX_API_KEY;
+  process.env.GENSX_ORG = "test-org";
+  process.env.GENSX_API_KEY = "test-api-key";
+
+  // Set up fetch mock to capture checkpoints
+  mockFetch((_input: FetchInput, options?: FetchInit) => {
+    if (!options?.body) throw new Error("No body provided");
+    const checkpoint = getExecutionFromBody(options.body as string);
+    checkpoints[checkpoint.id] = checkpoint;
+    return new Response(null, { status: 200 });
+  });
+
+  const WorkflowComponent = gsx.Component<{}, T>(
+    "WorkflowComponentWrapper",
+    async () => {
+      const result = await resolveDeep(element);
+      return result as T;
+    },
+  );
+
+  const workflow = gsx.workflow(
+    "executeWorkflowWithCheckpoints" +
+      Math.round(Math.random() * 1000).toFixed(0),
+    WorkflowComponent,
+    { metadata },
+  );
+
+  // Execute with context
+  const result = await workflow.run({});
+
+  process.env.GENSX_ORG = oldOrg;
+  process.env.GENSX_API_KEY = oldApiKey;
+
+  // This is all checkpoints that happen during the workflow execution, not just the ones for this specific execution, due to how we mock fetch to extract them.
+  return { result, checkpoints };
 }
 
 export function getExecutionFromBody(bodyStr: string): ExecutionNode {

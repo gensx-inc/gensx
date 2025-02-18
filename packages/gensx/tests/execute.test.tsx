@@ -3,7 +3,7 @@ import { setTimeout } from "timers/promises";
 import { expect, suite, test } from "vitest";
 
 import { gsx, Streamable } from "../src";
-import { executeWithCheckpoints } from "./utils/executeWithCheckpoints";
+import { executeWorkflowWithCheckpoints } from "./utils/executeWithCheckpoints";
 
 type Assert<T, U> =
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -77,12 +77,38 @@ suite("execute", () => {
     });
 
     test("can run workflows in parallel", async () => {
-      const result1 = executeWithCheckpoints(WorkflowComponent);
-      const result2 = executeWithCheckpoints(WorkflowComponent);
+      const result1 = executeWorkflowWithCheckpoints(<WorkflowComponent />, {
+        num: "1",
+      });
+      const result2 = executeWorkflowWithCheckpoints(<WorkflowComponent />, {
+        num: "2",
+      });
 
       const [r1, r2] = await Promise.all([result1, result2]);
-      expect(r1).toBe("hello");
-      expect(r2).toBe("hello");
+      expect(r1.result).toBe("hello");
+      expect(r2.result).toBe("hello");
+
+      // Checkpoints from r1 and r2 are the same since they happened in parallel.
+      expect(Object.keys(r1.checkpoints).length).toBe(2);
+      expect(
+        Object.values(r1.checkpoints).some(c => c.metadata?.num === "1"),
+      ).toBe(true);
+      expect(
+        Object.values(r1.checkpoints).some(c => c.metadata?.num === "2"),
+      ).toBe(true);
+    });
+
+    test("sets the workflow name on the root node", async () => {
+      const result = await executeWorkflowWithCheckpoints(
+        <WorkflowComponent />,
+      );
+      expect(result.result).toBe("hello");
+      expect(Object.keys(result.checkpoints)).toHaveLength(1);
+
+      // The executeWorkflowWithCheckpoints helper sets the workflow name to be something like executeWorkflowWithCheckpoints1
+      expect(Object.values(result.checkpoints)[0].componentName).toMatch(
+        /executeWorkflowWithCheckpoints\d+/,
+      );
     });
   });
 
