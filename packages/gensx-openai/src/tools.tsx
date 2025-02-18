@@ -9,6 +9,7 @@ import {
   ChatCompletionCreateParamsNonStreaming,
   ChatCompletionMessageParam,
   ChatCompletionTool,
+  ChatCompletionToolMessageParam,
 } from "openai/resources/chat/completions";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -72,7 +73,7 @@ interface ToolExecutorProps {
   model: string;
 }
 
-type ToolExecutorOutput = ChatCompletionMessageParam[];
+type ToolExecutorOutput = ChatCompletionToolMessageParam[];
 
 // Tools completion component
 type ToolsCompletionProps = Omit<
