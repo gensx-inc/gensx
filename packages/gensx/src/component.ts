@@ -1,5 +1,6 @@
 import type {
   BrandedGsxComponent,
+  BrandedGsxStreamComponent,
   DeepJSXElement,
   ExecutableValue,
   GsxComponent,
@@ -103,11 +104,13 @@ export function Component<P, O>(
 
 export function StreamComponent<P>(
   name: string,
-  fn: (props: P) => MaybePromise<Streamable | JSX.Element>,
+  fn: (
+    props: P & { stream?: boolean },
+  ) => MaybePromise<Streamable | JSX.Element>,
   defaultOpts?: DefaultOpts,
-): GsxStreamComponent<WithComponentOpts<P>> {
+): BrandedGsxStreamComponent<WithComponentOpts<P & { stream?: boolean }>> {
   const GsxStreamComponent: GsxStreamComponent<
-    WithComponentOpts<P>
+    WithComponentOpts<P & { stream?: boolean }>
   > = async props => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
@@ -142,7 +145,7 @@ export function StreamComponent<P>(
     try {
       const iterator: Streamable = await context.withCurrentNode(nodeId, () => {
         const { componentOpts, ...componentProps } = props;
-        return resolveDeep(fn(componentProps as P));
+        return resolveDeep(fn(componentProps as P & { stream?: boolean }));
       });
 
       if (props.stream) {
@@ -209,5 +212,7 @@ export function StreamComponent<P>(
     value: true,
   });
 
-  return GsxStreamComponent;
+  return GsxStreamComponent as BrandedGsxStreamComponent<
+    WithComponentOpts<P & { stream?: boolean }>
+  >;
 }

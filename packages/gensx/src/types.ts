@@ -112,3 +112,9 @@ export type BrandedGsxComponent<P, O> = GsxComponent<P, O> & {
   readonly __outputType: O;
   readonly __rawProps: P;
 };
+
+export type BrandedGsxStreamComponent<P extends { stream?: boolean }> =
+  GsxStreamComponent<P> & {
+    readonly __brand: "gsx-stream-component";
+    readonly __rawProps: P;
+  };

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ExecutionContext, getCurrentContext, withContext } from "./context";
+import { ExecutionContext } from "./context";
 import { isStreamable } from "./stream";
-import { Args, BrandedGsxComponent, ExecutableValue } from "./types";
 
 /**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.
@@ -63,40 +62,4 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
 
   // Base case: primitive value
   return value as T;
-}
-
-/**
- * Executes a JSX element or any other value, ensuring all promises and nested values are resolved.
- * This is the main entry point for executing workflow components.
- */
-export async function execute<T>(element: ExecutableValue): Promise<T> {
-  const context = getCurrentContext().getWorkflowContext();
-  const result = (await resolveDeep(element)) as T;
-  context.checkpointManager.write();
-  return result;
-}
-
-// function isGsxStreamComponent<P>(
-//   component: GsxComponent<P, unknown> | GsxStreamComponent<P>,
-// ): component is GsxStreamComponent<P> {
-//   return (
-//     "__gsxStreamComponent" in component &&
-//     component.__gsxStreamComponent === true
-//   );
-// }
-
-export function workflow<P, O>(
-  _name: string,
-  component: BrandedGsxComponent<P, O>,
-): (props: P) => Promise<O> {
-  return async props => {
-    const context = new ExecutionContext({});
-    const componentResult = await component(props as Args<P, O>);
-    const result = await withContext(context, async () => {
-      // We know the component will resolve to its output type
-      const resolved = await resolveDeep<O>(componentResult);
-      return resolved;
-    });
-    return result;
-  };
 }
