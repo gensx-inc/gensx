@@ -1,5 +1,4 @@
 import type {
-  BrandedGsxComponent,
   DeepJSXElement,
   ExecutableValue,
   GsxComponent,
@@ -31,8 +30,8 @@ export function Component<P, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
   defaultOpts?: DefaultOpts,
-): BrandedGsxComponent<WithComponentOpts<P>, O> {
-  const GsxComponent: GsxComponent<WithComponentOpts<P>, O> = async props => {
+): GsxComponent<WithComponentOpts<P>, O> {
+  const GsxComponent = async (props: WithComponentOpts<P>) => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -98,7 +97,7 @@ export function Component<P, O>(
   });
 
   // Brand the component with its output type
-  return GsxComponent as BrandedGsxComponent<WithComponentOpts<P>, O>;
+  return GsxComponent as GsxComponent<WithComponentOpts<P>, O>;
 }
 
 export function StreamComponent<P>(

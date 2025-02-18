@@ -64,10 +64,18 @@ export type Args<P, O> = P & {
  * - The output type O directly
  * - JSX that will resolve to type O
  * - A promise of either of the above
+ *
+ * Use branding to preserve output type information.
+ * This allows direct access to the output type O while maintaining
+ * compatibility with the more flexible JSX composition system.
  */
-export type GsxComponent<P, O> = (
-  props: Args<P, O>,
-) => MaybePromise<O | DeepJSXElement<O> | ExecutableValue<O>>;
+export type GsxComponent<P, O> = (props: Args<P, O>) => MaybePromise<
+  O | DeepJSXElement<O> | ExecutableValue<O>
+> & {
+  readonly __brand: "gsx-component";
+  readonly __outputType: O;
+  readonly __rawProps: P;
+};
 
 export type Streamable =
   | AsyncIterableIterator<string>
@@ -101,14 +109,3 @@ export interface Context<T> {
   readonly symbol: symbol;
   Provider: GsxComponent<{ value: T }, ExecutionContext>;
 }
-
-/**
- * A branded component that preserves its output type information.
- * This allows direct access to the output type O while maintaining
- * compatibility with the more flexible JSX composition system.
- */
-export type BrandedGsxComponent<P, O> = GsxComponent<P, O> & {
-  readonly __brand: "gsx-component";
-  readonly __outputType: O;
-  readonly __rawProps: P;
-};
