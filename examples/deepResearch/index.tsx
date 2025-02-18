@@ -6,7 +6,11 @@ async function main() {
   const prompt =
     "find research comparing the writing style of humans and LLMs. We want to figure out how to quantify the differences.";
   console.log("\n🚀 Starting deep research workflow with prompt: ", prompt);
-  const result = await gsx.execute(<DeepResearchWorkflow prompt={prompt} />);
+  const result = await gsx
+    .workflow("DeepResearchExample", DeepResearchWorkflow)
+    .run({
+      prompt,
+    });
 
   console.log("\n\n");
   console.log("=".repeat(50));

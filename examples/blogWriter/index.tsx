@@ -1,15 +1,14 @@
-import { gsx, Streamable } from "gensx";
+import { gsx } from "gensx";
 
 import { BlogWritingWorkflow } from "./blogWriter.js";
 
 async function main() {
   console.log("\n🚀 Starting blog writing workflow");
-  const stream = await gsx.execute<Streamable>(
-    <BlogWritingWorkflow
-      stream={true}
-      prompt="Write a blog post about the future of AI"
-    />,
-  );
+  const wf = gsx.workflow("BlogWritingExample", BlogWritingWorkflow);
+  const stream = await wf.run({
+    stream: true,
+    prompt: "Write a blog post about the future of AI",
+  });
   for await (const chunk of stream) {
     process.stdout.write(chunk);
   }

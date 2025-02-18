@@ -299,47 +299,41 @@ async function main() {
   const example: Example = "multiStepTools";
 
   switch (example as Example) {
-    case "basicCompletion": {
+    case "basicCompletion":
       console.log("basic completion 🔥");
       const r = await basicCompletion();
       console.log(r.choices[0].message.content);
       break;
-    }
-    case "streamingCompletion": {
+    case "streamingCompletion":
       console.log("streaming completion 🔥");
       const stream = await streamingCompletion();
       for await (const chunk of stream) {
         process.stdout.write(chunk.choices[0].delta.content ?? "");
       }
       break;
-    }
-    case "tools": {
+    case "tools":
       console.log("tools completion 🔥");
       const results = await tools();
       console.log(results.choices[0].message.content);
       break;
-    }
-    case "toolsStreaming": {
+    case "toolsStreaming":
       console.log("tools streaming completion 🔥");
       const s2 = await toolsStreaming();
       for await (const chunk of s2) {
         process.stdout.write(chunk.choices[0].delta.content ?? "");
       }
       break;
-    }
-    case "structuredOutput": {
+    case "structuredOutput":
       console.log("structured output completion 🔥");
       const structured = await structuredOutput();
       console.log(structured.overallVerdict);
       console.log(structured);
       break;
-    }
-    case "multiStepTools": {
+    case "multiStepTools":
       console.log("multi-step tools completion 🔥");
       const multiStepResults = await multiStepTools();
       console.log(multiStepResults.choices[0].message.content);
       break;
-    }
     default:
       throw new Error(`Unknown example: ${example}`);
   }

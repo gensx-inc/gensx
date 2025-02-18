@@ -36,16 +36,18 @@ const ExtractEntities = gsx.Component<
     "organizations": ["org1", "org2", "org3"]
   }`;
   return (
-    <GSXChatCompletion
-      model="gpt-4o-mini"
-      messages={[
-        {
-          role: "user",
-          content: prompt,
-        },
-      ]}
-      outputSchema={ExtractEntitiesSchema}
-    ></GSXChatCompletion>
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <GSXChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          {
+            role: "user",
+            content: prompt,
+          },
+        ]}
+        outputSchema={ExtractEntitiesSchema}
+      />
+    </OpenAIProvider>
   );
 });
 
@@ -66,20 +68,22 @@ const ExtractEntitiesWithoutHelpers = gsx.Component<
     "organizations": ["org1", "org2", "org3"]
   }`;
   return (
-    <ChatCompletion
-      model="gpt-4o-mini"
-      messages={[
-        {
-          role: "user",
-          content: prompt,
-        },
-      ]}
-      response_format={zodResponseFormat(ExtractEntitiesSchema, "entities")}
-    >
-      {(response: string) => {
-        return ExtractEntitiesSchema.parse(JSON.parse(response));
-      }}
-    </ChatCompletion>
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          {
+            role: "user",
+            content: prompt,
+          },
+        ]}
+        response_format={zodResponseFormat(ExtractEntitiesSchema, "entities")}
+      >
+        {(response: string) => {
+          return ExtractEntitiesSchema.parse(JSON.parse(response));
+        }}
+      </ChatCompletion>
+    </OpenAIProvider>
   );
 });
 
@@ -87,19 +91,20 @@ async function main() {
   console.log("\n🚀 Starting the structured outputs example");
 
   console.log("\n🎯 Getting structured outputs with GSXChatCompletion");
-  const result = await gsx.execute<ExtractEntitiesOutput>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <ExtractEntities text="John Doe is a software engineer at Google." />
-    </OpenAIProvider>,
-  );
+  const workflow = gsx.workflow("ExtractEntities", ExtractEntities);
+  const result = await workflow.run({
+    text: "John Doe is a software engineer at Google.",
+  });
   console.log(result);
 
   console.log("\n🎯 Getting structured outputs without helpers");
-  const resultWithoutHelpers = await gsx.execute<ExtractEntitiesOutput>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <ExtractEntitiesWithoutHelpers text="John Doe is a software engineer at Google." />
-    </OpenAIProvider>,
+  const workflowWithoutHelpers = gsx.workflow(
+    "ExtractEntitiesWithoutHelpers",
+    ExtractEntitiesWithoutHelpers,
   );
+  const resultWithoutHelpers = await workflowWithoutHelpers.run({
+    text: "John Doe is a software engineer at Google.",
+  });
   console.log(resultWithoutHelpers);
   console.log("\n✅ Structured outputs example complete");
 }
