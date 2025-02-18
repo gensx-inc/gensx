@@ -9,43 +9,40 @@ import {
   ChatCompletionCreateParamsNonStreaming,
   ChatCompletionMessageParam,
   ChatCompletionTool,
+  ChatCompletionToolMessageParam,
 } from "openai/resources/chat/completions";
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { OpenAIContext } from "./openai.js";
 import { OpenAIChatCompletion, OpenAIChatCompletionOutput } from "./openai.js";
 
+interface GSXToolParams<TSchema extends z.ZodObject<z.ZodRawShape>> {
+  name: string;
+  description: string;
+  schema: TSchema;
+  execute: (args: z.infer<TSchema>) => Promise<unknown>;
+  options?: {};
+}
+
 // Wrapper for tool parameter schemas
 export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
   public readonly type = "function" as const;
-  public readonly function: ChatCompletionTool["function"];
+  public readonly definition: ChatCompletionTool;
   private readonly executionComponent: ReturnType<typeof gsx.Component>;
 
-  constructor(
-    public readonly name: string,
-    public readonly description: string,
-    public readonly parameters: TSchema,
-    private readonly executeImpl: (args: z.infer<TSchema>) => Promise<unknown>,
-    public readonly options: {} = {},
-  ) {
-    // TODO @dereklegenzoff: update to work with things other than strings
-    this.function = {
-      name: this.name,
-      description: this.description,
-      parameters: {
-        type: "object",
-        properties: Object.fromEntries(
-          Object.entries(this.parameters.shape).map(([key, value]) => [
-            key,
-            (value as z.ZodString).description
-              ? {
-                  type: "string",
-                  description: (value as z.ZodString).description,
-                }
-              : { type: "string" },
-          ]),
-        ),
-        required: Object.keys(this.parameters.shape),
+  constructor(params: GSXToolParams<TSchema>) {
+    this.name = params.name;
+    this.description = params.description;
+    this.schema = params.schema;
+    this.options = params.options ?? {};
+
+    this.definition = {
+      type: this.type,
+      function: {
+        name: this.name,
+        description: this.description,
+        parameters: zodToJsonSchema(this.schema),
       },
     };
 
@@ -53,7 +50,7 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     this.executionComponent = gsx.Component<z.infer<TSchema>, unknown>(
       `Tool[${this.name}]`,
       async (props) => {
-        return this.executeImpl(props);
+        return params.execute(props);
       },
     );
   }
@@ -64,14 +61,15 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
   }
 
   static create<TSchema extends z.ZodObject<z.ZodRawShape>>(
-    name: string,
-    description: string,
-    parameters: TSchema,
-    execute: (args: z.infer<TSchema>) => Promise<unknown>,
-    options: {} = {},
+    params: GSXToolParams<TSchema>,
   ): GSXTool<TSchema> {
-    return new GSXTool(name, description, parameters, execute, options);
+    return new GSXTool(params);
   }
+
+  public readonly name: string;
+  public readonly description: string;
+  public readonly schema: TSchema;
+  public readonly options: {};
 }
 
 interface ToolExecutorProps {
@@ -83,7 +81,7 @@ interface ToolExecutorProps {
   model: string;
 }
 
-type ToolExecutorOutput = ChatCompletionMessageParam[];
+type ToolExecutorOutput = ChatCompletionToolMessageParam[];
 
 // Tools completion component
 type ToolsCompletionProps = Omit<
@@ -120,7 +118,7 @@ export const ToolExecutor = gsx.Component<
           string,
           unknown
         >;
-        const validated = tool.parameters.safeParse(args);
+        const validated = tool.schema.safeParse(args);
         if (!validated.success) {
           throw new Error(`Invalid tool arguments: ${validated.error.message}`);
         }
@@ -149,7 +147,11 @@ export const ToolsCompletion = gsx.Component<
 
   // Make initial completion
   let completion = await gsx.execute<ChatCompletionOutput>(
-    <OpenAIChatCompletion {...rest} messages={currentMessages} tools={tools} />,
+    <OpenAIChatCompletion
+      {...rest}
+      messages={currentMessages}
+      tools={tools.map((t) => t.definition)}
+    />,
   );
 
   // Keep processing tool calls until none are left
@@ -175,7 +177,7 @@ export const ToolsCompletion = gsx.Component<
       <OpenAIChatCompletion
         {...rest}
         messages={currentMessages}
-        tools={tools}
+        tools={tools.map((t) => t.definition)}
       />,
     );
   }

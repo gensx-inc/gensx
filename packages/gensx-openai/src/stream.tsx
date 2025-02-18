@@ -32,7 +32,11 @@ export const StreamCompletion = gsx.Component<
   if (tools?.length) {
     // Make initial completion to get tool calls
     const completion = await gsx.execute<ChatCompletionOutput>(
-      <OpenAIChatCompletion {...rest} tools={tools} stream={false} />,
+      <OpenAIChatCompletion
+        {...rest}
+        tools={tools.map((t) => t.definition)}
+        stream={false}
+      />,
     );
 
     const toolCalls = completion.choices[0]?.message?.tool_calls;
@@ -69,6 +73,10 @@ export const StreamCompletion = gsx.Component<
 
   // No tools, just stream normally
   return gsx.execute<Stream<ChatCompletionChunk>>(
-    <OpenAIChatCompletion {...rest} tools={tools} stream={true} />,
+    <OpenAIChatCompletion
+      {...rest}
+      tools={tools?.map((t) => t.definition)}
+      stream={true}
+    />,
   );
 });

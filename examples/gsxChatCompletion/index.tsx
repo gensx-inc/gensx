@@ -7,76 +7,64 @@ import {
 import { Stream } from "openai/streaming";
 import { z } from "zod";
 
-// Define schemas at the top level
-const trashRatingSchema = z.object({
-  bins: z.array(
-    z.object({
-      location: z.string().describe("Location of the trash bin"),
-      rating: z.number().describe("Rating from 1-10"),
-      review: z.string().describe("A sassy review of the trash bin"),
-      bestFinds: z
-        .array(z.string())
-        .describe("List of the best items found in this bin"),
-    }),
-  ),
-  overallVerdict: z
-    .string()
-    .describe("Overall verdict on the neighborhood's trash quality"),
-});
-
-// Define weather schema and type
-const weatherSchema = z.object({
-  location: z.string(),
-});
-type WeatherParams = z.infer<typeof weatherSchema>;
-
-const BasicCompletionWorkflow = gsx.Component<{}, ChatCompletionOutput>(
-  "BasicCompletionWorkflow",
-  () => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
-        messages={[
-          {
-            role: "system",
-            content:
-              "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
-          },
-          {
-            role: "user",
-            content: `What do you think of kubernetes in one paragraph?`,
-          },
-        ]}
-        model="gpt-4o-mini"
-        temperature={0.7}
-      />
-    </OpenAIProvider>
-  ),
-);
-
 async function basicCompletion() {
-  const wf = gsx.workflow("basicCompletion", BasicCompletionWorkflow);
-  return await wf.run({});
+  const BasicCompletionWorkflow = gsx.Component<{}, ChatCompletionOutput>(
+    "BasicCompletionWorkflow",
+    () => (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <GSXChatCompletion
+          messages={[
+            {
+              role: "system",
+              content:
+                "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
+            },
+            {
+              role: "user",
+              content: `What do you think of kubernetes in one paragraph?`,
+            },
+          ]}
+          model="gpt-4o-mini"
+          temperature={0.7}
+        />
+      </OpenAIProvider>
+    ),
+  );
+
+  const workflow = gsx.workflow(
+    "BasicCompletionWorkflow",
+    BasicCompletionWorkflow,
+  );
+
+  return workflow.run({});
 }
 
-// Define the tools workflow component
-const ToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
-  "ToolsWorkflow",
-  () => {
-    // Create the tool with the correct type
-    const tool = new GSXTool<typeof weatherSchema>(
-      "get_weather",
-      "get the weather for a given location",
-      weatherSchema,
-      async ({ location }: WeatherParams) => {
-        console.log("getting weather for", location);
-        const weather = ["sunny", "cloudy", "rainy", "snowy"];
-        return Promise.resolve({
-          weather: weather[Math.floor(Math.random() * weather.length)],
-        });
-      },
-    );
+async function tools() {
+  // Define the schema as a Zod object
+  const weatherSchema = z.object({
+    location: z.string(),
+  });
 
-    return (
+  // Use z.infer to get the type for our parameters
+  type WeatherParams = z.infer<typeof weatherSchema>;
+
+  // Create the tool with the correct type - using the schema type, not the inferred type
+  const tool = new GSXTool({
+    name: "get_weather",
+    description: "get the weather for a given location",
+    schema: weatherSchema,
+    execute: async ({ location }: WeatherParams) => {
+      console.log("getting weather for", location);
+      const weather = ["sunny", "cloudy", "rainy", "snowy"];
+      return Promise.resolve({
+        weather: weather[Math.floor(Math.random() * weather.length)],
+      });
+    },
+  });
+
+  const ToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
+    "ToolsWorkflow",
+    () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
           messages={[
@@ -95,33 +83,40 @@ const ToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
           tools={[tool]}
         />
       </OpenAIProvider>
-    );
-  },
-);
+    ),
+  );
 
-async function tools() {
-  const wf = gsx.workflow("tools", ToolsWorkflow);
-  return await wf.run({});
+  const workflow = gsx.workflow("ToolsWorkflowExample", ToolsWorkflow);
+
+  return workflow.run({});
 }
 
-// Define the streaming tools workflow component
-const ToolsStreamingWorkflow = gsx.Component<{}, Stream<ChatCompletionChunk>>(
-  "ToolsStreamingWorkflow",
-  () => {
-    const tool = new GSXTool<typeof weatherSchema>(
-      "get_weather",
-      "get the weather for a given location",
-      weatherSchema,
-      async ({ location }: WeatherParams) => {
-        console.log("getting weather for", location);
-        const weather = ["sunny", "cloudy", "rainy", "snowy"];
-        return Promise.resolve({
-          weather: weather[Math.floor(Math.random() * weather.length)],
-        });
-      },
-    );
+async function toolsStreaming() {
+  // Define the schema as a Zod object
+  const weatherSchema = z.object({
+    location: z.string(),
+  });
 
-    return (
+  // Use z.infer to get the type for our parameters
+  type WeatherParams = z.infer<typeof weatherSchema>;
+
+  // Create the tool with the correct type - using the schema type, not the inferred type
+  const tool = new GSXTool({
+    name: "get_weather",
+    description: "get the weather for a given location",
+    schema: weatherSchema,
+    execute: async ({ location }: WeatherParams) => {
+      console.log("getting weather for", location);
+      const weather = ["sunny", "cloudy", "rainy", "snowy"];
+      return Promise.resolve({
+        weather: weather[Math.floor(Math.random() * weather.length)],
+      });
+    },
+  });
+
+  const ToolsStreamingWorkflow = gsx.Component<{}, Stream<ChatCompletionChunk>>(
+    "ToolsStreamingWorkflow",
+    () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
           stream={true}
@@ -141,120 +136,154 @@ const ToolsStreamingWorkflow = gsx.Component<{}, Stream<ChatCompletionChunk>>(
           tools={[tool]}
         />
       </OpenAIProvider>
-    );
-  },
-);
+    ),
+  );
 
-async function toolsStreaming() {
-  const wf = gsx.workflow("toolsStreaming", ToolsStreamingWorkflow);
-  return await wf.run({});
+  const workflow = gsx.workflow(
+    "ToolsStreamingWorkflow",
+    ToolsStreamingWorkflow,
+  );
+
+  return workflow.run({});
 }
-
-const StreamingCompletionWorkflow = gsx.Component<
-  {},
-  Stream<ChatCompletionChunk>
->("StreamingCompletionWorkflow", () => (
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <GSXChatCompletion
-      stream={true}
-      messages={[
-        {
-          role: "system",
-          content:
-            "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
-        },
-        {
-          role: "user",
-          content: `What do you think of kubernetes in one paragraph?`,
-        },
-      ]}
-      model="gpt-4o-mini"
-      temperature={0.7}
-    />
-  </OpenAIProvider>
-));
 
 async function streamingCompletion() {
-  const wf = gsx.workflow("streamingCompletion", StreamingCompletionWorkflow);
-  return await wf.run({});
-}
-
-// Define the structured output workflow component
-const StructuredOutputWorkflow = gsx.Component<
-  {},
-  z.infer<typeof trashRatingSchema>
->("StructuredOutputWorkflow", () => {
-  return (
+  const StreamingCompletionWorkflow = gsx.Component<
+    {},
+    Stream<ChatCompletionChunk>
+  >("StreamingCompletionWorkflow", () => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <GSXChatCompletion
+        stream={true}
         messages={[
           {
             role: "system",
             content:
-              "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun.",
+              "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
           },
           {
             role: "user",
-            content:
-              "Rate and review three different trash bins in the neighborhood. Be creative with the locations!",
+            content: `What do you think of kubernetes in one paragraph?`,
           },
         ]}
         model="gpt-4o-mini"
         temperature={0.7}
-        outputSchema={trashRatingSchema}
       />
     </OpenAIProvider>
-  );
-});
+  ));
 
-async function structuredOutput() {
-  const wf = gsx.workflow("structuredOutput", StructuredOutputWorkflow);
-  return await wf.run({});
+  const workflow = gsx.workflow(
+    "StreamingCompletionWorkflow",
+    StreamingCompletionWorkflow,
+  );
+
+  return workflow.run({});
 }
 
-// Define the multi-step tools workflow component
-const MultiStepToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
-  "MultiStepToolsWorkflow",
-  () => {
-    const weatherTool = new GSXTool<typeof weatherSchema>(
-      "get_weather",
-      "Get the current weather for a location",
-      weatherSchema,
-      async ({ location }) => {
-        console.log("Getting weather for", location);
-        const weather = ["sunny", "cloudy", "rainy", "snowy"];
-        return Promise.resolve({
-          weather: weather[Math.floor(Math.random() * weather.length)],
-        });
-      },
-    );
+async function structuredOutput() {
+  // Define a schema for rating trash bins
+  const trashRatingSchema = z.object({
+    bins: z.array(
+      z.object({
+        location: z.string().describe("Location of the trash bin"),
+        rating: z.number().describe("Rating from 1-10"),
+        review: z.string().describe("A sassy review of the trash bin"),
+        bestFinds: z
+          .array(z.string())
+          .describe("List of the best items found in this bin"),
+      }),
+    ),
+    overallVerdict: z
+      .string()
+      .describe("Overall verdict on the neighborhood's trash quality"),
+  });
 
-    const servicesSchema = z.object({
-      service: z.enum(["restaurants", "parks", "cafes"]),
-      location: z.string(),
-    });
+  type TrashRating = z.infer<typeof trashRatingSchema>;
 
-    const servicesTool = new GSXTool<typeof servicesSchema>(
-      "find_local_services",
+  const StructuredOutputWorkflow = gsx.Component<{}, TrashRating>(
+    "StructuredOutputWorkflow",
+    () => (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <GSXChatCompletion
+          messages={[
+            {
+              role: "system",
+              content:
+                "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun.",
+            },
+            {
+              role: "user",
+              content:
+                "Rate and review three different trash bins in the neighborhood. Be creative with the locations!",
+            },
+          ]}
+          model="gpt-4o-mini"
+          temperature={0.7}
+          outputSchema={trashRatingSchema}
+        />
+      </OpenAIProvider>
+    ),
+  );
+
+  const workflow = gsx.workflow(
+    "StructuredOutputWorkflow",
+    StructuredOutputWorkflow,
+  );
+
+  return workflow.run({});
+}
+
+async function multiStepTools() {
+  // Weather tool (reusing existing schema)
+  const weatherSchema = z.object({
+    location: z.string(),
+  });
+
+  const weatherTool = new GSXTool({
+    name: "get_weather",
+    description: "Get the current weather for a location",
+    schema: weatherSchema,
+    execute: async ({ location }) => {
+      console.log("Getting weather for", location);
+      // Simulate API delay
+      const weather = ["sunny", "cloudy", "rainy", "snowy"];
+      return Promise.resolve({
+        weather: weather[Math.floor(Math.random() * weather.length)],
+      });
+    },
+  });
+
+  // Local services tool
+  const servicesSchema = z.object({
+    service: z.enum(["restaurants", "parks", "cafes"]),
+    location: z.string(),
+  });
+
+  const servicesTool = new GSXTool({
+    name: "find_local_services",
+    description:
       "Find local services (restaurants, parks, or cafes) in a given location",
-      servicesSchema,
-      async ({ service, location }) => {
-        console.log(`Finding ${service} near ${location}`);
-        const places = {
-          restaurants: ["Tasty Bites", "Gourmet Corner", "Local Flavor"],
-          parks: ["Central Park", "Riverside Walk", "Community Garden"],
-          cafes: ["Coffee Haven", "Bean Scene", "Morning Brew"],
-        };
-        return Promise.resolve({
-          places: places[service].map((name) => ({
-            name,
-            rating: Math.floor(Math.random() * 2) + 4,
-          })),
-        });
-      },
-    );
+    schema: servicesSchema,
+    execute: async ({ service, location }) => {
+      console.log(`Finding ${service} near ${location}`);
+      // Simulate API delay
+      const places = {
+        restaurants: ["Tasty Bites", "Gourmet Corner", "Local Flavor"],
+        parks: ["Central Park", "Riverside Walk", "Community Garden"],
+        cafes: ["Coffee Haven", "Bean Scene", "Morning Brew"],
+      };
+      return Promise.resolve({
+        places: places[service].map((name) => ({
+          name,
+          rating: Math.floor(Math.random() * 2) + 4, // 4-5 star rating
+        })),
+      });
+    },
+  });
 
-    return (
+  const MultiStepToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
+    "MultiStepToolsWorkflow",
+    () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
           messages={[
@@ -278,13 +307,15 @@ Please explain your thinking as you go through this analysis.`,
           tools={[weatherTool, servicesTool]}
         />
       </OpenAIProvider>
-    );
-  },
-);
+    ),
+  );
 
-async function multiStepTools() {
-  const wf = gsx.workflow("multiStepTools", MultiStepToolsWorkflow);
-  return await wf.run({});
+  const workflow = gsx.workflow(
+    "MultiStepToolsWorkflow",
+    MultiStepToolsWorkflow,
+  );
+
+  return workflow.run({});
 }
 
 async function main() {
@@ -311,11 +342,13 @@ async function main() {
         process.stdout.write(chunk.choices[0].delta.content ?? "");
       }
       break;
+
     case "tools":
       console.log("tools completion 🔥");
       const results = await tools();
       console.log(results.choices[0].message.content);
       break;
+
     case "toolsStreaming":
       console.log("tools streaming completion 🔥");
       const s2 = await toolsStreaming();
@@ -323,17 +356,20 @@ async function main() {
         process.stdout.write(chunk.choices[0].delta.content ?? "");
       }
       break;
+
     case "structuredOutput":
       console.log("structured output completion 🔥");
       const structured = await structuredOutput();
       console.log(structured.overallVerdict);
       console.log(structured);
       break;
+
     case "multiStepTools":
       console.log("multi-step tools completion 🔥");
       const multiStepResults = await multiStepTools();
       console.log(multiStepResults.choices[0].message.content);
       break;
+
     default:
       throw new Error(`Unknown example: ${example}`);
   }

@@ -54,7 +54,7 @@ export const StructuredOutput = gsx.Component<
         <OpenAIChatCompletion
           {...rest}
           messages={messages}
-          tools={tools}
+          tools={tools?.map((t) => t.definition)}
           response_format={zodResponseFormat(outputSchema, "output_schema")}
         />,
       );
