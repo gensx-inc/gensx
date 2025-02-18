@@ -1,4 +1,6 @@
-const DOCS_URL = process.env.DOCS_URL || "http://localhost:4000";
+// const isDev = process.env.NODE_ENV === "development";
+
+const DOCS_URL = "https://gensx-docs-test.vercel.app";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
