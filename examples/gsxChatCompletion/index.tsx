@@ -41,7 +41,7 @@ async function tools() {
   type WeatherParams = z.infer<typeof weatherSchema>;
 
   // Create the tool with the correct type - using the schema type, not the inferred type
-  const tool = new GSXTool<typeof weatherSchema>({
+  const tool = new GSXTool({
     name: "get_weather",
     description: "get the weather for a given location",
     schema: weatherSchema,
@@ -88,7 +88,7 @@ async function toolsStreaming() {
   type WeatherParams = z.infer<typeof weatherSchema>;
 
   // Create the tool with the correct type - using the schema type, not the inferred type
-  const tool = new GSXTool<typeof weatherSchema>({
+  const tool = new GSXTool({
     name: "get_weather",
     description: "get the weather for a given location",
     schema: weatherSchema,
@@ -202,7 +202,7 @@ async function multiStepTools() {
     location: z.string(),
   });
 
-  const weatherTool = new GSXTool<typeof weatherSchema>({
+  const weatherTool = new GSXTool({
     name: "get_weather",
     description: "Get the current weather for a location",
     schema: weatherSchema,
@@ -222,7 +222,7 @@ async function multiStepTools() {
     location: z.string(),
   });
 
-  const servicesTool = new GSXTool<typeof servicesSchema>({
+  const servicesTool = new GSXTool({
     name: "find_local_services",
     description:
       "Find local services (restaurants, parks, or cafes) in a given location",
