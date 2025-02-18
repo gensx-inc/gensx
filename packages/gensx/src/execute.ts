@@ -23,22 +23,29 @@ type RunResult<P> = P extends { stream: true }
   ? Promise<Streamable>
   : Promise<string>;
 
-// Overload for BrandedGsxComponent
+// Overload for GsxComponent
 export function workflow<P, O>(
-  _name: string,
+  name: string,
   component: GsxComponent<P, O>,
+  opts?: {
+    metadata?: Record<string, unknown>;
+  },
 ): { run: (props: P) => Promise<O> };
 
 // Overload for GsxStreamComponent
 export function workflow<P extends { stream?: boolean }>(
-  _name: string,
+  name: string,
   component: GsxStreamComponent<P>,
+  opts?: {
+    metadata?: Record<string, unknown>;
+  },
 ): { run: <T extends P>(props: T) => RunResult<T> };
-
-// Implementation
 export function workflow<P extends { stream?: boolean }, O>(
-  _name: string,
+  name: string,
   component: GsxComponent<P, O> | GsxStreamComponent<P>,
+  opts?: {
+    metadata?: Record<string, unknown>;
+  },
 ): {
   run: (props: P) => Promise<O | Streamable | string>;
 } {
@@ -52,6 +59,22 @@ export function workflow<P extends { stream?: boolean }, O>(
         );
         return resolved;
       });
+
+      const workflowContext = context.getWorkflowContext();
+      const rootId = workflowContext.checkpointManager.root?.id;
+      if (rootId) {
+        workflowContext.checkpointManager.addMetadata(
+          rootId,
+          opts?.metadata ?? {},
+        );
+      } else {
+        console.warn(
+          "No root checkpoint found for workflow after execution",
+          name,
+        );
+      }
+      await workflowContext.checkpointManager.waitForPendingUpdates();
+
       return result;
     },
   };
