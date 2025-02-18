@@ -4,6 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 import { gsx } from "gensx";
+import OpenAI from "openai";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionCreateParamsNonStreaming,
@@ -93,12 +94,12 @@ type ToolsCompletionProps = Omit<
 
 type ToolsCompletionOutput = OpenAIChatCompletionOutput;
 
-export const ToolExecutor = gsx.Component<
-  ToolExecutorProps,
-  ToolExecutorOutput
->("ToolExecutor", async (props) => {
+// Extract implementation into a separate function
+export const toolExecutorImpl = async (
+  props: ToolExecutorProps,
+  context: { client?: OpenAI },
+): Promise<ToolExecutorOutput> => {
   const { tools, toolCalls } = props;
-  const context = gsx.useContext(OpenAIContext);
   if (!context.client) {
     throw new Error(
       "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
@@ -135,15 +136,23 @@ export const ToolExecutor = gsx.Component<
       }
     }),
   );
+};
+
+export const ToolExecutor = gsx.Component<
+  ToolExecutorProps,
+  ToolExecutorOutput
+>("ToolExecutor", async (props) => {
+  const context = gsx.useContext(OpenAIContext);
+  return toolExecutorImpl(props, context);
 });
 
-// Tools completion component
-export const ToolsCompletion = gsx.Component<
-  ToolsCompletionProps,
-  ToolsCompletionOutput
->("ToolsCompletion", async (props) => {
+// Extract ToolsCompletion implementation
+export const toolsCompletionImpl = async (
+  props: ToolsCompletionProps,
+): Promise<ToolsCompletionOutput> => {
   const { tools, ...rest } = props;
   const currentMessages = [...rest.messages];
+  const context = gsx.useContext(OpenAIContext);
 
   // Make initial completion
   let completion = await gsx.execute<ChatCompletionOutput>(
@@ -159,14 +168,15 @@ export const ToolsCompletion = gsx.Component<
     // Add assistant's message to the conversation
     currentMessages.push(completion.choices[0].message);
 
-    // Execute tools
-    const toolResponses = await gsx.execute<ChatCompletionMessageParam[]>(
-      <ToolExecutor
-        tools={tools}
-        toolCalls={completion.choices[0].message.tool_calls}
-        messages={currentMessages}
-        model={rest.model}
-      />,
+    // Execute tools using toolExecutorImpl directly
+    const toolResponses = await toolExecutorImpl(
+      {
+        tools,
+        toolCalls: completion.choices[0].message.tool_calls,
+        messages: currentMessages,
+        model: rest.model,
+      },
+      context,
     );
 
     // Add tool responses to the conversation
@@ -183,4 +193,10 @@ export const ToolsCompletion = gsx.Component<
   }
 
   return completion;
-});
+};
+
+// Tools completion component
+export const ToolsCompletion = gsx.Component<
+  ToolsCompletionProps,
+  ToolsCompletionOutput
+>("ToolsCompletion", toolsCompletionImpl);

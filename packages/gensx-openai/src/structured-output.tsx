@@ -28,11 +28,10 @@ type StructuredOutputProps<O = unknown> = Omit<
 
 type StructuredOutputOutput<T> = T;
 
-// Combined structured output component
-export const StructuredOutput = gsx.Component<
-  StructuredOutputProps,
-  StructuredOutputOutput<unknown>
->("StructuredOutput", async (props) => {
+// Extracted implementation function
+export const structuredOutputImpl = async <T,>(
+  props: StructuredOutputProps<T>,
+): Promise<StructuredOutputOutput<T>> => {
   const { outputSchema, tools, retry, ...rest } = props;
   const maxAttempts = retry?.maxAttempts ?? 3;
   let lastError: Error | undefined;
@@ -129,4 +128,14 @@ export const StructuredOutput = gsx.Component<
       }
     }
   }
-});
+
+  throw new Error(
+    "Failed to get valid structured output: Maximum attempts reached",
+  );
+};
+
+// Updated component definition
+export const StructuredOutput = gsx.Component<
+  StructuredOutputProps,
+  StructuredOutputOutput<unknown>
+>("StructuredOutput", structuredOutputImpl);

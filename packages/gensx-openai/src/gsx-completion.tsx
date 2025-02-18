@@ -11,8 +11,8 @@ import { z } from "zod";
 
 import { OpenAIChatCompletion } from "./openai.js";
 import { StreamCompletion } from "./stream.js";
-import { StructuredOutput } from "./structured-output.js";
-import { GSXTool, ToolsCompletion } from "./tools.js";
+import { structuredOutputImpl } from "./structured-output.js";
+import { GSXTool, toolsCompletionImpl } from "./tools.js";
 // Types for the composition-based implementation
 export type StreamingProps = Omit<
   ChatCompletionCreateParamsNonStreaming,
@@ -65,15 +65,13 @@ export const GSXChatCompletion = gsx.Component<
   // Handle structured output case
   if ("outputSchema" in props && props.outputSchema) {
     const { tools, outputSchema, ...rest } = props;
-    return (
-      <StructuredOutput {...rest} tools={tools} outputSchema={outputSchema} />
-    );
+    return structuredOutputImpl({ ...rest, tools, outputSchema });
   }
 
   // Handle standard case (with or without tools)
   const { tools, ...rest } = props;
   if (tools) {
-    return <ToolsCompletion {...rest} tools={tools} />;
+    return toolsCompletionImpl({ ...rest, tools });
   }
   return <OpenAIChatCompletion {...rest} />;
 });
