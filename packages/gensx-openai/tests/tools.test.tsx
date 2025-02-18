@@ -1,13 +1,14 @@
 import { gsx } from "gensx";
 import {
+  ChatCompletion as ChatCompletionOutput,
   ChatCompletionCreateParams,
   ChatCompletionToolMessageParam,
 } from "openai/resources/index.mjs";
 import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
 
-import { GSXTool, OpenAIProvider } from "@/index.js";
-import { ToolExecutor } from "@/tools";
+import { GSXChatCompletion, GSXTool, OpenAIProvider } from "@/index.js";
+import { ToolExecutor, ToolsCompletion } from "@/tools";
 
 // Mock OpenAI client
 vi.mock("openai", async (importOriginal) => {
@@ -22,11 +23,20 @@ vi.mock("openai", async (importOriginal) => {
       completions: {
         create: vi
           .fn()
-          .mockImplementation(async (params: ChatCompletionCreateParams) => {
-            await Promise.resolve(); // Add await to satisfy linter
-            // Handle tool calls
-            if (params.tools?.length) {
-              return {
+          .mockImplementation((params: ChatCompletionCreateParams) => {
+            // If there's already a tool response in the conversation, return a final answer
+            if (params.messages.some((m) => m.role === "tool")) {
+              return Promise.resolve({
+                choices: [
+                  {
+                    message: { content: "Final answer after tool execution" },
+                  },
+                ],
+              });
+            }
+            // Handle initial tool calls
+            else if (params.tools?.length) {
+              return Promise.resolve({
                 choices: [
                   {
                     message: {
@@ -43,15 +53,15 @@ vi.mock("openai", async (importOriginal) => {
                     },
                   },
                 ],
-              };
+              });
             } else {
-              return {
+              return Promise.resolve({
                 choices: [
                   {
                     message: { content: "Hello World" },
                   },
                 ],
-              };
+              });
             }
           }),
       },
@@ -128,47 +138,51 @@ suite("Tools", () => {
     expect(result[0].content).toBe("Processed: test");
   });
 
-  // test("ToolsCompletion handles tool-based conversation", async () => {
-  //   const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
-  //     "TestComponent",
-  //     () => (
-  //       <ToolsCompletion
-  //         model="gpt-4"
-  //         messages={[{ role: "user", content: "test" }]}
-  //         tools={[testTool]}
-  //       />
-  //     ),
-  //   );
+  test("ToolsCompletion handles tool-based conversation", async () => {
+    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+      "TestComponent",
+      () => (
+        <ToolsCompletion
+          model="gpt-4"
+          messages={[{ role: "user", content: "test" }]}
+          tools={[testTool]}
+        />
+      ),
+    );
 
-  //   const result = await gsx.execute<ChatCompletionOutput>(
-  //     <OpenAIProvider apiKey="test">
-  //       <TestComponent />
-  //     </OpenAIProvider>,
-  //   );
+    const result = await gsx.execute<ChatCompletionOutput>(
+      <OpenAIProvider apiKey="test">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
 
-  //   expect(result.choices[0].message).toBeDefined();
-  // });
+    expect(result.choices[0].message.content).toBe(
+      "Final answer after tool execution",
+    );
+  });
 
-  // test("GSXChatCompletion works with tools", async () => {
-  //   const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
-  //     "TestComponent",
-  //     () => (
-  //       <GSXChatCompletion
-  //         model="gpt-4"
-  //         messages={[{ role: "user", content: "test" }]}
-  //         tools={[testTool]}
-  //       />
-  //     ),
-  //   );
+  test("GSXChatCompletion works with tools", async () => {
+    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+      "TestComponent",
+      () => (
+        <GSXChatCompletion
+          model="gpt-4o"
+          messages={[{ role: "user", content: "test" }]}
+          tools={[testTool]}
+        />
+      ),
+    );
 
-  //   const result = await gsx.execute<ChatCompletionOutput>(
-  //     <OpenAIProvider apiKey="test">
-  //       <TestComponent />
-  //     </OpenAIProvider>,
-  //   );
+    const result = await gsx.execute<ChatCompletionOutput>(
+      <OpenAIProvider apiKey="test">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
 
-  //   expect(result.choices[0].message).toBeDefined();
-  // });
+    expect(result.choices[0].message.content).toBe(
+      "Final answer after tool execution",
+    );
+  });
 
   test("ToolExecutor throws error for invalid tool", async () => {
     const TestComponent = gsx.Component("TestComponent", () => (
