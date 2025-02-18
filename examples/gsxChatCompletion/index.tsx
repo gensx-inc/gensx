@@ -55,7 +55,7 @@ const BasicCompletionWorkflow = gsx.Component<{}, ChatCompletionOutput>(
 
 async function basicCompletion() {
   const wf = gsx.workflow("basicCompletion", BasicCompletionWorkflow);
-  return await wf({});
+  return await wf.run({});
 }
 
 // Define the tools workflow component
@@ -101,7 +101,7 @@ const ToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
 
 async function tools() {
   const wf = gsx.workflow("tools", ToolsWorkflow);
-  return wf({});
+  return await wf.run({});
 }
 
 // Define the streaming tools workflow component
@@ -147,7 +147,7 @@ const ToolsStreamingWorkflow = gsx.Component<{}, Stream<ChatCompletionChunk>>(
 
 async function toolsStreaming() {
   const wf = gsx.workflow("toolsStreaming", ToolsStreamingWorkflow);
-  return wf({});
+  return await wf.run({});
 }
 
 const StreamingCompletionWorkflow = gsx.Component<
@@ -176,7 +176,7 @@ const StreamingCompletionWorkflow = gsx.Component<
 
 async function streamingCompletion() {
   const wf = gsx.workflow("streamingCompletion", StreamingCompletionWorkflow);
-  return await wf({});
+  return await wf.run({});
 }
 
 // Define the structured output workflow component
@@ -209,7 +209,7 @@ const StructuredOutputWorkflow = gsx.Component<
 
 async function structuredOutput() {
   const wf = gsx.workflow("structuredOutput", StructuredOutputWorkflow);
-  return wf({});
+  return await wf.run({});
 }
 
 // Define the multi-step tools workflow component
@@ -284,7 +284,7 @@ Please explain your thinking as you go through this analysis.`,
 
 async function multiStepTools() {
   const wf = gsx.workflow("multiStepTools", MultiStepToolsWorkflow);
-  return wf({});
+  return await wf.run({});
 }
 
 async function main() {
