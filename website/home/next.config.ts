@@ -2,11 +2,6 @@ const DOCS_URL = process.env.DOCS_URL || "http://localhost:4000";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    parserOptions: {
-      moduleResolution: "node16",
-    },
-  },
   async rewrites() {
     return [
       {
