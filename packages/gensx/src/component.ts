@@ -1,6 +1,5 @@
 import type {
   BrandedGsxComponent,
-  BrandedGsxStreamComponent,
   DeepJSXElement,
   ExecutableValue,
   GsxComponent,
@@ -108,7 +107,7 @@ export function StreamComponent<P>(
     props: P & { stream?: boolean },
   ) => MaybePromise<Streamable | JSX.Element>,
   defaultOpts?: DefaultOpts,
-): BrandedGsxStreamComponent<WithComponentOpts<P & { stream?: boolean }>> {
+): GsxStreamComponent<WithComponentOpts<P & { stream?: boolean }>> {
   const GsxStreamComponent: GsxStreamComponent<
     WithComponentOpts<P & { stream?: boolean }>
   > = async props => {
@@ -212,7 +211,7 @@ export function StreamComponent<P>(
     value: true,
   });
 
-  return GsxStreamComponent as BrandedGsxStreamComponent<
+  return GsxStreamComponent as GsxStreamComponent<
     WithComponentOpts<P & { stream?: boolean }>
   >;
 }

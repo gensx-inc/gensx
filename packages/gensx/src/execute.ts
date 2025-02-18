@@ -2,8 +2,8 @@ import { ExecutionContext, getCurrentContext, withContext } from "./context";
 import { resolveDeep } from "./resolve";
 import {
   BrandedGsxComponent,
-  BrandedGsxStreamComponent,
   ExecutableValue,
+  GsxStreamComponent,
   Streamable,
 } from "./types";
 
@@ -29,16 +29,16 @@ export function workflow<P, O>(
   component: BrandedGsxComponent<P, O>,
 ): { run: (props: P) => Promise<O> };
 
-// Overload for BrandedGsxStreamComponent
+// Overload for GsxStreamComponent
 export function workflow<P extends { stream?: boolean }>(
   _name: string,
-  component: BrandedGsxStreamComponent<P>,
+  component: GsxStreamComponent<P>,
 ): { run: <T extends P>(props: T) => RunResult<T> };
 
 // Implementation
 export function workflow<P extends { stream?: boolean }, O>(
   _name: string,
-  component: BrandedGsxComponent<P, O> | BrandedGsxStreamComponent<P>,
+  component: BrandedGsxComponent<P, O> | GsxStreamComponent<P>,
 ): {
   run: (props: P) => Promise<O | Streamable | string>;
 } {

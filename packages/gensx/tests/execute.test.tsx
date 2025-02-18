@@ -2,7 +2,7 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "../src";
+import { gsx, Streamable } from "../src";
 
 suite("execute", () => {
   const WorkflowComponent = gsx.Component("test", () => "hello");
@@ -26,18 +26,25 @@ suite("execute", () => {
         },
       );
 
+      // Using type annotations on the workflow call to ensure the correct type is returned
       const workflow = gsx.workflow("test", StreamComponent);
-      const iterator = await workflow.run({ stream: true, foo: "hello" });
+      const iterator: Streamable = await workflow.run({
+        stream: true,
+        foo: "hello",
+      });
       let result = "";
       for await (const chunk of iterator) {
         result += chunk;
       }
       expect(result).toBe("hello");
 
-      const stringResult = await workflow.run({ stream: false, foo: "hello" });
+      const stringResult: string = await workflow.run({
+        stream: false,
+        foo: "hello",
+      });
       expect(stringResult).toBe("hello");
 
-      const stringResult2 = await workflow.run({ foo: "hello" });
+      const stringResult2: string = await workflow.run({ foo: "hello" });
       expect(stringResult2).toBe("hello");
     });
   });
