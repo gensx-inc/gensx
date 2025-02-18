@@ -51,30 +51,46 @@ export type GSXChatCompletionOutput<P> = P extends StreamingProps
     ? O
     : ChatCompletionOutput;
 
-// Update CompositionCompletion to use the renamed parameter
-export const GSXChatCompletion = gsx.Component<
-  GSXChatCompletionProps,
-  GSXChatCompletionOutput<GSXChatCompletionProps>
->("GSXCompletion", (props) => {
+// Extract GSXChatCompletion implementation
+export const gsxChatCompletionImpl = <P extends GSXChatCompletionProps>(
+  props: P,
+): GSXChatCompletionOutput<P> => {
   // Handle streaming case
   if (props.stream) {
     const { tools, ...rest } = props;
-    return <StreamCompletion {...rest} tools={tools} stream={true} />;
+    return (
+      <StreamCompletion {...rest} tools={tools} stream={true} />
+    ) as GSXChatCompletionOutput<P>;
   }
 
   // Handle structured output case
   if ("outputSchema" in props && props.outputSchema) {
     const { tools, outputSchema, ...rest } = props;
-    return structuredOutputImpl({ ...rest, tools, outputSchema });
+    return structuredOutputImpl({
+      ...rest,
+      tools,
+      outputSchema,
+    }) as GSXChatCompletionOutput<P>;
   }
 
   // Handle standard case (with or without tools)
-  const { tools, ...rest } = props;
+  const { tools, stream, ...rest } = props;
   if (tools) {
-    return toolsCompletionImpl({ ...rest, tools });
+    return toolsCompletionImpl({
+      ...rest,
+      tools,
+    }) as GSXChatCompletionOutput<P>;
   }
-  return <OpenAIChatCompletion {...rest} />;
-});
+  return (
+    <OpenAIChatCompletion {...rest} stream={false} />
+  ) as GSXChatCompletionOutput<P>;
+};
+
+// Update component to use implementation
+export const GSXChatCompletion = gsx.Component<
+  GSXChatCompletionProps,
+  GSXChatCompletionOutput<GSXChatCompletionProps>
+>("GSXChatCompletion", gsxChatCompletionImpl);
 
 // Base props type from OpenAI
 export type ChatCompletionProps = Omit<
@@ -90,7 +106,7 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
   async (props) => {
     if (props.stream) {
       const stream = await gsx.execute<Stream<ChatCompletionChunk>>(
-        <GSXChatCompletion {...props} stream={true} />,
+        gsxChatCompletionImpl({ ...props, stream: true }),
       );
 
       // Transform Stream<ChatCompletionChunk> into AsyncIterableIterator<string>
@@ -106,7 +122,7 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
       return generateTokens();
     } else {
       const response = await gsx.execute<ChatCompletionOutput>(
-        <GSXChatCompletion {...props} stream={false} />,
+        gsxChatCompletionImpl({ ...props, stream: false }),
       );
       const content = response.choices[0]?.message?.content ?? "";
 
