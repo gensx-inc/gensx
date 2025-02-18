@@ -81,15 +81,15 @@ suite("Tools", () => {
     input: z.string(),
   });
 
-  const testTool = new GSXTool(
-    "test_tool",
-    "A test tool",
-    testToolSchema,
-    async (args) => {
+  const testTool = new GSXTool({
+    name: "test_tool",
+    description: "A test tool",
+    schema: testToolSchema,
+    execute: async (args) => {
       await Promise.resolve();
       return `Processed: ${args.input}`;
     },
-  );
+  });
 
   test("GSXTool creation and definition", () => {
     expect(testTool.name).toBe("test_tool");
