@@ -1,15 +1,16 @@
 name: "🐢 Build and Test Examples"
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  pull_request:
     branches: [main]
     paths:
       - "examples/**/*"
+      - "packages/**/*"
   push:
     branches: [main]
     paths:
       - "examples/**/*"
+      - "packages/**/*"
 
 permissions:
   contents: read
@@ -23,23 +24,22 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Important security check for pull_request_target
-    if: |
-      (github.event_name == 'push') ||
-      (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
 
     steps:
-      - name: Checkout 🛬
+      - name: Checkout code 🛬
         uses: actions/checkout@v4
         with:
-          # Important: For PR events, explicitly checkout the PR HEAD
-          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.ref }}
-          persist-credentials: false
+          fetch-depth: 0
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node
         with:
           version: 22.x
           npm_token: ${{ secrets.NPM_TOKEN }}
+      - name: Clean build artifacts 🧹
+        run: |
+          rm -rf examples/**/dist
+          rm -rf examples/**/.turbo
       - name: Build 📦
         run: pnpm build:examples
       - name: Run tests ✅

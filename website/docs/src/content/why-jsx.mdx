@@ -1,0 +1,143 @@
+---
+title: Why JSX?
+description: Why GenSX uses JSX for workflow composition
+---
+
+# Why JSX?
+
+GenSX uses JSX for workflow composition because it's a natural fit for the programming model. Most people think of React and frontend when JSX is mentioned, so choosing it for a backend workflow orchestration framework may seem surprising.
+
+This page explains why JSX is a good fit for anyone building LLM applications, whether it be simple linear workflows or complex cyclical agents.
+
+## Why not graphs?
+
+Graph APIs are the standard for LLM frameworks. They provide APIs to define nodes, edges between those nodes, and a global state object that is passed around the workflow.
+
+A workflow for writing a blog post might look like this:
+
+```tsx
+const graph = new Graph()
+  .addNode("hnCollector", collectHNStories)
+  .addNode("analyzeHNPosts", analyzePosts)
+  .addNode("trendAnalyzer", analyzeTrends)
+  .addNode("pgEditor", editAsPG)
+  .addNode("pgTweetWriter", writeTweet);
+
+graph
+  .addEdge(START, "hnCollector")
+  .addEdge("hnCollector", "analyzeHNPosts")
+  .addEdge("analyzeHNPosts", "trendAnalyzer")
+  .addEdge("trendAnalyzer", "pgEditor")
+  .addEdge("pgEditor", "pgTweetWriter")
+  .addEdge("pgTweetWriter", END);
+```
+
+Can you easily read this code and visualize the workflow?
+
+On the other hand, the same workflow with GenSX and JSX reads top to bottom like a normal programming language:
+
+```tsx
+<HNCollector limit={postCount}>
+  {(stories) => (
+    <AnalyzeHNPosts stories={stories}>
+      {({ analyses }) => (
+        <TrendAnalyzer analyses={analyses}>
+          {(report) => (
+            <Editor content={report}>
+              {(editedReport) => (
+                <TweetWriter
+                  context={editedReport}
+                  prompt="Summarize the HN trends in a tweet"
+                />
+              )}
+            </Editor>
+          )}
+        </TrendAnalyzer>
+      )}
+    </AnalyzeHNPosts>
+  )}
+</HNCollector>
+```
+
+As you'll see in the next section, trees are just another kind of graph and you can express all of the same things.
+
+## Graphs, DAGs, and trees
+
+Most workflow frameworks use explicit graph construction with nodes and edges. This makes sense - workflows are fundamentally about connecting steps together, and graphs are a natural way to represent these connections.
+
+Trees are just a special kind of graph - one where each node has a single parent. At first glance, this might seem more restrictive than a general graph. But JSX gives us something powerful: the ability to express _programmatic_ trees.
+
+Consider a cycle in a workflow:
+
+```tsx
+const AgentWorkflow = () => (
+  <AgentStep>
+    {(result) =>
+      result.needsMoreWork ? (
+        <AgentWorkflow /> // Recursion creates A -> B -> C -> A
+      ) : (
+        result
+      )
+    }
+  </AgentStep>
+);
+```
+
+This tree structure visually represents the workflow, and programmatic JSX and typescript allow you to express cycles through normal programming constructs. This gives you the best of both worlds:
+
+- Visual clarity of a tree structure
+- Full expressiveness of a graph API
+- Natural control flow through standard TypeScript
+- No explicit edge definitions needed
+
+JSX isn't limited to static trees. It gives you a way to express dynamic, programmatic trees that can represent any possible workflow.
+
+## Pure functional components
+
+GenSX uses JSX to encourage a functional component model, enabling you to compose your workflows from discrete, reusable steps.
+
+Functional and reusable components can be published and shared on `npm`, and it's easy to test and evaluate them in isolation.
+
+Writing robust evals is the difference between a prototype and a high quality AI app. Usually you start with end to end evals, but as workflows grow these become expensive, take a long time to run, and it can be difficult to isolate and understand the impact of changes in your workflow.
+
+By breaking down your workflow into discrete components, you can write more focused evals that are easier to run, faster to complete, and test the impact of specific changes in your workflow.
+
+## Nesting via child functions
+
+Standard JSX allows you to nest components to form a tree:
+
+```tsx
+<div>
+  <button>Click me</button>
+</div>
+```
+
+GenSX extends this with the ability to nest components via child functions. The output of any component can be accessed as a child function, giving a simple pattern to chain workflow steps together:
+
+{/* prettier-ignore-start */}
+```tsx
+<StepOne>
+    {(result) => <StepTwo input={result} />}
+</StepOne>
+```
+{/* prettier-ignore-end */}
+
+## Programming language native
+
+JSX with TypeScript gives you everything you expect from a modern programming language:
+
+- Conditionals via `if`, `??`, and other standard primitives
+- Looping via `for` and `while`
+- Vanilla function calling
+- Type safety
+
+No DSL required, just standard TypeScript.
+
+## Familiar mental model
+
+If you've used React, GenSX will feel familiar even though there are some differences.
+
+- The tree structure is the same.
+- Elements can be composed and nested.
+- It uses a similar `Provider` and `Context` pattern for passing minimal configuration where necessary.
+- Familiar syntax and type safety.
