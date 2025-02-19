@@ -82,6 +82,7 @@ async function saveConfig(config: Config): Promise<void> {
       api: {
         token: config.token,
         org: config.orgSlug,
+        baseUrl: API_BASE_URL,
       },
     });
 
