@@ -1,13 +1,20 @@
 import { gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
+  ChatCompletionAssistantMessageParam,
   ChatCompletionCreateParams,
+  ChatCompletionMessageParam,
   ChatCompletionToolMessageParam,
 } from "openai/resources/index.mjs";
 import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
 
-import { GSXChatCompletion, GSXTool, OpenAIProvider } from "@/index.js";
+import {
+  GSXChatCompletion,
+  GSXChatCompletionResult,
+  GSXTool,
+  OpenAIProvider,
+} from "@/index.js";
 import { ToolExecutor, ToolsCompletion } from "@/tools";
 
 // Mock OpenAI client
@@ -29,7 +36,10 @@ vi.mock("openai", async (importOriginal) => {
               return Promise.resolve({
                 choices: [
                   {
-                    message: { content: "Final answer after tool execution" },
+                    message: {
+                      role: "assistant",
+                      content: "Final answer after tool execution",
+                    },
                   },
                 ],
               });
@@ -40,6 +50,8 @@ vi.mock("openai", async (importOriginal) => {
                 choices: [
                   {
                     message: {
+                      role: "assistant",
+                      content: null,
                       tool_calls: [
                         {
                           id: "call_1",
@@ -58,7 +70,10 @@ vi.mock("openai", async (importOriginal) => {
               return Promise.resolve({
                 choices: [
                   {
-                    message: { content: "Hello World" },
+                    message: {
+                      role: "assistant",
+                      content: "Hello World",
+                    },
                   },
                 ],
               });
@@ -157,6 +172,57 @@ suite("Tools", () => {
     );
 
     expect(result.choices[0].message.content).toBe(
+      "Final answer after tool execution",
+    );
+  });
+
+  test("GSXChatCompletion returns complete message history", async () => {
+    const initialMessages: ChatCompletionMessageParam[] = [
+      { role: "system", content: "You are a test assistant" },
+      { role: "user", content: "test message" },
+    ];
+
+    const TestComponent = gsx.Component<{}, GSXChatCompletionResult>(
+      "TestComponent",
+      () => (
+        <GSXChatCompletion
+          model="gpt-4o"
+          messages={initialMessages}
+          tools={[testTool]}
+        />
+      ),
+    );
+
+    const result = await gsx.execute<GSXChatCompletionResult>(
+      <OpenAIProvider apiKey="test">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
+
+    // Verify messages array exists and contains the complete conversation
+    expect(result.messages).toBeDefined();
+    expect(result.messages).toHaveLength(5); // Initial 2 + Assistant tool call + Tool response + Final response
+
+    // Check initial messages
+    expect(result.messages[0]).toEqual(initialMessages[0]);
+    expect(result.messages[1]).toEqual(initialMessages[1]);
+
+    // Check tool call message
+    const toolCallMessage = result
+      .messages[2] as ChatCompletionAssistantMessageParam;
+    expect(toolCallMessage.role).toBe("assistant");
+    expect(toolCallMessage.tool_calls).toBeDefined();
+    expect(toolCallMessage.tool_calls).toHaveLength(1);
+    const toolCall = toolCallMessage.tool_calls![0];
+    expect(toolCall.function.name).toBe("test_tool");
+
+    // Check tool response
+    expect(result.messages[3].role).toBe("tool");
+    expect(result.messages[3].content).toBe("Processed: test");
+
+    // Check final response
+    expect(result.messages[4].role).toBe("assistant");
+    expect(result.messages[4].content).toBe(
       "Final answer after tool execution",
     );
   });

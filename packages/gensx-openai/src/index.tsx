@@ -4,6 +4,7 @@ import {
   GSXChatCompletion,
   GSXChatCompletionOutput,
   GSXChatCompletionProps,
+  GSXChatCompletionResult,
 } from "./gsx-completion.js";
 import {
   OpenAIChatCompletion,
@@ -27,4 +28,5 @@ export type {
   ChatCompletionProps,
   OpenAIChatCompletionProps,
   GSXChatCompletionOutput,
+  GSXChatCompletionResult,
 };

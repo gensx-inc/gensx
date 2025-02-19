@@ -1,4 +1,9 @@
-import { GSXChatCompletion, GSXTool, OpenAIProvider } from "@gensx/openai";
+import {
+  GSXChatCompletion,
+  GSXChatCompletionResult,
+  GSXTool,
+  OpenAIProvider,
+} from "@gensx/openai";
 import { gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
@@ -281,7 +286,7 @@ async function multiStepTools() {
     },
   });
 
-  const MultiStepToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
+  const MultiStepToolsWorkflow = gsx.Component<{}, GSXChatCompletionResult>(
     "MultiStepToolsWorkflow",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -368,6 +373,7 @@ async function main() {
       console.log("multi-step tools completion 🔥");
       const multiStepResults = await multiStepTools();
       console.log(multiStepResults.choices[0].message.content);
+      console.log(JSON.stringify(multiStepResults.messages, null, 2));
       break;
 
     default:

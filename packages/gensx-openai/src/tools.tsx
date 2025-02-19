@@ -92,7 +92,9 @@ type ToolsCompletionProps = Omit<
   tools: GSXTool<any>[];
 };
 
-type ToolsCompletionOutput = OpenAIChatCompletionOutput;
+type ToolsCompletionOutput = OpenAIChatCompletionOutput & {
+  messages: ChatCompletionMessageParam[];
+};
 
 // Extract implementation into a separate function
 export const toolExecutorImpl = async (
@@ -192,7 +194,13 @@ export const toolsCompletionImpl = async (
     );
   }
 
-  return completion;
+  // Add the final assistant message to the conversation
+  currentMessages.push(completion.choices[0].message);
+
+  return {
+    ...completion,
+    messages: currentMessages,
+  };
 };
 
 // Tools completion component
