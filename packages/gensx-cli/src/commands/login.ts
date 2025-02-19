@@ -7,6 +7,7 @@ import path from "path";
 import { consola } from "consola";
 import { stringify as stringifyIni } from "ini";
 import open from "open";
+import ora from "ora";
 
 const API_BASE_URL = process.env.GENSX_API_BASE_URL ?? "https://api.gensx.com";
 const APP_BASE_URL = process.env.GENSX_APP_BASE_URL ?? "https://app.gensx.com";
@@ -161,50 +162,75 @@ async function pollLoginStatus(
 }
 
 export async function login(): Promise<void> {
+  // Set raw mode to read single keystrokes
+  const { stdin } = process;
+  const wasRaw = stdin.isRaw;
+  const spinner = ora();
+
   try {
-    consola.info("Starting GenSX login process...");
+    spinner.start("Starting GenSX login process");
 
     const verificationCode = generateVerificationCode();
     const request = await createLoginRequest(verificationCode);
+    spinner.succeed();
 
     const authUrl =
       path.join(APP_BASE_URL, "auth/device", request.requestId) +
       "?code_verifier=" +
       verificationCode;
-    consola.info(
-      "\nPress any key to open the following URL in your browser to complete login:",
-    );
-    consola.info(authUrl);
 
-    await new Promise((resolve) => {
-      process.stdin.once("data", () => {
-        resolve(undefined);
-      });
+    consola.box(
+      "Press Enter to open the login page in your browser:\n\n" + authUrl,
+    );
+
+    // Set raw mode and wait for keypress
+    stdin.setRawMode(true);
+    stdin.resume();
+    await new Promise<void>((resolve) => {
+      const onData = (data: Buffer) => {
+        // Only respond to Enter key
+        if (data[0] === 0x0d) {
+          stdin.removeListener("data", onData);
+          stdin.setRawMode(wasRaw);
+          stdin.pause();
+          resolve();
+        }
+      };
+      stdin.on("data", onData);
     });
 
+    spinner.start("Opening browser");
     await open(authUrl);
+    spinner.succeed();
 
-    consola.info("\nWaiting for authentication...");
+    spinner.start("Waiting for authentication");
 
-    for (;;) {
-      const status = await pollLoginStatus(request.requestId, verificationCode);
+    // Poll until we get a completed status
+    let status: DeviceAuthStatus;
+    do {
+      status = await pollLoginStatus(request.requestId, verificationCode);
       if (status.status === "completed") {
         await saveConfig({
           token: status.token,
           orgSlug: status.orgSlug,
         });
-        consola.success("\nLogin successful!");
+        spinner.succeed("Successfully logged in to GenSX");
         break;
       }
-
       // Wait 1 second before polling again
       await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
+    } while (status.status === "pending");
   } catch (error) {
-    consola.error(
-      "Login failed:",
-      error instanceof Error ? error.message : String(error),
+    spinner.fail(
+      "Login failed: " +
+        (error instanceof Error ? error.message : String(error)),
     );
-    process.exit(1);
+    throw error; // Let the error propagate up
+  } finally {
+    // Always ensure we restore stdin state
+    if (stdin.isRaw !== wasRaw) {
+      stdin.setRawMode(wasRaw);
+    }
+    stdin.pause();
   }
 }
