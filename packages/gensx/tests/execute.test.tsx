@@ -19,7 +19,7 @@ suite("execute", () => {
 
   suite("workflow", () => {
     test("can execute a workflow", async () => {
-      const workflow = gsx.workflow("test", WorkflowComponent);
+      const workflow = gsx.Workflow("test", WorkflowComponent);
       const result = await workflow.run({});
 
       const assertReturnType: Assert<typeof result, string> = true;
@@ -41,7 +41,7 @@ suite("execute", () => {
       );
 
       // Using type annotations on the workflow call to ensure the correct type is returned
-      const workflow = gsx.workflow("test", StreamComponent);
+      const workflow = gsx.Workflow("test", StreamComponent);
       const iterator: Streamable = await workflow.run({
         stream: true,
         foo: "hello",
