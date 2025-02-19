@@ -67,12 +67,11 @@ export type Args<P, O> = P & {
  */
 export type GsxComponent<P, O> = (props: Args<P, O>) => MaybePromise<
   O | DeepJSXElement<O> | ExecutableValue<O>
-> & /*
+> /*
  * Use branding to preserve output type information.
  * This allows direct access to the output type O while maintaining
  * compatibility with the more flexible JSX composition system.
- */
-{
+ */ & {
   readonly __brand: "gsx-component";
   readonly __outputType: O;
   readonly __rawProps: P;
