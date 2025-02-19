@@ -35,6 +35,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@tsconfig/node20": "^20.1.4",
+    "@types/ini": "^4.1.1",
     "@types/node": "^20.12.12",
     "@vitest/coverage-istanbul": "^2.1.8",
     "@yao-pkg/pkg": "^6.3.0",
@@ -45,6 +46,8 @@
   "dependencies": {
     "commander": "^11.0.0",
     "consola": "^3.2.3",
+    "ini": "^5.0.0",
+    "open": "^10.0.3",
     "picocolors": "^1.0.1"
   },
   "type": "module",
