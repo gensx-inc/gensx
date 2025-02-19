@@ -50,7 +50,7 @@ export function workflow<P extends { stream?: boolean }, O>(
   run: (props: P) => Promise<O | Streamable | string>;
 } {
   return {
-    run: async props => {
+    run: async (props) => {
       const context = new ExecutionContext({});
 
       const workflowContext = context.getWorkflowContext();

@@ -35,7 +35,7 @@ suite("jsx-runtime", () => {
   test("child does not receive children prop", async () => {
     let childReceivedProps: Record<string, unknown> | undefined = undefined;
 
-    const Child = gsx.Component<{}, string>("Child", props => {
+    const Child = gsx.Component<{}, string>("Child", (props) => {
       childReceivedProps = props;
       return "child";
     });

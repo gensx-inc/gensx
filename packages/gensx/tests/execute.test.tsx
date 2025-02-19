@@ -31,7 +31,7 @@ suite("execute", () => {
     test("can execute a workflow with a stream component", async () => {
       const StreamComponent = gsx.StreamComponent<{ foo: string }>(
         "test",
-        props => {
+        (props) => {
           const generator = async function* () {
             await setTimeout(0);
             yield props.foo;
@@ -97,10 +97,10 @@ suite("execute", () => {
       }
       expect(Object.keys(checkpoints).length).toBeGreaterThanOrEqual(2);
       expect(
-        Object.values(checkpoints).some(c => c.metadata?.num === "1"),
+        Object.values(checkpoints).some((c) => c.metadata?.num === "1"),
       ).toBe(true);
       expect(
-        Object.values(checkpoints).some(c => c.metadata?.num === "2"),
+        Object.values(checkpoints).some((c) => c.metadata?.num === "2"),
       ).toBe(true);
     });
 
