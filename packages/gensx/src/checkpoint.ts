@@ -69,6 +69,17 @@ export class CheckpointManager implements CheckpointWriter {
   private apiKey: string;
   private baseUrl: string;
 
+  // Provide unified view of all secrets
+  get secretValues(): Set<unknown> {
+    const allSecrets = new Set<unknown>();
+    for (const secrets of this._secretValues.values()) {
+      for (const secret of secrets) {
+        allSecrets.add(secret);
+      }
+    }
+    return allSecrets;
+  }
+
   constructor(opts?: {
     apiKey: string;
     org: string;
@@ -618,7 +629,7 @@ export class CheckpointManager implements CheckpointWriter {
     return node.id;
   }
 
-  completeNode(id: string, output: unknown): void {
+  completeNode(id: string, output: unknown) {
     const node = this.nodes.get(id);
     if (node) {
       node.endTime = Date.now();
@@ -644,7 +655,7 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  addMetadata(id: string, metadata: Record<string, unknown>): void {
+  addMetadata(id: string, metadata: Record<string, unknown>) {
     const node = this.nodes.get(id);
     if (node) {
       node.metadata = {
@@ -655,7 +666,16 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  updateNode(id: string, updates: Partial<ExecutionNode>): void {
+  setWorkflowName(name: string) {
+    // Right now we just update the name of the root node. Eventually this should be separated from the workflow name.
+    this.workflowName = name;
+
+    if (this.root) {
+      this.root.componentName = name;
+    }
+  }
+
+  updateNode(id: string, updates: Partial<ExecutionNode>) {
     const node = this.nodes.get(id);
     if (node) {
       if (
@@ -683,7 +703,7 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  write(): void {
+  write() {
     this.updateCheckpoint();
   }
 
@@ -695,15 +715,6 @@ export class CheckpointManager implements CheckpointWriter {
     // If that checkpoint triggered another update, wait again
     if (this.pendingUpdate || this.activeCheckpoint) {
       await this.waitForPendingUpdates();
-    }
-  }
-
-  setWorkflowName(name: string) {
-    // Right now we just update the name of the root node. Eventually this should be separated from the workflow name.
-    this.workflowName = name;
-
-    if (this.root) {
-      this.root.componentName = name;
     }
   }
 }

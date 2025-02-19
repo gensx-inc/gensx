@@ -33,6 +33,11 @@ export function getConfigPath(): string {
 }
 
 export function readConfig(): GensxConfig {
+  // Don't read config in tests.
+  if (process.env.NODE_ENV === "test") {
+    return {};
+  }
+
   try {
     const configPath = getConfigPath();
     const configContent = readFileSync(configPath, "utf-8");
