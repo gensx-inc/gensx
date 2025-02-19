@@ -22,10 +22,19 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
   ),
 );
 
-const result = await gsx.execute<string>(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
-  </OpenAIProvider>,
+const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
+  "Workflow",
+  ({ userInput }) => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Respond userInput={userInput} />
+    </OpenAIProvider>
+  ),
 );
+
+const workflow = gsx.workflow("MyGSXWorkflow", WorkflowComponent);
+
+const result = await workflow.run({
+  userInput: "Hi there! Say 'Hello, World!' and nothing else.",
+});
 
 console.log(result);
