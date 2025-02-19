@@ -22,7 +22,7 @@ interface GSXToolParams<TSchema extends z.ZodObject<z.ZodRawShape>> {
   name: string;
   description: string;
   schema: TSchema;
-  execute: (args: z.infer<TSchema>) => Promise<unknown>;
+  run: (args: z.infer<TSchema>) => Promise<unknown>;
   options?: {};
 }
 
@@ -51,12 +51,12 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     this.executionComponent = gsx.Component<z.infer<TSchema>, unknown>(
       `Tool[${this.name}]`,
       async (props) => {
-        return params.execute(props);
+        return params.run(props);
       },
     );
   }
 
-  async execute(args: z.infer<TSchema>): Promise<unknown> {
+  async run(args: z.infer<TSchema>): Promise<unknown> {
     // Execute the component through gsx.execute to get checkpointing
     return gsx.execute(<this.executionComponent {...args} />);
   }
@@ -125,7 +125,7 @@ export const toolExecutorImpl = async (
         if (!validated.success) {
           throw new Error(`Invalid tool arguments: ${validated.error.message}`);
         }
-        const result = await tool.execute(validated.data);
+        const result = await tool.run(validated.data);
         return {
           tool_call_id: toolCall.id,
           role: "tool" as const,

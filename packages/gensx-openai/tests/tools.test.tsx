@@ -100,7 +100,7 @@ suite("Tools", () => {
     name: "test_tool",
     description: "A test tool",
     schema: testToolSchema,
-    execute: async (args) => {
+    run: async (args) => {
       await Promise.resolve();
       return `Processed: ${args.input}`;
     },
@@ -115,7 +115,7 @@ suite("Tools", () => {
   });
 
   test("GSXTool execution", async () => {
-    const result = await testTool.execute({ input: "test" });
+    const result = await testTool.run({ input: "test" });
     expect(result).toBe("Processed: test");
   });
 

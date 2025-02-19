@@ -12,7 +12,7 @@ import {
 import { Stream } from "openai/streaming";
 import { z } from "zod";
 
-async function basicCompletion() {
+function basicCompletion() {
   const BasicCompletionWorkflow = gsx.Component<{}, ChatCompletionOutput>(
     "BasicCompletionWorkflow",
     () => (
@@ -44,7 +44,7 @@ async function basicCompletion() {
   return workflow.run({});
 }
 
-async function tools() {
+function tools() {
   // Define the schema as a Zod object
   const weatherSchema = z.object({
     location: z.string(),
@@ -58,7 +58,7 @@ async function tools() {
     name: "get_weather",
     description: "get the weather for a given location",
     schema: weatherSchema,
-    execute: async ({ location }: WeatherParams) => {
+    run: async ({ location }: WeatherParams) => {
       console.log("getting weather for", location);
       const weather = ["sunny", "cloudy", "rainy", "snowy"];
       return Promise.resolve({
@@ -96,7 +96,7 @@ async function tools() {
   return workflow.run({});
 }
 
-async function toolsStreaming() {
+function toolsStreaming() {
   // Define the schema as a Zod object
   const weatherSchema = z.object({
     location: z.string(),
@@ -110,7 +110,7 @@ async function toolsStreaming() {
     name: "get_weather",
     description: "get the weather for a given location",
     schema: weatherSchema,
-    execute: async ({ location }: WeatherParams) => {
+    run: async ({ location }: WeatherParams) => {
       console.log("getting weather for", location);
       const weather = ["sunny", "cloudy", "rainy", "snowy"];
       return Promise.resolve({
@@ -152,7 +152,7 @@ async function toolsStreaming() {
   return workflow.run({});
 }
 
-async function streamingCompletion() {
+function streamingCompletion() {
   const StreamingCompletionWorkflow = gsx.Component<
     {},
     Stream<ChatCompletionChunk>
@@ -185,7 +185,7 @@ async function streamingCompletion() {
   return workflow.run({});
 }
 
-async function structuredOutput() {
+function structuredOutput() {
   // Define a schema for rating trash bins
   const trashRatingSchema = z.object({
     bins: z.array(
@@ -238,7 +238,7 @@ async function structuredOutput() {
   return workflow.run({});
 }
 
-async function multiStepTools() {
+function multiStepTools() {
   // Weather tool (reusing existing schema)
   const weatherSchema = z.object({
     location: z.string(),
@@ -248,7 +248,7 @@ async function multiStepTools() {
     name: "get_weather",
     description: "Get the current weather for a location",
     schema: weatherSchema,
-    execute: async ({ location }) => {
+    run: async ({ location }) => {
       console.log("Getting weather for", location);
       // Simulate API delay
       const weather = ["sunny", "cloudy", "rainy", "snowy"];
@@ -269,7 +269,7 @@ async function multiStepTools() {
     description:
       "Find local services (restaurants, parks, or cafes) in a given location",
     schema: servicesSchema,
-    execute: async ({ service, location }) => {
+    run: async ({ service, location }) => {
       console.log(`Finding ${service} near ${location}`);
       // Simulate API delay
       const places = {
@@ -373,7 +373,6 @@ async function main() {
       console.log("multi-step tools completion 🔥");
       const multiStepResults = await multiStepTools();
       console.log(multiStepResults.choices[0].message.content);
-      console.log(JSON.stringify(multiStepResults.messages, null, 2));
       break;
 
     default:
