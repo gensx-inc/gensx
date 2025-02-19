@@ -52,9 +52,9 @@ export type GSXChatCompletionOutput<P> = P extends StreamingProps
     : ChatCompletionOutput;
 
 // Extract GSXChatCompletion implementation
-export const gsxChatCompletionImpl = <P extends GSXChatCompletionProps>(
+export const gsxChatCompletionImpl = async <P extends GSXChatCompletionProps>(
   props: P,
-): GSXChatCompletionOutput<P> => {
+): Promise<GSXChatCompletionOutput<P>> => {
   // Handle streaming case
   if (props.stream) {
     const { tools, ...rest } = props;
@@ -83,9 +83,10 @@ export const gsxChatCompletionImpl = <P extends GSXChatCompletionProps>(
       tools,
     }) as GSXChatCompletionOutput<P>;
   }
-  return (
-    <OpenAIChatCompletion {...rest} stream={false} />
-  ) as GSXChatCompletionOutput<P>;
+  const result = await gsx.execute<ChatCompletionOutput>(
+    <OpenAIChatCompletion {...rest} stream={false} />,
+  );
+  return result as GSXChatCompletionOutput<P>;
 };
 
 // Update component to use implementation
@@ -107,9 +108,7 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
   "ChatCompletion",
   async (props) => {
     if (props.stream) {
-      const stream = await gsx.execute<Stream<ChatCompletionChunk>>(
-        gsxChatCompletionImpl({ ...props, stream: true }),
-      );
+      const stream = await gsxChatCompletionImpl({ ...props, stream: true });
 
       // Transform Stream<ChatCompletionChunk> into AsyncIterableIterator<string>
       const generateTokens = async function* () {
@@ -123,9 +122,7 @@ export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
 
       return generateTokens();
     } else {
-      const response = await gsx.execute<ChatCompletionOutput>(
-        gsxChatCompletionImpl({ ...props, stream: false }),
-      );
+      const response = await gsxChatCompletionImpl({ ...props, stream: false });
       const content = response.choices[0]?.message?.content ?? "";
 
       // Use sync iterator for non-streaming case, matching ChatCompletion's behavior
