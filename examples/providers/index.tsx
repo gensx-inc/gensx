@@ -16,7 +16,7 @@ async function main() {
     },
   );
 
-  const workflow = gsx.workflow("ScrapeWorkflow", ScrapeWorkflow);
+  const workflow = gsx.Workflow("ScrapeWorkflow", ScrapeWorkflow);
 
   console.log("\n🚀 Scraping page from url:", url);
   const markdown = await workflow.run({
