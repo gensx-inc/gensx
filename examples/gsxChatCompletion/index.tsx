@@ -13,8 +13,8 @@ import { Stream } from "openai/streaming";
 import { z } from "zod";
 
 function basicCompletion() {
-  const BasicCompletionWorkflow = gsx.Component<{}, ChatCompletionOutput>(
-    "BasicCompletionWorkflow",
+  const BasicCompletionExample = gsx.Component<{}, ChatCompletionOutput>(
+    "BasicCompletionExample",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
@@ -36,9 +36,9 @@ function basicCompletion() {
     ),
   );
 
-  const workflow = gsx.workflow(
-    "BasicCompletionWorkflow",
-    BasicCompletionWorkflow,
+  const workflow = gsx.Workflow(
+    "BasicCompletionExampleWorkflow",
+    BasicCompletionExample,
   );
 
   return workflow.run({});
@@ -67,8 +67,8 @@ function tools() {
     },
   });
 
-  const ToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
-    "ToolsWorkflow",
+  const ToolsExample = gsx.Component<{}, ChatCompletionOutput>(
+    "ToolsExample",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
@@ -91,7 +91,7 @@ function tools() {
     ),
   );
 
-  const workflow = gsx.workflow("ToolsWorkflowExample", ToolsWorkflow);
+  const workflow = gsx.Workflow("ToolsExampleWorkflow", ToolsExample);
 
   return workflow.run({});
 }

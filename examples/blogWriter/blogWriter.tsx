@@ -143,23 +143,22 @@ const ParallelResearch = gsx.Component<
   );
 });
 
-interface BlogWritingWorkflowProps {
+interface BlogWriterProps {
   prompt: string;
 }
-export const BlogWritingWorkflow =
-  gsx.StreamComponent<BlogWritingWorkflowProps>(
-    "BlogWritingWorkflow",
-    ({ prompt }) => {
-      return (
-        <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-          <ParallelResearch prompt={prompt}>
-            {(research) => (
-              <LLMWriter prompt={prompt} research={research.flat()}>
-                {(draft) => <LLMEditor draft={draft} stream={true} />}
-              </LLMWriter>
-            )}
-          </ParallelResearch>
-        </OpenAIProvider>
-      );
-    },
-  );
+export const BlogWriter = gsx.StreamComponent<BlogWriterProps>(
+  "BlogWriter",
+  ({ prompt }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <ParallelResearch prompt={prompt}>
+          {(research) => (
+            <LLMWriter prompt={prompt} research={research.flat()}>
+              {(draft) => <LLMEditor draft={draft} stream={true} />}
+            </LLMWriter>
+          )}
+        </ParallelResearch>
+      </OpenAIProvider>
+    );
+  },
+);

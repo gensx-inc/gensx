@@ -38,7 +38,7 @@ export const CreateReport = gsx.Component<CreateReportProps, string>(
     </paper>`,
       )
       .join("\n")}
-      
+
     Please write a report answering the user's prompt using the papers provided.`;
 
     return (
@@ -100,8 +100,8 @@ interface DeepResearchProps {
   prompt: string;
 }
 
-export const DeepResearchWorkflow = gsx.Component<DeepResearchProps, string>(
-  "DeepResearchWorkflow",
+export const DeepResearch = gsx.Component<DeepResearchProps, string>(
+  "DeepResearch",
   ({ prompt }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>

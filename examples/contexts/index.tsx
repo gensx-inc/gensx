@@ -17,7 +17,7 @@ const Greeting = gsx.Component<{}, GreetingOutput>("Greeting", () => {
   return `Hello, ${user.name}!`;
 });
 
-const Workflow = gsx.Component("Workflow", () => {
+const ContextExample = gsx.Component("ContextExample", () => {
   return (
     <UserContext.Provider value={{ name: "John" }}>
       <Greeting />
@@ -27,7 +27,9 @@ const Workflow = gsx.Component("Workflow", () => {
 
 async function main() {
   // Provide a value to the context
-  const result = await gsx.workflow("ContextExample", Workflow).run({});
+  const result = await gsx
+    .Workflow("ContextExampleWorkflow", ContextExample)
+    .run({});
   console.log(result);
 }
 
