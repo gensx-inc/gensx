@@ -1,6 +1,6 @@
 {
   "name": "@gensx/cli",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "`GenSX command line tools",
   "bin": {
     "gensx": "./dist/run.js"
