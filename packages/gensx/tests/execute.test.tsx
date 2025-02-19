@@ -88,13 +88,19 @@ suite("execute", () => {
       expect(r1.result).toBe("hello");
       expect(r2.result).toBe("hello");
 
-      // Checkpoints from r1 and r2 are the same since they happened in parallel.
-      expect(Object.keys(r1.checkpoints).length).toBeGreaterThanOrEqual(2);
+      // There is a race conditon (because of the way we mock fetch to capture checkpoints), so either r1 or r2 will have 2 checkpoints and the other will have 0.
+      let checkpoints: typeof r1.checkpoints;
+      if (Object.keys(r1.checkpoints).length > 0) {
+        checkpoints = r1.checkpoints;
+      } else {
+        checkpoints = r2.checkpoints;
+      }
+      expect(Object.keys(checkpoints).length).toBeGreaterThanOrEqual(2);
       expect(
-        Object.values(r1.checkpoints).some(c => c.metadata?.num === "1"),
+        Object.values(checkpoints).some(c => c.metadata?.num === "1"),
       ).toBe(true);
       expect(
-        Object.values(r1.checkpoints).some(c => c.metadata?.num === "2"),
+        Object.values(checkpoints).some(c => c.metadata?.num === "2"),
       ).toBe(true);
     });
 

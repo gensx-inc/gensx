@@ -19,7 +19,6 @@ const originalFetch = global.fetch;
 afterEach(() => {
   vi.clearAllMocks();
   global.fetch = originalFetch;
-  checkpoints = {};
 });
 
 /**
@@ -68,8 +67,6 @@ export async function executeWithCheckpoints<T>(
   return { result, checkpoints, checkpointManager };
 }
 
-let checkpoints: Record<string, ExecutionNode> = {};
-
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export async function executeWorkflowWithCheckpoints<T>(
   element: ExecutableValue,
@@ -82,6 +79,8 @@ export async function executeWorkflowWithCheckpoints<T>(
   const oldApiKey = process.env.GENSX_API_KEY;
   process.env.GENSX_ORG = "test-org";
   process.env.GENSX_API_KEY = "test-api-key";
+
+  const checkpoints: Record<string, ExecutionNode> = {};
 
   // Set up fetch mock to capture checkpoints
   mockFetch((_input: FetchInput, options?: FetchInit) => {
