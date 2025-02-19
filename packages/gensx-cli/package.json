@@ -17,7 +17,6 @@
   ],
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch",
     "clean": "rm -rf dist",
     "compile": "tsc",
     "lint": "eslint .",
@@ -37,15 +36,16 @@
   "devDependencies": {
     "@tsconfig/node20": "^20.1.4",
     "@types/node": "^20.12.12",
+    "@vitest/coverage-istanbul": "^2.1.8",
     "@yao-pkg/pkg": "^6.3.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.4.5"
+    "vite": "^6.1.0",
+    "vite-plugin-dts": "^4.5.0",
+    "vitest": "^2.1.8"
   },
   "dependencies": {
     "commander": "^11.0.0",
     "consola": "^3.2.3",
-    "picocolors": "^1.0.1",
-    "typescript": "^5.3.3"
+    "picocolors": "^1.0.1"
   },
   "type": "module",
   "publishConfig": {
