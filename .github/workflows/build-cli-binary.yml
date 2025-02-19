@@ -45,9 +45,8 @@ jobs:
           VERSION=$(jq -r '.version' packages/gensx-cli/package.json)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Build CLI
+      - name: Build
         run: pnpm build
-        working-directory: packages/gensx-cli
 
       - name: Building...
         run: TARGET=${{ matrix.target }} pnpm run package
