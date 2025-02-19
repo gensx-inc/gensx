@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "commander": "^11.1.0",
+    "enquirer": "^2.4.1",
     "ora": "^8.0.1",
     "picocolors": "^1.0.0"
   },

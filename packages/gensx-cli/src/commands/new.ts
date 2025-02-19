@@ -2,7 +2,7 @@ import { createGensxProject } from "create-gensx";
 import pc from "picocolors";
 
 interface NewCommandOptions {
-  template: string;
+  template?: string;
   force: boolean;
 }
 

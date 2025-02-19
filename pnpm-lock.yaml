@@ -349,6 +349,9 @@ importers:
       commander:
         specifier: ^11.1.0
         version: 11.1.0
+      enquirer:
+        specifier: ^2.4.1
+        version: 2.4.1
       ora:
         specifier: ^8.0.1
         version: 8.2.0

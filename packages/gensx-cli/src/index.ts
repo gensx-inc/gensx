@@ -16,7 +16,7 @@ export function runCLI() {
     .command("new")
     .description("Create a new GenSX project")
     .argument("<project-directory>", "Directory to create the project in")
-    .option("-t, --template <type>", "Template to use (ts)", "ts")
+    .option("-t, --template <type>", "Template to use (ts)")
     .option("-f, --force", "Overwrite existing files", false)
     .action(newProject);
 

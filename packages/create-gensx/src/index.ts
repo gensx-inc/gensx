@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { promisify } from "util";
 
+import enquirer from "enquirer";
 import ora from "ora";
 import pc from "picocolors";
 
@@ -11,6 +12,10 @@ const exec = promisify(execCallback);
 
 const TEMPLATE_MAP: Record<string, string> = {
   ts: "typescript",
+};
+
+const TEMPLATE_NAMES: { [key in keyof typeof TEMPLATE_MAP]: string } = {
+  ts: "TypeScript Project",
 };
 
 interface Template {
@@ -53,6 +58,32 @@ async function listTemplates(): Promise<string[]> {
   }
 }
 
+async function selectTemplate(): Promise<string> {
+  const templates = await listTemplates();
+  const choices = templates.map((flag) => ({
+    name: flag,
+    value: flag,
+    message: TEMPLATE_NAMES[flag],
+  }));
+
+  if (choices.length === 0) {
+    throw new Error("No templates available");
+  }
+
+  if (choices.length === 1) {
+    return choices[0].value;
+  }
+
+  const answer = await enquirer.prompt<{ template: string }>({
+    type: "select",
+    name: "template",
+    message: "Select a template",
+    choices,
+  });
+
+  return answer.template;
+}
+
 async function copyTemplateFiles(templateName: string, targetPath: string) {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const templatePath = path.join(
@@ -87,7 +118,7 @@ async function copyTemplateFiles(templateName: string, targetPath: string) {
 }
 
 export interface CreateOptions {
-  template: string;
+  template?: string;
   force: boolean;
 }
 
@@ -96,12 +127,18 @@ export async function createGensxProject(
   options: CreateOptions,
 ) {
   const spinner = ora();
-  const { template: templateName, force } = options;
+  let { template: templateName, force } = options;
 
   try {
-    // Validate template exists
+    // Get available templates
+    spinner.start("Loading available templates");
     const templates = await listTemplates();
-    if (!templates.includes(templateName)) {
+    spinner.succeed();
+
+    // If no template specified, show selection menu
+    if (!templateName) {
+      templateName = await selectTemplate();
+    } else if (!templates.includes(templateName)) {
       spinner.fail();
       throw new Error(
         `Template "${templateName}" not found. Available templates: ${templates.join(", ")}`,
@@ -109,7 +146,11 @@ export async function createGensxProject(
     }
 
     // Load template
+    spinner.start(
+      `Loading template: ${pc.cyan(TEMPLATE_NAMES[templateName] || templateName)}`,
+    );
     const template = await loadTemplate(templateName);
+    spinner.succeed();
 
     const absoluteProjectPath = path.resolve(process.cwd(), projectPath);
 
