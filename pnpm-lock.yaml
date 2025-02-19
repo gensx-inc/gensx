@@ -82,31 +82,6 @@ importers:
         specifier: ^3.99.0
         version: 3.99.0(@cloudflare/workers-types@4.20241230.0)
 
-  examples/AnalyzeHackerNewsTrends:
-    dependencies:
-      '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
-      openai:
-        specifier: ^4.77.0
-        version: 4.80.1(ws@8.18.0)(zod@3.24.1)
-    devDependencies:
-      '@types/node':
-        specifier: ^20.17.11
-        version: 20.17.11
-      nodemon:
-        specifier: ^3.1.9
-        version: 3.1.9
-      tsx:
-        specifier: ^4.19.2
-        version: 4.19.2
-      typescript:
-        specifier: ^5.0.0
-        version: 5.7.3
-
   examples/blogWriter:
     dependencies:
       '@gensx/openai':
@@ -243,6 +218,31 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.7.2
+
+  examples/hackerNewsAnalyzer:
+    dependencies:
+      '@gensx/openai':
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
+      gensx:
+        specifier: workspace:*
+        version: link:../../packages/gensx
+      openai:
+        specifier: ^4.77.0
+        version: 4.80.1(ws@8.18.0)(zod@3.24.1)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.11
+        version: 20.17.11
+      nodemon:
+        specifier: ^3.1.9
+        version: 3.1.9
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.3
 
   examples/providers:
     dependencies:
@@ -7793,7 +7793,7 @@ snapshots:
       '@babel/traverse': 7.26.4
       '@babel/types': 7.26.3
       convert-source-map: 2.0.0
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@5.5.0)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -7864,7 +7864,7 @@ snapshots:
       '@babel/parser': 7.26.3
       '@babel/template': 7.25.9
       '@babel/types': 7.26.3
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@5.5.0)
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -10027,7 +10027,7 @@ snapshots:
   '@vitest/coverage-istanbul@2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))':
     dependencies:
       '@istanbuljs/schema': 0.1.3
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@5.5.0)
       istanbul-lib-coverage: 3.2.2
       istanbul-lib-instrument: 6.0.3
       istanbul-lib-report: 3.0.1
@@ -11003,10 +11003,6 @@ snapshots:
   de-indent@1.0.2: {}
 
   debug@3.2.7:
-    dependencies:
-      ms: 2.1.3
-
-  debug@4.4.0:
     dependencies:
       ms: 2.1.3
 
@@ -12526,7 +12522,7 @@ snapshots:
   istanbul-lib-source-maps@5.0.6:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.25
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@5.5.0)
       istanbul-lib-coverage: 3.2.2
     transitivePeerDependencies:
       - supports-color
@@ -15391,7 +15387,7 @@ snapshots:
   vite-node@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1):
     dependencies:
       cac: 6.7.14
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@5.5.0)
       es-module-lexer: 1.6.0
       pathe: 1.1.2
       vite: 5.4.11(@types/node@20.17.11)(lightningcss@1.29.1)
@@ -15432,7 +15428,7 @@ snapshots:
       '@volar/typescript': 2.4.11
       '@vue/language-core': 2.2.0(typescript@5.7.3)
       compare-versions: 6.1.1
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@5.5.0)
       kolorist: 1.8.0
       local-pkg: 0.5.1
       magic-string: 0.30.17
@@ -15492,7 +15488,7 @@ snapshots:
       '@vitest/spy': 2.1.8
       '@vitest/utils': 2.1.8
       chai: 5.1.2
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@5.5.0)
       expect-type: 1.1.0
       magic-string: 0.30.17
       pathe: 1.1.2
