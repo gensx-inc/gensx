@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon",
-    "start": "tsx ./src/index.tsx",
+    "start": "tsx ./src/index.ts",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
