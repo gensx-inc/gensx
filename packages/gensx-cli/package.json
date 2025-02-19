@@ -46,6 +46,7 @@
   "dependencies": {
     "commander": "^11.0.0",
     "consola": "^3.2.3",
+    "create-gensx": "workspace:*",
     "ini": "^5.0.0",
     "open": "^10.0.3",
     "ora": "^8.2.0",

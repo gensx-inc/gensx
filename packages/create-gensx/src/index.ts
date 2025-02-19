@@ -4,6 +4,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { promisify } from "util";
 
+import ora from "ora";
+import pc from "picocolors";
+
 const exec = promisify(execCallback);
 
 const TEMPLATE_MAP: Record<string, string> = {
@@ -92,52 +95,76 @@ export async function createGensxProject(
   projectPath: string,
   options: CreateOptions,
 ) {
+  const spinner = ora();
   const { template: templateName, force } = options;
 
-  // Validate template exists
-  const templates = await listTemplates();
-  if (!templates.includes(templateName)) {
-    throw new Error(
-      `Template "${templateName}" not found. Available templates: ${templates.join(", ")}`,
-    );
-  }
+  try {
+    // Validate template exists
+    const templates = await listTemplates();
+    if (!templates.includes(templateName)) {
+      spinner.fail();
+      throw new Error(
+        `Template "${templateName}" not found. Available templates: ${templates.join(", ")}`,
+      );
+    }
 
-  const template = await loadTemplate(templateName);
-  const absoluteProjectPath = path.resolve(process.cwd(), projectPath);
+    // Load template
+    const template = await loadTemplate(templateName);
 
-  // Create project directory
-  await mkdir(absoluteProjectPath, { recursive: true });
+    const absoluteProjectPath = path.resolve(process.cwd(), projectPath);
 
-  // check if the directory is empty
-  const files = await readdir(absoluteProjectPath);
-  if (files.length > 0 && !force) {
-    throw new Error(
-      `Directory "${absoluteProjectPath}" is not empty. Use --force to overwrite existing files.`,
-    );
-  }
+    // Create and validate project directory
+    spinner.start("Creating project directory");
+    await mkdir(absoluteProjectPath, { recursive: true });
 
-  // Copy template files
-  await copyTemplateFiles(templateName, absoluteProjectPath);
+    const files = await readdir(absoluteProjectPath);
+    if (files.length > 0 && !force) {
+      spinner.fail();
+      throw new Error(
+        `Directory "${absoluteProjectPath}" is not empty. Use --force to overwrite existing files.`,
+      );
+    }
+    spinner.succeed();
 
-  // Initialize npm project and install dependencies
-  process.chdir(absoluteProjectPath);
-  await exec("npm init -y");
+    // Copy template files
+    spinner.start("Copying template files");
+    await copyTemplateFiles(templateName, absoluteProjectPath);
+    spinner.succeed();
 
-  if (template.dependencies.length > 0) {
-    await exec(`npm install ${template.dependencies.join(" ")}`);
-  }
+    // Initialize npm project and install dependencies
+    process.chdir(absoluteProjectPath);
 
-  if (template.devDependencies.length > 0) {
-    await exec(`npm install -D ${template.devDependencies.join(" ")}`);
-  }
+    spinner.start("Initializing npm project");
+    await exec("npm init -y");
+    spinner.succeed();
 
-  console.info(`
-Successfully created GenSX project in ${absoluteProjectPath}
+    if (template.dependencies.length > 0) {
+      spinner.start("Installing dependencies");
+      await exec(`npm install ${template.dependencies.join(" ")}`);
+      spinner.succeed();
+    }
+
+    if (template.devDependencies.length > 0) {
+      spinner.start("Installing development dependencies");
+      await exec(`npm install -D ${template.devDependencies.join(" ")}`);
+      spinner.succeed();
+    }
+
+    // Show success message
+    console.info(`
+${pc.green("✔")} Successfully created GenSX project in ${pc.cyan(absoluteProjectPath)}
 
 To get started:
-  ${projectPath !== "." ? `cd ${projectPath}` : ""}
-  ${template.runCommand}
+  ${projectPath !== "." ? pc.cyan(`cd ${projectPath}`) : ""}
+  ${pc.cyan(template.runCommand)}
 
-Edit src/index.tsx to start building your GenSX application.
+Edit ${pc.cyan("src/index.tsx")} to start building your GenSX application.
 `);
+  } catch (error) {
+    // If spinner is still spinning, stop it with failure
+    if (spinner.isSpinning) {
+      spinner.fail();
+    }
+    throw error; // Re-throw to let caller handle the error
+  }
 }

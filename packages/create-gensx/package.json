@@ -7,6 +7,8 @@
     "node": ">=18.0.0"
   },
   "bin": "./dist/cli.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -20,7 +22,9 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "ora": "^8.0.1",
+    "picocolors": "^1.0.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
