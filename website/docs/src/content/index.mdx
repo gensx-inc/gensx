@@ -13,15 +13,21 @@ It uses `jsx` to define and orchestrate workflows with functional, reusable comp
 {/* prettier-ignore-start */}
 
 ```tsx
-const result = await gsx.execute(
-  <BlogWriter prompt="Write a blog post about AI developer tools">
-    {(blog) => (
-      <LLMEditor draft={blog}>
+const BlogWriter = gsx.Component<BlogWriterProps, string>(
+  "BlogWriter",
+  async ({ prompt }) => {
+    return (
+      <BlogDraftWriter prompt={prompt}>
+        {(blog) => (
+          <LLMEditor draft={blog}>
         {(draft) => console.log(draft)}
       </LLMEditor>
     )}
-  </BlogWriter>,
+  </BlogDraftWriter>,
 );
+
+const blogWritingWorkflow = gsx.workflow("BlogWritingWorkflow", BlogWriter);
+const result = await blogWritingWorkflow.run({ prompt: "Write a blog post about AI developer tools" });
 ```
 
 {/* prettier-ignore-end */}
