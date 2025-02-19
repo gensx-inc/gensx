@@ -1,68 +1,32 @@
-import type { Streamable } from "gensx";
-
-import { gsx } from "gensx";
-import OpenAI, { ClientOptions } from "openai";
 import {
-  ChatCompletionChunk,
-  ChatCompletionCreateParams,
-} from "openai/resources/index.mjs";
-import { Stream } from "openai/streaming";
+  ChatCompletion,
+  ChatCompletionProps,
+  GSXChatCompletion,
+  GSXChatCompletionOutput,
+  GSXChatCompletionProps,
+  GSXChatCompletionResult,
+} from "./gsx-completion.js";
+import {
+  OpenAIChatCompletion,
+  OpenAIChatCompletionProps,
+  OpenAIContext,
+  OpenAIProvider,
+} from "./openai.js";
+import { GSXTool } from "./tools.js";
 
-// Create a context for OpenAI
-export const OpenAIContext = gsx.createContext<{
-  client?: OpenAI;
-}>({});
+export {
+  OpenAIProvider,
+  GSXChatCompletion,
+  GSXTool,
+  OpenAIChatCompletion,
+  ChatCompletion,
+  OpenAIContext,
+};
 
-export const OpenAIProvider = gsx.Component<ClientOptions, never>(
-  "OpenAIProvider",
-  (args) => {
-    const client = new OpenAI(args);
-    return <OpenAIContext.Provider value={{ client }} />;
-  },
-  {
-    secretProps: ["apiKey"],
-  },
-);
-
-// Create a component for chat completions
-export const ChatCompletion = gsx.StreamComponent<ChatCompletionCreateParams>(
-  "ChatCompletion",
-  async (props) => {
-    const context = gsx.useContext(OpenAIContext);
-
-    if (!context.client) {
-      throw new Error(
-        "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-      );
-    }
-
-    if (props.stream) {
-      const stream = await context.client.chat.completions.create(props);
-
-      async function* generateTokens(): AsyncGenerator<
-        string,
-        void,
-        undefined
-      > {
-        for await (const chunk of stream as Stream<ChatCompletionChunk>) {
-          const content = chunk.choices[0]?.delta?.content;
-          if (content) {
-            yield content;
-          }
-        }
-      }
-
-      const streamable: Streamable = generateTokens();
-      return streamable;
-    } else {
-      const response = await context.client.chat.completions.create(props);
-      const content = response.choices[0]?.message?.content ?? "";
-
-      function* generateTokens() {
-        yield content;
-      }
-
-      return generateTokens();
-    }
-  },
-);
+export type {
+  GSXChatCompletionProps,
+  ChatCompletionProps,
+  OpenAIChatCompletionProps,
+  GSXChatCompletionOutput,
+  GSXChatCompletionResult,
+};

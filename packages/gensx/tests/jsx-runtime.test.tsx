@@ -31,4 +31,25 @@ suite("jsx-runtime", () => {
     );
     expect(result).toBe("test world");
   });
+
+  test("child does not receive children prop", async () => {
+    let childReceivedProps: Record<string, unknown> | undefined = undefined;
+
+    const Child = gsx.Component<{}, string>("Child", props => {
+      childReceivedProps = props;
+      return "child";
+    });
+
+    const Parent = gsx.Component<{}, string>("Parent", async () => {
+      return await gsx.execute(
+        <Child>{(val: string) => val + " extra"}</Child>,
+      );
+    });
+
+    await gsx.execute(<Parent />);
+
+    expect(childReceivedProps).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+    expect((childReceivedProps as any)?.children).toBeUndefined();
+  });
 });

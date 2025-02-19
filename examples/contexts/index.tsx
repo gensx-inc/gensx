@@ -17,17 +17,17 @@ const Greeting = gsx.Component<{}, GreetingOutput>("Greeting", () => {
   return `Hello, ${user.name}!`;
 });
 
+const Workflow = gsx.Component("Workflow", () => {
+  return (
+    <UserContext.Provider value={{ name: "John" }}>
+      <Greeting />
+    </UserContext.Provider>
+  );
+});
+
 async function main() {
   // Provide a value to the context
-  const result = await gsx.execute(
-    <UserContext.Provider
-      value={{
-        name: "John",
-      }}
-    >
-      <Greeting />
-    </UserContext.Provider>,
-  );
+  const result = await gsx.workflow("ContextExample", Workflow).run({});
   console.log(result);
 }
 

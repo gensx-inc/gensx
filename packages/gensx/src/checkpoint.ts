@@ -60,7 +60,7 @@ export class CheckpointManager implements CheckpointWriter {
   private readonly MIN_SECRET_LENGTH = 8;
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
-
+  public workflowName?: string;
   // Track active checkpoint write
   private activeCheckpoint: Promise<void> | null = null;
   private pendingUpdate = false;
@@ -127,6 +127,13 @@ export class CheckpointManager implements CheckpointWriter {
 
     // Add diagnostic timeout to detect stuck orphans
     this.checkOrphanTimeout(node.id, expectedParentId);
+  }
+
+  private isNativeFunction(value: unknown): boolean {
+    return (
+      typeof value === "function" &&
+      Function.prototype.toString.call(value).includes("[native code]")
+    );
   }
 
   private checkOrphanTimeout(nodeId: string, expectedParentId: string) {
@@ -223,7 +230,26 @@ export class CheckpointManager implements CheckpointWriter {
 
     try {
       // Create a deep copy of the execution tree for masking
-      const maskedRoot = this.maskExecutionTree(structuredClone(this.root));
+      const cloneWithoutFunctions = (obj: unknown): unknown => {
+        if (this.isNativeFunction(obj) || typeof obj === "function") {
+          return "[function]";
+        }
+        if (Array.isArray(obj)) {
+          return obj.map(cloneWithoutFunctions);
+        }
+        if (obj && typeof obj === "object" && !ArrayBuffer.isView(obj)) {
+          return Object.fromEntries(
+            Object.entries(obj).map(([key, value]) => [
+              key,
+              cloneWithoutFunctions(value),
+            ]),
+          );
+        }
+        return obj;
+      };
+
+      const treeCopy = cloneWithoutFunctions(this.root);
+      const maskedRoot = this.maskExecutionTree(treeCopy as ExecutionNode);
       const baseUrl =
         process.env.GENSX_CHECKPOINT_URL ?? "https://api.gensx.com";
       const url = join(baseUrl, `/org/${this.org}/executions`);
@@ -429,6 +455,16 @@ export class CheckpointManager implements CheckpointWriter {
 
   private scrubSecrets(data: unknown, nodeId?: string, path = ""): unknown {
     return this.withNode(nodeId ?? "", () => {
+      // Handle native functions
+      if (this.isNativeFunction(data)) {
+        return "[native function]";
+      }
+
+      // Handle functions
+      if (typeof data === "function") {
+        return "[function]";
+      }
+
       // Handle primitive values
       if (typeof data === "string" || typeof data === "number") {
         const strValue = String(data);
@@ -558,6 +594,11 @@ export class CheckpointManager implements CheckpointWriter {
       // Handle root node case
       if (!this.root) {
         this.root = node;
+
+        // If the workflow name is set, update the root node name.
+        if (this.workflowName) {
+          this.root.componentName = this.workflowName;
+        }
       } else if (this.root.parentId === node.id) {
         // Current root was waiting for this node as parent
         this.attachToParent(this.root, node);
@@ -624,6 +665,15 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
+  setWorkflowName(name: string) {
+    // Right now we just update the name of the root node. Eventually this should be separated from the workflow name.
+    this.workflowName = name;
+
+    if (this.root) {
+      this.root.componentName = name;
+    }
+  }
+
   updateNode(id: string, updates: Partial<ExecutionNode>) {
     const node = this.nodes.get(id);
     if (node) {
@@ -644,6 +694,9 @@ export class CheckpointManager implements CheckpointWriter {
       }
 
       Object.assign(node, updates);
+      if (node.id === this.root?.id) {
+        node.componentName = this.workflowName ?? node.componentName;
+      }
       this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to update unknown node:`, { id });

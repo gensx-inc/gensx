@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.9](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.8...gensx-v0.2.9) (2025-02-12)
+
+
+### 🐛 Bug Fixes
+
+* Remove console.log and fix eslint. ([#213](https://github.com/gensx-inc/gensx/issues/213)) ([a408e62](https://github.com/gensx-inc/gensx/commit/a408e62d6d15201b97351ef7d7f8c1f656941cef))
+* Separate `children` from other props before component execution ([#231](https://github.com/gensx-inc/gensx/issues/231)) ([954ac75](https://github.com/gensx-inc/gensx/commit/954ac75fc9f6a6c1c9bd8c3b2c3b2565f92ef8da))
+* various fixes for handling of functions and streams during resolution and checkpointing ([#232](https://github.com/gensx-inc/gensx/issues/232)) ([f58556c](https://github.com/gensx-inc/gensx/commit/f58556c1b5c851144e777673c4c2fe04c7f9b27f))
+
 ## [0.2.8](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.7...gensx-v0.2.8) (2025-01-31)
 
 

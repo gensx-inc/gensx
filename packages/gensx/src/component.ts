@@ -1,5 +1,6 @@
 import type {
   DeepJSXElement,
+  ExecutableValue,
   GsxComponent,
   GsxStreamComponent,
   MaybePromise,
@@ -30,10 +31,11 @@ export function Component<P, O>(
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
   defaultOpts?: DefaultOpts,
 ): GsxComponent<WithComponentOpts<P>, O> {
-  const GsxComponent: GsxComponent<WithComponentOpts<P>, O> = async props => {
+  const GsxComponent = async (props: WithComponentOpts<P>) => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
+    const currentNodeId = context.getCurrentNodeId();
 
     // Merge component opts with unique secrets
     const mergedOpts = {
@@ -58,13 +60,16 @@ export function Component<P, O>(
         ),
         componentOpts: mergedOpts,
       },
-      context.getCurrentNodeId(),
+      currentNodeId,
     );
 
     try {
-      const result = await context.withCurrentNode(nodeId, () => {
+      const result = await context.withCurrentNode(nodeId, async () => {
         const { componentOpts, ...componentProps } = props;
-        return resolveDeep(fn(componentProps as P));
+        const fnResult = await fn(componentProps as P);
+        return resolveDeep<O | DeepJSXElement<O> | ExecutableValue<O>>(
+          fnResult,
+        );
       });
 
       // Complete the checkpoint node with the result
@@ -87,16 +92,23 @@ export function Component<P, O>(
     });
   }
 
-  return GsxComponent;
+  Object.defineProperty(GsxComponent, "__gsxFramework", {
+    value: true,
+  });
+
+  // Brand the component with its output type
+  return GsxComponent as GsxComponent<WithComponentOpts<P>, O>;
 }
 
 export function StreamComponent<P>(
   name: string,
-  fn: (props: P) => MaybePromise<Streamable | JSX.Element>,
+  fn: (
+    props: P & { stream?: boolean },
+  ) => MaybePromise<Streamable | JSX.Element>,
   defaultOpts?: DefaultOpts,
-): GsxStreamComponent<WithComponentOpts<P>> {
+): GsxStreamComponent<WithComponentOpts<P & { stream?: boolean }>> {
   const GsxStreamComponent: GsxStreamComponent<
-    WithComponentOpts<P>
+    WithComponentOpts<P & { stream?: boolean }>
   > = async props => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
@@ -131,7 +143,7 @@ export function StreamComponent<P>(
     try {
       const iterator: Streamable = await context.withCurrentNode(nodeId, () => {
         const { componentOpts, ...componentProps } = props;
-        return resolveDeep(fn(componentProps as P));
+        return resolveDeep(fn(componentProps as P & { stream?: boolean }));
       });
 
       if (props.stream) {
@@ -190,5 +202,15 @@ export function StreamComponent<P>(
     });
   }
 
-  return GsxStreamComponent;
+  Object.defineProperty(GsxStreamComponent, "__gsxFramework", {
+    value: true,
+  });
+
+  Object.defineProperty(GsxStreamComponent, "__gsxStreamComponent", {
+    value: true,
+  });
+
+  return GsxStreamComponent as GsxStreamComponent<
+    WithComponentOpts<P & { stream?: boolean }>
+  >;
 }

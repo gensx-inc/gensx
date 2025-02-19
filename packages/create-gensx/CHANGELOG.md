@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.6...create-gensx-v0.1.7) (2025-02-12)
+
+
+### 🐛 Bug Fixes
+
+* Remove console.log and fix eslint. ([#213](https://github.com/gensx-inc/gensx/issues/213)) ([a408e62](https://github.com/gensx-inc/gensx/commit/a408e62d6d15201b97351ef7d7f8c1f656941cef))
+
 ## [0.1.6](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.5...create-gensx-v0.1.6) (2025-01-28)
 
 

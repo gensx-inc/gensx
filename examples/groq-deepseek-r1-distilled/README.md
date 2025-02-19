@@ -1,6 +1,6 @@
 # Groq DeepSeek R1 Distilled Example
 
-This example demonstrates how to use the Groq DeepSeek R1 Distilled model with [GenSX](https://gensx.dev).
+This example demonstrates how to use the Groq DeepSeek R1 Distilled model with [GenSX](https://gensx.com).
 
 ## Setup
 

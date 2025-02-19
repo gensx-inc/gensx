@@ -1,12 +1,12 @@
 # GenSX ⚡️
 
 [![npm version](https://badge.fury.io/js/gensx.svg)](https://badge.fury.io/js/gensx)
-[![Website](https://img.shields.io/badge/Visit-gensx.dev-orange)](https://gensx.dev)
+[![Website](https://img.shields.io/badge/Visit-gensx.com-orange)](https://gensx.com)
 [![Discord](https://img.shields.io/badge/Join-Discord-blue)](https://discord.gg/wRmwfz5tCy)
 [![X](https://img.shields.io/badge/Follow-X-blue)](https://x.com/gensx_inc)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-[GenSX](https://gensx.dev/) is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed to create and orchestrate workflows.
+[GenSX](https://gensx.com/) is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed to create and orchestrate workflows.
 
 Designed for backend development, GenSX makes it easy to build and test powerful LLM workflows that can be turned into REST APIs or integrated into existing applications.
 
@@ -19,7 +19,7 @@ Designed for backend development, GenSX makes it easy to build and test powerful
 - 🌊 **Streaming Built-in**: Stream responses with a single prop change, no refactoring needed
 - 🚀 **Built for Scale**: Start simple and evolve to complex patterns like agents and reflection without changing your programming model
 
-Check out the [documentation](https://gensx.dev/overview) to learn more about building LLM applications with GenSX.
+Check out the [documentation](https://gensx.com/overview) to learn more about building LLM applications with GenSX.
 
 ## Getting Started
 
@@ -35,7 +35,7 @@ To add GenSX to an existing project, run the following command and follow the in
 npm install gensx @gensx/openai
 ```
 
-Check out the [Quickstart Guide](https://gensx.dev/quickstart) for more details on getting started.
+Check out the [Quickstart Guide](https://gensx.com/quickstart) for more details on getting started.
 
 ## Building a workflow
 
@@ -141,7 +141,7 @@ This monorepo contains GenSX, its related packages, examples, and documentation.
 
 - `packages/` - Published packages
 - `examples/` - Example applications and use cases
-- `docs` - `https://gensx.dev` Documentation
+- `docs` - `https://gensx.com` Documentation
 
 ## License
 
