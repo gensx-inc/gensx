@@ -1,6 +1,6 @@
 # Structured Outputs Example
 
-This example demonstrates how to use Structured Outputs with GenSX. Learn more in the [structured outputs docs](https://gensx.com/patterns/structured-outputs).
+This example demonstrates how to use Structured Outputs with GenSX. Learn more in the [structured outputs docs](https://gensx.com/docs/patterns/structured-outputs).
 
 ## Usage
 

@@ -6,6 +6,11 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/create-gensx"
+  },
   "bin": "./dist/cli.js",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

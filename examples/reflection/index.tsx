@@ -67,8 +67,8 @@ const CleanBuzzwords = gsx.Component<
   return text;
 });
 
-const CleanBuzzwordsWorkflow = gsx.Component<{ text: string }, string>(
-  "CleanBuzzwordsWorkflow",
+const CleanBuzzwordsReflectionLoop = gsx.Component<{ text: string }, string>(
+  "CleanBuzzwordsReflectionLoop",
   ({ text }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -81,7 +81,7 @@ const CleanBuzzwordsWorkflow = gsx.Component<{ text: string }, string>(
 async function main() {
   const workflow = gsx.Workflow(
     "CleanBuzzwordsWorkflow",
-    CleanBuzzwordsWorkflow,
+    CleanBuzzwordsReflectionLoop,
   );
   const withoutBuzzwords = await workflow.run({
     text: `We are a cutting-edge technology company leveraging bleeding-edge AI solutions to deliver best-in-class products to our customers. Our agile development methodology ensures we stay ahead of the curve with paradigm-shifting innovations.

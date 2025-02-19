@@ -70,7 +70,7 @@ jobs:
         if: ${{ steps.release.outputs.releases_created }}
         run: |
           pnpm install --frozen-lockfile
-          pnpm turbo run build
+          pnpm build
 
       - name: Publish to NPM 🚀
         if: ${{ steps.release.outputs.releases_created }}

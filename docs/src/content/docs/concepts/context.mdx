@@ -165,7 +165,7 @@ Now when you use the `ScrapePage` component in your workflow, you'll wrap it in 
 ```tsx
 const markdown = await gsx.execute(
   <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
-    <ScrapePage url="https://gensx.com/overview/" />
+    <ScrapePage url="https://gensx.com/docs/" />
   </FirecrawlProvider>,
 );
 ```
@@ -178,7 +178,7 @@ You can nest multiple providers to combine different services or configurations 
 const result = await gsx.execute(
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
-      <WebPageSummarizer url="https://gensx.com/overview/" />
+      <WebPageSummarizer url="https://gensx.com/docs/" />
     </FirecrawlProvider>
   </OpenAIProvider>,
 );
