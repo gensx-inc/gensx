@@ -79,7 +79,7 @@ const CleanBuzzwordsWorkflow = gsx.Component<{ text: string }, string>(
 );
 
 async function main() {
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "CleanBuzzwordsWorkflow",
     CleanBuzzwordsWorkflow,
   );

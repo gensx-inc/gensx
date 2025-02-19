@@ -7,14 +7,14 @@ import { getTopStoryDetails, type HNStory } from "./hn.js";
 const getHNPostUrl = (id: number | string) =>
   `https://news.ycombinator.com/item?id=${id}`;
 
-interface PGTweetWriterProps {
+interface WritePGTweetProps {
   context: string;
   prompt: string;
 }
 
-type PGTweetWriterOutput = string;
-const PGTweetWriter = gsx.Component<PGTweetWriterProps, PGTweetWriterOutput>(
-  "PGTweetWriter",
+type WritePGTweetOutput = string;
+const WritePGTweet = gsx.Component<WritePGTweetProps, WritePGTweetOutput>(
+  "WritePGTweet",
   ({ context, prompt }) => {
     const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
@@ -42,13 +42,13 @@ Focus on the most surprising or counterintuitive point rather than trying to sum
   },
 );
 
-interface PGEditorProps {
+interface WritePGReportProps {
   content: string;
 }
 
-type PGEditorOutput = string;
-const PGEditor = gsx.Component<PGEditorProps, PGEditorOutput>(
-  "PGEditor",
+type WritePGReportOutput = string;
+const WritePGReport = gsx.Component<WritePGReportProps, WritePGReportOutput>(
+  "WritePGReport",
   ({ content }) => {
     const PROMPT = `
 You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
@@ -196,17 +196,17 @@ ${story.comments
   },
 );
 
-interface TrendAnalyzerProps {
+interface AnalyzeTrendsProps {
   analyses: {
     summary: string;
     commentAnalysis: string;
   }[];
 }
 
-type TrendReport = string;
+type AnalyzeTrendsOutput = string;
 
-const TrendAnalyzer = gsx.Component<TrendAnalyzerProps, TrendReport>(
-  "TrendAnalyzer",
+const AnalyzeTrends = gsx.Component<AnalyzeTrendsProps, AnalyzeTrendsOutput>(
+  "AnalyzeTrends",
   ({ analyses }) => {
     const PROMPT = `
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
@@ -257,13 +257,13 @@ ${commentAnalysis}
   },
 );
 
-interface HNCollectorProps {
+interface FetchHNPostsProps {
   limit: number;
 }
 
-type HNCollectorOutput = HNStory[]; // Array of stories
-const HNCollector = gsx.Component<HNCollectorProps, HNCollectorOutput>(
-  "HNCollector",
+type FetchHNPostsOutput = HNStory[]; // Array of stories
+const FetchHNPosts = gsx.Component<FetchHNPostsProps, FetchHNPostsOutput>(
+  "FetchHNPosts",
   async ({ limit }) => {
     // We can only get up to 500 stories from the API
     const MAX_HN_STORIES = 500;
@@ -309,43 +309,43 @@ const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
   },
 );
 
-interface HNAnalyzerWorkflowProps {
+interface AnalyzeHackerNewsTrendsProps {
   postCount: number;
 }
 
-export interface HNAnalyzerWorkflowOutput {
+export interface AnalyzeHackerNewsTrendsOutput {
   report: string;
   tweet: string;
 }
 
-export const HNAnalyzerWorkflow = gsx.Component<
-  HNAnalyzerWorkflowProps,
-  HNAnalyzerWorkflowOutput
->("HNAnalyzerWorkflow", ({ postCount }) => {
+export const AnalyzeHackerNewsTrends = gsx.Component<
+  AnalyzeHackerNewsTrendsProps,
+  AnalyzeHackerNewsTrendsOutput
+>("AnalyzeHackerNewsTrends", ({ postCount }) => {
   return (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <HNCollector limit={postCount}>
+      <FetchHNPosts limit={postCount}>
         {(stories) => (
           <AnalyzeHNPosts stories={stories}>
             {({ analyses }) => (
-              <TrendAnalyzer analyses={analyses}>
+              <AnalyzeTrends analyses={analyses}>
                 {(report) => (
-                  <PGEditor content={report}>
+                  <WritePGReport content={report}>
                     {(editedReport) => (
-                      <PGTweetWriter
+                      <WritePGTweet
                         context={editedReport}
                         prompt="Summarize the HN trends in a tweet"
                       >
                         {(tweet) => ({ report: editedReport, tweet })}
-                      </PGTweetWriter>
+                      </WritePGTweet>
                     )}
-                  </PGEditor>
+                  </WritePGReport>
                 )}
-              </TrendAnalyzer>
+              </AnalyzeTrends>
             )}
           </AnalyzeHNPosts>
         )}
-      </HNCollector>
+      </FetchHNPosts>
     </OpenAIProvider>
   );
 });

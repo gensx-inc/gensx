@@ -1,10 +1,10 @@
 import { gsx } from "gensx";
 
-import { BlogWriter } from "./blogWriter.js";
+import { WriteBlog } from "./blogWriter.js";
 
 async function main() {
   console.log("\n🚀 Starting blog writing workflow");
-  const wf = gsx.Workflow("BlogWriterWorkflow", BlogWriter);
+  const wf = gsx.Workflow("BlogWriterWorkflow", WriteBlog);
   const stream = await wf.run({
     stream: true,
     prompt: "Write a blog post about the future of AI",

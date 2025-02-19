@@ -119,8 +119,8 @@ function toolsStreaming() {
     },
   });
 
-  const ToolsStreamingWorkflow = gsx.Component<{}, Stream<ChatCompletionChunk>>(
-    "ToolsStreamingWorkflow",
+  const ToolsStreamingExample = gsx.Component<{}, Stream<ChatCompletionChunk>>(
+    "ToolsStreamingExample",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
@@ -144,9 +144,9 @@ function toolsStreaming() {
     ),
   );
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "ToolsStreamingWorkflow",
-    ToolsStreamingWorkflow,
+    ToolsStreamingExample,
   );
 
   return workflow.run({});
@@ -177,7 +177,7 @@ function streamingCompletion() {
     </OpenAIProvider>
   ));
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "StreamingCompletionWorkflow",
     StreamingCompletionWorkflow,
   );
@@ -230,7 +230,7 @@ function structuredOutput() {
     ),
   );
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "StructuredOutputWorkflow",
     StructuredOutputWorkflow,
   );
@@ -315,7 +315,7 @@ Please explain your thinking as you go through this analysis.`,
     ),
   );
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "MultiStepToolsWorkflow",
     MultiStepToolsWorkflow,
   );

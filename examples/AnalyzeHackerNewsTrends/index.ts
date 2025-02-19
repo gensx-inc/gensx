@@ -7,7 +7,7 @@ import { HNAnalyzerWorkflow } from "./hackerNewsAnalyzer.js";
 async function main() {
   console.log("\n🚀 Starting HN analysis workflow...");
   const { report, tweet } = await gsx
-    .workflow("HNAnalyzerExample", HNAnalyzerWorkflow)
+    .Workflow("HNAnalyzerExample", HNAnalyzerWorkflow)
     .run({
       postCount: 500,
     });
