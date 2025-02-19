@@ -9,6 +9,8 @@ import { stringify as stringifyIni } from "ini";
 import open from "open";
 import ora from "ora";
 
+import { waitForKeypress } from "../utils/terminal";
+
 const API_BASE_URL = process.env.GENSX_API_BASE_URL ?? "https://api.gensx.com";
 const APP_BASE_URL = process.env.GENSX_APP_BASE_URL ?? "https://app.gensx.com";
 
@@ -105,7 +107,8 @@ ${configContent}`;
 async function createLoginRequest(
   verificationCode: string,
 ): Promise<DeviceAuthRequest> {
-  const response = await fetch(path.join(API_BASE_URL, "auth/device/request"), {
+  const url = new URL("/auth/device/request", API_BASE_URL);
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -136,11 +139,9 @@ async function pollLoginStatus(
   requestId: string,
   verificationCode: string,
 ): Promise<DeviceAuthStatus> {
-  const response = await fetch(
-    path.join(API_BASE_URL, `auth/device/request/${requestId}`) +
-      "?code_verifier=" +
-      verificationCode,
-  );
+  const url = new URL(`/auth/device/request/${requestId}`, API_BASE_URL);
+  url.searchParams.set("code_verifier", verificationCode);
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to check login status: ${response.statusText}`);
@@ -162,45 +163,29 @@ async function pollLoginStatus(
 }
 
 export async function login(): Promise<void> {
-  // Set raw mode to read single keystrokes
-  const { stdin } = process;
-  const wasRaw = stdin.isRaw;
   const spinner = ora();
 
   try {
-    spinner.start("Starting GenSX login process");
+    spinner.start("Logging in to GenSX");
 
     const verificationCode = generateVerificationCode();
     const request = await createLoginRequest(verificationCode);
     spinner.succeed();
 
-    const authUrl =
-      path.join(APP_BASE_URL, "auth/device", request.requestId) +
-      "?code_verifier=" +
-      verificationCode;
+    const authUrl = new URL(`/auth/device/${request.requestId}`, APP_BASE_URL);
+    authUrl.searchParams.set("code_verifier", verificationCode);
 
     consola.box(
-      "Press Enter to open the login page in your browser:\n\n" + authUrl,
+      `Press any key to open your browser and authenticate with GenSX:
+
+${authUrl.toString()}`,
     );
 
-    // Set raw mode and wait for keypress
-    stdin.setRawMode(true);
-    stdin.resume();
-    await new Promise<void>((resolve) => {
-      const onData = (data: Buffer) => {
-        // Only respond to Enter key
-        if (data[0] === 0x0d) {
-          stdin.removeListener("data", onData);
-          stdin.setRawMode(wasRaw);
-          stdin.pause();
-          resolve();
-        }
-      };
-      stdin.on("data", onData);
-    });
+    // Wait for any keypress
+    await waitForKeypress();
 
     spinner.start("Opening browser");
-    await open(authUrl);
+    await open(authUrl.toString());
     spinner.succeed();
 
     spinner.start("Waiting for authentication");
@@ -221,16 +206,11 @@ export async function login(): Promise<void> {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } while (status.status === "pending");
   } catch (error) {
+    consola.error("Error:", error);
     spinner.fail(
       "Login failed: " +
         (error instanceof Error ? error.message : String(error)),
     );
     throw error; // Let the error propagate up
-  } finally {
-    // Always ensure we restore stdin state
-    if (stdin.isRaw !== wasRaw) {
-      stdin.setRawMode(wasRaw);
-    }
-    stdin.pause();
   }
 }
