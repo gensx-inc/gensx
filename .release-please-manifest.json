@@ -2,5 +2,5 @@
   "packages/gensx": "0.2.10",
   "packages/gensx-openai": "0.1.7",
   "packages/create-gensx": "0.1.8",
-  "packages/gensx-cli": "0.1.0"
+  "packages/gensx-cli": "0.1.1"
 }

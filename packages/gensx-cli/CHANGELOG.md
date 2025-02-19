@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.0...gensx-cli-v0.1.1) (2025-02-19)
+
+
+### 🐛 Bug Fixes
+
+* Add hashbang for using npx gensx ([#286](https://github.com/gensx-inc/gensx/issues/286)) ([5aae4ec](https://github.com/gensx-inc/gensx/commit/5aae4ecd6786e45be77b64a7b7d6320acbe63775))
+
 ## 0.1.0 (2025-02-19)
 
 
