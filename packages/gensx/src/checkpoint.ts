@@ -694,6 +694,9 @@ export class CheckpointManager implements CheckpointWriter {
       }
 
       Object.assign(node, updates);
+      if (node.id === this.root?.id) {
+        node.componentName = this.workflowName ?? node.componentName;
+      }
       this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to update unknown node:`, { id });

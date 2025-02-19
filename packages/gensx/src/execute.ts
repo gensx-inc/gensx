@@ -52,6 +52,10 @@ export function workflow<P extends { stream?: boolean }, O>(
   return {
     run: async props => {
       const context = new ExecutionContext({});
+
+      const workflowContext = context.getWorkflowContext();
+      workflowContext.checkpointManager.setWorkflowName(name);
+
       const result = await withContext(context, async () => {
         const componentResult = await component(props);
         const resolved = await resolveDeep<O | Streamable | string>(
@@ -59,9 +63,6 @@ export function workflow<P extends { stream?: boolean }, O>(
         );
         return resolved;
       });
-
-      const workflowContext = context.getWorkflowContext();
-      workflowContext.checkpointManager.setWorkflowName(name);
 
       const rootId = workflowContext.checkpointManager.root?.id;
       if (rootId) {
