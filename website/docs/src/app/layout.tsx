@@ -7,6 +7,7 @@ import "nextra-theme-docs/style.css";
 import "./globals.css";
 import { Figtree } from "next/font/google";
 import Logo from "./components/Logo";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata = {
   metadataBase: new URL("https://gensx.com/docs"),
@@ -56,6 +57,7 @@ export default async function RootLayout({ children }) {
         >
           {children}
         </Layout>
+        <Analytics />
       </body>
     </html>
   );

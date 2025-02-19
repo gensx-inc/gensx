@@ -3,6 +3,7 @@ import { Figtree } from "next/font/google";
 import "./globals.css";
 import { GridPatternDemo } from "@/components/ui/grid-pattern";
 import Nav from "@/components/nav";
+import { Analytics } from "@vercel/analytics/react";
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -27,6 +28,7 @@ export default function RootLayout({
         <GridPatternDemo />
         <Nav />
         {children}
+        <Analytics />
       </body>
     </html>
   );
