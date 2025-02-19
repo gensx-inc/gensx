@@ -7,14 +7,14 @@ import { getTopStoryDetails, type HNStory } from "./hn.js";
 const getHNPostUrl = (id: number | string) =>
   `https://news.ycombinator.com/item?id=${id}`;
 
-interface WritePGTweetProps {
+interface WriteTweetProps {
   context: string;
   prompt: string;
 }
 
-type WritePGTweetOutput = string;
-const WritePGTweet = gsx.Component<WritePGTweetProps, WritePGTweetOutput>(
-  "WritePGTweet",
+type WriteTweetOutput = string;
+const WriteTweet = gsx.Component<WriteTweetProps, WriteTweetOutput>(
+  "WriteTweet",
   ({ context, prompt }) => {
     const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
@@ -42,13 +42,13 @@ Focus on the most surprising or counterintuitive point rather than trying to sum
   },
 );
 
-interface WritePGReportProps {
+interface EditReportProps {
   content: string;
 }
 
-type WritePGReportOutput = string;
-const WritePGReport = gsx.Component<WritePGReportProps, WritePGReportOutput>(
-  "WritePGReport",
+type EditReportOutput = string;
+const EditReport = gsx.Component<EditReportProps, EditReportOutput>(
+  "EditReport",
   ({ content }) => {
     const PROMPT = `
 You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
@@ -196,17 +196,17 @@ ${story.comments
   },
 );
 
-interface AnalyzeTrendsProps {
+interface GenerateReportProps {
   analyses: {
     summary: string;
     commentAnalysis: string;
   }[];
 }
 
-type AnalyzeTrendsOutput = string;
+type GenerateReportOutput = string;
 
-const AnalyzeTrends = gsx.Component<AnalyzeTrendsProps, AnalyzeTrendsOutput>(
-  "AnalyzeTrends",
+const GenerateReport = gsx.Component<GenerateReportProps, GenerateReportOutput>(
+  "GenerateReport",
   ({ analyses }) => {
     const PROMPT = `
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
@@ -328,20 +328,20 @@ export const AnalyzeHackerNewsTrends = gsx.Component<
         {(stories) => (
           <AnalyzeHNPosts stories={stories}>
             {({ analyses }) => (
-              <AnalyzeTrends analyses={analyses}>
+              <GenerateReport analyses={analyses}>
                 {(report) => (
-                  <WritePGReport content={report}>
+                  <EditReport content={report}>
                     {(editedReport) => (
-                      <WritePGTweet
+                      <WriteTweet
                         context={editedReport}
                         prompt="Summarize the HN trends in a tweet"
                       >
                         {(tweet) => ({ report: editedReport, tweet })}
-                      </WritePGTweet>
+                      </WriteTweet>
                     )}
-                  </WritePGReport>
+                  </EditReport>
                 )}
-              </AnalyzeTrends>
+              </GenerateReport>
             )}
           </AnalyzeHNPosts>
         )}
