@@ -282,7 +282,7 @@ async function main() {
     | "structuredOutput"
     | "multiStepTools";
 
-  const example: Example = "multiStepTools";
+  const example: Example = "streamingCompletion";
 
   switch (example as Example) {
     case "basicCompletion":

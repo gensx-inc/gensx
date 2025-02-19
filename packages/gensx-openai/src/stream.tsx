@@ -22,10 +22,9 @@ type StreamCompletionProps = Omit<
 
 type StreamCompletionOutput = Stream<ChatCompletionChunk>;
 
-export const StreamCompletion = gsx.Component<
-  StreamCompletionProps,
-  StreamCompletionOutput
->("StreamCompletion", async (props) => {
+export const streamCompletionImpl = async (
+  props: StreamCompletionProps,
+): Promise<StreamCompletionOutput> => {
   const { stream, tools, ...rest } = props;
 
   // If we have tools, first make a synchronous call to get tool calls
@@ -79,4 +78,9 @@ export const StreamCompletion = gsx.Component<
       stream={true}
     />,
   );
-});
+};
+
+export const StreamCompletion = gsx.Component<
+  StreamCompletionProps,
+  StreamCompletionOutput
+>("StreamCompletion", streamCompletionImpl);

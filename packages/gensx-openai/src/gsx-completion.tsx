@@ -10,7 +10,7 @@ import { Stream } from "openai/streaming";
 import { z } from "zod";
 
 import { OpenAIChatCompletion } from "./openai.js";
-import { StreamCompletion } from "./stream.js";
+import { streamCompletionImpl } from "./stream.js";
 import { structuredOutputImpl } from "./structured-output.js";
 import { GSXTool, toolsCompletionImpl } from "./tools.js";
 // Types for the composition-based implementation
@@ -58,9 +58,11 @@ export const gsxChatCompletionImpl = <P extends GSXChatCompletionProps>(
   // Handle streaming case
   if (props.stream) {
     const { tools, ...rest } = props;
-    return (
-      <StreamCompletion {...rest} tools={tools} stream={true} />
-    ) as GSXChatCompletionOutput<P>;
+    return streamCompletionImpl({
+      ...rest,
+      tools,
+      stream: true,
+    }) as GSXChatCompletionOutput<P>;
   }
 
   // Handle structured output case
