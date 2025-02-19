@@ -2,12 +2,12 @@ import fs from "fs/promises";
 
 import { gsx } from "gensx";
 
-import { HNAnalyzerWorkflow } from "./hackerNewsAnalyzer.js";
+import { AnalyzeHackerNewsTrends } from "./analyzeHNTrends.js";
 
 async function main() {
   console.log("\n🚀 Starting HN analysis workflow...");
   const { report, tweet } = await gsx
-    .Workflow("HNAnalyzerExample", HNAnalyzerWorkflow)
+    .Workflow("AnalyzeHackerNewsWorkflow", AnalyzeHackerNewsTrends)
     .run({
       postCount: 500,
     });
