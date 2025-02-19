@@ -1,5 +1,5 @@
 {
-  "name": "nextjs",
+  "name": "gensx-home",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -28,7 +28,7 @@
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.474.0",
     "motion": "^12.3.1",
-    "next": "15.1.6",
+    "next": "canary",
     "next-themes": "^0.4.4",
     "prismjs": "^1.29.0",
     "react": "^19.0.0",

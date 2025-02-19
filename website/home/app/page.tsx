@@ -6,7 +6,6 @@ import { useState } from "react";
 import { HyperText } from "@/components/ui/hyper-text";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ScriptCopyBtn } from "@/components/ui/script-copy-btn";
 import Link from "next/link";
 
 export default function Home() {
@@ -26,41 +25,23 @@ export default function Home() {
     components: `import { Component } from 'gensx';
 import { OpenAIChatCompletion, OpenAIChatCompletionProps } from 'gensx/openai';
 
-type GenerateTextOutput = {
-  text: string;
-}
-const GenerateText = Component<OpenAIChatCompletionProps, GenerateTextOutput>("Generate Text",
-  (props: OpenAIChatCompletionProps) => {
-    const chatCompletionProps = {
-      model: "gpt-4o",
-      temperature: 0.7,
-      maxTokens: 2000,
-    };
-    return (
-      <OpenAIChatCompletion props={{...props, ...chatCompletionProps}}>
-        {(output: ChatCompletionOutput) => {
-          return { text: output.choices[0].message.content };
-        }}
-      </OpenAIChatCompletion>
-    );
-  }
-);
-
-type WriteBlogProps = {
+type WriteBlogDraftProps = {
   prompt: string;
 }
-type WriteBlogOutput = {
-  blog: string;
+type WriteBlogDraftOutput = {
+  draft: string;
 }
-const WriteBlog = Component<WriteBlogProps, WriteBlogOutput>("Write Blog",  
-  (props: WriteBlogProps) => {
-    const chatCompletionProps = {
-      prompt: \`Write a blog for the prompt: \${props.prompt}\`,
-    };
+
+const WriteBlogDraft = Component("Write Blog Draft",
+  (props: WriteBlogDraftProps) => {
+    const blogPrompt = [
+      {
+        role: "user",
+        content: \`Write a blog for the prompt: \${props.prompt}\`,
+      },
+    ];
     return (
-      <GenerateText props={chatCompletionProps}>
-        {(output: GenerateTextOutput) => output.text}
-      </GenerateText>
+      <ChatCompletion messages={chatCompletionMessages} />
     );
   }
 );
@@ -71,15 +52,17 @@ type RemoveBuzzWordsProps = {
 type RemoveBuzzWordsOutput = {
   blog: string;
 }
-const RemoveBuzzWords = Component<RemoveBuzzWordsProps, RemoveBuzzWordsOutput>("Remove Buzz Words", 
+const RemoveBuzzWords = Component("Remove Buzz Words",
   (props: RemoveBuzzWordsProps) => {
-    const chatCompletionProps = {
-      prompt: \`Remove common buzzwords and jargon from this text while preserving the meaning: \${props.draft}\`,
+    const chatCompletionMessages = [
+      {
+        role: "user",
+        content: \`Remove common buzzwords and jargon from this text while preserving the meaning: \${props.draft}\`,
+      },
+    ];
     };
     return (
-      <GenerateText props={chatCompletionProps}>
-        {(output: GenerateTextOutput) => output.text}
-      </GenerateText>
+      <ChatCompletion messages={chatCompletionMessages} />
     );
   }
 );
@@ -93,8 +76,7 @@ type BlogWorkflowProps = {
 type BlogWorkflowOutput = {
   blog: string;
 }
-const WriteBlogWorkflow = Workflow<BlogWorkflowInput, BlogWorkflowOutput>(
-  "Blog Workflow",
+const WriteBlogWorkflow = Workflow("Blog Workflow",
   (props: BlogWorkflowInput) => (
     <WriteBlog prompt={props.prompt}>
       {(output: WriteBlogOutput) => (
@@ -107,6 +89,13 @@ const WriteBlogWorkflow = Workflow<BlogWorkflowInput, BlogWorkflowOutput>(
     </WriteBlog>
   )
 );
+
+Const blogWriter = gsx.Component( <WriteBlog> <next></WriteBlog>
+
+Const blogWritingWorkflow = gsx.Workflow(“name”, BlogWriter)
+
+Const result = blowWritingWorkflow.run({ prompt: “foo” });
+
 
 const result = WriteBlogWorkflow.run({ prompt: "Write a blog post about AI developer tools." });
 `,
@@ -137,19 +126,19 @@ const agent = new Agent({
   model: "gpt-4",
   temperature: 0.7,
   maxTokens: 1000,
-  
+
   // Define custom decision making
   async decide(context) {
     const { message, memory } = context;
-    
+
     // Access agent's memory
     const relevantHistory = await memory.search(message);
-    
+
     // Make decisions based on context
     if (relevantHistory.length > 0) {
       return this.useHistoricalContext(relevantHistory);
     }
-    
+
     return this.generateNewResponse(message);
   }
 });`,
@@ -164,29 +153,29 @@ const agent = new Agent({
   }[] = [
     {
       type: "components",
-      title: "Define Components",
+      title: "Components",
       mobileTitle: "Components",
       description:
         "Create building blocks for your app with reusable components.",
     },
     {
       type: "workflows",
-      title: "Build Workflows",
+      title: "Workflows",
       mobileTitle: "Workflows",
       description: "Use Components to build and run workflows.",
     },
     {
       type: "agents",
-      title: "Orchestrate Agents",
-      mobileTitle: "Agents",
-      description: "Wire agents together to create more complex workflows.",
+      title: "Agentic Patterns",
+      mobileTitle: "Agentic Patterns",
+      description: "Expressive and powerful agentic patterns.",
     },
     {
       type: "llms",
-      title: "Exchangable LLMs",
+      title: "Composable and Reusable",
       mobileTitle: "LLMs",
       description:
-        "Switch between different LLMs to see which one works best for your use case.",
+        "Install or publish components on npm and use throughout your workflows.",
     },
   ];
 
@@ -202,13 +191,13 @@ const agent = new Agent({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.0, ease: "easeOut" }}
-          className="max-w-3xl mx-auto flex flex-col items-center text-center"
+          className="max-w-4xl mx-auto flex flex-col items-center text-center"
         >
-          <h1 className="text-4xl md:text-6xl font-bold text-center">
-            The AI framework built for TypeScript developers
+          <h1 className="text-2xl md:text-6xl font-bold text-center">
+            The TypeScript framework for agents & workflows
           </h1>
           <p className="max-w-2xl text-md md:text-xl text-gray-600 mt-6 leading-relaxed text-center">
-            Easy to learn. Lightning fast dev loop. Reusable components.
+            Build complex AI applications with React-like components.
           </p>
           <div className="flex gap-4 mt-8 justify-center">
             <Link href="/docs/quickstart">
@@ -236,7 +225,7 @@ const agent = new Agent({
               </Button>
             </Link>
           </div>
-          <ScriptCopyBtnDemo />
+          {/* <ScriptCopyBtnDemo /> */}
         </motion.div>
 
         {/* Example Picker Section */}
@@ -246,6 +235,10 @@ const agent = new Agent({
           transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
           className="w-full max-w-5xl mx-auto mt-12"
         >
+          {/* <div className="text-xl font-bold text-center mx-auto mb-4 w-[500px]">
+            If you can build a React component, you should be able to build an
+            AI agent or workflow...
+          </div> */}
           {/* Mobile Picker */}
           <div className="block md:hidden">
             <div className="flex gap-0 relative">
@@ -377,7 +370,7 @@ const agent = new Agent({
 
         {/* Uncomment or add new sections as needed */}
         {/*
-        <motion.section 
+        <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
@@ -397,20 +390,20 @@ const agent = new Agent({
   );
 }
 
-function ScriptCopyBtnDemo() {
-  const customCommandMap = {
-    npm: "npm create gensx@latest my-app",
-    npx: "npx create gensx my-app",
-    yarn: "yarn create gensx my-app",
-    pnpm: "pnpm create gensx my-app",
-  };
-  return (
-    <ScriptCopyBtn
-      showMultiplePackageOptions={true}
-      codeLanguage="shell"
-      lightTheme="nord"
-      darkTheme="vitesse-dark"
-      commandMap={customCommandMap}
-    />
-  );
-}
+// function ScriptCopyBtnDemo() {
+//   const customCommandMap = {
+//     npm: "npm create gensx@latest my-app",
+//     npx: "npx create gensx my-app",
+//     yarn: "yarn create gensx my-app",
+//     pnpm: "pnpm create gensx my-app",
+//   };
+//   return (
+//     <ScriptCopyBtn
+//       showMultiplePackageOptions={true}
+//       codeLanguage="shell"
+//       lightTheme="nord"
+//       darkTheme="vitesse-dark"
+//       commandMap={customCommandMap}
+//     />
+//   );
+// }

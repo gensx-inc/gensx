@@ -11,14 +11,14 @@ export const metadata: Metadata = {
 };
 
 export default function BlogIndex() {
-  const posts = getAllPosts();
+  const allPosts = getAllPosts();
+  // Filter out posts that start with underscore
+  const posts = allPosts.filter((post) => !post.slug.startsWith("_"));
 
   return (
     <div className="min-h-screen w-full max-w-7xl mx-auto pt-32 px-8 md:px-8 pb-20">
       <div className="max-w-4xl mx-auto">
-        <AnimatedTitle>
-          News, tips and resources <br /> about GenSX
-        </AnimatedTitle>
+        <AnimatedTitle>News, tips and resources</AnimatedTitle>
         <div className="space-y-6 md:space-y-8">
           {posts.map((post, index) => (
             <AnimatedArticle key={post.slug} index={index}>

@@ -1,6 +1,7 @@
-export default {
+const meta = {
   index: "Overview",
   "basic-concepts": "Basic Concepts",
+  cloud: "Cloud (Beta)",
   quickstart: "Quickstart",
   "why-jsx": "Why JSX?",
   concepts: "Concepts",
@@ -10,3 +11,5 @@ export default {
     display: "hidden",
   },
 };
+
+export default meta;

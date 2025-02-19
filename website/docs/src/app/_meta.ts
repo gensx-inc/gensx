@@ -1,1 +1,2 @@
-export default {};
+const meta = {};
+export default meta;

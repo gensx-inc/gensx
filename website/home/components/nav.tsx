@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { HyperText } from "./ui/hyper-text";
 import { motion } from "framer-motion";
-import { ArrowRight, Menu } from "lucide-react";
+import { Menu, ArrowUpRight } from "lucide-react";
 // Replace Sheet components with Dropdown components
 import {
   DropdownMenu,
@@ -39,13 +39,33 @@ function NavMenu({ simple = false }: NavMenuProps) {
       <ul className="space-y-4">
         <li>
           <Link href="/company" className="block text-gray-800 text-sm">
-            Company
+            Blog
           </Link>
         </li>
         <li>
-          <Link href="/blog" className="block text-gray-800 text-sm">
-            Blog
-          </Link>
+          <motion.a
+            href="/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`relative py-2 transition-colors text-sm group inline-flex items-center gap-1
+              ${
+                pathname === "/docs"
+                  ? "text-gray-900 font-medium"
+                  : pathname === "/"
+                    ? "text-gray-900 hover:text-gray-900"
+                    : "text-gray-800 hover:text-gray-900"
+              }
+              after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full
+              after:origin-left after:scale-x-0 after:bg-[#ffde59] after:transition-transform after:duration-300
+              after:z-10
+              ${pathname === "/docs" ? "after:scale-x-100" : "hover:after:scale-x-100 group-hover:after:scale-x-100"}
+            `}
+          >
+            <span>Docs</span>
+            <span className="inline-block opacity-0 -translate-x-2 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0">
+              <ArrowUpRight size={16} />
+            </span>
+          </motion.a>
         </li>
       </ul>
     );
@@ -53,23 +73,6 @@ function NavMenu({ simple = false }: NavMenuProps) {
 
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-8">
-      <Link
-        href="/company"
-        className={`relative py-2 transition-colors text-sm
-          ${
-            pathname === "/company"
-              ? "text-gray-900 font-medium"
-              : pathname === "/"
-                ? "text-gray-900 hover:text-gray-900"
-                : "text-gray-800 hover:text-gray-900"
-          }
-          after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full
-          after:origin-left after:scale-x-0 after:bg-[#ffde59] after:transition-transform after:duration-300
-          ${pathname === "/company" ? "after:scale-x-100" : "hover:after:scale-x-100"}
-        `}
-      >
-        Company
-      </Link>
       <Link
         href="/blog"
         className={`relative py-2 transition-colors text-sm
@@ -87,6 +90,29 @@ function NavMenu({ simple = false }: NavMenuProps) {
       >
         Blog
       </Link>
+      <motion.a
+        href="/docs"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`relative py-2 transition-colors text-sm group inline-flex items-center gap-1
+          ${
+            pathname === "/docs"
+              ? "text-gray-900 font-medium"
+              : pathname === "/"
+                ? "text-gray-900 hover:text-gray-900"
+                : "text-gray-800 hover:text-gray-900"
+          }
+          after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full
+          after:origin-left after:scale-x-0 after:bg-[#ffde59] after:transition-transform after:duration-300
+          after:z-10
+          ${pathname === "/docs" ? "after:scale-x-100" : "hover:after:scale-x-100 group-hover:after:scale-x-100"}
+        `}
+      >
+        <span>Docs</span>
+        <span className="inline-block opacity-0 -translate-x-2 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0">
+          <ArrowUpRight size={16} />
+        </span>
+      </motion.a>
     </div>
   );
 }
@@ -104,15 +130,15 @@ function SocialLinks({ showLabels = false }: { showLabels?: boolean }) {
     tap: { scale: 0.95, transition: { duration: 0.1 } },
   };
 
-  const docsTextVariants = {
-    rest: { x: 0 },
-    hover: { x: -5, transition: { duration: 0.3 } },
-  };
+  // const docsTextVariants = {
+  //   rest: { x: 0 },
+  //   hover: { x: -5, transition: { duration: 0.3 } },
+  // };
 
-  const docsArrowVariants = {
-    rest: { opacity: 0, x: 8 },
-    hover: { opacity: 1, x: 0, transition: { duration: 0.3 } },
-  };
+  // const docsArrowVariants = {
+  //   rest: { opacity: 0, x: 8 },
+  //   hover: { opacity: 1, x: 0, transition: { duration: 0.3 } },
+  // };
 
   if (showLabels) {
     return (
@@ -186,7 +212,7 @@ function SocialLinks({ showLabels = false }: { showLabels?: boolean }) {
 
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-8">
-      <a
+      {/* <a
         href="/docs"
         rel="noopener noreferrer"
         className="text-gray-800 hover:text-gray-900 transition-colors text-sm"
@@ -202,7 +228,7 @@ function SocialLinks({ showLabels = false }: { showLabels?: boolean }) {
             <ArrowRight size={16} />
           </motion.span>
         </motion.div>
-      </a>
+      </a> */}
 
       <MotionLink
         href="https://github.com/gensx-inc/gensx"
