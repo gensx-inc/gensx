@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon",
-    "start": "tsx ./src/index.tsx",
+    "start": "tsx ./src/index.ts",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
@@ -19,8 +19,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@gensx/openai": "^0.1.5",
-    "gensx": "^0.2.7",
+    "@gensx/openai": "workspace:*",
+    "gensx": "workspace:*",
     "openai": "^4.80.1"
   },
   "devDependencies": {

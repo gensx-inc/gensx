@@ -85,34 +85,6 @@ importers:
         specifier: ^3.99.0
         version: 3.99.0(@cloudflare/workers-types@4.20241230.0)
 
-  examples/agent:
-    dependencies:
-      '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
-      openai:
-        specifier: ^4.77.4
-        version: 4.80.1(ws@8.18.0)(zod@3.24.1)
-      zod:
-        specifier: ^3.24.1
-        version: 3.24.1
-    devDependencies:
-      '@types/node':
-        specifier: ^20.17.11
-        version: 20.17.11
-      nodemon:
-        specifier: ^3.1.9
-        version: 3.1.9
-      tsx:
-        specifier: ^4.19.2
-        version: 4.19.2
-      typescript:
-        specifier: ^5.7.2
-        version: 5.7.2
-
   examples/blogWriter:
     dependencies:
       '@gensx/openai':
@@ -200,11 +172,11 @@ importers:
   examples/groq-deepseek-r1-distilled:
     dependencies:
       '@gensx/openai':
-        specifier: ^0.1.5
-        version: 0.1.5(gensx@0.2.7)(openai@4.80.1(ws@8.18.0)(zod@3.24.1))
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
       gensx:
-        specifier: ^0.2.7
-        version: 0.2.7
+        specifier: workspace:*
+        version: link:../../packages/gensx
       openai:
         specifier: ^4.80.1
         version: 4.80.1(ws@8.18.0)(zod@3.24.1)
@@ -429,6 +401,9 @@ importers:
 
   packages/gensx-openai:
     dependencies:
+      gensx:
+        specifier: workspace:>=0.2.1
+        version: link:../gensx
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -442,9 +417,6 @@ importers:
       '@vitest/coverage-istanbul':
         specifier: ^2.1.8
         version: 2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))
-      gensx:
-        specifier: workspace:*
-        version: link:../gensx
       openai:
         specifier: ^4.77
         version: 4.77.4(zod@3.24.1)
@@ -1564,13 +1536,6 @@ packages:
 
   '@formatjs/intl-localematcher@0.6.0':
     resolution: {integrity: sha512-4rB4g+3hESy1bHSBG3tDFaMY2CH67iT7yne1e+0CLTsGLDcmoEWWpJjjpWVaYgYfYuohIRuo0E+N536gd2ZHZA==}
-
-  '@gensx/openai@0.1.5':
-    resolution: {integrity: sha512-IX3/mIFdo7BS3HhCe4Jj4PBBuI/7t4XQUFuM9yb4f0QEzzymmRy2SRxYTOVWpNhCswPTLkECf6meACYs6Unp8A==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      gensx: '>=0.2.1'
-      openai: ^4.77
 
   '@headlessui/react@2.2.0':
     resolution: {integrity: sha512-RzCEg+LXsuI7mHiSomsu/gBJSjpupm6A1qIZ5sWjd7JhARNlMiSA4kKfJpCKwU9tE+zMRterhhrP74PvfJrpXQ==}
@@ -4403,10 +4368,6 @@ packages:
 
   functions-have-names@1.2.3:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
-
-  gensx@0.2.7:
-    resolution: {integrity: sha512-SmpdfyDVvDaDkHZi0O+z0t/3a+LLa35CpiNpq0sSqscg2CitcdxaDxPyptkijs1J621XG323Btgdn+1H/m0H5g==}
-    engines: {node: '>=18.0.0'}
 
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
@@ -8207,11 +8168,6 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@gensx/openai@0.1.5(gensx@0.2.7)(openai@4.80.1(ws@8.18.0)(zod@3.24.1))':
-    dependencies:
-      gensx: 0.2.7
-      openai: 4.80.1(ws@8.18.0)(zod@3.24.1)
-
   '@headlessui/react@2.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@floating-ui/react': 0.26.28(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11081,8 +11037,8 @@ snapshots:
       '@typescript-eslint/parser': 8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2)
       eslint: 9.17.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.8.0(eslint-plugin-import@2.31.0)(eslint@9.17.0(jiti@2.4.2))
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.17.0(jiti@2.4.2))
       eslint-plugin-react: 7.37.4(eslint@9.17.0(jiti@2.4.2))
       eslint-plugin-react-hooks: 5.1.0(eslint@9.17.0(jiti@2.4.2))
@@ -11105,7 +11061,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0)(eslint@9.17.0(jiti@2.4.2)):
+  eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.0(supports-color@5.5.0)
@@ -11116,18 +11072,18 @@ snapshots:
       stable-hash: 0.0.4
       tinyglobby: 0.2.10
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2)
       eslint: 9.17.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.8.0(eslint-plugin-import@2.31.0)(eslint@9.17.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
@@ -11138,7 +11094,7 @@ snapshots:
       eslint: 9.17.0(jiti@2.4.2)
       eslint-compat-utils: 0.5.1(eslint@9.17.0(jiti@2.4.2))
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2)):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -11149,7 +11105,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.17.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
@@ -11562,8 +11518,6 @@ snapshots:
       is-callable: 1.2.7
 
   functions-have-names@1.2.3: {}
-
-  gensx@0.2.7: {}
 
   gensync@1.0.0-beta.2: {}
 

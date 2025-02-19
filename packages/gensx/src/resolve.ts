@@ -1,6 +1,6 @@
-import { ExecutionContext, getCurrentContext } from "./context";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { ExecutionContext } from "./context";
 import { isStreamable } from "./stream";
-import { ExecutableValue } from "./types";
 
 /**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.
@@ -42,7 +42,7 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
 
   // Handle functions first
   if (typeof value === "function" && value.name !== "Object") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if ((value as any).__gsxFramework) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       return await resolveDeep(value());
@@ -62,15 +62,4 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
 
   // Base case: primitive value
   return value as T;
-}
-
-/**
- * Executes a JSX element or any other value, ensuring all promises and nested values are resolved.
- * This is the main entry point for executing workflow components.
- */
-export async function execute<T>(element: ExecutableValue): Promise<T> {
-  const context = getCurrentContext().getWorkflowContext();
-  const result = (await resolveDeep(element)) as T;
-  context.checkpointManager.write();
-  return result;
 }

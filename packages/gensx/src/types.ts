@@ -42,25 +42,40 @@ export type DeepJSXElement<T> = T extends (infer Item)[]
     : T | JSX.Element;
 
 // Allow children function to return plain objects that will be executed
-
-export type ExecutableValue =
+export type ExecutableValue<T = unknown> =
   | Element
   | Element[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-redundant-type-constituents
-  | Record<string, Element | any>;
+  | Primitive
+  | Streamable
+  | Record<string, Element | Primitive | Streamable>
+  | T[]
+  | Record<string, T>;
 
 // Component props as a type alias instead of interface
 export type Args<P, O> = P & {
   children?:
-    | ((output: O) => MaybePromise<ExecutableValue | Primitive>)
-    // support child functions that do not return anything, but maybe do some other side effect
+    | ((output: O) => MaybePromise<ExecutableValue<O> | Primitive>)
     | ((output: O) => void)
     | ((output: O) => Promise<void>);
 };
 
-export type GsxComponent<P, O> = (
-  props: Args<P, O>,
-) => MaybePromise<DeepJSXElement<O> | ExecutableValue>;
+/**
+ * A component that returns either:
+ * - The output type O directly
+ * - JSX that will resolve to type O
+ * - A promise of either of the above
+ */
+export type GsxComponent<P, O> = (props: Args<P, O>) => MaybePromise<
+  O | DeepJSXElement<O> | ExecutableValue<O>
+> /*
+ * Use branding to preserve output type information.
+ * This allows direct access to the output type O while maintaining
+ * compatibility with the more flexible JSX composition system.
+ */ & {
+  readonly __brand: "gsx-component";
+  readonly __outputType: O;
+  readonly __rawProps: P;
+};
 
 export type Streamable =
   | AsyncIterableIterator<string>

@@ -67,18 +67,28 @@ const CleanBuzzwords = gsx.Component<
   return text;
 });
 
-async function main() {
-  const withoutBuzzwords = await gsx.execute<string>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <CleanBuzzwords
-        text="We are a cutting-edge technology company leveraging bleeding-edge AI solutions to deliver best-in-class products to our customers. Our agile development methodology ensures we stay ahead of the curve with paradigm-shifting innovations.
+const CleanBuzzwordsWorkflow = gsx.Component<{ text: string }, string>(
+  "CleanBuzzwordsWorkflow",
+  ({ text }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <CleanBuzzwords text={text} />
+      </OpenAIProvider>
+    );
+  },
+);
 
+async function main() {
+  const workflow = gsx.workflow(
+    "CleanBuzzwordsWorkflow",
+    CleanBuzzwordsWorkflow,
+  );
+  const withoutBuzzwords = await workflow.run({
+    text: `We are a cutting-edge technology company leveraging bleeding-edge AI solutions to deliver best-in-class products to our customers. Our agile development methodology ensures we stay ahead of the curve with paradigm-shifting innovations.
 Our mission-critical systems utilize cloud-native architectures and next-generation frameworks to create synergistic solutions that drive digital transformation. By thinking outside the box, we empower stakeholders with scalable and future-proof applications that maximize ROI.
 
-Through our holistic approach to disruptive innovation, we create game-changing solutions that move the needle and generate impactful results. Our best-of-breed technology stack combined with our customer-centric focus allows us to ideate and iterate rapidly in this fast-paced market."
-      />
-    </OpenAIProvider>,
-  );
+Through our holistic approach to disruptive innovation, we create game-changing solutions that move the needle and generate impactful results. Our best-of-breed technology stack combined with our customer-centric focus allows us to ideate and iterate rapidly in this fast-paced market.`,
+  });
 
   console.log("result:\n", withoutBuzzwords);
 }

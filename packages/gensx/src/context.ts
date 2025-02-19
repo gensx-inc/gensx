@@ -1,5 +1,5 @@
 import { resolveDeep } from "./resolve";
-import { Args, Context } from "./types";
+import { Args, Context, GsxComponent } from "./types";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
@@ -17,7 +17,7 @@ function createContextSymbol() {
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
 
-  function Provider(props: Args<{ value: T }, ExecutionContext>) {
+  const Provider = (props: Args<{ value: T }, ExecutionContext>) => {
     return wrapWithFramework(() => {
       const currentContext = getCurrentContext();
 
@@ -25,13 +25,16 @@ export function createContext<T>(defaultValue: T): Context<T> {
         currentContext.withContext({ [contextSymbol]: props.value }),
       );
     });
-  }
+  };
 
   const context = {
     __type: "Context" as const,
     defaultValue,
     symbol: contextSymbol,
-    Provider,
+    Provider: Provider as unknown as GsxComponent<
+      { value: T },
+      ExecutionContext
+    >,
   };
 
   return context;

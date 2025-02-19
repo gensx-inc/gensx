@@ -60,7 +60,7 @@ export class CheckpointManager implements CheckpointWriter {
   private readonly MIN_SECRET_LENGTH = 8;
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
-
+  public workflowName?: string;
   // Track active checkpoint write
   private activeCheckpoint: Promise<void> | null = null;
   private pendingUpdate = false;
@@ -594,6 +594,11 @@ export class CheckpointManager implements CheckpointWriter {
       // Handle root node case
       if (!this.root) {
         this.root = node;
+
+        // If the workflow name is set, update the root node name.
+        if (this.workflowName) {
+          this.root.componentName = this.workflowName;
+        }
       } else if (this.root.parentId === node.id) {
         // Current root was waiting for this node as parent
         this.attachToParent(this.root, node);
@@ -660,6 +665,15 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
+  setWorkflowName(name: string) {
+    // Right now we just update the name of the root node. Eventually this should be separated from the workflow name.
+    this.workflowName = name;
+
+    if (this.root) {
+      this.root.componentName = name;
+    }
+  }
+
   updateNode(id: string, updates: Partial<ExecutionNode>) {
     const node = this.nodes.get(id);
     if (node) {
@@ -680,6 +694,9 @@ export class CheckpointManager implements CheckpointWriter {
       }
 
       Object.assign(node, updates);
+      if (node.id === this.root?.id) {
+        node.componentName = this.workflowName ?? node.componentName;
+      }
       this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to update unknown node:`, { id });

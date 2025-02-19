@@ -8,27 +8,35 @@ import { Stream } from "openai/streaming";
 import { z } from "zod";
 
 async function basicCompletion() {
-  const results = await gsx.execute<ChatCompletionOutput>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
-        messages={[
-          {
-            role: "system",
-            content:
-              "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
-          },
-          {
-            role: "user",
-            content: `What do you think of kubernetes in one paragraph?`,
-          },
-        ]}
-        model="gpt-4o-mini"
-        temperature={0.7}
-      />
-    </OpenAIProvider>,
+  const BasicCompletionWorkflow = gsx.Component<{}, ChatCompletionOutput>(
+    "BasicCompletionWorkflow",
+    () => (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <GSXChatCompletion
+          messages={[
+            {
+              role: "system",
+              content:
+                "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
+            },
+            {
+              role: "user",
+              content: `What do you think of kubernetes in one paragraph?`,
+            },
+          ]}
+          model="gpt-4o-mini"
+          temperature={0.7}
+        />
+      </OpenAIProvider>
+    ),
   );
 
-  return results;
+  const workflow = gsx.workflow(
+    "BasicCompletionWorkflow",
+    BasicCompletionWorkflow,
+  );
+
+  return workflow.run({});
 }
 
 async function tools() {
@@ -54,28 +62,33 @@ async function tools() {
     },
   });
 
-  const results = await gsx.execute<ChatCompletionOutput>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
-        messages={[
-          {
-            role: "system",
-            content:
-              "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
-          },
-          {
-            role: "user",
-            content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
-          },
-        ]}
-        model="gpt-4o-mini"
-        temperature={0.7}
-        tools={[tool]}
-      />
-    </OpenAIProvider>,
+  const ToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
+    "ToolsWorkflow",
+    () => (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <GSXChatCompletion
+          messages={[
+            {
+              role: "system",
+              content:
+                "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
+            },
+            {
+              role: "user",
+              content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
+            },
+          ]}
+          model="gpt-4o-mini"
+          temperature={0.7}
+          tools={[tool]}
+        />
+      </OpenAIProvider>
+    ),
   );
 
-  return results;
+  const workflow = gsx.workflow("ToolsWorkflowExample", ToolsWorkflow);
+
+  return workflow.run({});
 }
 
 async function toolsStreaming() {
@@ -101,33 +114,44 @@ async function toolsStreaming() {
     },
   });
 
-  const results = await gsx.execute<Stream<ChatCompletionChunk>>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
-        stream={true}
-        messages={[
-          {
-            role: "system",
-            content:
-              "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
-          },
-          {
-            role: "user",
-            content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
-          },
-        ]}
-        model="gpt-4o-mini"
-        temperature={0.7}
-        tools={[tool]}
-      />
-    </OpenAIProvider>,
+  const ToolsStreamingWorkflow = gsx.Component<{}, Stream<ChatCompletionChunk>>(
+    "ToolsStreamingWorkflow",
+    () => (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <GSXChatCompletion
+          stream={true}
+          messages={[
+            {
+              role: "system",
+              content:
+                "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
+            },
+            {
+              role: "user",
+              content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
+            },
+          ]}
+          model="gpt-4o-mini"
+          temperature={0.7}
+          tools={[tool]}
+        />
+      </OpenAIProvider>
+    ),
   );
 
-  return results;
+  const workflow = gsx.workflow(
+    "ToolsStreamingWorkflow",
+    ToolsStreamingWorkflow,
+  );
+
+  return workflow.run({});
 }
 
 async function streamingCompletion() {
-  const results = await gsx.execute<Stream<ChatCompletionChunk>>(
+  const StreamingCompletionWorkflow = gsx.Component<
+    {},
+    Stream<ChatCompletionChunk>
+  >("StreamingCompletionWorkflow", () => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <GSXChatCompletion
         stream={true}
@@ -145,10 +169,15 @@ async function streamingCompletion() {
         model="gpt-4o-mini"
         temperature={0.7}
       />
-    </OpenAIProvider>,
+    </OpenAIProvider>
+  ));
+
+  const workflow = gsx.workflow(
+    "StreamingCompletionWorkflow",
+    StreamingCompletionWorkflow,
   );
 
-  return results;
+  return workflow.run({});
 }
 
 async function structuredOutput() {
@@ -171,29 +200,37 @@ async function structuredOutput() {
 
   type TrashRating = z.infer<typeof trashRatingSchema>;
 
-  const results = await gsx.execute<TrashRating>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
-        messages={[
-          {
-            role: "system",
-            content:
-              "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun.",
-          },
-          {
-            role: "user",
-            content:
-              "Rate and review three different trash bins in the neighborhood. Be creative with the locations!",
-          },
-        ]}
-        model="gpt-4o-mini"
-        temperature={0.7}
-        outputSchema={trashRatingSchema}
-      />
-    </OpenAIProvider>,
+  const StructuredOutputWorkflow = gsx.Component<{}, TrashRating>(
+    "StructuredOutputWorkflow",
+    () => (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <GSXChatCompletion
+          messages={[
+            {
+              role: "system",
+              content:
+                "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun.",
+            },
+            {
+              role: "user",
+              content:
+                "Rate and review three different trash bins in the neighborhood. Be creative with the locations!",
+            },
+          ]}
+          model="gpt-4o-mini"
+          temperature={0.7}
+          outputSchema={trashRatingSchema}
+        />
+      </OpenAIProvider>
+    ),
   );
 
-  return results;
+  const workflow = gsx.workflow(
+    "StructuredOutputWorkflow",
+    StructuredOutputWorkflow,
+  );
+
+  return workflow.run({});
 }
 
 async function multiStepTools() {
@@ -244,33 +281,41 @@ async function multiStepTools() {
     },
   });
 
-  const results = await gsx.execute<ChatCompletionOutput>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
-        messages={[
-          {
-            role: "system",
-            content:
-              "You are a helpful local guide who provides detailed neighborhood analysis.",
-          },
-          {
-            role: "user",
-            content: `I'm thinking of spending a day in downtown Seattle. Can you:
+  const MultiStepToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
+    "MultiStepToolsWorkflow",
+    () => (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <GSXChatCompletion
+          messages={[
+            {
+              role: "system",
+              content:
+                "You are a helpful local guide who provides detailed neighborhood analysis.",
+            },
+            {
+              role: "user",
+              content: `I'm thinking of spending a day in downtown Seattle. Can you:
 1. Check the weather first
 2. Based on the weather, suggest some activities (use the local services tool)
 3. If it's good weather, look for parks and outdoor dining
 4. If it's bad weather, focus on indoor places like cafes and restaurants
 Please explain your thinking as you go through this analysis.`,
-          },
-        ]}
-        model="gpt-4o-mini"
-        temperature={0.7}
-        tools={[weatherTool, servicesTool]}
-      />
-    </OpenAIProvider>,
+            },
+          ]}
+          model="gpt-4o-mini"
+          temperature={0.7}
+          tools={[weatherTool, servicesTool]}
+        />
+      </OpenAIProvider>
+    ),
   );
 
-  return results;
+  const workflow = gsx.workflow(
+    "MultiStepToolsWorkflow",
+    MultiStepToolsWorkflow,
+  );
+
+  return workflow.run({});
 }
 
 async function main() {
