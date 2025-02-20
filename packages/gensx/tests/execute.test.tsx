@@ -95,26 +95,24 @@ suite("execute", () => {
       } else {
         checkpoints = r2.checkpoints;
       }
-      expect(Object.keys(checkpoints).length).toBeGreaterThanOrEqual(2);
+      let workflowNames: typeof r1.workflowNames;
+      if (r1.workflowNames.size > 0) {
+        workflowNames = r1.workflowNames;
+      } else {
+        workflowNames = r2.workflowNames;
+      }
+      expect(workflowNames.size).toBeGreaterThanOrEqual(2);
       expect(
         Object.values(checkpoints).some((c) => c.metadata?.num === "1"),
       ).toBe(true);
       expect(
         Object.values(checkpoints).some((c) => c.metadata?.num === "2"),
       ).toBe(true);
-    });
-
-    test("sets the workflow name on the root node", async () => {
-      const result = await executeWorkflowWithCheckpoints(
-        <WorkflowComponent />,
-      );
-      expect(result.result).toBe("hello");
-      expect(Object.keys(result.checkpoints).length).toBeGreaterThan(0);
-
-      // The executeWorkflowWithCheckpoints helper sets the workflow name to be something like executeWorkflowWithCheckpoints1
-      expect(Object.values(result.checkpoints)[0].componentName).toMatch(
-        /executeWorkflowWithCheckpoints\d+/,
-      );
+      expect(
+        Array.from(workflowNames).every((wn) =>
+          /executeWorkflowWithCheckpoints\d+/.exec(wn),
+        ),
+      ).toBe(true);
     });
   });
 

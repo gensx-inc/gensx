@@ -483,7 +483,9 @@ suite("tree reconstruction", () => {
     expect(lastCall).toBeDefined();
     const options = lastCall![1];
     expect(options?.body).toBeDefined();
-    const lastCallBody = getExecutionFromBody(options?.body as string);
+    const { node: lastCallBody } = getExecutionFromBody(
+      options?.body as string,
+    );
     expect(lastCallBody.componentName).toBe("Parent");
     expect(lastCallBody.children[0].componentName).toBe("Child1");
 

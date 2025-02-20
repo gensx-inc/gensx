@@ -39,7 +39,7 @@ export async function executeWithCheckpoints<T>(
   // Set up fetch mock to capture checkpoints
   mockFetch((_input: FetchInput, options?: FetchInit) => {
     if (!options?.body) throw new Error("No body provided");
-    const checkpoint = getExecutionFromBody(options.body as string);
+    const { node: checkpoint } = getExecutionFromBody(options.body as string);
     checkpoints.push(checkpoint);
     return new Response(null, { status: 200 });
   });
@@ -74,6 +74,7 @@ export async function executeWorkflowWithCheckpoints<T>(
 ): Promise<{
   result: T;
   checkpoints: Record<string, ExecutionNode>;
+  workflowNames: Set<string>;
 }> {
   const oldOrg = process.env.GENSX_ORG;
   const oldApiKey = process.env.GENSX_API_KEY;
@@ -81,12 +82,16 @@ export async function executeWorkflowWithCheckpoints<T>(
   process.env.GENSX_API_KEY = "test-api-key";
 
   const checkpoints: Record<string, ExecutionNode> = {};
+  const workflowNames = new Set<string>();
 
   // Set up fetch mock to capture checkpoints
   mockFetch((_input: FetchInput, options?: FetchInit) => {
     if (!options?.body) throw new Error("No body provided");
-    const checkpoint = getExecutionFromBody(options.body as string);
+    const { node: checkpoint, workflowName } = getExecutionFromBody(
+      options.body as string,
+    );
     checkpoints[checkpoint.id] = checkpoint;
+    workflowNames.add(workflowName);
     return new Response(null, { status: 200 });
   });
 
@@ -112,16 +117,23 @@ export async function executeWorkflowWithCheckpoints<T>(
   process.env.GENSX_API_KEY = oldApiKey;
 
   // This is all checkpoints that happen during the workflow execution, not just the ones for this specific execution, due to how we mock fetch to extract them.
-  return { result, checkpoints };
+  return { result, checkpoints, workflowNames };
 }
 
-export function getExecutionFromBody(bodyStr: string): ExecutionNode {
+export function getExecutionFromBody(bodyStr: string): {
+  node: ExecutionNode;
+  workflowName: string;
+} {
   const body = JSON.parse(zlib.gunzipSync(bodyStr).toString()) as {
+    workflowName: string;
     rawExecution: string;
   };
   const compressedExecution = Buffer.from(body.rawExecution, "base64");
   const decompressedExecution = zlib.gunzipSync(compressedExecution);
-  return JSON.parse(decompressedExecution.toString("utf-8")) as ExecutionNode;
+  return {
+    node: JSON.parse(decompressedExecution.toString("utf-8")) as ExecutionNode,
+    workflowName: body.workflowName,
+  };
 }
 
 export function mockFetch(
