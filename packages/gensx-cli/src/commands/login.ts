@@ -10,7 +10,8 @@ import { stringify as stringifyIni } from "ini";
 import open from "open";
 import ora from "ora";
 
-import { waitForKeypress } from "../utils/terminal";
+import { logger } from "../logger.js";
+import { waitForKeypress } from "../utils/terminal.js";
 
 const API_BASE_URL = process.env.GENSX_API_BASE_URL ?? "https://api.gensx.com";
 const APP_BASE_URL = process.env.GENSX_APP_BASE_URL ?? "https://app.gensx.com";
@@ -177,10 +178,10 @@ export async function login(): Promise<void> {
     const authUrl = new URL(`/auth/device/${request.requestId}`, APP_BASE_URL);
     authUrl.searchParams.set("code_verifier", verificationCode);
 
-    consola.box(
-      `Press any key to open your browser and authenticate with GenSX:
+    logger.log(
+      `\x1b[33mPress any key to open your browser and authenticate with GenSX:\x1b[0m
 
-${authUrl.toString()}`,
+\x1b[34m${authUrl.toString()}\x1b[0m`,
     );
 
     // Wait for any keypress
