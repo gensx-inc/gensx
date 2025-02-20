@@ -44,7 +44,7 @@ export function getCodeAgentPrompt(message: string, repoPath: string) {
 ${repoPath}
 </uploaded_files>
 
-I've uploaded a python code repository in the directory ${repoPath} (not in /tmp/inputs). Consider the following PR description:
+I've uploaded a code repository in the directory ${repoPath} (not in /tmp/inputs). Consider the following PR description:
 
 <user_instructions>
 ${message}
@@ -57,7 +57,7 @@ Your task is to make the minimal changes to non-tests files in the ${repoPath} d
 
 Follow these steps to resolve the issue:
 1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.
-2. Create a script to reproduce the error and execute it with \`python <filename.py>\` using the BashTool, to confirm the error
+2. Create a script to reproduce the error and execute it using the BashTool, to confirm the error
 3. Edit the sourcecode of the repo to resolve the issue
 4. Rerun your reproduce script and confirm that the error is fixed!
 5. Think about edge cases and make sure your fix handles them as well

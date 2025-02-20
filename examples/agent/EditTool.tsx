@@ -96,7 +96,6 @@ Notes for using the \`str_replace\` command:\n
 
     try {
       const stats = await fs.stat(params.path).catch(() => null);
-
       switch (params.command) {
         case "view": {
           if (!stats) {
@@ -111,20 +110,26 @@ Notes for using the \`str_replace\` command:\n
             );
             return result;
           } else {
-            // For files, use cat -n and optionally filter by view_range
-            if (params.view_range) {
-              const [start, end] = params.view_range;
-              const result = execSync(
-                `sed -n '${start},${end}p' "${params.path}" | cat -n`,
-                { encoding: "utf-8" },
-              );
-              return result;
-            } else {
-              const result = execSync(`cat -n "${params.path}"`, {
-                encoding: "utf-8",
-              });
-              return result;
-            }
+            // Read file contents directly using fs
+            const content = await fs.readFile(params.path, "utf-8");
+            //const lines = content.split("\n");
+            return content;
+            // console.log("LINES", lines);
+
+            // // Add line numbers to each line
+            // const numberedLines = lines.map(
+            //   (line, idx) => `${String(idx + 1).padStart(6)}  ${line}`,
+            // );
+
+            // if (params.view_range) {
+            //   const [start, end] = params.view_range;
+            //   // Get the specified range (adjusting for 0-based array indexing)
+            //   const result = numberedLines.slice(start - 1, end).join("\n");
+            //   return result;
+            // } else {
+            //   const result = numberedLines.join("\n");
+            //   return result;
+            // }
           }
         }
 
