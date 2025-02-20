@@ -33,11 +33,18 @@ interface WriteDraftProps {
 const WriteDraft = gsx.Component<WriteDraftProps, string>(
   "WriteDraft",
   ({ prompt, research }) => {
+    const systemMessage = \`You're an expert technical writer.
+    Use the information when responding to users: \${research}\`;
+
     return (
       <ChatCompletion
         model="gpt-4o-mini"
         temperature={0}
         messages={[
+          {
+            role: "system",
+            content: systemMessage
+          },
           {
             role: "user",
             content: \`Write a blog post about \${prompt}\`
