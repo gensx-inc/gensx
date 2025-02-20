@@ -5,7 +5,7 @@ description: Getting started with GenSX
 
 # Quickstart
 
-In this quickstart, you'll learn how to get up and running with GenSX. GenSX is a simple typescript framework for building complex LLM applications using JSX. If you haven't already, check out the [basic concepts](../basic-concepts) to learn more about how GenSX works.
+In this quickstart, you'll learn how to get up and running with GenSX. GenSX is a simple typescript framework for building complex LLM applications using JSX. If you haven't already, check out the [basic concepts](/docs/basic-concepts) to learn more about how GenSX works.
 
 ## Prerequisites
 
@@ -63,16 +63,25 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
   },
 );
 
-const result = await gsx.execute<string>(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <Respond userInput="Hi there! Say 'Hello, World!' and nothing else." />
-  </OpenAIProvider>,
+const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
+  "Workflow",
+  ({ userInput }) => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Respond userInput={userInput} />
+    </OpenAIProvider>
+  ),
 );
+
+const workflow = gsx.Workflow("MyGSXWorkflow", WorkflowComponent);
+
+const result = await workflow.run({
+  userInput: "Hi there! Say 'Hello, World!' and nothing else.",
+});
 
 console.log(result);
 ```
 
-The component is executed through `gsx.execute()`, which processes the JSX tree from top to bottom. In this example:
+The component is executed through `gsx.Workflow.run()`, which processes the JSX tree from top to bottom. In this example:
 
 1. First, the `OpenAIProvider` component is initialized with your API key
 2. Then, the `Respond` component receives the `userInput` prop
@@ -121,8 +130,8 @@ const Research = gsx.Component<{ topic: string }, string>(
 );
 
 // Writer component that uses research to write content
-const Writer = gsx.Component<{ topic: string; research: string }, string>(
-  "Writer",
+const WriteArticle = gsx.Component<{ topic: string; research: string }, string>(
+  "WriteArticle",
   async ({ topic, research }) => {
     return (
       <ChatCompletion
@@ -145,10 +154,14 @@ Now you can combine these components using a child function:
 
 ```tsx
 // Combine components using child functions
-const result = await gsx.execute<string>(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <Research topic="quantum computing">
-      {(research) => <Writer topic="quantum computing" research={research} />}
+const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
+  "ResearchAndWrite",
+  ({ topic }) => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Research topic={topic}>
+        {(research) => (
+        <WriteArticle topic={topic} research={research} />
+      )}
     </Research>
   </OpenAIProvider>,
 );
@@ -156,21 +169,27 @@ const result = await gsx.execute<string>(
 console.log(result);
 ```
 
-In this example, the `Research` component gathers information about the topic which then passes the informaton to the `Writer` component. The `Writer` component uses that information to write an article about the topic which is then returned as the `result`.
+In this example, the `Research` component gathers information about the topic which then passes the information to the `WriteArticle` component. The `WriteArticle` component uses that information to write an article about the topic which is then returned as the `result`.
 
 ### Streaming
 
 One common challenge with LLM workflows is handling streaming responses. Any given LLM call can return a response as a string or as a stream of tokens. Typically you'll want the last component of your workflow to stream the response.
 
-To take advantage of streaming, all you need to do is update the `Writer` component to use `StreamComponent` and pass `stream={true}` when you invoke it.
+To take advantage of streaming, all you need to do is update the `WriteArticle` component to use `StreamComponent` and set the `stream` prop to `true` in the `ChatCompletion` component.
 
 ```tsx
-const Writer = gsx.StreamComponent<{ topic: string; research: string }, string>(
+interface WriterProps {
+  topic: string;
+  research: string;
+  stream?: boolean;
+}
+
+const Writer = gsx.StreamComponent<WriterProps>(
   "Writer",
-  async ({ topic, research }) => {
+  async ({ topic, research, stream }) => {
     return (
       <ChatCompletion
-        stream={true}
+        stream={stream ?? false}
         model="gpt-4o-mini"
         messages={[
           {
@@ -185,15 +204,20 @@ const Writer = gsx.StreamComponent<{ topic: string; research: string }, string>(
   },
 );
 
-const stream = await gsx.execute<Streamable>(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <Research topic="quantum computing">
-      {(research) => (
-        <Writer topic="quantum computing" research={research} stream={true} />
+const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
+  "ResearchAndWrite",
+  ({ topic }) => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Research topic={topic}>
+        {(research) => (
+        <WriteArticle topic="latest quantum computing chips" research={research} stream={true} />
       )}
     </Research>
   </OpenAIProvider>,
 );
+
+const workflow = gsx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite);
+const stream = await workflow.run({ topic: "latest quantum computing chips" });
 
 // Print the streaming response
 for await (const chunk of stream) {
@@ -201,17 +225,25 @@ for await (const chunk of stream) {
 }
 ```
 
-While this is nice, the real power of streaming components comes when you expand or refactor your workflow. Now you could easily add an `<Editor>` component to the workflow that streams the response to the user with minimal changes. There's no extra plumbing needed besides removing the `stream={true}` prop on the `Writer` component.
+While this is nice, the real power of streaming components comes when you expand or refactor your workflow. Now you could easily add an `<EditArticle>` component to the workflow that streams the response to the user with minimal changes. There's no extra plumbing needed besides removing the `stream={true}` prop on the `WriteArticle` component.
 
 ```tsx
-const stream = await gsx.execute<Streamable>(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <Research topic="quantum computing">
-      {(research) => <Writer topic="quantum computing" research={research}>
-        {(content) => <Editor content={content} stream={true}/>}
-      </Writer>
+const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
+  "ResearchAndWrite",
+  ({ topic }) => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Research topic={topic}>
+        {(research) => (
+        <WriteArticle topic={topic} research={research}>
+          {(content) => <EditArticle content={content} stream={true}/>}
+        </WriteArticle>
+      )}
     </Research>
   </OpenAIProvider>,
+);
+
+const workflow = gsx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite);
+const stream = await workflow.run({ topic: "latest quantum computing chips" });
 ```
 
 ## Next steps
