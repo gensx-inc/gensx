@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.12](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.11...gensx-v0.2.12) (2025-02-20)
+
+
+### ✨ New Features
+
+* Print URL to link to execution. ([#293](https://github.com/gensx-inc/gensx/issues/293)) ([3f6898e](https://github.com/gensx-inc/gensx/commit/3f6898e5cc2a02e53286f939528f6fa499b52238))
+
 ## [0.2.11](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.10...gensx-v0.2.11) (2025-02-19)
 
 
