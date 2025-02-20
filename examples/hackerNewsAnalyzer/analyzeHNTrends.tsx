@@ -3,6 +3,17 @@ import { gsx } from "gensx";
 
 import { getTopStoryDetails, type HNStory } from "./hn.js";
 
+const FAST_MODEL = "llama-3.1-8b-instant";
+const MEDIUM_MODEL = "qwen-2.5-32b";
+const QUALITY_MODEL = "llama-3.3-70b-versatile";
+const FAST_QUALITY_MODEL = "llama-3.3-70b-specdec";
+
+const TWEET_MODEL = QUALITY_MODEL;
+const EDITOR_MODEL = FAST_QUALITY_MODEL;
+const COMMENTS_ANALYSIS_MODEL = MEDIUM_MODEL;
+const POST_SUMMARY_MODEL = FAST_MODEL;
+const TREND_ANALYSIS_MODEL = QUALITY_MODEL;
+
 // Add HN URL helper
 const getHNPostUrl = (id: number | string) =>
   `https://news.ycombinator.com/item?id=${id}`;
@@ -35,7 +46,7 @@ Focus on the most surprising or counterintuitive point rather than trying to sum
             content: `Context:\n${context}\n\nPrompt: ${prompt}`,
           },
         ]}
-        model="gpt-4o"
+        model={TWEET_MODEL}
         temperature={0.7}
       />
     );
@@ -71,7 +82,7 @@ Maintain your voice while preserving the key insights and all links from the ana
           { role: "system", content: PROMPT },
           { role: "user", content: content },
         ]}
-        model="gpt-4o"
+        model={EDITOR_MODEL}
         temperature={0.7}
       />
     );
@@ -131,7 +142,7 @@ Focus on substance rather than surface-level reactions. When referencing comment
           content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
         },
       ]}
-      model="gpt-4o"
+      model={COMMENTS_ANALYSIS_MODEL}
       temperature={0.7}
     />
   );
@@ -182,7 +193,7 @@ ${story.comments
           { role: "system", content: PROMPT },
           { role: "user", content: context },
         ]}
-        model="gpt-4o"
+        model={POST_SUMMARY_MODEL}
         temperature={0.7}
       >
         {(response: string) => {
@@ -250,7 +261,7 @@ ${commentAnalysis}
           { role: "system", content: PROMPT },
           { role: "user", content: context },
         ]}
-        model="gpt-4o"
+        model={TREND_ANALYSIS_MODEL}
         temperature={0.7}
       />
     );
@@ -289,22 +300,41 @@ interface AnalyzeHNPostsProps {
 }
 
 interface AnalyzeHNPostsOutput {
-  analyses: {
-    summary: string;
-    commentAnalysis: string;
-  }[];
+  analyses: AnalyzePostOutput[];
 }
 
 const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
   "AnalyzeHNPosts",
-  ({ stories }) => {
+  ({ stories }) => ({
+    analyses: stories.map((story) => {
+      return (
+        <AnalyzePost
+          post={story}
+          componentOpts={{
+            name: "Analyze Post - " + story.title,
+          }}
+        />
+      );
+    }),
+  }),
+);
+
+interface AnalyzePostProps {
+  post: HNStory;
+}
+
+interface AnalyzePostOutput {
+  summary: string;
+  commentAnalysis: string;
+}
+const AnalyzePost = gsx.Component<AnalyzePostProps, AnalyzePostOutput>(
+  "AnalyzePost",
+  ({ post }) => {
     return {
-      analyses: stories.map((story) => ({
-        summary: <PostSummarizer story={story} />,
-        commentAnalysis: (
-          <CommentsAnalyzer postId={story.id} comments={story.comments} />
-        ),
-      })),
+      summary: <PostSummarizer story={post} />,
+      commentAnalysis: (
+        <CommentsAnalyzer postId={post.id} comments={post.comments} />
+      ),
     };
   },
 );
@@ -323,7 +353,10 @@ export const AnalyzeHackerNewsTrends = gsx.Component<
   AnalyzeHackerNewsTrendsOutput
 >("AnalyzeHackerNewsTrends", ({ postCount }) => {
   return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <OpenAIProvider
+      apiKey={process.env.GROQ_API_KEY}
+      baseURL={"https://api.groq.com/openai/v1"}
+    >
       <FetchHNPosts limit={postCount}>
         {(stories) => (
           <AnalyzeHNPosts stories={stories}>
