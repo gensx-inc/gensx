@@ -7,6 +7,8 @@ import type {
   Streamable,
 } from "./types";
 
+import { serializeError } from "serialize-error";
+
 import { getCurrentContext } from "./context";
 import { JSX } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
@@ -79,7 +81,7 @@ export function Component<P, O>(
     } catch (error) {
       // Record error in checkpoint
       if (error instanceof Error) {
-        checkpointManager.addMetadata(nodeId, { error: error.message });
+        checkpointManager.addMetadata(nodeId, { error: serializeError(error) });
         checkpointManager.completeNode(nodeId, undefined);
       }
       throw error;
