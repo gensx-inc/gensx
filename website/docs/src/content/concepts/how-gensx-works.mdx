@@ -74,7 +74,7 @@ Then to run the workflow, call the `run()` method on the workflow and pass in th
 const result = await myWorkflow.run({ query: "DeepSeek R1 vs o3-mini" });
 ```
 
-When you execute a workflow, GenSX will:
+When you run a workflow, GenSX will:
 
 1. Creates a dependency graph from your JSX tree
 2. Tracks dependencies between components through prop passing and child functions
@@ -89,6 +89,16 @@ For example, when executing the TweetWorkflow, GenSX will:
 - Wait for its result, `tweets`, to be available through the child function
 - Pass the tweets to `TweetAnalyzer` and execute it
 - Finally execute `ReportGenerator` with the trends from `TweetAnalyzer` and the tweets
+
+### Executing sub-workflows
+
+GenSX also allows you to execute sub-workflows from within a component using `gsx.execute()`.
+
+```tsx
+const result = await gsx.execute(<MyComponent input="some data" />);
+```
+
+When used inside a component, `gsx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow. The result is automatically resolved to a plain JavaScript value, allowing you to work with it directly without additional JSX syntax.
 
 ## Resolving nested values and complex structures
 
