@@ -194,7 +194,7 @@ const result = await workflow.run({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex flex-col gap-4 items-center w-full max-w-7xl mx-auto pt-32 px-4 md:px-8 pb-20 mt-0 md:mt-8"
+        className="flex flex-col gap-4 items-center w-full max-w-7xl mx-auto pt-24 px-4 md:px-8 pb-20 mt-0 md:mt-8"
       >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
