@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.8...create-gensx-v0.1.9) (2025-02-20)
+
+
+### ✨ New Features
+
+* Print URL to link to execution. ([#293](https://github.com/gensx-inc/gensx/issues/293)) ([3f6898e](https://github.com/gensx-inc/gensx/commit/3f6898e5cc2a02e53286f939528f6fa499b52238))
+
 ## [0.1.8](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.7...create-gensx-v0.1.8) (2025-02-19)
 
 
