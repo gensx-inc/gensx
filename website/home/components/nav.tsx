@@ -73,7 +73,7 @@ function NavMenu({ simple = false }: NavMenuProps) {
 
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-8">
-      <Link
+      {/* <Link
         href="/blog"
         className={`relative py-2 transition-colors text-sm
           ${
@@ -89,7 +89,7 @@ function NavMenu({ simple = false }: NavMenuProps) {
         `}
       >
         Blog
-      </Link>
+      </Link> */}
       <motion.a
         href="/docs"
         target="_blank"
