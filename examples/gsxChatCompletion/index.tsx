@@ -41,7 +41,7 @@ function basicCompletion() {
     BasicCompletionExample,
   );
 
-  return workflow.run({});
+  return workflow.run({}, { printUrl: true });
 }
 
 function tools() {
@@ -93,7 +93,7 @@ function tools() {
 
   const workflow = gsx.Workflow("ToolsExampleWorkflow", ToolsExample);
 
-  return workflow.run({});
+  return workflow.run({}, { printUrl: true });
 }
 
 function toolsStreaming() {
@@ -149,7 +149,7 @@ function toolsStreaming() {
     ToolsStreamingExample,
   );
 
-  return workflow.run({});
+  return workflow.run({}, { printUrl: true });
 }
 
 function streamingCompletion() {
@@ -182,7 +182,7 @@ function streamingCompletion() {
     StreamingCompletionWorkflow,
   );
 
-  return workflow.run({});
+  return workflow.run({}, { printUrl: true });
 }
 
 function structuredOutput() {
@@ -235,7 +235,7 @@ function structuredOutput() {
     StructuredOutputWorkflow,
   );
 
-  return workflow.run({});
+  return workflow.run({}, { printUrl: true });
 }
 
 function multiStepTools() {
@@ -320,7 +320,7 @@ Please explain your thinking as you go through this analysis.`,
     MultiStepToolsWorkflow,
   );
 
-  return workflow.run({});
+  return workflow.run({}, { printUrl: true });
 }
 
 async function main() {

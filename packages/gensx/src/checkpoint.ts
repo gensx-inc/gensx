@@ -317,14 +317,19 @@ export class CheckpointManager implements CheckpointWriter {
 
       if (this.printUrl && !this.havePrintedUrl) {
         const responseBody = (await response.json()) as {
-          executionId: string;
-          workflowName?: string;
+          status: "ok";
+          data: {
+            executionId: string;
+            workflowName?: string;
+          };
         };
         const executionUrl = new URL(
-          `/${this.org}/executions/${responseBody.workflowName ?? workflowName}/${responseBody.executionId}`,
+          `/${this.org}/workflows/${responseBody.data.workflowName ?? workflowName}/${responseBody.data.executionId}`,
           this.consoleBaseUrl,
         );
-        console.info(`View execution at: ${executionUrl.toString()}`);
+        console.info(
+          `\n\n[GenSX] View execution at: ${executionUrl.toString()}\n\n`,
+        );
         this.havePrintedUrl = true;
       }
     } catch (error) {

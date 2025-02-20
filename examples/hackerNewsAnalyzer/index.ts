@@ -8,9 +8,12 @@ async function main() {
   console.log("\n🚀 Starting HN analysis workflow...");
   const { report, tweet } = await gsx
     .Workflow("AnalyzeHackerNewsWorkflow", AnalyzeHackerNewsTrends)
-    .run({
-      postCount: 500,
-    });
+    .run(
+      {
+        postCount: 500,
+      },
+      { printUrl: true },
+    );
 
   // Write outputs to files
   await fs.writeFile("hn_analysis_report.md", report);

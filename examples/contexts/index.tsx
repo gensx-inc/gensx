@@ -29,7 +29,7 @@ async function main() {
   // Provide a value to the context
   const result = await gsx
     .Workflow("ContextExampleWorkflow", ContextExample)
-    .run({});
+    .run({}, { printUrl: true });
   console.log(result);
 }
 

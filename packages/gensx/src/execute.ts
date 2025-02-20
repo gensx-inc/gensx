@@ -28,18 +28,32 @@ export function Workflow<P, O>(
   name: string,
   component: GsxComponent<P, O>,
   opts?: {
+    printUrl?: boolean;
     metadata?: Record<string, unknown>;
   },
-): { run: (props: P) => Promise<O> };
+): {
+  run: (
+    props: P,
+    runOpts?: { printUrl?: boolean; metadata?: Record<string, unknown> },
+  ) => Promise<O>;
+};
 
 // Overload for GsxStreamComponent
 export function Workflow<P extends { stream?: boolean }>(
   name: string,
   component: GsxStreamComponent<P>,
   opts?: {
+    printUrl?: boolean;
     metadata?: Record<string, unknown>;
   },
-): { run: <T extends P>(props: T) => RunResult<T> };
+): {
+  run: <T extends P>(
+    props: T,
+    runOpts?: { printUrl?: boolean; metadata?: Record<string, unknown> },
+  ) => RunResult<T>;
+};
+
+// Overload for GsxComponent or GsxStreamComponent
 export function Workflow<P extends { stream?: boolean }, O>(
   name: string,
   component: GsxComponent<P, O> | GsxStreamComponent<P>,
@@ -48,14 +62,27 @@ export function Workflow<P extends { stream?: boolean }, O>(
     metadata?: Record<string, unknown>;
   },
 ): {
-  run: (props: P) => Promise<O | Streamable | string>;
+  run: (
+    props: P,
+    runOpts?: { printUrl?: boolean; metadata?: Record<string, unknown> },
+  ) => Promise<O | Streamable | string>;
 } {
   return {
-    run: async (props) => {
+    run: async (props, runOpts = {}) => {
       const context = new ExecutionContext({});
 
+      const mergedOpts = {
+        ...opts,
+        ...runOpts,
+        ...(opts?.metadata
+          ? { metadata: { ...opts.metadata, ...runOpts.metadata } }
+          : { metadata: runOpts.metadata }),
+      };
+
       const workflowContext = context.getWorkflowContext();
-      workflowContext.checkpointManager.setPrintUrl(opts?.printUrl ?? false);
+      workflowContext.checkpointManager.setPrintUrl(
+        mergedOpts.printUrl ?? false,
+      );
       workflowContext.checkpointManager.setWorkflowName(name);
 
       const result = await withContext(context, async () => {
@@ -70,7 +97,7 @@ export function Workflow<P extends { stream?: boolean }, O>(
       if (rootId) {
         workflowContext.checkpointManager.addMetadata(
           rootId,
-          opts?.metadata ?? {},
+          mergedOpts.metadata ?? {},
         );
       } else {
         console.warn(

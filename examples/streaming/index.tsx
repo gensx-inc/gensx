@@ -107,6 +107,7 @@ async function runStreamingWithChildrenExample() {
   const workflow = gsx.Workflow(
     "StreamingStoryWithChildrenWorkflow",
     StreamStoryWithChildren,
+    { printUrl: true },
   );
 
   console.log("\n📝 Non-streaming version (waiting for full response):");
@@ -122,14 +123,19 @@ async function runStreamingExample() {
 
   console.log("\n🚀 Starting streaming example with prompt:", prompt);
 
-  const workflow = gsx.Workflow("StreamStoryWorkflow", StreamStory);
+  const workflow = gsx.Workflow("StreamStoryWorkflow", StreamStory, {
+    printUrl: true,
+  });
 
   console.log("\n📝 Non-streaming version (waiting for full response):");
   const finalResult = await workflow.run({ prompt });
   console.log("✅ Complete response:", finalResult);
 
   console.log("\n📝 Streaming version (processing tokens as they arrive):");
-  const response = await workflow.run({ prompt, stream: true });
+  const response = await workflow.run(
+    { prompt, stream: true },
+    { printUrl: true },
+  );
 
   for await (const token of response) {
     process.stdout.write(token);
