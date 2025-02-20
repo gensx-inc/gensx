@@ -72,7 +72,8 @@ export async function executeWorkflowWithCheckpoints<T>(
   element: ExecutableValue,
   metadata?: Record<string, unknown>,
 ): Promise<{
-  result: T;
+  result?: T;
+  error?: Error;
   checkpoints: Record<string, ExecutionNode>;
   workflowNames: Set<string>;
 }> {
@@ -111,13 +112,19 @@ export async function executeWorkflowWithCheckpoints<T>(
   );
 
   // Execute with context
-  const result = await workflow.run({});
+  let result: T | undefined;
+  let error: Error | undefined;
+  try {
+    result = await workflow.run({});
+  } catch (err) {
+    error = err as Error;
+  }
 
   process.env.GENSX_ORG = oldOrg;
   process.env.GENSX_API_KEY = oldApiKey;
 
   // This is all checkpoints that happen during the workflow execution, not just the ones for this specific execution, due to how we mock fetch to extract them.
-  return { result, checkpoints, workflowNames };
+  return { result, error, checkpoints, workflowNames };
 }
 
 export function getExecutionFromBody(bodyStr: string): {

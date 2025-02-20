@@ -10,6 +10,7 @@ import { gsx } from "@/index.js";
 
 import {
   executeWithCheckpoints,
+  executeWorkflowWithCheckpoints,
   getExecutionFromBody,
   mockFetch,
 } from "./utils/executeWithCheckpoints";
@@ -453,6 +454,45 @@ suite("checkpoint", () => {
       metadata: {
         error: "Stream error",
         streamCompleted: false,
+      },
+    });
+  });
+
+  test("adds execution error to metadata when workflow throws", async () => {
+    // Define a component that throws an error
+    const ErrorComponent = gsx.Component<{ message: string }, string>(
+      "ErrorComponent",
+      async ({ message }) => {
+        await setTimeout(0); // Add small delay like other tests
+        throw new Error(message);
+      },
+    );
+
+    const { checkpoints, error } = await executeWorkflowWithCheckpoints<string>(
+      <ErrorComponent message="Test error message" />,
+    );
+
+    // Verify error was thrown
+    expect(error).toBeDefined();
+    expect(error?.message).toBe("Test error message");
+
+    // Verify checkpoint structure includes error in metadata
+    expect(Object.values(checkpoints)[0]).toMatchObject({
+      componentName: "WorkflowComponentWrapper",
+      metadata: {
+        error: {
+          name: "Error",
+          message: "Test error message",
+        },
+      },
+    });
+    expect(Object.values(checkpoints)[0].children[0]).toMatchObject({
+      componentName: "ErrorComponent",
+      metadata: {
+        error: {
+          name: "Error",
+          message: "Test error message",
+        },
       },
     });
   });
