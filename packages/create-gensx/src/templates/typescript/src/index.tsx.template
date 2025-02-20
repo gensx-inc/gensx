@@ -31,10 +31,13 @@ const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
   ),
 );
 
-const workflow = gsx.workflow("MyGSXWorkflow", WorkflowComponent);
+const workflow = gsx.Workflow("MyGSXWorkflow", WorkflowComponent);
 
-const result = await workflow.run({
-  userInput: "Hi there! Say 'Hello, World!' and nothing else.",
-});
+const result = await workflow.run(
+  {
+    userInput: "Hi there! Say 'Hello, World!' and nothing else.",
+  },
+  { printUrl: true },
+);
 
 console.log(result);

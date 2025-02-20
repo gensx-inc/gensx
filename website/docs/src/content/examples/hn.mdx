@@ -11,13 +11,13 @@ The [Hacker News Analyzer](https://github.com/gensx-inc/gensx/tree/main/examples
 
 The Hacker News Analyzer workflow is composed of the following steps:
 
-1. Fetch the top 500 Hacker News posts and filters down to `text` posts (`<HnCollector>`)
+1. Fetch the top 500 Hacker News posts and filters down to `text` posts (`<FetchHNPosts>`)
 2. Process each post in parallel (`<AnalyzeHNPosts>`)
-   - Summarize the content (`<PostSummarizer>`)
-   - Analyze the comments (`<CommentsAnalyzer>`)
-3. Writes a detailed report identifying the key trends across all posts (`<TrendsAnalyzer>`)
-4. Edits the report into the style of Paul Graham (`<PGEditor>`)
-5. Generates a tweet in the voice of Paul Graham (`<PGTweetWriter>`)
+   - Summarize the content (`<SummarizePost>`)
+   - Analyze the comments (`<AnalyzeComments>`)
+3. Writes a detailed report identifying the key trends across all posts (`<GenerateReport>`)
+4. Edits the report into the style of Paul Graham (`<EditReport>`)
+5. Generates a tweet in the voice of Paul Graham (`<WriteTweet>`)
 
 ## Running the example
 
@@ -51,9 +51,9 @@ const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
   ({ stories }) => {
     return {
       analyses: stories.map((story) => ({
-        summary: <PostSummarizer story={story} />,
+        summary: <SummarizePost story={story} />,
         commentAnalysis: (
-          <CommentsAnalyzer postId={story.id} comments={story.comments} />
+          <AnalyzeComments postId={story.id} comments={story.comments} />
         ),
       })),
     };
@@ -63,23 +63,23 @@ const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
 
 ### Multiple outputs
 
-This example also shows a simple pattern returning multiple outputs from a workflow. In this case, both the outputs of `<TrendAnalyzer>` and `<PGTweetWriter>` are returned as a single object. This is done by using the the child function of `<PGEditor>` to combine the outputs of multiple components into a single object.
+This example also shows a simple pattern returning multiple outputs from a workflow. In this case, both the outputs of `<GenerateReport>` and `<WriteTweet>` are returned as a single object. This is done by using the the child function of `<GenerateReport>` to combine the outputs of multiple components into a single object.
 
 ```tsx
-<TrendAnalyzer analyses={analyses}>
+<GenerateReport analyses={analyses}>
   {(report) => (
-    <PGEditor content={report}>
+    <EditReport content={report}>
       {(editedReport) => (
-        <PGTweetWriter
+        <WriteTweet
           context={editedReport}
           prompt="Summarize the HN trends in a tweet"
         >
           {(tweet) => ({ report: editedReport, tweet })}
-        </PGTweetWriter>
+        </WriteTweet>
       )}
-    </PGEditor>
+    </EditReport>
   )}
-</TrendAnalyzer>
+</GenerateReport>
 ```
 
 ## Additional resources

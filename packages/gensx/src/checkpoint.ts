@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import { gzip } from "node:zlib";
 
 import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component";
+import { readConfig } from "./config";
 
 const gzipAsync = promisify(gzip);
 
@@ -13,7 +14,7 @@ function generateUUID(): string {
     return crypto.randomUUID();
   } catch {
     // Simple fallback for environments without crypto
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
       const r = (Math.random() * 16) | 0;
       const v = c === "x" ? r : (r & 0x3) | 0x8;
       return v.toString(16);
@@ -61,12 +62,14 @@ export class CheckpointManager implements CheckpointWriter {
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
   public workflowName?: string;
-  // Track active checkpoint write
   private activeCheckpoint: Promise<void> | null = null;
   private pendingUpdate = false;
   private version = 1;
-  private org = "";
-  private apiKey = "";
+  private org: string;
+  private apiKey: string;
+  private apiBaseUrl: string;
+  private consoleBaseUrl: string;
+  private printUrl = false;
 
   // Provide unified view of all secrets
   get secretValues(): Set<unknown> {
@@ -79,15 +82,32 @@ export class CheckpointManager implements CheckpointWriter {
     return allSecrets;
   }
 
-  constructor(opts?: { apiKey: string; org: string; disabled?: boolean }) {
-    // The presence of a apiKey is enough to enable checkpoints, but it can be disabled by setting GENSX_CHECKPOINTS=false
-    // org must also be set to record checkpoints.
-    const apiKey = opts?.apiKey ?? process.env.GENSX_API_KEY;
-    const org = opts?.org ?? process.env.GENSX_ORG;
+  constructor(opts?: {
+    apiKey: string;
+    org: string;
+    disabled?: boolean;
+    apiBaseUrl?: string;
+    consoleBaseUrl?: string;
+  }) {
+    // Priority order: constructor opts > env vars > config file
+    const config = readConfig();
+    const apiKey =
+      opts?.apiKey ?? process.env.GENSX_API_KEY ?? config.api?.token;
+    const org = opts?.org ?? process.env.GENSX_ORG ?? config.api?.org;
+    const apiBaseUrl =
+      opts?.apiBaseUrl ??
+      process.env.GENSX_CHECKPOINT_URL ??
+      config.api?.baseUrl;
+    const consoleBaseUrl =
+      opts?.consoleBaseUrl ??
+      process.env.GENSX_CONSOLE_URL ??
+      config.console?.baseUrl;
 
     this.checkpointsEnabled = apiKey !== undefined;
     this.org = org ?? "";
     this.apiKey = apiKey ?? "";
+    this.apiBaseUrl = apiBaseUrl ?? "https://api.gensx.com";
+    this.consoleBaseUrl = consoleBaseUrl ?? "https://app.gensx.com";
 
     if (
       opts?.disabled ||
@@ -99,20 +119,16 @@ export class CheckpointManager implements CheckpointWriter {
       this.checkpointsEnabled = false;
     }
 
-    if (!this.checkpointsEnabled) {
-      return;
-    }
-
-    if (!this.org) {
+    if (this.checkpointsEnabled && !this.org) {
       throw new Error(
-        "GENSX_ORG is not set, must be set to record checkpoints. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
+        "Organization not set. Set it via constructor options, GENSX_ORG environment variable, or in ~/.config/gensx/config. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
       );
     }
   }
 
   private attachToParent(node: ExecutionNode, parent: ExecutionNode) {
     node.parentId = parent.id;
-    if (!parent.children.some(child => child.id === node.id)) {
+    if (!parent.children.some((child) => child.id === node.id)) {
       parent.children.push(node);
     }
   }
@@ -225,6 +241,7 @@ export class CheckpointManager implements CheckpointWriter {
     });
   }
 
+  private havePrintedUrl = false;
   private async writeCheckpoint() {
     if (!this.root) return;
 
@@ -250,9 +267,7 @@ export class CheckpointManager implements CheckpointWriter {
 
       const treeCopy = cloneWithoutFunctions(this.root);
       const maskedRoot = this.maskExecutionTree(treeCopy as ExecutionNode);
-      const baseUrl =
-        process.env.GENSX_CHECKPOINT_URL ?? "https://api.gensx.com";
-      const url = join(baseUrl, `/org/${this.org}/executions`);
+      const url = join(this.apiBaseUrl, `/org/${this.org}/executions`);
       const steps = this.countSteps(this.root);
 
       // Separately gzip the rawExecution data
@@ -268,11 +283,12 @@ export class CheckpointManager implements CheckpointWriter {
       const base64CompressedExecution =
         Buffer.from(compressedExecution).toString("base64");
 
+      const workflowName = this.workflowName ?? this.root.componentName;
       const payload = {
         executionId: this.root.id,
         version: this.version,
         schemaVersion: 2,
-        workflowName: this.root.componentName,
+        workflowName,
         startedAt: this.root.startTime,
         completedAt: this.root.endTime,
         rawExecution: base64CompressedExecution,
@@ -297,6 +313,24 @@ export class CheckpointManager implements CheckpointWriter {
           status: response.status,
           message: await response.text(),
         });
+      }
+
+      if (this.printUrl && !this.havePrintedUrl && response.ok) {
+        const responseBody = (await response.json()) as {
+          status: "ok";
+          data: {
+            executionId: string;
+            workflowName?: string;
+          };
+        };
+        const executionUrl = new URL(
+          `/${this.org}/workflows/${responseBody.data.workflowName ?? workflowName}/${responseBody.data.executionId}`,
+          this.consoleBaseUrl,
+        );
+        this.havePrintedUrl = true;
+        console.info(
+          `\n\n\x1b[33m[GenSX] View execution at:\x1b[0m \x1b[1;34m${executionUrl.toString()}\x1b[0m\n\n`,
+        );
       }
     } catch (error) {
       console.error(`[Checkpoint] Failed to save checkpoint:`, { error });
@@ -335,7 +369,7 @@ export class CheckpointManager implements CheckpointWriter {
     }
 
     // Recursively mask children
-    node.children = node.children.map(child => this.maskExecutionTree(child));
+    node.children = node.children.map((child) => this.maskExecutionTree(child));
 
     return node;
   }
@@ -363,7 +397,7 @@ export class CheckpointManager implements CheckpointWriter {
       const bKeys = Object.keys(b);
       return (
         aKeys.length === bKeys.length &&
-        aKeys.every(key =>
+        aKeys.every((key) =>
           this.isEqual(a[key as keyof typeof a], b[key as keyof typeof b]),
         )
       );
@@ -447,7 +481,7 @@ export class CheckpointManager implements CheckpointWriter {
     // Handle arrays and objects (excluding ArrayBuffer views)
     if (Array.isArray(data) || !ArrayBuffer.isView(data)) {
       const values = Array.isArray(data) ? data : Object.values(data);
-      values.forEach(value => {
+      values.forEach((value) => {
         this.collectSecretValues(value, nodeSecrets, visited);
       });
     }
@@ -507,7 +541,9 @@ export class CheckpointManager implements CheckpointWriter {
 
     // Sort secrets by length (longest first) to handle overlapping secrets correctly
     const secrets = Array.from(effectiveSecrets)
-      .filter(s => typeof s === "string" && s.length >= this.MIN_SECRET_LENGTH)
+      .filter(
+        (s) => typeof s === "string" && s.length >= this.MIN_SECRET_LENGTH,
+      )
       .sort((a, b) => String(b).length - String(a).length);
 
     // Replace each secret with [secret]
@@ -594,11 +630,6 @@ export class CheckpointManager implements CheckpointWriter {
       // Handle root node case
       if (!this.root) {
         this.root = node;
-
-        // If the workflow name is set, update the root node name.
-        if (this.workflowName) {
-          this.root.componentName = this.workflowName;
-        }
       } else if (this.root.parentId === node.id) {
         // Current root was waiting for this node as parent
         this.attachToParent(this.root, node);
@@ -629,10 +660,8 @@ export class CheckpointManager implements CheckpointWriter {
     const node = this.nodes.get(id);
     if (node) {
       node.endTime = Date.now();
-      // Store raw output - masking happens at write time
       node.output = output;
 
-      // If output is marked as secret and not the streaming placeholder, collect secrets
       if (
         node.componentOpts?.secretOutputs &&
         output !== STREAMING_PLACEHOLDER
@@ -656,7 +685,6 @@ export class CheckpointManager implements CheckpointWriter {
   addMetadata(id: string, metadata: Record<string, unknown>) {
     const node = this.nodes.get(id);
     if (node) {
-      // Store raw metadata - masking happens at write time
       node.metadata = {
         ...node.metadata,
         ...metadata,
@@ -665,19 +693,18 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
+  // TODO: What if we have already sent some checkpoints?
   setWorkflowName(name: string) {
-    // Right now we just update the name of the root node. Eventually this should be separated from the workflow name.
     this.workflowName = name;
+  }
 
-    if (this.root) {
-      this.root.componentName = name;
-    }
+  setPrintUrl(printUrl: boolean) {
+    this.printUrl = printUrl;
   }
 
   updateNode(id: string, updates: Partial<ExecutionNode>) {
     const node = this.nodes.get(id);
     if (node) {
-      // If output is being updated and it's marked as secret (and not the placeholder), collect secrets
       if (
         "output" in updates &&
         node.componentOpts?.secretOutputs &&
@@ -694,9 +721,6 @@ export class CheckpointManager implements CheckpointWriter {
       }
 
       Object.assign(node, updates);
-      if (node.id === this.root?.id) {
-        node.componentName = this.workflowName ?? node.componentName;
-      }
       this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to update unknown node:`, { id });

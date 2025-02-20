@@ -19,7 +19,7 @@ Designed for backend development, GenSX makes it easy to build and test powerful
 - 🌊 **Streaming Built-in**: Stream responses with a single prop change, no refactoring needed
 - 🚀 **Built for Scale**: Start simple and evolve to complex patterns like agents and reflection without changing your programming model
 
-Check out the [documentation](https://gensx.com/overview) to learn more about building LLM applications with GenSX.
+Check out the [documentation](https://gensx.com/docs) to learn more about building LLM applications with GenSX.
 
 ## Getting Started
 
@@ -35,7 +35,7 @@ To add GenSX to an existing project, run the following command and follow the in
 npm install gensx @gensx/openai
 ```
 
-Check out the [Quickstart Guide](https://gensx.com/quickstart) for more details on getting started.
+Check out the [Quickstart Guide](https://gensx.com/docs/quickstart) for more details on getting started.
 
 ## Building a workflow
 
@@ -141,7 +141,7 @@ This monorepo contains GenSX, its related packages, examples, and documentation.
 
 - `packages/` - Published packages
 - `examples/` - Example applications and use cases
-- `docs` - `https://gensx.com` Documentation
+- `website/` - [GenSX website](https://gensx.com)
 
 ## License
 

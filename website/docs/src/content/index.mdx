@@ -13,15 +13,21 @@ It uses `jsx` to define and orchestrate workflows with functional, reusable comp
 {/* prettier-ignore-start */}
 
 ```tsx
-const result = await gsx.execute(
-  <BlogWriter prompt="Write a blog post about AI developer tools">
-    {(blog) => (
-      <LLMEditor draft={blog}>
+const WriteBlog = gsx.Component<WriteBlogProps, string>(
+  "WriteBlog",
+  async ({ prompt }) => {
+    return (
+      <WriteDraft prompt={prompt}>
+        {(blog) => (
+          <EditDraft draft={blog}>
         {(draft) => console.log(draft)}
-      </LLMEditor>
+      </WriteDraft>
     )}
-  </BlogWriter>,
+  </WriteBlog>,
 );
+
+const workflow = gsx.Workflow("WriteBlogWorkflow", WriteBlog);
+const result = await workflow.run({ prompt: "Write a blog post about AI developer tools" });
 ```
 
 {/* prettier-ignore-end */}
@@ -32,7 +38,7 @@ Most LLM frameworks are graph oriented, inspired by popular python tools like Ai
 - Global state makes refactoring difficult.
 - All of this leads to low velocity when experimenting with and evolving your LLM workflows.
 
-LLM workflows are fundamentally about function composition and data flow - exactly what JSX was designed to express. There is no need for a graph DSL. GenSX expresses control flow, loops, and recursion using plain old typescript language primitives. To learn more about why GenSX uses JSX, read [Why JSX?](/why-jsx).
+LLM workflows are fundamentally about function composition and data flow - exactly what JSX was designed to express. There is no need for a graph DSL. GenSX expresses control flow, loops, and recursion using plain old typescript language primitives. To learn more about why GenSX uses JSX, read [Why JSX?](docs/why-jsx).
 
 While GenSX uses JSX, it does not share the same execution model as React, and has zero dependencies.
 
@@ -41,12 +47,12 @@ While GenSX uses JSX, it does not share the same execution model as React, and h
 GenSX components are pure functions, depend on zero global state, and are _reusable_ by default. Components accept `props` and return an output.
 
 ```tsx
-interface LLMResearchProps {
+interface ResearchTopicProps {
   topic: string;
 }
-type LLMResearchOutput = string;
-const LLMResearch = gsx.Component<LLMResearchProps, LLMResearchOutput>(
-  "LLMResearch",
+type ResearchTopicOutput = string;
+const ResearchTopic = gsx.Component<ResearchTopicProps, ResearchTopicOutput>(
+  "ResearchTopic",
   async ({ topic }) => {
     console.log("📚 Researching topic:", topic);
     const systemPrompt = `You are a helpful assistant that researches topics...`;
@@ -74,23 +80,22 @@ A second order benefit of reusability is that components can be _shared_ and pub
 All GenSX components support nesting, a pattern to access component outputs via a child function. This creates a natural way to pass data between steps:
 
 ```tsx
-export const BlogWritingWorkflow =
-  gsx.StreamComponent<BlogWritingWorkflowProps>(
-    "BlogWritingWorkflow",
-    async ({ prompt }) => {
-      return (
-        <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-          <ParallelResearch prompt={prompt}>
-            {(research) => (
-              <LLMWriter prompt={prompt} research={research.flat()}>
-                {(draft) => <LLMEditor draft={draft} stream={true} />}
-              </LLMWriter>
-            )}
-          </ParallelResearch>
-        </OpenAIProvider>
-      );
-    },
-  );
+export const WriteBlog = gsx.StreamComponent<WriteBlogProps>(
+  "WriteBlog",
+  async ({ prompt }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <Research prompt={prompt}>
+          {(research) => (
+            <WriteDraft prompt={prompt} research={research.flat()}>
+              {(draft) => <EditDraft draft={draft} stream={true} />}
+            </WriteDraft>
+          )}
+        </Research>
+      </OpenAIProvider>
+    );
+  },
+);
 ```
 
 There is no need for a DSL or graph API to define the structure of your workflow. More complex patterns like cycles and agents can be encapsulated in components that use standard loops and conditionals. Typescript and JSX unifies workflow definition and execution in plain old typescript, with the ability to express all of the same patterns.
@@ -100,45 +105,45 @@ There is no need for a DSL or graph API to define the structure of your workflow
 Workflow composition with JSX reads naturally from top to bottom like a standard programming language.
 
 ```tsx
-<HNCollector limit={postCount}>
+<FetchHNPosts limit={postCount}>
   {(stories) => (
     <AnalyzeHNPosts stories={stories}>
       {({ analyses }) => (
-        <TrendAnalyzer analyses={analyses}>
+        <GenerateReport analyses={analyses}>
           {(report) => (
-            <Editor content={report}>
+            <EditReport content={report}>
               {(editedReport) => (
-                <TweetWriter
+                <WriteTweet
                   context={editedReport}
                   prompt="Summarize the HN trends in a tweet"
                 />
               )}
-            </Editor>
+            </EditReport>
           )}
-        </TrendAnalyzer>
+        </GenerateReport>
       )}
     </AnalyzeHNPosts>
   )}
-</HNCollector>
+</FetchHNPosts>
 ```
 
 Contrast this with graph APIs, where you need to build a mental model of the workflow from a node/edge builder:
 
 ```tsx
 const graph = new Graph()
-  .addNode("hnCollector", collectHNStories)
+  .addNode("fetchHNPosts", fetchHNPosts)
   .addNode("analyzeHNPosts", analyzePosts)
-  .addNode("trendAnalyzer", analyzeTrends)
-  .addNode("pgEditor", editAsPG)
-  .addNode("pgTweetWriter", writeTweet);
+  .addNode("generateReport", generateReport)
+  .addNode("editReport", editReport)
+  .addNode("writeTweet", writeTweet);
 
 graph
-  .addEdge(START, "hnCollector")
-  .addEdge("hnCollector", "analyzeHNPosts")
-  .addEdge("analyzeHNPosts", "trendAnalyzer")
-  .addEdge("trendAnalyzer", "pgEditor")
-  .addEdge("pgEditor", "pgTweetWriter")
-  .addEdge("pgTweetWriter", END);
+  .addEdge(START, "fetchHNPosts")
+  .addEdge("fetchHNPosts", "analyzeHNPosts")
+  .addEdge("analyzeHNPosts", "generateReport")
+  .addEdge("generateReport", "editReport")
+  .addEdge("editReport", "writeTweet")
+  .addEdge("writeTweet", END);
 ```
 
 Nesting makes dependencies explicit, and it is easy to see the data flow between steps. No graph DSL required.
@@ -152,8 +157,8 @@ GenSX makes this easy to handle with `StreamComponent`.
 A single component implementation can be used in both streaming and non-streaming contexts by setting the `stream` prop:
 
 ```tsx
-const LLMEditor = gsx.StreamComponent<LLMEditorProps>(
-  "LLMEditor",
+const EditDraft = gsx.StreamComponent<EditDraftProps>(
+  "EditDraft",
   async ({ draft }) => {
     console.log("🔍 Editing draft");
     const systemPrompt = `You are a helpful assistant that edits blog posts...`;
@@ -176,9 +181,9 @@ const LLMEditor = gsx.StreamComponent<LLMEditorProps>(
 From there you can use the component in a streaming context:
 
 ```tsx
-const stream = await gsx.execute<Streamable>(
-  <LLMEditor draft={draft} stream={true} />,
-);
+const stream = await gsx
+  .Workflow("EditDraftWorkflow", EditDraft)
+  .run({ draft, stream: true });
 
 for await (const chunk of stream) {
   process.stdout.write(chunk);
@@ -188,7 +193,9 @@ for await (const chunk of stream) {
 And you can use the component in a non-streaming context:
 
 ```tsx
-const result = await gsx.execute(<LLMEditor draft={draft} />);
+const result = await gsx
+  .Workflow("EditDraftWorkflow", EditDraft)
+  .run({ draft, stream: false });
 
 console.log(result);
 ```

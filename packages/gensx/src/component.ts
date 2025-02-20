@@ -109,7 +109,7 @@ export function StreamComponent<P>(
 ): GsxStreamComponent<WithComponentOpts<P & { stream?: boolean }>> {
   const GsxStreamComponent: GsxStreamComponent<
     WithComponentOpts<P & { stream?: boolean }>
-  > = async props => {
+  > = async (props) => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;

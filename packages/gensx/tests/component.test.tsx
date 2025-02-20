@@ -120,7 +120,7 @@ suite("component", () => {
     const { result, checkpoints, checkpointManager } =
       await executeWithCheckpoints<string>(
         <ParentComponent componentOpts={{ name: "CustomParent" }}>
-          {_parentResult => (
+          {(_parentResult) => (
             <ChildComponent componentOpts={{ name: "CustomChild" }} />
           )}
         </ParentComponent>,

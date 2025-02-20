@@ -49,7 +49,7 @@ const UserContext = gsx.createContext<User>({
 To use the context, call the `gsx.useContext(context)` hook inside of a component. Here a `Greeting` component is created that uses the `UserContext` to get the user's name:
 
 ```tsx
-const Greeting = gsx.Component<{}, GreetingOutput>("Greeting", () => {
+const GreetUser = gsx.Component<{}, string>("GreetUser", () => {
   const user = gsx.useContext(UserContext);
   return `Hello, ${user.name}!`;
 });
@@ -60,11 +60,11 @@ const Greeting = gsx.Component<{}, GreetingOutput>("Greeting", () => {
 To make the context value available to your components, you need to wrap your component in a `Provider` component and pass in a value via the `value` prop:
 
 ```tsx
-const result = await gsx.execute(
+const ContextExample = gsx.Component<{}, string>("ContextExample", () => (
   <UserContext.Provider value={{ name: "John" }}>
-    <Greeting />
-  </UserContext.Provider>,
-);
+    <GreetUser />
+  </UserContext.Provider>
+));
 ```
 
 ## Using providers for configuration and dependencies
@@ -76,14 +76,23 @@ Providers are a specialized way to use contexts that focus on managing configura
 The main provider available today is the `OpenAIProvider`, which manages your OpenAI API key and client:
 
 ```tsx
-const result = await gsx.execute(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <ChatCompletion
-      model="gpt-4"
-      messages={[{ role: "user", content: "Hello!" }]}
-    />
-  </OpenAIProvider>,
+const BasicChat = gsx.Component<BasicChatProps, string>(
+  "BasicChat",
+  async ({ prompt }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <ChatCompletion
+          model="gpt-4o-mini"
+          messages={[{ role: "user", content: prompt }]}
+        />
+      </OpenAIProvider>
+    );
+  },
 );
+
+const result = await gsx.Workflow("BasicChat", BasicChat).run({
+  prompt: "Hello!",
+});
 ```
 
 ### Creating a Custom Provider
@@ -163,11 +172,20 @@ export const ScrapePage = gsx.Component<ScrapePageProps, string>(
 Now when you use the `ScrapePage` component in your workflow, you'll wrap it in the `FirecrawlProvider` and pass in the `apiKey`:
 
 ```tsx
-const markdown = await gsx.execute(
-  <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
-    <ScrapePage url="https://gensx.com/overview/" />
-  </FirecrawlProvider>,
+const FirecrawlExample = gsx.Component<FirecrawlExampleProps, string>(
+  "FirecrawlExample",
+  async ({ url }) => {
+    return (
+      <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
+        <ScrapePage url={url} />
+      </FirecrawlProvider>
+    );
+  },
 );
+
+const result = await gsx.Workflow("FirecrawlExample", FirecrawlExample).run({
+  url: "https://gensx.com/docs/",
+});
 ```
 
 ### Nesting providers
@@ -175,12 +193,17 @@ const markdown = await gsx.execute(
 You can nest multiple providers to combine different services or configurations in your workflow. This is useful when a component needs access to multiple contexts. Here's an example that combines the OpenAI provider with our custom Firecrawl provider:
 
 ```tsx
-const result = await gsx.execute(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
-      <WebPageSummarizer url="https://gensx.com/overview/" />
-    </FirecrawlProvider>
-  </OpenAIProvider>,
+const NestedProviderExample = gsx.Component<NestedProviderExampleProps, string>(
+  "NestedProviderExample",
+  async ({ url }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
+          <WebPageSummarizer url={url} />
+        </FirecrawlProvider>
+      </OpenAIProvider>
+    );
+  },
 );
 ```
 

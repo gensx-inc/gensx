@@ -7,9 +7,7 @@ const meta = {
   concepts: "Concepts",
   examples: "Examples",
   "component-reference": "Components Reference",
-  patterns: {
-    display: "hidden",
-  },
+  patterns: "Patterns",
 };
 
 export default meta;

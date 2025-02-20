@@ -1,24 +1,24 @@
 import { ChatCompletion } from "@gensx/openai";
 import { gsx } from "gensx";
 
-export interface QueryGeneratorProps {
+export interface GenerateQueriesProps {
   prompt: string;
 }
 
-export interface QueryGeneratorOutput {
+export interface GenerateQueriesOutput {
   queries: string[];
 }
 
-export const QueryGenerator = gsx.Component<
-  QueryGeneratorProps,
-  QueryGeneratorOutput
->("QueryGenerator", ({ prompt }) => {
-  const systemMessage = `You are a helpful research assistant. 
+export const GenerateQueries = gsx.Component<
+  GenerateQueriesProps,
+  GenerateQueriesOutput
+>("GenerateQueries", ({ prompt }) => {
+  const systemMessage = `You are a helpful research assistant.
 
     Instructions:
     - You will be given a prompt and your job is to return a list of arxiv search queries
     - Please write between 1 and 3 queries.
-    
+
     Output Format:
     Please return json with the following format:
     {
@@ -37,7 +37,7 @@ export const QueryGenerator = gsx.Component<
       response_format={{ type: "json_object" }}
     >
       {(response: string) => {
-        return JSON.parse(response) as QueryGeneratorOutput;
+        return JSON.parse(response) as GenerateQueriesOutput;
       }}
     </ChatCompletion>
   );

@@ -2,15 +2,18 @@ import fs from "fs/promises";
 
 import { gsx } from "gensx";
 
-import { HNAnalyzerWorkflow } from "./hackerNewsAnalyzer.js";
+import { AnalyzeHackerNewsTrends } from "./analyzeHNTrends.js";
 
 async function main() {
   console.log("\n🚀 Starting HN analysis workflow...");
   const { report, tweet } = await gsx
-    .workflow("HNAnalyzerExample", HNAnalyzerWorkflow)
-    .run({
-      postCount: 500,
-    });
+    .Workflow("AnalyzeHackerNewsWorkflow", AnalyzeHackerNewsTrends)
+    .run(
+      {
+        postCount: 500,
+      },
+      { printUrl: true },
+    );
 
   // Write outputs to files
   await fs.writeFile("hn_analysis_report.md", report);
