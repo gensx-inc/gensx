@@ -5,6 +5,7 @@ import { createHash, getRandomValues } from "node:crypto";
 import { consola } from "consola";
 import open from "open";
 import ora from "ora";
+import picocolors from "picocolors";
 
 import { logger } from "../logger.js";
 import { API_BASE_URL, APP_BASE_URL, saveConfig } from "../utils/config.js";
@@ -95,19 +96,10 @@ export async function login(): Promise<{ skipped: boolean }> {
   const spinner = ora();
 
   try {
-    spinner.start("Logging in to GenSX");
-
-    const verificationCode = generateVerificationCode();
-    const request = await createLoginRequest(verificationCode);
-    spinner.succeed();
-
-    const authUrl = new URL(`/auth/device/${request.requestId}`, APP_BASE_URL);
-    authUrl.searchParams.set("code_verifier", verificationCode);
-
     logger.log(
-      `\x1b[33mPress any key to open your browser and login to GenSX Cloud (ESC to skip):\x1b[0m
-
-\x1b[34m${authUrl.toString()}\x1b[0m`,
+      picocolors.yellow(
+        `Press any key to open your browser and login to GenSX Cloud (ESC to skip)`,
+      ),
     );
 
     // Wait for any keypress
@@ -119,7 +111,15 @@ export async function login(): Promise<{ skipped: boolean }> {
       return { skipped: true };
     }
 
-    spinner.start("Opening browser");
+    spinner.start("Logging in to GenSX Cloud");
+    const verificationCode = generateVerificationCode();
+    const request = await createLoginRequest(verificationCode);
+    spinner.succeed();
+
+    const authUrl = new URL(`/auth/device/${request.requestId}`, APP_BASE_URL);
+    authUrl.searchParams.set("code_verifier", verificationCode);
+
+    spinner.start(`Opening ${picocolors.blue(authUrl.toString())}`);
     await open(authUrl.toString());
     spinner.succeed();
 
