@@ -38,9 +38,9 @@ function NavMenu({ simple = false }: NavMenuProps) {
     return (
       <ul className="space-y-4">
         <li>
-          <Link href="/company" className="block text-gray-800 text-sm">
+          {/* <Link href="/company" className="block text-gray-800 text-sm">
             Blog
-          </Link>
+          </Link> */}
         </li>
         <li>
           <motion.a
