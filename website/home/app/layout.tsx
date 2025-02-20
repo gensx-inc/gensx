@@ -71,7 +71,7 @@ export default function RootLayout({
             {/* Column 3: Social Icons */}
             <div className="flex gap-4">
               <a
-                href="https://twitter.com/yourhandle"
+                href="https://twitter.com/gensx_inc"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-gray-900"
@@ -86,7 +86,7 @@ export default function RootLayout({
                 </svg>
               </a>
               <a
-                href="https://linkedin.com/in/yourprofile"
+                href="https://www.linkedin.com/company/gensx-inc"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-gray-900"
@@ -101,7 +101,7 @@ export default function RootLayout({
                 </svg>
               </a>
               <a
-                href="https://github.com/yourprofile"
+                href="https://github.com/gensx-inc"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-gray-900"
