@@ -7,7 +7,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Analytics } from "@vercel/analytics/react";
 
-
 const figtree = Figtree({
   subsets: ["latin"],
   variable: "--font-figtree",
