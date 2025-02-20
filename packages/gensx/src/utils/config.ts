@@ -91,7 +91,33 @@ async function writeConfigFile(config: ConfigFileFormat): Promise<void> {
 
   try {
     await mkdir(configDir, { recursive: true, mode: 0o700 });
-    const configContent = stringifyIni(config);
+
+    // Read existing config to preserve state if not provided
+    let existingState: CliState = {
+      hasCompletedFirstTimeSetup: false,
+    };
+    try {
+      const existing = await readConfig();
+      existingState = existing.state;
+    } catch (_err) {
+      // Ignore read errors
+    }
+
+    const configContent = stringifyIni({
+      api: {
+        ...config,
+        baseUrl: API_BASE_URL,
+      },
+      console: {
+        baseUrl: APP_BASE_URL,
+      },
+      state: {
+        ...existingState,
+        ...config.state,
+      },
+    });
+
+    // Add a helpful header comment
     const fileContent = `; GenSX Configuration File
 ; Generated on: ${new Date().toISOString()}
 
