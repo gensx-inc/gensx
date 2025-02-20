@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.2](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.1...gensx-cli-v0.1.2) (2025-02-20)
+
+
+### ✨ New Features
+
+* Colorize login command. ([#303](https://github.com/gensx-inc/gensx/issues/303)) ([36af168](https://github.com/gensx-inc/gensx/commit/36af168cab8faebad5e11d40516075ac9b2ed84d))
+* Print URL to link to execution. ([#293](https://github.com/gensx-inc/gensx/issues/293)) ([3f6898e](https://github.com/gensx-inc/gensx/commit/3f6898e5cc2a02e53286f939528f6fa499b52238))
+
+
+### 🐛 Bug Fixes
+
+* Don't use global crypto. ([#298](https://github.com/gensx-inc/gensx/issues/298)) ([8ce57d8](https://github.com/gensx-inc/gensx/commit/8ce57d863185a88cb14a7f72ac70f7894b25164e))
+
 ## [0.1.1](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.0...gensx-cli-v0.1.1) (2025-02-19)
 
 
