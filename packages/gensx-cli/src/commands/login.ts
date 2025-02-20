@@ -1,60 +1,19 @@
-import { mkdir, writeFile } from "fs/promises";
-import { homedir, platform } from "os";
 import { hostname } from "os";
-import path from "path";
 
 import { createHash, getRandomValues } from "node:crypto";
 
 import { consola } from "consola";
-import { stringify as stringifyIni } from "ini";
 import open from "open";
 import ora from "ora";
+import picocolors from "picocolors";
 
 import { logger } from "../logger.js";
+import { API_BASE_URL, APP_BASE_URL, saveConfig } from "../utils/config.js";
 import { waitForKeypress } from "../utils/terminal.js";
-
-const API_BASE_URL = process.env.GENSX_API_BASE_URL ?? "https://api.gensx.com";
-const APP_BASE_URL = process.env.GENSX_APP_BASE_URL ?? "https://app.gensx.com";
-
-function getConfigPath(): { configDir: string; configFile: string } {
-  // Allow override through environment variable
-  if (process.env.GENSX_CONFIG_DIR) {
-    return {
-      configDir: process.env.GENSX_CONFIG_DIR,
-      configFile: path.join(process.env.GENSX_CONFIG_DIR, "config"),
-    };
-  }
-
-  const home = homedir();
-
-  // Platform-specific paths
-  if (platform() === "win32") {
-    // Windows: %APPDATA%\gensx\config
-    const appData =
-      process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
-    return {
-      configDir: path.join(appData, "gensx"),
-      configFile: path.join(appData, "gensx", "config"),
-    };
-  }
-
-  // Unix-like systems (Linux, macOS): ~/.config/gensx/config
-  const xdgConfigHome =
-    process.env.XDG_CONFIG_HOME ?? path.join(home, ".config");
-  return {
-    configDir: path.join(xdgConfigHome, "gensx"),
-    configFile: path.join(xdgConfigHome, "gensx", "config"),
-  };
-}
 
 interface DeviceAuthRequest {
   requestId: string;
   expiresAt: string;
-}
-
-interface Config {
-  token: string;
-  orgSlug: string;
 }
 
 type DeviceAuthStatus =
@@ -73,38 +32,6 @@ function generateVerificationCode(): string {
 
 function createCodeHash(code: string): string {
   return createHash("sha256").update(code).digest("base64url");
-}
-
-async function saveConfig(config: Config): Promise<void> {
-  const { configDir, configFile } = getConfigPath();
-
-  try {
-    await mkdir(configDir, { recursive: true, mode: 0o700 });
-
-    const configContent = stringifyIni({
-      api: {
-        token: config.token,
-        org: config.orgSlug,
-        baseUrl: API_BASE_URL,
-      },
-      console: {
-        baseUrl: APP_BASE_URL,
-      },
-    });
-
-    // Add a helpful header comment
-    const fileContent = `; GenSX Configuration File
-; Generated on: ${new Date().toISOString()}
-
-${configContent}`;
-
-    const mode = platform() === "win32" ? undefined : 0o600;
-    await writeFile(configFile, fileContent, { mode });
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Unknown error occurred";
-    throw new Error(`Failed to save configuration: ${message}`);
-  }
 }
 
 async function createLoginRequest(
@@ -165,12 +92,26 @@ async function pollLoginStatus(
   return body.data;
 }
 
-export async function login(): Promise<void> {
+export async function login(): Promise<{ skipped: boolean }> {
   const spinner = ora();
 
   try {
-    spinner.start("Logging in to GenSX");
+    logger.log(
+      picocolors.yellow(
+        `Press any key to open your browser and login to GenSX Cloud (ESC to skip)`,
+      ),
+    );
 
+    // Wait for any keypress
+    let key: string;
+    key = await waitForKeypress();
+    if (key === "\u001b") {
+      // ESC key
+      spinner.info("Login skipped");
+      return { skipped: true };
+    }
+
+    spinner.start("Logging in to GenSX Cloud");
     const verificationCode = generateVerificationCode();
     const request = await createLoginRequest(verificationCode);
     spinner.succeed();
@@ -178,16 +119,7 @@ export async function login(): Promise<void> {
     const authUrl = new URL(`/auth/device/${request.requestId}`, APP_BASE_URL);
     authUrl.searchParams.set("code_verifier", verificationCode);
 
-    logger.log(
-      `\x1b[33mPress any key to open your browser and authenticate with GenSX:\x1b[0m
-
-\x1b[34m${authUrl.toString()}\x1b[0m`,
-    );
-
-    // Wait for any keypress
-    await waitForKeypress();
-
-    spinner.start("Opening browser");
+    spinner.start(`Opening ${picocolors.blue(authUrl.toString())}`);
     await open(authUrl.toString());
     spinner.succeed();
 
@@ -198,16 +130,22 @@ export async function login(): Promise<void> {
     do {
       status = await pollLoginStatus(request.requestId, verificationCode);
       if (status.status === "completed") {
-        await saveConfig({
+        const config = {
           token: status.token,
-          orgSlug: status.orgSlug,
+          org: status.orgSlug,
+        };
+        await saveConfig(config, {
+          hasCompletedFirstTimeSetup: true,
+          lastLoginAt: new Date().toISOString(),
         });
         spinner.succeed("Successfully logged in to GenSX");
-        break;
+        return { skipped: false };
       }
       // Wait 1 second before polling again
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } while (status.status === "pending");
+
+    return { skipped: false };
   } catch (error) {
     consola.error("Error:", error);
     spinner.fail(

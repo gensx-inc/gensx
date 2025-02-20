@@ -4,8 +4,9 @@ import { consola } from "consola";
  * Waits for a single keypress in the terminal.
  * Falls back to waiting for Enter in non-TTY environments.
  * Handles cleanup and process termination gracefully.
+ * @returns The key that was pressed, or '\n' for Enter in non-TTY environments
  */
-export async function waitForKeypress(): Promise<void> {
+export async function waitForKeypress(): Promise<string> {
   return new Promise((resolve) => {
     try {
       if (!process.stdin.isTTY) {
@@ -14,9 +15,9 @@ export async function waitForKeypress(): Promise<void> {
         process.stdin.resume();
         process.stdin.setEncoding("utf8");
 
-        const onData = () => {
+        const onData = (data: string) => {
           cleanup();
-          resolve();
+          resolve(data.trim());
         };
 
         process.stdin.once("data", onData);
@@ -62,7 +63,7 @@ export async function waitForKeypress(): Promise<void> {
         process.removeListener("SIGINT", exitHandler);
         process.removeListener("SIGTERM", exitHandler);
         process.removeListener("SIGQUIT", exitHandler);
-        resolve();
+        resolve(data);
       };
 
       process.stdin.on("data", onData);
@@ -72,10 +73,10 @@ export async function waitForKeypress(): Promise<void> {
       process.stdin.resume();
       process.stdin.setEncoding("utf8");
 
-      const onData = () => {
+      const onData = (data: string) => {
         process.stdin.removeAllListeners("data");
         process.stdin.pause();
-        resolve();
+        resolve(data.trim());
       };
 
       process.stdin.once("data", onData);
