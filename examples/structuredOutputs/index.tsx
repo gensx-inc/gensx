@@ -91,14 +91,14 @@ async function main() {
   console.log("\n🚀 Starting the structured outputs example");
 
   console.log("\n🎯 Getting structured outputs with GSXChatCompletion");
-  const workflow = gsx.workflow("ExtractEntities", ExtractEntities);
+  const workflow = gsx.Workflow("ExtractEntities", ExtractEntities);
   const result = await workflow.run({
     text: "John Doe is a software engineer at Google.",
   });
   console.log(result);
 
   console.log("\n🎯 Getting structured outputs without helpers");
-  const workflowWithoutHelpers = gsx.workflow(
+  const workflowWithoutHelpers = gsx.Workflow(
     "ExtractEntitiesWithoutHelpers",
     ExtractEntitiesWithoutHelpers,
   );

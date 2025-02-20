@@ -24,7 +24,7 @@ type RunResult<P> = P extends { stream: true }
   : Promise<string>;
 
 // Overload for GsxComponent
-export function workflow<P, O>(
+export function Workflow<P, O>(
   name: string,
   component: GsxComponent<P, O>,
   opts?: {
@@ -33,14 +33,14 @@ export function workflow<P, O>(
 ): { run: (props: P) => Promise<O> };
 
 // Overload for GsxStreamComponent
-export function workflow<P extends { stream?: boolean }>(
+export function Workflow<P extends { stream?: boolean }>(
   name: string,
   component: GsxStreamComponent<P>,
   opts?: {
     metadata?: Record<string, unknown>;
   },
 ): { run: <T extends P>(props: T) => RunResult<T> };
-export function workflow<P extends { stream?: boolean }, O>(
+export function Workflow<P extends { stream?: boolean }, O>(
   name: string,
   component: GsxComponent<P, O> | GsxStreamComponent<P>,
   opts?: {
@@ -50,7 +50,7 @@ export function workflow<P extends { stream?: boolean }, O>(
   run: (props: P) => Promise<O | Streamable | string>;
 } {
   return {
-    run: async props => {
+    run: async (props) => {
       const context = new ExecutionContext({});
 
       const workflowContext = context.getWorkflowContext();

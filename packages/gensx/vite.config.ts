@@ -11,12 +11,13 @@ export default defineConfig(({ command }) => ({
         index: resolve(__dirname, "src/index.ts"),
         "jsx-runtime": resolve(__dirname, "src/jsx-runtime.ts"),
         "jsx-dev-runtime": resolve(__dirname, "src/jsx-dev-runtime.ts"),
+        "run-cli": resolve(__dirname, "src/run-cli.ts"),
       },
       formats: ["es"],
       fileName: (_, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
-      external: id => !id.startsWith(".") && !id.startsWith("/"),
+      external: (id) => !id.startsWith(".") && !id.startsWith("/"),
     },
     watch: command === "serve" ? {} : undefined,
   },
@@ -30,7 +31,7 @@ export default defineConfig(({ command }) => ({
       include: ["src"],
       outDir: "dist",
       rollupTypes: true,
-      afterDiagnostic: diagnostics => {
+      afterDiagnostic: (diagnostics) => {
         if (diagnostics.length) {
           throw new Error("Compile failure");
         }

@@ -1,9 +1,9 @@
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 
-import { ArxivEntry, ArxivSearch } from "./arxiv.js";
+import { ArxivEntry, SearchArxiv } from "./arxiv.js";
 import { GradeDocument } from "./grader.js";
-import { QueryGenerator } from "./queryGenerator.js";
+import { GenerateQueries } from "./queryGenerator.js";
 import { ArxivSummary, FetchAndSummarize } from "./summarize.js";
 
 interface CreateReportProps {
@@ -38,7 +38,7 @@ export const CreateReport = gsx.Component<CreateReportProps, string>(
     </paper>`,
       )
       .join("\n")}
-      
+
     Please write a report answering the user's prompt using the papers provided.`;
 
     return (
@@ -73,7 +73,7 @@ export const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
     const documents: ArxivSummary[] = await gsx
       .array<string>(queries)
       .flatMap<ArxivEntry>((query) => (
-        <ArxivSearch query={query} maxResults={3} />
+        <SearchArxiv query={query} maxResults={3} />
       ))
       .filter(
         (document, index, array) =>
@@ -100,18 +100,18 @@ interface DeepResearchProps {
   prompt: string;
 }
 
-export const DeepResearchWorkflow = gsx.Component<DeepResearchProps, string>(
-  "DeepResearchWorkflow",
+export const DeepResearch = gsx.Component<DeepResearchProps, string>(
+  "DeepResearch",
   ({ prompt }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <QueryGenerator prompt={prompt}>
+        <GenerateQueries prompt={prompt}>
           {({ queries }) => (
             <Research queries={queries} prompt={prompt}>
               {(results) => <CreateReport results={results} prompt={prompt} />}
             </Research>
           )}
-        </QueryGenerator>
+        </GenerateQueries>
       </OpenAIProvider>
     );
   },

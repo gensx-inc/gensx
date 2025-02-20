@@ -19,7 +19,7 @@ suite("execute", () => {
 
   suite("workflow", () => {
     test("can execute a workflow", async () => {
-      const workflow = gsx.workflow("test", WorkflowComponent);
+      const workflow = gsx.Workflow("test", WorkflowComponent);
       const result = await workflow.run({});
 
       const assertReturnType: Assert<typeof result, string> = true;
@@ -31,7 +31,7 @@ suite("execute", () => {
     test("can execute a workflow with a stream component", async () => {
       const StreamComponent = gsx.StreamComponent<{ foo: string }>(
         "test",
-        props => {
+        (props) => {
           const generator = async function* () {
             await setTimeout(0);
             yield props.foo;
@@ -41,7 +41,7 @@ suite("execute", () => {
       );
 
       // Using type annotations on the workflow call to ensure the correct type is returned
-      const workflow = gsx.workflow("test", StreamComponent);
+      const workflow = gsx.Workflow("test", StreamComponent);
       const iterator: Streamable = await workflow.run({
         stream: true,
         foo: "hello",
@@ -97,10 +97,10 @@ suite("execute", () => {
       }
       expect(Object.keys(checkpoints).length).toBeGreaterThanOrEqual(2);
       expect(
-        Object.values(checkpoints).some(c => c.metadata?.num === "1"),
+        Object.values(checkpoints).some((c) => c.metadata?.num === "1"),
       ).toBe(true);
       expect(
-        Object.values(checkpoints).some(c => c.metadata?.num === "2"),
+        Object.values(checkpoints).some((c) => c.metadata?.num === "2"),
       ).toBe(true);
     });
 

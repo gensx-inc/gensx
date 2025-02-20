@@ -98,7 +98,7 @@ export async function executeWorkflowWithCheckpoints<T>(
     },
   );
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "executeWorkflowWithCheckpoints" +
       Math.round(Math.random() * 1000).toFixed(0),
     WorkflowComponent,

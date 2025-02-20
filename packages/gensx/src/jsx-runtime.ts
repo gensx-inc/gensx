@@ -129,7 +129,7 @@ function resolveChildren<O>(
     return children(output);
   }
   if (Array.isArray(children)) {
-    return Promise.all(children.map(child => child(output)));
+    return Promise.all(children.map((child) => child(output)));
   }
   // Single element case
   return (children as JSX.Element)(output);

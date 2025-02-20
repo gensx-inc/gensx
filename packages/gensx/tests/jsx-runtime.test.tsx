@@ -23,7 +23,7 @@ suite("jsx-runtime", () => {
 
     const result = await gsx.execute(
       <MyComponent>
-        {async value => {
+        {async (value) => {
           await setTimeout(0);
           return value + " world";
         }}
@@ -35,7 +35,7 @@ suite("jsx-runtime", () => {
   test("child does not receive children prop", async () => {
     let childReceivedProps: Record<string, unknown> | undefined = undefined;
 
-    const Child = gsx.Component<{}, string>("Child", props => {
+    const Child = gsx.Component<{}, string>("Child", (props) => {
       childReceivedProps = props;
       return "child";
     });
