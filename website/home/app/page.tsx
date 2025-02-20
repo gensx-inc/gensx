@@ -117,6 +117,14 @@ const WebSearchAgent = gsx.Component<{}, Stream<ChatCompletionChunk>>(
 import { gsx } from "gensx";
 import { ClientOptions } from "openai";
 
+const grok3Config = {
+  clientOptions: {
+    apiKey: process.env.GROK_API_KEY,
+    baseURL: "https://api.x.ai/v1",
+  },
+  model: "grok-3",
+};
+
 const DocumentSummarizer = gsx.Component<DocumentSummarizerProps, string>(
   "DocumentSummarizer",
   ({ document, provider }) => (
@@ -138,14 +146,6 @@ const workflow = gsx.Workflow(
   "DocumentSummarizerWorkflow",
   DocumentSummarizer,
 );
-
-const grok3Config = {
-  clientOptions: {
-    apiKey: process.env.GROK_API_KEY,
-    baseURL: "https://api.x.ai/v1",
-  },
-  model: "grok-3",
-};
 
 const result = await workflow.run({
   document: "The quick brown fox...",
