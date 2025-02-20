@@ -78,17 +78,17 @@ Maintain your voice while preserving the key insights and all links from the ana
   },
 );
 
-interface CommentsAnalyzerProps {
+interface AnalyzeCommentsProps {
   postId: number;
   comments: { text: string; score: number }[];
 }
 
-type CommentsAnalyzerOutput = string;
+type AnalyzeCommentsOutput = string;
 
-const CommentsAnalyzer = gsx.Component<
-  CommentsAnalyzerProps,
-  CommentsAnalyzerOutput
->("CommentsAnalyzer", ({ postId, comments }) => {
+const AnalyzeComments = gsx.Component<
+  AnalyzeCommentsProps,
+  AnalyzeCommentsOutput
+>("AnalyzeComments", ({ postId, comments }) => {
   const PROMPT = `
 You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
 
@@ -137,13 +137,13 @@ Focus on substance rather than surface-level reactions. When referencing comment
   );
 });
 
-interface PostSummarizerProps {
+interface SummarizePostProps {
   story: HNStory;
 }
 
-type PostSummarizerOutput = string;
-const PostSummarizer = gsx.Component<PostSummarizerProps, PostSummarizerOutput>(
-  "PostSummarizer",
+type SummarizePostOutput = string;
+const SummarizePost = gsx.Component<SummarizePostProps, SummarizePostOutput>(
+  "SummarizePost",
   ({ story }) => {
     const PROMPT = `
 You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
@@ -300,9 +300,9 @@ const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
   ({ stories }) => {
     return {
       analyses: stories.map((story) => ({
-        summary: <PostSummarizer story={story} />,
+        summary: <SummarizePost story={story} />,
         commentAnalysis: (
-          <CommentsAnalyzer postId={story.id} comments={story.comments} />
+          <AnalyzeComments postId={story.id} comments={story.comments} />
         ),
       })),
     };

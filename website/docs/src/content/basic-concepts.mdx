@@ -26,13 +26,13 @@ When you define a component, you need to include four things:
 Here's an example of a simple component:
 
 ```tsx
-interface GreetingProps {
+interface GreetUserProps {
   name: string;
 }
-type GreetingOutput = string;
+type GreetUserOutput = string;
 
-const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
-  "Greeting",
+const GreetUser = gsx.Component<GreetUserProps, GreetUserOutput>(
+  "GreetUser",
   async ({ name }) => {
     return `Hello, ${name}!`;
   },
@@ -42,8 +42,8 @@ const Greeting = gsx.Component<GreetingProps, GreetingOutput>(
 Components can return data as well as other components. Here's an example of a component that returns another component:
 
 ```tsx
-const AIGreeting = gsx.Component<GreetingProps, GreetingOutput>(
-  "AIGreeting",
+const GreetUser = gsx.Component<GreetUserProps, GreetUserOutput>(
+  "GreetUser",
   async ({ name }) => {
     return (
       <ChatCompletion
@@ -116,15 +116,31 @@ for await (const chunk of stream) {
 }
 ```
 
-## Executing components
+## Running workflows
 
-Components are executed using `gsx.execute()`, which processes the JSX tree from top to bottom while executing components in parallel wherever possible.
+Workflows and components are synonymous in GenSX. You'll often design workflows that are composed of multiple components, but they can also just be a single component. Regardless, you'll need to define a top level component that will be used to run the workflow. You can then use `gsx.Workflow().run(props)` to run the workflow:
+
+```tsx
+const result = await gsx
+  .Workflow("MyWorkflow", MyComponent)
+  .run({ input: "some data" });
+```
+
+When components are run via a workflow, GenSX processes the JSX tree from top to bottom while executing components in parallel wherever possible.
+
+Because workflows are just components, you can run and evaluate them in isolation, making it easy to debug and verify individual steps of your workflow. This is particularly valuable when building complex LLM applications that need robust evaluation.
+
+Rather than having to run an entire workflow to test a change to a single component, you can test just that component, dramatically speeding up your dev loop. This isolation also makes unit testing more manageable, as you can create specific test cases without having to worry about the rest of the workflow.
+
+## Executing sub-workflows
+
+In some cases, you may need to run a sub-workflow within a larger workflow. You can do this by using `gsx.execute()`:
 
 ```tsx
 const result = await gsx.execute(<MyComponent input="some data" />);
 ```
 
-You'll often use `gsx.execute()` to run a top level workflow as shown above, but you can also use it to run a sub-workflow within a component. This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `gsx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow.
+This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `gsx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow.
 
 Sub-workflows are especially useful for more complex operations like map/reduce:
 
@@ -145,10 +161,6 @@ const AnalyzeReviews = gsx.Component<AnalyzeReviewsProps, AnalyzeReviewsOutput>(
 );
 ```
 
-Components can be tested and evaluated in isolation, making it easy to debug and verify individual steps of your workflow. This is particularly valuable when building complex LLM applications that need robust evaluation.
-
-Rather than having to run an entire workflow to test a change to a single component, you can test just that component, dramatically speeding up your dev loop. This isolation also makes unit testing more manageable, as you can create specific test cases without having to worry about the rest of the workflow.
-
 ## Contexts
 
 Contexts provide a way to share data across components without explicitly passing them through props. They're similar to React's Context API but adapted for GenSX workflows. Contexts are particularly useful for:
@@ -160,7 +172,7 @@ Contexts provide a way to share data across components without explicitly passin
 Here's how to create and use a context:
 
 ```tsx
-interface User {
+interface GreetUserProps {
   name: string;
 }
 
@@ -168,22 +180,22 @@ interface User {
 const UserContext = gsx.createContext({ name: "" });
 
 // Use the context in a component
-const Greeting = gsx.Component<{}, string>("Greeting", () => {
+const GreetUser = gsx.Component<{}, string>("GreetUser", () => {
   const user = gsx.useContext(UserContext);
   return `Hello, ${user.name}!`;
 });
 
 // Provide a value to the context
-const result = await gsx.execute(
+const ContextExample = gsx.Component<{}, string>("ContextExample", () => (
   <UserContext.Provider value={{ name: "John" }}>
-    <Greeting />
-  </UserContext.Provider>,
-);
+    <GreetUser />
+  </UserContext.Provider>
+));
 ```
 
 Contexts are a useful way to pass configuration without prop drilling. However, they do make your components less reusable so we recommend that you use them sparingly.
 
-For more details on providers, see the [Contexts](/docs/concepts/context) page.
+For more details on providers, see the [Context and Providers](/docs/concepts/context) page.
 
 ## Providers
 
@@ -192,14 +204,19 @@ Providers are a specialized use of contexts that focus on managing configuration
 The main provider available today is the `OpenAIProvider`, which manages your OpenAI API key:
 
 ```tsx
-const result = await gsx.execute(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <ChatCompletion
-      model="gpt-4o-mini"
-      messages={[{ role: "user", content: "Hello!" }]}
-    />
-  </OpenAIProvider>,
+const BasicChat = gsx.Component<BasicChatProps, string>(
+  "BasicChat",
+  async ({ prompt }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <ChatCompletion
+          model="gpt-4o-mini"
+          messages={[{ role: "user", content: prompt }]}
+        />
+      </OpenAIProvider>
+    );
+  },
 );
 ```
 
-For more details on providers, see the [Providers](../concepts/providers) page.
+For more details on providers, see the [Context and Providers](/docs/concepts/context) page.
