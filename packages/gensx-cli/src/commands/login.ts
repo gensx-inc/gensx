@@ -1,60 +1,18 @@
-import { mkdir, writeFile } from "fs/promises";
-import { homedir, platform } from "os";
 import { hostname } from "os";
-import path from "path";
 
 import { createHash, getRandomValues } from "node:crypto";
 
 import { consola } from "consola";
-import { stringify as stringifyIni } from "ini";
 import open from "open";
 import ora from "ora";
 
 import { logger } from "../logger.js";
+import { API_BASE_URL, APP_BASE_URL, saveConfig } from "../utils/config.js";
 import { waitForKeypress } from "../utils/terminal.js";
-
-const API_BASE_URL = process.env.GENSX_API_BASE_URL ?? "https://api.gensx.com";
-const APP_BASE_URL = process.env.GENSX_APP_BASE_URL ?? "https://app.gensx.com";
-
-function getConfigPath(): { configDir: string; configFile: string } {
-  // Allow override through environment variable
-  if (process.env.GENSX_CONFIG_DIR) {
-    return {
-      configDir: process.env.GENSX_CONFIG_DIR,
-      configFile: path.join(process.env.GENSX_CONFIG_DIR, "config"),
-    };
-  }
-
-  const home = homedir();
-
-  // Platform-specific paths
-  if (platform() === "win32") {
-    // Windows: %APPDATA%\gensx\config
-    const appData =
-      process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
-    return {
-      configDir: path.join(appData, "gensx"),
-      configFile: path.join(appData, "gensx", "config"),
-    };
-  }
-
-  // Unix-like systems (Linux, macOS): ~/.config/gensx/config
-  const xdgConfigHome =
-    process.env.XDG_CONFIG_HOME ?? path.join(home, ".config");
-  return {
-    configDir: path.join(xdgConfigHome, "gensx"),
-    configFile: path.join(xdgConfigHome, "gensx", "config"),
-  };
-}
 
 interface DeviceAuthRequest {
   requestId: string;
   expiresAt: string;
-}
-
-interface Config {
-  token: string;
-  orgSlug: string;
 }
 
 type DeviceAuthStatus =
@@ -73,38 +31,6 @@ function generateVerificationCode(): string {
 
 function createCodeHash(code: string): string {
   return createHash("sha256").update(code).digest("base64url");
-}
-
-async function saveConfig(config: Config): Promise<void> {
-  const { configDir, configFile } = getConfigPath();
-
-  try {
-    await mkdir(configDir, { recursive: true, mode: 0o700 });
-
-    const configContent = stringifyIni({
-      api: {
-        token: config.token,
-        org: config.orgSlug,
-        baseUrl: API_BASE_URL,
-      },
-      console: {
-        baseUrl: APP_BASE_URL,
-      },
-    });
-
-    // Add a helpful header comment
-    const fileContent = `; GenSX Configuration File
-; Generated on: ${new Date().toISOString()}
-
-${configContent}`;
-
-    const mode = platform() === "win32" ? undefined : 0o600;
-    await writeFile(configFile, fileContent, { mode });
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Unknown error occurred";
-    throw new Error(`Failed to save configuration: ${message}`);
-  }
 }
 
 async function createLoginRequest(
@@ -198,9 +124,13 @@ export async function login(): Promise<void> {
     do {
       status = await pollLoginStatus(request.requestId, verificationCode);
       if (status.status === "completed") {
-        await saveConfig({
+        const config = {
           token: status.token,
           orgSlug: status.orgSlug,
+        };
+        await saveConfig(config, {
+          hasCompletedFirstTimeSetup: true,
+          lastLoginAt: new Date().toISOString(),
         });
         spinner.succeed("Successfully logged in to GenSX");
         break;
