@@ -22,126 +22,138 @@ export default function Home() {
   const activeExample = hoveredExample ?? committedExample;
 
   const examples: Record<ExampleType, string> = {
-    components: `import { Component } from 'gensx';
-import { OpenAIChatCompletion, OpenAIChatCompletionProps } from 'gensx/openai';
+    components: `import { gsx } from 'gensx';
+import { ChatCompletion } from 'gensx/openai';
 
-type WriteBlogDraftProps = {
+interface WriteDraftProps {
+  research: string[];
   prompt: string;
 }
-type WriteBlogDraftOutput = {
-  draft: string;
-}
 
-const WriteBlogDraft = Component("Write Blog Draft",
-  (props: WriteBlogDraftProps) => {
-    const blogPrompt = [
-      {
-        role: "user",
-        content: \`Write a blog for the prompt: \${props.prompt}\`,
-      },
-    ];
-    return (
-      <ChatCompletion messages={chatCompletionMessages} />
-    );
-  }
-);
+type WriteDraftOutput = string;
 
-type RemoveBuzzWordsProps = {
-  blog: string;
-}
-type RemoveBuzzWordsOutput = {
-  blog: string;
-}
-const RemoveBuzzWords = Component("Remove Buzz Words",
-  (props: RemoveBuzzWordsProps) => {
-    const chatCompletionMessages = [
-      {
-        role: "user",
-        content: \`Remove common buzzwords and jargon from this text while preserving the meaning: \${props.draft}\`,
-      },
-    ];
-    };
+const WriteDraft = gsx.Component<WriteDraftProps, WriteDraftOutput>(
+  "WriteDraft",
+  ({ prompt, research }) => {
     return (
-      <ChatCompletion messages={chatCompletionMessages} />
+      <ChatCompletion
+        model="gpt-4o-mini"
+        temperature={0}
+        messages={[
+          {
+            role: "user",
+            content: \`Write a blog post about \${prompt}\`
+          },
+        ]}
+      />
     );
-  }
+  },
 );
 `,
-    workflows: `import { Workflow } from 'gensx';
-import { WriteBlog, RemoveBuzzWords } from './write-blog';
+    workflows: `import { gsx } from 'gensx';
+import { OpenAIProvider } from 'gensx/openai';
+import { Research, WriteDraft, EditDraft } from './writeBlog';
 
-type BlogWorkflowProps = {
+interface BlogWriterProps {
   prompt: string;
 }
-type BlogWorkflowOutput = {
-  blog: string;
-}
-const WriteBlogWorkflow = Workflow("Blog Workflow",
-  (props: BlogWorkflowInput) => (
-    <WriteBlog prompt={props.prompt}>
-      {(output: WriteBlogOutput) => (
-        <RemoveBuzzWords draft={output.blog}>
-          {(output: RemoveBuzzWordsOutput) => {
-            return { blog: output.result };
-          }}
-        </RemoveBuzzWords>
-      )}
-    </WriteBlog>
-  )
+
+export const WriteBlog = gsx.StreamComponent<BlogWriterProps>(
+  "WriteBlog",
+  ({ prompt }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <Research prompt={prompt}>
+          {(research) => (
+            <WriteDraft prompt={prompt} research={research.flat()}>
+              {(draft) => <EditDraft draft={draft} stream={true} />}
+            </WriteDraft>
+          )}
+        </Research>
+      </OpenAIProvider>
+    );
+  },
 );
 
-Const blogWriter = gsx.Component( <WriteBlog> <next></WriteBlog>
-
-Const blogWritingWorkflow = gsx.Workflow(“name”, BlogWriter)
-
-Const result = blowWritingWorkflow.run({ prompt: “foo” });
-
-
-const result = WriteBlogWorkflow.run({ prompt: "Write a blog post about AI developer tools." });
+const workflow = gsx.Workflow("WriteBlogWorkflow", WriteBlog);
+const result = await workflow.run({
+  prompt: "Write a blog post about AI developer tools"
+});
 `,
-    agents: `import { Swarm, Agent, Tool } from 'ai-agent-sdk';
+    agents: `import { gsx } from 'gensx';
+import { OpenAIProvider, GSXTool, GSXChatCompletion } from 'gensx/openai';
 
-// Define a custom tool
-const calculator = new Tool({
-  name: "calculator",
-  description: "Perform calculations",
-  function: async (input: string) => {
-    return eval(input).toString();
-  }
+const webSearchTool = new GSXTool({
+  name: "web_search",
+  description: "Search the internet for information",
+  schema: webSearchSchema,
+  run: async ({ query }: WebSearchParams) => {
+    return await searchWeb(query);
+  },
 });
 
-const agent = new Agent({
-  name: "Math Helper",
-  tools: [calculator],
+const WebSearchAgent = gsx.Component<{}, Stream<ChatCompletionChunk>>(
+  "WebSearchAgent",
+  () => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <GSXChatCompletion
+        stream={true}
+        messages={[
+          {
+            role: "system",
+            content: "You are a sassy, trash eating racoon.",
+          },
+          {
+            role: "user",
+            content: "Where are the best trash cans near central park?",
+          },
+        ]}
+        model="gpt-4o-mini"
+        temperature={0.7}
+        tools={[webSearchTool]}
+      />
+    </OpenAIProvider>
+  ),
+);`,
+    llms: `import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { gsx } from "gensx";
+import { ClientOptions } from "openai";
+
+const DocumentSummarizer = gsx.Component<DocumentSummarizerProps, string>(
+  "DocumentSummarizer",
+  ({ document, provider }) => (
+    <OpenAIProvider {...provider.clientOptions}>
+      <ChatCompletion
+        model={provider.model}
+        messages={[
+          {
+            role: "user",
+            content: \`Summarize the document in 30 words: \${document}\`,
+          },
+        ]}
+      />
+    </OpenAIProvider>
+  ),
+);
+
+const workflow = gsx.Workflow(
+  "DocumentSummarizerWorkflow",
+  DocumentSummarizer,
+);
+
+const grok3Config = {
+  clientOptions: {
+    apiKey: process.env.GROK_API_KEY,
+    baseURL: "https://api.x.ai/v1",
+  },
+  model: "grok-3",
+};
+
+const result = await workflow.run({
+  document: "The quick brown fox...",
+  provider: grok3Config,
 });
-
-const result = await agent.run({
-  message: "What is 123 * 456?"
-});`,
-    llms: `import { Swarm, Agent } from 'ai-agent-sdk';
-
-// Create an agent with custom behavior
-const agent = new Agent({
-  name: "Custom Agent",
-  model: "gpt-4",
-  temperature: 0.7,
-  maxTokens: 1000,
-
-  // Define custom decision making
-  async decide(context) {
-    const { message, memory } = context;
-
-    // Access agent's memory
-    const relevantHistory = await memory.search(message);
-
-    // Make decisions based on context
-    if (relevantHistory.length > 0) {
-      return this.useHistoricalContext(relevantHistory);
-    }
-
-    return this.generateNewResponse(message);
-  }
-});`,
+`,
   };
 
   // Define an array of button/tab details so we can map over them.
@@ -153,29 +165,28 @@ const agent = new Agent({
   }[] = [
     {
       type: "components",
-      title: "Components",
-      mobileTitle: "Components",
+      title: "Create Components",
+      mobileTitle: "Create Components",
       description:
         "Create building blocks for your app with reusable components.",
     },
     {
       type: "workflows",
-      title: "Workflows",
-      mobileTitle: "Workflows",
-      description: "Use Components to build and run workflows.",
+      title: "Run Workflows",
+      mobileTitle: "Run Workflows",
+      description: "Combine components to build and run powerful workflows.",
     },
     {
       type: "agents",
-      title: "Agentic Patterns",
-      mobileTitle: "Agentic Patterns",
-      description: "Expressive and powerful agentic patterns.",
+      title: "Build Agents",
+      mobileTitle: "Build Agents",
+      description: "Create agents to handle complex tasks.",
     },
     {
       type: "llms",
-      title: "Composable and Reusable",
-      mobileTitle: "LLMs",
-      description:
-        "Install or publish components on npm and use throughout your workflows.",
+      title: "Use any LLM",
+      mobileTitle: "Use any LLM",
+      description: "Easily swap between models and providers.",
     },
   ];
 
