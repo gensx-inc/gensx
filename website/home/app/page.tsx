@@ -30,9 +30,7 @@ interface WriteDraftProps {
   prompt: string;
 }
 
-type WriteDraftOutput = string;
-
-const WriteDraft = gsx.Component<WriteDraftProps, WriteDraftOutput>(
+const WriteDraft = gsx.Component<WriteDraftProps, string>(
   "WriteDraft",
   ({ prompt, research }) => {
     return (
