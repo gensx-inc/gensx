@@ -271,11 +271,12 @@ export class CheckpointManager implements CheckpointWriter {
       const base64CompressedExecution =
         Buffer.from(compressedExecution).toString("base64");
 
+      const workflowName = this.workflowName ?? this.root.componentName;
       const payload = {
         executionId: this.root.id,
         version: this.version,
         schemaVersion: 2,
-        workflowName: this.root.componentName,
+        workflowName,
         startedAt: this.root.startTime,
         completedAt: this.root.endTime,
         rawExecution: base64CompressedExecution,
@@ -599,10 +600,6 @@ export class CheckpointManager implements CheckpointWriter {
       // Handle root node case
       if (!this.root) {
         this.root = node;
-        // If the workflow name is set, update the root node name.
-        if (this.workflowName) {
-          this.root.componentName = this.workflowName;
-        }
       } else if (this.root.parentId === node.id) {
         // Current root was waiting for this node as parent
         this.attachToParent(this.root, node);
@@ -666,9 +663,10 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
+  // TODO: What if we have already sent some checkpoints?
   setWorkflowName(name: string) {
-    // Right now we just update the name of the root node. Eventually this should be separated from the workflow name.
     this.workflowName = name;
+  }
 
     if (this.root) {
       this.root.componentName = name;
@@ -694,9 +692,6 @@ export class CheckpointManager implements CheckpointWriter {
       }
 
       Object.assign(node, updates);
-      if (node.id === this.root?.id) {
-        node.componentName = this.workflowName ?? node.componentName;
-      }
       this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to update unknown node:`, { id });
