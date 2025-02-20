@@ -101,7 +101,7 @@ export async function readConfig(): Promise<{
 }
 
 export async function saveConfig(
-  config: Config,
+  config: Config | null,
   state?: Partial<State>,
 ): Promise<void> {
   const { configDir, configFile } = getConfigPath();
@@ -122,8 +122,7 @@ export async function saveConfig(
 
     const configContent = stringifyIni({
       api: {
-        token: config.token,
-        org: config.orgSlug,
+        ...(config ? {} : {}),
         baseUrl: API_BASE_URL,
       },
       console: {
@@ -152,8 +151,5 @@ ${configContent}`;
 
 export async function updateState(state: Partial<State>): Promise<void> {
   const { config, state: existingState } = await readConfig();
-  if (!config) {
-    throw new Error("Cannot update state without existing config");
-  }
   await saveConfig(config, { ...existingState, ...state });
 }

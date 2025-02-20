@@ -91,7 +91,7 @@ async function pollLoginStatus(
   return body.data;
 }
 
-export async function login(): Promise<void> {
+export async function login(): Promise<{ skipped: boolean }> {
   const spinner = ora();
 
   try {
@@ -105,13 +105,19 @@ export async function login(): Promise<void> {
     authUrl.searchParams.set("code_verifier", verificationCode);
 
     logger.log(
-      `\x1b[33mPress any key to open your browser and authenticate with GenSX:\x1b[0m
+      `\x1b[33mPress any key to open your browser and login to GenSX Cloud (ESC to skip):\x1b[0m
 
 \x1b[34m${authUrl.toString()}\x1b[0m`,
     );
 
     // Wait for any keypress
-    await waitForKeypress();
+    let key: string;
+    key = await waitForKeypress();
+    if (key === "\u001b") {
+      // ESC key
+      spinner.info("Login skipped");
+      return { skipped: true };
+    }
 
     spinner.start("Opening browser");
     await open(authUrl.toString());
@@ -133,11 +139,13 @@ export async function login(): Promise<void> {
           lastLoginAt: new Date().toISOString(),
         });
         spinner.succeed("Successfully logged in to GenSX");
-        break;
+        return { skipped: false };
       }
       // Wait 1 second before polling again
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } while (status.status === "pending");
+
+    return { skipped: false };
   } catch (error) {
     consola.error("Error:", error);
     spinner.fail(

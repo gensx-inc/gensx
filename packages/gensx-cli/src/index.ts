@@ -10,7 +10,12 @@ export function runCLI() {
     .description("CLI tool for GenSX")
     .version(version);
 
-  program.command("login").description("Login to GenSX Cloud").action(login);
+  program
+    .command("login")
+    .description("Login to GenSX Cloud")
+    .action(async () => {
+      await login();
+    });
 
   program
     .command("new")
