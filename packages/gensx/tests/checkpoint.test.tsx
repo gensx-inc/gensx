@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import { setTimeout } from "timers/promises";
 
 import type { ExecutionNode } from "@/checkpoint.js";
@@ -312,6 +313,39 @@ suite("checkpoint", () => {
     });
   });
 
+  test("masks functions in checkpoints", async () => {
+    const nativeFunction = readFileSync;
+    const customFunction = () => "test";
+
+    type CustomFn = () => string;
+    type TimerFn = typeof setTimeout;
+
+    const FunctionComponent = gsx.Component<
+      {},
+      { fn: CustomFn; native: TimerFn }
+    >("FunctionComponent", () => ({
+      fn: customFunction,
+      native: nativeFunction,
+    }));
+
+    const { result, checkpoints } = await executeWithCheckpoints<{
+      fn: CustomFn;
+      native: TimerFn;
+    }>(<FunctionComponent />);
+
+    // Verify the actual result contains the functions
+    expect(typeof result.fn).toBe("function");
+    expect(typeof result.native).toBe("function");
+    expect(result.fn()).toBe("test");
+
+    // Verify the checkpoint masks the functions
+    const finalCheckpoint = checkpoints[checkpoints.length - 1];
+    expect(finalCheckpoint.output).toEqual({
+      fn: "[function]",
+      native: "[function]",
+    });
+  });
+
   test("handles streaming components", async () => {
     // Define a streaming component that yields tokens with delays
     const StreamingComponent = gsx.StreamComponent<{ tokens: string[] }>(
@@ -449,7 +483,9 @@ suite("tree reconstruction", () => {
     expect(lastCall).toBeDefined();
     const options = lastCall![1];
     expect(options?.body).toBeDefined();
-    const lastCallBody = getExecutionFromBody(options?.body as string);
+    const { node: lastCallBody } = getExecutionFromBody(
+      options?.body as string,
+    );
     expect(lastCallBody.componentName).toBe("Parent");
     expect(lastCallBody.children[0].componentName).toBe("Child1");
 
@@ -469,8 +505,8 @@ suite("tree reconstruction", () => {
 
     expect(cm.root?.componentName).toBe("Parent2");
     expect(cm.root?.children).toHaveLength(2);
-    expect(cm.root?.children.map(c => c.componentName)).toContain("Child2A");
-    expect(cm.root?.children.map(c => c.componentName)).toContain("Child2B");
+    expect(cm.root?.children.map((c) => c.componentName)).toContain("Child2A");
+    expect(cm.root?.children.map((c) => c.componentName)).toContain("Child2B");
   });
 
   test("handles deep tree with mixed ordering", () => {
@@ -489,8 +525,8 @@ suite("tree reconstruction", () => {
     expect(root?.componentName).toBe("Root");
     expect(root?.children).toHaveLength(2);
 
-    const branchA = root?.children.find(c => c.componentName === "BranchA");
-    const branchB = root?.children.find(c => c.componentName === "BranchB");
+    const branchA = root?.children.find((c) => c.componentName === "BranchA");
+    const branchB = root?.children.find((c) => c.componentName === "BranchB");
 
     expect(branchA?.children[0].componentName).toBe("LeafA");
     expect(branchB?.children[0].componentName).toBe("LeafB");
@@ -526,13 +562,13 @@ suite("tree reconstruction", () => {
     expect(root?.componentName).toBe("Root");
     expect(root?.children).toHaveLength(2);
 
-    const branchA = root?.children.find(c => c.componentName === "BranchA");
-    const branchB = root?.children.find(c => c.componentName === "BranchB");
+    const branchA = root?.children.find((c) => c.componentName === "BranchA");
+    const branchB = root?.children.find((c) => c.componentName === "BranchB");
 
     // Verify all nodes are connected properly
-    expect(branchA?.children.map(c => c.componentName)).toContain("LeafA");
-    expect(branchA?.children.map(c => c.componentName)).toContain("LeafC");
-    expect(branchB?.children.map(c => c.componentName)).toContain("LeafB");
+    expect(branchA?.children.map((c) => c.componentName)).toContain("LeafA");
+    expect(branchA?.children.map((c) => c.componentName)).toContain("LeafC");
+    expect(branchB?.children.map((c) => c.componentName)).toContain("LeafB");
 
     // Verify tree integrity - every node should have correct parent reference
     function verifyNodeParentRefs(node: ExecutionNode) {

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ExecutionContext, withContext } from "./context";
+import { ExecutionContext, getCurrentContext, withContext } from "./context";
 import { resolveDeep } from "./resolve";
 import {
   Args,
@@ -38,27 +38,64 @@ export const jsx = <TOutput, TProps>(
   component: (
     props: Args<TProps, TOutput> | StreamArgs<TProps>,
   ) => MaybePromise<TOutput>,
-  props: Args<TProps, TOutput> | null,
+  fullProps: Args<TProps, TOutput> | null,
 ): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
+  // Only set name if children is a function and doesn't already have our naming pattern
+  if (
+    fullProps?.children &&
+    typeof fullProps.children === "function" &&
+    fullProps.children.name &&
+    !fullProps.children.name.startsWith("Children[")
+  ) {
+    Object.defineProperty(fullProps.children, "name", {
+      value: `Children[${component.name}]`,
+    });
+  }
+
   // Return a promise that will be handled by execute()
   async function JsxWrapper(): Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
-    const rawResult = await component(props ?? ({} as Args<TProps, TOutput>));
+    const context = getCurrentContext();
 
+    // For Fragment, we need to pass the children through
+    if ((component as any).__gsxFragment) {
+      const result = await component(fullProps!);
+      return await resolveDeep(result);
+    }
+
+    // For regular components, we handle children separately
+    const { children, ...props } = fullProps ?? ({} as Args<TProps, TOutput>);
+    const rawResult = await component(props as Args<TProps, TOutput>);
     const result = await resolveDeep(rawResult);
 
-    // Need to special case Fragment, because it's children are actually executed in the resolveDeep above
-    if (props?.children && !(component as any).__gsxFragment) {
+    if (children) {
+      const workflowContext = context.getWorkflowContext();
+      const root = workflowContext.checkpointManager.root;
+      const parentNodeId = root?.id;
+
       if (result instanceof ExecutionContext) {
-        return await withContext(result, () => {
-          if (props.children) {
-            return resolveDeep(resolveChildren(null as never, props.children));
-          }
-          return null as never;
+        // withContext handles wrapping internally
+        return await withContext(result, async () => {
+          const childResult = await resolveChildren(null as never, children);
+          return resolveDeep(childResult);
+        });
+      } else if (parentNodeId) {
+        // withCurrentNode handles wrapping internally
+        return await context.withCurrentNode(parentNodeId, async () => {
+          const awaitedResult = await result;
+          const childResult = await resolveChildren(
+            awaitedResult as TOutput,
+            children,
+          );
+          return resolveDeep(childResult);
         });
       } else {
-        return await resolveDeep(
-          resolveChildren(result as TOutput, props.children),
+        // No context available, just execute children directly
+        const awaitedResult = await result;
+        const childResult = await resolveChildren(
+          awaitedResult as TOutput,
+          children,
         );
+        return await resolveDeep(childResult);
       }
     }
     return result as Awaited<TOutput> | Awaited<TOutput>[];
@@ -69,6 +106,10 @@ export const jsx = <TOutput, TProps>(
       value: `JsxWrapper[${component.name}]`,
     });
   }
+
+  Object.defineProperty(JsxWrapper, "__gsxFramework", {
+    value: true,
+  });
 
   return JsxWrapper;
 };
@@ -81,15 +122,15 @@ function resolveChildren<O>(
     | JSX.Element
     | JSX.Element[]
     | ((output: O) => MaybePromise<ExecutableValue | Primitive>)
-    // support child functions that do not return anything, but maybe do some other side effect
     | ((output: O) => void)
     | ((output: O) => Promise<void>),
-) {
-  if (children instanceof Function) {
+): MaybePromise<unknown> {
+  if (typeof children === "function") {
     return children(output);
   }
   if (Array.isArray(children)) {
-    return resolveDeep(children);
+    return Promise.all(children.map((child) => child(output)));
   }
-  return children;
+  // Single element case
+  return (children as JSX.Element)(output);
 }

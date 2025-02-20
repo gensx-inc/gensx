@@ -3,7 +3,6 @@ import { setTimeout } from "timers/promises";
 import { expect, suite, test } from "vitest";
 
 import { gsx } from "@/index.js";
-import { JSX } from "@/jsx-runtime.js";
 
 import { executeWithCheckpoints } from "./utils/executeWithCheckpoints";
 
@@ -110,35 +109,65 @@ suite("component", () => {
   });
 
   test("nested components can each have custom names", async () => {
-    const ParentComponent = gsx.Component<{ children: JSX.Element }, string>(
-      "ParentOriginal",
-      async ({ children }) => {
-        await setTimeout(0);
-        return children;
-      },
-    );
+    const ParentComponent = gsx.Component<{}, string>("ParentOriginal", () => {
+      return "parent";
+    });
 
-    const ChildComponent = gsx.Component<{}, string>(
-      "ChildOriginal",
-      async () => {
-        await setTimeout(0);
-        return "hello";
-      },
-    );
+    const ChildComponent = gsx.Component<{}, string>("ChildOriginal", () => {
+      return "child";
+    });
 
-    const { result, checkpoints } = await executeWithCheckpoints<string>(
-      <ParentComponent componentOpts={{ name: "CustomParent" }}>
-        <ChildComponent componentOpts={{ name: "CustomChild" }} />
-      </ParentComponent>,
-    );
+    const { result, checkpoints, checkpointManager } =
+      await executeWithCheckpoints<string>(
+        <ParentComponent componentOpts={{ name: "CustomParent" }}>
+          {(_parentResult) => (
+            <ChildComponent componentOpts={{ name: "CustomChild" }} />
+          )}
+        </ParentComponent>,
+      );
+
+    // Wait for all checkpoint updates to complete
+    await checkpointManager.waitForPendingUpdates();
 
     expect(checkpoints).toBeDefined();
     const finalCheckpoint = checkpoints[checkpoints.length - 1];
     expect(finalCheckpoint).toBeDefined();
     const childCheckpoint = finalCheckpoint.children[0];
 
-    expect(result).toBe("hello");
+    expect(result).toBe("child");
     expect(finalCheckpoint.componentName).toBe("CustomParent");
     expect(childCheckpoint.componentName).toBe("CustomChild");
+  });
+
+  test("does not consume asyncIterable during execution", async () => {
+    let iteratorConsumed = false;
+    const AsyncIterableComponent = gsx.Component<
+      {},
+      AsyncIterableIterator<string>
+    >("AsyncIterableComponent", async () => {
+      await setTimeout(0);
+      const iterator = (async function* () {
+        await setTimeout(0);
+        iteratorConsumed = true;
+        yield "test";
+      })();
+      return iterator;
+    });
+
+    const result = await gsx.execute<AsyncIterableIterator<string>>(
+      <AsyncIterableComponent />,
+    );
+
+    // Verify the iterator wasn't consumed during execution
+    expect(iteratorConsumed).toBe(false);
+
+    // Verify we can still consume the iterator after execution
+    let consumed = false;
+    for await (const value of result) {
+      expect(value).toBe("test");
+      consumed = true;
+    }
+    expect(consumed).toBe(true);
+    expect(iteratorConsumed).toBe(true);
   });
 });

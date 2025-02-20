@@ -5,8 +5,10 @@
   "scripts": {
     "build": "turbo run build --filter=\"./packages/*\"",
     "build:examples": "turbo run build --filter=\"./examples/*\"",
+    "build:home": "turbo run build --filter=\"./website/home\"",
+    "build:docs": "turbo run build --filter=\"./website/docs\"",
     "build:all": "turbo run build",
-    "dev": "turbo run dev --filter=\"./packages/*\"",
+    "dev": "turbo watch build --filter=\"./packages/*\"",
     "lint": "turbo run lint --filter=\"./packages/*\"",
     "lint:examples": "turbo run lint --filter=\"./examples/*\"",
     "lint:all": "turbo run lint",
@@ -32,7 +34,6 @@
     "eslint-plugin-vitest": "^0.5.4",
     "prettier": "^3.0.0",
     "turbo": "^2.3.3",
-    "vite": "^5.0.0",
-    "vite-plugin-dts": "^3.0.0"
+    "typescript": "^5.7.2"
   }
 }

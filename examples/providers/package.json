@@ -14,8 +14,10 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@gensx/openai": "workspace:*",
     "@mendable/firecrawl-js": "^1.15.7",
-    "gensx": "workspace:*"
+    "gensx": "workspace:*",
+    "openai": "^4.83.0"
   },
   "devDependencies": {
     "@types/node": "^20.17.11",

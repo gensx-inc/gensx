@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.2.12](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.11...gensx-v0.2.12) (2025-02-20)
+
+
+### ✨ New Features
+
+* Print URL to link to execution. ([#293](https://github.com/gensx-inc/gensx/issues/293)) ([3f6898e](https://github.com/gensx-inc/gensx/commit/3f6898e5cc2a02e53286f939528f6fa499b52238))
+
+## [0.2.11](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.10...gensx-v0.2.11) (2025-02-19)
+
+
+### 🐛 Bug Fixes
+
+* Add hashbang for using npx gensx ([#286](https://github.com/gensx-inc/gensx/issues/286)) ([5aae4ec](https://github.com/gensx-inc/gensx/commit/5aae4ecd6786e45be77b64a7b7d6320acbe63775))
+
+## [0.2.10](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.9...gensx-v0.2.10) (2025-02-19)
+
+
+### ✨ New Features
+
+* Add `workflow.run` for executing workflows in a fresh context ([#255](https://github.com/gensx-inc/gensx/issues/255)) ([62c5f19](https://github.com/gensx-inc/gensx/commit/62c5f19ef142ab1d0d76531c9caa0d8688cfae4d))
+* capitzalize gsx.Workflow and update examples ([#279](https://github.com/gensx-inc/gensx/issues/279)) ([9ba3eda](https://github.com/gensx-inc/gensx/commit/9ba3eda6b6867c569a98444d411c2ba85b32214d))
+* CLI Device auth flow ([#212](https://github.com/gensx-inc/gensx/issues/212)) ([094b98e](https://github.com/gensx-inc/gensx/commit/094b98e12ef4239e8b04c176a14f19f5e891f5a1))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/cli bumped to 0.1.1
+
+## [0.2.9](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.8...gensx-v0.2.9) (2025-02-12)
+
+
+### 🐛 Bug Fixes
+
+* Remove console.log and fix eslint. ([#213](https://github.com/gensx-inc/gensx/issues/213)) ([a408e62](https://github.com/gensx-inc/gensx/commit/a408e62d6d15201b97351ef7d7f8c1f656941cef))
+* Separate `children` from other props before component execution ([#231](https://github.com/gensx-inc/gensx/issues/231)) ([954ac75](https://github.com/gensx-inc/gensx/commit/954ac75fc9f6a6c1c9bd8c3b2c3b2565f92ef8da))
+* various fixes for handling of functions and streams during resolution and checkpointing ([#232](https://github.com/gensx-inc/gensx/issues/232)) ([f58556c](https://github.com/gensx-inc/gensx/commit/f58556c1b5c851144e777673c4c2fe04c7f9b27f))
+
 ## [0.2.8](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.7...gensx-v0.2.8) (2025-01-31)
 
 

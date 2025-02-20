@@ -24,13 +24,15 @@ Make sure to check what environment variables are required for each example.
 
 ## Basic Examples
 
-| Example                                      | Description                                               |
-| -------------------------------------------- | --------------------------------------------------------- |
-| 📊 [Structured Outputs](./structuredOutputs) | Demonstrates using structured outputs with GenSX          |
-| 🔄 [Reflection](./reflection)                | Shows how to use a self-reflection pattern with GenSX     |
-| 🌊 [Streaming](./streaming)                  | Demonstrates how to handle streaming responses with GenSX |
-| 🔌 [Providers](./providers)                  | Shows how to create a custom provider for GenSX           |
-| 🗃️ [Contexts](./contexts)                    | Shows how to use contexts to manage state in GenSX        |
+| Example                                        | Description                                                      |
+| ---------------------------------------------- | ---------------------------------------------------------------- |
+| 📊 [Structured Outputs](./structuredOutputs)   | Demonstrates using structured outputs with GenSX                 |
+| 🔄 [Reflection](./reflection)                  | Shows how to use a self-reflection pattern with GenSX            |
+| 🌊 [Streaming](./streaming)                    | Demonstrates how to handle streaming responses with GenSX        |
+| 🗃️ [Contexts](./contexts)                      | Shows how to use contexts to manage state in GenSX               |
+| 🔌 [Providers](./providers)                    | Shows how to create a custom provider for GenSX                  |
+| 🎭 [Nested Providers](./nestedProviders)       | Demonstrates how to nest and combine multiple providers in GenSX |
+| 🧩 [Reusable Components](./reusableComponents) | Shows how to create and use reusable components in GenSX         |
 
 ## Full Examples
 
@@ -38,3 +40,4 @@ Make sure to check what environment variables are required for each example.
 | ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | 🔍 [Hacker News Analyzer](./hackerNewsAnalyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
 | ✍️ [Blog Writer](./blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |
+| 🔬 [Deep Research](./examples/deepResearch)     | Generates a report from a prompt after researching and summarizing a list of research papers |

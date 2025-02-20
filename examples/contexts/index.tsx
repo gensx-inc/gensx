@@ -12,22 +12,24 @@ const UserContext = gsx.createContext<User>({
 type GreetingOutput = string;
 
 // Use the context in a component
-const Greeting = gsx.Component<{}, GreetingOutput>("Greeting", () => {
+const GreetUser = gsx.Component<{}, GreetingOutput>("GreetUser", () => {
   const user = gsx.useContext(UserContext);
   return `Hello, ${user.name}!`;
 });
 
+const ContextExample = gsx.Component("ContextExample", () => {
+  return (
+    <UserContext.Provider value={{ name: "John" }}>
+      <GreetUser />
+    </UserContext.Provider>
+  );
+});
+
 async function main() {
   // Provide a value to the context
-  const result = await gsx.execute(
-    <UserContext.Provider
-      value={{
-        name: "John",
-      }}
-    >
-      <Greeting />
-    </UserContext.Provider>,
-  );
+  const result = await gsx
+    .Workflow("ContextExampleWorkflow", ContextExample)
+    .run({}, { printUrl: true });
   console.log(result);
 }
 

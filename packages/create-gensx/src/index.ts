@@ -4,10 +4,18 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { promisify } from "util";
 
+import enquirer from "enquirer";
+import ora from "ora";
+import pc from "picocolors";
+
 const exec = promisify(execCallback);
 
 const TEMPLATE_MAP: Record<string, string> = {
   ts: "typescript",
+};
+
+const TEMPLATE_NAMES: { [key in keyof typeof TEMPLATE_MAP]: string } = {
+  ts: "TypeScript Project",
 };
 
 interface Template {
@@ -50,6 +58,32 @@ async function listTemplates(): Promise<string[]> {
   }
 }
 
+async function selectTemplate(): Promise<string> {
+  const templates = await listTemplates();
+  const choices = templates.map((flag) => ({
+    name: flag,
+    value: flag,
+    message: TEMPLATE_NAMES[flag],
+  }));
+
+  if (choices.length === 0) {
+    throw new Error("No templates available");
+  }
+
+  if (choices.length === 1) {
+    return choices[0].value;
+  }
+
+  const answer = await enquirer.prompt<{ template: string }>({
+    type: "select",
+    name: "template",
+    message: "Select a template",
+    choices,
+  });
+
+  return answer.template;
+}
+
 async function copyTemplateFiles(templateName: string, targetPath: string) {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const templatePath = path.join(
@@ -84,7 +118,7 @@ async function copyTemplateFiles(templateName: string, targetPath: string) {
 }
 
 export interface CreateOptions {
-  template: string;
+  template?: string;
   force: boolean;
 }
 
@@ -92,52 +126,86 @@ export async function createGensxProject(
   projectPath: string,
   options: CreateOptions,
 ) {
-  const { template: templateName, force } = options;
+  const spinner = ora();
+  let { template: templateName, force } = options;
 
-  // Validate template exists
-  const templates = await listTemplates();
-  if (!templates.includes(templateName)) {
-    throw new Error(
-      `Template "${templateName}" not found. Available templates: ${templates.join(", ")}`,
+  try {
+    // Get available templates
+    spinner.start("Loading available templates");
+    const templates = await listTemplates();
+    spinner.succeed();
+
+    // If no template specified, show selection menu
+    if (!templateName) {
+      templateName = await selectTemplate();
+    } else if (!templates.includes(templateName)) {
+      spinner.fail();
+      throw new Error(
+        `Template "${templateName}" not found. Available templates: ${templates.join(", ")}`,
+      );
+    }
+
+    // Load template
+    spinner.start(
+      `Loading template: ${pc.cyan(TEMPLATE_NAMES[templateName] || templateName)}`,
     );
-  }
+    const template = await loadTemplate(templateName);
+    spinner.succeed();
 
-  const template = await loadTemplate(templateName);
-  const absoluteProjectPath = path.resolve(process.cwd(), projectPath);
+    const absoluteProjectPath = path.resolve(process.cwd(), projectPath);
 
-  // Create project directory
-  await mkdir(absoluteProjectPath, { recursive: true });
+    // Create and validate project directory
+    spinner.start("Creating project directory");
+    await mkdir(absoluteProjectPath, { recursive: true });
 
-  // check if the directory is empty
-  const files = await readdir(absoluteProjectPath);
-  if (files.length > 0 && !force) {
-    throw new Error(
-      `Directory "${absoluteProjectPath}" is not empty. Use --force to overwrite existing files.`,
-    );
-  }
+    const files = await readdir(absoluteProjectPath);
+    if (files.length > 0 && !force) {
+      spinner.fail();
+      throw new Error(
+        `Directory "${absoluteProjectPath}" is not empty. Use --force to overwrite existing files.`,
+      );
+    }
+    spinner.succeed();
 
-  // Copy template files
-  await copyTemplateFiles(templateName, absoluteProjectPath);
+    // Copy template files
+    spinner.start("Copying template files");
+    await copyTemplateFiles(templateName, absoluteProjectPath);
+    spinner.succeed();
 
-  // Initialize npm project and install dependencies
-  process.chdir(absoluteProjectPath);
-  await exec("npm init -y");
+    // Initialize npm project and install dependencies
+    process.chdir(absoluteProjectPath);
 
-  if (template.dependencies.length > 0) {
-    await exec(`npm install ${template.dependencies.join(" ")}`);
-  }
+    spinner.start("Initializing npm project");
+    await exec("npm init -y");
+    spinner.succeed();
 
-  if (template.devDependencies.length > 0) {
-    await exec(`npm install -D ${template.devDependencies.join(" ")}`);
-  }
+    if (template.dependencies.length > 0) {
+      spinner.start("Installing dependencies");
+      await exec(`npm install ${template.dependencies.join(" ")}`);
+      spinner.succeed();
+    }
 
-  console.info(`
-Successfully created GenSX project in ${absoluteProjectPath}
+    if (template.devDependencies.length > 0) {
+      spinner.start("Installing development dependencies");
+      await exec(`npm install -D ${template.devDependencies.join(" ")}`);
+      spinner.succeed();
+    }
+
+    // Show success message
+    console.info(`
+${pc.green("✔")} Successfully created GenSX project in ${pc.cyan(absoluteProjectPath)}
 
 To get started:
-  ${projectPath !== "." ? `cd ${projectPath}` : ""}
-  ${template.runCommand}
+  ${projectPath !== "." ? pc.cyan(`cd ${projectPath}`) : ""}
+  ${pc.cyan(template.runCommand)}
 
-Edit src/index.tsx to start building your GenSX application.
+Edit ${pc.cyan("src/index.tsx")} to start building your GenSX application.
 `);
+  } catch (error) {
+    // If spinner is still spinning, stop it with failure
+    if (spinner.isSpinning) {
+      spinner.fail();
+    }
+    throw error; // Re-throw to let caller handle the error
+  }
 }

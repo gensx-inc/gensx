@@ -1,6 +1,6 @@
 # create-gensx
 
-Create a new [GenSX](https://gensx.dev) project with one command.
+Create a new [GenSX](https://gensx.com) project with one command.
 
 ## Usage
 

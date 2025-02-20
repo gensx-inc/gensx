@@ -1,12 +1,19 @@
 {
   "name": "create-gensx",
-  "version": "0.1.6",
+  "version": "0.1.9",
   "type": "module",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=18.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/create-gensx"
+  },
   "bin": "./dist/cli.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -20,15 +27,17 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "enquirer": "^2.4.1",
+    "ora": "^8.0.1",
+    "picocolors": "^1.0.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^20.0.0",
     "@vitest/coverage-istanbul": "^2.1.8",
     "fs-extra": "^11.2.0",
-    "typescript": "^5.7.2",
-    "vite": "^6.0.7",
+    "vite": "^6.1.0",
     "vite-plugin-dts": "^4.5.0",
     "vitest": "^2.1.8"
   }

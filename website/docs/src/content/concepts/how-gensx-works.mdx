@@ -1,0 +1,157 @@
+---
+title: How GenSX works
+description: This guide explains how GenSX works and executes workflows
+---
+
+# How GenSX works
+
+GenSX is a simple framework for building complex LLM workflows. While most LLM frameworks use graph-based APIs that require explicit node and edge definitions, GenSX takes a different approach. It uses JSX to dynamically construct an execution graph by programmatically constructing a tree from your components.
+
+Trees are just a kind of graph, and JSX enables building trees programmatically which lets you express common agentic patterns like reflection and recursion -- all with a more intuitive, composable syntax that is easier to understand.
+
+## JSX and component model
+
+Unlike React's UI components, GenSX uses JSX to compose data processing workflows. While the syntax is familiar to React developers, there are key differences:
+
+- Components are pure functions that transform data, not UI elements
+- There's no virtual DOM or reconciliation
+- Components execute once and produce a value, rather than rendering and re-rendering
+- The component tree represents data flow, not visual hierarchy
+
+Here's a basic example of a component that takes in a list of tweets and analyzes them using a LLM:
+
+```tsx
+const TweetAnalyzer = gsx.Component<TweetAnalyzerProps, string>(
+  "TweetAnalyzer",
+  async ({ tweets }) => {
+    const prompt = tweets
+      .map(
+        (tweet) =>
+          `<tweet><author>${tweet.author}</author><content>${tweet.content}</content></tweet>`,
+      )
+      .join("\n");
+    return (
+      <ChatCompletion
+        model="gpt-4o"
+        messages={[
+          { role: "system", content: "Analyze key themes in these tweets..." },
+          { role: "user", content: prompt },
+        ]}
+      />
+    );
+  },
+);
+```
+
+You can also create components that are composed of other components:
+
+```tsx
+const TweetWorkflow = gsx.Component<TweetWorkflowProps, string>(
+  "TweetWorkflow",
+  async ({ query }) => (
+    <TweetCollector query={query}>
+      {(tweets) => (
+        <TweetAnalyzer tweets={tweets}>
+          {(trends) => <ReportGenerator trends={trends} tweets={tweets} />}
+        </TweetAnalyzer>
+      )}
+    </TweetCollector>
+  ),
+);
+```
+
+## Component resolution and execution
+
+You can turn any component into a runnable workflow using `gsx.workflow()`:
+
+```tsx
+const myWorkflow = gsx.workflow("TweetWorkflow", TweetWorkflow);
+```
+
+Then to run the workflow, call the `run()` method on the workflow and pass in the props:
+
+```tsx
+const result = await myWorkflow.run({ query: "DeepSeek R1 vs o3-mini" });
+```
+
+When you run a workflow, GenSX will:
+
+1. Creates a dependency graph from your JSX tree
+2. Tracks dependencies between components through prop passing and child functions
+3. Executes components in parallel where possible while respecting dependencies
+4. Resolves all values - including promises, arrays, objects, and nested components
+
+This automatic dependency tracking ensures components only execute when their dependencies are resolved, while taking advantage of parallelization wherever possible.
+
+For example, when executing the TweetWorkflow, GenSX will:
+
+- Start executing `TweetCollector` immediately
+- Wait for its result, `tweets`, to be available through the child function
+- Pass the tweets to `TweetAnalyzer` and execute it
+- Finally execute `ReportGenerator` with the trends from `TweetAnalyzer` and the tweets
+
+### Executing sub-workflows
+
+GenSX also allows you to execute sub-workflows from within a component using `gsx.execute()`.
+
+```tsx
+const result = await gsx.execute(<MyComponent input="some data" />);
+```
+
+When used inside a component, `gsx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow. The result is automatically resolved to a plain JavaScript value, allowing you to work with it directly without additional JSX syntax.
+
+## Resolving nested values and complex structures
+
+GenSX automatically handles resolution of:
+
+- Promises and async functions
+- Arrays of components or values
+- Objects containing components or values
+- Nested JSX elements
+- Child function results
+
+For example, consider this nested structure:
+
+```tsx
+const DocumentProcessor = gsx.Component<
+  DocumentProcessorProps,
+  DocumentProcessorOutput
+>("DocumentProcessor", async ({ text1, text2 }) => ({
+  summaries: [<Summarize text={text1} />, <Summarize text={text2} />],
+  metadata: {
+    sentiment: <AnalyzeSentiment text={text1 + text2} />,
+    topics: Promise.resolve(["ai", "tech"]),
+  },
+}));
+
+const myWorkflow = gsx.workflow("DocumentProcessor", DocumentProcessor);
+const result = await myWorkflow.run({ text1: "...", text2: "..." });
+```
+
+When you execute the DocumentProcessor workflow, GenSX will:
+
+1. Execute both `Summarize` components in parallel
+2. Execute `AnalyzeSentiment` in parallel with the summaries
+3. Resolve the topics promise
+4. Maintain the object structure in the final output:
+
+```tsx
+{
+  summaries: [
+    "First summary...",
+    "Second summary..."
+  ],
+  metadata: {
+    sentiment: "positive",
+    topics: ['ai', 'tech']
+  }
+}
+```
+
+## Visualizing and debugging workflows
+
+When used with [GenSX Cloud](/docs/cloud), GenSX automatically tracks the execution of your workflow to give you full visibility into your workflow's execution.
+
+You can see the execution graph, the inputs and outputs of each component, and other information like the execution time and status of each component. This makes it easy to debug and understand your workflow so you can see what's happening and make improvements where needed.
+
+![Workflow Visualization](/docs/gensx-visualize-workflow.png)
