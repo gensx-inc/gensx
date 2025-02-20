@@ -87,6 +87,9 @@ async function saveConfig(config: Config): Promise<void> {
         org: config.orgSlug,
         baseUrl: API_BASE_URL,
       },
+      console: {
+        baseUrl: APP_BASE_URL,
+      },
     });
 
     // Add a helpful header comment
