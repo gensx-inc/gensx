@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 export default function TermsOfUse() {
   return (
     <div className="container mx-auto px-4 py-24 max-w-4xl">
@@ -15,7 +16,7 @@ export default function TermsOfUse() {
       Site from time to time are hereby expressly incorporated herein by
       reference. We reserve the right, in our sole discretion, to make changes
       or modifications to these Terms of Use from time to time. We will alert
-      you about any changes by updating the “Last updated” date of these Terms
+      you about any changes by updating the "Last updated" date of these Terms
       of Use, and you waive any right to receive specific notice of each such
       change. Please ensure that you check the applicable Terms every time you
       use our Site so that you understand which Terms apply. You will be subject
@@ -39,13 +40,13 @@ export default function TermsOfUse() {
       or register for the Site. Unless otherwise expressly indicated herein, the
       Site is our proprietary property and all source code, databases,
       functionality, software, website designs, audio, video, text, photographs,
-      and graphics on the Site (collectively, the “Content”) and the trademarks,
-      service marks, and logos contained therein (the “Marks”) are owned or
+      and graphics on the Site (collectively, the "Content") and the trademarks,
+      service marks, and logos contained therein (the "Marks") are owned or
       controlled by us or licensed to us, and are protected by copyright and
       trademark laws and various other intellectual property rights and unfair
       competition laws of the United States, international copyright laws, and
       international conventions. The Content and the Marks are provided on the
-      Site “AS IS” for your information and personal use only. Except as
+      Site "AS IS" for your information and personal use only. Except as
       expressly provided in these Terms of Use, no part of the Site and no
       Content or Marks may be copied, reproduced, aggregated, republished,
       uploaded, posted, publicly displayed, encoded, translated, transmitted,
@@ -87,7 +88,7 @@ export default function TermsOfUse() {
       Upload or transmit (or attempt to upload or to transmit) viruses, Trojan
       horses, or other material, including excessive use of capital letters and
       spamming (continuous posting of repetitive text), that interferes with any
-      party’s uninterrupted use and enjoyment of the Site or modifies, impairs,
+      party's uninterrupted use and enjoyment of the Site or modifies, impairs,
       disrupts, alters, or interferes with the use, features, functions,
       operation, or maintenance of the Site. Engage in any automated use of the
       system, such as using scripts to send comments or messages, or using any
@@ -97,15 +98,15 @@ export default function TermsOfUse() {
       another user or person or use the username of another user. Upload or
       transmit (or attempt to upload or to transmit) any material that acts as a
       passive or active information collection or transmission mechanism,
-      including without limitation, clear graphics interchange formats (“gifs”),
+      including without limitation, clear graphics interchange formats ("gifs"),
       1×1 pixels, web bugs, cookies, or other similar devices (sometimes
-      referred to as “spyware” or “passive collection mechanisms” or “pcms”).
+      referred to as "spyware" or "passive collection mechanisms" or "pcms").
       Interfere with, disrupt, or create an undue burden on the Site or the
       networks or services connected to the Site. Harass, annoy, intimidate, or
       threaten any of our employees or agents engaged in providing any portion
       of the Site to you. Attempt to bypass any measures of the Site designed to
       prevent or restrict access to the Site, or any portion of the Site. Copy
-      or adapt the Site’s software, including but not limited to Flash, PHP,
+      or adapt the Site's software, including but not limited to Flash, PHP,
       HTML, JavaScript, or other code. Except as permitted by applicable law,
       decipher, decompile, disassemble, or reverse engineer any of the software
       comprising or in any way making up a part of the Site. Except as may be
@@ -280,9 +281,9 @@ export default function TermsOfUse() {
       performed within the State of Washington, without regard to its conflict
       of law principles. ‍ Informal Negotiations To expedite resolution and
       control the cost of any dispute, controversy, or claim related to these
-      Terms of Use (each "Dispute" and collectively, the “Disputes”) brought by
-      either you or us (individually, a “Party” and collectively, the
-      “Parties”), the Parties agree to first attempt to negotiate any Dispute
+      Terms of Use (each "Dispute" and collectively, the "Disputes") brought by
+      either you or us (individually, a "Party" and collectively, the
+      "Parties"), the Parties agree to first attempt to negotiate any Dispute
       informally for at least thirty (30) days before initiating any legal
       process, except to the extent otherwise prohibited by law. Such informal
       negotiations commence upon written notice from one Party to the other
@@ -298,7 +299,7 @@ export default function TermsOfUse() {
       THE SITE AND YOUR USE THEREOF, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
       WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
       NON-INFRINGEMENT. WE MAKE NO WARRANTIES OR REPRESENTATIONS ABOUT THE
-      ACCURACY OR COMPLETENESS OF THE SITE’S CONTENT OR THE CONTENT OF ANY
+      ACCURACY OR COMPLETENESS OF THE SITE'S CONTENT OR THE CONTENT OF ANY
       WEBSITES LINKED TO THE SITE AND WE WILL ASSUME NO LIABILITY OR
       RESPONSIBILITY FOR ANY (1) ERRORS, MISTAKES, OR INACCURACIES OF CONTENT
       AND MATERIALS, (2) PERSONAL INJURY OR PROPERTY DAMAGE, OF ANY NATURE
@@ -330,7 +331,7 @@ export default function TermsOfUse() {
       DISCLAIMERS OR LIMITATIONS MAY NOT APPLY TO YOU, AND YOU MAY HAVE
       ADDITIONAL RIGHTS. ‍ You agree to defend, indemnify, and hold us harmless
       from and against any loss, damage, liability, claim, or demand, including
-      reasonable attorneys’ fees and expenses, made by any third party due to or
+      reasonable attorneys' fees and expenses, made by any third party due to or
       arising out of: (1) use of the Site; (2) breach of these Terms of Use; (3)
       any breach of your representations and warranties set forth in these Terms
       of Use; (4) your violation of the rights of a third party; or (5) any
