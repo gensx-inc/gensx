@@ -11,7 +11,7 @@ export const APP_BASE_URL =
 
 export interface Config {
   token: string;
-  orgSlug: string;
+  org: string;
 }
 
 export interface State {
@@ -77,7 +77,7 @@ export async function readConfig(): Promise<{
       parsed.api?.token && parsed.api.org
         ? {
             token: parsed.api.token,
-            orgSlug: parsed.api.org,
+            org: parsed.api.org,
           }
         : null;
 
@@ -122,7 +122,7 @@ export async function saveConfig(
 
     const configContent = stringifyIni({
       api: {
-        ...(config ? {} : {}),
+        ...(config ? config : {}),
         baseUrl: API_BASE_URL,
       },
       console: {

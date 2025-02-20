@@ -132,7 +132,7 @@ export async function login(): Promise<{ skipped: boolean }> {
       if (status.status === "completed") {
         const config = {
           token: status.token,
-          orgSlug: status.orgSlug,
+          org: status.orgSlug,
         };
         await saveConfig(config, {
           hasCompletedFirstTimeSetup: true,
