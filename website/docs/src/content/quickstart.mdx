@@ -3,6 +3,12 @@ title: Quickstart
 description: Getting started with GenSX
 ---
 
+TODO:
+
+1. install / acquire CLI
+2. log in -- add note about skipping this if you don't want to save your runs
+3. Add section on tracing and visualization. -- add notes that if you skipped logging into the CLI, you can still do so to view the traces.
+
 # Quickstart
 
 In this quickstart, you'll learn how to get up and running with GenSX. GenSX is a simple typescript framework for building complex LLM applications using JSX. If you haven't already, check out the [basic concepts](/docs/basic-concepts) to learn more about how GenSX works.
@@ -15,23 +21,49 @@ Before getting started, make sure you have the following:
 - An [OpenAI API key](https://platform.openai.com/api-keys) with access to the required models
 - A package manager of your choice ([npm](https://www.npmjs.com/), [yarn](https://yarnpkg.com/), or [pnpm](https://pnpm.io/))
 
+## Install the `gensx` CLI
+
+You can install the `gensx` CLI globally using your package manager of choice:
+
+```bash
+npm i -g gensx
+```
+
+Or if you prefer to avoid a global installation, you can prefix commands with `npx`:
+
+```bash
+npx gensx
+```
+
+Now run `gensx login` or `npx gensx login`. This will save your traces to the cloud so you can visualize and debug workflow executions, but this step is optional and you can skip it for now if you prefer.
+
+![gensx login](/quickstart/gensx-login.png)
+
+Hit enter and your browser will open the login page.
+
+![console login](/quickstart/login.png)
+
+Once you've logged in, you'll see the following success message:
+
+![login success](/quickstart/login-success.png)
+
+Now you're ready to create a new project! Return to your terminal for the next steps.
+
 ## Create a new project
 
 To get started, run the following command with your package manager of choice in an empty directory. This will create a new GenSX project to get you started.
 
 ```bash
-# Using npm
-npm create gensx@latest my-app
+# If you installed the CLI globally
+gensx new .
 
 # Using npx
-npx create-gensx@latest my-app
-
-# Using yarn
-yarn create gensx my-app
-
-# Using pnpm
-pnpm create gensx my-app
+npx gensx new .
 ```
+
+This will create a new started project, ready for you to run your first workflow:
+
+![create project](/quickstart/gensx-new.png)
 
 In `index.tsx`, you'll find a simple OpenAI chat completion component:
 
@@ -102,6 +134,18 @@ export OPENAI_API_KEY=<your-api-key>
 pnpm dev
 ```
 
+![run project](/quickstart/gensx-run.png)
+
+If you chose to log in, you can now view the trace for this run in GenSX Cloud by clicking the link:
+
+![trace](/quickstart/trace.png)
+
+The trace shows a flame graph of your workflow, including every component that executed with inputs and outputs.
+
+Some components will be hidden by default, but you can click the carat to expand them. Clicking on a component will show you details about it's input props and outputs.
+
+For longer running workflows, this view will update in real time as the workflow executes.
+
 ## Combining components
 
 The example above is a simple workflow with a single component. In practice, you'll often want to combine multiple components to create more complex workflows.
@@ -159,14 +203,15 @@ const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
   ({ topic }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <Research topic={topic}>
-        {(research) => (
-        <WriteArticle topic={topic} research={research} />
-      )}
-    </Research>
-  </OpenAIProvider>,
+        {(research) => <WriteArticle topic={topic} research={research} />}
+      </Research>
+    </OpenAIProvider>
+  ),
 );
 
-console.log(result);
+const workflow = gsx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite, {
+  printUrl: true,
+});
 ```
 
 In this example, the `Research` component gathers information about the topic which then passes the information to the `WriteArticle` component. The `WriteArticle` component uses that information to write an article about the topic which is then returned as the `result`.
@@ -210,20 +255,32 @@ const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <Research topic={topic}>
         {(research) => (
-        <WriteArticle topic="latest quantum computing chips" research={research} stream={true} />
-      )}
-    </Research>
-  </OpenAIProvider>,
+          <Writer
+            topic="latest quantum computing chips"
+            research={research}
+            stream={true}
+          />
+        )}
+      </Research>
+    </OpenAIProvider>
+  ),
 );
 
 const workflow = gsx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite);
-const stream = await workflow.run({ topic: "latest quantum computing chips" });
+const stream = await workflow.run(
+  { topic: "latest quantum computing chips" },
+  { printUrl: true },
+);
 
 // Print the streaming response
 for await (const chunk of stream) {
   process.stdout.write(chunk);
 }
 ```
+
+Now we can see our research step running before the write step:
+
+![streaming](/quickstart/writer-trace.png)
 
 While this is nice, the real power of streaming components comes when you expand or refactor your workflow. Now you could easily add an `<EditArticle>` component to the workflow that streams the response to the user with minimal changes. There's no extra plumbing needed besides removing the `stream={true}` prop on the `WriteArticle` component.
 
@@ -242,9 +299,11 @@ const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
   </OpenAIProvider>,
 );
 
-const workflow = gsx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite);
+const workflow = gsx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite, { printUrl: true });
 const stream = await workflow.run({ topic: "latest quantum computing chips" });
 ```
+
+![blog writing trace](/quickstart/blog-trace.png)
 
 ## Next steps
 
