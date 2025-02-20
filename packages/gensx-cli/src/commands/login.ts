@@ -1,8 +1,9 @@
-import { createHash } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import { homedir, platform } from "os";
 import { hostname } from "os";
 import path from "path";
+
+import { createHash, getRandomValues } from "node:crypto";
 
 import { consola } from "consola";
 import { stringify as stringifyIni } from "ini";
@@ -66,9 +67,7 @@ type DeviceAuthStatus =
     };
 
 function generateVerificationCode(): string {
-  return Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString(
-    "base64url",
-  );
+  return Buffer.from(getRandomValues(new Uint8Array(32))).toString("base64url");
 }
 
 function createCodeHash(code: string): string {
