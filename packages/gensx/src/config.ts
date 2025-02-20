@@ -10,6 +10,9 @@ export interface GensxConfig {
     org?: string;
     baseUrl?: string;
   };
+  console?: {
+    baseUrl?: string;
+  };
 }
 
 export function getConfigPath(): string {

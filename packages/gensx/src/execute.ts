@@ -44,6 +44,7 @@ export function Workflow<P extends { stream?: boolean }, O>(
   name: string,
   component: GsxComponent<P, O> | GsxStreamComponent<P>,
   opts?: {
+    printUrl?: boolean;
     metadata?: Record<string, unknown>;
   },
 ): {
@@ -54,6 +55,7 @@ export function Workflow<P extends { stream?: boolean }, O>(
       const context = new ExecutionContext({});
 
       const workflowContext = context.getWorkflowContext();
+      workflowContext.checkpointManager.setPrintUrl(opts?.printUrl ?? false);
       workflowContext.checkpointManager.setWorkflowName(name);
 
       const result = await withContext(context, async () => {
