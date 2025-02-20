@@ -315,7 +315,7 @@ export class CheckpointManager implements CheckpointWriter {
         });
       }
 
-      if (this.printUrl && !this.havePrintedUrl) {
+      if (this.printUrl && !this.havePrintedUrl && response.ok) {
         const responseBody = (await response.json()) as {
           status: "ok";
           data: {
@@ -327,10 +327,10 @@ export class CheckpointManager implements CheckpointWriter {
           `/${this.org}/workflows/${responseBody.data.workflowName ?? workflowName}/${responseBody.data.executionId}`,
           this.consoleBaseUrl,
         );
-        console.info(
-          `\n\n[GenSX] View execution at: ${executionUrl.toString()}\n\n`,
-        );
         this.havePrintedUrl = true;
+        console.info(
+          `\n\n\x1b[33m[GenSX] View execution at:\x1b[0m \x1b[1;34m${executionUrl.toString()}\x1b[0m\n\n`,
+        );
       }
     } catch (error) {
       console.error(`[Checkpoint] Failed to save checkpoint:`, { error });
