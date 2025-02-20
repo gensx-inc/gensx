@@ -5,6 +5,7 @@ import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
   ChatCompletionCreateParamsNonStreaming,
+  ChatCompletionMessageParam,
 } from "openai/resources/chat/completions";
 import { Stream } from "openai/streaming";
 import { z } from "zod";
@@ -49,7 +50,12 @@ export type GSXChatCompletionOutput<P> = P extends StreamingProps
   ? Stream<ChatCompletionChunk>
   : P extends StructuredProps<infer O>
     ? O
-    : ChatCompletionOutput;
+    : GSXChatCompletionResult;
+
+// Simple type alias for the standard completion output with messages
+export type GSXChatCompletionResult = ChatCompletionOutput & {
+  messages: ChatCompletionMessageParam[];
+};
 
 // Extract GSXChatCompletion implementation
 export const gsxChatCompletionImpl = async <P extends GSXChatCompletionProps>(
@@ -86,7 +92,10 @@ export const gsxChatCompletionImpl = async <P extends GSXChatCompletionProps>(
   const result = await gsx.execute<ChatCompletionOutput>(
     <OpenAIChatCompletion {...rest} stream={false} />,
   );
-  return result as GSXChatCompletionOutput<P>;
+  return {
+    ...result,
+    messages: [...props.messages, result.choices[0].message],
+  } as GSXChatCompletionOutput<P>;
 };
 
 // Update component to use implementation

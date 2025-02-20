@@ -5,6 +5,8 @@ import { GridPatternDemo } from "@/components/ui/grid-pattern";
 import Nav from "@/components/nav";
 import Link from "next/link";
 import Image from "next/image";
+import { Analytics } from "@vercel/analytics/react";
+
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -118,6 +120,7 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );

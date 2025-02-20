@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.1.7](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.6...gensx-openai-v0.1.7) (2025-02-19)
+
+
+### ✨ New Features
+
+* Add `workflow.run` for executing workflows in a fresh context ([#255](https://github.com/gensx-inc/gensx/issues/255)) ([62c5f19](https://github.com/gensx-inc/gensx/commit/62c5f19ef142ab1d0d76531c9caa0d8688cfae4d))
+* CLI Device auth flow ([#212](https://github.com/gensx-inc/gensx/issues/212)) ([094b98e](https://github.com/gensx-inc/gensx/commit/094b98e12ef4239e8b04c176a14f19f5e891f5a1))
+* first round of tool updates ([#251](https://github.com/gensx-inc/gensx/issues/251)) ([5970487](https://github.com/gensx-inc/gensx/commit/59704877ae75874fd886e0ef36fe64d18eb6bb1e))
+* Improving Visualization for GSXChatCompletion ([#258](https://github.com/gensx-inc/gensx/issues/258)) ([01b7b52](https://github.com/gensx-inc/gensx/commit/01b7b5277c4ed177338ca3e63327401a51e1e927))
+* make GSXChatCompletion return the entire messages array.  ([#262](https://github.com/gensx-inc/gensx/issues/262)) ([240f2b6](https://github.com/gensx-inc/gensx/commit/240f2b6319ad38c3a9692b72f03164ef04fece6c))
+* Removing GSXSchema, updating docs, and updating example ([#242](https://github.com/gensx-inc/gensx/issues/242)) ([1a54078](https://github.com/gensx-inc/gensx/commit/1a5407869fd0e7ca2f428f8d36c3696e50edcc28))
+* renaming tool.execute to tool.run ([#275](https://github.com/gensx-inc/gensx/issues/275)) ([37adf90](https://github.com/gensx-inc/gensx/commit/37adf90c78e9ca7cac3eb566eca17961086d8895))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.2.11
+  * devDependencies
+    * gensx bumped to 0.2.11
+
 ## [0.1.6](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.5...gensx-openai-v0.1.6) (2025-02-13)
 
 

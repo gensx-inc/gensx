@@ -5,8 +5,8 @@ function isAsyncIterable(obj: unknown): obj is AsyncIterable<unknown> {
   return obj != null && typeof obj === "object" && Symbol.asyncIterator in obj;
 }
 
-const StreamingStoryWorkflow = gsx.StreamComponent<{ prompt: string }>(
-  "StreamingStoryWorkflow",
+const StreamStory = gsx.StreamComponent<{ prompt: string }>(
+  "StreamStory",
   ({ prompt, stream }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -26,9 +26,9 @@ interface StreamResponse {
   ) => MaybePromise<string | undefined>;
 }
 
-const StreamingStoryWithChildrenWorkflow = gsx.StreamComponent<
+const StreamStoryWithChildren = gsx.StreamComponent<
   { prompt: string } & StreamResponse
->("StreamingStoryWithChildrenWorkflow", ({ prompt, stream = false }) => {
+>("StreamStoryWithChildren", ({ prompt, stream = false }) => {
   return (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <ChatCompletion
@@ -104,9 +104,9 @@ async function runStreamingWithChildrenExample() {
 
   console.log("\n🚀 Starting streaming example with prompt:", prompt);
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "StreamingStoryWithChildrenWorkflow",
-    StreamingStoryWithChildrenWorkflow,
+    StreamStoryWithChildren,
   );
 
   console.log("\n📝 Non-streaming version (waiting for full response):");
@@ -122,10 +122,7 @@ async function runStreamingExample() {
 
   console.log("\n🚀 Starting streaming example with prompt:", prompt);
 
-  const workflow = gsx.workflow(
-    "StreamingStoryWorkflow",
-    StreamingStoryWorkflow,
-  );
+  const workflow = gsx.Workflow("StreamStoryWorkflow", StreamStory);
 
   console.log("\n📝 Non-streaming version (waiting for full response):");
   const finalResult = await workflow.run({ prompt });
@@ -142,7 +139,7 @@ async function runStreamingExample() {
 }
 
 async function streamingGeneratorExample() {
-  const workflow = gsx.workflow("GeneratorWorkflow", GeneratorWorkflow);
+  const workflow = gsx.Workflow("GeneratorWorkflow", GeneratorWorkflow);
 
   console.log("⚡️ StreamingGeneratorExample - return result from generator");
   const response1 = await workflow.run({ foo: "bar", iterations: 10 });

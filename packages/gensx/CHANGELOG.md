@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.2.11](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.10...gensx-v0.2.11) (2025-02-19)
+
+
+### 🐛 Bug Fixes
+
+* Add hashbang for using npx gensx ([#286](https://github.com/gensx-inc/gensx/issues/286)) ([5aae4ec](https://github.com/gensx-inc/gensx/commit/5aae4ecd6786e45be77b64a7b7d6320acbe63775))
+
+## [0.2.10](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.9...gensx-v0.2.10) (2025-02-19)
+
+
+### ✨ New Features
+
+* Add `workflow.run` for executing workflows in a fresh context ([#255](https://github.com/gensx-inc/gensx/issues/255)) ([62c5f19](https://github.com/gensx-inc/gensx/commit/62c5f19ef142ab1d0d76531c9caa0d8688cfae4d))
+* capitzalize gsx.Workflow and update examples ([#279](https://github.com/gensx-inc/gensx/issues/279)) ([9ba3eda](https://github.com/gensx-inc/gensx/commit/9ba3eda6b6867c569a98444d411c2ba85b32214d))
+* CLI Device auth flow ([#212](https://github.com/gensx-inc/gensx/issues/212)) ([094b98e](https://github.com/gensx-inc/gensx/commit/094b98e12ef4239e8b04c176a14f19f5e891f5a1))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/cli bumped to 0.1.1
+
 ## [0.2.9](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.8...gensx-v0.2.9) (2025-02-12)
 
 

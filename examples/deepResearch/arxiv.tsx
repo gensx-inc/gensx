@@ -18,13 +18,13 @@ export interface ArxivEntry {
   updated: string;
 }
 
-export interface ArxivSearchProps {
+export interface SearchArxivProps {
   query: string;
   maxResults?: number;
 }
 
-export const ArxivSearch = gsx.Component<ArxivSearchProps, ArxivEntry[]>(
-  "ArxivSearch",
+export const SearchArxiv = gsx.Component<SearchArxivProps, ArxivEntry[]>(
+  "SearchArxiv",
   async ({ query, maxResults = 10 }) => {
     const queryUrl = `https://export.arxiv.org/api/query?search_query=all:${query}&start=0&max_results=${maxResults}`;
     const response = await fetch(queryUrl);

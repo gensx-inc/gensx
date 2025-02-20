@@ -1,4 +1,9 @@
-import { GSXChatCompletion, GSXTool, OpenAIProvider } from "@gensx/openai";
+import {
+  GSXChatCompletion,
+  GSXChatCompletionResult,
+  GSXTool,
+  OpenAIProvider,
+} from "@gensx/openai";
 import { gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
@@ -7,9 +12,9 @@ import {
 import { Stream } from "openai/streaming";
 import { z } from "zod";
 
-async function basicCompletion() {
-  const BasicCompletionWorkflow = gsx.Component<{}, ChatCompletionOutput>(
-    "BasicCompletionWorkflow",
+function basicCompletion() {
+  const BasicCompletionExample = gsx.Component<{}, ChatCompletionOutput>(
+    "BasicCompletionExample",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
@@ -31,15 +36,15 @@ async function basicCompletion() {
     ),
   );
 
-  const workflow = gsx.workflow(
-    "BasicCompletionWorkflow",
-    BasicCompletionWorkflow,
+  const workflow = gsx.Workflow(
+    "BasicCompletionExampleWorkflow",
+    BasicCompletionExample,
   );
 
   return workflow.run({});
 }
 
-async function tools() {
+function tools() {
   // Define the schema as a Zod object
   const weatherSchema = z.object({
     location: z.string(),
@@ -53,7 +58,7 @@ async function tools() {
     name: "get_weather",
     description: "get the weather for a given location",
     schema: weatherSchema,
-    execute: async ({ location }: WeatherParams) => {
+    run: async ({ location }: WeatherParams) => {
       console.log("getting weather for", location);
       const weather = ["sunny", "cloudy", "rainy", "snowy"];
       return Promise.resolve({
@@ -62,8 +67,8 @@ async function tools() {
     },
   });
 
-  const ToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
-    "ToolsWorkflow",
+  const ToolsExample = gsx.Component<{}, ChatCompletionOutput>(
+    "ToolsExample",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
@@ -86,12 +91,12 @@ async function tools() {
     ),
   );
 
-  const workflow = gsx.workflow("ToolsWorkflowExample", ToolsWorkflow);
+  const workflow = gsx.Workflow("ToolsExampleWorkflow", ToolsExample);
 
   return workflow.run({});
 }
 
-async function toolsStreaming() {
+function toolsStreaming() {
   // Define the schema as a Zod object
   const weatherSchema = z.object({
     location: z.string(),
@@ -105,7 +110,7 @@ async function toolsStreaming() {
     name: "get_weather",
     description: "get the weather for a given location",
     schema: weatherSchema,
-    execute: async ({ location }: WeatherParams) => {
+    run: async ({ location }: WeatherParams) => {
       console.log("getting weather for", location);
       const weather = ["sunny", "cloudy", "rainy", "snowy"];
       return Promise.resolve({
@@ -114,8 +119,8 @@ async function toolsStreaming() {
     },
   });
 
-  const ToolsStreamingWorkflow = gsx.Component<{}, Stream<ChatCompletionChunk>>(
-    "ToolsStreamingWorkflow",
+  const ToolsStreamingExample = gsx.Component<{}, Stream<ChatCompletionChunk>>(
+    "ToolsStreamingExample",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
@@ -139,15 +144,15 @@ async function toolsStreaming() {
     ),
   );
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "ToolsStreamingWorkflow",
-    ToolsStreamingWorkflow,
+    ToolsStreamingExample,
   );
 
   return workflow.run({});
 }
 
-async function streamingCompletion() {
+function streamingCompletion() {
   const StreamingCompletionWorkflow = gsx.Component<
     {},
     Stream<ChatCompletionChunk>
@@ -172,7 +177,7 @@ async function streamingCompletion() {
     </OpenAIProvider>
   ));
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "StreamingCompletionWorkflow",
     StreamingCompletionWorkflow,
   );
@@ -180,7 +185,7 @@ async function streamingCompletion() {
   return workflow.run({});
 }
 
-async function structuredOutput() {
+function structuredOutput() {
   // Define a schema for rating trash bins
   const trashRatingSchema = z.object({
     bins: z.array(
@@ -225,7 +230,7 @@ async function structuredOutput() {
     ),
   );
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "StructuredOutputWorkflow",
     StructuredOutputWorkflow,
   );
@@ -233,7 +238,7 @@ async function structuredOutput() {
   return workflow.run({});
 }
 
-async function multiStepTools() {
+function multiStepTools() {
   // Weather tool (reusing existing schema)
   const weatherSchema = z.object({
     location: z.string(),
@@ -243,7 +248,7 @@ async function multiStepTools() {
     name: "get_weather",
     description: "Get the current weather for a location",
     schema: weatherSchema,
-    execute: async ({ location }) => {
+    run: async ({ location }) => {
       console.log("Getting weather for", location);
       // Simulate API delay
       const weather = ["sunny", "cloudy", "rainy", "snowy"];
@@ -264,7 +269,7 @@ async function multiStepTools() {
     description:
       "Find local services (restaurants, parks, or cafes) in a given location",
     schema: servicesSchema,
-    execute: async ({ service, location }) => {
+    run: async ({ service, location }) => {
       console.log(`Finding ${service} near ${location}`);
       // Simulate API delay
       const places = {
@@ -281,7 +286,7 @@ async function multiStepTools() {
     },
   });
 
-  const MultiStepToolsWorkflow = gsx.Component<{}, ChatCompletionOutput>(
+  const MultiStepToolsWorkflow = gsx.Component<{}, GSXChatCompletionResult>(
     "MultiStepToolsWorkflow",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -310,7 +315,7 @@ Please explain your thinking as you go through this analysis.`,
     ),
   );
 
-  const workflow = gsx.workflow(
+  const workflow = gsx.Workflow(
     "MultiStepToolsWorkflow",
     MultiStepToolsWorkflow,
   );
