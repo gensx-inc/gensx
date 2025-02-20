@@ -1,8 +1,8 @@
 # Reusable Components Example
 
-This example shows how to create reusable components and workflows that can be used with different models and providers. For more details on building reusable components, see the [docs on building reusable components](https://gensx.com/concepts/reusable-components).
+This example shows how to create reusable components and workflows that can be used with different models and providers. For more details on building reusable components, see the [docs on building reusable components](https://gensx.com/docs/concepts/reusable-components).
 
-In particular, this example creates a `DocumentProcessor` component that supports a config for a default model and a small model and uses those providers to process a document and extract metadata from it.
+In particular, this example creates a `ProcessDocument` component that supports a config for a default model and a small model and uses those providers to process a document and extract metadata from it.
 
 ## Usage
 

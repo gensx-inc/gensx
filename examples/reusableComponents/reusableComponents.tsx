@@ -7,13 +7,13 @@ interface ProviderConfig {
   model: string;
 }
 
-interface DocumentSummarizerProps {
+interface SummarizeDocumentProps {
   document: string;
   provider: ProviderConfig;
 }
 
-const DocumentSummarizer = gsx.Component<DocumentSummarizerProps, string>(
-  "DocumentSummarizer",
+const SummarizeDocument = gsx.Component<SummarizeDocumentProps, string>(
+  "SummarizeDocument",
   ({ document, provider }) => (
     <OpenAIProvider {...provider.clientOptions}>
       <ChatCompletion
@@ -29,13 +29,13 @@ const DocumentSummarizer = gsx.Component<DocumentSummarizerProps, string>(
   ),
 );
 
-interface KeywordsExtractorProps {
+interface ExtractKeywordsProps {
   document: string;
   provider: ProviderConfig;
 }
 
-const KeywordsExtractor = gsx.Component<KeywordsExtractorProps, string[]>(
-  "KeywordsExtractor",
+const ExtractKeywords = gsx.Component<ExtractKeywordsProps, string[]>(
+  "ExtractKeywords",
   ({ document, provider }) => (
     <OpenAIProvider {...provider.clientOptions}>
       <ChatCompletion
@@ -57,13 +57,13 @@ const KeywordsExtractor = gsx.Component<KeywordsExtractorProps, string[]>(
   ),
 );
 
-interface CategoryClassifierProps {
+interface CategorizeDocumentProps {
   document: string;
   provider: ProviderConfig;
 }
 
-const CategoryClassifier = gsx.Component<CategoryClassifierProps, string>(
-  "CategoryClassifier",
+const CategorizeDocument = gsx.Component<CategorizeDocumentProps, string>(
+  "CategorizeDocument",
   ({ document, provider }) => (
     <OpenAIProvider {...provider.clientOptions}>
       <ChatCompletion
@@ -83,38 +83,38 @@ const CategoryClassifier = gsx.Component<CategoryClassifierProps, string>(
   ),
 );
 
-interface DocumentProcessorProps {
+interface ProcessDocumentProps {
   document: string;
   defaultProvider: ProviderConfig;
   smallModelProvider?: ProviderConfig;
 }
 
-export interface DocumentProcessorOutput {
+export interface ProcessDocumentOutput {
   summary: string;
   keywords: string[];
   category: string;
 }
 
-export const DocumentProcessor = gsx.Component<
-  DocumentProcessorProps,
-  DocumentProcessorOutput
->("DocumentProcessor", (props) => {
+export const ProcessDocument = gsx.Component<
+  ProcessDocumentProps,
+  ProcessDocumentOutput
+>("ProcessDocument", (props) => {
   const smallModelProvider = props.smallModelProvider ?? props.defaultProvider;
   return {
     summary: (
-      <DocumentSummarizer
+      <SummarizeDocument
         document={props.document}
         provider={props.defaultProvider}
       />
     ),
     keywords: [
-      <KeywordsExtractor
+      <ExtractKeywords
         document={props.document}
         provider={smallModelProvider}
       />,
     ],
     category: (
-      <CategoryClassifier
+      <CategorizeDocument
         document={props.document}
         provider={smallModelProvider}
       />

@@ -213,7 +213,7 @@ The order of nesting doesn't matter as long as the component using a context is 
 
 ### Using multiple OpenAI compatible providers
 
-You can also nest multiple providers to use LLMs from different companies in the same workflow. When you nest multiple OpenAI providers, components will always use the closest provider above it in the tree. The example below shows how you could use models from OpenAI and Groq in the same workflow using their OpenAI compatible APIs.
+You can also nest multiple providers to use multiple OpenAI compatible APIs in the same workflow. When you nest multiple OpenAI providers, components will always use the closest provider above it in the tree. The example below shows how you could use models from OpenAI and Groq in the same workflow using their OpenAI compatible APIs.
 
 First, create a provider for [Groq](https://www.groq.com/) that wraps the `OpenAIProvider` and points to the correct base URL:
 
@@ -226,33 +226,33 @@ const GroqProvider = gsx.Component<{}, never>("GroqProvider", () => (
 ));
 ```
 
-Because components will always use the closest provider above them in the tree, `TutorialEditor` will use the Groq API while `TutorialWriter` will use the OpenAI API:
+Because components will always use the closest provider above them in the tree, `EditTutorial` will use the Groq API while `WriteTutorial` will use the OpenAI API:
 
 ```tsx
-export const TutorialWriterWithEditorial = gsx.Component<
-  TutorialWriterProps,
-  string
->("TutorialWriterWithEditorial", ({ subject }) => {
-  return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <TutorialWriter subject={subject}>
-        {(tutorial) => {
-          console.log("\n📝 Original tutorial from OpenAI:\n", tutorial);
-          return (
-            <GroqProvider>
-              <TutorialEditor tutorial={tutorial} />
-            </GroqProvider>
-          );
-        }}
-      </TutorialWriter>
-    </OpenAIProvider>
-  );
-});
+export const WriteAndEditTutorial = gsx.Component<WriteTutorialProps, string>(
+  "WriteAndEditTutorial",
+  ({ subject }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <WriteTutorial subject={subject}>
+          {(tutorial) => {
+            console.log("\n📝 Original tutorial from OpenAI:\n", tutorial);
+            return (
+              <GroqProvider>
+                <EditTutorial tutorial={tutorial} />
+              </GroqProvider>
+            );
+          }}
+        </WriteTutorial>
+      </OpenAIProvider>
+    );
+  },
+);
 ```
 
 Note that you don't have to create the `GroqProvider` component; instead you could just use the `OpenAIProvider` and pass in the correct props. However, wrapping the provider can make your code cleaner and easier to manage.
 
-To make your components more reusable, you could also pass in the model name as a prop. For more details, see the guide on [creating reusable components](../reusable-component).
+To make your components more reusable, you could also pass in the model name as a prop. For more details, see the guide on [creating reusable components](/docs/concepts/reusable-components).
 
 ## Additional resources
 

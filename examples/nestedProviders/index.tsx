@@ -1,12 +1,16 @@
 import { gsx } from "gensx";
 
-import { TutorialWriterWithEditorial } from "./nestingProviders.js";
+import { WriteAndEditTutorial } from "./nestingProviders.js";
 
 async function main() {
   console.log("\n🚀 Starting the tutorial writing workflow...");
-  const tutorial = await gsx.execute<string>(
-    <TutorialWriterWithEditorial subject="visualizing data with matplotlib" />,
+  const workflow = gsx.Workflow(
+    "WriteAndEditTutorialWorkflow",
+    WriteAndEditTutorial,
   );
+  const tutorial = await workflow.run({
+    subject: "visualizing data with matplotlib",
+  });
   console.log("\n✅ Rewritten tutorial from Groq:\n", tutorial);
 }
 

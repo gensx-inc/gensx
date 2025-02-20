@@ -4,10 +4,7 @@ import { fileURLToPath } from "url";
 
 import { gsx } from "gensx";
 
-import {
-  DocumentProcessor,
-  DocumentProcessorOutput,
-} from "./reusableComponents.js";
+import { ProcessDocument } from "./reusableComponents.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -32,13 +29,12 @@ async function main() {
     "utf8",
   );
 
-  const documentMetadata = await gsx.execute<DocumentProcessorOutput>(
-    <DocumentProcessor
-      document={document}
-      defaultProvider={gpt4oProviderConfig}
-      smallModelProvider={llama8bProviderConfig}
-    />,
-  );
+  const workflow = gsx.Workflow("ProcessDocumentWorkflow", ProcessDocument);
+  const documentMetadata = await workflow.run({
+    document,
+    defaultProvider: gpt4oProviderConfig,
+    smallModelProvider: llama8bProviderConfig,
+  });
 
   console.log(documentMetadata);
 }

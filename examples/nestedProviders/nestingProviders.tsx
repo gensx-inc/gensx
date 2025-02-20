@@ -1,11 +1,11 @@
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
-interface TutorialWriterProps {
+interface WriteTutorialProps {
   subject: string;
 }
 
-export const TutorialWriter = gsx.Component<TutorialWriterProps, string>(
-  "TutorialWriter",
+export const WriteTutorial = gsx.Component<WriteTutorialProps, string>(
+  "WriteTutorial",
   ({ subject }) => {
     return (
       <ChatCompletion
@@ -21,12 +21,12 @@ export const TutorialWriter = gsx.Component<TutorialWriterProps, string>(
   },
 );
 
-interface TutorialEditorProps {
+interface EditTutorialProps {
   tutorial: string;
 }
 
-export const TutorialEditor = gsx.Component<TutorialEditorProps, string>(
-  "TutorialEditor",
+export const EditTutorial = gsx.Component<EditTutorialProps, string>(
+  "EditTutorial",
   ({ tutorial }) => {
     const prompt = `Please review the tutorial below, consider how to improve it, and then rewrite it.
 
@@ -58,22 +58,22 @@ const GroqProvider = gsx.Component<{}, never>("GroqProvider", () => (
   />
 ));
 
-export const TutorialWriterWithEditorial = gsx.Component<
-  TutorialWriterProps,
-  string
->("TutorialWriterWithEditorial", ({ subject }) => {
-  return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <TutorialWriter subject={subject}>
-        {(tutorial) => {
-          console.log("\n📝 Original tutorial from OpenAI:\n", tutorial);
-          return (
-            <GroqProvider>
-              <TutorialEditor tutorial={tutorial} />
-            </GroqProvider>
-          );
-        }}
-      </TutorialWriter>
-    </OpenAIProvider>
-  );
-});
+export const WriteAndEditTutorial = gsx.Component<WriteTutorialProps, string>(
+  "WriteAndEditTutorial",
+  ({ subject }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <WriteTutorial subject={subject}>
+          {(tutorial) => {
+            console.log("\n📝 Original tutorial from OpenAI:\n", tutorial);
+            return (
+              <GroqProvider>
+                <EditTutorial tutorial={tutorial} />
+              </GroqProvider>
+            );
+          }}
+        </WriteTutorial>
+      </OpenAIProvider>
+    );
+  },
+);
