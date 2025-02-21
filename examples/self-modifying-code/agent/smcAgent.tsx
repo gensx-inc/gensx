@@ -2,8 +2,8 @@ import { GSXChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
 
-import { Lease } from "./lease.js";
-import { AgentContext, Workspace } from "./workspace.js";
+import { Lease } from "../lease.js";
+import { AgentContext, updateContext, Workspace } from "../workspace.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -28,12 +28,22 @@ export interface AgentResult {
  * The agent does NOT create new workspaces - that's handled by the outer control loop.
  */
 
+/**
+ * - [ x ] update goal state
+ * - [ x ] write goal state to filesystem
+ * - [  ] create implementation plan
+ * - [  ] run code modifying agent
+ * - [  ] run final validation
+ * - [  ] AnalyzeResults
+ * - [  ] CommitResults
+ */
+
 export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
-  ({ workspace: _workspace, context, lease: _lease }) => {
+  ({ workspace, context, lease: _lease }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <GenerateGoalState context={context}>
+        <GenerateGoalState context={context} workspace={workspace}>
           {(decision) => {
             console.log("Goal Decision:", JSON.stringify(decision, null, 2));
 
@@ -59,16 +69,19 @@ type GoalDecision = z.infer<typeof goalDecisionSchema>;
 
 interface GenerateGoalStateProps {
   context: AgentContext;
+  workspace: Workspace;
 }
 
 const GenerateGoalState = gsx.Component<GenerateGoalStateProps, GoalDecision>(
   "GenerateGoalState",
-  ({ context }) => (
-    <GSXChatCompletion
-      messages={[
-        {
-          role: "system",
-          content: `You are an AI agent that decides on goals for improving a codebase.
+  async ({ context, workspace }) => {
+    // Get the goal decision from OpenAI
+    const decision = await gsx.execute<GoalDecision>(
+      <GSXChatCompletion
+        messages={[
+          {
+            role: "system",
+            content: `You are an AI agent that decides on goals for improving a codebase.
 
 CURRENT GOAL STATE:
 "${context.goalState}"
@@ -92,16 +105,26 @@ Remember:
 - If the history shows failed attempts or no progress, keep the current goal
 - Only move to a new goal when the current one is definitively achieved
 - New goals should be specific, actionable, and focused on a single improvement`,
-        },
-        {
-          role: "user",
-          content:
-            "Review the goal state and history, then make your decision.",
-        },
-      ]}
-      model="gpt-4o"
-      temperature={0.7}
-      outputSchema={goalDecisionSchema}
-    />
-  ),
+          },
+          {
+            role: "user",
+            content:
+              "Review the goal state and history, then make your decision.",
+          },
+        ]}
+        model="gpt-4o"
+        temperature={0.7}
+        outputSchema={goalDecisionSchema}
+      />,
+    );
+
+    // If we have a new goal, update the context
+    if (decision.newGoal) {
+      await updateContext(workspace, {
+        goalState: decision.goalState,
+      });
+    }
+
+    return decision;
+  },
 );
