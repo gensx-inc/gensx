@@ -20,7 +20,7 @@ test("StreamText streams text response", async () => {
   });
 
   expect(stream).toBeDefined();
-});
+}, 30000);
 
 test("StreamObject streams JSON objects", async () => {
   const workflow = gsx.Workflow("StreamObject", AI.StreamObject);
@@ -37,7 +37,7 @@ test("StreamObject streams JSON objects", async () => {
     }),
   });
   expect(response).toBeDefined();
-});
+}, 30000);
 
 test("GenerateText generates text", async () => {
   const workflow = gsx.Workflow("GenerateText", AI.GenerateText);
@@ -46,7 +46,7 @@ test("GenerateText generates text", async () => {
     model: languageModel,
   });
   expect(result).toBeDefined();
-});
+}, 30000);
 
 test("GenerateObject generates JSON object", async () => {
   const workflow = gsx.Workflow("GenerateObject", AI.GenerateObject);
@@ -63,7 +63,7 @@ test("GenerateObject generates JSON object", async () => {
     }),
   });
   expect(response).toBeDefined();
-});
+}, 30000);
 
 test("Embed generates embeddings", async () => {
   const workflow = gsx.Workflow("Embed", AI.Embed);
@@ -72,7 +72,7 @@ test("Embed generates embeddings", async () => {
     model: embeddingModel,
   });
   expect(embedding).toBeDefined();
-});
+}, 30000);
 
 test("EmbedMany generates multiple embeddings", async () => {
   const workflow = gsx.Workflow("EmbedMany", AI.EmbedMany);
@@ -82,7 +82,7 @@ test("EmbedMany generates multiple embeddings", async () => {
   });
 
   expect(embeddings).toBeDefined();
-});
+}, 30000);
 
 test("GenerateImage generates image", async () => {
   const workflow = gsx.Workflow("GenerateImage", AI.GenerateImage);
