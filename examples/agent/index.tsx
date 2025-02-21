@@ -4,9 +4,8 @@ import { CodeAgent } from "./CodeAgent.js";
 async function main() {
   console.log("\n🚀 Starting the code agent example");
 
-  const instructions =
-    "Add a new tool to the codebase that prints 'Hello, world!'";
-  const repoPath = ".";
+  const instructions = "Create a basic connect 4 game in typescript";
+  const repoPath = "connect4Game";
 
   console.log("Repo path:", repoPath);
   console.log("Instructions:", instructions);
