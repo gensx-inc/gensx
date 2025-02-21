@@ -7,7 +7,7 @@ description: Using self-reflection to improve the quality of LLM outputs
 
 Self-reflection is a common prompting technique used to improve the outputs of LLMs. With self-reflection, an LLM is used to evaluate it's own output and then improve it, similar to how a humans would review and edit their own work.
 
-Self reflection works well because it's easy for LLMs to make mistakes. LLMs are simply predicting tokens one after the next so a single bad token choice can create a cascading effect. Self-reflection allows the model to evaluate the output in its entirety allowing the model to catch and then correct any mistakes.
+Self-reflection works well because it's easy for LLMs to make mistakes. LLMs are simply predicting tokens one after the next so a single bad token choice can create a cascading effect. Self-reflection allows the model to evaluate the output in its entirety giving the model a chance to catch and correct any mistakes.
 
 ## Self-reflection in GenSX
 
@@ -177,12 +177,14 @@ export const ImproveTextWithReflection = gsx.Component<
 >("ImproveTextWithReflection", ({ text, maxIterations = 3 }) => {
   const Reflection = createReflectionLoop<string>("ImproveTextWithReflection");
   return (
-    <Reflection
-      input={text}
-      ImproveFn={ImproveText}
-      EvaluateFn={EvaluateText}
-      maxIterations={maxIterations}
-    />
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Reflection
+        input={text}
+        ImproveFn={ImproveText}
+        EvaluateFn={EvaluateText}
+        maxIterations={maxIterations}
+      />
+    </OpenAIProvider>
   );
 });
 ```
@@ -194,13 +196,10 @@ You can run the text improvement example using the following code:
 ```tsx
 const text = `We are a cutting-edge technology company leveraging bleeding-edge AI solutions to deliver best-in-class products to our customers. Our agile development methodology ensures we stay ahead of the curve with paradigm-shifting innovations.`;
 
-const improvedText = await gsx.execute<string>(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <ImproveTextWithReflection text={text} />
-  </OpenAIProvider>,
-);
+const workflow = gsx.Workflow("ReflectionWorkflow", ImproveTextWithReflection);
+const improvedText = await workflow.run({ text });
 
-console.log(improvedText);
+console.log("🎯 Final text:\n", improvedText);
 ```
 
 You can find the complete example code in the [reflection example](https://github.com/gensx-inc/gensx/tree/main/examples/reflection).
