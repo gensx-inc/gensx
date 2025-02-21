@@ -27,7 +27,7 @@ Check out the [documentation](https://gensx.com/docs) to learn more about buildi
 
 Most LLM frameworks are graph oriented--you express your workflow with nodes, edges, and a global state object. GenSX takes a different approach--you compose your workflow with components, and GenSX handles the execution for you.
 
-Building a component looks a lot like a React component:
+Components in GenSX look a lot like a React components:
 
 ```tsx
 import { gsx } from "gensx";
