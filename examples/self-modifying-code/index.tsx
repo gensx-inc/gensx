@@ -1,0 +1,106 @@
+import { spawn } from "child_process";
+
+import { gsx } from "gensx";
+
+import { SelfModifyingCodeAgent } from "./agent.js";
+import { readContext } from "./context.js";
+import { acquireLease, releaseLease } from "./lease.js";
+import {
+  cleanupWorkspace,
+  setupWorkspace,
+  type Workspace,
+  type WorkspaceConfig,
+} from "./workspace.js";
+
+function getWorkspaceConfig(): WorkspaceConfig {
+  const repoUrl = process.env.REPO_URL;
+  const branch = process.env.BRANCH;
+
+  if (!repoUrl || !branch) {
+    throw new Error("Missing required environment variables: REPO_URL, BRANCH");
+  }
+
+  return {
+    repoUrl,
+    branch,
+  };
+}
+
+async function startNewAgent(workspace: Workspace): Promise<boolean> {
+  return new Promise((resolve) => {
+    // Start new agent process with same env vars
+    const proc = spawn("node", [workspace.entryPoint], {
+      cwd: workspace.rootDir,
+      stdio: "inherit",
+      env: process.env,
+    });
+
+    // Give it 10 seconds to acquire the lease
+    const timeout = setTimeout(() => {
+      proc.kill();
+      resolve(false);
+    }, 10000);
+
+    // If process exits early, it failed
+    proc.on("exit", (code) => {
+      clearTimeout(timeout);
+      resolve(code === 0);
+    });
+  });
+}
+
+async function main() {
+  let lease;
+  let workspace;
+  let error: unknown;
+
+  try {
+    // Setup phase
+    const config = getWorkspaceConfig();
+    lease = await acquireLease();
+    workspace = await setupWorkspace(config);
+    const context = await readContext(workspace.contextFile);
+
+    // Run agent workflow
+    const workflow = gsx.Workflow("SelfModifyingCode", SelfModifyingCodeAgent);
+    const result = await workflow.run(
+      { workspace, context, lease },
+      { printUrl: true },
+    );
+
+    if (!result.success) {
+      error = new Error(`Agent failed: ${result.error}`);
+      return;
+    }
+
+    // If agent made changes, try to start new version
+    if (result.workspace && result.workspace !== workspace) {
+      console.log("New version created, attempting handoff...");
+      const success = await startNewAgent(result.workspace);
+
+      if (success) {
+        console.log("New version started successfully, shutting down");
+        await releaseLease(lease);
+        process.exit(0);
+      } else {
+        error = new Error("Failed to start new version");
+      }
+    }
+  } catch (e) {
+    error = e;
+  } finally {
+    // Cleanup phase
+    if (lease) await releaseLease(lease);
+    if (workspace) await cleanupWorkspace(workspace);
+  }
+
+  if (error) {
+    console.error("Fatal error:", error);
+    process.exit(1);
+  }
+}
+
+main().catch((error: unknown) => {
+  console.error("Unhandled error:", error);
+  process.exit(1);
+});
