@@ -8,12 +8,44 @@ export interface WorkspaceConfig {
   branch: string;
 }
 
+export interface AgentContext {
+  goalState: string;
+  history: {
+    timestamp: Date;
+    action: string;
+    result: "success" | "failure";
+    details: string;
+  }[];
+}
+
 export interface Workspace {
   rootDir: string;
   sourceDir: string;
   contextFile: string; // Path to agent_context.json in the repo
   entryPoint: string; // Path to the main script that starts the agent
   config: WorkspaceConfig;
+}
+
+function serializeContext(context: AgentContext): string {
+  return JSON.stringify(
+    context,
+    (_key, value) => {
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+      return value;
+    },
+    2,
+  );
+}
+
+function deserializeContext(json: string): AgentContext {
+  return JSON.parse(json, (key, value) => {
+    if (key === "timestamp" && typeof value === "string") {
+      return new Date(value);
+    }
+    return value;
+  });
 }
 
 async function runCommand(
@@ -79,6 +111,67 @@ export async function setupWorkspace(
 
 export async function cleanupWorkspace(workspace: Workspace): Promise<void> {
   await fs.rm(workspace.rootDir, { recursive: true, force: true });
+}
+
+export async function readContext(workspace: Workspace): Promise<AgentContext> {
+  try {
+    const content = await fs.readFile(workspace.contextFile, "utf-8");
+    return deserializeContext(content);
+  } catch (e) {
+    if ((e as { code?: string }).code === "ENOENT") {
+      // Create default context if file doesn't exist
+      const defaultContext: AgentContext = {
+        goalState: "Improve code quality and efficiency",
+        history: [],
+      };
+      await writeContext(workspace, defaultContext);
+      return defaultContext;
+    }
+    throw e;
+  }
+}
+
+export async function writeContext(
+  workspace: Workspace,
+  context: AgentContext,
+): Promise<void> {
+  await fs.writeFile(workspace.contextFile, serializeContext(context));
+}
+
+export async function updateContext(
+  workspace: Workspace,
+  update: Partial<AgentContext>,
+): Promise<AgentContext> {
+  const current = await readContext(workspace);
+
+  const updated: AgentContext = {
+    ...current,
+    ...update,
+    history: update.history
+      ? [...current.history, ...update.history]
+      : current.history,
+  };
+
+  await writeContext(workspace, updated);
+  return updated;
+}
+
+export async function addHistoryEntry(
+  workspace: Workspace,
+  action: string,
+  result: "success" | "failure",
+  details: string,
+): Promise<AgentContext> {
+  const entry = {
+    timestamp: new Date(),
+    action,
+    result,
+    details,
+  };
+
+  return updateContext(workspace, {
+    history: [entry],
+  });
 }
 
 export async function commitAndPush(
