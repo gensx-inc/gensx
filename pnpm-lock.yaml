@@ -437,46 +437,6 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
 
-  packages/gensx-ai-sdk:
-    dependencies:
-      ai:
-        specifier: ^4.1.45
-        version: 4.1.45(react@19.0.0)(zod@3.24.1)
-      gensx:
-        specifier: workspace:>=0.2.1
-        version: link:../gensx
-      openai:
-        specifier: ^4.77
-        version: 4.83.0(ws@8.18.0)(zod@3.24.1)
-    devDependencies:
-      '@ai-sdk/openai':
-        specifier: ^1.1.13
-        version: 1.1.13(zod@3.24.1)
-      '@tsconfig/node20':
-        specifier: ^20.1.4
-        version: 20.1.4
-      '@types/node':
-        specifier: ^20.17.11
-        version: 20.17.11
-      '@vitest/coverage-istanbul':
-        specifier: ^2.1.8
-        version: 2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))
-      vite:
-        specifier: ^6.1.0
-        version: 6.1.0(@types/node@20.17.11)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.2)(yaml@2.7.0)
-      vite-plugin-dts:
-        specifier: ^4.5.0
-        version: 4.5.0(@types/node@20.17.11)(rollup@4.34.8)(typescript@5.7.3)(vite@6.1.0(@types/node@20.17.11)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.2)(yaml@2.7.0))
-      vitest:
-        specifier: ^2.1.8
-        version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
-      zod:
-        specifier: ^3.24.1
-        version: 3.24.1
-      zod-to-json-schema:
-        specifier: ^3.24.1
-        version: 3.24.1(zod@3.24.1)
-
   packages/gensx-cli:
     dependencies:
       commander:
@@ -556,6 +516,46 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
+
+  packages/gensx-vercel-ai-sdk:
+    dependencies:
+      ai:
+        specifier: ^4.1.45
+        version: 4.1.45(react@19.0.0)(zod@3.24.1)
+      gensx:
+        specifier: workspace:>=0.2.1
+        version: link:../gensx
+      openai:
+        specifier: ^4.77
+        version: 4.83.0(ws@8.18.0)(zod@3.24.1)
+    devDependencies:
+      '@ai-sdk/openai':
+        specifier: ^1.1.13
+        version: 1.1.13(zod@3.24.1)
+      '@tsconfig/node20':
+        specifier: ^20.1.4
+        version: 20.1.4
+      '@types/node':
+        specifier: ^20.17.11
+        version: 20.17.11
+      '@vitest/coverage-istanbul':
+        specifier: ^2.1.8
+        version: 2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))
+      vite:
+        specifier: ^6.1.0
+        version: 6.1.0(@types/node@20.17.11)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.2)(yaml@2.7.0)
+      vite-plugin-dts:
+        specifier: ^4.5.0
+        version: 4.5.0(@types/node@20.17.11)(rollup@4.34.8)(typescript@5.7.3)(vite@6.1.0(@types/node@20.17.11)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.2)(yaml@2.7.0))
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
+      zod:
+        specifier: ^3.24.1
+        version: 3.24.1
+      zod-to-json-schema:
+        specifier: ^3.24.1
+        version: 3.24.1(zod@3.24.1)
 
   website/docs:
     dependencies:
@@ -10236,8 +10236,8 @@ snapshots:
       '@typescript-eslint/parser': 8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2)
       eslint: 9.17.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.8.0(eslint-plugin-import@2.31.0)(eslint@9.17.0(jiti@2.4.2))
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.17.0(jiti@2.4.2))
       eslint-plugin-react: 7.37.4(eslint@9.17.0(jiti@2.4.2))
       eslint-plugin-react-hooks: 5.1.0(eslint@9.17.0(jiti@2.4.2))
@@ -10260,7 +10260,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0)(eslint@9.17.0(jiti@2.4.2)):
+  eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.0(supports-color@5.5.0)
@@ -10271,18 +10271,18 @@ snapshots:
       stable-hash: 0.0.4
       tinyglobby: 0.2.10
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2)
       eslint: 9.17.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.8.0(eslint-plugin-import@2.31.0)(eslint@9.17.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
@@ -10293,7 +10293,7 @@ snapshots:
       eslint: 9.17.0(jiti@2.4.2)
       eslint-compat-utils: 0.5.1(eslint@9.17.0(jiti@2.4.2))
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2)):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -10304,7 +10304,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.17.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.0)(eslint@9.17.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.19.1(eslint@9.17.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2)))(eslint@9.17.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
