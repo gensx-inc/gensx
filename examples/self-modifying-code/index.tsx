@@ -2,7 +2,7 @@ import { spawn } from "child_process";
 
 import { gsx } from "gensx";
 
-import { SelfModifyingCodeAgent } from "./agent.js";
+import { SelfModifyingCodeAgent } from "./agent/agent.js";
 import { acquireLease, releaseLease } from "./lease.js";
 import {
   cleanupWorkspace,
