@@ -4,6 +4,7 @@ import { gzip } from "node:zlib";
 
 import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component";
 import { readConfig } from "./config";
+import { ExecutionContext } from "./context";
 
 const gzipAsync = promisify(gzip);
 
@@ -570,6 +571,32 @@ export class CheckpointManager implements CheckpointWriter {
     }, obj);
   }
 
+  private cloneValue(value: unknown): unknown {
+    // Handle null/undefined
+    if (value == null) return value;
+
+    // Don't clone functions
+    if (typeof value === "function") return value;
+
+    // Handle primitive values
+    if (typeof value !== "object") return value;
+
+    // Handle arrays
+    if (Array.isArray(value)) {
+      return value.map((item) => this.cloneValue(item));
+    }
+
+    // Handle objects that shouldn't be cloned
+    if (value instanceof ExecutionContext) return value;
+    if (Symbol.asyncIterator in value) return value;
+    if (ArrayBuffer.isView(value)) return value;
+
+    // For regular objects, clone each property
+    return Object.fromEntries(
+      Object.entries(value).map(([key, val]) => [key, this.cloneValue(val)]),
+    );
+  }
+
   /**
    * Due to the async nature of component execution, nodes can arrive in any order.
    * For example, in a tree like:
@@ -599,13 +626,16 @@ export class CheckpointManager implements CheckpointWriter {
    */
   addNode(partialNode: Partial<ExecutionNode>, parentId?: string): string {
     const nodeId = generateUUID();
+    const clonedPartial = this.cloneValue(
+      partialNode,
+    ) as Partial<ExecutionNode>;
     const node: ExecutionNode = {
       id: nodeId,
       componentName: "Unknown",
       startTime: Date.now(),
       children: [],
       props: {},
-      ...partialNode,
+      ...clonedPartial, // Clone mutable state while preserving functions
     };
 
     // Register any secrets from componentOpts
@@ -660,7 +690,7 @@ export class CheckpointManager implements CheckpointWriter {
     const node = this.nodes.get(id);
     if (node) {
       node.endTime = Date.now();
-      node.output = output;
+      node.output = this.cloneValue(output);
 
       if (
         node.componentOpts?.secretOutputs &&
@@ -720,7 +750,7 @@ export class CheckpointManager implements CheckpointWriter {
         });
       }
 
-      Object.assign(node, updates);
+      Object.assign(node, this.cloneValue(updates));
       this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to update unknown node:`, { id });
