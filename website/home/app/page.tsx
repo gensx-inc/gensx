@@ -11,7 +11,7 @@ import Link from "next/link";
 export default function Home() {
   type ExampleType = "components" | "workflows" | "agents" | "llms";
 
-  // State that remains when you click an example.
+  // State that remains when you click an example
   const [committedExample, setCommittedExample] =
     useState<ExampleType>("components");
   // Temporary state that updates on hover (overriding the committed one temporarily).
