@@ -84,32 +84,29 @@ export const ImproveTextWithReflection = gsx.Component<
 >("ImproveTextWithReflection", ({ text, maxIterations = 3 }) => {
   const Reflection = createReflectionLoop<string>("ImproveTextWithReflection");
   return (
-    <Reflection
-      input={text}
-      ImproveFn={ImproveText}
-      EvaluateFn={EvaluateText}
-      maxIterations={maxIterations}
-    />
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <Reflection
+        input={text}
+        ImproveFn={ImproveText}
+        EvaluateFn={EvaluateText}
+        maxIterations={maxIterations}
+      />
+    </OpenAIProvider>
   );
 });
 
 async function main() {
-  const workflow = gsx.Workflow(
-    "CleanBuzzwordsWorkflow",
-    CleanBuzzwordsReflectionLoop,
-  );
-  const withoutBuzzwords = await workflow.run(
-    {
-      text: `We are a cutting-edge technology company leveraging bleeding-edge AI solutions to deliver best-in-class products to our customers. Our agile development methodology ensures we stay ahead of the curve with paradigm-shifting innovations.
+  const text = `We are a cutting-edge technology company leveraging bleeding-edge AI solutions to deliver best-in-class products to our customers. Our agile development methodology ensures we stay ahead of the curve with paradigm-shifting innovations.
+
 Our mission-critical systems utilize cloud-native architectures and next-generation frameworks to create synergistic solutions that drive digital transformation. By thinking outside the box, we empower stakeholders with scalable and future-proof applications that maximize ROI.
 
 Through our holistic approach to disruptive innovation, we create game-changing solutions that move the needle and generate impactful results. Our best-of-breed technology stack combined with our customer-centric focus allows us to ideate and iterate rapidly in this fast-paced market.`;
 
-  const improvedText = await gsx.execute<string>(
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <ImproveTextWithReflection text={text} />
-    </OpenAIProvider>,
+  const workflow = gsx.Workflow(
+    "ReflectionWorkflow",
+    ImproveTextWithReflection,
   );
+  const improvedText = await workflow.run({ text });
 
   console.log("🎯 Final text:\n", improvedText);
 }

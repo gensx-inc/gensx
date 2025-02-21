@@ -45,9 +45,7 @@ export function createReflectionLoop<TInput>(name: string) {
         );
 
         // Recursive call with updated input and iteration count
-        const Reflection = createReflectionLoop<TInput>(
-          `${name}-${iterations + 1}`,
-        );
+        const Reflection = createReflectionLoop<TInput>(name);
         return (
           <Reflection
             input={newInput}
