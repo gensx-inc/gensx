@@ -26,6 +26,9 @@ function getWorkspaceConfig(): WorkspaceConfig {
   };
 }
 
+// flag for testing in development.
+const shouldSpawnAgent = false;
+
 async function startNewAgent(workspace: Workspace): Promise<boolean> {
   return new Promise((resolve) => {
     // Start new agent process with same env vars
@@ -74,7 +77,12 @@ async function main() {
     }
 
     // If agent made changes, try to start new version
-    if (result.workspace && result.workspace !== workspace) {
+    if (
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      shouldSpawnAgent &&
+      result.workspace &&
+      result.workspace !== workspace
+    ) {
       console.log("New version created, attempting handoff...");
       const success = await startNewAgent(result.workspace);
 
