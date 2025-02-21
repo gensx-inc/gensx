@@ -23,7 +23,11 @@ But if you know how to write a react component, then building an agent will feel
 
 Check out the [documentation](https://gensx.com/docs) to learn more about building LLM applications with GenSX.
 
-Building a component (equivalent to a workflow or agent step) looks a lot like a React component:
+## Building a workflow
+
+Most LLM frameworks are graph oriented--you express your workflow with nodes, edges, and a global state object. GenSX takes a different approach--you compose your workflow with components, and GenSX handles the execution for you.
+
+Building a component looks a lot like a React component:
 
 ```tsx
 import { gsx } from "gensx";
@@ -102,78 +106,6 @@ const result = await workflow.run({
 ## Getting Started
 
 Check out the [Quickstart Guide](https://gensx.com/docs/quickstart) to build your first workflow in just a few minutes.
-
-## Building a workflow
-
-Most LLM frameworks are graph oriented--you express your workflow with nodes, edges, and a global state object. GenSX takes a different approach--you compose your workflow with components, and GenSX handles the execution for you.
-
-You start by defining your components:
-
-```tsx
-import { gsx } from "gensx";
-import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
-
-// Define the input props and output type for type safety
-interface CreateOutlineProps {
-  prompt: string;
-}
-type CreateOutlineOutput = string;
-
-// Create a reusable component that can be composed with others
-const CreateOutline = gsx.Component<CreateOutlineProps, CreateOutlineOutput>(
-  "CreateOutline",
-  async ({ prompt }) => {
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          {
-            role: "user",
-            content: `Create an outline for an article about ${prompt}`,
-          },
-        ]}
-      />
-    );
-  },
-);
-
-interface WriteArticleProps {
-  outline: string;
-}
-type WriteArticleOutput = string;
-
-const WriteArticle = gsx.Component<WriteArticleProps, WriteArticleOutput>(
-  "WriteArticle",
-  async ({ outline }) => {
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          {
-            role: "user",
-            content: `Use this outline to write a detailed article: ${outline}`,
-          },
-        ]}
-      />
-    );
-  },
-);
-```
-
-Then you can compose your components together to create a workflow:
-
-```tsx
-// Execute the workflow with the OpenAI provider
-const result = await gsx.execute<string>(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <CreateOutline prompt="the future of LLM dev tools">
-      {(outline) => <WriteArticle outline={outline} />}
-    </CreateOutline>
-  </OpenAIProvider>,
-);
-
-console.log(result);
-```
 
 ## Examples
 
