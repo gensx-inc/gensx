@@ -334,7 +334,7 @@ const result = await workflow.run({
           </div>
 
           {/* Desktop Picker (Sidebar on the left) */}
-          <div className="hidden md:grid grid-cols-3 gap-6">
+          <div className="hidden md:grid grid-cols-3 gap-6 h-[600px]">
             <div className="space-y-2 relative">
               {examplesData.map(({ type, title, description }) => (
                 <button
@@ -402,8 +402,6 @@ const result = await workflow.run({
         transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
         className="flex gap-6 flex-wrap items-center justify-center pb-8"
       ></motion.footer>
-      {/* Bottom spacer bar */}
-      <div className="w-full h-[600px] bg-gradient-to-b from-transparent to-black/5" />
     </div>
   );
 }
