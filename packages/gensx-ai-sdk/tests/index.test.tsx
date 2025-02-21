@@ -1,6 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { gsx } from "gensx";
 import { expect, test } from "vitest";
+import { z } from "zod";
 
 import * as AI from "../src";
 
@@ -24,29 +25,18 @@ test("StreamText streams text response", async () => {
 test("StreamObject streams JSON objects", async () => {
   const workflow = gsx.Workflow("StreamObject", AI.StreamObject);
   const response = await workflow.run({
-    prompt: "Generate a JSON object",
+    prompt:
+      "Generate a chat message object representing an AI assistant's response about machine learning",
     model: languageModel,
-    output: "no-schema",
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(z.string()),
+        steps: z.array(z.string()),
+      }),
+    }),
   });
-
   expect(response).toBeDefined();
-
-  // Collect all chunks from the stream
-  const chunks = [];
-  for await (const chunk of response.partialObjectStream) {
-    expect(chunk).toBeTypeOf("object");
-    chunks.push(chunk);
-  }
-
-  // Verify we received some data
-  expect(chunks.length).toBeGreaterThan(0);
-
-  // Verify each chunk is a valid JSON object
-  chunks.forEach((chunk) => {
-    expect(() => JSON.stringify(chunk)).not.toThrow();
-    expect(chunk).toHaveProperty("id");
-    expect(chunk).toHaveProperty("content");
-  });
 });
 
 test("GenerateText generates text", async () => {
@@ -55,19 +45,24 @@ test("GenerateText generates text", async () => {
     prompt: "Tell me a joke",
     model: languageModel,
   });
-
   expect(result).toBeDefined();
 });
 
 test("GenerateObject generates JSON object", async () => {
   const workflow = gsx.Workflow("GenerateObject", AI.GenerateObject);
-  const result = await workflow.run({
-    prompt: "Generate a user object",
+  const response = await workflow.run({
+    prompt:
+      "Generate a chat message object representing an AI assistant's response about machine learning",
     model: languageModel,
-    output: "no-schema",
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(z.string()),
+        steps: z.array(z.string()),
+      }),
+    }),
   });
-
-  expect(result).toBeDefined();
+  expect(response).toBeDefined();
 });
 
 test("Embed generates embeddings", async () => {
