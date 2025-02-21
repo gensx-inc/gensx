@@ -5,17 +5,17 @@ import { GSXChatCompletion, GSXChatCompletionResult } from "@gensx/openai";
 import { gsx } from "gensx";
 
 import { bashTool } from "./BashTool.js";
-import { confirmationTool } from "./ConfirmationTool.js";
 import { editTool } from "./EditTool.js";
 
 interface CodeAgentProps {
-  message: string;
+  task: string;
+  additionalInstructions?: string;
   repoPath: string;
 }
 
 export const CodeAgent = gsx.Component<CodeAgentProps, GSXChatCompletionResult>(
   "CodeAgent",
-  ({ message, repoPath }) => {
+  ({ task, additionalInstructions, repoPath }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GSXChatCompletion
@@ -23,23 +23,31 @@ export const CodeAgent = gsx.Component<CodeAgentProps, GSXChatCompletionResult>(
             {
               role: "system",
               content:
-                "You are a helpful assistant designed to act as an expert software engineer and assist users with updating their code. Before making any changes or running any commands, you must get user confirmation.\n\nFor any bash or edit commands:\n1. First use the confirmation tool to get user approval\n2. Only proceed with the action if the user approves (returns 'yes')\n3. If the user denies (returns 'no'), explain that you won't proceed and ask what they'd like to do instead",
+                "You are a helpful assistant designed to act as an expert software engineer designed to autonomously update codebases based on user instructions.",
             },
             {
               role: "user",
-              content: getCodeAgentPrompt(message, repoPath),
+              content: getCodeAgentPrompt(
+                task,
+                additionalInstructions ?? "",
+                repoPath,
+              ),
             },
           ]}
           model="gpt-4o"
           temperature={0.7}
-          tools={[confirmationTool, editTool, bashTool]}
+          tools={[editTool, bashTool]}
         />
       </OpenAIProvider>
     );
   },
 );
 
-export function getCodeAgentPrompt(message: string, repoPath: string) {
+export function getCodeAgentPrompt(
+  task: string,
+  additionalInstructions: string,
+  repoPath: string,
+) {
   return `<uploaded_files>
 ${repoPath}
 </uploaded_files>
@@ -47,7 +55,7 @@ ${repoPath}
 I've uploaded a code repository in the directory ${repoPath} (not in /tmp/inputs). Consider the following PR description:
 
 <user_instructions>
-${message}
+${task}${additionalInstructions ? `\n\n${additionalInstructions}` : ""}
 </user_instructions>
 
 Can you help me implement the necessary changes to the repository so that the requirements specified in the <user_instructions> are met?

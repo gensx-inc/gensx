@@ -23,8 +23,20 @@ export const bashTool = new GSXTool<typeof bashToolSchema>({
 * Please run long lived commands in the background, e.g. 'sleep 10 &' or start a server in the background.`,
   schema: bashToolSchema,
   run: async ({ command }: BashToolParams) => {
-    console.log("running command", command);
-    const result = execSync(command);
-    return Promise.resolve(result.toString());
+    console.log("💻 Calling the BashTool:", command);
+    try {
+      const result = await Promise.resolve(execSync(command));
+      return result.toString();
+    } catch (error) {
+      // Check if error is an object with stderr property
+      if (error && typeof error === "object" && "stderr" in error) {
+        return (error.stderr as Buffer).toString();
+      }
+      // Fallback to error message if available
+      if (error instanceof Error) {
+        return error.message;
+      }
+      return "An unknown error occurred";
+    }
   },
 });

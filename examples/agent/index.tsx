@@ -5,7 +5,8 @@ async function main() {
   console.log("\n🚀 Starting the code agent example");
 
   const instructions = "Create a basic connect 4 game in typescript";
-  const repoPath = "connect4Game";
+  const additionalInstructions = "Use `pnpm run start` to run the game";
+  const repoPath = "./connect4Game";
 
   console.log("Repo path:", repoPath);
   console.log("Instructions:", instructions);
@@ -16,7 +17,8 @@ async function main() {
   const agent = gsx.Workflow("CodeAgent", CodeAgent);
 
   const result = await agent.run({
-    message: instructions,
+    task: instructions,
+    additionalInstructions,
     repoPath,
   });
 

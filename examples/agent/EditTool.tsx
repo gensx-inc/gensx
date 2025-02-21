@@ -69,7 +69,7 @@ Notes for using the \`str_replace\` command:\n
 * The \`new_str\` parameter should contain the edited lines that should replace the \`old_str\``,
   schema: editToolSchema,
   run: async (params: EditToolParams) => {
-    console.log("Processing edit command", params);
+    console.log("🛠️ Calling the EditTool:", params);
 
     // Validate required fields based on command
     switch (params.command) {
