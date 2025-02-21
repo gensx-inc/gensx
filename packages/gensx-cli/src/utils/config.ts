@@ -4,22 +4,23 @@ import path from "path";
 
 import { parse as parseIni, stringify as stringifyIni } from "ini";
 
-export const API_BASE_URL =
-  process.env.GENSX_API_BASE_URL ?? "https://api.gensx.com";
-export const APP_BASE_URL =
-  process.env.GENSX_APP_BASE_URL ?? "https://app.gensx.com";
+// Default URLs to use if no config file exists and no env vars are set
+const DEFAULT_API_URL = "https://api.gensx.com";
+const DEFAULT_CONSOLE_URL = "https://app.gensx.com";
 
-export interface Config {
+// Public types
+export interface AuthConfig {
   token: string;
   org: string;
 }
 
-export interface State {
-  hasCompletedFirstTimeSetup?: boolean;
+export interface CliState {
+  hasCompletedFirstTimeSetup: boolean;
   lastLoginAt?: string;
 }
 
-interface FullConfig {
+// Internal types for the config file format
+interface ConfigFileFormat {
   api?: {
     token?: string;
     org?: string;
@@ -28,11 +29,16 @@ interface FullConfig {
   console?: {
     baseUrl?: string;
   };
-  state?: State;
+  state?: Partial<CliState>;
 }
 
-export function getConfigPath(): { configDir: string; configFile: string } {
-  // Allow override through environment variable
+// Default values
+const DEFAULT_STATE: CliState = {
+  hasCompletedFirstTimeSetup: false,
+};
+
+// Configuration path management
+function getConfigPaths(): { configDir: string; configFile: string } {
   if (process.env.GENSX_CONFIG_DIR) {
     return {
       configDir: process.env.GENSX_CONFIG_DIR,
@@ -42,9 +48,7 @@ export function getConfigPath(): { configDir: string; configFile: string } {
 
   const home = homedir();
 
-  // Platform-specific paths
   if (platform() === "win32") {
-    // Windows: %APPDATA%\gensx\config
     const appData =
       process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
     return {
@@ -53,7 +57,6 @@ export function getConfigPath(): { configDir: string; configFile: string } {
     };
   }
 
-  // Unix-like systems (Linux, macOS): ~/.config/gensx/config
   const xdgConfigHome =
     process.env.XDG_CONFIG_HOME ?? path.join(home, ".config");
   return {
@@ -62,79 +65,32 @@ export function getConfigPath(): { configDir: string; configFile: string } {
   };
 }
 
-export async function readConfig(): Promise<{
-  config: Config | null;
-  state: State;
-}> {
-  const { configFile } = getConfigPath();
+// Helper to check if auth config is complete
+function isCompleteAuth(auth: {
+  token?: string;
+  org?: string;
+}): auth is AuthConfig {
+  return typeof auth.token === "string" && typeof auth.org === "string";
+}
+
+// Core config operations
+async function readConfigFile(): Promise<ConfigFileFormat> {
+  const { configFile } = getConfigPaths();
 
   try {
     const fileContent = await readFile(configFile, "utf-8");
-    const parsed = parseIni(fileContent) as FullConfig;
-
-    // Extract config if it exists
-    const config =
-      parsed.api?.token && parsed.api.org
-        ? {
-            token: parsed.api.token,
-            org: parsed.api.org,
-          }
-        : null;
-
-    // Extract state with defaults
-    const state: State = {
-      hasCompletedFirstTimeSetup: false,
-      lastLoginAt: undefined,
-      ...parsed.state,
-    };
-
-    return { config, state };
+    return parseIni(fileContent) as ConfigFileFormat;
   } catch (_err) {
-    // If file doesn't exist or can't be read, return defaults
-    return {
-      config: null,
-      state: {
-        hasCompletedFirstTimeSetup: false,
-      },
-    };
+    return {};
   }
 }
 
-export async function saveConfig(
-  config: Config | null,
-  state?: Partial<State>,
-): Promise<void> {
-  const { configDir, configFile } = getConfigPath();
+async function writeConfigFile(config: ConfigFileFormat): Promise<void> {
+  const { configDir, configFile } = getConfigPaths();
 
   try {
     await mkdir(configDir, { recursive: true, mode: 0o700 });
-
-    // Read existing config to preserve state if not provided
-    let existingState: State = {
-      hasCompletedFirstTimeSetup: false,
-    };
-    try {
-      const existing = await readConfig();
-      existingState = existing.state;
-    } catch (_err) {
-      // Ignore read errors
-    }
-
-    const configContent = stringifyIni({
-      api: {
-        ...(config ? config : {}),
-        baseUrl: API_BASE_URL,
-      },
-      console: {
-        baseUrl: APP_BASE_URL,
-      },
-      state: {
-        ...existingState,
-        ...state,
-      },
-    });
-
-    // Add a helpful header comment
+    const configContent = stringifyIni(config);
     const fileContent = `; GenSX Configuration File
 ; Generated on: ${new Date().toISOString()}
 
@@ -149,7 +105,102 @@ ${configContent}`;
   }
 }
 
-export async function updateState(state: Partial<State>): Promise<void> {
-  const { config, state: existingState } = await readConfig();
-  await saveConfig(config, { ...existingState, ...state });
+// Public API
+export async function getAuth(): Promise<AuthConfig | null> {
+  const config = await readConfigFile();
+  return config.api && isCompleteAuth(config.api) ? config.api : null;
+}
+
+export async function getState(): Promise<CliState> {
+  const config = await readConfigFile();
+  return {
+    ...DEFAULT_STATE,
+    ...config.state,
+  };
+}
+
+export async function saveAuth(auth: AuthConfig | null): Promise<void> {
+  const config = await readConfigFile();
+
+  await writeConfigFile({
+    ...config,
+    api: {
+      ...(auth && { token: auth.token, org: auth.org }),
+      baseUrl:
+        process.env.GENSX_API_BASE_URL ??
+        config.api?.baseUrl ??
+        DEFAULT_API_URL,
+    },
+    console: {
+      baseUrl:
+        process.env.GENSX_APP_BASE_URL ??
+        config.console?.baseUrl ??
+        DEFAULT_CONSOLE_URL,
+    },
+  });
+}
+
+export async function saveState(state: Partial<CliState>): Promise<void> {
+  const config = await readConfigFile();
+  const currentState = await getState();
+
+  await writeConfigFile({
+    ...config,
+    api: {
+      ...config.api,
+      baseUrl:
+        process.env.GENSX_API_BASE_URL ??
+        config.api?.baseUrl ??
+        DEFAULT_API_URL,
+    },
+    console: {
+      baseUrl:
+        process.env.GENSX_APP_BASE_URL ??
+        config.console?.baseUrl ??
+        DEFAULT_CONSOLE_URL,
+    },
+    state: {
+      ...currentState,
+      ...state,
+    },
+  });
+}
+
+// Export base URLs that respect config precedence
+export const API_BASE_URL = process.env.GENSX_API_BASE_URL ?? DEFAULT_API_URL;
+export const APP_BASE_URL =
+  process.env.GENSX_APP_BASE_URL ?? DEFAULT_CONSOLE_URL;
+
+// Backwards compatibility layer
+export async function readConfig() {
+  const config = await readConfigFile();
+
+  return {
+    config: {
+      api: {
+        ...config.api,
+        baseUrl:
+          process.env.GENSX_API_BASE_URL ??
+          config.api?.baseUrl ??
+          DEFAULT_API_URL,
+      },
+      console: {
+        baseUrl:
+          process.env.GENSX_APP_BASE_URL ??
+          config.console?.baseUrl ??
+          DEFAULT_CONSOLE_URL,
+      },
+    },
+    state: await getState(),
+  };
+}
+
+export async function saveConfig(
+  auth: AuthConfig | null,
+  state?: Partial<CliState>,
+): Promise<void> {
+  if (state) {
+    await saveState(state);
+  }
+  await saveAuth(auth);
 }

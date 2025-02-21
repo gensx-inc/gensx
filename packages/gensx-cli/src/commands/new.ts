@@ -2,7 +2,7 @@ import { createGensxProject } from "create-gensx";
 import pc from "picocolors";
 
 import { logger } from "../logger.js";
-import { readConfig, updateState } from "../utils/config.js";
+import { readConfig, saveState } from "../utils/config.js";
 import { login } from "./login.js";
 
 interface NewCommandOptions {
@@ -19,7 +19,7 @@ export async function newProject(
     const { state } = await readConfig();
     if (!state.hasCompletedFirstTimeSetup) {
       // Ensure that we don't ask again.
-      await updateState({ hasCompletedFirstTimeSetup: true });
+      await saveState({ hasCompletedFirstTimeSetup: true });
       logger.log(
         pc.yellow("\nWelcome to GenSX! Let's get you set up first.\n"),
       );
