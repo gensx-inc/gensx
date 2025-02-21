@@ -76,22 +76,18 @@ async function main() {
       return;
     }
 
-    // If agent made changes, try to start new version
-    if (
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      shouldSpawnAgent &&
-      result.workspace &&
-      result.workspace !== workspace
-    ) {
-      console.log("New version created, attempting handoff...");
-      const success = await startNewAgent(result.workspace);
+    // If agent made changes, start a new iteration
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.modified && shouldSpawnAgent) {
+      console.log("Changes made, starting new iteration...");
+      const success = await startNewAgent(workspace);
 
       if (success) {
-        console.log("New version started successfully, shutting down");
+        console.log("New iteration started successfully, shutting down");
         await releaseLease(lease);
         process.exit(0);
       } else {
-        error = new Error("Failed to start new version");
+        error = new Error("Failed to start new iteration");
       }
     }
   } catch (e) {
