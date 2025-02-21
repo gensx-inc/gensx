@@ -43,6 +43,26 @@
         }
       ]
     },
+    "packages/gensx-ai-sdk": {
+      "component": "gensx-ai-sdk",
+      "release-type": "node",
+      "package-name": "@gensx/ai-sdk",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "initial-version": "0.1.0",
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
     "packages/create-gensx": {
       "component": "create-gensx",
       "release-type": "node",
