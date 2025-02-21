@@ -43,7 +43,9 @@ export default async function RootLayout({ children }) {
   const pageMap = await getPageMap("/docs");
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
-      <Head />
+      <Head>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
       <body className={`${figtree.variable}`}>
         <Layout
           navbar={navbar}
