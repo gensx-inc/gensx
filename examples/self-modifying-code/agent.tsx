@@ -69,24 +69,37 @@ const GenerateGoalState = gsx.Component<GenerateGoalStateProps, GoalDecision>(
         {
           role: "system",
           content: `You are an AI agent that decides on goals for improving a codebase.
-Current goal state: "${context.goalState}"
-History of actions: ${context.history.length} entries
 
-You should decide if:
-1. The current goal is complete or needs refinement
-2. We need a new goal to pursue
+CURRENT GOAL STATE:
+"${context.goalState}"
 
-Your response should be structured with:
-- newGoal: true if we need a new goal
-- goalState: if newGoal is true, provide a specific, actionable goal`,
+HISTORY OF ACTIONS:
+${JSON.stringify(context.history, null, 2)}
+
+Your task is to:
+1. Review the current goal state
+2. Analyze the history of actions to determine if the goal has been achieved
+3. Make a decision:
+   - If the current goal has been achieved:
+     * Set newGoal = true
+     * Provide a new goalState for a different improvement to work on
+   - If the current goal has NOT been achieved:
+     * Set newGoal = false
+     * Keep the current goalState
+
+Remember:
+- Look for clear evidence in the history that the goal was completed
+- If the history shows failed attempts or no progress, keep the current goal
+- Only move to a new goal when the current one is definitively achieved
+- New goals should be specific, actionable, and focused on a single improvement`,
         },
         {
           role: "user",
           content:
-            "Analyze the current state and decide if we need a new goal.",
+            "Review the goal state and history, then make your decision.",
         },
       ]}
-      model="gpt-4"
+      model="gpt-4o"
       temperature={0.7}
       outputSchema={goalDecisionSchema}
     />
