@@ -110,6 +110,7 @@ export async function setupWorkspace(
 }
 
 export async function cleanupWorkspace(workspace: Workspace): Promise<void> {
+  console.log("Cleaning up workspace", workspace.rootDir);
   await fs.rm(workspace.rootDir, { recursive: true, force: true });
 }
 

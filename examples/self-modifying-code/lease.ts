@@ -56,6 +56,7 @@ export async function acquireLease(): Promise<Lease> {
 }
 
 export async function releaseLease(lease: Lease): Promise<void> {
+  console.log("Releasing lease", lease);
   await ensureLeaseDirExists();
   try {
     const existingLease = await fs.readFile(LEASE_FILE, "utf-8");
