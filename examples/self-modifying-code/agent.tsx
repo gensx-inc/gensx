@@ -1,4 +1,4 @@
-import { GSXChatCompletion } from "@gensx/openai";
+import { GSXChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
 
@@ -17,14 +17,6 @@ export interface AgentResult {
   error?: string;
 }
 
-// Schema for goal state decision
-const goalDecisionSchema = z.object({
-  newGoal: z.boolean().describe("Whether to set a new goal"),
-  goalState: z.string().describe("The new goal state if newGoal is true"),
-});
-
-type GoalDecision = z.infer<typeof goalDecisionSchema>;
-
 /**
  * The agent receives a workspace and can:
  * - read context
@@ -38,15 +30,45 @@ type GoalDecision = z.infer<typeof goalDecisionSchema>;
 
 export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
-  async ({ context }) => {
-    try {
-      // Decide if we need a new goal
-      const decision = await gsx.execute<GoalDecision>(
-        <GSXChatCompletion
-          messages={[
-            {
-              role: "system",
-              content: `You are an AI agent that decides on goals for improving a codebase.
+  ({ workspace: _workspace, context, lease: _lease }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <GenerateGoalState context={context}>
+          {(decision) => {
+            console.log("Goal Decision:", JSON.stringify(decision, null, 2));
+
+            // For now, just return empty result
+            return {
+              success: true,
+              modified: false,
+            };
+          }}
+        </GenerateGoalState>
+      </OpenAIProvider>
+    );
+  },
+);
+
+// Schema for goal state decision
+const goalDecisionSchema = z.object({
+  newGoal: z.boolean().describe("Whether to set a new goal"),
+  goalState: z.string().describe("The new goal state if newGoal is true"),
+});
+
+type GoalDecision = z.infer<typeof goalDecisionSchema>;
+
+interface GenerateGoalStateProps {
+  context: AgentContext;
+}
+
+const GenerateGoalState = gsx.Component<GenerateGoalStateProps, GoalDecision>(
+  "GenerateGoalState",
+  ({ context }) => (
+    <GSXChatCompletion
+      messages={[
+        {
+          role: "system",
+          content: `You are an AI agent that decides on goals for improving a codebase.
 Current goal state: "${context.goalState}"
 History of actions: ${context.history.length} entries
 
@@ -57,32 +79,16 @@ You should decide if:
 Your response should be structured with:
 - newGoal: true if we need a new goal
 - goalState: if newGoal is true, provide a specific, actionable goal`,
-            },
-            {
-              role: "user",
-              content:
-                "Analyze the current state and decide if we need a new goal.",
-            },
-          ]}
-          model="gpt-4"
-          temperature={0.7}
-          outputSchema={goalDecisionSchema}
-        />,
-      );
-
-      console.log("Goal Decision:", JSON.stringify(decision, null, 2));
-
-      // For now, just return empty result
-      return {
-        success: true,
-        modified: false,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        modified: false,
-        error: String(error),
-      };
-    }
-  },
+        },
+        {
+          role: "user",
+          content:
+            "Analyze the current state and decide if we need a new goal.",
+        },
+      ]}
+      model="gpt-4"
+      temperature={0.7}
+      outputSchema={goalDecisionSchema}
+    />
+  ),
 );
