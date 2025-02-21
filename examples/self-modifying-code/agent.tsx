@@ -1,7 +1,7 @@
 import { gsx } from "gensx";
 
-import { AgentContext } from "./context.js";
 import { Lease } from "./lease.js";
+import { AgentContext } from "./workspace.js";
 import { Workspace } from "./workspace.js";
 
 export interface AgentProps {
