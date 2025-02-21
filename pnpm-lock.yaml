@@ -439,6 +439,9 @@ importers:
       '@ai-sdk/openai':
         specifier: ^1.1.13
         version: 1.1.13(zod@3.24.1)
+      '@tsconfig/node20':
+        specifier: ^20.1.4
+        version: 20.1.4
       ai:
         specifier: ^4.1.45
         version: 4.1.45(react@19.0.0)(zod@3.24.1)
