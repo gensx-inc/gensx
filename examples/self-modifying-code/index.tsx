@@ -3,10 +3,10 @@ import { spawn } from "child_process";
 import { gsx } from "gensx";
 
 import { SelfModifyingCodeAgent } from "./agent.js";
-import { readContext } from "./context.js";
 import { acquireLease, releaseLease } from "./lease.js";
 import {
   cleanupWorkspace,
+  readContext,
   setupWorkspace,
   type Workspace,
   type WorkspaceConfig,
@@ -59,7 +59,7 @@ async function main() {
     const config = getWorkspaceConfig();
     lease = await acquireLease();
     workspace = await setupWorkspace(config);
-    const context = await readContext(workspace.contextFile);
+    const context = await readContext(workspace);
 
     // Run agent workflow
     const workflow = gsx.Workflow("SelfModifyingCode", SelfModifyingCodeAgent);
