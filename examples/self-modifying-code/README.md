@@ -21,3 +21,11 @@ pnpm install
 # Run the example
 pnpm run start
 ```
+
+## Killing all agents
+
+On macos:
+
+```bash
+pkill -f "node.*examples/self-modifying-code"
+```
