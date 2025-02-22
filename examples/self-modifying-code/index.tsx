@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import path from "path";
 
 import { gsx } from "gensx";
 
@@ -25,13 +26,18 @@ function getWorkspaceConfig(): WorkspaceConfig {
 }
 
 // flag for testing in development.
-const shouldSpawnAgent = false;
+const shouldSpawnAgent = true;
 
 async function startNewAgent(workspace: Workspace): Promise<boolean> {
   return new Promise((resolve) => {
+    const scopedPath = path.join(
+      workspace.sourceDir,
+      "examples",
+      "self-modifying-code",
+    );
     // Start new agent process with same env vars
     const proc = spawn("pnpm", ["dev"], {
-      cwd: workspace.rootDir,
+      cwd: scopedPath,
       stdio: "inherit",
       env: process.env,
     });
