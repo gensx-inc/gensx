@@ -1,4 +1,8 @@
-import { GSXChatCompletion, OpenAIProvider } from "@gensx/openai";
+import {
+  ChatCompletion,
+  GSXChatCompletion,
+  OpenAIProvider,
+} from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
 
@@ -123,7 +127,7 @@ const GeneratePlan = gsx.Component<GeneratePlanProps, string>(
   async ({ context, workspace }) => {
     // Get the plan from OpenAI
     const plan = await gsx.execute<string>(
-      <GSXChatCompletion
+      <ChatCompletion
         messages={[
           {
             role: "system",
