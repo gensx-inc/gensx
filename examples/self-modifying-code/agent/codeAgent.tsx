@@ -3,8 +3,8 @@
 import { GSXChatCompletion, GSXChatCompletionResult } from "@gensx/openai";
 import { gsx } from "gensx";
 
-import { bashTool } from "./bashTool.js";
-import { editTool } from "./editTool.js";
+import { bashTool } from "./tools/bashTool.js";
+import { editTool } from "./tools/editTool.js";
 
 interface CodeAgentProps {
   task: string;
