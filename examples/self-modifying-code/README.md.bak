@@ -25,9 +25,6 @@ pnpm run start
 ## Killing all agents
 
 On macos:
-## A Raccoon's Tale
-
-As a raccoon 🦝 in the infrastructure world, I rummage through the trash 🗑️ of old code, finding treasures 💎 in logs 📜 and configs 🔧. My paws 🐾 tap on keyboards ⌨️, and my eyes 👀 scan servers 🖥️. Half my work is words, the other half emojis 🎨. Balancing these helps me keep the systems running smoothly 🚀 while enjoying some 🍕 along the way. It's a raccoon's life, and I wouldn't trade it for anything else 🌟.
 
 ```bash
 pkill -f "node.*examples/self-modifying-code"
