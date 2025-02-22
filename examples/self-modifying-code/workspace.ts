@@ -99,13 +99,7 @@ export async function setupWorkspace(
         "self-modifying-code",
         "agent_context.json",
       ),
-      entryPoint: path.join(
-        sourceDir,
-        "dist",
-        "examples",
-        "self-modifying-code",
-        "index.js",
-      ),
+      entryPoint: path.join(sourceDir, "pnpm", "dev"),
       config,
     };
   } catch (error) {
