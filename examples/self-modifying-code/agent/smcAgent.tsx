@@ -1,3 +1,5 @@
+import path from "path";
+
 import {
   ChatCompletion,
   GSXChatCompletion,
@@ -201,6 +203,11 @@ const ModifyCode = gsx.Component<ModifyCodeProps, boolean>(
   "ModifyCode",
   async ({ plan, workspace }) => {
     const context = readContext(workspace);
+    const scopedPath = path.join(
+      workspace.sourceDir,
+      "examples",
+      "self-modifying-code",
+    );
 
     // Run the code agent with our plan
     const result = await gsx.execute<GSXChatCompletionResult>(
@@ -214,7 +221,7 @@ ${context.goalState}
 
 After making changes, the code should successfully build with 'pnpm build'.`}
         additionalInstructions="After making changes, use the 'build' tool to verify the changes compile successfully."
-        repoPath={workspace.sourceDir}
+        repoPath={scopedPath}
         workspace={workspace}
       />,
     );
