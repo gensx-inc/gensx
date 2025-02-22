@@ -1,9 +1,11 @@
 import path from "path";
 
+// Add type import for CodeAgent output
+import type { CodeAgentOutput } from "./codeAgent.js";
+
 import {
   ChatCompletion,
   GSXChatCompletion,
-  GSXChatCompletionResult,
   OpenAIProvider,
 } from "@gensx/openai";
 import { gsx } from "gensx";
@@ -215,7 +217,7 @@ const ModifyCode = gsx.Component<ModifyCodeProps, boolean>(
     );
 
     // Run the code agent with our plan
-    const result = await gsx.execute<GSXChatCompletionResult>(
+    const result = await gsx.execute<CodeAgentOutput>(
       <CodeAgent
         task={`Implement the following changes to the codebase:
 
@@ -231,22 +233,20 @@ After making changes, the code should successfully build with 'pnpm build'.`}
       />,
     );
 
-    const content = result.choices[0]?.message?.content ?? "";
-
     // Add the modification attempt to history
     await updateContext(workspace, {
       history: [
         {
           timestamp: new Date(),
           action: "Attempted code modifications",
-          result: content.includes("error") ? "failure" : "success",
-          details: content,
+          result: result.success ? "success" : "failure",
+          details: result.summary,
         },
       ],
     });
 
     // Return whether modifications were successful
-    return !content.includes("error");
+    return result.success;
   },
 );
 
