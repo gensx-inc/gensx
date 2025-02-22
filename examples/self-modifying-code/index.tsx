@@ -74,11 +74,18 @@ async function main() {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (result.modified && shouldSpawnAgent) {
       console.log("Changes made, starting new iteration...");
-      const success = await startNewAgent(workspace);
 
+      // Release lease before spawning new agent
+      console.log("Releasing lease to allow new agent to start...");
+      await releaseLease(lease);
+      lease = undefined; // Prevent double-release in finally block
+
+      // Give a small delay to allow lease file system operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const success = await startNewAgent(workspace);
       if (success) {
         console.log("New iteration started successfully, shutting down");
-        await releaseLease(lease);
         process.exit(0);
       } else {
         error = new Error("Failed to start new iteration");
