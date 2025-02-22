@@ -12,8 +12,5 @@ export default [
         project: "./tsconfig.json",
       },
     },
-    extends: [
-      "prettier",
-    ],
   },
 ];
