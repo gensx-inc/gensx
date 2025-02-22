@@ -54,7 +54,7 @@ function deserializeContext(json: string): AgentContext {
   });
 }
 
-async function runCommand(
+export async function runCommand(
   cmd: string,
   args: string[],
   cwd: string,

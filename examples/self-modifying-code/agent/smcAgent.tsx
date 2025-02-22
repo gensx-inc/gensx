@@ -15,6 +15,7 @@ import { z } from "zod";
 import { Lease } from "../lease.js";
 import {
   readContext,
+  runCommand,
   updateContext,
   validateBuild,
   Workspace,
@@ -337,6 +338,56 @@ const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
   },
 );
 
+interface CommitResultsProps {
+  success: boolean;
+  workspace: Workspace;
+}
+
+const CommitResults = gsx.Component<CommitResultsProps, boolean>(
+  "CommitResults",
+  async ({ success, workspace }) => {
+    const scopedPath = path.join(
+      workspace.sourceDir,
+      "examples",
+      "self-modifying-code",
+    );
+
+    try {
+      // Always run git commands from the scoped directory
+      process.chdir(scopedPath);
+
+      if (success) {
+        // Stage all changes in the directory
+        await runCommand("git", ["add", "."], scopedPath);
+        await runCommand(
+          "git",
+          ["commit", "-m", "agent: successful code update"],
+          scopedPath,
+        );
+      } else {
+        // Only stage the context file
+        await runCommand("git", ["add", "agent_context.json"], scopedPath);
+        await runCommand(
+          "git",
+          ["commit", "-m", "agent: failed attempt - updating context only"],
+          scopedPath,
+        );
+      }
+
+      // Push in both cases
+      await runCommand(
+        "git",
+        ["push", "origin", workspace.config.branch],
+        scopedPath,
+      );
+      return true;
+    } catch (_error) {
+      // If git operations fail, return false and let outer control loop handle it
+      return false;
+    }
+  },
+);
+
 export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
   ({ workspace, lease: _lease }) => {
@@ -352,10 +403,17 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
                       success={modifySuccess}
                       workspace={workspace}
                     >
-                      {(validated) => ({
-                        success: validated,
-                        modified: true,
-                      })}
+                      {(validated) => (
+                        <CommitResults
+                          success={validated}
+                          workspace={workspace}
+                        >
+                          {(committed) => ({
+                            success: validated && committed,
+                            modified: true,
+                          })}
+                        </CommitResults>
+                      )}
                     </RunFinalValidation>
                   )}
                 </ModifyCode>
