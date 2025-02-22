@@ -6,7 +6,6 @@ import { SelfModifyingCodeAgent } from "./agent/smcAgent.js";
 import { acquireLease, releaseLease } from "./lease.js";
 import {
   cleanupWorkspace,
-  readContext,
   setupWorkspace,
   type Workspace,
   type WorkspaceConfig,
@@ -62,14 +61,10 @@ async function main() {
     const config = getWorkspaceConfig();
     lease = await acquireLease();
     workspace = await setupWorkspace(config);
-    const context = await readContext(workspace);
 
     // Run agent workflow
     const workflow = gsx.Workflow("SelfModifyingCode", SelfModifyingCodeAgent);
-    const result = await workflow.run(
-      { workspace, context, lease },
-      { printUrl: true },
-    );
+    const result = await workflow.run({ workspace, lease }, { printUrl: true });
 
     if (!result.success) {
       error = new Error(`Agent failed: ${result.error}`);

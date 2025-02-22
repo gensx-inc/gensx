@@ -3,11 +3,16 @@ import { gsx } from "gensx";
 import { z } from "zod";
 
 import { Lease } from "../lease.js";
-import { AgentContext, updateContext, Workspace } from "../workspace.js";
+import {
+  AgentContext,
+  readContext,
+  updateContext,
+  Workspace,
+} from "../workspace.js";
+import { bashTool } from "./tools/bashTool.js";
 
 export interface AgentProps {
   workspace: Workspace;
-  context: AgentContext;
   lease: Lease;
 }
 
@@ -37,27 +42,6 @@ export interface AgentResult {
  * - [  ] AnalyzeResults
  * - [  ] CommitResults
  */
-
-export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
-  "SelfModifyingCodeAgent",
-  ({ workspace, context, lease: _lease }) => {
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <GenerateGoalState context={context} workspace={workspace}>
-          {(decision) => {
-            console.log("Goal Decision:", JSON.stringify(decision, null, 2));
-
-            // For now, just return empty result
-            return {
-              success: true,
-              modified: false,
-            };
-          }}
-        </GenerateGoalState>
-      </OpenAIProvider>
-    );
-  },
-);
 
 // Schema for goal state decision
 const goalDecisionSchema = z.object({
@@ -126,5 +110,143 @@ Remember:
     }
 
     return decision;
+  },
+);
+
+// Schema for the execution plan
+const planSchema = z.object({
+  steps: z.array(
+    z.object({
+      action: z.string().describe("The specific action to take"),
+      tool: z
+        .string()
+        .describe("The tool to use (e.g., 'bash' for file operations)"),
+      args: z.string().describe("The arguments or command to pass to the tool"),
+      purpose: z.string().describe("Why this step is necessary"),
+    }),
+  ),
+  expectedOutcome: z
+    .string()
+    .describe("What we expect to achieve with this plan"),
+});
+
+type ExecutionPlan = z.infer<typeof planSchema>;
+
+interface GeneratePlanProps {
+  context: AgentContext;
+  workspace: Workspace;
+}
+
+const GeneratePlan = gsx.Component<GeneratePlanProps, ExecutionPlan>(
+  "GeneratePlan",
+  async ({ context, workspace }) => {
+    // Get the plan from OpenAI
+    const plan = await gsx.execute<ExecutionPlan>(
+      <GSXChatCompletion
+        messages={[
+          {
+            role: "system",
+            content: `You are an AI agent tasked with creating an execution plan to achieve a goal in a codebase.
+
+CURRENT GOAL:
+"${context.goalState}"
+
+HISTORY OF ACTIONS:
+${JSON.stringify(context.history, null, 2)}
+
+You have access to the following tools:
+1. bash - Run shell commands to:
+   - Read file contents
+   - List directories
+   - Check file existence
+   - Analyze project structure
+
+Create a detailed plan with specific steps to achieve the goal.
+Each step should include:
+- The exact action to take
+- Which tool to use
+- The specific arguments/commands
+- Why this step is necessary
+
+For example, to modify a README:
+1. First locate the README:
+   {
+     action: "Find README location",
+     tool: "bash",
+     args: "find . -name README.md",
+     purpose: "Locate the README file in the project"
+   }
+2. Then read its contents:
+   {
+     action: "Read current README",
+     tool: "bash",
+     args: "cat ./README.md",
+     purpose: "Understand current content before modification"
+   }
+
+Make the plan as specific and actionable as possible.`,
+          },
+          {
+            role: "user",
+            content: "Analyze the goal and create a detailed execution plan.",
+          },
+        ]}
+        model="gpt-4"
+        temperature={0.7}
+        outputSchema={planSchema}
+        tools={[bashTool]}
+      />,
+    );
+
+    // Add the plan to history
+    await updateContext(workspace, {
+      history: [
+        {
+          timestamp: new Date(),
+          action: "Generated execution plan",
+          result: "success",
+          details: JSON.stringify(plan, null, 2),
+        },
+      ],
+    });
+
+    return plan;
+  },
+);
+
+export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
+  "SelfModifyingCodeAgent",
+  ({ workspace, lease: _lease }) => {
+    // Always read fresh context
+    const initialContext = readContext(workspace);
+
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <GenerateGoalState context={initialContext} workspace={workspace}>
+          {(goalDecision) => {
+            // Read context again after goal state might have changed
+            const contextAfterGoal = readContext(workspace);
+
+            return (
+              <GeneratePlan context={contextAfterGoal} workspace={workspace}>
+                {(plan) => {
+                  console.log(
+                    "Goal Decision:",
+                    JSON.stringify(goalDecision, null, 2),
+                  );
+                  console.log("Execution Plan:", JSON.stringify(plan, null, 2));
+
+                  // For now, just return empty result
+                  return {
+                    success: true,
+                    modified: false,
+                  };
+                }}
+              </GeneratePlan>
+            );
+          }}
+        </GenerateGoalState>
+      </OpenAIProvider>
+    );
   },
 );
