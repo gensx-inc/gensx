@@ -1,6 +1,6 @@
 // Agent based on https://www.anthropic.com/research/swe-bench-sonnet
 
-import { GSXChatCompletion } from "@gensx/openai";
+import { GSXChatCompletion, GSXChatCompletionResult } from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
 
@@ -26,10 +26,11 @@ export type CodeAgentOutput = z.infer<typeof codeAgentOutputSchema>;
 
 export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
   "CodeAgent",
-  ({ task, additionalInstructions, repoPath, workspace }) => {
+  async ({ task, additionalInstructions, repoPath, workspace }) => {
     const buildTool = getBuildTool(workspace);
 
-    return (
+    // First run with tools to make the changes
+    const toolResult = await gsx.execute<GSXChatCompletionResult>(
       <GSXChatCompletion
         messages={[
           {
@@ -49,6 +50,40 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
         model="gpt-4o"
         temperature={0.7}
         tools={[editTool, bashTool, buildTool]}
+      />,
+    );
+
+    const toolOutput = toolResult.choices[0]?.message?.content ?? "";
+
+    // Then coerce the output into our structured format
+    return (
+      <GSXChatCompletion
+        messages={[
+          {
+            role: "system",
+            content: `You are a helpful assistant that takes the output from a code modification session and structures it into a clear summary and success state.
+
+The output should be structured as:
+{
+  "summary": "A clear description of what changes were made or attempted",
+  "success": true/false  // true if changes were made and build succeeded, false if there were any failures
+}
+
+Look for:
+- What files were modified
+- Whether the changes were successful
+- If the build succeeded
+- Any errors or issues encountered`,
+          },
+          {
+            role: "user",
+            content: `Please analyze this code modification output and provide a structured summary:
+
+${toolOutput}`,
+          },
+        ]}
+        model="gpt-4o"
+        temperature={0.7}
         outputSchema={codeAgentOutputSchema}
       />
     );
@@ -86,11 +121,6 @@ You have access to:
 - editTool: For making code changes
 - buildTool: For verifying changes compile successfully with 'pnpm build'
 
-Your response should be structured as follows:
-{
-  "summary": "A clear description of what changes were made or attempted. For example: 'Added new utility function getConfig() to config.ts and updated all imports. Build succeeded.'",
-  "success": true/false  // true if changes were made and build succeeded, false if there were any failures
-}
 
 Be thorough in your thinking and explain your changes in the summary. Make sure to verify the build succeeds before marking success as true.`;
 }
