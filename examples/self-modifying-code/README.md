@@ -22,6 +22,20 @@ pnpm install
 pnpm run start
 ```
 
+## Running ESLint
+
+To maintain code quality and consistency, we use ESLint. You can manually run ESLint using the following commands:
+
+```bash
+# Check for linting issues
+npm run lint
+
+# Automatically fix linting issues
+npm run lint:fix
+```
+
+These commands are integrated into the development workflow to ensure code quality.
+
 ## Killing all agents
 
 On macos:
