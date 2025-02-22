@@ -6,6 +6,7 @@ import type { CodeAgentOutput } from "./codeAgent.js";
 import {
   ChatCompletion,
   GSXChatCompletion,
+  GSXChatCompletionResult,
   OpenAIProvider,
 } from "@gensx/openai";
 import { gsx } from "gensx";
@@ -48,18 +49,16 @@ export interface AgentResult {
  * - [ x ] write goal state to filesystem
  * - [ x ] create implementation plan
  * - [ x ] run code modifying agent
- * - [  ] run final validation
+ * - [ x ] run final validation
  * - [  ] AnalyzeResults
  * - [  ] CommitResults
  */
 
-// Schema for goal state decision
-const goalDecisionSchema = z.object({
-  newGoal: z.boolean().describe("Whether to set a new goal"),
-  goalState: z.string().describe("The new goal state if newGoal is true"),
-});
-
-type GoalDecision = z.infer<typeof goalDecisionSchema>;
+// Remove unused schema since we're defining inline now
+interface GoalDecision {
+  newGoal: boolean;
+  goalState: string;
+}
 
 interface GenerateGoalStateProps {
   workspace: Workspace;
@@ -70,13 +69,13 @@ const GenerateGoalState = gsx.Component<GenerateGoalStateProps, GoalDecision>(
   async ({ workspace }) => {
     const context = readContext(workspace);
 
-    // Get the goal decision from OpenAI
-    const decision = await gsx.execute<GoalDecision>(
+    // First step: Decide if we need a new goal
+    const needsNewGoal = await gsx.execute<{ needsNewGoal: boolean }>(
       <GSXChatCompletion
         messages={[
           {
             role: "system",
-            content: `You are an AI agent that decides on goals for improving a codebase.
+            content: `You are an AI agent that decides if the current goal has been achieved.
 
 CURRENT GOAL STATE:
 "${context.goalState}"
@@ -87,19 +86,14 @@ ${JSON.stringify(context.history, null, 2)}
 Your task is to:
 1. Review the current goal state
 2. Analyze the history of actions to determine if the goal has been achieved
-3. Make a decision:
-   - If the current goal has been achieved:
-     * Set newGoal = true
-     * Provide a new goalState for a different improvement to work on
-   - If the current goal has NOT been achieved:
-     * Set newGoal = false
-     * Keep the current goalState
+3. Decide if we need a new goal:
+   - If the current goal has been achieved, set needsNewGoal = true
+   - If the current goal has NOT been achieved, set needsNewGoal = false
 
 Remember:
 - Look for clear evidence in the history that the goal was completed
 - If the history shows failed attempts or no progress, keep the current goal
-- Only move to a new goal when the current one is definitively achieved
-- New goals should be specific, actionable, and focused on a single improvement`,
+- Only move to a new goal when the current one is definitively achieved`,
           },
           {
             role: "user",
@@ -109,18 +103,68 @@ Remember:
         ]}
         model="gpt-4o"
         temperature={0.7}
-        outputSchema={goalDecisionSchema}
+        outputSchema={z.object({
+          needsNewGoal: z.boolean().describe("Whether we need a new goal"),
+        })}
       />,
     );
 
-    // If we have a new goal, update the context
-    if (decision.newGoal) {
-      await updateContext(workspace, {
-        goalState: decision.goalState,
-      });
+    // If we don't need a new goal, return the current one
+    if (!needsNewGoal.needsNewGoal) {
+      return {
+        newGoal: false,
+        goalState: context.goalState,
+      };
     }
 
-    return decision;
+    // Second step: Generate new goal using tools to explore codebase
+    const newGoalResult = await gsx.execute<GSXChatCompletionResult>(
+      <GSXChatCompletion
+        messages={[
+          {
+            role: "system",
+            content: `You are an AI agent that generates new goals for improving a codebase.
+
+CURRENT GOAL STATE (which has been achieved):
+"${context.goalState}"
+
+HISTORY OF ACTIONS:
+${JSON.stringify(context.history, null, 2)}
+
+Your task is to:
+1. Explore the codebase to understand its current state
+2. Generate a new goal that will improve the codebase
+3. The goal should be specific, actionable, and focused on a single improvement
+
+Remember:
+- Goals should focus on improving code functionality and quality
+- Start with simpler goals and progress to more complex ones
+- Each goal should be achievable in a single iteration
+- After initial simple goals like README changes, focus on code improvements`,
+          },
+          {
+            role: "user",
+            content: "Explore the codebase and propose a new goal.",
+          },
+        ]}
+        model="gpt-4o"
+        temperature={0.7}
+        tools={[bashTool]}
+      />,
+    );
+
+    const newGoal =
+      newGoalResult.choices[0]?.message?.content ?? context.goalState;
+
+    // Update context with new goal
+    await updateContext(workspace, {
+      goalState: newGoal,
+    });
+
+    return {
+      newGoal: true,
+      goalState: newGoal,
+    };
   },
 );
 
