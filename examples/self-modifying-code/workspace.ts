@@ -27,6 +27,11 @@ export interface Workspace {
   config: WorkspaceConfig;
 }
 
+export interface BuildValidationResult {
+  success: boolean;
+  output: string;
+}
+
 function serializeContext(context: AgentContext): string {
   return JSON.stringify(
     context,
@@ -225,5 +230,53 @@ export async function buildWorkspace(workspace: Workspace): Promise<string> {
     }
   } catch (e) {
     return String(e);
+  }
+}
+
+export async function validateBuild(
+  workspace: Workspace,
+): Promise<BuildValidationResult> {
+  try {
+    // Scope to examples/self-modifying-code
+    const scopedPath = path.join(
+      workspace.sourceDir,
+      "examples",
+      "self-modifying-code",
+    );
+
+    // Run pnpm build and capture output
+    const proc = spawn("pnpm", ["build"], {
+      cwd: scopedPath,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let output = "";
+    let error = "";
+
+    // Collect stdout
+    proc.stdout.on("data", (data: Buffer) => {
+      output += data.toString();
+    });
+
+    // Collect stderr
+    proc.stderr.on("data", (data: Buffer) => {
+      error += data.toString();
+    });
+
+    // Wait for process to complete and get exit code
+    const exitCode = await new Promise<number>((resolve) => {
+      proc.on("exit", resolve);
+    });
+
+    return {
+      success: exitCode === 0,
+      output:
+        exitCode === 0 ? output : error || "Build failed with no error output",
+    };
+  } catch (e) {
+    return {
+      success: false,
+      output: String(e),
+    };
   }
 }
