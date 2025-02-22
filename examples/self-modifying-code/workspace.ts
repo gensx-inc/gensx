@@ -23,7 +23,6 @@ export interface Workspace {
   rootDir: string;
   sourceDir: string;
   contextFile: string; // Path to agent_context.json in the repo
-  entryPoint: string; // Path to the main script that starts the agent
   config: WorkspaceConfig;
 }
 
@@ -99,7 +98,6 @@ export async function setupWorkspace(
         "self-modifying-code",
         "agent_context.json",
       ),
-      entryPoint: path.join(sourceDir, "pnpm", "dev"),
       config,
     };
   } catch (error) {
