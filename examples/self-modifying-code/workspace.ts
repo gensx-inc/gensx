@@ -191,3 +191,39 @@ export async function commitAndPush(
     sourceDir,
   );
 }
+
+export async function buildWorkspace(workspace: Workspace): Promise<string> {
+  try {
+    // Run pnpm build and capture output
+    const proc = spawn("pnpm", ["build"], {
+      cwd: workspace.sourceDir,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let output = "";
+    let error = "";
+
+    // Collect stdout
+    proc.stdout.on("data", (data: Buffer) => {
+      output += data.toString();
+    });
+
+    // Collect stderr
+    proc.stderr.on("data", (data: Buffer) => {
+      error += data.toString();
+    });
+
+    // Wait for process to complete
+    const exitCode = await new Promise<number>((resolve) => {
+      proc.on("exit", resolve);
+    });
+
+    if (exitCode === 0) {
+      return output;
+    } else {
+      return error || "Build failed with no error output";
+    }
+  } catch (e) {
+    return String(e);
+  }
+}

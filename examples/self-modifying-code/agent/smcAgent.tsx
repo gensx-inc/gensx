@@ -1,18 +1,15 @@
 import {
   ChatCompletion,
   GSXChatCompletion,
+  GSXChatCompletionResult,
   OpenAIProvider,
 } from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
 
 import { Lease } from "../lease.js";
-import {
-  AgentContext,
-  readContext,
-  updateContext,
-  Workspace,
-} from "../workspace.js";
+import { readContext, updateContext, Workspace } from "../workspace.js";
+import { CodeAgent } from "./codeAgent.js";
 import { bashTool } from "./tools/bashTool.js";
 
 export interface AgentProps {
@@ -40,7 +37,7 @@ export interface AgentResult {
 /**
  * - [ x ] update goal state
  * - [ x ] write goal state to filesystem
- * - [  ] create implementation plan
+ * - [ x ] create implementation plan
  * - [  ] run code modifying agent
  * - [  ] run final validation
  * - [  ] AnalyzeResults
@@ -56,13 +53,14 @@ const goalDecisionSchema = z.object({
 type GoalDecision = z.infer<typeof goalDecisionSchema>;
 
 interface GenerateGoalStateProps {
-  context: AgentContext;
   workspace: Workspace;
 }
 
 const GenerateGoalState = gsx.Component<GenerateGoalStateProps, GoalDecision>(
   "GenerateGoalState",
-  async ({ context, workspace }) => {
+  async ({ workspace }) => {
+    const context = readContext(workspace);
+
     // Get the goal decision from OpenAI
     const decision = await gsx.execute<GoalDecision>(
       <GSXChatCompletion
@@ -118,13 +116,14 @@ Remember:
 );
 
 interface GeneratePlanProps {
-  context: AgentContext;
   workspace: Workspace;
 }
 
 const GeneratePlan = gsx.Component<GeneratePlanProps, string>(
   "GeneratePlan",
-  async ({ context, workspace }) => {
+  async ({ workspace }) => {
+    const context = readContext(workspace);
+
     // Get the plan from OpenAI
     const plan = await gsx.execute<string>(
       <ChatCompletion
@@ -193,37 +192,70 @@ Use the bash tool to explore the codebase before creating your plan.`,
   },
 );
 
+interface ModifyCodeProps {
+  plan: string;
+  workspace: Workspace;
+}
+
+const ModifyCode = gsx.Component<ModifyCodeProps, boolean>(
+  "ModifyCode",
+  async ({ plan, workspace }) => {
+    const context = readContext(workspace);
+
+    // Run the code agent with our plan
+    const result = await gsx.execute<GSXChatCompletionResult>(
+      <CodeAgent
+        task={`Implement the following changes to the codebase:
+
+${plan}
+
+Current goal state from context:
+${context.goalState}
+
+After making changes, the code should successfully build with 'pnpm build'.`}
+        additionalInstructions="After making changes, use the 'build' tool to verify the changes compile successfully."
+        repoPath={workspace.sourceDir}
+        workspace={workspace}
+      />,
+    );
+
+    const content = result.choices[0]?.message?.content ?? "";
+
+    // Add the modification attempt to history
+    await updateContext(workspace, {
+      history: [
+        {
+          timestamp: new Date(),
+          action: "Attempted code modifications",
+          result: content.includes("error") ? "failure" : "success",
+          details: content,
+        },
+      ],
+    });
+
+    // Return whether modifications were successful
+    return !content.includes("error");
+  },
+);
+
 export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
   ({ workspace, lease: _lease }) => {
-    // Always read fresh context
-    const initialContext = readContext(workspace);
-
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <GenerateGoalState context={initialContext} workspace={workspace}>
-          {(goalDecision) => {
-            // Read context again after goal state might have changed
-            const contextAfterGoal = readContext(workspace);
-
-            return (
-              <GeneratePlan context={contextAfterGoal} workspace={workspace}>
-                {(plan) => {
-                  console.log(
-                    "Goal Decision:",
-                    JSON.stringify(goalDecision, null, 2),
-                  );
-                  console.log("Execution Plan:", plan);
-
-                  // For now, just return empty result
-                  return {
-                    success: true,
-                    modified: false,
-                  };
-                }}
-              </GeneratePlan>
-            );
-          }}
+        <GenerateGoalState workspace={workspace}>
+          {() => (
+            <GeneratePlan workspace={workspace}>
+              {(plan) => (
+                <ModifyCode plan={plan} workspace={workspace}>
+                  {(success) => ({
+                    success,
+                    modified: true,
+                  })}
+                </ModifyCode>
+              )}
+            </GeneratePlan>
+          )}
         </GenerateGoalState>
       </OpenAIProvider>
     );

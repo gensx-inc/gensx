@@ -5,7 +5,6 @@ import { gsx } from "gensx";
 import { SelfModifyingCodeAgent } from "./agent/smcAgent.js";
 import { acquireLease, releaseLease } from "./lease.js";
 import {
-  cleanupWorkspace,
   setupWorkspace,
   type Workspace,
   type WorkspaceConfig,
@@ -90,7 +89,7 @@ async function main() {
   } finally {
     // Cleanup phase
     if (lease) await releaseLease(lease);
-    if (workspace) await cleanupWorkspace(workspace);
+    // if (workspace) await cleanupWorkspace(workspace);
   }
 
   if (error) {
