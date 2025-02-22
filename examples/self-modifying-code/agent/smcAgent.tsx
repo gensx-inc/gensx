@@ -191,7 +191,7 @@ Make the plan as specific and actionable as possible.`,
             content: "Analyze the goal and create a detailed execution plan.",
           },
         ]}
-        model="gpt-4"
+        model="gpt-4o"
         temperature={0.7}
         outputSchema={planSchema}
         tools={[bashTool]}
