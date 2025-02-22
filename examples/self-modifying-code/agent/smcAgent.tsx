@@ -10,7 +10,12 @@ import { gsx } from "gensx";
 import { z } from "zod";
 
 import { Lease } from "../lease.js";
-import { readContext, updateContext, Workspace } from "../workspace.js";
+import {
+  readContext,
+  updateContext,
+  validateBuild,
+  Workspace,
+} from "../workspace.js";
 import { CodeAgent } from "./codeAgent.js";
 import { bashTool } from "./tools/bashTool.js";
 
@@ -40,7 +45,7 @@ export interface AgentResult {
  * - [ x ] update goal state
  * - [ x ] write goal state to filesystem
  * - [ x ] create implementation plan
- * - [  ] run code modifying agent
+ * - [ x ] run code modifying agent
  * - [  ] run final validation
  * - [  ] AnalyzeResults
  * - [  ] CommitResults
@@ -245,6 +250,47 @@ After making changes, the code should successfully build with 'pnpm build'.`}
   },
 );
 
+interface RunFinalValidationProps {
+  success: boolean;
+  workspace: Workspace;
+}
+
+const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
+  "RunFinalValidation",
+  async ({ success, workspace }) => {
+    // If the modification wasn't successful, no need to validate
+    if (!success) {
+      await updateContext(workspace, {
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Final validation",
+            result: "failure",
+            details: "Skipped validation as modification was unsuccessful",
+          },
+        ],
+      });
+      return false;
+    }
+
+    // Run the build validation
+    const { success: buildSuccess, output } = await validateBuild(workspace);
+
+    await updateContext(workspace, {
+      history: [
+        {
+          timestamp: new Date(),
+          action: "Final validation",
+          result: buildSuccess ? "success" : "failure",
+          details: buildSuccess ? "Build succeeded" : `Build failed: ${output}`,
+        },
+      ],
+    });
+
+    return buildSuccess;
+  },
+);
+
 export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
   ({ workspace, lease: _lease }) => {
@@ -255,10 +301,17 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
             <GeneratePlan workspace={workspace}>
               {(plan) => (
                 <ModifyCode plan={plan} workspace={workspace}>
-                  {(success) => ({
-                    success,
-                    modified: true,
-                  })}
+                  {(modifySuccess) => (
+                    <RunFinalValidation
+                      success={modifySuccess}
+                      workspace={workspace}
+                    >
+                      {(validated) => ({
+                        success: validated,
+                        modified: true,
+                      })}
+                    </RunFinalValidation>
+                  )}
                 </ModifyCode>
               )}
             </GeneratePlan>
