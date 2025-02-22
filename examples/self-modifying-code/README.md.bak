@@ -29,7 +29,3 @@ On macos:
 ```bash
 pkill -f "node.*examples/self-modifying-code"
 ```
-
-## A Raccoon's Tale
-
-In the 🌃 night, I scurry 🏃 through the maze of cables and servers 🌐. My paws 🐾 tap-tap on the keyboard ⌨️, configuring networks 🌐 and securing trash bins 🗑️. A byte here, a nibble there 🍂. The life of a raccoon engineer is never boring! 🦝✨.
