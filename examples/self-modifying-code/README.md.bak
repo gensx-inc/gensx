@@ -29,7 +29,3 @@ On macos:
 ```bash
 pkill -f "node.*examples/self-modifying-code"
 ```
-
-## A Day in the Life of an Infrastructure Engineer Raccoon
-
-In the 🌲 forest, every day is a new challenge for a raccoon 🦝 engineer. At sunrise 🌅, I check the servers 🖥️, making sure they're running smoothly. Half the time, I'm coding 💻, and the other half, I'm scavenging 🍂 for the best solutions. My paws 🐾 dance across the keyboard ⌨️, balancing between fixing bugs 🐛 and finding tasty treats 🍇. It's a wild world, but with a mix of tech skills and a love for shiny things 🌟, I navigate through the chaos, ensuring everything is in harmony 🎶.
