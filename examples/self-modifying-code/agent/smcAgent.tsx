@@ -278,7 +278,6 @@ const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
     // Run the build validation
     const { success: buildSuccess, output } = await validateBuild(workspace);
     console.log("Build success:", buildSuccess);
-    console.log("Build output:", output);
     await updateContext(workspace, {
       history: [
         {
