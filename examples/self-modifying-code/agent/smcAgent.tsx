@@ -258,6 +258,8 @@ interface RunFinalValidationProps {
 const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
   "RunFinalValidation",
   async ({ success, workspace }) => {
+    console.log("Running final validation");
+    console.log("Success:", success);
     // If the modification wasn't successful, no need to validate
     if (!success) {
       await updateContext(workspace, {
@@ -275,7 +277,8 @@ const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
 
     // Run the build validation
     const { success: buildSuccess, output } = await validateBuild(workspace);
-
+    console.log("Build success:", buildSuccess);
+    console.log("Build output:", output);
     await updateContext(workspace, {
       history: [
         {
