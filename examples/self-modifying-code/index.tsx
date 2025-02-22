@@ -30,7 +30,7 @@ const shouldSpawnAgent = false;
 async function startNewAgent(workspace: Workspace): Promise<boolean> {
   return new Promise((resolve) => {
     // Start new agent process with same env vars
-    const proc = spawn("node", [workspace.entryPoint], {
+    const proc = spawn("pnpm", ["dev"], {
       cwd: workspace.rootDir,
       stdio: "inherit",
       env: process.env,
