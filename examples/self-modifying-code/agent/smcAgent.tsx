@@ -390,7 +390,7 @@ const CommitResults = gsx.Component<CommitResultsProps, boolean>(
 
 export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
-  ({ workspace, lease: _lease }) => {
+  ({ workspace }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GenerateGoalState workspace={workspace}>
