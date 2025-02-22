@@ -1,7 +1,8 @@
 // Agent based on https://www.anthropic.com/research/swe-bench-sonnet
 
-import { GSXChatCompletion, GSXChatCompletionResult } from "@gensx/openai";
+import { GSXChatCompletion } from "@gensx/openai";
 import { gsx } from "gensx";
+import { z } from "zod";
 
 import { Workspace } from "../workspace.js";
 import { bashTool } from "./tools/bashTool.js";
@@ -15,7 +16,15 @@ interface CodeAgentProps {
   workspace: Workspace;
 }
 
-export const CodeAgent = gsx.Component<CodeAgentProps, GSXChatCompletionResult>(
+// Schema for code agent output
+const codeAgentOutputSchema = z.object({
+  summary: z.string().describe("A summary of the changes made or attempted"),
+  success: z.boolean().describe("Whether the changes were successful"),
+});
+
+export type CodeAgentOutput = z.infer<typeof codeAgentOutputSchema>;
+
+export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
   "CodeAgent",
   ({ task, additionalInstructions, repoPath, workspace }) => {
     const buildTool = getBuildTool(workspace);
@@ -40,6 +49,7 @@ export const CodeAgent = gsx.Component<CodeAgentProps, GSXChatCompletionResult>(
         model="gpt-4o"
         temperature={0.7}
         tools={[editTool, bashTool, buildTool]}
+        outputSchema={codeAgentOutputSchema}
       />
     );
   },
