@@ -1,18 +1,18 @@
-import { execSync } from "child_process";
+import { execSync } from 'child_process'
 
-import { GSXTool } from "@gensx/openai";
-import { z } from "zod";
+import { GSXTool } from '@gensx/openai'
+import { z } from 'zod'
 
 // Define the schema as a Zod object
 const bashToolSchema = z.object({
-  command: z.string().describe("The bash command to run."),
-});
+  command: z.string().describe('The bash command to run.'),
+})
 // Use z.infer to get the type for our parameters
-type BashToolParams = z.infer<typeof bashToolSchema>;
+type BashToolParams = z.infer<typeof bashToolSchema>
 
 // Create the tool with the correct type - using the schema type, not the inferred type
 export const bashTool = new GSXTool<typeof bashToolSchema>({
-  name: "bash",
+  name: 'bash',
   description: `Run commands in a bash shell\n
 * When invoking this tool, the contents of the \"command\" parameter does NOT need to be XML-escaped.\n
 * You don't have access to the internet via this tool.\n
@@ -23,20 +23,20 @@ export const bashTool = new GSXTool<typeof bashToolSchema>({
 * Please run long lived commands in the background, e.g. 'sleep 10 &' or start a server in the background.`,
   schema: bashToolSchema,
   run: async ({ command }: BashToolParams) => {
-    console.log("💻 Calling the BashTool:", command);
+    console.log('💻 Calling the BashTool:', command)
     try {
-      const result = await Promise.resolve(execSync(command));
-      return result.toString();
+      const result = await Promise.resolve(execSync(command))
+      return result.toString()
     } catch (error) {
       // Check if error is an object with stderr property
-      if (error && typeof error === "object" && "stderr" in error) {
-        return (error.stderr as Buffer).toString();
+      if (error && typeof error === 'object' && 'stderr' in error) {
+        return (error.stderr as Buffer).toString()
       }
       // Fallback to error message if available
       if (error instanceof Error) {
-        return error.message;
+        return error.message
       }
-      return "An unknown error occurred";
+      return 'An unknown error occurred'
     }
   },
-});
+})

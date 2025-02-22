@@ -1,34 +1,34 @@
-import { execSync } from "child_process";
-import fs from "fs/promises";
-import path from "path";
+import { execSync } from 'child_process'
+import fs from 'fs/promises'
+import path from 'path'
 
-import { GSXTool } from "@gensx/openai";
-import { z } from "zod";
+import { GSXTool } from '@gensx/openai'
+import { z } from 'zod'
 
 // Define the base schema as a Zod object
 const editToolSchema = z.object({
   command: z
-    .enum(["view", "create", "write"])
+    .enum(['view', 'create', 'write'])
     .describe(
-      "The commands to run. Allowed options are: `view` (read file), `create` (new file), `write` (replace entire file).",
+      'The commands to run. Allowed options are: `view` (read file), `create` (new file), `write` (replace entire file).',
     ),
   path: z
     .string()
     .describe(
-      "Absolute path to file or directory, e.g. `/repo/file.py` or `/repo`.",
+      'Absolute path to file or directory, e.g. `/repo/file.py` or `/repo`.',
     ),
   content: z
     .string()
     .optional()
     .describe(
-      "Required for create/write commands. The complete content to write to the file.",
+      'Required for create/write commands. The complete content to write to the file.',
     ),
-});
+})
 
-type EditToolParams = z.infer<typeof editToolSchema>;
+type EditToolParams = z.infer<typeof editToolSchema>
 
 export const editTool = new GSXTool<typeof editToolSchema>({
-  name: "editor",
+  name: 'editor',
   description: `Tool for viewing and editing files. Operations are atomic - edits replace the entire file content.
 
 Commands:
@@ -45,72 +45,72 @@ Commands:
   - Use this for all file modifications`,
   schema: editToolSchema,
   run: async (params: EditToolParams) => {
-    console.log("🛠️ Calling the EditTool:", params);
+    console.log('🛠️ Calling the EditTool:', params)
 
     // Validate required fields based on command
     if (
-      (params.command === "create" || params.command === "write") &&
+      (params.command === 'create' || params.command === 'write') &&
       !params.content
     ) {
-      throw new Error("content is required for create and write commands");
+      throw new Error('content is required for create and write commands')
     }
 
     try {
-      const stats = await fs.stat(params.path).catch(() => null);
+      const stats = await fs.stat(params.path).catch(() => null)
 
       switch (params.command) {
-      case "view": {
-        if (!stats) {
-          throw new Error(`Path does not exist: ${params.path}`);
+        case 'view': {
+          if (!stats) {
+            throw new Error(`Path does not exist: ${params.path}`)
+          }
+
+          if (stats.isDirectory()) {
+            // List files up to 2 levels deep for directories
+            const result = execSync(
+              `find "${params.path}" -maxdepth 2 -not -path '*/\\.*' -type f -o -type d`,
+              { encoding: 'utf-8' },
+            )
+            return result
+          } else {
+            // Read and return complete file contents
+            const content = await fs.readFile(params.path, 'utf-8')
+            return content
+          }
         }
 
-        if (stats.isDirectory()) {
-          // List files up to 2 levels deep for directories
-          const result = execSync(
-            `find "${params.path}" -maxdepth 2 -not -path '*/\\.*' -type f -o -type d`,
-            { encoding: "utf-8" },
-          );
-          return result;
-        } else {
-          // Read and return complete file contents
-          const content = await fs.readFile(params.path, "utf-8");
-          return content;
-        }
-      }
-
-      case "create": {
-        if (stats) {
-          throw new Error(
-            `Cannot create file, path already exists: ${params.path}`,
-          );
-        }
-        await fs.mkdir(path.dirname(params.path), { recursive: true });
-        await fs.writeFile(params.path, params.content!, "utf-8");
-        return `File created successfully: ${params.path}`;
-      }
-
-      case "write": {
-        if (!stats?.isFile()) {
-          throw new Error(`Target must be an existing file: ${params.path}`);
+        case 'create': {
+          if (stats) {
+            throw new Error(
+              `Cannot create file, path already exists: ${params.path}`,
+            )
+          }
+          await fs.mkdir(path.dirname(params.path), { recursive: true })
+          await fs.writeFile(params.path, params.content!, 'utf-8')
+          return `File created successfully: ${params.path}`
         }
 
-        // Create backup before modification
-        const backupPath = `${params.path}.bak`;
-        await fs.copyFile(params.path, backupPath);
+        case 'write': {
+          if (!stats?.isFile()) {
+            throw new Error(`Target must be an existing file: ${params.path}`)
+          }
 
-        // Write new content atomically
-        await fs.writeFile(params.path, params.content!, "utf-8");
-        return `File updated successfully: ${params.path}`;
-      }
+          // Create backup before modification
+          const backupPath = `${params.path}.bak`
+          await fs.copyFile(params.path, backupPath)
 
-      default:
-        throw new Error(`Unknown command: ${String(params.command)}`);
+          // Write new content atomically
+          await fs.writeFile(params.path, params.content!, 'utf-8')
+          return `File updated successfully: ${params.path}`
+        }
+
+        default:
+          throw new Error(`Unknown command: ${String(params.command)}`)
       }
     } catch (error) {
       if (error instanceof Error) {
-        throw error;
+        throw error
       }
-      throw new Error(`Failed to process command: ${String(error)}`);
+      throw new Error(`Failed to process command: ${String(error)}`)
     }
   },
-});
+})

@@ -1,37 +1,37 @@
-import path from "path";
+import path from 'path'
 
 // Add type import for CodeAgent output
-import type { CodeAgentOutput } from "./codeAgent.js";
+import type { CodeAgentOutput } from './codeAgent.js'
 
 import {
   ChatCompletion,
   GSXChatCompletion,
   GSXChatCompletionResult,
   OpenAIProvider,
-} from "@gensx/openai";
-import { gsx } from "gensx";
-import { z } from "zod";
+} from '@gensx/openai'
+import { gsx } from 'gensx'
+import { z } from 'zod'
 
-import { Lease } from "../lease.js";
+import { Lease } from '../lease.js'
 import {
   readContext,
   runCommand,
   updateContext,
   validateBuild,
   Workspace,
-} from "../workspace.js";
-import { CodeAgent } from "./codeAgent.js";
-import { bashTool } from "./tools/bashTool.js";
+} from '../workspace.js'
+import { CodeAgent } from './codeAgent.js'
+import { bashTool } from './tools/bashTool.js'
 
 export interface AgentProps {
-  workspace: Workspace;
-  lease: Lease;
+  workspace: Workspace
+  lease: Lease
 }
 
 export interface AgentResult {
-  success: boolean;
-  modified: boolean; // Whether the agent made changes to the workspace
-  error?: string;
+  success: boolean
+  modified: boolean // Whether the agent made changes to the workspace
+  error?: string
 }
 
 /**
@@ -57,25 +57,25 @@ export interface AgentResult {
 
 // Remove unused schema since we're defining inline now
 interface GoalDecision {
-  newGoal: boolean;
-  goalState: string;
+  newGoal: boolean
+  goalState: string
 }
 
 interface GenerateGoalStateProps {
-  workspace: Workspace;
+  workspace: Workspace
 }
 
 const GenerateGoalState = gsx.Component<GenerateGoalStateProps, GoalDecision>(
-  "GenerateGoalState",
+  'GenerateGoalState',
   async ({ workspace }) => {
-    const context = readContext(workspace);
+    const context = readContext(workspace)
 
     // First step: Decide if we need a new goal
     const needsNewGoal = await gsx.execute<{ needsNewGoal: boolean }>(
       <GSXChatCompletion
         messages={[
           {
-            role: "system",
+            role: 'system',
             content: `You are an AI agent that decides if the current goal has been achieved.
 
 CURRENT GOAL STATE:
@@ -97,25 +97,25 @@ Remember:
 - Only move to a new goal when the current one is definitively achieved`,
           },
           {
-            role: "user",
+            role: 'user',
             content:
-              "Review the goal state and history, then make your decision.",
+              'Review the goal state and history, then make your decision.',
           },
         ]}
         model="gpt-4o"
         temperature={0.7}
         outputSchema={z.object({
-          needsNewGoal: z.boolean().describe("Whether we need a new goal"),
+          needsNewGoal: z.boolean().describe('Whether we need a new goal'),
         })}
       />,
-    );
+    )
 
     // If we don't need a new goal, return the current one
     if (!needsNewGoal.needsNewGoal) {
       return {
         newGoal: false,
         goalState: context.goalState,
-      };
+      }
     }
 
     // Second step: Generate new goal using tools to explore codebase
@@ -123,7 +123,7 @@ Remember:
       <GSXChatCompletion
         messages={[
           {
-            role: "system",
+            role: 'system',
             content: `You are an AI agent that generates new goals for improving a codebase.
 
 CURRENT GOAL STATE (which has been achieved):
@@ -144,46 +144,46 @@ Remember:
 - After initial simple goals like README changes, focus on code improvements`,
           },
           {
-            role: "user",
-            content: "Explore the codebase and propose a new goal.",
+            role: 'user',
+            content: 'Explore the codebase and propose a new goal.',
           },
         ]}
         model="gpt-4o"
         temperature={0.7}
         tools={[bashTool]}
       />,
-    );
+    )
 
     const newGoal =
-      newGoalResult.choices[0]?.message?.content ?? context.goalState;
+      newGoalResult.choices[0]?.message?.content ?? context.goalState
 
     // Update context with new goal
     await updateContext(workspace, {
       goalState: newGoal,
-    });
+    })
 
     return {
       newGoal: true,
       goalState: newGoal,
-    };
+    }
   },
-);
+)
 
 interface GeneratePlanProps {
-  workspace: Workspace;
+  workspace: Workspace
 }
 
 const GeneratePlan = gsx.Component<GeneratePlanProps, string>(
-  "GeneratePlan",
+  'GeneratePlan',
   async ({ workspace }) => {
-    const context = readContext(workspace);
+    const context = readContext(workspace)
 
     // Get the plan from OpenAI
     const plan = await gsx.execute<string>(
       <ChatCompletion
         messages={[
           {
-            role: "system",
+            role: 'system',
             content: `You are an AI agent tasked with creating a plan to achieve a goal in a codebase.
 
 CURRENT GOAL:
@@ -219,47 +219,47 @@ For example, if modifying a README:
 Use the bash tool to explore the codebase before creating your plan.`,
           },
           {
-            role: "user",
+            role: 'user',
             content:
-              "Explore the codebase and create a plan to achieve the current goal.",
+              'Explore the codebase and create a plan to achieve the current goal.',
           },
         ]}
         model="gpt-4"
         temperature={0.7}
         tools={[bashTool]}
       />,
-    );
+    )
 
     // Add the plan to history
     await updateContext(workspace, {
       history: [
         {
           timestamp: new Date(),
-          action: "Generated execution plan",
-          result: "success",
+          action: 'Generated execution plan',
+          result: 'success',
           details: plan,
         },
       ],
-    });
+    })
 
-    return plan;
+    return plan
   },
-);
+)
 
 interface ModifyCodeProps {
-  plan: string;
-  workspace: Workspace;
+  plan: string
+  workspace: Workspace
 }
 
 const ModifyCode = gsx.Component<ModifyCodeProps, boolean>(
-  "ModifyCode",
+  'ModifyCode',
   async ({ plan, workspace }) => {
-    const context = readContext(workspace);
+    const context = readContext(workspace)
     const scopedPath = path.join(
       workspace.sourceDir,
-      "examples",
-      "self-modifying-code",
-    );
+      'examples',
+      'self-modifying-code',
+    )
 
     // Run the code agent with our plan
     const result = await gsx.execute<CodeAgentOutput>(
@@ -276,120 +276,120 @@ After making changes, the code should successfully build with 'pnpm build'.`}
         repoPath={scopedPath}
         workspace={workspace}
       />,
-    );
+    )
 
     // Add the modification attempt to history
     await updateContext(workspace, {
       history: [
         {
           timestamp: new Date(),
-          action: "Attempted code modifications",
-          result: result.success ? "success" : "failure",
+          action: 'Attempted code modifications',
+          result: result.success ? 'success' : 'failure',
           details: result.summary,
         },
       ],
-    });
+    })
 
     // Return whether modifications were successful
-    return result.success;
+    return result.success
   },
-);
+)
 
 interface RunFinalValidationProps {
-  success: boolean;
-  workspace: Workspace;
+  success: boolean
+  workspace: Workspace
 }
 
 const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
-  "RunFinalValidation",
+  'RunFinalValidation',
   async ({ success, workspace }) => {
-    console.log("Running final validation");
-    console.log("Success:", success);
+    console.log('Running final validation')
+    console.log('Success:', success)
     // If the modification wasn't successful, no need to validate
     if (!success) {
       await updateContext(workspace, {
         history: [
           {
             timestamp: new Date(),
-            action: "Final validation",
-            result: "failure",
-            details: "Skipped validation as modification was unsuccessful",
+            action: 'Final validation',
+            result: 'failure',
+            details: 'Skipped validation as modification was unsuccessful',
           },
         ],
-      });
-      return false;
+      })
+      return false
     }
 
     // Run the build validation
-    const { success: buildSuccess, output } = await validateBuild(workspace);
-    console.log("Build success:", buildSuccess);
+    const { success: buildSuccess, output } = await validateBuild(workspace)
+    console.log('Build success:', buildSuccess)
     await updateContext(workspace, {
       history: [
         {
           timestamp: new Date(),
-          action: "Final validation",
-          result: buildSuccess ? "success" : "failure",
-          details: buildSuccess ? "Build succeeded" : `Build failed: ${output}`,
+          action: 'Final validation',
+          result: buildSuccess ? 'success' : 'failure',
+          details: buildSuccess ? 'Build succeeded' : `Build failed: ${output}`,
         },
       ],
-    });
+    })
 
-    return buildSuccess;
+    return buildSuccess
   },
-);
+)
 
 interface CommitResultsProps {
-  success: boolean;
-  workspace: Workspace;
+  success: boolean
+  workspace: Workspace
 }
 
 const CommitResults = gsx.Component<CommitResultsProps, boolean>(
-  "CommitResults",
+  'CommitResults',
   async ({ success, workspace }) => {
     const scopedPath = path.join(
       workspace.sourceDir,
-      "examples",
-      "self-modifying-code",
-    );
+      'examples',
+      'self-modifying-code',
+    )
 
     try {
       // Always run git commands from the scoped directory
-      process.chdir(scopedPath);
+      process.chdir(scopedPath)
 
       if (success) {
         // Stage all changes in the directory
-        await runCommand("git", ["add", "."], scopedPath);
+        await runCommand('git', ['add', '.'], scopedPath)
         await runCommand(
-          "git",
-          ["commit", "-m", "agent: successful code update"],
+          'git',
+          ['commit', '-m', 'agent: successful code update'],
           scopedPath,
-        );
+        )
       } else {
         // Only stage the context file
-        await runCommand("git", ["add", "agent_context.json"], scopedPath);
+        await runCommand('git', ['add', 'agent_context.json'], scopedPath)
         await runCommand(
-          "git",
-          ["commit", "-m", "agent: failed attempt - updating context only"],
+          'git',
+          ['commit', '-m', 'agent: failed attempt - updating context only'],
           scopedPath,
-        );
+        )
       }
 
       // Push in both cases
       await runCommand(
-        "git",
-        ["push", "origin", workspace.config.branch],
+        'git',
+        ['push', 'origin', workspace.config.branch],
         scopedPath,
-      );
-      return true;
+      )
+      return true
     } catch (_error) {
       // If git operations fail, return false and let outer control loop handle it
-      return false;
+      return false
     }
   },
-);
+)
 
 export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
-  "SelfModifyingCodeAgent",
+  'SelfModifyingCodeAgent',
   ({ workspace }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -422,6 +422,6 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
           )}
         </GenerateGoalState>
       </OpenAIProvider>
-    );
+    )
   },
-);
+)
