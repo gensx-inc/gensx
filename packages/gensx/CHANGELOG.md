@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.13](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.12...gensx-v0.2.13) (2025-02-22)
+
+
+### ✨ New Features
+
+* Handle errors when executing workflow ([#308](https://github.com/gensx-inc/gensx/issues/308)) ([bc0f07c](https://github.com/gensx-inc/gensx/commit/bc0f07cf1ef534fcd61c7782df3151e1385232a6))
+
 ## [0.2.12](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.11...gensx-v0.2.12) (2025-02-20)
 
 
