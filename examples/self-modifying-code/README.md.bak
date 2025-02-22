@@ -17,9 +17,6 @@ This example demonstrates a self-modifying code agent. The agent:
 ```bash
 # Install dependencies
 pnpm install
-## A Raccoon's Perspective
-
-I'm a raccoon 🦝 working as an infra engineer. I love trash 🗑️ and fixing servers 🔧. Half the time, I munch on leftovers 🍕, the other half I debug code 💻. My job is like a treasure hunt 🏴‍☠️, finding tasty bugs 🐛 and solving them. Trash diving gives me skills to manage data dumps 🗄️. Balancing between words and emojis keeps my work fun 🎉 and expressive. Nature and tech blend in my raccoon life 🌲💼.
 
 # Run the example
 pnpm run start
