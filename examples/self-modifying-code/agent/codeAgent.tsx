@@ -3,18 +3,23 @@
 import { GSXChatCompletion, GSXChatCompletionResult } from "@gensx/openai";
 import { gsx } from "gensx";
 
+import { Workspace } from "../workspace.js";
 import { bashTool } from "./tools/bashTool.js";
+import { getBuildTool } from "./tools/buildTool.js";
 import { editTool } from "./tools/editTool.js";
 
 interface CodeAgentProps {
   task: string;
   additionalInstructions?: string;
   repoPath: string;
+  workspace: Workspace;
 }
 
 export const CodeAgent = gsx.Component<CodeAgentProps, GSXChatCompletionResult>(
   "CodeAgent",
-  ({ task, additionalInstructions, repoPath }) => {
+  ({ task, additionalInstructions, repoPath, workspace }) => {
+    const buildTool = getBuildTool(workspace);
+
     return (
       <GSXChatCompletion
         messages={[
@@ -34,7 +39,7 @@ export const CodeAgent = gsx.Component<CodeAgentProps, GSXChatCompletionResult>(
         ]}
         model="gpt-4o"
         temperature={0.7}
-        tools={[editTool, bashTool]}
+        tools={[editTool, bashTool, buildTool]}
       />
     );
   },
@@ -49,23 +54,27 @@ export function getCodeAgentPrompt(
 ${repoPath}
 </uploaded_files>
 
-I've uploaded a code repository in the directory ${repoPath} (not in /tmp/inputs). Consider the following PR description:
+I've uploaded a code repository in the directory ${repoPath}. Consider the following task:
 
 <user_instructions>
 ${task}${additionalInstructions ? `\n\n${additionalInstructions}` : ""}
 </user_instructions>
 
 Can you help me implement the necessary changes to the repository so that the requirements specified in the <user_instructions> are met?
-I've already taken care of all changes to any of the test files described in the <user_instructions>. This means you DON'T have to modify the testing logic or any of the tests in any way!
 
-Your task is to make the minimal changes to non-tests files in the ${repoPath} directory to ensure the <user_instructions> are satisfied.
+Your task is to make the minimal necessary changes to the files in the ${repoPath} directory to implement the requirements.
 
-Follow these steps to resolve the issue:
-1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.
-2. Create a script to reproduce the error and execute it using the BashTool, to confirm the error
-3. Edit the sourcecode of the repo to resolve the issue
-4. Rerun your reproduce script and confirm that the error is fixed!
-5. Think about edge cases and make sure your fix handles them as well
+Follow these steps:
+1. First, explore the repo to understand its structure and identify the files that need to be modified
+2. Make the necessary code changes using the editTool
+3. Use the buildTool to verify your changes compile successfully
+4. If the build fails, examine the error output and fix any issues
+5. Once the build succeeds, verify that your changes meet all the requirements
 
-Your thinking should be thorough so it's fine if it's very long.`;
+You have access to:
+- bashTool: For exploring the codebase and examining files
+- editTool: For making code changes
+- buildTool: For verifying changes compile successfully with 'pnpm build'
+
+Be thorough in your thinking and explain your changes. Make sure to verify the build succeeds before considering the task complete.`;
 }
