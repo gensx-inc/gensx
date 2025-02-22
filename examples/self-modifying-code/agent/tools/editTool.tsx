@@ -59,52 +59,52 @@ Commands:
       const stats = await fs.stat(params.path).catch(() => null);
 
       switch (params.command) {
-        case "view": {
-          if (!stats) {
-            throw new Error(`Path does not exist: ${params.path}`);
-          }
-
-          if (stats.isDirectory()) {
-            // List files up to 2 levels deep for directories
-            const result = execSync(
-              `find "${params.path}" -maxdepth 2 -not -path '*/\\.*' -type f -o -type d`,
-              { encoding: "utf-8" },
-            );
-            return result;
-          } else {
-            // Read and return complete file contents
-            const content = await fs.readFile(params.path, "utf-8");
-            return content;
-          }
+      case "view": {
+        if (!stats) {
+          throw new Error(`Path does not exist: ${params.path}`);
         }
 
-        case "create": {
-          if (stats) {
-            throw new Error(
-              `Cannot create file, path already exists: ${params.path}`,
-            );
-          }
-          await fs.mkdir(path.dirname(params.path), { recursive: true });
-          await fs.writeFile(params.path, params.content!, "utf-8");
-          return `File created successfully: ${params.path}`;
+        if (stats.isDirectory()) {
+          // List files up to 2 levels deep for directories
+          const result = execSync(
+            `find "${params.path}" -maxdepth 2 -not -path '*/\\.*' -type f -o -type d`,
+            { encoding: "utf-8" },
+          );
+          return result;
+        } else {
+          // Read and return complete file contents
+          const content = await fs.readFile(params.path, "utf-8");
+          return content;
+        }
+      }
+
+      case "create": {
+        if (stats) {
+          throw new Error(
+            `Cannot create file, path already exists: ${params.path}`,
+          );
+        }
+        await fs.mkdir(path.dirname(params.path), { recursive: true });
+        await fs.writeFile(params.path, params.content!, "utf-8");
+        return `File created successfully: ${params.path}`;
+      }
+
+      case "write": {
+        if (!stats?.isFile()) {
+          throw new Error(`Target must be an existing file: ${params.path}`);
         }
 
-        case "write": {
-          if (!stats?.isFile()) {
-            throw new Error(`Target must be an existing file: ${params.path}`);
-          }
+        // Create backup before modification
+        const backupPath = `${params.path}.bak`;
+        await fs.copyFile(params.path, backupPath);
 
-          // Create backup before modification
-          const backupPath = `${params.path}.bak`;
-          await fs.copyFile(params.path, backupPath);
+        // Write new content atomically
+        await fs.writeFile(params.path, params.content!, "utf-8");
+        return `File updated successfully: ${params.path}`;
+      }
 
-          // Write new content atomically
-          await fs.writeFile(params.path, params.content!, "utf-8");
-          return `File updated successfully: ${params.path}`;
-        }
-
-        default:
-          throw new Error(`Unknown command: ${String(params.command)}`);
+      default:
+        throw new Error(`Unknown command: ${String(params.command)}`);
       }
     } catch (error) {
       if (error instanceof Error) {
