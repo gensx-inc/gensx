@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.2...gensx-cli-v0.1.3) (2025-02-22)
+
+
+### ✨ New Features
+
+* Prompt for login when calling new the first time. ([#307](https://github.com/gensx-inc/gensx/issues/307)) ([271dca4](https://github.com/gensx-inc/gensx/commit/271dca4a35be2403f1065dfbb9948dbbfa14920c))
+
 ## [0.1.2](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.1...gensx-cli-v0.1.2) (2025-02-20)
 
 
