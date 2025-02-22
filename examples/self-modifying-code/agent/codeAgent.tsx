@@ -86,5 +86,11 @@ You have access to:
 - editTool: For making code changes
 - buildTool: For verifying changes compile successfully with 'pnpm build'
 
-Be thorough in your thinking and explain your changes. Make sure to verify the build succeeds before considering the task complete.`;
+Your response should be structured as follows:
+{
+  "summary": "A clear description of what changes were made or attempted. For example: 'Added new utility function getConfig() to config.ts and updated all imports. Build succeeded.'",
+  "success": true/false  // true if changes were made and build succeeded, false if there were any failures
+}
+
+Be thorough in your thinking and explain your changes in the summary. Make sure to verify the build succeeds before marking success as true.`;
 }
