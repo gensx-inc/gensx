@@ -1,5 +1,6 @@
 import { spawn } from "child_process";
-import fs from "fs/promises";
+import fs from "fs";
+import fsPromises from "fs/promises";
 import os from "os";
 import path from "path";
 
@@ -69,7 +70,7 @@ export async function setupWorkspace(
   config: WorkspaceConfig,
 ): Promise<Workspace> {
   // Create temp directory
-  const rootDir = await fs.mkdtemp(
+  const rootDir = await fsPromises.mkdtemp(
     path.join(os.tmpdir(), "self-modifying-code-"),
   );
   const sourceDir = path.join(rootDir, "repo");
@@ -104,19 +105,19 @@ export async function setupWorkspace(
     };
   } catch (error) {
     // Cleanup on failure
-    await fs.rm(rootDir, { recursive: true, force: true });
+    await fsPromises.rm(rootDir, { recursive: true, force: true });
     throw error;
   }
 }
 
 export async function cleanupWorkspace(workspace: Workspace): Promise<void> {
   console.log("Cleaning up workspace", workspace.rootDir);
-  await fs.rm(workspace.rootDir, { recursive: true, force: true });
+  await fsPromises.rm(workspace.rootDir, { recursive: true, force: true });
 }
 
-export async function readContext(workspace: Workspace): Promise<AgentContext> {
+export function readContext(workspace: Workspace): AgentContext {
   try {
-    const content = await fs.readFile(workspace.contextFile, "utf-8");
+    const content = fs.readFileSync(workspace.contextFile, "utf-8");
     return deserializeContext(content);
   } catch (e) {
     if ((e as { code?: string }).code === "ENOENT") {
@@ -125,25 +126,26 @@ export async function readContext(workspace: Workspace): Promise<AgentContext> {
         goalState: "Improve code quality and efficiency",
         history: [],
       };
-      await writeContext(workspace, defaultContext);
+      // Write synchronously
+      fs.writeFileSync(workspace.contextFile, serializeContext(defaultContext));
       return defaultContext;
     }
     throw e;
   }
 }
 
-export async function writeContext(
+async function writeContext(
   workspace: Workspace,
   context: AgentContext,
 ): Promise<void> {
-  await fs.writeFile(workspace.contextFile, serializeContext(context));
+  await fsPromises.writeFile(workspace.contextFile, serializeContext(context));
 }
 
 export async function updateContext(
   workspace: Workspace,
   update: Partial<AgentContext>,
 ): Promise<AgentContext> {
-  const current = await readContext(workspace);
+  const current = readContext(workspace);
 
   const updated: AgentContext = {
     ...current,
