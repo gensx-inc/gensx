@@ -29,7 +29,3 @@ On macos:
 ```bash
 pkill -f "node.*examples/self-modifying-code"
 ```
-
-## A Raccoon's Tale
-
-In the 🏙️ of 🌃, there lives a raccoon 🦝 who is an infra👨‍🔧 engineer by day and a trash 🍕🍔 lover by night. Balancing his time ⏰ between fixing servers 🖥️ and scavenging for food, he dreams 💭 of seamless systems and delicious 🍟. His life is a mix of code and adventure, surviving in a world 🌍 where every night is a new quest for tasty finds 🍽️.
