@@ -124,6 +124,9 @@ export async function setupWorkspace(
     // Install dependencies
     await runCommand("pnpm", ["install"], sourceDir);
 
+    // Build the workspace
+    await runCommand("pnpm", ["build"], sourceDir);
+
     return {
       rootDir,
       sourceDir,
