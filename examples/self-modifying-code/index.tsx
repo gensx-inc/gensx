@@ -28,7 +28,7 @@ function getWorkspaceConfig(): WorkspaceConfig {
 // flag for testing in development.
 const shouldSpawnAgent = true;
 
-async function startNewAgent(workspace: Workspace): Promise<boolean> {
+const startNewAgent = async (workspace: Workspace): Promise<boolean> => {
   return new Promise((resolve) => {
     const scopedPath = path.join(
       workspace.sourceDir,
@@ -54,9 +54,9 @@ async function startNewAgent(workspace: Workspace): Promise<boolean> {
       resolve(code === 0);
     });
   });
-}
+};
 
-async function main() {
+const main = async () => {
   let lease;
   let workspace;
   let error: unknown;
@@ -109,7 +109,7 @@ async function main() {
     console.error("Fatal error:", error);
     process.exit(1);
   }
-}
+};
 
 main().catch((error: unknown) => {
   console.error("Unhandled error:", error);
