@@ -12,7 +12,11 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "jsxImportSource": "gensx",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": ["./*.ts", "./*.tsx", "./**/*.ts", "./**/*.tsx"],
   "exclude": ["node_modules"]

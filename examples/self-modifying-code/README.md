@@ -30,6 +30,16 @@ On macos:
 pkill -f "node.*examples/self-modifying-code"
 ```
 
+## TypeScript Configuration
+
+The TypeScript configuration for this project has been enhanced to improve error checking and code quality. The following options have been enabled in `tsconfig.json`:
+
+- `noImplicitAny`: Raises errors on expressions and declarations with an implied `any` type.
+- `strictNullChecks`: Ensures `null` and `undefined` are handled explicitly.
+- `noUnusedLocals` and `noUnusedParameters`: Help identify and remove unused code.
+
+These settings help catch potential errors earlier and make the codebase cleaner and more maintainable.
+
 ## From the Perspective of a Trash-Eating Raccoon
 
 🌃 Night falls, and the city sleeps. I, 🦝, the infrastructure engineer, awake. With paws on keyboard ⌨️, I manage servers, ensuring they're secure 🔒. Troubleshooting? My specialty! Logs are treasures to sift through, revealing secrets 🗝️. But hunger calls! 🍂 Dive into trash bins, find snacks 🥐. Balancing work-life is a juggle 🤹. Code and 🍕, my dual sustenance. By dawn, systems stable, I retreat 💤. Another night conquered! 🌟
