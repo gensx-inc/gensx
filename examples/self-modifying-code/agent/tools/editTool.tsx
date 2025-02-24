@@ -94,10 +94,6 @@ Commands:
             throw new Error(`Target must be an existing file: ${params.path}`);
           }
 
-          // Create backup before modification
-          const backupPath = `${params.path}.bak`;
-          await fs.copyFile(params.path, backupPath);
-
           // Write new content atomically
           await fs.writeFile(params.path, params.content!, "utf-8");
           return `File updated successfully: ${params.path}`;
