@@ -4,6 +4,41 @@ import fsPromises from "fs/promises";
 import os from "os";
 import path from "path";
 
+import { gsx } from "gensx";
+
+const context = gsx.createContext<Workspace | undefined>(undefined);
+
+export const WorkspaceProvider = gsx.Component<{ workspace: Workspace }, never>(
+  "WorkspaceProvider",
+  ({ workspace }) => {
+    return <context.Provider value={workspace} />;
+  },
+);
+
+export const useWorkspace = () => {
+  const workspace = gsx.useContext(context);
+  if (!workspace) {
+    throw new Error("Workspace not found");
+  }
+  return workspace;
+};
+
+export const useWorkspaceContext = () => {
+  const workspace = gsx.useContext(context);
+  if (!workspace) {
+    throw new Error("Workspace not found");
+  }
+  return readContext(workspace);
+};
+
+export const updateWorkspaceContext = (update: Partial<AgentContext>) => {
+  const workspace = gsx.useContext(context);
+  if (!workspace) {
+    throw new Error("Workspace not found");
+  }
+  return updateContext(workspace, update);
+};
+
 export interface WorkspaceConfig {
   repoUrl: string;
   branch: string;
@@ -112,7 +147,7 @@ export async function cleanupWorkspace(workspace: Workspace): Promise<void> {
   await fsPromises.rm(workspace.rootDir, { recursive: true, force: true });
 }
 
-export function readContext(workspace: Workspace): AgentContext {
+function readContext(workspace: Workspace): AgentContext {
   try {
     const content = fs.readFileSync(workspace.contextFile, "utf-8");
     return deserializeContext(content);
@@ -138,7 +173,7 @@ async function writeContext(
   await fsPromises.writeFile(workspace.contextFile, serializeContext(context));
 }
 
-export async function updateContext(
+async function updateContext(
   workspace: Workspace,
   update: Partial<AgentContext>,
 ): Promise<AgentContext> {
@@ -154,24 +189,6 @@ export async function updateContext(
 
   await writeContext(workspace, updated);
   return updated;
-}
-
-export async function addHistoryEntry(
-  workspace: Workspace,
-  action: string,
-  result: "success" | "failure",
-  details: string,
-): Promise<AgentContext> {
-  const entry = {
-    timestamp: new Date(),
-    action,
-    result,
-    details,
-  };
-
-  return updateContext(workspace, {
-    history: [entry],
-  });
 }
 
 export async function commitAndPush(
