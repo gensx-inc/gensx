@@ -4,16 +4,15 @@ import { GSXChatCompletion, GSXChatCompletionResult } from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
 
-import { Workspace } from "../workspace.js";
 import { bashTool } from "./tools/bashTool.js";
 import { getBuildTool } from "./tools/buildTool.js";
 import { editTool } from "./tools/editTool.js";
+import { useWorkspace } from "./WorkspaceContext.js";
 
 interface CodeAgentProps {
   task: string;
   additionalInstructions?: string;
   repoPath: string;
-  workspace: Workspace;
 }
 
 // Schema for code agent output
@@ -26,7 +25,8 @@ export type CodeAgentOutput = z.infer<typeof codeAgentOutputSchema>;
 
 export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
   "CodeAgent",
-  async ({ task, additionalInstructions, repoPath, workspace }) => {
+  async ({ task, additionalInstructions, repoPath }) => {
+    const workspace = useWorkspace();
     const buildTool = getBuildTool(workspace);
 
     // First run with tools to make the changes
