@@ -4,10 +4,10 @@ import { GSXChatCompletion, GSXChatCompletionResult } from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
 
+import { useWorkspace } from "../workspace.js";
 import { bashTool } from "./tools/bashTool.js";
 import { getBuildTool } from "./tools/buildTool.js";
 import { editTool } from "./tools/editTool.js";
-import { useWorkspace } from "./WorkspaceContext.js";
 
 interface CodeAgentProps {
   task: string;

@@ -14,15 +14,16 @@ import { z } from "zod";
 
 import { Lease } from "../lease.js";
 import {
-  readContext,
   runCommand,
-  updateContext,
+  updateWorkspaceContext,
+  useWorkspace,
+  useWorkspaceContext,
   validateBuild,
   Workspace,
+  WorkspaceProvider,
 } from "../workspace.js";
 import { CodeAgent } from "./codeAgent.js";
 import { bashTool } from "./tools/bashTool.js";
-import { useWorkspace, WorkspaceProvider } from "./WorkspaceContext.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -67,8 +68,7 @@ interface GenerateGoalStateProps {}
 const GenerateGoalState = gsx.Component<GenerateGoalStateProps, GoalDecision>(
   "GenerateGoalState",
   async () => {
-    const workspace = useWorkspace();
-    const context = readContext(workspace);
+    const context = useWorkspaceContext();
 
     // First step: Decide if we need a new goal
     const needsNewGoal = await gsx.execute<{ needsNewGoal: boolean }>(
@@ -158,7 +158,7 @@ Remember:
       newGoalResult.choices[0]?.message?.content ?? context.goalState;
 
     // Update context with new goal
-    await updateContext(workspace, {
+    await updateWorkspaceContext({
       goalState: newGoal,
     });
 
@@ -174,8 +174,7 @@ interface GeneratePlanProps {}
 const GeneratePlan = gsx.Component<GeneratePlanProps, string>(
   "GeneratePlan",
   async () => {
-    const workspace = useWorkspace();
-    const context = readContext(workspace);
+    const context = useWorkspaceContext();
 
     // Get the plan from OpenAI
     const plan = await gsx.execute<string>(
@@ -230,7 +229,7 @@ Use the bash tool to explore the codebase before creating your plan.`,
     );
 
     // Add the plan to history
-    await updateContext(workspace, {
+    await updateWorkspaceContext({
       history: [
         {
           timestamp: new Date(),
@@ -253,7 +252,7 @@ const ModifyCode = gsx.Component<ModifyCodeProps, boolean>(
   "ModifyCode",
   async ({ plan }) => {
     const workspace = useWorkspace();
-    const context = readContext(workspace);
+    const context = useWorkspaceContext();
     const scopedPath = path.join(
       workspace.sourceDir,
       "examples",
@@ -277,7 +276,7 @@ After making changes, the code should successfully build with 'pnpm build'.`}
     );
 
     // Add the modification attempt to history
-    await updateContext(workspace, {
+    await updateWorkspaceContext({
       history: [
         {
           timestamp: new Date(),
@@ -305,7 +304,7 @@ const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
     console.log("Success:", success);
     // If the modification wasn't successful, no need to validate
     if (!success) {
-      await updateContext(workspace, {
+      await updateWorkspaceContext({
         history: [
           {
             timestamp: new Date(),
@@ -321,7 +320,7 @@ const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
     // Run the build validation
     const { success: buildSuccess, output } = await validateBuild(workspace);
     console.log("Build success:", buildSuccess);
-    await updateContext(workspace, {
+    await updateWorkspaceContext({
       history: [
         {
           timestamp: new Date(),
