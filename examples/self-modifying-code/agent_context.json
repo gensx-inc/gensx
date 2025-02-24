@@ -1,4 +1,4 @@
 {
-  "goalState": "Let's start with a simple change and build confidence from there. Let's update the README to add a new section the README. This story should be a paragraph, and written from the perspective of an infrastructure engineer who is also a trash eating raccoon. This raccoon has a speech limitation where he can only use 50% words and the other 50% must be expressed via emojis.",
+  "goalState": "Let's improve the codebase by making it more idiomatic and easier to understand, based on the guidelines and standards of the GenSX project. You can find documentation on the project at https://gensx.com/docs/.",
   "history": []
 }
