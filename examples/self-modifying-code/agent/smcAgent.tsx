@@ -24,6 +24,7 @@ import {
 } from "../workspace.js";
 import { CodeAgent } from "./codeAgent.js";
 import { bashTool } from "./tools/bashTool.js";
+import { FirecrawlProvider, scrapeWebpageTool } from "./tools/scrapeWebpage.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -150,7 +151,7 @@ Remember:
         ]}
         model="gpt-4o"
         temperature={0.7}
-        tools={[bashTool]}
+        tools={[bashTool, scrapeWebpageTool]}
       />,
     );
 
@@ -224,7 +225,7 @@ Use the bash tool to explore the codebase before creating your plan.`,
         ]}
         model="gpt-4"
         temperature={0.7}
-        tools={[bashTool]}
+        tools={[bashTool, scrapeWebpageTool]}
       />,
     );
 
@@ -389,32 +390,34 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
   ({ workspace }) => {
     return (
-      <WorkspaceProvider workspace={workspace}>
+      <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
         <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-          <GenerateGoalState>
-            {() => (
-              <GeneratePlan>
-                {(plan) => (
-                  <ModifyCode plan={plan}>
-                    {(modifySuccess) => (
-                      <RunFinalValidation success={modifySuccess}>
-                        {(validated) => (
-                          <CommitResults success={validated}>
-                            {(committed) => ({
-                              success: validated && committed,
-                              modified: true,
-                            })}
-                          </CommitResults>
-                        )}
-                      </RunFinalValidation>
-                    )}
-                  </ModifyCode>
-                )}
-              </GeneratePlan>
-            )}
-          </GenerateGoalState>
+          <WorkspaceProvider workspace={workspace}>
+            <GenerateGoalState>
+              {() => (
+                <GeneratePlan>
+                  {(plan) => (
+                    <ModifyCode plan={plan}>
+                      {(modifySuccess) => (
+                        <RunFinalValidation success={modifySuccess}>
+                          {(validated) => (
+                            <CommitResults success={validated}>
+                              {(committed) => ({
+                                success: validated && committed,
+                                modified: true,
+                              })}
+                            </CommitResults>
+                          )}
+                        </RunFinalValidation>
+                      )}
+                    </ModifyCode>
+                  )}
+                </GeneratePlan>
+              )}
+            </GenerateGoalState>
+          </WorkspaceProvider>
         </OpenAIProvider>
-      </WorkspaceProvider>
+      </FirecrawlProvider>
     );
   },
 );
