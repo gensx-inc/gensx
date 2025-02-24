@@ -259,12 +259,12 @@ export async function validateBuild(
       stdio: ["ignore", "pipe", "pipe"],
     });
 
-    let output = "";
+    let procOutput = "";
     let error = "";
 
     // Collect stdout
     proc.stdout.on("data", (data: Buffer) => {
-      output += data.toString();
+      procOutput += data.toString();
     });
 
     // Collect stderr
@@ -278,13 +278,20 @@ export async function validateBuild(
     });
 
     console.info("Build exit code", exitCode);
-    console.info("Build output", output);
+    console.info("Build output", procOutput);
     console.info("Build error", error);
+
+    let output = procOutput.trim();
+    if (exitCode !== 0) {
+      output += `\n${error.trim()}`;
+    }
+    if (!output) {
+      output = "Build failed with no error output";
+    }
 
     return {
       success: exitCode === 0,
-      output:
-        exitCode === 0 ? output : error || "Build failed with no error output",
+      output,
     };
   } catch (e) {
     return {
