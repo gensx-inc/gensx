@@ -12,5 +12,8 @@ export default [
         project: "./tsconfig.json",
       },
     },
+    rules: {
+      "prettier/prettier": "error"
+    }
   },
 ];
