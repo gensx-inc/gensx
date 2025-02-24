@@ -109,11 +109,6 @@ export const toolExecutorImpl = async (
 ): Promise<ToolExecutorOutput> => {
   const { tools, toolCalls } = props;
 
-  console.log(
-    "tools",
-    tools.map((t) => t.name),
-  );
-
   // Execute each tool call
   return await Promise.all(
     toolCalls.map(async (toolCall) => {
