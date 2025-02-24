@@ -14,6 +14,11 @@ interface GoalDecision {
 
 interface GenerateGoalStateProps {}
 
+const needsGoalSchema = z.object({
+  needsNewGoal: z.boolean().describe("Whether we need a new goal"),
+});
+type NeedsGoal = z.infer<typeof needsGoalSchema>;
+
 const GenerateGoalStateCompletion = gsx.Component<
   GenerateGoalStateProps,
   GoalDecision
@@ -54,13 +59,11 @@ Remember:
       ]}
       model="gpt-4o"
       temperature={0.7}
-      outputSchema={z.object({
-        needsNewGoal: z.boolean().describe("Whether we need a new goal"),
-      })}
+      outputSchema={needsGoalSchema}
     >
       {(result) => {
         // If we don't need a new goal, return the current one
-        if (!result.needsNewGoal) {
+        if (!(result as NeedsGoal).needsNewGoal) {
           return {
             newGoal: false,
             goalState: context.goalState,
@@ -105,9 +108,7 @@ Remember:
             {(newGoalResult) => {
               return {
                 newGoal: true,
-                goalState:
-                  newGoalResult.choices[0]?.message?.content ??
-                  context.goalState,
+                goalState: (newGoalResult as GoalDecision).goalState,
               };
             }}
           </GSXChatCompletion>
