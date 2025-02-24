@@ -24,7 +24,7 @@ import {
 } from "../workspace.js";
 import { CodeAgent } from "./codeAgent.js";
 import { bashTool } from "./tools/bashTool.js";
-import { FirecrawlProvider, scrapeWebpageTool } from "./tools/scrapeWebpage.js";
+import { FirecrawlProvider, scrapeUrlTool } from "./tools/scrapeWebpage.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -152,7 +152,7 @@ Remember:
         ]}
         model="gpt-4o"
         temperature={0.7}
-        tools={[bashTool, scrapeWebpageTool]}
+        tools={[bashTool, scrapeUrlTool]}
       />,
     );
 
@@ -216,7 +216,7 @@ For example, if modifying a README:
 4. Ensure the new section flows well with the existing content
 5. Verify the markdown formatting is correct"
 
-Use the bash tool to explore the codebase before creating your plan, and the scrapeWebpage tool to find relevant information online if needed.`,
+Use the bash tool to explore the codebase before creating your plan, and the scrapeUrl tool to find relevant information online if needed.`,
           },
           {
             role: "user",
@@ -226,7 +226,7 @@ Use the bash tool to explore the codebase before creating your plan, and the scr
         ]}
         model="gpt-4"
         temperature={0.7}
-        tools={[bashTool, scrapeWebpageTool]}
+        tools={[bashTool, scrapeUrlTool]}
       />,
     );
 
