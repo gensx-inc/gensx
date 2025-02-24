@@ -36,7 +36,7 @@ async function startNewAgent(workspace: Workspace): Promise<boolean> {
       "self-modifying-code",
     );
     // Start new agent process with same env vars
-    const proc = spawn("pnpm", ["dev"], {
+    const proc = spawn("pnpm", ["start"], {
       cwd: scopedPath,
       stdio: "inherit",
       env: process.env,

@@ -22,6 +22,7 @@ interface GSXToolParams<TSchema extends z.ZodObject<z.ZodRawShape>> {
   schema: TSchema;
   run: (args: z.infer<TSchema>) => Promise<unknown>;
   options?: {};
+  throwOnError?: boolean;
 }
 
 // Wrapper for tool parameter schemas
@@ -29,13 +30,13 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
   public readonly type = "function" as const;
   public readonly definition: ChatCompletionTool;
   private readonly executionComponent: ReturnType<typeof gsx.Component>;
-
+  private readonly throwOnError: boolean;
   constructor(params: GSXToolParams<TSchema>) {
     this.name = params.name;
     this.description = params.description;
     this.schema = params.schema;
     this.options = params.options ?? {};
-
+    this.throwOnError = params.throwOnError ?? false;
     this.definition = {
       type: this.type,
       function: {
@@ -56,7 +57,17 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
 
   async run(args: z.infer<TSchema>): Promise<unknown> {
     // Execute the component through gsx.execute to get checkpointing
-    return gsx.execute(<this.executionComponent {...args} />);
+    try {
+      return await gsx.execute(<this.executionComponent {...args} />);
+    } catch (e) {
+      if (this.throwOnError) {
+        throw e;
+      }
+      if (e instanceof Error) {
+        return "Error calling tool: " + e.message;
+      }
+      return "Error calling tool: " + String(e);
+    }
   }
 
   static create<TSchema extends z.ZodObject<z.ZodRawShape>>(
@@ -98,12 +109,21 @@ export const toolExecutorImpl = async (
 ): Promise<ToolExecutorOutput> => {
   const { tools, toolCalls } = props;
 
+  console.log(
+    "tools",
+    tools.map((t) => t.name),
+  );
+
   // Execute each tool call
   return await Promise.all(
     toolCalls.map(async (toolCall) => {
       const tool = tools.find((t) => t.name === toolCall.function.name);
       if (!tool) {
-        throw new Error(`Tool ${toolCall.function.name} not found`);
+        return {
+          tool_call_id: toolCall.id,
+          role: "tool" as const,
+          content: `Error: Tool ${toolCall.function.name} not found`,
+        };
       }
 
       try {
@@ -113,7 +133,11 @@ export const toolExecutorImpl = async (
         >;
         const validated = tool.schema.safeParse(args);
         if (!validated.success) {
-          throw new Error(`Invalid tool arguments: ${validated.error.message}`);
+          return {
+            tool_call_id: toolCall.id,
+            role: "tool" as const,
+            content: `Error: Invalid tool arguments: ${validated.error.message}`,
+          };
         }
         const result = await tool.run(validated.data);
         return {

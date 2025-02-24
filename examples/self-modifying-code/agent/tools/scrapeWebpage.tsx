@@ -37,6 +37,8 @@ export const scrapeWebpageTool = new GSXTool<typeof scrapePageSchema>({
       );
     }
 
+    console.log("🔍 Scraping URL:", url);
+
     const result = await context.client.scrapeUrl(url, {
       formats: ["markdown"],
       timeout: 40000,
