@@ -112,15 +112,16 @@ Your task is to make the minimal necessary changes to the files in the ${repoPat
 Follow these steps:
 1. First, explore the repo to understand its structure and identify the files that need to be modified
 2. Make the necessary code changes using the editTool
-3. Use the buildTool to verify your changes compile successfully
-4. If the build fails, examine the error output and fix any issues
-5. Once the build succeeds, verify that your changes meet all the requirements
+3. Feel free to use the scrapeWebpageTool to find relevant information online if needed
+4. Use the buildTool to verify your changes compile successfully
+5. If the build fails, examine the error output and fix any issues
+6. Once the build succeeds, verify that your changes meet all the requirements
 
-You have access to:
-- bashTool: For exploring the codebase and examining files
-- editTool: For making code changes
-- buildTool: For verifying changes compile successfully with 'pnpm build'
-
+You have access to some tools that may be helpful:
+- bash: For exploring the codebase and examining files
+- editor: For making code changes
+- build: For verifying changes compile successfully with 'pnpm build'
+- scrapeWebpage: For finding relevant information online
 
 Be thorough in your thinking and explain your changes in the summary. Make sure to verify the build succeeds before marking success as true.`;
 }
