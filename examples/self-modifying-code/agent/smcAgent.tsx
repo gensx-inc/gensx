@@ -142,7 +142,8 @@ Remember:
 - Goals should focus on improving code functionality and quality
 - Start with simpler goals and progress to more complex ones
 - Each goal should be achievable in a single iteration
-- After initial simple goals like README changes, focus on code improvements`,
+- After initial simple goals like README changes, focus on code improvements
+- Use the tools to explore the codebase and find relevant information online if needed`,
           },
           {
             role: "user",
@@ -215,7 +216,7 @@ For example, if modifying a README:
 4. Ensure the new section flows well with the existing content
 5. Verify the markdown formatting is correct"
 
-Use the bash tool to explore the codebase before creating your plan.`,
+Use the bash tool to explore the codebase before creating your plan, and the scrapeWebpage tool to find relevant information online if needed.`,
           },
           {
             role: "user",
