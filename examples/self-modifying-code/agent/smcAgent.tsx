@@ -22,6 +22,7 @@ import {
 } from "../workspace.js";
 import { CodeAgent } from "./codeAgent.js";
 import { bashTool } from "./tools/bashTool.js";
+import { useWorkspace, WorkspaceProvider } from "./WorkspaceContext.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -61,13 +62,12 @@ interface GoalDecision {
   goalState: string;
 }
 
-interface GenerateGoalStateProps {
-  workspace: Workspace;
-}
+interface GenerateGoalStateProps {}
 
 const GenerateGoalState = gsx.Component<GenerateGoalStateProps, GoalDecision>(
   "GenerateGoalState",
-  async ({ workspace }) => {
+  async () => {
+    const workspace = useWorkspace();
     const context = readContext(workspace);
 
     // First step: Decide if we need a new goal
@@ -169,13 +169,12 @@ Remember:
   },
 );
 
-interface GeneratePlanProps {
-  workspace: Workspace;
-}
+interface GeneratePlanProps {}
 
 const GeneratePlan = gsx.Component<GeneratePlanProps, string>(
   "GeneratePlan",
-  async ({ workspace }) => {
+  async () => {
+    const workspace = useWorkspace();
     const context = readContext(workspace);
 
     // Get the plan from OpenAI
@@ -248,12 +247,12 @@ Use the bash tool to explore the codebase before creating your plan.`,
 
 interface ModifyCodeProps {
   plan: string;
-  workspace: Workspace;
 }
 
 const ModifyCode = gsx.Component<ModifyCodeProps, boolean>(
   "ModifyCode",
-  async ({ plan, workspace }) => {
+  async ({ plan }) => {
+    const workspace = useWorkspace();
     const context = readContext(workspace);
     const scopedPath = path.join(
       workspace.sourceDir,
@@ -274,7 +273,6 @@ ${context.goalState}
 After making changes, the code should successfully build with 'pnpm build'.`}
         additionalInstructions="After making changes, use the 'build' tool to verify the changes compile successfully."
         repoPath={scopedPath}
-        workspace={workspace}
       />,
     );
 
@@ -297,12 +295,12 @@ After making changes, the code should successfully build with 'pnpm build'.`}
 
 interface RunFinalValidationProps {
   success: boolean;
-  workspace: Workspace;
 }
 
 const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
   "RunFinalValidation",
-  async ({ success, workspace }) => {
+  async ({ success }) => {
+    const workspace = useWorkspace();
     console.log("Running final validation");
     console.log("Success:", success);
     // If the modification wasn't successful, no need to validate
@@ -340,12 +338,12 @@ const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
 
 interface CommitResultsProps {
   success: boolean;
-  workspace: Workspace;
 }
 
 const CommitResults = gsx.Component<CommitResultsProps, boolean>(
   "CommitResults",
-  async ({ success, workspace }) => {
+  async ({ success }) => {
+    const workspace = useWorkspace();
     const scopedPath = path.join(
       workspace.sourceDir,
       "examples",
@@ -392,36 +390,32 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
   ({ workspace }) => {
     return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <GenerateGoalState workspace={workspace}>
-          {() => (
-            <GeneratePlan workspace={workspace}>
-              {(plan) => (
-                <ModifyCode plan={plan} workspace={workspace}>
-                  {(modifySuccess) => (
-                    <RunFinalValidation
-                      success={modifySuccess}
-                      workspace={workspace}
-                    >
-                      {(validated) => (
-                        <CommitResults
-                          success={validated}
-                          workspace={workspace}
-                        >
-                          {(committed) => ({
-                            success: validated && committed,
-                            modified: true,
-                          })}
-                        </CommitResults>
-                      )}
-                    </RunFinalValidation>
-                  )}
-                </ModifyCode>
-              )}
-            </GeneratePlan>
-          )}
-        </GenerateGoalState>
-      </OpenAIProvider>
+      <WorkspaceProvider workspace={workspace}>
+        <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+          <GenerateGoalState>
+            {() => (
+              <GeneratePlan>
+                {(plan) => (
+                  <ModifyCode plan={plan}>
+                    {(modifySuccess) => (
+                      <RunFinalValidation success={modifySuccess}>
+                        {(validated) => (
+                          <CommitResults success={validated}>
+                            {(committed) => ({
+                              success: validated && committed,
+                              modified: true,
+                            })}
+                          </CommitResults>
+                        )}
+                      </RunFinalValidation>
+                    )}
+                  </ModifyCode>
+                )}
+              </GeneratePlan>
+            )}
+          </GenerateGoalState>
+        </OpenAIProvider>
+      </WorkspaceProvider>
     );
   },
 );
