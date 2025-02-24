@@ -61,7 +61,7 @@ export const structuredOutputImpl = async <T,>(
 
       const toolCalls = completion.choices[0].message.tool_calls;
       // If we have tool calls, execute them and make another completion
-      if (toolCalls?.length && tools) {
+      while (toolCalls?.length && tools) {
         const toolResponses = await toolExecutorImpl(
           {
             tools,
