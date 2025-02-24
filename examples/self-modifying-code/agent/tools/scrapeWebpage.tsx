@@ -24,9 +24,9 @@ const scrapePageSchema = z.object({
 });
 
 // Create a component that uses the provider
-export const scrapeWebpageTool = new GSXTool<typeof scrapePageSchema>({
-  name: "scrapeWebpage",
-  description: "Scrape a webpage",
+export const scrapeUrlTool = new GSXTool<typeof scrapePageSchema>({
+  name: "scrapeUrl",
+  description: "Fetch the contents of a url in markdown format",
   schema: scrapePageSchema,
   run: async ({ url }) => {
     const context = gsx.useContext(FirecrawlContext);
