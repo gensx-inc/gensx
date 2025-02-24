@@ -277,6 +277,10 @@ export async function validateBuild(
       proc.on("exit", resolve);
     });
 
+    console.info("Build exit code", exitCode);
+    console.info("Build output", output);
+    console.info("Build error", error);
+
     return {
       success: exitCode === 0,
       output:
