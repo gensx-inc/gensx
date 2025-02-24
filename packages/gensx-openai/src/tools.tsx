@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 import { gsx } from "gensx";
-import OpenAI from "openai";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionCreateParamsNonStreaming,
@@ -15,7 +14,6 @@ import {
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-import { OpenAIContext } from "./openai.js";
 import { OpenAIChatCompletion, OpenAIChatCompletionOutput } from "./openai.js";
 
 interface GSXToolParams<TSchema extends z.ZodObject<z.ZodRawShape>> {
@@ -97,14 +95,8 @@ type ToolsCompletionOutput = OpenAIChatCompletionOutput & {
 // Extract implementation into a separate function
 export const toolExecutorImpl = async (
   props: ToolExecutorProps,
-  context: { client?: OpenAI },
 ): Promise<ToolExecutorOutput> => {
   const { tools, toolCalls } = props;
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
 
   // Execute each tool call
   return await Promise.all(
@@ -142,8 +134,7 @@ export const ToolExecutor = gsx.Component<
   ToolExecutorProps,
   ToolExecutorOutput
 >("ToolExecutor", async (props) => {
-  const context = gsx.useContext(OpenAIContext);
-  return toolExecutorImpl(props, context);
+  return toolExecutorImpl(props);
 });
 
 // Extract ToolsCompletion implementation
@@ -152,7 +143,6 @@ export const toolsCompletionImpl = async (
 ): Promise<ToolsCompletionOutput> => {
   const { tools, ...rest } = props;
   const currentMessages = [...rest.messages];
-  const context = gsx.useContext(OpenAIContext);
 
   // Make initial completion
   let completion = await gsx.execute<ChatCompletionOutput>(
@@ -169,13 +159,10 @@ export const toolsCompletionImpl = async (
     currentMessages.push(completion.choices[0].message);
 
     // Execute tools using toolExecutorImpl directly
-    const toolResponses = await toolExecutorImpl(
-      {
-        tools,
-        toolCalls: completion.choices[0].message.tool_calls,
-      },
-      context,
-    );
+    const toolResponses = await toolExecutorImpl({
+      tools,
+      toolCalls: completion.choices[0].message.tool_calls,
+    });
 
     // Add tool responses to the conversation
     currentMessages.push(...toolResponses);

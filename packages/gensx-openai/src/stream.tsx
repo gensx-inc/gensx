@@ -8,7 +8,7 @@ import {
 } from "openai/resources/chat/completions";
 import { Stream } from "openai/streaming";
 
-import { OpenAIChatCompletion, OpenAIContext } from "./openai.js";
+import { OpenAIChatCompletion } from "./openai.js";
 import { GSXTool, toolExecutorImpl } from "./tools.js";
 
 type StreamCompletionProps = Omit<
@@ -25,7 +25,6 @@ export const streamCompletionImpl = async (
   props: StreamCompletionProps,
 ): Promise<StreamCompletionOutput> => {
   const { stream, tools, ...rest } = props;
-  const context = gsx.useContext(OpenAIContext);
 
   // If we have tools, first make a synchronous call to get tool calls
   if (tools?.length) {
@@ -47,13 +46,10 @@ export const streamCompletionImpl = async (
     }
 
     // Execute tools
-    const toolResponses = await toolExecutorImpl(
-      {
-        tools,
-        toolCalls,
-      },
-      context,
-    );
+    const toolResponses = await toolExecutorImpl({
+      tools,
+      toolCalls,
+    });
 
     // Make final streaming call with all messages
     return gsx.execute<Stream<ChatCompletionChunk>>(

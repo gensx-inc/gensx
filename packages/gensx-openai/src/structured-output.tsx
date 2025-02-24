@@ -8,7 +8,7 @@ import {
 } from "openai/resources/chat/completions";
 import { z } from "zod";
 
-import { OpenAIChatCompletion, OpenAIContext } from "./openai.js";
+import { OpenAIChatCompletion } from "./openai.js";
 import { GSXTool, toolExecutorImpl } from "./tools.js";
 
 // Updated type to include retry options
@@ -36,7 +36,6 @@ export const structuredOutputImpl = async <T,>(
   const maxAttempts = retry?.maxAttempts ?? 3;
   let lastError: Error | undefined;
   let lastResponse: string | undefined;
-  const context = gsx.useContext(OpenAIContext);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -62,13 +61,10 @@ export const structuredOutputImpl = async <T,>(
       const toolCalls = completion.choices[0].message.tool_calls;
       // If we have tool calls, execute them and make another completion
       while (toolCalls?.length && tools) {
-        const toolResponses = await toolExecutorImpl(
-          {
-            tools,
-            toolCalls,
-          },
-          context,
-        );
+        const toolResponses = await toolExecutorImpl({
+          tools,
+          toolCalls,
+        });
 
         currentMessages.push(completion.choices[0].message);
         currentMessages.push(...toolResponses);
