@@ -8,8 +8,8 @@ import {
 } from "openai/resources/chat/completions";
 import { z } from "zod";
 
-import { OpenAIChatCompletion } from "./openai.js";
-import { GSXTool, ToolExecutor } from "./tools.js";
+import { OpenAIChatCompletion, OpenAIContext } from "./openai.js";
+import { GSXTool, toolExecutorImpl } from "./tools.js";
 
 // Updated type to include retry options
 type StructuredOutputProps<O = unknown> = Omit<
@@ -32,15 +32,16 @@ type StructuredOutputOutput<T> = T;
 export const structuredOutputImpl = async <T,>(
   props: StructuredOutputProps<T>,
 ): Promise<StructuredOutputOutput<T>> => {
-  const { outputSchema, tools, retry, ...rest } = props;
+  const { outputSchema, tools, retry, messages, ...rest } = props;
   const maxAttempts = retry?.maxAttempts ?? 3;
   let lastError: Error | undefined;
   let lastResponse: string | undefined;
+  const context = gsx.useContext(OpenAIContext);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       // Add retry context to messages if not first attempt
-      const messages = [...rest.messages];
+      const currentMessages = messages;
       if (attempt > 1) {
         messages.push({
           role: "user",
@@ -49,10 +50,10 @@ export const structuredOutputImpl = async <T,>(
       }
 
       // Make initial completion
-      const completion = await gsx.execute<ChatCompletionOutput>(
+      let completion = await gsx.execute<ChatCompletionOutput>(
         <OpenAIChatCompletion
           {...rest}
-          messages={messages}
+          messages={currentMessages}
           tools={tools?.map((t) => t.definition)}
           response_format={zodResponseFormat(outputSchema, "output_schema")}
         />,
@@ -61,17 +62,28 @@ export const structuredOutputImpl = async <T,>(
       const toolCalls = completion.choices[0].message.tool_calls;
       // If we have tool calls, execute them and make another completion
       if (toolCalls?.length && tools) {
-        const toolResult = await gsx.execute<ChatCompletionOutput>(
-          <ToolExecutor
-            tools={tools}
-            toolCalls={toolCalls}
-            messages={[...messages, completion.choices[0].message]}
-            model={rest.model}
+        const toolResponses = await toolExecutorImpl(
+          {
+            tools,
+            toolCalls,
+          },
+          context,
+        );
+
+        currentMessages.push(completion.choices[0].message);
+        currentMessages.push(...toolResponses);
+
+        completion = await gsx.execute<ChatCompletionOutput>(
+          <OpenAIChatCompletion
+            {...rest}
+            messages={currentMessages}
+            tools={tools.map((t) => t.definition)}
+            response_format={zodResponseFormat(outputSchema, "output_schema")}
           />,
         );
 
         // Parse and validate the final result
-        const content = toolResult.choices[0]?.message.content;
+        const content = completion.choices[0]?.message.content;
         if (!content) {
           throw new Error(
             "No content returned from OpenAI after tool execution",

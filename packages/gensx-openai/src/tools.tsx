@@ -78,8 +78,6 @@ interface ToolExecutorProps {
   toolCalls: NonNullable<
     ChatCompletionOutput["choices"][0]["message"]["tool_calls"]
   >;
-  messages: ChatCompletionMessageParam[];
-  model: string;
 }
 
 type ToolExecutorOutput = ChatCompletionToolMessageParam[];
@@ -175,8 +173,6 @@ export const toolsCompletionImpl = async (
       {
         tools,
         toolCalls: completion.choices[0].message.tool_calls,
-        messages: currentMessages,
-        model: rest.model,
       },
       context,
     );

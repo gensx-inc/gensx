@@ -33,16 +33,32 @@ vi.mock("openai", async (importOriginal) => {
           .mockImplementation((params: ChatCompletionCreateParams) => {
             // If there's already a tool response in the conversation, return a final answer
             if (params.messages.some((m) => m.role === "tool")) {
-              return Promise.resolve({
-                choices: [
-                  {
-                    message: {
-                      role: "assistant",
-                      content: "Final answer after tool execution",
+              if (params.response_format?.type === "json_schema") {
+                return Promise.resolve({
+                  choices: [
+                    {
+                      message: {
+                        role: "assistant",
+                        content: JSON.stringify({
+                          name: "structured output after tool execution",
+                          age: 42,
+                        }),
+                      },
                     },
-                  },
-                ],
-              });
+                  ],
+                });
+              } else {
+                return Promise.resolve({
+                  choices: [
+                    {
+                      message: {
+                        role: "assistant",
+                        content: "Final answer after tool execution",
+                      },
+                    },
+                  ],
+                });
+              }
             }
             // Handle initial tool calls
             else if (params.tools?.length) {
@@ -135,8 +151,6 @@ suite("Tools", () => {
               },
             },
           ]}
-          messages={[{ role: "user", content: "test" }]}
-          model="gpt-4"
         />
       ),
     );
@@ -250,6 +264,34 @@ suite("Tools", () => {
     );
   });
 
+  test("GSXChatCompletion works with tools and structured output", async () => {
+    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+      "TestComponent",
+      () => (
+        <GSXChatCompletion
+          model="gpt-4o"
+          messages={[{ role: "user", content: "test" }]}
+          tools={[testTool]}
+          outputSchema={z.object({
+            name: z.string(),
+            age: z.number(),
+          })}
+        />
+      ),
+    );
+
+    const result = await gsx.execute<ChatCompletionOutput>(
+      <OpenAIProvider apiKey="test">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toEqual({
+      name: "structured output after tool execution",
+      age: 42,
+    });
+  });
+
   test("ToolExecutor throws error for invalid tool", async () => {
     const TestComponent = gsx.Component("TestComponent", () => (
       <ToolExecutor
@@ -264,8 +306,6 @@ suite("Tools", () => {
             },
           },
         ]}
-        messages={[{ role: "user", content: "test" }]}
-        model="gpt-4"
       />
     ));
 
@@ -292,8 +332,6 @@ suite("Tools", () => {
             },
           },
         ]}
-        messages={[{ role: "user", content: "test" }]}
-        model="gpt-4"
       />
     ));
 
