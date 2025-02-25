@@ -100,4 +100,77 @@ suite("StructuredOutput", () => {
 
     expect(result).toEqual({ name: "Hello World", age: 42 });
   });
+
+  test("structured output gets passed to the child function", async () => {
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+    });
+
+    const Wrapper = gsx.Component<
+      {},
+      {
+        uppercase: string;
+        doubleAge: number;
+      }
+    >("Wrapper", () => {
+      return (
+        <GSXChatCompletion
+          model="gpt-4o"
+          messages={[{ role: "user", content: "test" }]}
+          outputSchema={schema}
+        >
+          {(result) => {
+            return {
+              uppercase: result.name.toUpperCase(),
+              doubleAge: result.age * 2,
+            };
+          }}
+        </GSXChatCompletion>
+      );
+    });
+
+    const result = await gsx.execute<{
+      uppercase: string;
+      doubleAge: number;
+    }>(
+      <OpenAIProvider apiKey="test">
+        <Wrapper />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toEqual({
+      uppercase: "HELLO WORLD",
+      doubleAge: 84,
+    });
+  });
+
+  test("structured output works with `GSXChatCompletion` component with `run` method", async () => {
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+    });
+
+    const Wrapper = gsx.Component<{}, z.infer<typeof schema>>(
+      "Wrapper",
+      async () => {
+        // add a type assertion to ensure the result is of the expected type
+        const result: z.infer<typeof schema> = await GSXChatCompletion.run({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: "test" }],
+          outputSchema: schema,
+        });
+
+        return result;
+      },
+    );
+
+    const result = await gsx.execute(
+      <OpenAIProvider apiKey="test">
+        <Wrapper />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toEqual({ name: "Hello World", age: 42 });
+  });
 });
