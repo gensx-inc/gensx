@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { gsx } from "gensx";
+import { Args, gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
@@ -8,12 +8,13 @@ import {
   ChatCompletionMessageParam,
 } from "openai/resources/chat/completions";
 import { Stream } from "openai/streaming";
-import { z } from "zod";
+import { z, ZodType } from "zod";
 
 import { OpenAIChatCompletion } from "./openai.js";
 import { streamCompletionImpl } from "./stream.js";
 import { structuredOutputImpl } from "./structured-output.js";
 import { GSXTool, toolsCompletionImpl } from "./tools.js";
+
 // Types for the composition-based implementation
 export type StreamingProps = Omit<
   ChatCompletionCreateParamsNonStreaming,
@@ -98,11 +99,35 @@ export const gsxChatCompletionImpl = async <P extends GSXChatCompletionProps>(
   } as GSXChatCompletionOutput<P>;
 };
 
-// Update component to use implementation
+type InferSchemaType<T> = T extends { outputSchema: infer S }
+  ? S extends ZodType
+    ? z.infer<S>
+    : never
+  : T extends { stream: true }
+    ? Stream<ChatCompletionChunk>
+    : GSXChatCompletionResult;
+
+interface GSXChatCompletionComponent {
+  readonly __brand: "gsx-component";
+  readonly __outputType: GSXChatCompletionOutput<GSXChatCompletionProps<any>>;
+  readonly __rawProps: GSXChatCompletionProps<any>;
+  <P extends GSXChatCompletionProps<any>>(
+    props: Args<P, InferSchemaType<P>>,
+  ): InferSchemaType<P>;
+
+  run<P extends GSXChatCompletionProps<any>>(
+    props: P,
+  ): Promise<InferSchemaType<P>>;
+}
+
+// Update component to use implementation with explicit type casting
 export const GSXChatCompletion = gsx.Component<
   GSXChatCompletionProps,
   GSXChatCompletionOutput<GSXChatCompletionProps>
->("GSXChatCompletion", gsxChatCompletionImpl);
+>(
+  "GSXChatCompletion",
+  gsxChatCompletionImpl,
+) as unknown as GSXChatCompletionComponent;
 
 // Base props type from OpenAI
 export type ChatCompletionProps = Omit<
