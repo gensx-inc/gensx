@@ -1,4 +1,3 @@
-import { ComponentOpts } from "./component";
 import { ExecutionContext, getCurrentContext, withContext } from "./context";
 import { resolveDeep } from "./resolve";
 import {
@@ -56,10 +55,7 @@ export function Workflow<P extends { stream?: boolean }>(
 
 // Overload for GsxComponent or GsxStreamComponent
 export function Workflow<
-  P extends Record<string, unknown> & {
-    stream?: boolean;
-    componentOpts?: ComponentOpts;
-  },
+  P extends object & { stream?: boolean; length?: never },
   O,
 >(
   name: string,
