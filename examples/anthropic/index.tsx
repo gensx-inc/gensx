@@ -89,59 +89,6 @@ function tools() {
   return workflow.run({}, { printUrl: true });
 }
 
-// function toolsStreaming() {
-//   // Define the schema as a Zod object
-//   const weatherSchema = z.object({
-//     location: z.string(),
-//   });
-
-//   // Use z.infer to get the type for our parameters
-//   type WeatherParams = z.infer<typeof weatherSchema>;
-
-//   // Create the tool with the correct type - using the schema type, not the inferred type
-//   const tool = new GSXTool({
-//     name: "get_weather",
-//     description: "get the weather for a given location",
-//     schema: weatherSchema,
-//     run: async ({ location }: WeatherParams) => {
-//       console.log("getting weather for", location);
-//       const weather = ["sunny", "cloudy", "rainy", "snowy"];
-//       return Promise.resolve({
-//         weather: weather[Math.floor(Math.random() * weather.length)],
-//       });
-//     },
-//   });
-
-//   const ToolsStreamingExample = gsx.Component<
-//     {},
-//     Stream<RawMessageStreamEvent>
-//   >("ToolsStreamingExample", () => (
-//     <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
-//       <GSXChatCompletion
-//         stream={true}
-//         system="you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. "
-//         messages={[
-//           {
-//             role: "user",
-//             content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
-//           },
-//         ]}
-//         model="claude-3-5-sonnet-latest"
-//         temperature={0.7}
-//         max_tokens={1000}
-//         tools={[tool]}
-//       />
-//     </AnthropicProvider>
-//   ));
-
-//   const workflow = gsx.Workflow(
-//     "ToolsStreamingWorkflow",
-//     ToolsStreamingExample,
-//   );
-
-//   return workflow.run({}, { printUrl: true });
-// }
-
 function streamingCompletion() {
   const StreamingCompletionWorkflow = gsx.Component<
     {},
@@ -424,7 +371,6 @@ async function main() {
     | "basicCompletion"
     | "streamingCompletion"
     | "tools"
-    | "toolsStreaming"
     | "structuredOutput"
     | "multiStepTools"
     | "toolsWithStructuredOutput";
@@ -455,14 +401,6 @@ async function main() {
       const results = await tools();
       console.log(JSON.stringify(results, null, 2));
       break;
-
-    // case "toolsStreaming":
-    //   console.log("tools streaming completion 🔥");
-    //   const s2 = await toolsStreaming();
-    //   for await (const chunk of s2) {
-    //     process.stdout.write(chunk.choices[0].delta.content ?? "");
-    //   }
-    //   break;
 
     case "structuredOutput":
       console.log("structured output completion 🔥");
