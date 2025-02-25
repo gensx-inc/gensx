@@ -2,9 +2,12 @@ import { GSXChatCompletion } from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
 
-import { updateWorkspaceContext, useWorkspaceContext } from "../workspace.js";
-import { bashTool } from "./tools/bashTool.js";
-import { scrapeUrlTool } from "./tools/scrapeWebpage.js";
+import {
+  updateWorkspaceContext,
+  useWorkspaceContext,
+} from "../../workspace.js";
+import { bashTool } from "../tools/bashTool.js";
+import { scrapeUrlTool } from "../tools/scrapeWebpage.js";
 
 // Remove unused schema since we're defining inline now
 interface GoalDecision {

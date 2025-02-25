@@ -1,8 +1,5 @@
 import path from "path";
 
-// Add type import for CodeAgent output
-import type { CodeAgentOutput } from "./codeAgent.js";
-
 import { OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 
@@ -17,7 +14,7 @@ import {
   WorkspaceProvider,
 } from "../workspace.js";
 import { CodeAgent } from "./codeAgent.js";
-import { GenerateGoalState } from "./generateGoalState.js";
+import { GenerateGoalState } from "./steps/generateGoalState.js";
 import { GeneratePlan } from "./steps/generatePlan.js";
 import { FirecrawlProvider } from "./tools/scrapeWebpage.js";
 
@@ -69,20 +66,19 @@ const ModifyCode = gsx.Component<ModifyCodeProps, boolean>(
     );
 
     // Run the code agent with our plan
-    const result = await gsx.execute<CodeAgentOutput>(
-      <CodeAgent
-        task={`Implement the following changes to the codebase:
+    const result = await CodeAgent.run({
+      task: `Implement the following changes to the codebase:
 
 ${plan}
 
 Current goal state from context:
 ${context.goalState}
 
-After making changes, the code should successfully build with 'pnpm build'.`}
-        additionalInstructions="After making changes, use the 'build' tool to verify the changes compile successfully."
-        repoPath={scopedPath}
-      />,
-    );
+After making changes, the code should successfully build with 'pnpm build'.`,
+      additionalInstructions:
+        "After making changes, use the 'build' tool to verify the changes compile successfully.",
+      repoPath: scopedPath,
+    });
 
     // Add the modification attempt to history
     await updateWorkspaceContext({
