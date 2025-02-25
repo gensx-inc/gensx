@@ -4,7 +4,10 @@ import { expect, suite, test } from "vitest";
 
 import { gsx } from "@/index.js";
 
-import { executeWithCheckpoints } from "./utils/executeWithCheckpoints";
+import {
+  executeWithCheckpoints,
+  executeWorkflowWithCheckpoints,
+} from "./utils/executeWithCheckpoints";
 
 suite("component", () => {
   test("can create anonymous component", async () => {
@@ -169,5 +172,107 @@ suite("component", () => {
     }
     expect(consumed).toBe(true);
     expect(iteratorConsumed).toBe(true);
+  });
+
+  suite("Component.run", () => {
+    test("executes component", async () => {
+      const TestComponent = gsx.Component<{ input: string }, string>(
+        "TestComponent",
+        async ({ input }) => {
+          await setTimeout(0);
+          return `Hello ${input}`;
+        },
+      );
+
+      const result: string = await TestComponent.run({ input: "World" });
+      expect(result).toBe("Hello World");
+    });
+
+    test("complex props", async () => {
+      const ComplexComponent = gsx.Component<
+        { numbers: number[]; config: { enabled: boolean } },
+        { sum: number; enabled: boolean }
+      >("ComplexComponent", async ({ numbers, config }) => {
+        await setTimeout(0);
+        return {
+          sum: numbers.reduce((a, b) => a + b, 0),
+          enabled: config.enabled,
+        };
+      });
+
+      const result = await ComplexComponent.run({
+        numbers: [1, 2, 3, 4],
+        config: { enabled: true },
+      });
+
+      expect(result).toEqual({ sum: 10, enabled: true });
+    });
+
+    test("uses componentOpts", async () => {
+      const NamedComponent = gsx.Component<{ value: string }, string>(
+        "OriginalName",
+        async ({ value }) => {
+          await setTimeout(0);
+          return value;
+        },
+      );
+
+      const WrapperComponent = gsx.Component<{ input: string }, string>(
+        "WrapperComponent",
+        async ({ input }) => {
+          const result = await NamedComponent.run({
+            value: input,
+            componentOpts: { name: "RenamedComponent" },
+          });
+          return result;
+        },
+      );
+
+      const { result, checkpoints } =
+        await executeWorkflowWithCheckpoints<string>(
+          <WrapperComponent input="test" />,
+        );
+
+      expect(result).toBe("test");
+      expect(checkpoints).toBeDefined();
+      const checkpoint = Object.values(checkpoints)[0];
+      expect(checkpoint.componentName).toBe("WorkflowComponentWrapper");
+      expect(checkpoint.children[0].componentName).toBe("WrapperComponent");
+      expect(checkpoint.children[0].children[0].componentName).toBe(
+        "RenamedComponent",
+      );
+    });
+
+    test("executes inside a component", async () => {
+      const TestComponent = gsx.Component<
+        { input: string },
+        { processed: string }
+      >("TestComponent", async ({ input }) => {
+        await setTimeout(0);
+        return { processed: input.toUpperCase() };
+      });
+
+      const WrapperComponent = gsx.Component<{ input: string }, string>(
+        "WrapperComponent",
+        async ({ input }) => {
+          const result = await TestComponent.run({ input });
+          return result.processed;
+        },
+      );
+
+      const { result, checkpoints } =
+        await executeWorkflowWithCheckpoints<string>(
+          <WrapperComponent input="test" />,
+        );
+
+      expect(result).toEqual("TEST");
+      expect(checkpoints).toBeDefined();
+      const checkpoint = Object.values(checkpoints)[0];
+      expect(checkpoint.componentName).toBe("WorkflowComponentWrapper");
+      expect(checkpoint.children[0].componentName).toBe("WrapperComponent");
+      expect(checkpoint.children[0].children[0].componentName).toBe(
+        "TestComponent",
+      );
+    });
   });
 });

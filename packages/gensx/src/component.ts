@@ -10,7 +10,7 @@ import type {
 import { serializeError } from "serialize-error";
 
 import { getCurrentContext } from "./context";
-import { JSX } from "./jsx-runtime";
+import { JSX, jsx } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
@@ -91,6 +91,10 @@ export function Component<P extends object & { length?: never }, O>(
       }
       throw error;
     }
+  };
+
+  GsxComponent.run = (props: WithComponentOpts<P>) => {
+    return jsx(GsxComponent, props)();
   };
 
   if (name) {
