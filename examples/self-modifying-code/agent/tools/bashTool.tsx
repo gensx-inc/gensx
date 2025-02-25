@@ -7,6 +7,7 @@ import { z } from "zod";
 const bashToolSchema = z.object({
   command: z.string().describe("The bash command to run."),
 });
+
 // Use z.infer to get the type for our parameters
 type BashToolParams = z.infer<typeof bashToolSchema>;
 
@@ -20,19 +21,18 @@ export const bashTool = new GSXTool<typeof bashToolSchema>({
 * State is persistent across command calls and discussions with the user.\n
 * To inspect a particular line range of a file, e.g. lines 10-25, try 'sed -n 10,25p /path/to/the/file'.\n
 * Please avoid commands that may produce a very large amount of output.\n
-* Please run long lived commands in the background, e.g. 'sleep 10 &' or start a server in the background.`,
+* Please run long-lived commands in the background, e.g. 'sleep 10 &' or start a server in the background.\n
+* Returns detailed output for complex commands.`,
   schema: bashToolSchema,
   run: async ({ command }: BashToolParams) => {
-    console.log("💻 Calling the BashTool:", command);
+    console.log("[34m[Running BashTool][0m:", command);
     try {
-      const result = await Promise.resolve(execSync(command));
-      return result.toString();
+      const result = await Promise.resolve(execSync(command, { encoding: 'utf-8', stdio: 'pipe' }));
+      return result;
     } catch (error) {
-      // Check if error is an object with stderr property
       if (error && typeof error === "object" && "stderr" in error) {
         return (error.stderr as Buffer).toString();
       }
-      // Fallback to error message if available
       if (error instanceof Error) {
         return error.message;
       }

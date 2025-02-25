@@ -29,12 +29,13 @@ You have access to bash commands to explore the codebase:
 - Check file existence
 - Analyze project structure
 
-First, explore the codebase to understand what needs to be changed.
-Then create a clear, descriptive plan that outlines:
-1. What files need to be modified
-2. What changes need to be made
-3. How we'll validate the changes
-4. What the expected outcome will be
+Your task is to:
+1. Explore the codebase to understand what needs to be changed
+2. Create a comprehensive plan that outlines:
+   - What files need to be modified
+   - What changes need to be made
+   - How we'll validate the changes
+   - What the expected outcome will be
 
 Focus on WHAT needs to be done, not HOW to do it.
 Be specific about files and changes, but don't include actual implementation details.

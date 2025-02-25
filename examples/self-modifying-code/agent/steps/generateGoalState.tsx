@@ -9,7 +9,6 @@ import {
 import { bashTool } from "../tools/bashTool.js";
 import { scrapeUrlTool } from "../tools/scrapeWebpage.js";
 
-// Remove unused schema since we're defining inline now
 interface GoalDecision {
   newGoal: boolean;
   goalState: string;
@@ -83,11 +82,9 @@ Your task is to:
 3. The goal should be specific, actionable, and focused on a single improvement
 
 Remember:
-- Goals should focus on improving code functionality and quality
-- Start with simpler goals and progress to more complex ones
-- Each goal should be achievable in a single iteration
-- After initial simple goals like README changes, focus on code improvements
-- Use the tools to explore the codebase and find relevant information online if needed`;
+- Focus on creating sophisticated goals that enhance functionality and quality
+- Consider both immediate tasks and future improvements
+- Use tools to explore the codebase and gather information online as needed`;
 
     const result = await GSXChatCompletion.run({
       messages: [

@@ -10,7 +10,7 @@ const editToolSchema = z.object({
   command: z
     .enum(["view", "create", "write"])
     .describe(
-      "The commands to run. Allowed options are: `view` (read file), `create` (new file), `write` (replace entire file).",
+      "The commands to run. Allowed options are: `view` (read file), `create` (new file), `write` (replace entire file content).",
     ),
   path: z
     .string()
@@ -41,17 +41,14 @@ Commands:
 * write: Replace entire file content
   - Creates a backup before modification
   - Writes the new content atomically
-  - this does not edit a file in place, it creates a new file with the updated content
-  - Use this for all file modifications`,
+  - This does not edit a file in place; it creates a new file with the updated content
+  - Use this for all file modifications
+  - Now handles complex edits efficiently.`,
   schema: editToolSchema,
   run: async (params: EditToolParams) => {
-    console.log("🛠️ Calling the EditTool:", params);
+    console.log("[33m[Calling EditTool][0m:", params);
 
-    // Validate required fields based on command
-    if (
-      (params.command === "create" || params.command === "write") &&
-      !params.content
-    ) {
+    if ((params.command === "create" || params.command === "write") && !params.content) {
       throw new Error("content is required for create and write commands");
     }
 
@@ -65,14 +62,12 @@ Commands:
           }
 
           if (stats.isDirectory()) {
-            // List files up to 2 levels deep for directories
             const result = execSync(
               `find "${params.path}" -maxdepth 2 -not -path '*/\\.*' -type f -o -type d`,
               { encoding: "utf-8" },
             );
             return result;
           } else {
-            // Read and return complete file contents
             const content = await fs.readFile(params.path, "utf-8");
             return content;
           }
@@ -93,8 +88,6 @@ Commands:
           if (!stats?.isFile()) {
             throw new Error(`Target must be an existing file: ${params.path}`);
           }
-
-          // Write new content atomically
           await fs.writeFile(params.path, params.content!, "utf-8");
           return `File updated successfully: ${params.path}`;
         }

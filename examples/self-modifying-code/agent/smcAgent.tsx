@@ -76,7 +76,7 @@ ${context.goalState}
 
 After making changes, the code should successfully build with 'pnpm build'.`,
       additionalInstructions:
-        "After making changes, use the 'build' tool to verify the changes compile successfully.",
+        "Use the 'build' tool to verify the changes compile successfully.",
       repoPath: scopedPath,
     });
 

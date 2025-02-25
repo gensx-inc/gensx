@@ -29,13 +29,22 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
     const workspace = useWorkspace();
     const buildTool = getBuildTool(workspace);
 
-    // First run with tools to make the changes
+    // Enhanced decision-making process
+    const enhancedPrompt = `You are a highly capable AI designed to autonomously update codebases with advanced decision-making capabilities.
+
+Your task is to:
+1. Consider short-term and long-term goals
+2. Handle complex tasks and edge cases effectively
+3. Make informed decisions based on detailed analysis
+
+You have access to tools like bash for exploring and editing files, and scrapeUrl for online information.`;
+
+    // Run with tools to make the changes
     const toolResult = await GSXChatCompletion.run({
       messages: [
         {
           role: "system",
-          content:
-            "You are a helpful assistant designed to act as an expert software engineer designed to autonomously update codebases based on user instructions.",
+          content: enhancedPrompt,
         },
         {
           role: "user",
@@ -53,28 +62,16 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
 
     const toolOutput = toolResult.choices[0]?.message?.content ?? "";
 
-    // Then coerce the output into our structured format
+    // Structure the output
     return GSXChatCompletion.run({
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that takes the output from a code modification session and structures it into a clear summary and success state.
-
-The output should be structured as:
-{
-  "summary": "A clear description of what changes were made or attempted",
-  "success": true/false  // true if changes were made and build succeeded, false if there were any failures
-}
-
-Look for:
-- What files were modified
-- Whether the changes were successful
-- If the build succeeded
-- Any errors or issues encountered`,
+          content: `You are a helpful assistant that structures outputs from code modification sessions into clear summaries.`,
         },
         {
           role: "user",
-          content: `Please analyze this code modification output and provide a structured summary:
+          content: `Please analyze the code modification output and provide a structured summary:
 
 ${toolOutput}`,
         },
@@ -86,11 +83,7 @@ ${toolOutput}`,
   },
 );
 
-export function getCodeAgentPrompt(
-  task: string,
-  additionalInstructions: string,
-  repoPath: string,
-) {
+function getCodeAgentPrompt(task: string, additionalInstructions: string, repoPath: string) {
   return `<uploaded_files>
 ${repoPath}
 </uploaded_files>
@@ -108,16 +101,9 @@ Your task is to make the minimal necessary changes to the files in the ${repoPat
 Follow these steps:
 1. First, explore the repo to understand its structure and identify the files that need to be modified
 2. Make the necessary code changes using the editTool
-3. Feel free to use the scrapeWebpageTool to find relevant information online if needed
-4. Use the buildTool to verify your changes compile successfully
-5. If the build fails, examine the error output and fix any issues
-6. Once the build succeeds, verify that your changes meet all the requirements
+3. Use the buildTool to verify your changes compile successfully
+4. If the build fails, examine the error output and fix any issues
+5. Verify that your changes meet all the requirements
 
-You have access to some tools that may be helpful:
-- bash: For exploring the codebase and examining files
-- editor: For making code changes
-- build: For verifying changes compile successfully with 'pnpm build'
-- scrapeUrl: For finding relevant information online
-
-Be thorough in your thinking and explain your changes in the summary. Make sure to verify the build succeeds before marking success as true.`;
+You have access to tools for exploring the codebase and making changes.`;
 }
