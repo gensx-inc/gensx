@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.8](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.7...gensx-openai-v0.1.8) (2025-02-25)
+
+
+### 🐛 Bug Fixes
+
+* Fix type inference got GSXChatCompletion. ([#346](https://github.com/gensx-inc/gensx/issues/346)) ([e0865b6](https://github.com/gensx-inc/gensx/commit/e0865b6ab5bb1911ccf76f462865981e5bb33443))
+* making structured outputs work with tools ([#337](https://github.com/gensx-inc/gensx/issues/337)) ([b80f1b4](https://github.com/gensx-inc/gensx/commit/b80f1b4f862532ff794cd9cbe22821f5a982661b))
+* Resolve GsxArray ([#343](https://github.com/gensx-inc/gensx/issues/343)) ([3a582b3](https://github.com/gensx-inc/gensx/commit/3a582b305d5a828b783a73c5cef4eb551645a275))
+
 ## [0.1.7](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.6...gensx-openai-v0.1.7) (2025-02-19)
 
 
