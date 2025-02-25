@@ -207,7 +207,7 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
                           {(validated) => (
                             <CommitResults success={validated}>
                               {(committed) => ({
-                                success: validated && committed,
+                                success: committed,
                                 modified: true,
                               })}
                             </CommitResults>
