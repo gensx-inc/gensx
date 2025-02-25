@@ -5,12 +5,11 @@ import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
   ChatCompletionCreateParamsNonStreaming,
-  ChatCompletionMessageParam,
 } from "openai/resources/chat/completions";
 import { Stream } from "openai/streaming";
 
 import { OpenAIChatCompletion } from "./openai.js";
-import { GSXTool, ToolExecutor } from "./tools.js";
+import { GSXTool, toolExecutorImpl } from "./tools.js";
 
 type StreamCompletionProps = Omit<
   ChatCompletionCreateParamsNonStreaming,
@@ -47,14 +46,10 @@ export const streamCompletionImpl = async (
     }
 
     // Execute tools
-    const toolResponses = await gsx.execute<ChatCompletionMessageParam[]>(
-      <ToolExecutor
-        tools={tools}
-        toolCalls={toolCalls}
-        messages={[...rest.messages, completion.choices[0].message]}
-        model={rest.model}
-      />,
-    );
+    const toolResponses = await toolExecutorImpl({
+      tools,
+      toolCalls,
+    });
 
     // Make final streaming call with all messages
     return gsx.execute<Stream<ChatCompletionChunk>>(

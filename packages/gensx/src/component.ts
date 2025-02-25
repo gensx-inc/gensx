@@ -28,12 +28,17 @@ export type WithComponentOpts<P> = P & {
   componentOpts?: ComponentOpts;
 };
 
-export function Component<P, O>(
+export function Component<P extends object & { length?: never }, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
   defaultOpts?: DefaultOpts,
 ): GsxComponent<WithComponentOpts<P>, O> {
   const GsxComponent = async (props: WithComponentOpts<P>) => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (typeof props !== "object" || Array.isArray(props) || props === null) {
+      throw new Error(`Component ${name} received non-object props.`);
+    }
+
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;

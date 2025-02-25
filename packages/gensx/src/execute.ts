@@ -54,7 +54,10 @@ export function Workflow<P extends { stream?: boolean }>(
 };
 
 // Overload for GsxComponent or GsxStreamComponent
-export function Workflow<P extends { stream?: boolean }, O>(
+export function Workflow<
+  P extends object & { stream?: boolean; length?: never },
+  O,
+>(
   name: string,
   component: GsxComponent<P, O> | GsxStreamComponent<P>,
   opts?: {
