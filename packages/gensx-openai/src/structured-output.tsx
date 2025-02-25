@@ -58,25 +58,29 @@ export const structuredOutputImpl = async <T,>(
         />,
       );
 
-      const toolCalls = completion.choices[0].message.tool_calls;
+      let toolCalls = completion.choices[0].message.tool_calls;
       // If we have tool calls, execute them and make another completion
-      while (toolCalls?.length && tools) {
-        const toolResponses = await toolExecutorImpl({
-          tools,
-          toolCalls,
-        });
+      if (toolCalls?.length && tools) {
+        while (toolCalls?.length) {
+          const toolResponses = await toolExecutorImpl({
+            tools,
+            toolCalls,
+          });
 
-        currentMessages.push(completion.choices[0].message);
-        currentMessages.push(...toolResponses);
+          currentMessages.push(completion.choices[0].message);
+          currentMessages.push(...toolResponses);
 
-        completion = await gsx.execute<ChatCompletionOutput>(
-          <OpenAIChatCompletion
-            {...rest}
-            messages={currentMessages}
-            tools={tools.map((t) => t.definition)}
-            response_format={zodResponseFormat(outputSchema, "output_schema")}
-          />,
-        );
+          completion = await gsx.execute<ChatCompletionOutput>(
+            <OpenAIChatCompletion
+              {...rest}
+              messages={currentMessages}
+              tools={tools.map((t) => t.definition)}
+              response_format={zodResponseFormat(outputSchema, "output_schema")}
+            />,
+          );
+
+          toolCalls = completion.choices[0].message.tool_calls;
+        }
 
         // Parse and validate the final result
         const content = completion.choices[0]?.message.content;
