@@ -19,7 +19,7 @@ export type StreamingProps = Omit<
   "stream" | "tools"
 > & {
   stream: true;
-  tools?: GSXTool<any>[];
+  tools?: never; // Tools cannot be used with streaming
 };
 
 export type StructuredProps<O = unknown> = Omit<
@@ -60,12 +60,22 @@ export type GSXChatCompletionResult = Message & {
 export const gsxChatCompletionImpl = async <P extends GSXChatCompletionProps>(
   props: P,
 ): Promise<GSXChatCompletionOutput<P>> => {
+  // Validate that tools and streaming are not used together
+  // This should never happen due to type constraints, but we check at runtime as well
+  if (props.stream === true && "tools" in props) {
+    const toolsArray = props.tools as unknown as GSXTool<any>[] | undefined;
+    if (Array.isArray(toolsArray) && toolsArray.length > 0) {
+      throw new Error(
+        "Tools cannot be used with streaming. Please use either tools or streaming, but not both.",
+      );
+    }
+  }
+
   // Handle streaming case
   if (props.stream) {
-    const { tools, ...rest } = props;
+    const { ...rest } = props;
     return streamCompletionImpl({
       ...rest,
-      tools,
       stream: true,
     }) as GSXChatCompletionOutput<P>;
   }
@@ -118,8 +128,24 @@ export type ChatCompletionProps = Omit<
 export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
   "ChatCompletion",
   async (props) => {
+    // Validate that tools and streaming are not used together
+    if (
+      props.stream === true &&
+      Array.isArray(props.tools) &&
+      props.tools.length > 0
+    ) {
+      throw new Error(
+        "Tools cannot be used with streaming. Please use either tools or streaming, but not both.",
+      );
+    }
+
     if (props.stream) {
-      const stream = await gsxChatCompletionImpl({ ...props, stream: true });
+      // Remove tools when streaming
+      const { tools, ...restProps } = props;
+      const stream = await gsxChatCompletionImpl({
+        ...restProps,
+        stream: true,
+      });
 
       // Transform Stream<ChatCompletionChunk> into AsyncIterableIterator<string>
       const generateTokens = async function* () {
