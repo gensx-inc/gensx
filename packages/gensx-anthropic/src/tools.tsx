@@ -76,7 +76,7 @@ interface ToolExecutorProps {
   toolCalls: NonNullable<ToolUseBlock>[];
 }
 
-type ToolExecutorOutput = MessageParam[];
+type ToolExecutorOutput = MessageParam;
 
 // Tools completion component
 type ToolsCompletionProps = Omit<
@@ -97,7 +97,7 @@ export const toolExecutorImpl = async (
   const { tools, toolCalls } = props;
 
   // Execute each tool call
-  return await Promise.all(
+  const toolContents = await Promise.all(
     toolCalls.map(async (toolCall) => {
       const tool = tools.find((t) => t.name === toolCall.name);
       if (!tool) {
@@ -112,15 +112,9 @@ export const toolExecutorImpl = async (
         }
         const result = await tool.run(validated.data);
         return {
-          role: "user",
-          content: [
-            {
-              type: "tool_result",
-              tool_use_id: toolCall.id,
-              content:
-                typeof result === "string" ? result : JSON.stringify(result),
-            },
-          ],
+          type: "tool_result" as const,
+          tool_use_id: toolCall.id,
+          content: typeof result === "string" ? result : JSON.stringify(result),
         };
       } catch (e) {
         throw new Error(
@@ -129,6 +123,8 @@ export const toolExecutorImpl = async (
       }
     }),
   );
+
+  return { role: "user", content: toolContents };
 };
 
 export const ToolExecutor = gsx.Component<
@@ -171,8 +167,7 @@ export const toolsCompletionImpl = async (
     });
 
     // Add tool responses to the conversation
-
-    currentMessages.push(...toolResponses);
+    currentMessages.push(toolResponses);
 
     // Make next completion
     completion = await gsx.execute<Message>(

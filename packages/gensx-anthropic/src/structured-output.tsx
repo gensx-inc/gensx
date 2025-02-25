@@ -95,7 +95,7 @@ export const structuredOutputImpl = async <T,>(
 
       // If we have tool calls, execute them and make another completion unless the output tool was called
       if (toolCalls.length > 0 && tools.length > 0 && !outputToolCall) {
-        while (completion.stop_reason !== "tool_use") {
+        while (!outputToolCall && toolCalls.length > 0) {
           const toolResponses = await toolExecutorImpl({
             tools,
             toolCalls,
@@ -105,7 +105,7 @@ export const structuredOutputImpl = async <T,>(
             role: "assistant",
             content: completion.content,
           });
-          currentMessages.push(...toolResponses);
+          currentMessages.push(toolResponses);
 
           completion = await gsx.execute<Message>(
             <AnthropicChatCompletion
@@ -133,10 +133,6 @@ export const structuredOutputImpl = async <T,>(
 
         const structuredOutput = outputToolCall.input as { output: unknown };
         lastResponse = JSON.stringify(structuredOutput);
-        console.info("structuredOutput!!!");
-        console.info(structuredOutput);
-        console.info(JSON.stringify(structuredOutput));
-        console.info(typeof structuredOutput);
         // Extract the output property from the structured output
         const outputValue = structuredOutput.output;
         const validated = outputSchema.safeParse(outputValue);
@@ -155,10 +151,6 @@ export const structuredOutputImpl = async <T,>(
 
       const structuredOutput = outputToolCall.input as { output: unknown };
       lastResponse = JSON.stringify(structuredOutput);
-      console.info("structuredOutput!!!");
-      console.info(structuredOutput);
-      console.info(JSON.stringify(structuredOutput));
-      console.info(typeof structuredOutput);
       // Extract the output property from the structured output
       const outputValue = structuredOutput.output;
       const validated = outputSchema.safeParse(outputValue);

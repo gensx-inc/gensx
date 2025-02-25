@@ -304,6 +304,121 @@ Please explain your thinking as you go through this analysis.`,
   return workflow.run({}, { printUrl: true });
 }
 
+function toolsWithStructuredOutput() {
+  // Trash details tool
+  const trashDetailsSchema = z.object({
+    name: z.string(),
+  });
+
+  const trashDetailsTool = new GSXTool({
+    name: "get_trash_details",
+    description: "Get details on trash bins by name",
+    schema: trashDetailsSchema,
+    run: async ({ name }) => {
+      console.log("Getting details for the trash bin called", name);
+
+      // Array of possible funny reviews
+      const possibleReviews = [
+        "Five stars! The metallic finish really complements my night vision goggles.",
+        "This bin has the perfect height-to-tip ratio. Trust me, I'm a professional.",
+        "The lid squeaks just right - nature's dinner bell!",
+        "Premium dining establishment with excellent late-night service.",
+        "The vintage 2023 garbage collection is *chef's kiss*.",
+        "A bit pretentious for my taste, but the food scraps are to die for.",
+        "Best dumpster in the neighborhood, but don't tell the other raccoons!",
+      ];
+
+      // Array of possible trash finds
+      const possibleFinds = [
+        "half-eaten avocado toast",
+        "vintage pizza crust (2 days old)",
+        "artisanal coffee grounds",
+        "slightly used takeout container",
+        "premium banana peel",
+        "gourmet sandwich wrapper",
+        "fancy aluminum foil ball",
+        "organic vegetable peels",
+        "designer paper bag",
+        "boutique cardboard box",
+        "locally-sourced leftovers",
+        "free-range chicken bones",
+        "sustainable food scraps",
+      ];
+
+      // Generate random rating between 3.5 and 5
+      const rating = (Math.random() * 1.5 + 3.5).toFixed(1);
+
+      // Get random review
+      const review =
+        possibleReviews[Math.floor(Math.random() * possibleReviews.length)];
+
+      // Get 2-4 random unique finds
+      const numFinds = Math.floor(Math.random() * 3) + 2;
+      const shuffledFinds = [...possibleFinds].sort(() => Math.random() - 0.5);
+      const bestFinds = shuffledFinds.slice(0, numFinds);
+
+      const trashDetails = {
+        name,
+        rating: parseFloat(rating),
+        review,
+        bestFinds,
+      };
+      return Promise.resolve(trashDetails);
+    },
+  });
+
+  // Define a schema for rating trash bins
+  const trashBinReportSchema = z.object({
+    highlights: z.array(
+      z.object({
+        location: z
+          .string()
+          .describe("Location of the trash bin being highlighted"),
+        commentary: z
+          .string()
+          .describe(
+            "A brief description of why the bin is a highlight and why it's a good bin",
+          ),
+        bestFinds: z
+          .array(z.string())
+          .describe("List of the best items found in this bin"),
+      }),
+    ),
+    binOfTheWeek: z.string().describe("The best trash bin in the neighborhood"),
+  });
+
+  type TrashBinReport = z.infer<typeof trashBinReportSchema>;
+
+  const ToolsWithStructuredOutputWorkflow = gsx.Component<{}, TrashBinReport>(
+    "ToolsWithStructuredOutputWorkflow",
+    () => (
+      <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
+        <GSXChatCompletion
+          system="you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun."
+          messages={[
+            {
+              role: "user",
+              content: `Please research the trash bins in the neighborhood and then create a report on the best trash bins in the neighborhood. be controversial`,
+            },
+          ]}
+          model="claude-3-5-sonnet-latest"
+          temperature={0.7}
+          tools={[trashDetailsTool]}
+          outputSchema={trashBinReportSchema}
+          max_tokens={1000}
+        />
+      </AnthropicProvider>
+    ),
+  );
+
+  const workflow = gsx.Workflow(
+    "ToolsWithStructuredOutputWorkflow",
+    ToolsWithStructuredOutputWorkflow,
+  );
+
+  return workflow.run({}, { printUrl: true });
+}
+
 async function main() {
   type Example =
     | "basicCompletion"
@@ -311,9 +426,10 @@ async function main() {
     | "tools"
     | "toolsStreaming"
     | "structuredOutput"
-    | "multiStepTools";
+    | "multiStepTools"
+    | "toolsWithStructuredOutput";
 
-  const example: Example = "structuredOutput";
+  const example: Example = "toolsWithStructuredOutput";
 
   switch (example as Example) {
     case "basicCompletion":
@@ -359,6 +475,12 @@ async function main() {
       console.log("multi-step tools completion 🔥");
       const multiStepResults = await multiStepTools();
       console.log(JSON.stringify(multiStepResults, null, 2));
+      break;
+
+    case "toolsWithStructuredOutput":
+      console.log("tools with structured output ���");
+      const result = await toolsWithStructuredOutput();
+      console.log(JSON.stringify(result, null, 2));
       break;
 
     default:

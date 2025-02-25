@@ -3,7 +3,6 @@
 import {
   Message,
   MessageCreateParamsNonStreaming,
-  MessageParam,
   RawMessageStreamEvent,
   ToolUseBlock,
 } from "@anthropic-ai/sdk/resources/messages";
@@ -52,10 +51,10 @@ export const streamCompletionImpl = async (
     );
 
     // Execute tools
-    const toolResponses = (await toolExecutorImpl({
+    const toolResponses = await toolExecutorImpl({
       tools,
       toolCalls,
-    })) as MessageParam[];
+    });
 
     // Make final streaming call with all messages
     return gsx.execute<Stream<RawMessageStreamEvent>>(
@@ -64,7 +63,7 @@ export const streamCompletionImpl = async (
         messages={[
           ...rest.messages,
           { role: "assistant", content: completion.content },
-          ...toolResponses,
+          toolResponses,
         ]}
         stream={true}
         tools={tools.map((t) => t.definition)}
