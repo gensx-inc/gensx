@@ -19,7 +19,7 @@ This example demonstrates a self-modifying code agent. The agent:
 pnpm install
 
 # Run the example
-pnpm run start
+OPENAI_API_KEY=<api key> FIRECRAWL_API_KEY=<api key> pnpm run start
 ```
 
 ## Killing all agents

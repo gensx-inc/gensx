@@ -15,13 +15,7 @@ export const GeneratePlan = gsx.Component<GeneratePlanProps, string>(
   async () => {
     const context = useWorkspaceContext();
 
-    // Get the plan from OpenAI
-    const plan = await gsx.execute<string>(
-      <ChatCompletion
-        messages={[
-          {
-            role: "system",
-            content: `You are an AI agent tasked with creating a plan to achieve a goal in a codebase.
+    const systemPrompt = `You are an AI agent tasked with creating a plan to achieve a goal in a codebase.
 
 CURRENT GOAL:
 "${context.goalState}"
@@ -53,19 +47,25 @@ For example, if modifying a README:
 4. Ensure the new section flows well with the existing content
 5. Verify the markdown formatting is correct"
 
-Use the bash tool to explore the codebase before creating your plan, and the scrapeUrl tool to find relevant information online if needed.`,
-          },
-          {
-            role: "user",
-            content:
-              "Explore the codebase and create a plan to achieve the current goal.",
-          },
-        ]}
-        model="gpt-4"
-        temperature={0.7}
-        tools={[bashTool, scrapeUrlTool]}
-      />,
-    );
+Use the bash tool to explore the codebase before creating your plan, and the scrapeUrl tool to find relevant information online if needed.`;
+
+    // Get the plan from OpenAI
+    const plan = await ChatCompletion.run({
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content:
+            "Explore the codebase and create a plan to achieve the current goal.",
+        },
+      ],
+      model: "gpt-4",
+      temperature: 0.7,
+      tools: [bashTool, scrapeUrlTool],
+    });
 
     // Add the plan to history
     await updateWorkspaceContext({
