@@ -36,11 +36,11 @@ jobs:
         with:
           version: ${{ matrix.node-version }}
 
-      - name: Test types 🧪
-        run: pnpm test:types
-
       - name: Build 📦
         run: pnpm build
+
+      - name: Test types 🧪
+        run: pnpm test:types
 
       - name: Run tests 🧪
         run: pnpm test
