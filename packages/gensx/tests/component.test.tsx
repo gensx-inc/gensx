@@ -3,8 +3,12 @@ import { setTimeout } from "timers/promises";
 import { expect, suite, test } from "vitest";
 
 import { gsx } from "@/index.js";
+import { Streamable } from "@/types.js";
 
-import { executeWithCheckpoints } from "./utils/executeWithCheckpoints";
+import {
+  executeWithCheckpoints,
+  executeWorkflowWithCheckpoints,
+} from "./utils/executeWithCheckpoints";
 
 suite("component", () => {
   test("can create anonymous component", async () => {
@@ -169,5 +173,246 @@ suite("component", () => {
     }
     expect(consumed).toBe(true);
     expect(iteratorConsumed).toBe(true);
+  });
+
+  suite("Component.run", () => {
+    test("executes component", async () => {
+      const TestComponent = gsx.Component<{ input: string }, string>(
+        "TestComponent",
+        async ({ input }) => {
+          await setTimeout(0);
+          return `Hello ${input}`;
+        },
+      );
+
+      const result: string = await TestComponent.run({ input: "World" });
+      expect(result).toBe("Hello World");
+    });
+
+    test("complex props", async () => {
+      const ComplexComponent = gsx.Component<
+        { numbers: number[]; config: { enabled: boolean } },
+        { sum: number; enabled: boolean }
+      >("ComplexComponent", async ({ numbers, config }) => {
+        await setTimeout(0);
+        return {
+          sum: numbers.reduce((a, b) => a + b, 0),
+          enabled: config.enabled,
+        };
+      });
+
+      const result = await ComplexComponent.run({
+        numbers: [1, 2, 3, 4],
+        config: { enabled: true },
+      });
+
+      expect(result).toEqual({ sum: 10, enabled: true });
+    });
+
+    test("uses componentOpts", async () => {
+      const NamedComponent = gsx.Component<{ value: string }, string>(
+        "OriginalName",
+        async ({ value }) => {
+          await setTimeout(0);
+          return value;
+        },
+      );
+
+      const WrapperComponent = gsx.Component<{ input: string }, string>(
+        "WrapperComponent",
+        async ({ input }) => {
+          const result = await NamedComponent.run({
+            value: input,
+            componentOpts: { name: "RenamedComponent" },
+          });
+          return result;
+        },
+      );
+
+      const { result, checkpoints } =
+        await executeWorkflowWithCheckpoints<string>(
+          <WrapperComponent input="test" />,
+        );
+
+      expect(result).toBe("test");
+      expect(checkpoints).toBeDefined();
+      const checkpoint = Object.values(checkpoints)[0];
+      expect(checkpoint.componentName).toBe("WorkflowComponentWrapper");
+      expect(checkpoint.children[0].componentName).toBe("WrapperComponent");
+      expect(checkpoint.children[0].children[0].componentName).toBe(
+        "RenamedComponent",
+      );
+    });
+
+    test("executes inside a component", async () => {
+      const TestComponent = gsx.Component<
+        { input: string },
+        { processed: string }
+      >("TestComponent", async ({ input }) => {
+        await setTimeout(0);
+        return { processed: input.toUpperCase() };
+      });
+
+      const WrapperComponent = gsx.Component<{ input: string }, string>(
+        "WrapperComponent",
+        async ({ input }) => {
+          const result = await TestComponent.run({ input });
+          return result.processed;
+        },
+      );
+
+      const { result, checkpoints } =
+        await executeWorkflowWithCheckpoints<string>(
+          <WrapperComponent input="test" />,
+        );
+
+      expect(result).toEqual("TEST");
+      expect(checkpoints).toBeDefined();
+      const checkpoint = Object.values(checkpoints)[0];
+      expect(checkpoint.componentName).toBe("WorkflowComponentWrapper");
+      expect(checkpoint.children[0].componentName).toBe("WrapperComponent");
+      expect(checkpoint.children[0].children[0].componentName).toBe(
+        "TestComponent",
+      );
+    });
+  });
+
+  suite("StreamComponent.run", () => {
+    test("executes stream component in non-streaming mode", async () => {
+      const TestStreamComponent = gsx.StreamComponent<{ input: string }>(
+        "TestStreamComponent",
+        async function* ({ input }) {
+          await setTimeout(0);
+          yield "Hello ";
+          await setTimeout(0);
+          yield input;
+        },
+      );
+
+      // The result should be typed as string when stream is not true
+      const result = await TestStreamComponent.run({ input: "World" });
+      expect(typeof result).toBe("string");
+      expect(result).toBe("Hello World");
+    });
+
+    test("executes stream component in streaming mode", async () => {
+      const TestStreamComponent = gsx.StreamComponent<{ input: string }>(
+        "TestStreamComponent",
+        async function* ({ input }) {
+          await setTimeout(0);
+          yield "Hello ";
+          await setTimeout(0);
+          yield input;
+        },
+      );
+
+      // The result should be typed as Streamable when stream is true
+      const streamResult = await TestStreamComponent.run({
+        input: "World",
+        stream: true,
+      });
+
+      // Check if it's an async iterable
+      expect(streamResult).toBeDefined();
+
+      // Collect streaming results
+      let streamedContent = "";
+      for await (const token of streamResult) {
+        streamedContent += token;
+      }
+
+      expect(streamedContent).toBe("Hello World");
+    });
+
+    test("uses componentOpts", async () => {
+      const TestStreamComponent = gsx.StreamComponent<{ input: string }>(
+        "OriginalStreamName",
+        async function* ({ input }) {
+          await setTimeout(0);
+          yield "Hello ";
+          await setTimeout(0);
+          yield input;
+        },
+      );
+
+      const WrapperComponent = gsx.Component<{ input: string }, string>(
+        "WrapperComponent",
+        async ({ input }) => {
+          // No need for type assertion since it's correctly typed as string
+          const result = await TestStreamComponent.run({
+            input,
+            componentOpts: { name: "RenamedStreamComponent" },
+          });
+          return result;
+        },
+      );
+
+      const { result, checkpoints } =
+        await executeWorkflowWithCheckpoints<string>(
+          <WrapperComponent input="World" />,
+        );
+
+      expect(result).toBe("Hello World");
+      expect(checkpoints).toBeDefined();
+      const checkpoint = Object.values(checkpoints)[0];
+      expect(checkpoint.componentName).toBe("WorkflowComponentWrapper");
+      expect(checkpoint.children[0].componentName).toBe("WrapperComponent");
+      expect(checkpoint.children[0].children[0].componentName).toBe(
+        "RenamedStreamComponent",
+      );
+    });
+
+    test("can be used inside another component", async () => {
+      const TestStreamComponent = gsx.StreamComponent<{ input: string }>(
+        "TestStreamComponent",
+        async function* ({ input }) {
+          await setTimeout(0);
+          yield "Hello ";
+          await setTimeout(0);
+          yield input;
+          await setTimeout(0);
+          yield "!";
+        },
+      );
+
+      const WrapperComponent = gsx.Component<
+        { input: string; useStream?: boolean },
+        string | Streamable
+      >("WrapperComponent", async ({ input, useStream }) => {
+        if (useStream) {
+          // Correctly typed as Streamable
+          return await TestStreamComponent.run({
+            input,
+            stream: true,
+          });
+        }
+        // Correctly typed as string
+        return await TestStreamComponent.run({ input });
+      });
+
+      // Test non-streaming mode
+      const { result: nonStreamResult } =
+        await executeWorkflowWithCheckpoints<string>(
+          <WrapperComponent input="World" />,
+        );
+      expect(nonStreamResult).toBe("Hello World!");
+
+      // Test streaming mode
+      const { result: streamResult } =
+        await executeWorkflowWithCheckpoints<Streamable>(
+          <WrapperComponent input="World" useStream={true} />,
+        );
+
+      if (streamResult) {
+        let streamedContent = "";
+        for await (const token of streamResult) {
+          streamedContent += token;
+        }
+
+        expect(streamedContent).toBe("Hello World!");
+      } else {
+        throw new Error("Stream result is undefined");
+      }
+    });
   });
 });

@@ -10,7 +10,7 @@ import type {
 import { serializeError } from "serialize-error";
 
 import { getCurrentContext } from "./context";
-import { JSX } from "./jsx-runtime";
+import { JSX, jsx } from "./jsx-runtime";
 import { resolveDeep } from "./resolve";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
@@ -93,6 +93,10 @@ export function Component<P extends object & { length?: never }, O>(
     }
   };
 
+  GsxComponent.run = (props: WithComponentOpts<P>) => {
+    return jsx(GsxComponent, props)();
+  };
+
   if (name) {
     Object.defineProperty(GsxComponent, "name", {
       value: name,
@@ -114,9 +118,9 @@ export function StreamComponent<P>(
   ) => MaybePromise<Streamable | JSX.Element>,
   defaultOpts?: DefaultOpts,
 ): GsxStreamComponent<WithComponentOpts<P & { stream?: boolean }>> {
-  const GsxStreamComponent: GsxStreamComponent<
-    WithComponentOpts<P & { stream?: boolean }>
-  > = async (props) => {
+  const GsxStreamComponent = async (
+    props: WithComponentOpts<P & { stream?: boolean }>,
+  ) => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -201,6 +205,12 @@ export function StreamComponent<P>(
       }
       throw error;
     }
+  };
+
+  GsxStreamComponent.run = <T extends P & { stream?: boolean }>(
+    props: WithComponentOpts<T>,
+  ) => {
+    return jsx(GsxStreamComponent, props)();
   };
 
   if (name) {
