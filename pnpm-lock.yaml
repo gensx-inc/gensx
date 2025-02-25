@@ -45,6 +45,34 @@ importers:
         specifier: ^5.7.2
         version: 5.7.3
 
+  examples/anthropic:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.37.0
+        version: 0.37.0
+      '@gensx/anthropic':
+        specifier: workspace:*
+        version: link:../../packages/gensx-anthropic
+      gensx:
+        specifier: workspace:*
+        version: link:../../packages/gensx
+      zod:
+        specifier: ^3.24.1
+        version: 3.24.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.11
+        version: 20.17.11
+      nodemon:
+        specifier: ^3.1.9
+        version: 3.1.9
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.3
+
   examples/blogWriter:
     dependencies:
       '@gensx/openai':
@@ -437,6 +465,37 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
 
+  packages/gensx-anthropic:
+    dependencies:
+      gensx:
+        specifier: workspace:>=0.2.1
+        version: link:../gensx
+      zod:
+        specifier: ^3.24.1
+        version: 3.24.1
+      zod-to-json-schema:
+        specifier: ^3.24.1
+        version: 3.24.1(zod@3.24.1)
+    devDependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.37.0
+        version: 0.37.0
+      '@types/node':
+        specifier: ^20.17.11
+        version: 20.17.11
+      '@vitest/coverage-istanbul':
+        specifier: ^2.1.8
+        version: 2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))
+      vite:
+        specifier: ^6.1.0
+        version: 6.1.0(@types/node@20.17.11)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.2)(yaml@2.7.0)
+      vite-plugin-dts:
+        specifier: ^4.5.0
+        version: 4.5.0(@types/node@20.17.11)(rollup@4.34.8)(typescript@5.7.3)(vite@6.1.0(@types/node@20.17.11)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.2)(yaml@2.7.0))
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
+
   packages/gensx-cli:
     dependencies:
       commander:
@@ -806,6 +865,9 @@ packages:
 
   '@antfu/utils@8.1.1':
     resolution: {integrity: sha512-Mex9nXf9vR6AhcXmMrlz/HVgYYZpVGJ6YlPgwl7UnaFpnshXs6EK/oa5Gpf3CzENMjkvEx2tQtntGnb7UtSTOQ==}
+
+  '@anthropic-ai/sdk@0.37.0':
+    resolution: {integrity: sha512-tHjX2YbkUBwEgg0JZU3EFSSAQPoK4qQR/NFYa8Vtzd5UAyXzZksCw2In69Rml4R/TyHPBfRYaLK35XiOe33pjw==}
 
   '@babel/code-frame@7.26.2':
     resolution: {integrity: sha512-RJlIHRueQgwWitWgF8OdFYGZX328Ax5BCemNGlqHfplnRT9ESi8JkFlvaVYbS+UubVY6dpv87Fs2u5M29iNFVQ==}
@@ -7019,6 +7081,18 @@ snapshots:
       tinyexec: 0.3.2
 
   '@antfu/utils@8.1.1': {}
+
+  '@anthropic-ai/sdk@0.37.0':
+    dependencies:
+      '@types/node': 18.19.68
+      '@types/node-fetch': 2.6.12
+      abort-controller: 3.0.0
+      agentkeepalive: 4.6.0
+      form-data-encoder: 1.7.2
+      formdata-node: 4.4.1
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
 
   '@babel/code-frame@7.26.2':
     dependencies:
