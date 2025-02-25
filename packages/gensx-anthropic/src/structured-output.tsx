@@ -29,14 +29,41 @@ type StructuredOutputProps<O = unknown> = Omit<
 
 type StructuredOutputOutput<T> = T;
 
+// Helper function to create an output schema tool
+const createOutputSchemaTool = <T,>(
+  outputSchema: z.ZodSchema<T>,
+): GSXTool<any> => {
+  // Create a wrapper schema that will contain the output
+  const wrapperSchema = z.object({
+    output: outputSchema,
+  });
+
+  return GSXTool.create({
+    name: "output_schema",
+    description:
+      "When producing a final output, always call this tool to produce a structured output",
+    schema: wrapperSchema,
+    run: async (args: z.infer<typeof wrapperSchema>) => {
+      // This is a passthrough function - no await needed
+      return Promise.resolve(args);
+    },
+  });
+};
+
 // Extracted implementation function
 export const structuredOutputImpl = async <T,>(
   props: StructuredOutputProps<T>,
 ): Promise<StructuredOutputOutput<T>> => {
-  const { outputSchema, tools, retry, messages, ...rest } = props;
+  const { outputSchema, tools = [], retry, messages, ...rest } = props;
   const maxAttempts = retry?.maxAttempts ?? 3;
   let lastError: Error | undefined;
   let lastResponse: string | undefined;
+
+  // Create a tool from the output schema
+  const outputSchemaTool = createOutputSchemaTool(outputSchema);
+
+  // Combine user-provided tools with the output schema tool
+  const allTools = [...tools, outputSchemaTool];
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -54,49 +81,65 @@ export const structuredOutputImpl = async <T,>(
         <AnthropicChatCompletion
           {...rest}
           messages={currentMessages}
-          tools={tools?.map((t) => t.definition)}
-          //response_format={zodResponseFormat(outputSchema, "output_schema")}
+          tools={allTools.map((t) => t.definition)}
+          tool_choice={{ type: "any" }}
         />,
       );
 
-      // If we have tool calls, execute them and make another completion
-      if (completion.stop_reason !== "tool_use" && tools) {
+      let toolCalls = completion.content.filter<ToolUseBlock>(
+        (content) => content.type === "tool_use",
+      );
+      let outputToolCall = toolCalls.find(
+        (call) => call.name === outputSchemaTool.name,
+      );
+
+      // If we have tool calls, execute them and make another completion unless the output tool was called
+      if (toolCalls.length > 0 && tools.length > 0 && !outputToolCall) {
         while (completion.stop_reason !== "tool_use") {
-          let toolCalls = completion.content.filter<ToolUseBlock>(
-            (content) => content.type === "tool_use",
-          );
           const toolResponses = await toolExecutorImpl({
             tools,
             toolCalls,
           });
 
-          currentMessages.push(completion);
+          currentMessages.push({
+            role: "assistant",
+            content: completion.content,
+          });
           currentMessages.push(...toolResponses);
 
           completion = await gsx.execute<Message>(
             <AnthropicChatCompletion
               {...rest}
               messages={currentMessages}
-              tools={tools.map((t) => t.definition)}
-              //response_format={zodResponseFormat(outputSchema, "output_schema")}
+              tools={allTools.map((t) => t.definition)}
+              tool_choice={{ type: "any" }}
             />,
           );
-        }
 
-        // Parse and validate the final result
-        const textBlock = completion.content.find(
-          (block) => block.type === "text",
-        );
-        const content = textBlock?.text;
-        if (!content) {
-          throw new Error(
-            "No content returned from Anthropic after tool execution",
+          toolCalls = completion.content.filter<ToolUseBlock>(
+            (content) => content.type === "tool_use",
+          );
+
+          outputToolCall = toolCalls.find(
+            (call) => call.name === outputSchemaTool.name,
           );
         }
 
-        lastResponse = content;
-        const parsed = JSON.parse(content) as unknown;
-        const validated = outputSchema.safeParse(parsed);
+        if (!outputToolCall?.input) {
+          throw new Error(
+            "No structured output returned from Anthropic after tool execution",
+          );
+        }
+
+        const structuredOutput = outputToolCall.input as { output: unknown };
+        lastResponse = JSON.stringify(structuredOutput);
+        console.info("structuredOutput!!!");
+        console.info(structuredOutput);
+        console.info(JSON.stringify(structuredOutput));
+        console.info(typeof structuredOutput);
+        // Extract the output property from the structured output
+        const outputValue = structuredOutput.output;
+        const validated = outputSchema.safeParse(outputValue);
         if (!validated.success) {
           throw new Error(
             `Invalid structured output: ${validated.error.message}`,
@@ -106,17 +149,20 @@ export const structuredOutputImpl = async <T,>(
       }
 
       // No tool calls, parse and validate the direct result
-      const textBlock = completion.content.find(
-        (block) => block.type === "text",
-      );
-      const content = textBlock?.text;
-      if (!content) {
-        throw new Error("No content returned from Anthropic");
+      if (!outputToolCall?.input) {
+        throw new Error("No structured output returned from Anthropic");
       }
 
-      lastResponse = content;
-      const parsed = JSON.parse(content) as unknown;
-      const validated = outputSchema.safeParse(parsed);
+      const structuredOutput = outputToolCall.input as { output: unknown };
+      lastResponse = JSON.stringify(structuredOutput);
+      console.info("structuredOutput!!!");
+      console.info(structuredOutput);
+      console.info(JSON.stringify(structuredOutput));
+      console.info(typeof structuredOutput);
+      // Extract the output property from the structured output
+      const outputValue = structuredOutput.output;
+      const validated = outputSchema.safeParse(outputValue);
+
       if (!validated.success) {
         throw new Error(
           `Invalid structured output: ${validated.error.message}`,

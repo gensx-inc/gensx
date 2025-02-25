@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-
 import {
   Message,
   MessageCreateParamsNonStreaming,
@@ -63,8 +61,13 @@ export const streamCompletionImpl = async (
     return gsx.execute<Stream<RawMessageStreamEvent>>(
       <AnthropicChatCompletion
         {...rest}
-        messages={[...rest.messages, completion, ...toolResponses]}
+        messages={[
+          ...rest.messages,
+          { role: "assistant", content: completion.content },
+          ...toolResponses,
+        ]}
         stream={true}
+        tools={tools.map((t) => t.definition)}
       />,
     );
   }

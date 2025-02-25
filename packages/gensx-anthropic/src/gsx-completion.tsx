@@ -93,7 +93,10 @@ export const gsxChatCompletionImpl = async <P extends GSXChatCompletionProps>(
   );
   return {
     ...result,
-    messages: [...props.messages, result],
+    messages: [
+      ...props.messages,
+      { role: "assistant", content: result.content },
+    ],
   } as GSXChatCompletionOutput<P>;
 };
 
