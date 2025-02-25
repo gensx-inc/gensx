@@ -1,3 +1,4 @@
+import { GsxArray } from "./array";
 import { ExecutionContext } from "./context";
 import { JSX } from "./jsx-runtime";
 
@@ -36,10 +37,12 @@ export type Primitive = string | number | boolean | null | undefined;
  * );
  */
 export type DeepJSXElement<T> = T extends (infer Item)[]
-  ? DeepJSXElement<Item>[]
+  ? DeepJSXElement<Item>[] | GsxArray<Item>
   : T extends object
     ? { [K in keyof T]: DeepJSXElement<T[K]> }
-    : T | JSX.Element;
+    : T extends GsxArray<infer Item>
+      ? GsxArray<Item>
+      : T | JSX.Element;
 
 // Allow children function to return plain objects that will be executed
 export type ExecutableValue<T = unknown> =
@@ -54,7 +57,7 @@ export type ExecutableValue<T = unknown> =
 // Component props as a type alias instead of interface
 export type Args<P, O> = P & {
   children?:
-    | ((output: O) => MaybePromise<ExecutableValue<O> | Primitive>)
+    | ((output: O) => MaybePromise<ExecutableValue<O>>)
     | ((output: O) => void)
     | ((output: O) => Promise<void>);
 };
@@ -66,7 +69,9 @@ export type Args<P, O> = P & {
  * - A promise of either of the above
  */
 export type GsxComponent<P, O> = (props: Args<P, O>) => MaybePromise<
-  O | DeepJSXElement<O> | ExecutableValue<O>
+  O extends (infer Item)[]
+    ? DeepJSXElement<O> | GsxArray<Item> | Item[] | (Item | Element)[]
+    : O | DeepJSXElement<O> | ExecutableValue<O>
 > /*
  * Use branding to preserve output type information.
  * This allows direct access to the output type O while maintaining
