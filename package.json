@@ -16,6 +16,7 @@
     "lint:fix:examples": "turbo run lint:fix --filter=\"./examples/*\"",
     "lint:fix:all": "turbo run lint:fix",
     "test": "turbo run test --filter=\"./packages/*\"",
+    "test:types": "turbo run test:types --filter=\"./packages/*\"",
     "test:examples": "turbo run test --filter=\"./examples/*\"",
     "test:all": "turbo run test",
     "clean": "turbo run clean",
