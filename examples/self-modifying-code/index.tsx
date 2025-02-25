@@ -42,11 +42,11 @@ async function startNewAgent(workspace: Workspace): Promise<boolean> {
       env: process.env,
     });
 
-    // Give it 10 seconds to acquire the lease
+    // Give it 60 seconds to acquire the lease
     const timeout = setTimeout(() => {
       proc.kill();
       resolve(false);
-    }, 10000);
+    }, 60000);
 
     // If process exits early, it failed
     proc.on("exit", (code) => {
