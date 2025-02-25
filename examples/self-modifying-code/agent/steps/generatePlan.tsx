@@ -1,0 +1,84 @@
+import { ChatCompletion } from "@gensx/openai";
+import { gsx } from "gensx";
+
+import {
+  updateWorkspaceContext,
+  useWorkspaceContext,
+} from "../../workspace.js";
+import { bashTool } from "../tools/bashTool.js";
+import { scrapeUrlTool } from "../tools/scrapeWebpage.js";
+
+interface GeneratePlanProps {}
+
+export const GeneratePlan = gsx.Component<GeneratePlanProps, string>(
+  "GeneratePlan",
+  async () => {
+    const context = useWorkspaceContext();
+
+    // Get the plan from OpenAI
+    const plan = await gsx.execute<string>(
+      <ChatCompletion
+        messages={[
+          {
+            role: "system",
+            content: `You are an AI agent tasked with creating a plan to achieve a goal in a codebase.
+
+CURRENT GOAL:
+"${context.goalState}"
+
+HISTORY OF ACTIONS:
+${JSON.stringify(context.history, null, 2)}
+
+You have access to bash commands to explore the codebase:
+- List files and directories
+- Read file contents
+- Check file existence
+- Analyze project structure
+
+First, explore the codebase to understand what needs to be changed.
+Then create a clear, descriptive plan that outlines:
+1. What files need to be modified
+2. What changes need to be made
+3. How we'll validate the changes
+4. What the expected outcome will be
+
+Focus on WHAT needs to be done, not HOW to do it.
+Be specific about files and changes, but don't include actual implementation details.
+
+For example, if modifying a README:
+"To add the raccoon story section to the README:
+1. Locate the README.md file in the root directory
+2. Add a new section titled 'A Raccoon's Tale' after the existing sections
+3. Write a paragraph from the raccoon's perspective using 50% words and 50% emojis
+4. Ensure the new section flows well with the existing content
+5. Verify the markdown formatting is correct"
+
+Use the bash tool to explore the codebase before creating your plan, and the scrapeUrl tool to find relevant information online if needed.`,
+          },
+          {
+            role: "user",
+            content:
+              "Explore the codebase and create a plan to achieve the current goal.",
+          },
+        ]}
+        model="gpt-4"
+        temperature={0.7}
+        tools={[bashTool, scrapeUrlTool]}
+      />,
+    );
+
+    // Add the plan to history
+    await updateWorkspaceContext({
+      history: [
+        {
+          timestamp: new Date(),
+          action: "Generated execution plan",
+          result: "success",
+          details: plan,
+        },
+      ],
+    });
+
+    return plan;
+  },
+);

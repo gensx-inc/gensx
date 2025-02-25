@@ -1,4 +1,4 @@
-import { GSXChatCompletion } from "@gensx/openai";
+import { GSXChatCompletion, GSXChatCompletionOutput } from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
 
@@ -17,21 +17,19 @@ interface GenerateGoalStateProps {}
 const needsGoalSchema = z.object({
   needsNewGoal: z.boolean().describe("Whether we need a new goal"),
 });
-type NeedsGoal = z.infer<typeof needsGoalSchema>;
 
-const GenerateGoalStateCompletion = gsx.Component<
+export const GenerateGoalState = gsx.Component<
   GenerateGoalStateProps,
   GoalDecision
->("GenerateGoalState", () => {
+>("GenerateGoalState", async () => {
   const context = useWorkspaceContext();
 
   // First step: Decide if we need a new goal
-  return (
-    <GSXChatCompletion
-      messages={[
-        {
-          role: "system",
-          content: `You are an AI agent that decides if the current goal has been achieved.
+  const needsNewGoal = (await GSXChatCompletion.run({
+    messages: [
+      {
+        role: "system",
+        content: `You are an AI agent that decides if the current goal has been achieved.
 
 CURRENT GOAL STATE:
 "${context.goalState}"
@@ -50,33 +48,30 @@ Remember:
 - Look for clear evidence in the history that the goal was completed
 - If the history shows failed attempts or no progress, keep the current goal
 - Only move to a new goal when the current one is definitively achieved`,
-        },
-        {
-          role: "user",
-          content:
-            "Review the goal state and history, then make your decision.",
-        },
-      ]}
-      model="gpt-4o"
-      temperature={0.7}
-      outputSchema={needsGoalSchema}
-    >
-      {(result) => {
-        // If we don't need a new goal, return the current one
-        if (!(result as NeedsGoal).needsNewGoal) {
-          return {
-            newGoal: false,
-            goalState: context.goalState,
-          };
-        }
+      },
+      {
+        role: "user",
+        content: "Review the goal state and history, then make your decision.",
+      },
+    ],
+    model: "gpt-4o",
+    temperature: 0.7,
+    outputSchema: needsGoalSchema,
+  })) as z.infer<typeof needsGoalSchema>;
 
-        // Second step: Generate new goal using tools to explore codebase
-        return (
-          <GSXChatCompletion
-            messages={[
-              {
-                role: "system",
-                content: `You are an AI agent that generates new goals for improving a codebase.
+  if (!needsNewGoal.needsNewGoal) {
+    return {
+      newGoal: false,
+      goalState: context.goalState,
+    };
+  }
+
+  // Second step: Generate new goal using tools to explore codebase
+  const newGoalResult = (await GSXChatCompletion.run({
+    messages: [
+      {
+        role: "system",
+        content: `You are an AI agent that generates new goals for improving a codebase.
 
 CURRENT GOAL STATE (which has been achieved):
 "${context.goalState}"
@@ -95,39 +90,25 @@ Remember:
 - Each goal should be achievable in a single iteration
 - After initial simple goals like README changes, focus on code improvements
 - Use the tools to explore the codebase and find relevant information online if needed`,
-              },
-              {
-                role: "user",
-                content: "Explore the codebase and propose a new goal.",
-              },
-            ]}
-            model="gpt-4o"
-            temperature={0.7}
-            tools={[bashTool, scrapeUrlTool]}
-          >
-            {(newGoalResult) => {
-              return {
-                newGoal: true,
-                goalState: (newGoalResult as GoalDecision).goalState,
-              };
-            }}
-          </GSXChatCompletion>
-        );
-      }}
-    </GSXChatCompletion>
-  );
-});
+      },
+      {
+        role: "user",
+        content: "Explore the codebase and propose a new goal.",
+      },
+    ],
+    model: "gpt-4o",
+    temperature: 0.7,
+    tools: [bashTool, scrapeUrlTool],
+  })) as GSXChatCompletionOutput<{ stream: false }>;
 
-export const GenerateGoalState = gsx.Component<
-  GenerateGoalStateProps,
-  GoalDecision
->("GenerateGoalStateAndUpdateContext", () => (
-  <GenerateGoalStateCompletion>
-    {async ({ newGoal, goalState }) => {
-      await updateWorkspaceContext({
-        goalState,
-      });
-      return { newGoal, goalState };
-    }}
-  </GenerateGoalStateCompletion>
-));
+  const newGoal = newGoalResult.choices[0].message.content ?? context.goalState;
+
+  await updateWorkspaceContext({
+    goalState: newGoal,
+  });
+
+  return {
+    newGoal: true,
+    goalState: newGoal,
+  };
+});
