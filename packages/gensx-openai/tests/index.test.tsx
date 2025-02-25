@@ -101,7 +101,7 @@ suite("ChatCompletion", () => {
     const TestComponent = gsx.StreamComponent<{}>("TestComponent", () => (
       <ChatCompletion
         stream={true}
-        model="gpt-4"
+        model="gpt-4o"
         messages={[{ role: "user", content: "test" }]}
       />
     ));
@@ -123,7 +123,7 @@ suite("ChatCompletion", () => {
   test("handles non-streaming response", async () => {
     const TestComponent = gsx.Component<{}, string>("TestComponent", () => (
       <ChatCompletion
-        model="gpt-4"
+        model="gpt-4o"
         messages={[{ role: "user", content: "test" }]}
       >
         {(completion: string) => completion}
