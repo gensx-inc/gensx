@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 
 import {
   Message,
@@ -106,10 +105,7 @@ export const toolExecutorImpl = async (
       }
 
       try {
-        const args = JSON.parse(String(toolCall.input)) as Record<
-          string,
-          unknown
-        >;
+        const args = toolCall.input as Record<string, unknown>;
         const validated = tool.schema.safeParse(args);
         if (!validated.success) {
           throw new Error(`Invalid tool arguments: ${validated.error.message}`);
@@ -161,7 +157,10 @@ export const toolsCompletionImpl = async (
   // Keep processing tool calls until none are left
   while (completion.stop_reason === "tool_use") {
     // Add assistant's message to the conversation
-    currentMessages.push(completion);
+    currentMessages.push({
+      role: "assistant",
+      content: completion.content,
+    });
 
     // Execute tools using toolExecutorImpl directly
     const toolResponses = await toolExecutorImpl({
@@ -172,7 +171,7 @@ export const toolsCompletionImpl = async (
     });
 
     // Add tool responses to the conversation
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
     currentMessages.push(...toolResponses);
 
     // Make next completion
@@ -186,7 +185,10 @@ export const toolsCompletionImpl = async (
   }
 
   // Add the final assistant message to the conversation
-  currentMessages.push(completion);
+  currentMessages.push({
+    role: "assistant",
+    content: completion.content,
+  });
 
   return {
     ...completion,

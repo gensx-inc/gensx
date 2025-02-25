@@ -1,6 +1,13 @@
 import { Message } from "@anthropic-ai/sdk/resources/messages";
-import { AnthropicChatCompletion, AnthropicProvider } from "@gensx/anthropic";
+import {
+  AnthropicChatCompletion,
+  AnthropicProvider,
+  GSXChatCompletion,
+  GSXTool,
+} from "@gensx/anthropic";
 import { gsx } from "gensx";
+import { z } from "zod";
+
 function basicCompletion() {
   const BasicCompletionExample = gsx.Component<{}, Message>(
     "BasicCompletionExample",
@@ -31,57 +38,51 @@ function basicCompletion() {
   return workflow.run({}, { printUrl: true });
 }
 
-// function tools() {
-//   // Define the schema as a Zod object
-//   const weatherSchema = z.object({
-//     location: z.string(),
-//   });
+function tools() {
+  // Define the schema as a Zod object
+  const weatherSchema = z.object({
+    location: z.string(),
+  });
 
-//   // Use z.infer to get the type for our parameters
-//   type WeatherParams = z.infer<typeof weatherSchema>;
+  // Use z.infer to get the type for our parameters
+  type WeatherParams = z.infer<typeof weatherSchema>;
 
-//   // Create the tool with the correct type - using the schema type, not the inferred type
-//   const tool = new GSXTool({
-//     name: "get_weather",
-//     description: "get the weather for a given location",
-//     schema: weatherSchema,
-//     run: async ({ location }: WeatherParams) => {
-//       console.log("getting weather for", location);
-//       const weather = ["sunny", "cloudy", "rainy", "snowy"];
-//       return Promise.resolve({
-//         weather: weather[Math.floor(Math.random() * weather.length)],
-//       });
-//     },
-//   });
+  // Create the tool with the correct type - using the schema type, not the inferred type
+  const tool = new GSXTool({
+    name: "get_weather",
+    description: "get the weather for a given location",
+    schema: weatherSchema,
+    run: async ({ location }: WeatherParams) => {
+      console.log("getting weather for", location);
+      const weather = ["sunny", "cloudy", "rainy", "snowy"];
+      return Promise.resolve({
+        weather: weather[Math.floor(Math.random() * weather.length)],
+      });
+    },
+  });
 
-//   const ToolsExample = gsx.Component<{}, ChatCompletionOutput>(
-//     "ToolsExample",
-//     () => (
-//       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-//         <GSXChatCompletion
-//           messages={[
-//             {
-//               role: "system",
-//               content:
-//                 "you are a trash eating infrastructure engineer embodied as a racoon. Be saassy and fun. ",
-//             },
-//             {
-//               role: "user",
-//               content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
-//             },
-//           ]}
-//           model="gpt-4o-mini"
-//           temperature={0.7}
-//           tools={[tool]}
-//         />
-//       </OpenAIProvider>
-//     ),
-//   );
+  const ToolsExample = gsx.Component<{}, Message>("ToolsExample", () => (
+    <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
+      <GSXChatCompletion
+        system="you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. "
+        messages={[
+          {
+            role: "user",
+            content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
+          },
+        ]}
+        model="claude-3-5-sonnet-latest"
+        temperature={0.7}
+        max_tokens={1000}
+        tools={[tool]}
+      />
+    </AnthropicProvider>
+  ));
 
-//   const workflow = gsx.Workflow("ToolsExampleWorkflow", ToolsExample);
+  const workflow = gsx.Workflow("ToolsExampleWorkflow", ToolsExample);
 
-//   return workflow.run({}, { printUrl: true });
-// }
+  return workflow.run({}, { printUrl: true });
+}
 
 // function toolsStreaming() {
 //   // Define the schema as a Zod object
@@ -319,7 +320,7 @@ async function main() {
     | "structuredOutput"
     | "multiStepTools";
 
-  const example: Example = "basicCompletion";
+  const example: Example = "tools";
 
   switch (example as Example) {
     case "basicCompletion":
@@ -335,11 +336,11 @@ async function main() {
     //   }
     //   break;
 
-    // case "tools":
-    //   console.log("tools completion 🔥");
-    //   const results = await tools();
-    //   console.log(results.choices[0].message.content);
-    //   break;
+    case "tools":
+      console.log("tools completion 🔥");
+      const results = await tools();
+      console.log(JSON.stringify(results, null, 2));
+      break;
 
     // case "toolsStreaming":
     //   console.log("tools streaming completion 🔥");
