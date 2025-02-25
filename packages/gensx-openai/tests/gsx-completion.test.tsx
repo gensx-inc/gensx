@@ -53,6 +53,55 @@ vi.mock("openai", async (importOriginal) => {
 });
 
 suite("GSXChatCompletion", () => {
+  test("passes a stream to a child function", async () => {
+    const Wrapper = gsx.Component<{}, string>("Wrapper", () => {
+      return (
+        <GSXChatCompletion
+          model="gpt-4o"
+          messages={[{ role: "user", content: "test" }]}
+          stream={true}
+        >
+          {async (stream) => {
+            let result = "";
+            for await (const chunk of stream) {
+              result += chunk.choices[0].delta.content ?? "";
+            }
+            return result;
+          }}
+        </GSXChatCompletion>
+      );
+    });
+
+    const result = await gsx.execute<string>(
+      <OpenAIProvider apiKey="test">
+        <Wrapper />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toBe("Hello World ");
+  });
+
+  test("passes a standard response to a child function", async () => {
+    const Wrapper = gsx.Component<{}, string>("Wrapper", () => {
+      return (
+        <GSXChatCompletion
+          model="gpt-4o"
+          messages={[{ role: "user", content: "test" }]}
+        >
+          {(result) => result.choices[0].message.content}
+        </GSXChatCompletion>
+      );
+    });
+
+    const result = await gsx.execute<string>(
+      <OpenAIProvider apiKey="test">
+        <Wrapper />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toBe("Hello World");
+  });
+
   test("returns a stream", async () => {
     const Wrapper = gsx.Component<{}, Stream<ChatCompletionChunk>>(
       "Wrapper",
