@@ -22,6 +22,12 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*", "vitest.config.ts", "vite.config.ts", "tests/**/*"],
+  "include": [
+    "src/**/*",
+    "vitest.config.ts",
+    "vite.config.ts",
+    "tests/**/*",
+    "__mocks__/**/*"
+  ],
   "exclude": ["node_modules", "dist"]
 }
