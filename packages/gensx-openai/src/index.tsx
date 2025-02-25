@@ -23,6 +23,9 @@ export {
   OpenAIContext,
 };
 
+// Export the type of GSXChatCompletion itself
+export type GSXChatCompletionType = typeof GSXChatCompletion;
+
 export type {
   GSXChatCompletionProps,
   ChatCompletionProps,
