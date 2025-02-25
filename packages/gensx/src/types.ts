@@ -104,12 +104,16 @@ export type StreamArgs<P> = P & {
   children?: StreamChildrenType<P>;
 };
 
-export type GsxStreamComponent<P> = <T extends P & { stream?: boolean }>(
+export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
   props: StreamArgs<T>,
 ) => MaybePromise<
   | DeepJSXElement<T extends { stream: true } ? Streamable : string>
   | ExecutableValue
->;
+>) & {
+  run: <T extends P & { stream?: boolean }>(
+    props: T,
+  ) => MaybePromise<T extends { stream: true } ? Streamable : string>;
+};
 
 export interface Context<T> {
   readonly __type: "Context";

@@ -118,9 +118,9 @@ export function StreamComponent<P>(
   ) => MaybePromise<Streamable | JSX.Element>,
   defaultOpts?: DefaultOpts,
 ): GsxStreamComponent<WithComponentOpts<P & { stream?: boolean }>> {
-  const GsxStreamComponent: GsxStreamComponent<
-    WithComponentOpts<P & { stream?: boolean }>
-  > = async (props) => {
+  const GsxStreamComponent = async (
+    props: WithComponentOpts<P & { stream?: boolean }>,
+  ) => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -205,6 +205,12 @@ export function StreamComponent<P>(
       }
       throw error;
     }
+  };
+
+  GsxStreamComponent.run = <T extends P & { stream?: boolean }>(
+    props: WithComponentOpts<T>,
+  ) => {
+    return jsx(GsxStreamComponent, props)();
   };
 
   if (name) {
