@@ -114,6 +114,190 @@ suite("execute", () => {
         ),
       ).toBe(true);
     });
+
+    test("requires workflow props to be an object", async () => {
+      // @ts-expect-error - props is an array
+      const ArrayPropsComponent = gsx.Component<string[], string[]>(
+        "ArrayPropsComponent",
+        (props) => {
+          return props;
+        },
+      );
+
+      const workflow = gsx.Workflow("test", ArrayPropsComponent);
+
+      try {
+        await workflow.run([]);
+      } catch (e) {
+        expect(e).toBeDefined();
+        expect(e).toBeInstanceOf(Error);
+        expect((e as Error).message).toBe(
+          "Component ArrayPropsComponent received non-object props.",
+        );
+      }
+
+      // @ts-expect-error - props is a string
+      const StringPropsComponent = gsx.Component<string, string>(
+        "StringPropsComponent",
+        (props) => {
+          return props;
+        },
+      );
+
+      const workflow2 = gsx.Workflow("test", StringPropsComponent);
+
+      try {
+        await workflow2.run("hello");
+      } catch (e) {
+        expect(e).toBeDefined();
+        expect(e).toBeInstanceOf(Error);
+        expect((e as Error).message).toBe(
+          "Component StringPropsComponent received non-object props.",
+        );
+      }
+
+      // @ts-expect-error - props is a number
+      const NumberPropsComponent = gsx.Component<number, number>(
+        "NumberPropsComponent",
+        (props) => {
+          return props;
+        },
+      );
+
+      const workflow3 = gsx.Workflow("test", NumberPropsComponent);
+
+      try {
+        await workflow3.run(1);
+      } catch (e) {
+        expect(e).toBeDefined();
+        expect(e).toBeInstanceOf(Error);
+        expect((e as Error).message).toBe(
+          "Component NumberPropsComponent received non-object props.",
+        );
+      }
+
+      // @ts-expect-error - props is a boolean
+      const BooleanPropsComponent = gsx.Component<boolean, boolean>(
+        "BooleanPropsComponent",
+        (props) => {
+          return props;
+        },
+      );
+
+      const workflow4 = gsx.Workflow("test", BooleanPropsComponent);
+
+      try {
+        await workflow4.run(true);
+      } catch (e) {
+        expect(e).toBeDefined();
+        expect(e).toBeInstanceOf(Error);
+        expect((e as Error).message).toBe(
+          "Component BooleanPropsComponent received non-object props.",
+        );
+      }
+
+      // @ts-expect-error - props is a symbol
+      const SymbolPropsComponent = gsx.Component<symbol, symbol>(
+        "SymbolPropsComponent",
+        (props) => {
+          return props;
+        },
+      );
+
+      const workflow5 = gsx.Workflow("test", SymbolPropsComponent);
+
+      try {
+        await workflow5.run(Symbol("test"));
+      } catch (e) {
+        expect(e).toBeDefined();
+        expect(e).toBeInstanceOf(Error);
+        expect((e as Error).message).toBe(
+          "Component SymbolPropsComponent received non-object props.",
+        );
+      }
+
+      // @ts-expect-error - props is a function
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+      const FunctionPropsComponent = gsx.Component<Function, Function>(
+        "FunctionPropsComponent",
+        (props) => {
+          return props;
+        },
+      );
+
+      const workflow6 = gsx.Workflow("test", FunctionPropsComponent);
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        await workflow6.run(() => {});
+      } catch (e) {
+        expect(e).toBeDefined();
+        expect(e).toBeInstanceOf(Error);
+        expect((e as Error).message).toBe(
+          "Component FunctionPropsComponent received non-object props.",
+        );
+      }
+
+      // @ts-expect-error - props is a null
+      const NullPropsComponent = gsx.Component<null, null>(
+        "NullPropsComponent",
+        (props) => {
+          return props;
+        },
+      );
+
+      const workflow7 = gsx.Workflow("test", NullPropsComponent);
+
+      try {
+        await workflow7.run(null as never);
+      } catch (e) {
+        expect(e).toBeDefined();
+        expect(e).toBeInstanceOf(Error);
+        expect((e as Error).message).toBe(
+          "Component NullPropsComponent received non-object props.",
+        );
+      }
+
+      // @ts-expect-error - props is a undefined
+      const UndefinedPropsComponent = gsx.Component<undefined, undefined>(
+        "UndefinedPropsComponent",
+        (props) => {
+          return props;
+        },
+      );
+
+      const workflow8 = gsx.Workflow("test", UndefinedPropsComponent);
+
+      try {
+        await workflow8.run(undefined as never);
+      } catch (e) {
+        expect(e).toBeDefined();
+        expect(e).toBeInstanceOf(Error);
+        expect((e as Error).message).toBe(
+          "Component UndefinedPropsComponent received non-object props.",
+        );
+      }
+
+      // @ts-expect-error - props is a bigint
+      const BigIntPropsComponent = gsx.Component<bigint, bigint>(
+        "BigIntPropsComponent",
+        (props) => {
+          return props;
+        },
+      );
+
+      const workflow9 = gsx.Workflow("test", BigIntPropsComponent);
+
+      try {
+        await workflow9.run(BigInt(1));
+      } catch (e) {
+        expect(e).toBeDefined();
+        expect(e).toBeInstanceOf(Error);
+        expect((e as Error).message).toBe(
+          "Component BigIntPropsComponent received non-object props.",
+        );
+      }
+    });
   });
 
   suite("execute", () => {
