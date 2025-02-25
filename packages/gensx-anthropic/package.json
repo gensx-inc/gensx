@@ -1,0 +1,57 @@
+{
+  "name": "@gensx/anthropic",
+  "version": "0.1.7",
+  "description": "Anthropic integration for GenSX",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/gensx-anthropic"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [
+    "gensx",
+    "anthropic",
+    "claude",
+    "ai",
+    "jsx"
+  ],
+  "files": [
+    "dist"
+  ],
+  "author": "GenSX Team",
+  "license": "Apache-2.0",
+  "peerDependencies": {
+    "@anthropic-ai/sdk": "^0.37.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.11",
+    "@vitest/coverage-istanbul": "^2.1.8",
+    "gensx": "workspace:*",
+    "@anthropic-ai/sdk": "^0.37.0",
+    "vite": "^6.1.0",
+    "vite-plugin-dts": "^4.5.0",
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "gensx": "workspace:>=0.2.1",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1"
+  }
+}

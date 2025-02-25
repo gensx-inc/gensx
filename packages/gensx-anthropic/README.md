@@ -1,11 +1,11 @@
-# @gensx/openai
+# @gensx/anthropic
 
-OpenAI integration for [GenSX](https://github.com/gensx-inc/gensx) - Build AI workflows using JSX.
+Anthropic integration for [GenSX](https://github.com/gensx-inc/gensx) - Build AI workflows using JSX.
 
 ## Installation
 
 ```bash
-npm install @gensx/openai
+npm install @gensx/anthropic
 ```
 
 ### Requires `gensx`
@@ -20,41 +20,41 @@ npm install gensx
 
 ```tsx
 import { gsx } from "gensx";
-import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
+import { AnthropicProvider, ChatCompletion } from "@gensx/anthropic";
 
 const ChatBot = gsx.Component(async ({ userInput }) => {
   return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY!}>
+    <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY!}>
       <ChatCompletion
+        system="You are a helpful assistant."
         messages={[
-          { role: "system", content: "You are a helpful assistant." },
           { role: "user", content: userInput },
         ]}
-        model="gpt-4o"
+        model="claude-3-5-sonnet-latest"
         temperature={0.7}
       />
-    </OpenAIProvider>
+    </AnthropicProvider>
   );
 });
 
 // Use with streaming
 const StreamingChat = gsx.Component(async ({ userInput }) => {
   return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY!}>
+    <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY!}>
       <ChatCompletion
+        system="You are a helpful assistant."
         messages={[
-          { role: "system", content: "You are a helpful assistant." },
           { role: "user", content: userInput },
         ]}
-        model="gpt-4o"
         stream={true}
+        model="claude-3-5-sonnet-latest"
       >
         {async (stream) => {
           for await (const token of stream) {
             process.stdout.write(token);
           }
         }}
-      </ChatCompletion>
+      </AnthropicProvider>
     </OpenAIProvider>
   );
 });
