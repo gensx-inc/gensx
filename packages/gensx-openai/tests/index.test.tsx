@@ -1,51 +1,8 @@
 import { gsx, Streamable } from "gensx";
 import OpenAI from "openai";
-import { ChatCompletionCreateParams } from "openai/resources/index.mjs";
-import { expect, suite, test, vi } from "vitest";
+import { expect, suite, test } from "vitest";
 
 import { ChatCompletion, OpenAIContext, OpenAIProvider } from "@/index.js";
-
-import { createMockChatCompletionChunks } from "./helpers.js";
-
-vi.mock("openai", async (importOriginal) => {
-  const originalOpenAI: Awaited<typeof import("openai")> =
-    await importOriginal();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mockedOpenAIClass: any = vi.fn();
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  mockedOpenAIClass.prototype = {
-    chat: {
-      completions: {
-        create: vi
-          .fn()
-          .mockImplementation((params: ChatCompletionCreateParams) => {
-            if (params.stream) {
-              const chunks = createMockChatCompletionChunks("Hello World");
-              return Promise.resolve({
-                [Symbol.asyncIterator]: async function* () {
-                  for (const chunk of chunks) {
-                    await Promise.resolve();
-                    yield chunk;
-                  }
-                },
-              });
-            } else {
-              return Promise.resolve({
-                choices: [{ message: { content: "Hello World" } }],
-              });
-            }
-          }),
-      },
-    },
-  };
-
-  return {
-    ...originalOpenAI,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    default: mockedOpenAIClass,
-  };
-});
 
 suite("OpenAIContext", () => {
   test("provides OpenAI client to children", async () => {

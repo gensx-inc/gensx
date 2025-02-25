@@ -2,11 +2,10 @@ import { gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionAssistantMessageParam,
-  ChatCompletionCreateParams,
   ChatCompletionMessageParam,
   ChatCompletionToolMessageParam,
 } from "openai/resources/index.mjs";
-import { expect, suite, test, vi } from "vitest";
+import { expect, suite, test } from "vitest";
 import { z } from "zod";
 
 import {
@@ -16,95 +15,6 @@ import {
   OpenAIProvider,
 } from "@/index.js";
 import { ToolExecutor, ToolsCompletion } from "@/tools";
-
-// Mock OpenAI client
-vi.mock("openai", async (importOriginal) => {
-  const originalOpenAI: Awaited<typeof import("openai")> =
-    await importOriginal();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mockedOpenAIClass: any = vi.fn();
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  mockedOpenAIClass.prototype = {
-    chat: {
-      completions: {
-        create: vi
-          .fn()
-          .mockImplementation((params: ChatCompletionCreateParams) => {
-            // If there's already a tool response in the conversation, return a final answer
-            if (params.messages.some((m) => m.role === "tool")) {
-              if (params.response_format?.type === "json_schema") {
-                return Promise.resolve({
-                  choices: [
-                    {
-                      message: {
-                        role: "assistant",
-                        content: JSON.stringify({
-                          name: "structured output after tool execution",
-                          age: 42,
-                        }),
-                      },
-                    },
-                  ],
-                });
-              } else {
-                return Promise.resolve({
-                  choices: [
-                    {
-                      message: {
-                        role: "assistant",
-                        content: "Final answer after tool execution",
-                      },
-                    },
-                  ],
-                });
-              }
-            }
-            // Handle initial tool calls
-            else if (params.tools?.length) {
-              return Promise.resolve({
-                choices: [
-                  {
-                    message: {
-                      role: "assistant",
-                      content: null,
-                      tool_calls: [
-                        {
-                          id: "call_1",
-                          type: "function" as const,
-                          function: {
-                            name: "test_tool",
-                            arguments: JSON.stringify({ input: "test" }),
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              });
-            } else {
-              return Promise.resolve({
-                choices: [
-                  {
-                    message: {
-                      role: "assistant",
-                      content: "Hello World",
-                    },
-                  },
-                ],
-              });
-            }
-          }),
-      },
-    },
-  };
-
-  return {
-    ...originalOpenAI,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    default: mockedOpenAIClass,
-  };
-});
 
 suite("Tools", () => {
   // Create a test tool
@@ -287,7 +197,7 @@ suite("Tools", () => {
     );
 
     expect(result).toEqual({
-      name: "structured output after tool execution",
+      name: "Hello World",
       age: 42,
     });
   });

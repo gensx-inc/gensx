@@ -1,56 +1,10 @@
 import { gsx } from "gensx";
-import {
-  ChatCompletionChunk,
-  ChatCompletionCreateParams,
-} from "openai/resources/index.mjs";
+import { ChatCompletionChunk } from "openai/resources/index.mjs";
 import { Stream } from "openai/streaming.mjs";
-import { expect, suite, test, vi } from "vitest";
+import { expect, suite, test } from "vitest";
 
-import { GSXChatCompletion } from "@/gsx-completion";
 import { GSXChatCompletionResult } from "@/gsx-completion";
-import { OpenAIProvider } from "@/index";
-
-import { createMockChatCompletionChunks } from "./helpers";
-
-vi.mock("openai", async (importOriginal) => {
-  const originalOpenAI: Awaited<typeof import("openai")> =
-    await importOriginal();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mockedOpenAIClass: any = vi.fn();
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  mockedOpenAIClass.prototype = {
-    chat: {
-      completions: {
-        create: vi
-          .fn()
-          .mockImplementation((params: ChatCompletionCreateParams) => {
-            if (params.stream) {
-              const chunks = createMockChatCompletionChunks("Hello World");
-              return Promise.resolve({
-                [Symbol.asyncIterator]: async function* () {
-                  for (const chunk of chunks) {
-                    await Promise.resolve();
-                    yield chunk;
-                  }
-                },
-              });
-            } else {
-              return Promise.resolve({
-                choices: [{ message: { content: "Hello World" } }],
-              });
-            }
-          }),
-      },
-    },
-  };
-
-  return {
-    ...originalOpenAI,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    default: mockedOpenAIClass,
-  };
-});
+import { GSXChatCompletion, OpenAIProvider } from "@/index.js";
 
 suite("GSXChatCompletion", () => {
   test("passes a stream to a child function", async () => {
