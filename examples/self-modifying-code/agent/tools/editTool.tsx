@@ -27,6 +27,14 @@ const editToolSchema = z.object({
 
 type EditToolParams = z.infer<typeof editToolSchema>;
 
+// Centralized logging function
+function logError(context: string, error: unknown) {
+  console.error(`❌ ${context}`, error);
+  if (error instanceof Error) {
+    console.error(error.stack);
+  }
+}
+
 export const editTool = new GSXTool<typeof editToolSchema>({
   name: "editor",
   description: `Tool for viewing and editing files. Operations are atomic - edits replace the entire file content.
@@ -45,7 +53,7 @@ Commands:
   - Use this for all file modifications`,
   schema: editToolSchema,
   run: async (params: EditToolParams) => {
-    console.log(`\ud83d\udee0\ufe0f Executing EditTool command: ${JSON.stringify(params)}`);
+    console.log(`🛠️ Executing EditTool command: ${JSON.stringify(params)}`);
 
     // Validate required fields based on command
     if (
@@ -70,12 +78,12 @@ Commands:
               `find "${params.path}" -maxdepth 2 -not -path '*/\\.*' -type f -o -type d`,
               { encoding: "utf-8" },
             );
-            console.log(`\ud83d\udcbb Directory contents listed for ${params.path}`);
+            console.log(`💻 Directory contents listed for ${params.path}`);
             return result;
           } else {
             // Read and return complete file contents
             const content = await fs.readFile(params.path, "utf-8");
-            console.log(`\ud83d\udcbb File read successfully: ${params.path}`);
+            console.log(`💻 File read successfully: ${params.path}`);
             return content;
           }
         }
@@ -88,7 +96,7 @@ Commands:
           }
           await fs.mkdir(path.dirname(params.path), { recursive: true });
           await fs.writeFile(params.path, params.content!, "utf-8");
-          console.log(`\ud83c\udf89 File created successfully: ${params.path}`);
+          console.log(`🎉 File created successfully: ${params.path}`);
           return `File created successfully: ${params.path}`;
         }
 
@@ -99,7 +107,7 @@ Commands:
 
           // Write new content atomically
           await fs.writeFile(params.path, params.content!, "utf-8");
-          console.log(`\ud83c\udf89 File updated successfully: ${params.path}`);
+          console.log(`🎉 File updated successfully: ${params.path}`);
           return `File updated successfully: ${params.path}`;
         }
 
@@ -107,7 +115,7 @@ Commands:
           throw new Error(`Unknown command: ${String(params.command)}`);
       }
     } catch (error) {
-      console.error("\u274c Error executing EditTool command.", error);
+      logError("Error executing EditTool command.", error);
       if (error instanceof Error) {
         throw error;
       }

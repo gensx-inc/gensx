@@ -21,6 +21,14 @@ const needsGoalSchema = z.object({
 
 type DecideIfGoalAchievedOutput = z.infer<typeof needsGoalSchema>;
 
+// Centralized logging function
+function logError(context: string, error: unknown) {
+  console.error(`❌ ${context}`, error);
+  if (error instanceof Error) {
+    console.error(error.stack);
+  }
+}
+
 const DecideIfGoalAchieved = gsx.Component<{}, DecideIfGoalAchievedOutput>(
   "DecideIfGoalAchieved",
   () => {
@@ -46,7 +54,7 @@ Remember:
 - If the history shows failed attempts or no progress, keep the current goal
 - Only move to a new goal when the current one is definitively achieved`;
 
-    console.log("\ud83d\udcbb Deciding if goal has been achieved with current context.");
+    console.log("💻 Deciding if goal has been achieved with current context.");
 
     return GSXChatCompletion.run({
       messages: [
@@ -60,6 +68,9 @@ Remember:
       model: "gpt-4o",
       temperature: 0.7,
       outputSchema: needsGoalSchema,
+    }).catch(error => {
+      logError("Error in DecideIfGoalAchieved component.", error);
+      throw error;
     });
   },
 );
@@ -89,7 +100,7 @@ Remember:
 - After initial simple goals like README changes, focus on code improvements
 - Use the tools to explore the codebase and find relevant information online if needed`;
 
-    console.log("\ud83d\udcbb Generating new goal based on current context.");
+    console.log("💻 Generating new goal based on current context.");
 
     const result = await GSXChatCompletion.run({
       messages: [
@@ -102,9 +113,12 @@ Remember:
       model: "gpt-4o",
       temperature: 0.7,
       tools: [bashTool],
+    }).catch(error => {
+      logError("Error in GenerateNewGoal component.", error);
+      throw error;
     });
 
-    console.log("\ud83c\udf89 New goal generated.");
+    console.log("🎉 New goal generated.");
 
     return result.choices[0].message.content ?? context.goalState;
   },
@@ -117,11 +131,11 @@ export const GenerateGoalState = gsx.Component<
   const context = useWorkspaceContext();
 
   // First step: Decide if we need a new goal
-  console.log("\ud83d\udcbb Evaluating if a new goal is needed...");
+  console.log("💻 Evaluating if a new goal is needed...");
   const needsNewGoal = await DecideIfGoalAchieved.run({});
 
   if (!needsNewGoal.needsNewGoal) {
-    console.log("\ud83d\udcbb No new goal needed.");
+    console.log("💻 No new goal needed.");
     return {
       newGoal: false,
       goalState: context.goalState,
@@ -129,14 +143,14 @@ export const GenerateGoalState = gsx.Component<
   }
 
   // Second step: Generate new goal using tools to explore codebase
-  console.log("\ud83d\udcbb Generating a new goal...");
+  console.log("💻 Generating a new goal...");
   const newGoal = await GenerateNewGoal.run({});
 
   await updateWorkspaceContext({
     goalState: newGoal,
   });
 
-  console.log("\ud83c\udf89 New goal state updated.");
+  console.log("🎉 New goal state updated.");
 
   return {
     newGoal: true,

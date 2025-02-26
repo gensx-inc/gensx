@@ -9,6 +9,14 @@ import { bashTool } from "../tools/bashTool.js";
 
 interface GeneratePlanProps {}
 
+// Centralized logging function
+function logError(context: string, error: unknown) {
+  console.error(`[31m✖ ${context}[0m`, error);
+  if (error instanceof Error) {
+    console.error(error.stack);
+  }
+}
+
 export const GeneratePlan = gsx.Component<GeneratePlanProps, string>(
   "GeneratePlan",
   async () => {
@@ -48,40 +56,45 @@ For example, if modifying a README:
 
 Use the bash tool to explore the codebase before creating your plan, and the scrapeUrl tool to find relevant information online if needed.`;
 
-    console.log("\ud83d\udcbb Generating plan for current goal...");
+    console.log("[34mℹ Generating plan for current goal...[0m");
 
     // Get the plan from OpenAI
-    const plan = await ChatCompletion.run({
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content:
-            "Explore the codebase and create a plan to achieve the current goal.",
-        },
-      ],
-      model: "gpt-4o",
-      temperature: 0.7,
-      tools: [bashTool],
-    });
+    try {
+      const plan = await ChatCompletion.run({
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            role: "user",
+            content:
+              "Explore the codebase and create a plan to achieve the current goal.",
+          },
+        ],
+        model: "gpt-4o",
+        temperature: 0.7,
+        tools: [bashTool],
+      });
 
-    console.log("\ud83c\udf89 Plan generated successfully.");
+      console.log("[32m✔ Plan generated successfully.[0m");
 
-    // Add the plan to history
-    await updateWorkspaceContext({
-      history: [
-        {
-          timestamp: new Date(),
-          action: "Generated execution plan",
-          result: "success",
-          details: plan,
-        },
-      ],
-    });
+      // Add the plan to history
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Generated execution plan",
+            result: "success",
+            details: plan,
+          },
+        ],
+      });
 
-    return plan;
+      return plan;
+    } catch (error) {
+      logError("Error in GeneratePlan component.", error);
+      throw error; // Re-throw the error after logging
+    }
   },
 );
