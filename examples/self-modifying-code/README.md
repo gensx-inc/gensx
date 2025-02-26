@@ -8,7 +8,6 @@ This example demonstrates a self-modifying code agent. The agent:
 4. Modifies it's source code to match the goal state
 5. Runs tests to verify the changes
 6. Starts a new version of itself to continue the work
-7. Spins itself down and allows the new agent to take control
 
 ![Self-Modifying Code Agent](https://card-images.netrunnerdb.com/v2/large/03046.jpg)
 
@@ -19,13 +18,12 @@ This example demonstrates a self-modifying code agent. The agent:
 pnpm install
 
 # Run the example
-OPENAI_API_KEY=<api key> FIRECRAWL_API_KEY=<api key> pnpm run start
+OPENAI_API_KEY=<api key> FIRECRAWL_API_KEY=<api key> REPO_URL=https://github.com/<your-username>/<your-fork-of-gensx> BRANCH=<branch> pnpm run start
 ```
 
-## Killing all agents
+## Warning
 
-On macos:
+We did our best to ensure that the agent does not do anything malicious. However, the agent is given direct access to it's own source code, and is able to make changes to any file within its workspace,
+so there are no guarantees that it will not modify itself in such a way as to enable itself to do problematic things to your computer.
 
-```bash
-pkill -f "node.*examples/self-modifying-code"
-```
+RUN THIS EXAMPLE AT YOUR OWN RISK.
