@@ -9,42 +9,6 @@ import { z } from "zod";
 
 import { createMCPServerContext, MCPTool } from "../src/index";
 
-// Mock the MCP SDK
-vi.mock("@modelcontextprotocol/sdk/client/index.js", () => {
-  return {
-    Client: vi.fn().mockImplementation(() => ({
-      connect: vi.fn().mockResolvedValue(undefined),
-      listTools: vi.fn().mockResolvedValue({
-        tools: [
-          {
-            name: "testTool",
-            description: "A test tool",
-            inputSchema: {
-              type: "object",
-              properties: {
-                testParam: {
-                  type: "string",
-                  description: "A test parameter",
-                },
-              },
-            },
-          },
-        ],
-      }),
-      callTool: vi.fn().mockResolvedValue({ result: "success" }),
-      close: vi.fn().mockResolvedValue(undefined),
-    })),
-  };
-});
-
-vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => {
-  return {
-    StdioClientTransport: vi.fn().mockImplementation(() => ({
-      // Mock implementation of StdioClientTransport
-    })),
-  };
-});
-
 describe("createMCPServerContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -69,10 +33,8 @@ describe("createMCPServerContext", () => {
         expect(tools.length).toBe(1);
         expect(tools[0]).toBeInstanceOf(MCPTool);
 
-        const toolResponse = (await tools[0].run({ testParam: message })) as {
-          result: string;
-        };
-        return toolResponse.result;
+        const toolResponse = await tools[0].run({ message });
+        return toolResponse.content[0].text as string;
       },
     );
 
@@ -88,7 +50,115 @@ describe("createMCPServerContext", () => {
     const workflow = gsx.Workflow("TestWorkflow", Wrapper);
 
     const result = await workflow.run({ message: "test" });
-    expect(result).toBe("success");
+    expect(result).toBe("Tool echo: test");
+  });
+
+  it("should create a context with Provider and useContext that provides access to resource templates", async () => {
+    const { Provider, useContext } = createMCPServerContext({
+      clientName: "test-client",
+      clientVersion: "1.0.0",
+      serverCommand: "tsx",
+      serverArgs: [path.join(__dirname, "echoMCPServer.ts")],
+    });
+
+    expect(Provider).toBeDefined();
+    expect(useContext).toBeDefined();
+
+    const TestComponent = gsx.Component<{ message: string }, string>(
+      "TestComponent",
+      async ({ message }) => {
+        const { resourceTemplates } = useContext();
+        expect(resourceTemplates).toBeDefined();
+        expect(resourceTemplates.length).toBe(1);
+        const resourceResponse = await resourceTemplates[0].read({ message });
+        return resourceResponse.contents[0].text as string;
+      },
+    );
+
+    const Wrapper = gsx.Component<{ message: string }, string>(
+      "Wrapper",
+      ({ message }) => (
+        <Provider>
+          <TestComponent message={message} />
+        </Provider>
+      ),
+    );
+
+    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+
+    const result = await workflow.run({ message: "test" });
+    expect(result).toBe("Resource echo: test");
+  });
+
+  it("should create a context with Provider and useContext that provides access to resources", async () => {
+    const { Provider, useContext } = createMCPServerContext({
+      clientName: "test-client",
+      clientVersion: "1.0.0",
+      serverCommand: "tsx",
+      serverArgs: [path.join(__dirname, "echoMCPServer.ts")],
+    });
+
+    expect(Provider).toBeDefined();
+    expect(useContext).toBeDefined();
+
+    const TestComponent = gsx.Component<{}, string>(
+      "TestComponent",
+      async () => {
+        const { resources } = useContext();
+        expect(resources).toBeDefined();
+        expect(resources.length).toBe(1);
+        const resourceResponse = await resources[0].read();
+        return resourceResponse.contents[0].text as string;
+      },
+    );
+
+    const Wrapper = gsx.Component<{}, string>("Wrapper", () => (
+      <Provider>
+        <TestComponent />
+      </Provider>
+    ));
+
+    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+
+    const result = await workflow.run({});
+    expect(result).toBe("Resource echo: helloWorld");
+  });
+
+  it("should create a context with Provider and useContext that provides access to prompts", async () => {
+    const { Provider, useContext } = createMCPServerContext({
+      clientName: "test-client",
+      clientVersion: "1.0.0",
+      serverCommand: "tsx",
+      serverArgs: [path.join(__dirname, "echoMCPServer.ts")],
+    });
+
+    expect(Provider).toBeDefined();
+    expect(useContext).toBeDefined();
+
+    const TestComponent = gsx.Component<{ message: string }, string>(
+      "TestComponent",
+      async ({ message }) => {
+        const { prompts } = useContext();
+        expect(prompts).toBeDefined();
+        expect(prompts.length).toBe(1);
+        const promptResponse = await prompts[0].get({ message });
+        return promptResponse.messages[0].content.text as string;
+      },
+    );
+
+    const Wrapper = gsx.Component<{ message: string }, string>(
+      "Wrapper",
+      ({ message }) => (
+        <Provider>
+          <TestComponent message={message} />
+        </Provider>
+      ),
+    );
+
+    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+
+    const result = await workflow.run({ message: "test" });
+    expect(result).toBe("Please process this message: test");
   });
 
   it("should throw an error if context is not found", () => {
@@ -294,44 +364,5 @@ describe("translateJsonSchemaToZodSchema", () => {
     // Just verify the schema was created without errors
     expect(tool.schema).toBeDefined();
     expect(tool.schema instanceof z.ZodObject).toBe(true);
-  });
-});
-
-// We'll skip the integration test since it would require a real Provider
-// which would try to connect to a real MCP server
-// Instead, we'll add a test for the MCPTool class's functionality
-describe("MCPTool additional functionality", () => {
-  it("should handle empty input schema", () => {
-    const mockClient = {
-      callTool: vi.fn().mockResolvedValue({ result: "success" }),
-    };
-
-    const tool = new MCPTool(
-      mockClient as unknown as Client,
-      "testTool",
-      "A test tool",
-      // No input schema provided
-    );
-
-    expect(tool.schema).toBeDefined();
-    // Should default to an empty object schema
-    expect(tool.schema instanceof z.ZodObject).toBe(true);
-    expect(Object.keys(tool.schema.shape).length).toBe(0);
-  });
-
-  it("should handle undefined description", () => {
-    const mockClient = {
-      callTool: vi.fn().mockResolvedValue({ result: "success" }),
-    };
-
-    const tool = new MCPTool(
-      mockClient as unknown as Client,
-      "testTool",
-      // No description provided
-    );
-
-    expect(tool.name).toBe("testTool");
-    expect(tool.description).toBeUndefined();
-    expect(tool.schema).toBeDefined();
   });
 });

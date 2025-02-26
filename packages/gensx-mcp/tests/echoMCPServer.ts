@@ -23,6 +23,15 @@ server.resource(
   }),
 );
 
+server.resource("helloWorld", "echo://helloWorld", () => ({
+  contents: [
+    {
+      uri: "echo://helloWorld",
+      text: "Resource echo: helloWorld",
+    },
+  ],
+}));
+
 server.tool("echo", { message: z.string() }, ({ message }) => ({
   content: [{ type: "text", text: `Tool echo: ${message}` }],
 }));
@@ -42,7 +51,7 @@ server.prompt("echo", { message: z.string() }, ({ message }) => ({
 async function runServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Sequential Thinking MCP Server running on stdio");
+  console.error("Echo MCP Server running on stdio");
 }
 
 runServer().catch((error: unknown) => {
