@@ -8,14 +8,6 @@ OpenAI integration for [GenSX](https://github.com/gensx-inc/gensx) - Build AI wo
 npm install @gensx/openai
 ```
 
-### Requires `gensx`
-
-This package requires `gensx` to be installed as a peer dependency.
-
-```bash
-npm install gensx
-```
-
 ## Usage
 
 ```tsx
