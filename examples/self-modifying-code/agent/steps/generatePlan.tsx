@@ -48,6 +48,8 @@ For example, if modifying a README:
 
 Use the bash tool to explore the codebase before creating your plan, and the scrapeUrl tool to find relevant information online if needed.`;
 
+    console.log("\ud83d\udcbb Generating plan for current goal...");
+
     // Get the plan from OpenAI
     const plan = await ChatCompletion.run({
       messages: [
@@ -65,6 +67,8 @@ Use the bash tool to explore the codebase before creating your plan, and the scr
       temperature: 0.7,
       tools: [bashTool],
     });
+
+    console.log("\ud83c\udf89 Plan generated successfully.");
 
     // Add the plan to history
     await updateWorkspaceContext({

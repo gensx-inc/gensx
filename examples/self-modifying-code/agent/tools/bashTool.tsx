@@ -23,11 +23,13 @@ export const bashTool = new GSXTool<typeof bashToolSchema>({
 * Please run long lived commands in the background, e.g. 'sleep 10 &' or start a server in the background.`,
   schema: bashToolSchema,
   run: async ({ command }: BashToolParams) => {
-    console.log("💻 Calling the BashTool:", command);
+    console.log(`\ud83d\udcbb Executing BashTool command: ${command}`);
     try {
       const result = await Promise.resolve(execSync(command));
+      console.log(`\ud83c\udf89 BashTool command executed successfully.`);
       return result.toString();
     } catch (error) {
+      console.error(`\u274c Error executing BashTool command: ${command}`, error);
       // Check if error is an object with stderr property
       if (error && typeof error === "object" && "stderr" in error) {
         return (error.stderr as Buffer).toString();

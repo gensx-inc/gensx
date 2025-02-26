@@ -15,8 +15,15 @@ export function getBuildTool(workspace: Workspace) {
       "Build the project using pnpm build. Returns build output or error messages.",
     schema: buildToolSchema,
     run: async (_params: BuildToolParams) => {
-      const output = await buildWorkspace(workspace);
-      return { output };
+      try {
+        console.log("\ud83d\udcbb Starting build process...");
+        const output = await buildWorkspace(workspace);
+        console.log("\ud83c\udf89 Build process completed successfully.");
+        return { output };
+      } catch (error) {
+        console.error("\u274c Build process failed.", error);
+        return { output: "Build failed: " + (error instanceof Error ? error.message : "Unknown error") };
+      }
     },
   });
 }

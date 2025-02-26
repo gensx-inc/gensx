@@ -8,7 +8,6 @@ import {
 } from "../../workspace.js";
 import { bashTool } from "../tools/bashTool.js";
 
-// Remove unused schema since we're defining inline now
 interface GoalDecision {
   newGoal: boolean;
   goalState: string;
@@ -46,6 +45,8 @@ Remember:
 - Look for clear evidence in the history that the goal was completed
 - If the history shows failed attempts or no progress, keep the current goal
 - Only move to a new goal when the current one is definitively achieved`;
+
+    console.log("\ud83d\udcbb Deciding if goal has been achieved with current context.");
 
     return GSXChatCompletion.run({
       messages: [
@@ -88,6 +89,8 @@ Remember:
 - After initial simple goals like README changes, focus on code improvements
 - Use the tools to explore the codebase and find relevant information online if needed`;
 
+    console.log("\ud83d\udcbb Generating new goal based on current context.");
+
     const result = await GSXChatCompletion.run({
       messages: [
         { role: "system", content: systemPrompt },
@@ -101,6 +104,8 @@ Remember:
       tools: [bashTool],
     });
 
+    console.log("\ud83c\udf89 New goal generated.");
+
     return result.choices[0].message.content ?? context.goalState;
   },
 );
@@ -112,9 +117,11 @@ export const GenerateGoalState = gsx.Component<
   const context = useWorkspaceContext();
 
   // First step: Decide if we need a new goal
+  console.log("\ud83d\udcbb Evaluating if a new goal is needed...");
   const needsNewGoal = await DecideIfGoalAchieved.run({});
 
   if (!needsNewGoal.needsNewGoal) {
+    console.log("\ud83d\udcbb No new goal needed.");
     return {
       newGoal: false,
       goalState: context.goalState,
@@ -122,11 +129,14 @@ export const GenerateGoalState = gsx.Component<
   }
 
   // Second step: Generate new goal using tools to explore codebase
+  console.log("\ud83d\udcbb Generating a new goal...");
   const newGoal = await GenerateNewGoal.run({});
 
   await updateWorkspaceContext({
     goalState: newGoal,
   });
+
+  console.log("\ud83c\udf89 New goal state updated.");
 
   return {
     newGoal: true,
