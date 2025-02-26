@@ -19,6 +19,7 @@
     "@mendable/firecrawl-js": "^1.18.2",
     "gensx": "workspace:*",
     "@anthropic-ai/sdk": "^0.37.0",
+    "glob": "^10.3.10",
     "zod": "^3.24.1"
   },
   "devDependencies": {

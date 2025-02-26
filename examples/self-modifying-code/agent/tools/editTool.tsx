@@ -85,7 +85,9 @@ Commands:
             );
           }
           await fs.mkdir(path.dirname(params.path), { recursive: true });
-          await fs.writeFile(params.path, params.content, "utf-8");
+          // Ensure content is not undefined
+          const contentToWrite = params.content || "";
+          await fs.writeFile(params.path, contentToWrite, "utf-8");
           return `File created successfully: ${params.path}`;
         }
 
@@ -95,7 +97,9 @@ Commands:
           }
 
           // Write new content atomically
-          await fs.writeFile(params.path, params.content, "utf-8");
+          // Ensure content is not undefined
+          const contentToWrite = params.content || "";
+          await fs.writeFile(params.path, contentToWrite, "utf-8");
           return `File updated successfully: ${params.path}`;
         }
 
