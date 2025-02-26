@@ -23,6 +23,8 @@ export {
   ChatCompletion,
 };
 
+export type GSXChatCompletionType = typeof GSXChatCompletion;
+
 export type {
   GSXChatCompletionProps,
   ChatCompletionProps,
