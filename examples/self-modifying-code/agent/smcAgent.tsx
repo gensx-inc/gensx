@@ -15,6 +15,8 @@ import {
 import { CodeAgent } from "./codeAgent.js";
 import { GenerateGoalState } from "./steps/generateGoalState.js";
 import { GeneratePlan } from "./steps/generatePlan.js";
+import { TestConfig, TestReport, runTestsForModifiedFiles } from "./testing/testRunner.js";
+import { ErrorCategory, ErrorDetails, createErrorHandler } from "./utils/errorHandler.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -94,16 +96,98 @@ After making changes, the code should successfully build with 'pnpm build'.`,
   },
 );
 
+interface RunTestsProps {
+  success: boolean;
+}
+
+const RunTests = gsx.Component<RunTestsProps, TestReport | null>(
+  "RunTests",
+  async ({ success }) => {
+    const workspace = useWorkspace();
+    console.log("Running tests");
+    
+    // If the modification wasn't successful, no need to run tests
+    if (!success) {
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Test execution",
+            result: "failure",
+            details: "Skipped tests as modification was unsuccessful",
+          },
+        ],
+      });
+      return null;
+    }
+    
+    const scopedPath = path.join(
+      workspace.sourceDir,
+      "examples",
+      "self-modifying-code",
+    );
+    
+    // Configure tests
+    const testConfig: TestConfig = {
+      testDir: scopedPath,
+      testMatch: ['**/*.test.ts', '**/*.test.tsx'],
+      timeout: 5000,
+      maxConcurrency: 1,
+      modifiedFilesOnly: true,
+      excludePatterns: [],
+    };
+    
+    try {
+      // Run tests for modified files
+      const modifiedFiles: string[] = []; // TODO: Get list of modified files
+      const testReport = await runTestsForModifiedFiles(testConfig, modifiedFiles);
+      
+      // Record test results in history
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Test execution",
+            result: testReport.passed ? "success" : "failure",
+            details: `Tests: ${testReport.passedCount} passed, ${testReport.failedCount} failed`,
+          },
+        ],
+      });
+      
+      return testReport;
+    } catch (error) {
+      // Handle test execution errors
+      const errorHandler = createErrorHandler();
+      const errorDetails = errorHandler.captureError(error);
+      
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Test execution",
+            result: "failure",
+            details: `Error running tests: ${errorDetails.message}`,
+          },
+        ],
+      });
+      
+      return null;
+    }
+  }
+);
+
 interface RunFinalValidationProps {
   success: boolean;
+  testReport: TestReport | null;
 }
 
 const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
   "RunFinalValidation",
-  async ({ success }) => {
+  async ({ success, testReport }) => {
     const workspace = useWorkspace();
     console.log("Running final validation");
     console.log("Success:", success);
+    
     // If the modification wasn't successful, no need to validate
     if (!success) {
       await updateWorkspaceContext({
@@ -118,10 +202,26 @@ const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
       });
       return false;
     }
+    
+    // If tests failed, mark validation as failed
+    if (testReport && !testReport.passed) {
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Final validation",
+            result: "failure",
+            details: `Validation failed: Tests failed (${testReport.failedCount} failures)`,
+          },
+        ],
+      });
+      return false;
+    }
 
     // Run the build validation
     const { success: buildSuccess, output } = await validateBuild(workspace);
     console.log("Build success:", buildSuccess);
+    
     await updateWorkspaceContext({
       history: [
         {
@@ -199,16 +299,20 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
                 {(plan) => (
                   <ModifyCode plan={plan}>
                     {(modifySuccess) => (
-                      <RunFinalValidation success={modifySuccess}>
-                        {(validated) => (
-                          <CommitResults success={validated}>
-                            {(committed) => ({
-                              success: committed,
-                              modified: true,
-                            })}
-                          </CommitResults>
+                      <RunTests success={modifySuccess}>
+                        {(testReport) => (
+                          <RunFinalValidation success={modifySuccess} testReport={testReport}>
+                            {(validated) => (
+                              <CommitResults success={validated}>
+                                {(committed) => ({
+                                  success: committed,
+                                  modified: true,
+                                })}
+                              </CommitResults>
+                            )}
+                          </RunFinalValidation>
                         )}
-                      </RunFinalValidation>
+                      </RunTests>
                     )}
                   </ModifyCode>
                 )}

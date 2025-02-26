@@ -6,6 +6,7 @@ import {
   useWorkspaceContext,
 } from "../../workspace.js";
 import { bashTool } from "../tools/bashTool.js";
+import { Plan, enhancePlan, parsePlanFromText, validatePlan } from "../utils/planValidator.js";
 
 interface GeneratePlanProps {}
 
@@ -46,10 +47,17 @@ For example, if modifying a README:
 4. Ensure the new section flows well with the existing content
 5. Verify the markdown formatting is correct"
 
+Your plan should include:
+- Clear step IDs (e.g., "Step 1", "Step 2")
+- Risk levels for each step (low, medium, high)
+- Dependencies between steps
+- Verification steps after major changes
+- A final build/validation step
+
 Use the bash tool to explore the codebase before creating your plan.`;
 
     // Get the plan from OpenAI
-    const plan = await ChatCompletion.run({
+    const planText = await ChatCompletion.run({
       system: systemPrompt,
       messages: [
         {
@@ -64,6 +72,47 @@ Use the bash tool to explore the codebase before creating your plan.`;
       tools: [bashTool],
     });
 
+    // Parse the plan text into a structured plan
+    let plan: Plan;
+    try {
+      plan = parsePlanFromText(planText);
+      
+      // Get list of existing files for validation
+      const existingFiles: string[] = [];
+      
+      // Validate the plan
+      const validation = validatePlan(plan, existingFiles);
+      
+      // If the plan is valid, enhance it with additional verification steps
+      if (validation.isValid) {
+        plan = enhancePlan(plan, existingFiles);
+      } else {
+        // Log validation issues
+        await updateWorkspaceContext({
+          history: [
+            {
+              timestamp: new Date(),
+              action: "Plan validation",
+              result: "failure",
+              details: `Plan validation failed: ${validation.issues.map(i => i.message).join(', ')}`,
+            },
+          ],
+        });
+      }
+    } catch (error) {
+      // If plan parsing fails, just use the text as is
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Plan parsing",
+            result: "failure",
+            details: `Failed to parse plan: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+      });
+    }
+
     // Add the plan to history
     await updateWorkspaceContext({
       history: [
@@ -71,11 +120,11 @@ Use the bash tool to explore the codebase before creating your plan.`;
           timestamp: new Date(),
           action: "Generated execution plan",
           result: "success",
-          details: plan,
+          details: planText,
         },
       ],
     });
 
-    return plan;
+    return planText;
   },
 );
