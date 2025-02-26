@@ -2,7 +2,12 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
+import {
+  contextOnComplete,
+  ExecutionContext,
+  getCurrentContext,
+  withContext,
+} from "./context.js";
 import { resolveDeep } from "./resolve.js";
 import {
   Args,
@@ -76,7 +81,12 @@ export const jsx = <TOutput, TProps>(
         // withContext handles wrapping internally
         return await withContext(result, async () => {
           const childResult = await resolveChildren(null as never, children);
-          return resolveDeep(childResult);
+          const resolvedChildResult = resolveDeep(childResult);
+
+          // .contextSymbol here is set in the provider function, as a way for us to backtrack a reference to the context that was created, and more specifically, any cleanup that needs to be done via the onComplete function.
+
+          await contextOnComplete((result as any).contextSymbol);
+          return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
         });
       } else if (parentNodeId) {
         // withCurrentNode handles wrapping internally

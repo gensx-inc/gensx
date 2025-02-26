@@ -17,13 +17,25 @@ function createContextSymbol() {
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
 
-  const Provider = (props: Args<{ value: T }, ExecutionContext>) => {
+  const Provider = (
+    props: Args<
+      { value: T; onComplete?: () => Promise<void> | void },
+      ExecutionContext
+    >,
+  ) => {
     return wrapWithFramework(() => {
       const currentContext = getCurrentContext();
 
-      return Promise.resolve(
-        currentContext.withContext({ [contextSymbol]: props.value }),
-      );
+      const executionContext = currentContext.withContext({
+        [contextSymbol]: { value: props.value, onComplete: props.onComplete },
+      });
+
+      // This is a hacky way to make provide a reference to the new context to the jsx-runtime, so that we can trace back and contextOnComplete after this provider is finished.
+      // otherwise, there is no way to distinguish between the newly created context and the parent values.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      (executionContext as any).contextSymbol = contextSymbol;
+
+      return Promise.resolve(executionContext);
     });
   };
 
@@ -32,7 +44,7 @@ export function createContext<T>(defaultValue: T): Context<T> {
     defaultValue,
     symbol: contextSymbol,
     Provider: Provider as unknown as GsxComponent<
-      { value: T },
+      { value: T; onComplete?: () => Promise<void> | void },
       ExecutionContext
     >,
   };
@@ -42,13 +54,39 @@ export function createContext<T>(defaultValue: T): Context<T> {
 
 export function useContext<T>(context: Context<T>): T {
   const executionContext = getCurrentContext();
-  const value = executionContext.get(context.symbol);
+  const contextValue = executionContext.get(context.symbol) as
+    | {
+        value: T;
+        onComplete?: () => Promise<void>;
+      }
+    | undefined;
 
-  if (value === undefined) {
+  if (contextValue?.value === undefined) {
     return context.defaultValue;
   }
 
-  return value as T;
+  const { value } = contextValue as {
+    value: T;
+    onComplete?: () => Promise<void>;
+  };
+
+  return value;
+}
+
+export async function contextOnComplete(contextSymbol: symbol | undefined) {
+  if (!contextSymbol) {
+    return;
+  }
+
+  const executionContext = getCurrentContext();
+  const contextValue = executionContext.get(contextSymbol) as
+    | {
+        value: unknown;
+        onComplete?: () => Promise<void>;
+      }
+    | undefined;
+
+  await contextValue?.onComplete?.();
 }
 
 // Define AsyncLocalStorage type based on Node.js definitions

@@ -119,5 +119,8 @@ export interface Context<T> {
   readonly __type: "Context";
   readonly defaultValue: T;
   readonly symbol: symbol;
-  Provider: GsxComponent<{ value: T }, ExecutionContext>;
+  Provider: GsxComponent<
+    { value: T; onComplete?: () => Promise<void> | void },
+    ExecutionContext
+  >;
 }
