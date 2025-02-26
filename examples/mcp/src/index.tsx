@@ -1,120 +1,109 @@
+import { createMCPServerContext, MCPTool } from "@gensx/mcp";
+import {
+  GSXChatCompletion,
+  GSXChatCompletionResult,
+  GSXTool,
+  GSXToolAnySchema,
+  OpenAIProvider,
+} from "@gensx/openai";
 import { gsx } from "gensx";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { GenerateText } from "@gensx/vercel-ai-sdk";
-import { openai } from "@ai-sdk/openai";
-import { tool, ToolSet } from "ai";
-import { z } from "zod";
 
+import packageJson from "../package.json" assert { type: "json" };
 
-interface MCPServerResult {
-  client: Client;
-  availableTools: any;
-}
-interface MCPServerProps {
-  clientName: string;
-  clientVersion: string;
-  serverCommand: string;
-  serverArgs: string[];
+// Check for OpenAI API key
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+if (!OPENAI_API_KEY) {
+  console.error("Error: OPENAI_API_KEY environment variable is required");
+  console.error("Please set it before running this example:");
+  console.error("  export OPENAI_API_KEY=your_api_key_here");
+  process.exit(1);
 }
 
-const MCPServer = gsx.Component<MCPServerProps, MCPServerResult>(
-  "MCPServer",
-  async (props: MCPServerProps): Promise<MCPServerResult> => {
-    // Create a transport for the MCP server
-    const { clientName, clientVersion, serverCommand, serverArgs } = props;
-    const transport = new StdioClientTransport({
-      command: serverCommand,
-      args: serverArgs
-    });
+const mapToGsxTools = (tools: MCPTool[]) => {
+  return tools.reduce((acc: GSXTool<GSXToolAnySchema>[], tool: MCPTool) => {
+    let description: string = tool.description ?? "";
+    if (description.length > 1024) {
+      description = description.slice(0, 1021) + "...";
+    }
 
-    // Create the client with appropriate capabilities
-    const client = new Client(
-      {
-        name: clientName,
-        version: clientVersion
-      },
-      {
-        capabilities: {
-          resources: {},
-          tools: {},
-          prompts: {}
-        }
-      }
+    acc.push(
+      GSXTool.create({
+        name: tool.name,
+        description,
+        schema: tool.schema as unknown as GSXToolAnySchema,
+        run: async (params) => {
+          return await tool.run(params);
+        },
+      }),
     );
+    return acc;
+  }, []);
+};
 
-    // Connect to the server
-    await client.connect(transport);
+const {
+  Provider: SequentialThinkingProvider,
+  useContext: useSequentialThinkingContext,
+} = createMCPServerContext({
+  clientName: "GSX-MCP-Tools-Client",
+  clientVersion: packageJson.version,
+  serverCommand: "npx",
+  serverArgs: ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+});
 
-    // Get server info to confirm connection
-    const serverInfo = await client.getServerCapabilities();
+const RespondWithTools = gsx.Component<
+  { userInput: string },
+  GSXChatCompletionResult
+>("RespondWithTools", ({ userInput }) => {
+  const { tools } = useSequentialThinkingContext();
+  const gsxTools = mapToGsxTools(tools);
 
-    // List available tools
-    const availableTools = (await client.listTools()).tools
-
-    return {
-      client,
-      availableTools,
-    };
-  }
-);
-
-interface MCPToolsConverterProps {
-  client: Client;
-  availableTools: any[];
-}
-
-const MCPToolsConverter = gsx.Component<MCPToolsConverterProps, { aiSdkTools: ToolSet }>(
-  "MCPToolsConverter",
-  ({ client, availableTools }) => {
-    // Create a tools object (not an array)
-    const aiSdkTools = availableTools.reduce((acc: ToolSet, mcpTool: any) => {
-      acc[mcpTool.name] = tool({
-        description: mcpTool.description?.substring(0, 1000) || "A tool",
-        parameters: z.object({
-          input: z.string().describe("Input for the tool")
-        }),
-        execute: async (params) => {
-          return await client.callTool(mcpTool.name, params);
-        }
-      });
-      return acc;
-    }, {});
-
-    return { aiSdkTools };
-  }
-);
+  return (
+    <GSXChatCompletion
+      model={"gpt-4o"}
+      messages={[
+        {
+          role: "system",
+          content:
+            "You are a helpful assistant that can use tools to answer questions.",
+        },
+        {
+          role: "user",
+          content: userInput,
+        },
+      ]}
+      tools={gsxTools}
+    />
+  );
+});
 
 // Example workflow that uses the MCPToolsProvider
-const MCPToolsWorkflow = gsx.Workflow("MCPToolsWorkflow", gsx.Component<{ userInput: string }, string>(
-  "MCPToolsExample",
-  async ({ userInput }) => {
-    return (
-      <MCPServer
-        clientName="GSX-MCP-Tools-Client"
-        clientVersion="1.0.0"
-        serverCommand="npx"
-        serverArgs={["-y", "@modelcontextprotocol/server-sequential-thinking"]}
-      >
-        {async ({ client, availableTools }) => {
-          return (
-            <MCPToolsConverter client={client} availableTools={availableTools}>
-              {({ aiSdkTools }) => (
-                <GenerateText
-                  model={openai("gpt-4o-mini")}
-                  prompt={userInput}
-                  tools={aiSdkTools as ToolSet}
-                />
-              )}
-            </MCPToolsConverter>
-          );
-        }}
-      </MCPServer>
-    );
-  }
-));
+const MCPToolsWorkflow = gsx.Workflow(
+  "MCPToolsWorkflow",
+  gsx.Component<{ userInput: string }, string>(
+    "MCPToolsExample",
+    ({ userInput }) => {
+      return (
+        <OpenAIProvider apiKey={OPENAI_API_KEY}>
+          <SequentialThinkingProvider>
+            <RespondWithTools userInput={userInput}>
+              {(result) => {
+                return result.choices[0].message.content;
+              }}
+            </RespondWithTools>
+          </SequentialThinkingProvider>
+        </OpenAIProvider>
+      );
+    },
+  ),
+);
 
 // Run the MCP tools workflow with a user input
-const mcpToolsResult = await MCPToolsWorkflow.run({
-  userInput: "Can you think through how much flooring I would need if I have a 25x25 room but there is a 3.5 x3 ft area in one of the corners. The flooring is 5 in x 4 ft."
-}, { printUrl: true });
+const mcpToolsResult = await MCPToolsWorkflow.run(
+  {
+    userInput:
+      "Can you think through how much flooring I would need if I have a 25x25 room but there is a 3.5 x3 ft area in one of the corners. The flooring is 5 in x 4 ft.",
+  },
+  { printUrl: true },
+);
+
+console.info(mcpToolsResult);

@@ -1,5 +1,5 @@
 {
-  "name": "my-gensx-app",
+  "name": "@gensx-examples/mcp",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -11,19 +11,17 @@
     "start": "tsx ./src/index.tsx",
     "build": "tsc"
   },
-  "description": "Starter project for [GenSX](https://gensx.com), created using `npx create-gensx`.",
+  "description": "GenSX example project for the Model Context Protocol",
   "main": "index.js",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ai-sdk/openai": "^1.1.14",
-    "@gensx/openai": "^0.1.7",
-    "@gensx/vercel-ai-sdk": "^0.1.0",
-    "@modelcontextprotocol/sdk": "^1.6.0",
-    "ai": "^4.1.46",
-    "gensx": "^0.2.13",
-    "openai": "^4.85.4"
+    "@gensx/mcp": "workspace:*",
+    "@gensx/openai": "workspace:*",
+    "gensx": "workspace:*",
+    "openai": "^4.85.4",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
