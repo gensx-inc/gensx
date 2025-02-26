@@ -15,10 +15,10 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@gensx/openai": "workspace:*",
+    "@gensx/anthropic": "workspace:*",
     "@mendable/firecrawl-js": "^1.18.2",
     "gensx": "workspace:*",
-    "openai": "^4.77.0",
+    "@anthropic-ai/sdk": "^0.37.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 // Agent based on https://www.anthropic.com/research/swe-bench-sonnet
 
-import { GSXChatCompletion } from "@gensx/openai";
+import { GSXChatCompletion } from "@gensx/anthropic";
 import { gsx } from "gensx";
 import { z } from "zod";
 
@@ -30,12 +30,9 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
 
     // First run with tools to make the changes
     const toolResult = await GSXChatCompletion.run({
+      system:
+        "You are a helpful assistant designed to act as an expert software engineer designed to autonomously update codebases based on user instructions.",
       messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful assistant designed to act as an expert software engineer designed to autonomously update codebases based on user instructions.",
-        },
         {
           role: "user",
           content: getCodeAgentPrompt(
@@ -45,19 +42,18 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
           ),
         },
       ],
-      model: "gpt-4o",
+      model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
+      max_tokens: 10000,
       tools: [editTool, bashTool, buildTool],
     });
 
-    const toolOutput = toolResult.choices[0]?.message?.content ?? "";
+    const textBlock = toolResult.content.find((block) => block.type === "text");
+    const toolOutput = textBlock?.text ?? "";
 
     // Then coerce the output into our structured format
     return GSXChatCompletion.run({
-      messages: [
-        {
-          role: "system",
-          content: `You are a helpful assistant that takes the output from a code modification session and structures it into a clear summary and success state.
+      system: `You are a helpful assistant that takes the output from a code modification session and structures it into a clear summary and success state.
 
 The output should be structured as:
 {
@@ -70,7 +66,7 @@ Look for:
 - Whether the changes were successful
 - If the build succeeded
 - Any errors or issues encountered`,
-        },
+      messages: [
         {
           role: "user",
           content: `Please analyze this code modification output and provide a structured summary:
@@ -78,8 +74,9 @@ Look for:
 ${toolOutput}`,
         },
       ],
-      model: "gpt-4o",
+      model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
+      max_tokens: 10000,
       outputSchema: codeAgentOutputSchema,
     });
   },

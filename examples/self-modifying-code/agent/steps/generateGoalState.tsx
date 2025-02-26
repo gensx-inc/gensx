@@ -1,4 +1,4 @@
-import { GSXChatCompletion } from "@gensx/openai";
+import { GSXChatCompletion } from "@gensx/anthropic";
 import { gsx } from "gensx";
 import { z } from "zod";
 
@@ -48,16 +48,17 @@ Remember:
 - Only move to a new goal when the current one is definitively achieved`;
 
     return GSXChatCompletion.run({
+      system: systemPrompt,
       messages: [
-        { role: "system", content: systemPrompt },
         {
           role: "user",
           content:
             "Review the goal state and history, then make your decision.",
         },
       ],
-      model: "gpt-4o",
+      model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
+      max_tokens: 10000,
       outputSchema: needsGoalSchema,
     });
   },
@@ -89,19 +90,23 @@ Remember:
 - Use the tools to explore the codebase and find relevant information online if needed`;
 
     const result = await GSXChatCompletion.run({
+      system: systemPrompt,
       messages: [
-        { role: "system", content: systemPrompt },
         {
           role: "user",
           content: "Explore the codebase and propose a new goal.",
         },
       ],
-      model: "gpt-4o",
+      model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
+      max_tokens: 10000,
       tools: [bashTool],
     });
 
-    return result.choices[0].message.content ?? context.goalState;
+    const textBlock = result.content.find((block) => block.type === "text");
+    const goal = textBlock?.text ?? context.goalState;
+
+    return goal;
   },
 );
 

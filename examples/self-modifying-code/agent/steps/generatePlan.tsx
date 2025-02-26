@@ -1,4 +1,4 @@
-import { ChatCompletion } from "@gensx/openai";
+import { ChatCompletion } from "@gensx/anthropic";
 import { gsx } from "gensx";
 
 import {
@@ -50,19 +50,17 @@ Use the bash tool to explore the codebase before creating your plan.`;
 
     // Get the plan from OpenAI
     const plan = await ChatCompletion.run({
+      system: systemPrompt,
       messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
         {
           role: "user",
           content:
             "Explore the codebase and create a plan to achieve the current goal.",
         },
       ],
-      model: "gpt-4o",
+      model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
+      max_tokens: 10000,
       tools: [bashTool],
     });
 

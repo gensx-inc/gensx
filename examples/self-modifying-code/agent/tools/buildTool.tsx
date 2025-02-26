@@ -1,4 +1,4 @@
-import { GSXTool } from "@gensx/openai";
+import { GSXTool } from "@gensx/anthropic";
 import { z } from "zod";
 
 import { buildWorkspace, type Workspace } from "../../workspace.js";

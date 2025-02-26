@@ -1,6 +1,6 @@
 import path from "path";
 
-import { OpenAIProvider } from "@gensx/openai";
+import { AnthropicProvider } from "@gensx/anthropic";
 import { gsx } from "gensx";
 
 import {
@@ -191,7 +191,7 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
   ({ workspace }) => {
     return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
         <WorkspaceProvider workspace={workspace}>
           <GenerateGoalState>
             {() => (
@@ -216,7 +216,7 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
             )}
           </GenerateGoalState>
         </WorkspaceProvider>
-      </OpenAIProvider>
+      </AnthropicProvider>
     );
   },
 );

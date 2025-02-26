@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import fs from "fs/promises";
 import path from "path";
 
-import { GSXTool } from "@gensx/openai";
+import { GSXTool } from "@gensx/anthropic";
 import { z } from "zod";
 
 // Define the base schema as a Zod object
@@ -85,7 +85,7 @@ Commands:
             );
           }
           await fs.mkdir(path.dirname(params.path), { recursive: true });
-          await fs.writeFile(params.path, params.content!, "utf-8");
+          await fs.writeFile(params.path, params.content, "utf-8");
           return `File created successfully: ${params.path}`;
         }
 
@@ -95,7 +95,7 @@ Commands:
           }
 
           // Write new content atomically
-          await fs.writeFile(params.path, params.content!, "utf-8");
+          await fs.writeFile(params.path, params.content, "utf-8");
           return `File updated successfully: ${params.path}`;
         }
 

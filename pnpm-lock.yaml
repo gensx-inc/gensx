@@ -346,18 +346,18 @@ importers:
 
   examples/self-modifying-code:
     dependencies:
-      '@gensx/openai':
+      '@anthropic-ai/sdk':
+        specifier: ^0.37.0
+        version: 0.37.0
+      '@gensx/anthropic':
         specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        version: link:../../packages/gensx-anthropic
       '@mendable/firecrawl-js':
         specifier: ^1.18.2
         version: 1.18.2(ws@8.18.0)
       gensx:
         specifier: workspace:*
         version: link:../../packages/gensx
-      openai:
-        specifier: ^4.77.0
-        version: 4.83.0(ws@8.18.0)(zod@3.24.1)
       zod:
         specifier: ^3.24.1
         version: 3.24.1

@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 
-import { GSXTool } from "@gensx/openai";
+import { GSXTool } from "@gensx/anthropic";
 import { z } from "zod";
 
 // Define the schema as a Zod object
