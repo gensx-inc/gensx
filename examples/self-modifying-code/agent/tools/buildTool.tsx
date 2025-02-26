@@ -1,7 +1,7 @@
 import { GSXTool } from "@gensx/anthropic";
 import { z } from "zod";
 
-import { buildWorkspace, type Workspace } from "../../workspace.js";
+import { validateBuild, type Workspace } from "../../workspace.js";
 
 // Empty schema since we don't need any parameters
 const buildToolSchema = z.object({});
@@ -15,8 +15,8 @@ export function getBuildTool(workspace: Workspace) {
       "Build the project using pnpm build. Returns build output or error messages.",
     schema: buildToolSchema,
     run: async (_params: BuildToolParams) => {
-      const output = await buildWorkspace(workspace);
-      return { output };
+      const output = await validateBuild(workspace);
+      return output;
     },
   });
 }
