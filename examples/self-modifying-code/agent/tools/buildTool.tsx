@@ -1,4 +1,5 @@
 import { GSXTool } from "@gensx/anthropic";
+import { serializeError } from "serialize-error";
 import { z } from "zod";
 
 import { validateBuild, type Workspace } from "../../workspace.js";
@@ -15,8 +16,15 @@ export function getBuildTool(workspace: Workspace) {
       "Build the project using pnpm build. Returns build output or error messages.",
     schema: buildToolSchema,
     run: async (_params: BuildToolParams) => {
-      const output = await validateBuild(workspace);
-      return output;
+      try {
+        const output = await validateBuild(workspace);
+        return output;
+      } catch (error) {
+        return {
+          success: false,
+          output: serializeError(error),
+        };
+      }
     },
   });
 }

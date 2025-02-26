@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 
 import { GSXTool } from "@gensx/anthropic";
+import { serializeError } from "serialize-error";
 import { z } from "zod";
 
 // Define the base schema as a Zod object
@@ -85,7 +86,7 @@ Commands:
             );
           }
           await fs.mkdir(path.dirname(params.path), { recursive: true });
-          await fs.writeFile(params.path, params.content, "utf-8");
+          await fs.writeFile(params.path, params.content ?? "", "utf-8");
           return `File created successfully: ${params.path}`;
         }
 
@@ -95,7 +96,7 @@ Commands:
           }
 
           // Write new content atomically
-          await fs.writeFile(params.path, params.content, "utf-8");
+          await fs.writeFile(params.path, params.content ?? "", "utf-8");
           return `File updated successfully: ${params.path}`;
         }
 
@@ -103,10 +104,10 @@ Commands:
           throw new Error(`Unknown command: ${String(params.command)}`);
       }
     } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error(`Failed to process command: ${String(error)}`);
+      return {
+        success: false,
+        output: serializeError(error),
+      };
     }
   },
 });
