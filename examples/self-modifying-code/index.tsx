@@ -20,6 +20,8 @@ function getWorkspaceConfig(): WorkspaceConfig {
   };
 }
 
+const doNotSpawnChildProcess = process.env.SMC_NO_ITERATION === "true";
+
 // Check if this process is a child process
 const isChildProcess = process.env.SMC_CHILD_PROCESS === "true";
 const iterationId = process.env.SMC_ITERATION_ID;
@@ -86,7 +88,7 @@ function spawnChildProcess(iterationId: string) {
 
       // If the child process made modifications (exit code 42),
       // spawn a new child to continue the process
-      if (code === 42) {
+      if (code === 42 && !doNotSpawnChildProcess) {
         console.log("Child made modifications, spawning new child process...");
 
         // Spawn a new child process
