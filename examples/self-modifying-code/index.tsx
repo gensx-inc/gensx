@@ -4,7 +4,7 @@ import path from "path";
 import { gsx } from "gensx";
 
 import { SelfModifyingCodeAgent } from "./agent/smcAgent.js";
-import { acquireLease, releaseLease } from "./lease.js";
+import { acquireLease, checkIfLeaseExists, releaseLease } from "./lease.js";
 import {
   setupWorkspace,
   type Workspace,
@@ -35,22 +35,42 @@ async function startNewAgent(workspace: Workspace): Promise<boolean> {
       "examples",
       "self-modifying-code",
     );
+
     // Start new agent process with same env vars
-    const proc = spawn("pnpm", ["dev"], {
+    const proc = spawn("pnpm", ["start"], {
       cwd: scopedPath,
-      stdio: "inherit",
+      stdio: "ignore",
       env: process.env,
+      detached: true,
     });
+
+    // Use a setTimeout loop to check if the new process has acquired the lease
+    let checkLeaseTimeout: NodeJS.Timeout;
+    const checkLeaseAndLoop = () => {
+      void checkIfLeaseExists().then((result) => {
+        console.log("Lease check result:", result);
+        if (result) {
+          clearTimeout(checkLeaseTimeout);
+          resolve(true);
+        } else {
+          console.log("Lease not acquired, checking again...");
+          checkLeaseTimeout = setTimeout(checkLeaseAndLoop, 500);
+        }
+      });
+    };
+    checkLeaseTimeout = setTimeout(checkLeaseAndLoop, 500);
 
     // Give it 60 seconds to acquire the lease
     const timeout = setTimeout(() => {
       proc.kill();
       resolve(false);
+      clearTimeout(checkLeaseTimeout);
     }, 60000);
 
     // If process exits early, it failed
     proc.on("exit", (code) => {
       clearTimeout(timeout);
+      clearTimeout(checkLeaseTimeout);
       resolve(code === 0);
     });
   });

@@ -72,6 +72,14 @@ export async function releaseLease(lease: Lease): Promise<void> {
   }
 }
 
+export async function checkIfLeaseExists(): Promise<boolean> {
+  try {
+    await fs.access(LEASE_FILE);
+    return true;
+  } catch {
+    return false;
+  }
+}
 export async function renewLease(lease: Lease): Promise<Lease> {
   await ensureLeaseDirExists();
   try {
