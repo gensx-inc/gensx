@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.14](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.13...gensx-v0.2.14) (2025-02-25)
+
+
+### ✨ New Features
+
+* Component.run ([#345](https://github.com/gensx-inc/gensx/issues/345)) ([636f251](https://github.com/gensx-inc/gensx/commit/636f251f15f8cd20cf3fbc417a9485a4b4c83922))
+
+
+### 🐛 Bug Fixes
+
+* clone objects in checkpoints to prevent mutated objects from mes… ([#313](https://github.com/gensx-inc/gensx/issues/313)) ([f5fc005](https://github.com/gensx-inc/gensx/commit/f5fc005619bcd9dccf2d2dc7893363d5c685238d))
+* Constrain prop types to be an object ([#339](https://github.com/gensx-inc/gensx/issues/339)) ([3195537](https://github.com/gensx-inc/gensx/commit/31955378eedc458964bd877433ec0f9b8192a9b9))
+* Resolve GsxArray ([#343](https://github.com/gensx-inc/gensx/issues/343)) ([3a582b3](https://github.com/gensx-inc/gensx/commit/3a582b305d5a828b783a73c5cef4eb551645a275))
+
 ## [0.2.13](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.12...gensx-v0.2.13) (2025-02-22)
 
 

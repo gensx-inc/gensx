@@ -39,6 +39,9 @@ jobs:
       - name: Build 📦
         run: pnpm build
 
+      - name: Test types 🧪
+        run: pnpm test:types
+
       - name: Run tests 🧪
         run: pnpm test
         env:

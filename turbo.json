@@ -20,7 +20,7 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "build"],
       "outputs": ["coverage/**"],
       "inputs": [
         "src/**/*.tsx",
@@ -30,12 +30,12 @@
       ],
       "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY", "DOCS_URL"]
     },
+    "test:types": {
+      "outputs": []
+    },
     "lint:fix": {
       "dependsOn": ["^build"],
       "outputs": []
-    },
-    "docs#lint": {
-      "dependsOn": ["^build", "build"]
     },
     "create-gensx#test": {
       "dependsOn": ["^build", "build", "gensx#build", "@gensx/openai#build"],

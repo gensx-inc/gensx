@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { GsxArray } from "./array";
 import { ExecutionContext } from "./context";
 import { isStreamable } from "./stream";
 
@@ -25,6 +26,11 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   // Pass through streamable values - they are handled by execute (StreamComponent)
   if (isStreamable(value)) {
     return value as unknown as T;
+  }
+
+  // handle GsxArray
+  if (value instanceof GsxArray) {
+    return await resolveDeep(await value.toArray());
   }
 
   // Handle arrays
