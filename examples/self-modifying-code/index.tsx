@@ -1,15 +1,11 @@
 import { spawn } from "child_process";
-import path from "path";
+import process from "process";
 
 import { gsx } from "gensx";
 
 import { SelfModifyingCodeAgent } from "./agent/smcAgent.js";
-import { acquireLease, checkIfLeaseExists, releaseLease } from "./lease.js";
-import {
-  setupWorkspace,
-  type Workspace,
-  type WorkspaceConfig,
-} from "./workspace.js";
+import { acquireLease, releaseLease } from "./lease.js";
+import { setupWorkspace, type WorkspaceConfig } from "./workspace.js";
 
 function getWorkspaceConfig(): WorkspaceConfig {
   const repoUrl = process.env.REPO_URL;
@@ -25,67 +21,24 @@ function getWorkspaceConfig(): WorkspaceConfig {
   };
 }
 
-// flag for testing in development.
-const shouldSpawnAgent = true;
+// Flag for testing in development
+// const shouldSpawnAgent = true;
 
-async function startNewAgent(workspace: Workspace): Promise<boolean> {
-  return new Promise((resolve) => {
-    const scopedPath = path.join(
-      workspace.sourceDir,
-      "examples",
-      "self-modifying-code",
-    );
+// Check if this process is a child process
+const isChildProcess = process.env.SMC_CHILD_PROCESS === "true";
 
-    // Start new agent process with same env vars
-    const proc = spawn("pnpm", ["start"], {
-      cwd: scopedPath,
-      stdio: "ignore",
-      env: process.env,
-      detached: true,
-    });
-
-    // Use a setTimeout loop to check if the new process has acquired the lease
-    let checkLeaseTimeout: NodeJS.Timeout;
-    const checkLeaseAndLoop = () => {
-      void checkIfLeaseExists().then((result) => {
-        console.log("Lease check result:", result);
-        if (result) {
-          clearTimeout(checkLeaseTimeout);
-          resolve(true);
-        } else {
-          console.log("Lease not acquired, checking again...");
-          checkLeaseTimeout = setTimeout(checkLeaseAndLoop, 500);
-        }
-      });
-    };
-    checkLeaseTimeout = setTimeout(checkLeaseAndLoop, 500);
-
-    // Give it 60 seconds to acquire the lease
-    const timeout = setTimeout(() => {
-      proc.kill();
-      resolve(false);
-      clearTimeout(checkLeaseTimeout);
-    }, 60000);
-
-    // If process exits early, it failed
-    proc.on("exit", (code) => {
-      clearTimeout(timeout);
-      clearTimeout(checkLeaseTimeout);
-      resolve(code === 0);
-    });
-  });
-}
-
-async function main() {
+// Function to run the actual workflow
+async function runWorkflow() {
   let lease;
-  let workspace;
   let error: unknown;
+  let modified = false;
+
+  const config = getWorkspaceConfig();
+  const workspace = await setupWorkspace(config);
 
   try {
-    // Setup phase
-    const config = getWorkspaceConfig();
+    // Acquire lease
     lease = await acquireLease();
-    workspace = await setupWorkspace(config);
 
     // Run agent workflow
     const workflow = gsx.Workflow("SelfModifyingCode", SelfModifyingCodeAgent);
@@ -93,39 +46,100 @@ async function main() {
 
     if (!result.success) {
       error = new Error(`Agent failed: ${result.error}`);
-      return;
+      return { success: false, error, modified: false };
     }
 
-    // If agent made changes, start a new iteration
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (result.modified && shouldSpawnAgent) {
-      console.log("Changes made, starting new iteration...");
-
-      // Release lease before spawning new agent
-      console.log("Releasing lease to allow new agent to start...");
-      await releaseLease(lease);
-      lease = undefined; // Prevent double-release in finally block
-
-      // Give a small delay to allow lease file system operations to complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const success = await startNewAgent(workspace);
-      if (success) {
-        console.log("New iteration started successfully, shutting down");
-        process.exit(0);
-      } else {
-        error = new Error("Failed to start new iteration");
-      }
-    }
+    modified = result.modified;
+    return { success: true, modified };
   } catch (e) {
     error = e;
+    return { success: false, error, modified: false };
   } finally {
     // Cleanup phase
     if (lease) await releaseLease(lease);
-    // if (workspace) await cleanupWorkspace(workspace);
   }
+}
 
-  if (error) {
+// Function to spawn a new child process
+function spawnChildProcess() {
+  console.log("Spawning new child process...");
+
+  try {
+    // Create a new environment with the child process flag
+    const childEnv = {
+      ...process.env,
+      SMC_CHILD_PROCESS: "true",
+    };
+
+    // Use 'pnpm start' instead of trying to invoke Node directly
+    // This ensures we use the correct Node version through pnpm
+    const child = spawn("pnpm", ["start"], {
+      cwd: process.cwd(),
+      stdio: "inherit",
+      env: childEnv,
+      detached: false,
+    });
+
+    console.log("Child process spawned with PID:", child.pid);
+
+    // Handle child process events
+    child.on("error", (err) => {
+      console.error("Failed to start child process:", err);
+      process.exit(1);
+    });
+
+    // Handle child process exit
+    child.on("exit", (code) => {
+      console.log(`Child process exited with code ${code}`);
+
+      // If the child process made modifications (exit code 42),
+      // spawn a new child to continue the process
+      if (code === 42) {
+        console.log("Child made modifications, spawning new child process...");
+
+        // Spawn a new child process
+        spawnChildProcess();
+      } else {
+        // For any other exit code, just exit with the same code
+        process.exit(code ?? 0);
+      }
+    });
+  } catch (error) {
+    console.error("Error spawning child process:", error);
+    process.exit(1);
+  }
+}
+
+// Main function - acts as the controller
+async function main() {
+  try {
+    if (isChildProcess) {
+      // This is a child process, run the workflow
+      console.log("Running as child process");
+      const result = await runWorkflow();
+
+      if (!result.success) {
+        console.error("Workflow failed:", result.error);
+        process.exit(1);
+      }
+
+      // If modifications were made, signal parent to spawn a new iteration
+      if (result.modified) {
+        console.log("Changes made, signaling parent to spawn new iteration...");
+        // Exit with special code to indicate modifications were made
+        process.exit(42);
+      } else {
+        // No modifications, exit normally
+        process.exit(0);
+      }
+    } else {
+      // This is the parent/controller process
+      console.log("Running as parent/controller process");
+
+      // Spawn the first child process
+      spawnChildProcess();
+    }
+  } catch (error) {
     console.error("Fatal error:", error);
     process.exit(1);
   }
