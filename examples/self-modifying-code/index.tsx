@@ -4,7 +4,6 @@ import process from "process";
 import { gsx } from "gensx";
 
 import { SelfModifyingCodeAgent } from "./agent/smcAgent.js";
-import { acquireLease, releaseLease } from "./lease.js";
 import { setupWorkspace, type WorkspaceConfig } from "./workspace.js";
 
 function getWorkspaceConfig(): WorkspaceConfig {
@@ -21,15 +20,12 @@ function getWorkspaceConfig(): WorkspaceConfig {
   };
 }
 
-// Flag for testing in development
-// const shouldSpawnAgent = true;
-
 // Check if this process is a child process
 const isChildProcess = process.env.SMC_CHILD_PROCESS === "true";
+const iterationId = process.env.SMC_ITERATION_ID;
 
 // Function to run the actual workflow
 async function runWorkflow() {
-  let lease;
   let error: unknown;
   let modified = false;
 
@@ -37,12 +33,12 @@ async function runWorkflow() {
   const workspace = await setupWorkspace(config);
 
   try {
-    // Acquire lease
-    lease = await acquireLease();
-
-    // Run agent workflow
-    const workflow = gsx.Workflow("SelfModifyingCode", SelfModifyingCodeAgent);
-    const result = await workflow.run({ workspace, lease }, { printUrl: true });
+    // Run agent workflow. Give each iteration a unique name to group them in the UI
+    const workflow = gsx.Workflow(
+      `SelfModifyingCode-${iterationId ?? "unknown"}`,
+      SelfModifyingCodeAgent,
+    );
+    const result = await workflow.run({ workspace }, { printUrl: true });
 
     if (!result.success) {
       error = new Error(`Agent failed: ${result.error}`);
@@ -54,14 +50,11 @@ async function runWorkflow() {
   } catch (e) {
     error = e;
     return { success: false, error, modified: false };
-  } finally {
-    // Cleanup phase
-    if (lease) await releaseLease(lease);
   }
 }
 
 // Function to spawn a new child process
-function spawnChildProcess() {
+function spawnChildProcess(iterationId: string) {
   console.log("Spawning new child process...");
 
   try {
@@ -69,10 +62,9 @@ function spawnChildProcess() {
     const childEnv = {
       ...process.env,
       SMC_CHILD_PROCESS: "true",
+      SMC_ITERATION_ID: iterationId,
     };
 
-    // Use 'pnpm start' instead of trying to invoke Node directly
-    // This ensures we use the correct Node version through pnpm
     const child = spawn("pnpm", ["start"], {
       cwd: process.cwd(),
       stdio: "inherit",
@@ -98,7 +90,7 @@ function spawnChildProcess() {
         console.log("Child made modifications, spawning new child process...");
 
         // Spawn a new child process
-        spawnChildProcess();
+        spawnChildProcess(iterationId);
       } else {
         // For any other exit code, just exit with the same code
         process.exit(code ?? 0);
@@ -110,7 +102,10 @@ function spawnChildProcess() {
   }
 }
 
-// Main function - acts as the controller
+/**
+ * Main function acts as a process controller. If it is the parent, it spawns a child process and waits for it to finish.
+ * If it is a child process, it runs the workflow and exits with a special code if changes were made. The parent sees this code, and spawns a new child process if necessary.
+ */
 async function main() {
   try {
     if (isChildProcess) {
@@ -133,11 +128,14 @@ async function main() {
         process.exit(0);
       }
     } else {
+      const iterationId = Date.now().toString();
       // This is the parent/controller process
-      console.log("Running as parent/controller process");
+      console.log(
+        `Running as parent/controller process for iteration ${iterationId}`,
+      );
 
       // Spawn the first child process
-      spawnChildProcess();
+      spawnChildProcess(iterationId);
     }
   } catch (error) {
     console.error("Fatal error:", error);

@@ -3,7 +3,6 @@ import path from "path";
 import { OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 
-import { Lease } from "../lease.js";
 import {
   runCommand,
   updateWorkspaceContext,
@@ -20,7 +19,6 @@ import { FirecrawlProvider } from "./tools/scrapeWebpage.js";
 
 export interface AgentProps {
   workspace: Workspace;
-  lease: Lease;
 }
 
 export interface AgentResult {
