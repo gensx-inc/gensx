@@ -122,6 +122,26 @@
           "jsonpath": "$.version"
         }
       ]
+    },
+    "packages/gensx-mcp": {
+      "component": "gensx-mcp",
+      "release-type": "node",
+      "package-name": "@gensx/mcp",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "initial-version": "0.1.0",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
     }
   },
   "changelog-sections": [
