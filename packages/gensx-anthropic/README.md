@@ -8,14 +8,6 @@ Anthropic integration for [GenSX](https://github.com/gensx-inc/gensx) - Build AI
 npm install @gensx/anthropic
 ```
 
-### Requires `gensx`
-
-This package requires `gensx` to be installed as a peer dependency.
-
-```bash
-npm install gensx
-```
-
 ## Usage
 
 ```tsx

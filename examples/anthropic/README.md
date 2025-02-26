@@ -1,6 +1,6 @@
-# GsxChatCompletion Examples
+# Anthropic GsxChatCompletion Examples
 
-This example demonstrates different ways the `GSXChatCompletion` component can be used. It includes six smaller examples showing how you can use `GSXChatCompletion` for
+This example demonstrates different ways the `GSXChatCompletion` component can be used with Anthropic models. It includes six smaller examples showing how you can use `GSXChatCompletion` for
 
 - Basic chat completions
 - Streaming completions
@@ -14,8 +14,8 @@ This example demonstrates different ways the `GSXChatCompletion` component can b
 # Install dependencies
 pnpm install
 
-# Set your OpenAI API key
-export OPENAI_API_KEY=<your_api_key>
+# Set your Anthropic API Key
+export ANTHROPIC_API_KEY=<your_api_key>
 
 # Run the example
 pnpm run start
@@ -26,6 +26,5 @@ You can choose which example to run by changing the `example` variable in `index
 - `basicCompletion` - Simple chat completion with a system prompt and user message
 - `streamingCompletion` - Real-time streaming of chat responses
 - `tools` - Using tools with a simple weather tool example
-- `toolsStreaming` - Using tools with streaming responses
 - `structuredOutput` - Generating structured outputs with a Zod schema
 - `multiStepTools` - Using tools in a multi-step workflow
