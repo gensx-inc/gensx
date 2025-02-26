@@ -6,7 +6,6 @@ import {
   useWorkspaceContext,
 } from "../../workspace.js";
 import { bashTool } from "../tools/bashTool.js";
-import { scrapeUrlTool } from "../tools/scrapeWebpage.js";
 
 interface GeneratePlanProps {}
 
@@ -64,7 +63,7 @@ Use the bash tool to explore the codebase before creating your plan, and the scr
       ],
       model: "gpt-4o",
       temperature: 0.7,
-      tools: [bashTool, scrapeUrlTool],
+      tools: [bashTool],
     });
 
     // Add the plan to history

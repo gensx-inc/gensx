@@ -8,7 +8,6 @@ import { useWorkspace } from "../workspace.js";
 import { bashTool } from "./tools/bashTool.js";
 import { getBuildTool } from "./tools/buildTool.js";
 import { editTool } from "./tools/editTool.js";
-import { scrapeUrlTool } from "./tools/scrapeWebpage.js";
 interface CodeAgentProps {
   task: string;
   additionalInstructions?: string;
@@ -48,7 +47,7 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
       ],
       model: "gpt-4o",
       temperature: 0.7,
-      tools: [editTool, bashTool, buildTool, scrapeUrlTool],
+      tools: [editTool, bashTool, buildTool],
     });
 
     const toolOutput = toolResult.choices[0]?.message?.content ?? "";

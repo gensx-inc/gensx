@@ -7,7 +7,6 @@ import {
   useWorkspaceContext,
 } from "../../workspace.js";
 import { bashTool } from "../tools/bashTool.js";
-import { scrapeUrlTool } from "../tools/scrapeWebpage.js";
 
 // Remove unused schema since we're defining inline now
 interface GoalDecision {
@@ -99,7 +98,7 @@ Remember:
       ],
       model: "gpt-4o",
       temperature: 0.7,
-      tools: [bashTool, scrapeUrlTool],
+      tools: [bashTool],
     });
 
     return result.choices[0].message.content ?? context.goalState;
