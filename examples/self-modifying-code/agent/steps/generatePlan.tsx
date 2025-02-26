@@ -62,7 +62,7 @@ Use the bash tool to explore the codebase before creating your plan, and the scr
             "Explore the codebase and create a plan to achieve the current goal.",
         },
       ],
-      model: "gpt-4",
+      model: "gpt-4o",
       temperature: 0.7,
       tools: [bashTool, scrapeUrlTool],
     });
