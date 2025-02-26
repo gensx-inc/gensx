@@ -8,7 +8,6 @@ import { useWorkspace } from "../workspace.js";
 import { bashTool } from "./tools/bashTool.js";
 import { getBuildTool } from "./tools/buildTool.js";
 import { editTool } from "./tools/editTool.js";
-import { scrapeUrlTool } from "./tools/scrapeWebpage.js";
 interface CodeAgentProps {
   task: string;
   additionalInstructions?: string;
@@ -48,7 +47,7 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
       ],
       model: "gpt-4o",
       temperature: 0.7,
-      tools: [editTool, bashTool, buildTool, scrapeUrlTool],
+      tools: [editTool, bashTool, buildTool],
     });
 
     const toolOutput = toolResult.choices[0]?.message?.content ?? "";
@@ -117,7 +116,6 @@ You have access to some tools that may be helpful:
 - bash: For exploring the codebase and examining files
 - editor: For making code changes
 - build: For verifying changes compile successfully with 'pnpm build'
-- scrapeUrl: For finding relevant information online
 
 Be thorough in your thinking and explain your changes in the summary. Make sure to verify the build succeeds before marking success as true.`;
 }

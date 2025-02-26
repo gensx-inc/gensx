@@ -18,7 +18,7 @@ This example demonstrates a self-modifying code agent. The agent:
 pnpm install
 
 # Run the example
-OPENAI_API_KEY=<api key> FIRECRAWL_API_KEY=<api key> REPO_URL=https://github.com/<your-username>/<your-fork-of-gensx> BRANCH=<branch> pnpm run start
+OPENAI_API_KEY=<api key> REPO_URL=https://github.com/<your-username>/<your-fork-of-gensx> BRANCH=<branch> pnpm run start
 ```
 
 ## Warning

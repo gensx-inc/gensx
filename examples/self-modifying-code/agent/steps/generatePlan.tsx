@@ -6,7 +6,6 @@ import {
   useWorkspaceContext,
 } from "../../workspace.js";
 import { bashTool } from "../tools/bashTool.js";
-import { scrapeUrlTool } from "../tools/scrapeWebpage.js";
 
 interface GeneratePlanProps {}
 
@@ -47,7 +46,7 @@ For example, if modifying a README:
 4. Ensure the new section flows well with the existing content
 5. Verify the markdown formatting is correct"
 
-Use the bash tool to explore the codebase before creating your plan, and the scrapeUrl tool to find relevant information online if needed.`;
+Use the bash tool to explore the codebase before creating your plan.`;
 
     // Get the plan from OpenAI
     const plan = await ChatCompletion.run({
@@ -64,7 +63,7 @@ Use the bash tool to explore the codebase before creating your plan, and the scr
       ],
       model: "gpt-4o",
       temperature: 0.7,
-      tools: [bashTool, scrapeUrlTool],
+      tools: [bashTool],
     });
 
     // Add the plan to history

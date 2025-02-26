@@ -15,7 +15,6 @@ import {
 import { CodeAgent } from "./codeAgent.js";
 import { GenerateGoalState } from "./steps/generateGoalState.js";
 import { GeneratePlan } from "./steps/generatePlan.js";
-import { FirecrawlProvider } from "./tools/scrapeWebpage.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -192,34 +191,32 @@ export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
   ({ workspace }) => {
     return (
-      <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
-        <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-          <WorkspaceProvider workspace={workspace}>
-            <GenerateGoalState>
-              {() => (
-                <GeneratePlan>
-                  {(plan) => (
-                    <ModifyCode plan={plan}>
-                      {(modifySuccess) => (
-                        <RunFinalValidation success={modifySuccess}>
-                          {(validated) => (
-                            <CommitResults success={validated}>
-                              {(committed) => ({
-                                success: committed,
-                                modified: true,
-                              })}
-                            </CommitResults>
-                          )}
-                        </RunFinalValidation>
-                      )}
-                    </ModifyCode>
-                  )}
-                </GeneratePlan>
-              )}
-            </GenerateGoalState>
-          </WorkspaceProvider>
-        </OpenAIProvider>
-      </FirecrawlProvider>
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <WorkspaceProvider workspace={workspace}>
+          <GenerateGoalState>
+            {() => (
+              <GeneratePlan>
+                {(plan) => (
+                  <ModifyCode plan={plan}>
+                    {(modifySuccess) => (
+                      <RunFinalValidation success={modifySuccess}>
+                        {(validated) => (
+                          <CommitResults success={validated}>
+                            {(committed) => ({
+                              success: committed,
+                              modified: true,
+                            })}
+                          </CommitResults>
+                        )}
+                      </RunFinalValidation>
+                    )}
+                  </ModifyCode>
+                )}
+              </GeneratePlan>
+            )}
+          </GenerateGoalState>
+        </WorkspaceProvider>
+      </OpenAIProvider>
     );
   },
 );
