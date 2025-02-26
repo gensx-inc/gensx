@@ -29,7 +29,7 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
     const workspace = useWorkspace();
     const buildTool = getBuildTool(workspace);
 
-    // First run with tools to make the changes
+    // Execute tools to perform the task of updating the codebase
     const toolResult = await GSXChatCompletion.run({
       messages: [
         {
@@ -53,7 +53,7 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
 
     const toolOutput = toolResult.choices[0]?.message?.content ?? "";
 
-    // Then coerce the output into our structured format
+    // Process the tool output to fit the expected schema
     return GSXChatCompletion.run({
       messages: [
         {
@@ -86,6 +86,7 @@ ${toolOutput}`,
   },
 );
 
+// Helper function to generate the prompt for the code agent
 export function getCodeAgentPrompt(
   task: string,
   additionalInstructions: string,

@@ -11,28 +11,9 @@ This example demonstrates a self-modifying code agent. The agent:
 
 ![Self-Modifying Code Agent](https://card-images.netrunnerdb.com/v2/large/03046.jpg)
 
-## Usage
+## Architecture Overview
 
-```bash
-# Install dependencies
-pnpm install
-
-# Run the example
-OPENAI_API_KEY=<api key> REPO_URL=https://github.com/<your-username>/<your-fork-of-gensx> BRANCH=<branch> pnpm run start
-```
-
-## Testing
-
-To run the tests, use the following command:
-
-```bash
-# Run tests
-pnpm test
-```
-
-Ensure that all test cases pass successfully to verify the correctness of the code modifications.
-
-## Codebase Structure
+The codebase is structured into several key directories:
 
 - **Root Directory Files**:
   - `README.md`: Documentation for the codebase.
@@ -49,6 +30,56 @@ Ensure that all test cases pass successfully to verify the correctness of the co
 
 - **`agent/tools` Directory**:
   - `bashTool.tsx`, `buildTool.tsx`, `editTool.tsx`: Tools for executing bash commands, building, and editing crucial for self-modification tasks.
+
+## Setup Instructions
+
+To set up the project locally, follow these steps:
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/<your-username>/self-modifying-code.git
+   cd self-modifying-code
+   ```
+
+2. **Install Dependencies**:
+   ```bash
+   pnpm install
+   ```
+
+3. **Set Environment Variables**:
+   - `OPENAI_API_KEY`: Your API key for accessing OpenAI services.
+   - `REPO_URL`: URL of your forked repository.
+   - `BRANCH`: The branch you intend to work on.
+
+4. **Run the Example**:
+   ```bash
+   OPENAI_API_KEY=<api key> REPO_URL=https://github.com/<your-username>/<your-fork-of-gensx> BRANCH=<branch> pnpm run start
+   ```
+
+## Key Processes
+
+- **Running the Development Server**:
+  Use the start command mentioned above to initiate the development server.
+
+- **Running Tests**:
+  ```bash
+  pnpm test
+  ```
+  Ensure that all test cases pass successfully to verify the correctness of the code modifications.
+
+- **Building the Project**:
+  ```bash
+  pnpm build
+  ```
+  Builds the project to ensure all code changes are correctly compiled.
+
+## Contributing Guidelines
+
+We welcome contributions to this project! To contribute, please follow these guidelines:
+
+- **Coding Standards**: Adhere to the existing coding style and conventions.
+- **Branch Naming**: Use descriptive branch names, e.g., `feature/add-new-tool` or `fix/bug-description`.
+- **Pull Requests**: Provide a clear description of the changes made and ensure all checks pass before requesting a review.
 
 ## Enhancements
 
