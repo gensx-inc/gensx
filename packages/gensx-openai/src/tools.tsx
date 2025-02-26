@@ -16,7 +16,9 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { OpenAIChatCompletion, OpenAIChatCompletionOutput } from "./openai.js";
 
-interface GSXToolParams<TSchema extends z.ZodObject<z.ZodRawShape>> {
+export type GSXToolAnySchema = z.ZodObject<z.ZodRawShape>;
+
+export interface GSXToolParams<TSchema extends GSXToolAnySchema> {
   name: string;
   description: string;
   schema: TSchema;
