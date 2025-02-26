@@ -8,6 +8,7 @@ import { useWorkspace } from "../workspace.js";
 import { bashTool } from "./tools/bashTool.js";
 import { getBuildTool } from "./tools/buildTool.js";
 import { editTool } from "./tools/editTool.js";
+
 interface CodeAgentProps {
   task: string;
   additionalInstructions?: string;

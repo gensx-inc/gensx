@@ -10,7 +10,7 @@ const editToolSchema = z.object({
   command: z
     .enum(["view", "create", "write"])
     .describe(
-      "The commands to run. Allowed options are: `view` (read file), `create` (new file), `write` (replace entire file).",
+      "The commands to run. Allowed options are: `view` (read file), `create` (new file), `write` (replace entire file content).",
     ),
   path: z
     .string()

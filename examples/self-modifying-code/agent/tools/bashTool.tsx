@@ -7,6 +7,7 @@ import { z } from "zod";
 const bashToolSchema = z.object({
   command: z.string().describe("The bash command to run."),
 });
+
 // Use z.infer to get the type for our parameters
 type BashToolParams = z.infer<typeof bashToolSchema>;
 
