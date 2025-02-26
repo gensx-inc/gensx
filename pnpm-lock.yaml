@@ -641,6 +641,9 @@ importers:
       gensx:
         specifier: workspace:*
         version: link:../gensx
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
       zod:
         specifier: ^3.24.2
         version: 3.24.2
