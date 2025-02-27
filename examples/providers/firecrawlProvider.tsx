@@ -15,6 +15,9 @@ export const FirecrawlProvider = gsx.Component<FirecrawlAppConfig, never>(
     });
     return <FirecrawlContext.Provider value={{ client }} />;
   },
+  {
+    secretProps: ["apiKey"],
+  },
 );
 
 interface ScrapePageProps {

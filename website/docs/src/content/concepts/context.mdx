@@ -133,10 +133,15 @@ export const FirecrawlProvider = gsx.Component<FirecrawlAppConfig, never>(
     });
     return <FirecrawlContext.Provider value={{ client }} />;
   },
+  {
+    secretProps: ["apiKey"],
+  },
 );
 ```
 
 The provider will take in the `apiKey` as a prop and use it to initialize the Firecrawl client.
+
+Note that in the provider definition, an option bag is passed in as the third argument containing the `secretProps` property. This tells GenSX to treat the `apiKey` prop as a secret add it will be redacted in any traces.
 
 #### Step 3: Use the provider in a component
 
