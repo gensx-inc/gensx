@@ -9,17 +9,23 @@ import {
   MCPTool,
 } from "./wrappers";
 
-export interface MCPServerDefinition {
-  clientName: string;
-  clientVersion: string;
-  serverCommand: string;
-  serverArgs: string[];
-  roots?: Record<string, string>;
-}
+export type MCPServerDefinition =
+  | {
+      clientName: string;
+      clientVersion: string;
+      serverCommand: string;
+      serverArgs: string[];
+      roots?: Record<string, string>;
+    }
+  | { client: Client };
 
 export async function instantiateMcpClient(
   serverDefinition: MCPServerDefinition,
 ) {
+  if ("client" in serverDefinition) {
+    return { client: serverDefinition.client, closeOnComplete: false };
+  }
+
   const { clientName, clientVersion, serverCommand, serverArgs } =
     serverDefinition;
 
@@ -49,11 +55,12 @@ export async function instantiateMcpClient(
   // Connect to the server
   await client.connect(transport);
 
-  return client;
+  return { client, closeOnComplete: true };
 }
 
 export async function fetchMcpContext(serverDefinition: MCPServerDefinition) {
-  const client = await instantiateMcpClient(serverDefinition);
+  const { client, closeOnComplete } =
+    await instantiateMcpClient(serverDefinition);
   const tools = await getTools(client);
   const resources = await getResources(client);
   const resourceTemplates = await getResourceTemplates(client);
@@ -61,6 +68,7 @@ export async function fetchMcpContext(serverDefinition: MCPServerDefinition) {
 
   return {
     client,
+    closeOnComplete,
     tools,
     prompts,
     resourceTemplates,

@@ -30,19 +30,25 @@ export const createMCPServerContext = (
   const Provider = gsx.Component<{}, never>(
     `MCPServerProvider`,
     async () => {
-      const { client, ...rest } = await fetchMcpContext(serverDefinition);
+      const { client, closeOnComplete, ...rest } =
+        await fetchMcpContext(serverDefinition);
 
       const onComplete = () => {
-        void client.close();
+        if (closeOnComplete) {
+          void client.close();
+        }
       };
 
       return <context.Provider value={rest} onComplete={onComplete} />;
     },
     {
       metadata: {
-        serverCommand: `${serverDefinition.serverCommand} ${serverDefinition.serverArgs.join(
-          " ",
-        )}`,
+        serverCommand:
+          "client" in serverDefinition
+            ? `[Client Provided by Server Definition]`
+            : `${serverDefinition.serverCommand} ${serverDefinition.serverArgs.join(
+                " ",
+              )}`,
       },
     },
   );

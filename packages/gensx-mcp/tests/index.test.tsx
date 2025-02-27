@@ -1,5 +1,7 @@
 import path from "path";
 
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { gsx } from "gensx";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -215,5 +217,56 @@ describe("createMCPServerContext", () => {
 
     // Restore console.error
     consoleErrorSpy.mockRestore();
+  });
+
+  it("does not disconnect a client that was provided by the server definition", async () => {
+    const transport = new StdioClientTransport({
+      command: "tsx",
+      args: [path.join(__dirname, "echoMCPServer.ts")],
+    });
+
+    const onClientDisconnectSpy = vi.fn();
+
+    const client = new Client({ name: "test-client", version: "1.0.0" });
+    client.onclose = onClientDisconnectSpy;
+    await client.connect(transport);
+
+    const { Provider, useContext } = createMCPServerContext({
+      client,
+    });
+
+    expect(Provider).toBeDefined();
+    expect(useContext).toBeDefined();
+
+    const TestComponent = gsx.Component<{ message: string }, string>(
+      "TestComponent",
+      async () => {
+        const { tools } = useContext();
+        expect(tools).toBeDefined();
+        expect(tools.length).toBe(1);
+
+        const toolResponse = await tools[0].run({ message: "test" });
+        return toolResponse.content[0].text as string;
+      },
+    );
+
+    const Wrapper = gsx.Component<{ message: string }, string>(
+      "Wrapper",
+      ({ message }) => (
+        <Provider>
+          <TestComponent message={message} />
+        </Provider>
+      ),
+    );
+
+    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+
+    const result = await workflow.run({ message: "test" });
+    expect(result).toBe("Tool echo: test");
+
+    expect(onClientDisconnectSpy).not.toHaveBeenCalled();
+
+    await client.close();
+    expect(onClientDisconnectSpy).toHaveBeenCalled();
   });
 });
