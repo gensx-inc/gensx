@@ -26,14 +26,12 @@ export function createContext<T>(defaultValue: T): Context<T> {
     return wrapWithFramework(() => {
       const currentContext = getCurrentContext();
 
-      const executionContext = currentContext.withContext({
-        [contextSymbol]: { value: props.value, onComplete: props.onComplete },
-      });
-
-      // This is a hacky way to make provide a reference to the new context to the jsx-runtime, so that we can trace back and contextOnComplete after this provider is finished.
-      // otherwise, there is no way to distinguish between the newly created context and the parent values.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (executionContext as any).contextSymbol = contextSymbol;
+      const executionContext = currentContext.withContext(
+        {
+          [contextSymbol]: props.value,
+        },
+        props.onComplete,
+      );
 
       return Promise.resolve(executionContext);
     });
@@ -54,39 +52,13 @@ export function createContext<T>(defaultValue: T): Context<T> {
 
 export function useContext<T>(context: Context<T>): T {
   const executionContext = getCurrentContext();
-  const contextValue = executionContext.get(context.symbol) as
-    | {
-        value: T;
-        onComplete?: () => Promise<void>;
-      }
-    | undefined;
+  const value = executionContext.get(context.symbol) as T | undefined;
 
-  if (contextValue?.value === undefined) {
+  if (!value) {
     return context.defaultValue;
   }
 
-  const { value } = contextValue as {
-    value: T;
-    onComplete?: () => Promise<void>;
-  };
-
   return value;
-}
-
-export async function contextOnComplete(contextSymbol: symbol | undefined) {
-  if (!contextSymbol) {
-    return;
-  }
-
-  const executionContext = getCurrentContext();
-  const contextValue = executionContext.get(contextSymbol) as
-    | {
-        value: unknown;
-        onComplete?: () => Promise<void>;
-      }
-    | undefined;
-
-  await contextValue?.onComplete?.();
 }
 
 // Define AsyncLocalStorage type based on Node.js definitions
@@ -103,13 +75,17 @@ export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
+    public onComplete?: () => Promise<void> | void,
   ) {
     if (!this.context[WORKFLOW_CONTEXT_SYMBOL]) {
       this.context[WORKFLOW_CONTEXT_SYMBOL] = createWorkflowContext();
     }
   }
 
-  withContext(newContext: Partial<WorkflowContext>): ExecutionContext {
+  withContext(
+    newContext: Partial<WorkflowContext>,
+    onComplete?: () => Promise<void> | void,
+  ): ExecutionContext {
     if (Object.getOwnPropertySymbols(newContext).length === 0) {
       return this;
     }
@@ -123,7 +99,7 @@ export class ExecutionContext {
     for (const key of Object.getOwnPropertySymbols(newContext)) {
       mergedContext[key] = newContext[key];
     }
-    return new ExecutionContext(mergedContext, this);
+    return new ExecutionContext(mergedContext, this, onComplete);
   }
 
   get<K extends keyof WorkflowContext>(key: K): WorkflowContext[K] | undefined {

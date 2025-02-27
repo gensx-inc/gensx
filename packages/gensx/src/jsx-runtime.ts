@@ -2,12 +2,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import {
-  contextOnComplete,
-  ExecutionContext,
-  getCurrentContext,
-  withContext,
-} from "./context.js";
+import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
 import { resolveDeep } from "./resolve.js";
 import {
   Args,
@@ -78,14 +73,17 @@ export const jsx = <TOutput, TProps>(
       const parentNodeId = root?.id;
 
       if (result instanceof ExecutionContext) {
+        // rename to make the code more readable
+        const executionContext = result;
+
         // withContext handles wrapping internally
-        return await withContext(result, async () => {
+        return await withContext(executionContext, async () => {
           const childResult = await resolveChildren(null as never, children);
           const resolvedChildResult = resolveDeep(childResult);
 
-          // .contextSymbol here is set in the provider function, as a way for us to backtrack a reference to the context that was created, and more specifically, any cleanup that needs to be done via the onComplete function.
+          // Call onComplete for the ExecutionContext, if specified, after all the children are done.
+          await executionContext.onComplete?.();
 
-          await contextOnComplete((result as any).contextSymbol);
           return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
         });
       } else if (parentNodeId) {
