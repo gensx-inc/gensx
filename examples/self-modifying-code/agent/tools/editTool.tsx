@@ -32,6 +32,12 @@ const editToolSchema = z.object({
     .describe(
       "Whether to use the cache for file operations (default: true).",
     ),
+  maxCacheAge: z
+    .number()
+    .optional()
+    .describe(
+      "Maximum age of cached content in milliseconds before refreshing (default: 5000).",
+    ),
 });
 
 type EditToolParams = z.infer<typeof editToolSchema>;
@@ -66,6 +72,7 @@ Commands:
 
     // Default useCache to true if not specified
     const useCache = params.useCache !== false;
+    const maxCacheAge = params.maxCacheAge || 5000; // Default to 5 seconds
 
     try {
       const stats = await fs.stat(params.path).catch(() => null);
@@ -85,15 +92,26 @@ Commands:
             return result;
           } else {
             // Check cache first if enabled
-            if (useCache && fileCache.has(params.path)) {
-              console.log(`📋 Using cached content for ${params.path}`);
-              return fileCache.get(params.path);
+            if (useCache) {
+              // Check if file is in cache and not stale
+              if (fileCache.has(params.path) && !fileCache.isStale(params.path, maxCacheAge)) {
+                console.log(`📋 Using cached content for ${params.path}`);
+                return fileCache.get(params.path);
+              }
+              
+              // If file is in cache but stale, refresh it
+              await fileCache.refreshIfNeeded(params.path);
+              
+              // Try to get from cache again after refresh
+              if (fileCache.has(params.path)) {
+                return fileCache.get(params.path);
+              }
             }
 
-            // Read file contents
+            // Read file contents if not in cache or cache is disabled
             const content = await fs.readFile(params.path, "utf-8");
             
-            // Store in cache for future use
+            // Store in cache for future use if caching is enabled
             if (useCache) {
               fileCache.set(params.path, content);
             }
@@ -124,15 +142,28 @@ Commands:
             throw new Error(`Target must be an existing file: ${params.path}`);
           }
 
-          // Write new content atomically
-          await fs.writeFile(params.path, params.content ?? "", "utf-8");
-          
-          // Update cache with the new content
-          if (useCache) {
-            fileCache.set(params.path, params.content ?? "");
+          // Create backup of the original file
+          const backupPath = `${params.path}.bak`;
+          await fs.copyFile(params.path, backupPath);
+
+          try {
+            // Write new content atomically
+            await fs.writeFile(params.path, params.content ?? "", "utf-8");
+            
+            // Update cache with the new content
+            if (useCache) {
+              fileCache.set(params.path, params.content ?? "");
+            }
+            
+            return `File updated successfully: ${params.path}`;
+          } catch (error) {
+            // Restore from backup if write fails
+            await fs.copyFile(backupPath, params.path);
+            throw new Error(`Failed to update file: ${String(error)}`);
+          } finally {
+            // Clean up backup file
+            await fs.unlink(backupPath).catch(() => {});
           }
-          
-          return `File updated successfully: ${params.path}`;
         }
 
         default:

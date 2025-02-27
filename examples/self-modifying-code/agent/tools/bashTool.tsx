@@ -10,68 +10,110 @@ import { fileCache } from "./cacheManager.js";
 // Define the schema as a Zod object
 const bashToolSchema = z.object({
   command: z.string().describe("The bash command to run."),
+  useCache: z
+    .boolean()
+    .optional()
+    .describe("Whether to use the cache for file read operations (default: true)."),
   updateCache: z
     .boolean()
     .optional()
-    .describe("Whether to update the cache for any files modified by this command (default: false)."),
+    .describe("Whether to update the cache for any files modified by this command (default: true)."),
 });
 // Use z.infer to get the type for our parameters
 type BashToolParams = z.infer<typeof bashToolSchema>;
 
+// Regular expressions for common file operations
+const FILE_READ_PATTERNS = [
+  { cmd: 'cat', regex: /cat\s+(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'grep', regex: /grep\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'head', regex: /head\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'tail', regex: /tail\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'less', regex: /less\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'more', regex: /more\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'sed', regex: /sed\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'awk', regex: /awk\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1/ }
+];
+
+const FILE_WRITE_PATTERNS = [
+  { cmd: 'write', regex: />\s*(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'append', regex: />>\s*(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'touch', regex: /touch\s+(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'mkdir', regex: /mkdir\s+(?:-p\s+)?(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'mv', regex: /mv\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1$/ },
+  { cmd: 'cp', regex: /cp\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1$/ },
+  { cmd: 'rm', regex: /rm\s+(?:-[rf]\s+)?(['"]?)([^\s|><;&]+)\1/ },
+  { cmd: 'sed -i', regex: /sed\s+-i\s+(?:.*?)\s+(['"]?)([^\s|><;&]+)\1/ }
+];
+
 // Helper function to detect file operations in the command
-function detectFileOperations(command: string): { operation: string; files: string[] } | null {
-  // Check for common file operations
-  const catMatch = command.match(/cat\s+([^\s|><;&]+)/);
-  if (catMatch) {
-    return { operation: "read", files: [catMatch[1]] };
+function detectFileOperations(command: string): { 
+  reads: string[]; 
+  writes: string[];
+  isCacheable: boolean;
+} {
+  const result = {
+    reads: [] as string[],
+    writes: [] as string[],
+    isCacheable: false
+  };
+
+  // Check for file read operations
+  for (const pattern of FILE_READ_PATTERNS) {
+    const matches = [...command.matchAll(new RegExp(pattern.regex, 'g'))];
+    for (const match of matches) {
+      const filePath = match[2];
+      if (filePath && !filePath.includes('*') && !result.reads.includes(filePath)) {
+        result.reads.push(filePath);
+      }
+    }
+    
+    // Simple cat commands are cacheable
+    if (pattern.cmd === 'cat' && command.trim().startsWith('cat ') && !command.includes('|') && 
+        !command.includes('>') && !command.includes(';')) {
+      result.isCacheable = true;
+    }
   }
-  
-  const grepMatch = command.match(/grep\s+.*\s+([^\s|><;&]+)/);
-  if (grepMatch) {
-    return { operation: "read", files: [grepMatch[1]] };
+
+  // Check for file write operations
+  for (const pattern of FILE_WRITE_PATTERNS) {
+    const matches = [...command.matchAll(new RegExp(pattern.regex, 'g'))];
+    for (const match of matches) {
+      const filePath = match[2];
+      if (filePath && !filePath.includes('*') && !result.writes.includes(filePath)) {
+        result.writes.push(filePath);
+      }
+    }
   }
-  
-  const sedMatch = command.match(/sed\s+.*\s+([^\s|><;&]+)/);
-  if (sedMatch) {
-    return { operation: "read", files: [sedMatch[1]] };
-  }
-  
-  const findMatch = command.match(/find\s+([^\s]+)/);
-  if (findMatch) {
-    return { operation: "list", files: [findMatch[1]] };
-  }
-  
-  return null;
+
+  return result;
 }
 
 // Helper function to update cache for modified files
-async function updateCacheForModifiedFiles(command: string): Promise<void> {
-  // Simple detection for commands that might modify files
-  if (command.includes(">") || command.includes(">>") || 
-      command.includes("mv") || command.includes("cp") ||
-      command.includes("sed -i") || command.includes("touch")) {
-    
-    // Extract potential file paths
-    const matches = command.match(/(['"]?[a-zA-Z0-9_\-/.]+\.[a-zA-Z0-9]+['"]?)/g);
-    if (matches) {
-      // For each potential file path, check if it exists and update cache
-      for (const match of matches) {
-        const filePath = match.replace(/^['"]|['"]$/g, ""); // Remove quotes
-        try {
-          const stats = await fs.stat(filePath);
-          if (stats.isFile()) {
-            const content = await fs.readFile(filePath, "utf-8");
-            fileCache.set(filePath, content);
-          }
-        } catch (error) {
-          // Ignore errors for files that don't exist
-        }
+async function updateCacheForFiles(files: string[]): Promise<void> {
+  for (const filePath of files) {
+    try {
+      const stats = await fs.stat(filePath);
+      if (stats.isFile()) {
+        const content = await fs.readFile(filePath, "utf-8");
+        fileCache.set(filePath, content);
+        console.log(`📋 Updated cache for ${filePath}`);
       }
+    } catch (error) {
+      // Ignore errors for files that don't exist or can't be read
+      fileCache.invalidate(filePath);
     }
   }
 }
 
-// Create the tool with the correct type - using the schema type, not the inferred type
+// Helper function to invalidate cache for modified or deleted files
+async function invalidateCacheForFiles(files: string[]): Promise<void> {
+  for (const filePath of files) {
+    fileCache.invalidate(filePath);
+    console.log(`🗑️ Invalidated cache for ${filePath}`);
+  }
+}
+
+// Create the tool with the correct type
 export const bashTool = new GSXTool<typeof bashToolSchema>({
   name: "bash",
   description: `Run commands in a bash shell\n
@@ -83,45 +125,47 @@ export const bashTool = new GSXTool<typeof bashToolSchema>({
 * Please avoid commands that may produce a very large amount of output.\n
 * Please run long lived commands in the background, e.g. 'sleep 10 &' or start a server in the background.`,
   schema: bashToolSchema,
-  run: async ({ command, updateCache = false }: BashToolParams) => {
+  run: async ({ command, useCache = true, updateCache = true }: BashToolParams) => {
     console.log("💻 Calling the BashTool:", command);
     
-    // Check if this is a file read operation that we can optimize with the cache
-    const fileOp = detectFileOperations(command);
-    if (fileOp && fileOp.operation === "read") {
-      // For simple cat commands, we can use the cache
-      if (command.startsWith("cat ") && fileOp.files.length === 1) {
-        const filePath = fileOp.files[0];
-        if (fileCache.has(filePath)) {
-          console.log(`📋 Using cached content for ${filePath}`);
-          return fileCache.get(filePath);
-        }
+    // Detect file operations in the command
+    const fileOps = detectFileOperations(command);
+    
+    // For simple cacheable commands, try to use the cache
+    if (useCache && fileOps.isCacheable && fileOps.reads.length === 1) {
+      const filePath = fileOps.reads[0];
+      if (fileCache.has(filePath)) {
+        console.log(`📋 Using cached content for ${filePath}`);
+        return fileCache.get(filePath);
       }
     }
     
     try {
-      const result = await Promise.resolve(execSync(command));
-      const output = result.toString();
+      // Execute the command
+      const result = execSync(command, { encoding: 'utf-8' });
       
-      // Update cache if requested or if it's a read operation
-      if (updateCache) {
-        await updateCacheForModifiedFiles(command);
-      } else if (fileOp && fileOp.operation === "read") {
-        // For read operations, cache the content
-        for (const filePath of fileOp.files) {
-          try {
-            const stats = await fs.stat(filePath);
-            if (stats.isFile()) {
-              fileCache.set(filePath, output);
-            }
-          } catch (error) {
-            // Ignore errors for files that don't exist
-          }
+      // Update cache for read files if requested
+      if (useCache && fileOps.reads.length > 0) {
+        await updateCacheForFiles(fileOps.reads);
+      }
+      
+      // Invalidate cache for written/modified files
+      if (updateCache && fileOps.writes.length > 0) {
+        await invalidateCacheForFiles(fileOps.writes);
+        
+        // Optionally update cache with new content for modified files
+        if (useCache) {
+          await updateCacheForFiles(fileOps.writes);
         }
       }
       
-      return output;
+      return result;
     } catch (error) {
+      // Invalidate cache for any files that might have been modified
+      if (updateCache && fileOps.writes.length > 0) {
+        await invalidateCacheForFiles(fileOps.writes);
+      }
+      
       // Check if error is an object with stderr property
       if (error && typeof error === "object" && "stderr" in error) {
         return (error.stderr as Buffer).toString();
