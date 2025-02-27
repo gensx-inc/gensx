@@ -20,7 +20,7 @@ export default function MarkdownToHTML({
   className?: string;
 }) {
   return (
-    <div className="[&_pre]:overflow-x-auto [&_pre]:bg-white [&_pre]:rounded-[0px] [&_pre]:max-w-[95vw] md:[&_pre]:max-w-[85vw]">
+    <div className="[&_pre]:overflow-x-auto [&_pre]:bg-white [&_pre]:rounded-[0px] [&_pre]:max-w-[95vw] md:[&_pre]:max-w-[85vw] [&_pre]:mb-0">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
@@ -39,16 +39,16 @@ export default function MarkdownToHTML({
             }
 
             return (
-              <div className="relative border border-gray-200">
+              <div className="relative border border-gray-200 mt-4 mb-1 pb-0">
                 {language && (
                   <div className="absolute right-4 top-2 text-xs font-mono text-gray-800 z-10">
                     {language}
                   </div>
                 )}
-                <pre className="bg-white rounded-[0px] w-full px-2">
+                <pre className="bg-white rounded-[0px] w-full px-2 !pt-2 !pb-1">
                   <code
                     {...rest}
-                    className={`${className} text-xs md:text-sm leading-relaxed`}
+                    className={`${className} text-xs md:text-sm leading-relaxed pb-0 block`}
                   >
                     {children}
                   </code>
