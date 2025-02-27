@@ -3,7 +3,7 @@ title: "Self-modifying code"
 excerpt: "Build an agent that can change its own code, start new instances of itself, self-replicate, and evolve."
 date: "2025-02-27T00:00:00.000Z"
 author:
-  name: Evan
+  name: Evan Boyle
   picture: "/assets/blog/authors/evan.jpg"
 ogImage:
   url: "/assets/blog/hello-world/cover.jpg"
