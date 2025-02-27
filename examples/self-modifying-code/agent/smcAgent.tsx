@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 
 import { AnthropicProvider } from "@gensx/anthropic";
 import { gsx } from "gensx";
@@ -15,6 +16,8 @@ import {
 import { CodeAgent } from "./codeAgent.js";
 import { GenerateGoalState } from "./steps/generateGoalState.js";
 import { GeneratePlan } from "./steps/generatePlan.js";
+import { fileCache } from "./tools/cacheManager.js";
+import { errorAnalyzer } from "./tools/errorAnalyzer.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -62,6 +65,9 @@ const ModifyCode = gsx.Component<ModifyCodeProps, boolean>(
       "self-modifying-code",
     );
 
+    // Pre-cache common files to speed up operations
+    await prefetchCommonFiles(scopedPath);
+
     // Run the code agent with our plan
     const result = await CodeAgent.run({
       task: `Implement the following changes to the codebase:
@@ -94,6 +100,36 @@ After making changes, the code should successfully build with 'pnpm build'.`,
   },
 );
 
+// Helper function to prefetch common files into the cache
+async function prefetchCommonFiles(repoPath: string): Promise<void> {
+  try {
+    // Prefetch key files in the agent directory
+    const agentDir = path.join(repoPath, "agent");
+    const { execSync } = require("child_process");
+    
+    // Find TypeScript files in the agent directory
+    const filesOutput = execSync(`find ${agentDir} -name "*.tsx" -o -name "*.ts"`, { 
+      encoding: "utf-8" 
+    });
+    
+    const files = filesOutput.split("\n").filter(Boolean);
+    
+    // Read each file into the cache
+    for (const file of files) {
+      try {
+        const content = await fs.promises.readFile(file, "utf-8");
+        fileCache.set(file, content);
+      } catch (error) {
+        console.error(`Error prefetching file ${file}:`, error);
+      }
+    }
+    
+    console.log(`Prefetched ${files.length} files into the cache`);
+  } catch (error) {
+    console.error("Error during prefetching:", error);
+  }
+}
+
 interface RunFinalValidationProps {
   success: boolean;
 }
@@ -122,16 +158,52 @@ const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
     // Run the build validation
     const { success: buildSuccess, output } = await validateBuild(workspace);
     console.log("Build success:", buildSuccess);
-    await updateWorkspaceContext({
-      history: [
-        {
-          timestamp: new Date(),
-          action: "Final validation",
-          result: buildSuccess ? "success" : "failure",
-          details: buildSuccess ? "Build succeeded" : `Build failed: ${output}`,
-        },
-      ],
-    });
+    
+    // If build failed, try to analyze the error
+    if (!buildSuccess && output) {
+      try {
+        const analysis = await errorAnalyzer.run({
+          action: "analyze",
+          error: output,
+        });
+        
+        console.log("Build error analysis:", analysis);
+        
+        await updateWorkspaceContext({
+          history: [
+            {
+              timestamp: new Date(),
+              action: "Final validation",
+              result: "failure",
+              details: `Build failed: ${output}\n\nError analysis: ${JSON.stringify(analysis, null, 2)}`,
+            },
+          ],
+        });
+      } catch (error) {
+        console.error("Error analyzing build failure:", error);
+        await updateWorkspaceContext({
+          history: [
+            {
+              timestamp: new Date(),
+              action: "Final validation",
+              result: "failure",
+              details: `Build failed: ${output}`,
+            },
+          ],
+        });
+      }
+    } else {
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Final validation",
+            result: buildSuccess ? "success" : "failure",
+            details: buildSuccess ? "Build succeeded" : `Build failed: ${output}`,
+          },
+        ],
+      });
+    }
 
     return buildSuccess;
   },

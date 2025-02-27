@@ -6,6 +6,8 @@ import { GSXTool } from "@gensx/anthropic";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
 
+import { fileCache } from "./cacheManager.js";
+
 // Define the base schema as a Zod object
 const editToolSchema = z.object({
   command: z
@@ -23,6 +25,12 @@ const editToolSchema = z.object({
     .optional()
     .describe(
       "Required for create/write commands. The complete content to write to the file.",
+    ),
+  useCache: z
+    .boolean()
+    .optional()
+    .describe(
+      "Whether to use the cache for file operations (default: true).",
     ),
 });
 
@@ -56,6 +64,9 @@ Commands:
       throw new Error("content is required for create and write commands");
     }
 
+    // Default useCache to true if not specified
+    const useCache = params.useCache !== false;
+
     try {
       const stats = await fs.stat(params.path).catch(() => null);
 
@@ -73,8 +84,20 @@ Commands:
             );
             return result;
           } else {
-            // Read and return complete file contents
+            // Check cache first if enabled
+            if (useCache && fileCache.has(params.path)) {
+              console.log(`📋 Using cached content for ${params.path}`);
+              return fileCache.get(params.path);
+            }
+
+            // Read file contents
             const content = await fs.readFile(params.path, "utf-8");
+            
+            // Store in cache for future use
+            if (useCache) {
+              fileCache.set(params.path, content);
+            }
+            
             return content;
           }
         }
@@ -87,6 +110,12 @@ Commands:
           }
           await fs.mkdir(path.dirname(params.path), { recursive: true });
           await fs.writeFile(params.path, params.content ?? "", "utf-8");
+          
+          // Update cache with the new content
+          if (useCache) {
+            fileCache.set(params.path, params.content ?? "");
+          }
+          
           return `File created successfully: ${params.path}`;
         }
 
@@ -97,6 +126,12 @@ Commands:
 
           // Write new content atomically
           await fs.writeFile(params.path, params.content ?? "", "utf-8");
+          
+          // Update cache with the new content
+          if (useCache) {
+            fileCache.set(params.path, params.content ?? "");
+          }
+          
           return `File updated successfully: ${params.path}`;
         }
 

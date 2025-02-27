@@ -7,7 +7,12 @@ import { z } from "zod";
 import { useWorkspace } from "../workspace.js";
 import { bashTool } from "./tools/bashTool.js";
 import { getBuildTool } from "./tools/buildTool.js";
+import { codeAnalyzer } from "./tools/codeAnalyzer.js";
 import { editTool } from "./tools/editTool.js";
+import { errorAnalyzer } from "./tools/errorAnalyzer.js";
+import { testRunner } from "./tools/testRunner.js";
+import { changeTemplates } from "./tools/changeTemplates.js";
+
 interface CodeAgentProps {
   task: string;
   additionalInstructions?: string;
@@ -45,7 +50,15 @@ export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
       model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
       max_tokens: 10000,
-      tools: [editTool, bashTool, buildTool],
+      tools: [
+        editTool, 
+        bashTool, 
+        buildTool, 
+        codeAnalyzer, 
+        testRunner, 
+        errorAnalyzer,
+        changeTemplates
+      ],
     });
 
     const textBlock = toolResult.content.find((block) => block.type === "text");
@@ -103,15 +116,21 @@ Your task is to make the minimal necessary changes to the files in the ${repoPat
 
 Follow these steps:
 1. First, explore the repo to understand its structure and identify the files that need to be modified
-2. Make the necessary code changes using the editTool
-3. Feel free to use the scrapeWebpageTool to find relevant information online if needed
-4. Use the buildTool to verify your changes compile successfully
-5. If the build fails, examine the error output and fix any issues
-6. Once the build succeeds, verify that your changes meet all the requirements
+2. Use the codeAnalyzer tool to better understand code structure and relationships
+3. Make the necessary code changes using the editTool
+4. Use the testRunner to validate your changes if tests are available
+5. If you encounter errors, use the errorAnalyzer to diagnose and fix them
+6. Use the buildTool to verify your changes compile successfully
+7. If the build fails, examine the error output and fix any issues
+8. Once the build succeeds, verify that your changes meet all the requirements
 
 You have access to some tools that may be helpful:
 - bash: For exploring the codebase and examining files
 - editor: For making code changes
+- codeAnalyzer: For understanding code structure and relationships
+- testRunner: For running tests and validating changes
+- errorAnalyzer: For diagnosing and fixing errors
+- changeTemplates: For applying common code patterns
 - build: For verifying changes compile successfully with 'pnpm build'
 
 Be thorough in your thinking and explain your changes in the summary. Make sure to verify the build succeeds before marking success as true.`;

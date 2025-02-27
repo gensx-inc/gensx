@@ -6,6 +6,8 @@ import {
   useWorkspaceContext,
 } from "../../workspace.js";
 import { bashTool } from "../tools/bashTool.js";
+import { codeAnalyzer } from "../tools/codeAnalyzer.js";
+import { changeTemplates } from "../tools/changeTemplates.js";
 
 interface GeneratePlanProps {}
 
@@ -22,11 +24,10 @@ CURRENT GOAL:
 HISTORY OF ACTIONS:
 ${JSON.stringify(context.history, null, 2)}
 
-You have access to bash commands to explore the codebase:
-- List files and directories
-- Read file contents
-- Check file existence
-- Analyze project structure
+You have access to tools to explore and analyze the codebase:
+- bash: For running shell commands to explore the codebase
+- codeAnalyzer: For understanding code structure and relationships
+- changeTemplates: For checking available code templates that can be reused
 
 First, explore the codebase to understand what needs to be changed.
 Then create a clear, descriptive plan that outlines:
@@ -46,9 +47,9 @@ For example, if modifying a README:
 4. Ensure the new section flows well with the existing content
 5. Verify the markdown formatting is correct"
 
-Use the bash tool to explore the codebase before creating your plan.`;
+Use the available tools to explore and analyze the codebase before creating your plan.`;
 
-    // Get the plan from OpenAI
+    // Get the plan from Claude
     const plan = await ChatCompletion.run({
       system: systemPrompt,
       messages: [
@@ -61,7 +62,7 @@ Use the bash tool to explore the codebase before creating your plan.`;
       model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
       max_tokens: 10000,
-      tools: [bashTool],
+      tools: [bashTool, codeAnalyzer, changeTemplates],
     });
 
     // Add the plan to history
