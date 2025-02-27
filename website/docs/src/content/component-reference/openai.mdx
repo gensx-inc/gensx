@@ -17,14 +17,24 @@ npm install @gensx/openai
 
 ## Supported components
 
-| <div style={{width: "150px"}}>Component</div> | Description                                                                                |
-| :-------------------------------------------- | :----------------------------------------------------------------------------------------- |
-| [`OpenAIProvider`](#openai-provider)          | OpenAI Provider that handles configuration and authentication for child components         |
-| [`ChatCompletion`](#chat-completion)          | Component for making chat completions with OpenAI's models (`gpt-4o`, `gpt-4o-mini`, etc.) |
+| <div style={{width: "150px"}}>Component</div>   | Description                                                                        |
+| :---------------------------------------------- | :--------------------------------------------------------------------------------- |
+| [`OpenAIProvider`](#openaiprovider)             | OpenAI Provider that handles configuration and authentication for child components |
+| [`GSXChatCompletion`](#gsxchatcompletion)       | Enhanced component with enhanced features for OpenAI chat completions              |
+| [`ChatCompletion`](#chatcompletion)             | Simplified component for chat completions with streamlined output interface        |
+| [`OpenAIChatCompletion`](#openaichatcompletion) | Low-level component that directly matches the OpenAI SDK interface                 |
+
+## Component Comparison
+
+The package provides three different chat completion components to suit different use cases:
+
+- **OpenAIChatCompletion**: Direct mapping to the OpenAI API with identical inputs and outputs
+- **GSXChatCompletion**: Enhanced component with additional features like structured output and automated tool calling
+- **ChatCompletion**: Simplified interface that returns string responses or simple streams while maintaining identical inputs to the OpenAI API
 
 ## Reference
 
-#### `<OpenAIProvider />`
+#### `<OpenAIProvider/>`
 
 The `OpenAIProvider` component initializes and provides an OpenAI client instance to all child components. Any components that use OpenAI's API need to be wrapped in an `OpenAIProvider`.
 
@@ -55,27 +65,112 @@ The `OpenAIProvider` accepts all configuration options from the [OpenAI Node.js 
 - `organization`: Optional organization ID
 - `baseURL`: Optional API base URL
 
-#### `<ChatCompletion />`
+#### `<GSXChatCompletion/>`
 
-The `ChatCompletion` component creates chat completions using OpenAI's chat models. It must be used within an `OpenAIProvider`.
+The `GSXChatCompletion` component is an advanced chat completion component that provides enhanced features beyond the standard OpenAI API. It supports structured output, tool calling, and streaming, with automatic handling of tool execution.
 
 ```tsx
-import { ChatCompletion } from "@gensx/openai";
+import { GSXChatCompletion, GSXTool } from "@gensx/openai";
+import { z } from "zod";
 
-<ChatCompletion
-  model="gpt-4o"
-  messages={[
-    { role: "system", content: "You are a helpful assistant." },
-    { role: "user", content: "What's a programmable tree?" },
-  ]}
-  temperature={0.7}
-  stream={true}
-/>;
+// Example with structured output
+const result = await gsx.execute(
+  <GSXChatCompletion
+    model="gpt-4o"
+    messages={[
+      { role: "system", content: "You are a helpful assistant." },
+      {
+        role: "user",
+        content: "Extract the name and age from: John Doe, 32 years old",
+      },
+    ]}
+    outputSchema={z.object({
+      name: z.string(),
+      age: z.number(),
+    })}
+  />,
+);
+// result is typed as { name: string, age: number }
+
+// Example with tools
+const calculator = GSXTool.create({
+  name: "calculator",
+  description: "Perform mathematical calculations",
+  schema: z.object({
+    expression: z.string(),
+  }),
+  run: async ({ expression }) => {
+    return { result: eval(expression) };
+  },
+});
+
+const toolResult = await gsx.execute(
+  <GSXChatCompletion
+    model="gpt-4o"
+    messages={[{ role: "user", content: "What is 123 * 456?" }]}
+    tools={[calculator]}
+  />,
+);
 ```
 
 ##### Props
 
-The `ChatCompletion` component accepts all parameters from OpenAI's [chat completion API](https://platform.openai.com/docs/api-reference/chat/create) including:
+The `GSXChatCompletion` component accepts all parameters from OpenAI's chat completion API plus additional options:
+
+- `model` (required): ID of the model to use (e.g., `"gpt-4o"`, `"gpt-4o-mini"`)
+- `messages` (required): Array of messages in the conversation
+- `stream`: Whether to stream the response (when `true`, returns a `Stream<ChatCompletionChunk>`)
+- `tools`: Array of `GSXTool` instances for function calling
+- `outputSchema`: Zod schema for structured output (when provided, returns data matching the schema)
+- Plus all standard OpenAI chat completion parameters (temperature, maxTokens, etc.)
+
+##### Return Types
+
+The return type of `GSXChatCompletion` depends on the props:
+
+- With `stream: true`: Returns `Stream<ChatCompletionChunk>` from OpenAI SDK
+- With `outputSchema`: Returns data matching the provided Zod schema
+- Default: Returns `GSXChatCompletionResult` (OpenAI response with message history)
+
+#### `<ChatCompletion/>`
+
+The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens, making it easier to use in UI components.
+
+```tsx
+import { ChatCompletion } from "@gensx/openai";
+
+// Non-streaming usage (returns a string)
+const response = await gsx.execute(
+  <ChatCompletion
+    model="gpt-4o"
+    messages={[
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "What's a programmable tree?" },
+    ]}
+    temperature={0.7}
+  />,
+);
+
+// Streaming usage (returns an AsyncIterableIterator<string>)
+const stream = await gsx.execute(
+  <ChatCompletion
+    model="gpt-4o"
+    messages={[
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "What's a programmable tree?" },
+    ]}
+    temperature={0.7}
+    stream={true}
+  />,
+);
+
+// Use in a UI component
+<StreamingText stream={stream} />;
+```
+
+##### Props
+
+The `ChatCompletion` component accepts all parameters from OpenAI's chat completion API:
 
 - `model` (required): ID of the model to use (e.g., `"gpt-4o"`, `"gpt-4o-mini"`)
 - `messages` (required): Array of messages in the conversation
@@ -83,3 +178,62 @@ The `ChatCompletion` component accepts all parameters from OpenAI's [chat comple
 - `stream`: Whether to stream the response
 - `maxTokens`: Maximum number of tokens to generate
 - `responseFormat`: Format of the response (example: `{ "type": "json_object" }`)
+- `tools`: Array of `GSXTool` instances for function calling
+
+##### Return Types
+
+- With `stream: false` (default): Returns a string containing the model's response
+- With `stream: true`: Returns an `AsyncIterableIterator<string>` that yields tokens as they're generated
+
+#### `<OpenAIChatCompletion/>`
+
+The `OpenAIChatCompletion` component is a low-level component that directly maps to the OpenAI SDK. It has identical inputs and outputs to the OpenAI API, making it suitable for advanced use cases where you need full control.
+
+```tsx
+import { OpenAIChatCompletion } from "@gensx/openai";
+
+// Non-streaming usage
+const completion = await gsx.execute(
+  <OpenAIChatCompletion
+    model="gpt-4o"
+    messages={[
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "What's a programmable tree?" },
+    ]}
+  />,
+);
+console.log(completion.choices[0].message.content);
+
+// Streaming usage
+const stream = await gsx.execute(
+  <OpenAIChatCompletion
+    model="gpt-4o"
+    messages={[
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "What's a programmable tree?" },
+    ]}
+    stream={true}
+  />,
+);
+
+for await (const chunk of stream) {
+  console.log(chunk.choices[0]?.delta?.content || "");
+}
+```
+
+##### Props
+
+The `OpenAIChatCompletion` component accepts all parameters from the OpenAI SDK's `chat.completions.create` method:
+
+- `model` (required): ID of the model to use
+- `messages` (required): Array of messages in the conversation
+- `temperature`: Sampling temperature
+- `stream`: Whether to stream the response
+- `maxTokens`: Maximum number of tokens to generate
+- `tools`: Array of OpenAI tool definitions for function calling
+- Plus all other OpenAI chat completion parameters
+
+##### Return Types
+
+- With `stream: false` (default): Returns the full `ChatCompletionOutput` object from OpenAI SDK
+- With `stream: true`: Returns a `Stream<ChatCompletionChunk>` from OpenAI SDK
