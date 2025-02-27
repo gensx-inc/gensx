@@ -23,17 +23,17 @@ export default defineConfig({
   },
   test: {
     forceRerunTriggers: ["**/*.ts", "**/*.template"],
-    root: "./",
+    root: path.resolve(__dirname, "./"),
     globals: true,
     isolate: false,
     passWithNoTests: false,
-    include: ["tests/**/*.test.ts"],
+    include: ["./tests/**/*.test.ts"],
     env: loadEnv("test", process.cwd(), ""),
     coverage: {
       provider: "istanbul",
       reporter: ["text-summary", "json-summary", "json"],
       reportsDirectory: "coverage",
-      include: ["src/**/*.ts"],
+      include: ["./src/**/*.ts"],
       exclude: [
         "node_modules/**",
         "dist/**",

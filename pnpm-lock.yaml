@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.8(@types/node@22.13.4)(lightningcss@1.29.1)
     devDependencies:
       '@changesets/cli':
         specifier: ^2.27.1
@@ -9278,7 +9282,6 @@ snapshots:
       magic-string: 0.30.17
     optionalDependencies:
       vite: 5.4.11(@types/node@22.13.4)(lightningcss@1.29.1)
-    optional: true
 
   '@vitest/pretty-format@2.1.8':
     dependencies:
@@ -14134,7 +14137,6 @@ snapshots:
       - sugarss
       - supports-color
       - terser
-    optional: true
 
   vite-plugin-dts@4.5.0(@types/node@20.17.11)(rollup@4.34.8)(typescript@5.7.3)(vite@6.1.0(@types/node@20.17.11)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.2)(yaml@2.7.0)):
     dependencies:
@@ -14174,7 +14176,6 @@ snapshots:
       '@types/node': 22.13.4
       fsevents: 2.3.3
       lightningcss: 1.29.1
-    optional: true
 
   vite@6.1.0(@types/node@20.17.11)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.2)(yaml@2.7.0):
     dependencies:
@@ -14258,7 +14259,6 @@ snapshots:
       - sugarss
       - supports-color
       - terser
-    optional: true
 
   vscode-jsonrpc@8.2.0: {}
 
