@@ -43,4 +43,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-public/sitemap*.xml
+public/docs/sitemap*.xml
