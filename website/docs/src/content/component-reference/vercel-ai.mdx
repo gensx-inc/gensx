@@ -1,0 +1,334 @@
+---
+title: Vercel AI SDK components
+description: Vercel AI SDK compatible component reference
+---
+
+# Vercel AI SDK Components
+
+The [@gensx/vercel-ai-sdk](https://www.npmjs.com/package/@gensx/vercel-ai-sdk) package provides Vercel AI SDK compatible components for GenSX, allowing you to use Vercel's AI SDK with GenSX's component model.
+
+## Installation
+
+To install the package, run the following command:
+
+```bash
+npm install @gensx/vercel-ai-sdk
+```
+
+You'll also need to install the Vercel AI SDK:
+
+```bash
+npm install ai
+```
+
+## Supported components
+
+| <div style={{width: "150px"}}>Component</div> | Description                                                    |
+| :-------------------------------------------- | :------------------------------------------------------------- |
+| [`StreamText`](#streamtext)                   | Stream text responses from language models                     |
+| [`StreamObject`](#streamobject)               | Stream structured JSON objects from language models            |
+| [`GenerateText`](#generatetext)               | Generate complete text responses from language models          |
+| [`GenerateObject`](#generateobject)           | Generate complete structured JSON objects from language models |
+| [`Embed`](#embed)                             | Generate embeddings for a single text input                    |
+| [`EmbedMany`](#embedmany)                     | Generate embeddings for multiple text inputs                   |
+| [`GenerateImage`](#generateimage)             | Generate images from text prompts                              |
+
+## Component Reference
+
+#### `<StreamText/>`
+
+The `StreamText` component streams text responses from language models, making it ideal for chat interfaces and other applications where you want to show responses as they're generated.
+
+```tsx
+import { StreamText } from "@gensx/vercel-ai-sdk";
+import { openai } from "@ai-sdk/openai";
+
+const languageModel = openai("gpt-4o");
+
+// Streaming text response
+const stream = await gsx.execute(
+  <StreamText
+    prompt="Explain quantum computing in simple terms"
+    model={languageModel}
+  />,
+);
+
+// Use in a UI component
+<StreamingUI stream={stream} />;
+```
+
+##### Props
+
+The `StreamText` component accepts all parameters from the Vercel AI SDK's `streamText` function:
+
+- `prompt` (required): The text prompt to send to the model
+- `model` (required): The language model to use (from Vercel AI SDK)
+- Plus all other parameters supported by the Vercel AI SDK
+
+##### Return Type
+
+Returns a streaming response that can be consumed token by token.
+
+#### `<StreamObject/>`
+
+The `StreamObject` component streams structured JSON objects from language models, allowing you to get structured data with type safety.
+
+```tsx
+import { StreamObject } from "@gensx/vercel-ai-sdk";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+const languageModel = openai("gpt-4o");
+
+// Define a schema for the response
+const recipeSchema = z.object({
+  recipe: z.object({
+    name: z.string(),
+    ingredients: z.array(z.string()),
+    steps: z.array(z.string()),
+  }),
+});
+
+// Stream a structured object
+const response = await gsx.execute(
+  <StreamObject
+    prompt="Generate a recipe for chocolate chip cookies"
+    model={languageModel}
+    schema={recipeSchema}
+  />,
+);
+
+// Access the structured data
+console.log(response.recipe.name);
+console.log(response.recipe.ingredients);
+```
+
+##### Props
+
+The `StreamObject` component accepts all parameters from the Vercel AI SDK's `streamObject` function:
+
+- `prompt` (required): The text prompt to send to the model
+- `model` (required): The language model to use (from Vercel AI SDK)
+- `schema`: A Zod schema defining the structure of the response
+- `output`: The output format ("object", "array", or "no-schema")
+- Plus all other parameters supported by the Vercel AI SDK
+
+##### Return Type
+
+Returns a structured object matching the provided schema.
+
+#### `<GenerateText/>`
+
+The `GenerateText` component generates complete text responses from language models, waiting for the entire response before returning.
+
+```tsx
+import { GenerateText } from "@gensx/vercel-ai-sdk";
+import { openai } from "@ai-sdk/openai";
+
+const languageModel = openai("gpt-4o");
+
+// Generate a complete text response
+const response = await gsx.execute(
+  <GenerateText
+    prompt="Write a short poem about programming"
+    model={languageModel}
+  />,
+);
+
+console.log(response);
+```
+
+##### Props
+
+The `GenerateText` component accepts all parameters from the Vercel AI SDK's `generateText` function:
+
+- `prompt` (required): The text prompt to send to the model
+- `model` (required): The language model to use (from Vercel AI SDK)
+- Plus all other parameters supported by the Vercel AI SDK
+
+##### Return Type
+
+Returns a complete text string containing the model's response.
+
+#### `<GenerateObject/>`
+
+The `GenerateObject` component generates complete structured JSON objects from language models, with type safety through Zod schemas.
+
+```tsx
+import { GenerateObject } from "@gensx/vercel-ai-sdk";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+const languageModel = openai("gpt-4o");
+
+// Define a schema for the response
+const userSchema = z.object({
+  user: z.object({
+    name: z.string(),
+    age: z.number(),
+    interests: z.array(z.string()),
+    contact: z.object({
+      email: z.string().email(),
+      phone: z.string().optional(),
+    }),
+  }),
+});
+
+// Generate a structured object
+const userData = await gsx.execute(
+  <GenerateObject
+    prompt="Generate a fictional user profile"
+    model={languageModel}
+    schema={userSchema}
+  />,
+);
+
+// Access the structured data
+console.log(userData.user.name);
+console.log(userData.user.interests);
+```
+
+##### Props
+
+The `GenerateObject` component accepts all parameters from the Vercel AI SDK's `generateObject` function:
+
+- `prompt` (required): The text prompt to send to the model
+- `model` (required): The language model to use (from Vercel AI SDK)
+- `schema`: A Zod schema defining the structure of the response
+- `output`: The output format ("object", "array", or "no-schema")
+- Plus all other parameters supported by the Vercel AI SDK
+
+##### Return Type
+
+Returns a structured object matching the provided schema.
+
+#### `<Embed/>`
+
+The `Embed` component generates embeddings for a single text input, which can be used for semantic search, clustering, and other NLP tasks.
+
+```tsx
+import { Embed } from "@gensx/vercel-ai-sdk";
+import { openai } from "@ai-sdk/openai";
+
+const embeddingModel = openai.embedding("text-embedding-3-small");
+
+// Generate an embedding for a single text
+const embedding = await gsx.execute(
+  <Embed value="This is a sample text to embed" model={embeddingModel} />,
+);
+
+console.log(embedding); // Vector representation of the text
+```
+
+##### Props
+
+The `Embed` component accepts all parameters from the Vercel AI SDK's `embed` function:
+
+- `value` (required): The text to generate an embedding for
+- `model` (required): The embedding model to use (from Vercel AI SDK)
+- Plus all other parameters supported by the Vercel AI SDK
+
+##### Return Type
+
+Returns a vector representation (embedding) of the input text.
+
+#### `<EmbedMany/>`
+
+The `EmbedMany` component generates embeddings for multiple text inputs in a single call, which is more efficient than making separate calls for each text.
+
+```tsx
+import { EmbedMany } from "@gensx/vercel-ai-sdk";
+import { openai } from "@ai-sdk/openai";
+
+const embeddingModel = openai.embedding("text-embedding-3-small");
+
+// Generate embeddings for multiple texts
+const embeddings = await gsx.execute(
+  <EmbedMany
+    values={[
+      "First text to embed",
+      "Second text to embed",
+      "Third text to embed",
+    ]}
+    model={embeddingModel}
+  />,
+);
+
+console.log(embeddings); // Array of vector representations
+```
+
+##### Props
+
+The `EmbedMany` component accepts all parameters from the Vercel AI SDK's `embedMany` function:
+
+- `values` (required): Array of texts to generate embeddings for
+- `model` (required): The embedding model to use (from Vercel AI SDK)
+- Plus all other parameters supported by the Vercel AI SDK
+
+##### Return Type
+
+Returns an array of vector representations (embeddings) for the input texts.
+
+#### `<GenerateImage/>`
+
+The `GenerateImage` component generates images from text prompts using image generation models.
+
+```tsx
+import { GenerateImage } from "@gensx/vercel-ai-sdk";
+import { openai } from "@ai-sdk/openai";
+
+const imageModel = openai.image("dall-e-3");
+
+// Generate an image
+const result = await gsx.execute(
+  <GenerateImage
+    prompt="A futuristic city with flying cars and neon lights"
+    model={imageModel}
+  />,
+);
+
+console.log(result.url); // URL to the generated image
+```
+
+##### Props
+
+The `GenerateImage` component accepts all parameters from the Vercel AI SDK's `experimental_generateImage` function:
+
+- `prompt` (required): The text description of the image to generate
+- `model` (required): The image generation model to use (from Vercel AI SDK)
+- Plus all other parameters supported by the Vercel AI SDK
+
+##### Return Type
+
+Returns an object containing information about the generated image, including its URL.
+
+## Usage with Different Models
+
+The Vercel AI SDK supports multiple model providers. Here's how to use different providers with GenSX components:
+
+```tsx
+// OpenAI
+import { openai } from "@ai-sdk/openai";
+const openaiModel = openai("gpt-4o");
+
+// Anthropic
+import { anthropic } from "@ai-sdk/anthropic";
+const anthropicModel = anthropic("claude-3-opus-20240229");
+
+// Cohere
+import { cohere } from "@ai-sdk/cohere";
+const cohereModel = cohere("command-r-plus");
+
+// Use with GenSX components
+import { GenerateText } from "@gensx/vercel-ai-sdk";
+
+const openaiResponse = await gsx.execute(
+  <GenerateText prompt="Explain quantum computing" model={openaiModel} />,
+);
+
+const anthropicResponse = await gsx.execute(
+  <GenerateText prompt="Explain quantum computing" model={anthropicModel} />,
+);
+```
+
+For more information on the Vercel AI SDK, visit the [official documentation](https://sdk.vercel.ai/docs).

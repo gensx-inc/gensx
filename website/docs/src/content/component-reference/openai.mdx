@@ -17,24 +17,24 @@ npm install @gensx/openai
 
 ## Supported components
 
-| <div style={{width: "150px"}}>Component</div>     | Description                                                                        |
-| :------------------------------------------------ | :--------------------------------------------------------------------------------- |
-| [`OpenAIProvider`](#openai-provider)              | OpenAI Provider that handles configuration and authentication for child components |
-| [`GSXChatCompletion`](#gsx-chat-completion)       | Advanced component with enhanced features for OpenAI chat completions              |
-| [`ChatCompletion`](#chat-completion)              | Simplified component for chat completions with streamlined output interface        |
-| [`OpenAIChatCompletion`](#openai-chat-completion) | Low-level component that directly matches the OpenAI SDK interface                 |
+| <div style={{width: "150px"}}>Component</div>   | Description                                                                        |
+| :---------------------------------------------- | :--------------------------------------------------------------------------------- |
+| [`OpenAIProvider`](#openaiprovider)             | OpenAI Provider that handles configuration and authentication for child components |
+| [`GSXChatCompletion`](#gsxchatcompletion)       | Enhanced component with enhanced features for OpenAI chat completions              |
+| [`ChatCompletion`](#chatcompletion)             | Simplified component for chat completions with streamlined output interface        |
+| [`OpenAIChatCompletion`](#openaichatcompletion) | Low-level component that directly matches the OpenAI SDK interface                 |
 
 ## Component Comparison
 
 The package provides three different chat completion components to suit different use cases:
 
-- **OpenAIChatCompletion**: Provides a direct mapping to the OpenAI SDK with identical inputs and outputs
-- **GSXChatCompletion**: Enhanced component with additional features like structured output and tool calling
-- **ChatCompletion**: Simplified interface that returns string responses or simple streams while maintaining identical inputs
+- **OpenAIChatCompletion**: Direct mapping to the OpenAI API with identical inputs and outputs
+- **GSXChatCompletion**: Enhanced component with additional features like structured output and automated tool calling
+- **ChatCompletion**: Simplified interface that returns string responses or simple streams while maintaining identical inputs to the OpenAI API
 
 ## Reference
 
-#### `<OpenAIProvider />`
+#### `<OpenAIProvider/>`
 
 The `OpenAIProvider` component initializes and provides an OpenAI client instance to all child components. Any components that use OpenAI's API need to be wrapped in an `OpenAIProvider`.
 
@@ -65,7 +65,7 @@ The `OpenAIProvider` accepts all configuration options from the [OpenAI Node.js 
 - `organization`: Optional organization ID
 - `baseURL`: Optional API base URL
 
-#### `<GSXChatCompletion />`
+#### `<GSXChatCompletion/>`
 
 The `GSXChatCompletion` component is an advanced chat completion component that provides enhanced features beyond the standard OpenAI API. It supports structured output, tool calling, and streaming, with automatic handling of tool execution.
 
@@ -132,7 +132,7 @@ The return type of `GSXChatCompletion` depends on the props:
 - With `outputSchema`: Returns data matching the provided Zod schema
 - Default: Returns `GSXChatCompletionResult` (OpenAI response with message history)
 
-#### `<ChatCompletion />`
+#### `<ChatCompletion/>`
 
 The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens, making it easier to use in UI components.
 
@@ -185,7 +185,7 @@ The `ChatCompletion` component accepts all parameters from OpenAI's chat complet
 - With `stream: false` (default): Returns a string containing the model's response
 - With `stream: true`: Returns an `AsyncIterableIterator<string>` that yields tokens as they're generated
 
-#### `<OpenAIChatCompletion />`
+#### `<OpenAIChatCompletion/>`
 
 The `OpenAIChatCompletion` component is a low-level component that directly maps to the OpenAI SDK. It has identical inputs and outputs to the OpenAI API, making it suitable for advanced use cases where you need full control.
 
