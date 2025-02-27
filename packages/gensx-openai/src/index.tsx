@@ -1,3 +1,5 @@
+import type { GSXToolAnySchema, GSXToolParams } from "gensx";
+
 import {
   ChatCompletion,
   ChatCompletionProps,
@@ -12,7 +14,7 @@ import {
   OpenAIContext,
   OpenAIProvider,
 } from "./openai.js";
-import { GSXTool, GSXToolAnySchema } from "./tools.js";
+import { GSXTool } from "./tools.js";
 
 export {
   OpenAIProvider,
@@ -33,4 +35,5 @@ export type {
   GSXChatCompletionOutput,
   GSXChatCompletionResult,
   GSXToolAnySchema,
+  GSXToolParams,
 };

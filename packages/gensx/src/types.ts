@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { GsxArray } from "./array.js";
 import { ExecutionContext } from "./context.js";
 import { JSX } from "./jsx-runtime.js";
@@ -123,4 +125,14 @@ export interface Context<T> {
     { value: T; onComplete?: () => Promise<void> | void },
     ExecutionContext
   >;
+}
+
+export type GSXToolAnySchema = z.ZodObject<z.ZodRawShape>;
+// We export this type here so that we can share the same shape across all of our tool running implementations
+export interface GSXToolParams<TSchema extends GSXToolAnySchema> {
+  name: string;
+  description: string;
+  schema: TSchema;
+  run: (args: z.infer<TSchema>) => Promise<unknown>;
+  options?: {};
 }

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { gsx } from "gensx";
+import { gsx, GSXToolParams } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
@@ -16,7 +16,7 @@ type StreamCompletionProps = Omit<
   "stream" | "tools"
 > & {
   stream: true;
-  tools?: GSXTool<any>[];
+  tools?: (GSXTool<any> | GSXToolParams<any>)[];
 };
 
 type StreamCompletionOutput = Stream<ChatCompletionChunk>;
@@ -24,7 +24,11 @@ type StreamCompletionOutput = Stream<ChatCompletionChunk>;
 export const streamCompletionImpl = async (
   props: StreamCompletionProps,
 ): Promise<StreamCompletionOutput> => {
-  const { stream, tools, ...rest } = props;
+  const { stream, tools: toolsParams, ...rest } = props;
+
+  const tools = toolsParams?.map((t) =>
+    t instanceof GSXTool ? t : new GSXTool(t),
+  );
 
   // If we have tools, first make a synchronous call to get tool calls
   if (tools?.length) {

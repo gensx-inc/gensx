@@ -10,6 +10,7 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
+import { GSXToolAnySchema, GSXToolParams } from "gensx";
 import { z } from "zod";
 
 export class MCPResource {
@@ -137,7 +138,16 @@ export class MCPTool {
     return result as CallToolResult;
   }
 
-  asTool(): Tool {
+  asGSXTool(): GSXToolParams<GSXToolAnySchema> {
+    return {
+      name: this.name,
+      description: this.description ?? "",
+      schema: this.schema,
+      run: this.run.bind(this),
+    };
+  }
+
+  asMCPTool(): Tool {
     return {
       name: this.name,
       description: this.description,

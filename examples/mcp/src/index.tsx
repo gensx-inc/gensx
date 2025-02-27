@@ -1,9 +1,7 @@
-import { createMCPServerContext, MCPTool } from "@gensx/mcp";
+import { createMCPServerContext } from "@gensx/mcp";
 import {
   GSXChatCompletion,
   GSXChatCompletionResult,
-  GSXTool,
-  GSXToolAnySchema,
   OpenAIProvider,
 } from "@gensx/openai";
 import { gsx } from "gensx";
@@ -18,27 +16,6 @@ if (!OPENAI_API_KEY) {
   console.error("  export OPENAI_API_KEY=your_api_key_here");
   process.exit(1);
 }
-
-const mapToGsxTools = (tools: MCPTool[]) => {
-  return tools.reduce((acc: GSXTool<GSXToolAnySchema>[], tool: MCPTool) => {
-    let description: string = tool.description ?? "";
-    if (description.length > 1024) {
-      description = description.slice(0, 1021) + "...";
-    }
-
-    acc.push(
-      GSXTool.create({
-        name: tool.name,
-        description,
-        schema: tool.schema as unknown as GSXToolAnySchema,
-        run: async (params) => {
-          return await tool.run(params);
-        },
-      }),
-    );
-    return acc;
-  }, []);
-};
 
 const {
   Provider: SequentialThinkingProvider,
@@ -55,7 +32,7 @@ const RespondWithTools = gsx.Component<
   GSXChatCompletionResult
 >("RespondWithTools", ({ userInput }) => {
   const { tools } = useSequentialThinkingContext();
-  const gsxTools = mapToGsxTools(tools);
+  const gsxTools = tools.map((tool) => tool.asGSXTool());
 
   return (
     <GSXChatCompletion

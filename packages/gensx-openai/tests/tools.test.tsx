@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import { gsx, GSXToolParams } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionAssistantMessageParam,
@@ -22,7 +22,7 @@ suite("Tools", () => {
     input: z.string(),
   });
 
-  const testTool = new GSXTool({
+  const testToolParams: GSXToolParams<typeof testToolSchema> = {
     name: "test_tool",
     description: "A test tool",
     schema: testToolSchema,
@@ -30,7 +30,9 @@ suite("Tools", () => {
       await Promise.resolve();
       return `Processed: ${args.input}`;
     },
-  });
+  };
+
+  const testTool = GSXTool.create(testToolParams);
 
   test("GSXTool creation and definition", () => {
     expect(testTool.name).toBe("test_tool");
@@ -174,6 +176,29 @@ suite("Tools", () => {
     );
   });
 
+  test("GSXChatCompletion works with tool params", async () => {
+    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+      "TestComponent",
+      () => (
+        <GSXChatCompletion
+          model="gpt-4o"
+          messages={[{ role: "user", content: "test" }]}
+          tools={[testToolParams]}
+        />
+      ),
+    );
+
+    const result = await gsx.execute<ChatCompletionOutput>(
+      <OpenAIProvider apiKey="test">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
+
+    expect(result.choices[0].message.content).toBe(
+      "Final answer after tool execution",
+    );
+  });
+
   test("GSXChatCompletion works with tools and structured output", async () => {
     const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
       "TestComponent",
@@ -182,6 +207,34 @@ suite("Tools", () => {
           model="gpt-4o"
           messages={[{ role: "user", content: "test" }]}
           tools={[testTool]}
+          outputSchema={z.object({
+            name: z.string(),
+            age: z.number(),
+          })}
+        />
+      ),
+    );
+
+    const result = await gsx.execute<ChatCompletionOutput>(
+      <OpenAIProvider apiKey="test">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toEqual({
+      name: "Hello World",
+      age: 42,
+    });
+  });
+
+  test("GSXChatCompletion works with tool params and structured output", async () => {
+    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+      "TestComponent",
+      () => (
+        <GSXChatCompletion
+          model="gpt-4o"
+          messages={[{ role: "user", content: "test" }]}
+          tools={[testToolParams]}
           outputSchema={z.object({
             name: z.string(),
             age: z.number(),
