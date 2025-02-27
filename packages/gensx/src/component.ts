@@ -19,6 +19,7 @@ export interface ComponentOpts {
   secretProps?: string[]; // Property paths to mask in checkpoints
   secretOutputs?: boolean; // Whether to mask the output of the component
   name?: string; // Allows you to override the name of the component
+  propSerializers?: Record<string, (value: unknown) => unknown>; // Custom serializers for specific props
 }
 
 // omit name from ComponentOpts

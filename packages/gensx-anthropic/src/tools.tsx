@@ -65,6 +65,15 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     return new GSXTool(params);
   }
 
+  // This method is used for custom serialization in the checkpoint system
+  [Symbol.for("checkpoint.serialize")](): Record<string, unknown> {
+    return {
+      name: this.name,
+      description: this.description,
+      schema: this.definition.input_schema,
+    };
+  }
+
   public readonly name: string;
   public readonly description: string;
   public readonly schema: TSchema;

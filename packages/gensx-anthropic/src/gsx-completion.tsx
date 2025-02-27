@@ -8,6 +8,7 @@ import {
 import { Stream } from "@anthropic-ai/sdk/streaming";
 import { Args, gsx } from "gensx";
 import { z, ZodType } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { AnthropicChatCompletion } from "./anthropic.js";
 import { streamCompletionImpl } from "./stream.js";
@@ -137,10 +138,23 @@ interface GSXChatCompletionComponent {
 export const GSXChatCompletion = gsx.Component<
   GSXChatCompletionProps,
   GSXChatCompletionOutput<GSXChatCompletionProps>
->(
-  "GSXChatCompletion",
-  gsxChatCompletionImpl,
-) as unknown as GSXChatCompletionComponent;
+>("GSXChatCompletion", gsxChatCompletionImpl, {
+  propSerializers: {
+    outputSchema: (schema: unknown) => {
+      if (!schema) return schema;
+      try {
+        // Convert Zod schema to JSON Schema for serialization
+        return {
+          __type: "ZodSchema",
+          schema: zodToJsonSchema(schema as z.ZodSchema),
+        };
+      } catch (_error) {
+        // Fallback if conversion fails
+        return { __type: "ZodSchema", description: "Serialization failed" };
+      }
+    },
+  },
+}) as unknown as GSXChatCompletionComponent;
 
 // Base props type from OpenAI
 export type ChatCompletionProps = Omit<

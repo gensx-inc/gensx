@@ -59,6 +59,7 @@ export class CheckpointManager implements CheckpointWriter {
   private orphanedNodes = new Map<string, Set<ExecutionNode>>();
   private _secretValues = new Map<string, Set<unknown>>(); // Internal per-node secrets
   private currentNodeChain: string[] = []; // Track current execution context
+  private _currentPropName?: string; // Track current property being cloned
   private readonly MIN_SECRET_LENGTH = 8;
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
@@ -571,7 +572,7 @@ export class CheckpointManager implements CheckpointWriter {
     }, obj);
   }
 
-  private cloneValue(value: unknown): unknown {
+  private cloneValue(value: unknown, skipSerializers = false): unknown {
     // Handle null/undefined
     if (value == null) return value;
 
@@ -581,9 +582,50 @@ export class CheckpointManager implements CheckpointWriter {
     // Handle primitive values
     if (typeof value !== "object") return value;
 
+    // Apply component-level property serializers if not skipped
+    if (!skipSerializers && this.currentNodeChain.length > 0) {
+      const currentNodeId =
+        this.currentNodeChain[this.currentNodeChain.length - 1];
+      const currentNode = this.nodes.get(currentNodeId);
+
+      // If we're in a node context and the node has propSerializers
+      if (currentNode?.componentOpts?.propSerializers) {
+        const propSerializers = currentNode.componentOpts.propSerializers;
+        const propName = this._currentPropName;
+
+        if (propName && propName in propSerializers) {
+          try {
+            const serializer = propSerializers[propName];
+            const serialized = serializer(value);
+
+            // Skip serializers on the second pass to prevent infinite recursion
+            return this.cloneValue(serialized, true);
+          } catch (error) {
+            console.warn(
+              `[Checkpoint] Error in propSerializer for ${propName} in component ${currentNode.componentName}:`,
+              error,
+            );
+            // Continue with normal serialization on error
+          }
+        }
+      }
+    }
+
+    // Fall back to the legacy custom serializer approach
+    const customSerializerSymbol = Symbol.for("checkpoint.serialize");
+    if (typeof value === "object" && customSerializerSymbol in value) {
+      const serializeMethod = (value as Record<symbol, unknown>)[
+        customSerializerSymbol
+      ];
+      if (typeof serializeMethod === "function") {
+        // Skip serializers on the second pass to prevent infinite recursion
+        return this.cloneValue(serializeMethod.call(value), true);
+      }
+    }
+
     // Handle arrays
     if (Array.isArray(value)) {
-      return value.map((item) => this.cloneValue(item));
+      return value.map((item) => this.cloneValue(item, skipSerializers));
     }
 
     // Handle objects that shouldn't be cloned
@@ -593,7 +635,10 @@ export class CheckpointManager implements CheckpointWriter {
 
     // For regular objects, clone each property
     return Object.fromEntries(
-      Object.entries(value).map(([key, val]) => [key, this.cloneValue(val)]),
+      Object.entries(value).map(([key, val]) => [
+        key,
+        this.cloneValue(val, skipSerializers),
+      ]),
     );
   }
 
@@ -626,25 +671,46 @@ export class CheckpointManager implements CheckpointWriter {
    */
   addNode(partialNode: Partial<ExecutionNode>, parentId?: string): string {
     const nodeId = generateUUID();
-    const clonedPartial = this.cloneValue(
-      partialNode,
-    ) as Partial<ExecutionNode>;
-    const node: ExecutionNode = {
+
+    // Create a minimal node first so it exists in the nodes map
+    const initialNode: ExecutionNode = {
       id: nodeId,
-      componentName: "Unknown",
+      componentName: partialNode.componentName ?? "Unknown",
       startTime: Date.now(),
       children: [],
       props: {},
-      ...clonedPartial, // Clone mutable state while preserving functions
+      componentOpts: partialNode.componentOpts,
     };
+
+    // Add the node to the map so it can be referenced during serialization
+    this.nodes.set(nodeId, initialNode);
+
+    // Clone the partial node with property serialization
+    let clonedProps: Record<string, unknown> = {};
+
+    // Clone each prop individually to apply prop-specific serializers
+    if (partialNode.props) {
+      this.withNode(nodeId, () => {
+        for (const [key, value] of Object.entries(partialNode.props ?? {})) {
+          this._currentPropName = key;
+          clonedProps[key] = this.cloneValue(value);
+        }
+        this._currentPropName = undefined;
+      });
+    }
+
+    // Update the node with all properties
+    const node = this.nodes.get(nodeId)!;
+    Object.assign(node, {
+      ...partialNode,
+      id: nodeId,
+      props: clonedProps,
+    });
 
     // Register any secrets from componentOpts
     if (node.componentOpts?.secretProps) {
       this.registerSecrets(node.props, node.componentOpts.secretProps, nodeId);
     }
-
-    // Store raw values - masking happens at write time
-    this.nodes.set(node.id, node);
 
     if (parentId) {
       const parent = this.nodes.get(parentId);
@@ -690,7 +756,13 @@ export class CheckpointManager implements CheckpointWriter {
     const node = this.nodes.get(id);
     if (node) {
       node.endTime = Date.now();
-      node.output = this.cloneValue(output);
+
+      // Apply output serialization if needed
+      this.withNode(id, () => {
+        this._currentPropName = "output";
+        node.output = this.cloneValue(output);
+        this._currentPropName = undefined;
+      });
 
       if (
         node.componentOpts?.secretOutputs &&
@@ -750,7 +822,19 @@ export class CheckpointManager implements CheckpointWriter {
         });
       }
 
-      Object.assign(node, this.cloneValue(updates));
+      // Clone and apply updates with property serializers
+      const clonedUpdates: Partial<ExecutionNode> = {};
+
+      this.withNode(id, () => {
+        for (const [key, value] of Object.entries(updates)) {
+          this._currentPropName = key;
+          (clonedUpdates as Record<string, unknown>)[key] =
+            this.cloneValue(value);
+          this._currentPropName = undefined;
+        }
+      });
+
+      Object.assign(node, clonedUpdates);
       this.updateCheckpoint();
     } else {
       console.warn(`[Tracker] Attempted to update unknown node:`, { id });
