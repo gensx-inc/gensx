@@ -27,6 +27,24 @@
       "request": "launch",
       "type": "node-terminal",
       "cwd": "${workspaceRoot}/docs"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug GenSX Example",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "program": "${workspaceRoot}/node_modules/tsx/dist/cli.mjs",
+      "args": ["${file}"],
+      "smartStep": true,
+      "console": "integratedTerminal",
+      "cwd": "${fileDirname}",
+      "env": {
+        "NODE_ENV": "development",
+        "NODE_OPTIONS": "--enable-source-maps"
+      },
+      "sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/examples/**/dist/**/*.js"]
     }
   ]
 }
