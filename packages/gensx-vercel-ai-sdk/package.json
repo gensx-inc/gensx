@@ -47,6 +47,6 @@
   },
   "dependencies": {
     "ai": "^4.1.46",
-    "gensx": "workspace:>=0.2.1"
+    "gensx": "workspace:*"
   }
 }
