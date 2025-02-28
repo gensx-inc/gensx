@@ -1,6 +1,6 @@
 import { Command } from "commander";
 
-import packageJson from "../package.json" assert { type: "json" };
+import packageJson from "../package.json" with { type: "json" };
 import { login } from "./commands/login.js";
 import { newProject } from "./commands/new.js";
 
