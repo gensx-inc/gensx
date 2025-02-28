@@ -15,7 +15,7 @@
     "directory": "packages/gensx-mcp"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",

@@ -7,7 +7,7 @@ import {
   MCPResource,
   MCPResourceTemplate,
   MCPTool,
-} from "./wrappers";
+} from "./wrappers.js";
 
 export type MCPServerDefinition =
   | {

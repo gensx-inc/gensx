@@ -1,12 +1,12 @@
 import { gsx, GsxComponent } from "gensx";
 
-import { fetchMcpContext, MCPServerDefinition } from "./mcp";
+import { fetchMcpContext, MCPServerDefinition } from "./mcp.js";
 import {
   MCPPrompt,
   MCPResource,
   MCPResourceTemplate,
   MCPTool,
-} from "./wrappers";
+} from "./wrappers.js";
 
 export { MCPTool, MCPResource, MCPResourceTemplate, MCPPrompt };
 export interface MCPServerContext {
