@@ -1,6 +1,6 @@
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "@/index";
+import { gsx } from "@/index.js";
 
 suite("resolveDeep", () => {
   const Doubler = gsx.Component<{ foo: number }, number>("Doubler", (props) => {

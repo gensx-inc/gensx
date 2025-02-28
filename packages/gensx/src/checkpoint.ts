@@ -2,9 +2,9 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { gzip } from "node:zlib";
 
-import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component";
-import { readConfig } from "./config";
-import { ExecutionContext } from "./context";
+import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component.js";
+import { readConfig } from "./config.js";
+import { ExecutionContext } from "./context.js";
 
 const gzipAsync = promisify(gzip);
 

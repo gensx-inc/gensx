@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GsxArray } from "./array";
-import { ExecutionContext } from "./context";
-import { isStreamable } from "./stream";
+import { GsxArray } from "./array.js";
+import { ExecutionContext } from "./context.js";
+import { isStreamable } from "./stream.js";
 
 /**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.

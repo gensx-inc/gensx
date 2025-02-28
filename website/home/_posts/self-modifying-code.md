@@ -1,6 +1,6 @@
 ---
-title: "Self-modifying code"
-excerpt: "Build an agent that can change its own code, start new instances of itself, self-replicate, and evolve."
+title: "Self-modifying code agent"
+excerpt: "We built an agent that can change its own code, start new instances of itself, self-replicate, and evolve."
 date: "2025-02-27T00:00:00.000Z"
 coverImage: "/assets/blog/hello-world/cover.jpg"
 author:
@@ -18,7 +18,7 @@ Will it develop independent thought? Brick my machine? Ascend to Skynet?
 
 Feel free to [fork the example in the GenSX GitHub repo](https://github.com/gensx-inc/gensx/tree/main/examples/self-modifying-code) if you’d like to follow along. But fair warning that if you do decide to run this code, **make sure you do it in a VM**. It has the ability to run arbitrary bash commands and spawn new instances of itself in a loop. Each iteration consumes \~1MM tokens (\~$4 at the time of writing), so you certainly don’t want it to run away while unattended.
 
-# Architecture
+## Architecture
 
 While this may sound daunting, the architecture is surprisingly straight forward. There is an outer control loop for cloning source code and spawning new agent processes, and an inner workflow that contains the LLM magic.
 
@@ -124,7 +124,7 @@ Commands:
 
 There is a lot more to doing this reliably, and making sure that the LLM doesn’t do things like nuke the filesystem (again - _run this code at your own risk_), but this simplified gist will take us pretty far.
 
-# So what did the agent do?
+## So what did the agent do?
 
 We let the agent come up with its own goals for improving itself. It reads through the context and history of changes and uses tools to access the codebase.
 
@@ -156,7 +156,7 @@ But there are some problems. A deeper look at the code reveals a few TODO commen
 
 I was hopeful that the agent would see all of the TODOs and NYIs when it planned for the next iteration and decide to finish the job. Unfortunately, it just moved on to implementing a telemetry and logging system.
 
-# Should you worry about losing your job?
+## Should you worry about losing your job?
 
 Based on my experience building this, absolutely not. At least not yet. This self modifying agent can’t really be left to its own devices.
 

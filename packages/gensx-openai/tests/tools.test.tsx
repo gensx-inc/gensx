@@ -14,7 +14,7 @@ import {
   GSXTool,
   OpenAIProvider,
 } from "@/index.js";
-import { ToolExecutor, ToolsCompletion } from "@/tools";
+import { ToolExecutor, ToolsCompletion } from "@/tools.js";
 
 suite("Tools", () => {
   // Create a test tool

@@ -7,7 +7,7 @@ import { promisify } from "util";
 
 import { afterEach, expect, it, suite } from "vitest";
 
-import { createGensxProject } from "../src/index";
+import { createGensxProject } from "../src/index.js";
 
 const exec = promisify(execCallback);
 

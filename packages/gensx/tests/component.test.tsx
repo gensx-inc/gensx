@@ -8,7 +8,7 @@ import { Streamable } from "@/types.js";
 import {
   executeWithCheckpoints,
   executeWorkflowWithCheckpoints,
-} from "./utils/executeWithCheckpoints";
+} from "./utils/executeWithCheckpoints.js";
 
 suite("component", () => {
   test("can create anonymous component", async () => {

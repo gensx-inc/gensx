@@ -1,10 +1,10 @@
-import { resolveDeep } from "./resolve";
-import { Args, Context, GsxComponent } from "./types";
+import { resolveDeep } from "./resolve.js";
+import { Args, Context, GsxComponent } from "./types.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
   WorkflowExecutionContext,
-} from "./workflow-context";
+} from "./workflow-context.js";
 
 type WorkflowContext = Record<symbol, unknown>;
 

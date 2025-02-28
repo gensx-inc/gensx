@@ -6,11 +6,11 @@ import { Stream } from "@anthropic-ai/sdk/streaming";
 import { gsx } from "gensx";
 import { expect, suite, test, vi } from "vitest";
 
-import { GSXChatCompletionResult } from "@/gsx-completion";
+import { GSXChatCompletionResult } from "@/gsx-completion.js";
 import { AnthropicProvider, GSXChatCompletion } from "@/index.js";
 
-import { createMockMessage, createMockTextContent } from "./helpers";
-import { createMockStreamEvents } from "./helpers";
+import { createMockMessage, createMockTextContent } from "./helpers.js";
+import { createMockStreamEvents } from "./helpers.js";
 
 // Mock Anthropic client
 vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
