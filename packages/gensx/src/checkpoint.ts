@@ -591,6 +591,12 @@ export class CheckpointManager implements CheckpointWriter {
     if (Symbol.asyncIterator in value) return value;
     if (ArrayBuffer.isView(value)) return value;
 
+    // Check for toJSON method before doing regular object cloning
+    const objValue = value as { toJSON?: () => unknown };
+    if (typeof objValue.toJSON === "function") {
+      return this.cloneValue(objValue.toJSON());
+    }
+
     // For regular objects, clone each property
     return Object.fromEntries(
       Object.entries(value).map(([key, val]) => [key, this.cloneValue(val)]),

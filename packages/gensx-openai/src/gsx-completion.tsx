@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Import Zod extensions for improved serialization
+import "./utils/zod-extensions.js";
+
 import { Args, gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
