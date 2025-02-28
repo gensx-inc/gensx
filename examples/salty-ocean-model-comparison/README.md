@@ -1,4 +1,4 @@
-# Why is the Ocean Salty? - GenSX Example
+# Model Comparison - Why is the Ocean Salty?
 
 This example demonstrates how to use [GenSX](https://gensx.com) to compare responses from different AI models and providers to the same prompt.
 
