@@ -4,7 +4,7 @@ import * as path from "path";
 import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
 
-import tsconfig from "./tsconfig.json";
+import tsconfig from "./tsconfig.json" assert { type: "json" };
 
 // Create an alias object from the paths in tsconfig.json
 const alias = Object.fromEntries(

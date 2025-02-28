@@ -3,8 +3,8 @@ import { ChatCompletionChunk } from "openai/resources/index.mjs";
 import { Stream } from "openai/streaming.mjs";
 import { expect, suite, test } from "vitest";
 
-import { GSXChatCompletionResult } from "@/gsx-completion";
-import { GSXChatCompletion, OpenAIProvider } from "@/index";
+import { GSXChatCompletionResult } from "@/gsx-completion.js";
+import { GSXChatCompletion, OpenAIProvider } from "@/index.js";
 
 suite("GSXChatCompletion", () => {
   test("passes a stream to a child function", async () => {

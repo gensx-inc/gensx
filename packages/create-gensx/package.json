@@ -19,7 +19,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && cp -r src/templates dist/templates",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest",

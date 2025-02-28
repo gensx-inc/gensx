@@ -2,14 +2,14 @@ import zlib from "node:zlib";
 
 import { afterEach, vi } from "vitest";
 
-import { CheckpointManager } from "@/checkpoint";
-import { ExecutionNode } from "@/checkpoint";
-import { withContext } from "@/context";
-import { ExecutionContext } from "@/context";
-import { gsx } from "@/index";
-import { resolveDeep } from "@/resolve";
-import { ExecutableValue } from "@/types";
-import { createWorkflowContext } from "@/workflow-context";
+import { CheckpointManager } from "@/checkpoint.js";
+import { ExecutionNode } from "@/checkpoint.js";
+import { withContext } from "@/context.js";
+import { ExecutionContext } from "@/context.js";
+import { gsx } from "@/index.js";
+import { resolveDeep } from "@/resolve.js";
+import { ExecutableValue } from "@/types.js";
+import { createWorkflowContext } from "@/workflow-context.js";
 
 // Add types for fetch API
 export type FetchInput = Parameters<typeof fetch>[0];

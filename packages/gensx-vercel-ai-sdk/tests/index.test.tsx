@@ -3,7 +3,7 @@ import { gsx } from "gensx";
 import { expect, test } from "vitest";
 import { z } from "zod";
 
-import * as AI from "../src";
+import * as AI from "../src/index.js";
 
 // Test configuration
 const languageModel = openai("gpt-4o-mini");

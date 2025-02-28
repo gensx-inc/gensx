@@ -1,6 +1,6 @@
-import { GsxArray } from "./array";
-import { ExecutionContext } from "./context";
-import { JSX } from "./jsx-runtime";
+import { GsxArray } from "./array.js";
+import { ExecutionContext } from "./context.js";
+import { JSX } from "./jsx-runtime.js";
 
 export type MaybePromise<T> = T | Promise<T>;
 

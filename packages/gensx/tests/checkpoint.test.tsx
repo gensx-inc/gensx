@@ -13,7 +13,7 @@ import {
   executeWorkflowWithCheckpoints,
   getExecutionFromBody,
   mockFetch,
-} from "./utils/executeWithCheckpoints";
+} from "./utils/executeWithCheckpoints.js";
 
 // Helper function to generate test IDs
 export function generateTestId(): string {

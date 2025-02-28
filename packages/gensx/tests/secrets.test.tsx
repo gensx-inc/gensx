@@ -2,7 +2,7 @@ import { expect, suite, test } from "vitest";
 
 import { gsx } from "@/index.js";
 
-import { executeWithCheckpoints } from "./utils/executeWithCheckpoints";
+import { executeWithCheckpoints } from "./utils/executeWithCheckpoints.js";
 
 // Test components
 interface ArrayConfig {

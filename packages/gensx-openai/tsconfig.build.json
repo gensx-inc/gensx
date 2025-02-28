@@ -5,7 +5,8 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-    "emitDeclarationOnly": false
+    "incremental": false,
+    "rootDir": "./src"
   },
   "include": ["src/**/*"]
 }
