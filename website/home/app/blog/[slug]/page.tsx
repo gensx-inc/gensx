@@ -157,7 +157,7 @@ export default async function Post(props: Params) {
 
             <MarkdownToHTML
               markdown={post.content || ""}
-              className="prose md:prose-lg max-w-none [&>*]:my-6 [&_p]:leading-relaxed [&_p]:leading-[1.3] [&_p+p]:mt-6 [&_li]:leading-relaxed [&_li]:leading-[1.3] [&_h2]:text-3xl [&_h2]:font-bold [&_h2]:mt-16 [&_h2]:mb-6 [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:mt-12 [&_h3]:mb-4 [&_ul]:my-6 [&_ol]:my-6 [&_li]:my-2 [&_blockquote]:my-8 [&_blockquote]:border-l-4 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-800 [&_hr]:my-10 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_pre]:mt-4 [&_pre]:mb-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_figure]:my-10 mb-24"
+              className="prose md:prose-lg max-w-none [&>*]:my-6 [&_p]:leading-relaxed [&_p]:leading-[1.3] [&_p+p]:mt-6 [&_li]:leading-relaxed [&_li]:leading-[1.3] [&_h2]:text-3xl [&_h2]:font-bold [&_h2]:mt-16 [&_h2]:mb-6 [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:mt-12 [&_h3]:mb-4 [&_ul]:my-6 [&_ol]:my-6 [&_li]:my-2 [&_blockquote]:my-8 [&_blockquote]:border-l-4 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-800 [&_hr]:my-10 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_pre]:mt-4 [&_pre]:mb-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_img]:my-10 [&_img]:mx-auto [&_figure]:my-10 mb-24"
             />
           </article>
         </div>

@@ -8,6 +8,18 @@ export default {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    typography: {
+      DEFAULT: {
+        css: {
+          "code::before": {
+            content: '""',
+          },
+          "code::after": {
+            content: '""',
+          },
+        },
+      },
+    },
     extend: {
       colors: {
         background: "hsl(var(--background))",
