@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@tsconfig/node20": "^20.1.4",
+    "tsx": "^4.19.2",
     "vite": "^6.2.0",
     "vitest": "^2.1.8"
   }

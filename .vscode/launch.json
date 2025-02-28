@@ -33,7 +33,7 @@
       "request": "launch",
       "name": "Debug GenSX Example",
       "autoAttachChildProcesses": true,
-      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceRoot}/node_modules/tsx/dist/cli.mjs",
       "args": ["${file}"],
       "smartStep": true,
@@ -44,7 +44,15 @@
         "NODE_OPTIONS": "--enable-source-maps"
       },
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/examples/**/dist/**/*.js"]
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceRoot}/examples/**/dist/**/*.js",
+        "${workspaceRoot}/packages/**/dist/**/*.js"
+      ],
+      "restart": true
     }
   ]
 }
