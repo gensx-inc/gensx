@@ -75,7 +75,7 @@ export class Board {
     return null;
   }
 
-  public hasWinningMove(player: "X" | "O"): { row: number; column: number }[] {
+  public getWinningMoves(player: "X" | "O"): { row: number; column: number }[] {
     const winningMoves: { row: number; column: number }[] = [];
     // Try each empty cell
     for (let i = 0; i < 3; i++) {
@@ -96,7 +96,9 @@ export class Board {
     return winningMoves;
   }
 
-  public hasBlockingMove(player: "X" | "O"): { row: number; column: number }[] {
+  public getBlockingMoves(
+    player: "X" | "O",
+  ): { row: number; column: number }[] {
     const opponent = player === "X" ? "O" : "X";
     const blockingMoves: { row: number; column: number }[] = [];
 
@@ -146,5 +148,28 @@ export class Board {
 
   public getGrid(): string[][] {
     return this.grid.map((row) => [...row]);
+  }
+
+  public getRandomMove(): { row: number; column: number } | null {
+    const availableMoves: { row: number; column: number }[] = [];
+
+    // Find all empty cells
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (this.grid[i][j] === "") {
+          // Convert from 0-based to 1-based indexing for the return value
+          availableMoves.push({ row: i + 1, column: j + 1 });
+        }
+      }
+    }
+
+    // If no moves are available, return null
+    if (availableMoves.length === 0) {
+      return null;
+    }
+
+    // Select a random move from the available moves
+    const randomIndex = Math.floor(Math.random() * availableMoves.length);
+    return availableMoves[randomIndex];
   }
 }
