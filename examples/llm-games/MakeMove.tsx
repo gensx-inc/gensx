@@ -3,7 +3,7 @@ import { gsx } from "gensx";
 import { z } from "zod";
 
 import { Board } from "./Board.js";
-import { Player } from "./GameContext.js";
+import { Player } from "./types.js";
 
 export interface MakeMoveProps {
   playerSymbol: "X" | "O";

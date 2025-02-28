@@ -1,8 +1,8 @@
 import { gsx } from "gensx";
 
 import { Board } from "./Board.js";
-import { Player, PlayerSymbol } from "./GameContext.js";
 import { MakeMove } from "./MakeMove.js";
+import { Player, PlayerSymbol } from "./types.js";
 
 interface PlayGameProps {
   playerX: Player;
@@ -13,6 +13,11 @@ interface PlayGameResult {
   winner: string;
   playerXStats: PlayerStats;
   playerOStats: PlayerStats;
+  board: {
+    row1: string;
+    row2: string;
+    row3: string;
+  };
 }
 
 interface PlayerStats {
@@ -42,6 +47,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
     let currentPlayer: Player;
 
     // Play the game
+    let moveNumber = 1;
     while (!board.checkWinner() && !board.isFull()) {
       // Make the move
       currentPlayer = currentPlayerSymbol === "X" ? playerX : playerO;
@@ -49,7 +55,11 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
         playerSymbol: currentPlayerSymbol,
         player: currentPlayer,
         board,
+        componentOpts: {
+          name: `Move ${moveNumber}: ${currentPlayer.model} (${currentPlayerSymbol})`,
+        },
       });
+      // const moveDetails = gsx.execute(<MakeMove name="move1"/>)
 
       const { move, isFallback } = moveDetails;
 
@@ -94,6 +104,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
 
       // Switch players
       currentPlayerSymbol = currentPlayerSymbol === "X" ? "O" : "X";
+      moveNumber++;
     }
 
     const winner = board.checkWinner();
@@ -101,6 +112,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
       winner: winner ?? "draw",
       playerXStats,
       playerOStats,
+      board: board.toJSON(),
     };
   },
 );

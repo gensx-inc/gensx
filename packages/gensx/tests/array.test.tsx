@@ -1,6 +1,6 @@
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "../src";
+import { gsx } from "../src/index.js";
 
 interface NumberWrapperOutput {
   value: number;

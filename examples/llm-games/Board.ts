@@ -150,8 +150,16 @@ export class Board {
     return this.grid.map((row) => [...row]);
   }
 
-  public toJSON(): string {
-    return this.toString();
+  public toJSON(): {
+    row1: string;
+    row2: string;
+    row3: string;
+  } {
+    return {
+      row1: "| " + this.grid[0].map((cell) => cell || " ").join(" | ") + " |",
+      row2: "| " + this.grid[1].map((cell) => cell || " ").join(" | ") + " |",
+      row3: "| " + this.grid[2].map((cell) => cell || " ").join(" | ") + " |",
+    };
   }
 
   public getRandomMove(): { row: number; column: number } | null {

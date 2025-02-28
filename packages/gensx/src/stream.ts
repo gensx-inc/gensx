@@ -1,4 +1,4 @@
-import type { Streamable } from "./types";
+import type { Streamable } from "./types.js";
 
 // Helper to check if something is a streamable value
 export function isStreamable(value: unknown): value is Streamable {

@@ -2,15 +2,15 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ExecutionContext, getCurrentContext, withContext } from "./context";
-import { resolveDeep } from "./resolve";
+import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
+import { resolveDeep } from "./resolve.js";
 import {
   Args,
   ExecutableValue,
   MaybePromise,
   Primitive,
   StreamArgs,
-} from "./types";
+} from "./types.js";
 
 export namespace JSX {
   export type ElementType = Element;

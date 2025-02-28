@@ -13,7 +13,7 @@ import {
   executeWorkflowWithCheckpoints,
   getExecutionFromBody,
   mockFetch,
-} from "./utils/executeWithCheckpoints";
+} from "./utils/executeWithCheckpoints.js";
 
 // Helper function to generate test IDs
 export function generateTestId(): string {
@@ -345,6 +345,64 @@ suite("checkpoint", () => {
       fn: "[function]",
       native: "[function]",
     });
+  });
+
+  test("uses toJSON method when available for serialization", async () => {
+    // Define a class with a custom toJSON method
+    class CustomSerializable {
+      internalValue: string;
+      secretValue: string;
+
+      constructor(value: string, secret: string) {
+        this.internalValue = value;
+        this.secretValue = secret;
+      }
+
+      // This method shouldn't appear in serialized output
+      getInternalValue() {
+        return this.internalValue;
+      }
+
+      // Custom serialization that intentionally excludes secretValue
+      toJSON() {
+        return {
+          serializedValue: this.internalValue,
+          transformed: true,
+        };
+      }
+    }
+
+    // Define a component that has a custom serializable object as an input
+    const ToJSONComponent = gsx.Component<{ data: CustomSerializable }, string>(
+      "ToJSONComponent",
+      () => {
+        return "just a test output";
+      },
+    );
+
+    // Execute the component with checkpoints
+    const { result, checkpoints } = await executeWithCheckpoints<string>(
+      <ToJSONComponent
+        data={new CustomSerializable("hello world", "secret data")}
+      />,
+    );
+
+    // The actual result contains the raw object with all properties
+    expect(result).toBe("just a test output");
+
+    const finalCheckpoint = checkpoints[checkpoints.length - 1];
+
+    expect(finalCheckpoint.props).toBeDefined();
+    expect(finalCheckpoint.props.data).toBeDefined();
+
+    // Type assertion for the props.data
+    const propData = finalCheckpoint.props.data as {
+      serializedValue: string;
+      transformed: boolean;
+    };
+
+    expect(propData.serializedValue).toBe("hello world");
+    expect(propData.transformed).toBe(true);
   });
 
   test("handles streaming components", async () => {

@@ -1,8 +1,8 @@
-import { gsx } from "gensx";
-import { OpenAIProvider, OpenAIContext } from "@gensx/openai";
-import OpenAI from "openai";
-import { GenerateText } from "@gensx/vercel-ai-sdk";
 import { createOpenAI } from "@ai-sdk/openai";
+import { OpenAIContext, OpenAIProvider } from "@gensx/openai";
+import { GenerateText } from "@gensx/vercel-ai-sdk";
+import { gsx } from "gensx";
+import OpenAI from "openai";
 
 // Define types for the API provider configuration
 interface APIProviderConfig {
@@ -22,13 +22,13 @@ interface APIProviderRunnerProps {
   name: string;
 }
 
-type APIProviderRunnerOutput = {
+interface APIProviderRunnerOutput {
   result: string;
   provider: string;
-};
-type ListModelsOutput = {
+}
+interface ListModelsOutput {
   models: OpenAI.Models.ModelsPage;
-};
+}
 // Example component to list available OpenAI models
 const ListModels = gsx.Component<{}, ListModelsOutput>(
   "ListModels",
@@ -49,7 +49,7 @@ const GetAllModelResponsesFromProvider = gsx.Component<
   APIProviderRunnerOutput
 >(
   "Get All Model Responses from Provider",
-  async ({ providerConfig, prompt, name }) => {
+  ({ providerConfig, prompt, name }) => {
     return (
       <OpenAIProvider {...providerConfig} componentOpts={{ name: name }}>
         <ListModels>
@@ -58,7 +58,6 @@ const GetAllModelResponsesFromProvider = gsx.Component<
             const filteredModels = models.data
               .filter(
                 (model) =>
-                  model.object === "model" &&
                   !model.id.includes("embedding") &&
                   !model.id.includes("audio") &&
                   !model.id.includes("whisper") &&
@@ -107,28 +106,28 @@ const GetModelHistoryAcrossProviders = gsx.Component<
     prompt: string;
     providers?: APIProvider[];
   },
-  any
+  APIProviderRunnerOutput[]
 >(
   "Get History of Model Responses across Providers",
   ({ prompt, providers }) => {
-    const apiProviders = providers || [
+    const apiProviders = providers ?? [
       {
         name: "OpenAI",
         providerConfig: {
-          apiKey: process.env["OPENAI_API_KEY"],
+          apiKey: process.env.OPENAI_API_KEY,
         },
       },
       {
         name: "Groq",
         providerConfig: {
           baseURL: "https://api.groq.com/openai/v1",
-          apiKey: process.env["GROQ_API_KEY"],
+          apiKey: process.env.GROQ_API_KEY,
         },
       },
     ];
 
     // Map through all API providers and get history for each
-    return apiProviders.map((provider) => (
+    return gsx.array(apiProviders).map((provider) => (
       <GetAllModelResponsesFromProvider
         name={provider.name}
         providerConfig={provider.providerConfig}
@@ -152,13 +151,13 @@ const result = await workflow.run(
     providers: [
       {
         name: "OpenAI",
-        providerConfig: { apiKey: process.env["OPENAI_API_KEY"] },
+        providerConfig: { apiKey: process.env.OPENAI_API_KEY },
       },
       {
         name: "Groq",
         providerConfig: {
           baseURL: "https://api.groq.com/openai/v1",
-          apiKey: process.env["GROQ_API_KEY"],
+          apiKey: process.env.GROQ_API_KEY,
         },
       },
     ],

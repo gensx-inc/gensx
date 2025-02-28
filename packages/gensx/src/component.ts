@@ -5,13 +5,13 @@ import type {
   GsxStreamComponent,
   MaybePromise,
   Streamable,
-} from "./types";
+} from "./types.js";
 
 import { serializeError } from "serialize-error";
 
-import { getCurrentContext } from "./context";
-import { JSX, jsx } from "./jsx-runtime";
-import { resolveDeep } from "./resolve";
+import { getCurrentContext } from "./context.js";
+import { JSX, jsx } from "./jsx-runtime.js";
+import { resolveDeep } from "./resolve.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 

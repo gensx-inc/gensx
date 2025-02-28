@@ -1,7 +1,7 @@
 import { gsx } from "gensx";
 
-import { PlayGame } from "./Game.js";
-import { Player } from "./GameContext.js";
+import { PlayTournament } from "./Tournament.js";
+import { Player } from "./types.js";
 async function main() {
   const playerX: Player = {
     model: "gpt-4o-mini",
@@ -9,13 +9,25 @@ async function main() {
     provider: "openai",
   };
   const playerO: Player = {
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     strategy: "random",
     provider: "openai",
   };
 
-  const gameWorkflow = gsx.Workflow("TicTacToe", PlayGame);
-  const result = await gameWorkflow.run({ playerX, playerO });
+  // Play a single game
+  // const gameWorkflow = gsx.Workflow("TicTacToe", PlayGame);
+  // const result = await gameWorkflow.run({ playerX, playerO });
+  // console.log(result);
+
+  // Play a tournament
+  const tournamentWorkflow = gsx.Workflow(
+    "TicTacToeTournament",
+    PlayTournament,
+  );
+  const result = await tournamentWorkflow.run({
+    players: [playerX, playerO],
+    numGames: 4,
+  });
   console.log(result);
 }
 main().catch(console.error);

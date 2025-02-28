@@ -1,0 +1,27 @@
+{
+  "extends": "@tsconfig/node20/tsconfig.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "useDefineForClassFields": true,
+    "module": "NodeNext",
+    "lib": ["ESNext"],
+    "incremental": true,
+    "skipLibCheck": true,
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "isolatedModules": true,
+    "emitDeclarationOnly": false,
+    "sourceMap": true,
+    "inlineSources": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "jsx": "react-jsx",
+    "jsxImportSource": "gensx"
+  }
+}

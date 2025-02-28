@@ -2,8 +2,8 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { gsx, Streamable } from "../src";
-import { executeWorkflowWithCheckpoints } from "./utils/executeWithCheckpoints";
+import { gsx, Streamable } from "../src/index.js";
+import { executeWorkflowWithCheckpoints } from "./utils/executeWithCheckpoints.js";
 
 type Assert<T, U> =
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters

@@ -15,8 +15,7 @@
     "directory": "packages/gensx-openai"
   },
   "scripts": {
-    "build": "vite build",
-    "dev": "vite build --watch",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",
@@ -43,8 +42,6 @@
     "@types/node": "^20.17.11",
     "@vitest/coverage-istanbul": "^2.1.8",
     "openai": "^4.85.4",
-    "vite": "^6.1.0",
-    "vite-plugin-dts": "^4.5.0",
     "vitest": "^2.1.8"
   },
   "publishConfig": {
