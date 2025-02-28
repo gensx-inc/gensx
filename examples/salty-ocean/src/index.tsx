@@ -90,21 +90,6 @@ const GetAllModelResponsesFromProvider = gsx.Component<
                     baseURL: context.client?.baseURL,
                     apiKey: context.client?.apiKey,
                   }).languageModel(model.id)}
-                  componentOpts={{
-                    name:
-                      model.id +
-                      " (" +
-                      new Date(model.created * 1000).toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "numeric",
-                          day: "numeric",
-                          year: "numeric",
-                        },
-                      ) +
-                      ") - " +
-                      prompt,
-                  }}
                 >
                   {({ text }) => text}
                 </GenerateText>,
@@ -115,9 +100,6 @@ const GetAllModelResponsesFromProvider = gsx.Component<
       </OpenAIProvider>
     );
   },
-  {
-    secretOutputs: ["apiKey"],
-  },
 );
 
 const GetModelHistoryAcrossProviders = gsx.Component<
@@ -125,7 +107,7 @@ const GetModelHistoryAcrossProviders = gsx.Component<
     prompt: string;
     providers?: APIProvider[];
   },
-  APIProviderRunnerOutput[]
+  any
 >(
   "Get History of Model Responses across Providers",
   ({ prompt, providers }) => {
@@ -146,7 +128,7 @@ const GetModelHistoryAcrossProviders = gsx.Component<
     ];
 
     // Map through all API providers and get history for each
-    return gsx.array(apiProviders).map((provider) => (
+    return apiProviders.map((provider) => (
       <GetAllModelResponsesFromProvider
         name={provider.name}
         providerConfig={provider.providerConfig}
