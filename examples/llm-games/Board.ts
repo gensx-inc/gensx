@@ -150,6 +150,10 @@ export class Board {
     return this.grid.map((row) => [...row]);
   }
 
+  public toJSON(): string {
+    return this.toString();
+  }
+
   public getRandomMove(): { row: number; column: number } | null {
     const availableMoves: { row: number; column: number }[] = [];
 
