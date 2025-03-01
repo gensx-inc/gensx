@@ -11,7 +11,7 @@
     "javascriptreact",
     "typescriptreact"
   ],
-  "cSpell.words": ["gensx", "jsxs", "Streamable", "Firecrawl"],
+  "cSpell.words": ["gensx", "jsxs", "Streamable", "Firecrawl", "pulumi"],
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
