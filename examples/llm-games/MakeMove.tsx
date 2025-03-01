@@ -3,7 +3,7 @@ import { gsx } from "gensx";
 import { z } from "zod";
 
 import { Board } from "./Board.js";
-import { Player } from "./types.js";
+import { Move, Player } from "./types.js";
 
 export interface MakeMoveProps {
   playerSymbol: "X" | "O";
@@ -18,14 +18,9 @@ export interface MakeMoveResult {
   isFallback: boolean;
 }
 
-export interface Move {
-  row: number;
-  col: number;
-}
-
 const MoveSchema = z.object({
   row: z.number().int().min(1).max(3),
-  col: z.number().int().min(1).max(3),
+  column: z.number().int().min(1).max(3),
 });
 
 export const getBasicSystemMessage = (player: "X" | "O") => {
@@ -51,47 +46,61 @@ Please respond with the json inside of <move> xml tags (no backticks). Do not in
 export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
   "MakeMove",
   ({ playerSymbol, player, board }) => {
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <ChatCompletion
-          model={player.model}
-          messages={[
-            { role: "system", content: getBasicSystemMessage(playerSymbol) },
-            { role: "user", content: board.toString() },
-          ]}
-        >
-          {(response: string) => {
-            try {
-              const moveText = /<move>(.*?)<\/move>/s.exec(response)?.[1];
-              if (!moveText) {
-                throw new Error("No move found in response");
+    if (player.type === "random") {
+      return {
+        move: board.getRandomMove()!,
+        rawResponse: "",
+        isFallback: false,
+      };
+    } else if (player.type === "basic") {
+      return {
+        move: board.getBasicStrategyMove(playerSymbol)!,
+        rawResponse: "",
+        isFallback: false,
+      };
+    } else {
+      return (
+        <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+          <ChatCompletion
+            model={player.model}
+            messages={[
+              { role: "system", content: getBasicSystemMessage(playerSymbol) },
+              { role: "user", content: board.toString() },
+            ]}
+          >
+            {(response: string) => {
+              try {
+                const moveText = /<move>(.*?)<\/move>/s.exec(response)?.[1];
+                if (!moveText) {
+                  throw new Error("No move found in response");
+                }
+
+                const parsedJson = JSON.parse(moveText);
+                // Rename column to col if it exists
+                if (parsedJson.column && !parsedJson.col) {
+                  parsedJson.col = parsedJson.column;
+                  delete parsedJson.column;
+                }
+
+                // Validate and parse the move using the Zod schema
+                const validatedMove = MoveSchema.parse(parsedJson);
+
+                return {
+                  move: validatedMove,
+                  rawResponse: response,
+                  isFallback: false,
+                };
+              } catch {
+                return {
+                  move: board.getRandomMove(),
+                  rawResponse: response,
+                  isFallback: true,
+                };
               }
-
-              const parsedJson = JSON.parse(moveText);
-              // Rename column to col if it exists
-              if (parsedJson.column && !parsedJson.col) {
-                parsedJson.col = parsedJson.column;
-                delete parsedJson.column;
-              }
-
-              // Validate and parse the move using the Zod schema
-              const validatedMove = MoveSchema.parse(parsedJson);
-
-              return {
-                move: validatedMove,
-                rawResponse: response,
-                isFallback: false,
-              };
-            } catch {
-              return {
-                move: board.getRandomMove(),
-                rawResponse: response,
-                isFallback: true,
-              };
-            }
-          }}
-        </ChatCompletion>
-      </OpenAIProvider>
-    );
+            }}
+          </ChatCompletion>
+        </OpenAIProvider>
+      );
+    }
   },
 );

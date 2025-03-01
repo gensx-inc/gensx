@@ -35,7 +35,7 @@ export const PlayTournament = gsx.Component<TournamentProps, TournamentOutput>(
 
     // Initialize results
     const results: Record<string, PlayerResult> = {
-      [player1.model]: {
+      [player1.name]: {
         wins: 0,
         losses: 0,
         draws: 0,
@@ -45,7 +45,7 @@ export const PlayTournament = gsx.Component<TournamentProps, TournamentOutput>(
           invalidMoves: 0,
         },
       },
-      [player2.model]: {
+      [player2.name]: {
         wins: 0,
         losses: 0,
         draws: 0,
@@ -76,57 +76,57 @@ export const PlayTournament = gsx.Component<TournamentProps, TournamentOutput>(
       if (gameResult.winner === "X") {
         // X won
         if (isPlayer1X) {
-          results[player1.model].wins++;
-          results[player2.model].losses++;
+          results[player1.name].wins++;
+          results[player2.name].losses++;
         } else {
-          results[player2.model].wins++;
-          results[player1.model].losses++;
+          results[player2.name].wins++;
+          results[player1.name].losses++;
         }
       } else if (gameResult.winner === "O") {
         // O won
         if (isPlayer1X) {
-          results[player2.model].wins++;
-          results[player1.model].losses++;
+          results[player2.name].wins++;
+          results[player1.name].losses++;
         } else {
-          results[player1.model].wins++;
-          results[player2.model].losses++;
+          results[player1.name].wins++;
+          results[player2.name].losses++;
         }
       } else {
         // Draw
-        results[player1.model].draws++;
-        results[player2.model].draws++;
+        results[player1.name].draws++;
+        results[player2.name].draws++;
       }
 
       // Track player stats
       if (isPlayer1X) {
         // Player 1 was X, player 2 was O
-        results[player1.model].stats.missedWins +=
+        results[player1.name].stats.missedWins +=
           gameResult.playerXStats.missedWins;
-        results[player1.model].stats.missedBlocks +=
+        results[player1.name].stats.missedBlocks +=
           gameResult.playerXStats.missedBlocks;
-        results[player1.model].stats.invalidMoves +=
+        results[player1.name].stats.invalidMoves +=
           gameResult.playerXStats.invalidMoves;
 
-        results[player2.model].stats.missedWins +=
+        results[player2.name].stats.missedWins +=
           gameResult.playerOStats.missedWins;
-        results[player2.model].stats.missedBlocks +=
+        results[player2.name].stats.missedBlocks +=
           gameResult.playerOStats.missedBlocks;
-        results[player2.model].stats.invalidMoves +=
+        results[player2.name].stats.invalidMoves +=
           gameResult.playerOStats.invalidMoves;
       } else {
         // Player 2 was X, player 1 was O
-        results[player2.model].stats.missedWins +=
+        results[player2.name].stats.missedWins +=
           gameResult.playerXStats.missedWins;
-        results[player2.model].stats.missedBlocks +=
+        results[player2.name].stats.missedBlocks +=
           gameResult.playerXStats.missedBlocks;
-        results[player2.model].stats.invalidMoves +=
+        results[player2.name].stats.invalidMoves +=
           gameResult.playerXStats.invalidMoves;
 
-        results[player1.model].stats.missedWins +=
+        results[player1.name].stats.missedWins +=
           gameResult.playerOStats.missedWins;
-        results[player1.model].stats.missedBlocks +=
+        results[player1.name].stats.missedBlocks +=
           gameResult.playerOStats.missedBlocks;
-        results[player1.model].stats.invalidMoves +=
+        results[player1.name].stats.invalidMoves +=
           gameResult.playerOStats.invalidMoves;
       }
     }

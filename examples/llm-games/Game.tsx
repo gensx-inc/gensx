@@ -64,7 +64,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
       const { move, isFallback } = moveDetails;
 
       // Process the move
-      const isValidMove = board.isValidMove(move.row, move.col);
+      const isValidMove = board.isValidMove(move.row, move.column);
       if (!isValidMove || isFallback) {
         if (currentPlayerSymbol === "X") {
           playerXStats.invalidMoves++;
@@ -77,7 +77,9 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
 
       if (winningMoves.length > 0) {
         if (
-          !winningMoves.some((m) => m.row === move.row && m.column === move.col)
+          !winningMoves.some(
+            (m) => m.row === move.row && m.column === move.column,
+          )
         ) {
           if (currentPlayerSymbol === "X") {
             playerXStats.missedWins++;
@@ -88,7 +90,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
       } else if (blockingMoves.length > 0) {
         if (
           !blockingMoves.some(
-            (m) => m.row === move.row && m.column === move.col,
+            (m) => m.row === move.row && m.column === move.column,
           )
         ) {
           if (currentPlayerSymbol === "X") {
@@ -100,7 +102,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
       }
 
       // Update the board
-      board.makeMove(move.row, move.col, currentPlayerSymbol);
+      board.makeMove(move.row, move.column, currentPlayerSymbol);
 
       // Switch players
       currentPlayerSymbol = currentPlayerSymbol === "X" ? "O" : "X";

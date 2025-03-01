@@ -3,16 +3,14 @@ import { gsx } from "gensx";
 import { PlayTournament } from "./Tournament.js";
 import { Player } from "./types.js";
 async function main() {
-  const playerX: Player = {
+  const player1: Player = new Player({
     model: "gpt-4o-mini",
-    strategy: "random",
+    type: "llm",
     provider: "openai",
-  };
-  const playerO: Player = {
-    model: "gpt-4o",
-    strategy: "random",
-    provider: "openai",
-  };
+  });
+  const player2: Player = new Player({
+    type: "basic",
+  });
 
   // Play a single game
   // const gameWorkflow = gsx.Workflow("TicTacToe", PlayGame);
@@ -25,7 +23,7 @@ async function main() {
     PlayTournament,
   );
   const result = await tournamentWorkflow.run({
-    players: [playerX, playerO],
+    players: [player1, player2],
     numGames: 4,
   });
   console.log(result);

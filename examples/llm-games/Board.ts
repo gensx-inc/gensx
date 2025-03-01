@@ -1,3 +1,5 @@
+import { Move } from "./types.js";
+
 export class Board {
   private grid: string[][];
 
@@ -9,21 +11,21 @@ export class Board {
     ];
   }
 
-  public makeMove(row: number, col: number, player: "X" | "O"): boolean {
+  public makeMove(row: number, column: number, player: "X" | "O"): boolean {
     // Convert from 1-based to 0-based indexing
     const adjustedRow = row - 1;
-    const adjustedCol = col - 1;
-    if (this.isValidMove(row, col)) {
-      this.grid[adjustedRow][adjustedCol] = player;
+    const adjustedColumn = column - 1;
+    if (this.isValidMove(row, column)) {
+      this.grid[adjustedRow][adjustedColumn] = player;
       return true;
     }
     return false;
   }
 
-  public isValidMove(row: number, col: number): boolean {
+  public isValidMove(row: number, column: number): boolean {
     // Convert from 1-based to 0-based indexing
     const adjustedRow = row - 1;
-    const adjustedCol = col - 1;
+    const adjustedCol = column - 1;
     return (
       adjustedRow >= 0 &&
       adjustedRow < 3 &&
@@ -75,8 +77,8 @@ export class Board {
     return null;
   }
 
-  public getWinningMoves(player: "X" | "O"): { row: number; column: number }[] {
-    const winningMoves: { row: number; column: number }[] = [];
+  public getWinningMoves(player: "X" | "O"): Move[] {
+    const winningMoves: Move[] = [];
     // Try each empty cell
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
@@ -96,11 +98,9 @@ export class Board {
     return winningMoves;
   }
 
-  public getBlockingMoves(
-    player: "X" | "O",
-  ): { row: number; column: number }[] {
+  public getBlockingMoves(player: "X" | "O"): Move[] {
     const opponent = player === "X" ? "O" : "X";
-    const blockingMoves: { row: number; column: number }[] = [];
+    const blockingMoves: Move[] = [];
 
     // Try each empty cell
     for (let i = 0; i < 3; i++) {
@@ -150,6 +150,7 @@ export class Board {
     return this.grid.map((row) => [...row]);
   }
 
+  // The toJSON method allows use to control how the board is serialized to JSON in GenSX checkpoints
   public toJSON(): {
     row1: string;
     row2: string;
@@ -162,8 +163,8 @@ export class Board {
     };
   }
 
-  public getRandomMove(): { row: number; column: number } | null {
-    const availableMoves: { row: number; column: number }[] = [];
+  public getRandomMove(): Move | null {
+    const availableMoves: Move[] = [];
 
     // Find all empty cells
     for (let i = 0; i < 3; i++) {
@@ -183,5 +184,22 @@ export class Board {
     // Select a random move from the available moves
     const randomIndex = Math.floor(Math.random() * availableMoves.length);
     return availableMoves[randomIndex];
+  }
+
+  public getBasicStrategyMove(player: "X" | "O"): Move | null {
+    // Check for winning moves
+    const winningMoves = this.getWinningMoves(player);
+    if (winningMoves.length > 0) {
+      return winningMoves[0]; // Return the first winning move found
+    }
+
+    // Check for blocking moves
+    const blockingMoves = this.getBlockingMoves(player);
+    if (blockingMoves.length > 0) {
+      return blockingMoves[0]; // Return the first blocking move found
+    }
+
+    // Fall back to a random move if neither winning nor blocking moves exist
+    return this.getRandomMove();
   }
 }
