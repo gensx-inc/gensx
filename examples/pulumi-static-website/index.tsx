@@ -28,7 +28,7 @@ const Bucket = createPulumiComponent<BucketArgs, aws.s3.Bucket>(
 const BucketObject = createPulumiComponent<
   BucketObjectArgs,
   aws.s3.BucketObject
->("BucketObject", aws.s3.BucketObject);
+>("index.html", aws.s3.BucketObject);
 const BucketPolicy = createPulumiComponent<
   BucketPolicyArgs,
   aws.s3.BucketPolicy
@@ -72,7 +72,6 @@ const StaticWebsiteBucket = gsx.Component<
       }}
     >
       {(bucket) => {
-        console.log("Creating bucket object for bucket:", bucket);
         return (
           <BucketObject
             bucket={bucket}
@@ -110,7 +109,9 @@ async function main() {
   </html>`;
 
   const result = await workflow.run({ indexContent }, { printUrl: true });
-  console.log("Website URL:", result.websiteUrl);
+  result.websiteUrl.apply((url) => {
+    console.log("Website URL:", `http://${url}`);
+  });
 }
 
 await main().catch(console.error);

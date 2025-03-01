@@ -4,10 +4,67 @@ import { ExecutionContext } from "./context.js";
 import { isStreamable } from "./stream.js";
 
 /**
+ * Checks if a value is a Pulumi Output by looking for the characteristic properties
+ */
+function isPulumiOutput(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+
+  // Check for the __pulumiOutput property which is a more reliable indicator
+  const obj = value as Record<string, unknown>;
+  return (
+    obj.__pulumiOutput === true ||
+    // Fallback to checking for the apply method which is characteristic of Pulumi Output
+    ("apply" in obj && typeof (obj.apply as any) === "function")
+  );
+}
+
+/**
+ * Checks if an object contains any Pulumi outputs as properties (recursively)
+ */
+function containsPulumiOutput(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object") return false;
+
+  // Check if the object itself is a Pulumi output
+  if (isPulumiOutput(obj)) return true;
+
+  // Check if it's an array
+  if (Array.isArray(obj)) {
+    return obj.some((item) => containsPulumiOutput(item));
+  }
+
+  // Check all properties of the object
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = (obj as Record<string, unknown>)[key];
+      if (isPulumiOutput(value) || containsPulumiOutput(value)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.
  * This is the core resolution logic used by both execute() and the JSX runtime.
  */
 export async function resolveDeep<T>(value: unknown): Promise<T> {
+  // Skip resolving Pulumi outputs
+  if (isPulumiOutput(value)) {
+    return value as T;
+  }
+
+  // Skip resolving objects that contain Pulumi outputs
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    containsPulumiOutput(value)
+  ) {
+    return value as T;
+  }
+
   // Handle promises first
   if (value instanceof Promise) {
     const resolved = (await value) as Promise<T>;

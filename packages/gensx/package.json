@@ -52,6 +52,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@gensx/cli": "workspace:*",
+    "@pulumi/pulumi": "^3.153.1",
     "ini": "^5.0.0",
     "serialize-error": "^12.0.0"
   },
