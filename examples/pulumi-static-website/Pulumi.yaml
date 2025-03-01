@@ -1,0 +1,10 @@
+name: gensx-bucket-example
+runtime:
+  name: nodejs
+  options:
+    typescript: false
+description: GenSX Public API
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-typescript
