@@ -9,7 +9,7 @@ async function main() {
     provider: "openai",
   });
   const player2: Player = new Player({
-    type: "basic",
+    type: "random",
   });
 
   // Play a single game

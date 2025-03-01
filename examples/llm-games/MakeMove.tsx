@@ -49,13 +49,13 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
     if (player.type === "random") {
       return {
         move: board.getRandomMove()!,
-        rawResponse: "",
+        rawResponse: "N/A",
         isFallback: false,
       };
     } else if (player.type === "basic") {
       return {
         move: board.getBasicStrategyMove(playerSymbol)!,
-        rawResponse: "",
+        rawResponse: "N/A",
         isFallback: false,
       };
     } else {
@@ -77,8 +77,8 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
 
                 const parsedJson = JSON.parse(moveText);
                 // Rename column to col if it exists
-                if (parsedJson.column && !parsedJson.col) {
-                  parsedJson.col = parsedJson.column;
+                if (parsedJson.column && !parsedJson.column) {
+                  parsedJson.column = parsedJson.column;
                   delete parsedJson.column;
                 }
 

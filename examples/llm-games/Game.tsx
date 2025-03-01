@@ -56,7 +56,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
         player: currentPlayer,
         board,
         componentOpts: {
-          name: `Move ${moveNumber}: ${currentPlayer.model} (${currentPlayerSymbol})`,
+          name: `Move ${moveNumber}: ${currentPlayer.name} (${currentPlayerSymbol})`,
         },
       });
       // const moveDetails = gsx.execute(<MakeMove name="move1"/>)
