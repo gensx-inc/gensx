@@ -61,7 +61,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
       });
       // const moveDetails = gsx.execute(<MakeMove name="move1"/>)
 
-      const { move, isFallback } = moveDetails;
+      let { move, isFallback } = moveDetails;
 
       // Process the move
       const isValidMove = board.isValidMove(move.row, move.column);
@@ -100,6 +100,11 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
           }
         }
       }
+
+      // if it's an invalid move, make a random move
+      // if (!isValidMove || isFallback) {
+      //   move = board.getRandomMove()!;
+      // }
 
       // Update the board
       board.makeMove(move.row, move.column, currentPlayerSymbol);

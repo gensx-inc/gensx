@@ -3,13 +3,16 @@ import { gsx } from "gensx";
 import { PlayTournament } from "./Tournament.js";
 import { Player } from "./types.js";
 async function main() {
+  // const player1: Player = new Player({
+  //   model: "gpt-4o-mini",
+  //   type: "llm",
+  //   provider: "openai",
+  // });
   const player1: Player = new Player({
-    model: "gpt-4o-mini",
-    type: "llm",
-    provider: "openai",
+    type: "random",
   });
   const player2: Player = new Player({
-    type: "random",
+    type: "basic",
   });
 
   // Play a single game
@@ -24,7 +27,7 @@ async function main() {
   );
   const result = await tournamentWorkflow.run({
     players: [player1, player2],
-    numGames: 4,
+    numGames: 30,
   });
   console.log(result);
 }

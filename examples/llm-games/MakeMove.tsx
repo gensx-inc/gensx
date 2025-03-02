@@ -3,7 +3,7 @@ import { gsx } from "gensx";
 import { z } from "zod";
 
 import { Board } from "./Board.js";
-import { Move, Player } from "./types.js";
+import { LLMPlayerStrategy, Move, Player } from "./types.js";
 
 export interface MakeMoveProps {
   playerSymbol: "X" | "O";
@@ -23,9 +23,30 @@ const MoveSchema = z.object({
   column: z.number().int().min(1).max(3),
 });
 
-export const getBasicSystemMessage = (player: "X" | "O") => {
+export const getSystemMessage = (
+  player: "X" | "O",
+  strategy: LLMPlayerStrategy,
+) => {
   const opponent = player === "X" ? "O" : "X";
-  return `You are playing a game of Tic Tac Toe and are working hard to win the game. You are player \`${player}\` and your opponent is \`${opponent}\`.
+  if (strategy === "thinking") {
+    return `You are playing a game of Tic Tac Toe and are working hard to win the game. You are player \`${player}\` and your opponent is \`${opponent}\`.
+
+Tic Tac Toe rules:
+- The board is a 3x3 grid.
+- Players take turns placing their pieces on the board.
+- You can only place your piece in an empty square.
+- You win if you can get 3 of your pieces in a row, column, or diagonal.
+- The game is a draw if the board is full and no player has won.
+
+You will be sent the board. You will respond with JSON in following format, that represents where you want to place your piece.
+{
+   "row": 1|2|3
+   "column": 1|2|3
+}
+
+Before you make your move, talk through your strategy and figure out the best move to make. Then respond with the json inside of <move> xml tags (no backticks).`;
+  } else {
+    return `You are playing a game of Tic Tac Toe and are working hard to win the game. You are player \`${player}\` and your opponent is \`${opponent}\`.
 
 Tic Tac Toe rules:
 - The board is a 3x3 grid.
@@ -41,6 +62,7 @@ You will be sent the board. You will respond with JSON in following format, that
 }
 
 Please respond with the json inside of <move> xml tags (no backticks). Do not include any other text in the output.`;
+  }
 };
 
 export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
@@ -64,7 +86,10 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
           <ChatCompletion
             model={player.model}
             messages={[
-              { role: "system", content: getBasicSystemMessage(playerSymbol) },
+              {
+                role: "system",
+                content: getSystemMessage(playerSymbol, player.strategy),
+              },
               { role: "user", content: board.toString() },
             ]}
           >
@@ -84,6 +109,15 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
 
                 // Validate and parse the move using the Zod schema
                 const validatedMove = MoveSchema.parse(parsedJson);
+
+                // Check the board to make sure the move is available
+                const isValidMove = board.isValidMove(
+                  validatedMove.row,
+                  validatedMove.column,
+                );
+                if (!isValidMove) {
+                  throw new Error("Invalid move");
+                }
 
                 return {
                   move: validatedMove,

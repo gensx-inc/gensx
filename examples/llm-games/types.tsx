@@ -14,6 +14,7 @@ export interface Move {
 export class Player {
   model?: string;
   provider?: string;
+  strategy: LLMPlayerStrategy;
   type: PlayerType;
   name: string;
   constructor(
@@ -21,16 +22,19 @@ export class Player {
       model,
       provider,
       type = "basic",
+      strategy = "basic",
     }: {
       model?: string;
       provider?: string;
       type: PlayerType;
+      strategy?: LLMPlayerStrategy;
     } = { type: "basic" },
   ) {
     this.model = model;
     this.provider = provider;
     this.type = type;
     this.name = this.model ?? this.type;
+    this.strategy = strategy;
 
     // Validate that LLM players have required properties
     if (this.type === "llm") {
@@ -47,3 +51,5 @@ export class Player {
 export type PlayerSymbol = "X" | "O";
 
 export type PlayerType = "llm" | "basic" | "random";
+
+export type LLMPlayerStrategy = "basic" | "thinking";
