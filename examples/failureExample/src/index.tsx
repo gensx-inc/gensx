@@ -35,8 +35,6 @@ const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
   ({ userInput }) => (
     <>
       <ErrorComponent timeout={10000} message="Test error message" />
-      <ErrorComponent timeout={1} message="Test error message" />
-      <ErrorComponent timeout={1000} message="Test error message" />
     </>
   ),
 );
