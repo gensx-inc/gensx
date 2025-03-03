@@ -74,7 +74,7 @@ jobs:
           cp ${{ matrix.target }}.${{ env._EXT }} gensx_${{ inputs.version }}_${{ matrix.target }}.${{ env._EXT }}
 
       - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2.0.8
+        uses: softprops/action-gh-release@v2.2.1
         with:
           tag_name: gensx-cli-binary-v${{ inputs.version }}
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
@@ -85,14 +85,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download macOS ARM64 Release
-        uses: dsaltares/fetch-gh-release-asset@1.1.1
+        uses: dsaltares/fetch-gh-release-asset@1.1.2
         with:
           version: tags/gensx-cli-binary-v${{ inputs.version }}
           file: gensx_${{ inputs.version }}_node22-macos-arm64.tar.gz
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
 
       - name: Download macOS x64 Release
-        uses: dsaltares/fetch-gh-release-asset@1.1.1
+        uses: dsaltares/fetch-gh-release-asset@1.1.2
         with:
           version: tags/gensx-cli-binary-v${{ inputs.version }}
           file: gensx_${{ inputs.version }}_node22-macos-x64.tar.gz
