@@ -4,5 +4,6 @@
   "packages/create-gensx": "0.1.10",
   "packages/gensx-cli": "0.1.4",
   "packages/gensx-vercel-ai-sdk": "0.1.1",
-  "packages/gensx-anthropic": "0.1.0"
+  "packages/gensx-anthropic": "0.1.0",
+  "packages/gensx-mcp": "0.1.0"
 }
