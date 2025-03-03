@@ -35,9 +35,9 @@
   "devDependencies": {
     "@tsconfig/node20": "^20.1.4",
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^20.0.0",
-    "@vitest/coverage-istanbul": "^2.1.8",
-    "fs-extra": "^11.2.0",
-    "vitest": "^2.1.8"
+    "@types/node": "^20.17.23",
+    "@vitest/coverage-istanbul": "^2.1.9",
+    "fs-extra": "^11.3.0",
+    "vitest": "^2.1.9"
   }
 }
