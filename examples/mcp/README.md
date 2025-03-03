@@ -1,4 +1,4 @@
-# Module Context Protocol Example
+# Model Context Protocol Example
 
 This example demonstrates how to integrate an MCP server into your workflow, and enable those tools to be used in a GenSX workflow.
 
