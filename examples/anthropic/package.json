@@ -16,13 +16,13 @@
   "dependencies": {
     "@gensx/anthropic": "workspace:*",
     "gensx": "workspace:*",
-    "@anthropic-ai/sdk": "^0.37.0",
+    "@anthropic-ai/sdk": "^0.39.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^20.17.11",
+    "@types/node": "^20.17.23",
     "nodemon": "^3.1.9",
-    "tsx": "^4.19.2",
-    "typescript": "^5.0.0"
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   }
 }

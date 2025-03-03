@@ -35,11 +35,11 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@tsconfig/node20": "^20.1.4",
-    "@types/node": "^20.17.11",
-    "@vitest/coverage-istanbul": "^2.1.8",
+    "@types/node": "^20.17.23",
+    "@vitest/coverage-istanbul": "^2.1.9",
     "vite": "^6.1.0",
-    "vite-plugin-dts": "^4.5.0",
-    "vitest": "^2.1.8"
+    "vite-plugin-dts": "^4.5.3",
+    "vitest": "^2.1.9"
   },
   "publishConfig": {
     "access": "public"
