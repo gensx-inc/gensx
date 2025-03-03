@@ -20,10 +20,10 @@ npm install @gensx/mcp
 | <div style={{width: "150px"}}>Component/Utility</div> | Description                                                            |
 | :---------------------------------------------------- | :--------------------------------------------------------------------- |
 | [`createMCPServerContext`](#createmcpservercontext)   | Creates a context provider and hook for accessing MCP server resources |
-| [`MCPTool`](#mcptool)                                 | Represents a tool available in the MCP server                          |
-| [`MCPResource`](#mcpresource)                         | Represents a resource available in the MCP server                      |
-| [`MCPResourceTemplate`](#mcpresourcetemplate)         | Represents a resource template in the MCP server                       |
-| [`MCPPrompt`](#mcpprompt)                             | Represents a prompt available in the MCP server                        |
+| [`MCPTool`](#mcptool)                                 | Wrapper used to call a tool resource provided by an MCP server         |
+| [`MCPResource`](#mcpresource)                         | Wrapper used to call a resource provided by an MCP server              |
+| [`MCPResourceTemplate`](#mcpresourcetemplate)         | Wrapper used to call a resource template provided by an MCP server     |
+| [`MCPPrompt`](#mcpprompt)                             | Wrapper used to call a prompt resource provided by an MCP server       |
 
 ## Reference
 
@@ -88,19 +88,19 @@ interface MCPServerContext {
 
 #### MCPTool
 
-Represents a tool available in the MCP server.
+Wrapper used to call a tool resource provided by an MCP server. This makes it easy to call any of the tools provided by an MCP server, with the correct arguments and parameters.
 
 #### MCPResource
 
-Represents a resource available in the MCP server.
+Wrapper used to call a resource provided by an MCP server. This makes it easy to access any of the resources provided by an MCP server.
 
 #### MCPResourceTemplate
 
-Represents a resource template in the MCP server.
+Wrapper used to call a resource template provided by an MCP server. This makes it easy to access any of the resource templates provided by an MCP server, with the correct arguments and parameters.
 
 #### MCPPrompt
 
-Represents a prompt available in the MCP server.
+Wrapper used to call a prompt resource provided by an MCP server. This makes it easy to access any of the prompts provided by an MCP server, with the correct arguments and parameters.
 
 ## Example Usage
 
