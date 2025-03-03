@@ -1,0 +1,129 @@
+---
+title: MCP components
+description: Model Control Protocol (MCP) component reference
+---
+
+# MCP Components
+
+The `@gensx/mcp` package provides Model Control Protocol (MCP) components for GenSX, enabling interaction with MCP-compatible model servers.
+
+## Installation
+
+To install the package, run the following command:
+
+```bash
+npm install @gensx/mcp
+```
+
+## Supported components and utilities
+
+| <div style={{width: "150px"}}>Component/Utility</div> | Description                                                            |
+| :---------------------------------------------------- | :--------------------------------------------------------------------- |
+| [`createMCPServerContext`](#createmcpservercontext)   | Creates a context provider and hook for accessing MCP server resources |
+| [`MCPTool`](#mcptool)                                 | Represents a tool available in the MCP server                          |
+| [`MCPResource`](#mcpresource)                         | Represents a resource available in the MCP server                      |
+| [`MCPResourceTemplate`](#mcpresourcetemplate)         | Represents a resource template in the MCP server                       |
+| [`MCPPrompt`](#mcpprompt)                             | Represents a prompt available in the MCP server                        |
+
+## Reference
+
+### `createMCPServerContext()`
+
+The `createMCPServerContext` function creates a context provider and hook for accessing MCP server resources. It returns an object containing a Provider component and a useContext hook.
+If a server command is provided, it will be used to start the MCP server, and close the connection when the component is unmounted. Otherwise, the MCP client will be used to connect to an existing server.
+
+```tsx
+import { createMCPServerContext } from "@gensx/mcp";
+
+const { Provider, useContext } = createMCPServerContext({
+  serverCommand: "your-server-command",
+  serverArgs: ["--arg1", "--arg2"],
+  // Or provide a client directly
+  client: yourMCPClient,
+});
+
+// Use the Provider to wrap your application
+<Provider>
+  <YourApp />
+</Provider>;
+
+// Use the context hook in your components
+const MyComponent = () => {
+  const { tools, resources, resourceTemplates, prompts } = useContext();
+  // Use the MCP server context...
+};
+```
+
+#### Parameters
+
+The `createMCPServerContext` function accepts a server definition object with the following properties:
+
+- Either:
+  - `serverCommand`: The command to start the MCP server
+  - `serverArgs`: Array of arguments for the server command
+- Or:
+  - `client`: A pre-configured MCP client instance
+
+#### Return Value
+
+Returns an object containing:
+
+- `Provider`: A React component that provides the MCP server context
+- `useContext`: A hook that returns the current MCP server context
+
+### Types
+
+#### MCPServerContext
+
+The context object returned by `useContext` contains:
+
+```tsx
+interface MCPServerContext {
+  tools: MCPTool[]; // Available tools in the server
+  resources: MCPResource[]; // Available resources
+  resourceTemplates: MCPResourceTemplate[]; // Available resource templates
+  prompts: MCPPrompt[]; // Available prompts
+}
+```
+
+#### MCPTool
+
+Represents a tool available in the MCP server.
+
+#### MCPResource
+
+Represents a resource available in the MCP server.
+
+#### MCPResourceTemplate
+
+Represents a resource template in the MCP server.
+
+#### MCPPrompt
+
+Represents a prompt available in the MCP server.
+
+## Example Usage
+
+```tsx
+import { createMCPServerContext } from "@gensx/mcp";
+
+// Create the MCP server context
+const { Provider, useContext: useMCPContext } = createMCPServerContext({
+  serverCommand: "npx",
+  serverArgs: ["-y", "@<mcp-server>/<package>"],
+});
+
+// Wrap your application with the Provider
+const App = () => (
+  <Provider>
+    <MCPComponent />
+  </Provider>
+);
+
+// Use the context in your components
+const MCPComponent = () => {
+  const { tools, resources } = useMCPContext();
+
+  return `Resources Available: ${resources.map((r) => r.name).join(", ")}`;
+};
+```
