@@ -106,6 +106,7 @@ Wrapper used to call a prompt resource provided by an MCP server. This makes it 
 
 ```tsx
 import { createMCPServerContext } from "@gensx/mcp";
+import { OpenAIProvider } from "@gensx/openai";
 
 // Create the MCP server context
 const { Provider, useContext: useMCPContext } = createMCPServerContext({
@@ -115,15 +116,23 @@ const { Provider, useContext: useMCPContext } = createMCPServerContext({
 
 // Wrap your application with the Provider
 const App = () => (
-  <Provider>
-    <MCPComponent />
-  </Provider>
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <Provider>
+      <MCPComponent />
+    </Provider>
+  </OpenAIProvider>
 );
 
 // Use the context in your components
 const MCPComponent = () => {
   const { tools, resources } = useMCPContext();
 
-  return `Resources Available: ${resources.map((r) => r.name).join(", ")}`;
+  return (
+    <ChatCompletion
+      model="gpt-4o"
+      messages={[{ role: "user", content: "Call these tools if necessary." }]}
+      tools={tools.map((tool) => tool.asGSXTool())}
+    />
+  );
 };
 ```
