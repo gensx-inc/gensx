@@ -15,6 +15,8 @@ const exec = promisify(execCallback);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const gensxPackagePath = path.resolve(__dirname, "../../gensx-core");
 const gensxOpenaiPackagePath = path.resolve(__dirname, "../../gensx-openai");
+console.log(gensxPackagePath);
+console.log(gensxOpenaiPackagePath);
 suite("create-gensx", () => {
   let tempDir: string;
 
@@ -37,6 +39,8 @@ suite("create-gensx", () => {
       force: false,
     });
 
+    console.log("created project", projectPath);
+
     // Update package.json to use local version of @gensx/core and @gensx/openai
     const packageJsonPath = path.join(projectPath, "package.json");
     const packageJson: {
@@ -49,6 +53,8 @@ suite("create-gensx", () => {
     packageJson.dependencies["@gensx/core"] = `file:${gensxPackagePath}`;
     packageJson.dependencies["@gensx/openai"] =
       `file:${gensxOpenaiPackagePath}`;
+
+    console.log("writing package.json", packageJsonPath, packageJson);
     await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
     // Verify the project was created
@@ -58,8 +64,14 @@ suite("create-gensx", () => {
     expect(lsOutput).toContain("src");
 
     // Install dependencies
-    await exec("npm install", { cwd: projectPath });
-
+    const { stderr: installErrorOutput, stdout: installOutput } = await exec(
+      "npm install",
+      {
+        cwd: projectPath,
+      },
+    );
+    console.log("installOutput", installOutput);
+    console.log("installErrorOutput", installErrorOutput);
     try {
       // Build the project
       const { stderr: buildOutput } = await exec("npm run build", {
@@ -78,5 +90,5 @@ suite("create-gensx", () => {
 
     // Verify the output contains our welcome message
     expect(runOutput).toContain("Hello, World!");
-  }, 120000); // Increase timeout to 120s since npm install can be slow
+  }, 60000); // Increase timeout to 60s since npm install can be slow
 });
