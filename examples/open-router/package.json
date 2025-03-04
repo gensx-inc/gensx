@@ -1,0 +1,30 @@
+{
+  "name": "my-gensx-app",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon",
+    "start": "tsx ./src/index.tsx",
+    "build": "tsc"
+  },
+  "description": "Starter project for [GenSX](https://gensx.com), created using `npx create-gensx`.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@gensx/openai": "^0.1.9",
+    "gensx": "^0.2.15",
+    "openai": "^4.86.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.2"
+  }
+}
