@@ -1,14 +1,13 @@
 # GenSX OpenRouter Example
 
-This example demonstrates how to use [GenSX](https://gensx.com) with [OpenRouter](https://openrouter.ai) to access various AI models through a unified API.
+This example demonstrates how to use [GenSX](https://gensx.com) with [OpenRouter](https://openrouter.ai).
 
 ## Overview
 
 This example shows how to:
 
 - Configure GenSX to use OpenRouter as a provider
-- Access models like Claude 3.7 Sonnet through OpenRouter
-- Create a simple workflow that generates text based on user input
+- Access models through OpenRouter
 
 ## Prerequisites
 
