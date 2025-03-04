@@ -25,7 +25,7 @@ suite("create-gensx", () => {
     }
   });
 
-  it.skip("creates a working TypeScript project", async () => {
+  it("creates a working TypeScript project", async () => {
     // Create a temporary directory for our test
     tempDir = await mkdtemp(path.join(os.tmpdir(), "gensx-test-"));
     const projectName = "test-project";
