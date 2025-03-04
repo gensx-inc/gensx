@@ -13,6 +13,7 @@ export async function runCLI() {
     .argument("<project-directory>", "Directory to create the project in")
     .option("-t, --template <name>", "Template to use", "ts")
     .option("-f, --force", "Overwrite existing files", false)
+    .option("-s, --skip-login", "Skip check for login to GenSX", false)
     .action(async (projectPath: string, options: NewCommandOptions) => {
       try {
         await createGensxProject(projectPath, options);

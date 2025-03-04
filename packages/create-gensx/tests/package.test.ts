@@ -91,7 +91,7 @@ it("package.json is correctly configured for npm create", async () => {
 
   try {
     // Try to execute the package bin directly
-    await exec(`${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}"`, {
+    await exec(`${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s`, {
       cwd: pkgDir,
       env: { ...process.env },
     });
