@@ -1,4 +1,4 @@
-import { NewCommandOptions, newProject } from "gensx";
+import { NewCommandOptions, newProject } from "../../gensx/dist/index.js";
 
 export type { NewCommandOptions };
 

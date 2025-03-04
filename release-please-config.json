@@ -81,11 +81,30 @@
         }
       ]
     },
-    "packages/gensx-cli": {
-      "component": "gensx-cli",
+    "packages/gensx": {
+      "component": "gensx",
       "release-as": "0.3.0",
       "release-type": "node",
       "package-name": "gensx",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/gensx-cli": {
+      "component": "gensx-cli",
+      "release-type": "node",
+      "package-name": "@gensx/cli",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,

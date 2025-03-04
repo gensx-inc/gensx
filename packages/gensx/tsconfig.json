@@ -3,11 +3,8 @@
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo",
     "outDir": "./dist",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "baseUrl": "."
   },
-  "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
+  "include": ["src/**/*", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

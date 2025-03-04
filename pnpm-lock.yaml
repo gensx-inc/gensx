@@ -596,7 +596,7 @@ importers:
         version: 11.1.0
       gensx:
         specifier: workspace:*
-        version: link:../gensx-cli
+        version: link:../gensx
     devDependencies:
       '@types/fs-extra':
         specifier: ^11.0.4
@@ -614,32 +614,7 @@ importers:
         specifier: 'catalog:'
         version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
 
-  packages/gensx-anthropic:
-    dependencies:
-      '@gensx/core':
-        specifier: workspace:*
-        version: link:../gensx-core
-      zod:
-        specifier: 'catalog:'
-        version: 3.24.2
-      zod-to-json-schema:
-        specifier: 'catalog:'
-        version: 3.24.1(zod@3.24.2)
-    devDependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.37.0
-        version: 0.37.0
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.17.11
-      '@vitest/coverage-istanbul':
-        specifier: 'catalog:'
-        version: 2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))
-      vitest:
-        specifier: 'catalog:'
-        version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
-
-  packages/gensx-cli:
+  packages/gensx:
     dependencies:
       commander:
         specifier: ^11.0.0
@@ -678,6 +653,37 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
+
+  packages/gensx-anthropic:
+    dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../gensx-core
+      zod:
+        specifier: 'catalog:'
+        version: 3.24.2
+      zod-to-json-schema:
+        specifier: 'catalog:'
+        version: 3.24.1(zod@3.24.2)
+    devDependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.37.0
+        version: 0.37.0
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.17.11
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))
+      vitest:
+        specifier: 'catalog:'
+        version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
+
+  packages/gensx-cli:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.17.11
 
   packages/gensx-core:
     dependencies:
