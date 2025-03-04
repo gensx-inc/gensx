@@ -9,25 +9,15 @@ import rehypeHighlight from "rehype-highlight";
 
 // Custom component to render the styled image using CSS instead of nested divs
 const StyledImage = (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-  <span className="block relative my-2 w-full before:content-[''] before:absolute before:left-0 before:top-0 before:w-[30px] before:h-[1px] before:bg-gray-800 before:z-10 after:content-[''] after:absolute after:left-0 after:top-0 after:w-[1px] after:h-[30px] after:bg-gray-800 after:z-10">
-    <span className="block relative before:content-[''] before:absolute before:right-0 before:top-0 before:w-[30px] before:h-[1px] before:bg-gray-800 before:z-10 after:content-[''] after:absolute after:right-0 after:top-0 after:w-[1px] after:h-[30px] after:bg-gray-800 after:z-10">
-      <span className="block relative before:content-[''] before:absolute before:left-0 before:bottom-0 before:w-[30px] before:h-[1px] before:bg-gray-800 before:z-10 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-[1px] after:h-[30px] after:bg-gray-800 after:z-10">
-        <span className="block relative before:content-[''] before:absolute before:right-0 before:bottom-0 before:w-[30px] before:h-[1px] before:bg-gray-800 before:z-10 after:content-[''] after:absolute after:right-0 after:bottom-0 after:w-[1px] after:h-[30px] after:bg-gray-800 after:z-10">
-          <span className="block relative border-t border-b border-gray-200">
-            <span className="block relative border-l border-r border-gray-200 my-[0px]">
-              <Image
-                src={props.src || ""}
-                alt={props.alt || ""}
-                width={typeof props.width === "number" ? props.width : 1200}
-                height={typeof props.height === "number" ? props.height : 630}
-                className="w-full h-auto"
-                unoptimized={!props.src?.startsWith("/")}
-              />
-            </span>
-          </span>
-        </span>
-      </span>
-    </span>
+  <span className="block my-4 border border-gray-300 p-1">
+    <Image
+      src={props.src || ""}
+      alt={props.alt || ""}
+      width={typeof props.width === "number" ? props.width : 1200}
+      height={typeof props.height === "number" ? props.height : 630}
+      className="w-full h-auto"
+      unoptimized={!props.src?.startsWith("/")}
+    />
   </span>
 );
 
@@ -81,20 +71,10 @@ export default function MarkdownToHTML({
         pre(props) {
           const { children } = props;
           return (
-            <span className="block relative mt-2 mb-1 w-full before:content-[''] before:absolute before:left-0 before:top-0 before:w-[30px] before:h-[1px] before:bg-gray-800 before:z-10 after:content-[''] after:absolute after:left-0 after:top-0 after:w-[1px] after:h-[30px] after:bg-gray-800 after:z-10">
-              <span className="block relative before:content-[''] before:absolute before:right-0 before:top-0 before:w-[30px] before:h-[1px] before:bg-gray-800 before:z-10 after:content-[''] after:absolute after:right-0 after:top-0 after:w-[1px] after:h-[30px] after:bg-gray-800 after:z-10">
-                <span className="block relative before:content-[''] before:absolute before:left-0 before:bottom-0 before:w-[30px] before:h-[1px] before:bg-gray-800 before:z-10 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-[1px] after:h-[30px] after:bg-gray-800 after:z-10">
-                  <span className="block relative before:content-[''] before:absolute before:right-0 before:bottom-0 before:w-[30px] before:h-[1px] before:bg-gray-800 before:z-10 after:content-[''] after:absolute after:right-0 after:bottom-0 after:w-[1px] after:h-[30px] after:bg-gray-800 after:z-10">
-                    <span className="block relative border-t border-b border-gray-200">
-                      <span className="block relative border-l border-r border-gray-200">
-                        <pre className="bg-white w-full !p-0 !pl-1 border-0 whitespace-pre-wrap break-words font-mono text-sm">
-                          {children}
-                        </pre>
-                      </span>
-                    </span>
-                  </span>
-                </span>
-              </span>
+            <span className="block my-4 border border-gray-300">
+              <pre className="bg-white w-full p-4 whitespace-pre-wrap break-words font-mono text-sm">
+                {children}
+              </pre>
             </span>
           );
         },
