@@ -28,7 +28,7 @@ export type Primitive = string | number | boolean | null | undefined;
  *   input: string;
  * }
  *
- * const Component = gsx.Component<Args, ComponentOutput>(
+ * const Component = gensx.Component<Args, ComponentOutput>(
  *   "Component",
  *   ({ input }) => ({
  *     nested: [
@@ -81,7 +81,7 @@ export type GsxComponent<P, O> = ((
  * This allows direct access to the output type O while maintaining
  * compatibility with the more flexible JSX composition system.
  */ & {
-  readonly __brand: "gsx-component";
+  readonly __brand: "gensx-component";
   readonly __outputType: O;
   readonly __rawProps: P;
   run: (props: P) => MaybePromise<O>;

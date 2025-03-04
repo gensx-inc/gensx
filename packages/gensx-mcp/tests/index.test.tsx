@@ -1,8 +1,8 @@
 import path from "path";
 
+import * as gensx from "@gensx/core";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { gsx } from "gensx";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMCPServerContext } from "@/index.js";
@@ -24,7 +24,7 @@ describe("createMCPServerContext", () => {
     expect(Provider).toBeDefined();
     expect(useContext).toBeDefined();
 
-    const TestComponent = gsx.Component<{ message: string }, string>(
+    const TestComponent = gensx.Component<{ message: string }, string>(
       "TestComponent",
       async ({ message }) => {
         const { tools } = useContext();
@@ -37,7 +37,7 @@ describe("createMCPServerContext", () => {
       },
     );
 
-    const Wrapper = gsx.Component<{ message: string }, string>(
+    const Wrapper = gensx.Component<{ message: string }, string>(
       "Wrapper",
       ({ message }) => (
         <Provider>
@@ -46,7 +46,7 @@ describe("createMCPServerContext", () => {
       ),
     );
 
-    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+    const workflow = gensx.Workflow("TestWorkflow", Wrapper);
 
     const result = await workflow.run({ message: "test" });
     expect(result).toBe("Tool echo: test");
@@ -63,7 +63,7 @@ describe("createMCPServerContext", () => {
     expect(Provider).toBeDefined();
     expect(useContext).toBeDefined();
 
-    const TestComponent = gsx.Component<{ message: string }, string>(
+    const TestComponent = gensx.Component<{ message: string }, string>(
       "TestComponent",
       async ({ message }) => {
         const { resourceTemplates } = useContext();
@@ -74,7 +74,7 @@ describe("createMCPServerContext", () => {
       },
     );
 
-    const Wrapper = gsx.Component<{ message: string }, string>(
+    const Wrapper = gensx.Component<{ message: string }, string>(
       "Wrapper",
       ({ message }) => (
         <Provider>
@@ -83,7 +83,7 @@ describe("createMCPServerContext", () => {
       ),
     );
 
-    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+    const workflow = gensx.Workflow("TestWorkflow", Wrapper);
 
     const result = await workflow.run({ message: "test" });
     expect(result).toBe("Resource echo: test");
@@ -100,7 +100,7 @@ describe("createMCPServerContext", () => {
     expect(Provider).toBeDefined();
     expect(useContext).toBeDefined();
 
-    const TestComponent = gsx.Component<{}, string>(
+    const TestComponent = gensx.Component<{}, string>(
       "TestComponent",
       async () => {
         const { resources } = useContext();
@@ -111,13 +111,13 @@ describe("createMCPServerContext", () => {
       },
     );
 
-    const Wrapper = gsx.Component<{}, string>("Wrapper", () => (
+    const Wrapper = gensx.Component<{}, string>("Wrapper", () => (
       <Provider>
         <TestComponent />
       </Provider>
     ));
 
-    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+    const workflow = gensx.Workflow("TestWorkflow", Wrapper);
 
     const result = await workflow.run({});
     expect(result).toBe("Resource echo: helloWorld");
@@ -134,7 +134,7 @@ describe("createMCPServerContext", () => {
     expect(Provider).toBeDefined();
     expect(useContext).toBeDefined();
 
-    const TestComponent = gsx.Component<{ message: string }, string>(
+    const TestComponent = gensx.Component<{ message: string }, string>(
       "TestComponent",
       async ({ message }) => {
         const { prompts } = useContext();
@@ -145,7 +145,7 @@ describe("createMCPServerContext", () => {
       },
     );
 
-    const Wrapper = gsx.Component<{ message: string }, string>(
+    const Wrapper = gensx.Component<{ message: string }, string>(
       "Wrapper",
       ({ message }) => (
         <Provider>
@@ -154,7 +154,7 @@ describe("createMCPServerContext", () => {
       ),
     );
 
-    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+    const workflow = gensx.Workflow("TestWorkflow", Wrapper);
 
     const result = await workflow.run({ message: "test" });
     expect(result).toBe("Please process this message: test");
@@ -171,7 +171,7 @@ describe("createMCPServerContext", () => {
     expect(Provider).toBeDefined();
     expect(useContext).toBeDefined();
 
-    const TestComponent = gsx.Component<{ message: string }, string>(
+    const TestComponent = gensx.Component<{ message: string }, string>(
       "TestComponent",
       async () => {
         const { tools } = useContext();
@@ -183,7 +183,7 @@ describe("createMCPServerContext", () => {
       },
     );
 
-    const Wrapper = gsx.Component<{ message: string }, string>(
+    const Wrapper = gensx.Component<{ message: string }, string>(
       "Wrapper",
       ({ message }) => (
         <Provider>
@@ -192,7 +192,7 @@ describe("createMCPServerContext", () => {
       ),
     );
 
-    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+    const workflow = gensx.Workflow("TestWorkflow", Wrapper);
 
     const result = await workflow.run({ message: "test" });
     expect(result).toBe("Tool echo: test");
@@ -238,7 +238,7 @@ describe("createMCPServerContext", () => {
     expect(Provider).toBeDefined();
     expect(useContext).toBeDefined();
 
-    const TestComponent = gsx.Component<{ message: string }, string>(
+    const TestComponent = gensx.Component<{ message: string }, string>(
       "TestComponent",
       async () => {
         const { tools } = useContext();
@@ -250,7 +250,7 @@ describe("createMCPServerContext", () => {
       },
     );
 
-    const Wrapper = gsx.Component<{ message: string }, string>(
+    const Wrapper = gensx.Component<{ message: string }, string>(
       "Wrapper",
       ({ message }) => (
         <Provider>
@@ -259,7 +259,7 @@ describe("createMCPServerContext", () => {
       ),
     );
 
-    const workflow = gsx.Workflow("TestWorkflow", Wrapper);
+    const workflow = gensx.Workflow("TestWorkflow", Wrapper);
 
     const result = await workflow.run({ message: "test" });
     expect(result).toBe("Tool echo: test");

@@ -1,4 +1,4 @@
-import type { GSXToolAnySchema, GSXToolParams } from "gensx";
+import type { GSXToolAnySchema, GSXToolParams } from "@gensx/core";
 
 import {
   ChatCompletion,

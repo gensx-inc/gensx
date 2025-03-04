@@ -6,7 +6,7 @@ import type { ExecutionNode } from "@/checkpoint.js";
 import { beforeEach, expect, suite, test, vi } from "vitest";
 
 import { CheckpointManager } from "@/checkpoint.js";
-import { gsx } from "@/index.js";
+import * as gensx from "@/index.js";
 
 import {
   executeWithCheckpoints,
@@ -23,7 +23,7 @@ export function generateTestId(): string {
 suite("checkpoint", () => {
   test("basic component test", async () => {
     // Define a simple component that returns a string
-    const SimpleComponent = gsx.Component<{ message: string }, string>(
+    const SimpleComponent = gensx.Component<{ message: string }, string>(
       "SimpleComponent",
       async ({ message }) => {
         await setTimeout(0); // Add small delay like other tests
@@ -63,7 +63,7 @@ suite("checkpoint", () => {
     process.env.GENSX_CHECKPOINTS = "false";
 
     // Define a simple component that returns a string
-    const SimpleComponent = gsx.Component<{ message: string }, string>(
+    const SimpleComponent = gensx.Component<{ message: string }, string>(
       "SimpleComponent",
       async ({ message }) => {
         await setTimeout(0);
@@ -89,7 +89,7 @@ suite("checkpoint", () => {
 
   test("handles parallel execution", async () => {
     // Define a simple component that we'll use many times
-    const SimpleComponent = gsx.Component<{ id: number }, string>(
+    const SimpleComponent = gensx.Component<{ id: number }, string>(
       "SimpleComponent",
       async ({ id }) => {
         await setTimeout(0); // Small delay to ensure parallel execution
@@ -98,12 +98,12 @@ suite("checkpoint", () => {
     );
 
     // Create a component that returns an array of parallel executions
-    const ParallelComponent = gsx.Component<{}, string[]>(
+    const ParallelComponent = gensx.Component<{}, string[]>(
       "ParallelComponent",
       async () => {
         return Promise.all(
           Array.from({ length: 100 }).map((_, i) =>
-            gsx.execute<string>(<SimpleComponent id={i} />),
+            gensx.execute<string>(<SimpleComponent id={i} />),
           ),
         );
       },
@@ -145,7 +145,7 @@ suite("checkpoint", () => {
 
   test("handles sequential execute calls within component", async () => {
     // Define a simple component that we'll use multiple times
-    const SimpleComponent = gsx.Component<{ id: number }, string>(
+    const SimpleComponent = gensx.Component<{ id: number }, string>(
       "SimpleComponent",
       async ({ id }) => {
         await setTimeout(0);
@@ -154,12 +154,12 @@ suite("checkpoint", () => {
     );
 
     // Create a component that makes three sequential execute calls
-    const ParentComponent = gsx.Component<{}, string>(
+    const ParentComponent = gensx.Component<{}, string>(
       "ParentComponent",
       async () => {
-        const first = await gsx.execute<string>(<SimpleComponent id={1} />);
-        const second = await gsx.execute<string>(<SimpleComponent id={2} />);
-        const third = await gsx.execute<string>(<SimpleComponent id={3} />);
+        const first = await gensx.execute<string>(<SimpleComponent id={1} />);
+        const second = await gensx.execute<string>(<SimpleComponent id={2} />);
+        const third = await gensx.execute<string>(<SimpleComponent id={3} />);
         return `${first}, ${second}, ${third}`;
       },
     );
@@ -188,7 +188,7 @@ suite("checkpoint", () => {
 
   test("handles component children with object return", async () => {
     // Define child components
-    const ComponentA = gsx.Component<{ value: string }, string>(
+    const ComponentA = gensx.Component<{ value: string }, string>(
       "ComponentA",
       async ({ value }) => {
         await setTimeout(0);
@@ -196,7 +196,7 @@ suite("checkpoint", () => {
       },
     );
 
-    const ComponentB = gsx.Component<{ value: string }, string>(
+    const ComponentB = gensx.Component<{ value: string }, string>(
       "ComponentB",
       async ({ value }) => {
         await setTimeout(0);
@@ -205,7 +205,7 @@ suite("checkpoint", () => {
     );
 
     // Create parent component that returns an object with multiple children
-    const ParentComponent = gsx.Component<{}, { a: string; b: string }>(
+    const ParentComponent = gensx.Component<{}, { a: string; b: string }>(
       "ParentComponent",
       () => {
         return {
@@ -253,7 +253,7 @@ suite("checkpoint", () => {
 
   test("handles nested component hierarchy", async () => {
     // Define components that will be nested
-    const ComponentC = gsx.Component<{ value: string }, string>(
+    const ComponentC = gensx.Component<{ value: string }, string>(
       "ComponentC",
       async ({ value }) => {
         await setTimeout(0);
@@ -261,20 +261,20 @@ suite("checkpoint", () => {
       },
     );
 
-    const ComponentB = gsx.Component<{ value: string }, string>(
+    const ComponentB = gensx.Component<{ value: string }, string>(
       "ComponentB",
       async ({ value }) => {
-        const inner = await gsx.execute<string>(
+        const inner = await gensx.execute<string>(
           <ComponentC value={`${value}-inner`} />,
         );
         return `b:${value}(${inner})`;
       },
     );
 
-    const ComponentA = gsx.Component<{ value: string }, string>(
+    const ComponentA = gensx.Component<{ value: string }, string>(
       "ComponentA",
       async ({ value }) => {
-        const middle = await gsx.execute<string>(
+        const middle = await gensx.execute<string>(
           <ComponentB value={`${value}-middle`} />,
         );
         return `a:${value}(${middle})`;
@@ -321,7 +321,7 @@ suite("checkpoint", () => {
     type CustomFn = () => string;
     type TimerFn = typeof setTimeout;
 
-    const FunctionComponent = gsx.Component<
+    const FunctionComponent = gensx.Component<
       {},
       { fn: CustomFn; native: TimerFn }
     >("FunctionComponent", () => ({
@@ -373,12 +373,12 @@ suite("checkpoint", () => {
     }
 
     // Define a component that has a custom serializable object as an input
-    const ToJSONComponent = gsx.Component<{ data: CustomSerializable }, string>(
-      "ToJSONComponent",
-      () => {
-        return "just a test output";
-      },
-    );
+    const ToJSONComponent = gensx.Component<
+      { data: CustomSerializable },
+      string
+    >("ToJSONComponent", () => {
+      return "just a test output";
+    });
 
     // Execute the component with checkpoints
     const { result, checkpoints } = await executeWithCheckpoints<string>(
@@ -407,7 +407,7 @@ suite("checkpoint", () => {
 
   test("handles streaming components", async () => {
     // Define a streaming component that yields tokens with delays
-    const StreamingComponent = gsx.StreamComponent<{ tokens: string[] }>(
+    const StreamingComponent = gensx.StreamComponent<{ tokens: string[] }>(
       "StreamingComponent",
       ({ tokens }) => {
         const stream = async function* () {
@@ -467,7 +467,7 @@ suite("checkpoint", () => {
   });
 
   test("handles errors in streaming components", async () => {
-    const ErrorStreamingComponent = gsx.StreamComponent<{
+    const ErrorStreamingComponent = gensx.StreamComponent<{
       shouldError: boolean;
     }>("ErrorStreamingComponent", ({ shouldError }) => {
       const stream = async function* () {
@@ -518,7 +518,7 @@ suite("checkpoint", () => {
 
   test("adds execution error to metadata when workflow throws", async () => {
     // Define a component that throws an error
-    const ErrorComponent = gsx.Component<{ message: string }, string>(
+    const ErrorComponent = gensx.Component<{ message: string }, string>(
       "ErrorComponent",
       async ({ message }) => {
         await setTimeout(0); // Add small delay like other tests

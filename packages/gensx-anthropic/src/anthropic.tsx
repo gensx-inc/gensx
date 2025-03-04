@@ -7,14 +7,14 @@ import {
   Tool,
 } from "@anthropic-ai/sdk/resources/messages";
 import { Stream } from "@anthropic-ai/sdk/streaming";
-import { gsx } from "gensx";
+import * as gensx from "@gensx/core";
 
 // Create a context for Anthropic
-export const AnthropicContext = gsx.createContext<{
+export const AnthropicContext = gensx.createContext<{
   client?: Anthropic;
 }>({});
 
-export const AnthropicProvider = gsx.Component<ClientOptions, never>(
+export const AnthropicProvider = gensx.Component<ClientOptions, never>(
   "AnthropicProvider",
   (args) => {
     const client = new Anthropic(args);
@@ -38,11 +38,11 @@ export type AnthropicChatCompletionOutput =
   | Message
   | Stream<RawMessageStreamEvent>;
 
-export const AnthropicChatCompletion = gsx.Component<
+export const AnthropicChatCompletion = gensx.Component<
   AnthropicChatCompletionProps,
   AnthropicChatCompletionOutput
 >("AnthropicChatCompletion", (props) => {
-  const context = gsx.useContext(AnthropicContext);
+  const context = gensx.useContext(AnthropicContext);
   if (!context.client) {
     throw new Error(
       "Anthropic client not found in context. Please wrap your component with AnthropicProvider.",

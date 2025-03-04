@@ -1,5 +1,5 @@
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
 import { ClientOptions } from "openai";
 
 interface ProviderConfig {
@@ -12,7 +12,7 @@ interface SummarizeDocumentProps {
   provider: ProviderConfig;
 }
 
-const SummarizeDocument = gsx.Component<SummarizeDocumentProps, string>(
+const SummarizeDocument = gensx.Component<SummarizeDocumentProps, string>(
   "SummarizeDocument",
   ({ document, provider }) => (
     <OpenAIProvider {...provider.clientOptions}>
@@ -34,7 +34,7 @@ interface ExtractKeywordsProps {
   provider: ProviderConfig;
 }
 
-const ExtractKeywords = gsx.Component<ExtractKeywordsProps, string[]>(
+const ExtractKeywords = gensx.Component<ExtractKeywordsProps, string[]>(
   "ExtractKeywords",
   ({ document, provider }) => (
     <OpenAIProvider {...provider.clientOptions}>
@@ -62,7 +62,7 @@ interface CategorizeDocumentProps {
   provider: ProviderConfig;
 }
 
-const CategorizeDocument = gsx.Component<CategorizeDocumentProps, string>(
+const CategorizeDocument = gensx.Component<CategorizeDocumentProps, string>(
   "CategorizeDocument",
   ({ document, provider }) => (
     <OpenAIProvider {...provider.clientOptions}>
@@ -95,7 +95,7 @@ export interface ProcessDocumentOutput {
   category: string;
 }
 
-export const ProcessDocument = gsx.Component<
+export const ProcessDocument = gensx.Component<
   ProcessDocumentProps,
   ProcessDocumentOutput
 >("ProcessDocument", (props) => {

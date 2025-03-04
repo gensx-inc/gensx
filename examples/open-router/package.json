@@ -15,14 +15,14 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
-  "description": "Starter project for [GenSX](https://gensx.com), created using `npx create-gensx`.",
+  "description": "Example project leveraging OpenRouter for LLM inference.",
   "main": "index.js",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@gensx/openai": "^0.1.9",
-    "gensx": "^0.2.15",
+    "@gensx/openai": "workspace:*",
+    "@gensx/core": "workspace:*",
     "openai": "catalog:"
   },
   "devDependencies": {

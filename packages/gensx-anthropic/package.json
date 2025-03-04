@@ -47,7 +47,7 @@
     "access": "public"
   },
   "dependencies": {
-    "gensx": "workspace:*",
+    "@gensx/core": "workspace:*",
     "zod": "catalog:",
     "zod-to-json-schema": "catalog:"
   }

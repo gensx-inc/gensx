@@ -11,10 +11,10 @@ npm install @gensx/anthropic
 ## Usage
 
 ```tsx
-import { gsx } from "gensx";
+import * as gensx from "@gensx/core";
 import { AnthropicProvider, ChatCompletion } from "@gensx/anthropic";
 
-const ChatBot = gsx.Component(async ({ userInput }) => {
+const ChatBot = gensx.Component(async ({ userInput }) => {
   return (
     <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY!}>
       <ChatCompletion
@@ -30,7 +30,7 @@ const ChatBot = gsx.Component(async ({ userInput }) => {
 });
 
 // Use with streaming
-const StreamingChat = gsx.Component(async ({ userInput }) => {
+const StreamingChat = gensx.Component(async ({ userInput }) => {
   return (
     <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY!}>
       <ChatCompletion

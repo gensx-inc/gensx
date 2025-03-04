@@ -1,6 +1,6 @@
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "@/index.js";
+import * as gensx from "@/index.js";
 
 import { executeWithCheckpoints } from "./utils/executeWithCheckpoints.js";
 
@@ -25,12 +25,12 @@ interface Config {
   message?: string;
 }
 
-const SecretComponent = gsx.Component<
+const SecretComponent = gensx.Component<
   { config: Partial<Config> },
   Partial<Config>
 >("SecretComponent", ({ config }) => config);
 
-const SecondComponent = gsx.Component<{}, string>(
+const SecondComponent = gensx.Component<{}, string>(
   "SecondComponent",
   () => {
     // Return raw values - masking happens at checkpoint level
@@ -46,7 +46,7 @@ const SecondComponent = gsx.Component<{}, string>(
   { secretOutputs: true }, // Mark the entire output as containing secrets
 );
 
-const ChildComponent = gsx.Component<
+const ChildComponent = gensx.Component<
   { apiKey: string; additionalKey: string },
   string
 >(
@@ -55,7 +55,7 @@ const ChildComponent = gsx.Component<
   { secretProps: ["apiKey"] },
 );
 
-const ParentComponent = gsx.Component<
+const ParentComponent = gensx.Component<
   { credentials: { key: string; other: string } },
   string
 >(
@@ -72,7 +72,7 @@ const ParentComponent = gsx.Component<
   { secretProps: ["credentials"] },
 );
 
-const EdgeCaseComponent = gsx.Component<
+const EdgeCaseComponent = gensx.Component<
   {
     config: {
       emptyString: string;
@@ -92,20 +92,20 @@ const EdgeCaseComponent = gsx.Component<
   { secretProps: ["config"] },
 );
 
-const SpecialCharComponent = gsx.Component<
+const SpecialCharComponent = gensx.Component<
   { dotted: string; regex: string; unicode: string; url: string },
   string
 >("SpecialCharComponent", (props) => Object.values(props).join(", "), {
   secretProps: ["dotted", "regex", "unicode", "url"],
 });
 
-const ArrayComponent = gsx.Component<{ config: ArrayConfig }, ArrayConfig>(
+const ArrayComponent = gensx.Component<{ config: ArrayConfig }, ArrayConfig>(
   "ArrayComponent",
   ({ config }) => config,
   { secretProps: ["config"] },
 );
 
-const ReuseComponent = gsx.Component<{}, string[]>(
+const ReuseComponent = gensx.Component<{}, string[]>(
   "ReuseComponent",
   () => {
     // Return raw values - masking happens at checkpoint level
@@ -120,7 +120,7 @@ const ReuseComponent = gsx.Component<{}, string[]>(
   { secretOutputs: true }, // Mark the entire output as containing secrets
 );
 
-const PartialComponent = gsx.Component<
+const PartialComponent = gensx.Component<
   {
     prefix: string;
     suffix: string;
@@ -136,7 +136,7 @@ const PartialComponent = gsx.Component<
   { secretProps: ["prefix", "suffix", "middle", "combined"] },
 );
 
-const SecretStreamComponent = gsx.StreamComponent<{ apiKey: string }>(
+const SecretStreamComponent = gensx.StreamComponent<{ apiKey: string }>(
   "SecretStreamComponent",
   ({ apiKey }) => {
     const stream = function* () {
@@ -257,7 +257,10 @@ suite("secrets", () => {
     const apiKey = "sk-1234567890";
     const shortKey = "123"; // Should not be masked due to length
 
-    const SecretComponent = gsx.Component<{ config: { key: string } }, string>(
+    const SecretComponent = gensx.Component<
+      { config: { key: string } },
+      string
+    >(
       "SecretComponent",
       ({ config }) =>
         `Key is ${config.key} and reused here: ${config.key}, short: ${shortKey}`,
@@ -289,7 +292,7 @@ suite("secrets", () => {
       };
     }
 
-    const SecretComponent = gsx.Component<{ config: Config }, Config>(
+    const SecretComponent = gensx.Component<{ config: Config }, Config>(
       "SecretComponent",
       ({ config }) => config,
       { secretProps: ["config"] },

@@ -13,7 +13,7 @@ It uses `jsx` to define and orchestrate workflows with functional, reusable comp
 {/* prettier-ignore-start */}
 
 ```tsx
-const WriteBlog = gsx.Component<WriteBlogProps, string>(
+const WriteBlog = gensx.Component<WriteBlogProps, string>(
   "WriteBlog",
   async ({ prompt }) => {
     return (
@@ -26,7 +26,7 @@ const WriteBlog = gsx.Component<WriteBlogProps, string>(
   </WriteBlog>,
 );
 
-const workflow = gsx.Workflow("WriteBlogWorkflow", WriteBlog);
+const workflow = gensx.Workflow("WriteBlogWorkflow", WriteBlog);
 const result = await workflow.run({ prompt: "Write a blog post about AI developer tools" });
 ```
 
@@ -51,7 +51,7 @@ interface ResearchTopicProps {
   topic: string;
 }
 type ResearchTopicOutput = string;
-const ResearchTopic = gsx.Component<ResearchTopicProps, ResearchTopicOutput>(
+const ResearchTopic = gensx.Component<ResearchTopicProps, ResearchTopicOutput>(
   "ResearchTopic",
   async ({ topic }) => {
     console.log("📚 Researching topic:", topic);
@@ -80,7 +80,7 @@ A second order benefit of reusability is that components can be _shared_ and pub
 All GenSX components support nesting, a pattern to access component outputs via a child function. This creates a natural way to pass data between steps:
 
 ```tsx
-export const WriteBlog = gsx.StreamComponent<WriteBlogProps>(
+export const WriteBlog = gensx.StreamComponent<WriteBlogProps>(
   "WriteBlog",
   async ({ prompt }) => {
     return (
@@ -157,7 +157,7 @@ GenSX makes this easy to handle with `StreamComponent`.
 A single component implementation can be used in both streaming and non-streaming contexts by setting the `stream` prop:
 
 ```tsx
-const EditDraft = gsx.StreamComponent<EditDraftProps>(
+const EditDraft = gensx.StreamComponent<EditDraftProps>(
   "EditDraft",
   async ({ draft }) => {
     console.log("🔍 Editing draft");
@@ -181,7 +181,7 @@ const EditDraft = gsx.StreamComponent<EditDraftProps>(
 From there you can use the component in a streaming context:
 
 ```tsx
-const stream = await gsx
+const stream = await gensx
   .Workflow("EditDraftWorkflow", EditDraft)
   .run({ draft, stream: true });
 
@@ -193,7 +193,7 @@ for await (const chunk of stream) {
 And you can use the component in a non-streaming context:
 
 ```tsx
-const result = await gsx
+const result = await gensx
   .Workflow("EditDraftWorkflow", EditDraft)
   .run({ draft, stream: false });
 

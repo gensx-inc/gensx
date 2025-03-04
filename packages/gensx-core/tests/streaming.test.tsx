@@ -2,7 +2,8 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { gsx, Streamable } from "@/index.js";
+import * as gensx from "@/index.js";
+import { Streamable } from "@/index.js";
 
 async function* stream(foo: string) {
   yield "Hello ";
@@ -71,7 +72,7 @@ async function* streamWithDelay(foo: string) {
 
 suite("streaming", () => {
   test("returns the stream immediately without pre-resolving", async () => {
-    const DelayedComponent = gsx.StreamComponent<{ foo: string }>(
+    const DelayedComponent = gensx.StreamComponent<{ foo: string }>(
       "DelayedComponent",
       ({ foo }) => {
         return streamWithDelay(foo);
@@ -79,7 +80,7 @@ suite("streaming", () => {
     );
 
     const start = performance.now();
-    const result = await gsx.execute<Streamable>(
+    const result = await gensx.execute<Streamable>(
       <DelayedComponent stream={true} foo="bar" />,
     );
 
@@ -97,7 +98,7 @@ suite("streaming", () => {
     suite(
       `for a ${isAsync ? "AsyncIterableIterator" : "IterableIterator"}`,
       () => {
-        const MyComponent = gsx.StreamComponent<{ foo: string }>(
+        const MyComponent = gensx.StreamComponent<{ foo: string }>(
           "MyComponent",
           ({ foo }) => {
             let iterator: Streamable;
@@ -113,12 +114,12 @@ suite("streaming", () => {
         );
 
         test("returns the results directly", async () => {
-          const result = await gsx.execute<string>(<MyComponent foo="bar" />);
+          const result = await gensx.execute<string>(<MyComponent foo="bar" />);
           expect(result).toEqual("Hello World!\n\nHere is the prompt\nbar");
         });
 
         test("returns a streamable", async () => {
-          const result = await gsx.execute<Streamable>(
+          const result = await gensx.execute<Streamable>(
             <MyComponent stream={true} foo="bar" />,
           );
           let accumulated = "";
@@ -132,7 +133,7 @@ suite("streaming", () => {
 
         test("can be used with async child function as a stream", async () => {
           let result = "";
-          await gsx.execute(
+          await gensx.execute(
             <MyComponent stream={true} foo="bar">
               {async (response: Streamable) => {
                 for await (const token of response) {
@@ -146,7 +147,7 @@ suite("streaming", () => {
 
         test("can be used with child function without streaming", async () => {
           let result = "";
-          await gsx.execute(
+          await gensx.execute(
             <MyComponent foo="bar">
               {(response: string) => {
                 result = response;
@@ -158,7 +159,7 @@ suite("streaming", () => {
 
         test("can be used with async child function without streaming", async () => {
           let result = "";
-          await gsx.execute(
+          await gensx.execute(
             <MyComponent foo="bar">
               {async (response: string) => {
                 await setTimeout(0);
@@ -170,14 +171,14 @@ suite("streaming", () => {
         });
 
         test("stacked streaming components return a streamable for stream=true", async () => {
-          const StreamPassThrough = gsx.StreamComponent<{
+          const StreamPassThrough = gensx.StreamComponent<{
             input: string;
           }>("StreamPassThrough", async ({ input }) => {
             await setTimeout(0);
             return <MyComponent stream={true} foo={input} />;
           });
 
-          const result = await gsx.execute<Streamable>(
+          const result = await gensx.execute<Streamable>(
             <StreamPassThrough input="foo" stream={true} />,
           );
           let accumulated = "";
@@ -190,21 +191,21 @@ suite("streaming", () => {
         });
 
         test("stacked streaming components return a string for stream=false", async () => {
-          const StreamPassThrough = gsx.StreamComponent<{ input: string }>(
+          const StreamPassThrough = gensx.StreamComponent<{ input: string }>(
             "StreamPassThrough",
             async ({ input }) => {
               await setTimeout(0);
               return <MyComponent stream={true} foo={input} />;
             },
           );
-          const result = await gsx.execute<string>(
+          const result = await gensx.execute<string>(
             <StreamPassThrough input="foo" />,
           );
           expect(result).toEqual("Hello World!\n\nHere is the prompt\nfoo");
         });
 
         test("nested children with stream=true receive Streamable type", async () => {
-          await gsx.execute(
+          await gensx.execute(
             <MyComponent stream={true} foo="bar">
               {async (response) => {
                 // TypeScript should infer response as Streamable
@@ -221,7 +222,7 @@ suite("streaming", () => {
         });
 
         test("nested children with stream=false receive string type", async () => {
-          await gsx.execute(
+          await gensx.execute(
             <MyComponent foo="bar">
               {(response) => {
                 // TypeScript should infer response as string

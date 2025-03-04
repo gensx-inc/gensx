@@ -19,7 +19,7 @@
   "dependencies": {
     "@gensx/mcp": "workspace:*",
     "@gensx/openai": "workspace:*",
-    "gensx": "workspace:*",
+    "@gensx/core": "workspace:*",
     "openai": "catalog:",
     "zod": "catalog:"
   },

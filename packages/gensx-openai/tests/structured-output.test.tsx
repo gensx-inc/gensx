@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import * as gensx from "@gensx/core";
 import { expect, suite, test } from "vitest";
 import { z } from "zod";
 
@@ -12,7 +12,7 @@ suite("StructuredOutput", () => {
       age: z.number(),
     });
 
-    const TestComponent = gsx.Component("TestComponent", () => (
+    const TestComponent = gensx.Component("TestComponent", () => (
       <StructuredOutput
         model="gpt-4o"
         messages={[{ role: "user", content: "test" }]}
@@ -20,7 +20,7 @@ suite("StructuredOutput", () => {
       />
     ));
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <OpenAIProvider apiKey="test">
         <TestComponent />
       </OpenAIProvider>,
@@ -35,7 +35,7 @@ suite("StructuredOutput", () => {
       age: z.number(),
     });
 
-    const TestComponent = gsx.Component("TestComponent", () => (
+    const TestComponent = gensx.Component("TestComponent", () => (
       <GSXChatCompletion
         model="gpt-4o"
         messages={[{ role: "user", content: "test" }]}
@@ -43,7 +43,7 @@ suite("StructuredOutput", () => {
       />
     ));
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <OpenAIProvider apiKey="test">
         <TestComponent />
       </OpenAIProvider>,
@@ -58,7 +58,7 @@ suite("StructuredOutput", () => {
       age: z.number(),
     });
 
-    const Wrapper = gsx.Component<
+    const Wrapper = gensx.Component<
       {},
       {
         uppercase: string;
@@ -81,7 +81,7 @@ suite("StructuredOutput", () => {
       );
     });
 
-    const result = await gsx.execute<{
+    const result = await gensx.execute<{
       uppercase: string;
       doubleAge: number;
     }>(
@@ -102,7 +102,7 @@ suite("StructuredOutput", () => {
       age: z.number(),
     });
 
-    const Wrapper = gsx.Component<{}, z.infer<typeof schema>>(
+    const Wrapper = gensx.Component<{}, z.infer<typeof schema>>(
       "Wrapper",
       async () => {
         // add a type assertion to ensure the result is of the expected type
@@ -116,7 +116,7 @@ suite("StructuredOutput", () => {
       },
     );
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <OpenAIProvider apiKey="test">
         <Wrapper />
       </OpenAIProvider>,

@@ -1,5 +1,5 @@
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
 
 export interface GroqDeepSeekR1CompletionProps {
   prompt: string;
@@ -9,7 +9,7 @@ export interface GroqDeepSeekR1CompletionOutput {
   thinking: string;
   completion: string;
 }
-export const GroqDeepSeekR1Completion = gsx.Component<
+export const GroqDeepSeekR1Completion = gensx.Component<
   GroqDeepSeekR1CompletionProps,
   GroqDeepSeekR1CompletionOutput
 >("GroqDeepSeekR1Completion", ({ prompt }) => {

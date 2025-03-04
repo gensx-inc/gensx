@@ -1,7 +1,7 @@
 import path from "path";
 
 import { AnthropicProvider } from "@gensx/anthropic";
-import { gsx } from "gensx";
+import * as gensx from "@gensx/core";
 
 import {
   runCommand,
@@ -51,7 +51,7 @@ interface ModifyCodeProps {
   plan: string;
 }
 
-const ModifyCode = gsx.Component<ModifyCodeProps, boolean>(
+const ModifyCode = gensx.Component<ModifyCodeProps, boolean>(
   "ModifyCode",
   async ({ plan }) => {
     const workspace = useWorkspace();
@@ -98,7 +98,7 @@ interface RunFinalValidationProps {
   success: boolean;
 }
 
-const RunFinalValidation = gsx.Component<RunFinalValidationProps, boolean>(
+const RunFinalValidation = gensx.Component<RunFinalValidationProps, boolean>(
   "RunFinalValidation",
   async ({ success }) => {
     const workspace = useWorkspace();
@@ -141,7 +141,7 @@ interface CommitResultsProps {
   success: boolean;
 }
 
-const CommitResults = gsx.Component<CommitResultsProps, boolean>(
+const CommitResults = gensx.Component<CommitResultsProps, boolean>(
   "CommitResults",
   async ({ success }) => {
     const workspace = useWorkspace();
@@ -187,7 +187,7 @@ const CommitResults = gsx.Component<CommitResultsProps, boolean>(
   },
 );
 
-export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
+export const SelfModifyingCodeAgent = gensx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
   ({ workspace }) => {
     return (

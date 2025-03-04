@@ -2,7 +2,7 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "@/index.js";
+import * as gensx from "@/index.js";
 import { Streamable } from "@/types.js";
 
 import {
@@ -12,7 +12,7 @@ import {
 
 suite("component", () => {
   test("can create anonymous component", async () => {
-    const AnonymousComponent = gsx.Component<{}, string>(
+    const AnonymousComponent = gensx.Component<{}, string>(
       "AnonymousComponent",
       async () => {
         await setTimeout(0);
@@ -20,12 +20,12 @@ suite("component", () => {
       },
     );
 
-    const result = await gsx.execute(<AnonymousComponent />);
+    const result = await gensx.execute(<AnonymousComponent />);
     expect(result).toBe("hello");
   });
 
   test("can create named component", async () => {
-    const NamedComponent = gsx.Component<{}, string>(
+    const NamedComponent = gensx.Component<{}, string>(
       "NamedComponent",
       async () => {
         await setTimeout(0);
@@ -33,12 +33,12 @@ suite("component", () => {
       },
     );
 
-    const result = await gsx.execute(<NamedComponent />);
+    const result = await gensx.execute(<NamedComponent />);
     expect(result).toBe("hello");
   });
 
   test("can override component name with componentOpts", async () => {
-    const TestComponent = gsx.Component<{}, string>(
+    const TestComponent = gensx.Component<{}, string>(
       "OriginalName",
       async () => {
         await setTimeout(0);
@@ -58,7 +58,7 @@ suite("component", () => {
   });
 
   test("component name falls back to original when not provided in componentOpts", async () => {
-    const TestComponent = gsx.Component<{}, string>(
+    const TestComponent = gensx.Component<{}, string>(
       "OriginalName",
       async () => {
         await setTimeout(0);
@@ -78,7 +78,7 @@ suite("component", () => {
   });
 
   test("stream component supports name override with componentOpts", async () => {
-    const TestStreamComponent = gsx.StreamComponent<{}>(
+    const TestStreamComponent = gensx.StreamComponent<{}>(
       "OriginalStreamName",
       async function* () {
         await setTimeout(0);
@@ -113,11 +113,14 @@ suite("component", () => {
   });
 
   test("nested components can each have custom names", async () => {
-    const ParentComponent = gsx.Component<{}, string>("ParentOriginal", () => {
-      return "parent";
-    });
+    const ParentComponent = gensx.Component<{}, string>(
+      "ParentOriginal",
+      () => {
+        return "parent";
+      },
+    );
 
-    const ChildComponent = gsx.Component<{}, string>("ChildOriginal", () => {
+    const ChildComponent = gensx.Component<{}, string>("ChildOriginal", () => {
       return "child";
     });
 
@@ -145,7 +148,7 @@ suite("component", () => {
 
   test("does not consume asyncIterable during execution", async () => {
     let iteratorConsumed = false;
-    const AsyncIterableComponent = gsx.Component<
+    const AsyncIterableComponent = gensx.Component<
       {},
       AsyncIterableIterator<string>
     >("AsyncIterableComponent", async () => {
@@ -158,7 +161,7 @@ suite("component", () => {
       return iterator;
     });
 
-    const result = await gsx.execute<AsyncIterableIterator<string>>(
+    const result = await gensx.execute<AsyncIterableIterator<string>>(
       <AsyncIterableComponent />,
     );
 
@@ -177,7 +180,7 @@ suite("component", () => {
 
   suite("Component.run", () => {
     test("executes component", async () => {
-      const TestComponent = gsx.Component<{ input: string }, string>(
+      const TestComponent = gensx.Component<{ input: string }, string>(
         "TestComponent",
         async ({ input }) => {
           await setTimeout(0);
@@ -190,7 +193,7 @@ suite("component", () => {
     });
 
     test("complex props", async () => {
-      const ComplexComponent = gsx.Component<
+      const ComplexComponent = gensx.Component<
         { numbers: number[]; config: { enabled: boolean } },
         { sum: number; enabled: boolean }
       >("ComplexComponent", async ({ numbers, config }) => {
@@ -210,7 +213,7 @@ suite("component", () => {
     });
 
     test("uses componentOpts", async () => {
-      const NamedComponent = gsx.Component<{ value: string }, string>(
+      const NamedComponent = gensx.Component<{ value: string }, string>(
         "OriginalName",
         async ({ value }) => {
           await setTimeout(0);
@@ -218,7 +221,7 @@ suite("component", () => {
         },
       );
 
-      const WrapperComponent = gsx.Component<{ input: string }, string>(
+      const WrapperComponent = gensx.Component<{ input: string }, string>(
         "WrapperComponent",
         async ({ input }) => {
           const result = await NamedComponent.run({
@@ -245,7 +248,7 @@ suite("component", () => {
     });
 
     test("executes inside a component", async () => {
-      const TestComponent = gsx.Component<
+      const TestComponent = gensx.Component<
         { input: string },
         { processed: string }
       >("TestComponent", async ({ input }) => {
@@ -253,7 +256,7 @@ suite("component", () => {
         return { processed: input.toUpperCase() };
       });
 
-      const WrapperComponent = gsx.Component<{ input: string }, string>(
+      const WrapperComponent = gensx.Component<{ input: string }, string>(
         "WrapperComponent",
         async ({ input }) => {
           const result = await TestComponent.run({ input });
@@ -279,7 +282,7 @@ suite("component", () => {
 
   suite("StreamComponent.run", () => {
     test("executes stream component in non-streaming mode", async () => {
-      const TestStreamComponent = gsx.StreamComponent<{ input: string }>(
+      const TestStreamComponent = gensx.StreamComponent<{ input: string }>(
         "TestStreamComponent",
         async function* ({ input }) {
           await setTimeout(0);
@@ -296,7 +299,7 @@ suite("component", () => {
     });
 
     test("executes stream component in streaming mode", async () => {
-      const TestStreamComponent = gsx.StreamComponent<{ input: string }>(
+      const TestStreamComponent = gensx.StreamComponent<{ input: string }>(
         "TestStreamComponent",
         async function* ({ input }) {
           await setTimeout(0);
@@ -325,7 +328,7 @@ suite("component", () => {
     });
 
     test("uses componentOpts", async () => {
-      const TestStreamComponent = gsx.StreamComponent<{ input: string }>(
+      const TestStreamComponent = gensx.StreamComponent<{ input: string }>(
         "OriginalStreamName",
         async function* ({ input }) {
           await setTimeout(0);
@@ -335,7 +338,7 @@ suite("component", () => {
         },
       );
 
-      const WrapperComponent = gsx.Component<{ input: string }, string>(
+      const WrapperComponent = gensx.Component<{ input: string }, string>(
         "WrapperComponent",
         async ({ input }) => {
           // No need for type assertion since it's correctly typed as string
@@ -363,7 +366,7 @@ suite("component", () => {
     });
 
     test("can be used inside another component", async () => {
-      const TestStreamComponent = gsx.StreamComponent<{ input: string }>(
+      const TestStreamComponent = gensx.StreamComponent<{ input: string }>(
         "TestStreamComponent",
         async function* ({ input }) {
           await setTimeout(0);
@@ -375,7 +378,7 @@ suite("component", () => {
         },
       );
 
-      const WrapperComponent = gsx.Component<
+      const WrapperComponent = gensx.Component<
         { input: string; useStream?: boolean },
         string | Streamable
       >("WrapperComponent", async ({ input, useStream }) => {

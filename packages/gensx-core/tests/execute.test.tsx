@@ -2,7 +2,7 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { gsx, Streamable } from "../src/index.js";
+import * as gensx from "../src/index.js";
 import { executeWorkflowWithCheckpoints } from "./utils/executeWithCheckpoints.js";
 
 type Assert<T, U> =
@@ -12,14 +12,14 @@ type Assert<T, U> =
     : { error: "Types are not equal"; type1: T; type2: U };
 
 suite("execute", () => {
-  const WorkflowComponent = gsx.Component("test", async () => {
+  const WorkflowComponent = gensx.Component("test", async () => {
     await setTimeout(0);
     return "hello";
   });
 
   suite("workflow", () => {
     test("can execute a workflow", async () => {
-      const workflow = gsx.Workflow("test", WorkflowComponent);
+      const workflow = gensx.Workflow("test", WorkflowComponent);
       const result = await workflow.run({});
 
       const assertReturnType: Assert<typeof result, string> = true;
@@ -29,7 +29,7 @@ suite("execute", () => {
     });
 
     test("can execute a workflow with a stream component", async () => {
-      const StreamComponent = gsx.StreamComponent<{ foo: string }>(
+      const StreamComponent = gensx.StreamComponent<{ foo: string }>(
         "test",
         (props) => {
           const generator = async function* () {
@@ -41,7 +41,7 @@ suite("execute", () => {
       );
 
       // Using type annotations on the workflow call to ensure the correct type is returned
-      const workflow = gsx.Workflow("test", StreamComponent);
+      const workflow = gensx.Workflow("test", StreamComponent);
       const iterator: Streamable = await workflow.run({
         stream: true,
         foo: "hello",
@@ -117,14 +117,14 @@ suite("execute", () => {
 
     test("requires workflow props to be an object", async () => {
       // @ts-expect-error - props is an array
-      const ArrayPropsComponent = gsx.Component<string[], string[]>(
+      const ArrayPropsComponent = gensx.Component<string[], string[]>(
         "ArrayPropsComponent",
         (props) => {
           return props;
         },
       );
 
-      const workflow = gsx.Workflow("test", ArrayPropsComponent);
+      const workflow = gensx.Workflow("test", ArrayPropsComponent);
 
       try {
         await workflow.run([]);
@@ -137,14 +137,14 @@ suite("execute", () => {
       }
 
       // @ts-expect-error - props is a string
-      const StringPropsComponent = gsx.Component<string, string>(
+      const StringPropsComponent = gensx.Component<string, string>(
         "StringPropsComponent",
         (props) => {
           return props;
         },
       );
 
-      const workflow2 = gsx.Workflow("test", StringPropsComponent);
+      const workflow2 = gensx.Workflow("test", StringPropsComponent);
 
       try {
         await workflow2.run("hello");
@@ -157,14 +157,14 @@ suite("execute", () => {
       }
 
       // @ts-expect-error - props is a number
-      const NumberPropsComponent = gsx.Component<number, number>(
+      const NumberPropsComponent = gensx.Component<number, number>(
         "NumberPropsComponent",
         (props) => {
           return props;
         },
       );
 
-      const workflow3 = gsx.Workflow("test", NumberPropsComponent);
+      const workflow3 = gensx.Workflow("test", NumberPropsComponent);
 
       try {
         await workflow3.run(1);
@@ -177,14 +177,14 @@ suite("execute", () => {
       }
 
       // @ts-expect-error - props is a boolean
-      const BooleanPropsComponent = gsx.Component<boolean, boolean>(
+      const BooleanPropsComponent = gensx.Component<boolean, boolean>(
         "BooleanPropsComponent",
         (props) => {
           return props;
         },
       );
 
-      const workflow4 = gsx.Workflow("test", BooleanPropsComponent);
+      const workflow4 = gensx.Workflow("test", BooleanPropsComponent);
 
       try {
         await workflow4.run(true);
@@ -197,14 +197,14 @@ suite("execute", () => {
       }
 
       // @ts-expect-error - props is a symbol
-      const SymbolPropsComponent = gsx.Component<symbol, symbol>(
+      const SymbolPropsComponent = gensx.Component<symbol, symbol>(
         "SymbolPropsComponent",
         (props) => {
           return props;
         },
       );
 
-      const workflow5 = gsx.Workflow("test", SymbolPropsComponent);
+      const workflow5 = gensx.Workflow("test", SymbolPropsComponent);
 
       try {
         await workflow5.run(Symbol("test"));
@@ -218,14 +218,14 @@ suite("execute", () => {
 
       // @ts-expect-error - props is a function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-      const FunctionPropsComponent = gsx.Component<Function, Function>(
+      const FunctionPropsComponent = gensx.Component<Function, Function>(
         "FunctionPropsComponent",
         (props) => {
           return props;
         },
       );
 
-      const workflow6 = gsx.Workflow("test", FunctionPropsComponent);
+      const workflow6 = gensx.Workflow("test", FunctionPropsComponent);
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -239,14 +239,14 @@ suite("execute", () => {
       }
 
       // @ts-expect-error - props is a null
-      const NullPropsComponent = gsx.Component<null, null>(
+      const NullPropsComponent = gensx.Component<null, null>(
         "NullPropsComponent",
         (props) => {
           return props;
         },
       );
 
-      const workflow7 = gsx.Workflow("test", NullPropsComponent);
+      const workflow7 = gensx.Workflow("test", NullPropsComponent);
 
       try {
         await workflow7.run(null as never);
@@ -259,14 +259,14 @@ suite("execute", () => {
       }
 
       // @ts-expect-error - props is a undefined
-      const UndefinedPropsComponent = gsx.Component<undefined, undefined>(
+      const UndefinedPropsComponent = gensx.Component<undefined, undefined>(
         "UndefinedPropsComponent",
         (props) => {
           return props;
         },
       );
 
-      const workflow8 = gsx.Workflow("test", UndefinedPropsComponent);
+      const workflow8 = gensx.Workflow("test", UndefinedPropsComponent);
 
       try {
         await workflow8.run(undefined as never);
@@ -279,14 +279,14 @@ suite("execute", () => {
       }
 
       // @ts-expect-error - props is a bigint
-      const BigIntPropsComponent = gsx.Component<bigint, bigint>(
+      const BigIntPropsComponent = gensx.Component<bigint, bigint>(
         "BigIntPropsComponent",
         (props) => {
           return props;
         },
       );
 
-      const workflow9 = gsx.Workflow("test", BigIntPropsComponent);
+      const workflow9 = gensx.Workflow("test", BigIntPropsComponent);
 
       try {
         await workflow9.run(BigInt(1));
@@ -302,7 +302,7 @@ suite("execute", () => {
 
   suite("execute", () => {
     test("can execute a component", async () => {
-      const result = await gsx.execute(<WorkflowComponent />);
+      const result = await gensx.execute(<WorkflowComponent />);
       expect(result).toBe("hello");
     });
   });

@@ -1,5 +1,5 @@
+import * as gensx from "@gensx/core";
 import { ChatCompletion } from "@gensx/openai";
-import { gsx } from "gensx";
 
 import { ArxivEntry } from "./arxiv.js";
 import { FirecrawlProvider, ScrapePage } from "./firecrawlProvider.js";
@@ -9,7 +9,7 @@ export interface SummarizePaperProps {
   prompt: string;
 }
 
-export const SummarizePaper = gsx.Component<SummarizePaperProps, string>(
+export const SummarizePaper = gensx.Component<SummarizePaperProps, string>(
   "SummarizePaper",
   ({ markdown, prompt }) => {
     const systemMessage = `Your job is to provide a contextual research summary of a research summary based on the prompt provided.`;
@@ -18,12 +18,12 @@ export const SummarizePaper = gsx.Component<SummarizePaperProps, string>(
       <prompt>
       ${prompt}
       </prompt>
-      
+
       Here is the paper:
       <paper>
       ${markdown}
       </paper>
-  
+
       Please return a detailed yet concise summary of the paper that is relevant to the user's prompt.`;
     return (
       <ChatCompletion
@@ -51,7 +51,7 @@ export interface ArxivSummary {
   summary: string;
 }
 
-export const FetchAndSummarize = gsx.Component<
+export const FetchAndSummarize = gensx.Component<
   FetchAndSummarizeProps,
   ArxivSummary
 >("FetchAndSummarize", ({ document, prompt }) => {

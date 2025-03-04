@@ -19,7 +19,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && cp -r src/templates dist/templates",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
@@ -28,10 +28,7 @@
   },
   "dependencies": {
     "commander": "^11.1.0",
-    "enquirer": "^2.4.1",
-    "ora": "^8.0.1",
-    "picocolors": "^1.0.0",
-    "yaml": "^2.7.0"
+    "gensx": "workspace:*"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",

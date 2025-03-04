@@ -38,7 +38,7 @@ type ExtractEntitiesOutput = z.infer<typeof ExtractEntitiesSchema>;
 Finally, define the component and set the `outputSchema` prop on the `GSXChatCompletion` component to get the output matching that schema:
 
 ```tsx
-const ExtractEntities = gsx.Component<
+const ExtractEntities = gensx.Component<
   ExtractEntitiesProps,
   ExtractEntitiesOutput
 >("ExtractEntities", ({ text }) => {
@@ -100,7 +100,7 @@ Using the same `ExtractEntitiesSchema` from the previous example, you can define
 ```tsx
 import { zodResponseFormat } from "openai/helpers/zod";
 
-const ExtractEntitiesWithoutHelpers = gsx.Component<
+const ExtractEntitiesWithoutHelpers = gensx.Component<
   ExtractEntitiesProps,
   ExtractEntitiesOutput
 >("ExtractEntitiesWithoutHelpers", ({ text }) => {
@@ -144,7 +144,7 @@ This example uses the `ChatCompletion` component which always returns a string b
 You can run the examples above using the following code:
 
 ```tsx
-const workflow = gsx.Workflow("ExtractEntitiesWorkflow", ExtractEntities);
+const workflow = gensx.Workflow("ExtractEntitiesWorkflow", ExtractEntities);
 
 const result = await workflow.run({
   text: "John Doe is a software engineer at Google.",

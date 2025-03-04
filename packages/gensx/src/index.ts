@@ -1,41 +1,37 @@
-export { createContext, useContext } from "./context.js";
-export { execute, Workflow } from "./execute.js";
-export { Fragment, jsx, jsxs } from "./jsx-runtime.js";
-export type { JSX } from "./jsx-runtime.js";
-export { StreamComponent, Component } from "./component.js";
-export type { ComponentOpts } from "./component.js";
-export { array } from "./array.js";
-export type {
-  Args,
-  Context,
-  MaybePromise,
-  Streamable,
-  StreamArgs,
-  GsxStreamComponent,
-  GsxComponent,
-  GSXToolParams,
-  GSXToolAnySchema,
-} from "./types.js";
-export type { GsxArray } from "./array.js";
+import { Command } from "commander";
+export * from "@gensx/core";
+// Legacy holdover from v0
+export { gsx } from "./gsx.js";
+export type { gsx as Gsx } from "./gsx.js";
 
-import { array } from "./array.js";
-import { Component, StreamComponent } from "./component.js";
-import { createContext, useContext } from "./context.js";
-import { execute, Workflow } from "./execute.js";
-import * as types from "./types.js";
+import packageJson from "../package.json" with { type: "json" };
+import { login } from "./commands/login.js";
+import { NewCommandOptions, newProject } from "./commands/new.js";
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace gsx {
-  export type Args<P, O> = types.Args<P, O>;
-  export type StreamArgs<P> = types.StreamArgs<P>;
+export function runCLI() {
+  const program = new Command()
+    .name("gensx")
+    .description("CLI tool for GenSX")
+    .version(packageJson.version);
+
+  program
+    .command("login")
+    .description("Login to GenSX Cloud")
+    .action(async () => {
+      await login();
+    });
+
+  program
+    .command("new")
+    .description("Create a new GenSX project")
+    .argument("<project-directory>", "Directory to create the project in")
+    .option("-t, --template <type>", "Template to use (ts)")
+    .option("-f, --force", "Overwrite existing files", false)
+    .action(newProject);
+
+  program.parse();
 }
 
-export const gsx = {
-  StreamComponent,
-  Component,
-  createContext,
-  execute,
-  Workflow,
-  useContext,
-  array,
-};
+export { newProject };
+
+export type { NewCommandOptions };

@@ -28,7 +28,7 @@ interface SummarizeDocumentProps {
   provider: ProviderConfig;
 }
 
-const SummarizeDocument = gsx.Component<SummarizeDocumentProps, string>(
+const SummarizeDocument = gensx.Component<SummarizeDocumentProps, string>(
   "SummarizeDocument",
   ({ document, provider }) => (
     <OpenAIProvider {...provider.clientOptions}>
@@ -64,14 +64,14 @@ const llama8bProviderConfig = {
   model: "llama-3.1-8b-instant",
 };
 
-const gptSummary = await gsx.execute<string>(
+const gptSummary = await gensx.execute<string>(
   <SummarizeDocument
     document="Your document..."
     provider={gpt4oProviderConfig}
   />,
 );
 
-const llamaSummary = await gsx.execute<string>(
+const llamaSummary = await gensx.execute<string>(
   <SummarizeDocument
     document="Your document..."
     provider={llama8bProviderConfig}
@@ -100,7 +100,7 @@ In this example, the `defaultProvider` is required, but the `smallModelProvider`
 Now, we can define the `ProcessDocument` component and pass the provider configuration to the individual components:
 
 ```tsx
-export const ProcessDocument = gsx.Component<
+export const ProcessDocument = gensx.Component<
   ProcessDocumentProps,
   ProcessDocumentOutput
 >("ProcessDocument", (props) => {
@@ -149,7 +149,7 @@ const llama8bProviderConfig = {
   model: "llama-3.1-8b-instant",
 };
 
-const documentMetadata = await gsx.execute<ProcessDocumentOutput>(
+const documentMetadata = await gensx.execute<ProcessDocumentOutput>(
   <ProcessDocument
     document="Your document here"
     defaultProvider={gpt4oProviderConfig}

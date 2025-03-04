@@ -1,9 +1,9 @@
+import * as gensx from "@gensx/core";
 import {
   ChatCompletion,
   GSXChatCompletion,
   OpenAIProvider,
 } from "@gensx/openai";
-import { gsx } from "gensx";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
@@ -19,7 +19,7 @@ interface ExtractEntitiesProps {
   text: string;
 }
 
-const ExtractEntities = gsx.Component<
+const ExtractEntities = gensx.Component<
   ExtractEntitiesProps,
   ExtractEntitiesOutput
 >("ExtractEntities", ({ text }) => {
@@ -51,7 +51,7 @@ const ExtractEntities = gsx.Component<
   );
 });
 
-const ExtractEntitiesWithoutHelpers = gsx.Component<
+const ExtractEntitiesWithoutHelpers = gensx.Component<
   ExtractEntitiesProps,
   ExtractEntitiesOutput
 >("ExtractEntitiesWithoutHelpers", ({ text }) => {
@@ -91,7 +91,7 @@ async function main() {
   console.log("\n🚀 Starting the structured outputs example");
 
   console.log("\n🎯 Getting structured outputs with GSXChatCompletion");
-  const workflow = gsx.Workflow("ExtractEntities", ExtractEntities);
+  const workflow = gensx.Workflow("ExtractEntities", ExtractEntities);
   const result = await workflow.run(
     {
       text: "John Doe is a software engineer at Google.",
@@ -101,7 +101,7 @@ async function main() {
   console.log(result);
 
   console.log("\n🎯 Getting structured outputs without helpers");
-  const workflowWithoutHelpers = gsx.Workflow(
+  const workflowWithoutHelpers = gensx.Workflow(
     "ExtractEntitiesWithoutHelpers",
     ExtractEntitiesWithoutHelpers,
   );

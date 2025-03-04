@@ -11,10 +11,10 @@ npm install @gensx/openai
 ## Usage
 
 ```tsx
-import { gsx } from "gensx";
+import * as gensx from "@gensx/core";
 import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
 
-const ChatBot = gsx.Component(async ({ userInput }) => {
+const ChatBot = gensx.Component(async ({ userInput }) => {
   return (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY!}>
       <ChatCompletion
@@ -30,7 +30,7 @@ const ChatBot = gsx.Component(async ({ userInput }) => {
 });
 
 // Use with streaming
-const StreamingChat = gsx.Component(async ({ userInput }) => {
+const StreamingChat = gensx.Component(async ({ userInput }) => {
   return (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY!}>
       <ChatCompletion

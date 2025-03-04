@@ -1,4 +1,4 @@
-import { gsx, GsxComponent } from "gensx";
+import * as gensx from "@gensx/core";
 
 import { fetchMcpContext, MCPServerDefinition } from "./mcp.js";
 import {
@@ -19,15 +19,15 @@ export interface MCPServerContext {
 // Define the return type explicitly to avoid exposing internal types
 interface MCPServerContextResult {
   useContext: () => MCPServerContext;
-  Provider: GsxComponent<{}, never>;
+  Provider: gensx.GsxComponent<{}, never>;
 }
 
 export const createMCPServerContext = (
   serverDefinition: MCPServerDefinition,
 ): MCPServerContextResult => {
-  const context = gsx.createContext<MCPServerContext | null>(null);
+  const context = gensx.createContext<MCPServerContext | null>(null);
 
-  const Provider = gsx.Component<{}, never>(
+  const Provider = gensx.Component<{}, never>(
     `MCPServerProvider`,
     async () => {
       const { client, closeOnComplete, ...rest } =
@@ -54,7 +54,7 @@ export const createMCPServerContext = (
   );
 
   const useContext = () => {
-    const loadedContext = gsx.useContext(context);
+    const loadedContext = gensx.useContext(context);
     if (!loadedContext) {
       throw new Error("MCPServerContext not found");
     }

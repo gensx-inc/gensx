@@ -46,19 +46,19 @@ The workflow uses the `<AnalyzeHNPosts>` component to process each post in paral
 This component takes advantage of this and uses `array.map` to return a list of `analyses`, each containing a summary of the post and an analysis of its comments.
 
 ```tsx
-const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
-  "AnalyzeHNPosts",
-  ({ stories }) => {
-    return {
-      analyses: stories.map((story) => ({
-        summary: <SummarizePost story={story} />,
-        commentAnalysis: (
-          <AnalyzeComments postId={story.id} comments={story.comments} />
-        ),
-      })),
-    };
-  },
-);
+const AnalyzeHNPosts = gensx.Component<
+  AnalyzeHNPostsProps,
+  AnalyzeHNPostsOutput
+>("AnalyzeHNPosts", ({ stories }) => {
+  return {
+    analyses: stories.map((story) => ({
+      summary: <SummarizePost story={story} />,
+      commentAnalysis: (
+        <AnalyzeComments postId={story.id} comments={story.comments} />
+      ),
+    })),
+  };
+});
 ```
 
 ### Multiple outputs

@@ -1,5 +1,5 @@
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
 
 interface BrainstormTopicsProps {
   prompt: string;
@@ -7,7 +7,7 @@ interface BrainstormTopicsProps {
 interface BrainstormTopicsOutput {
   topics: string[];
 }
-const BrainstormTopics = gsx.Component<
+const BrainstormTopics = gensx.Component<
   BrainstormTopicsProps,
   BrainstormTopicsOutput
 >("BrainstormTopics", ({ prompt }) => {
@@ -38,7 +38,7 @@ interface ResearchTopicProps {
   topic: string;
 }
 type ResearchTopicOutput = string;
-const ResearchTopic = gsx.Component<ResearchTopicProps, ResearchTopicOutput>(
+const ResearchTopic = gensx.Component<ResearchTopicProps, ResearchTopicOutput>(
   "ResearchTopic",
   ({ topic }) => {
     console.log("📚 Researching topic:", topic);
@@ -62,7 +62,7 @@ interface WriteDraftProps {
   prompt: string;
 }
 type WriteDraftOutput = string;
-const WriteDraft = gsx.Component<WriteDraftProps, WriteDraftOutput>(
+const WriteDraft = gensx.Component<WriteDraftProps, WriteDraftOutput>(
   "WriteDraft",
   ({ prompt, research }) => {
     const systemPrompt = `You are a helpful assistant that writes blog posts. The user will provide a prompt and you will write a blog post based on the prompt. Unless specified by the user, the blog post should be 200 words.
@@ -86,7 +86,7 @@ Here is the research for the blog post: ${research.join("\n")}`;
 interface EditDraftProps {
   draft: string;
 }
-const EditDraft = gsx.StreamComponent<EditDraftProps>(
+const EditDraft = gensx.StreamComponent<EditDraftProps>(
   "EditDraft",
   ({ draft }) => {
     console.log("🔍 Editing draft");
@@ -110,7 +110,7 @@ interface SearchWebProps {
   prompt: string;
 }
 type SearchWebOutput = string[];
-export const SearchWeb = gsx.Component<SearchWebProps, SearchWebOutput>(
+export const SearchWeb = gensx.Component<SearchWebProps, SearchWebOutput>(
   "SearchWeb",
   async ({ prompt }) => {
     console.log("🌐 Researching web for:", prompt);
@@ -127,7 +127,7 @@ type ResearchOutput = [string[], string[]];
 interface ResearchProps {
   prompt: string;
 }
-const Research = gsx.Component<ResearchProps, ResearchOutput>(
+const Research = gensx.Component<ResearchProps, ResearchOutput>(
   "Research",
   ({ prompt }) => {
     return (
@@ -147,7 +147,7 @@ interface BlogWriterProps {
   prompt: string;
 }
 
-export const WriteBlog = gsx.StreamComponent<BlogWriterProps>(
+export const WriteBlog = gensx.StreamComponent<BlogWriterProps>(
   "WriteBlog",
   ({ prompt }) => {
     return (
