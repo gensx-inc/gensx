@@ -25,12 +25,12 @@
     "@gensx/openai": "^0.1.8",
     "@gensx/vercel-ai-sdk": "^0.1.1",
     "gensx": "^0.2.14",
-    "openai": "^4.86.0"
+    "openai": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.13.5",
-    "nodemon": "^3.1.9",
-    "tsx": "^4.19.3",
-    "typescript": "^5.7.2"
+    "@types/node": "catalog:",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

@@ -20,13 +20,13 @@
     "@gensx/mcp": "workspace:*",
     "@gensx/openai": "workspace:*",
     "gensx": "workspace:*",
-    "openai": "^4.85.4",
-    "zod": "^3.24.2"
+    "openai": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.13.5",
-    "nodemon": "^3.1.9",
-    "tsx": "^4.19.3",
-    "typescript": "^5.7.2"
+    "@types/node": "catalog:",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

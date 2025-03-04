@@ -22,12 +22,12 @@
   "dependencies": {
     "@gensx/openai": "workspace:*",
     "gensx": "workspace:*",
-    "openai": "^4.80.1"
+    "openai": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.12.0",
-    "nodemon": "^3.1.9",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "@types/node": "catalog:",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

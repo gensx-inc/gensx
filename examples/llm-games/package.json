@@ -17,12 +17,12 @@
     "@gensx/anthropic": "workspace:*",
     "@gensx/openai": "workspace:*",
     "gensx": "workspace:*",
-    "zod": "^3.24.2"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^20.17.11",
-    "nodemon": "^3.1.9",
-    "tsx": "^4.19.2",
-    "typescript": "^5.0.0"
+    "@types/node": "catalog:",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

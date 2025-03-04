@@ -4,3 +4,14 @@ packages:
   - "docs"
   - "website/docs"
   - "website/home"
+
+catalog:
+  "@types/node": "^20.17.11"
+  "@vitest/coverage-istanbul": "^2.1.8"
+  nodemon: "^3.1.9"
+  openai: "^4.85.4"
+  tsx: "^4.19.2"
+  typescript: "^5.7.2"
+  vitest: "^2.1.8"
+  zod-to-json-schema: "^3.24.1"
+  zod: "^3.24.2"
