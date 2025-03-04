@@ -122,4 +122,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
       board: board.toJSON(),
     };
   },
+  {
+    secretProps: ["playerX.provider.apiKey", "playerO.provider.apiKey"],
+  },
 );

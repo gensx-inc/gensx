@@ -6,16 +6,16 @@ import { PlayTournament } from "./Tournament.js";
 import { Player } from "./types.js";
 async function main() {
   const player1: Player = new Player({
-    model: "claude-3-5-haiku-latest",
+    model: "claude-3-7-sonnet-latest",
     type: "llm",
-    strategy: "basic",
+    strategy: "thinking",
     provider: {
       apiKey: process.env.ANTHROPIC_API_KEY!,
       type: "anthropic",
     },
   });
   // const player1: Player = new Player({
-  //   model: "deepseek/deepseek-chat",
+  //   model: "deepseek/deepseek-r1",
   //   type: "llm",
   //   strategy: "basic",
   //   provider: {

@@ -91,7 +91,7 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
           <AnthropicProvider apiKey={player.provider.apiKey}>
             <ChatCompletionAnthropic
               model={player.model}
-              system={getSystemMessage(playerSymbol, player.strategy)}
+              system={getSystemMessage(playerSymbol, "basic")}
               max_tokens={1000}
               messages={[
                 {
@@ -160,5 +160,8 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
         };
       }
     }
+  },
+  {
+    secretProps: ["player.provider.apiKey"],
   },
 );

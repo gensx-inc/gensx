@@ -10,7 +10,7 @@ ogImage:
   url: "/assets/blog/hello-world/cover.jpg"
 ---
 
-LLMs are really bad at Tic-Tac-Toe. They're so bad, in fact, that I spent hours debugging my code and looking through traces in [GenSX](https://www.gensx.com/) to make sure the LLMs were the dumb ones and not me. Turns out they really are just quite bad at the game--something that's made even more surprising by the fact that LLMs wrote most of the code I used to test this.
+LLMs are _really_ bad at Tic-Tac-Toe. They're so bad, in fact, that I spent hours debugging my code and looking through traces in [GenSX](https://www.gensx.com/) to make sure the LLMs were the dumb ones and not me. Turns out they really are just quite bad at the game--something that's made even more surprising by the fact that LLMs wrote most of the code I used to test this.
 
 We started down this path because we wanted new ways to evaluate LLMs. Current benchmarks often feel saturated or gamed. Evaluating LLMs by having them play games like Tic-Tac-Toe is interesting because it:
 
@@ -22,7 +22,7 @@ Okay but LLM's can't really be that bad at Tic-Tac-Toe, right? Let's dive in.
 
 ## The Setup
 
-To keep things simple and fair, I had each model play 100 games against a basic computer strategy alternating who goes first. The computer would just make random moves unless it (a) had two in a row and could make a winning move or (b) could block the opponent from winning. In theory, it should be kind of hard to beat but really easy to draw.
+To keep things simple and fair, I had each model play 100 games against a basic computer strategy alternating who goes first. The computer would just make random moves unless it (a) had two in a row and could make a winning move or (b) could block the opponent from winning. In theory, it should be kind of hard to beat but really easy to draw. I would expect the average human with no knowledge of the game to almost never lose.
 
 Each model received the same prompt. The system prompt was as follows:
 
@@ -64,20 +64,22 @@ Without further ado, here are the results from a few top models:
 
 ![Tic-Tac-Toe Results by Model](/assets/blog/tic-tac-toe/perf-by-model.png)
 
-Here's the number of errors each of the models made:
+And here's the number of errors each of the models made:
 
 ![Tic-Tac-Toe Errors by Model](/assets/blog/tic-tac-toe/errors-by-model.png)
 
-With the exception of reasoning models, every model was absolutely terrible at the game. Not only did they miss tons of opportunities to win or block the opponent, they also frequently just made invalid moves. One common failure mode was trying to "win" by placing their piece where the opponent already had one.
+With the exception of reasoning models shown below, every model was absolutely terrible at the game. Not only did they miss tons of opportunities to win or block the opponent, they also frequently just made invalid moves. One common failure mode was trying to "win" by placing their piece where the opponent already had one.
 
-You'll also notice that the LLMs missed blocking moves far more often than they missed winning moves: often they were too focused on trying to win that they didn't notice the opponent was about to win.
+You'll also notice that the LLMs missed blocking moves far more often than they missed winning moves: often they were too focused on trying to win that they didn't notice the opponent was about to win. Complete tunnel vision.
 
-Even more surprising is that there doesn't seem to be any meaningful difference between small and large models. They're just all bad.
+Even more surprising is that there doesn't seem to be any meaningful difference between small and large models. They're just all bad but gpt-4o-mini and claude-3.5-haiku are the best two despite being smaller than their counterparts.
 
-In fact, LLMs are only marginally better at Tic-Tac-Toe than placing moves at random. Just placing moves at random against the same computer strategy resulted in:
+When you look at the numbers, LLMs are only marginally better at Tic-Tac-Toe than placing moves at random. Just placing moves at random against the same computer strategy resulted in:
 
 - 4 wins, 81 losses, and 15 draws
 - 2 missed wins, 70 missed blocks, and 0 invalid moves
+
+In fact, gpt-4o and deepseek-v3 both lost more games than playing at random. The very best performing models only won 6% more games than playing at random.
 
 ### Chain-of-thought
 
@@ -87,7 +89,7 @@ Here's a comparison of gpt-4o-mini with the prompt above and a prompt that encou
 
 ![gpt-4o-mini results with thinking and non thinking prompts](/assets/blog/tic-tac-toe/perf-thinking-vs-not.png)
 
-The chain of thought does change the failure mode a bit. The model is much less likely to miss a winning opportunity but misses more blocks and makes almost 6x invalid moves.
+The chain of thought does change the failure mode a bit. The model is much less likely to miss a winning opportunity but misses more blocks and makes almost 6x as many invalid moves. So much for "thinking it through."
 
 ![gpt-4o-mini errors with thinking and non thinking prompts](/assets/blog/tic-tac-toe/errors-thinking-vs-not.png)
 
@@ -99,7 +101,7 @@ Reasoning models are a bit better, but still very unimpressive considering they'
 
 ## Why are they so bad?
 
-So why are LLMs so bad at Tic-Tac-Toe? LLMs are increasingly reaching parity with humans across a wide variety of tasks including competitive programming. You'd think they'd be good at Tic-Tac-Toe. Especially considering the state space is so small and optimal strategies are well known and easy to understand.
+So why are LLMs so bad at Tic-Tac-Toe? LLMs are increasingly reaching parity with humans across a wide variety of tasks including competitive programming, chat, and . You'd think they'd be good at Tic-Tac-Toe. Especially considering the state space is so small and optimal strategies are well known and easy to understand.
 
 I won't claim to know for sure why they're so bad, but I'll offer a few hypotheses:
 
@@ -118,4 +120,4 @@ For example, maybe formatting the board differently for the model would help, ma
 
 Think you can get better results? Pull down the [code](https://github.com/gensx/gensx/tree/main/examples/llm-games) and try it yourself.
 
-Want to see more of these experiments? Let us know on [X](https://x.com/gensxcom) or [Discord](https://discord.gg/gensx).
+Want to see more of these experiments? Join us on [Discord](https://discord.gg/wRmwfz5tCy) and let us know.
