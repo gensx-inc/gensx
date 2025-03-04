@@ -1,38 +1,42 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { ensureFirstTimeSetupComplete } from "../utils/first-time-setup.js";
+import { build } from "./build.js";
 
 export interface DevOptions {
   buildDir?: string;
+  watch?: boolean;
 }
 
-export async function dev(options: DevOptions = {}) {
+export async function dev(entryFile: string, options: DevOptions = {}) {
   await ensureFirstTimeSetupComplete();
 
   const buildDir = options.buildDir ?? ".gensx/dist";
   const entryPoint = join(buildDir, "index.js");
+  const absoluteEntryPath = resolve(process.cwd(), entryFile);
 
-  if (!existsSync(buildDir)) {
-    console.error(`Error: Build directory '${buildDir}' does not exist.`);
-    console.error(
-      "Please run 'gensx build' first or specify a different build directory with --build-dir",
-    );
+  if (!existsSync(absoluteEntryPath)) {
+    console.error(`Error: Entry file '${entryFile}' does not exist.`);
     process.exit(1);
   }
 
-  if (!existsSync(entryPoint)) {
-    console.error(
-      `Error: Entry point '${entryPoint}' not found in build directory.`,
-    );
-    console.error("Please ensure your build contains an index.js file.");
+  if (!entryFile.endsWith(".ts") && !entryFile.endsWith(".tsx")) {
+    console.error("Error: Only TypeScript files (.ts or .tsx) are supported");
     process.exit(1);
   }
 
+  // Run the initial build
+  await build(entryFile, {
+    outDir: buildDir,
+    watch: false,
+  });
+
+  // Start the Deno process
   const denoProcess = spawn(
     "deno",
-    ["run", "--allow-all", "--node-modules-dir", entryPoint],
+    ["run", "--allow-all", "--node-modules-dir", "--watch", entryPoint],
     {
       stdio: "inherit",
     },
@@ -43,7 +47,33 @@ export async function dev(options: DevOptions = {}) {
     process.exit(1);
   });
 
+  // If watch mode is enabled, start the build watcher in parallel
+  if (options.watch) {
+    void build(entryFile, {
+      outDir: buildDir,
+      watch: true,
+    }).catch((error: unknown) => {
+      console.error("Build watcher failed:", error);
+      denoProcess.kill();
+      process.exit(1);
+    });
+  }
+
+  // Handle process exit
   denoProcess.on("exit", (code) => {
-    process.exit(code ?? 0);
+    if (!options.watch) {
+      process.exit(code ?? 0);
+    }
+  });
+
+  // Handle interrupts
+  process.on("SIGINT", () => {
+    denoProcess.kill();
+    process.exit(0);
+  });
+
+  process.on("SIGTERM", () => {
+    denoProcess.kill();
+    process.exit(0);
   });
 }
