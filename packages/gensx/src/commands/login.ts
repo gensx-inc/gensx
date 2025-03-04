@@ -9,7 +9,12 @@ import ora from "ora";
 import picocolors from "picocolors";
 
 import { logger } from "../logger.js";
-import { API_BASE_URL, APP_BASE_URL, saveConfig } from "../utils/config.js";
+import {
+  API_BASE_URL,
+  APP_BASE_URL,
+  saveAuth,
+  saveState,
+} from "../utils/config.js";
 
 interface DeviceAuthRequest {
   requestId: string;
@@ -139,11 +144,11 @@ export async function login(): Promise<{ skipped: boolean }> {
     do {
       status = await pollLoginStatus(request.requestId, verificationCode);
       if (status.status === "completed") {
-        const config = {
+        await saveAuth({
           token: status.token,
           org: status.orgSlug,
-        };
-        await saveConfig(config, {
+        });
+        await saveState({
           hasCompletedFirstTimeSetup: true,
           lastLoginAt: new Date().toISOString(),
         });
