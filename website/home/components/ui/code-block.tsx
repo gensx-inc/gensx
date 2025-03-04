@@ -37,7 +37,7 @@ export const CodeBlock: FC<CodeBlockProps> = ({ code, language = "jsx" }) => {
   }, [code, language, memoizedHighlighter]);
 
   return (
-    <div className="rounded-[2px] border bg-white shadow-sm flex flex-col relative group overflow-hidden h-full">
+    <div className="rounded-[2px] border bg-white shadow-sm flex flex-col relative group overflow-hidden h-full max-h-[600px]">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-transparent opacity-0 transition-opacity pointer-events-none" />
       <div
         className="p-6 text-sm overflow-y-auto flex-1 bg-white/80 [&_pre]:!bg-transparent [&_pre]:!m-0"
