@@ -20,15 +20,22 @@ npm run start
 
 - gpt-4o
 - gpt-4o-mini
-- claude-3-5-sonnet
+- gpt-4.5
+- claude-3-7-sonnet
 - claude-3-5-haiku
-- llama-3.1-405b
 - llama-3.3-70b
 - deepseek-v3
-- grok-2
+- grok-3
 - gemini-2.0-flash
 - gemini-1.5-pro
 - qwen-2.5-plus
+
+### Reasoning models
+
+- o3-mini
+- claude-3-7-sonnet thinking
+- deepseek-r1
+- gemini-flash-2-thinking
 
 ## Other ideas to consider
 

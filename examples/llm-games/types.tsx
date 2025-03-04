@@ -6,6 +6,11 @@ export interface Game {
   board: Board;
 }
 
+export interface Provider {
+  apiKey: string;
+  baseURL?: string;
+}
+
 export interface Move {
   row: number;
   column: number;
@@ -13,7 +18,7 @@ export interface Move {
 
 export class Player {
   model?: string;
-  provider?: string;
+  provider?: Provider;
   strategy: LLMPlayerStrategy;
   type: PlayerType;
   name: string;
@@ -25,7 +30,7 @@ export class Player {
       strategy = "basic",
     }: {
       model?: string;
-      provider?: string;
+      provider?: Provider;
       type: PlayerType;
       strategy?: LLMPlayerStrategy;
     } = { type: "basic" },

@@ -82,7 +82,10 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
       };
     } else {
       return (
-        <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <OpenAIProvider
+          apiKey={player.provider?.apiKey}
+          baseURL={player.provider?.baseURL}
+        >
           <ChatCompletion
             model={player.model}
             messages={[

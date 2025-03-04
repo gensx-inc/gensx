@@ -68,6 +68,14 @@ export default function MarkdownToHTML({
           return <StyledImage {...props} />;
         },
 
+        ul(props) {
+          return <ul className="list-disc list-inside my-4" {...props} />;
+        },
+
+        li(props) {
+          return <li className="my-1" {...props} />;
+        },
+
         code(props) {
           const { children, className } = props;
           // If classname is found, it's a code block, not inline code
