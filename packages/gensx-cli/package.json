@@ -1,5 +1,5 @@
 {
-  "name": "@gensx/cli",
+  "name": "gensx",
   "version": "0.1.5",
   "description": "`GenSX command line tools",
   "repository": {
