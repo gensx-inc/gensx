@@ -1,7 +1,7 @@
 {
   "name": "@gensx/openai",
   "version": "0.1.10",
-  "description": "OpenAI integration for GenSX",
+  "description": "OpenAI integration for GenSX.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
