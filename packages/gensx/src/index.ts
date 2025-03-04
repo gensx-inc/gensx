@@ -1,5 +1,8 @@
 import { Command } from "commander";
 export * from "@gensx/core";
+// Legacy holdover from v0
+export { gsx } from "./gsx.js";
+export type { gsx as Gsx } from "./gsx.js";
 
 import packageJson from "../package.json" with { type: "json" };
 import { login } from "./commands/login.js";

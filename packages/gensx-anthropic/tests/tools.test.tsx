@@ -6,7 +6,7 @@ import {
   ToolResultBlockParam,
   ToolUseBlock,
 } from "@anthropic-ai/sdk/resources/messages";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
 
@@ -125,12 +125,12 @@ suite("Tools", () => {
       input: { input: "test" },
     };
 
-    const TestComponent = gsx.Component<{}, MessageParam>(
+    const TestComponent = gensx.Component<{}, MessageParam>(
       "TestComponent",
       () => <ToolExecutor tools={[testTool]} toolCalls={[toolUseBlock]} />,
     );
 
-    const result = await gsx.execute<MessageParam>(
+    const result = await gensx.execute<MessageParam>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -146,7 +146,7 @@ suite("Tools", () => {
   });
 
   test("ToolsCompletion handles tool-based conversation", async () => {
-    const TestComponent = gsx.Component<{}, Message>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, Message>("TestComponent", () => (
       <ToolsCompletion
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "test" }]}
@@ -155,7 +155,7 @@ suite("Tools", () => {
       />
     ));
 
-    const result = await gsx.execute<Message>(
+    const result = await gensx.execute<Message>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -173,7 +173,7 @@ suite("Tools", () => {
       { role: "user", content: "test message" },
     ];
 
-    const TestComponent = gsx.Component<{}, GSXChatCompletionResult>(
+    const TestComponent = gensx.Component<{}, GSXChatCompletionResult>(
       "TestComponent",
       () => (
         <GSXChatCompletion
@@ -185,7 +185,7 @@ suite("Tools", () => {
       ),
     );
 
-    const result = await gsx.execute<GSXChatCompletionResult>(
+    const result = await gensx.execute<GSXChatCompletionResult>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -224,7 +224,7 @@ suite("Tools", () => {
   });
 
   test("GSXChatCompletion works with tools", async () => {
-    const TestComponent = gsx.Component<{}, Message>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, Message>("TestComponent", () => (
       <GSXChatCompletion
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "test" }]}
@@ -233,7 +233,7 @@ suite("Tools", () => {
       />
     ));
 
-    const result = await gsx.execute<Message>(
+    const result = await gensx.execute<Message>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -253,12 +253,12 @@ suite("Tools", () => {
       input: { input: "test" },
     };
 
-    const TestComponent = gsx.Component("TestComponent", () => (
+    const TestComponent = gensx.Component("TestComponent", () => (
       <ToolExecutor tools={[testTool]} toolCalls={[toolUseBlock]} />
     ));
 
     await expect(() =>
-      gsx.execute(
+      gensx.execute(
         <AnthropicProvider apiKey="test">
           <TestComponent />
         </AnthropicProvider>,
@@ -274,12 +274,12 @@ suite("Tools", () => {
       input: { invalid: "test" },
     };
 
-    const TestComponent = gsx.Component("TestComponent", () => (
+    const TestComponent = gensx.Component("TestComponent", () => (
       <ToolExecutor tools={[testTool]} toolCalls={[toolUseBlock]} />
     ));
 
     await expect(() =>
-      gsx.execute(
+      gensx.execute(
         <AnthropicProvider apiKey="test">
           <TestComponent />
         </AnthropicProvider>,

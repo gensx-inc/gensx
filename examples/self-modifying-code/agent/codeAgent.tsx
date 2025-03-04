@@ -1,7 +1,7 @@
 // Agent based on https://www.anthropic.com/research/swe-bench-sonnet
 
 import { GSXChatCompletion } from "@gensx/anthropic";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { z } from "zod";
 
 import { useWorkspace } from "../workspace.js";
@@ -22,7 +22,7 @@ const codeAgentOutputSchema = z.object({
 
 export type CodeAgentOutput = z.infer<typeof codeAgentOutputSchema>;
 
-export const CodeAgent = gsx.Component<CodeAgentProps, CodeAgentOutput>(
+export const CodeAgent = gensx.Component<CodeAgentProps, CodeAgentOutput>(
   "CodeAgent",
   async ({ task, additionalInstructions, repoPath }) => {
     const workspace = useWorkspace();

@@ -10,11 +10,11 @@ import {
   GSXChatCompletionResult,
   GSXTool,
 } from "@gensx/anthropic";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { z } from "zod";
 
 function basicCompletion() {
-  const BasicCompletionExample = gsx.Component<{}, Message>(
+  const BasicCompletionExample = gensx.Component<{}, Message>(
     "BasicCompletionExample",
     () => (
       <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
@@ -35,7 +35,7 @@ function basicCompletion() {
     ),
   );
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "BasicCompletionExampleWorkflow",
     BasicCompletionExample,
   );
@@ -66,7 +66,7 @@ function tools() {
     },
   });
 
-  const ToolsExample = gsx.Component<{}, Message>("ToolsExample", () => (
+  const ToolsExample = gensx.Component<{}, Message>("ToolsExample", () => (
     <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
       <GSXChatCompletion
         system="you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. "
@@ -84,13 +84,13 @@ function tools() {
     </AnthropicProvider>
   ));
 
-  const workflow = gsx.Workflow("ToolsExampleWorkflow", ToolsExample);
+  const workflow = gensx.Workflow("ToolsExampleWorkflow", ToolsExample);
 
   return workflow.run({}, { printUrl: true });
 }
 
 function streamingCompletion() {
-  const StreamingCompletionWorkflow = gsx.Component<
+  const StreamingCompletionWorkflow = gensx.Component<
     {},
     Stream<RawMessageStreamEvent>
   >("StreamingCompletionWorkflow", () => (
@@ -111,7 +111,7 @@ function streamingCompletion() {
     </AnthropicProvider>
   ));
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "StreamingCompletionWorkflow",
     StreamingCompletionWorkflow,
   );
@@ -139,7 +139,7 @@ function structuredOutput() {
 
   type TrashRating = z.infer<typeof trashRatingSchema>;
 
-  const StructuredOutputWorkflow = gsx.Component<{}, TrashRating>(
+  const StructuredOutputWorkflow = gensx.Component<{}, TrashRating>(
     "StructuredOutputWorkflow",
     () => (
       <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
@@ -161,7 +161,7 @@ function structuredOutput() {
     ),
   );
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "StructuredOutputWorkflow",
     StructuredOutputWorkflow,
   );
@@ -217,7 +217,7 @@ function multiStepTools() {
     },
   });
 
-  const MultiStepToolsWorkflow = gsx.Component<{}, GSXChatCompletionResult>(
+  const MultiStepToolsWorkflow = gensx.Component<{}, GSXChatCompletionResult>(
     "MultiStepToolsWorkflow",
     () => (
       <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
@@ -243,7 +243,7 @@ Please explain your thinking as you go through this analysis.`,
     ),
   );
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "MultiStepToolsWorkflow",
     MultiStepToolsWorkflow,
   );
@@ -336,7 +336,7 @@ function toolsWithStructuredOutput() {
 
   type TrashBinReport = z.infer<typeof trashBinReportSchema>;
 
-  const ToolsWithStructuredOutputWorkflow = gsx.Component<{}, TrashBinReport>(
+  const ToolsWithStructuredOutputWorkflow = gensx.Component<{}, TrashBinReport>(
     "ToolsWithStructuredOutputWorkflow",
     () => (
       <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
@@ -358,7 +358,7 @@ function toolsWithStructuredOutput() {
     ),
   );
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "ToolsWithStructuredOutputWorkflow",
     ToolsWithStructuredOutputWorkflow,
   );

@@ -1,11 +1,11 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 import { FirecrawlProvider, ScrapePage } from "./firecrawlProvider.js";
 
 async function main() {
   const url = "https://gensx.com/docs/";
 
-  const ScrapePageExample = gsx.Component<{ url: string }, string>(
+  const ScrapePageExample = gensx.Component<{ url: string }, string>(
     "ScrapePageExample",
     ({ url }) => {
       return (
@@ -16,7 +16,10 @@ async function main() {
     },
   );
 
-  const workflow = gsx.Workflow("ScrapePageExampleWorkflow", ScrapePageExample);
+  const workflow = gensx.Workflow(
+    "ScrapePageExampleWorkflow",
+    ScrapePageExample,
+  );
 
   console.log("\n🚀 Scraping page from url:", url);
   const markdown = await workflow.run(

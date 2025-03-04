@@ -1,4 +1,4 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { ChatCompletion } from "@gensx/openai";
 
 export interface GenerateQueriesProps {
@@ -9,7 +9,7 @@ export interface GenerateQueriesOutput {
   queries: string[];
 }
 
-export const GenerateQueries = gsx.Component<
+export const GenerateQueries = gensx.Component<
   GenerateQueriesProps,
   GenerateQueriesOutput
 >("GenerateQueries", ({ prompt }) => {

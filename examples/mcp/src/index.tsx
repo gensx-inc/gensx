@@ -1,10 +1,10 @@
+import * as gensx from "@gensx/core";
 import { createMCPServerContext } from "@gensx/mcp";
 import {
   GSXChatCompletion,
   GSXChatCompletionResult,
   OpenAIProvider,
 } from "@gensx/openai";
-import { gsx } from "@gensx/core";
 
 import packageJson from "../package.json" assert { type: "json" };
 
@@ -27,7 +27,7 @@ const {
   serverArgs: ["-y", "@modelcontextprotocol/server-sequential-thinking"],
 });
 
-const RespondWithTools = gsx.Component<
+const RespondWithTools = gensx.Component<
   { userInput: string },
   GSXChatCompletionResult
 >("RespondWithTools", ({ userInput }) => {
@@ -54,9 +54,9 @@ const RespondWithTools = gsx.Component<
 });
 
 // Example workflow that uses the MCPToolsProvider
-const MCPToolsWorkflow = gsx.Workflow(
+const MCPToolsWorkflow = gensx.Workflow(
   "MCPToolsWorkflow",
-  gsx.Component<{ userInput: string }, string>(
+  gensx.Component<{ userInput: string }, string>(
     "MCPToolsExample",
     ({ userInput }) => {
       return (

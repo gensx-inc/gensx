@@ -1,8 +1,13 @@
-import { gsx, GSXToolParams } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
 
-import { AnthropicProvider, GSXChatCompletion, GSXTool } from "@/index.js";
+import {
+  AnthropicProvider,
+  GSXChatCompletion,
+  GSXTool,
+  GSXToolParams,
+} from "@/index.js";
 
 // Mock Anthropic client
 vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
@@ -70,13 +75,13 @@ suite("GSXChatCompletion with tools and streaming", () => {
       max_tokens: 1000,
     };
 
-    const TestComponent = gsx.Component<{}, unknown>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, unknown>("TestComponent", () => (
       // @ts-expect-error - Intentionally bypassing type checking to test runtime error
       <GSXChatCompletion {...props} />
     ));
 
     await expect(() =>
-      gsx.execute(
+      gensx.execute(
         <AnthropicProvider apiKey="test">
           <TestComponent />
         </AnthropicProvider>,
@@ -87,7 +92,7 @@ suite("GSXChatCompletion with tools and streaming", () => {
   });
 
   test("works with tools when streaming is false", async () => {
-    const TestComponent = gsx.Component<{}, unknown>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, unknown>("TestComponent", () => (
       <GSXChatCompletion
         stream={false}
         tools={[mockTool]}
@@ -98,7 +103,7 @@ suite("GSXChatCompletion with tools and streaming", () => {
     ));
 
     await expect(
-      gsx.execute(
+      gensx.execute(
         <AnthropicProvider apiKey="test">
           <TestComponent />
         </AnthropicProvider>,
@@ -107,7 +112,7 @@ suite("GSXChatCompletion with tools and streaming", () => {
   });
 
   test("works with tool params when streaming is false", async () => {
-    const TestComponent = gsx.Component<{}, unknown>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, unknown>("TestComponent", () => (
       <GSXChatCompletion
         stream={false}
         tools={[mockToolParams]}
@@ -118,7 +123,7 @@ suite("GSXChatCompletion with tools and streaming", () => {
     ));
 
     await expect(
-      gsx.execute(
+      gensx.execute(
         <AnthropicProvider apiKey="test">
           <TestComponent />
         </AnthropicProvider>,
@@ -127,7 +132,7 @@ suite("GSXChatCompletion with tools and streaming", () => {
   });
 
   test("works with streaming when tools are not provided", async () => {
-    const TestComponent = gsx.Component<{}, unknown>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, unknown>("TestComponent", () => (
       <GSXChatCompletion
         stream={true}
         model="claude-3-5-sonnet-latest"
@@ -137,7 +142,7 @@ suite("GSXChatCompletion with tools and streaming", () => {
     ));
 
     await expect(
-      gsx.execute(
+      gensx.execute(
         <AnthropicProvider apiKey="test">
           <TestComponent />
         </AnthropicProvider>,

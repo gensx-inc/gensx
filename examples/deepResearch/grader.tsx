@@ -1,4 +1,4 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { ChatCompletion } from "@gensx/openai";
 
 import { ArxivEntry } from "./arxiv.js";
@@ -12,7 +12,7 @@ export interface GradeDocumentOutput {
   useful: boolean;
 }
 
-export const GradeDocument = gsx.Component<GradeDocumentProps, boolean>(
+export const GradeDocument = gensx.Component<GradeDocumentProps, boolean>(
   "GradeDocument",
   ({ prompt, document }) => {
     const systemMessage = `You are a helpful research assistant.

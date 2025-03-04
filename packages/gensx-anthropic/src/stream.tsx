@@ -7,7 +7,8 @@ import {
   ToolUseBlock,
 } from "@anthropic-ai/sdk/resources/messages";
 import { Stream } from "@anthropic-ai/sdk/streaming";
-import { gsx, GSXToolParams } from "@gensx/core";
+import * as gensx from "@gensx/core";
+import { GSXToolParams } from "@gensx/core";
 
 import { AnthropicChatCompletion } from "./anthropic.js";
 import { GSXTool } from "./tools.js";
@@ -34,7 +35,7 @@ export const streamCompletionImpl = async (
   // If we have tools, first make a synchronous call to get tool calls
   if (tools?.length) {
     // Make initial completion to get tool calls
-    const completion = await gsx.execute<Message>(
+    const completion = await gensx.execute<Message>(
       <AnthropicChatCompletion
         {...rest}
         tools={tools.map((t) => t.definition)}
@@ -44,7 +45,7 @@ export const streamCompletionImpl = async (
 
     // If no tool calls, proceed with streaming the original response
     if (completion.stop_reason !== "tool_use") {
-      return gsx.execute<Stream<RawMessageStreamEvent>>(
+      return gensx.execute<Stream<RawMessageStreamEvent>>(
         <AnthropicChatCompletion {...rest} stream={true} />,
       );
     }
@@ -60,7 +61,7 @@ export const streamCompletionImpl = async (
     });
 
     // Make final streaming call with all messages
-    return gsx.execute<Stream<RawMessageStreamEvent>>(
+    return gensx.execute<Stream<RawMessageStreamEvent>>(
       <AnthropicChatCompletion
         {...rest}
         messages={[
@@ -75,7 +76,7 @@ export const streamCompletionImpl = async (
   }
 
   // No tools, just stream normally
-  return gsx.execute<Stream<RawMessageStreamEvent>>(
+  return gensx.execute<Stream<RawMessageStreamEvent>>(
     <AnthropicChatCompletion
       {...rest}
       tools={tools?.map((t) => t.definition)}
@@ -84,7 +85,7 @@ export const streamCompletionImpl = async (
   );
 };
 
-export const StreamCompletion = gsx.Component<
+export const StreamCompletion = gensx.Component<
   StreamCompletionProps,
   StreamCompletionOutput
 >("StreamCompletion", streamCompletionImpl);

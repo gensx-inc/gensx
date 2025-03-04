@@ -1,6 +1,7 @@
 import type { z } from "zod";
 
-import { gsx, type GsxComponent } from "@gensx/core";
+import * as gensx from "@gensx/core";
+import { GsxComponent } from "@gensx/core";
 import * as ai from "ai";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -8,11 +9,14 @@ export function createGSXComponent<TFn extends (...args: any[]) => any>(
   name: string,
   fn: TFn,
 ) {
-  return gsx.Component<Parameters<TFn>[0], Awaited<ReturnType<TFn>>>(name, fn);
+  return gensx.Component<Parameters<TFn>[0], Awaited<ReturnType<TFn>>>(
+    name,
+    fn,
+  );
 }
 
 // Define a more specific type for StreamObject that allows schema
-type StreamObjectType = GsxComponent<
+type StreamObjectType = gensx.GsxComponent<
   // Make output optional and allow schema
   Omit<Parameters<typeof ai.streamObject>[0], "output"> & {
     output?: "object" | "array" | "no-schema";

@@ -1,5 +1,5 @@
 import { GSXChatCompletion } from "@gensx/anthropic";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { z } from "zod";
 
 import {
@@ -22,7 +22,7 @@ const needsGoalSchema = z.object({
 
 type DecideIfGoalAchievedOutput = z.infer<typeof needsGoalSchema>;
 
-const DecideIfGoalAchieved = gsx.Component<{}, DecideIfGoalAchievedOutput>(
+const DecideIfGoalAchieved = gensx.Component<{}, DecideIfGoalAchievedOutput>(
   "DecideIfGoalAchieved",
   () => {
     const context = useWorkspaceContext();
@@ -64,7 +64,7 @@ Remember:
   },
 );
 
-const GenerateNewGoal = gsx.Component<{}, string>(
+const GenerateNewGoal = gensx.Component<{}, string>(
   "GenerateNewGoal",
   async () => {
     const context = useWorkspaceContext();
@@ -110,7 +110,7 @@ Remember:
   },
 );
 
-export const GenerateGoalState = gsx.Component<
+export const GenerateGoalState = gensx.Component<
   GenerateGoalStateProps,
   GoalDecision
 >("GenerateGoalState", async () => {

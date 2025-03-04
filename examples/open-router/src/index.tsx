@@ -1,4 +1,4 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 
 interface RespondProps {
@@ -6,7 +6,7 @@ interface RespondProps {
 }
 type RespondOutput = string;
 
-const GenerateText = gsx.Component<RespondProps, RespondOutput>(
+const GenerateText = gensx.Component<RespondProps, RespondOutput>(
   "GenerateText",
   ({ userInput }) => (
     <ChatCompletion
@@ -25,19 +25,22 @@ const GenerateText = gsx.Component<RespondProps, RespondOutput>(
   ),
 );
 
-const OpenRouterExampleComponent = gsx.Component<{ userInput: string }, string>(
-  "OpenRouter",
-  ({ userInput }) => (
-    <OpenAIProvider
-      apiKey={process.env.OPENROUTER_API_KEY}
-      baseURL="https://openrouter.ai/api/v1"
-    >
-      <GenerateText userInput={userInput} />
-    </OpenAIProvider>
-  ),
-);
+const OpenRouterExampleComponent = gensx.Component<
+  { userInput: string },
+  string
+>("OpenRouter", ({ userInput }) => (
+  <OpenAIProvider
+    apiKey={process.env.OPENROUTER_API_KEY}
+    baseURL="https://openrouter.ai/api/v1"
+  >
+    <GenerateText userInput={userInput} />
+  </OpenAIProvider>
+));
 
-const workflow = gsx.Workflow("OpenRouterWorkflow", OpenRouterExampleComponent);
+const workflow = gensx.Workflow(
+  "OpenRouterWorkflow",
+  OpenRouterExampleComponent,
+);
 
 const result = await workflow.run(
   {

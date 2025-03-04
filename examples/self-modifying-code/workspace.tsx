@@ -4,19 +4,19 @@ import fsPromises from "fs/promises";
 import os from "os";
 import path from "path";
 
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
-const context = gsx.createContext<Workspace | undefined>(undefined);
+const context = gensx.createContext<Workspace | undefined>(undefined);
 
-export const WorkspaceProvider = gsx.Component<{ workspace: Workspace }, never>(
-  "WorkspaceProvider",
-  ({ workspace }) => {
-    return <context.Provider value={workspace} />;
-  },
-);
+export const WorkspaceProvider = gensx.Component<
+  { workspace: Workspace },
+  never
+>("WorkspaceProvider", ({ workspace }) => {
+  return <context.Provider value={workspace} />;
+});
 
 export const useWorkspace = () => {
-  const workspace = gsx.useContext(context);
+  const workspace = gensx.useContext(context);
   if (!workspace) {
     throw new Error("Workspace not found");
   }
@@ -24,7 +24,7 @@ export const useWorkspace = () => {
 };
 
 export const useWorkspaceContext = () => {
-  const workspace = gsx.useContext(context);
+  const workspace = gensx.useContext(context);
   if (!workspace) {
     throw new Error("Workspace not found");
   }
@@ -32,7 +32,7 @@ export const useWorkspaceContext = () => {
 };
 
 export const updateWorkspaceContext = (update: Partial<AgentContext>) => {
-  const workspace = gsx.useContext(context);
+  const workspace = gensx.useContext(context);
   if (!workspace) {
     throw new Error("Workspace not found");
   }

@@ -1,4 +1,4 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 import { Board } from "./Board.js";
 import { MakeMove } from "./MakeMove.js";
@@ -26,7 +26,7 @@ interface PlayerStats {
   invalidMoves: number;
 }
 
-export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
+export const PlayGame = gensx.Component<PlayGameProps, PlayGameResult>(
   "PlayGame",
   async ({ playerX, playerO }) => {
     const playerXStats: PlayerStats = {
@@ -59,7 +59,7 @@ export const PlayGame = gsx.Component<PlayGameProps, PlayGameResult>(
           name: `Move ${moveNumber}: ${currentPlayer.name} (${currentPlayerSymbol})`,
         },
       });
-      // const moveDetails = gsx.execute(<MakeMove name="move1"/>)
+      // const moveDetails = gensx.execute(<MakeMove name="move1"/>)
 
       let { move, isFallback } = moveDetails;
 

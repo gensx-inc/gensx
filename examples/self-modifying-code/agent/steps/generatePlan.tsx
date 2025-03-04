@@ -1,5 +1,5 @@
 import { ChatCompletion } from "@gensx/anthropic";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 import {
   updateWorkspaceContext,
@@ -9,7 +9,7 @@ import { bashTool } from "../tools/bashTool.js";
 
 interface GeneratePlanProps {}
 
-export const GeneratePlan = gsx.Component<GeneratePlanProps, string>(
+export const GeneratePlan = gensx.Component<GeneratePlanProps, string>(
   "GeneratePlan",
   async () => {
     const context = useWorkspaceContext();

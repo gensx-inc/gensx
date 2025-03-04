@@ -31,7 +31,7 @@ interface GreetUserProps {
 }
 type GreetUserOutput = string;
 
-const GreetUser = gsx.Component<GreetUserProps, GreetUserOutput>(
+const GreetUser = gensx.Component<GreetUserProps, GreetUserOutput>(
   "GreetUser",
   async ({ name }) => {
     return `Hello, ${name}!`;
@@ -42,7 +42,7 @@ const GreetUser = gsx.Component<GreetUserProps, GreetUserOutput>(
 Components can return data as well as other components. Here's an example of a component that returns another component:
 
 ```tsx
-const GreetUser = gsx.Component<GreetUserProps, GreetUserOutput>(
+const GreetUser = gensx.Component<GreetUserProps, GreetUserOutput>(
   "GreetUser",
   async ({ name }) => {
     return (
@@ -64,7 +64,7 @@ const GreetUser = gsx.Component<GreetUserProps, GreetUserOutput>(
 Components can also return arrays and structured objects containing other components. The pattern also works with array operations like `map` for processing items in parallel.
 
 ```tsx
-const AnalyzePosts = gsx.Component<AnalyzePostsProps, AnalyzePostsOutput>(
+const AnalyzePosts = gensx.Component<AnalyzePostsProps, AnalyzePostsOutput>(
   "AnalyzePosts",
   ({ posts }) => ({
     analyses: posts.map((post) => ({
@@ -100,13 +100,13 @@ While GenSX uses a [tree-based structure with JSX](https://gensx.com/docs/why-js
 
 GenSX provides two main types of components:
 
-1. **Components** (`gsx.Component`) - Components that produce an output value and can handle both synchronous and asynchronous operations
-2. **Streaming Components** (`gsx.StreamComponent`) - Components designed to handle responses from LLMs, working in both streaming and non-streaming contexts
+1. **Components** (`gensx.Component`) - Components that produce an output value and can handle both synchronous and asynchronous operations
+2. **Streaming Components** (`gensx.StreamComponent`) - Components designed to handle responses from LLMs, working in both streaming and non-streaming contexts
 
 The power of a `StreamComponent` is that a single implementation can be used interchangeably in both streaming and non-streaming contexts without any code changes - you just toggle the `stream` prop:
 
 ```tsx
-const stream = await gsx.execute<Streamable>(
+const stream = await gensx.execute<Streamable>(
   <MyStreamingComponent input="some data" stream={true} />,
 );
 
@@ -118,10 +118,10 @@ for await (const chunk of stream) {
 
 ## Running workflows
 
-Workflows and components are synonymous in GenSX. You'll often design workflows that are composed of multiple components, but they can also just be a single component. Regardless, you'll need to define a top level component that will be used to run the workflow. You can then use `gsx.Workflow().run(props)` to run the workflow:
+Workflows and components are synonymous in GenSX. You'll often design workflows that are composed of multiple components, but they can also just be a single component. Regardless, you'll need to define a top level component that will be used to run the workflow. You can then use `gensx.Workflow().run(props)` to run the workflow:
 
 ```tsx
-const result = await gsx
+const result = await gensx
   .Workflow("MyWorkflow", MyComponent)
   .run({ input: "some data" });
 ```
@@ -134,31 +134,31 @@ Rather than having to run an entire workflow to test a change to a single compon
 
 ## Executing sub-workflows
 
-In some cases, you may need to run a sub-workflow within a larger workflow. You can do this by using `gsx.execute()`:
+In some cases, you may need to run a sub-workflow within a larger workflow. You can do this by using `gensx.execute()`:
 
 ```tsx
-const result = await gsx.execute(<MyComponent input="some data" />);
+const result = await gensx.execute(<MyComponent input="some data" />);
 ```
 
-This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `gsx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow.
+This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `gensx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow.
 
 Sub-workflows are especially useful for more complex operations like map/reduce:
 
 ```tsx
-const AnalyzeReviews = gsx.Component<AnalyzeReviewsProps, AnalyzeReviewsOutput>(
-  "AnalyzeReviews",
-  async ({ reviews }) => {
-    // Map: Extract topics from each review in parallel
-    const topics = await gsx.execute<GetTopicOutput[]>(
-      reviews.map((r) => <GetTopic review={r} />),
-    );
-    // Reduce: Count frequency of each topic
-    return topics.reduce(
-      (counts, topic) => ({ ...counts, [topic]: (counts[topic] || 0) + 1 }),
-      {},
-    );
-  },
-);
+const AnalyzeReviews = gensx.Component<
+  AnalyzeReviewsProps,
+  AnalyzeReviewsOutput
+>("AnalyzeReviews", async ({ reviews }) => {
+  // Map: Extract topics from each review in parallel
+  const topics = await gensx.execute<GetTopicOutput[]>(
+    reviews.map((r) => <GetTopic review={r} />),
+  );
+  // Reduce: Count frequency of each topic
+  return topics.reduce(
+    (counts, topic) => ({ ...counts, [topic]: (counts[topic] || 0) + 1 }),
+    {},
+  );
+});
 ```
 
 ## Contexts
@@ -177,16 +177,16 @@ interface GreetUserProps {
 }
 
 // Create a context with a default value
-const UserContext = gsx.createContext({ name: "" });
+const UserContext = gensx.createContext({ name: "" });
 
 // Use the context in a component
-const GreetUser = gsx.Component<{}, string>("GreetUser", () => {
-  const user = gsx.useContext(UserContext);
+const GreetUser = gensx.Component<{}, string>("GreetUser", () => {
+  const user = gensx.useContext(UserContext);
   return `Hello, ${user.name}!`;
 });
 
 // Provide a value to the context
-const ContextExample = gsx.Component<{}, string>("ContextExample", () => (
+const ContextExample = gensx.Component<{}, string>("ContextExample", () => (
   <UserContext.Provider value={{ name: "John" }}>
     <GreetUser />
   </UserContext.Provider>
@@ -204,7 +204,7 @@ Providers are a specialized use of contexts that focus on managing configuration
 The main provider available today is the `OpenAIProvider`, which manages your OpenAI API key:
 
 ```tsx
-const BasicChat = gsx.Component<BasicChatProps, string>(
+const BasicChat = gensx.Component<BasicChatProps, string>(
   "BasicChat",
   async ({ prompt }) => {
     return (

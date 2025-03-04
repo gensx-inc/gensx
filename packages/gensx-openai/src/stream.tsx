@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { gsx, GSXToolParams } from "@gensx/core";
+import * as gensx from "@gensx/core";
+import { GSXToolParams } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
@@ -33,7 +34,7 @@ export const streamCompletionImpl = async (
   // If we have tools, first make a synchronous call to get tool calls
   if (tools?.length) {
     // Make initial completion to get tool calls
-    const completion = await gsx.execute<ChatCompletionOutput>(
+    const completion = await gensx.execute<ChatCompletionOutput>(
       <OpenAIChatCompletion
         {...rest}
         tools={tools.map((t) => t.definition)}
@@ -44,7 +45,7 @@ export const streamCompletionImpl = async (
     const toolCalls = completion.choices[0]?.message?.tool_calls;
     // If no tool calls, proceed with streaming the original response
     if (!toolCalls?.length) {
-      return gsx.execute<Stream<ChatCompletionChunk>>(
+      return gensx.execute<Stream<ChatCompletionChunk>>(
         <OpenAIChatCompletion {...rest} stream={true} />,
       );
     }
@@ -56,7 +57,7 @@ export const streamCompletionImpl = async (
     });
 
     // Make final streaming call with all messages
-    return gsx.execute<Stream<ChatCompletionChunk>>(
+    return gensx.execute<Stream<ChatCompletionChunk>>(
       <OpenAIChatCompletion
         {...rest}
         messages={[
@@ -70,7 +71,7 @@ export const streamCompletionImpl = async (
   }
 
   // No tools, just stream normally
-  return gsx.execute<Stream<ChatCompletionChunk>>(
+  return gensx.execute<Stream<ChatCompletionChunk>>(
     <OpenAIChatCompletion
       {...rest}
       tools={tools?.map((t) => t.definition)}
@@ -79,7 +80,7 @@ export const streamCompletionImpl = async (
   );
 };
 
-export const StreamCompletion = gsx.Component<
+export const StreamCompletion = gensx.Component<
   StreamCompletionProps,
   StreamCompletionOutput
 >("StreamCompletion", streamCompletionImpl);

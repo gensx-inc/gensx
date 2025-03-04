@@ -1,4 +1,4 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import OpenAI, { ClientOptions } from "openai";
 import {
   ChatCompletion as ChatCompletionOutput,
@@ -10,11 +10,11 @@ import {
 import { Stream } from "openai/streaming";
 
 // Create a context for OpenAI
-export const OpenAIContext = gsx.createContext<{
+export const OpenAIContext = gensx.createContext<{
   client?: OpenAI;
 }>({});
 
-export const OpenAIProvider = gsx.Component<ClientOptions, never>(
+export const OpenAIProvider = gensx.Component<ClientOptions, never>(
   "OpenAIProvider",
   (args) => {
     const client = new OpenAI(args);
@@ -38,11 +38,11 @@ export type OpenAIChatCompletionOutput =
   | ChatCompletionOutput
   | Stream<ChatCompletionChunk>; // OpenAI chat completion component that directly calls the API
 
-export const OpenAIChatCompletion = gsx.Component<
+export const OpenAIChatCompletion = gensx.Component<
   OpenAIChatCompletionProps,
   OpenAIChatCompletionOutput
 >("OpenAIChatCompletion", async (props) => {
-  const context = gsx.useContext(OpenAIContext);
+  const context = gensx.useContext(OpenAIContext);
   if (!context.client) {
     throw new Error(
       "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",

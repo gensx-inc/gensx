@@ -1,4 +1,4 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 
 import { getTopStoryDetails, type HNStory } from "./hn.js";
@@ -13,7 +13,7 @@ interface WriteTweetProps {
 }
 
 type WriteTweetOutput = string;
-const WriteTweet = gsx.Component<WriteTweetProps, WriteTweetOutput>(
+const WriteTweet = gensx.Component<WriteTweetProps, WriteTweetOutput>(
   "WriteTweet",
   ({ context, prompt }) => {
     const PROMPT = `
@@ -47,7 +47,7 @@ interface EditReportProps {
 }
 
 type EditReportOutput = string;
-const EditReport = gsx.Component<EditReportProps, EditReportOutput>(
+const EditReport = gensx.Component<EditReportProps, EditReportOutput>(
   "EditReport",
   ({ content }) => {
     const PROMPT = `
@@ -85,7 +85,7 @@ interface AnalyzeCommentsProps {
 
 type AnalyzeCommentsOutput = string;
 
-const AnalyzeComments = gsx.Component<
+const AnalyzeComments = gensx.Component<
   AnalyzeCommentsProps,
   AnalyzeCommentsOutput
 >("AnalyzeComments", ({ postId, comments }) => {
@@ -142,7 +142,7 @@ interface SummarizePostProps {
 }
 
 type SummarizePostOutput = string;
-const SummarizePost = gsx.Component<SummarizePostProps, SummarizePostOutput>(
+const SummarizePost = gensx.Component<SummarizePostProps, SummarizePostOutput>(
   "SummarizePost",
   ({ story }) => {
     const PROMPT = `
@@ -205,10 +205,11 @@ interface GenerateReportProps {
 
 type GenerateReportOutput = string;
 
-const GenerateReport = gsx.Component<GenerateReportProps, GenerateReportOutput>(
-  "GenerateReport",
-  ({ analyses }) => {
-    const PROMPT = `
+const GenerateReport = gensx.Component<
+  GenerateReportProps,
+  GenerateReportOutput
+>("GenerateReport", ({ analyses }) => {
+  const PROMPT = `
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
 You will be given input summarizing the top posts from hacker news, and an analysis of the comments on each post.
 
@@ -232,37 +233,36 @@ Where appropriate, interleave demonstrative comments to help support your points
 Shoot for 1000 words.
     `.trim();
 
-    const context = analyses
-      .map(({ summary, commentAnalysis }) =>
-        `
+  const context = analyses
+    .map(({ summary, commentAnalysis }) =>
+      `
 ### Post Summary
 ${summary}
 
 ### Comment Analysis
 ${commentAnalysis}
     `.trim(),
-      )
-      .join("\n\n");
+    )
+    .join("\n\n");
 
-    return (
-      <ChatCompletion
-        messages={[
-          { role: "system", content: PROMPT },
-          { role: "user", content: context },
-        ]}
-        model="gpt-4o"
-        temperature={0.7}
-      />
-    );
-  },
-);
+  return (
+    <ChatCompletion
+      messages={[
+        { role: "system", content: PROMPT },
+        { role: "user", content: context },
+      ]}
+      model="gpt-4o"
+      temperature={0.7}
+    />
+  );
+});
 
 interface FetchHNPostsProps {
   limit: number;
 }
 
 type FetchHNPostsOutput = HNStory[]; // Array of stories
-const FetchHNPosts = gsx.Component<FetchHNPostsProps, FetchHNPostsOutput>(
+const FetchHNPosts = gensx.Component<FetchHNPostsProps, FetchHNPostsOutput>(
   "FetchHNPosts",
   async ({ limit }) => {
     // We can only get up to 500 stories from the API
@@ -295,19 +295,19 @@ interface AnalyzeHNPostsOutput {
   }[];
 }
 
-const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
-  "AnalyzeHNPosts",
-  ({ stories }) => {
-    return {
-      analyses: stories.map((story) => ({
-        summary: <SummarizePost story={story} />,
-        commentAnalysis: (
-          <AnalyzeComments postId={story.id} comments={story.comments} />
-        ),
-      })),
-    };
-  },
-);
+const AnalyzeHNPosts = gensx.Component<
+  AnalyzeHNPostsProps,
+  AnalyzeHNPostsOutput
+>("AnalyzeHNPosts", ({ stories }) => {
+  return {
+    analyses: stories.map((story) => ({
+      summary: <SummarizePost story={story} />,
+      commentAnalysis: (
+        <AnalyzeComments postId={story.id} comments={story.comments} />
+      ),
+    })),
+  };
+});
 
 interface AnalyzeHackerNewsTrendsProps {
   postCount: number;
@@ -318,7 +318,7 @@ export interface AnalyzeHackerNewsTrendsOutput {
   tweet: string;
 }
 
-export const AnalyzeHackerNewsTrends = gsx.Component<
+export const AnalyzeHackerNewsTrends = gensx.Component<
   AnalyzeHackerNewsTrendsProps,
   AnalyzeHackerNewsTrendsOutput
 >("AnalyzeHackerNewsTrends", ({ postCount }) => {

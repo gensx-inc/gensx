@@ -5,7 +5,7 @@ import {
   MessageCreateParamsNonStreaming,
   ToolUseBlock,
 } from "@anthropic-ai/sdk/resources/index.mjs";
-import { gsx, GSXToolParams } from "@gensx/core";
+import * as gensx from "@gensx/core";
 //import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { z } from "zod";
 
@@ -18,7 +18,7 @@ type StructuredOutputProps<O = unknown> = Omit<
   "stream" | "tools"
 > & {
   outputSchema: z.ZodSchema<O>;
-  tools?: (GSXTool<any> | GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | gensx.GSXToolParams<any>)[];
   retry?: {
     maxAttempts?: number;
     backoff?: "exponential" | "linear";
@@ -87,7 +87,7 @@ export const structuredOutputImpl = async <T,>(
       }
 
       // Make initial completion
-      let completion = await gsx.execute<Message>(
+      let completion = await gensx.execute<Message>(
         <AnthropicChatCompletion
           {...rest}
           messages={currentMessages}
@@ -117,7 +117,7 @@ export const structuredOutputImpl = async <T,>(
           });
           currentMessages.push(toolResponses);
 
-          completion = await gsx.execute<Message>(
+          completion = await gensx.execute<Message>(
             <AnthropicChatCompletion
               {...rest}
               messages={currentMessages}
@@ -202,7 +202,7 @@ export const structuredOutputImpl = async <T,>(
 };
 
 // Updated component definition
-export const StructuredOutput = gsx.Component<
+export const StructuredOutput = gensx.Component<
   StructuredOutputProps,
   StructuredOutputOutput<unknown>
 >("StructuredOutput", structuredOutputImpl);

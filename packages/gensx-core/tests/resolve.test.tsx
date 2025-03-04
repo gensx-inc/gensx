@@ -1,23 +1,26 @@
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "@/index.js";
+import * as gensx from "@/index.js";
 
 suite("resolveDeep", () => {
-  const Doubler = gsx.Component<{ foo: number }, number>("Doubler", (props) => {
-    return props.foo * 2;
-  });
+  const Doubler = gensx.Component<{ foo: number }, number>(
+    "Doubler",
+    (props) => {
+      return props.foo * 2;
+    },
+  );
 
-  const ArrayComponent = gsx.Component<{ inputs: number[] }, number[]>(
+  const ArrayComponent = gensx.Component<{ inputs: number[] }, number[]>(
     "ArrayComponent",
     (props) => {
-      return gsx
+      return gensx
         .array(props.inputs)
         .map<number>((input) => <Doubler foo={input} />);
     },
   );
 
   test("will resolve GsxArray", async () => {
-    const result = await gsx.execute(<ArrayComponent inputs={[1, 2, 3]} />);
+    const result = await gensx.execute(<ArrayComponent inputs={[1, 2, 3]} />);
     expect(result).toEqual([2, 4, 6]);
   });
 });

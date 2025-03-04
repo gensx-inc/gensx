@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 import { ProcessDocument } from "./reusableComponents.js";
 
@@ -29,7 +29,7 @@ async function main() {
     "utf8",
   );
 
-  const workflow = gsx.Workflow("ProcessDocumentWorkflow", ProcessDocument);
+  const workflow = gensx.Workflow("ProcessDocumentWorkflow", ProcessDocument);
   const documentMetadata = await workflow.run({
     document,
     defaultProvider: gpt4oProviderConfig,

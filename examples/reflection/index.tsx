@@ -1,37 +1,37 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 
 import { createReflectionLoop, ReflectionOutput } from "./reflection.js";
 
-const ImproveText = gsx.Component<{ input: string; feedback: string }, string>(
-  "ImproveText",
-  ({ input, feedback }) => {
-    console.log("\n📝 Current draft:\n", input);
-    console.log("\n🔍 Feedback:\n", feedback);
-    console.log("=".repeat(50));
-    const systemPrompt = `You're a helpful assistant that improves text by fixing typos, removing buzzwords, jargon, and making the writing sound more authentic.
+const ImproveText = gensx.Component<
+  { input: string; feedback: string },
+  string
+>("ImproveText", ({ input, feedback }) => {
+  console.log("\n📝 Current draft:\n", input);
+  console.log("\n🔍 Feedback:\n", feedback);
+  console.log("=".repeat(50));
+  const systemPrompt = `You're a helpful assistant that improves text by fixing typos, removing buzzwords, jargon, and making the writing sound more authentic.
 
     You will be given a piece of text and feedback on the text. Your job is to improve the text based on the feedback. You should return the improved text and nothing else.`;
-    const prompt = `<feedback>
+  const prompt = `<feedback>
     ${feedback}
     </feedback>
 
     <text>
     ${input}
     </text>`;
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ]}
-      />
-    );
-  },
-);
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ]}
+    />
+  );
+});
 
-const EvaluateText = gsx.Component<{ input: string }, ReflectionOutput>(
+const EvaluateText = gensx.Component<{ input: string }, ReflectionOutput>(
   "EvaluateText",
   ({ input }) => {
     const systemPrompt = `You're a helpful assistant that evaluates text and suggests improvements if needed.
@@ -75,7 +75,7 @@ const EvaluateText = gsx.Component<{ input: string }, ReflectionOutput>(
   },
 );
 
-export const ImproveTextWithReflection = gsx.Component<
+export const ImproveTextWithReflection = gensx.Component<
   {
     text: string;
     maxIterations?: number;
@@ -102,7 +102,7 @@ Our mission-critical systems utilize cloud-native architectures and next-generat
 
 Through our holistic approach to disruptive innovation, we create game-changing solutions that move the needle and generate impactful results. Our best-of-breed technology stack combined with our customer-centric focus allows us to ideate and iterate rapidly in this fast-paced market.`;
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "ReflectionWorkflow",
     ImproveTextWithReflection,
   );

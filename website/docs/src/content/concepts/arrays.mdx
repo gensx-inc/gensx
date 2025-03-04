@@ -1,6 +1,6 @@
 ---
 title: Using array operations
-description: Learn how to work with gsx.Array and handle arrays in your workflows
+description: Learn how to work with gensx.array and handle arrays in your workflows
 ---
 
 # Arrays
@@ -11,17 +11,17 @@ GenSX includes an array primitive that lets you operate over arrays of component
 - Translating a single document into multiple languages
 - Analyzing key themes in a set of customer reviews
 
-When you use `gsx.array`, GenSX takes care of executing components and producing outputs as needed so that you can focus on the logic of your workflow.
+When you use `gensx.array`, GenSX takes care of executing components and producing outputs as needed so that you can focus on the logic of your workflow.
 
 ## Example
 
-Here's a practical example of using `gsx.array`. The `Research` component below receives a prompt and a list of queries, and then returns a list of summaries from relevant research papers.
+Here's a practical example of using `gensx.array`. The `Research` component below receives a prompt and a list of queries, and then returns a list of summaries from relevant research papers.
 
 ```tsx
-const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
+const Research = gensx.Component<ResearchProps, ArxivSummary[]>(
   "Research",
   async ({ queries: string[], prompt: string }) => {
-    return await gsx
+    return await gensx
       .array<string>(queries)
       .flatMap<ArxivEntry>((query) => <ArxivSearch query={query} maxResults={3} />)
       .filter((document) => (
@@ -47,29 +47,29 @@ You can find the full code for this in the [Deep Research example](https://githu
 
 ## Working with arrays
 
-Now that you've seen an example showing a lot of the functionality of `gsx.array`, let's explore each of these operations in more detail.
+Now that you've seen an example showing a lot of the functionality of `gensx.array`, let's explore each of these operations in more detail.
 
 ### Creating an array
 
 To access the array operations, you first need to create a `GsxArray`. You can create an array from raw values:
 
 ```tsx
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 // Create from raw values
-const numbers = gsx.array<number>([1, 2, 3]);
+const numbers = gensx.array<number>([1, 2, 3]);
 ```
 
 You can also create arrays from components:
 
 ```tsx
-const NumberWrapper = gsx.Component<{ n: number }, number>(
+const NumberWrapper = gensx.Component<{ n: number }, number>(
   "NumberWrapper",
   ({ n }) => n,
 );
 
 // Create from components
-const wrappedNumbers = gsx.array<NumberWrapper>([
+const wrappedNumbers = gensx.array<NumberWrapper>([
   <NumberWrapper n={1} />,
   <NumberWrapper n={2} />,
   <NumberWrapper n={3} />,
@@ -80,14 +80,14 @@ To convert a `GsxArray` back to a plain array, you simply call the `toArray()` m
 
 ### Map and FlatMap
 
-`gsx.array` supports both `map` and `flatMap` operations. Both of these operations behave exactly as you'd expect if you're familiar with `array.map` and `array.flatMap` in JavaScript.
+`gensx.array` supports both `map` and `flatMap` operations. Both of these operations behave exactly as you'd expect if you're familiar with `array.map` and `array.flatMap` in JavaScript.
 
 #### Map
 
 Map transforms each element in an array using a component:
 
 ```tsx
-const numbers = gsx.array([1, 2, 3]);
+const numbers = gensx.array([1, 2, 3]);
 
 const doubled = await numbers
   .map<number>((n) => <NumberDoubler value={n} />)
@@ -102,7 +102,7 @@ Similarly, flatMap invokes a component for each element in the array and flatten
 For example, the code below retrieves an array of search results for each query and flattens the results into a single array:
 
 ```tsx
-const queries = gsx.array(["chain of thought", "reasoning models"]);
+const queries = gensx.array(["chain of thought", "reasoning models"]);
 
 const documents = await queries
   .flatMap<SearchResult>((query) => (
@@ -124,7 +124,7 @@ When you filter with a component, the component needs to result in a boolean val
 
 ```tsx
 // Define a component that returns a boolean
-const EvenNumberFilter = gsx.Component<{ value: number }, boolean>(
+const EvenNumberFilter = gensx.Component<{ value: number }, boolean>(
   "EvenNumberFilter",
   ({ value }) => {
     return value % 2 === 0;
@@ -132,7 +132,7 @@ const EvenNumberFilter = gsx.Component<{ value: number }, boolean>(
 );
 
 // Use a component that returns a boolean to filter
-const evenNumbers = await gsx
+const evenNumbers = await gensx
   .array<number>([10, 11, 12, 13, 14])
   .filter((n) => <EvenNumberFilter value={n} />)
   .toArray();
@@ -141,7 +141,7 @@ const evenNumbers = await gsx
 You can also use the component's child function to convert the output of a component into a boolean:
 
 ```tsx
-const evenNumbers = await gsx
+const evenNumbers = await gensx
   .array<number>([10, 11, 12, 13, 14])
   .filter((n) => (
     <EvenOrOdd value={n}>
@@ -156,7 +156,7 @@ const evenNumbers = await gsx
 When you filter with a boolean expression, you use the filter method just like you would with JavaScript arrays:
 
 ```tsx
-const evenNumbers = await gsx
+const evenNumbers = await gensx
   .array<number>([10, 11, 12, 13, 14])
   .filter((n) => n % 2 === 0)
   .toArray();
@@ -167,7 +167,7 @@ const evenNumbers = await gsx
 Filter expressions can also access the current index and the entire array. Here's a basic example of using this to remove duplicates from an array:
 
 ```tsx
-const uniqueNumbers = await gsx
+const uniqueNumbers = await gensx
   .array<number>([1, 2, 2, 3, 3, 3, 4])
   .filter((num, index, array) => array.indexOf(num) === index)
   .toArray();
@@ -183,7 +183,7 @@ For example, if you wanted to translate a markdown document section by section a
 ```tsx
 const markdownContent = "<some markdown content>";
 
-const translatedContent = await gsx
+const translatedContent = await gensx
   .array<string>(markdownContent.split(/(?=^#{1,2} )/m))
   .map<string>((value) => <TranslateSection value={value} />)
   .reduce<string>(
@@ -200,29 +200,29 @@ To break down this example a bit more:
 
 ## How array operations work
 
-`gsx.array` is a convenience wrapper around `gsx.execute` function and the corresponding JavaScript array methods.
+`gensx.array` is a convenience wrapper around `gensx.execute` function and the corresponding JavaScript array methods.
 
 To illustrate this, take the following example:
 
 ```tsx
 const numbers = [1, 2, 3];
-const result = await gsx
+const result = await gensx
   .array<number>(numbers)
   .map<number>((n) => <NumberDoubler value={n} />)
   .filter((n) => <EvenNumberFilter value={n} />)
   .toArray();
 ```
 
-That same code can be written using `gsx.execute` like this:
+That same code can be written using `gensx.execute` like this:
 
 ```tsx
 const numbers = [1, 2, 3];
-const doubledNumbers = await gsx.execute<number[]>(
+const doubledNumbers = await gensx.execute<number[]>(
   numbers.map((n) => <NumberDoubler value={n} />),
 );
-const result = await gsx.execute<number[]>(
+const result = await gensx.execute<number[]>(
   doubledNumbers.filter((n) => <EvenNumberFilter value={n} />),
 );
 ```
 
-When using `gsx.array`, each operation in the chain will execute in sequence so if you have `gsx.array().map().map()`, all of the components in the first `map` will execute in parallel and will complete before the second `map` starts.
+When using `gensx.array`, each operation in the chain will execute in sequence so if you have `gensx.array().map().map()`, all of the components in the first `map` will execute in parallel and will complete before the second `map` starts.

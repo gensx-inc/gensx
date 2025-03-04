@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 import { PlayTournament } from "./Tournament.js";
 import { Player } from "./types.js";
@@ -32,12 +32,12 @@ async function main() {
   });
 
   // Play a single game
-  // const gameWorkflow = gsx.Workflow("TicTacToe", PlayGame);
+  // const gameWorkflow = gensx.Workflow("TicTacToe", PlayGame);
   // const result = await gameWorkflow.run({ playerX, playerO });
   // console.log(result);
 
   // Play a tournament
-  const tournamentWorkflow = gsx.Workflow(
+  const tournamentWorkflow = gensx.Workflow(
     "TicTacToeTournament",
     PlayTournament,
   );

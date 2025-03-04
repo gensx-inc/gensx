@@ -28,10 +28,10 @@ This next section walks through the steps needed to create and use a context in 
 
 ### Step 1: Create a context
 
-To create a context, start by defining its interface and then use `gsx.createContext<T>()` to initialize it along with a default value. For example, here's how to create a `User` context:
+To create a context, start by defining its interface and then use `gensx.createContext<T>()` to initialize it along with a default value. For example, here's how to create a `User` context:
 
 ```tsx
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 // Define the interface
 interface User {
@@ -39,18 +39,18 @@ interface User {
 }
 
 // Create a context with a default value
-const UserContext = gsx.createContext<User>({
+const UserContext = gensx.createContext<User>({
   name: "",
 });
 ```
 
 ### Step 2: Use the context in a component
 
-To use the context, call the `gsx.useContext(context)` hook inside of a component. Here a `Greeting` component is created that uses the `UserContext` to get the user's name:
+To use the context, call the `gensx.useContext(context)` hook inside of a component. Here a `Greeting` component is created that uses the `UserContext` to get the user's name:
 
 ```tsx
-const GreetUser = gsx.Component<{}, string>("GreetUser", () => {
-  const user = gsx.useContext(UserContext);
+const GreetUser = gensx.Component<{}, string>("GreetUser", () => {
+  const user = gensx.useContext(UserContext);
   return `Hello, ${user.name}!`;
 });
 ```
@@ -60,7 +60,7 @@ const GreetUser = gsx.Component<{}, string>("GreetUser", () => {
 To make the context value available to your components, you need to wrap your component in a `Provider` component and pass in a value via the `value` prop:
 
 ```tsx
-const ContextExample = gsx.Component<{}, string>("ContextExample", () => (
+const ContextExample = gensx.Component<{}, string>("ContextExample", () => (
   <UserContext.Provider value={{ name: "John" }}>
     <GreetUser />
   </UserContext.Provider>
@@ -76,7 +76,7 @@ Providers are a specialized way to use contexts that focus on managing configura
 The main provider available today is the `OpenAIProvider`, which manages your OpenAI API key and client:
 
 ```tsx
-const BasicChat = gsx.Component<BasicChatProps, string>(
+const BasicChat = gensx.Component<BasicChatProps, string>(
   "BasicChat",
   async ({ prompt }) => {
     return (
@@ -90,7 +90,7 @@ const BasicChat = gsx.Component<BasicChatProps, string>(
   },
 );
 
-const result = await gsx.Workflow("BasicChat", BasicChat).run({
+const result = await gensx.Workflow("BasicChat", BasicChat).run({
   prompt: "Hello!",
 });
 ```
@@ -101,10 +101,10 @@ If you need a provider that isn't available out of the box, you can easily creat
 
 #### Step 1: Create a context
 
-Start by importing `gsx` and the package you want to use:
+Start by importing from `@gensx/core` and the package you want to use:
 
 ```tsx
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import FirecrawlApp, { FirecrawlAppConfig } from "@mendable/firecrawl-js";
 ```
 
@@ -112,7 +112,7 @@ Then, create the context:
 
 ```tsx
 // Create a context
-export const FirecrawlContext = gsx.createContext<{
+export const FirecrawlContext = gensx.createContext<{
   client?: FirecrawlApp;
 }>({});
 ```
@@ -125,7 +125,7 @@ Next, wrap your context in a provider component:
 
 ```tsx
 // Create the provider
-export const FirecrawlProvider = gsx.Component<FirecrawlAppConfig, never>(
+export const FirecrawlProvider = gensx.Component<FirecrawlAppConfig, never>(
   "FirecrawlProvider",
   (args: FirecrawlAppConfig) => {
     const client = new FirecrawlApp({
@@ -148,10 +148,10 @@ Note that in the provider definition, an option bag is passed in as the third ar
 Finally, you can build components that consume the context supplied by the provider:
 
 ```tsx
-export const ScrapePage = gsx.Component<ScrapePageProps, string>(
+export const ScrapePage = gensx.Component<ScrapePageProps, string>(
   "ScrapePage",
   async ({ url }) => {
-    const context = gsx.useContext(FirecrawlContext);
+    const context = gensx.useContext(FirecrawlContext);
 
     if (!context.client) {
       throw new Error(
@@ -177,7 +177,7 @@ export const ScrapePage = gsx.Component<ScrapePageProps, string>(
 Now when you use the `ScrapePage` component in your workflow, you'll wrap it in the `FirecrawlProvider` and pass in the `apiKey`:
 
 ```tsx
-const FirecrawlExample = gsx.Component<FirecrawlExampleProps, string>(
+const FirecrawlExample = gensx.Component<FirecrawlExampleProps, string>(
   "FirecrawlExample",
   async ({ url }) => {
     return (
@@ -188,7 +188,7 @@ const FirecrawlExample = gsx.Component<FirecrawlExampleProps, string>(
   },
 );
 
-const result = await gsx.Workflow("FirecrawlExample", FirecrawlExample).run({
+const result = await gensx.Workflow("FirecrawlExample", FirecrawlExample).run({
   url: "https://gensx.com/docs/",
 });
 ```
@@ -198,18 +198,18 @@ const result = await gsx.Workflow("FirecrawlExample", FirecrawlExample).run({
 You can nest multiple providers to combine different services or configurations in your workflow. This is useful when a component needs access to multiple contexts. Here's an example that combines the OpenAI provider with our custom Firecrawl provider:
 
 ```tsx
-const NestedProviderExample = gsx.Component<NestedProviderExampleProps, string>(
-  "NestedProviderExample",
-  async ({ url }) => {
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
-          <WebPageSummarizer url={url} />
-        </FirecrawlProvider>
-      </OpenAIProvider>
-    );
-  },
-);
+const NestedProviderExample = gensx.Component<
+  NestedProviderExampleProps,
+  string
+>("NestedProviderExample", async ({ url }) => {
+  return (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <FirecrawlProvider apiKey={process.env.FIRECRAWL_API_KEY}>
+        <WebPageSummarizer url={url} />
+      </FirecrawlProvider>
+    </OpenAIProvider>
+  );
+});
 ```
 
 In this example, the `WebPageSummarizer` component can access both the OpenAI client and Firecrawl client through their respective contexts.
@@ -223,7 +223,7 @@ You can also nest multiple providers to use multiple OpenAI compatible APIs in t
 First, create a provider for [Groq](https://www.groq.com/) that wraps the `OpenAIProvider` and points to the correct base URL:
 
 ```tsx
-const GroqProvider = gsx.Component<{}, never>("GroqProvider", () => (
+const GroqProvider = gensx.Component<{}, never>("GroqProvider", () => (
   <OpenAIProvider
     apiKey={process.env.GROQ_API_KEY}
     baseURL="https://api.groq.com/openai/v1"
@@ -234,7 +234,7 @@ const GroqProvider = gsx.Component<{}, never>("GroqProvider", () => (
 Because components will always use the closest provider above them in the tree, `EditTutorial` will use the Groq API while `WriteTutorial` will use the OpenAI API:
 
 ```tsx
-export const WriteAndEditTutorial = gsx.Component<WriteTutorialProps, string>(
+export const WriteAndEditTutorial = gensx.Component<WriteTutorialProps, string>(
   "WriteAndEditTutorial",
   ({ subject }) => {
     return (

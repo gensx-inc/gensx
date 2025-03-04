@@ -1,23 +1,23 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 interface User {
   name: string;
 }
 
 // Create a context with a default value
-const UserContext = gsx.createContext<User>({
+const UserContext = gensx.createContext<User>({
   name: "",
 });
 
 type GreetingOutput = string;
 
 // Use the context in a component
-const GreetUser = gsx.Component<{}, GreetingOutput>("GreetUser", () => {
-  const user = gsx.useContext(UserContext);
+const GreetUser = gensx.Component<{}, GreetingOutput>("GreetUser", () => {
+  const user = gensx.useContext(UserContext);
   return `Hello, ${user.name}!`;
 });
 
-const ContextExample = gsx.Component("ContextExample", () => {
+const ContextExample = gensx.Component("ContextExample", () => {
   return (
     <UserContext.Provider value={{ name: "John" }}>
       <GreetUser />
@@ -27,7 +27,7 @@ const ContextExample = gsx.Component("ContextExample", () => {
 
 async function main() {
   // Provide a value to the context
-  const result = await gsx
+  const result = await gensx
     .Workflow("ContextExampleWorkflow", ContextExample)
     .run({}, { printUrl: true });
   console.log(result);

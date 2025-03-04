@@ -1,22 +1,22 @@
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "../src/index.js";
+import * as gensx from "../src/index.js";
 
 interface NumberWrapperOutput {
   value: number;
 }
 
-const NumberWrapper = gsx.Component<{ n: number }, NumberWrapperOutput>(
+const NumberWrapper = gensx.Component<{ n: number }, NumberWrapperOutput>(
   "NumberWrapper",
   ({ n }) => ({ value: n }),
 );
 
-const NumberDoubler = gsx.Component<{ value: number }, number>(
+const NumberDoubler = gensx.Component<{ value: number }, number>(
   "NumberDoubler",
   ({ value }) => value * 2,
 );
 
-const AsyncNumberFilter = gsx.Component<{ value: number }, boolean>(
+const AsyncNumberFilter = gensx.Component<{ value: number }, boolean>(
   "AsyncNumberFilter",
   async ({ value }) => {
     await new Promise((resolve) => setTimeout(resolve, 1));
@@ -24,12 +24,12 @@ const AsyncNumberFilter = gsx.Component<{ value: number }, boolean>(
   },
 );
 
-const Value = gsx.Component<{ value: number | boolean }, number | boolean>(
+const Value = gensx.Component<{ value: number | boolean }, number | boolean>(
   "Value",
   ({ value }) => value,
 );
 
-const TaskGenerator = gsx.Component<{ value: number }, number[]>(
+const TaskGenerator = gensx.Component<{ value: number }, number[]>(
   "TaskGenerator",
   async ({ value }) => {
     // Simulate a workflow step that generates multiple tasks
@@ -39,11 +39,11 @@ const TaskGenerator = gsx.Component<{ value: number }, number[]>(
   },
 );
 
-const BatchProcessor = gsx.Component<{ inputs: number[] }, number>(
+const BatchProcessor = gensx.Component<{ inputs: number[] }, number>(
   "BatchProcessor",
   async ({ inputs }) => {
     // Create a new array workflow inside the component
-    const results = await gsx
+    const results = await gensx
       .array<NumberWrapperOutput>(inputs.map((n) => <NumberWrapper n={n} />))
       .map<number>((n) => <NumberDoubler value={n.value} />)
       .filter((n) => <AsyncNumberFilter value={n} />)
@@ -53,14 +53,14 @@ const BatchProcessor = gsx.Component<{ inputs: number[] }, number>(
   },
 );
 
-const ArrayProvider = gsx.Component<{ inputs: number[] }, number[]>(
+const ArrayProvider = gensx.Component<{ inputs: number[] }, number[]>(
   "ArrayProvider",
   ({ inputs }) => inputs,
 );
 
-suite("gsx.array", () => {
+suite("gensx.array", () => {
   test("map transforms array elements", async () => {
-    const arr = gsx.array<NumberWrapperOutput>([
+    const arr = gensx.array<NumberWrapperOutput>([
       <NumberWrapper n={1} />,
       <NumberWrapper n={2} />,
       <NumberWrapper n={3} />,
@@ -73,7 +73,7 @@ suite("gsx.array", () => {
   });
 
   test("filter removes elements based on predicate", async () => {
-    const arr = gsx.array<NumberWrapperOutput>([
+    const arr = gensx.array<NumberWrapperOutput>([
       <NumberWrapper n={1} />,
       <NumberWrapper n={2} />,
       <NumberWrapper n={3} />,
@@ -89,7 +89,7 @@ suite("gsx.array", () => {
   });
 
   test("reduce accumulates results", async () => {
-    const arr = gsx.array<NumberWrapperOutput>([
+    const arr = gensx.array<NumberWrapperOutput>([
       <NumberWrapper n={1} />,
       <NumberWrapper n={2} />,
       <NumberWrapper n={3} />,
@@ -103,7 +103,7 @@ suite("gsx.array", () => {
   });
 
   test("chains multiple operations", async () => {
-    const arr = gsx.array<NumberWrapperOutput>([
+    const arr = gensx.array<NumberWrapperOutput>([
       <NumberWrapper n={1} />,
       <NumberWrapper n={2} />,
       <NumberWrapper n={3} />,
@@ -120,7 +120,7 @@ suite("gsx.array", () => {
   });
 
   test("flatMap generates multiple tasks from each input, task generator returns nested components", async () => {
-    const arr = gsx.array<NumberWrapperOutput>([
+    const arr = gensx.array<NumberWrapperOutput>([
       <NumberWrapper n={1} />,
       <NumberWrapper n={2} />,
     ]);
@@ -134,8 +134,8 @@ suite("gsx.array", () => {
     expect(result).toEqual([1, 2, 2, 4]);
   });
 
-  test("components can use gsx.array internally for workflow composition", async () => {
-    const result = await gsx.execute(
+  test("components can use gensx.array internally for workflow composition", async () => {
+    const result = await gensx.execute(
       <BatchProcessor inputs={[1, 2, 3, 4, 5]} />,
     );
 
@@ -143,11 +143,11 @@ suite("gsx.array", () => {
     expect(result).toEqual(24);
   });
 
-  test("can use gsx.array operations in child functions", async () => {
-    const result = await gsx.execute(
+  test("can use gensx.array operations in child functions", async () => {
+    const result = await gensx.execute(
       <ArrayProvider inputs={[1, 2, 3, 4, 5]}>
         {(numbers: number[]) =>
-          gsx
+          gensx
             .array<NumberWrapperOutput>(
               numbers.map((n) => <NumberWrapper n={n} />),
             )
@@ -164,14 +164,14 @@ suite("gsx.array", () => {
   });
 
   test("map works with raw number arrays", async () => {
-    const arr = gsx.array<number>([1, 2, 3]);
+    const arr = gensx.array<number>([1, 2, 3]);
     const result = await arr.map((n) => <NumberDoubler value={n} />).toArray();
 
     expect(result).toEqual([2, 4, 6]);
   });
 
   test("filter works with raw number arrays", async () => {
-    const arr = gsx.array<number>([1, 2, 3, 4, 5, 6]);
+    const arr = gensx.array<number>([1, 2, 3, 4, 5, 6]);
     const result = await arr
       .filter((n) => <AsyncNumberFilter value={n} />)
       .toArray();
@@ -180,7 +180,7 @@ suite("gsx.array", () => {
   });
 
   test("reduce works with raw number arrays", async () => {
-    const arr = gsx.array<number>([1, 2, 3]);
+    const arr = gensx.array<number>([1, 2, 3]);
     const result = await arr
       .map<number>((n) => <NumberDoubler value={n} />)
       .reduce<number>((acc: number, n: number) => <Value value={acc + n} />, 0);
@@ -189,7 +189,7 @@ suite("gsx.array", () => {
   });
 
   test("flatMap works with raw number arrays", async () => {
-    const arr = gsx.array<number>([1, 2]);
+    const arr = gensx.array<number>([1, 2]);
     const result = await arr
       .flatMap((n) => <TaskGenerator value={n} />)
       .toArray();
@@ -198,7 +198,7 @@ suite("gsx.array", () => {
   });
 
   test("chains multiple operations with raw arrays", async () => {
-    const arr = gsx.array<number>([1, 2, 3, 4, 5]);
+    const arr = gensx.array<number>([1, 2, 3, 4, 5]);
     const result = await arr
       .map<number>((n) => <NumberDoubler value={n} />)
       .filter((n: number) => <AsyncNumberFilter value={n} />)
@@ -208,7 +208,7 @@ suite("gsx.array", () => {
   });
 
   test("filter can be used with index and array parameters for deduplication", async () => {
-    const arr = gsx.array([1, 2, 2, 3, 3, 3, 4]);
+    const arr = gensx.array([1, 2, 2, 3, 3, 3, 4]);
     const result = await arr
       .filter((value, index, array) => (
         <Value value={array.indexOf(value) === index} />
@@ -226,7 +226,7 @@ suite("gsx.array", () => {
       { id: 3, value: "d" },
     ];
 
-    const result = await gsx
+    const result = await gensx
       .array(items)
       .filter((item, index, array) => (
         <Value value={array.findIndex((x) => x.id === item.id) === index} />
@@ -241,14 +241,14 @@ suite("gsx.array", () => {
   });
 
   test("filter accepts boolean return type", async () => {
-    const arr = gsx.array([1, 2, 3, 4, 5]);
+    const arr = gensx.array([1, 2, 3, 4, 5]);
     const result = await arr.filter((n) => n > 3).toArray();
 
     expect(result).toEqual([4, 5]);
   });
 
   test("filter accepts JSX.Element return type", async () => {
-    const arr = gsx.array([1, 2, 3, 4, 5, 6, 7]);
+    const arr = gensx.array([1, 2, 3, 4, 5, 6, 7]);
     const result = await arr
       .filter((n) => <AsyncNumberFilter value={n} />)
       .toArray();
@@ -257,7 +257,7 @@ suite("gsx.array", () => {
   });
 
   test("filter with boolean return type works with index and array parameters", async () => {
-    const arr = gsx.array([1, 2, 2, 3, 3, 3, 4]);
+    const arr = gensx.array([1, 2, 2, 3, 3, 3, 4]);
     const result = await arr
       .filter((value, index, array) => array.indexOf(value) === index)
       .toArray();
@@ -266,7 +266,7 @@ suite("gsx.array", () => {
   });
 
   test("filter with JSX.Element return type works with index and array parameters", async () => {
-    const arr = gsx.array([1, 2, 2, 3, 3, 3, 4]);
+    const arr = gensx.array([1, 2, 2, 3, 3, 3, 4]);
     const result = await arr
       .filter((value, index, array) => (
         <Value value={array.indexOf(value) === index} />
@@ -277,7 +277,7 @@ suite("gsx.array", () => {
   });
 
   test("filter can mix boolean and JSX.Element predicates in chain", async () => {
-    const arr = gsx.array([1, 2, 3, 4, 5, 6, 6, 7]);
+    const arr = gensx.array([1, 2, 3, 4, 5, 6, 6, 7]);
     const result = await arr
       // First remove duplicates using boolean predicate
       .filter((value, index, array) => array.indexOf(value) === index)

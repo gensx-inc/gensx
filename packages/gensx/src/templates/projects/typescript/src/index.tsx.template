@@ -1,4 +1,4 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 
 interface RespondProps {
@@ -6,7 +6,7 @@ interface RespondProps {
 }
 type RespondOutput = string;
 
-const Respond = gsx.Component<RespondProps, RespondOutput>(
+const Respond = gensx.Component<RespondProps, RespondOutput>(
   "Respond",
   ({ userInput }) => (
     <ChatCompletion
@@ -22,7 +22,7 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
   ),
 );
 
-const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
+const WorkflowComponent = gensx.Component<{ userInput: string }, string>(
   "Workflow",
   ({ userInput }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -31,7 +31,7 @@ const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
   ),
 );
 
-const workflow = gsx.Workflow("MyGSXWorkflow", WorkflowComponent);
+const workflow = gensx.Workflow("MyGSXWorkflow", WorkflowComponent);
 
 const result = await workflow.run(
   {

@@ -9,12 +9,12 @@
 `<GenSX />` is a framework for building LLM workflows and AI agents with JSX on the backend. Every `<GenSX />` component is a pure function, and thus easily shareable by default.
 
 ```jsx
-import * as gsx from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 const title = "How to be a 10x LLM Developer";
 const prompt = "Write an article about using gensx to build LLM applications";
 
-const [tweet, blogPost] = await gsx.execute(
+const [tweet, blogPost] = await gensx.execute(
   <BlogWritingWorkflow title={title} prompt={prompt}>
     {(blogPost) => (
       <TweetWritingWorkflow content={blogPost}>
@@ -32,15 +32,15 @@ const [tweet, blogPost] = await gsx.execute(
 ### 📦 Installing
 
 ```bash
-pnpm install gensx
+pnpm install @gensx/core
 ```
 
 ```bash
-yarn add gensx
+yarn add @gensx/core
 ```
 
 ```bash
-npm install gensx
+npm install @gensx/core
 ```
 
 #### Dependencies
@@ -95,7 +95,7 @@ module.exports = {
 ## Building a workflow
 
 ```jsx
-import * as gsx from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 interface ResearchBrainstormProps {
   prompt: string;
@@ -103,11 +103,11 @@ interface ResearchBrainstormProps {
 type ResearchBrainstormOutput = string[];
 
 /**
- * A `gsx.Component` is just function. Within them you can do things like make calls to your vector DB, call APIs, or invoke models like OpenAI, Claude, Perplexity, and more.
+ * A `gensx.Component` is just function. Within them you can do things like make calls to your vector DB, call APIs, or invoke models like OpenAI, Claude, Perplexity, and more.
  *
- * Every `gsx.Component` automatically supports accessing it's outputs by nesting a `child` function with no additional work required. For instance:
+ * Every `gensx.Component` automatically supports accessing it's outputs by nesting a `child` function with no additional work required. For instance:
  */
-const ResearchBrainstorm = gsx.Component<
+const ResearchBrainstorm = gensx.Component<
   ResearchBrainstormProps,
   ResearchBrainstormOutput
 >("ResearchBrainstorm", async ({ prompt }) => {
@@ -120,7 +120,7 @@ interface PerformResearchProps {
   topic: string;
 }
 type PerformResearchOutput = string;
-const PerformResearch = gsx.Component<ResearchProps, ResearchOutput>(
+const PerformResearch = gensx.Component<PerformResearchProps, PerformResearchOutput>(
   "PerformResearch",
   async ({ topic }) => {
     console.log("📚 Researching topic:", topic);
@@ -139,7 +139,7 @@ interface WriteDraftProps {
   prompt: string;
 }
 type WriteDraftOutput = string;
-const WriteDraft = gsx.Component<WriteDraftProps, WriteDraftOutput>(
+const WriteDraft = gensx.Component<WriteDraftProps, WriteDraftOutput>(
   "WriteDraft",
   async ({ research, prompt }) => {
     console.log("✍️  Writing draft based on research");
@@ -155,7 +155,7 @@ interface EditDraftProps {
   draft: string;
 }
 type EditDraftOutput = string;
-const EditDraft = gsx.Component<EditDraftProps, EditDraftOutput>(
+const EditDraft = gensx.Component<EditDraftProps, EditDraftOutput>(
   "EditDraft",
   async ({ draft }) => {
     console.log("✨ Polishing final draft");
@@ -169,7 +169,7 @@ interface WebResearcherProps {
   prompt: string;
 }
 type WebResearcherOutput = string[];
-const WebResearcher = gsx.Component<WebResearcherProps, WebResearcherOutput>(
+const WebResearcher = gensx.Component<WebResearcherProps, WebResearcherOutput>(
   "WebResearcher",
   async ({ prompt }) => {
     console.log("🌐 Researching web for:", prompt);
@@ -190,8 +190,8 @@ interface ParallelResearchComponentProps {
 
 // You can build complex workflows by nesting components. When you pass a child function to a component, it will be called with the output of that component, and you can use that output inside any child components. If you don't specify a function as a child, the result from that leaf node will be bubbled up as the final result.
 //
-// We again wrap using the gsx.Component function, and we annotate the output type with the type of the final result.
-const ParallelResearch = gsx.Component<
+// We again wrap using the gensx.Component function, and we annotate the output type with the type of the final result.
+const ParallelResearch = gensx.Component<
   ParallelResearchComponentProps,
   ParallelResearchOutput
 >("ParallelResearch", ({ prompt }) => (
@@ -207,7 +207,7 @@ interface BlogWritingWorkflowProps {
   prompt: string;
 }
 type BlogWritingWorkflowOutput = string;
-const BlogWritingWorkflow = gsx.Component<
+const BlogWritingWorkflow = gensx.Component<
   BlogWritingWorkflowProps,
   BlogWritingWorkflowOutput
 >("BlogWritingWorkflow", ({ prompt }) => (
@@ -232,7 +232,7 @@ async function main() {
   console.log("🚀 Starting blog writing workflow");
 
   // Use the gensx function to execute the workflow and annotate with the output type.
-  const result = await gsx.execute<BlogWritingWorkflowOutput>(
+  const result = await gensx.execute<BlogWritingWorkflowOutput>(
     <BlogWritingWorkflow prompt="Write a blog post about the future of AI" />,
   );
   console.log("✅ Final result:", { result });

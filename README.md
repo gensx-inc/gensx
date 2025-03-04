@@ -30,7 +30,7 @@ Most LLM frameworks are graph oriented--you express your workflow with nodes, ed
 Components in GenSX look a lot like a React components:
 
 ```tsx
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { ChatCompletion } from "gensx/openai";
 
 // props interface
@@ -43,7 +43,7 @@ interface WriteDraftProps {
 type WriteDraftOutput = string;
 
 // components are pure functions that are reusable by default
-const WriteDraft = gsx.Component<WriteDraftProps, WriteDraftOutput>(
+const WriteDraft = gensx.Component<WriteDraftProps, WriteDraftOutput>(
   "WriteDraft",
   ({ prompt, research }) => {
     const systemMessage = `You're an expert technical writer.
@@ -72,7 +72,7 @@ const WriteDraft = gsx.Component<WriteDraftProps, WriteDraftOutput>(
 Components can be composed together to create more complex agents and workflows:
 
 ```tsx
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { OpenAIProvider } from "gensx/openai";
 import { Research, WriteDraft, EditDraft } from "./writeBlog";
 
@@ -80,7 +80,7 @@ interface BlogWriterProps {
   prompt: string;
 }
 
-export const WriteBlog = gsx.StreamComponent<BlogWriterProps>(
+export const WriteBlog = gensx.StreamComponent<BlogWriterProps>(
   "WriteBlog",
   ({ prompt }) => {
     return (
@@ -97,7 +97,7 @@ export const WriteBlog = gsx.StreamComponent<BlogWriterProps>(
   },
 );
 
-const workflow = gsx.Workflow("WriteBlogWorkflow", WriteBlog);
+const workflow = gensx.Workflow("WriteBlogWorkflow", WriteBlog);
 const result = await workflow.run({
   prompt: "Write a blog post about AI developer tools",
 });

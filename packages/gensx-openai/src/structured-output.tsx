@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { gsx, GSXToolParams } from "@gensx/core";
+import * as gensx from "@gensx/core";
+import { GSXToolParams } from "@gensx/core";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import {
   ChatCompletion as ChatCompletionOutput,
@@ -53,7 +54,7 @@ export const structuredOutputImpl = async <T,>(
       }
 
       // Make initial completion
-      let completion = await gsx.execute<ChatCompletionOutput>(
+      let completion = await gensx.execute<ChatCompletionOutput>(
         <OpenAIChatCompletion
           {...rest}
           messages={currentMessages}
@@ -74,7 +75,7 @@ export const structuredOutputImpl = async <T,>(
           currentMessages.push(completion.choices[0].message);
           currentMessages.push(...toolResponses);
 
-          completion = await gsx.execute<ChatCompletionOutput>(
+          completion = await gensx.execute<ChatCompletionOutput>(
             <OpenAIChatCompletion
               {...rest}
               messages={currentMessages}
@@ -151,7 +152,7 @@ export const structuredOutputImpl = async <T,>(
 };
 
 // Updated component definition
-export const StructuredOutput = gsx.Component<
+export const StructuredOutput = gensx.Component<
   StructuredOutputProps,
   StructuredOutputOutput<unknown>
 >("StructuredOutput", structuredOutputImpl);

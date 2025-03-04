@@ -9,7 +9,7 @@ import {
   RawMessageStreamEvent,
 } from "@anthropic-ai/sdk/resources/index.mjs";
 import { Stream } from "@anthropic-ai/sdk/streaming";
-import { Args, gsx, GSXToolParams } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { z, ZodType } from "zod";
 
 import { AnthropicChatCompletion } from "./anthropic.js";
@@ -31,7 +31,7 @@ export type StructuredProps<O = unknown> = Omit<
   "stream" | "tools"
 > & {
   stream?: false;
-  tools?: (GSXTool<any> | GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | gensx.GSXToolParams<any>)[];
   outputSchema: z.ZodSchema<O>;
 };
 
@@ -40,7 +40,7 @@ export type StandardProps = Omit<
   "stream" | "tools"
 > & {
   stream?: false;
-  tools?: (GSXTool<any> | GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | gensx.GSXToolParams<any>)[];
   outputSchema?: never;
 };
 
@@ -106,7 +106,7 @@ export const gsxChatCompletionImpl = async <P extends GSXChatCompletionProps>(
       tools,
     }) as GSXChatCompletionOutput<P>;
   }
-  const result = await gsx.execute<Message>(
+  const result = await gensx.execute<Message>(
     <AnthropicChatCompletion {...rest} stream={false} />,
   );
   return {
@@ -127,11 +127,11 @@ type InferSchemaType<T> = T extends { outputSchema: infer S }
     : GSXChatCompletionResult;
 
 interface GSXChatCompletionComponent {
-  readonly __brand: "gsx-component";
+  readonly __brand: "gensx-component";
   readonly __outputType: GSXChatCompletionOutput<GSXChatCompletionProps<any>>;
   readonly __rawProps: GSXChatCompletionProps<any>;
   <P extends GSXChatCompletionProps<any>>(
-    props: Args<P, InferSchemaType<P>>,
+    props: gensx.Args<P, InferSchemaType<P>>,
   ): InferSchemaType<P>;
 
   run<P extends GSXChatCompletionProps<any>>(
@@ -141,7 +141,7 @@ interface GSXChatCompletionComponent {
 
 // Update component to use implementation with explicit type casting
 // Update component to use implementation
-export const GSXChatCompletion = gsx.Component<
+export const GSXChatCompletion = gensx.Component<
   GSXChatCompletionProps,
   GSXChatCompletionOutput<GSXChatCompletionProps>
 >(
@@ -158,7 +158,7 @@ export type ChatCompletionProps = Omit<
   tools?: GSXTool<any>[];
 };
 
-export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
+export const ChatCompletion = gensx.StreamComponent<ChatCompletionProps>(
   "ChatCompletion",
   async (props) => {
     // Validate that tools and streaming are not used together

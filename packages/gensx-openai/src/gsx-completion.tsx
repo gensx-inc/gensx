@@ -3,7 +3,8 @@
 // Import Zod extensions for improved serialization
 import "./utils/zod-extensions.js";
 
-import { Args, gsx, GSXToolParams } from "@gensx/core";
+import * as gensx from "@gensx/core";
+import { Args, GSXToolParams } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
@@ -97,7 +98,7 @@ export const gsxChatCompletionImpl = async <P extends GSXChatCompletionProps>(
       tools,
     }) as GSXChatCompletionOutput<P>;
   }
-  const result = await gsx.execute<ChatCompletionOutput>(
+  const result = await gensx.execute<ChatCompletionOutput>(
     <OpenAIChatCompletion {...rest} stream={false} />,
   );
   return {
@@ -115,7 +116,7 @@ type InferSchemaType<T> = T extends { outputSchema: infer S }
     : GSXChatCompletionResult;
 
 interface GSXChatCompletionComponent {
-  readonly __brand: "gsx-component";
+  readonly __brand: "gensx-component";
   readonly __outputType: GSXChatCompletionOutput<GSXChatCompletionProps<any>>;
   readonly __rawProps: GSXChatCompletionProps<any>;
   <P extends GSXChatCompletionProps<any>>(
@@ -128,7 +129,7 @@ interface GSXChatCompletionComponent {
 }
 
 // Update component to use implementation with explicit type casting
-export const GSXChatCompletion = gsx.Component<
+export const GSXChatCompletion = gensx.Component<
   GSXChatCompletionProps,
   GSXChatCompletionOutput<GSXChatCompletionProps>
 >(
@@ -145,7 +146,7 @@ export type ChatCompletionProps = Omit<
   tools?: GSXTool<any>[];
 };
 
-export const ChatCompletion = gsx.StreamComponent<ChatCompletionProps>(
+export const ChatCompletion = gensx.StreamComponent<ChatCompletionProps>(
   "ChatCompletion",
   async (props) => {
     if (props.stream) {

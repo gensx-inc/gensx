@@ -17,25 +17,3 @@ export type {
   GSXToolAnySchema,
 } from "./types.js";
 export type { GsxArray } from "./array.js";
-
-import { array } from "./array.js";
-import { Component, StreamComponent } from "./component.js";
-import { createContext, useContext } from "./context.js";
-import { execute, Workflow } from "./execute.js";
-import * as types from "./types.js";
-
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace gsx {
-  export type Args<P, O> = types.Args<P, O>;
-  export type StreamArgs<P> = types.StreamArgs<P>;
-}
-
-export const gsx = {
-  StreamComponent,
-  Component,
-  createContext,
-  execute,
-  Workflow,
-  useContext,
-  array,
-};

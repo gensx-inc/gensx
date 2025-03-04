@@ -76,7 +76,7 @@ This will create a new started project, ready for you to run your first workflow
 In `index.tsx`, you'll find a simple OpenAI chat completion component:
 
 ```tsx
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
 
 interface RespondProps {
@@ -84,7 +84,7 @@ interface RespondProps {
 }
 type RespondOutput = string;
 
-const Respond = gsx.Component<RespondProps, RespondOutput>(
+const Respond = gensx.Component<RespondProps, RespondOutput>(
   "Respond",
   async ({ userInput }) => {
     return (
@@ -103,7 +103,7 @@ const Respond = gsx.Component<RespondProps, RespondOutput>(
   },
 );
 
-const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
+const WorkflowComponent = gensx.Component<{ userInput: string }, string>(
   "Workflow",
   ({ userInput }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -112,7 +112,7 @@ const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
   ),
 );
 
-const workflow = gsx.Workflow("MyGSXWorkflow", WorkflowComponent);
+const workflow = gensx.Workflow("MyGSXWorkflow", WorkflowComponent);
 
 const result = await workflow.run({
   userInput: "Hi there! Say 'Hello, World!' and nothing else.",
@@ -121,7 +121,7 @@ const result = await workflow.run({
 console.log(result);
 ```
 
-The component is executed through `gsx.Workflow.run()`, which processes the JSX tree from top to bottom. In this example:
+The component is executed through `gensx.Workflow.run()`, which processes the JSX tree from top to bottom. In this example:
 
 1. First, the `OpenAIProvider` component is initialized with your API key
 2. Then, the `Respond` component receives the `userInput` prop
@@ -162,7 +162,7 @@ Components can be nested to create multi-step workflows with each component's ou
 
 ```tsx
 // Research component that gathers information
-const Research = gsx.Component<{ topic: string }, string>(
+const Research = gensx.Component<{ topic: string }, string>(
   "Research",
   async ({ topic }) => {
     return (
@@ -182,31 +182,31 @@ const Research = gsx.Component<{ topic: string }, string>(
 );
 
 // Writer component that uses research to write content
-const WriteArticle = gsx.Component<{ topic: string; research: string }, string>(
-  "WriteArticle",
-  async ({ topic, research }) => {
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          {
-            role: "system",
-            content:
-              "You are a content writer. Use the research provided to write a blog post about the topic.",
-          },
-          { role: "user", content: `Topic: ${topic}\nResearch: ${research}` },
-        ]}
-      />
-    );
-  },
-);
+const WriteArticle = gensx.Component<
+  { topic: string; research: string },
+  string
+>("WriteArticle", async ({ topic, research }) => {
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        {
+          role: "system",
+          content:
+            "You are a content writer. Use the research provided to write a blog post about the topic.",
+        },
+        { role: "user", content: `Topic: ${topic}\nResearch: ${research}` },
+      ]}
+    />
+  );
+});
 ```
 
 Now you can combine these components using a child function:
 
 ```tsx
 // Combine components using child functions
-const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
+const ResearchAndWrite = gensx.Component<{ topic: string }, string>(
   "ResearchAndWrite",
   ({ topic }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -217,7 +217,7 @@ const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
   ),
 );
 
-const workflow = gsx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite, {
+const workflow = gensx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite, {
   printUrl: true,
 });
 ```
@@ -237,7 +237,7 @@ interface WriterProps {
   stream?: boolean;
 }
 
-const Writer = gsx.StreamComponent<WriterProps>(
+const Writer = gensx.StreamComponent<WriterProps>(
   "Writer",
   async ({ topic, research, stream }) => {
     return (
@@ -257,7 +257,7 @@ const Writer = gsx.StreamComponent<WriterProps>(
   },
 );
 
-const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
+const ResearchAndWrite = gensx.Component<{ topic: string }, string>(
   "ResearchAndWrite",
   ({ topic }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -274,7 +274,7 @@ const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
   ),
 );
 
-const workflow = gsx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite);
+const workflow = gensx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite);
 const stream = await workflow.run(
   { topic: "latest quantum computing chips" },
   { printUrl: true },
@@ -293,7 +293,7 @@ Now we can see our research step running before the write step:
 While this is nice, the real power of streaming components comes when you expand or refactor your workflow. Now you could easily add an `<EditArticle>` component to the workflow that streams the response to the user with minimal changes. There's no extra plumbing needed besides removing the `stream={true}` prop on the `WriteArticle` component.
 
 ```tsx
-const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
+const ResearchAndWrite = gensx.Component<{ topic: string }, string>(
   "ResearchAndWrite",
   ({ topic }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -307,7 +307,7 @@ const ResearchAndWrite = gsx.Component<{ topic: string }, string>(
   </OpenAIProvider>,
 );
 
-const workflow = gsx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite, { printUrl: true });
+const workflow = gensx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite, { printUrl: true });
 const stream = await workflow.run({ topic: "latest quantum computing chips" });
 ```
 

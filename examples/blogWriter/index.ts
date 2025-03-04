@@ -1,10 +1,10 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 import { WriteBlog } from "./writeBlog.js";
 
 async function main() {
   console.log("\n🚀 Starting blog writing workflow");
-  const wf = gsx.Workflow("WriteBlogWorkflow", WriteBlog);
+  const wf = gensx.Workflow("WriteBlogWorkflow", WriteBlog);
   const stream = await wf.run(
     {
       stream: true,

@@ -22,7 +22,7 @@ export default function Home() {
   const activeExample = hoveredExample ?? committedExample;
 
   const examples: Record<ExampleType, string> = {
-    components: `import { gsx } from 'gensx';
+    components: `import * as gensx from 'gensx';
 import { ChatCompletion } from 'gensx/openai';
 
 interface WriteDraftProps {
@@ -30,7 +30,7 @@ interface WriteDraftProps {
   prompt: string;
 }
 
-const WriteDraft = gsx.Component<WriteDraftProps, string>(
+const WriteDraft = gensx.Component<WriteDraftProps, string>(
   "WriteDraft",
   ({ prompt, research }) => {
     const systemMessage = \`You're an expert technical writer.
@@ -55,7 +55,7 @@ const WriteDraft = gsx.Component<WriteDraftProps, string>(
   },
 );
 `,
-    workflows: `import { gsx } from 'gensx';
+    workflows: `import * as gensx from 'gensx';
 import { OpenAIProvider } from 'gensx/openai';
 import { Research, WriteDraft, EditDraft } from './writeBlog';
 
@@ -63,7 +63,7 @@ interface BlogWriterProps {
   prompt: string;
 }
 
-export const WriteBlog = gsx.StreamComponent<BlogWriterProps>(
+export const WriteBlog = gensx.StreamComponent<BlogWriterProps>(
   "WriteBlog",
   ({ prompt }) => {
     return (
@@ -80,12 +80,12 @@ export const WriteBlog = gsx.StreamComponent<BlogWriterProps>(
   },
 );
 
-const workflow = gsx.Workflow("WriteBlogWorkflow", WriteBlog);
+const workflow = gensx.Workflow("WriteBlogWorkflow", WriteBlog);
 const result = await workflow.run({
   prompt: "Write a blog post about AI developer tools"
 });
 `,
-    agents: `import { gsx } from 'gensx';
+    agents: `import * as gensx from 'gensx';
 import { OpenAIProvider, GSXTool, GSXChatCompletion } from 'gensx/openai';
 
 const webSearchTool = new GSXTool({
@@ -97,7 +97,7 @@ const webSearchTool = new GSXTool({
   },
 });
 
-const WebSearchAgent = gsx.Component<{}, Stream<ChatCompletionChunk>>(
+const WebSearchAgent = gensx.Component<{}, Stream<ChatCompletionChunk>>(
   "WebSearchAgent",
   () => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -121,7 +121,7 @@ const WebSearchAgent = gsx.Component<{}, Stream<ChatCompletionChunk>>(
   ),
 );`,
     llms: `import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { ClientOptions } from "openai";
 
 const grok3Config = {
@@ -132,7 +132,7 @@ const grok3Config = {
   model: "grok-3",
 };
 
-const DocumentSummarizer = gsx.Component<DocumentSummarizerProps, string>(
+const DocumentSummarizer = gensx.Component<DocumentSummarizerProps, string>(
   "DocumentSummarizer",
   ({ document, provider }) => (
     <OpenAIProvider {...provider.clientOptions}>
@@ -149,7 +149,7 @@ const DocumentSummarizer = gsx.Component<DocumentSummarizerProps, string>(
   ),
 );
 
-const workflow = gsx.Workflow(
+const workflow = gensx.Workflow(
   "DocumentSummarizerWorkflow",
   DocumentSummarizer,
 );

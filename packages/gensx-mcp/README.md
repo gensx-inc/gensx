@@ -16,7 +16,7 @@ The `@gensx/mcp` package provides integration with the [Model Context Protocol (
 
 ```tsx
 import { createMCPServerContext } from "@gensx/mcp";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 // Create an MCP server context for Sequential Thinking
 const {
@@ -37,7 +37,7 @@ You can use MCP tools with any LLM provider in GenSX. Here's an example with Ope
 ```tsx
 import { createMCPServerContext, MCPTool } from "@gensx/mcp";
 import { GSXChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 // Helper function to map MCP tools to GSX tools
 const mapToGsxTools = (tools: MCPTool[]) => {
@@ -52,7 +52,7 @@ const mapToGsxTools = (tools: MCPTool[]) => {
 };
 
 // Create a component that uses MCP tools
-const RespondWithTools = gsx.Component(({ userInput }) => {
+const RespondWithTools = gensx.Component(({ userInput }) => {
   const { tools } = useSequentialThinkingContext();
   const gsxTools = mapToGsxTools(tools);
 
@@ -76,9 +76,9 @@ const RespondWithTools = gsx.Component(({ userInput }) => {
 });
 
 // Create a workflow that combines MCP tools with an LLM provider
-const MCPToolsWorkflow = gsx.Workflow(
+const MCPToolsWorkflow = gensx.Workflow(
   "MCPToolsWorkflow",
-  gsx.Component(({ userInput }) => {
+  gensx.Component(({ userInput }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <SequentialThinkingProvider>

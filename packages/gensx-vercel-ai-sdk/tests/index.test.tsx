@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { expect, test } from "vitest";
 import { z } from "zod";
 
@@ -13,7 +13,7 @@ const embeddingModel = openai.embedding("text-embedding-3-small");
 const imageModel = openai.image("dall-e-3");
 
 test("StreamText streams text response", async () => {
-  const workflow = gsx.Workflow("StreamText", AI.StreamText);
+  const workflow = gensx.Workflow("StreamText", AI.StreamText);
   const stream = await workflow.run({
     prompt: "What is the weather?",
     model: languageModel,
@@ -23,7 +23,7 @@ test("StreamText streams text response", async () => {
 }, 30000);
 
 test("StreamObject streams JSON objects", async () => {
-  const workflow = gsx.Workflow("StreamObject", AI.StreamObject);
+  const workflow = gensx.Workflow("StreamObject", AI.StreamObject);
   const response = await workflow.run({
     prompt:
       "Generate a chat message object representing an AI assistant's response about machine learning",
@@ -40,7 +40,7 @@ test("StreamObject streams JSON objects", async () => {
 }, 30000);
 
 test("GenerateText generates text", async () => {
-  const workflow = gsx.Workflow("GenerateText", AI.GenerateText);
+  const workflow = gensx.Workflow("GenerateText", AI.GenerateText);
   const result = await workflow.run({
     prompt: "Tell me a joke",
     model: languageModel,
@@ -49,7 +49,7 @@ test("GenerateText generates text", async () => {
 }, 30000);
 
 test("GenerateObject generates JSON object", async () => {
-  const workflow = gsx.Workflow("GenerateObject", AI.GenerateObject);
+  const workflow = gensx.Workflow("GenerateObject", AI.GenerateObject);
   const response = await workflow.run({
     prompt:
       "Generate a chat message object representing an AI assistant's response about machine learning",
@@ -66,7 +66,7 @@ test("GenerateObject generates JSON object", async () => {
 }, 30000);
 
 test("Embed generates embeddings", async () => {
-  const workflow = gsx.Workflow("Embed", AI.Embed);
+  const workflow = gensx.Workflow("Embed", AI.Embed);
   const embedding = await workflow.run({
     value: "Sample text to embed",
     model: embeddingModel,
@@ -75,7 +75,7 @@ test("Embed generates embeddings", async () => {
 }, 30000);
 
 test("EmbedMany generates multiple embeddings", async () => {
-  const workflow = gsx.Workflow("EmbedMany", AI.EmbedMany);
+  const workflow = gensx.Workflow("EmbedMany", AI.EmbedMany);
   const embeddings = await workflow.run({
     values: ["Text 1", "Text 2"],
     model: embeddingModel,
@@ -85,7 +85,7 @@ test("EmbedMany generates multiple embeddings", async () => {
 }, 30000);
 
 test("GenerateImage generates image", async () => {
-  const workflow = gsx.Workflow("GenerateImage", AI.GenerateImage);
+  const workflow = gensx.Workflow("GenerateImage", AI.GenerateImage);
   const result = await workflow.run({
     prompt: "A sunset over mountains",
     model: imageModel,

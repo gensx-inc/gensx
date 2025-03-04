@@ -65,7 +65,7 @@
 ### ✨ New Features
 
 * Add `workflow.run` for executing workflows in a fresh context ([#255](https://github.com/gensx-inc/gensx/issues/255)) ([62c5f19](https://github.com/gensx-inc/gensx/commit/62c5f19ef142ab1d0d76531c9caa0d8688cfae4d))
-* capitzalize gsx.Workflow and update examples ([#279](https://github.com/gensx-inc/gensx/issues/279)) ([9ba3eda](https://github.com/gensx-inc/gensx/commit/9ba3eda6b6867c569a98444d411c2ba85b32214d))
+* capitzalize gensx.Workflow and update examples ([#279](https://github.com/gensx-inc/gensx/issues/279)) ([9ba3eda](https://github.com/gensx-inc/gensx/commit/9ba3eda6b6867c569a98444d411c2ba85b32214d))
 * CLI Device auth flow ([#212](https://github.com/gensx-inc/gensx/issues/212)) ([094b98e](https://github.com/gensx-inc/gensx/commit/094b98e12ef4239e8b04c176a14f19f5e891f5a1))
 
 
@@ -106,7 +106,7 @@
 
 * Add secrets masking ([#182](https://github.com/gensx-inc/gensx/issues/182)) ([17826a7](https://github.com/gensx-inc/gensx/commit/17826a784eccb1641d05fe38a0ee7886a771e019))
 * adding deep research example ([#110](https://github.com/gensx-inc/gensx/issues/110)) ([d7c33f2](https://github.com/gensx-inc/gensx/commit/d7c33f2bcad706777bd35a64823ae50b3c0cf914))
-* adding support for generic arrays in gsx.array ([#173](https://github.com/gensx-inc/gensx/issues/173)) ([3d8795a](https://github.com/gensx-inc/gensx/commit/3d8795a451ca07b845a14a128d7625edbaa7372e))
+* adding support for generic arrays in gensx.array ([#173](https://github.com/gensx-inc/gensx/issues/173)) ([3d8795a](https://github.com/gensx-inc/gensx/commit/3d8795a451ca07b845a14a128d7625edbaa7372e))
 
 
 ### 📚 Documentation
@@ -125,7 +125,7 @@
 
 ### ✨ New Features
 
-* Add `gsx.array` plus `map`, `filter`, `reduce`, and `flatMap` ([#153](https://github.com/gensx-inc/gensx/issues/153)) ([ad8f74b](https://github.com/gensx-inc/gensx/commit/ad8f74b0500ab8b6190334bae396a18655041b6f))
+* Add `gensx.array` plus `map`, `filter`, `reduce`, and `flatMap` ([#153](https://github.com/gensx-inc/gensx/issues/153)) ([ad8f74b](https://github.com/gensx-inc/gensx/commit/ad8f74b0500ab8b6190334bae396a18655041b6f))
 * Add checkpoint support for StreamComponent ([#155](https://github.com/gensx-inc/gensx/issues/155)) ([830f43e](https://github.com/gensx-inc/gensx/commit/830f43ea2b63f11639f911a258a75ca55e5dabe2))
 
 ## [0.2.3](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.2...gensx-v0.2.3) (2025-01-21)

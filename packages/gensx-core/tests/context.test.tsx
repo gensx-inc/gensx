@@ -2,32 +2,32 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { createContext, gsx, useContext } from "@/index.js";
+import * as gensx from "@/index.js";
 
 suite("context", () => {
   test("can create and use context with default value", async () => {
-    const TestContext = createContext("default");
+    const TestContext = gensx.createContext("default");
 
-    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
+    const Consumer = gensx.Component<{}, string>("Consumer", async () => {
       await setTimeout(0);
-      const value = useContext(TestContext);
+      const value = gensx.useContext(TestContext);
       return value;
     });
 
-    const result = await gsx.execute(<Consumer />);
+    const result = await gensx.execute(<Consumer />);
     expect(result).toBe("default");
   });
 
   test("can provide and consume context value", async () => {
-    const TestContext = createContext("default");
+    const TestContext = gensx.createContext("default");
 
-    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
+    const Consumer = gensx.Component<{}, string>("Consumer", async () => {
       await setTimeout(0);
-      const value = useContext(TestContext);
+      const value = gensx.useContext(TestContext);
       return value;
     });
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <TestContext.Provider value="provided">
         <Consumer />
       </TestContext.Provider>,
@@ -37,15 +37,15 @@ suite("context", () => {
   });
 
   test("context value can be nested", async () => {
-    const TestContext = createContext("default");
+    const TestContext = gensx.createContext("default");
 
-    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
+    const Consumer = gensx.Component<{}, string>("Consumer", async () => {
       await setTimeout(0);
-      const value = useContext(TestContext);
+      const value = gensx.useContext(TestContext);
       return value;
     });
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <TestContext.Provider value="outer">
         <TestContext.Provider value="inner">
           <Consumer />
@@ -62,15 +62,15 @@ suite("context", () => {
       age: number;
     }
 
-    const UserContext = createContext<User>({ name: "default", age: 0 });
+    const UserContext = gensx.createContext<User>({ name: "default", age: 0 });
 
-    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
+    const Consumer = gensx.Component<{}, string>("Consumer", async () => {
       await setTimeout(0);
-      const user = useContext(UserContext);
+      const user = gensx.useContext(UserContext);
       return user.name;
     });
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <UserContext.Provider value={{ name: "John", age: 30 }}>
         <Consumer />
       </UserContext.Provider>,
@@ -80,20 +80,20 @@ suite("context", () => {
   });
 
   test("multiple contexts work independently", async () => {
-    const NameContext = createContext("default-name");
-    const AgeContext = createContext(0);
+    const NameContext = gensx.createContext("default-name");
+    const AgeContext = gensx.createContext(0);
 
-    const Consumer = gsx.Component<{}, { name: string; age: number }>(
+    const Consumer = gensx.Component<{}, { name: string; age: number }>(
       "Consumer",
       async () => {
         await setTimeout(0);
-        const name = useContext(NameContext);
-        const age = useContext(AgeContext);
+        const name = gensx.useContext(NameContext);
+        const age = gensx.useContext(AgeContext);
         return { name, age };
       },
     );
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <NameContext.Provider value="John">
         <AgeContext.Provider value={30}>
           <Consumer />
@@ -104,7 +104,7 @@ suite("context", () => {
     expect(result).toEqual({ name: "John", age: 30 });
 
     // Test that contexts can be nested in different orders
-    const result2 = await gsx.execute(
+    const result2 = await gensx.execute(
       <AgeContext.Provider value={25}>
         <NameContext.Provider value="Jane">
           <Consumer />
@@ -116,20 +116,20 @@ suite("context", () => {
   });
 
   test("contexts maintain independence when nested", async () => {
-    const Context1 = createContext("default1");
-    const Context2 = createContext("default2");
+    const Context1 = gensx.createContext("default1");
+    const Context2 = gensx.createContext("default2");
 
-    const Consumer = gsx.Component<{}, { value1: string; value2: string }>(
+    const Consumer = gensx.Component<{}, { value1: string; value2: string }>(
       "Consumer",
       async () => {
         await setTimeout(0);
-        const value1 = useContext(Context1);
-        const value2 = useContext(Context2);
+        const value1 = gensx.useContext(Context1);
+        const value2 = gensx.useContext(Context2);
         return { value1, value2 };
       },
     );
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <Context1.Provider value="outer1">
         <Context2.Provider value="outer2">
           <Context1.Provider value="inner1">
@@ -143,18 +143,18 @@ suite("context", () => {
   });
 
   test("context values persist through async operations", async () => {
-    const TestContext = createContext("default");
+    const TestContext = gensx.createContext("default");
 
-    const AsyncConsumer = gsx.Component<{}, string>(
+    const AsyncConsumer = gensx.Component<{}, string>(
       "AsyncConsumer",
       async () => {
         await setTimeout(0);
-        const value = useContext(TestContext);
+        const value = gensx.useContext(TestContext);
         return value;
       },
     );
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <TestContext.Provider value="async-test">
         <AsyncConsumer />
       </TestContext.Provider>,
@@ -164,22 +164,22 @@ suite("context", () => {
   });
 
   test("context values are isolated between executions", async () => {
-    const TestContext = createContext("default");
+    const TestContext = gensx.createContext("default");
 
-    const Consumer = gsx.Component<{}, string>("Consumer", async () => {
+    const Consumer = gensx.Component<{}, string>("Consumer", async () => {
       await setTimeout(0);
-      const value = useContext(TestContext);
+      const value = gensx.useContext(TestContext);
       return value;
     });
 
     // Run two executions in parallel
     const [result1, result2] = await Promise.all([
-      gsx.execute(
+      gensx.execute(
         <TestContext.Provider value="value1">
           <Consumer />
         </TestContext.Provider>,
       ),
-      gsx.execute(
+      gensx.execute(
         <TestContext.Provider value="value2">
           <Consumer />
         </TestContext.Provider>,
@@ -191,20 +191,20 @@ suite("context", () => {
   });
 
   test("context with complex nested async operations", async () => {
-    const Context1 = createContext("default1");
-    const Context2 = createContext("default2");
+    const Context1 = gensx.createContext("default1");
+    const Context2 = gensx.createContext("default2");
 
-    const AsyncChild = gsx.Component<{}, { value1: string; value2: string }>(
+    const AsyncChild = gensx.Component<{}, { value1: string; value2: string }>(
       "AsyncChild",
       async () => {
         await setTimeout(0);
-        const value1 = useContext(Context1);
-        const value2 = useContext(Context2);
+        const value1 = gensx.useContext(Context1);
+        const value2 = gensx.useContext(Context2);
         return { value1, value2 };
       },
     );
 
-    const AsyncParent = gsx.Component<{}, { value1: string; value2: string }>(
+    const AsyncParent = gensx.Component<{}, { value1: string; value2: string }>(
       "AsyncParent",
       async () => {
         await setTimeout(0);
@@ -212,7 +212,7 @@ suite("context", () => {
       },
     );
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <Context1.Provider value="outer1">
         <Context2.Provider value="outer2">
           <AsyncParent />
@@ -224,8 +224,8 @@ suite("context", () => {
   });
 
   suite("can wrap children in a context provider", () => {
-    const TestContext = createContext("default");
-    const MyProvider = gsx.Component<{ value: string }, never>(
+    const TestContext = gensx.createContext("default");
+    const MyProvider = gensx.Component<{ value: string }, never>(
       "MyProvider",
       async ({ value }) => {
         await setTimeout(0);
@@ -235,10 +235,10 @@ suite("context", () => {
     );
 
     test("returns the value from the context", async () => {
-      const result = await gsx.execute<string>(
+      const result = await gensx.execute<string>(
         <MyProvider value="value">
           {() => {
-            const value = useContext(TestContext);
+            const value = gensx.useContext(TestContext);
             return value;
           }}
         </MyProvider>,
@@ -247,9 +247,9 @@ suite("context", () => {
     });
 
     test("can nest children within multiple context providers", async () => {
-      const Context2 = createContext("default2");
+      const Context2 = gensx.createContext("default2");
 
-      const Providers = gsx.Component<{ value: string }, never>(
+      const Providers = gensx.Component<{ value: string }, never>(
         "Providers",
         async (props) => {
           await setTimeout(0);
@@ -261,11 +261,11 @@ suite("context", () => {
         },
       );
 
-      const result = await gsx.execute(
+      const result = await gensx.execute(
         <Providers value="value">
           {() => {
-            const testValue = useContext(TestContext);
-            const context2Value = useContext(Context2);
+            const testValue = gensx.useContext(TestContext);
+            const context2Value = gensx.useContext(Context2);
             return [testValue, context2Value];
           }}
         </Providers>,

@@ -1,4 +1,4 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import fetch from "node-fetch";
 import { Parser } from "xml2js";
 
@@ -23,7 +23,7 @@ export interface SearchArxivProps {
   maxResults?: number;
 }
 
-export const SearchArxiv = gsx.Component<SearchArxivProps, ArxivEntry[]>(
+export const SearchArxiv = gensx.Component<SearchArxivProps, ArxivEntry[]>(
   "SearchArxiv",
   async ({ query, maxResults = 10 }) => {
     const queryUrl = `https://export.arxiv.org/api/query?search_query=all:${query}&start=0&max_results=${maxResults}`;

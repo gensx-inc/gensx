@@ -19,10 +19,10 @@ npm install gensx
 ## Usage
 
 ```tsx
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { GenerateText, StreamText } from "@gensx/vercel-ai-sdk";
 
-const ChatBot = gsx.Component(async ({ userInput }) => {
+const ChatBot = gensx.Component(async ({ userInput }) => {
   return (
     <GenerateText
       messages={[
@@ -36,7 +36,7 @@ const ChatBot = gsx.Component(async ({ userInput }) => {
 });
 
 // Use with streaming
-const StreamingChat = gsx.Component(async ({ userInput }) => {
+const StreamingChat = gensx.Component(async ({ userInput }) => {
   return (
     <StreamText
       messages={[

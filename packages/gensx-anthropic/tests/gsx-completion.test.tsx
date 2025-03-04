@@ -3,7 +3,7 @@ import {
   RawMessageStreamEvent,
 } from "@anthropic-ai/sdk/resources/messages";
 import { Stream } from "@anthropic-ai/sdk/streaming";
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 
 import { GSXChatCompletionResult } from "@/gsx-completion.js";
@@ -45,7 +45,7 @@ vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
 
 suite("GSXChatCompletion", () => {
   test("passes a stream to a child function", async () => {
-    const Wrapper = gsx.Component<{}, string>("Wrapper", () => {
+    const Wrapper = gensx.Component<{}, string>("Wrapper", () => {
       return (
         <GSXChatCompletion
           model="claude-3-5-sonnet-latest"
@@ -69,7 +69,7 @@ suite("GSXChatCompletion", () => {
       );
     });
 
-    const result = await gsx.execute<string>(
+    const result = await gensx.execute<string>(
       <AnthropicProvider apiKey="test">
         <Wrapper />
       </AnthropicProvider>,
@@ -79,7 +79,7 @@ suite("GSXChatCompletion", () => {
   });
 
   test("passes a standard response to a child function", async () => {
-    const Wrapper = gsx.Component<{}, string>("Wrapper", () => {
+    const Wrapper = gensx.Component<{}, string>("Wrapper", () => {
       return (
         <GSXChatCompletion
           model="claude-3-5-sonnet-latest"
@@ -96,7 +96,7 @@ suite("GSXChatCompletion", () => {
       );
     });
 
-    const result = await gsx.execute<string>(
+    const result = await gensx.execute<string>(
       <AnthropicProvider apiKey="test">
         <Wrapper />
       </AnthropicProvider>,
@@ -106,7 +106,7 @@ suite("GSXChatCompletion", () => {
   });
 
   test("returns a stream", async () => {
-    const Wrapper = gsx.Component<{}, Stream<RawMessageStreamEvent>>(
+    const Wrapper = gensx.Component<{}, Stream<RawMessageStreamEvent>>(
       "Wrapper",
       async () => {
         const stream = await GSXChatCompletion.run({
@@ -120,7 +120,7 @@ suite("GSXChatCompletion", () => {
       },
     );
 
-    const result = await gsx.execute<Stream<RawMessageStreamEvent>>(
+    const result = await gensx.execute<Stream<RawMessageStreamEvent>>(
       <AnthropicProvider apiKey="test">
         <Wrapper />
       </AnthropicProvider>,
@@ -140,7 +140,7 @@ suite("GSXChatCompletion", () => {
   });
 
   test("returns a standard response", async () => {
-    const Wrapper = gsx.Component<{}, GSXChatCompletionResult>(
+    const Wrapper = gensx.Component<{}, GSXChatCompletionResult>(
       "Wrapper",
       async () => {
         const result = await GSXChatCompletion.run({
@@ -153,7 +153,7 @@ suite("GSXChatCompletion", () => {
       },
     );
 
-    const result = await gsx.execute<GSXChatCompletionResult>(
+    const result = await gensx.execute<GSXChatCompletionResult>(
       <AnthropicProvider apiKey="test">
         <Wrapper />
       </AnthropicProvider>,

@@ -39,7 +39,7 @@ Even if the agent fails to successfully make code changes, it will still push up
 The inner LLM loop is a [GenSX workflow](/docs). There is an outer control loop in plain TypeScript that handles workspace setup and spawning new processes on completion, but the most interesting part is the inner workflow where all of the LLM logic is encapsulated:
 
 ```tsx
-export const SelfModifyingCodeAgent = gsx.Component<AgentProps, AgentResult>(
+export const SelfModifyingCodeAgent = gensx.Component<AgentProps, AgentResult>(
   "SelfModifyingCodeAgent",
   ({ workspace }) => {
     return (

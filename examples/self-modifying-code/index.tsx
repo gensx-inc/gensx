@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import process from "process";
 
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 import { SelfModifyingCodeAgent } from "./agent/smcAgent.js";
 import { setupWorkspace, type WorkspaceConfig } from "./workspace.js";
@@ -36,7 +36,7 @@ async function runWorkflow() {
 
   try {
     // Run agent workflow. Give each iteration a unique name to group them in the UI
-    const workflow = gsx.Workflow(
+    const workflow = gensx.Workflow(
       `SelfModifyingCode-${iterationId ?? "unknown"}`,
       SelfModifyingCodeAgent,
     );

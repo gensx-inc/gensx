@@ -1,12 +1,12 @@
 import fs from "fs/promises";
 
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 
 import { AnalyzeHackerNewsTrends } from "./analyzeHNTrends.js";
 
 async function main() {
   console.log("\n🚀 Starting HN analysis workflow...");
-  const { report, tweet } = await gsx
+  const { report, tweet } = await gensx
     .Workflow("AnalyzeHackerNewsWorkflow", AnalyzeHackerNewsTrends)
     .run(
       {

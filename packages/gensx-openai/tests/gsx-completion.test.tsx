@@ -1,4 +1,4 @@
-import { gsx } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { ChatCompletionChunk } from "openai/resources/index.mjs";
 import { Stream } from "openai/streaming.mjs";
 import { expect, suite, test } from "vitest";
@@ -8,7 +8,7 @@ import { GSXChatCompletion, OpenAIProvider } from "@/index.js";
 
 suite("GSXChatCompletion", () => {
   test("passes a stream to a child function", async () => {
-    const Wrapper = gsx.Component<{}, string>("Wrapper", () => {
+    const Wrapper = gensx.Component<{}, string>("Wrapper", () => {
       return (
         <GSXChatCompletion
           model="gpt-4o"
@@ -26,7 +26,7 @@ suite("GSXChatCompletion", () => {
       );
     });
 
-    const result = await gsx.execute<string>(
+    const result = await gensx.execute<string>(
       <OpenAIProvider apiKey="test">
         <Wrapper />
       </OpenAIProvider>,
@@ -36,7 +36,7 @@ suite("GSXChatCompletion", () => {
   });
 
   test("passes a standard response to a child function", async () => {
-    const Wrapper = gsx.Component<{}, string>("Wrapper", () => {
+    const Wrapper = gensx.Component<{}, string>("Wrapper", () => {
       return (
         <GSXChatCompletion
           model="gpt-4o"
@@ -47,7 +47,7 @@ suite("GSXChatCompletion", () => {
       );
     });
 
-    const result = await gsx.execute<string>(
+    const result = await gensx.execute<string>(
       <OpenAIProvider apiKey="test">
         <Wrapper />
       </OpenAIProvider>,
@@ -57,7 +57,7 @@ suite("GSXChatCompletion", () => {
   });
 
   test("returns a stream", async () => {
-    const Wrapper = gsx.Component<{}, Stream<ChatCompletionChunk>>(
+    const Wrapper = gensx.Component<{}, Stream<ChatCompletionChunk>>(
       "Wrapper",
       async () => {
         const stream = await GSXChatCompletion.run({
@@ -70,7 +70,7 @@ suite("GSXChatCompletion", () => {
       },
     );
 
-    const result = await gsx.execute<Stream<ChatCompletionChunk>>(
+    const result = await gensx.execute<Stream<ChatCompletionChunk>>(
       <OpenAIProvider apiKey="test">
         <Wrapper />
       </OpenAIProvider>,
@@ -85,7 +85,7 @@ suite("GSXChatCompletion", () => {
   });
 
   test("returns a standard response", async () => {
-    const Wrapper = gsx.Component<{}, GSXChatCompletionResult>(
+    const Wrapper = gensx.Component<{}, GSXChatCompletionResult>(
       "Wrapper",
       async () => {
         const result = await GSXChatCompletion.run({
@@ -97,7 +97,7 @@ suite("GSXChatCompletion", () => {
       },
     );
 
-    const result = await gsx.execute<GSXChatCompletionResult>(
+    const result = await gensx.execute<GSXChatCompletionResult>(
       <OpenAIProvider apiKey="test">
         <Wrapper />
       </OpenAIProvider>,

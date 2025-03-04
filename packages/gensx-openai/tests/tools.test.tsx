@@ -1,4 +1,4 @@
-import { gsx, GSXToolParams } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionAssistantMessageParam,
@@ -12,6 +12,7 @@ import {
   GSXChatCompletion,
   GSXChatCompletionResult,
   GSXTool,
+  GSXToolParams,
   OpenAIProvider,
 } from "@/index.js";
 import { ToolExecutor, ToolsCompletion } from "@/tools.js";
@@ -48,7 +49,7 @@ suite("Tools", () => {
   });
 
   test("ToolExecutor executes tools correctly", async () => {
-    const TestComponent = gsx.Component<{}, ChatCompletionToolMessageParam[]>(
+    const TestComponent = gensx.Component<{}, ChatCompletionToolMessageParam[]>(
       "TestComponent",
       () => (
         <ToolExecutor
@@ -67,7 +68,7 @@ suite("Tools", () => {
       ),
     );
 
-    const result = await gsx.execute<ChatCompletionToolMessageParam[]>(
+    const result = await gensx.execute<ChatCompletionToolMessageParam[]>(
       <OpenAIProvider apiKey="test">
         <TestComponent />
       </OpenAIProvider>,
@@ -80,7 +81,7 @@ suite("Tools", () => {
   });
 
   test("ToolsCompletion handles tool-based conversation", async () => {
-    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+    const TestComponent = gensx.Component<{}, ChatCompletionOutput>(
       "TestComponent",
       () => (
         <ToolsCompletion
@@ -91,7 +92,7 @@ suite("Tools", () => {
       ),
     );
 
-    const result = await gsx.execute<ChatCompletionOutput>(
+    const result = await gensx.execute<ChatCompletionOutput>(
       <OpenAIProvider apiKey="test">
         <TestComponent />
       </OpenAIProvider>,
@@ -108,7 +109,7 @@ suite("Tools", () => {
       { role: "user", content: "test message" },
     ];
 
-    const TestComponent = gsx.Component<{}, GSXChatCompletionResult>(
+    const TestComponent = gensx.Component<{}, GSXChatCompletionResult>(
       "TestComponent",
       () => (
         <GSXChatCompletion
@@ -119,7 +120,7 @@ suite("Tools", () => {
       ),
     );
 
-    const result = await gsx.execute<GSXChatCompletionResult>(
+    const result = await gensx.execute<GSXChatCompletionResult>(
       <OpenAIProvider apiKey="test">
         <TestComponent />
       </OpenAIProvider>,
@@ -154,7 +155,7 @@ suite("Tools", () => {
   });
 
   test("GSXChatCompletion works with tools", async () => {
-    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+    const TestComponent = gensx.Component<{}, ChatCompletionOutput>(
       "TestComponent",
       () => (
         <GSXChatCompletion
@@ -165,7 +166,7 @@ suite("Tools", () => {
       ),
     );
 
-    const result = await gsx.execute<ChatCompletionOutput>(
+    const result = await gensx.execute<ChatCompletionOutput>(
       <OpenAIProvider apiKey="test">
         <TestComponent />
       </OpenAIProvider>,
@@ -177,7 +178,7 @@ suite("Tools", () => {
   });
 
   test("GSXChatCompletion works with tool params", async () => {
-    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+    const TestComponent = gensx.Component<{}, ChatCompletionOutput>(
       "TestComponent",
       () => (
         <GSXChatCompletion
@@ -188,7 +189,7 @@ suite("Tools", () => {
       ),
     );
 
-    const result = await gsx.execute<ChatCompletionOutput>(
+    const result = await gensx.execute<ChatCompletionOutput>(
       <OpenAIProvider apiKey="test">
         <TestComponent />
       </OpenAIProvider>,
@@ -200,7 +201,7 @@ suite("Tools", () => {
   });
 
   test("GSXChatCompletion works with tools and structured output", async () => {
-    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+    const TestComponent = gensx.Component<{}, ChatCompletionOutput>(
       "TestComponent",
       () => (
         <GSXChatCompletion
@@ -215,7 +216,7 @@ suite("Tools", () => {
       ),
     );
 
-    const result = await gsx.execute<ChatCompletionOutput>(
+    const result = await gensx.execute<ChatCompletionOutput>(
       <OpenAIProvider apiKey="test">
         <TestComponent />
       </OpenAIProvider>,
@@ -228,7 +229,7 @@ suite("Tools", () => {
   });
 
   test("GSXChatCompletion works with tool params and structured output", async () => {
-    const TestComponent = gsx.Component<{}, ChatCompletionOutput>(
+    const TestComponent = gensx.Component<{}, ChatCompletionOutput>(
       "TestComponent",
       () => (
         <GSXChatCompletion
@@ -243,7 +244,7 @@ suite("Tools", () => {
       ),
     );
 
-    const result = await gsx.execute<ChatCompletionOutput>(
+    const result = await gensx.execute<ChatCompletionOutput>(
       <OpenAIProvider apiKey="test">
         <TestComponent />
       </OpenAIProvider>,
@@ -256,7 +257,7 @@ suite("Tools", () => {
   });
 
   test("ToolExecutor throws error for invalid tool", async () => {
-    const TestComponent = gsx.Component("TestComponent", () => (
+    const TestComponent = gensx.Component("TestComponent", () => (
       <ToolExecutor
         tools={[testTool]}
         toolCalls={[
@@ -273,7 +274,7 @@ suite("Tools", () => {
     ));
 
     await expect(() =>
-      gsx.execute(
+      gensx.execute(
         <OpenAIProvider apiKey="test">
           <TestComponent />
         </OpenAIProvider>,
@@ -282,7 +283,7 @@ suite("Tools", () => {
   });
 
   test("ToolExecutor throws error for invalid arguments", async () => {
-    const TestComponent = gsx.Component("TestComponent", () => (
+    const TestComponent = gensx.Component("TestComponent", () => (
       <ToolExecutor
         tools={[testTool]}
         toolCalls={[
@@ -299,7 +300,7 @@ suite("Tools", () => {
     ));
 
     await expect(() =>
-      gsx.execute(
+      gensx.execute(
         <OpenAIProvider apiKey="test">
           <TestComponent />
         </OpenAIProvider>,

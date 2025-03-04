@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { MessageCreateParams } from "@anthropic-ai/sdk/resources/messages";
-import { gsx, Streamable } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 
 import {
@@ -51,13 +51,13 @@ suite("AnthropicContext", () => {
   test("provides Anthropic client to children", async () => {
     let capturedClient: Anthropic | undefined;
 
-    const TestComponent = gsx.Component<{}, null>("TestComponent", () => {
-      const context = gsx.useContext(AnthropicContext);
+    const TestComponent = gensx.Component<{}, null>("TestComponent", () => {
+      const context = gensx.useContext(AnthropicContext);
       capturedClient = context.client;
       return null;
     });
 
-    await gsx.execute(
+    await gensx.execute(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -67,7 +67,7 @@ suite("AnthropicContext", () => {
   });
 
   test("throws error when client is not provided", async () => {
-    const TestComponent = gsx.Component<{}, string>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, string>("TestComponent", () => (
       <AnthropicChatCompletion
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "test" }]}
@@ -75,7 +75,7 @@ suite("AnthropicContext", () => {
       />
     ));
 
-    await expect(() => gsx.execute(<TestComponent />)).rejects.toThrow(
+    await expect(() => gensx.execute(<TestComponent />)).rejects.toThrow(
       "Anthropic client not found in context",
     );
   });
@@ -83,13 +83,13 @@ suite("AnthropicContext", () => {
   test("can provide a custom client", async () => {
     const customClient = new Anthropic({ apiKey: "test" });
 
-    const TestComponent = gsx.Component<{}, null>("TestComponent", () => {
-      const context = gsx.useContext(AnthropicContext);
+    const TestComponent = gensx.Component<{}, null>("TestComponent", () => {
+      const context = gensx.useContext(AnthropicContext);
       expect(context.client).toBe(customClient);
       return null;
     });
 
-    await gsx.execute(
+    await gensx.execute(
       <AnthropicContext.Provider value={{ client: customClient }}>
         <TestComponent />
       </AnthropicContext.Provider>,
@@ -99,7 +99,7 @@ suite("AnthropicContext", () => {
 
 suite("ChatCompletion", () => {
   test("handles streaming response", async () => {
-    const TestComponent = gsx.StreamComponent<{}>("TestComponent", () => (
+    const TestComponent = gensx.StreamComponent<{}>("TestComponent", () => (
       <ChatCompletion
         stream={true}
         model="claude-3-5-sonnet-latest"
@@ -108,7 +108,7 @@ suite("ChatCompletion", () => {
       />
     ));
 
-    const result = await gsx.execute<Streamable>(
+    const result = await gensx.execute<gensx.Streamable>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -123,7 +123,7 @@ suite("ChatCompletion", () => {
   });
 
   test("handles non-streaming response", async () => {
-    const TestComponent = gsx.Component<{}, string>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, string>("TestComponent", () => (
       <ChatCompletion
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "test" }]}
@@ -133,7 +133,7 @@ suite("ChatCompletion", () => {
       </ChatCompletion>
     ));
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
