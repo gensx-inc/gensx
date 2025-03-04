@@ -2,7 +2,7 @@
 title: "LLMs are really bad at Tic-Tac-Toe"
 excerpt: ""
 date: "2025-03-03T00:00:00.000Z"
-coverImage: "/assets/blog/hello-world/cover.jpg"
+coverImage: "/assets/blog/dynamic-routing/cover.jpg"
 author:
   name: Derek Legenzoff
   picture: "/assets/blog/authors/derek.jpg"

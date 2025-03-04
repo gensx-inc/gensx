@@ -1,44 +1,48 @@
-# LLM Games
+# LLM Games - Tic-Tac-Toe
 
-## Tic Tac Toe
+This example allows you to run a Tic-Tac-Toe tournament between two LLMs or an LLM and a computer. You can see the full results of our tournament runs in [this blog post](https://gensx.com/blog/llm-tic-tac-toe).
 
-### Running the game
+## Usage
 
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run the game:
+### Running the example
 
 ```bash
-npm run start
+# Install dependencies
+pnpm install
+
+# Set your OpenAI API key or any relevant key
+export OPENAI_API_KEY=<your_api_key>
+
+# Run the example
+pnpm run start
 ```
 
-## Models to include
+### Updating the tournament
 
-- gpt-4o
-- gpt-4o-mini
-- gpt-4.5
-- claude-3-7-sonnet
-- claude-3-5-haiku
-- llama-3.3-70b
-- deepseek-v3
-- grok-3
-- gemini-2.0-flash
-- gemini-1.5-pro
-- qwen-2.5-plus
+By default, the tournament will run 10 games between `gpt-4o-mini` and the `basic` computer strategy in index.tsx.
 
-### Reasoning models
+#### Players
 
-- o3-mini
-- claude-3-7-sonnet thinking
-- deepseek-r1
-- gemini-flash-2-thinking
+You can also change the different players in the `index.tsx` file.
 
-## Other ideas to consider
+There are two computer strategies supported: "random" and "basic".
 
-- Give models the game history (including their moves and thought process)
-- Incorporate vision models to "see" the board
-- Give more in depth strategy advice
+```tsx
+const player2: Player = new Player({
+  type: "basic",
+});
+```
+
+You can use any anthropic model or any openai compatible model.
+
+```tsx
+const player1: Player = new Player({
+  model: "claude-3-5-haiku-latest",
+  type: "llm",
+  strategy: "basic",
+  provider: {
+    apiKey: process.env.ANTHROPIC_API_KEY!,
+    type: "anthropic",
+  },
+});
+```

@@ -6,14 +6,24 @@ import { PlayTournament } from "./Tournament.js";
 import { Player } from "./types.js";
 async function main() {
   const player1: Player = new Player({
-    model: "o3-mini",
+    model: "claude-3-5-haiku-latest",
     type: "llm",
     strategy: "basic",
     provider: {
-      apiKey: process.env.OPENAI_API_KEY!,
-      type: "openai",
+      apiKey: process.env.ANTHROPIC_API_KEY!,
+      type: "anthropic",
     },
   });
+  // const player1: Player = new Player({
+  //   model: "deepseek/deepseek-chat",
+  //   type: "llm",
+  //   strategy: "basic",
+  //   provider: {
+  //     apiKey: process.env.OPENROUTER_API_KEY!,
+  //     baseURL: "https://openrouter.ai/api/v1",
+  //     type: "openai",
+  //   },
+  // });
   // const player1: Player = new Player({
   //   type: "random",
   // });
