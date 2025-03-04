@@ -5,6 +5,7 @@ import { promisify } from "util";
 
 import fs from "fs-extra";
 import { afterEach, beforeEach, expect, it } from "vitest";
+import yaml from "yaml";
 
 const exec = promisify(execCallback);
 
@@ -30,6 +31,38 @@ it("package.json is correctly configured for npm create", async () => {
     path.join(pkgDir, "package.json"),
   );
   await fs.chmod(path.join(pkgDir, "dist/cli.js"), 0o755);
+
+  // Fix the "catalog:" dependencies and devDependencies, swapping in the versions from the pnpm-workspace.yaml
+  const pkgJson = (await fs.readJson(path.join(pkgDir, "package.json"))) as {
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+  };
+  const pnpmWorkspaceYaml = await fs.readFile(
+    path.join(__dirname, "../../../pnpm-workspace.yaml"),
+    "utf-8",
+  );
+  const pnpmWorkspace = yaml.parse(pnpmWorkspaceYaml) as {
+    catalog: Record<string, string>;
+  };
+  pkgJson.dependencies = Object.fromEntries(
+    Object.entries(pkgJson.dependencies).map(([key, value]) => {
+      if (value === "catalog:") {
+        return [key, pnpmWorkspace.catalog[key]];
+      }
+      return [key, value];
+    }),
+  );
+  pkgJson.devDependencies = Object.fromEntries(
+    Object.entries(pkgJson.devDependencies).map(([key, value]) => {
+      if (value === "catalog:") {
+        return [key, pnpmWorkspace.catalog[key]];
+      }
+      return [key, value];
+    }),
+  );
+  await fs.writeJson(path.join(pkgDir, "package.json"), pkgJson, {
+    spaces: 2,
+  });
 
   // Install dependencies in the package directory
   await exec("npm install", {

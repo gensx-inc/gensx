@@ -30,10 +30,10 @@
     "commander": "^11.1.0",
     "enquirer": "^2.4.1",
     "ora": "^8.0.1",
-    "picocolors": "^1.0.0"
+    "picocolors": "^1.0.0",
+    "yaml": "^2.7.0"
   },
   "devDependencies": {
-    "@tsconfig/node20": "^20.1.4",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
