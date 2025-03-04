@@ -15,6 +15,14 @@ import {
 import { bundleWorkflow } from "../utils/bundler.js";
 import { ensureFirstTimeSetupComplete } from "../utils/first-time-setup.js";
 
+// Utility function to convert camelCase to train-case
+function toTrainCase(str: string): string {
+  return str
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/([A-Z])([A-Z])(?=[a-z])/g, "$1-$2")
+    .toLowerCase();
+}
+
 export interface BuildOptions {
   outDir?: string;
   tsconfig?: string;
@@ -82,6 +90,9 @@ async function generateSchema(
     workflowName,
     componentName,
   ] of workflowDeclarations) {
+    // Convert workflow name to train-case
+    const normalizedWorkflowName = toTrainCase(workflowName);
+
     // Look for the component definition and its type parameters
     const componentMatch = new RegExp(
       `${componentName}\\s*=\\s*gsx\\.Component\\s*<\\s*({[^}]+}|[^,>]+)\\s*,\\s*([^>]+)\\s*>`,
@@ -126,7 +137,7 @@ async function generateSchema(
     const output = schema.definitions[outputType];
 
     if (isDefinition(input) && isDefinition(output)) {
-      workflowSchemas[workflowName] = { input, output };
+      workflowSchemas[normalizedWorkflowName] = { input, output };
     }
   }
 
@@ -183,10 +194,21 @@ const ajv = new Ajv({
 });
 addFormats(ajv);    // Add support for formats like email, date, etc.
 
-// Combine default export and named exports
+// Function to convert camelCase to train-case
+function toTrainCase(str) {
+  return str
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z])([A-Z])(?=[a-z])/g, '$1-$2')
+    .toLowerCase();
+}
+
+// Combine default export and named exports with normalized names
 const workflows = {
-  ...(defaultWorkflow ? { [defaultWorkflow.name]: defaultWorkflow } : {}),
-  ...Object.fromEntries(Object.values(namedWorkflows).map(workflow => [workflow.name, workflow])),
+  ...(defaultWorkflow ? { [toTrainCase(defaultWorkflow.name)]: defaultWorkflow } : {}),
+  ...Object.fromEntries(
+    Object.values(namedWorkflows)
+      .map(workflow => [toTrainCase(workflow.name), workflow])
+  ),
 };
 
 // Cache for compiled validators

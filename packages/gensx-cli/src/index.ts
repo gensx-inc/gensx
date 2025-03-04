@@ -3,6 +3,7 @@ import { Command } from "commander";
 import packageJson from "../package.json" with { type: "json" };
 import { build, BuildOptions } from "./commands/build.js";
 import { deploy } from "./commands/deploy.js";
+import { dev, DevOptions } from "./commands/dev.js";
 import { login } from "./commands/login.js";
 import { newProject } from "./commands/new.js";
 
@@ -39,6 +40,17 @@ export function runCLI() {
     .action(async (file: string, options: BuildOptions) => {
       const outFile = await build(file, options);
       console.info(`Workflow built to ${outFile}`);
+    });
+
+  program
+    .command("dev")
+    .description("Run the built GenSX project")
+    .option(
+      "-b, --build-dir <dir>",
+      "Build directory (defaults to .gensx/dist)",
+    )
+    .action(async (options: DevOptions) => {
+      await dev(options);
     });
 
   program
