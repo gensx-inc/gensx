@@ -99,25 +99,6 @@
         }
       ]
     },
-    "packages/gensx-cli": {
-      "component": "gensx-cli",
-      "release-type": "node",
-      "package-name": "@gensx/cli",
-      "changelog-path": "CHANGELOG.md",
-      "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "draft": false,
-      "prerelease": false,
-      "include-component-in-tag": true,
-      "include-v-in-tag": true,
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "package.json",
-          "jsonpath": "$.version"
-        }
-      ]
-    },
     "packages/gensx-anthropic": {
       "component": "gensx-anthropic",
       "release-type": "node",
