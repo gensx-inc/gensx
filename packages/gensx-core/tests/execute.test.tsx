@@ -3,6 +3,7 @@ import { setTimeout } from "timers/promises";
 import { expect, suite, test } from "vitest";
 
 import * as gensx from "../src/index.js";
+import { Streamable } from "../src/index.js";
 import { executeWorkflowWithCheckpoints } from "./utils/executeWithCheckpoints.js";
 
 type Assert<T, U> =
