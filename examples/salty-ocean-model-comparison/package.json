@@ -21,16 +21,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ai-sdk/openai": "^1.1.13",
+    "@ai-sdk/openai": "^1.2.0",
     "@gensx/openai": "^0.1.8",
     "@gensx/vercel-ai-sdk": "^0.1.1",
     "gensx": "^0.2.14",
-    "openai": "^4.86.0"
+    "openai": "^4.86.1"
   },
   "devDependencies": {
-    "@types/node": "^22.13.5",
+    "@types/node": "^20.17.23",
     "nodemon": "^3.1.9",
     "tsx": "^4.19.3",
-    "typescript": "^5.7.2"
+    "typescript": "^5.8.2"
   }
 }
