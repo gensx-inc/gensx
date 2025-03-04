@@ -135,6 +135,7 @@ async function copyTemplateFiles(templateName: string, targetPath: string) {
 export interface NewCommandOptions {
   template?: string;
   force: boolean;
+  skipLogin?: boolean;
 }
 
 export async function newProject(
@@ -144,7 +145,7 @@ export async function newProject(
   try {
     // Check if user has completed first-time setup
     const { state } = await readConfig();
-    if (!state.hasCompletedFirstTimeSetup) {
+    if (!state.hasCompletedFirstTimeSetup && !options.skipLogin) {
       // Ensure that we don't ask again.
       await saveState({ hasCompletedFirstTimeSetup: true });
       logger.log(

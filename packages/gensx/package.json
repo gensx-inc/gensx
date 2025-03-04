@@ -22,6 +22,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && cp -r src/templates dist/",
+    "test:types": "tsc --noEmit",
     "clean": "rm -rf dist",
     "compile": "tsc",
     "lint": "eslint .",
