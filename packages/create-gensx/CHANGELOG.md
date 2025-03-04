@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.10](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.9...create-gensx-v0.1.10) (2025-03-03)
+
+
+### ✨ New Features
+
+* adding @gensx/anthropic ([#347](https://github.com/gensx-inc/gensx/issues/347)) ([4c1457d](https://github.com/gensx-inc/gensx/commit/4c1457dbb7be98f4879dd528bc65d953fe931c70))
+* Don't minify packages ([#371](https://github.com/gensx-inc/gensx/issues/371)) ([2761ab8](https://github.com/gensx-inc/gensx/commit/2761ab862319858bd0447c2d006903f91d9a9b79))
+
 ## [0.1.9](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.8...create-gensx-v0.1.9) (2025-02-20)
 
 

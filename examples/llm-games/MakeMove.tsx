@@ -1,3 +1,7 @@
+import {
+  AnthropicProvider,
+  ChatCompletion as ChatCompletionAnthropic,
+} from "@gensx/anthropic";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 import { z } from "zod";
@@ -67,7 +71,7 @@ Please respond with the json inside of <move> xml tags (no backticks). Do not in
 
 export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
   "MakeMove",
-  ({ playerSymbol, player, board }) => {
+  async ({ playerSymbol, player, board }) => {
     if (player.type === "random") {
       return {
         move: board.getRandomMove()!,
@@ -81,63 +85,80 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
         isFallback: false,
       };
     } else {
-      return (
-        <OpenAIProvider
-          apiKey={player.provider?.apiKey}
-          baseURL={player.provider?.baseURL}
-        >
-          <ChatCompletion
-            model={player.model}
-            messages={[
-              {
-                role: "system",
-                content: getSystemMessage(playerSymbol, player.strategy),
-              },
-              { role: "user", content: board.toString() },
-            ]}
+      let response: string;
+      if (player.provider?.type === "anthropic") {
+        response = await gsx.execute<string>(
+          <AnthropicProvider apiKey={player.provider.apiKey}>
+            <ChatCompletionAnthropic
+              model={player.model}
+              systemMessage={getSystemMessage(playerSymbol, player.strategy)}
+              maxTokens={1000}
+              messages={[
+                {
+                  role: "user",
+                  content: board.toString(),
+                },
+              ]}
+            />
+          </AnthropicProvider>,
+        );
+      } else {
+        response = await gsx.execute<string>(
+          <OpenAIProvider
+            apiKey={player.provider?.apiKey}
+            baseURL={player.provider?.baseURL}
           >
-            {(response: string) => {
-              try {
-                const moveText = /<move>(.*?)<\/move>/s.exec(response)?.[1];
-                if (!moveText) {
-                  throw new Error("No move found in response");
-                }
+            <ChatCompletion
+              model={player.model}
+              messages={[
+                {
+                  role: "system",
+                  content: getSystemMessage(playerSymbol, player.strategy),
+                },
+                { role: "user", content: board.toString() },
+              ]}
+            />
+          </OpenAIProvider>,
+        );
+      }
 
-                const parsedJson = JSON.parse(moveText);
-                // Rename column to col if it exists
-                if (parsedJson.column && !parsedJson.column) {
-                  parsedJson.column = parsedJson.column;
-                  delete parsedJson.column;
-                }
+      try {
+        const moveText = /<move>(.*?)<\/move>/s.exec(response)?.[1];
+        if (!moveText) {
+          throw new Error("No move found in response");
+        }
 
-                // Validate and parse the move using the Zod schema
-                const validatedMove = MoveSchema.parse(parsedJson);
+        const parsedJson = JSON.parse(moveText);
+        // Rename column to col if it exists
+        if (parsedJson.column && !parsedJson.column) {
+          parsedJson.column = parsedJson.column;
+          delete parsedJson.column;
+        }
 
-                // Check the board to make sure the move is available
-                const isValidMove = board.isValidMove(
-                  validatedMove.row,
-                  validatedMove.column,
-                );
-                if (!isValidMove) {
-                  throw new Error("Invalid move");
-                }
+        // Validate and parse the move using the Zod schema
+        const validatedMove = MoveSchema.parse(parsedJson);
 
-                return {
-                  move: validatedMove,
-                  rawResponse: response,
-                  isFallback: false,
-                };
-              } catch {
-                return {
-                  move: board.getRandomMove(),
-                  rawResponse: response,
-                  isFallback: true,
-                };
-              }
-            }}
-          </ChatCompletion>
-        </OpenAIProvider>
-      );
+        // Check the board to make sure the move is available
+        const isValidMove = board.isValidMove(
+          validatedMove.row,
+          validatedMove.column,
+        );
+        if (!isValidMove) {
+          throw new Error("Invalid move");
+        }
+
+        return {
+          move: validatedMove,
+          rawResponse: response,
+          isFallback: false,
+        };
+      } catch {
+        return {
+          move: board.getRandomMove()!,
+          rawResponse: response,
+          isFallback: true,
+        };
+      }
     }
   },
 );

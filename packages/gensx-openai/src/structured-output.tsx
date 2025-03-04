@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { gsx } from "gensx";
+import { gsx, GSXToolParams } from "gensx";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import {
   ChatCompletion as ChatCompletionOutput,
@@ -17,7 +17,7 @@ type StructuredOutputProps<O = unknown> = Omit<
   "stream" | "tools"
 > & {
   outputSchema: z.ZodSchema<O>;
-  tools?: GSXTool<any>[];
+  tools?: (GSXTool<any> | GSXToolParams<any>)[];
   retry?: {
     maxAttempts?: number;
     backoff?: "exponential" | "linear";
@@ -32,10 +32,14 @@ type StructuredOutputOutput<T> = T;
 export const structuredOutputImpl = async <T,>(
   props: StructuredOutputProps<T>,
 ): Promise<StructuredOutputOutput<T>> => {
-  const { outputSchema, tools, retry, messages, ...rest } = props;
+  const { outputSchema, tools: toolsParams, retry, messages, ...rest } = props;
   const maxAttempts = retry?.maxAttempts ?? 3;
   let lastError: Error | undefined;
   let lastResponse: string | undefined;
+
+  const tools = toolsParams?.map((t) =>
+    t instanceof GSXTool ? t : new GSXTool(t),
+  );
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {

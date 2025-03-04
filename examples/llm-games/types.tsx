@@ -9,6 +9,7 @@ export interface Game {
 export interface Provider {
   apiKey: string;
   baseURL?: string;
+  type: "openai" | "anthropic";
 }
 
 export interface Move {

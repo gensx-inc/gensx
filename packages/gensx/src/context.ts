@@ -17,13 +17,23 @@ function createContextSymbol() {
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
 
-  const Provider = (props: Args<{ value: T }, ExecutionContext>) => {
+  const Provider = (
+    props: Args<
+      { value: T; onComplete?: () => Promise<void> | void },
+      ExecutionContext
+    >,
+  ) => {
     return wrapWithFramework(() => {
       const currentContext = getCurrentContext();
 
-      return Promise.resolve(
-        currentContext.withContext({ [contextSymbol]: props.value }),
+      const executionContext = currentContext.withContext(
+        {
+          [contextSymbol]: props.value,
+        },
+        props.onComplete,
       );
+
+      return Promise.resolve(executionContext);
     });
   };
 
@@ -32,7 +42,7 @@ export function createContext<T>(defaultValue: T): Context<T> {
     defaultValue,
     symbol: contextSymbol,
     Provider: Provider as unknown as GsxComponent<
-      { value: T },
+      { value: T; onComplete?: () => Promise<void> | void },
       ExecutionContext
     >,
   };
@@ -42,13 +52,13 @@ export function createContext<T>(defaultValue: T): Context<T> {
 
 export function useContext<T>(context: Context<T>): T {
   const executionContext = getCurrentContext();
-  const value = executionContext.get(context.symbol);
+  const value = executionContext.get(context.symbol) as T | undefined;
 
-  if (value === undefined) {
+  if (!value) {
     return context.defaultValue;
   }
 
-  return value as T;
+  return value;
 }
 
 // Define AsyncLocalStorage type based on Node.js definitions
@@ -65,13 +75,17 @@ export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
+    public onComplete?: () => Promise<void> | void,
   ) {
     if (!this.context[WORKFLOW_CONTEXT_SYMBOL]) {
       this.context[WORKFLOW_CONTEXT_SYMBOL] = createWorkflowContext();
     }
   }
 
-  withContext(newContext: Partial<WorkflowContext>): ExecutionContext {
+  withContext(
+    newContext: Partial<WorkflowContext>,
+    onComplete?: () => Promise<void> | void,
+  ): ExecutionContext {
     if (Object.getOwnPropertySymbols(newContext).length === 0) {
       return this;
     }
@@ -85,7 +99,7 @@ export class ExecutionContext {
     for (const key of Object.getOwnPropertySymbols(newContext)) {
       mergedContext[key] = newContext[key];
     }
-    return new ExecutionContext(mergedContext, this);
+    return new ExecutionContext(mergedContext, this, onComplete);
   }
 
   get<K extends keyof WorkflowContext>(key: K): WorkflowContext[K] | undefined {

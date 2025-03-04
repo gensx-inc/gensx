@@ -73,10 +73,18 @@ export const jsx = <TOutput, TProps>(
       const parentNodeId = root?.id;
 
       if (result instanceof ExecutionContext) {
+        // rename to make the code more readable
+        const executionContext = result;
+
         // withContext handles wrapping internally
-        return await withContext(result, async () => {
+        return await withContext(executionContext, async () => {
           const childResult = await resolveChildren(null as never, children);
-          return resolveDeep(childResult);
+          const resolvedChildResult = resolveDeep(childResult);
+
+          // Call onComplete for the ExecutionContext, if specified, after all the children are done.
+          await executionContext.onComplete?.();
+
+          return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
         });
       } else if (parentNodeId) {
         // withCurrentNode handles wrapping internally

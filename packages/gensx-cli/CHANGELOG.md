@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.3...gensx-cli-v0.1.4) (2025-03-03)
+
+
+### ✨ New Features
+
+* @gensx/mcp ([#358](https://github.com/gensx-inc/gensx/issues/358)) ([37d316e](https://github.com/gensx-inc/gensx/commit/37d316e0819e3ae9ffc74f568170ff84fff4da3c))
+* Don't minify packages ([#371](https://github.com/gensx-inc/gensx/issues/371)) ([2761ab8](https://github.com/gensx-inc/gensx/commit/2761ab862319858bd0447c2d006903f91d9a9b79))
+
 ## [0.1.3](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.2...gensx-cli-v0.1.3) (2025-02-22)
 
 

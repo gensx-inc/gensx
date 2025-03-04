@@ -1,3 +1,5 @@
+import type { GSXToolAnySchema, GSXToolParams } from "gensx";
+
 import {
   AnthropicChatCompletion,
   AnthropicChatCompletionProps,
@@ -13,7 +15,6 @@ import {
   GSXChatCompletionResult,
 } from "./gsx-completion.js";
 import { GSXTool } from "./tools.js";
-
 export {
   AnthropicProvider,
   AnthropicChatCompletion,
@@ -31,4 +32,6 @@ export type {
   AnthropicChatCompletionProps,
   GSXChatCompletionOutput,
   GSXChatCompletionResult,
+  GSXToolAnySchema,
+  GSXToolParams,
 };

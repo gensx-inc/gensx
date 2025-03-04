@@ -11,6 +11,7 @@ async function main() {
     strategy: "basic",
     provider: {
       apiKey: process.env.OPENAI_API_KEY!,
+      type: "openai",
     },
   });
   // const player1: Player = new Player({

@@ -1,0 +1,32 @@
+{
+  "name": "@gensx-examples/mcp",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon",
+    "start": "tsx ./src/index.tsx",
+    "build": "tsc"
+  },
+  "description": "GenSX example project for the Model Context Protocol",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@gensx/mcp": "workspace:*",
+    "@gensx/openai": "workspace:*",
+    "gensx": "workspace:*",
+    "openai": "^4.85.4",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.2"
+  }
+}

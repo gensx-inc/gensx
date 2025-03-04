@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import { gsx, GSXToolParams } from "gensx";
 import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
 
@@ -42,18 +42,22 @@ vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
 });
 
 suite("GSXChatCompletion with tools and streaming", () => {
+  const schema = z.object({
+    input: z.string(),
+  });
+
   // Create a mock tool for testing
-  const mockTool = GSXTool.create({
+  const mockToolParams: GSXToolParams<typeof schema> = {
     name: "test_tool",
     description: "A test tool",
-    schema: z.object({
-      input: z.string(),
-    }),
+    schema,
     run: async (args) => {
       await Promise.resolve();
       return { result: args.input };
     },
-  });
+  };
+
+  const mockTool = GSXTool.create(mockToolParams);
 
   test("throws error when tools and streaming are used together", async () => {
     // We need to bypass TypeScript's type checking to test the runtime error
@@ -102,6 +106,26 @@ suite("GSXChatCompletion with tools and streaming", () => {
     ).resolves.not.toThrow();
   });
 
+  test("works with tool params when streaming is false", async () => {
+    const TestComponent = gsx.Component<{}, unknown>("TestComponent", () => (
+      <GSXChatCompletion
+        stream={false}
+        tools={[mockToolParams]}
+        model="claude-3-5-sonnet-latest"
+        messages={[{ role: "user", content: "test" }]}
+        max_tokens={1000}
+      />
+    ));
+
+    await expect(
+      gsx.execute(
+        <AnthropicProvider apiKey="test">
+          <TestComponent />
+        </AnthropicProvider>,
+      ),
+    ).resolves.not.toThrow();
+  });
+
   test("works with streaming when tools are not provided", async () => {
     const TestComponent = gsx.Component<{}, unknown>("TestComponent", () => (
       <GSXChatCompletion
@@ -122,18 +146,15 @@ suite("GSXChatCompletion with tools and streaming", () => {
   });
 
   test("type error when trying to use tools with streaming", () => {
-    // This test is for TypeScript type checking only
-    // The following code should not compile:
-    //
-    // <GSXChatCompletion
-    //   stream={true}
-    //   tools={[mockTool]} // Type error: tools cannot be used with streaming
-    //   model="claude-3-5-sonnet-latest"
-    //   messages={[{ role: "user", content: "test" }]}
-    //   max_tokens={1000}
-    // />
-    //
-    // We can't actually test this at runtime, but we can document it
+    // @ts-expect-error - Type error: tools cannot be used with streaming
+    <GSXChatCompletion
+      stream={true}
+      tools={[mockTool]} // Type error: tools cannot be used with streaming
+      model="claude-3-5-sonnet-latest"
+      messages={[{ role: "user", content: "test" }]}
+      max_tokens={1000}
+    />;
+
     expect(true).toBe(true);
   });
 });

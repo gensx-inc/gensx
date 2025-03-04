@@ -3,7 +3,7 @@
 // Import Zod extensions for improved serialization
 import "./utils/zod-extensions.js";
 
-import { Args, gsx } from "gensx";
+import { Args, gsx, GSXToolParams } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
@@ -24,7 +24,7 @@ export type StreamingProps = Omit<
   "stream" | "tools"
 > & {
   stream: true;
-  tools?: GSXTool<any>[];
+  tools?: (GSXTool<any> | GSXToolParams<any>)[];
 };
 
 export type StructuredProps<O = unknown> = Omit<
@@ -32,7 +32,7 @@ export type StructuredProps<O = unknown> = Omit<
   "stream" | "tools"
 > & {
   stream?: false;
-  tools?: GSXTool<any>[];
+  tools?: (GSXTool<any> | GSXToolParams<any>)[];
   outputSchema: z.ZodSchema<O>;
 };
 
@@ -41,7 +41,7 @@ export type StandardProps = Omit<
   "stream" | "tools"
 > & {
   stream?: false;
-  tools?: GSXTool<any>[];
+  tools?: (GSXTool<any> | GSXToolParams<any>)[];
   outputSchema?: never;
 };
 
@@ -86,7 +86,11 @@ export const gsxChatCompletionImpl = async <P extends GSXChatCompletionProps>(
   }
 
   // Handle standard case (with or without tools)
-  const { tools, stream, ...rest } = props;
+  const { tools: toolsParams, stream, ...rest } = props;
+  const tools = toolsParams?.map((t) =>
+    t instanceof GSXTool ? t : new GSXTool(t),
+  );
+
   if (tools) {
     return toolsCompletionImpl({
       ...rest,
