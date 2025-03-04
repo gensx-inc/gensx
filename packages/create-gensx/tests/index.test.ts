@@ -78,5 +78,5 @@ suite("create-gensx", () => {
 
     // Verify the output contains our welcome message
     expect(runOutput).toContain("Hello, World!");
-  }, 60000); // Increase timeout to 60s since npm install can be slow
+  }, 120000); // Increase timeout to 120s since npm install can be slow
 });
