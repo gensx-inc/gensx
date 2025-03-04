@@ -1,155 +1,17 @@
-import { existsSync, readFileSync } from "fs";
+import { existsSync } from "fs";
 import { writeFile } from "fs/promises";
 import { resolve } from "path";
 
 import ora from "ora";
 import pc from "picocolors";
-import {
-  CompilerOptions,
-  Definition,
-  generateSchema as generateSchemaTJS,
-  getProgramFromFiles,
-  PartialArgs,
-} from "typescript-json-schema";
 
 import { bundleWorkflow } from "../utils/bundler.js";
 import { ensureFirstTimeSetupComplete } from "../utils/first-time-setup.js";
-
-// Utility function to convert camelCase to train-case
-function toTrainCase(str: string): string {
-  return str
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .replace(/([A-Z])([A-Z])(?=[a-z])/g, "$1-$2")
-    .toLowerCase();
-}
+import { generateSchema } from "../utils/schema.js";
 
 export interface BuildOptions {
   outDir?: string;
   tsconfig?: string;
-}
-
-// Type guard to check if a value is a Definition object
-function isDefinition(value: unknown): value is Definition {
-  return typeof value === "object" && value !== null;
-}
-
-async function generateSchema(
-  tsFile: string,
-  outFile: string,
-  tsConfigFile?: string,
-): Promise<void> {
-  // Generate schema for all exported types
-  const settings: PartialArgs = {
-    include: [tsFile],
-  };
-
-  const tsconfigJson = JSON.parse(
-    readFileSync(
-      tsConfigFile ?? resolve(process.cwd(), "tsconfig.json"),
-      "utf-8",
-    ),
-  ) as unknown as { compilerOptions: CompilerOptions };
-
-  const program = getProgramFromFiles([tsFile], tsconfigJson.compilerOptions);
-
-  // Generate schema for all types
-  const schema = generateSchemaTJS(program, "*", {
-    ...settings,
-    ignoreErrors: true,
-    ref: true,
-    required: true,
-    strictNullChecks: true,
-    topRef: true,
-    noExtraProps: true,
-  });
-
-  if (!schema?.definitions) {
-    throw new Error("Failed to generate schema");
-  }
-
-  // Read the source file to get workflow names
-  const sourceContent = readFileSync(tsFile, "utf-8");
-
-  // Find workflow-related types by looking at the component types
-  const workflowSchemas: Record<
-    string,
-    { input: Definition; output: Definition }
-  > = {};
-
-  // First find all workflow declarations
-  const workflowDeclarations = Array.from(
-    sourceContent.matchAll(
-      /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*gsx\.Workflow\s*\(\s*["']([^"']+)["']\s*,\s*(\w+)/g,
-    ),
-  );
-
-  // Then look for their component types
-  for (const [
-    ,
-    _varName,
-    workflowName,
-    componentName,
-  ] of workflowDeclarations) {
-    // Convert workflow name to train-case
-    const normalizedWorkflowName = toTrainCase(workflowName);
-
-    // Look for the component definition and its type parameters
-    const componentMatch = new RegExp(
-      `${componentName}\\s*=\\s*gsx\\.Component\\s*<\\s*({[^}]+}|[^,>]+)\\s*,\\s*([^>]+)\\s*>`,
-    ).exec(sourceContent);
-
-    if (!componentMatch) {
-      continue;
-    }
-
-    const [, inputTypeStr, outputTypeStr] = componentMatch;
-
-    // If input type is an inline object type, create a temporary type for it
-    let inputType = inputTypeStr;
-    if (inputTypeStr.startsWith("{")) {
-      const tempTypeName = `${componentName}Input`;
-      if (!schema.definitions[tempTypeName]) {
-        schema.definitions[tempTypeName] = {
-          type: "object",
-          properties: {
-            userInput: { type: "string" },
-          },
-          required: ["userInput"],
-        };
-      }
-      inputType = tempTypeName;
-    }
-
-    // Handle primitive output type
-    let outputType = outputTypeStr.trim();
-    if (outputType === "string") {
-      const tempTypeName = `${componentName}Output`;
-      if (!schema.definitions[tempTypeName]) {
-        schema.definitions[tempTypeName] = {
-          type: "string",
-        };
-      }
-      outputType = tempTypeName;
-    }
-
-    // Get the actual type definitions
-    const input = schema.definitions[inputType.trim()];
-    const output = schema.definitions[outputType];
-
-    if (isDefinition(input) && isDefinition(output)) {
-      workflowSchemas[normalizedWorkflowName] = { input, output };
-    }
-  }
-
-  // Create the final schema document
-  const schemaWithMeta = {
-    $schema: "http://json-schema.org/draft-07/schema#",
-    title: "GenSX Workflow Schemas",
-    description: "JSON Schema for workflow inputs and outputs",
-    workflows: workflowSchemas,
-  };
-
-  await writeFile(outFile, JSON.stringify(schemaWithMeta, null, 2));
 }
 
 export async function build(file: string, options: BuildOptions = {}) {
@@ -178,12 +40,12 @@ export async function build(file: string, options: BuildOptions = {}) {
     // 3. Generate schema
     spinner.start("Generating schema");
     const schemaFile = resolve(outDir, "schema.json");
-    await generateSchema(absolutePath, schemaFile);
+    await generateSchema(absolutePath, schemaFile, options.tsconfig);
     spinner.succeed();
 
     // 4. Generate index.js wrapper
     spinner.start("Generating index wrapper");
-    const indexContent = `import defaultWorkflow, * as namedWorkflows from './handler.js';
+    const indexContent = `import * as namedWorkflows from './handler.js';
 import Ajv from 'npm:ajv@8.12.0';
 import addFormats from 'npm:ajv-formats@2.1.1';
 
@@ -202,14 +64,12 @@ function toTrainCase(str) {
     .toLowerCase();
 }
 
-// Combine default export and named exports with normalized names
-const workflows = {
-  ...(defaultWorkflow ? { [toTrainCase(defaultWorkflow.name)]: defaultWorkflow } : {}),
-  ...Object.fromEntries(
-    Object.values(namedWorkflows)
-      .map(workflow => [toTrainCase(workflow.name), workflow])
-  ),
-};
+// Get all exports and normalize their names
+const workflows = Object.fromEntries(
+  Object.entries(namedWorkflows)
+    .filter(([key, value]) => typeof value === 'object' && value !== null && 'run' in value)
+    .map(([key, workflow]) => [toTrainCase(workflow.name), workflow])
+);
 
 // Cache for compiled validators
 const validators = new Map();
@@ -233,6 +93,36 @@ function validateInput(input, schema, workflowName) {
     });
     throw new Error(\`Validation failed:\\n\${errors.join('\\n')}\`);
   }
+}
+
+// Function to create a streaming response
+function createStreamingResponse(stream) {
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of stream) {
+          if (chunk && typeof chunk === 'object' && chunk.type === 'stream') {
+            controller.enqueue(encoder.encode(chunk.value));
+          } else if (typeof chunk === 'string') {
+            controller.enqueue(encoder.encode(chunk));
+          }
+        }
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      }
+    }
+  });
+
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Transfer-Encoding': 'chunked',
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'no-cache',
+    }
+  });
 }
 
 const handler = async function(req) {
@@ -268,6 +158,20 @@ const handler = async function(req) {
 
     const result = await workflow.run(body);
 
+    // Check if streaming was requested and the result is an async iterable
+    if (typeof result === 'object' && Symbol.asyncIterator in result) {
+      return createStreamingResponse(result);
+    }
+
+    if (typeof result === 'string') {
+      return new Response(result, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8'
+        }
+      });
+    }
+
+    // For non-streaming responses, return as JSON
     return new Response(JSON.stringify(result), {
       headers: {
         'Content-Type': 'application/json'
