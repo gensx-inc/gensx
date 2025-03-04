@@ -1,11 +1,11 @@
 ---
-title: Vercel AI SDK components
+title: Vercel AI SDK
 description: Vercel AI SDK compatible component reference
 ---
 
-# Vercel AI SDK Components
+# Vercel AI SDK
 
-The [@gensx/vercel-ai-sdk](https://www.npmjs.com/package/@gensx/vercel-ai-sdk) package provides Vercel AI SDK compatible components for GenSX, allowing you to use Vercel's AI SDK with GenSX's component model.
+The [@gensx/vercel-ai-sdk](https://www.npmjs.com/package/@gensx/vercel-ai-sdk) package provides [Vercel AI SDK](https://sdk.vercel.ai/docs/introduction) compatible components for GenSX, allowing you to use Vercel's AI SDK with GenSX's component model.
 
 ## Installation
 
@@ -37,7 +37,7 @@ npm install ai
 
 #### `<StreamText/>`
 
-The `StreamText` component streams text responses from language models, making it ideal for chat interfaces and other applications where you want to show responses as they're generated.
+The [StreamText](https://sdk.vercel.ai/docs/ai-sdk-core/generating-text#streamtext) component streams text responses from language models, making it ideal for chat interfaces and other applications where you want to show responses as they're generated.
 
 ```tsx
 import { StreamText } from "@gensx/vercel-ai-sdk";
@@ -105,7 +105,7 @@ console.log(response.recipe.ingredients);
 
 ##### Props
 
-The `StreamObject` component accepts all parameters from the Vercel AI SDK's `streamObject` function:
+The [StreamObject](https://sdk.vercel.ai/docs/ai-sdk-core/generating-structured-data#stream-object) component accepts all parameters from the Vercel AI SDK's `streamObject` function:
 
 - `prompt` (required): The text prompt to send to the model
 - `model` (required): The language model to use (from Vercel AI SDK)
@@ -119,7 +119,7 @@ Returns a structured object matching the provided schema.
 
 #### `<GenerateText/>`
 
-The `GenerateText` component generates complete text responses from language models, waiting for the entire response before returning.
+The [GenerateText](https://sdk.vercel.ai/docs/ai-sdk-core/generating-text#generatetext) component generates complete text responses from language models, waiting for the entire response before returning.
 
 ```tsx
 import { GenerateText } from "@gensx/vercel-ai-sdk";
@@ -144,7 +144,7 @@ The `GenerateText` component accepts all parameters from the Vercel AI SDK's `ge
 
 - `prompt` (required): The text prompt to send to the model
 - `model` (required): The language model to use (from Vercel AI SDK)
-- Plus all other parameters supported by the Vercel AI SDK
+- Plus any other parameters supported by the Vercel AI SDK
 
 ##### Return Type
 
@@ -152,7 +152,7 @@ Returns a complete text string containing the model's response.
 
 #### `<GenerateObject/>`
 
-The `GenerateObject` component generates complete structured JSON objects from language models, with type safety through Zod schemas.
+The [GenerateObject](https://sdk.vercel.ai/docs/ai-sdk-core/generating-structured-data#generate-object) component generates complete structured JSON objects from language models, with type safety through Zod schemas.
 
 ```tsx
 import { GenerateObject } from "@gensx/vercel-ai-sdk";
@@ -196,7 +196,7 @@ The `GenerateObject` component accepts all parameters from the Vercel AI SDK's `
 - `model` (required): The language model to use (from Vercel AI SDK)
 - `schema`: A Zod schema defining the structure of the response
 - `output`: The output format ("object", "array", or "no-schema")
-- Plus all other parameters supported by the Vercel AI SDK
+- Plus any other optional parameters supported by the Vercel AI SDK
 
 ##### Return Type
 
@@ -204,7 +204,7 @@ Returns a structured object matching the provided schema.
 
 #### `<Embed/>`
 
-The `Embed` component generates embeddings for a single text input, which can be used for semantic search, clustering, and other NLP tasks.
+The [Embed](https://sdk.vercel.ai/docs/ai-sdk-core/embeddings) component generates embeddings for a single text input, which can be used for semantic search, clustering, and other NLP tasks.
 
 ```tsx
 import { Embed } from "@gensx/vercel-ai-sdk";
@@ -226,7 +226,7 @@ The `Embed` component accepts all parameters from the Vercel AI SDK's `embed` fu
 
 - `value` (required): The text to generate an embedding for
 - `model` (required): The embedding model to use (from Vercel AI SDK)
-- Plus all other parameters supported by the Vercel AI SDK
+- Plus any other optional parameters supported by the Vercel AI SDK
 
 ##### Return Type
 
@@ -234,7 +234,7 @@ Returns a vector representation (embedding) of the input text.
 
 #### `<EmbedMany/>`
 
-The `EmbedMany` component generates embeddings for multiple text inputs in a single call, which is more efficient than making separate calls for each text.
+The [EmbedMany](https://sdk.vercel.ai/docs/ai-sdk-core/embeddings#embedding-many-values) component generates embeddings for multiple text inputs in a single call, which is more efficient than making separate calls for each text.
 
 ```tsx
 import { EmbedMany } from "@gensx/vercel-ai-sdk";
@@ -263,7 +263,7 @@ The `EmbedMany` component accepts all parameters from the Vercel AI SDK's `embed
 
 - `values` (required): Array of texts to generate embeddings for
 - `model` (required): The embedding model to use (from Vercel AI SDK)
-- Plus all other parameters supported by the Vercel AI SDK
+- Plus any other optional parameters supported by the Vercel AI SDK
 
 ##### Return Type
 
@@ -271,7 +271,7 @@ Returns an array of vector representations (embeddings) for the input texts.
 
 #### `<GenerateImage/>`
 
-The `GenerateImage` component generates images from text prompts using image generation models.
+The [GenerateImage](https://sdk.vercel.ai/docs/ai-sdk-core/image-generation) component generates images from text prompts using image generation models.
 
 ```tsx
 import { GenerateImage } from "@gensx/vercel-ai-sdk";
@@ -296,7 +296,7 @@ The `GenerateImage` component accepts all parameters from the Vercel AI SDK's `e
 
 - `prompt` (required): The text description of the image to generate
 - `model` (required): The image generation model to use (from Vercel AI SDK)
-- Plus all other parameters supported by the Vercel AI SDK
+- Plus any other optional parameters supported by the Vercel AI SDK
 
 ##### Return Type
 
