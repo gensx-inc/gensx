@@ -99,7 +99,7 @@ Reasoning models are much better, but still a bit unimpressive considering they'
 
 ![Reasoning models results](/assets/blog/tic-tac-toe/perf-reasoning.png)
 
-However, o3-mini made very few errors so it does seem to have the edge in this particular task.
+o3-mini made very few errors so it does seem to have the edge in this particular task:
 
 ![Reasoning models errors](/assets/blog/tic-tac-toe/errors-reasoning.png)
 
@@ -107,14 +107,14 @@ Criticism aside, these results clearly demonstrate the massive gain in model cap
 
 ## Why are they so bad?
 
-So why are LLMs so bad at Tic-Tac-Toe? LLMs are increasingly reaching parity with humans across a wide variety of tasks including competitive programming, chat, and other NLP tasks. You'd think they'd be good at Tic-Tac-Toe. Especially considering the state space is so small and optimal strategies are well known and easy to understand.
+So why are LLMs so bad at Tic-Tac-Toe? LLMs are increasingly reaching parity with humans across a wide variety of tasks including competitive programming, chat, and other NLP tasks. You'd think they'd be good at Tic-Tac-Toe, especially considering the state space is so small and optimal strategies are well known and easy to understand.
 
 I won't claim to know for sure why they're so bad, but I'll offer a few hypotheses:
 
 First, it's hard for an LLM to reason about and visualize the board. To an LLM the board above looks more like this:
 `    1   2   3\n  +---+---+---+\n1 | X | O | . |\n  +---+---+---+\n2 | . | X | . |\n  +---+---+---+\n3 | O | X | O |\n  +---+---+---+`
 
-That's clearly much harder to reason about than the formatted version for the human eye. Additionally, LLMs are trained on text data and don't have inherit visual or spatial reasoning abilities.
+That's clearly much harder to reason about than the formatted version for the human eye. Additionally, LLMs are trained on text data and don't have inherent visual or spatial reasoning abilities.
 
 Second, Tic-Tac-Toe is potentially largely out of distribution for LLMs meaning there may not be much training data on optimal gameplay. Frontier AI labs are more focussed on training LLMs to excel at coding, chat, summarization, and many other tasks.
 
