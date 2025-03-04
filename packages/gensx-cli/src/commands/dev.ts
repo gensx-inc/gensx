@@ -31,6 +31,7 @@ export async function dev(entryFile: string, options: DevOptions = {}) {
   await build(entryFile, {
     outDir: buildDir,
     watch: false,
+    quiet: true,
   });
 
   // Start the Deno process
@@ -38,7 +39,7 @@ export async function dev(entryFile: string, options: DevOptions = {}) {
     "deno",
     ["run", "--allow-all", "--node-modules-dir", "--watch", entryPoint],
     {
-      stdio: "inherit",
+      stdio: "ignore",
     },
   );
 
