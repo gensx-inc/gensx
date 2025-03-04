@@ -22,9 +22,9 @@
   "license": "ISC",
   "dependencies": {
     "@ai-sdk/openai": "^1.1.13",
-    "@gensx/openai": "^0.1.8",
-    "@gensx/vercel-ai-sdk": "^0.1.1",
-    "gensx": "^0.2.14",
+    "@gensx/openai": "workspace:*",
+    "@gensx/vercel-ai-sdk": "workspace:*",
+    "gensx": "workspace:*",
     "openai": "catalog:"
   },
   "devDependencies": {
