@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.11](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.10...create-gensx-v0.1.11) (2025-03-04)
+
+
+### 🐛 Bug Fixes
+
+* Fix build ([#399](https://github.com/gensx-inc/gensx/issues/399)) ([fa26f63](https://github.com/gensx-inc/gensx/commit/fa26f63ac688f0be423a9a6ce6585b7600bb6cb1))
+
 ## [0.1.10](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.9...create-gensx-v0.1.10) (2025-03-03)
 
 

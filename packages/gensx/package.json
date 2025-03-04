@@ -1,6 +1,6 @@
 {
   "name": "gensx",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "Build AI workflows using JSX",
   "type": "module",
   "main": "./dist/index.js",
