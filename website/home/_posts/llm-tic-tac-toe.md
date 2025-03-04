@@ -12,13 +12,13 @@ ogImage:
 
 LLMs are really bad at Tic-Tac-Toe. They're so bad, in fact, that I spent hours debugging my code and looking through traces in [GenSX](https://www.gensx.com/) to make sure the LLMs were the dumb ones and not me. Turns out they really are just quite bad at the game--something that's made even more surprising by the fact that LLMs wrote most of the code I used to test this.
 
-We started down this path because we wanted new ways to evaluate LLMs. Current benchmarks often feel saturated or gamed. Evaluating LLMs by having them play games like Tic-Tac-Toe is interesting because it's:
+We started down this path because we wanted new ways to evaluate LLMs. Current benchmarks often feel saturated or gamed. Evaluating LLMs by having them play games like Tic-Tac-Toe is interesting because it:
 
-- Objective metrics
-- Simulated environments
-- Out of distribution
+- Is not covered by current benchmarks
+- Is objective and easy to understand
+- Is out of distribution for LLMs, meaning it demonstrates how well LLMs can generalize
 
-So how bad are they really? Let's dive in.
+Okay but LLM's can't really be that bad at Tic-Tac-Toe, right? Let's dive in.
 
 ## The Setup
 
@@ -106,7 +106,7 @@ I won't claim to know for sure why they're so bad, but I'll offer a few hypothes
 First, it's hard for an LLM to reason about and visualize the board. To an LLM the board above looks more like this:
 `    1   2   3\n  +---+---+---+\n1 | X | O | . |\n  +---+---+---+\n2 | . | X | . |\n  +---+---+---+\n3 | O | X | O |\n  +---+---+---+`
 
-Much harder to reason about that the formatted version for the human eye. Additionally,LLMs are trained on text data and don't have inherit visual or spatial reasoning abilities.
+That's clearly much harder to reason about than the formatted version for the human eye. Additionally, LLMs are trained on text data and don't have inherit visual or spatial reasoning abilities.
 
 Second, Tic-Tac-Toe is potentially largely out of distribution for LLMs meaning there may not be much training data on optimal gameplay. Frontier AI labs are more focussed on training LLMs to excel at coding, chat, summarization, and many other tasks.
 
@@ -114,7 +114,7 @@ Second, Tic-Tac-Toe is potentially largely out of distribution for LLMs meaning 
 
 The goal of this experiment wasn't to go through rigorous prompt engineering and evaluation to maximize the LLM's performance at Tic-Tac-Toe but rather to see differences in how different models perform at the task. You could certainly do more prompt engineering to improve the results (although I still think the results will be quite mediocre).
 
-For example, maybe formatting the board differently for the model would help, or maybe providing an image of the board to a model with vision capabilities would help.
+For example, maybe formatting the board differently for the model would help, maybe providing an image of the board to a model with vision capabilities would help, or maybe prompting the model on optimal gameplay would help too.
 
 Think you can get better results? Pull down the [code](https://github.com/gensx/gensx/tree/main/examples/llm-games) and try it yourself.
 
