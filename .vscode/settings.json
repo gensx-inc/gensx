@@ -24,6 +24,7 @@
   "files.associations": {
     "*.tsx.template": "typescriptreact",
     "*.ts.template": "typescript",
+    "*.js.template": "javascript",
     "*.json.template": "json",
     "*.md.template": "markdown"
   }
