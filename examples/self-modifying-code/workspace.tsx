@@ -4,7 +4,7 @@ import fsPromises from "fs/promises";
 import os from "os";
 import path from "path";
 
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 const context = gsx.createContext<Workspace | undefined>(undefined);
 

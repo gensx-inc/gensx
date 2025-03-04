@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 import { GroqDeepSeekR1Completion } from "./groq-deepseek-r1-distilled.js";
 

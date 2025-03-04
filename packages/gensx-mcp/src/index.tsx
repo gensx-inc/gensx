@@ -1,4 +1,4 @@
-import { gsx, GsxComponent } from "gensx";
+import { gsx, GsxComponent } from "@gensx/core";
 
 import { fetchMcpContext, MCPServerDefinition } from "./mcp.js";
 import {

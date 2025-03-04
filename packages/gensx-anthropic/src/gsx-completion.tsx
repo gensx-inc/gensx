@@ -9,7 +9,7 @@ import {
   RawMessageStreamEvent,
 } from "@anthropic-ai/sdk/resources/index.mjs";
 import { Stream } from "@anthropic-ai/sdk/streaming";
-import { Args, gsx, GSXToolParams } from "gensx";
+import { Args, gsx, GSXToolParams } from "@gensx/core";
 import { z, ZodType } from "zod";
 
 import { AnthropicChatCompletion } from "./anthropic.js";

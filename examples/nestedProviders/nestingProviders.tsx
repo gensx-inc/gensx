@@ -1,5 +1,5 @@
+import { gsx } from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
 interface WriteTutorialProps {
   subject: string;
 }

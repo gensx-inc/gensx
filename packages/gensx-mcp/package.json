@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.0",
-    "gensx": "workspace:*",
+    "@gensx/core": "workspace:*",
     "tsx": "catalog:",
     "zod": "catalog:"
   }

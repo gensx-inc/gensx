@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 import { AnalyzeHackerNewsTrends } from "./analyzeHNTrends.js";
 

@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 
 interface RespondProps {

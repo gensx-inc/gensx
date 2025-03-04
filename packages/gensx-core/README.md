@@ -9,7 +9,7 @@
 `<GenSX />` is a framework for building LLM workflows and AI agents with JSX on the backend. Every `<GenSX />` component is a pure function, and thus easily shareable by default.
 
 ```jsx
-import * as gsx from "gensx";
+import * as gsx from "@gensx/core";
 
 const title = "How to be a 10x LLM Developer";
 const prompt = "Write an article about using gensx to build LLM applications";
@@ -54,7 +54,7 @@ This project does not have a dependency on `react`, or any other JSX-based libra
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "gensx"
+    "jsxImportSource": "@gensx/core"
   }
 }
 ```
@@ -64,7 +64,7 @@ This project does not have a dependency on `react`, or any other JSX-based libra
 If you're using React, and can't change the `jsxImportSource` in your `tsconfig.json` without breaking your project, you can use a [per-file pragma](https://www.typescriptlang.org/tsconfig/#jsxImportSource) to enable the `gensx` runtime for specific files.
 
 ```tsx
-/** @jsxImportSource gensx */
+/** @jsxImportSource @gensx/core */
 
 // ...
 ```
@@ -87,7 +87,7 @@ module.exports = {
 ```
 
 ```jsx
-/** @jsxImportSource gensx */
+/** @jsxImportSource @gensx/core */
 
 // ...
 ```
@@ -95,7 +95,7 @@ module.exports = {
 ## Building a workflow
 
 ```jsx
-import * as gsx from "gensx";
+import * as gsx from "@gensx/core";
 
 interface ResearchBrainstormProps {
   prompt: string;

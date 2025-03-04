@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 import { PlayGame } from "./Game.js";
 import { Player } from "./types.js";

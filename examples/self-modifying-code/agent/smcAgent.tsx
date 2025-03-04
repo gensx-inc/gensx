@@ -1,7 +1,7 @@
 import path from "path";
 
 import { AnthropicProvider } from "@gensx/anthropic";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 import {
   runCommand,

@@ -2,8 +2,8 @@ import {
   AnthropicProvider,
   ChatCompletion as ChatCompletionAnthropic,
 } from "@gensx/anthropic";
+import { gsx } from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
 import { z } from "zod";
 
 import { Board } from "./Board.js";

@@ -1,5 +1,5 @@
+import { gsx } from "@gensx/core";
 import { ChatCompletion } from "@gensx/openai";
-import { gsx } from "gensx";
 
 import { ArxivEntry } from "./arxiv.js";
 import { FirecrawlProvider, ScrapePage } from "./firecrawlProvider.js";
@@ -18,12 +18,12 @@ export const SummarizePaper = gsx.Component<SummarizePaperProps, string>(
       <prompt>
       ${prompt}
       </prompt>
-      
+
       Here is the paper:
       <paper>
       ${markdown}
       </paper>
-  
+
       Please return a detailed yet concise summary of the paper that is relevant to the user's prompt.`;
     return (
       <ChatCompletion

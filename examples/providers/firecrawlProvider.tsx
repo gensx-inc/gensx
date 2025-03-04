@@ -1,5 +1,5 @@
+import { gsx } from "@gensx/core";
 import FirecrawlApp, { FirecrawlAppConfig } from "@mendable/firecrawl-js";
-import { gsx } from "gensx";
 
 // Create a context
 export const FirecrawlContext = gsx.createContext<{

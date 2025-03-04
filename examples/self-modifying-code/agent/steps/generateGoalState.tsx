@@ -1,5 +1,5 @@
 import { GSXChatCompletion } from "@gensx/anthropic";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { z } from "zod";
 
 import {

@@ -10,7 +10,7 @@ import {
   Tool,
   ToolUseBlock,
 } from "@anthropic-ai/sdk/resources/index.mjs";
-import { gsx, GSXToolAnySchema, GSXToolParams } from "gensx";
+import { gsx, GSXToolAnySchema, GSXToolParams } from "@gensx/core";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 

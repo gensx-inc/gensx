@@ -19,7 +19,7 @@ npm install gensx
 ## Usage
 
 ```tsx
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { GenerateText, StreamText } from "@gensx/vercel-ai-sdk";
 
 const ChatBot = gsx.Component(async ({ userInput }) => {

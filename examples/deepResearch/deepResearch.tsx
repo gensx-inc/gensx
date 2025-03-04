@@ -1,5 +1,5 @@
+import { gsx } from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
 
 import { ArxivEntry, SearchArxiv } from "./arxiv.js";
 import { GradeDocument } from "./grader.js";

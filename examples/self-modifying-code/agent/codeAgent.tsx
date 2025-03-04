@@ -1,7 +1,7 @@
 // Agent based on https://www.anthropic.com/research/swe-bench-sonnet
 
 import { GSXChatCompletion } from "@gensx/anthropic";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { z } from "zod";
 
 import { useWorkspace } from "../workspace.js";

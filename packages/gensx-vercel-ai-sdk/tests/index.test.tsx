@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { expect, test } from "vitest";
 import { z } from "zod";
 

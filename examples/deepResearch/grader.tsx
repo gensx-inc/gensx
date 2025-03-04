@@ -1,5 +1,5 @@
+import { gsx } from "@gensx/core";
 import { ChatCompletion } from "@gensx/openai";
-import { gsx } from "gensx";
 
 import { ArxivEntry } from "./arxiv.js";
 
@@ -15,8 +15,8 @@ export interface GradeDocumentOutput {
 export const GradeDocument = gsx.Component<GradeDocumentProps, boolean>(
   "GradeDocument",
   ({ prompt, document }) => {
-    const systemMessage = `You are a helpful research assistant. 
-  
+    const systemMessage = `You are a helpful research assistant.
+
 Instructions:
 - You will be given user prompt and a document
 - Your goal is to determine if the document is useful to the user prompt

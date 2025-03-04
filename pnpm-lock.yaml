@@ -96,9 +96,9 @@ importers:
       '@gensx/anthropic':
         specifier: workspace:*
         version: link:../../packages/gensx-anthropic
-      gensx:
+      '@gensx/core':
         specifier: workspace:*
-        version: link:../../packages/gensx
+        version: link:../../packages/gensx-core
       zod:
         specifier: 'catalog:'
         version: 3.24.2
@@ -118,12 +118,12 @@ importers:
 
   examples/blogWriter:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -143,9 +143,9 @@ importers:
 
   examples/contexts:
     dependencies:
-      gensx:
+      '@gensx/core':
         specifier: workspace:*
-        version: link:../../packages/gensx
+        version: link:../../packages/gensx-core
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -162,6 +162,9 @@ importers:
 
   examples/deepResearch:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
@@ -171,9 +174,6 @@ importers:
       '@types/node-fetch':
         specifier: ^2.6.12
         version: 2.6.12
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       node-fetch:
         specifier: ^3.3.2
         version: 3.3.2
@@ -202,12 +202,12 @@ importers:
 
   examples/groq-deepseek-r1-distilled:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -227,12 +227,12 @@ importers:
 
   examples/gsxChatCompletion:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -255,12 +255,12 @@ importers:
 
   examples/hackerNewsAnalyzer:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -283,12 +283,12 @@ importers:
       '@gensx/anthropic':
         specifier: workspace:*
         version: link:../../packages/gensx-anthropic
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       zod:
         specifier: 'catalog:'
         version: 3.24.2
@@ -308,15 +308,15 @@ importers:
 
   examples/mcp:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/mcp':
         specifier: workspace:*
         version: link:../../packages/gensx-mcp
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -339,15 +339,15 @@ importers:
 
   examples/nestedProviders:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       '@mendable/firecrawl-js':
         specifier: ^1.15.7
         version: 1.15.7(ws@8.18.0)
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -367,12 +367,12 @@ importers:
 
   examples/open-router:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
-        specifier: ^0.1.9
-        version: 0.1.9(openai@4.86.1(ws@8.18.0)(zod@3.24.2))
-      gensx:
-        specifier: ^0.2.15
-        version: 0.2.15
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -392,15 +392,15 @@ importers:
 
   examples/providers:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       '@mendable/firecrawl-js':
         specifier: ^1.15.7
         version: 1.15.7(ws@8.18.0)
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -420,12 +420,12 @@ importers:
 
   examples/reflection:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -445,15 +445,15 @@ importers:
 
   examples/reusableComponents:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       '@mendable/firecrawl-js':
         specifier: ^1.15.7
         version: 1.15.7(ws@8.18.0)
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -476,15 +476,15 @@ importers:
       '@ai-sdk/openai':
         specifier: ^1.1.13
         version: 1.1.13(zod@3.24.2)
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       '@gensx/vercel-ai-sdk':
         specifier: workspace:*
         version: link:../../packages/gensx-vercel-ai-sdk
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -510,12 +510,12 @@ importers:
       '@gensx/anthropic':
         specifier: workspace:*
         version: link:../../packages/gensx-anthropic
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@mendable/firecrawl-js':
         specifier: ^1.18.2
         version: 1.18.2(ws@8.18.0)
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       serialize-error:
         specifier: ^12.0.0
         version: 12.0.0
@@ -538,12 +538,12 @@ importers:
 
   examples/streaming:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -563,12 +563,12 @@ importers:
 
   examples/structuredOutputs:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      gensx:
-        specifier: workspace:*
-        version: link:../../packages/gensx
       openai:
         specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
@@ -623,39 +623,11 @@ importers:
         specifier: 'catalog:'
         version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
 
-  packages/gensx:
-    dependencies:
-      '@gensx/cli':
-        specifier: workspace:*
-        version: link:../gensx-cli
-      ini:
-        specifier: ^5.0.0
-        version: 5.0.0
-      serialize-error:
-        specifier: ^12.0.0
-        version: 12.0.0
-      zod:
-        specifier: 'catalog:'
-        version: 3.24.2
-    devDependencies:
-      '@types/ini':
-        specifier: ^4.1.1
-        version: 4.1.1
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.17.11
-      '@vitest/coverage-istanbul':
-        specifier: 'catalog:'
-        version: 2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))
-      vitest:
-        specifier: 'catalog:'
-        version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
-
   packages/gensx-anthropic:
     dependencies:
-      gensx:
+      '@gensx/core':
         specifier: workspace:*
-        version: link:../gensx
+        version: link:../gensx-core
       zod:
         specifier: 'catalog:'
         version: 3.24.2
@@ -716,14 +688,39 @@ importers:
         specifier: 'catalog:'
         version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
 
+  packages/gensx-core:
+    dependencies:
+      ini:
+        specifier: ^5.0.0
+        version: 5.0.0
+      serialize-error:
+        specifier: ^12.0.0
+        version: 12.0.0
+      zod:
+        specifier: 'catalog:'
+        version: 3.24.2
+    devDependencies:
+      '@types/ini':
+        specifier: ^4.1.1
+        version: 4.1.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.17.11
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))
+      vitest:
+        specifier: 'catalog:'
+        version: 2.1.8(@types/node@20.17.11)(lightningcss@1.29.1)
+
   packages/gensx-mcp:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../gensx-core
       '@modelcontextprotocol/sdk':
         specifier: ^1.6.0
         version: 1.6.1
-      gensx:
-        specifier: workspace:*
-        version: link:../gensx
       tsx:
         specifier: 'catalog:'
         version: 4.19.3
@@ -743,9 +740,9 @@ importers:
 
   packages/gensx-openai:
     dependencies:
-      gensx:
+      '@gensx/core':
         specifier: workspace:*
-        version: link:../gensx
+        version: link:../gensx-core
       zod:
         specifier: 'catalog:'
         version: 3.24.2
@@ -768,12 +765,12 @@ importers:
 
   packages/gensx-vercel-ai-sdk:
     dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../gensx-core
       ai:
         specifier: ^4.1.46
         version: 4.1.50(react@19.0.0)(zod@3.24.2)
-      gensx:
-        specifier: workspace:*
-        version: link:../gensx
     devDependencies:
       '@ai-sdk/openai':
         specifier: ^1.1.14
@@ -1567,16 +1564,6 @@ packages:
 
   '@formatjs/intl-localematcher@0.6.0':
     resolution: {integrity: sha512-4rB4g+3hESy1bHSBG3tDFaMY2CH67iT7yne1e+0CLTsGLDcmoEWWpJjjpWVaYgYfYuohIRuo0E+N536gd2ZHZA==}
-
-  '@gensx/cli@0.1.4':
-    resolution: {integrity: sha512-XZfwWvN8rW3cKY7c2OYrDtj8JdVgSAtM3RNXP9Kap47oah0FurGQ2ndYkiw1r1U6aCtc+OsSrA5awtU7RTAo8Q==}
-    hasBin: true
-
-  '@gensx/openai@0.1.9':
-    resolution: {integrity: sha512-Xtb0WKHt7bbz4sktOQdLtTpoontDyGMN2r5kOYR4s4rFEboGpJ4Ga/3hb4ooessOuiqxVfSWreiDd1RBirfYKg==}
-    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
-    peerDependencies:
-      openai: ^4.85.4
 
   '@headlessui/react@2.2.0':
     resolution: {integrity: sha512-RzCEg+LXsuI7mHiSomsu/gBJSjpupm6A1qIZ5sWjd7JhARNlMiSA4kKfJpCKwU9tE+zMRterhhrP74PvfJrpXQ==}
@@ -3483,11 +3470,6 @@ packages:
   cose-base@2.2.0:
     resolution: {integrity: sha512-AzlgcsCbUMymkADOJtQm3wO9S3ltPfYOFD5033keQn9NJzIbtnZj+UdBJe7DYml/8TdbtHJW3j58SOnKhWY/5g==}
 
-  create-gensx@0.1.10:
-    resolution: {integrity: sha512-Aihg1pSUaXBP5Xrq3LjIYL1X4vOJfNxOOxrMDpiJvs50qtp39cz86VLhjDZI96T8KkctxH8H+gNjLYeH8Jg/NQ==}
-    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
-    hasBin: true
-
   create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
 
@@ -4364,11 +4346,6 @@ packages:
 
   functions-have-names@1.2.3:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
-
-  gensx@0.2.15:
-    resolution: {integrity: sha512-B4BpWQBS/q7DNPXmyxpIUJvMhpu1jzuyY5jsc/66c5ERvGh3bw03lJIInVPrfEpWK7ETjffxT4s87AoPN/R9gA==}
-    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
-    hasBin: true
 
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
@@ -7716,23 +7693,6 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@gensx/cli@0.1.4':
-    dependencies:
-      commander: 11.1.0
-      consola: 3.3.3
-      create-gensx: 0.1.10
-      ini: 5.0.0
-      open: 10.1.0
-      ora: 8.2.0
-      picocolors: 1.1.1
-
-  '@gensx/openai@0.1.9(openai@4.86.1(ws@8.18.0)(zod@3.24.2))':
-    dependencies:
-      gensx: 0.2.15
-      openai: 4.86.1(ws@8.18.0)(zod@3.24.2)
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.1(zod@3.24.2)
-
   '@headlessui/react@2.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@floating-ui/react': 0.26.28(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -9733,13 +9693,6 @@ snapshots:
     dependencies:
       layout-base: 2.0.1
 
-  create-gensx@0.1.10:
-    dependencies:
-      commander: 11.1.0
-      enquirer: 2.4.1
-      ora: 8.2.0
-      picocolors: 1.1.1
-
   create-require@1.1.1:
     optional: true
 
@@ -10827,13 +10780,6 @@ snapshots:
       is-callable: 1.2.7
 
   functions-have-names@1.2.3: {}
-
-  gensx@0.2.15:
-    dependencies:
-      '@gensx/cli': 0.1.4
-      ini: 5.0.0
-      serialize-error: 12.0.0
-      zod: 3.24.2
 
   gensync@1.0.0-beta.2: {}
 

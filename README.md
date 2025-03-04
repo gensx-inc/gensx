@@ -30,7 +30,7 @@ Most LLM frameworks are graph oriented--you express your workflow with nodes, ed
 Components in GenSX look a lot like a React components:
 
 ```tsx
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { ChatCompletion } from "gensx/openai";
 
 // props interface
@@ -72,7 +72,7 @@ const WriteDraft = gsx.Component<WriteDraftProps, WriteDraftOutput>(
 Components can be composed together to create more complex agents and workflows:
 
 ```tsx
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { OpenAIProvider } from "gensx/openai";
 import { Research, WriteDraft, EditDraft } from "./writeBlog";
 

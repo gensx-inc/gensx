@@ -7,7 +7,7 @@ import {
   ToolUseBlock,
 } from "@anthropic-ai/sdk/resources/messages";
 import { Stream } from "@anthropic-ai/sdk/streaming";
-import { gsx, GSXToolParams } from "gensx";
+import { gsx, GSXToolParams } from "@gensx/core";
 
 import { AnthropicChatCompletion } from "./anthropic.js";
 import { GSXTool } from "./tools.js";

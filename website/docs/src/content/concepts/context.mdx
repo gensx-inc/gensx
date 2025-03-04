@@ -31,7 +31,7 @@ This next section walks through the steps needed to create and use a context in 
 To create a context, start by defining its interface and then use `gsx.createContext<T>()` to initialize it along with a default value. For example, here's how to create a `User` context:
 
 ```tsx
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 // Define the interface
 interface User {
@@ -104,7 +104,7 @@ If you need a provider that isn't available out of the box, you can easily creat
 Start by importing `gsx` and the package you want to use:
 
 ```tsx
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import FirecrawlApp, { FirecrawlAppConfig } from "@mendable/firecrawl-js";
 ```
 

@@ -11,7 +11,7 @@ npm install @gensx/openai
 ## Usage
 
 ```tsx
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
 
 const ChatBot = gsx.Component(async ({ userInput }) => {

@@ -1,5 +1,5 @@
+import { gsx, MaybePromise, Streamable } from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx, MaybePromise, Streamable } from "gensx";
 
 function isAsyncIterable(obj: unknown): obj is AsyncIterable<unknown> {
   return obj != null && typeof obj === "object" && Symbol.asyncIterator in obj;

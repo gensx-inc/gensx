@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { ChatCompletionChunk } from "openai/resources/index.mjs";
 import { Stream } from "openai/streaming.mjs";
 import { expect, suite, test } from "vitest";

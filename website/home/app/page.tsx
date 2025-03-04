@@ -121,7 +121,7 @@ const WebSearchAgent = gsx.Component<{}, Stream<ChatCompletionChunk>>(
   ),
 );`,
     llms: `import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { ClientOptions } from "openai";
 
 const grok3Config = {

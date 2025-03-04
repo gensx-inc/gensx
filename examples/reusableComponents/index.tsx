@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 import { ProcessDocument } from "./reusableComponents.js";
 

@@ -1,9 +1,9 @@
+import { gsx } from "@gensx/core";
 import {
   ChatCompletion,
   GSXChatCompletion,
   OpenAIProvider,
 } from "@gensx/openai";
-import { gsx } from "gensx";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 

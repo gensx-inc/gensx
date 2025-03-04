@@ -3,7 +3,7 @@
 // Import Zod extensions for improved serialization
 import "./utils/zod-extensions.js";
 
-import { Args, gsx, GSXToolParams } from "gensx";
+import { Args, gsx, GSXToolParams } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,

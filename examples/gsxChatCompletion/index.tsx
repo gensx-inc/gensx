@@ -1,10 +1,10 @@
+import { gsx } from "@gensx/core";
 import {
   GSXChatCompletion,
   GSXChatCompletionResult,
   GSXTool,
   OpenAIProvider,
 } from "@gensx/openai";
-import { gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,

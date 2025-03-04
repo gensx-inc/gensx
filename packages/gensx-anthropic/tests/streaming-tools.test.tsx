@@ -1,4 +1,4 @@
-import { gsx, GSXToolParams } from "gensx";
+import { gsx, GSXToolParams } from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
 

@@ -4,7 +4,7 @@ import {
   GSXChatCompletionResult,
   OpenAIProvider,
 } from "@gensx/openai";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 import packageJson from "../package.json" assert { type: "json" };
 

@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import OpenAI, { ClientOptions } from "openai";
 import {
   ChatCompletion as ChatCompletionOutput,

@@ -7,7 +7,7 @@ import {
   Tool,
 } from "@anthropic-ai/sdk/resources/messages";
 import { Stream } from "@anthropic-ai/sdk/streaming";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 // Create a context for Anthropic
 export const AnthropicContext = gsx.createContext<{

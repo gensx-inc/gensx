@@ -5,7 +5,7 @@ import {
   MessageCreateParamsNonStreaming,
   ToolUseBlock,
 } from "@anthropic-ai/sdk/resources/index.mjs";
-import { gsx, GSXToolParams } from "gensx";
+import { gsx, GSXToolParams } from "@gensx/core";
 //import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { z } from "zod";
 

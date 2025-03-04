@@ -1,7 +1,7 @@
 import type { z } from "zod";
 
+import { gsx, type GsxComponent } from "@gensx/core";
 import * as ai from "ai";
-import { gsx, type GsxComponent } from "gensx";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createGSXComponent<TFn extends (...args: any[]) => any>(

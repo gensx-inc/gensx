@@ -3,7 +3,7 @@ import {
   RawMessageStreamEvent,
 } from "@anthropic-ai/sdk/resources/messages";
 import { Stream } from "@anthropic-ai/sdk/streaming";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 
 import { GSXChatCompletionResult } from "@/gsx-completion.js";

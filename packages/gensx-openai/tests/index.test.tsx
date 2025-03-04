@@ -1,4 +1,4 @@
-import { gsx, Streamable } from "gensx";
+import { gsx, Streamable } from "@gensx/core";
 import OpenAI from "openai";
 import { expect, suite, test } from "vitest";
 

@@ -11,7 +11,7 @@ npm install @gensx/anthropic
 ## Usage
 
 ```tsx
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import { AnthropicProvider, ChatCompletion } from "@gensx/anthropic";
 
 const ChatBot = gsx.Component(async ({ userInput }) => {

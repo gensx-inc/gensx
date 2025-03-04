@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { gsx, GSXToolParams } from "gensx";
+import { gsx, GSXToolParams } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,

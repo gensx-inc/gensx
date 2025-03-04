@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 import fetch from "node-fetch";
 import { Parser } from "xml2js";
 

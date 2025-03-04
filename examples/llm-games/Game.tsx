@@ -1,4 +1,4 @@
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 import { Board } from "./Board.js";
 import { MakeMove } from "./MakeMove.js";

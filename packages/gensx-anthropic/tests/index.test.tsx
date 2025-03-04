@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { MessageCreateParams } from "@anthropic-ai/sdk/resources/messages";
-import { gsx, Streamable } from "gensx";
+import { gsx, Streamable } from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 
 import {

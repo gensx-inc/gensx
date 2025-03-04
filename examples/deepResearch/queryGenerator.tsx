@@ -1,5 +1,5 @@
+import { gsx } from "@gensx/core";
 import { ChatCompletion } from "@gensx/openai";
-import { gsx } from "gensx";
 
 export interface GenerateQueriesProps {
   prompt: string;

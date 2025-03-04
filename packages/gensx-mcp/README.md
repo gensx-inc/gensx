@@ -16,7 +16,7 @@ The `@gensx/mcp` package provides integration with the [Model Context Protocol (
 
 ```tsx
 import { createMCPServerContext } from "@gensx/mcp";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 // Create an MCP server context for Sequential Thinking
 const {
@@ -37,7 +37,7 @@ You can use MCP tools with any LLM provider in GenSX. Here's an example with Ope
 ```tsx
 import { createMCPServerContext, MCPTool } from "@gensx/mcp";
 import { GSXChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 // Helper function to map MCP tools to GSX tools
 const mapToGsxTools = (tools: MCPTool[]) => {

@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
-import { gsx, GSXToolAnySchema, GSXToolParams } from "gensx";
+import { gsx, GSXToolAnySchema, GSXToolParams } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionCreateParamsNonStreaming,

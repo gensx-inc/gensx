@@ -1,4 +1,4 @@
-import { gsx, GsxComponent } from "gensx";
+import { gsx, GsxComponent } from "@gensx/core";
 
 export interface ReflectionOutput {
   feedback: string;

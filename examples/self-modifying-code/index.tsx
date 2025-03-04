@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import process from "process";
 
-import { gsx } from "gensx";
+import { gsx } from "@gensx/core";
 
 import { SelfModifyingCodeAgent } from "./agent/smcAgent.js";
 import { setupWorkspace, type WorkspaceConfig } from "./workspace.js";
