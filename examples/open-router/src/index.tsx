@@ -1,5 +1,5 @@
-import { gsx } from "gensx";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { gsx } from "gensx";
 
 interface RespondProps {
   userInput: string;

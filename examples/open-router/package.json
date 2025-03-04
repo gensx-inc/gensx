@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./src/index.tsx",
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "description": "Starter project for [GenSX](https://gensx.com), created using `npx create-gensx`.",
   "main": "index.js",
