@@ -8,8 +8,6 @@ interface RespondProps {
 const Respond = gsx.StreamComponent<RespondProps>(
   "Respond",
   ({ userInput }) => {
-    console.info("Responding to user input:", userInput);
-
     return (
       <ChatCompletion
         stream={true}
@@ -18,7 +16,7 @@ const Respond = gsx.StreamComponent<RespondProps>(
           {
             role: "system",
             content:
-              "You are a helpful assistant. Respond to the user's input.",
+              "You are a helpful assistant. Respond to the user's input!",
           },
           { role: "user", content: userInput },
         ]}

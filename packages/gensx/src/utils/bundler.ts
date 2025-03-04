@@ -68,9 +68,17 @@ function denoCompat(): Plugin {
 export function getRollupConfig(
   workflowPath: string,
   outFile: string,
+  watch = false,
 ): RollupOptions {
   return {
     input: workflowPath,
+    ...(watch && {
+      watch: {
+        include: ["src/**", "components/**", "*.ts", "*.tsx"],
+        exclude: ["node_modules/**", ".gensx/**"],
+        clearScreen: false,
+      },
+    }),
     onwarn(warning, warn) {
       // Ignore sourcemap warnings
       if (
@@ -137,8 +145,12 @@ export function getRollupConfig(
   };
 }
 
-export async function bundleWorkflow(workflowPath: string, outFile: string) {
-  const options = getRollupConfig(workflowPath, outFile);
+export async function bundleWorkflow(
+  workflowPath: string,
+  outFile: string,
+  watch = false,
+) {
+  const options = getRollupConfig(workflowPath, outFile, watch);
   const bundle = await rollup(options);
   return bundle.write(options.output as OutputOptions);
 }

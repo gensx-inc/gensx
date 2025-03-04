@@ -44,13 +44,15 @@ export function runCLI() {
 
   program
     .command("dev")
-    .description("Run the built GenSX project")
+    .description("Run a GenSX project in development mode")
+    .argument("<file>", "Entry file to run (e.g. src/index.tsx)")
     .option(
       "-b, --build-dir <dir>",
       "Build directory (defaults to .gensx/dist)",
     )
-    .action(async (options: DevOptions) => {
-      await dev(options);
+    .option("-w, --watch", "Watch for changes and rebuild automatically", false)
+    .action(async (file: string, options: DevOptions) => {
+      await dev(file, options);
     });
 
   program
