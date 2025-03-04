@@ -1,33 +1,13 @@
 {
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "lib": ["ES2020"],
     "tsBuildInfoFile": ".tsbuildinfo",
-    "incremental": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
     "outDir": "./dist",
-    "strict": true,
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "gensx",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "vitest.config.ts",
-    "vite.config.ts",
-    "tests/**/*",
-    "__mocks__/**/*"
-  ],
+  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "__mocks__/**/*"],
   "exclude": ["node_modules", "dist"]
 }

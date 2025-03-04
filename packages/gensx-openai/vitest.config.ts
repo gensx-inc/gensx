@@ -4,7 +4,7 @@ import * as path from "path";
 import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
 
-import tsconfig from "./tsconfig.json";
+import tsconfig from "./tsconfig.json" with { type: "json" };
 
 // Create an alias object from the paths in tsconfig.json
 const alias = Object.fromEntries(
@@ -22,18 +22,18 @@ export default defineConfig({
     alias,
   },
   test: {
-    root: "./",
+    root: path.resolve(__dirname, "./"),
     globals: true,
     isolate: false,
     passWithNoTests: false,
-    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    include: ["./tests/**/*.test.ts", "./tests/**/*.test.tsx"],
     env: loadEnv("test", process.cwd(), ""),
     setupFiles: ["./tests/setup.ts"],
     coverage: {
       provider: "istanbul",
       reporter: ["text-summary", "json-summary", "json"],
       reportsDirectory: "coverage",
-      include: ["src/**/*.ts", "src/**/*.tsx"],
+      include: ["./src/**/*.ts", "./src/**/*.tsx"],
       exclude: [
         "node_modules/**",
         "dist/**",

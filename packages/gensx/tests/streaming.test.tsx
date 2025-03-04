@@ -2,7 +2,7 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { gsx, Streamable } from "@/index";
+import { gsx, Streamable } from "@/index.js";
 
 async function* stream(foo: string) {
   yield "Hello ";

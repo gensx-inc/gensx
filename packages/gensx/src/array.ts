@@ -1,6 +1,6 @@
-import type { JSX } from "./jsx-runtime";
+import type { JSX } from "./jsx-runtime.js";
 
-import { execute } from "./execute";
+import { execute } from "./execute.js";
 
 export class GsxArray<T> {
   private promise: Promise<unknown[]>;

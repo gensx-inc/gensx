@@ -10,7 +10,7 @@ import {
   Tool,
   ToolUseBlock,
 } from "@anthropic-ai/sdk/resources/index.mjs";
-import { gsx } from "gensx";
+import { gsx, GSXToolAnySchema, GSXToolParams } from "gensx";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
@@ -19,16 +19,8 @@ import {
   AnthropicChatCompletionOutput,
 } from "./anthropic.js";
 
-interface GSXToolParams<TSchema extends z.ZodObject<z.ZodRawShape>> {
-  name: string;
-  description: string;
-  schema: TSchema;
-  run: (args: z.infer<TSchema>) => Promise<unknown>;
-  options?: {};
-}
-
 // Wrapper for tool parameter schemas
-export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
+export class GSXTool<TSchema extends GSXToolAnySchema> {
   public readonly type = "function" as const;
   public readonly definition: Tool;
   private readonly executionComponent: ReturnType<typeof gsx.Component>;
@@ -38,6 +30,10 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     this.description = params.description;
     this.schema = params.schema;
     this.options = params.options ?? {};
+
+    if (this.description.length > 1024) {
+      this.description = this.description.slice(0, 1021) + "...";
+    }
 
     this.definition = {
       name: this.name,
@@ -59,10 +55,18 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     return gsx.execute(<this.executionComponent {...args} />);
   }
 
-  static create<TSchema extends z.ZodObject<z.ZodRawShape>>(
+  static create<TSchema extends GSXToolAnySchema>(
     params: GSXToolParams<TSchema>,
   ): GSXTool<TSchema> {
     return new GSXTool(params);
+  }
+
+  toJSON(): Record<string, unknown> {
+    return {
+      name: this.name,
+      description: this.description,
+      schema: this.definition.input_schema,
+    };
   }
 
   public readonly name: string;

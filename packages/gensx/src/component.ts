@@ -5,13 +5,13 @@ import type {
   GsxStreamComponent,
   MaybePromise,
   Streamable,
-} from "./types";
+} from "./types.js";
 
 import { serializeError } from "serialize-error";
 
-import { getCurrentContext } from "./context";
-import { JSX, jsx } from "./jsx-runtime";
-import { resolveDeep } from "./resolve";
+import { getCurrentContext } from "./context.js";
+import { JSX, jsx } from "./jsx-runtime.js";
+import { resolveDeep } from "./resolve.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
@@ -19,6 +19,7 @@ export interface ComponentOpts {
   secretProps?: string[]; // Property paths to mask in checkpoints
   secretOutputs?: boolean; // Whether to mask the output of the component
   name?: string; // Allows you to override the name of the component
+  metadata?: Record<string, unknown>; // Metadata to attach to the component
 }
 
 // omit name from ComponentOpts
@@ -48,6 +49,10 @@ export function Component<P extends object & { length?: never }, O>(
     const mergedOpts = {
       ...defaultOpts,
       ...props.componentOpts,
+      ...{
+        ...defaultOpts?.metadata,
+        ...props.componentOpts?.metadata,
+      },
       secretProps: Array.from(
         new Set([
           ...(defaultOpts?.secretProps ?? []),
@@ -129,6 +134,10 @@ export function StreamComponent<P>(
     const mergedOpts = {
       ...defaultOpts,
       ...props.componentOpts,
+      ...{
+        ...defaultOpts?.metadata,
+        ...props.componentOpts?.metadata,
+      },
       secretProps: Array.from(
         new Set([
           ...(defaultOpts?.secretProps ?? []),

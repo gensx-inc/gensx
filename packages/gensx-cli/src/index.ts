@@ -1,14 +1,14 @@
 import { Command } from "commander";
 
-import { version } from "../package.json";
-import { login } from "./commands/login";
-import { newProject } from "./commands/new";
+import packageJson from "../package.json" with { type: "json" };
+import { login } from "./commands/login.js";
+import { newProject } from "./commands/new.js";
 
 export function runCLI() {
   const program = new Command()
     .name("gensx")
     .description("CLI tool for GenSX")
-    .version(version);
+    .version(packageJson.version);
 
   program
     .command("login")

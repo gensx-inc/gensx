@@ -1,11 +1,11 @@
-import { ExecutionContext, getCurrentContext, withContext } from "./context";
-import { resolveDeep } from "./resolve";
+import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
+import { resolveDeep } from "./resolve.js";
 import {
   ExecutableValue,
   GsxComponent,
   GsxStreamComponent,
   Streamable,
-} from "./types";
+} from "./types.js";
 
 /**
  * Executes a JSX element or any other value, ensuring all promises and nested values are resolved.

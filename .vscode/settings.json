@@ -11,7 +11,13 @@
     "javascriptreact",
     "typescriptreact"
   ],
-  "cSpell.words": ["gensx", "jsxs", "Streamable", "Firecrawl"],
+  "cSpell.words": [
+    "gensx",
+    "jsxs",
+    "modelcontextprotocol",
+    "Streamable",
+    "Firecrawl"
+  ],
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },

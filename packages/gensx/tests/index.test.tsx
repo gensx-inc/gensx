@@ -2,7 +2,7 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "@/index";
+import { gsx } from "@/index.js";
 
 suite("gensx", () => {
   test("returns a result", async () => {

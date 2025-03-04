@@ -1,5 +1,5 @@
 import { MessageCreateParams } from "@anthropic-ai/sdk/resources/messages";
-import { gsx } from "gensx";
+import { gsx, GSXToolParams } from "gensx";
 import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
 
@@ -97,7 +97,7 @@ suite("StructuredOutput", () => {
     input: z.string(),
   });
 
-  const testTool = new GSXTool({
+  const testToolParams: GSXToolParams<typeof testToolSchema> = {
     name: "test_tool",
     description: "A test tool",
     schema: testToolSchema,
@@ -105,7 +105,9 @@ suite("StructuredOutput", () => {
       await Promise.resolve();
       return `Processed: ${args.input}`;
     },
-  });
+  };
+
+  const testTool = new GSXTool(testToolParams);
 
   test("StructuredOutput returns structured output", async () => {
     const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
@@ -154,6 +156,30 @@ suite("StructuredOutput", () => {
     });
   });
 
+  test("StructuredOutput works with GSXToolParams", async () => {
+    const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
+      <StructuredOutput
+        model="claude-3-5-sonnet-latest"
+        messages={[{ role: "user", content: "Get me user data" }]}
+        outputSchema={userSchema}
+        tools={[testToolParams]}
+        max_tokens={1000}
+      />
+    ));
+
+    const result = await gsx.execute<User>(
+      <AnthropicProvider apiKey="test">
+        <TestComponent />
+      </AnthropicProvider>,
+    );
+
+    expect(result).toEqual({
+      name: "Test User",
+      age: 30,
+      isActive: true,
+    });
+  });
+
   test("GSXChatCompletion with outputSchema returns structured output", async () => {
     const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
       <GSXChatCompletion
@@ -184,6 +210,30 @@ suite("StructuredOutput", () => {
         messages={[{ role: "user", content: "Get me user data" }]}
         outputSchema={userSchema}
         tools={[testTool]}
+        max_tokens={1000}
+      />
+    ));
+
+    const result = await gsx.execute<User>(
+      <AnthropicProvider apiKey="test">
+        <TestComponent />
+      </AnthropicProvider>,
+    );
+
+    expect(result).toEqual({
+      name: "Test User",
+      age: 30,
+      isActive: true,
+    });
+  });
+
+  test("GSXChatCompletion with outputSchema and tools params returns structured output", async () => {
+    const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
+      <GSXChatCompletion
+        model="claude-3-5-sonnet-latest"
+        messages={[{ role: "user", content: "Get me user data" }]}
+        outputSchema={userSchema}
+        tools={[testToolParams]}
         max_tokens={1000}
       />
     ));

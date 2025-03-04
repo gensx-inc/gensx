@@ -1,5 +1,5 @@
-import { CheckpointManager } from "./checkpoint";
-import { getCurrentContext } from "./context";
+import { CheckpointManager } from "./checkpoint.js";
+import { getCurrentContext } from "./context.js";
 
 // Static symbol for workflow context
 export const WORKFLOW_CONTEXT_SYMBOL = Symbol.for("gensx.workflow");

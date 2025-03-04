@@ -1,0 +1,53 @@
+{
+  "name": "@gensx/mcp",
+  "version": "0.1.2",
+  "description": "Model Context Protocol Support for GenSX",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/gensx-mcp"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "test:types": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [
+    "gensx",
+    "jsx",
+    "mcp"
+  ],
+  "files": [
+    "dist"
+  ],
+  "author": "GenSX Team",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^20.17.11",
+    "@vitest/coverage-istanbul": "^2.1.8",
+    "vite": "^6.1.0",
+    "vite-plugin-dts": "^4.5.0",
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0",
+    "gensx": "workspace:*",
+    "tsx": "^4.19.3",
+    "zod": "^3.24.2"
+  }
+}

@@ -2,15 +2,15 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ExecutionContext, getCurrentContext, withContext } from "./context";
-import { resolveDeep } from "./resolve";
+import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
+import { resolveDeep } from "./resolve.js";
 import {
   Args,
   ExecutableValue,
   MaybePromise,
   Primitive,
   StreamArgs,
-} from "./types";
+} from "./types.js";
 
 export namespace JSX {
   export type ElementType = Element;
@@ -73,10 +73,18 @@ export const jsx = <TOutput, TProps>(
       const parentNodeId = root?.id;
 
       if (result instanceof ExecutionContext) {
+        // rename to make the code more readable
+        const executionContext = result;
+
         // withContext handles wrapping internally
-        return await withContext(result, async () => {
+        return await withContext(executionContext, async () => {
           const childResult = await resolveChildren(null as never, children);
-          return resolveDeep(childResult);
+          const resolvedChildResult = resolveDeep(childResult);
+
+          // Call onComplete for the ExecutionContext, if specified, after all the children are done.
+          await executionContext.onComplete?.();
+
+          return resolvedChildResult as Awaited<TOutput> | Awaited<TOutput>[];
         });
       } else if (parentNodeId) {
         // withCurrentNode handles wrapping internally

@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
-import { gsx } from "gensx";
+import { gsx, GSXToolAnySchema, GSXToolParams } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionCreateParamsNonStreaming,
@@ -16,16 +16,8 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { OpenAIChatCompletion, OpenAIChatCompletionOutput } from "./openai.js";
 
-interface GSXToolParams<TSchema extends z.ZodObject<z.ZodRawShape>> {
-  name: string;
-  description: string;
-  schema: TSchema;
-  run: (args: z.infer<TSchema>) => Promise<unknown>;
-  options?: {};
-}
-
 // Wrapper for tool parameter schemas
-export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
+export class GSXTool<TSchema extends GSXToolAnySchema> {
   public readonly type = "function" as const;
   public readonly definition: ChatCompletionTool;
   private readonly executionComponent: ReturnType<typeof gsx.Component>;
@@ -35,6 +27,10 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     this.description = params.description;
     this.schema = params.schema;
     this.options = params.options ?? {};
+
+    if (this.description.length > 1024) {
+      this.description = this.description.slice(0, 1021) + "...";
+    }
 
     this.definition = {
       type: this.type,
@@ -63,6 +59,14 @@ export class GSXTool<TSchema extends z.ZodObject<z.ZodRawShape>> {
     params: GSXToolParams<TSchema>,
   ): GSXTool<TSchema> {
     return new GSXTool(params);
+  }
+
+  toJSON(): Record<string, unknown> {
+    return {
+      name: this.name,
+      description: this.description,
+      schema: zodToJsonSchema(this.schema),
+    };
   }
 
   public readonly name: string;

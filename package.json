@@ -34,7 +34,13 @@
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-vitest": "^0.5.4",
     "prettier": "^3.0.0",
-    "turbo": "^2.3.3",
+    "turbo": "^2.4.4",
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@tsconfig/node20": "^20.1.4",
+    "tsx": "^4.19.2",
+    "vite": "^6.2.0",
+    "vitest": "^2.1.8"
   }
 }

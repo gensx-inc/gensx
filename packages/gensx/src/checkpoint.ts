@@ -2,9 +2,9 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { gzip } from "node:zlib";
 
-import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component";
-import { readConfig } from "./config";
-import { ExecutionContext } from "./context";
+import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component.js";
+import { readConfig } from "./config.js";
+import { ExecutionContext } from "./context.js";
 
 const gzipAsync = promisify(gzip);
 
@@ -590,6 +590,12 @@ export class CheckpointManager implements CheckpointWriter {
     if (value instanceof ExecutionContext) return value;
     if (Symbol.asyncIterator in value) return value;
     if (ArrayBuffer.isView(value)) return value;
+
+    // Check for toJSON method before doing regular object cloning
+    const objValue = value as { toJSON?: () => unknown };
+    if (typeof objValue.toJSON === "function") {
+      return this.cloneValue(objValue.toJSON());
+    }
 
     // For regular objects, clone each property
     return Object.fromEntries(

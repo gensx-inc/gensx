@@ -1,35 +1,15 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "target": "esnext",
-    "useDefineForClassFields": true,
-    "module": "esnext",
-    "lib": ["ESNext"],
     "tsBuildInfoFile": ".tsbuildinfo",
-    "incremental": true,
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "emitDeclarationOnly": true,
-    "declaration": true,
-    "declarationMap": true,
-    "outDir": "dist",
-    "sourceMap": true,
-    "inlineSources": true,
-    "esModuleInterop": true,
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "jsx": "react-jsx",
     "jsxImportSource": "@",
+    "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@/jsx-runtime": ["src/jsx-runtime.ts"]
     }
   },
-  "include": ["src/**/*", "tests/**/*", "vitest.config.ts", "vite.config.ts"],
+  "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }
