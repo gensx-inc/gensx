@@ -95,9 +95,15 @@ The chain of thought does change the failure mode a bit. The model is much less 
 
 ### Reasoning models
 
-Reasoning models are a bit better, but still very unimpressive considering they're spending hundreds of tokens formulating an approach.
+Reasoning models are much better, but still a bit unimpressive considering they're spending hundreds of tokens formulating an approach. Both o3-mini and claude-3.7-sonnet had fairly similar records. Certainly far from superhuman AI.
 
-<!-- image of the results -->
+![Reasoning models results](/assets/blog/tic-tac-toe/perf-reasoning.png)
+
+However, o3-mini made very few errors so it does seem to have the edge in this particular task.
+
+![Reasoning models errors](/assets/blog/tic-tac-toe/errors-reasoning.png)
+
+Criticism aside, these results clearly demonstrate the massive gain in model capability with the latest reasoning models even compared to chain-of-thought in conventional models.
 
 ## Why are they so bad?
 
