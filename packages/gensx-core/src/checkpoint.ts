@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { gzip } from "node:zlib";

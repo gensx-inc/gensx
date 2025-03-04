@@ -5,11 +5,9 @@ import process from "node:process";
 
 import { parse as parseIni, stringify as stringifyIni } from "ini";
 
-// Environment-based configuration
-export const API_BASE_URL =
-  process.env.GENSX_API_BASE_URL ?? "https://api.gensx.com";
-export const APP_BASE_URL =
-  process.env.GENSX_APP_BASE_URL ?? "https://app.gensx.com";
+// Default URLs to use if no config file exists and no env vars are set
+const DEFAULT_API_URL = "https://api.gensx.com";
+const DEFAULT_CONSOLE_URL = "https://app.gensx.com";
 
 // Public types
 export interface AuthConfig {
@@ -39,11 +37,6 @@ interface ConfigFileFormat {
 const DEFAULT_STATE: CliState = {
   hasCompletedFirstTimeSetup: false,
 };
-
-const DEFAULT_URLS = {
-  api: API_BASE_URL,
-  console: APP_BASE_URL,
-} as const;
 
 // Configuration path management
 function getConfigPaths(): { configDir: string; configFile: string } {
@@ -134,10 +127,16 @@ export async function saveAuth(auth: AuthConfig | null): Promise<void> {
     ...config,
     api: {
       ...(auth && { token: auth.token, org: auth.org }),
-      baseUrl: DEFAULT_URLS.api,
+      baseUrl:
+        process.env.GENSX_API_BASE_URL ??
+        config.api?.baseUrl ??
+        DEFAULT_API_URL,
     },
     console: {
-      baseUrl: DEFAULT_URLS.console,
+      baseUrl:
+        process.env.GENSX_APP_BASE_URL ??
+        config.console?.baseUrl ??
+        DEFAULT_CONSOLE_URL,
     },
   });
 }
@@ -150,10 +149,16 @@ export async function saveState(state: Partial<CliState>): Promise<void> {
     ...config,
     api: {
       ...config.api,
-      baseUrl: DEFAULT_URLS.api,
+      baseUrl:
+        process.env.GENSX_API_BASE_URL ??
+        config.api?.baseUrl ??
+        DEFAULT_API_URL,
     },
     console: {
-      baseUrl: DEFAULT_URLS.console,
+      baseUrl:
+        process.env.GENSX_APP_BASE_URL ??
+        config.console?.baseUrl ??
+        DEFAULT_CONSOLE_URL,
     },
     state: {
       ...currentState,
@@ -162,17 +167,29 @@ export async function saveState(state: Partial<CliState>): Promise<void> {
   });
 }
 
+// Export base URLs that respect config precedence
+export const API_BASE_URL = process.env.GENSX_API_BASE_URL ?? DEFAULT_API_URL;
+export const APP_BASE_URL =
+  process.env.GENSX_APP_BASE_URL ?? DEFAULT_CONSOLE_URL;
+
 // Backwards compatibility layer
 export async function readConfig() {
   const config = await readConfigFile();
+
   return {
     config: {
       api: {
         ...config.api,
-        baseUrl: config.api?.baseUrl ?? DEFAULT_URLS.api,
+        baseUrl:
+          process.env.GENSX_API_BASE_URL ??
+          config.api?.baseUrl ??
+          DEFAULT_API_URL,
       },
       console: {
-        baseUrl: config.console?.baseUrl ?? DEFAULT_URLS.console,
+        baseUrl:
+          process.env.GENSX_APP_BASE_URL ??
+          config.console?.baseUrl ??
+          DEFAULT_CONSOLE_URL,
       },
     },
     state: await getState(),
