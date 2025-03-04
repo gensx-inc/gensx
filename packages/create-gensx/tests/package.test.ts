@@ -45,21 +45,40 @@ it("package.json is correctly configured for npm create", async () => {
     catalog: Record<string, string>;
   };
   pkgJson.dependencies = Object.fromEntries(
-    Object.entries(pkgJson.dependencies).map(([key, value]) => {
-      if (value === "catalog:") {
-        return [key, pnpmWorkspace.catalog[key]];
-      }
-      return [key, value];
-    }),
+    await Promise.all(
+      Object.entries(pkgJson.dependencies).map(async ([key, value]) => {
+        if (value === "catalog:") {
+          return [key, pnpmWorkspace.catalog[key]] as const;
+        }
+        if (value.startsWith("workspace:")) {
+          const packageName = key.replace("@", "").replace("/", "-");
+          const packageJson = (await fs.readJson(
+            path.join(__dirname, "../../", packageName, "package.json"),
+          )) as { version: string };
+          return [key, packageJson.version] as const;
+        }
+        return [key, value] as const;
+      }),
+    ),
   );
   pkgJson.devDependencies = Object.fromEntries(
-    Object.entries(pkgJson.devDependencies).map(([key, value]) => {
-      if (value === "catalog:") {
-        return [key, pnpmWorkspace.catalog[key]];
-      }
-      return [key, value];
-    }),
+    await Promise.all(
+      Object.entries(pkgJson.devDependencies).map(async ([key, value]) => {
+        if (value === "catalog:") {
+          return [key, pnpmWorkspace.catalog[key]] as const;
+        }
+        if (value.startsWith("workspace:")) {
+          const packageName = key.replace("@", "").replace("/", "-");
+          const packageJson = (await fs.readJson(
+            path.join(__dirname, "../../", packageName, "package.json"),
+          )) as { version: string };
+          return [key, packageJson.version] as const;
+        }
+        return [key, value] as const;
+      }),
+    ),
   );
+
   await fs.writeJson(path.join(pkgDir, "package.json"), pkgJson, {
     spaces: 2,
   });
