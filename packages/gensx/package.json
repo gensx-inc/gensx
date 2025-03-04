@@ -46,6 +46,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@gensx/core": "workspace:*",
     "commander": "^11.0.0",
     "consola": "^3.2.3",
     "enquirer": "^2.4.1",

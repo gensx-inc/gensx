@@ -1,4 +1,5 @@
 import { Command } from "commander";
+export * from "@gensx/core";
 
 import packageJson from "../package.json" with { type: "json" };
 import { login } from "./commands/login.js";

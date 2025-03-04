@@ -20,11 +20,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "clean": "rm -rf dist",
-    "test": "vitest run --coverage",
-    "test:watch": "vitest",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "clean": "rm -rf dist"
   },
   "dependencies": {},
   "devDependencies": {
