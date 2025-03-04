@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.16...gensx-v0.3.0) (2025-03-04)
+
+
+### 🐛 Bug Fixes
+
+* Force release for all packages. ([#408](https://github.com/gensx-inc/gensx/issues/408)) ([c41a6c2](https://github.com/gensx-inc/gensx/commit/c41a6c21f66dae8f257a58ad9a7c0335471fdfef))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.0
+
 ## [0.1.5](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.4...gensx-cli-v0.1.5) (2025-03-04)
 
 

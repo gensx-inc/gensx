@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.5...gensx-cli-v0.1.6) (2025-03-04)
+
+
+### 🐛 Bug Fixes
+
+* Force release for all packages. ([#408](https://github.com/gensx-inc/gensx/issues/408)) ([c41a6c2](https://github.com/gensx-inc/gensx/commit/c41a6c21f66dae8f257a58ad9a7c0335471fdfef))
+
 ## [0.1.5](https://github.com/gensx-inc/gensx/compare/gensx-cli-v0.1.4...gensx-cli-v0.1.5) (2025-03-04)
 
 

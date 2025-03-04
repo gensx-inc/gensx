@@ -1,6 +1,6 @@
 {
   "name": "@gensx/cli",
-  "version": "0.1.11",
+  "version": "0.1.6",
   "type": "module",
   "license": "Apache-2.0",
   "description": "GenSX CLI",
