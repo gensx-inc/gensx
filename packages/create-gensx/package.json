@@ -28,7 +28,8 @@
   },
   "dependencies": {
     "commander": "^11.1.0",
-    "gensx": "workspace:*"
+    "gensx": "workspace:*",
+    "yaml": "^2.7.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
