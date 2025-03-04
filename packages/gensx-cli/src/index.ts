@@ -2,7 +2,7 @@ import { Command } from "commander";
 
 import packageJson from "../package.json" with { type: "json" };
 import { login } from "./commands/login.js";
-import { newProject } from "./commands/new.js";
+import { NewCommandOptions, newProject } from "./commands/new.js";
 
 export function runCLI() {
   const program = new Command()
@@ -27,3 +27,7 @@ export function runCLI() {
 
   program.parse();
 }
+
+export { newProject };
+
+export type { NewCommandOptions };

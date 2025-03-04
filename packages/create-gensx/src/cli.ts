@@ -2,7 +2,7 @@
 
 import { Command } from "commander";
 
-import { createGensxProject, CreateOptions } from "./index.js";
+import { createGensxProject, NewCommandOptions } from "./index.js";
 
 export async function runCLI() {
   const program = new Command();
@@ -13,7 +13,7 @@ export async function runCLI() {
     .argument("<project-directory>", "Directory to create the project in")
     .option("-t, --template <name>", "Template to use", "ts")
     .option("-f, --force", "Overwrite existing files", false)
-    .action(async (projectPath: string, options: CreateOptions) => {
+    .action(async (projectPath: string, options: NewCommandOptions) => {
       try {
         await createGensxProject(projectPath, options);
       } catch (error) {

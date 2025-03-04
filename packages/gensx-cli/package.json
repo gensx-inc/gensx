@@ -21,7 +21,7 @@
     "bin"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && cp -r src/templates dist/",
     "clean": "rm -rf dist",
     "compile": "tsc",
     "lint": "eslint .",
@@ -48,7 +48,7 @@
   "dependencies": {
     "commander": "^11.0.0",
     "consola": "^3.2.3",
-    "create-gensx": "workspace:*",
+    "enquirer": "^2.4.1",
     "ini": "^5.0.0",
     "open": "^10.0.3",
     "ora": "^8.2.0",
