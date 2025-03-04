@@ -95,11 +95,7 @@ export function getRollupConfig(
         return;
       }
 
-      if (
-        warning.message.includes("Circular dependency") &&
-        warning.message.includes("openai") &&
-        warning.message.includes("zod")
-      ) {
+      if (warning.code === "CIRCULAR_DEPENDENCY") {
         return;
       }
       // Forward other warnings to default handler

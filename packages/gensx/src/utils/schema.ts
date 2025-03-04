@@ -165,7 +165,7 @@ export async function generateSchema(
   tsFile: string,
   outFile: string,
   tsConfigFile?: string,
-): Promise<void> {
+): Promise<string[]> {
   // Generate schema for all exported types
   const settings: PartialArgs = {
     include: [tsFile],
@@ -211,6 +211,7 @@ export async function generateSchema(
     ),
   );
 
+  const workflowNames: string[] = [];
   // Then look for their component types
   for (const [
     ,
@@ -285,6 +286,8 @@ export async function generateSchema(
         input: inputDef,
         output: outputDef,
       };
+
+      workflowNames.push(normalizedWorkflowName);
     }
   }
 
@@ -297,4 +300,6 @@ export async function generateSchema(
   };
 
   await writeFile(outFile, JSON.stringify(schemaWithMeta, null, 2));
+
+  return workflowNames;
 }

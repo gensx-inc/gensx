@@ -15,10 +15,12 @@ export interface BuildOptions {
   outDir?: string;
   tsconfig?: string;
   watch?: boolean;
+  quiet?: boolean;
 }
 
 export async function build(file: string, options: BuildOptions = {}) {
-  const spinner = ora();
+  const quiet = options.quiet ?? false;
+  const spinner = ora({ isSilent: quiet });
 
   try {
     await ensureFirstTimeSetupComplete();
@@ -50,10 +52,17 @@ export async function build(file: string, options: BuildOptions = {}) {
           try {
             await event.result.write(rollupConfig.output as OutputOptions);
             // Generate schema after successful build
-            await generateSchema(absolutePath, schemaFile, options.tsconfig);
+            const workflowNames = await generateSchema(
+              absolutePath,
+              schemaFile,
+              options.tsconfig,
+            );
             // Generate index.js wrapper
             await generateServerFile(outDir);
             spinner.succeed("Build completed");
+            if (!quiet) {
+              outputBuildSuccess(outDir, workflowNames);
+            }
             await event.result.close();
           } catch (error) {
             spinner.fail("Build failed");
@@ -94,14 +103,30 @@ export async function build(file: string, options: BuildOptions = {}) {
     spinner.succeed();
 
     spinner.start("Generating schema");
-    await generateSchema(absolutePath, schemaFile, options.tsconfig);
+    const workflowNames = await generateSchema(
+      absolutePath,
+      schemaFile,
+      options.tsconfig,
+    );
     spinner.succeed();
 
     spinner.start("Generating index wrapper");
     await generateServerFile(outDir);
     spinner.succeed();
 
-    console.info(`
+    if (!quiet) {
+      outputBuildSuccess(outDir, workflowNames);
+    }
+
+    return outFile;
+  } catch (error) {
+    spinner.fail("Build failed");
+    throw error;
+  }
+}
+
+const outputBuildSuccess = (outDir: string, workflowNames: string[]) => {
+  console.info(`
 ${pc.green("✔")} Successfully built workflow
 
 ${pc.bold("Output files:")}
@@ -111,13 +136,14 @@ ${pc.cyan("- " + resolve(outDir, "schema.json"))} (JSON Schema)
 
 ${pc.bold("Available routes:")}
 ${pc.cyan("GET /")} - List all available workflows
-${pc.cyan("GET /{workflowName}/schema")} - Get JSON Schema for a workflow
-${pc.cyan("POST /{workflowName}")} - Execute a specific workflow
-`);
 
-    return outFile;
-  } catch (error) {
-    spinner.fail("Build failed");
-    throw error;
-  }
-}
+${workflowNames
+  .map(
+    (
+      name,
+    ) => `${pc.cyan(`GET /${name}/schema`)} - Get JSON Schema for a workflow
+${pc.cyan(`POST /${name}`)} - Execute a specific workflow`,
+  )
+  .join("\n\n")}
+`);
+};
