@@ -1,0 +1,31 @@
+{
+  "name": "@gensx-examples/deploy",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon",
+    "start": "tsx ./src/index.tsx",
+    "build": "tsc"
+  },
+  "description": "An example GenSX app that demonstrates how to deploy a workflow.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@gensx/openai": "workspace:*",
+    "deno": "^2.2.2",
+    "gensx": "workspace:*",
+    "openai": "^4.86.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.2"
+  }
+}
