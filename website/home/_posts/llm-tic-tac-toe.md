@@ -95,7 +95,7 @@ The chain of thought does change the failure mode a bit. The model is much less 
 
 ### Reasoning models
 
-Reasoning models are much better, but still a bit unimpressive considering they're spending hundreds of tokens formulating an approach. Both o3-mini and claude-3.7-sonnet had fairly similar records. Certainly far from superhuman AI.
+Reasoning models are much better, but still a bit unimpressive considering they're spending hundreds of tokens formulating an approach. Both o3-mini and claude-3.7-sonnet had fairly similar records. Not bad but not exactly superhuman AI either.
 
 ![Reasoning models results](/assets/blog/tic-tac-toe/perf-reasoning.png)
 
@@ -103,11 +103,11 @@ However, o3-mini made very few errors so it does seem to have the edge in this p
 
 ![Reasoning models errors](/assets/blog/tic-tac-toe/errors-reasoning.png)
 
-Criticism aside, these results clearly demonstrate the massive gain in model capability with the latest reasoning models even compared to chain-of-thought in conventional models.
+Criticism aside, these results clearly demonstrate the massive gain in model capability with the latest reasoning models even compared to chain-of-thought in non-reasoning models.
 
 ## Why are they so bad?
 
-So why are LLMs so bad at Tic-Tac-Toe? LLMs are increasingly reaching parity with humans across a wide variety of tasks including competitive programming, chat, and . You'd think they'd be good at Tic-Tac-Toe. Especially considering the state space is so small and optimal strategies are well known and easy to understand.
+So why are LLMs so bad at Tic-Tac-Toe? LLMs are increasingly reaching parity with humans across a wide variety of tasks including competitive programming, chat, and other NLP tasks. You'd think they'd be good at Tic-Tac-Toe. Especially considering the state space is so small and optimal strategies are well known and easy to understand.
 
 I won't claim to know for sure why they're so bad, but I'll offer a few hypotheses:
 
@@ -122,7 +122,7 @@ Second, Tic-Tac-Toe is potentially largely out of distribution for LLMs meaning 
 
 The goal of this experiment wasn't to go through rigorous prompt engineering and evaluation to maximize the LLM's performance at Tic-Tac-Toe but rather to see differences in how different models perform at the task. You could certainly do more prompt engineering to improve the results (although I still think the results will be quite mediocre).
 
-For example, maybe formatting the board differently for the model would help, maybe providing an image of the board to a model with vision capabilities would help, or maybe prompting the model on optimal gameplay would help too.
+For example, maybe formatting the board differently for the model would help, maybe providing an image of the board to a model with vision capabilities would help, or maybe prompting the model on optimal gameplay would help.
 
 Think you can get better results? Pull down the [code](https://github.com/gensx/gensx/tree/main/examples/llm-games) and try it yourself.
 
