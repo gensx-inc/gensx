@@ -159,11 +159,11 @@ jobs:
 
             on_macos do
               on_arm do
-                url "https://github.com/gensx-inc/gensx/releases/download/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}/gensx_${{ needs.release-please.outputs.cli_version }}_macos-arm64.tar.gz"
+                url "https://github.com/gensx-inc/gensx/releases/download/gensx-cli-binary-v${{ needs.build-cli-binary.outputs.version }}/gensx_${{ needs.build-cli-binary.outputs.version }}_macos-arm64.tar.gz"
                 sha256 "${{ env.ARM64_SHA256 }}"
               end
               on_intel do
-                url "https://github.com/gensx-inc/gensx/releases/download/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}/gensx_${{ needs.release-please.outputs.cli_version }}_macos-x64.tar.gz"
+                url "https://github.com/gensx-inc/gensx/releases/download/gensx-cli-binary-v${{ needs.build-cli-binary.outputs.version }}/gensx_${{ needs.build-cli-binary.outputs.version }}_macos-x64.tar.gz"
                 sha256 "${{ env.X64_SHA256 }}"
               end
             end
