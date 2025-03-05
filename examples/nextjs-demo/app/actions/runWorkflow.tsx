@@ -1,8 +1,8 @@
-/** @jsxImportSource gensx */
+/** @jsxImportSource @gensx/core */
 "use server";
 
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
+import * as gensx from "@gensx/core";
 
 type Prize = "T-Shirt" | "Stickers" | "Mug" | "Hoodie" | "Hat";
 
@@ -15,7 +15,7 @@ interface SelectPrizeProps {
   prizes: PrizeOdds[];
 }
 
-const SelectPrize = gsx.Component<SelectPrizeProps, Prize>(
+const SelectPrize = gensx.Component<SelectPrizeProps, Prize>(
   "SelectPrize",
   async ({ prizes }) => {
     const totalProbability = prizes.reduce(
@@ -36,7 +36,7 @@ const SelectPrize = gsx.Component<SelectPrizeProps, Prize>(
   },
 );
 
-const WriteCongratulationsMessage = gsx.Component<{ prize: Prize }, string>(
+const WriteCongratulationsMessage = gensx.Component<{ prize: Prize }, string>(
   "WriteCongratulationsMessage",
   async ({ prize }) => {
     const systemMessage = `You're an AI assistant who works as a developer advocate at a startup called GenSX.
@@ -45,6 +45,10 @@ const WriteCongratulationsMessage = gsx.Component<{ prize: Prize }, string>(
   You're working at a booth at a conference and announcing the prize that a user wins (like spinning a wheel!) given a prize and you need to write a poem about it.
 
   You will be given a prompt on how to share a prize a user gets. Make sure the response makes clear the prize and relates it to GenSX/AI/etc. `;
+
+    // wait 15 seconds
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <ChatCompletion
@@ -62,7 +66,7 @@ const WriteCongratulationsMessage = gsx.Component<{ prize: Prize }, string>(
   },
 );
 
-const WriteJoke = gsx.Component<{ prize: string }, string>(
+const WriteJoke = gensx.Component<{ prize: string }, string>(
   "WriteJoke",
   async ({ prize }) => {
     const systemMessage = `You're an AI assistant who works as a developer advocate at a startup called GenSX.
@@ -94,7 +98,7 @@ export interface SwagGiveawayOutput {
   joke: string;
 }
 
-const SwagGiveaway = gsx.Component<SelectPrizeProps, SwagGiveawayOutput>(
+const SwagGiveaway = gensx.Component<SelectPrizeProps, SwagGiveawayOutput>(
   "SwagGiveaway",
   async ({ prizes }) => {
     return (
@@ -111,7 +115,7 @@ const SwagGiveaway = gsx.Component<SelectPrizeProps, SwagGiveawayOutput>(
   },
 );
 
-const swagGiveawayWorkflow = gsx.Workflow(
+const swagGiveawayWorkflow = gensx.Workflow(
   "SwagGiveawayWorkflow",
   SwagGiveaway,
   {

@@ -16,15 +16,20 @@ export default function SwagPage() {
   const handleRunWorkflow = async () => {
     setIsLoading(true);
     try {
-      const result = await runGiveawayWorkflow({
-        prizes: [
-          { name: "Hat", probability: 0.5 },
-          { name: "Hoodie", probability: 0.5 },
-          { name: "T-Shirt", probability: 0.5 },
-          { name: "Stickers", probability: 0.4 },
-          { name: "Mug", probability: 0.2 },
-        ],
-      });
+      const result = await runGiveawayWorkflow(
+        {
+          prizes: [
+            { name: "Hat", probability: 0.5 },
+            { name: "Hoodie", probability: 0.5 },
+            { name: "T-Shirt", probability: 0.5 },
+            { name: "Stickers", probability: 0.4 },
+            { name: "Mug", probability: 0.2 },
+          ],
+        },
+        {
+          workflowName: "DerekSwag",
+        },
+      );
       setResult(result);
     } catch (error) {
       console.error("Error running workflow:", error);

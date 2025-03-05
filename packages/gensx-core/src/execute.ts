@@ -34,7 +34,11 @@ export function Workflow<P, O>(
 ): {
   run: (
     props: P,
-    runOpts?: { printUrl?: boolean; metadata?: Record<string, unknown> },
+    runOpts?: {
+      printUrl?: boolean;
+      metadata?: Record<string, unknown>;
+      workflowName?: string;
+    },
   ) => Promise<O>;
 };
 
@@ -49,7 +53,11 @@ export function Workflow<P extends { stream?: boolean }>(
 ): {
   run: <T extends P>(
     props: T,
-    runOpts?: { printUrl?: boolean; metadata?: Record<string, unknown> },
+    runOpts?: {
+      printUrl?: boolean;
+      metadata?: Record<string, unknown>;
+      workflowName?: string;
+    },
   ) => RunResult<T>;
 };
 
@@ -67,7 +75,11 @@ export function Workflow<
 ): {
   run: (
     props: P,
-    runOpts?: { printUrl?: boolean; metadata?: Record<string, unknown> },
+    runOpts?: {
+      printUrl?: boolean;
+      metadata?: Record<string, unknown>;
+      workflowName?: string;
+    },
   ) => Promise<O | Streamable | string>;
 } {
   return {
@@ -86,7 +98,9 @@ export function Workflow<
       workflowContext.checkpointManager.setPrintUrl(
         mergedOpts.printUrl ?? false,
       );
-      workflowContext.checkpointManager.setWorkflowName(name);
+      // Use the overridden name from componentOpts if provided
+      const workflowName = runOpts.workflowName ?? name;
+      workflowContext.checkpointManager.setWorkflowName(workflowName);
 
       let result: O | Streamable | string | undefined;
       let error: unknown;
@@ -113,7 +127,7 @@ export function Workflow<
       } else {
         console.warn(
           "No root checkpoint found for workflow after execution",
-          name,
+          workflowName,
         );
       }
       await workflowContext.checkpointManager.waitForPendingUpdates();
