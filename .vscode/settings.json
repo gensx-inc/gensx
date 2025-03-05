@@ -12,11 +12,12 @@
     "typescriptreact"
   ],
   "cSpell.words": [
+    "Firecrawl",
     "gensx",
     "jsxs",
+    "Kysely",
     "modelcontextprotocol",
-    "Streamable",
-    "Firecrawl"
+    "Streamable"
   ],
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
