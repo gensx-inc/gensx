@@ -78,16 +78,6 @@ export interface Info {
 
 type InfoJsx = DeepJSXElement<Info>;
 
-const ScrapeInfo = gensx.Component<SwagGiveawayProps, Info>(
-  "ScrapeInfo",
-  ({ username, prizes }) => {
-    return {
-      profile: <ScrapeGitHubProfile username={username} />,
-      prize: <SelectPrize prizes={prizes} />,
-    };
-  },
-);
-
 export interface SwagGiveawayOutput {
   prize: Prize;
   message: string;
@@ -103,22 +93,23 @@ const SwagGiveaway = gensx.Component<SwagGiveawayProps, SwagGiveawayOutput>(
   "SwagGiveaway",
   async ({ prizes, username }) => {
     return (
-      <ScrapeInfo username={username} prizes={prizes}>
-        {(info) => (
-          <WriteCongratulationsMessage
-            prize={info.prize}
-            profile={info.profile}
-          >
-            {(message) => {
-              return {
-                prize: info.prize,
-                message,
-                profile: info.profile,
-              };
-            }}
-          </WriteCongratulationsMessage>
+      <ScrapeGitHubProfile username={username}>
+        {(profile) => (
+          <SelectPrize prizes={prizes}>
+            {(prize) => (
+              <WriteCongratulationsMessage prize={prize} profile={profile}>
+                {(message) => {
+                  return {
+                    prize: prize,
+                    message,
+                    profile: profile,
+                  };
+                }}
+              </WriteCongratulationsMessage>
+            )}
+          </SelectPrize>
         )}
-      </ScrapeInfo>
+      </ScrapeGitHubProfile>
     );
   },
 );
