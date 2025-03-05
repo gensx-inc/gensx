@@ -126,9 +126,6 @@ const SwagGiveaway = gensx.Component<SwagGiveawayProps, SwagGiveawayOutput>(
 const swagGiveawayWorkflow = gensx.Workflow(
   "SwagGiveawayWorkflow",
   SwagGiveaway,
-  {
-    printUrl: true,
-  },
 );
 
 export const runGiveawayWorkflow = swagGiveawayWorkflow.run;

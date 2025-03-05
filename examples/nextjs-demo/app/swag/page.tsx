@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { runGiveawayWorkflow } from "../actions/runWorkflow";
+import { runGiveawayWorkflow } from "../actions/runGiveawayWorkflow";
 import { useState, useEffect, useRef } from "react";
-import type { SwagGiveawayOutput } from "../actions/runWorkflow";
+import type { SwagGiveawayOutput } from "../actions/runGiveawayWorkflow";
 import { checkStarsWorkflow } from "../actions/checkStars";
 
 export default function SwagPage() {
@@ -112,13 +112,21 @@ export default function SwagPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 gap-8 w-full">
-      <h1 className="text-4xl font-bold mb-4">GenSX Swag Wheel</h1>
+      <div className="flex items-center justify-center mb-4">
+        <Image
+          src="/logo-dark.svg"
+          alt="GenSX Logo"
+          width={250}
+          height={80}
+          priority
+        />
+      </div>
 
       <div className="flex flex-col sm:flex-row gap-8 w-full max-w-7xl">
         {/* QR Code Section - Left */}
         <div className="flex-1 flex flex-col items-center">
           <h2 className="text-2xl font-bold mb-6">
-            Step 1. Star GenSX on Github
+            Star GenSX on Github to win swag!
           </h2>
           <Image
             src="/gensx-qr.png"
@@ -130,7 +138,7 @@ export default function SwagPage() {
         </div>
 
         {/* Button and Result Section - Right */}
-        <div className="flex-1 flex flex-col items-center">
+        {/* <div className="flex-1 flex flex-col items-center">
           <h2 className="text-2xl font-bold mb-6">Step 2. Win Swag!!</h2>
           <button
             onClick={() => handleRunWorkflow("dereklegenzoff")}
@@ -168,7 +176,7 @@ export default function SwagPage() {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
       </div>
     </main>
   );

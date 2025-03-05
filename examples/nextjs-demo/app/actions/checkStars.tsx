@@ -59,14 +59,13 @@ const ProcessStargazers = Component<
   });
 
   return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY || ""}>
-      <GSXChatCompletion
-        model="gpt-4o-mini"
-        outputSchema={StargazerListSchema}
-        messages={[
-          {
-            role: "system",
-            content: `Extract GitHub usernames from the stargazers page HTML.
+    <GSXChatCompletion
+      model="gpt-4o-mini"
+      outputSchema={StargazerListSchema}
+      messages={[
+        {
+          role: "system",
+          content: `Extract GitHub usernames from the stargazers page HTML.
 
 Look specifically for HTML elements that look somewhat like this:
 <a class="d-inline-block" data-hovercard-type="user" data-hovercard-url="/users/USERNAME/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/USERNAME">
@@ -75,14 +74,13 @@ Look specifically for HTML elements that look somewhat like this:
 
 The username is found in the href attribute (/USERNAME) and in the alt attribute (@USERNAME).
 Return a JSON array of objects with only the username property (without the @ symbol).`,
-          },
-          {
-            role: "user",
-            content: `Extract all stargazer usernames from these GitHub page HTML elements: ${relevantHtml}`,
-          },
-        ]}
-      />
-    </OpenAIProvider>
+        },
+        {
+          role: "user",
+          content: `Extract all stargazer usernames from these GitHub page HTML elements: ${relevantHtml}`,
+        },
+      ]}
+    />
   );
 });
 
