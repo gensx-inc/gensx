@@ -44,8 +44,6 @@ jobs:
 
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node
-        with:
-          version: ${{ matrix.node-version }}
 
       - name: Build 📦
         run: pnpm build

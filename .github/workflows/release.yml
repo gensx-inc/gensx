@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       cli_released: ${{ steps.release.outputs.releases_created && contains(fromJson(steps.release.outputs.paths_released || '[]'), 'packages/gensx') }}
-      cli_version: ${{ fromJson(steps.release.outputs.paths_released || '[]')['packages/gensx'].version }}
     # Only run on pushes to the original repository and not on forks
     if: |
       github.repository == 'gensx-inc/gensx' &&
@@ -64,6 +63,8 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.cli_released == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
     strategy:
       fail-fast: false
       matrix:
@@ -79,8 +80,12 @@ jobs:
 
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node
-        with:
-          version: ${{ matrix.node-version }}
+
+      - name: Get Version
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./packages/gensx/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build 📦
         run: pnpm build
@@ -95,22 +100,22 @@ jobs:
         run: |
           cd packages/gensx-cli
           tar czf gensx-${{ matrix.target }}.tar.gz gensx-cli-${{ matrix.target }}
-          cp gensx-${{ matrix.target }}.tar.gz gensx_${{ needs.release-please.outputs.cli_version }}_${{ matrix.target }}.tar.gz
+          cp gensx-${{ matrix.target }}.tar.gz gensx_${{ steps.get-version.outputs.version }}_${{ matrix.target }}.tar.gz
 
       - name: Prepare Archive (Windows)
         if: matrix.target == 'win'
         run: |
           cd packages/gensx-cli
           zip gensx-windows.zip gensx-cli-windows.exe
-          cp gensx-windows.zip gensx_${{ needs.release-please.outputs.cli_version }}_windows.zip
+          cp gensx-windows.zip gensx_${{ steps.get-version.outputs.version }}_windows.zip
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2.0.8
         with:
-          tag_name: gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}
+          tag_name: gensx-cli-binary-v${{ steps.get-version.outputs.version }}
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
           files: |
-            packages/gensx-cli/gensx_${{ needs.release-please.outputs.cli_version }}_${{ matrix.target }}.*
+            packages/gensx-cli/gensx_${{ steps.get-version.outputs.version }}_${{ matrix.target }}.*
 
   update-homebrew:
     needs: [release-please, build-cli-binary]
@@ -120,21 +125,21 @@ jobs:
       - name: Download macOS ARM64 Release
         uses: dsaltares/fetch-gh-release-asset@1.1.1
         with:
-          version: tags/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}
-          file: gensx_${{ needs.release-please.outputs.cli_version }}_macos-arm64.tar.gz
+          version: tags/gensx-cli-binary-v${{ needs.build-cli-binary.outputs.version }}
+          file: gensx_${{ needs.build-cli-binary.outputs.version }}_macos-arm64.tar.gz
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
 
       - name: Download macOS x64 Release
         uses: dsaltares/fetch-gh-release-asset@1.1.1
         with:
-          version: tags/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}
-          file: gensx_${{ needs.release-please.outputs.cli_version }}_macos-x64.tar.gz
+          version: tags/gensx-cli-binary-v${{ needs.build-cli-binary.outputs.version }}
+          file: gensx_${{ needs.build-cli-binary.outputs.version }}_macos-x64.tar.gz
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
 
       - name: Calculate SHA256 Checksums
         run: |
-          echo "ARM64_SHA256=$(sha256sum gensx_${{ needs.release-please.outputs.cli_version }}_macos-arm64.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
-          echo "X64_SHA256=$(sha256sum gensx_${{ needs.release-please.outputs.cli_version }}_macos-x64.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
+          echo "ARM64_SHA256=$(sha256sum gensx_${{ needs.build-cli-binary.outputs.version }}_macos-arm64.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
+          echo "X64_SHA256=$(sha256sum gensx_${{ needs.build-cli-binary.outputs.version }}_macos-x64.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
 
       - name: Checkout homebrew-gensx repo
         uses: actions/checkout@v4
@@ -149,7 +154,7 @@ jobs:
           class Gensx < Formula
             desc "GenSX CLI - The command-line interface for GenSX"
             homepage "https://gensx.com"
-            version "${{ needs.release-please.outputs.cli_version }}"
+            version "${{ needs.build-cli-binary.outputs.version }}"
             license "MIT"
 
             on_macos do
@@ -177,5 +182,5 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add Formula/gensx.rb
-          git commit -m "Update formula to version ${{ needs.release-please.outputs.cli_version }}"
+          git commit -m "Update formula to version ${{ needs.build-cli-binary.outputs.version }}"
           git push
