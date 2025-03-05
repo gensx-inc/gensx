@@ -45,7 +45,7 @@ export const WriteBlog = gsx.StreamComponent<BlogWriterProps>(
 );
 ```
 
-Last week we open sourced [GenSX](https://github.com/gensx-inc/gensx), a framework for building agents and workflows with React-like components. It's a node.js framework for production-grade AI applications with uni-directional dataflow and no concept of "re-rendering".
+Last week we open sourced [GenSX](https://github.com/gensx-inc/gensx), a framework for building agents and workflows with React-like components. But unlike React, it's a backend node.js framework for production-grade AI applications with uni-directional dataflow and no concept of "re-rendering".
 
 ## The "no framework" movement
 
