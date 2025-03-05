@@ -2,7 +2,10 @@
 "use server";
 
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { GitHubProfile } from "./gensx/scrapeGithub";
 import * as gensx from "@gensx/core";
+import { ScrapeGitHubProfile } from "./gensx/scrapeGithub";
+import { DeepJSXElement } from "../../../../packages/gensx-core/dist/types";
 
 type Prize = "T-Shirt" | "Stickers" | "Mug" | "Hoodie" | "Hat";
 
@@ -18,6 +21,9 @@ interface SelectPrizeProps {
 const SelectPrize = gensx.Component<SelectPrizeProps, Prize>(
   "SelectPrize",
   async ({ prizes }) => {
+    // wait 5 seconds
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
     const totalProbability = prizes.reduce(
       (acc, curr) => acc + curr.probability,
       0,
@@ -36,81 +42,83 @@ const SelectPrize = gensx.Component<SelectPrizeProps, Prize>(
   },
 );
 
-const WriteCongratulationsMessage = gensx.Component<{ prize: Prize }, string>(
-  "WriteCongratulationsMessage",
-  async ({ prize }) => {
-    const systemMessage = `You're an AI assistant who works as a developer advocate at a startup called GenSX.
+const WriteCongratulationsMessage = gensx.Component<
+  { prize: Prize; profile: GitHubProfile },
+  string
+>("WriteCongratulationsMessage", async ({ prize, profile }) => {
+  const systemMessage = `You're an AI assistant who works as a developer advocate at a startup called GenSX.
   GenSX is a typescript framework for building AI agents and workflows.
 
   You're working at a booth at a conference and announcing the prize that a user wins (like spinning a wheel!) given a prize and you need to write a poem about it.
 
   You will be given a prompt on how to share a prize a user gets. Make sure the response makes clear the prize and relates it to GenSX/AI/etc. `;
 
-    // wait 15 seconds
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+  return (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          { role: "system", content: systemMessage },
+          {
+            role: "user",
+            content: `Write a funny short sentence congratulating the user on their prize: a ${prize}
 
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <ChatCompletion
-          model="gpt-4o-mini"
-          messages={[
-            { role: "system", content: systemMessage },
-            {
-              role: "user",
-              content: `Write a funny short sentence congratulating the user on their prize: a ${prize}`,
-            },
-          ]}
-        />
-      </OpenAIProvider>
-    );
-  },
-);
+              Here are details about the user. Make sure to make the message personal to them: <github_profile> ${JSON.stringify(profile)}</github_profile>`,
+          },
+        ]}
+      />
+    </OpenAIProvider>
+  );
+});
 
-const WriteJoke = gensx.Component<{ prize: string }, string>(
-  "WriteJoke",
-  async ({ prize }) => {
-    const systemMessage = `You're an AI assistant who works as a developer advocate at a startup called GenSX.
-  GenSX is a typescript framework for building AI agents and workflows.
+export interface Info {
+  profile: GitHubProfile;
+  prize: Prize;
+}
 
-  You're working at a booth at a conference and announcing the prize that a user wins (like spinning a wheel!) given a prize and you need to write a poem about it.
+type InfoJsx = DeepJSXElement<Info>;
 
-  You will be given a prompt on how to share a prize a user gets. Make sure the response makes clear the prize and relates it to GenSX/AI/etc. `;
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <ChatCompletion
-          model="gpt-4o-mini"
-          messages={[
-            { role: "system", content: systemMessage },
-            {
-              role: "user",
-              content: `Write a super short joke about how the person at the booth should use their prize, a ${prize}`,
-            },
-          ]}
-        />
-      </OpenAIProvider>
-    );
+const ScrapeInfo = gensx.Component<SwagGiveawayProps, Info>(
+  "ScrapeInfo",
+  ({ username, prizes }) => {
+    return {
+      profile: <ScrapeGitHubProfile username={username} />,
+      prize: <SelectPrize prizes={prizes} />,
+    };
   },
 );
 
 export interface SwagGiveawayOutput {
   prize: Prize;
   message: string;
-  joke: string;
+  profile: GitHubProfile;
 }
 
-const SwagGiveaway = gensx.Component<SelectPrizeProps, SwagGiveawayOutput>(
+export interface SwagGiveawayProps {
+  prizes: PrizeOdds[];
+  username: string;
+}
+
+const SwagGiveaway = gensx.Component<SwagGiveawayProps, SwagGiveawayOutput>(
   "SwagGiveaway",
-  async ({ prizes }) => {
+  async ({ prizes, username }) => {
     return (
-      <SelectPrize prizes={prizes}>
-        {(prize) => {
-          return {
-            prize,
-            message: <WriteCongratulationsMessage prize={prize} />,
-            joke: <WriteJoke prize={prize} />,
-          };
-        }}
-      </SelectPrize>
+      <ScrapeInfo username={username} prizes={prizes}>
+        {(info) => (
+          <WriteCongratulationsMessage
+            prize={info.prize}
+            profile={info.profile}
+          >
+            {(message) => {
+              return {
+                prize: info.prize,
+                message,
+                profile: info.profile,
+              };
+            }}
+          </WriteCongratulationsMessage>
+        )}
+      </ScrapeInfo>
     );
   },
 );
@@ -122,15 +130,5 @@ const swagGiveawayWorkflow = gensx.Workflow(
     printUrl: true,
   },
 );
-
-// export const runGiveawayWorkflow = async () => {
-//   const prizes: PrizeOdds[] = [
-//     { name: "T-Shirt", probability: 0.5 },
-//     { name: "Stickers", probability: 0.3 },
-//     { name: "Mug", probability: 0.1 },
-//   ];
-//   const result = await swagGiveawayWorkflow.run({ prizes });
-//   return result;
-// };
 
 export const runGiveawayWorkflow = swagGiveawayWorkflow.run;
