@@ -229,11 +229,11 @@ Within a few years, node.js developers will be the largest consumers of AI tools
 
 ## Try GenSX Today
 
+After using the existing tools, I understand how we arrived at the "no framework" movement. But truthfully we're all still searching for "the right framework". Something expressive and free of bloated abstractions that will inevitably turn out to be wrong when the next wave of LLM developments play out over the next six months. Not just a framework, but the infrastructure, developer tooling, and ecosystem that comes with it.
+
 I think you'll find GenSX to be a fresh but familiar take on building agents. It's [open source](https://github.com/gensx-inc/gensx) and available under the Apache 2.0 license.
 
 Today it is a clean and scalable programming model with a bunch of useful LLM-focused packages. But very soon all of your components and workflows will be durable by default with providers and context map cleanly to durable object storage. And it turns out that a component model that uses pure functions with serializable inputs and outputs lends itself extremely well to all sorts of things like caching and strong guarantees for stateful workloads. If this node.js, frameworks, and fun infra challenges tickles your fancy, then please [join the discussion on discord](https://discord.gg/wRmwfz5tCy).
-
-After using the existing tools, I understand how we arrived at the "no framework" movement. But truthfully we're all still searching for "the right framework". Something expressive and free of bloated abstractions that will inevitably turn out to be wrong when the next wave of LLM developments play out over the next six months. Not just a framework, but the infrastructure, developer tooling, and ecosystem that comes with it.
 
 GenSX is grounded in a lifelong love of the JavaScript ecosystem and years of frustration building and shipping complex agents to production.
 
