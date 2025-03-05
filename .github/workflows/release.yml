@@ -67,7 +67,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [windows, linux, macos-x64, macos-arm64]
+        target: [win, linux, macos-x64, macos-arm64]
 
     steps:
       - uses: actions/checkout@v4
@@ -83,14 +83,14 @@ jobs:
           deno task compile:${{ matrix.target }}
 
       - name: Prepare Archive (Unix)
-        if: ${{ !contains(matrix.target, 'windows') }}
+        if: ${{ !contains(matrix.target, 'win') }}
         run: |
           cd packages/gensx-cli
           tar czf gensx-${{ matrix.target }}.tar.gz gensx-cli-${{ matrix.target }}
           cp gensx-${{ matrix.target }}.tar.gz gensx_${{ needs.release-please.outputs.cli_version }}_${{ matrix.target }}.tar.gz
 
       - name: Prepare Archive (Windows)
-        if: matrix.target == 'windows'
+        if: matrix.target == 'win'
         run: |
           cd packages/gensx-cli
           zip gensx-windows.zip gensx-cli-windows.exe
