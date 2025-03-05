@@ -2,20 +2,89 @@
 
 import Image from "next/image";
 import { runGiveawayWorkflow } from "../actions/runWorkflow";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { SwagGiveawayOutput } from "../actions/runWorkflow";
+import { checkStarsWorkflow } from "../actions/checkStars";
 
 export default function SwagPage() {
   const [result, setResult] = useState<SwagGiveawayOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [stargazers, setStargazers] = useState<string[]>([]);
+  const isInitialized = useRef(false);
+  const isChecking = useRef(false);
+  const processedStargazers = useRef(new Set<string>());
+
+  useEffect(() => {
+    // Initial check for stargazers
+    checkStargazers();
+
+    // Set up periodic checking every 15 seconds
+    const interval = setInterval(checkStargazers, 15000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const checkStargazers = async () => {
+    // Prevent concurrent executions
+    if (isChecking.current) {
+      console.log("Already checking stargazers, skipping this call");
+      return;
+    }
+
+    try {
+      isChecking.current = true;
+
+      const result = await checkStarsWorkflow(
+        { repoPath: "gensx-inc/gensx" },
+        { workflowName: "Check Stargazers" },
+      );
+
+      console.log(result);
+
+      const newStargazers = result.stargazers.map((s) => s.username);
+
+      if (!isInitialized.current) {
+        isInitialized.current = true;
+        setStargazers(newStargazers);
+
+        // Add initial stargazers to processed set to avoid triggering giveaways for them
+        newStargazers.forEach((username) => {
+          processedStargazers.current.add(username);
+        });
+
+        return;
+      }
+
+      // Use functional state update to ensure we're working with the latest state
+      setStargazers((prevStargazers) => {
+        // Find new stargazers that weren't in the previous list
+        const newlyAddedStargazers = newStargazers.filter(
+          (username) => !prevStargazers.includes(username),
+        );
+
+        // Trigger giveaway for each new stargazer (only if not already processed)
+        for (const username of newlyAddedStargazers) {
+          if (!processedStargazers.current.has(username)) {
+            processedStargazers.current.add(username);
+            handleRunWorkflow(username);
+          }
+        }
+
+        return newStargazers;
+      });
+    } catch (error) {
+      console.error("Error checking stargazers:", error);
+    } finally {
+      isChecking.current = false;
+    }
+  };
 
   const handleReset = () => {
     setResult(null);
   };
 
-  const handleRunWorkflow = async () => {
+  const handleRunWorkflow = async (username: string) => {
     setIsLoading(true);
-    const username = "dereklegenzoff";
     try {
       const result = await runGiveawayWorkflow(
         {
@@ -64,7 +133,7 @@ export default function SwagPage() {
         <div className="flex-1 flex flex-col items-center">
           <h2 className="text-2xl font-bold mb-6">Step 2. Win Swag!!</h2>
           <button
-            onClick={handleRunWorkflow}
+            onClick={() => handleRunWorkflow("dereklegenzoff")}
             disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
           >
