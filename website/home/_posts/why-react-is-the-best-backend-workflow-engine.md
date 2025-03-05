@@ -73,10 +73,10 @@ GenSX is actually an accidental pivot. The team and I spent the first nine month
 
 We used one of the "hot" frameworks to do this, and grew increasingly frustrated with a few things:
 
-1. _Graph builder DSLs are extremely hard to reason about_ - reading the code is useless, and I always needed a whiteboard to figure out what my code was doing.
-2. The _framework depended on global state_ being passed around the graph.
-3. The _static nature of the graph_ made it hard to experiment with our workflows.
-4. _Everything felt like a python port_, not something native and idiomatic to the node ecosystem.
+1. **Graph builder DSLs are extremely hard to reason about** - reading the code is useless, and I always needed a whiteboard to figure out what my code was doing.
+2. The **framework depended on global state** being passed around the graph.
+3. The **static nature of the graph** made it hard to experiment with our workflows.
+4. **Everything felt like a python port**, not something native and idiomatic to the node ecosystem.
 
 These are not academic concerns. Our workflows edited content in multiple phases - removing buzz words, adding strong hooks to engage readers, tuning stylometrics, linting and validating code, etc. As we layered in new steps we found that some of the work from previous steps would regress. Some of these goals conflicted.
 
