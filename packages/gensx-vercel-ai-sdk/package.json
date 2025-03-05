@@ -38,7 +38,7 @@
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:",
-    "@ai-sdk/openai": "^1.1.14",
+    "@ai-sdk/openai": "^1.2.0",
     "zod": "catalog:",
     "zod-to-json-schema": "catalog:"
   },
@@ -46,7 +46,7 @@
     "access": "public"
   },
   "dependencies": {
-    "ai": "^4.1.46",
+    "ai": "^4.1.51",
     "@gensx/core": "workspace:*"
   }
 }
