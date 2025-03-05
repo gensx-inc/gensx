@@ -1,8 +1,9 @@
-import { exec as execCallback } from "child_process";
-import { mkdir, readdir, readFile, writeFile } from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
-import { promisify } from "util";
+import { exec as execCallback } from "node:child_process";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
 import enquirer from "enquirer";
 import ora from "ora";

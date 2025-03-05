@@ -1,6 +1,7 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
-import { homedir, platform } from "os";
-import path from "path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir, platform } from "node:os";
+import path from "node:path";
+import process from "node:process";
 
 import { parse as parseIni, stringify as stringifyIni } from "ini";
 

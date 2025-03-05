@@ -1,3 +1,5 @@
+import process from "node:process";
+
 import { consola } from "consola";
 
 /**
@@ -6,7 +8,7 @@ import { consola } from "consola";
  * Handles cleanup and process termination gracefully.
  * @returns The key that was pressed, or '\n' for Enter in non-TTY environments
  */
-export async function waitForKeypress(): Promise<string> {
+export function waitForKeypress(): Promise<string> {
   return new Promise((resolve) => {
     try {
       if (!process.stdin.isTTY) {

@@ -1,6 +1,6 @@
-import { hostname } from "os";
-
+import { Buffer } from "node:buffer";
 import { createHash, getRandomValues } from "node:crypto";
+import { hostname } from "node:os";
 
 import { consola } from "consola";
 import open from "open";
@@ -103,8 +103,7 @@ export async function login(): Promise<{ skipped: boolean }> {
     );
 
     // Wait for any keypress
-    let key: string;
-    key = await waitForKeypress();
+    const key = await waitForKeypress();
     if (key === "\u001b") {
       // ESC key
       spinner.info("Login skipped");
