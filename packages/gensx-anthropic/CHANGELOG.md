@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/gensx-inc/gensx/compare/gensx-anthropic-v0.1.3...gensx-anthropic-v0.1.4) (2025-03-05)
+
+
+### 🐛 Bug Fixes
+
+* Cleanup release-please release-as versions ([#409](https://github.com/gensx-inc/gensx/issues/409)) ([a452bae](https://github.com/gensx-inc/gensx/commit/a452bae7d0076cae02918da06567c2854a78e3e6))
+
 ## [0.1.3](https://github.com/gensx-inc/gensx/compare/gensx-anthropic-v0.1.2...gensx-anthropic-v0.1.3) (2025-03-04)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.1](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.0...gensx-v0.3.1) (2025-03-05)
+
+
+### ✨ New Features
+
+* Bundle CLI into an executable ([#412](https://github.com/gensx-inc/gensx/issues/412)) ([9fcf551](https://github.com/gensx-inc/gensx/commit/9fcf551b59140fcf6c56d5650669d97ecef900de))
+
+
+### 🐛 Bug Fixes
+
+* Cleanup release-please release-as versions ([#409](https://github.com/gensx-inc/gensx/issues/409)) ([a452bae](https://github.com/gensx-inc/gensx/commit/a452bae7d0076cae02918da06567c2854a78e3e6))
+
 ## [0.3.0](https://github.com/gensx-inc/gensx/compare/gensx-v0.2.16...gensx-v0.3.0) (2025-03-04)
 
 
