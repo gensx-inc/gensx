@@ -162,7 +162,7 @@ This model is much more consistent with the way we know that abstraction works i
 
 It allows teams to break out their surface area into the right, meaningful abstraction. Exactly what the consumer needs, nothing more, nothing less.
 
-Contrast this with the current generation of agent frameworks that depend on graph-building APIs and global state:
+Good luck translating the above code into a static graph. But let's be generous and look at an simple example of linear dataflow in the current generation of frameworks:
 
 ```ts
 const graph = new Graph()
