@@ -57,7 +57,7 @@ These frameworks stink! But the reaction of throwing the baby out with the bath 
 
 Today's workloads violate every assumption. P99 request latency is no longer 500ms. You get the first token back from an LLM within a few seconds at best, and that is only for the simplest one-shot use cases. Once you're processing documents, and chaining requests in parallel we're talking several minutes or more… not to mention agents that can run in the background for hours. These workloads used to be extremely niche\!
 
-Now every engineer in the world is picking up AI and incidentally becoming a data and workflow engineer without realizing it. And for most full stack engineers, they don't want the baggage that comes with yesterday's tools like Airflow and Temporal. They want a programming model that solves these concerns _and_ feels like writing normal application code. Now _this_ is a problem worth solving.
+Now every engineer in the world is picking up AI and incidentally becoming a data and workflow engineer without realizing it. And for most full stack engineers, they don't want the baggage that comes with yesterday's tools like Airflow or heavy-weight durable execution engines. They want a programming model that solves these concerns _and_ feels like writing normal application code. Now _this_ is a problem worth solving.
 
 ## Learning by doing
 
