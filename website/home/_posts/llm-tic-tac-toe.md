@@ -124,6 +124,6 @@ The goal of this experiment wasn't to go through rigorous prompt engineering and
 
 For example, maybe formatting the board differently for the model would help, maybe providing an image of the board to a model with vision capabilities would help, or maybe prompting the model on optimal gameplay would help.
 
-Think you can get better results? Pull down the [code](https://github.com/gensx/gensx/tree/main/examples/llm-games) and try it yourself.
+Think you can get better results? Pull down the [code](https://github.com/gensx-inc/gensx/tree/main/examples/llm-games) and try it yourself.
 
 Want to see more of these experiments? Join us on [Discord](https://discord.gg/wRmwfz5tCy) and let us know.

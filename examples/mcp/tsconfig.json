@@ -11,7 +11,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "gensx",
+    "jsxImportSource": "@gensx/core",
     "outDir": "./dist"
   },
   "include": ["./src/**/*.ts", "./src/**/*.tsx"],

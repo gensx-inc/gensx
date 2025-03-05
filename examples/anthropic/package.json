@@ -1,5 +1,5 @@
 {
-  "name": "@gensx-examples/gsx-anthropic",
+  "name": "@gensx-examples/gensx-anthropic",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@gensx/anthropic": "workspace:*",
-    "gensx": "workspace:*",
+    "@gensx/core": "workspace:*",
     "@anthropic-ai/sdk": "^0.37.0",
     "zod": "catalog:"
   },

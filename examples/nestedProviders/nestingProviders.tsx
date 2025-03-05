@@ -1,10 +1,10 @@
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
 interface WriteTutorialProps {
   subject: string;
 }
 
-export const WriteTutorial = gsx.Component<WriteTutorialProps, string>(
+export const WriteTutorial = gensx.Component<WriteTutorialProps, string>(
   "WriteTutorial",
   ({ subject }) => {
     return (
@@ -25,7 +25,7 @@ interface EditTutorialProps {
   tutorial: string;
 }
 
-export const EditTutorial = gsx.Component<EditTutorialProps, string>(
+export const EditTutorial = gensx.Component<EditTutorialProps, string>(
   "EditTutorial",
   ({ tutorial }) => {
     const prompt = `Please review the tutorial below, consider how to improve it, and then rewrite it.
@@ -51,14 +51,14 @@ export const EditTutorial = gsx.Component<EditTutorialProps, string>(
   },
 );
 
-const GroqProvider = gsx.Component<{}, never>("GroqProvider", () => (
+const GroqProvider = gensx.Component<{}, never>("GroqProvider", () => (
   <OpenAIProvider
     apiKey={process.env.GROQ_API_KEY}
     baseURL="https://api.groq.com/openai/v1"
   />
 ));
 
-export const WriteAndEditTutorial = gsx.Component<WriteTutorialProps, string>(
+export const WriteAndEditTutorial = gensx.Component<WriteTutorialProps, string>(
   "WriteAndEditTutorial",
   ({ subject }) => {
     return (

@@ -1,13 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  "bootstrap-sha": "b6b9602f90f039f6da582ce32e36239cd69917cf",
   "separate-pull-requests": false,
   "plugins": ["node-workspace"],
   "packages": {
-    "packages/gensx": {
-      "component": "gensx",
+    "packages/gensx-core": {
+      "component": "gensx-core",
       "release-type": "node",
-      "package-name": "gensx",
+      "package-name": "@gensx/core",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
@@ -32,7 +31,6 @@
       "bump-patch-for-minor-pre-major": true,
       "draft": false,
       "prerelease": false,
-      "initial-version": "0.1.0",
       "include-component-in-tag": true,
       "include-v-in-tag": true,
       "extra-files": [
@@ -74,7 +72,6 @@
       "prerelease": false,
       "include-component-in-tag": true,
       "include-v-in-tag": true,
-      "initial-version": "0.1.0",
       "extra-files": [
         {
           "type": "json",
@@ -83,10 +80,10 @@
         }
       ]
     },
-    "packages/gensx-cli": {
-      "component": "gensx-cli",
+    "packages/gensx": {
+      "component": "gensx",
       "release-type": "node",
-      "package-name": "@gensx/cli",
+      "package-name": "gensx",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
@@ -94,7 +91,6 @@
       "prerelease": false,
       "include-component-in-tag": true,
       "include-v-in-tag": true,
-      "initial-version": "0.1.0",
       "extra-files": [
         {
           "type": "json",
@@ -114,7 +110,6 @@
       "prerelease": false,
       "include-component-in-tag": true,
       "include-v-in-tag": true,
-      "initial-version": "0.1.0",
       "extra-files": [
         {
           "type": "json",
@@ -134,7 +129,6 @@
       "prerelease": false,
       "include-component-in-tag": true,
       "include-v-in-tag": true,
-      "initial-version": "0.1.0",
       "extra-files": [
         {
           "type": "json",

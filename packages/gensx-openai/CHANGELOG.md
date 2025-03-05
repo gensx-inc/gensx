@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.11](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.10...gensx-openai-v0.1.11) (2025-03-04)
+
+
+### 🐛 Bug Fixes
+
+* Force release for all packages. ([#408](https://github.com/gensx-inc/gensx/issues/408)) ([c41a6c2](https://github.com/gensx-inc/gensx/commit/c41a6c21f66dae8f257a58ad9a7c0335471fdfef))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.0
+
 ## [0.1.10](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.9...gensx-openai-v0.1.10) (2025-03-04)
 
 

@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "jsxImportSource": "@",
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/jsx-runtime": ["src/jsx-runtime.ts"]
+    }
+  },
+  "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -3,7 +3,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
-import { gsx, GSXToolAnySchema, GSXToolParams } from "gensx";
+import * as gensx from "@gensx/core";
+import { GSXToolAnySchema, GSXToolParams } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionCreateParamsNonStreaming,
@@ -20,7 +21,7 @@ import { OpenAIChatCompletion, OpenAIChatCompletionOutput } from "./openai.js";
 export class GSXTool<TSchema extends GSXToolAnySchema> {
   public readonly type = "function" as const;
   public readonly definition: ChatCompletionTool;
-  private readonly executionComponent: ReturnType<typeof gsx.Component>;
+  private readonly executionComponent: ReturnType<typeof gensx.Component>;
 
   constructor(params: GSXToolParams<TSchema>) {
     this.name = params.name;
@@ -42,7 +43,7 @@ export class GSXTool<TSchema extends GSXToolAnySchema> {
     };
 
     // Create a component that wraps the execute function
-    this.executionComponent = gsx.Component<z.infer<TSchema>, unknown>(
+    this.executionComponent = gensx.Component<z.infer<TSchema>, unknown>(
       `Tool[${this.name}]`,
       async (props) => {
         return params.run(props);
@@ -51,8 +52,8 @@ export class GSXTool<TSchema extends GSXToolAnySchema> {
   }
 
   async run(args: z.infer<TSchema>): Promise<unknown> {
-    // Execute the component through gsx.execute to get checkpointing
-    return gsx.execute(<this.executionComponent {...args} />);
+    // Execute the component through gensx.execute to get checkpointing
+    return gensx.execute(<this.executionComponent {...args} />);
   }
 
   static create<TSchema extends z.ZodObject<z.ZodRawShape>>(
@@ -134,7 +135,7 @@ export const toolExecutorImpl = async (
   );
 };
 
-export const ToolExecutor = gsx.Component<
+export const ToolExecutor = gensx.Component<
   ToolExecutorProps,
   ToolExecutorOutput
 >("ToolExecutor", async (props) => {
@@ -149,7 +150,7 @@ export const toolsCompletionImpl = async (
   const currentMessages = [...rest.messages];
 
   // Make initial completion
-  let completion = await gsx.execute<ChatCompletionOutput>(
+  let completion = await gensx.execute<ChatCompletionOutput>(
     <OpenAIChatCompletion
       {...rest}
       messages={currentMessages}
@@ -172,7 +173,7 @@ export const toolsCompletionImpl = async (
     currentMessages.push(...toolResponses);
 
     // Make next completion
-    completion = await gsx.execute<ChatCompletionOutput>(
+    completion = await gensx.execute<ChatCompletionOutput>(
       <OpenAIChatCompletion
         {...rest}
         messages={currentMessages}
@@ -191,7 +192,7 @@ export const toolsCompletionImpl = async (
 };
 
 // Tools completion component
-export const ToolsCompletion = gsx.Component<
+export const ToolsCompletion = gensx.Component<
   ToolsCompletionProps,
   ToolsCompletionOutput
 >("ToolsCompletion", toolsCompletionImpl);

@@ -1,11 +1,11 @@
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx, MaybePromise, Streamable } from "gensx";
 
 function isAsyncIterable(obj: unknown): obj is AsyncIterable<unknown> {
   return obj != null && typeof obj === "object" && Symbol.asyncIterator in obj;
 }
 
-const StreamStory = gsx.StreamComponent<{ prompt: string }>(
+const StreamStory = gensx.StreamComponent<{ prompt: string }>(
   "StreamStory",
   ({ prompt, stream }) => {
     return (
@@ -22,11 +22,11 @@ const StreamStory = gsx.StreamComponent<{ prompt: string }>(
 
 interface StreamResponse {
   children?: (
-    response: string | Streamable,
-  ) => MaybePromise<string | undefined>;
+    response: string | gensx.Streamable,
+  ) => gensx.MaybePromise<string | undefined>;
 }
 
-const StreamStoryWithChildren = gsx.StreamComponent<
+const StreamStoryWithChildren = gensx.StreamComponent<
   { prompt: string } & StreamResponse
 >("StreamStoryWithChildren", ({ prompt, stream = false }) => {
   return (
@@ -36,10 +36,10 @@ const StreamStoryWithChildren = gsx.StreamComponent<
         stream={stream}
         messages={[{ role: "user", content: prompt }]}
       >
-        {(response: string | Streamable) => {
+        {(response: string | gensx.Streamable) => {
           if (stream && isAsyncIterable(response)) {
             void (async () => {
-              for await (const token of response as Streamable) {
+              for await (const token of response as gensx.Streamable) {
                 process.stdout.write(token);
               }
               process.stdout.write("\n");
@@ -60,19 +60,21 @@ interface GeneratorProps {
   foo: string;
   iterations: number;
   stream?: boolean;
-  children?: (response: Streamable) => MaybePromise<string | undefined>;
+  children?: (
+    response: gensx.Streamable,
+  ) => gensx.MaybePromise<string | undefined>;
 }
 
-const GeneratorWorkflow = gsx.Component<GeneratorProps, string>(
+const GeneratorWorkflow = gensx.Component<GeneratorProps, string>(
   "GeneratorWorkflow",
   ({ foo, iterations, stream = false }) => {
     return (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
         <GeneratorComponent stream={stream} foo={foo} iterations={iterations}>
-          {(output: string | Streamable) => {
+          {(output: string | gensx.Streamable) => {
             if (stream && isAsyncIterable(output)) {
               void (async () => {
-                for await (const token of output as Streamable) {
+                for await (const token of output as gensx.Streamable) {
                   process.stdout.write(token);
                 }
                 process.stdout.write("\n");
@@ -88,7 +90,7 @@ const GeneratorWorkflow = gsx.Component<GeneratorProps, string>(
   },
 );
 
-const GeneratorComponent = gsx.StreamComponent<{
+const GeneratorComponent = gensx.StreamComponent<{
   foo: string;
   iterations: number;
 }>("GeneratorComponent", function* ({ foo, iterations }) {
@@ -104,7 +106,7 @@ async function runStreamingWithChildrenExample() {
 
   console.log("\n🚀 Starting streaming example with prompt:", prompt);
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "StreamingStoryWithChildrenWorkflow",
     StreamStoryWithChildren,
     { printUrl: true },
@@ -123,7 +125,7 @@ async function runStreamingExample() {
 
   console.log("\n🚀 Starting streaming example with prompt:", prompt);
 
-  const workflow = gsx.Workflow("StreamStoryWorkflow", StreamStory, {
+  const workflow = gensx.Workflow("StreamStoryWorkflow", StreamStory, {
     printUrl: true,
   });
 
@@ -145,7 +147,7 @@ async function runStreamingExample() {
 }
 
 async function streamingGeneratorExample() {
-  const workflow = gsx.Workflow("GeneratorWorkflow", GeneratorWorkflow);
+  const workflow = gensx.Workflow("GeneratorWorkflow", GeneratorWorkflow);
 
   console.log("⚡️ StreamingGeneratorExample - return result from generator");
   const response1 = await workflow.run({ foo: "bar", iterations: 10 });

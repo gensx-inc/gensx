@@ -24,7 +24,7 @@
     "@ai-sdk/openai": "^1.1.13",
     "@gensx/openai": "workspace:*",
     "@gensx/vercel-ai-sdk": "workspace:*",
-    "gensx": "workspace:*",
+    "@gensx/core": "workspace:*",
     "openai": "catalog:"
   },
   "devDependencies": {

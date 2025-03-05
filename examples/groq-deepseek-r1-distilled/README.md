@@ -27,10 +27,10 @@ This example demonstrates how to use the Groq DeepSeek R1 Distilled model with [
 The example provides a `GroqDeepSeekR1Completion` component that can be used to generate completions using the Groq DeepSeek R1 Distilled model. Here's a basic example:
 
 ```typescript
-import { gsx } from "gensx";
+import * as gensx from "@gensx/core";
 import { GroqDeepSeekR1Completion } from "./groq-deepseek-r1-distilled.js";
 
-const result = await gsx.execute(
+const result = await gensx.execute(
   <GroqDeepSeekR1Completion prompt="Write me a blog post about the future of AI." />
 );
 

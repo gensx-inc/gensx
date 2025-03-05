@@ -2,8 +2,8 @@ import {
   AnthropicProvider,
   ChatCompletion as ChatCompletionAnthropic,
 } from "@gensx/anthropic";
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
 import { z } from "zod";
 
 import { Board } from "./Board.js";
@@ -69,7 +69,7 @@ Please respond with the json inside of <move> xml tags (no backticks). Do not in
   }
 };
 
-export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
+export const MakeMove = gensx.Component<MakeMoveProps, MakeMoveResult>(
   "MakeMove",
   async ({ playerSymbol, player, board }) => {
     if (player.type === "random") {
@@ -87,7 +87,7 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
     } else {
       let response: string;
       if (player.provider?.type === "anthropic") {
-        response = await gsx.execute<string>(
+        response = await gensx.execute<string>(
           <AnthropicProvider apiKey={player.provider.apiKey}>
             <ChatCompletionAnthropic
               model={player.model}
@@ -103,7 +103,7 @@ export const MakeMove = gsx.Component<MakeMoveProps, MakeMoveResult>(
           </AnthropicProvider>,
         );
       } else {
-        response = await gsx.execute<string>(
+        response = await gensx.execute<string>(
           <OpenAIProvider
             apiKey={player.provider?.apiKey}
             baseURL={player.provider?.baseURL}

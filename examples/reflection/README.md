@@ -1,6 +1,6 @@
 # Self-reflection Example
 
-This example demonstrates how to use GenSX to implement self-reflection for LLMs using `gsx.execute` and recursive component execution. It implements a self-reflection loop to improve the quality of AI generated text. Learn more in the [self-reflection docs](https://gensx.com/docs/patterns/reflection).
+This example demonstrates how to use GenSX to implement self-reflection for LLMs using `gensx.execute` and recursive component execution. It implements a self-reflection loop to improve the quality of AI generated text. Learn more in the [self-reflection docs](https://gensx.com/docs/patterns/reflection).
 
 ## Usage
 

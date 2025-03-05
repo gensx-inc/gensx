@@ -1,5 +1,5 @@
+import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx } from "gensx";
 
 import { ArxivEntry, SearchArxiv } from "./arxiv.js";
 import { GradeDocument } from "./grader.js";
@@ -11,7 +11,7 @@ interface CreateReportProps {
   prompt: string;
 }
 
-export const CreateReport = gsx.Component<CreateReportProps, string>(
+export const CreateReport = gensx.Component<CreateReportProps, string>(
   "CreateReport",
   ({ results, prompt }) => {
     const systemMessage = `You are an experienced researcher. You have summaries of relevant research papers. Write a report answering the user's prompt using the papers provided. Make sure to provide links to the relevant papers.`;
@@ -61,7 +61,7 @@ interface ResearchProps {
   queries: string[];
 }
 
-export const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
+export const Research = gensx.Component<ResearchProps, ArxivSummary[]>(
   "Research",
   async ({ queries, prompt }) => {
     console.log("\n=== Queries ===");
@@ -70,7 +70,7 @@ export const Research = gsx.Component<ResearchProps, ArxivSummary[]>(
     });
 
     // get search results, deduplicate by url, and grade documents
-    const documents: ArxivSummary[] = await gsx
+    const documents: ArxivSummary[] = await gensx
       .array<string>(queries)
       .flatMap<ArxivEntry>((query) => (
         <SearchArxiv query={query} maxResults={3} />
@@ -100,7 +100,7 @@ interface DeepResearchProps {
   prompt: string;
 }
 
-export const DeepResearch = gsx.Component<DeepResearchProps, string>(
+export const DeepResearch = gensx.Component<DeepResearchProps, string>(
   "DeepResearch",
   ({ prompt }) => {
     return (

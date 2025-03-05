@@ -2,26 +2,26 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { gsx } from "@/index.js";
+import * as gensx from "@/index.js";
 
 suite("jsx-runtime", () => {
   test("can create element from component", async () => {
-    const MyComponent = gsx.Component<{}, string>("MyComponent", async () => {
+    const MyComponent = gensx.Component<{}, string>("MyComponent", async () => {
       await setTimeout(0);
       return "test";
     });
 
-    const result = await gsx.execute(<MyComponent />);
+    const result = await gensx.execute(<MyComponent />);
     expect(result).toBe("test");
   });
 
   test("can create element from component with children", async () => {
-    const MyComponent = gsx.Component<{}, string>("MyComponent", async () => {
+    const MyComponent = gensx.Component<{}, string>("MyComponent", async () => {
       await setTimeout(0);
       return "test";
     });
 
-    const result = await gsx.execute(
+    const result = await gensx.execute(
       <MyComponent>
         {async (value) => {
           await setTimeout(0);
@@ -35,18 +35,18 @@ suite("jsx-runtime", () => {
   test("child does not receive children prop", async () => {
     let childReceivedProps: Record<string, unknown> | undefined = undefined;
 
-    const Child = gsx.Component<{}, string>("Child", (props) => {
+    const Child = gensx.Component<{}, string>("Child", (props) => {
       childReceivedProps = props;
       return "child";
     });
 
-    const Parent = gsx.Component<{}, string>("Parent", async () => {
-      return await gsx.execute(
+    const Parent = gensx.Component<{}, string>("Parent", async () => {
+      return await gensx.execute(
         <Child>{(val: string) => val + " extra"}</Child>,
       );
     });
 
-    await gsx.execute(<Parent />);
+    await gensx.execute(<Parent />);
 
     expect(childReceivedProps).toBeDefined();
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any

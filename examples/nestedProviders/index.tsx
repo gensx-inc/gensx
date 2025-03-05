@@ -1,10 +1,10 @@
-import { gsx } from "gensx";
+import * as gensx from "@gensx/core";
 
 import { WriteAndEditTutorial } from "./nestingProviders.js";
 
 async function main() {
   console.log("\n🚀 Starting the tutorial writing workflow...");
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "WriteAndEditTutorialWorkflow",
     WriteAndEditTutorial,
   );

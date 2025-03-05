@@ -1,68 +1,66 @@
 {
   "name": "gensx",
-  "version": "0.2.16",
-  "description": "Build AI workflows using JSX",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=9.0.0"
-  },
+  "version": "0.3.0",
+  "description": "`GenSX command line tools.",
   "repository": {
     "type": "git",
     "url": "https://github.com/gensx-inc/gensx.git",
-    "directory": "packages/gensx"
+    "directory": "packages/gensx-cli"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./jsx-runtime": {
-      "types": "./dist/jsx-runtime.d.ts",
-      "default": "./dist/jsx-runtime.js"
-    },
-    "./jsx-dev-runtime": {
-      "types": "./dist/jsx-dev-runtime.d.ts",
-      "default": "./dist/jsx-dev-runtime.js"
-    }
+  "bin": {
+    "gensx": "./dist/run.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "directories": {
+    "lib": "src",
+    "bin": "bin"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
-  "bin": {
-    "gensx": "./dist/run-cli.js"
-  },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "clean": "rm -rf dist",
-    "test": "vitest run --coverage",
-    "test:watch": "vitest watch",
+    "build": "tsc -p tsconfig.build.json && cp -r src/templates dist/",
     "test:types": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "compile": "tsc",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "start": "tsx ./bin/run.ts",
+    "start:node": "node ./bin/run",
+    "package": "pkg -t $TARGET --compress GZip --out-path dist/pkg ./dist/run.cjs",
+    "package:macos": "TARGET=node22-macos-arm64 pnpm package"
   },
   "keywords": [
-    "ai",
-    "jsx",
-    "workflow"
+    "typescript",
+    "gensx",
+    "cli"
   ],
   "author": "GenSX Team",
   "license": "Apache-2.0",
-  "dependencies": {
-    "@gensx/cli": "workspace:*",
-    "ini": "^5.0.0",
-    "serialize-error": "^12.0.0",
-    "zod": "catalog:"
-  },
   "devDependencies": {
     "@types/ini": "^4.1.1",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
+    "@yao-pkg/pkg": "^6.3.0",
     "vitest": "catalog:"
   },
+  "dependencies": {
+    "@gensx/core": "workspace:*",
+    "commander": "^11.0.0",
+    "consola": "^3.2.3",
+    "enquirer": "^2.4.1",
+    "ini": "^5.0.0",
+    "open": "^10.0.3",
+    "ora": "^8.2.0",
+    "picocolors": "^1.0.1"
+  },
+  "type": "module",
   "publishConfig": {
     "access": "public"
+  },
+  "pkg": {
+    "scripts": "dist/run.cjs"
   }
 }

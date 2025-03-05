@@ -1,12 +1,13 @@
 {
   "name": "create-gensx",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "type": "module",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
   },
+  "description": "Create a new GenSX project.",
   "repository": {
     "type": "git",
     "url": "https://github.com/gensx-inc/gensx.git",
@@ -19,18 +20,17 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && cp -r src/templates dist/templates",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:types": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "commander": "^11.1.0",
-    "enquirer": "^2.4.1",
-    "ora": "^8.0.1",
-    "picocolors": "^1.0.0",
+    "gensx": "workspace:*",
     "yaml": "^2.7.0"
   },
   "devDependencies": {

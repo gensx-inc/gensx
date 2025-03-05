@@ -6,7 +6,7 @@ import { CheckpointManager } from "@/checkpoint.js";
 import { ExecutionNode } from "@/checkpoint.js";
 import { withContext } from "@/context.js";
 import { ExecutionContext } from "@/context.js";
-import { gsx } from "@/index.js";
+import * as gensx from "@/index.js";
 import { resolveDeep } from "@/resolve.js";
 import { ExecutableValue } from "@/types.js";
 import { createWorkflowContext } from "@/workflow-context.js";
@@ -58,7 +58,7 @@ export async function executeWithCheckpoints<T>(
 
   // Execute with context
   const result = await withContext(contextWithWorkflow, () =>
-    gsx.execute<T>(element),
+    gensx.execute<T>(element),
   );
 
   // Wait for any pending checkpoints
@@ -96,7 +96,7 @@ export async function executeWorkflowWithCheckpoints<T>(
     return new Response(null, { status: 200 });
   });
 
-  const WorkflowComponent = gsx.Component<{}, T>(
+  const WorkflowComponent = gensx.Component<{}, T>(
     "WorkflowComponentWrapper",
     async () => {
       const result = await resolveDeep(element);
@@ -104,7 +104,7 @@ export async function executeWorkflowWithCheckpoints<T>(
     },
   );
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "executeWorkflowWithCheckpoints" +
       Math.round(Math.random() * 1000).toFixed(0),
     WorkflowComponent,

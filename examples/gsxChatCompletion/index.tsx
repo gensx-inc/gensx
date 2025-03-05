@@ -1,10 +1,10 @@
+import * as gensx from "@gensx/core";
 import {
   GSXChatCompletion,
   GSXChatCompletionResult,
   GSXTool,
   OpenAIProvider,
 } from "@gensx/openai";
-import { gsx } from "gensx";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
@@ -13,7 +13,7 @@ import { Stream } from "openai/streaming";
 import { z } from "zod";
 
 function basicCompletion() {
-  const BasicCompletionExample = gsx.Component<{}, ChatCompletionOutput>(
+  const BasicCompletionExample = gensx.Component<{}, ChatCompletionOutput>(
     "BasicCompletionExample",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -36,7 +36,7 @@ function basicCompletion() {
     ),
   );
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "BasicCompletionExampleWorkflow",
     BasicCompletionExample,
   );
@@ -67,7 +67,7 @@ function tools() {
     },
   });
 
-  const ToolsExample = gsx.Component<{}, ChatCompletionOutput>(
+  const ToolsExample = gensx.Component<{}, ChatCompletionOutput>(
     "ToolsExample",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -91,7 +91,7 @@ function tools() {
     ),
   );
 
-  const workflow = gsx.Workflow("ToolsExampleWorkflow", ToolsExample);
+  const workflow = gensx.Workflow("ToolsExampleWorkflow", ToolsExample);
 
   return workflow.run({}, { printUrl: true });
 }
@@ -119,32 +119,32 @@ function toolsStreaming() {
     },
   });
 
-  const ToolsStreamingExample = gsx.Component<{}, Stream<ChatCompletionChunk>>(
-    "ToolsStreamingExample",
-    () => (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <GSXChatCompletion
-          stream={true}
-          messages={[
-            {
-              role: "system",
-              content:
-                "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-            },
-            {
-              role: "user",
-              content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
-            },
-          ]}
-          model="gpt-4o-mini"
-          temperature={0.7}
-          tools={[tool]}
-        />
-      </OpenAIProvider>
-    ),
-  );
+  const ToolsStreamingExample = gensx.Component<
+    {},
+    Stream<ChatCompletionChunk>
+  >("ToolsStreamingExample", () => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <GSXChatCompletion
+        stream={true}
+        messages={[
+          {
+            role: "system",
+            content:
+              "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+          },
+          {
+            role: "user",
+            content: `What do you think of kubernetes in one paragraph? but also talk about the current weather. Make up a location and ask for the weather in that location from the tool.`,
+          },
+        ]}
+        model="gpt-4o-mini"
+        temperature={0.7}
+        tools={[tool]}
+      />
+    </OpenAIProvider>
+  ));
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "ToolsStreamingWorkflow",
     ToolsStreamingExample,
   );
@@ -153,7 +153,7 @@ function toolsStreaming() {
 }
 
 function streamingCompletion() {
-  const StreamingCompletionWorkflow = gsx.Component<
+  const StreamingCompletionWorkflow = gensx.Component<
     {},
     Stream<ChatCompletionChunk>
   >("StreamingCompletionWorkflow", () => (
@@ -177,7 +177,7 @@ function streamingCompletion() {
     </OpenAIProvider>
   ));
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "StreamingCompletionWorkflow",
     StreamingCompletionWorkflow,
   );
@@ -205,7 +205,7 @@ function structuredOutput() {
 
   type TrashRating = z.infer<typeof trashRatingSchema>;
 
-  const StructuredOutputWorkflow = gsx.Component<{}, TrashRating>(
+  const StructuredOutputWorkflow = gensx.Component<{}, TrashRating>(
     "StructuredOutputWorkflow",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -230,7 +230,7 @@ function structuredOutput() {
     ),
   );
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "StructuredOutputWorkflow",
     StructuredOutputWorkflow,
   );
@@ -286,7 +286,7 @@ function multiStepTools() {
     },
   });
 
-  const MultiStepToolsWorkflow = gsx.Component<{}, GSXChatCompletionResult>(
+  const MultiStepToolsWorkflow = gensx.Component<{}, GSXChatCompletionResult>(
     "MultiStepToolsWorkflow",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -315,7 +315,7 @@ Please explain your thinking as you go through this analysis.`,
     ),
   );
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "MultiStepToolsWorkflow",
     MultiStepToolsWorkflow,
   );
@@ -408,7 +408,7 @@ function toolsWithStructuredOutput() {
 
   type TrashBinReport = z.infer<typeof trashBinReportSchema>;
 
-  const ToolsWithStructuredOutputWorkflow = gsx.Component<{}, TrashBinReport>(
+  const ToolsWithStructuredOutputWorkflow = gensx.Component<{}, TrashBinReport>(
     "ToolsWithStructuredOutputWorkflow",
     () => (
       <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -433,7 +433,7 @@ function toolsWithStructuredOutput() {
     ),
   );
 
-  const workflow = gsx.Workflow(
+  const workflow = gensx.Workflow(
     "ToolsWithStructuredOutputWorkflow",
     ToolsWithStructuredOutputWorkflow,
   );

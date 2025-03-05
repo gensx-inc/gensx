@@ -21,7 +21,7 @@ Unlike React's UI components, GenSX uses JSX to compose data processing workflow
 Here's a basic example of a component that takes in a list of tweets and analyzes them using a LLM:
 
 ```tsx
-const TweetAnalyzer = gsx.Component<TweetAnalyzerProps, string>(
+const TweetAnalyzer = gensx.Component<TweetAnalyzerProps, string>(
   "TweetAnalyzer",
   async ({ tweets }) => {
     const prompt = tweets
@@ -46,7 +46,7 @@ const TweetAnalyzer = gsx.Component<TweetAnalyzerProps, string>(
 You can also create components that are composed of other components:
 
 ```tsx
-const TweetWorkflow = gsx.Component<TweetWorkflowProps, string>(
+const TweetWorkflow = gensx.Component<TweetWorkflowProps, string>(
   "TweetWorkflow",
   async ({ query }) => (
     <TweetCollector query={query}>
@@ -62,10 +62,10 @@ const TweetWorkflow = gsx.Component<TweetWorkflowProps, string>(
 
 ## Component resolution and execution
 
-You can turn any component into a runnable workflow using `gsx.workflow()`:
+You can turn any component into a runnable workflow using `gensx.workflow()`:
 
 ```tsx
-const myWorkflow = gsx.workflow("TweetWorkflow", TweetWorkflow);
+const myWorkflow = gensx.workflow("TweetWorkflow", TweetWorkflow);
 ```
 
 Then to run the workflow, call the `run()` method on the workflow and pass in the props:
@@ -92,13 +92,13 @@ For example, when executing the TweetWorkflow, GenSX will:
 
 ### Executing sub-workflows
 
-GenSX also allows you to execute sub-workflows from within a component using `gsx.execute()`.
+GenSX also allows you to execute sub-workflows from within a component using `gensx.execute()`.
 
 ```tsx
-const result = await gsx.execute(<MyComponent input="some data" />);
+const result = await gensx.execute(<MyComponent input="some data" />);
 ```
 
-When used inside a component, `gsx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow. The result is automatically resolved to a plain JavaScript value, allowing you to work with it directly without additional JSX syntax.
+When used inside a component, `gensx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow. The result is automatically resolved to a plain JavaScript value, allowing you to work with it directly without additional JSX syntax.
 
 ## Resolving nested values and complex structures
 
@@ -113,7 +113,7 @@ GenSX automatically handles resolution of:
 For example, consider this nested structure:
 
 ```tsx
-const DocumentProcessor = gsx.Component<
+const DocumentProcessor = gensx.Component<
   DocumentProcessorProps,
   DocumentProcessorOutput
 >("DocumentProcessor", async ({ text1, text2 }) => ({
@@ -124,7 +124,7 @@ const DocumentProcessor = gsx.Component<
   },
 }));
 
-const myWorkflow = gsx.workflow("DocumentProcessor", DocumentProcessor);
+const myWorkflow = gensx.workflow("DocumentProcessor", DocumentProcessor);
 const result = await myWorkflow.run({ text1: "...", text2: "..." });
 ```
 

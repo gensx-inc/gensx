@@ -16,7 +16,7 @@
   "dependencies": {
     "@gensx/anthropic": "workspace:*",
     "@gensx/openai": "workspace:*",
-    "gensx": "workspace:*",
+    "@gensx/core": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -1,9 +1,14 @@
 import { MessageCreateParams } from "@anthropic-ai/sdk/resources/messages";
-import { gsx, GSXToolParams } from "gensx";
+import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
 
-import { AnthropicProvider, GSXChatCompletion, GSXTool } from "@/index.js";
+import {
+  AnthropicProvider,
+  GSXChatCompletion,
+  GSXTool,
+  GSXToolParams,
+} from "@/index.js";
 import { StructuredOutput } from "@/structured-output.js";
 
 import {
@@ -110,7 +115,7 @@ suite("StructuredOutput", () => {
   const testTool = new GSXTool(testToolParams);
 
   test("StructuredOutput returns structured output", async () => {
-    const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, User>("TestComponent", () => (
       <StructuredOutput
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "Get me user data" }]}
@@ -119,7 +124,7 @@ suite("StructuredOutput", () => {
       />
     ));
 
-    const result = await gsx.execute<User>(
+    const result = await gensx.execute<User>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -133,7 +138,7 @@ suite("StructuredOutput", () => {
   });
 
   test("StructuredOutput works with tools", async () => {
-    const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, User>("TestComponent", () => (
       <StructuredOutput
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "Get me user data" }]}
@@ -143,7 +148,7 @@ suite("StructuredOutput", () => {
       />
     ));
 
-    const result = await gsx.execute<User>(
+    const result = await gensx.execute<User>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -157,7 +162,7 @@ suite("StructuredOutput", () => {
   });
 
   test("StructuredOutput works with GSXToolParams", async () => {
-    const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, User>("TestComponent", () => (
       <StructuredOutput
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "Get me user data" }]}
@@ -167,7 +172,7 @@ suite("StructuredOutput", () => {
       />
     ));
 
-    const result = await gsx.execute<User>(
+    const result = await gensx.execute<User>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -181,7 +186,7 @@ suite("StructuredOutput", () => {
   });
 
   test("GSXChatCompletion with outputSchema returns structured output", async () => {
-    const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, User>("TestComponent", () => (
       <GSXChatCompletion
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "Get me user data" }]}
@@ -190,7 +195,7 @@ suite("StructuredOutput", () => {
       />
     ));
 
-    const result = await gsx.execute<User>(
+    const result = await gensx.execute<User>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -204,7 +209,7 @@ suite("StructuredOutput", () => {
   });
 
   test("GSXChatCompletion with outputSchema and tools returns structured output", async () => {
-    const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, User>("TestComponent", () => (
       <GSXChatCompletion
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "Get me user data" }]}
@@ -214,7 +219,7 @@ suite("StructuredOutput", () => {
       />
     ));
 
-    const result = await gsx.execute<User>(
+    const result = await gensx.execute<User>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,
@@ -228,7 +233,7 @@ suite("StructuredOutput", () => {
   });
 
   test("GSXChatCompletion with outputSchema and tools params returns structured output", async () => {
-    const TestComponent = gsx.Component<{}, User>("TestComponent", () => (
+    const TestComponent = gensx.Component<{}, User>("TestComponent", () => (
       <GSXChatCompletion
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "Get me user data" }]}
@@ -238,7 +243,7 @@ suite("StructuredOutput", () => {
       />
     ));
 
-    const result = await gsx.execute<User>(
+    const result = await gensx.execute<User>(
       <AnthropicProvider apiKey="test">
         <TestComponent />
       </AnthropicProvider>,

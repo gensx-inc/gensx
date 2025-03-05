@@ -14,7 +14,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "gensx": "workspace:*"
+    "@gensx/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

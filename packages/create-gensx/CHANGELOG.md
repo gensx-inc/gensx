@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.12](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.11...create-gensx-v0.1.12) (2025-03-04)
+
+
+### 🐛 Bug Fixes
+
+* Force release for all packages. ([#408](https://github.com/gensx-inc/gensx/issues/408)) ([c41a6c2](https://github.com/gensx-inc/gensx/commit/c41a6c21f66dae8f257a58ad9a7c0335471fdfef))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.3.0
+
 ## [0.1.11](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.10...create-gensx-v0.1.11) (2025-03-04)
 
 
@@ -27,14 +41,14 @@
 
 ### ✨ New Features
 
-* capitzalize gsx.Workflow and update examples ([#279](https://github.com/gensx-inc/gensx/issues/279)) ([9ba3eda](https://github.com/gensx-inc/gensx/commit/9ba3eda6b6867c569a98444d411c2ba85b32214d))
+* capitzalize gensx.Workflow and update examples ([#279](https://github.com/gensx-inc/gensx/issues/279)) ([9ba3eda](https://github.com/gensx-inc/gensx/commit/9ba3eda6b6867c569a98444d411c2ba85b32214d))
 * CLI Device auth flow ([#212](https://github.com/gensx-inc/gensx/issues/212)) ([094b98e](https://github.com/gensx-inc/gensx/commit/094b98e12ef4239e8b04c176a14f19f5e891f5a1))
 * CLI new command ([#280](https://github.com/gensx-inc/gensx/issues/280)) ([5a8743c](https://github.com/gensx-inc/gensx/commit/5a8743c0df6aa188d45239cc96169ef0671c146e))
 
 
 ### 🐛 Bug Fixes
 
-* Update template project to use gsx.workflow. ([#260](https://github.com/gensx-inc/gensx/issues/260)) ([b9d8e1c](https://github.com/gensx-inc/gensx/commit/b9d8e1cf07b28a456b720bfff628e2afb8e7f306))
+* Update template project to use gensx.workflow. ([#260](https://github.com/gensx-inc/gensx/issues/260)) ([b9d8e1c](https://github.com/gensx-inc/gensx/commit/b9d8e1cf07b28a456b720bfff628e2afb8e7f306))
 
 
 ### 📚 Documentation

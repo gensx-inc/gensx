@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
+import * as gensx from "@gensx/core";
 import { OpenAIContext, OpenAIProvider } from "@gensx/openai";
 import { GenerateText } from "@gensx/vercel-ai-sdk";
-import { gsx } from "gensx";
 import OpenAI from "openai";
 
 // Define types for the API provider configuration
@@ -30,10 +30,10 @@ interface ListModelsOutput {
   models: OpenAI.Models.ModelsPage;
 }
 // Example component to list available OpenAI models
-const ListModels = gsx.Component<{}, ListModelsOutput>(
+const ListModels = gensx.Component<{}, ListModelsOutput>(
   "ListModels",
   async () => {
-    const context = gsx.useContext(OpenAIContext);
+    const context = gensx.useContext(OpenAIContext);
     if (!context.client) {
       throw new Error(
         "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
@@ -44,7 +44,7 @@ const ListModels = gsx.Component<{}, ListModelsOutput>(
   },
 );
 // Component to create a provider for a specific API configuration
-const GetAllModelResponsesFromProvider = gsx.Component<
+const GetAllModelResponsesFromProvider = gensx.Component<
   APIProviderRunnerProps,
   APIProviderRunnerOutput
 >(
@@ -71,7 +71,7 @@ const GetAllModelResponsesFromProvider = gsx.Component<
                   !model.id.startsWith("ft:"),
               )
               .sort((a, b) => a.created - b.created);
-            const context = gsx.useContext(OpenAIContext);
+            const context = gensx.useContext(OpenAIContext);
 
             return Object.fromEntries(
               filteredModels.map((model) => [
@@ -101,7 +101,7 @@ const GetAllModelResponsesFromProvider = gsx.Component<
   },
 );
 
-const GetModelHistoryAcrossProviders = gsx.Component<
+const GetModelHistoryAcrossProviders = gensx.Component<
   {
     prompt: string;
     providers?: APIProvider[];
@@ -127,7 +127,7 @@ const GetModelHistoryAcrossProviders = gsx.Component<
     ];
 
     // Map through all API providers and get history for each
-    return gsx.array(apiProviders).map((provider) => (
+    return gensx.array(apiProviders).map((provider) => (
       <GetAllModelResponsesFromProvider
         name={provider.name}
         providerConfig={provider.providerConfig}
@@ -140,7 +140,7 @@ const GetModelHistoryAcrossProviders = gsx.Component<
   },
 );
 
-const workflow = gsx.Workflow(
+const workflow = gensx.Workflow(
   "History of Model Responses",
   GetModelHistoryAcrossProviders,
 );

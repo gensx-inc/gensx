@@ -1,4 +1,4 @@
-import { gsx, GsxComponent } from "gensx";
+import * as gensx from "@gensx/core";
 
 export interface ReflectionOutput {
   feedback: string;
@@ -9,9 +9,9 @@ interface ReflectionProps<TInput> {
   // The initial input to process
   input: TInput;
   // Component to process the input and generate new output
-  ImproveFn: GsxComponent<{ input: TInput; feedback: string }, TInput>;
+  ImproveFn: gensx.GsxComponent<{ input: TInput; feedback: string }, TInput>;
   // Component to evaluate if we should continue processing and provide feedback
-  EvaluateFn: GsxComponent<{ input: TInput }, ReflectionOutput>;
+  EvaluateFn: gensx.GsxComponent<{ input: TInput }, ReflectionOutput>;
   // Current iteration count
   iterations?: number;
   // Maximum number of iterations allowed
@@ -25,7 +25,7 @@ interface ReflectionProps<TInput> {
  * 2. maxIterations is reached
  */
 export function createReflectionLoop<TInput>(name: string) {
-  return gsx.Component<ReflectionProps<TInput>, TInput>(
+  return gensx.Component<ReflectionProps<TInput>, TInput>(
     name,
     async ({
       input,
@@ -36,11 +36,11 @@ export function createReflectionLoop<TInput>(name: string) {
     }) => {
       // Check if we should continue processing
       const { feedback, continueProcessing } =
-        await gsx.execute<ReflectionOutput>(<EvaluateFn input={input} />);
+        await gensx.execute<ReflectionOutput>(<EvaluateFn input={input} />);
 
       if (continueProcessing && iterations < maxIterations) {
         // Process the input
-        const newInput: TInput = await gsx.execute<TInput>(
+        const newInput: TInput = await gensx.execute<TInput>(
           <ImproveFn input={input} feedback={feedback} />,
         );
 

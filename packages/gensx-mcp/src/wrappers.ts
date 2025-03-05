@@ -1,3 +1,4 @@
+import { GSXToolAnySchema, GSXToolParams } from "@gensx/core";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import {
   CallToolResult,
@@ -10,7 +11,6 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
-import { GSXToolAnySchema, GSXToolParams } from "gensx";
 import { z } from "zod";
 
 export class MCPResource {

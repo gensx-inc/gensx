@@ -32,7 +32,7 @@ Here's the implementation of the `createReflectionLoop` function:
 
 ```tsx
 export function createReflectionLoop<TInput>(name: string) {
-  return gsx.Component<ReflectionProps<TInput>, TInput>(
+  return gensx.Component<ReflectionProps<TInput>, TInput>(
     name,
     async ({
       input,
@@ -43,11 +43,11 @@ export function createReflectionLoop<TInput>(name: string) {
     }) => {
       // Check if we should continue processing
       const { feedback, continueProcessing } =
-        await gsx.execute<ReflectionOutput>(<EvaluateFn input={input} />);
+        await gensx.execute<ReflectionOutput>(<EvaluateFn input={input} />);
 
       if (continueProcessing && iterations < maxIterations) {
         // Process the input
-        const newInput: TInput = await gsx.execute<TInput>(
+        const newInput: TInput = await gensx.execute<TInput>(
           <ImproveFn input={input} feedback={feedback} />,
         );
 
@@ -84,7 +84,7 @@ First, you need to define the component that will be used to evaluate the text. 
 To get good results, you'll need to provide useful instructions on what feedback to provide. In this example, we focus on trying to make the text sound more authentic and less AI-generated.
 
 ```tsx
-const EvaluateText = gsx.Component<{ input: string }, ReflectionOutput>(
+const EvaluateText = gensx.Component<{ input: string }, ReflectionOutput>(
   "EvaluateText",
   ({ input }) => {
     const systemPrompt = `You're a helpful assistant that evaluates text and suggests improvements if needed.
@@ -134,33 +134,33 @@ const EvaluateText = gsx.Component<{ input: string }, ReflectionOutput>(
 Next, you need to define the component that will be used to improve the text. This component will take the `input` text and the `feedback` as input and return the improved text.
 
 ```tsx
-const ImproveText = gsx.Component<{ input: string; feedback: string }, string>(
-  "ImproveText",
-  ({ input, feedback }) => {
-    console.log("\n📝 Current draft:\n", input);
-    console.log("\n🔍 Feedback:\n", feedback);
-    console.log("=".repeat(50));
-    const systemPrompt = `You're a helpful assistant that improves text by fixing typos, removing buzzwords, jargon, and making the writing sound more authentic.
+const ImproveText = gensx.Component<
+  { input: string; feedback: string },
+  string
+>("ImproveText", ({ input, feedback }) => {
+  console.log("\n📝 Current draft:\n", input);
+  console.log("\n🔍 Feedback:\n", feedback);
+  console.log("=".repeat(50));
+  const systemPrompt = `You're a helpful assistant that improves text by fixing typos, removing buzzwords, jargon, and making the writing sound more authentic.
 
     You will be given a piece of text and feedback on the text. Your job is to improve the text based on the feedback. You should return the improved text and nothing else.`;
-    const prompt = `<feedback>
+  const prompt = `<feedback>
     ${feedback}
     </feedback>
 
     <text>
     ${input}
     </text>`;
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ]}
-      />
-    );
-  },
-);
+  return (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ]}
+    />
+  );
+});
 ```
 
 ### Step 3: Create the reflection loop
@@ -168,7 +168,7 @@ const ImproveText = gsx.Component<{ input: string; feedback: string }, string>(
 Now that you have the evaluation and improvement components, you can create the reflection loop.
 
 ```tsx
-export const ImproveTextWithReflection = gsx.Component<
+export const ImproveTextWithReflection = gensx.Component<
   {
     text: string;
     maxIterations?: number;
@@ -196,7 +196,10 @@ You can run the text improvement example using the following code:
 ```tsx
 const text = `We are a cutting-edge technology company leveraging bleeding-edge AI solutions to deliver best-in-class products to our customers. Our agile development methodology ensures we stay ahead of the curve with paradigm-shifting innovations.`;
 
-const workflow = gsx.Workflow("ReflectionWorkflow", ImproveTextWithReflection);
+const workflow = gensx.Workflow(
+  "ReflectionWorkflow",
+  ImproveTextWithReflection,
+);
 const improvedText = await workflow.run({ text });
 
 console.log("🎯 Final text:\n", improvedText);

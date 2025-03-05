@@ -1,7 +1,7 @@
 {
   "name": "@gensx/openai",
-  "version": "0.1.10",
-  "description": "OpenAI integration for GenSX",
+  "version": "0.1.11",
+  "description": "OpenAI integration for GenSX.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -48,7 +48,7 @@
     "access": "public"
   },
   "dependencies": {
-    "gensx": "workspace:*",
+    "@gensx/core": "workspace:*",
     "zod": "catalog:",
     "zod-to-json-schema": "catalog:"
   }

@@ -47,19 +47,36 @@ it("package.json is correctly configured for npm create", async () => {
   pkgJson.dependencies = Object.fromEntries(
     Object.entries(pkgJson.dependencies).map(([key, value]) => {
       if (value === "catalog:") {
-        return [key, pnpmWorkspace.catalog[key]];
+        return [key, pnpmWorkspace.catalog[key]] as const;
       }
-      return [key, value];
+      if (value.startsWith("workspace:")) {
+        const packageName = key.includes("@")
+          ? `gensx-${key.split("/")[0]}`
+          : key;
+        return [
+          key,
+          `file:${path.join(__dirname, "../../", packageName)}`,
+        ] as const;
+      }
+      return [key, value] as const;
     }),
   );
   pkgJson.devDependencies = Object.fromEntries(
     Object.entries(pkgJson.devDependencies).map(([key, value]) => {
       if (value === "catalog:") {
-        return [key, pnpmWorkspace.catalog[key]];
+        return [key, pnpmWorkspace.catalog[key]] as const;
       }
-      return [key, value];
+      if (value.startsWith("workspace:")) {
+        const packageName = key.replace("@", "").replace("/", "-");
+        return [
+          key,
+          `file:${path.join(__dirname, "../../", packageName)}`,
+        ] as const;
+      }
+      return [key, value] as const;
     }),
   );
+
   await fs.writeJson(path.join(pkgDir, "package.json"), pkgJson, {
     spaces: 2,
   });
@@ -74,7 +91,7 @@ it("package.json is correctly configured for npm create", async () => {
 
   try {
     // Try to execute the package bin directly
-    await exec(`${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}"`, {
+    await exec(`${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s`, {
       cwd: pkgDir,
       env: { ...process.env },
     });
