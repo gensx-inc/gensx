@@ -74,7 +74,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Deno ⚙️
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
 
@@ -110,7 +110,7 @@ jobs:
           cp gensx-windows.zip gensx_${{ steps.get-version.outputs.version }}_windows.zip
 
       - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2.0.8
+        uses: softprops/action-gh-release@v2.2.1
         with:
           tag_name: gensx-cli-binary-v${{ steps.get-version.outputs.version }}
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
@@ -123,14 +123,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download macOS ARM64 Release
-        uses: dsaltares/fetch-gh-release-asset@1.1.1
+        uses: dsaltares/fetch-gh-release-asset@1.1.2
         with:
           version: tags/gensx-cli-binary-v${{ needs.build-cli-binary.outputs.version }}
           file: gensx_${{ needs.build-cli-binary.outputs.version }}_macos-arm64.tar.gz
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
 
       - name: Download macOS x64 Release
-        uses: dsaltares/fetch-gh-release-asset@1.1.1
+        uses: dsaltares/fetch-gh-release-asset@1.1.2
         with:
           version: tags/gensx-cli-binary-v${{ needs.build-cli-binary.outputs.version }}
           file: gensx_${{ needs.build-cli-binary.outputs.version }}_macos-x64.tar.gz
