@@ -82,7 +82,7 @@ What started as a detour over Thanksgiving to solve our own problems resulted in
 
 I know. I would not have guessed a React-like model would be good or maintainable for the backend. But I was wrong. The Frontend universe runs on this stuff and if you spend any amount of time with it I think you will not be able to imagine life without it. It cuts right through the complexity of managing an insane state machine, and gives you a programming model that lets you focus on the end result.
 
-And the same applies to LLM workflows:
+And the same applies to LLM workflows.
 
 ### Encapsulation and Modularity
 
@@ -160,7 +160,7 @@ The code reads cleanly from top to bottom, uses a mixture of declarative compone
 
 This model is much more consistent with the way we know that abstraction works in the frontend. Compose building blocks together, and share dependencies via context.
 
-It allows infra teams to break out their surface area into the right, meaningful abstraction. Exactly what the consumer needs, nothing more, nothing less.
+It allows teams to break out their surface area into the right, meaningful abstraction. Exactly what the consumer needs, nothing more, nothing less.
 
 Contrast this with the current generation of agent frameworks that depend on graph-building APIs and global state:
 
@@ -199,7 +199,7 @@ const AgentWorkflow = gsx.Component(
   <AgentStep>
     {(result) =>
       result.needsMoreWork ? (
-        // Recursion creates AgentWorkflow \-\> AgentStep \-\> AgentWorkflow \-\> …
+        // Recursion creates AgentWorkflow -> AgentStep -> AgentWorkflow -> …
         <AgentWorkflow />
       ) : (
         result
