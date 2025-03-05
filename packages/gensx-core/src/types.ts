@@ -38,13 +38,15 @@ export type Primitive = string | number | boolean | null | undefined;
  *   }),
  * );
  */
-export type DeepJSXElement<T> = T extends (infer Item)[]
-  ? DeepJSXElement<Item>[] | GsxArray<Item>
-  : T extends object
-    ? { [K in keyof T]: DeepJSXElement<T[K]> }
-    : T extends GsxArray<infer Item>
-      ? GsxArray<Item>
-      : T | JSX.Element;
+export type DeepJSXElement<T> =
+  | (T extends (infer Item)[]
+      ? DeepJSXElement<Item>[] | GsxArray<Item> | Item[]
+      : T extends GsxArray<infer Item>
+        ? GsxArray<Item>
+        : T extends object
+          ? { [K in keyof T]: DeepJSXElement<T[K]> }
+          : JSX.Element | T)
+  | JSX.Element;
 
 // Allow children function to return plain objects that will be executed
 export type ExecutableValue<T = unknown> =
