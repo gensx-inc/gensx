@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 
 export interface WheelSegment {
   id: string;
@@ -24,10 +24,8 @@ export default function SpinWheel({
   spinDuration = 5,
   buttonText = "Spin the Wheel!",
 }: SpinWheelProps) {
-  const [rotation, setRotation] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
   const [winner, setWinner] = useState<WheelSegment | null>(null);
-  const wheelRef = useRef<HTMLDivElement>(null);
 
   // Calculate segment angles
   const segmentAngle = 360 / segments.length;
@@ -39,19 +37,35 @@ export default function SpinWheel({
     setIsSpinning(true);
     setWinner(null);
 
-    // Random number of full rotations (3-10) plus a random segment
-    const randomSegmentIndex = Math.floor(Math.random() * segments.length);
-    const segmentRotation = randomSegmentIndex * segmentAngle;
-    const fullRotations = (Math.floor(Math.random() * 8) + 3) * 360;
+    // First, determine the winning segment
+    const winningIndex = Math.floor(Math.random() * segments.length);
+    const winningSegment = segments[winningIndex];
 
-    // Calculate final rotation (we subtract the segment rotation because the wheel rotates clockwise)
-    const newRotation = rotation + fullRotations - segmentRotation;
+    // Get the wheel element
+    const wheelElement = document.querySelector(".wheel-inner") as HTMLElement;
+    if (!wheelElement) return;
 
-    setRotation(newRotation);
+    // Reset the wheel's rotation to 0
+    wheelElement.style.transition = "none";
+    wheelElement.style.transform = "rotate(0deg)";
 
-    // Determine the winner after spin ends
+    // Force a reflow to ensure the reset takes effect
+    void wheelElement.offsetHeight;
+
+    // Calculate the final rotation:
+    // - Start with 5 full rotations (1800 degrees)
+    // - Add the rotation needed to get to the winning segment
+    // - The winning segment should end at the top (0 degrees)
+    // - Since the wheel rotates clockwise and segments start at 3 o'clock,
+    //   we need to rotate (360 - (winningIndex * segmentAngle)) degrees
+    const finalRotation = 1800 + (360 - winningIndex * segmentAngle);
+
+    // Apply the spinning animation
+    wheelElement.style.transition = `transform ${spinDuration}s cubic-bezier(0.2, 0.8, 0.2, 1)`;
+    wheelElement.style.transform = `rotate(${finalRotation}deg)`;
+
+    // Set the winner after the spin
     setTimeout(() => {
-      const winningSegment = segments[randomSegmentIndex];
       setWinner(winningSegment);
       setIsSpinning(false);
       if (onSpinEnd) {
@@ -62,68 +76,73 @@ export default function SpinWheel({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="relative" style={{ width: wheelSize, height: wheelSize }}>
+      <div
+        className="relative"
+        style={{
+          width: wheelSize,
+          height: wheelSize,
+        }}
+      >
         {/* Wheel */}
         <div
-          ref={wheelRef}
-          className="absolute w-full h-full rounded-full overflow-hidden transition-transform"
+          className="wheel-inner absolute w-full h-full rounded-full overflow-hidden border-8 border-gray-800 shadow-lg"
           style={{
-            transform: `rotate(${rotation}deg)`,
-            transition: isSpinning
-              ? `transform ${spinDuration}s cubic-bezier(0.2, 0.8, 0.2, 1)`
-              : "none",
+            backgroundColor: "#1a1a1a",
+            transform: "rotate(0deg)",
           }}
         >
-          {segments.map((segment, index) => (
-            <div
-              key={segment.id}
-              className="absolute origin-bottom-right"
-              style={{
-                width: "50%",
-                height: "50%",
-                transform: `rotate(${index * segmentAngle}deg)`,
-                transformOrigin: "bottom left",
-                left: "50%",
-                top: "0",
-                overflow: "hidden",
-                zIndex: 5,
-              }}
-            >
+          {segments.map((segment, index) => {
+            // Each segment starts from the 3 o'clock position (0 degrees)
+            // and rotates counter-clockwise
+            const rotation = index * segmentAngle;
+
+            return (
               <div
+                key={segment.id}
+                className="absolute top-0 left-0 w-full h-full"
                 style={{
-                  position: "absolute",
-                  width: "200%",
-                  height: "200%",
-                  left: "-100%",
-                  transformOrigin: "center",
-                  transform: `rotate(${segmentAngle / 2}deg)`,
+                  transform: `rotate(${rotation}deg)`,
+                  transformOrigin: "50% 50%",
+                  clipPath: `polygon(50% 50%, 50% 0, ${50 + segmentAngle + 0.5}% 0)`,
                   backgroundColor: segment.color,
-                  clipPath: "polygon(100% 50%, 50% 100%, 0 50%, 50% 0)",
                 }}
               >
+                {/* Segment Text */}
                 <div
-                  className="absolute w-full h-full flex items-center justify-center text-white font-bold"
+                  className="absolute text-white font-bold"
                   style={{
-                    transform: `rotate(${index * -segmentAngle - 90}deg)`,
-                    transformOrigin: "center",
-                    fontSize: `${Math.max(12, wheelSize / 25)}px`,
-                    textShadow: "1px 1px 2px rgba(0,0,0,0.7)",
-                    paddingBottom: `${wheelSize / 3}px`,
+                    position: "absolute",
+                    left: "50%",
+                    width: `${wheelSize * 0.35}px`,
+                    transform: `
+                      rotate(${segmentAngle / 2}deg)
+                      translateY(${wheelSize * 0.15}px)
+                      translateX(-50%)
+                    `,
+                    transformOrigin: "0 50%",
+                    textShadow: "2px 2px 4px rgba(0,0,0,0.9)",
+                    fontSize: Math.max(14, wheelSize / 20),
+                    textAlign: "center",
+                    overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 8px",
                   }}
                 >
                   {segment.label}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Center point */}
         <div
-          className="absolute rounded-full bg-white border-4 border-gray-800 z-10"
+          className="absolute rounded-full bg-white border-4 border-gray-800 z-10 shadow-md"
           style={{
-            width: wheelSize / 10,
-            height: wheelSize / 10,
+            width: wheelSize / 8,
+            height: wheelSize / 8,
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
@@ -134,14 +153,15 @@ export default function SpinWheel({
         <div
           className="absolute z-20"
           style={{
-            top: 0,
+            top: -5,
             left: "50%",
             transform: "translateX(-50%)",
             width: 0,
             height: 0,
-            borderLeft: `${wheelSize / 20}px solid transparent`,
-            borderRight: `${wheelSize / 20}px solid transparent`,
-            borderTop: `${wheelSize / 10}px solid #ff5722`,
+            borderLeft: `${wheelSize / 18}px solid transparent`,
+            borderRight: `${wheelSize / 18}px solid transparent`,
+            borderTop: `${wheelSize / 9}px solid #ff5722`,
+            filter: "drop-shadow(0px 2px 2px rgba(0,0,0,0.3))",
           }}
         />
       </div>
