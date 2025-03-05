@@ -12,7 +12,7 @@ ogImage:
 
 ## Building LLM Apps Today Still Sucks
 
-If you've tried to build anything beyond a simple one-shot chat interface with LLMs, you know the pain. The current ecosystem is a mess:
+If you've tried to build anything beyond a simple single turn chat interface with LLMs, you know the pain. The current ecosystem is a mess:
 
 1. **Everything is Python-first**. JavaScript and TypeScript are eating the world, powering frontends and backends alike. And yet when it comes to building AI and agents, frameworks are stuck in an overabstracted, global-state Python world. No JavaScript or TypeScript to be found, no concept of declarative, repeatable components.
 
@@ -49,13 +49,13 @@ Last week we open sourced [GenSX](https://github.com/gensx-inc/gensx), a framewo
 
 ## The "no framework" movement
 
-I'm not alone in this frustration. The "no framework" movement is gaining steam, with developers abandoning existing frameworks in droves. There are countless threads on Hacker News and Reddit expressing similar concerns about the current state of LLM frameworks. [Lots](https://news.ycombinator.com/item?id=40739982), and [lots](https://news.ycombinator.com/item?id=42691946), and [lots](https://www.reddit.com/r/AI_Agents/comments/1ianz11/are_agent_frameworks_that_useful/), and [lots of them](https://www.reddit.com/r/AI_Agents/comments/1i4iyje/do_i_really_need_to_pick_an_ai_agent_framework/).
+The "no framework" movement is gaining steam, with developers abandoning existing frameworks in droves. There are countless threads on Hacker News and Reddit expressing similar concerns about the current state of LLM frameworks. [Lots](https://news.ycombinator.com/item?id=40739982), and [lots](https://news.ycombinator.com/item?id=42691946), and [lots](https://www.reddit.com/r/AI_Agents/comments/1ianz11/are_agent_frameworks_that_useful/), and [lots of them](https://www.reddit.com/r/AI_Agents/comments/1i4iyje/do_i_really_need_to_pick_an_ai_agent_framework/).
 
 These frameworks help you start quickly, but don't scale. They box you into corners by abstracting things that should not be abstracted. It is as if we took 30 years of experience with workflow engines and ignored any of the lessons on ergonomics.
 
 These frameworks stink! But the reaction of throwing the baby out with the bath water misses the point that the infrastructure designed for yesterday's internet is almost the opposite of what we need today.
 
-Today's workloads violate every assumption. P99 request latency is no longer 500ms. You get the first token back from an LLM within a few seconds at best, and that is only for the simplest one-shot use cases. Once you're processing documents, and chaining requests in parallel we're talking several minutes or more… not to mention agents that can run in the background for hours. These workloads used to be extremely niche\!
+Today's workloads violate every assumption. P99 request latency is no longer 500ms. You get the first token back from an LLM within a few seconds at best, and that is only for the simplest single turn use cases. Once you're processing documents, and chaining requests in parallel we're talking several minutes or more… not to mention agents that can run in the background for hours. These workloads used to be extremely niche\!
 
 Now every engineer in the world is picking up AI and incidentally becoming a data and workflow engineer without realizing it. And for most full stack engineers, they don't want the baggage that comes with yesterday's tools like Airflow or heavy-weight durable execution engines. They want a programming model that solves these concerns _and_ feels like writing normal application code. Now _this_ is a problem worth solving.
 
@@ -65,10 +65,10 @@ GenSX is actually an accidental pivot. The team and I spent the first nine month
 
 We used one of the "hot" frameworks to do this, and grew increasingly frustrated with a few things:
 
-1. Graph builder DSLs are extremely hard to reason about - reading the code is useless, and I always needed a whiteboard to figure out what my code was doing.
-2. The framework depended on global state being passed around the graph.
-3. The static nature of the graph made it hard to experiment with our workflows.
-4. Everything felt like a python port, not something native and idiomatic to the node ecosystem.
+1. _Graph builder DSLs are extremely hard to reason about_ - reading the code is useless, and I always needed a whiteboard to figure out what my code was doing.
+2. The _framework depended on global state_ being passed around the graph.
+3. The _static nature of the graph_ made it hard to experiment with our workflows.
+4. _Everything felt like a python port_, not something native and idiomatic to the node ecosystem.
 
 These are not academic concerns. Our workflows edited content in multiple phases - removing buzz words, adding strong hooks to engage readers, tuning stylometrics, linting and validating code, etc. As we layered in new steps we found that some of the work from previous steps would regress. Some of these goals conflicted.
 
@@ -130,15 +130,15 @@ Data in, data out. This is inherently more controlled than scattering global sta
 
 ### Composition Over Abstraction
 
-I recently looked at a framework that with a rather cute and clean hero example:
+I recently looked at a framework with a rather cute and clean hero example:
 
 ```ts
 new Agent(..., new Memory(), new RAG());
 ```
 
-Anyone who has spent meaningful time building in this space knows this reeks of over-abstraction. This is akin to saying `new DatabaseSchema()` with no additional parameters. It is nonsensical. Fundamentally, many problems in AI are tightly coupled your use-case and application-specific data model. Flashy abstraction will have you feeling good on day one but pulling your hair out on day 10.
+Anyone who has spent meaningful time building in this space knows this reeks of over-abstraction. This is akin to saying `new DatabaseSchema()` with no additional parameters. It is nonsensical. Fundamentally, many problems in AI are tightly coupled to your use-case and application-specific data model. Flashy abstraction will have you feeling good on day one but pulling your hair out on day 10.
 
-With GenSX, you use reusable components and compose them together. This happens via React-style children functions that make data dependencies explicit, and shows the entirety of the data pipeline at a glance.
+With GenSX, you build reusable components and compose them together. This happens via React-style children functions that make data dependencies explicit, and shows the entirety of the data pipeline at a glance.
 
 Consider this GenSX component that takes a list of hacker news stories and produces an LLM-generated summary and sentiment analysis over each one:
 
