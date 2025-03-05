@@ -8,7 +8,7 @@ import packageJson from "../package.json" with { type: "json" };
 import { login } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
 
-export function runCLI() {
+export async function runCLI() {
   const program = new Command()
     .name("gensx")
     .description("CLI tool for GenSX")
@@ -29,7 +29,7 @@ export function runCLI() {
     .option("-f, --force", "Overwrite existing files", false)
     .action(newProject);
 
-  program.parse();
+  await program.parseAsync();
 }
 
 export { newProject };
