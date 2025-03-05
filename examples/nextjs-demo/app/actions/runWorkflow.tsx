@@ -1,6 +1,7 @@
 /** @jsxImportSource gensx */
 "use server";
 
+import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { gsx } from "gensx";
 
 type Prize = "T-Shirt" | "Stickers" | "Mug" | "Hoodie" | "Hat";
@@ -38,7 +39,26 @@ const SelectPrize = gsx.Component<SelectPrizeProps, Prize>(
 const WritePrizePoem = gsx.Component<{ prize: Prize }, string>(
   "WritePrizePoem",
   async ({ prize }) => {
-    return `You won a ${prize}!`;
+    const systemMessage = `You're an AI assistant who works as a developer advocate at a startup called GenSX.
+  GenSX is a typescript framework for building AI agents and workflows.
+
+  You're working at a booth at a conference and announcing the prize that a user wins (like spinning a wheel!) given a prize and you need to write a poem about it.
+
+  You will be given a prompt on how to share a prize a user gets. Make sure the response makes clear the prize and relates it to GenSX/AI/etc. `;
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <ChatCompletion
+          model="gpt-4o-mini"
+          messages={[
+            { role: "system", content: systemMessage },
+            {
+              role: "user",
+              content: `Write a super short poem about the prize and GenSX: ${prize}`,
+            },
+          ]}
+        />
+      </OpenAIProvider>
+    );
   },
 );
 
@@ -53,7 +73,13 @@ const SwagGiveaway = gsx.Component<SelectPrizeProps, string>(
   },
 );
 
-const swagGiveawayWorkflow = gsx.Workflow("SwagGiveawayWorkflow", SwagGiveaway);
+const swagGiveawayWorkflow = gsx.Workflow(
+  "SwagGiveawayWorkflow",
+  SwagGiveaway,
+  {
+    printUrl: true,
+  },
+);
 
 // export const runGiveawayWorkflow = async () => {
 //   const prizes: PrizeOdds[] = [

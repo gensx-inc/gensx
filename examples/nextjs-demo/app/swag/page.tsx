@@ -65,9 +65,11 @@ export default function SwagPage() {
           </button>
 
           {result && (
-            <div className="mt-8 p-6 bg-gray-100 rounded-lg text-center">
-              <h3 className="text-xl font-semibold mb-2">Your Prize:</h3>
-              <p className="text-2xl text-blue-600">{result}</p>
+            <div className="mt-8 p-8 bg-white rounded-xl shadow-lg text-center border-2 border-blue-500 transform transition-all duration-500 hover:shadow-xl w-full max-w-md animate-in fade-in slide-in-from-bottom-4">
+              <h3 className="text-2xl font-bold mb-4 text-gray-800">
+                Your Prize:
+              </h3>
+              <p className="text-xl font-bold text-blue-600">{result}</p>
             </div>
           )}
         </div>
