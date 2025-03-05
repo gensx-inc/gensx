@@ -25,7 +25,7 @@ const TEMPLATE_NAMES: { [key in keyof typeof TEMPLATE_MAP]: string } = {
 
 const TEMPLATE_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../templates/projects",
+  process.env.DENO_BINARY ? "src/templates/projects" : "../templates/projects",
 );
 
 interface Template {
