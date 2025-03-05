@@ -16,8 +16,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     outputs:
-      cli_released: ${{ steps.release.outputs.releases_created && contains(fromJson(steps.release.outputs.paths_released || '[]'), 'packages/gensx-cli') }}
-      cli_version: ${{ fromJson(steps.release.outputs.paths_released || '[]')['packages/gensx-cli'].version }}
+      cli_released: ${{ steps.release.outputs.releases_created && contains(fromJson(steps.release.outputs.paths_released || '[]'), 'packages/gensx') }}
     # Only run on pushes to the original repository and not on forks
     if: |
       github.repository == 'gensx-inc/gensx' &&
@@ -60,149 +59,128 @@ jobs:
         run: |
           pnpm publish --no-git-checks --access public -r
 
-  # build-cli-binary:
-  #   needs: release-please
-  #   if: needs.release-please.outputs.cli_released == 'true'
-  #   runs-on: macos-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       target:
-  #         # - node22-linux-arm64
-  #         # - node22-linux-x64
-  #         - node22-macos-arm64
-  #         - node22-macos-x64
-  #         # - node22-win-arm64
-  #         # - node22-win-x64
+  build-cli-binary:
+    needs: release-please
+    if: needs.release-please.outputs.cli_released == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [win, linux, macos-x64, macos-arm64]
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Setup Node ⚙️
-  #       uses: ./.github/actions/setup-node
-  #       with:
-  #         version: 20.x
+      - name: Setup Deno ⚙️
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
 
-  #     - name: Build Packages 🏗️
-  #       run: pnpm build
+      - name: Setup Node ⚙️
+        uses: ./.github/actions/setup-node
 
-  #     - name: Building...
-  #       run: TARGET=${{ matrix.target }} pnpm run package
-  #       working-directory: packages/gensx-cli
+      - name: Get Version
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./packages/gensx/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-  #     - name: Prepare content...
-  #       run: |
-  #         mv README.md dist/pkg
-  #       working-directory: packages/gensx-cli
+      - name: Build 📦
+        run: pnpm build
 
-  #     - name: Setup environment (Unix)
-  #       if: contains(fromJSON('["node22-linux-arm64", "node22-linux-x64", "node22-macos-arm64", "node22-macos-x64"]'), matrix.target)
-  #       run: |
-  #         echo "_EXT=tar.gz" >> $GITHUB_ENV
+      - name: Build Binary 🏗️
+        run: |
+          cd packages/gensx-cli
+          deno task compile:${{ matrix.target }}
 
-  #     - name: Setup environment (Windows)
-  #       if: contains(fromJSON('["node22-win-arm64", "node22-win-x64"]'), matrix.target)
-  #       run: |
-  #         echo "_EXT=zip" >> $GITHUB_ENV
+      - name: Prepare Archive (Unix)
+        if: ${{ !contains(matrix.target, 'win') }}
+        run: |
+          cd packages/gensx-cli
+          tar czf gensx-${{ matrix.target }}.tar.gz gensx-cli-${{ matrix.target }}
+          cp gensx-${{ matrix.target }}.tar.gz gensx_${{ steps.get-version.outputs.version }}_${{ matrix.target }}.tar.gz
 
-  #     - name: Change permissions (Unix)
-  #       if: contains(fromJSON('["node22-linux-arm64", "node22-linux-x64", "node22-macos-arm64", "node22-macos-x64"]'), matrix.target)
-  #       run: |
-  #         chmod -R 777 ./dist/pkg
-  #       working-directory: packages/gensx-cli
+      - name: Prepare Archive (Windows)
+        if: matrix.target == 'win'
+        run: |
+          cd packages/gensx-cli
+          zip gensx-windows.zip gensx-cli-windows.exe
+          cp gensx-windows.zip gensx_${{ steps.get-version.outputs.version }}_windows.zip
 
-  #     - name: Tar dist (Unix)
-  #       if: contains(fromJSON('["node22-linux-arm64", "node22-linux-x64", "node22-macos-arm64", "node22-macos-x64"]'), matrix.target)
-  #       run: |
-  #         tar czf ${{ matrix.target }}.${{ env._EXT }} -C ./dist/pkg .
-  #         cp ${{ matrix.target }}.${{ env._EXT }} gensx_${{ needs.release-please.outputs.cli_version }}_${{ matrix.target }}.${{ env._EXT }}
-  #       working-directory: packages/gensx-cli
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2.0.8
+        with:
+          tag_name: gensx-cli-binary-v${{ steps.get-version.outputs.version }}
+          token: ${{ secrets.PAT_GITHUB_TOKEN }}
+          files: |
+            packages/gensx-cli/gensx_${{ steps.get-version.outputs.version }}_${{ matrix.target }}.*
 
-  #     - name: Zipping dist (Windows)
-  #       if: contains(fromJSON('["win-arm64", "win-x64"]'), matrix.target)
-  #       working-directory: packages/gensx-cli/dist/pkg
-  #       run: |
-  #         zip -r ${{ matrix.target }}.${{ env._EXT }} .
-  #         mv ${{ matrix.target }}.${{ env._EXT }} ../../
-  #         cd ../..
-  #         cp ${{ matrix.target }}.${{ env._EXT }} gensx_${{ needs.release-please.outputs.cli_version }}_${{ matrix.target }}.${{ env._EXT }}
+  update-homebrew:
+    needs: [release-please, build-cli-binary]
+    if: needs.release-please.outputs.cli_released == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS ARM64 Release
+        uses: dsaltares/fetch-gh-release-asset@1.1.1
+        with:
+          version: tags/gensx-cli-binary-v${{ needs.build-cli-binary.outputs.version }}
+          file: gensx_${{ needs.build-cli-binary.outputs.version }}_macos-arm64.tar.gz
+          token: ${{ secrets.PAT_GITHUB_TOKEN }}
 
-  #     - name: Upload Release Assets
-  #       uses: softprops/action-gh-release@v2.0.8
-  #       with:
-  #         tag_name: gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}
-  #         token: ${{ secrets.PAT_GITHUB_TOKEN }}
-  #         files: packages/gensx-cli/gensx_${{ needs.release-please.outputs.cli_version }}_${{ matrix.target }}.${{ env._EXT }}
+      - name: Download macOS x64 Release
+        uses: dsaltares/fetch-gh-release-asset@1.1.1
+        with:
+          version: tags/gensx-cli-binary-v${{ needs.build-cli-binary.outputs.version }}
+          file: gensx_${{ needs.build-cli-binary.outputs.version }}_macos-x64.tar.gz
+          token: ${{ secrets.PAT_GITHUB_TOKEN }}
 
-  # update-homebrew:
-  #   needs: [release-please, build-cli-binary]
-  #   if: needs.release-please.outputs.cli_released == 'true'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Download macOS ARM64 Release
-  #       uses: dsaltares/fetch-gh-release-asset@1.1.1
-  #       with:
-  #         version: tags/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}
-  #         file: gensx_${{ needs.release-please.outputs.cli_version }}_node22-macos-arm64.tar.gz
-  #         token: ${{ secrets.PAT_GITHUB_TOKEN }}
+      - name: Calculate SHA256 Checksums
+        run: |
+          echo "ARM64_SHA256=$(sha256sum gensx_${{ needs.build-cli-binary.outputs.version }}_macos-arm64.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
+          echo "X64_SHA256=$(sha256sum gensx_${{ needs.build-cli-binary.outputs.version }}_macos-x64.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
 
-  #     - name: Download macOS x64 Release
-  #       uses: dsaltares/fetch-gh-release-asset@1.1.1
-  #       with:
-  #         version: tags/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}
-  #         file: gensx_${{ needs.release-please.outputs.cli_version }}_node22-macos-x64.tar.gz
-  #         token: ${{ secrets.PAT_GITHUB_TOKEN }}
+      - name: Checkout homebrew-gensx repo
+        uses: actions/checkout@v4
+        with:
+          repository: gensx-inc/homebrew-gensx
+          token: ${{ secrets.PAT_GITHUB_TOKEN }}
+          path: homebrew-gensx
 
-  #     - name: Calculate SHA256 Checksums
-  #       run: |
-  #         echo "ARM64_SHA256=$(sha256sum gensx_${{ needs.release-please.outputs.cli_version }}_node22-macos-arm64.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
-  #         echo "X64_SHA256=$(sha256sum gensx_${{ needs.release-please.outputs.cli_version }}_node22-macos-x64.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
+      - name: Update Formula
+        run: |
+          cat > homebrew-gensx/Formula/gensx.rb << EOL
+          class Gensx < Formula
+            desc "GenSX CLI - The command-line interface for GenSX"
+            homepage "https://gensx.com"
+            version "${{ needs.build-cli-binary.outputs.version }}"
+            license "MIT"
 
-  #     - name: Checkout homebrew-gensx repo
-  #       uses: actions/checkout@v4
-  #       with:
-  #         repository: gensx-inc/homebrew-gensx
-  #         token: ${{ secrets.PAT_GITHUB_TOKEN }}
-  #         path: homebrew-gensx
+            on_macos do
+              on_arm do
+                url "https://github.com/gensx-inc/gensx/releases/download/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}/gensx_${{ needs.release-please.outputs.cli_version }}_macos-arm64.tar.gz"
+                sha256 "${{ env.ARM64_SHA256 }}"
+              end
+              on_intel do
+                url "https://github.com/gensx-inc/gensx/releases/download/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}/gensx_${{ needs.release-please.outputs.cli_version }}_macos-x64.tar.gz"
+                sha256 "${{ env.X64_SHA256 }}"
+              end
+            end
 
-  #     - name: Update Formula
-  #       run: |
-  #         cat > homebrew-gensx/Formula/gensx.rb << EOL
-  #         class Gensx < Formula
-  #           desc "GenSX CLI - The command-line interface for GenSX"
-  #           homepage "https://gensx.com"
-  #           version "${{ needs.release-please.outputs.cli_version }}"
-  #           license "MIT"
+            def install
+              binary_name = Hardware::CPU.arm? ? "gensx-cli-macos-arm64" : "gensx-cli-macos-x64"
+              bin.install binary_name => "gensx"
+              chmod 0755, bin/"gensx"
+            end
+          end
+          EOL
 
-  #           on_macos do
-  #             on_arm do
-  #               url "https://github.com/gensx-inc/gensx/releases/download/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}/gensx_${{ needs.release-please.outputs.cli_version }}_node22-macos-arm64.tar.gz"
-  #               sha256 "${{ env.ARM64_SHA256 }}"
-  #             end
-  #             on_intel do
-  #               url "https://github.com/gensx-inc/gensx/releases/download/gensx-cli-binary-v${{ needs.release-please.outputs.cli_version }}/gensx_${{ needs.release-please.outputs.cli_version }}_node22-macos-x64.tar.gz"
-  #               sha256 "${{ env.X64_SHA256 }}"
-  #             end
-  #           end
-
-  #           def install
-  #             # Extract the tar.gz file
-  #             system "tar", "xf", cached_download
-
-  #             # Install the 'run' file as 'gensx' in the bin directory
-  #             bin.install "run" => "gensx"
-
-  #             # Make the file executable
-  #             chmod 0755, bin/"gensx"
-  #           end
-  #         end
-  #         EOL
-
-  #     - name: Commit and Push Changes
-  #       run: |
-  #         cd homebrew-gensx
-  #         git config user.name "GitHub Actions Bot"
-  #         git config user.email "actions@github.com"
-  #         git add Formula/gensx.rb
-  #         git commit -m "Update formula to version ${{ needs.release-please.outputs.cli_version }}"
-  #         git push
+      - name: Commit and Push Changes
+        run: |
+          cd homebrew-gensx
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add Formula/gensx.rb
+          git commit -m "Update formula to version ${{ needs.build-cli-binary.outputs.version }}"
+          git push

@@ -1,6 +1,6 @@
 {
   "name": "gensx",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "`GenSX command line tools.",
   "repository": {
     "type": "git",
@@ -27,10 +27,8 @@
     "compile": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "start": "tsx ./bin/run.ts",
-    "start:node": "node ./bin/run",
-    "package": "pkg -t $TARGET --compress GZip --out-path dist/pkg ./dist/run.cjs",
-    "package:macos": "TARGET=node22-macos-arm64 pnpm package"
+    "start": "tsx ./src/run.ts",
+    "start:node": "node ./dist/run.js"
   },
   "keywords": [
     "typescript",
@@ -43,7 +41,6 @@
     "@types/ini": "^4.1.1",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
-    "@yao-pkg/pkg": "^6.3.0",
     "vitest": "catalog:"
   },
   "dependencies": {
@@ -59,8 +56,5 @@
   "type": "module",
   "publishConfig": {
     "access": "public"
-  },
-  "pkg": {
-    "scripts": "dist/run.cjs"
   }
 }

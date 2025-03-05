@@ -116,6 +116,23 @@ suite("execute", () => {
       ).toBe(true);
     });
 
+    test("can execute a workflow with custom workflowName", async () => {
+      const customName = "my-custom-workflow-name";
+      const { workflowNames } = await executeWorkflowWithCheckpoints(
+        <WorkflowComponent />,
+        undefined,
+      );
+
+      // The default name should not be in the set
+      expect(workflowNames.has("test")).toBe(false);
+
+      // Now run with custom name
+      const workflow = gensx.Workflow("test", WorkflowComponent);
+      const result = await workflow.run({}, { workflowName: customName });
+      expect(result).toBe("hello");
+      expect(workflowNames.has(customName)).toBe(true);
+    });
+
     test("requires workflow props to be an object", async () => {
       // @ts-expect-error - props is an array
       const ArrayPropsComponent = gensx.Component<string[], string[]>(
