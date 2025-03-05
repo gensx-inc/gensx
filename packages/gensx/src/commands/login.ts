@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { createHash, getRandomValues } from "node:crypto";
 import { hostname } from "node:os";
+import { createInterface } from "node:readline";
 
 import { consola } from "consola";
 import open from "open";
@@ -9,7 +10,6 @@ import picocolors from "picocolors";
 
 import { logger } from "../logger.js";
 import { API_BASE_URL, APP_BASE_URL, saveConfig } from "../utils/config.js";
-import { waitForKeypress } from "../utils/terminal.js";
 
 interface DeviceAuthRequest {
   requestId: string;
@@ -98,14 +98,24 @@ export async function login(): Promise<{ skipped: boolean }> {
   try {
     logger.log(
       picocolors.yellow(
-        `Press any key to open your browser and login to GenSX Cloud (ESC to skip)`,
+        `Press Enter to open your browser and login to GenSX Cloud (or type 'skip' to skip)`,
       ),
     );
 
-    // Wait for any keypress
-    const key = await waitForKeypress();
-    if (key === "\u001b") {
-      // ESC key
+    // Use readline interface for better input handling
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    const input = await new Promise<string>((resolve) => {
+      rl.question("", (answer) => {
+        rl.close();
+        resolve(answer.trim());
+      });
+    });
+
+    if (input.toLowerCase() === "skip") {
       spinner.info("Login skipped");
       return { skipped: true };
     }
@@ -151,6 +161,6 @@ export async function login(): Promise<{ skipped: boolean }> {
       "Login failed: " +
         (error instanceof Error ? error.message : String(error)),
     );
-    throw error; // Let the error propagate up
+    throw error;
   }
 }

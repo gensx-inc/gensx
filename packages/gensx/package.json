@@ -27,8 +27,8 @@
     "compile": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "start": "tsx ./bin/run.ts",
-    "start:node": "node ./bin/run"
+    "start": "tsx ./src/run.ts",
+    "start:node": "node ./dist/run.js"
   },
   "keywords": [
     "typescript",
