@@ -1,6 +1,6 @@
 ---
-title: "Why React is surprisingly the best model for backend workflow"
-excerpt: "Unintuitively, React is the best programming model for backend workflow, agents, and durability."
+title: "Why React is surprisingly the best model for LLM workflows"
+excerpt: "Unintuitively, React is the best programming model for backend LLM workflows, agents, and durability."
 date: "2025-03-05T00:00:00.000Z"
 coverImage: "/assets/blog/hello-world/cover.jpg"
 author:
@@ -9,12 +9,6 @@ author:
 ogImage:
   url: "/assets/blog/hello-world/cover.jpg"
 ---
-
-Why is building an LLM app or agent so damn hard?
-
-_What if building an agent was as easy as writing a React component?_
-
-Last week we open sourced [GenSX](https://github.com/gensx-inc/gensx), a framework for building agents and workflows with React-like components. It's a node.js framework for production-grade AI applications with uni-directional dataflow and no concept of "re-rendering".
 
 ## Building LLM Apps Today Still Sucks
 
@@ -26,15 +20,44 @@ If you've tried to build anything beyond a simple one-shot chat interface with L
 
 3. **Global state is a nightmare**. Backend devs have created these crazy rube goldberg machines where you have to forward all of the state to all parts of the workflow. This doesn't work when you're trying to experiment with your agent and need to quickly make changes.
 
+_What if building an agent was as easy as writing a React component?_
+
+```tsx
+interface BlogWriterProps {
+  prompt: string;
+}
+
+export const WriteBlog = gsx.StreamComponent<BlogWriterProps>(
+  "WriteBlog",
+  ({ prompt }) => {
+    return (
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <Research prompt={prompt}>
+          {(research) => (
+            <WriteDraft prompt={prompt} research={research.flat()}>
+              {(draft) => <EditDraft draft={draft} stream={true} />}
+            </WriteDraft>
+          )}
+        </Research>
+      </OpenAIProvider>
+    );
+  },
+);
+```
+
+Last week we open sourced [GenSX](https://github.com/gensx-inc/gensx), a framework for building agents and workflows with React-like components. It's a node.js framework for production-grade AI applications with uni-directional dataflow and no concept of "re-rendering".
+
 ## The "no framework" movement
 
-I'm not alone in this frustration. The "no framework" movement is gaining steam, with developers abandoning LangChain and other frameworks in droves. There are countless threads echoing these complaints on Hacker News and Reddit. [Lots](https://news.ycombinator.com/item?id=40739982), and [lots](https://news.ycombinator.com/item?id=42691946), and [lots](https://www.reddit.com/r/AI_Agents/comments/1ianz11/are_agent_frameworks_that_useful/), and [lots of them](https://www.reddit.com/r/AI_Agents/comments/1i4iyje/do_i_really_need_to_pick_an_ai_agent_framework/).
+I'm not alone in this frustration. The "no framework" movement is gaining steam, with developers abandoning existing frameworks in droves. There are countless threads on Hacker News and Reddit expressing similar concerns about the current state of LLM frameworks. [Lots](https://news.ycombinator.com/item?id=40739982), and [lots](https://news.ycombinator.com/item?id=42691946), and [lots](https://www.reddit.com/r/AI_Agents/comments/1ianz11/are_agent_frameworks_that_useful/), and [lots of them](https://www.reddit.com/r/AI_Agents/comments/1i4iyje/do_i_really_need_to_pick_an_ai_agent_framework/).
 
-These frameworks stink\! But the reaction of throwing the baby out with the bath water misses the point. Few seem to recognize that the infrastructure designed for yesterday's internet is almost the opposite of what we need today.
+These frameworks help you start quickly, but don't scale. They box you into corners by abstracting things that should not be abstracted. It is as if we took 30 years of experience with workflow engines and ignored any of the lessons on ergonomics.
 
-Today’s workloads violate every assumption. P99 request latency is no longer 500ms. You get the first token back from an LLM within a few seconds at best, and that is only for the simplest one-shot use cases. Once you’re processing documents, and chaining requests in parallel we’re talking several minutes or more… not to mention agents that can run in the background for hours. These workloads used to be extremely niche\!
+These frameworks stink! But the reaction of throwing the baby out with the bath water misses the point that the infrastructure designed for yesterday's internet is almost the opposite of what we need today.
 
-Now every engineer in the world is picking up AI and incidentally becoming a data and workflow engineer without realizing it. And for most full stack engineers, they don’t want the baggage that comes with yesterday's tools like Airflow and Temporal. They want a programming model that solves these concerns _and_ feels like writing normal application code. Now _this_ is a problem worth solving.
+Today's workloads violate every assumption. P99 request latency is no longer 500ms. You get the first token back from an LLM within a few seconds at best, and that is only for the simplest one-shot use cases. Once you're processing documents, and chaining requests in parallel we're talking several minutes or more… not to mention agents that can run in the background for hours. These workloads used to be extremely niche\!
+
+Now every engineer in the world is picking up AI and incidentally becoming a data and workflow engineer without realizing it. And for most full stack engineers, they don't want the baggage that comes with yesterday's tools like Airflow and Temporal. They want a programming model that solves these concerns _and_ feels like writing normal application code. Now _this_ is a problem worth solving.
 
 ## Learning by doing
 
@@ -49,7 +72,7 @@ We used one of the "hot" frameworks to do this, and grew increasingly frustrated
 
 These are not academic concerns. Our workflows edited content in multiple phases - removing buzz words, adding strong hooks to engage readers, tuning stylometrics, linting and validating code, etc. As we layered in new steps we found that some of the work from previous steps would regress. Some of these goals conflicted.
 
-We were left with an optimization problem: in a workflow consisting of N steps, what order of execution maximizes your evals? Because of static graphs and intertwined global state, each permutation involved 10+ minutes of editing boilerplate. Not sustainable. Not to mention that this framework didn’t help me with the “long-running” portion at all.
+We were left with an optimization problem: in a workflow consisting of N steps, what order of execution maximizes your evals? Because of static graphs and intertwined global state, each permutation involved 10+ minutes of editing boilerplate. Not sustainable. Not to mention that this framework didn't help me with the "long-running" portion at all.
 
 I rage-quit and went looking for other frameworks. To my dismay, all of them share the same fundamental programming model and flaws\!
 
@@ -59,7 +82,7 @@ What started as a detour over Thanksgiving to solve our own problems resulted in
 
 I know. I would not have guessed a React-like model would be good or maintainable for the backend. But I was wrong. The Frontend universe runs on this stuff and if you spend any amount of time with it I think you will not be able to imagine life without it. It cuts right through the complexity of managing an insane state machine, and gives you a programming model that lets you focus on the end result.
 
-And the same applies to backend workflow:
+And the same applies to LLM workflows:
 
 ### Encapsulation and Modularity
 
@@ -69,39 +92,7 @@ Modern frontend projects split concerns between the display layer and actually f
 
 The same pattern applied to workflow provides clean separation of concerns via a clearly defined and easy to understand contract. Each component (or workflow step) encapsulates its logic and only exposes structured inputs and outputs.
 
-Data in, data out. This is inherently more controlled than scattering global state across your pipeline. And _by default_ your components and workflow steps are reusable across your codebase and easy to test in isolation.
-
-### Composition Over Abstraction
-
-I recently looked at a framework that with a rather cute and clean hero example:
-
-```ts
-new Agent(..., new Memory(), new RAG());
-```
-
-Anyone who has spent meaningful time building in this space knows this reeks of over-abstraction. This is akin to saying `new DatabaseSchema()` with no additional parameters. It is nonsensical. Fundamentally, many problems in AI are tightly coupled your use-case and application-specific data model. Flashy abstraction will have you feeling good on day one but pulling your hair out on day 10.
-
-With GenSX, you other reusable components and compose them together. This happens via React-style children functions that make data dependencies explicit, and shows the entirety of the data pipeline at a glance.
-
-This model is much more consistent with the way we know that abstraction works in the frontend. Compose building blocks together, and share dependencies via context.
-
-It allows infra teams to break out their surface area into the right, meaningful abstraction. Exactly what the consumer needs, nothing more, nothing less.
-
-### The Perfect Mix of Declarative and Dynamic
-
-If you're a python developer you probably remember the battle between TensorFlow and PyTorch. TensorFlow was first to the scene, wildly popular and broadly adopted. But there was a major limitation \- the DAG was defined statically upfront.
-
-PyTorch changed this by letting developers build their DAGs dynamically as the program executed. This approach was so much more expressive that it dethroned TensorFlow, and the developers of the project scrambled to incorporate it into TensorFlow v2.
-
-All of the current agent frameworks are modeled after TensorFlow and left me longing for the dynamic PyTorch version.
-
-The React-model gives you the best of both worlds. JSX goes beyond defining the DOM and expressing trees. Since you can programmatically render elements, you've basically got an engine to build and execute a dynamic DAG.
-
-This means you can express all of the same non-deterministic agent patterns like cycles and reflection. Easy to read declarative meets expressive and dynamic.
-
-## A Tour of GenSX
-
-If you know how to write a React component, you can build an agent:
+Writing a component in GenSX will feel familiar if you've ever worked with React:
 
 ```tsx
 interface WriteDraftProps {
@@ -135,39 +126,41 @@ Use the information when responding to users: ${research}`;
 );
 ```
 
-Components are just functions, and can be called as plain functions where it makes sense. They are reusable by default, shareable across your codebase, and can even be published to NPM and shared with the ecosystem.
+Data in, data out. This is inherently more controlled than scattering global state across your pipeline. And _by default_ your components and workflow steps are reusable across your codebase and easy to test in isolation.
 
-When building GenSX workflows and agents, dependencies are clear, and the code reads cleanly top to bottom, with minimal boilerplate.
+### Composition Over Abstraction
 
-This is done with the use of child functions that cascade inputs and outputs down through a set of components:
+I recently looked at a framework that with a rather cute and clean hero example:
+
+```ts
+new Agent(..., new Memory(), new RAG());
+```
+
+Anyone who has spent meaningful time building in this space knows this reeks of over-abstraction. This is akin to saying `new DatabaseSchema()` with no additional parameters. It is nonsensical. Fundamentally, many problems in AI are tightly coupled your use-case and application-specific data model. Flashy abstraction will have you feeling good on day one but pulling your hair out on day 10.
+
+With GenSX, you use reusable components and compose them together. This happens via React-style children functions that make data dependencies explicit, and shows the entirety of the data pipeline at a glance.
+
+Consider this GenSX component that takes a list of hacker news stories and produces an LLM-generated summary and sentiment analysis over each one:
 
 ```tsx
-interface BlogWriterProps {
-  prompt: string;
-}
-
-export const WriteBlog = gsx.StreamComponent<BlogWriterProps>(
-  "WriteBlog",
-  ({ prompt }) => {
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <Research prompt={prompt}>
-          {(research) => (
-            <WriteDraft prompt={prompt} research={research.flat()}>
-              {(draft) => <EditDraft draft={draft} stream={true} />}
-            </WriteDraft>
-          )}
-        </Research>
-      </OpenAIProvider>
-    );
+const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
+  "AnalyzeHNPosts",
+  ({ stories }) => {
+    return {
+      analyses: stories.map((story) => ({
+        summary: <SummarizePost story={story} />,
+        commentAnalysis: <AnalyzeComments comments={story.comments} />,
+      })),
+    };
   },
 );
-
-const workflow = gsx.Workflow("WriteBlogWorkflow", WriteBlog);
-const result = await workflow.run({
-  prompt: "Write a blog post about AI developer tools",
-});
 ```
+
+The code reads cleanly from top to bottom, uses a mixture of declarative components and plain ole javascript for loops. Just a couple of lines and we're executing thousands of LLM calls \- with the framework parallelizing work, handling retries, and even tracing and caching where appropriate.
+
+This model is much more consistent with the way we know that abstraction works in the frontend. Compose building blocks together, and share dependencies via context.
+
+It allows infra teams to break out their surface area into the right, meaningful abstraction. Exactly what the consumer needs, nothing more, nothing less.
 
 Contrast this with the current generation of agent frameworks that depend on graph-building APIs and global state:
 
@@ -190,23 +183,33 @@ graph
 
 Can you tell what this code does at a glance? Personally, I need five minutes and a white board. And even after that point, there is a mess of hidden global state that needs to be traced. Want to refactor your workflow or add a new pipeline step? Be prepared to spend 20 minutes reworking the way that global state is defined and accumulated.
 
-Consider this GenSX component that takes a list of hacker news stories and produces an LLM-generated summary and sentiment analysis over each one:
+### The Perfect Mix of Declarative and Dynamic
+
+If you're a python developer you probably remember the battle between TensorFlow and PyTorch. TensorFlow was first to the scene, wildly popular and broadly adopted. But there was a major limitation \- the DAG was defined statically upfront.
+
+PyTorch changed this by letting developers build their DAGs dynamically as the program executed. This approach was so much more expressive that it dethroned TensorFlow, and the developers of the project scrambled to incorporate it into TensorFlow v2.
+
+All of the current agent frameworks are modeled after TensorFlow and left me longing for the dynamic PyTorch version.
+
+The React-model gives you the best of both worlds. JSX goes beyond defining the DOM and expressing trees. Since you can programmatically render elements, you've basically got an engine to build and execute a dynamic DAG:
 
 ```tsx
-const AnalyzeHNPosts = gsx.Component<AnalyzeHNPostsProps, AnalyzeHNPostsOutput>(
-  "AnalyzeHNPosts",
-  ({ stories }) => {
-    return {
-      analyses: stories.map((story) => ({
-        summary: <SummarizePost story={story} />,
-        commentAnalysis: <AnalyzeComments comments={story.comments} />,
-      })),
-    };
-  },
+const AgentWorkflow = gsx.Component(
+  "AgentWorkflow",
+  <AgentStep>
+    {(result) =>
+      result.needsMoreWork ? (
+        // Recursion creates AgentWorkflow \-\> AgentStep \-\> AgentWorkflow \-\> …
+        <AgentWorkflow />
+      ) : (
+        result
+      )
+    }
+  </AgentStep>,
 );
 ```
 
-The code reads cleanly from top to bottom, uses a mixture of declarative components and plain ole javascript for loops. Just a couple of lines and we're executing thousands of LLM calls \- with the framework parallelizing work, handling retries, and even tracing and caching where appropriate.
+This means you can express all of the same non-deterministic agent patterns like cycles and reflection. Easy to read declarative meets expressive and dynamic.
 
 ## JavaScript Will Continue to Eat the World
 
