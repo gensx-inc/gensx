@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.1](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.0...gensx-core-v0.3.1) (2025-03-05)
+
+
+### ✨ New Features
+
+* adding support for a workflowName ([#416](https://github.com/gensx-inc/gensx/issues/416)) ([4648796](https://github.com/gensx-inc/gensx/commit/4648796795a1a2c1fc7722a8f9a6ad9f3ff711cd))
+
+
+### 🐛 Bug Fixes
+
+* fixing types in deep resolve ([#418](https://github.com/gensx-inc/gensx/issues/418)) ([20e704c](https://github.com/gensx-inc/gensx/commit/20e704c17cb0a8146966edb4bc5990aa7f29c3d7))
+
 ## 0.3.0 (2025-03-04)
 
 

@@ -1,9 +1,9 @@
 {
-  "packages/create-gensx": "0.1.13",
-  "packages/gensx-anthropic": "0.1.4",
-  "packages/gensx-mcp": "0.1.4",
-  "packages/gensx-openai": "0.1.11",
-  "packages/gensx-vercel-ai-sdk": "0.1.4",
-  "packages/gensx": "0.3.1",
-  "packages/gensx-core": "0.3.0"
+  "packages/create-gensx": "0.1.14",
+  "packages/gensx-anthropic": "0.1.5",
+  "packages/gensx-mcp": "0.1.5",
+  "packages/gensx-openai": "0.1.12",
+  "packages/gensx-vercel-ai-sdk": "0.1.5",
+  "packages/gensx": "0.3.2",
+  "packages/gensx-core": "0.3.1"
 }
