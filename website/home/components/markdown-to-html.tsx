@@ -62,6 +62,10 @@ export default function MarkdownToHTML({
           return <ul className="list-disc list-inside my-4" {...props} />;
         },
 
+        ol(props) {
+          return <ol className="list-decimal mx-4" {...props} />;
+        },
+
         li(props) {
           return <li className="my-1" {...props} />;
         },
