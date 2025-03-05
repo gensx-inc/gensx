@@ -1,5 +1,9 @@
 # GenSX Platform Database Rules
 
+<rule>
+name: database_rules
+description: Standards for database schema, migrations, and queries in GenSX Platform
+
 This rule applies to database schema, migrations, and queries within the GenSX Platform (`packages/gensx-platform`) to ensure consistent and portable database practices.
 
 ## Scope
@@ -89,3 +93,8 @@ Bad schema definition:
 )
 .addColumn("created_at", "text")
 ```
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>
