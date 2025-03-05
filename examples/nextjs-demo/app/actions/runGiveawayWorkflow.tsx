@@ -5,7 +5,6 @@ import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { GitHubProfile } from "./gensx/scrapeGithub";
 import * as gensx from "@gensx/core";
 import { ScrapeGitHubProfile } from "./gensx/scrapeGithub";
-import { DeepJSXElement } from "../../../../packages/gensx-core/dist/types";
 
 type Prize = "T-Shirt" | "Stickers" | "Mug" | "Hoodie" | "Hat";
 
@@ -75,8 +74,6 @@ export interface Info {
   profile: GitHubProfile;
   prize: Prize;
 }
-
-type InfoJsx = DeepJSXElement<Info>;
 
 export interface SwagGiveawayOutput {
   prize: Prize;

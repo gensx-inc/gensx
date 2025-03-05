@@ -49,10 +49,6 @@ const ProcessStargazers = Component<
 >("ProcessStargazers", async ({ rawHtml }) => {
   // Extract only the relevant a tags before processing
   const relevantHtml = extractRelevantATags(rawHtml);
-  console.log(
-    "Extracted relevant HTML:",
-    relevantHtml.substring(0, 500) + "...",
-  );
 
   const StargazerListSchema = z.object({
     stargazers: z.array(z.object({ username: z.string() })),
