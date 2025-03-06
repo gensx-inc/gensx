@@ -68,12 +68,22 @@ export async function runCLI() {
 
   program
     .command("deploy")
-    .description("Deploy a handler to GenSX Cloud")
-    .argument("<file>", "Handler file to deploy (e.g. handler.ts)")
-    .option("-n, --name <n>", "Deployment name")
-    .option("-p, --prod", "Deploy to production", false)
-    .option("-e, --env <file>", "Environment variables file")
-    .option("--project <n>", "Project name to deploy to")
+    .description("Deploy a project to GenSX Cloud")
+    .option(
+      "-e, --env <VALUE=value>",
+      "Environment variable to include with deployment (can be used multiple times)",
+      (val, prev: Record<string, string> = {}) => {
+        const [key, value] = val.split("=");
+        if (!key || !value) {
+          throw new Error(
+            "Environment variables must be in the format KEY=value",
+          );
+        }
+        return { ...prev, [key]: value };
+      },
+      {},
+    )
+    .option("--project <name>", "Project name to deploy to")
     .action(deploy);
 
   program

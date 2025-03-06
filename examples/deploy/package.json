@@ -17,9 +17,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@gensx/core": "workspace:*",
     "@gensx/openai": "workspace:*",
-    "deno": "^2.2.2",
-    "gensx": "workspace:*",
     "openai": "^4.86.1"
   },
   "devDependencies": {
