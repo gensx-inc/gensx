@@ -228,18 +228,6 @@ const result = await workflow.run({
                 </div>
               </Button>
             </Link>
-            <Link href="/docs">
-              <Button variant="secondary">
-                <div className="flex items-center">
-                  <span>
-                    <HyperText delay={650} startOnView={false}>
-                      View Docs
-                    </HyperText>
-                  </span>
-                  <ArrowUpRight className="ml-2 w-4 h-4" />
-                </div>
-              </Button>
-            </Link>
           </div>
           {/* <ScriptCopyBtnDemo /> */}
         </motion.div>
