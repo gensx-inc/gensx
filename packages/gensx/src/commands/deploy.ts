@@ -8,11 +8,8 @@ import { readProjectConfig } from "../utils/project-config.js";
 import { build } from "./build.js";
 
 interface DeployOptions {
-  name?: string;
-  prod?: boolean;
-  env?: string;
   project?: string;
-  description?: string;
+  env?: string;
 }
 
 interface DeploymentResponse {
@@ -53,17 +50,13 @@ export async function deploy(file: string, options: DeployOptions) {
     // 3. Create form data with bundle
     const form = new FormData();
     form.append("file", outFile);
-    if (options.name) form.append("name", options.name);
-    if (options.prod) form.append("prod", "true");
+    if (options.env) form.append("env", options.env);
 
     // Use the project-specific deploy endpoint
     const url = new URL(
       `/projects/${encodeURIComponent(projectName)}/deploy`,
       API_BASE_URL,
     );
-
-    // Include description if provided
-    if (options.description) form.append("description", options.description);
 
     // 4. Deploy project to GenSX Cloud
     spinner.start(

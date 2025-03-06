@@ -1,11 +1,12 @@
+import * as gensx from "@gensx/core";
+import { Streamable } from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import { gsx, Streamable } from "gensx";
 
 interface RespondProps {
   userInput: string;
 }
 
-const Respond = gsx.StreamComponent<RespondProps>(
+const Respond = gensx.StreamComponent<RespondProps>(
   "Respond",
   ({ userInput }) => {
     return (
@@ -25,7 +26,7 @@ const Respond = gsx.StreamComponent<RespondProps>(
   },
 );
 
-const StreamWorkflowComponent = gsx.StreamComponent<{ userInput: string }>(
+const StreamWorkflowComponent = gensx.StreamComponent<{ userInput: string }>(
   "StreamWorkflow",
   ({ userInput }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -34,7 +35,7 @@ const StreamWorkflowComponent = gsx.StreamComponent<{ userInput: string }>(
   ),
 );
 
-const StreamableWorkflowComponent = gsx.Component<
+const StreamableWorkflowComponent = gensx.Component<
   { userInput: string },
   Streamable
 >("StreamableWorkflow", ({ userInput }) => (
@@ -43,7 +44,7 @@ const StreamableWorkflowComponent = gsx.Component<
   </OpenAIProvider>
 ));
 
-const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
+const WorkflowComponent = gensx.Component<{ userInput: string }, string>(
   "Workflow",
   ({ userInput }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
@@ -52,7 +53,7 @@ const WorkflowComponent = gsx.Component<{ userInput: string }, string>(
   ),
 );
 
-const StructuredWorkflowComponent = gsx.Component<
+const StructuredWorkflowComponent = gensx.Component<
   { userInput: string },
   { response: string }
 >("StructuredWorkflow", ({ userInput }) => (
@@ -63,13 +64,16 @@ const StructuredWorkflowComponent = gsx.Component<
   </OpenAIProvider>
 ));
 
-const streamWorkflow = gsx.Workflow("StreamWorkflow", StreamWorkflowComponent);
-const streamableWorkflow = gsx.Workflow(
+const streamWorkflow = gensx.Workflow(
+  "StreamWorkflow",
+  StreamWorkflowComponent,
+);
+const streamableWorkflow = gensx.Workflow(
   "StreamableWorkflow",
   StreamableWorkflowComponent,
 );
-const respondWorkflow = gsx.Workflow("RespondWorkflow", WorkflowComponent);
-const structuredWorkflow = gsx.Workflow(
+const respondWorkflow = gensx.Workflow("RespondWorkflow", WorkflowComponent);
+const structuredWorkflow = gensx.Workflow(
   "StructuredWorkflow",
   StructuredWorkflowComponent,
 );
