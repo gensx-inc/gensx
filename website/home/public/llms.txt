@@ -1,6 +1,6 @@
 # GenSX
 
- GenSX is a simple typescript framework for building complex LLM applications. It’s built around functional, reusable components that are composed using JSX to create and orchestrate workflows.
+GenSX is a simple typescript framework for building complex LLM applications. It’s built around functional, reusable components that are composed using JSX to create and orchestrate workflows.
 
 ## Docs
 
@@ -11,13 +11,13 @@
 - [Basic concepts](https://gensx.com/docs/basic-concepts)
 - [Structured outputs](https://gensx.com/docs/patterns/structured-outputs)
 - [Self-reflection](https://gensx.com/docs/patterns/reflection)
-- [Model Context Protocol](https://gensx.com/docs/examples/mcp)
-- [Hacker News analyzer](https://gensx.com/docs/examples/hn)
-- [Blog writer](https://gensx.com/docs/examples/blog-writing)
 - [Building reusable components](https://gensx.com/docs/concepts/reusable-components)
 - [How GenSX works](https://gensx.com/docs/concepts/how-gensx-works)
 - [Working with context and providers](https://gensx.com/docs/concepts/context)
 - [Using array operations](https://gensx.com/docs/concepts/arrays)
+- [Model Context Protocol](https://gensx.com/docs/examples/mcp)
+- [Hacker News analyzer](https://gensx.com/docs/examples/hn)
+- [Blog writer](https://gensx.com/docs/examples/blog-writing)
 - [Vercel AI SDK](https://gensx.com/docs/component-reference/vercel-ai)
 - [OpenRouter](https://gensx.com/docs/component-reference/openrouter)
 - [OpenAI](https://gensx.com/docs/component-reference/openai)

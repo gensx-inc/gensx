@@ -6,27 +6,33 @@ settings:
 
 catalogs:
   default:
-    '@types/glob':
-      specifier: ^8.1.0
-      version: 8.1.0
     '@types/node':
       specifier: ^20.17.11
       version: 20.17.11
-    glob:
-      specifier: ^10.3.10
-      version: 10.4.5
-    gray-matter:
-      specifier: ^4.0.3
-      version: 4.0.3
+    '@vitest/coverage-istanbul':
+      specifier: ^2.1.8
+      version: 2.1.8
     nodemon:
       specifier: ^3.1.9
       version: 3.1.9
+    openai:
+      specifier: ^4.85.4
+      version: 4.86.1
     tsx:
       specifier: ^4.19.2
       version: 4.19.3
     typescript:
       specifier: ^5.7.2
       version: 5.7.3
+    vitest:
+      specifier: ^2.1.8
+      version: 2.1.8
+    zod:
+      specifier: ^3.24.2
+      version: 3.24.2
+    zod-to-json-schema:
+      specifier: ^3.24.1
+      version: 3.24.1
 
 importers:
 
@@ -804,31 +810,6 @@ importers:
         specifier: 'catalog:'
         version: 3.24.1(zod@3.24.2)
 
-  scripts:
-    dependencies:
-      glob:
-        specifier: 'catalog:'
-        version: 10.4.5
-      gray-matter:
-        specifier: 'catalog:'
-        version: 4.0.3
-    devDependencies:
-      '@types/glob':
-        specifier: 'catalog:'
-        version: 8.1.0
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.17.11
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
-      typescript:
-        specifier: 'catalog:'
-        version: 5.7.3
-
   website/docs:
     dependencies:
       '@tailwindcss/postcss':
@@ -925,6 +906,9 @@ importers:
       framer-motion:
         specifier: ^12.4.0
         version: 12.4.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      glob:
+        specifier: ^10.3.10
+        version: 10.4.5
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -2836,9 +2820,6 @@ packages:
   '@types/geojson@7946.0.16':
     resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
 
-  '@types/glob@8.1.0':
-    resolution: {integrity: sha512-IO+MJPVhoqz+28h1qLAcBEH2+xHMK6MTyHJc7MTnnYb6wsoLR29POVGJ7LycmVXIqyy/4/2ShP5sUwTXuOwb/w==}
-
   '@types/hast@2.3.10':
     resolution: {integrity: sha512-McWspRw8xx8J9HurkVBfYj0xKoE25tOFlHGdx4MJ5xORQrMGZNqJhVQWaIbm6Oyla5kYOXtDiopzKRJzEOkwJw==}
 
@@ -2865,9 +2846,6 @@ packages:
 
   '@types/mdx@2.0.13':
     resolution: {integrity: sha512-+OWZQfAYyio6YkJb3HLxDrvnx6SWWDbC0zVPfBRzUk0/nqoDyf6dNxQi3eArPe8rJ473nobTMQ/8Zk+LxJ+Yuw==}
-
-  '@types/minimatch@5.1.2':
-    resolution: {integrity: sha512-K0VQKziLUWkVKiRVrx4a40iPaxTUefQmjtkQofBkYRcoaaL/8rhwDWww9qWbrgicNOgnpIsMxyNIUM4+n6dUIA==}
 
   '@types/ms@0.7.34':
     resolution: {integrity: sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==}
@@ -8702,11 +8680,6 @@ snapshots:
 
   '@types/geojson@7946.0.16': {}
 
-  '@types/glob@8.1.0':
-    dependencies:
-      '@types/minimatch': 5.1.2
-      '@types/node': 22.13.9
-
   '@types/hast@2.3.10':
     dependencies:
       '@types/unist': 2.0.11
@@ -8732,8 +8705,6 @@ snapshots:
       '@types/unist': 3.0.3
 
   '@types/mdx@2.0.13': {}
-
-  '@types/minimatch@5.1.2': {}
 
   '@types/ms@0.7.34': {}
 
