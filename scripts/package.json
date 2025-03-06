@@ -1,0 +1,28 @@
+{
+  "name": "gensx-scripts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon",
+    "start": "NODE_OPTIONS='--enable-source-maps' tsx ./index.tsx",
+    "build": "npm run generate-llms-txt && tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "generate-llms-txt": "tsx ./generate-llms-txt.ts"
+  },
+  "dependencies": {
+    "glob": "catalog:",
+    "gray-matter": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/glob": "catalog:",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

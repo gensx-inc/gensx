@@ -1,0 +1,31 @@
+# GenSX
+
+ Some basic description about GenSX
+
+## Docs
+
+- [Why JSX?](https://gensx.com/docs/why-jsx)
+- [Quickstart](https://gensx.com/docs/quickstart)
+- [GenSX Overview](https://gensx.com/docs/index)
+- [GenSX Cloud (Beta)](https://gensx.com/docs/cloud)
+- [Basic concepts](https://gensx.com/docs/basic-concepts)
+- [Structured outputs](https://gensx.com/docs/patterns/structured-outputs)
+- [Self-reflection](https://gensx.com/docs/patterns/reflection)
+- [Model Context Protocol](https://gensx.com/docs/examples/mcp)
+- [Hacker News analyzer](https://gensx.com/docs/examples/hn)
+- [Blog writer](https://gensx.com/docs/examples/blog-writing)
+- [Building reusable components](https://gensx.com/docs/concepts/reusable-components)
+- [How GenSX works](https://gensx.com/docs/concepts/how-gensx-works)
+- [Working with context and providers](https://gensx.com/docs/concepts/context)
+- [Using array operations](https://gensx.com/docs/concepts/arrays)
+- [Vercel AI SDK](https://gensx.com/docs/component-reference/vercel-ai)
+- [OpenRouter](https://gensx.com/docs/component-reference/openrouter)
+- [OpenAI](https://gensx.com/docs/component-reference/openai)
+- [MCP](https://gensx.com/docs/component-reference/mcp)
+- [Anthropic](https://gensx.com/docs/component-reference/anthropic)
+
+## Blog
+
+- [Why React is surprisingly the best model for LLM workflows](https://gensx.com/blogs/why-react-is-the-best-backend-workflow-engine)
+- [Self-modifying code agent](https://gensx.com/blogs/self-modifying-code)
+- [LLMs are really bad at Tic-Tac-Toe](https://gensx.com/blogs/llm-tic-tac-toe)
