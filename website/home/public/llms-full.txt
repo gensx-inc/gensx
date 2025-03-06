@@ -3,7 +3,9 @@
 
 GenSX uses JSX for workflow composition because it's a natural fit for the programming model. Most people think of React and frontend when JSX is mentioned, so choosing it for a backend workflow orchestration framework may seem surprising.
 
-This page explains why JSX is a good fit for anyone building LLM applications, whether it be simple linear workflows or complex cyclical agents.
+This page explains why JSX is a perfect fit for anyone building LLM applications, whether it be simple linear workflows or complex cyclical agents. At the end of the day, building agents and workflows is all about constructing a dataflow graph. And agents in particular need to dynamically branch and execute conditionally at runtime. This is exactly what GenSX excels at.
+
+Read the full blog post on [why a React-like model perfect for building agents and workflows](/blog/why-react-is-the-best-backend-workflow-engine).
 
 ## Why not graphs?
 
