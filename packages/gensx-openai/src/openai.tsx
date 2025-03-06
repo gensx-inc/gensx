@@ -43,11 +43,6 @@ export const OpenAIChatCompletion = gensx.Component<
   OpenAIChatCompletionOutput
 >("OpenAIChatCompletion", async (props) => {
   const context = gensx.useContext(OpenAIContext);
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
 
   return context.client.chat.completions.create(props);
 });
