@@ -32,7 +32,7 @@ suite("OpenAIContext", () => {
       />
     ));
 
-    expect(async () => await gensx.execute(<TestComponent />)).not.toThrow(
+    expect(() => gensx.execute(<TestComponent />)).not.toThrow(
       "OpenAI client not found in context",
     );
   });
