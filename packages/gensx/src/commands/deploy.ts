@@ -4,7 +4,6 @@ import pc from "picocolors";
 import { fetch } from "undici";
 
 import { API_BASE_URL, getAuth } from "../utils/config.js";
-import { ensureFirstTimeSetupComplete } from "../utils/first-time-setup.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { build } from "./build.js";
 
@@ -26,8 +25,6 @@ export async function deploy(file: string, options: DeployOptions) {
   const spinner = ora();
 
   try {
-    await ensureFirstTimeSetupComplete();
-
     // 1. Build the workflow
     const outFile = await build(file);
 
@@ -58,15 +55,20 @@ export async function deploy(file: string, options: DeployOptions) {
     form.append("file", outFile);
     if (options.name) form.append("name", options.name);
     if (options.prod) form.append("prod", "true");
-    if (projectName) form.append("projectName", projectName);
+
+    // Use the project-specific deploy endpoint
+    const url = new URL(
+      `/projects/${encodeURIComponent(projectName)}/deploy`,
+      API_BASE_URL,
+    );
+
     // Include description if provided
     if (options.description) form.append("description", options.description);
 
-    // 4. Deploy to GenSX Cloud
+    // 4. Deploy project to GenSX Cloud
     spinner.start(
-      `Deploying to GenSX Cloud${projectName ? ` (Project: ${pc.cyan(projectName)})` : ""}`,
+      `Deploying project to GenSX Cloud (Project: ${pc.cyan(projectName)})`,
     );
-    const url = new URL("/v1/deploy", API_BASE_URL);
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -87,11 +89,11 @@ export async function deploy(file: string, options: DeployOptions) {
 
     // 5. Show success message with deployment URL
     console.info(`
-${pc.green("✔")} Successfully deployed to GenSX Cloud
+${pc.green("✔")} Successfully deployed project to GenSX Cloud
 
 ${pc.bold("Deployment URL:")} ${pc.cyan(deployment.url)}
-${pc.bold("Dashboard:")} ${pc.cyan(`https://cloud.gensx.com/${auth.org}/deployments/${deployment.id}`)}
-${deployment.projectName ? `${pc.bold("Project:")} ${pc.cyan(deployment.projectName)}` : ""}
+${pc.bold("Dashboard:")} ${pc.cyan(`https://app.gensx.com/${auth.org}/${deployment.projectName}/deployments/${deployment.id}`)}
+${pc.bold("Project:")} ${pc.cyan(deployment.projectName)}
 `);
   } catch (error) {
     if (spinner.isSpinning) {

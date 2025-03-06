@@ -2,7 +2,6 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { ensureFirstTimeSetupComplete } from "../utils/first-time-setup.js";
 import { build } from "./build.js";
 
 export interface DevOptions {
@@ -11,8 +10,6 @@ export interface DevOptions {
 }
 
 export async function dev(entryFile: string, options: DevOptions = {}) {
-  await ensureFirstTimeSetupComplete();
-
   const buildDir = options.buildDir ?? ".gensx/dist";
   const entryPoint = join(buildDir, "index.js");
   const absoluteEntryPath = resolve(process.cwd(), entryFile);
