@@ -8,7 +8,6 @@ import { OutputOptions } from "rollup";
 
 import { bundleWorkflow, getRollupConfig } from "../utils/bundler.js";
 import { generateSchema } from "../utils/schema.js";
-import { generateServerFile } from "../utils/server-file.js";
 
 export interface BuildOptions {
   outDir?: string;
@@ -54,11 +53,9 @@ export async function build(file: string, options: BuildOptions = {}) {
               schemaFile,
               options.tsconfig,
             );
-            // Generate index.js wrapper
-            await generateServerFile(outDir);
             spinner.succeed("Build completed");
             if (!quiet) {
-              outputBuildSuccess(outDir, workflowNames);
+              outputBuildSuccess(workflowNames);
             }
             await event.result.close();
           } catch (error) {
@@ -107,12 +104,8 @@ export async function build(file: string, options: BuildOptions = {}) {
     );
     spinner.succeed();
 
-    spinner.start("Generating index wrapper");
-    await generateServerFile(outDir);
-    spinner.succeed();
-
     if (!quiet) {
-      outputBuildSuccess(outDir, workflowNames);
+      outputBuildSuccess(workflowNames);
     }
 
     return outFile;
@@ -122,25 +115,11 @@ export async function build(file: string, options: BuildOptions = {}) {
   }
 }
 
-const outputBuildSuccess = (outDir: string, workflowNames: string[]) => {
+const outputBuildSuccess = (workflowNames: string[]) => {
   console.info(`
-${pc.green("✔")} Successfully built workflow
+${pc.green("✔")} Successfully built project
 
-${pc.bold("Output files:")}
-${pc.cyan("- " + resolve(outDir, "handler.js"))} (bundled handler)
-${pc.cyan("- " + resolve(outDir, "index.js"))} (HTTP wrapper)
-${pc.cyan("- " + resolve(outDir, "schema.json"))} (JSON Schema)
-
-${pc.bold("Available routes:")}
-${pc.cyan("GET /")} - List all available workflows
-
-${workflowNames
-  .map(
-    (
-      name,
-    ) => `${pc.cyan(`GET /${name}/schema`)} - Get JSON Schema for a workflow
-${pc.cyan(`POST /${name}`)} - Execute a specific workflow`,
-  )
-  .join("\n\n")}
+${pc.bold("Available workflows:")}
+${workflowNames.map((name) => pc.cyan("- " + name)).join("\n")}
 `);
 };
