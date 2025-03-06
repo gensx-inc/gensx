@@ -24,7 +24,7 @@ suite("OpenAIContext", () => {
     expect(capturedClient).toBeDefined();
   });
 
-  test("Does not throw error when client is not provided", async () => {
+  test("Does not throw error when client is not provided", () => {
     const TestComponent = gensx.Component<{}, string>("TestComponent", () => (
       <ChatCompletion
         model="gpt-4"
