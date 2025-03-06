@@ -21,7 +21,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ai-sdk/openai": "^1.1.13",
+    "@ai-sdk/openai": "^1.2.1",
     "@gensx/openai": "workspace:*",
     "@gensx/vercel-ai-sdk": "workspace:*",
     "@gensx/core": "workspace:*",
