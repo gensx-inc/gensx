@@ -11,8 +11,8 @@ import { Stream } from "openai/streaming";
 
 // Create a context for OpenAI
 export const OpenAIContext = gensx.createContext<{
-  client?: OpenAI;
-}>({});
+  client: OpenAI;
+}>({ client: new OpenAI() });
 
 export const OpenAIProvider = gensx.Component<ClientOptions, never>(
   "OpenAIProvider",
