@@ -8,9 +8,8 @@ import matter from "gray-matter";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DOCS_DIR = resolve(__dirname, "../website/docs/src/content");
-const OUTPUT_FILE = resolve(__dirname, "../website/home/public/llms-full.txt");
-const BASE_URL = "https://gensx.com/"; // Adjust this to your actual base URL
+const DOCS_DIR = resolve(__dirname, "../../../website/docs/src/content");
+const OUTPUT_FILE = resolve(__dirname, "../public/llms-full.txt");
 
 interface DocContent {
   title: string;

@@ -8,9 +8,9 @@ import matter from "gray-matter";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DOCS_DIR = resolve(__dirname, "../website/docs/src/content");
-const BLOGS_DIR = resolve(__dirname, "../website/home/_posts");
-const OUTPUT_FILE = resolve(__dirname, "../website/home/public/llms.txt");
+const DOCS_DIR = resolve(__dirname, "../../../website/docs/src/content");
+const BLOGS_DIR = resolve(__dirname, "../_posts");
+const OUTPUT_FILE = resolve(__dirname, "../public/llms.txt");
 const BASE_URL = "https://gensx.com/"; // Adjust this to your actual base URL
 
 interface DocMetadata {
@@ -83,7 +83,7 @@ const main = async (): Promise<void> => {
     const docsLinks = generateList(docsMetadata);
     const blogLinks = generateList(blogMetadata);
 
-    const prelude = `# GenSX\n\nGenSX is a simple typescript framework for building complex LLM applications. It’s built around functional, reusable components that are composed using JSX to create and orchestrate workflows.`;
+    const prelude = `# GenSX\n\nGenSX is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed using JSX to create and orchestrate workflows.`;
 
     const content = `${prelude}\n\n## Docs\n\n${docsLinks}\n\n## Blog\n\n${blogLinks}`;
 
