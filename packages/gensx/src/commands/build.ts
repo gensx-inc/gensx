@@ -7,7 +7,6 @@ import { watch } from "rollup";
 import { OutputOptions } from "rollup";
 
 import { bundleWorkflow, getRollupConfig } from "../utils/bundler.js";
-import { ensureFirstTimeSetupComplete } from "../utils/first-time-setup.js";
 import { generateSchema } from "../utils/schema.js";
 import { generateServerFile } from "../utils/server-file.js";
 
@@ -23,8 +22,6 @@ export async function build(file: string, options: BuildOptions = {}) {
   const spinner = ora({ isSilent: quiet });
 
   try {
-    await ensureFirstTimeSetupComplete();
-
     // 1. Validate file exists and is a TypeScript file
     const absolutePath = resolve(process.cwd(), file);
     if (!existsSync(absolutePath)) {
