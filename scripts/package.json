@@ -12,7 +12,8 @@
     "build": "npm run generate-llms-txt && tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "generate-llms-txt": "tsx ./generate-llms-txt.ts"
+    "generate-llms-txt": "tsx ./generate-llms-txt.ts",
+    "generate-llms-full-txt": "tsx ./generate-llms-full-txt.ts"
   },
   "dependencies": {
     "glob": "catalog:",

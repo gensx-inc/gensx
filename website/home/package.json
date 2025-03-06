@@ -9,7 +9,7 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
-    "postbuild": "next-sitemap && tsx ../../scripts/generate-llms-txt.ts"
+    "postbuild": "next-sitemap && tsx ../../scripts/generate-llms-txt.ts && tsx ../../scripts/generate-llms-full-txt.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",
