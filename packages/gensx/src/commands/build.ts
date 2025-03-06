@@ -108,7 +108,10 @@ export async function build(file: string, options: BuildOptions = {}) {
       outputBuildSuccess(workflowNames);
     }
 
-    return outFile;
+    return {
+      bundleFile: outFile,
+      schemaFile: schemaFile,
+    };
   } catch (error) {
     spinner.fail("Build failed");
     throw error;

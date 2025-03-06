@@ -279,12 +279,11 @@ export async function newProject(
       }
       spinner.succeed();
 
-      // Create gensx.yaml configuration file with project name (required)
       spinner.start("Creating project configuration file");
       const projectName = path.basename(absoluteProjectPath);
       await saveProjectConfig(
         {
-          name: projectName,
+          projectName,
           description: options.description,
         },
         absoluteProjectPath,
