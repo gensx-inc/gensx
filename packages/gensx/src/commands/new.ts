@@ -11,6 +11,7 @@ import pc from "picocolors";
 
 import { logger } from "../logger.js";
 import { readConfig, saveState } from "../utils/config.js";
+import { saveProjectConfig } from "../utils/project-config.js";
 import { login } from "./login.js";
 
 const exec = promisify(execCallback);
@@ -101,6 +102,8 @@ async function selectTemplate(): Promise<string> {
     throw new Error("Failed to select template");
   }
 }
+
+// We no longer need this function since projects are created during deployment
 
 async function copyTemplateFiles(templateName: string, targetPath: string) {
   const templatePath = path.join(
@@ -208,6 +211,7 @@ export interface NewCommandOptions {
   skipLogin?: boolean;
   skipIdeRules?: boolean;
   ideRules?: string;
+  description?: string;
 }
 
 export async function newProject(
@@ -264,6 +268,7 @@ export async function newProject(
       // Create and validate project directory
       spinner.start("Creating project directory");
       await mkdir(absoluteProjectPath, { recursive: true });
+      spinner.succeed();
 
       const files = await readdir(absoluteProjectPath);
       if (files.length > 0 && !force) {
@@ -272,6 +277,18 @@ export async function newProject(
           `Directory "${absoluteProjectPath}" is not empty. Use --force to overwrite existing files.`,
         );
       }
+      spinner.succeed();
+
+      // Create gensx.yaml configuration file with project name (required)
+      spinner.start("Creating project configuration file");
+      const projectName = path.basename(absoluteProjectPath);
+      await saveProjectConfig(
+        {
+          name: projectName,
+          description: options.description,
+        },
+        absoluteProjectPath,
+      );
       spinner.succeed();
 
       // Copy template files
@@ -366,6 +383,11 @@ To get started:
   ${pc.cyan(template.runCommand)}
 
 Edit ${pc.cyan("src/index.tsx")} to start building your GenSX application.
+
+When ready to deploy:
+  ${pc.cyan(`gensx deploy <file>`)}
+
+Your project name "${pc.bold(projectName)}" has been saved to gensx.yaml and will be used for deployment.
 `);
     } catch (error) {
       // If spinner is still spinning, stop it with failure
