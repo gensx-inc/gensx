@@ -24,6 +24,15 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/overview",
+        destination: `${DOCS_URL}/docs`,
+        permanent: false,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
