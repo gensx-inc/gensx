@@ -1,15 +1,17 @@
+import fs from "node:fs";
+
+import axios from "axios";
 import FormData from "form-data";
 import ora from "ora";
 import pc from "picocolors";
-import { fetch } from "undici";
 
-import { API_BASE_URL, getAuth } from "../utils/config.js";
+import { getAuth } from "../utils/config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { build } from "./build.js";
 
 interface DeployOptions {
   project?: string;
-  env?: string;
+  env?: string[];
 }
 
 interface DeploymentResponse {
@@ -23,7 +25,7 @@ export async function deploy(file: string, options: DeployOptions) {
 
   try {
     // 1. Build the workflow
-    const outFile = await build(file);
+    const { bundleFile, schemaFile } = await build(file);
 
     // 2. Get auth config
     const auth = await getAuth();
@@ -34,8 +36,8 @@ export async function deploy(file: string, options: DeployOptions) {
     let projectName = options.project;
     if (!projectName) {
       const projectConfig = await readProjectConfig();
-      if (projectConfig?.name) {
-        projectName = projectConfig.name;
+      if (projectConfig?.projectName) {
+        projectName = projectConfig.projectName;
         spinner.info(
           `Using project name from gensx.yaml: ${pc.cyan(projectName)}`,
         );
@@ -49,35 +51,35 @@ export async function deploy(file: string, options: DeployOptions) {
 
     // 3. Create form data with bundle
     const form = new FormData();
-    form.append("file", outFile);
-    if (options.env) form.append("env", options.env);
+    form.append("file", fs.createReadStream(bundleFile), "bundle.js");
+    form.append("file", fs.createReadStream(schemaFile), "schema.json");
+    if (options.env)
+      form.append("environmentVariables", JSON.stringify(options.env));
 
     // Use the project-specific deploy endpoint
     const url = new URL(
       `/projects/${encodeURIComponent(projectName)}/deploy`,
-      API_BASE_URL,
+      "http://localhost:3000",
     );
 
     // 4. Deploy project to GenSX Cloud
     spinner.start(
       `Deploying project to GenSX Cloud (Project: ${pc.cyan(projectName)})`,
     );
-    const response = await fetch(url, {
-      method: "POST",
+
+    const response = await axios.post(url.toString(), form, {
       headers: {
         Authorization: `Bearer ${auth.token}`,
-        ...form.getHeaders(),
       },
-      body: form,
     });
 
-    if (!response.ok) {
+    if (response.status >= 400) {
       throw new Error(
         `Failed to deploy: ${response.status} ${response.statusText}`,
       );
     }
 
-    const deployment = (await response.json()) as DeploymentResponse;
+    const deployment = response.data as DeploymentResponse;
     spinner.succeed();
 
     // 5. Show success message with deployment URL

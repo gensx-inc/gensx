@@ -236,7 +236,7 @@ export async function newProject(
       const projectName = path.basename(absoluteProjectPath);
       await saveProjectConfig(
         {
-          name: projectName,
+          projectName,
           description: options.description,
         },
         absoluteProjectPath,

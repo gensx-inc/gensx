@@ -64,6 +64,7 @@ export async function runCLI() {
   program
     .command("deploy")
     .description("Deploy a project to GenSX Cloud")
+    .argument("<file>", "File to deploy")
     .option(
       "-e, --env <VALUE=value>",
       "Environment variable to include with deployment (can be used multiple times)",

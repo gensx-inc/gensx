@@ -6,7 +6,7 @@ import { z } from "zod";
 
 // Define schema for gensx.yaml
 const ProjectConfigSchema = z.object({
-  name: z.string(),
+  projectName: z.string(),
   description: z.string().optional(),
 });
 
