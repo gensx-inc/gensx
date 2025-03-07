@@ -119,7 +119,7 @@ export function getRollupConfig(
       // @ts-expect-error - This is a known issue with rollup-plugin-typescript
       typescript({
         jsx: "react-jsx",
-        jsxImportSource: "gensx",
+        jsxImportSource: "@gensx/core",
         tsconfig: "./tsconfig.json",
         sourceMap: false,
       }),
