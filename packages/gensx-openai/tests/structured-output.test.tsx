@@ -124,4 +124,52 @@ suite("StructuredOutput", () => {
 
     expect(result).toEqual({ name: "Hello World", age: 42 });
   });
+
+  test("structured output works with the `structuredOutputStrategy` prop set to tools", async () => {
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+    });
+
+    const TestComponent = gensx.Component("TestComponent", () => (
+      <GSXChatCompletion
+        model="gpt-4o"
+        messages={[{ role: "user", content: "test" }]}
+        outputSchema={schema}
+        structuredOutputStrategy="tools"
+      />
+    ));
+
+    const result = await gensx.execute(
+      <OpenAIProvider apiKey="test">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toEqual({ name: "Hello World", age: 42 });
+  });
+
+  test("structured output works with the `structuredOutputStrategy` prop set to response_format", async () => {
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+    });
+
+    const TestComponent = gensx.Component("TestComponent", () => (
+      <GSXChatCompletion
+        model="gpt-4o"
+        messages={[{ role: "user", content: "test" }]}
+        outputSchema={schema}
+        structuredOutputStrategy="response_format"
+      />
+    ));
+
+    const result = await gensx.execute(
+      <OpenAIProvider apiKey="test">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toEqual({ name: "Hello World", age: 42 });
+  });
 });
