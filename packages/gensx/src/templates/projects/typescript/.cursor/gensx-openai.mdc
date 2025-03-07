@@ -1,0 +1,72 @@
+---
+description: How to use the openai gensx package
+globs: 
+alwaysApply: true
+---
+
+## OpenAI Package Syntax
+
+### GSXChatCompletion
+
+Enhanced chat completion with structured output.
+
+```tsx
+import { GSXChatCompletion } from "@gensx/openai";
+import { z } from "zod";
+
+const OutputSchema = z.object({
+  answer: z.string(),
+});
+
+const StructuredChat = () => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <GSXChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        { role: "system", content: "Answer succinctly." },
+        { role: "user", content: "What is the capital of France?" },
+      ]}
+      outputSchema={OutputSchema}
+    />
+  </OpenAIProvider>
+);
+```
+
+### ChatCompletion (Simplified)
+
+Returns a string or a stream of tokens.
+
+```tsx
+const SimpleChat = () => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <ChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        { role: "system", content: "You are helpful." },
+        { role: "user", content: "Define AI." },
+      ]}
+      temperature={0.7}
+    />
+  </OpenAIProvider>
+);
+```
+
+### OpenAIChatCompletion (Low-Level)
+
+Direct mapping to OpenAI’s SDK.
+
+```tsx
+const LowLevelChat = () => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <OpenAIChatCompletion
+      model="gpt-4o-mini"
+      messages={[
+        { role: "system", content: "Assist me." },
+        { role: "user", content: "Explain quantum computing." },
+      ]}
+    />
+  </OpenAIProvider>
+);
+```
+
+---

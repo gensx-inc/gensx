@@ -1,0 +1,71 @@
+---
+description: How to use the anthropic gensx package
+globs: 
+alwaysApply: true
+---
+
+## GenSX Anthropic Package Syntax
+
+### AnthropicProvider & GSXChatCompletion
+
+Make sure to not use GSXChatCompletion from the OpenAI package for anthropic 
+
+```tsx
+import { AnthropicProvider, GSXChatCompletion as AnthropicGSXChat } from "@gensx/anthropic";
+import { z } from "zod";
+
+const AnthropicOutputSchema = z.object({
+  summary: z.string(),
+});
+
+const AnthropicChat = () => (
+  <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
+    <AnthropicGSXChat
+      model="claude-3-5-sonnet-latest"
+      system="You are an assistant."
+      messages={[
+        { role: "user", content: "Summarize the news." },
+      ]}
+      outputSchema={AnthropicOutputSchema}
+    />
+  </AnthropicProvider>
+);
+```
+
+### Simplified Anthropic Chat
+
+```tsx
+import { AnthropicProvider, ChatCompletion as AnthropicChat } from "@gensx/anthropic";
+
+const SimpleAnthropicChat = () => (
+  <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
+    <AnthropicChat
+      model="claude-3-5-sonnet-latest"
+      system="You are an assistant."
+      messages={[
+        { role: "user", content: "What is a programmable tree?" },
+      ]}
+      max_tokens={1000}
+    />
+  </AnthropicProvider>
+);
+```
+
+### AnthropicChatCompletion (Low-Level)
+
+```tsx
+import { AnthropicChatCompletion } from "@gensx/anthropic";
+
+const LowLevelAnthropicChat = () => (
+  <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
+    <AnthropicChatCompletion
+      model="claude-3-5-sonnet-latest"
+      system="You are an assistant."
+      messages={[
+        { role: "user", content: "Explain recursion." },
+      ]}
+      max_tokens={1000}
+    />
+  </AnthropicProvider>
+);
+```

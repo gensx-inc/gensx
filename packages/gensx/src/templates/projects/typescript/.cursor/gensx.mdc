@@ -1,0 +1,162 @@
+---
+description: How to use the gensx package
+globs: 
+alwaysApply: true
+---
+# GenSX Syntax Quick Reference
+
+GenSX is a TypeScript framework that uses JSX to build and orchestrate LLM workflows. This reference focuses on syntax for:
+
+- **Components & Workflows**  
+- **Providers & Contexts**  
+- **Integrations with OpenAI, Anthropic, and MCP packages**
+
+---
+
+## 1. Components
+
+### Defining a Basic Component
+
+Use `gensx.Component` to create a reusable, pure function component. The component accepts typed props and returns an output (synchronously or asynchronously).
+
+```tsx
+interface GreetUserProps {
+  name: string;
+}
+type GreetUserOutput = string;
+
+const GreetUser = gensx.Component<GreetUserProps, GreetUserOutput>(
+  "GreetUser",
+  async ({ name }) => `Hello, ${name}!`
+);
+```
+
+### Nested Components & Child Functions
+
+Components can be nested to pass outputs using a child function. This pattern creates a clear, top-to-bottom dataflow.
+
+```tsx
+const Parent = gensx.Component<{ input: string }, string>(
+  "Parent",
+  ({ input }) => (
+    <Child input={input}>
+      {(childOutput) => `Result: ${childOutput}`}
+    </Child>
+  )
+);
+
+const Child = gensx.Component<{ input: string }, string>(
+  "Child",
+  async ({ input }) => input.toUpperCase()
+);
+```
+
+### Streaming Components
+
+For LLM calls that return streams, use `gensx.StreamComponent`.
+
+```tsx
+interface StreamProps {
+  prompt: string;
+}
+const StreamChat = gensx.StreamComponent<StreamProps>(
+  "StreamChat",
+  async ({ prompt }) => (
+    <ChatCompletion
+      model="gpt-4o-mini"
+      stream={true}
+      messages={[{ role: "user", content: prompt }]}
+    />
+  )
+);
+```
+
+---
+
+## 2. Workflows
+
+A workflow is a runnable component tree. Define a workflow with `gensx.Workflow` and run it with `.run(props)`.
+
+```tsx
+const WorkflowComponent = gensx.Component<{ userInput: string }, string>(
+  "WorkflowComponent",
+  ({ userInput }) => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          { role: "system", content: "You are helpful." },
+          { role: "user", content: userInput },
+        ]}
+      />
+    </OpenAIProvider>
+  )
+);
+
+const workflow = gensx.Workflow("MyWorkflow", WorkflowComponent);
+const result = await workflow.run({ userInput: "Tell me a joke." });
+console.log(result);
+```
+
+---
+
+## 3. Providers & Contexts
+
+Providers supply configuration (like API keys) to components without prop drilling.
+
+### OpenAIProvider Example
+
+```tsx
+import { OpenAIProvider } from "@gensx/openai";
+
+<OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+  <MyComponent />
+</OpenAIProvider>
+```
+
+### Custom Provider Example
+
+Creating a custom provider (e.g., Firecrawl):
+
+```tsx
+const FirecrawlProvider = gensx.Component<FirecrawlAppConfig, never>(
+  "FirecrawlProvider",
+  (config) => {
+    const client = new FirecrawlApp({ apiKey: config.apiKey });
+    return <FirecrawlContext.Provider value={{ client }} />;
+  },
+  { secretProps: ["apiKey"] }
+);
+```
+
+### Context Usage
+
+Access a context using `gensx.useContext`.
+
+```tsx
+const UserContext = gensx.createContext({ name: "" });
+
+const GreetUser = gensx.Component<{}, string>("GreetUser", () => {
+  const user = gensx.useContext(UserContext);
+  return `Hello, ${user.name}!`;
+});
+
+const App = () => (
+  <UserContext.Provider value={{ name: "Alice" }}>
+    <GreetUser />
+  </UserContext.Provider>
+);
+```
+
+# Summary
+
+- **Components:** Define workflows using `gensx.Component` and nest outputs via child functions.
+- **Workflows:** Create with `gensx.Workflow("Name", Component)` and execute with `.run()`.
+- **Providers & Contexts:** Inject configuration (e.g., API keys) via providers like `OpenAIProvider` or custom providers.
+- **Integrations:**  
+@file ./gensx-openai.mdc
+-  Use `GSXChatCompletion`, `ChatCompletion`, or `OpenAIChatCompletion` within `OpenAIProvider`.  
+@file ./gensx-anthropic.mdc 
+- Similar patterns with `AnthropicProvider` and respective chat components.  
+@file ./gensx-mcp.mdc 
+- Leverage `createMCPServerContext` to access MCP resources and tools.

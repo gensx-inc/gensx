@@ -1,0 +1,37 @@
+---
+description: How to use the mcp gensx package
+globs: 
+alwaysApply: true
+---
+
+## MCP Package Syntax
+
+### Creating MCP Server Context
+
+Use `createMCPServerContext` to start or connect to an MCP server and share resources via context.
+
+```tsx
+import { createMCPServerContext } from "@gensx/mcp";
+
+const { Provider: MCPProvider, useContext: useMCP } = createMCPServerContext({
+  serverCommand: "npx",
+  serverArgs: ["-y", "@mcp-server/package"],
+});
+
+const MCPApp = () => (
+  <MCPProvider>
+    <MyMCPComponent />
+  </MCPProvider>
+);
+
+const MyMCPComponent = () => {
+  const { tools, resources } = useMCP();
+  return (
+    <ChatCompletion
+      model="gpt-4o"
+      messages={[{ role: "user", content: "Use MCP tools if needed." }]}
+      tools={tools.map((t) => t.asGSXTool())}
+    />
+  );
+};
+```
