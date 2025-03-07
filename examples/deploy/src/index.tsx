@@ -1,6 +1,10 @@
 import * as gensx from "@gensx/core";
 import { Streamable } from "@gensx/core";
-import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import {
+  ChatCompletion,
+  GSXChatCompletion,
+  OpenAIProvider,
+} from "@gensx/openai";
 
 interface RespondProps {
   userInput: string;
@@ -25,6 +29,23 @@ const Respond = gensx.StreamComponent<RespondProps>(
     );
   },
 );
+
+const RespondWithChatCompletionChunks = gensx.Component<
+  { userInput: string },
+  Streamable
+>("RespondWithChatCompletionChunks", ({ userInput }) => (
+  <GSXChatCompletion
+    stream={true}
+    model="gpt-4o-mini"
+    messages={[
+      {
+        role: "system",
+        content: "You are a helpful assistant. Respond to the user's input!",
+      },
+      { role: "user", content: userInput },
+    ]}
+  />
+));
 
 const StreamWorkflowComponent = gensx.StreamComponent<{ userInput: string }>(
   "StreamWorkflow",
@@ -64,6 +85,19 @@ const StructuredWorkflowComponent = gensx.Component<
   </OpenAIProvider>
 ));
 
+const StreamWithChatCompletionChunksWorkflowComponent = gensx.Component<
+  { userInput: string },
+  Streamable
+>("StreamWithChatCompletionChunksWorkflow", ({ userInput }) => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <RespondWithChatCompletionChunks userInput={userInput} />
+  </OpenAIProvider>
+));
+
+export const streamWithChatCompletionChunksWorkflow = gensx.Workflow(
+  "StreamWithChatCompletionChunksWorkflow",
+  StreamWithChatCompletionChunksWorkflowComponent,
+);
 const streamWorkflow = gensx.Workflow(
   "StreamWorkflow",
   StreamWorkflowComponent,
