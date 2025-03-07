@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.2...gensx-v0.3.3) (2025-03-07)
+
+
+### ✨ New Features
+
+* Add cursor project rules to template ([#438](https://github.com/gensx-inc/gensx/issues/438)) ([20cce63](https://github.com/gensx-inc/gensx/commit/20cce636aeb6431a45c782c84f92969f6fba16d5))
+
 ## [0.3.2](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.1...gensx-v0.3.2) (2025-03-05)
 
 
