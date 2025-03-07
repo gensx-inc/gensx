@@ -76,6 +76,7 @@ const result = await gsx.execute(
       name: z.string(),
       age: z.number(),
     })}
+    max_tokens={1000}
   />,
 );
 // result is typed as { name: string, age: number }
@@ -98,6 +99,7 @@ const toolResult = await gsx.execute(
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's the weather in Seattle?" }]}
     tools={[weatherTool]}
+    max_tokens={1000}
   />,
 );
 ```
@@ -138,6 +140,7 @@ const response = await gsx.execute(
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's a programmable tree?" }]}
     temperature={0.7}
+    max_tokens={1000}
   />,
 );
 
@@ -148,6 +151,7 @@ const stream = await gsx.execute(
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's a programmable tree?" }]}
     temperature={0.7}
+    max_tokens={1000}
     stream={true}
   />,
 );
@@ -186,6 +190,7 @@ const completion = await gsx.execute(
     model="claude-3-7-sonnet-latest"
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's a programmable tree?" }]}
+    max_tokens={1000}
   />,
 );
 console.log(completion.content);
@@ -197,6 +202,7 @@ const stream = await gsx.execute(
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's a programmable tree?" }]}
     stream={true}
+    max_tokens={1000}
   />,
 );
 
