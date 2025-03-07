@@ -96,7 +96,6 @@ const mockCreateMethod = vi
             typeof m === "object" && "role" in m && m.role === "tool",
         )
       ) {
-        // Otherwise return a regular text response
         return {
           choices: [
             {
