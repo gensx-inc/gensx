@@ -81,6 +81,14 @@ const mockCreateMethod = vi
     }
     // Handle tool calls
     else if (params.tools && params.tools.length > 0) {
+      // Check if there's an output_schema tool in the tools array
+      const hasOutputSchemaTool = params.tools.some(
+        (tool) =>
+          typeof tool === "object" &&
+          "function" in tool &&
+          tool.function.name === "output_schema",
+      );
+
       // If there's already a tool response in the conversation
       if (
         params.messages.some(
@@ -88,12 +96,42 @@ const mockCreateMethod = vi
             typeof m === "object" && "role" in m && m.role === "tool",
         )
       ) {
+        // Otherwise return a regular text response
         return {
           choices: [
             {
               message: {
                 role: "assistant",
                 content: "Final answer after tool execution",
+              },
+            },
+          ],
+        };
+      }
+
+      // If we have an output_schema tool, return a tool call for it
+      if (hasOutputSchemaTool) {
+        return {
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                  {
+                    id: "call_output_schema",
+                    type: "function",
+                    function: {
+                      name: "output_schema",
+                      arguments: JSON.stringify({
+                        output: {
+                          name: "Hello World",
+                          age: 42,
+                        },
+                      }),
+                    },
+                  },
+                ],
               },
             },
           ],
