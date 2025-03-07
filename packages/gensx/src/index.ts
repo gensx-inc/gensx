@@ -50,7 +50,7 @@ export async function runCLI() {
     .option("-t, --tsconfig <file>", "TypeScript config file")
     .action(async (file: string, options: BuildOptions) => {
       const outFile = await build(file, options);
-      console.info(`Workflow built to ${outFile}`);
+      console.info(`Workflow built to ${outFile.bundleFile}`);
     });
 
   program
@@ -71,14 +71,20 @@ export async function runCLI() {
     .description("Deploy a project to GenSX Cloud")
     .argument("<file>", "File to deploy")
     .option(
-      "-e, --env <VALUE=value>",
+      "-e, --env <VALUE[=value]>",
       "Environment variable to include with deployment (can be used multiple times)",
       (val, prev: Record<string, string> = {}) => {
-        const [key, value] = val.split("=");
-        if (!key || !value) {
+        let [key, value] = val.split("=") as [string, string | undefined];
+        if (!key) {
           throw new Error(
             "Environment variables must be in the format KEY=value",
           );
+        }
+        if (value === undefined) {
+          value = process.env[key];
+        }
+        if (value === undefined) {
+          throw new Error(`Environment variable ${key} has no value.`);
         }
         return { ...prev, [key]: value };
       },
