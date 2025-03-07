@@ -12,7 +12,7 @@ import { z } from "zod";
 import { OpenAIChatCompletion, OpenAIContext } from "./openai.js";
 import { GSXTool, toolExecutorImpl } from "./tools.js";
 
-type StructuredOutputStrategy = "default" | "true" | "false";
+type StructuredOutputStrategy = "default" | "tools" | "response_format";
 
 // Updated type to include retry options
 type StructuredOutputProps<O = unknown> = Omit<
@@ -20,7 +20,7 @@ type StructuredOutputProps<O = unknown> = Omit<
   "stream" | "tools"
 > & {
   outputSchema: z.ZodSchema<O>;
-  useToolsForStructuredOutput?: StructuredOutputStrategy;
+  structuredOutputStrategy?: StructuredOutputStrategy;
   tools?: (GSXTool<any> | GSXToolParams<any>)[];
   retry?: {
     maxAttempts?: number;
@@ -62,7 +62,7 @@ export const structuredOutputImpl = async <T,>(
     tools: toolsParams,
     retry,
     messages,
-    useToolsForStructuredOutput = "default",
+    structuredOutputStrategy = "default",
     ...rest
   } = props;
   const maxAttempts = retry?.maxAttempts ?? 3;
@@ -86,8 +86,8 @@ export const structuredOutputImpl = async <T,>(
 
   // Determine whether to use tools based on the useToolsForStructuredOutput parameter
   const shouldUseTools =
-    useToolsForStructuredOutput === "true" ||
-    (useToolsForStructuredOutput === "default" && !isOpenAIModel);
+    structuredOutputStrategy === "tools" ||
+    (structuredOutputStrategy === "default" && !isOpenAIModel);
 
   // Convert user-provided tools to GSXTool instances
   const userTools =

@@ -73,6 +73,18 @@ const ExtractEntities = gensx.Component<
 
 The `GSXChatCompletion` component will return the structured output directly matching the type of the `ExtractEntitiesSchema` with no extra parsing required.
 
+### Structured output strategies
+
+When using structured outputs with OpenAI models, GenSX uses the `response_format` parameter to return a structured output. However, not all models support structured outputs out of the box. For non-OpenAI models, structured outputs are handled by converting the schema into a tool and forcing the model to call that tool.
+
+GenSX looks at the `baseURL` of the OpenAIProvider to determine which approach to use but you can manually control this behavior by setting the `structuredOutputStrategy` prop. There are three available options:
+
+- `default`: Picks the best strategy based on the `baseURL` of the OpenAIProvider.
+- `tools`: Converts the schema into a tool to return a structured output.
+- `response_format`: Uses the `response_format` parameter to return a structured output.
+
+### Retries
+
 In the case that the model doesn't return valid JSON matching the schema, the task will be retried up to 3 times by default. You can change this behavior by setting the `retry` prop.
 
 ```tsx

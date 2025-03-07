@@ -122,6 +122,7 @@ The `GSXChatCompletion` component accepts all parameters from OpenAI's chat comp
 - `stream`: Whether to stream the response (when `true`, returns a `Stream<ChatCompletionChunk>`)
 - `tools`: Array of `GSXTool` instances for function calling
 - `outputSchema`: Zod schema for structured output (when provided, returns data matching the schema)
+- `structuredOutputStrategy`: Strategy to use for structured output. Supported values are `default`, `tools`, and `response_format`.
 - Plus all standard OpenAI chat completion parameters (temperature, maxTokens, etc.)
 
 ##### Return Types
