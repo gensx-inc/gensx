@@ -28,7 +28,7 @@ const nextConfig = {
     return [
       {
         source: "/overview",
-        destination: `${DOCS_URL}/docs`,
+        destination: `/docs`,
         permanent: false,
       },
     ];
