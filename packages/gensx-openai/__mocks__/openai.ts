@@ -25,7 +25,7 @@ export function createMockChatCompletionChunks(content: string) {
 }
 
 // Create a mock implementation for the chat.completions.create method
-const mockCreateMethod = vi
+export const mockCreateMethod = vi
   .fn()
   .mockImplementation((params: ChatCompletionCreateParams) => {
     // Handle streaming responses
@@ -172,15 +172,19 @@ const mockCreateMethod = vi
   });
 
 // Create the mock OpenAI class
-const MockOpenAI = vi.fn().mockImplementation(() => {
-  return {
-    chat: {
-      completions: {
-        create: mockCreateMethod,
+const MockOpenAI = vi
+  .fn()
+  .mockImplementation((config: { baseURL?: string; apiKey: string }) => {
+    return {
+      baseURL: config.baseURL,
+      apiKey: config.apiKey,
+      chat: {
+        completions: {
+          create: mockCreateMethod,
+        },
       },
-    },
-  };
-});
+    };
+  });
 
 // Export both the default export and any named exports
 const originalModule = await vi.importActual("openai");

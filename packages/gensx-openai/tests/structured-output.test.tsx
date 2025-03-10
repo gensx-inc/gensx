@@ -1,9 +1,13 @@
+import type { ChatCompletionCreateParams } from "openai/resources/chat/completions";
+
 import * as gensx from "@gensx/core";
 import { expect, suite, test } from "vitest";
 import { z } from "zod";
 
 import { GSXChatCompletion, OpenAIProvider } from "@/index.js";
 import { StructuredOutput } from "@/structured-output.js";
+
+import { openAISpy } from "./setup.js";
 
 suite("StructuredOutput", () => {
   test("structured output works with `StructuredOutput` component", async () => {
@@ -171,5 +175,88 @@ suite("StructuredOutput", () => {
     );
 
     expect(result).toEqual({ name: "Hello World", age: 42 });
+  });
+
+  test("structured output works non-openai providers and uses tools", async () => {
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+    });
+
+    const TestComponent = gensx.Component("TestComponent", () => (
+      <GSXChatCompletion
+        model="gpt-4o"
+        messages={[{ role: "user", content: "test" }]}
+        outputSchema={schema}
+      />
+    ));
+
+    const result = await gensx.execute(
+      <OpenAIProvider apiKey="test" baseURL="https://some-other-provider.com">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toEqual({ name: "Hello World", age: 42 });
+
+    expect(openAISpy).toHaveBeenCalled();
+
+    // check that the output_schema tool was on the call
+    const calls = openAISpy.mock.calls as [ChatCompletionCreateParams][];
+    const hasOutputSchemaTool = calls.some((call) => {
+      const params = call[0];
+      const tools = params.tools;
+      return tools?.some((tool) => tool.function.name === "output_schema");
+    });
+
+    // Verify that tools were used
+    expect(hasOutputSchemaTool).toBe(true);
+  });
+
+  test("structured output works non-openai providers and can be forced to use response_format", async () => {
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+    });
+
+    const TestComponent = gensx.Component("TestComponent", () => (
+      <GSXChatCompletion
+        model="gpt-4o"
+        messages={[{ role: "user", content: "test" }]}
+        outputSchema={schema}
+        structuredOutputStrategy="response_format"
+      />
+    ));
+
+    const result = await gensx.execute(
+      <OpenAIProvider apiKey="test" baseURL="https://some-other-provider.com">
+        <TestComponent />
+      </OpenAIProvider>,
+    );
+
+    expect(result).toEqual({ name: "Hello World", age: 42 });
+
+    // Verify that OpenAI was called
+    expect(openAISpy).toHaveBeenCalled();
+
+    // Check if any call included the output_schema tool
+    const calls = openAISpy.mock.calls as [ChatCompletionCreateParams][];
+    const hasOutputSchemaTool = calls.some((call) => {
+      const params = call[0];
+      const tools = params.tools;
+      return tools?.some((tool) => tool.function.name === "output_schema");
+    });
+
+    // Verify that tools were not used
+    expect(hasOutputSchemaTool).toBe(false);
+
+    // Check if response_format was used
+    const responseFormat = calls.some((call) => {
+      const params = call[0];
+      return params.response_format;
+    });
+
+    // Verify that response_format was used
+    expect(responseFormat).toBe(true);
   });
 });

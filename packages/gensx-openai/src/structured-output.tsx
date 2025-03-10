@@ -71,14 +71,9 @@ export const structuredOutputImpl = async <T,>(
 
   // Get the OpenAI client from context
   const context = gensx.useContext(OpenAIContext);
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
 
   // Check if the baseURL is for OpenAI or Azure OpenAI
-  const baseURL = context.client.baseURL;
+  const baseURL = context.client?.baseURL;
   const isOpenAIModel =
     !baseURL ||
     baseURL.includes("openai.com") ||
@@ -198,6 +193,7 @@ export const structuredOutputImpl = async <T,>(
             {...rest}
             messages={currentMessages}
             tools={allTools.map((t) => t.definition)}
+            tool_choice="required"
           />,
         );
 
@@ -222,6 +218,7 @@ export const structuredOutputImpl = async <T,>(
                 {...rest}
                 messages={currentMessages}
                 tools={allTools.map((t) => t.definition)}
+                tool_choice="required"
               />,
             );
 
