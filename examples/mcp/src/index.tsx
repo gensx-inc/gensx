@@ -6,7 +6,7 @@ import {
   OpenAIProvider,
 } from "@gensx/openai";
 
-import packageJson from "../package.json" assert { type: "json" };
+import packageJson from "../package.json" with { type: "json" };
 
 // Check for OpenAI API key
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;

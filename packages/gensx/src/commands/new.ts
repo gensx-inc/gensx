@@ -103,8 +103,6 @@ async function selectTemplate(): Promise<string> {
   }
 }
 
-// We no longer need this function since projects are created during deployment
-
 async function copyTemplateFiles(templateName: string, targetPath: string) {
   const templatePath = path.join(
     TEMPLATE_DIR,

@@ -1,3 +1,6 @@
+import { createWriteStream, WriteStream } from "node:fs";
+import { writeFile } from "node:fs/promises";
+
 import ora from "ora";
 import pc from "picocolors";
 
@@ -7,13 +10,18 @@ import { USER_AGENT } from "../utils/user-agent.js";
 
 export async function runWorkflow(
   workflow: string,
-  options: { input: string; wait: boolean; project?: string },
+  options: { input: string; wait: boolean; project?: string; output?: string },
 ) {
   const spinner = ora();
 
-  console.log("options", options);
   try {
-    const { input, wait } = options;
+    const { input, wait, output } = options;
+    if (output && !wait) {
+      console.warn(
+        "Output file cannot be specified without waiting for the workflow to finish.",
+      );
+      process.exit(1);
+    }
     const inputJson = JSON.parse(input) as Record<string, unknown>;
 
     const auth = await getAuth();
@@ -101,8 +109,17 @@ export async function runWorkflow(
           throw new Error("No stream returned");
         }
 
-        console.info("Streaming response output...");
+        if (output) {
+          console.info(`Streaming response output to ${pc.cyan(output)}`);
+        } else {
+          console.info("Streaming response output:");
+        }
         const decoder = new TextDecoder();
+
+        let fileStream: WriteStream | undefined;
+        if (output) {
+          fileStream = createWriteStream(output);
+        }
 
         let isDone = false;
 
@@ -111,8 +128,15 @@ export async function runWorkflow(
           if (result.done) {
             isDone = true;
           } else if (result.value) {
-            process.stdout.write(decoder.decode(result.value as ArrayBuffer));
+            if (fileStream) {
+              fileStream.write(decoder.decode(result.value as ArrayBuffer));
+            } else {
+              process.stdout.write(decoder.decode(result.value as ArrayBuffer));
+            }
           }
+        }
+        if (fileStream) {
+          fileStream.end();
         }
         console.info("\n\nWorkflow execution completed");
       } else {
@@ -120,8 +144,13 @@ export async function runWorkflow(
           status: "ok";
           data: { output: Record<string, unknown> };
         };
-        console.info("Workflow execution completed, here is the output:");
-        console.info(JSON.stringify(body.data.output, null, 2));
+        if (output) {
+          await writeFile(output, JSON.stringify(body.data.output, null, 2));
+          console.info(`Workflow output written to ${pc.cyan(output)}`);
+        } else {
+          console.info("Workflow execution completed, here is the output:");
+          console.info(JSON.stringify(body.data.output, null, 2));
+        }
       }
     }
   } catch (error) {
