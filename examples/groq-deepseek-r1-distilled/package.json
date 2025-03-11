@@ -1,5 +1,5 @@
 {
-  "name": "gensx-groq-deepseek-r1-distilled",
+  "name": "@examples/groq-deepseek-r1-distilled",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
-  "description": "Starter project for [GenSX](https://gensx.com), created using `npx create-gensx`.",
+  "description": "Use Groq DeepSeek R1 Distilled to write a blog post",
   "main": "index.js",
   "keywords": [],
   "author": "",

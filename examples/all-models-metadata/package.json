@@ -1,5 +1,5 @@
 {
-  "name": "all-models-metadata",
+  "name": "@examples/all-models-metadata",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -11,20 +11,20 @@
     "start": "tsx ./src/index.tsx",
     "build": "tsc"
   },
-  "description": "Starter project for [GenSX](https://gensx.com), created using `npx create-gensx`.",
+  "description": "Use OpenRouter to list all models and their pricing",
   "main": "index.js",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@gensx/core": "^0.3.1",
-    "@gensx/openai": "^0.1.12",
-    "openai": "^4.86.1"
+    "@gensx/core": "workspace:*",
+    "@gensx/openai": "workspace:*",
+    "openai": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.13.9",
-    "nodemon": "^3.1.9",
-    "tsx": "^4.19.3",
-    "typescript": "^5.7.2"
+    "@types/node": "catalog:",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

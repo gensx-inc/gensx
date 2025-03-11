@@ -24,13 +24,13 @@ interface OpenRouterModel {
     max_completion_tokens: number | null;
     is_moderated: boolean;
   };
-  per_request_limits: any | null;
+  per_request_limits: unknown;
 }
 
 // This interface is more generic to accommodate both OpenAI and OpenRouter responses
 interface ListModelsOutput {
   models: {
-    data: any[]; // Using any[] to accommodate different model structures
+    data: unknown[]; // Using any[] to accommodate different model structures
     // Add other properties if needed
   };
 }
@@ -114,3 +114,5 @@ const AllOpenRouterModelPricing = gensx.Component<{}, ListModelsOutput>(
 const workflow = gensx.Workflow("All Model Pricing", AllOpenRouterModelPricing);
 
 const result = await workflow.run({}, { printUrl: true });
+
+console.info(result);

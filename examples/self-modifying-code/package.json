@@ -1,5 +1,5 @@
 {
-  "name": "@gensx-examples/self-modifying-code",
+  "name": "@examples/self-modifying-code",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,9 +7,10 @@
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
   },
+  "description": "Use GenSX to build a program that is capable of modifying itself",
   "scripts": {
     "dev": "nodemon",
-    "start": "NODE_OPTIONS='--enable-source-maps' tsx ./index.tsx",
+    "start": "tsx ./index.tsx",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

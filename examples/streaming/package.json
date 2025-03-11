@@ -1,14 +1,15 @@
 {
-  "name": "@gensx-examples/streaming",
+  "name": "@examples/streaming",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
+  "description": "Example demonstrating the various ways to stream responses from GenSX",
   "scripts": {
     "dev": "nodemon",
-    "start": "NODE_OPTIONS='--enable-source-maps' tsx ./index.tsx",
+    "start": "tsx ./index.tsx",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

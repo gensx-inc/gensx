@@ -1,5 +1,5 @@
 {
-  "name": "@gensx-examples/blog-writer",
+  "name": "@examples/blog-writer",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon",
-    "start": "NODE_OPTIONS='--enable-source-maps' tsx ./index.ts",
+    "start": "tsx ./index.ts",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

@@ -1,5 +1,5 @@
 {
-  "name": "@gensx-examples/hacker-news-analyzer",
+  "name": "@examples/hacker-news-analyzer",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon",
-    "start": "tsx --enable-source-maps ./index.ts",
+    "start": "tsx ./index.ts",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

@@ -4,20 +4,10 @@ This folder contains a number of different examples to help you get up and runni
 
 ## Running the Examples
 
-To run the examples, start by installing and building everything from the root directory of the repo. This will install the dependencies and build all of the packages and examples
+From the root of the repo, run the following command to build packages and run an example:
 
 ```bash
-pnpm install
-
-pnpm build:all
-```
-
-From there, follow the instructions in the README of the example you want to run.
-
-Alternatively, you can run the examples directly from the root directory of the repo using the following command:
-
-```bash
-OPENAI_API_KEY=<my api key> turbo run start --filter="./examples/blogWriter"
+OPENAI_API_KEY=<my api key> pnpm start:example <example-name>
 ```
 
 Make sure to check what environment variables are required for each example.

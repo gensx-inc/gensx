@@ -1,5 +1,5 @@
 {
-  "name": "@gensx-examples/salty-ocean-model-comparison",
+  "name": "@examples/salty-ocean-model-comparison",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -11,11 +11,9 @@
     "start": "tsx ./src/index.tsx",
     "build": "tsc",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\""
+    "lint:fix": "eslint . --fix"
   },
-  "description": "Starter project for [GenSX](https://gensx.com), created using `npx create-gensx`.",
+  "description": "Compare the performance of different models by asking them why the ocean is salty",
   "main": "index.js",
   "keywords": [],
   "author": "",
