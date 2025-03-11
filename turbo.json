@@ -27,7 +27,8 @@
     },
     "start": {
       "dependsOn": ["^build", "build"],
-      "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY", "DOCS_URL"]
+      "cache": false,
+      "env": ["*"]
     },
     "test:types": {
       "outputs": []
