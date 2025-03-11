@@ -91,26 +91,26 @@ importers:
   examples/all-models-metadata:
     dependencies:
       '@gensx/core':
-        specifier: ^0.3.1
-        version: 0.3.1
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
-        specifier: ^0.1.12
-        version: 0.1.12(openai@4.86.1(ws@8.18.0)(zod@3.24.2))
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.86.1
+        specifier: 'catalog:'
         version: 4.86.1(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
-        specifier: ^22.13.9
-        version: 22.13.9
+        specifier: 'catalog:'
+        version: 20.17.11
       nodemon:
-        specifier: ^3.1.9
+        specifier: 'catalog:'
         version: 3.1.9
       tsx:
-        specifier: ^4.19.3
+        specifier: 'catalog:'
         version: 4.19.3
       typescript:
-        specifier: ^5.7.2
+        specifier: 'catalog:'
         version: 5.7.3
 
   examples/anthropic:
@@ -1586,16 +1586,6 @@ packages:
 
   '@formatjs/intl-localematcher@0.6.0':
     resolution: {integrity: sha512-4rB4g+3hESy1bHSBG3tDFaMY2CH67iT7yne1e+0CLTsGLDcmoEWWpJjjpWVaYgYfYuohIRuo0E+N536gd2ZHZA==}
-
-  '@gensx/core@0.3.1':
-    resolution: {integrity: sha512-+yljHvBb3slvo7Ha9vBD6hU+6eamjbSEF2PDlaa+KN5TbFGKpU0xXR8lBW4TNRwSG8tKOV/ClvfU+yzABYHerA==}
-    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
-
-  '@gensx/openai@0.1.12':
-    resolution: {integrity: sha512-5C9wsMjiiCGE83Iam2ZFs4Rh3QsuMI5Psj4Diq/NCTlL8d1Gb2ZK1qcHWcppAAEE98RS2cD2pEgePtsPssPDHA==}
-    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
-    peerDependencies:
-      openai: ^4.85.4
 
   '@headlessui/react@2.2.0':
     resolution: {integrity: sha512-RzCEg+LXsuI7mHiSomsu/gBJSjpupm6A1qIZ5sWjd7JhARNlMiSA4kKfJpCKwU9tE+zMRterhhrP74PvfJrpXQ==}
@@ -7512,19 +7502,6 @@ snapshots:
   '@formatjs/intl-localematcher@0.6.0':
     dependencies:
       tslib: 2.8.1
-
-  '@gensx/core@0.3.1':
-    dependencies:
-      ini: 5.0.0
-      serialize-error: 12.0.0
-      zod: 3.24.2
-
-  '@gensx/openai@0.1.12(openai@4.86.1(ws@8.18.0)(zod@3.24.2))':
-    dependencies:
-      '@gensx/core': 0.3.1
-      openai: 4.86.1(ws@8.18.0)(zod@3.24.2)
-      zod: 3.24.2
-      zod-to-json-schema: 3.24.1(zod@3.24.2)
 
   '@headlessui/react@2.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
