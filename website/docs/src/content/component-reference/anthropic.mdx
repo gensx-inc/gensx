@@ -128,7 +128,7 @@ The return type of `GSXChatCompletion` depends on the props:
 
 #### `<ChatCompletion/>`
 
-The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens, making it easier to use in UI components.
+The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the Anthropic API.
 
 ```tsx
 import { ChatCompletion } from "@gensx/anthropic";
@@ -155,9 +155,6 @@ const stream = await gsx.execute(
     stream={true}
   />,
 );
-
-// Use in a UI component
-<StreamingText stream={stream} />;
 ```
 
 ##### Props
