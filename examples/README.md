@@ -10,6 +10,17 @@ From the root of the repo, run the following command to build packages and run a
 OPENAI_API_KEY=<my api key> pnpm start:example <example-name>
 ```
 
+To run from the example directory, run:
+
+```bash
+# From the root of the repo
+pnpm build
+
+# From the example directory
+cd examples/<example-name>
+pnpm start
+```
+
 Make sure to check what environment variables are required for each example.
 
 ## Basic Examples

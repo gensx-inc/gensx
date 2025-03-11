@@ -30,7 +30,7 @@ interface OpenRouterModel {
 // This interface is more generic to accommodate both OpenAI and OpenRouter responses
 interface ListModelsOutput {
   models: {
-    data: unknown[]; // Using any[] to accommodate different model structures
+    data: unknown[];
     // Add other properties if needed
   };
 }

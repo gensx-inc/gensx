@@ -121,6 +121,12 @@ pnpm install
 
 # Run the example
 pnpm start:example <example-name>
+
+# or to run from the example directory
+pnpm build
+
+cd examples/<example-name>
+pnpm start
 ```
 
 ### Basic Examples
