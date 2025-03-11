@@ -4,6 +4,7 @@ packages:
   - "docs"
   - "website/docs"
   - "website/home"
+  - "!**/dist"
 
 catalog:
   "@types/node": "^20.17.11"
