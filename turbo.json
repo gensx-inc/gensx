@@ -25,6 +25,10 @@
       ],
       "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY", "DOCS_URL"]
     },
+    "start": {
+      "dependsOn": ["^build", "build"],
+      "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY", "DOCS_URL"]
+    },
     "test:types": {
       "outputs": []
     },

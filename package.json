@@ -17,7 +17,7 @@
     "lint:fix:all": "turbo run lint:fix",
     "test": "turbo run test --filter=\"./packages/*\"",
     "test:types": "turbo run test:types --filter=\"./packages/*\"",
-    "test:examples": "turbo run test --filter=\"./examples/*\"",
+    "start:example": "./scripts/runExample.sh",
     "test:all": "turbo run test",
     "clean": "turbo run clean",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
