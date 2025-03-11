@@ -7,10 +7,9 @@ export type { gsx as Gsx } from "./gsx.js";
 import packageJson from "../package.json" with { type: "json" };
 import { build, BuildOptions } from "./commands/build.js";
 import { deploy } from "./commands/deploy.js";
-import { dev, DevOptions } from "./commands/dev.js";
 import { login } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
-import { run } from "./commands/run.js";
+import { runWorkflow } from "./commands/run.js";
 
 export async function runCLI() {
   const program = new Command()
@@ -54,19 +53,6 @@ export async function runCLI() {
     });
 
   program
-    .command("dev")
-    .description("Run a GenSX project in development mode")
-    .argument("<file>", "Entry file to run (e.g. src/index.tsx)")
-    .option(
-      "-b, --build-dir <dir>",
-      "Build directory (defaults to .gensx/dist)",
-    )
-    .option("-w, --watch", "Watch for changes and rebuild automatically", false)
-    .action(async (file: string, options: DevOptions) => {
-      await dev(file, options);
-    });
-
-  program
     .command("deploy")
     .description("Deploy a project to GenSX Cloud")
     .argument("<file>", "File to deploy")
@@ -90,21 +76,17 @@ export async function runCLI() {
       },
       {},
     )
-    .option("--project <name>", "Project name to deploy to")
+    .option("-p, --project <name>", "Project name to deploy to")
     .action(deploy);
 
   program
     .command("run")
-    .description("Run a deployed workflow")
-    .argument("<name>", "Name of the deployed workflow")
-    .option("-i, --input <json>", "Input to the workflow (JSON string)")
-    .option(
-      "-f, --input-file <file>",
-      "File containing input to the workflow (JSON)",
-    )
-    .option("-w, --wait", "Wait for the workflow to complete", false)
-    .option("-p, --project <name>", "Project name")
-    .action(run);
+    .description("Run a workflow")
+    .argument("<workflow>", "Workflow name")
+    .option("-i, --input <input>", "Input to pass to the workflow")
+    .option("--no-wait", "Do not wait for the workflow to finish")
+    .option("-p, --project <name>", "Project name to run the workflow in")
+    .action(runWorkflow);
 
   await program.parseAsync();
 }
