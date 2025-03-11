@@ -11,7 +11,12 @@ package:
 docs:
   - changed-files:
       - any-glob-to-any-file:
-          - docs/**
+          - website/docs/**
+
+homepage:
+  - changed-files:
+      - any-glob-to-any-file:
+          - website/home/**
 
 examples:
   - changed-files:
