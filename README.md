@@ -110,6 +110,7 @@ Check out the [Quickstart Guide](https://gensx.com/docs/quickstart) to build you
 ## Examples
 
 This repo contains a number of [examples](./examples) to help you get up and running with GenSX.
+Perhaps you need to first execute the build command in the top-level directory to build the relevant dependencies.
 
 ### Basic Examples
 
