@@ -86,6 +86,11 @@ export async function runCLI() {
     .option("-i, --input <input>", "Input to pass to the workflow")
     .option("--no-wait", "Do not wait for the workflow to finish")
     .option("-p, --project <name>", "Project name to run the workflow in")
+    .option(
+      "-o, --output <file>",
+      "Output file to write the workflow result to",
+      undefined,
+    )
     .action(runWorkflow);
 
   await program.parseAsync();
