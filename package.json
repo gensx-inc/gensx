@@ -3,6 +3,9 @@
   "private": true,
   "packageManager": "pnpm@9.12.2",
   "scripts": {
+    "dev:example": "pnpm run --filter \"./examples/${1:-structuredOutputs}\" dev",
+    "start:examples": "pnpm run --filter \"./examples/*\" start",
+    "start:example": "pnpm run --filter \"./examples/${1:-structuredOutputs}\" start",
     "build": "turbo run build --filter=\"./packages/*\"",
     "build:examples": "turbo run build --filter=\"./examples/*\"",
     "build:home": "turbo run build --filter=\"./website/home\"",
