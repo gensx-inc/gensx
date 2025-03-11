@@ -1,12 +1,17 @@
 core:
   - changed-files:
       - any-glob-to-any-file:
-          - packages/gensx/**
+          - packages/gensx-core/**
 
 package:
   - changed-files:
       - any-glob-to-any-file:
           - packages/gensx-*/**
+
+cli:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/gensx/**
 
 docs:
   - changed-files:
