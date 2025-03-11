@@ -15,6 +15,7 @@ import {
   saveAuth,
   saveState,
 } from "../utils/config.js";
+import { USER_AGENT } from "../utils/user-agent.js";
 
 interface DeviceAuthRequest {
   requestId: string;
@@ -47,6 +48,7 @@ async function createLoginRequest(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "User-Agent": USER_AGENT,
     },
     body: JSON.stringify({
       clientId: hostname(),
@@ -76,7 +78,11 @@ async function pollLoginStatus(
 ): Promise<DeviceAuthStatus> {
   const url = new URL(`/auth/device/request/${requestId}`, API_BASE_URL);
   url.searchParams.set("code_verifier", verificationCode);
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": USER_AGENT,
+    },
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to check login status: ${response.statusText}`);

@@ -1,5 +1,4 @@
 import { readFileSync } from "fs";
-import { writeFile } from "fs/promises";
 import { resolve } from "path";
 
 import * as ts from "typescript";
@@ -13,11 +12,10 @@ import {
 /**
  * Generates JSON Schema for all workflows in a TypeScript file
  */
-export async function generateSchema(
+export function generateSchema(
   tsFile: string,
-  outFile: string,
   tsConfigFile?: string,
-): Promise<string[]> {
+): Record<string, { input: Definition; output: Definition }> {
   // Create program from the source file
   const tsconfigPath = tsConfigFile ?? resolve(process.cwd(), "tsconfig.json");
   const tsconfig = ts.parseJsonConfigFileContent(
@@ -88,19 +86,7 @@ export async function generateSchema(
     };
   }
 
-  // Create the final schema document
-  const schemaWithMeta = {
-    $schema: "http://json-schema.org/draft-07/schema#",
-    title: "GenSX Workflow Schemas",
-    description: "JSON Schema for workflow inputs and outputs",
-    properties: {
-      workflows: workflowSchemas,
-    },
-    required: ["workflows"],
-  };
-
-  await writeFile(outFile, JSON.stringify(schemaWithMeta, null, 2));
-  return workflowNames;
+  return workflowSchemas;
 }
 
 /**

@@ -13,6 +13,8 @@ const DEFAULT_CONSOLE_URL = "https://app.gensx.com";
 export interface AuthConfig {
   token: string;
   org: string;
+  apiBaseUrl: string;
+  consoleBaseUrl: string;
 }
 
 export interface CliState {
@@ -70,7 +72,7 @@ function getConfigPaths(): { configDir: string; configFile: string } {
 function isCompleteAuth(auth: {
   token?: string;
   org?: string;
-}): auth is AuthConfig {
+}): auth is { token: string; org: string; baseUrl?: string } {
   return typeof auth.token === "string" && typeof auth.org === "string";
 }
 
@@ -109,7 +111,14 @@ ${configContent}`;
 // Public API
 export async function getAuth(): Promise<AuthConfig | null> {
   const config = await readConfigFile();
-  return config.api && isCompleteAuth(config.api) ? config.api : null;
+  return config.api && isCompleteAuth(config.api)
+    ? {
+        token: config.api.token,
+        org: config.api.org,
+        apiBaseUrl: config.api.baseUrl ?? API_BASE_URL,
+        consoleBaseUrl: config.console?.baseUrl ?? APP_BASE_URL,
+      }
+    : null;
 }
 
 export async function getState(): Promise<CliState> {
@@ -120,7 +129,9 @@ export async function getState(): Promise<CliState> {
   };
 }
 
-export async function saveAuth(auth: AuthConfig | null): Promise<void> {
+export async function saveAuth(
+  auth: Pick<AuthConfig, "token" | "org"> | null,
+): Promise<void> {
   const config = await readConfigFile();
 
   await writeConfigFile({

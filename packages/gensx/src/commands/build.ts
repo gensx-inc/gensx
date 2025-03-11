@@ -33,7 +33,6 @@ export async function build(file: string, options: BuildOptions = {}) {
 
     const outDir = options.outDir ?? resolve(process.cwd(), ".gensx", "dist");
     const outFile = resolve(outDir, "handler.js");
-    const schemaFile = resolve(outDir, "schema.json");
 
     if (options.watch) {
       spinner.info("Starting build in watch mode...");
@@ -48,14 +47,10 @@ export async function build(file: string, options: BuildOptions = {}) {
           try {
             await event.result.write(rollupConfig.output as OutputOptions);
             // Generate schema after successful build
-            const workflowNames = await generateSchema(
-              absolutePath,
-              schemaFile,
-              options.tsconfig,
-            );
+            generateSchema(absolutePath, options.tsconfig);
             spinner.succeed("Build completed");
             if (!quiet) {
-              outputBuildSuccess(workflowNames);
+              outputBuildSuccess();
             }
             await event.result.close();
           } catch (error) {
@@ -97,20 +92,16 @@ export async function build(file: string, options: BuildOptions = {}) {
     spinner.succeed();
 
     spinner.start("Generating schema");
-    const workflowNames = await generateSchema(
-      absolutePath,
-      schemaFile,
-      options.tsconfig,
-    );
+    const workflowSchemas = generateSchema(absolutePath, options.tsconfig);
     spinner.succeed();
 
     if (!quiet) {
-      outputBuildSuccess(workflowNames);
+      outputBuildSuccess();
     }
 
     return {
       bundleFile: outFile,
-      schemaFile: schemaFile,
+      schemas: workflowSchemas,
     };
   } catch (error) {
     spinner.fail("Build failed");
@@ -118,11 +109,8 @@ export async function build(file: string, options: BuildOptions = {}) {
   }
 }
 
-const outputBuildSuccess = (workflowNames: string[]) => {
+const outputBuildSuccess = () => {
   console.info(`
 ${pc.green("✔")} Successfully built project
-
-${pc.bold("Available workflows:")}
-${workflowNames.map((name) => pc.cyan("- " + name)).join("\n")}
 `);
 };

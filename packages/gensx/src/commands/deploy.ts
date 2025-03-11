@@ -7,17 +7,28 @@ import pc from "picocolors";
 
 import { getAuth } from "../utils/config.js";
 import { readProjectConfig } from "../utils/project-config.js";
+import { USER_AGENT } from "../utils/user-agent.js";
 import { build } from "./build.js";
-
 interface DeployOptions {
   project?: string;
   env?: string[];
 }
 
 interface DeploymentResponse {
-  url: string;
-  id: string;
-  projectName?: string;
+  status: "ok";
+  data: {
+    id: string;
+    projectId: string;
+    projectName: string;
+    deploymentId: string;
+    bundleSize: number;
+    workflows: {
+      id: string;
+      name: string;
+      inputSchema: object;
+      outputSchema: object;
+    }[];
+  };
 }
 
 export async function deploy(file: string, options: DeployOptions) {
@@ -25,7 +36,7 @@ export async function deploy(file: string, options: DeployOptions) {
 
   try {
     // 1. Build the workflow
-    const { bundleFile, schemaFile } = await build(file);
+    const { bundleFile, schemas } = await build(file);
 
     // 2. Get auth config
     const auth = await getAuth();
@@ -52,14 +63,15 @@ export async function deploy(file: string, options: DeployOptions) {
     // 3. Create form data with bundle
     const form = new FormData();
     form.append("file", fs.createReadStream(bundleFile), "bundle.js");
-    form.append("file", fs.createReadStream(schemaFile), "schema.json");
     if (options.env)
       form.append("environmentVariables", JSON.stringify(options.env));
 
+    form.append("schemas", JSON.stringify(schemas));
+
     // Use the project-specific deploy endpoint
     const url = new URL(
-      `/projects/${encodeURIComponent(projectName)}/deploy`,
-      "http://localhost:3000",
+      `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/deploy`,
+      auth.apiBaseUrl,
     );
 
     // 4. Deploy project to GenSX Cloud
@@ -70,6 +82,7 @@ export async function deploy(file: string, options: DeployOptions) {
     const response = await axios.post(url.toString(), form, {
       headers: {
         Authorization: `Bearer ${auth.token}`,
+        "User-Agent": USER_AGENT,
       },
     });
 
@@ -80,15 +93,21 @@ export async function deploy(file: string, options: DeployOptions) {
     }
 
     const deployment = response.data as DeploymentResponse;
+
     spinner.succeed();
 
     // 5. Show success message with deployment URL
     console.info(`
 ${pc.green("✔")} Successfully deployed project to GenSX Cloud
 
-${pc.bold("Deployment URL:")} ${pc.cyan(deployment.url)}
-${pc.bold("Dashboard:")} ${pc.cyan(`https://app.gensx.com/${auth.org}/${deployment.projectName}/deployments/${deployment.id}`)}
-${pc.bold("Project:")} ${pc.cyan(deployment.projectName)}
+${pc.bold("Dashboard:")} ${pc.cyan(`${auth.consoleBaseUrl}/${auth.org}/${deployment.data.projectName}/deployments/${deployment.data.deploymentId}`)}
+
+${pc.bold("Available workflows:")}
+${deployment.data.workflows
+  .map((workflow) => pc.cyan("- " + workflow.name))
+  .join("\n")}
+
+${pc.bold("Project:")} ${pc.cyan(deployment.data.projectName)}
 `);
   } catch (error) {
     if (spinner.isSpinning) {
