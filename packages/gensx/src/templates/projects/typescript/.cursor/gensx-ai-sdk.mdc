@@ -1,11 +1,11 @@
 ---
 description: How to use the vercel ai gensx package
-globs: 
+globs:
 alwaysApply: false
 ---
 ## GenSX Vercel AI SDK Package Syntax
 
-The [@gensx/vercel-ai-sdk](mdc:https:/www.npmjs.com/package/@gensx/vercel-ai-sdk) package provides [Vercel AI SDK](mdc:https:/sdk.vercel.ai/docs/introduction) compatible components for GenSX, allowing you to use Vercel's AI SDK with GenSX's component model.
+The [@gensx/vercel-ai-sdk](mdc:https://www.npmjs.com/package/@gensx/vercel-ai-sdk) package provides [Vercel AI SDK](mdc:https://sdk.vercel.ai/docs/introduction) compatible components for GenSX, allowing you to use Vercel's AI SDK with GenSX's component model.
 
 ### Installation
 
@@ -175,7 +175,7 @@ const embeddings = await gsx.execute(
   />,
 );
 
-console.log(embeddings); 
+console.log(embeddings);
 ```
 
 #### GenerateImage
@@ -228,4 +228,4 @@ const anthropicResponse = await gsx.execute(
 );
 ```
 
-For more information on the Vercel AI SDK, visit the [official documentation](mdc:https:/sdk.vercel.ai/docs).
+For more information on the Vercel AI SDK, visit the [official documentation](mdc:https://sdk.vercel.ai/docs).
