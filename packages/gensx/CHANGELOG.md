@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.3...gensx-v0.3.4) (2025-03-11)
+
+
+### 🐛 Bug Fixes
+
+* small fixes and updates to cursor rules ([#446](https://github.com/gensx-inc/gensx/issues/446)) ([53a73af](https://github.com/gensx-inc/gensx/commit/53a73af4b13381239a091fb7bf2515c930d6494d))
+
 ## [0.3.3](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.2...gensx-v0.3.3) (2025-03-07)
 
 

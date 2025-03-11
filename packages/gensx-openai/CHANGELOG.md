@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.13](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.12...gensx-openai-v0.1.13) (2025-03-11)
+
+
+### ✨ New Features
+
+* support structured outputs via tools in the OpenAIProvider ([#440](https://github.com/gensx-inc/gensx/issues/440)) ([c492f7e](https://github.com/gensx-inc/gensx/commit/c492f7e2377ca8571062706b66cd97b7fc84694d))
+
 ## [0.1.12](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.11...gensx-openai-v0.1.12) (2025-03-05)
 
 
