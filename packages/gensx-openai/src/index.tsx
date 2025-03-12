@@ -13,6 +13,8 @@ import {
   OpenAIChatCompletionProps,
   OpenAIContext,
   OpenAIProvider,
+  OpenAIResponses,
+  OpenAIResponsesProps,
 } from "./openai.js";
 import { GSXTool } from "./tools.js";
 
@@ -23,6 +25,7 @@ export {
   OpenAIChatCompletion,
   ChatCompletion,
   OpenAIContext,
+  OpenAIResponses,
 };
 
 // Export the type of GSXChatCompletion itself
@@ -36,4 +39,5 @@ export type {
   GSXChatCompletionResult,
   GSXToolAnySchema,
   GSXToolParams,
+  OpenAIResponsesProps,
 };

@@ -1,0 +1,28 @@
+{
+  "name": "@examples/structured-outputs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon",
+    "start": "tsx ./index.tsx",
+    "build": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@gensx/core": "workspace:*",
+    "@gensx/openai": "workspace:*",
+    "openai": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

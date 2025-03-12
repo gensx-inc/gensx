@@ -7,6 +7,11 @@ import {
   ChatCompletionCreateParamsStreaming,
   ChatCompletionTool,
 } from "openai/resources/chat/completions";
+import {
+  ResponseCreateParamsNonStreaming,
+  ResponseCreateParamsStreaming,
+  ResponseStreamEvent,
+} from "openai/resources/responses/responses.mjs";
 import { Stream } from "openai/streaming";
 
 // Create a context for OpenAI
@@ -50,4 +55,27 @@ export const OpenAIChatCompletion = gensx.Component<
   }
 
   return context.client.chat.completions.create(props);
+});
+
+export type OpenAIResponsesProps =
+  | ResponseCreateParamsStreaming
+  | ResponseCreateParamsNonStreaming;
+
+export type OpenAIResponsesOutput = Stream<ResponseStreamEvent> | Response;
+
+export const OpenAIResponses = gensx.Component<
+  OpenAIResponsesProps,
+  OpenAIResponsesOutput
+>("OpenAIResponses", (props) => {
+  const context = gensx.useContext(OpenAIContext);
+  if (!context.client) {
+    throw new Error(
+      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
+    );
+  }
+
+  // Cast the response to the expected type
+  return context.client.responses.create(
+    props,
+  ) as unknown as OpenAIResponsesOutput;
 });
