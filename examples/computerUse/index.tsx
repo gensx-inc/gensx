@@ -1,9 +1,29 @@
 import * as gensx from "@gensx/core";
 import { OpenAIProvider, OpenAIResponses } from "@gensx/openai";
-import { Response } from "openai/resources/responses/responses";
+import {
+  Response,
+  ResponseComputerToolCall,
+} from "openai/resources/responses/responses";
 import { chromium, Page } from "playwright";
 
 import { getScreenshot, handleModelAction } from "./computerUse.js";
+
+interface UseBrowserProps {
+  call: ResponseComputerToolCall;
+  page: Page;
+}
+
+const UseBrowser = gensx.Component<UseBrowserProps, string>(
+  "UseBrowser",
+  async ({ call, page }) => {
+    await handleModelAction(page, call.action);
+
+    // Take a screenshot after the action (function defined in step 4)
+    const screenshotBytes = await getScreenshot(page);
+    const screenshotBase64 = Buffer.from(screenshotBytes).toString("base64");
+    return screenshotBase64;
+  },
+);
 
 interface ComputerUseSandboxProps {
   prompt: string;
@@ -46,12 +66,13 @@ const ComputerUseSandbox = gensx.Component<ComputerUseSandboxProps, Response>(
               const lastCallId = computerCall.call_id;
               const action = computerCall.action;
 
-              await handleModelAction(page, action);
-
-              // Take a screenshot after the action (function defined in step 4)
-              const screenshotBytes = await getScreenshot(page);
-              const screenshotBase64 =
-                Buffer.from(screenshotBytes).toString("base64");
+              const screenshotBase64 = (await UseBrowser({
+                call: computerCall,
+                page,
+                componentOpts: {
+                  name: `[Browser]:${action.type}`,
+                },
+              })) as string;
 
               currentResponse = (await OpenAIResponses.run({
                 model: "computer-use-preview",
@@ -108,7 +129,7 @@ async function main() {
   console.log("\n🎯 Calling the OpenAI Responses API");
   const workflow = gensx.Workflow("ComputerUseWorkflow", ComputerUseSandbox);
   const result = await workflow.run({
-    prompt: "Find Derek Legenzoff on LinkedIn.",
+    prompt: "Go star gensx on github",
     page,
   });
   console.log(result.output_text);
