@@ -10,6 +10,9 @@ You'll need to install Playwright to run this example. The model will interact w
 # Install dependencies
 pnpm install
 
+# Build the example
+pnpm build
+
 # Install Playwright
 npx playwright install
 ```
