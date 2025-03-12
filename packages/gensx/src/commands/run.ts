@@ -15,8 +15,8 @@ export async function runWorkflow(
   const spinner = ora();
 
   try {
-    const { input, wait, output } = options;
-    if (output && !wait) {
+    const { input, wait, output: outputFile } = options;
+    if (outputFile && !wait) {
       console.warn(
         "Output file cannot be specified without waiting for the workflow to finish.",
       );
@@ -109,16 +109,16 @@ export async function runWorkflow(
           throw new Error("No stream returned");
         }
 
-        if (output) {
-          console.info(`Streaming response output to ${pc.cyan(output)}`);
+        if (outputFile) {
+          console.info(`Streaming response output to ${pc.cyan(outputFile)}`);
         } else {
           console.info("Streaming response output:");
         }
         const decoder = new TextDecoder();
 
         let fileStream: WriteStream | undefined;
-        if (output) {
-          fileStream = createWriteStream(output);
+        if (outputFile) {
+          fileStream = createWriteStream(outputFile);
         }
 
         let isDone = false;
@@ -142,11 +142,33 @@ export async function runWorkflow(
       } else {
         const body = (await response.json()) as {
           status: "ok";
-          data: { output: Record<string, unknown> };
+          data: {
+            output: unknown;
+            status: "success" | "failed";
+            stdout?: string;
+            stderr?: string;
+          };
         };
-        if (output) {
-          await writeFile(output, JSON.stringify(body.data.output, null, 2));
-          console.info(`Workflow output written to ${pc.cyan(output)}`);
+        if (body.data.status === "failed") {
+          console.error("Workflow failed");
+          if (body.data.stderr) {
+            console.error("Stderr:", body.data.stderr);
+          }
+          if (body.data.stdout) {
+            console.error("Stdout:", body.data.stdout);
+          }
+          if (body.data.output) {
+            console.error("Output:", JSON.stringify(body.data.output, null, 2));
+          }
+          process.exit(1);
+        }
+
+        if (outputFile) {
+          await writeFile(
+            outputFile,
+            JSON.stringify(body.data.output, null, 2),
+          );
+          console.info(`Workflow output written to ${pc.cyan(outputFile)}`);
         } else {
           console.info("Workflow execution completed, here is the output:");
           console.info(JSON.stringify(body.data.output, null, 2));
