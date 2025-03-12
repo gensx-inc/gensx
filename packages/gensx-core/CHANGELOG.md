@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.1...gensx-core-v0.3.2) (2025-03-12)
+
+
+### 🐛 Bug Fixes
+
+* Do not mangle class instances ([#454](https://github.com/gensx-inc/gensx/issues/454)) ([5b41ea3](https://github.com/gensx-inc/gensx/commit/5b41ea37b6a4a11bac5c5c12d6c21bb5e6ab87af))
+
 ## [0.3.1](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.0...gensx-core-v0.3.1) (2025-03-05)
 
 
