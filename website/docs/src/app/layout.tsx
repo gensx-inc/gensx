@@ -8,6 +8,7 @@ import "./globals.css";
 import { Figtree } from "next/font/google";
 import Logo from "./components/Logo";
 import { Analytics } from "@vercel/analytics/react";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 export const metadata = {
   metadataBase: new URL("https://gensx.com/docs"),
@@ -61,6 +62,7 @@ export default async function RootLayout({ children }) {
         </Layout>
         <Analytics />
       </body>
+      <GoogleAnalytics gaId="G-PMQF1NV33L" />
     </html>
   );
 }

@@ -4,6 +4,7 @@ import "./globals.css";
 import { GridPatternDemo } from "@/components/ui/grid-pattern";
 import Nav from "@/components/nav";
 import { Analytics } from "@vercel/analytics/react";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({
         {children}
         <Analytics />
       </body>
+      <GoogleAnalytics gaId="G-PMQF1NV33L" />
     </html>
   );
 }

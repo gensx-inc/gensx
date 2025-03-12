@@ -57,8 +57,12 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
     return value as T;
   }
 
-  // Then handle objects (but not null)
-  if (typeof value === "object" && value !== null) {
+  // Then handle plain objects (but not null), but not class instances
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    value.constructor.name === "Object"
+  ) {
     const entries = Object.entries(value);
     const resolvedEntries = await Promise.all(
       entries.map(async ([key, val]) => [key, await resolveDeep(val)]),
