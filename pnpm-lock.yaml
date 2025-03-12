@@ -15,6 +15,9 @@ catalogs:
     nodemon:
       specifier: ^3.1.9
       version: 3.1.9
+    openai:
+      specifier: ^4.87.3
+      version: 4.87.3
     tsx:
       specifier: ^4.19.2
       version: 4.19.3
@@ -94,7 +97,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -147,7 +150,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -200,7 +203,7 @@ importers:
         specifier: ^3.3.2
         version: 3.3.2
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
       xml2js:
         specifier: ^0.6.2
@@ -231,7 +234,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -256,7 +259,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
       zod:
         specifier: 'catalog:'
@@ -284,7 +287,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -340,7 +343,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
       zod:
         specifier: 'catalog:'
@@ -371,7 +374,7 @@ importers:
         specifier: ^1.15.7
         version: 1.15.7(ws@8.18.0)
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -396,8 +399,36 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.17.11
+      nodemon:
+        specifier: 'catalog:'
+        version: 3.1.9
+      tsx:
+        specifier: 'catalog:'
+        version: 4.19.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.7.3
+
+  examples/openAIResponsesAPI:
+    dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
+      '@gensx/openai':
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
+      openai:
+        specifier: 'catalog:'
+        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+      zod:
+        specifier: 'catalog:'
+        version: 3.24.2
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -424,7 +455,7 @@ importers:
         specifier: ^1.15.7
         version: 1.15.7(ws@8.18.0)
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -449,7 +480,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -477,7 +508,7 @@ importers:
         specifier: ^1.15.7
         version: 1.15.7(ws@8.18.0)
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -508,7 +539,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-vercel-ai-sdk
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -567,7 +598,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
@@ -592,7 +623,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
       zod:
         specifier: 'catalog:'
@@ -773,7 +804,7 @@ importers:
         specifier: 'catalog:'
         version: 2.1.8(vitest@2.1.8(@types/node@20.17.11)(lightningcss@1.29.1))
       openai:
-        specifier: ^4.87.3
+        specifier: 'catalog:'
         version: 4.87.3(ws@8.18.0)(zod@3.24.2)
       vitest:
         specifier: 'catalog:'
@@ -8678,7 +8709,7 @@ snapshots:
 
   '@types/jsonfile@6.1.4':
     dependencies:
-      '@types/node': 20.17.11
+      '@types/node': 22.13.9
 
   '@types/katex@0.16.7': {}
 
