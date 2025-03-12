@@ -8,10 +8,11 @@ import {
   ChatCompletionTool,
 } from "openai/resources/chat/completions";
 import {
+  Response,
   ResponseCreateParamsNonStreaming,
   ResponseCreateParamsStreaming,
   ResponseStreamEvent,
-} from "openai/resources/responses/responses.mjs";
+} from "openai/resources/responses/responses";
 import { Stream } from "openai/streaming";
 
 // Create a context for OpenAI
@@ -66,7 +67,7 @@ export type OpenAIResponsesOutput = Stream<ResponseStreamEvent> | Response;
 export const OpenAIResponses = gensx.Component<
   OpenAIResponsesProps,
   OpenAIResponsesOutput
->("OpenAIResponses", (props) => {
+>("OpenAIResponses", async (props) => {
   const context = gensx.useContext(OpenAIContext);
   if (!context.client) {
     throw new Error(
@@ -74,8 +75,5 @@ export const OpenAIResponses = gensx.Component<
     );
   }
 
-  // Cast the response to the expected type
-  return context.client.responses.create(
-    props,
-  ) as unknown as OpenAIResponsesOutput;
+  return context.client.responses.create(props);
 });
