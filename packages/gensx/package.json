@@ -39,7 +39,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/ini": "^4.1.1",
-    "@types/node": "catalog:",
+    "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:"
   },

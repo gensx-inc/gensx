@@ -23,7 +23,7 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
+    "@types/node": "catalog:examples",
     "@types/xml2js": "^0.4.14",
     "nodemon": "catalog:",
     "tsx": "catalog:",

@@ -35,7 +35,7 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/node": "catalog:",
+    "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:",
     "@ai-sdk/openai": "^1.1.14",

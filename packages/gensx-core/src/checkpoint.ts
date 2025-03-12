@@ -11,7 +11,8 @@ const gzipAsync = promisify(gzip);
 // Cross-platform UUID generation
 function generateUUID(): string {
   try {
-    const crypto = globalThis.crypto;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    const crypto = (globalThis as any).crypto as { randomUUID: () => string };
     return crypto.randomUUID();
   } catch {
     // Simple fallback for environments without crypto

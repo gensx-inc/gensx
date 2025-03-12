@@ -17,7 +17,7 @@
     "@gensx/core": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
+    "@types/node": "catalog:examples",
     "nodemon": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"

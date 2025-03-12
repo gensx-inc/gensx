@@ -1037,6 +1037,18 @@ const ExtractEntities = gensx.Component<
 
 The `GSXChatCompletion` component will return the structured output directly matching the type of the `ExtractEntitiesSchema` with no extra parsing required.
 
+### Structured output strategies
+
+When using structured outputs with OpenAI models, GenSX uses the `response_format` parameter to return a structured output. However, not all models support structured outputs out of the box. For non-OpenAI models, structured outputs are handled by converting the schema into a tool and forcing the model to call that tool.
+
+GenSX looks at the `baseURL` of the OpenAIProvider to determine which approach to use but you can manually control this behavior by setting the `structuredOutputStrategy` prop. There are three available options:
+
+- `default`: Picks the best strategy based on the `baseURL` of the OpenAIProvider.
+- `tools`: Converts the schema into a tool to return a structured output.
+- `response_format`: Uses the `response_format` parameter to return a structured output.
+
+### Retries
+
 In the case that the model doesn't return valid JSON matching the schema, the task will be retried up to 3 times by default. You can change this behavior by setting the `retry` prop.
 
 ```tsx
@@ -1330,282 +1342,6 @@ console.log("🎯 Final text:\n", improvedText);
 ```
 
 You can find the complete example code in the [reflection example](https://github.com/gensx-inc/gensx/tree/main/examples/reflection).
-
-# Model Context Protocol
-
-This example demonstrates how to integrate an MCP server into your workflow, and enable those tools to be used in a GenSX workflow.
-
-See it on [Github](https://github.com/gensx-inc/gensx/tree/main/examples/mcp).
-
-### What it demonstrates
-
-- Instantiate an MCP server
-- Pass the tools to OpenAI for execution
-
-## Getting Started
-
-1. Install dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-2. Run the example:
-
-   ```bash
-   OPENAI_API_KEY=<your_api_key> pnpm run start
-   ```
-
-## What is the Model Context Protocol (MCP)?
-
-The Model Context Protocol is an open standard that enables developers to build secure, two-way connections between their data sources and AI-powered tools. MCP allows AI assistants to access relevant context from various systems where data lives, including content repositories, business tools, and development environments.
-
-This example demonstrates how to create components that connect to and interact with MCP servers.
-
-## Learn More
-
-For more information about the Model Context Protocol, visit [Anthropic's MCP page](https://www.anthropic.com/news/model-context-protocol).
-
-### Sample Output for this example
-
-```
-Sequential Thinking MCP Server running on stdio
-
-┌────────────────────────────────────────────────────┐
-│ 💭 Thought 1/5 │
-├────────────────────────────────────────────────────┤
-│ I need to find the area of the 25x25 room first.   │
-└────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 2/5 (from thought 1, ID: area_calculation) │
-├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ The area of the full room is calculated by multiplying the length and the width: 25 ft * 25 ft = 625 square feet.   │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 3/5 (from thought 2, ID: area_calculation) │
-├────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Next, calculate the area to be subtracted from the total, which is the 3.5 ft x 3 ft region.   │
-└────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 4/5 (from thought 3, ID: area_calculation) │
-├────────────────────────────────────────────────────────────┤
-│ The subtracted area is 3.5 ft * 3 ft = 10.5 square feet.   │
-└────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 5/5 (from thought 4, ID: area_calculation) │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Subtract the unused area from the total room area to get the flooring area required: 625 square feet - 10.5 square feet = 614.5 square feet.   │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 💭 Thought 6/8 │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Now, I need to calculate the amount of flooring based on the size of each piece, which is 5 inches x 4 feet.   │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 7/8 (from thought 6, ID: flooring_calculation) │
-├──────────────────────────────────────────────────────────────────────────────────────┤
-│ Convert the dimensions of the flooring from inches to feet: 5 inches is 5/12 feet.   │
-└──────────────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 8/8 (from thought 7, ID: flooring_calculation) │
-├──────────────────────────────────────────────────────────────────┤
-│ Calculate the area of one piece of flooring: (5/12 ft) * 4 ft.   │
-└──────────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 9/10 (from thought 8, ID: flooring_calculation) │
-├────────────────────────────────────────────────────────────────────────────┤
-│ The area of one piece of flooring is (5/12 ft) * 4 ft = 5/3 square feet.   │
-└────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 10/10 (from thought 9, ID: flooring_calculation) │
-├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Divide the total flooring area by the area of one piece of flooring to determine the number of pieces needed: 614.5 square feet / (5/3 square feet per piece).   │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 11/11 (from thought 10, ID: flooring_calculation) │
-├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ The number of pieces needed is 614.5 / (5/3) = 368.7, so approximately 369 pieces are required after rounding up.   │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-To cover the 25x25 room while excluding the 3.5 x 3 ft area, you'll need approximately **369 pieces** of flooring, given each piece measures 5 inches by 4 feet.
-```
-
-# Hacker News analyzer
-
-The [Hacker News Analyzer](https://github.com/gensx-inc/gensx/tree/main/examples/hackerNewsAnalyzer) example uses GenSX to fetch, analyze, and extract trends from the top Hacker News posts. It shows how to combine data fetching, parallel analysis, and content generation in a single workflow to create two outputs: a detailed report and a tweet of the trends.
-
-## Workflow
-
-The Hacker News Analyzer workflow is composed of the following steps:
-
-1. Fetch the top 500 Hacker News posts and filters down to `text` posts (`<FetchHNPosts>`)
-2. Process each post in parallel (`<AnalyzeHNPosts>`)
-   - Summarize the content (`<SummarizePost>`)
-   - Analyze the comments (`<AnalyzeComments>`)
-3. Writes a detailed report identifying the key trends across all posts (`<GenerateReport>`)
-4. Edits the report into the style of Paul Graham (`<EditReport>`)
-5. Generates a tweet in the voice of Paul Graham (`<WriteTweet>`)
-
-## Running the example
-
-```bash
-# Install dependencies
-pnpm install
-
-# Set your OpenAI API key
-export OPENAI_API_KEY=<your_api_key>
-
-# Run the example
-pnpm run start
-```
-
-The workflow will create two files:
-
-- `hn_analysis_report.md`: A detailed analysis report
-- `hn_analysis_tweet.txt`: A tweet-sized summary of the analysis
-
-## Key patterns
-
-### Parallel processing
-
-The workflow uses the `<AnalyzeHNPosts>` component to process each post in parallel. GenSX extends JSX to support returning objects so that components can return arrays and structured objects containing other components, which will all be resolved at runtime.
-
-This component takes advantage of this and uses `array.map` to return a list of `analyses`, each containing a summary of the post and an analysis of its comments.
-
-```tsx
-const AnalyzeHNPosts = gensx.Component<
-  AnalyzeHNPostsProps,
-  AnalyzeHNPostsOutput
->("AnalyzeHNPosts", ({ stories }) => {
-  return {
-    analyses: stories.map((story) => ({
-      summary: <SummarizePost story={story} />,
-      commentAnalysis: (
-        <AnalyzeComments postId={story.id} comments={story.comments} />
-      ),
-    })),
-  };
-});
-```
-
-### Multiple outputs
-
-This example also shows a simple pattern returning multiple outputs from a workflow. In this case, both the outputs of `<GenerateReport>` and `<WriteTweet>` are returned as a single object. This is done by using the the child function of `<GenerateReport>` to combine the outputs of multiple components into a single object.
-
-```tsx
-<GenerateReport analyses={analyses}>
-  {(report) => (
-    <EditReport content={report}>
-      {(editedReport) => (
-        <WriteTweet
-          context={editedReport}
-          prompt="Summarize the HN trends in a tweet"
-        >
-          {(tweet) => ({ report: editedReport, tweet })}
-        </WriteTweet>
-      )}
-    </EditReport>
-  )}
-</GenerateReport>
-```
-
-## Additional resources
-
-Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
-
-# Blog writer
-
-Breaking down complex tasks into smaller, discrete steps is one of the best ways to improve the quality of LLM outputs. The [blog writer workflow example](https://github.com/gensx-inc/gensx/tree/main/examples/blogWriter) does this by following the same approach a human would take to write a blog post: first conducting research, then generating a first draft, and finally editing that draft.
-
-## Workflow
-
-The Blog Writer workflow consists of the following steps:
-
-1. Parallel research phase:
-   - Brainstorm topics using LLM (`<BrainstormTopics>`)
-   - Research each topic in detail (`<ResearchTopic>`)
-   - Gather web research (`<SearchWeb>`)
-2. Write initial draft based on research (`<WriteDraft>`)
-3. Edit and polish the content (`<EditDraft>`)
-
-## Running the example
-
-```bash
-# Install dependencies
-pnpm install
-
-# Set your OpenAI API key
-export OPENAI_API_KEY=<your_api_key>
-
-# Run the example
-pnpm run start
-```
-
-## Key patterns
-
-### Running components in parallel
-
-The `<Research>` component runs both the `BrainstormTopics` and `SearchWeb` components in parallel. Both sub-workflows return an array of strings which are automatically combined into a single array.
-
-```tsx
-const Research = gensx.Component<ResearchComponentProps, ResearchOutput>(
-  "Research",
-  ({ prompt }) => {
-    return (
-      <>
-        <BrainstormTopics prompt={prompt}>
-          {({ topics }) => {
-            return topics.map((topic) => <ResearchTopic topic={topic} />);
-          }}
-        </BrainstormTopics>
-        <SearchWeb prompt={prompt} />
-      </>
-    );
-  },
-);
-```
-
-### Streaming Output
-
-The workflow streams back the final output to reduce the time that it takes for the user to receive the first token. The `<EditDraft>` component is a [`StreamComponent`](/docs/basic-concepts#component-types) and the `<ChatCompletion>` component has `stream={true}`.
-
-```tsx
-const EditDraft = gensx.StreamComponent<EditDraftProps>(
-  "EditDraft",
-  ({ draft }) => {
-    return (
-      <ChatCompletion
-        stream={true}
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: draft },
-        ]}
-      />
-    );
-  },
-);
-```
-
-Then when the component is invoked, `stream={true}` is passed to the component so that the output is streamed back and can be surfaced to the user:
-
-```tsx
-<EditDraft draft={draft} stream={true} />
-```
-
-## Additional resources
-
-Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
 
 # Building reusable components
 
@@ -2403,6 +2139,287 @@ const result = await gensx.execute<number[]>(
 
 When using `gensx.array`, each operation in the chain will execute in sequence so if you have `gensx.array().map().map()`, all of the components in the first `map` will execute in parallel and will complete before the second `map` starts.
 
+# Model Context Protocol
+
+This example demonstrates how to integrate an MCP server into your workflow, and enable those tools to be used in a GenSX workflow.
+
+See it on [Github](https://github.com/gensx-inc/gensx/tree/main/examples/mcp).
+
+### What it demonstrates
+
+- Instantiate an MCP server
+- Pass the tools to OpenAI for execution
+
+## Getting Started
+
+1. Install dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Run the example:
+
+   ```bash
+   # From the root of the repo
+   OPENAI_API_KEY=<your_api_key> pnpm start:example mcp
+   ```
+
+## What is the Model Context Protocol (MCP)?
+
+The Model Context Protocol is an open standard that enables developers to build secure, two-way connections between their data sources and AI-powered tools. MCP allows AI assistants to access relevant context from various systems where data lives, including content repositories, business tools, and development environments.
+
+This example demonstrates how to create components that connect to and interact with MCP servers.
+
+## Learn More
+
+For more information about the Model Context Protocol, visit [Anthropic's MCP page](https://www.anthropic.com/news/model-context-protocol).
+
+### Sample Output for this example
+
+```
+Sequential Thinking MCP Server running on stdio
+
+┌────────────────────────────────────────────────────┐
+│ 💭 Thought 1/5 │
+├────────────────────────────────────────────────────┤
+│ I need to find the area of the 25x25 room first.   │
+└────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 2/5 (from thought 1, ID: area_calculation) │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ The area of the full room is calculated by multiplying the length and the width: 25 ft * 25 ft = 625 square feet.   │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 3/5 (from thought 2, ID: area_calculation) │
+├────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Next, calculate the area to be subtracted from the total, which is the 3.5 ft x 3 ft region.   │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 4/5 (from thought 3, ID: area_calculation) │
+├────────────────────────────────────────────────────────────┤
+│ The subtracted area is 3.5 ft * 3 ft = 10.5 square feet.   │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 5/5 (from thought 4, ID: area_calculation) │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Subtract the unused area from the total room area to get the flooring area required: 625 square feet - 10.5 square feet = 614.5 square feet.   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 💭 Thought 6/8 │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Now, I need to calculate the amount of flooring based on the size of each piece, which is 5 inches x 4 feet.   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 7/8 (from thought 6, ID: flooring_calculation) │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Convert the dimensions of the flooring from inches to feet: 5 inches is 5/12 feet.   │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 8/8 (from thought 7, ID: flooring_calculation) │
+├──────────────────────────────────────────────────────────────────┤
+│ Calculate the area of one piece of flooring: (5/12 ft) * 4 ft.   │
+└──────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 9/10 (from thought 8, ID: flooring_calculation) │
+├────────────────────────────────────────────────────────────────────────────┤
+│ The area of one piece of flooring is (5/12 ft) * 4 ft = 5/3 square feet.   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 10/10 (from thought 9, ID: flooring_calculation) │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Divide the total flooring area by the area of one piece of flooring to determine the number of pieces needed: 614.5 square feet / (5/3 square feet per piece).   │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 11/11 (from thought 10, ID: flooring_calculation) │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ The number of pieces needed is 614.5 / (5/3) = 368.7, so approximately 369 pieces are required after rounding up.   │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+To cover the 25x25 room while excluding the 3.5 x 3 ft area, you'll need approximately **369 pieces** of flooring, given each piece measures 5 inches by 4 feet.
+```
+
+# Hacker News analyzer
+
+The [Hacker News Analyzer](https://github.com/gensx-inc/gensx/tree/main/examples/hackerNewsAnalyzer) example uses GenSX to fetch, analyze, and extract trends from the top Hacker News posts. It shows how to combine data fetching, parallel analysis, and content generation in a single workflow to create two outputs: a detailed report and a tweet of the trends.
+
+## Workflow
+
+The Hacker News Analyzer workflow is composed of the following steps:
+
+1. Fetch the top 500 Hacker News posts and filters down to `text` posts (`<FetchHNPosts>`)
+2. Process each post in parallel (`<AnalyzeHNPosts>`)
+   - Summarize the content (`<SummarizePost>`)
+   - Analyze the comments (`<AnalyzeComments>`)
+3. Writes a detailed report identifying the key trends across all posts (`<GenerateReport>`)
+4. Edits the report into the style of Paul Graham (`<EditReport>`)
+5. Generates a tweet in the voice of Paul Graham (`<WriteTweet>`)
+
+## Running the example
+
+```bash
+# From the root of the repo
+
+# Install dependencies
+pnpm install
+
+# Set your OpenAI API key
+export OPENAI_API_KEY=<your_api_key>
+
+# Run the example
+pnpm start:example hackerNewsAnalyzer
+```
+
+The workflow will create two files:
+
+- `hn_analysis_report.md`: A detailed analysis report
+- `hn_analysis_tweet.txt`: A tweet-sized summary of the analysis
+
+## Key patterns
+
+### Parallel processing
+
+The workflow uses the `<AnalyzeHNPosts>` component to process each post in parallel. GenSX extends JSX to support returning objects so that components can return arrays and structured objects containing other components, which will all be resolved at runtime.
+
+This component takes advantage of this and uses `array.map` to return a list of `analyses`, each containing a summary of the post and an analysis of its comments.
+
+```tsx
+const AnalyzeHNPosts = gensx.Component<
+  AnalyzeHNPostsProps,
+  AnalyzeHNPostsOutput
+>("AnalyzeHNPosts", ({ stories }) => {
+  return {
+    analyses: stories.map((story) => ({
+      summary: <SummarizePost story={story} />,
+      commentAnalysis: (
+        <AnalyzeComments postId={story.id} comments={story.comments} />
+      ),
+    })),
+  };
+});
+```
+
+### Multiple outputs
+
+This example also shows a simple pattern returning multiple outputs from a workflow. In this case, both the outputs of `<GenerateReport>` and `<WriteTweet>` are returned as a single object. This is done by using the the child function of `<GenerateReport>` to combine the outputs of multiple components into a single object.
+
+```tsx
+<GenerateReport analyses={analyses}>
+  {(report) => (
+    <EditReport content={report}>
+      {(editedReport) => (
+        <WriteTweet
+          context={editedReport}
+          prompt="Summarize the HN trends in a tweet"
+        >
+          {(tweet) => ({ report: editedReport, tweet })}
+        </WriteTweet>
+      )}
+    </EditReport>
+  )}
+</GenerateReport>
+```
+
+## Additional resources
+
+Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
+
+# Blog writer
+
+Breaking down complex tasks into smaller, discrete steps is one of the best ways to improve the quality of LLM outputs. The [blog writer workflow example](https://github.com/gensx-inc/gensx/tree/main/examples/blogWriter) does this by following the same approach a human would take to write a blog post: first conducting research, then generating a first draft, and finally editing that draft.
+
+## Workflow
+
+The Blog Writer workflow consists of the following steps:
+
+1. Parallel research phase:
+   - Brainstorm topics using LLM (`<BrainstormTopics>`)
+   - Research each topic in detail (`<ResearchTopic>`)
+   - Gather web research (`<SearchWeb>`)
+2. Write initial draft based on research (`<WriteDraft>`)
+3. Edit and polish the content (`<EditDraft>`)
+
+## Running the example
+
+```bash
+# From the root of the repo
+
+# Install dependencies
+pnpm install
+
+# Set your OpenAI API key
+export OPENAI_API_KEY=<your_api_key>
+
+# Run the example
+pnpm run start
+```
+
+## Key patterns
+
+### Running components in parallel
+
+The `<Research>` component runs both the `BrainstormTopics` and `SearchWeb` components in parallel. Both sub-workflows return an array of strings which are automatically combined into a single array.
+
+```tsx
+const Research = gensx.Component<ResearchComponentProps, ResearchOutput>(
+  "Research",
+  ({ prompt }) => {
+    return (
+      <>
+        <BrainstormTopics prompt={prompt}>
+          {({ topics }) => {
+            return topics.map((topic) => <ResearchTopic topic={topic} />);
+          }}
+        </BrainstormTopics>
+        <SearchWeb prompt={prompt} />
+      </>
+    );
+  },
+);
+```
+
+### Streaming Output
+
+The workflow streams back the final output to reduce the time that it takes for the user to receive the first token. The `<EditDraft>` component is a [`StreamComponent`](/docs/basic-concepts#component-types) and the `<ChatCompletion>` component has `stream={true}`.
+
+```tsx
+const EditDraft = gensx.StreamComponent<EditDraftProps>(
+  "EditDraft",
+  ({ draft }) => {
+    return (
+      <ChatCompletion
+        stream={true}
+        model="gpt-4o-mini"
+        temperature={0}
+        messages={[
+          { role: "system", content: systemPrompt },
+          { role: "user", content: draft },
+        ]}
+      />
+    );
+  },
+);
+```
+
+Then when the component is invoked, `stream={true}` is passed to the component so that the output is streamed back and can be surfaced to the user:
+
+```tsx
+<EditDraft draft={draft} stream={true} />
+```
+
+## Additional resources
+
+Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
+
 # Vercel AI SDK
 
 The [@gensx/vercel-ai-sdk](https://www.npmjs.com/package/@gensx/vercel-ai-sdk) package provides [Vercel AI SDK](https://sdk.vercel.ai/docs/introduction) compatible components for GenSX, allowing you to use Vercel's AI SDK with GenSX's component model.
@@ -2452,9 +2469,6 @@ const stream = await gsx.execute(
     model={languageModel}
   />,
 );
-
-// Use in a UI component
-<StreamingUI stream={stream} />;
 ```
 
 ##### Props
@@ -2968,6 +2982,7 @@ The `GSXChatCompletion` component accepts all parameters from OpenAI's chat comp
 - `stream`: Whether to stream the response (when `true`, returns a `Stream<ChatCompletionChunk>`)
 - `tools`: Array of `GSXTool` instances for function calling
 - `outputSchema`: Zod schema for structured output (when provided, returns data matching the schema)
+- `structuredOutputStrategy`: Strategy to use for structured output. Supported values are `default`, `tools`, and `response_format`.
 - Plus all standard OpenAI chat completion parameters (temperature, maxTokens, etc.)
 
 ##### Return Types
@@ -2980,7 +2995,7 @@ The return type of `GSXChatCompletion` depends on the props:
 
 #### `<ChatCompletion/>`
 
-The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens, making it easier to use in UI components.
+The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the OpenAI API.
 
 ```tsx
 import { ChatCompletion } from "@gensx/openai";
@@ -3009,9 +3024,6 @@ const stream = await gsx.execute(
     stream={true}
   />,
 );
-
-// Use in a UI component
-<StreamingText stream={stream} />;
 ```
 
 ##### Props
@@ -3295,6 +3307,7 @@ const result = await gsx.execute(
       name: z.string(),
       age: z.number(),
     })}
+    max_tokens={1000}
   />,
 );
 // result is typed as { name: string, age: number }
@@ -3317,6 +3330,7 @@ const toolResult = await gsx.execute(
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's the weather in Seattle?" }]}
     tools={[weatherTool]}
+    max_tokens={1000}
   />,
 );
 ```
@@ -3345,7 +3359,7 @@ The return type of `GSXChatCompletion` depends on the props:
 
 #### `<ChatCompletion/>`
 
-The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens, making it easier to use in UI components.
+The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the Anthropic API.
 
 ```tsx
 import { ChatCompletion } from "@gensx/anthropic";
@@ -3357,6 +3371,7 @@ const response = await gsx.execute(
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's a programmable tree?" }]}
     temperature={0.7}
+    max_tokens={1000}
   />,
 );
 
@@ -3367,12 +3382,10 @@ const stream = await gsx.execute(
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's a programmable tree?" }]}
     temperature={0.7}
+    max_tokens={1000}
     stream={true}
   />,
 );
-
-// Use in a UI component
-<StreamingText stream={stream} />;
 ```
 
 ##### Props
@@ -3405,6 +3418,7 @@ const completion = await gsx.execute(
     model="claude-3-7-sonnet-latest"
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's a programmable tree?" }]}
+    max_tokens={1000}
   />,
 );
 console.log(completion.content);
@@ -3416,6 +3430,7 @@ const stream = await gsx.execute(
     system="You are a helpful assistant."
     messages={[{ role: "user", content: "What's a programmable tree?" }]}
     stream={true}
+    max_tokens={1000}
   />,
 );
 

@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "catalog:",
+    "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "fs-extra": "^11.2.0",
     "vitest": "catalog:"

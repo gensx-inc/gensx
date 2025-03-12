@@ -7,7 +7,6 @@ packages:
   - "!**/dist"
 
 catalog:
-  "@types/node": "^20.17.11"
   "@vitest/coverage-istanbul": "^2.1.8"
   nodemon: "^3.1.9"
   openai: "^4.87.3"
@@ -19,3 +18,9 @@ catalog:
   glob: "^10.3.10"
   gray-matter: "^4.0.3"
   "@types/glob": "^8.1.0"
+
+catalogs:
+  examples:
+    "@types/node": "^22"
+  packages:
+    "@types/node": "^18"
