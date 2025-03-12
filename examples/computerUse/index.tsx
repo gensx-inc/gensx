@@ -236,12 +236,11 @@ async function main() {
   const workflow = gensx.Workflow("ComputerUseWorkflow", ComputerUseExample);
   const result = await workflow.run({
     prompt,
-    allowHumanFeedback: false,
+    allowHumanFeedback: true,
   });
   console.log("✅ Computer use complete");
   console.log(`\n✨ Final response: ${result.output_text}`);
 
-  // Close readline interface when done
   rl.close();
 }
 

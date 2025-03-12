@@ -148,6 +148,7 @@ pnpm start
 | 🔍 [Hacker News Analyzer](./examples/hackerNewsAnalyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
 | ✍️ [Blog Writer](./examples/blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |
 | 🔬 [Deep Research](./examples/deepResearch)              | Generates a report from a prompt after researching and summarizing a list of research papers |
+| 💻 [Computer Use](./examples/computerUse)                | Demonstrates how to use the OpenAI computer use tool with GenSX                              |
 
 ## Working with this repo
 
