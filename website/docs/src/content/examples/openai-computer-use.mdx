@@ -1,0 +1,153 @@
+---
+title: OpenAI Computer Use
+description: Control a web browser with natural language instructions using OpenAI's computer-use model
+---
+
+# OpenAI Computer Use
+
+The [OpenAI Computer Use](https://github.com/gensx-inc/gensx/tree/main/examples/openai-computer-use) example show how to use OpenAI's computer-use model with GenSX to control a web browser with natural language.
+
+## Workflow
+
+The OpenAI Computer Use workflow consists of the following steps:
+
+1. Launch a browser session with Playwright (`<BrowserProvider>`)
+2. Send an initial user prompt to the OpenAI computer-use model (`<OpenAIResponses>`)
+3. Process any computer actions requested by the model
+   - Execute browser actions like clicking, scrolling, typing, etc. (`<UseBrowser>`)
+   - Take a screenshot after each action and send it back to the model
+4. Optionally collect human feedback and continue the conversation (`<HumanFeedback>`)
+5. Process subsequent model responses and browser actions until completion
+
+Here's an example trace of the workflow showing the actions taken at each step:
+![OpenAI Computer Use Workflow](/docs/computer-use-trace.png)
+
+## Running the example
+
+From the root of the [GensX Github Repo](https://github.com/gensx-inc/gensx), run the following commands:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Install playwright
+npx playwright install
+
+# Run the example
+OPENAI_API_KEY=<your_api_key> pnpm start:example openai-computer-use
+```
+
+The default prompt is `how long does it take to drive from seattle to portland? use google maps` but you can change this by editing the `index.tsx` file. You can also control whether or not the example is multi-turn by toggling the `allowHumanFeedback` prop. This is set to `false` by default but you might what to change this to `true` so you can continue the conversation with the model in the terminal.
+
+When you run the example, you'll see an output like the following:
+
+```bash
+🚀 Starting the computer use example
+
+🎯 PROMPT: how long does it take to drive from seattle to portland? use google maps
+💻 Action: screenshot
+💻 Action: click at (188, 180) with button 'left'
+💻 Action: type text 'Google Maps'
+💻 Action: keypress 'ENTER'
+💻 Action: wait
+💻 Action: click at (233, 230) with button 'left'
+💻 New tab opened
+💻 Action: wait
+💻 Action: click at (389, 38) with button 'left'
+💻 Action: type text 'Seattle to Portland'
+💻 Action: keypress 'ENTER'
+💻 Action: wait
+✅ Computer use complete
+
+✨ Final response: The estimated driving time from Seattle to Portland on Google Maps is approximately 2 hours and 58 minutes via I-5 S, covering a distance of 174 miles. Would you like any more assistance with your route?
+```
+
+## Key patterns
+
+### Browser automation
+
+The example uses Playwright to control a web browser, creating a context that's shared throughout the workflow. The `BrowserProvider` component initializes a browser session and makes it available to child components:
+
+```tsx
+const BrowserProvider = gensx.Component<BrowserProviderProps, never>(
+  "BrowserProvider",
+  async ({ initialUrl }) => {
+    const browser = await chromium.launch({
+      headless: false,
+      chromiumSandbox: true,
+      env: {},
+      args: ["--disable-extensions", "--disable-file-system"],
+    });
+    const page = await browser.newPage();
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto(initialUrl);
+
+    return <BrowserContext.Provider value={{ page }} />;
+  },
+);
+```
+
+### Processing model actions
+
+The `ProcessComputerCalls` component handles the computer actions returned by the model. For each action, it:
+
+1. Extracts the action from the model response
+2. Executes the action on the browser using the `UseBrowser` component
+3. Takes a screenshot of the result
+4. Sends the screenshot back to the model
+5. Processes the next model response
+
+```tsx
+const ProcessComputerCalls = gensx.Component<
+  ProcessComputerCallsProps,
+  ProcessComputerCallsResult
+>("ProcessComputerCalls", async ({ response }) => {
+  let currentResponse = response;
+  let computerCalls = currentResponse.output.filter(
+    (item) => item.type === "computer_call",
+  );
+
+  while (computerCalls.length > 0) {
+    // Execute browser action and take screenshot
+    // ...
+    // Send screenshot back to model
+    // ...
+    // Get updated response
+    // ...
+  }
+
+  return { updatedResponse: currentResponse };
+});
+```
+
+### Interactive feedback loop
+
+The example supports an interactive conversation with the model, allowing you to provide feedback or additional instructions once the model finishes an initial turn:
+
+```tsx
+// Start conversation loop with human feedback
+let currentResponse = updatedResponse;
+let continueConversation = true;
+
+while (continueConversation) {
+  // Get human feedback
+  const { userMessage, shouldExit } = await HumanFeedback.run({
+    assistantMessage: currentResponse.output_text,
+  });
+
+  // Exit if requested
+  if (shouldExit) {
+    continueConversation = false;
+    continue;
+  }
+
+  // Send user message to model
+  // ...
+  // Process any computer calls in the response
+  // ...
+}
+```
+
+## Additional resources
+
+Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
