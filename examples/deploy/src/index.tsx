@@ -1,3 +1,5 @@
+import { setTimeout } from "timers/promises";
+
 import * as gensx from "@gensx/core";
 import { Streamable } from "@gensx/core";
 import {
@@ -12,8 +14,8 @@ interface RespondProps {
 
 const Respond = gensx.StreamComponent<RespondProps>(
   "Respond",
-  ({ userInput }) => {
-    throw new Error("test");
+  async ({ userInput }) => {
+    await setTimeout(1000);
 
     return (
       <ChatCompletion

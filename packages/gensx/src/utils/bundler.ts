@@ -1,6 +1,7 @@
 import commonjs from "@rollup/plugin-commonjs";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
+import builtinModules from "builtin-modules";
 import { OutputOptions, Plugin, rollup, RollupOptions } from "rollup";
 
 type NodeBuiltins = Record<string, string>;
@@ -19,6 +20,9 @@ function denoCompat(): Plugin {
       // Handle node: prefixed modules
       if (source.startsWith("node:")) {
         return source; // Let Deno handle it
+      }
+      if (builtinModules.includes(source)) {
+        return `node:${source}`;
       }
       const normalizedSource = source.replace(/^node:/, "");
       if (normalizedSource in nodeBuiltins) {
