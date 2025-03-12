@@ -1,5 +1,5 @@
 {
-  "name": "@examples/openai-responses-api",
+  "name": "@examples/computer-use",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "nodemon",
-    "start": "tsx ./index.tsx",
+    "start": "tsx ./index.tsx && tsx ./browser.ts",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
@@ -17,6 +17,7 @@
     "@gensx/core": "workspace:*",
     "@gensx/openai": "workspace:*",
     "openai": "catalog:",
+    "playwright": "^1.51.0",
     "zod": "catalog:"
   },
   "devDependencies": {
