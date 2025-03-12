@@ -72,11 +72,12 @@ export async function runWorkflow(
         status: "ok";
         data: { executionId: string };
       };
+
+      spinner.succeed();
+
       console.info(
         `Workflow execution started with id: ${pc.cyan(body.data.executionId)}`,
       );
-
-      spinner.succeed();
     } else {
       spinner.start("Running workflow");
 

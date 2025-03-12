@@ -50,6 +50,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
     "axios": "^1.8.1",
+    "builtin-modules": "^5.0.0",
     "commander": "^11.0.0",
     "consola": "^3.2.3",
     "enquirer": "^2.4.1",
