@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./src/index.tsx",
-    "build": "tsc"
+    "build": "tsc",
+    "deploy": "gensx deploy -e OPENAI_API_KEY src/index.tsx"
   },
   "description": "An example GenSX app that demonstrates how to deploy a workflow.",
   "main": "index.js",
@@ -19,12 +20,12 @@
   "dependencies": {
     "@gensx/core": "workspace:*",
     "@gensx/openai": "workspace:*",
-    "openai": "^4.86.1"
+    "openai": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.13.9",
-    "nodemon": "^3.1.9",
-    "tsx": "^4.19.3",
-    "typescript": "^5.7.2"
+    "@types/node": "^22",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

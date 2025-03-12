@@ -13,6 +13,8 @@ interface RespondProps {
 const Respond = gensx.StreamComponent<RespondProps>(
   "Respond",
   ({ userInput }) => {
+    throw new Error("test");
+
     return (
       <ChatCompletion
         stream={true}
