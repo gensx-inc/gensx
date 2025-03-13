@@ -43,11 +43,16 @@ it("package.json is correctly configured for npm create", async () => {
   );
   const pnpmWorkspace = yaml.parse(pnpmWorkspaceYaml) as {
     catalog: Record<string, string>;
+    catalogs: Record<string, Record<string, string>>;
   };
   pkgJson.dependencies = Object.fromEntries(
     Object.entries(pkgJson.dependencies).map(([key, value]) => {
       if (value === "catalog:") {
         return [key, pnpmWorkspace.catalog[key]] as const;
+      }
+      if (value.startsWith("catalog:")) {
+        const catalogName = value.split(":")[1];
+        return [key, pnpmWorkspace.catalogs[catalogName][key]] as const;
       }
       if (value.startsWith("workspace:")) {
         const packageName = key.includes("@")
@@ -65,6 +70,10 @@ it("package.json is correctly configured for npm create", async () => {
     Object.entries(pkgJson.devDependencies).map(([key, value]) => {
       if (value === "catalog:") {
         return [key, pnpmWorkspace.catalog[key]] as const;
+      }
+      if (value.startsWith("catalog:")) {
+        const catalogName = value.split(":")[1];
+        return [key, pnpmWorkspace.catalogs[catalogName][key]] as const;
       }
       if (value.startsWith("workspace:")) {
         const packageName = key.replace("@", "").replace("/", "-");
