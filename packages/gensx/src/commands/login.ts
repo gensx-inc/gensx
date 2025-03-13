@@ -9,7 +9,13 @@ import ora from "ora";
 import picocolors from "picocolors";
 
 import { logger } from "../logger.js";
-import { API_BASE_URL, APP_BASE_URL, saveConfig } from "../utils/config.js";
+import {
+  API_BASE_URL,
+  APP_BASE_URL,
+  saveAuth,
+  saveState,
+} from "../utils/config.js";
+import { USER_AGENT } from "../utils/user-agent.js";
 
 interface DeviceAuthRequest {
   requestId: string;
@@ -42,6 +48,7 @@ async function createLoginRequest(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "User-Agent": USER_AGENT,
     },
     body: JSON.stringify({
       clientId: hostname(),
@@ -71,7 +78,11 @@ async function pollLoginStatus(
 ): Promise<DeviceAuthStatus> {
   const url = new URL(`/auth/device/request/${requestId}`, API_BASE_URL);
   url.searchParams.set("code_verifier", verificationCode);
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": USER_AGENT,
+    },
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to check login status: ${response.statusText}`);
@@ -139,11 +150,11 @@ export async function login(): Promise<{ skipped: boolean }> {
     do {
       status = await pollLoginStatus(request.requestId, verificationCode);
       if (status.status === "completed") {
-        const config = {
+        await saveAuth({
           token: status.token,
           org: status.orgSlug,
-        };
-        await saveConfig(config, {
+        });
+        await saveState({
           hasCompletedFirstTimeSetup: true,
           lastLoginAt: new Date().toISOString(),
         });

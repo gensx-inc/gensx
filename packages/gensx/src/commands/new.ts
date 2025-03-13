@@ -11,6 +11,7 @@ import pc from "picocolors";
 
 import { logger } from "../logger.js";
 import { readConfig, saveState } from "../utils/config.js";
+import { saveProjectConfig } from "../utils/project-config.js";
 import { login } from "./login.js";
 
 const exec = promisify(execCallback);
@@ -137,6 +138,7 @@ export interface NewCommandOptions {
   template?: string;
   force: boolean;
   skipLogin?: boolean;
+  description?: string;
 }
 
 export async function newProject(
@@ -227,6 +229,21 @@ export async function newProject(
         spinner.succeed();
       }
 
+      // Create gensx.yaml configuration file with project name (required)
+      spinner.start("Creating project configuration file");
+      const projectName = path.basename(absoluteProjectPath);
+      await saveProjectConfig(
+        {
+          projectName,
+          description: options.description,
+        },
+        absoluteProjectPath,
+      );
+      spinner.succeed();
+
+      // We no longer create platform projects at this stage
+      // Projects are created during deployment if needed
+
       // Show success message
       console.info(`
 ${pc.green("✔")} Successfully created GenSX project in ${pc.cyan(absoluteProjectPath)}
@@ -236,6 +253,11 @@ To get started:
   ${pc.cyan(template.runCommand)}
 
 Edit ${pc.cyan("src/index.tsx")} to start building your GenSX application.
+
+When ready to deploy:
+  ${pc.cyan(`gensx deploy <file>`)}
+
+Your project name "${pc.bold(projectName)}" has been saved to gensx.yaml and will be used for deployment.
 `);
     } catch (error) {
       // If spinner is still spinning, stop it with failure

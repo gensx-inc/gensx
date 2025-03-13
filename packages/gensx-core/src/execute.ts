@@ -40,6 +40,7 @@ export function Workflow<P, O>(
       workflowName?: string;
     },
   ) => Promise<O>;
+  name: string;
 };
 
 // Overload for GsxStreamComponent
@@ -59,6 +60,7 @@ export function Workflow<P extends { stream?: boolean }>(
       workflowName?: string;
     },
   ) => RunResult<T>;
+  name: string;
 };
 
 // Overload for GsxComponent or GsxStreamComponent
@@ -81,8 +83,10 @@ export function Workflow<
       workflowName?: string;
     },
   ) => Promise<O | Streamable | string>;
+  name: string;
 } {
   return {
+    name,
     run: async (props, runOpts = {}) => {
       const context = new ExecutionContext({});
 

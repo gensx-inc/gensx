@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import zlib from "node:zlib";
 
 import { afterEach, vi } from "vitest";
