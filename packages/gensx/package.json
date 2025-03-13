@@ -46,7 +46,7 @@
   "dependencies": {
     "@gensx/core": "workspace:*",
     "commander": "^11.0.0",
-    "consola": "^3.2.3",
+    "consola": "^3.4.0",
     "enquirer": "^2.4.1",
     "ini": "^5.0.0",
     "open": "^10.0.3",
