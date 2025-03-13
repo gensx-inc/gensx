@@ -1,6 +1,6 @@
 # Next.js AI Chatbot with GenSX
 
-![CleanShot 2025-03-13 at 17 20 26@2x](https://github.com/user-attachments/assets/1d56768b-ecc1-4949-bcf3-f9290bc8e9f5)
+![Screenshot](https://github.com/user-attachments/assets/1d56768b-ecc1-4949-bcf3-f9290bc8e9f5)
 
 This example demonstrates how to build an AI-powered chatbot using Next.js, the Vercel AI SDK, and GenSX. It showcases how to integrate GenSX workflows into a full-featured chat application.
 
