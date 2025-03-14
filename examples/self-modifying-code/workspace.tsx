@@ -49,7 +49,7 @@ export interface AgentContext {
   history: {
     timestamp: Date;
     action: string;
-    result: "success" | "failure";
+    result: "success" | "failure" | "in_progress";
     details: string;
   }[];
 }
@@ -98,6 +98,11 @@ export interface Workspace {
 export interface BuildValidationResult {
   success: boolean;
   output: string;
+  errorDetails?: {
+    type: string;
+    location?: string;
+    affectedFiles?: string[];
+  };
 }
 
 function serializeContext(context: AgentContext): string {
@@ -510,12 +515,46 @@ function createErrorAnalyzer(workspace: Workspace) {
             if (errorText.includes("TS1005")) {
               result.suggestedFixes.push("Syntax error - check for missing brackets, semicolons, or other syntax issues");
             }
+            
+            // Add more specific error types
+            if (errorText.includes("TS2339")) {
+              result.suggestedFixes.push("Property does not exist - check object properties and interfaces");
+            }
+            
+            if (errorText.includes("TS2345")) {
+              result.suggestedFixes.push("Argument type mismatch - check function parameter types");
+            }
+            
+            if (errorText.includes("TS2554")) {
+              result.suggestedFixes.push("Expected more arguments - check function call parameters");
+            }
+            
+            if (errorText.includes("TS2741")) {
+              result.suggestedFixes.push("Incompatible property types - check interface implementations");
+            }
           } else if (errorText.includes("SyntaxError")) {
             result.rootCause = "JavaScript syntax error";
             result.suggestedFixes.push("Check for syntax errors like missing brackets, quotes, or semicolons");
+            
+            // Try to extract file information from syntax error
+            const syntaxErrorMatch = errorText.match(/SyntaxError.*?([^\s(]+\.[jt]sx?)/);
+            if (syntaxErrorMatch && syntaxErrorMatch[1]) {
+              result.affectedFiles.push(syntaxErrorMatch[1]);
+            }
+          } else if (errorText.includes("Cannot find module")) {
+            result.rootCause = "Missing module dependency";
+            result.suggestedFixes.push("Check import paths and ensure dependencies are installed");
+            result.suggestedFixes.push("Run 'pnpm install' to install missing dependencies");
+            
+            // Extract the missing module name
+            const moduleMatch = errorText.match(/Cannot find module ['"]([^'"]+)['"]/);
+            if (moduleMatch && moduleMatch[1]) {
+              result.suggestedFixes.push(`Install the missing module: pnpm add ${moduleMatch[1]}`);
+            }
           } else {
             result.rootCause = "Build process error";
             result.suggestedFixes.push("Check build configuration and dependencies");
+            result.suggestedFixes.push("Verify TypeScript configuration in tsconfig.json");
           }
           break;
           
@@ -540,6 +579,16 @@ function createErrorAnalyzer(workspace: Workspace) {
           }
           
           result.affectedFiles = Array.from(testFiles);
+          
+          // Add more specific test error analysis
+          if (errorText.includes("timeout")) {
+            result.suggestedFixes.push("Test timed out - check for asynchronous operations that aren't properly resolved");
+          }
+          
+          if (errorText.includes("snapshot")) {
+            result.suggestedFixes.push("Snapshot test failed - update snapshots if changes are expected");
+            result.suggestedFixes.push("Run tests with 'pnpm test -- -u' to update snapshots");
+          }
           break;
           
         case "runtime":
@@ -547,14 +596,28 @@ function createErrorAnalyzer(workspace: Workspace) {
           
           if (errorText.includes("undefined is not a function")) {
             result.suggestedFixes.push("Check for null or undefined values before calling methods");
+            result.suggestedFixes.push("Use optional chaining (?.) for method calls that might be undefined");
           }
           
           if (errorText.includes("Cannot read property")) {
             result.suggestedFixes.push("Use optional chaining (?.) or nullish coalescing (??) operators");
+            result.suggestedFixes.push("Add null checks before accessing properties");
           }
           
           if (errorText.includes("Maximum call stack size exceeded")) {
             result.suggestedFixes.push("Check for infinite recursion or circular references");
+            result.suggestedFixes.push("Ensure recursive functions have proper termination conditions");
+          }
+          
+          // Add more specific runtime error analysis
+          if (errorText.includes("Uncaught Promise")) {
+            result.suggestedFixes.push("Handle promise rejections with try/catch or .catch()");
+            result.suggestedFixes.push("Ensure all async functions properly handle errors");
+          }
+          
+          if (errorText.includes("memory")) {
+            result.suggestedFixes.push("Check for memory leaks or large data structures");
+            result.suggestedFixes.push("Optimize memory usage by cleaning up unused resources");
           }
           break;
           
@@ -562,6 +625,17 @@ function createErrorAnalyzer(workspace: Workspace) {
           result.rootCause = "Code style or quality issues";
           result.suggestedFixes.push("Run 'eslint --fix' to automatically fix some issues");
           result.suggestedFixes.push("Review coding standards and ensure consistent style");
+          
+          // Extract file information from lint output
+          const lintFileRegex = /([^\s:]+\.[jt]sx?):/g;
+          const lintFiles = new Set<string>();
+          let lintMatch;
+          
+          while ((lintMatch = lintFileRegex.exec(errorText)) !== null) {
+            lintFiles.add(lintMatch[1]);
+          }
+          
+          result.affectedFiles = Array.from(lintFiles);
           break;
       }
 
@@ -615,6 +689,30 @@ export async function buildWorkspace(workspace: Workspace): Promise<string> {
   } catch (e) {
     return String(e);
   }
+}
+
+// Extract error type from build output
+function extractErrorType(output: string): string {
+  if (output.includes("TS")) return "typescript";
+  if (output.includes("SyntaxError")) return "syntax";
+  if (output.includes("Cannot find module")) return "module";
+  if (output.includes("Error: ")) return "runtime";
+  return "unknown";
+}
+
+// Extract affected file locations from error output
+function extractAffectedFiles(output: string): string[] {
+  const files = new Set<string>();
+  
+  // Match file paths in error messages
+  const fileRegex = /([^\s:()]+\.[jt]sx?)[:\(]/g;
+  let match;
+  
+  while ((match = fileRegex.exec(output)) !== null) {
+    files.add(match[1]);
+  }
+  
+  return Array.from(files);
 }
 
 export async function validateBuild(
@@ -682,6 +780,29 @@ export async function validateBuild(
       workspace.buildCache.set(cacheKey, output);
     }
 
+    // For failed builds, extract more detailed error information
+    if (exitCode !== 0) {
+      const errorType = extractErrorType(output);
+      const affectedFiles = extractAffectedFiles(output);
+      
+      // Find the specific error location if possible
+      let location = undefined;
+      const locationMatch = output.match(/(\S+\.tsx?)\((\d+),(\d+)\)/);
+      if (locationMatch) {
+        location = `${locationMatch[1]} (line ${locationMatch[2]}, column ${locationMatch[3]})`;
+      }
+      
+      return {
+        success: false,
+        output,
+        errorDetails: {
+          type: errorType,
+          location,
+          affectedFiles,
+        }
+      };
+    }
+
     return {
       success: exitCode === 0,
       output,
@@ -690,6 +811,10 @@ export async function validateBuild(
     return {
       success: false,
       output: String(e),
+      errorDetails: {
+        type: "exception",
+        affectedFiles: [],
+      }
     };
   }
 }

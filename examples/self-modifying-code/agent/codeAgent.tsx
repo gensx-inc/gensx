@@ -8,6 +8,7 @@ import { useWorkspace } from "../workspace.js";
 import { bashTool } from "./tools/bashTool.js";
 import { getAnalysisTool } from "./tools/analysisTool.js";
 import { getBuildTool } from "./tools/buildTool.js";
+import { getDiagnosticTool } from "./tools/diagnosticTool.js";
 import { editTool } from "./tools/editTool.js";
 import { getErrorAnalysisTool } from "./tools/errorAnalysisTool.js";
 import { getTestTool } from "./tools/testTool.js";
@@ -34,6 +35,7 @@ export const CodeAgent = gensx.Component<CodeAgentProps, CodeAgentOutput>(
     const testTool = getTestTool(workspace);
     const analysisTool = getAnalysisTool(workspace);
     const errorAnalysisTool = getErrorAnalysisTool(workspace);
+    const diagnosticTool = getDiagnosticTool(workspace);
 
     // First run with tools to make the changes
     const toolResult = await GSXChatCompletion.run({
@@ -52,7 +54,7 @@ export const CodeAgent = gensx.Component<CodeAgentProps, CodeAgentOutput>(
       model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
       max_tokens: 10000,
-      tools: [editTool, bashTool, buildTool, testTool, analysisTool, errorAnalysisTool],
+      tools: [editTool, bashTool, buildTool, testTool, analysisTool, errorAnalysisTool, diagnosticTool],
     });
 
     const textBlock = toolResult.content.find((block) => block.type === "text");
@@ -117,7 +119,8 @@ Follow these steps:
 4. Use the testTool to run tests on your changes when appropriate
 5. Use the buildTool to verify your changes compile successfully
 6. If the build fails, use the errorAnalysisTool to analyze the errors and fix any issues
-7. Once the build succeeds, verify that your changes meet all the requirements
+7. Use the diagnosticTool to check error patterns and recovery statistics if needed
+8. Once the build succeeds, verify that your changes meet all the requirements
 
 You have access to these tools to help you:
 - bash: For exploring the codebase and examining files
@@ -126,6 +129,14 @@ You have access to these tools to help you:
 - test: For running tests on the codebase to validate changes
 - analysis: For analyzing code to identify patterns, issues, and improvement opportunities
 - errorAnalysis: For analyzing build and test errors and suggesting fixes
+- diagnostic: For viewing error patterns, recovery statistics, and system performance
+
+When encountering errors:
+1. Use errorAnalysis to understand the root cause
+2. Check diagnostic information for similar past errors
+3. Make targeted fixes based on the analysis
+4. Retry with incremental changes rather than large rewrites
+5. Validate each fix before moving to the next issue
 
 Be thorough in your thinking and explain your changes in the summary. Make sure to verify the build succeeds before marking success as true.`;
 }
