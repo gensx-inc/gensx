@@ -1,4 +1,5 @@
 import path from "path";
+import { spawn } from "child_process";
 
 import { AnthropicProvider } from "@gensx/anthropic";
 import * as gensx from "@gensx/core";
@@ -15,6 +16,7 @@ import {
 import { CodeAgent } from "./codeAgent.js";
 import { GenerateGoalState } from "./steps/generateGoalState.js";
 import { GeneratePlan } from "./steps/generatePlan.js";
+import { ValidateChanges } from "./steps/validateChanges.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -42,6 +44,7 @@ export interface AgentResult {
  * - [ x ] write goal state to filesystem
  * - [ x ] create implementation plan
  * - [ x ] run code modifying agent
+ * - [ x ] run comprehensive validation
  * - [ x ] run final validation
  * - [  ] AnalyzeResults
  * - [  ] CommitResults
@@ -51,7 +54,7 @@ interface ModifyCodeProps {
   plan: string;
 }
 
-const ModifyCode = gensx.Component<ModifyCodeProps, boolean>(
+const ModifyCode = gensx.Component<ModifyCodeProps, { success: boolean; modifiedFiles: string[] }>(
   "ModifyCode",
   async ({ plan }) => {
     const workspace = useWorkspace();
@@ -73,9 +76,24 @@ ${context.goalState}
 
 After making changes, the code should successfully build with 'pnpm build'.`,
       additionalInstructions:
-        "After making changes, use the 'build' tool to verify the changes compile successfully.",
+        "After making changes, use the 'build' tool to verify the changes compile successfully. Use the 'test' tool to verify your changes work correctly.",
       repoPath: scopedPath,
     });
+
+    // Get a list of modified files
+    // This is a simple implementation - in a real system, we'd track file changes more precisely
+    const { stdout: gitStatus } = await captureCommand(
+      "git",
+      ["status", "--porcelain"],
+      scopedPath
+    );
+    
+    // Extract modified file paths from git status output
+    const modifiedFiles = gitStatus
+      .split('\n')
+      .filter(line => line.match(/^\s*[AM]/)) // Modified or Added files
+      .map(line => line.replace(/^\s*[AM]\s+/, '')) // Extract just the file path
+      .filter(Boolean);
 
     // Add the modification attempt to history
     await updateWorkspaceContext({
@@ -90,38 +108,78 @@ After making changes, the code should successfully build with 'pnpm build'.`,
     });
 
     // Return whether modifications were successful
-    return result.success;
+    return { 
+      success: result.success,
+      modifiedFiles
+    };
   },
 );
 
+// Helper function to capture command output
+async function captureCommand(
+  cmd: string,
+  args: string[],
+  cwd: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    const proc = spawn(cmd, args, {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    // Collect stdout
+    proc.stdout.on("data", (data: Buffer) => {
+      stdout += data.toString();
+    });
+
+    // Collect stderr
+    proc.stderr.on("data", (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    // Wait for process to complete
+    proc.on("exit", (exitCode: number | null) => {
+      resolve({
+        exitCode: exitCode || 0,
+        stdout,
+        stderr,
+      });
+    });
+  });
+}
+
 interface RunFinalValidationProps {
-  success: boolean;
+  validationResult: { success: boolean; details: any };
 }
 
 const RunFinalValidation = gensx.Component<RunFinalValidationProps, boolean>(
   "RunFinalValidation",
-  async ({ success }) => {
+  async ({ validationResult }) => {
     const workspace = useWorkspace();
     console.log("Running final validation");
-    console.log("Success:", success);
-    // If the modification wasn't successful, no need to validate
-    if (!success) {
+    console.log("Validation result:", validationResult);
+    
+    // If the comprehensive validation wasn't successful, no need to validate again
+    if (!validationResult.success) {
       await updateWorkspaceContext({
         history: [
           {
             timestamp: new Date(),
             action: "Final validation",
             result: "failure",
-            details: "Skipped validation as modification was unsuccessful",
+            details: "Skipped validation as comprehensive validation was unsuccessful",
           },
         ],
       });
       return false;
     }
 
-    // Run the build validation
+    // Run the build validation one more time to be sure
     const { success: buildSuccess, output } = await validateBuild(workspace);
-    console.log("Build success:", buildSuccess);
+    console.log("Final build success:", buildSuccess);
     await updateWorkspaceContext({
       history: [
         {
@@ -198,17 +256,21 @@ export const SelfModifyingCodeAgent = gensx.Component<AgentProps, AgentResult>(
               <GeneratePlan>
                 {(plan) => (
                   <ModifyCode plan={plan}>
-                    {(modifySuccess) => (
-                      <RunFinalValidation success={modifySuccess}>
-                        {(validated) => (
-                          <CommitResults success={validated}>
-                            {(committed) => ({
-                              success: committed,
-                              modified: true,
-                            })}
-                          </CommitResults>
+                    {({ success: modifySuccess, modifiedFiles }) => (
+                      <ValidateChanges modifiedFiles={modifiedFiles}>
+                        {(validationResult) => (
+                          <RunFinalValidation validationResult={validationResult}>
+                            {(validated) => (
+                              <CommitResults success={validated}>
+                                {(committed) => ({
+                                  success: committed,
+                                  modified: true,
+                                })}
+                              </CommitResults>
+                            )}
+                          </RunFinalValidation>
                         )}
-                      </RunFinalValidation>
+                      </ValidateChanges>
                     )}
                   </ModifyCode>
                 )}

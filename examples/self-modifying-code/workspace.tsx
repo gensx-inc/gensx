@@ -54,11 +54,45 @@ export interface AgentContext {
   }[];
 }
 
+export interface TestResult {
+  success: boolean;
+  output: string;
+  total: number;
+  passed: number;
+  failed: number;
+}
+
+export interface CodeAnalysisResult {
+  summary: string;
+  issues: Array<{
+    description: string;
+    severity: "error" | "warning" | "info";
+    location: string;
+  }>;
+  suggestions: string[];
+}
+
+export interface ErrorAnalysisResult {
+  rootCause: string;
+  suggestedFixes: string[];
+  affectedFiles: string[];
+}
+
 export interface Workspace {
   rootDir: string;
   sourceDir: string;
   contextFile: string; // Path to agent_context.json in the repo
   config: WorkspaceConfig;
+  
+  // New methods for enhanced agent capabilities
+  runTests?: (command: string) => Promise<TestResult>;
+  analyzeCode?: (path: string, analysisType: string) => Promise<CodeAnalysisResult>;
+  analyzeError?: (errorText: string, errorType: string) => Promise<ErrorAnalysisResult>;
+  validateBuild: (workspace: Workspace) => Promise<BuildValidationResult>;
+  
+  // Build caching
+  buildCache?: Map<string, string>;
+  getLastModifiedTime?: (filePath: string) => Promise<number>;
 }
 
 export interface BuildValidationResult {
@@ -105,6 +139,41 @@ export async function runCommand(
   });
 }
 
+export async function captureCommand(
+  cmd: string,
+  args: string[],
+  cwd: string,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    const proc = spawn(cmd, args, {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    // Collect stdout
+    proc.stdout.on("data", (data: Buffer) => {
+      stdout += data.toString();
+    });
+
+    // Collect stderr
+    proc.stderr.on("data", (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    // Wait for process to complete
+    proc.on("exit", (exitCode) => {
+      resolve({
+        exitCode: exitCode || 0,
+        stdout,
+        stderr,
+      });
+    });
+  });
+}
+
 export async function setupWorkspace(
   config: WorkspaceConfig,
 ): Promise<Workspace> {
@@ -127,7 +196,8 @@ export async function setupWorkspace(
     // Build the workspace
     await runCommand("pnpm", ["build"], sourceDir);
 
-    return {
+    // Create the workspace with enhanced capabilities
+    const workspace: Workspace = {
       rootDir,
       sourceDir,
       contextFile: path.join(
@@ -137,7 +207,17 @@ export async function setupWorkspace(
         "agent_context.json",
       ),
       config,
+      validateBuild,
+      buildCache: new Map(),
     };
+
+    // Add enhanced capabilities
+    workspace.runTests = createTestRunner(workspace);
+    workspace.analyzeCode = createCodeAnalyzer(workspace);
+    workspace.analyzeError = createErrorAnalyzer(workspace);
+    workspace.getLastModifiedTime = getLastModifiedTime;
+
+    return workspace;
   } catch (error) {
     // Cleanup on failure
     await fsPromises.rm(rootDir, { recursive: true, force: true });
@@ -209,6 +289,298 @@ export async function commitAndPush(
   );
 }
 
+// Function to get the last modified time of a file
+async function getLastModifiedTime(filePath: string): Promise<number> {
+  try {
+    const stats = await fsPromises.stat(filePath);
+    return stats.mtimeMs;
+  } catch (e) {
+    return 0; // Return 0 if file doesn't exist
+  }
+}
+
+// Implementation of the test runner
+function createTestRunner(workspace: Workspace) {
+  return async (command: string): Promise<TestResult> => {
+    const scopedPath = path.join(
+      workspace.sourceDir,
+      "examples",
+      "self-modifying-code",
+    );
+
+    try {
+      // Determine the test command based on the input
+      const testCmd = command === "run-all" 
+        ? ["test"] 
+        : ["test", command];
+
+      // Run the tests
+      const { exitCode, stdout, stderr } = await captureCommand(
+        "pnpm",
+        testCmd,
+        scopedPath,
+      );
+
+      // Parse test results
+      const output = stdout + (stderr ? `\n${stderr}` : "");
+      
+      // Simple regex-based parsing for test results
+      // This is a basic implementation - would need to be adapted to actual test output format
+      const totalMatch = output.match(/Total tests: (\d+)/i);
+      const passedMatch = output.match(/Passed: (\d+)/i);
+      const failedMatch = output.match(/Failed: (\d+)/i);
+      
+      const total = totalMatch ? parseInt(totalMatch[1], 10) : 0;
+      const passed = passedMatch ? parseInt(passedMatch[1], 10) : 0;
+      const failed = failedMatch ? parseInt(failedMatch[1], 10) : 0;
+
+      return {
+        success: exitCode === 0,
+        output,
+        total: total || (passed + failed),
+        passed,
+        failed,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        output: String(error),
+        total: 0,
+        passed: 0,
+        failed: 1,
+      };
+    }
+  };
+}
+
+// Implementation of the code analyzer
+function createCodeAnalyzer(workspace: Workspace) {
+  return async (filePath: string, analysisType: string): Promise<CodeAnalysisResult> => {
+    const fullPath = path.isAbsolute(filePath)
+      ? filePath
+      : path.join(workspace.sourceDir, "examples", "self-modifying-code", filePath);
+    
+    try {
+      // Default result structure
+      const result: CodeAnalysisResult = {
+        summary: `Analysis completed for ${filePath}`,
+        issues: [],
+        suggestions: [],
+      };
+
+      // Different analysis types
+      switch (analysisType) {
+        case "code-quality":
+          // Run ESLint if available
+          const { exitCode, stdout, stderr } = await captureCommand(
+            "npx",
+            ["eslint", "--format", "json", fullPath],
+            workspace.sourceDir,
+          );
+          
+          if (exitCode === 0) {
+            result.summary = `No linting issues found in ${filePath}`;
+          } else {
+            try {
+              // Parse ESLint JSON output
+              const lintResults = JSON.parse(stdout || "[]");
+              
+              // Extract issues from ESLint results
+              lintResults.forEach((fileResult: any) => {
+                fileResult.messages.forEach((msg: any) => {
+                  result.issues.push({
+                    description: msg.message,
+                    severity: msg.severity === 2 ? "error" : "warning",
+                    location: `${fileResult.filePath}:${msg.line}:${msg.column}`,
+                  });
+                });
+              });
+              
+              result.summary = `Found ${result.issues.length} issues in ${filePath}`;
+            } catch (e) {
+              // If parsing fails, use raw output
+              result.summary = `Analysis completed with warnings: ${stderr || stdout}`;
+            }
+          }
+          break;
+          
+        case "patterns":
+          // Simple pattern detection based on file extension
+          const ext = path.extname(filePath);
+          if (ext === ".tsx" || ext === ".ts") {
+            // Look for React patterns in TSX files
+            const fileContent = await fsPromises.readFile(fullPath, "utf-8");
+            
+            // Check for common patterns
+            if (fileContent.includes("useState") && !fileContent.includes("useEffect")) {
+              result.suggestions.push("Consider using useEffect for side effects related to state changes");
+            }
+            
+            if (fileContent.includes("console.log")) {
+              result.issues.push({
+                description: "Console statements should be removed in production code",
+                severity: "warning",
+                location: filePath,
+              });
+            }
+          }
+          break;
+          
+        case "suggestions":
+          // Generate improvement suggestions
+          result.suggestions = [
+            "Consider adding more comprehensive error handling",
+            "Add detailed comments for complex logic",
+            "Extract repeated code into reusable functions",
+          ];
+          break;
+          
+        case "dependencies":
+          // Analyze imports and dependencies
+          const fileContent = await fsPromises.readFile(fullPath, "utf-8");
+          const importMatches = fileContent.match(/import .* from ["'](.*)["']/g) || [];
+          
+          result.summary = `Found ${importMatches.length} imports in ${filePath}`;
+          
+          if (importMatches.length > 10) {
+            result.issues.push({
+              description: "File has too many dependencies, consider refactoring",
+              severity: "warning",
+              location: filePath,
+            });
+            
+            result.suggestions.push("Split this file into smaller modules with focused responsibilities");
+          }
+          break;
+      }
+
+      return result;
+    } catch (error) {
+      return {
+        summary: `Error analyzing ${filePath}: ${error}`,
+        issues: [{
+          description: String(error),
+          severity: "error",
+          location: filePath,
+        }],
+        suggestions: ["Fix the error before proceeding with further analysis"],
+      };
+    }
+  };
+}
+
+// Implementation of the error analyzer
+function createErrorAnalyzer(workspace: Workspace) {
+  return async (errorText: string, errorType: string): Promise<ErrorAnalysisResult> => {
+    // Default result structure
+    const result: ErrorAnalysisResult = {
+      rootCause: "Unknown error",
+      suggestedFixes: [],
+      affectedFiles: [],
+    };
+
+    try {
+      switch (errorType) {
+        case "build":
+          // Parse TypeScript errors
+          const tsErrors = errorText.match(/TS\d+:.*?(?=\n\n|\n[^:]*:|\n$|$)/gs) || [];
+          
+          if (tsErrors.length > 0) {
+            // Extract file paths from error messages
+            const fileRegex = /([^\s(]+\.[jt]sx?)/g;
+            const files = new Set<string>();
+            let match;
+            
+            while ((match = fileRegex.exec(errorText)) !== null) {
+              files.add(match[1]);
+            }
+            
+            result.rootCause = "TypeScript compilation errors";
+            result.affectedFiles = Array.from(files);
+            
+            // Analyze common error types
+            if (errorText.includes("TS2322")) {
+              result.suggestedFixes.push("Type mismatch - check variable types and ensure they match expected types");
+            }
+            
+            if (errorText.includes("TS2307")) {
+              result.suggestedFixes.push("Module not found - check import paths and ensure dependencies are installed");
+            }
+            
+            if (errorText.includes("TS1005")) {
+              result.suggestedFixes.push("Syntax error - check for missing brackets, semicolons, or other syntax issues");
+            }
+          } else if (errorText.includes("SyntaxError")) {
+            result.rootCause = "JavaScript syntax error";
+            result.suggestedFixes.push("Check for syntax errors like missing brackets, quotes, or semicolons");
+          } else {
+            result.rootCause = "Build process error";
+            result.suggestedFixes.push("Check build configuration and dependencies");
+          }
+          break;
+          
+        case "test":
+          result.rootCause = "Test failures";
+          
+          if (errorText.includes("Expected")) {
+            result.suggestedFixes.push("Check test assertions - expected values don't match actual values");
+          }
+          
+          if (errorText.includes("TypeError")) {
+            result.suggestedFixes.push("Check for undefined values or incorrect property access in tests");
+          }
+          
+          // Extract file paths from test output
+          const testFileRegex = /([^\s(]+\.test\.[jt]sx?)/g;
+          const testFiles = new Set<string>();
+          let testMatch;
+          
+          while ((testMatch = testFileRegex.exec(errorText)) !== null) {
+            testFiles.add(testMatch[1]);
+          }
+          
+          result.affectedFiles = Array.from(testFiles);
+          break;
+          
+        case "runtime":
+          result.rootCause = "Runtime error";
+          
+          if (errorText.includes("undefined is not a function")) {
+            result.suggestedFixes.push("Check for null or undefined values before calling methods");
+          }
+          
+          if (errorText.includes("Cannot read property")) {
+            result.suggestedFixes.push("Use optional chaining (?.) or nullish coalescing (??) operators");
+          }
+          
+          if (errorText.includes("Maximum call stack size exceeded")) {
+            result.suggestedFixes.push("Check for infinite recursion or circular references");
+          }
+          break;
+          
+        case "lint":
+          result.rootCause = "Code style or quality issues";
+          result.suggestedFixes.push("Run 'eslint --fix' to automatically fix some issues");
+          result.suggestedFixes.push("Review coding standards and ensure consistent style");
+          break;
+      }
+
+      // If no specific fixes were added, add a generic one
+      if (result.suggestedFixes.length === 0) {
+        result.suggestedFixes.push("Review the error message carefully and address the specific issues mentioned");
+      }
+
+      return result;
+    } catch (error) {
+      return {
+        rootCause: `Error analyzing error: ${error}`,
+        suggestedFixes: ["Fix the meta-error before proceeding"],
+        affectedFiles: [],
+      };
+    }
+  };
+}
+
 export async function buildWorkspace(workspace: Workspace): Promise<string> {
   try {
     // Run pnpm build and capture output
@@ -256,6 +628,18 @@ export async function validateBuild(
       "self-modifying-code",
     );
 
+    // Check if we can use cached build results
+    if (workspace.buildCache) {
+      const cachedOutput = await checkBuildCache(workspace, scopedPath);
+      if (cachedOutput) {
+        console.log("Using cached build result");
+        return {
+          success: true,
+          output: cachedOutput,
+        };
+      }
+    }
+
     // Run pnpm build and capture output
     const proc = spawn("pnpm", ["build"], {
       cwd: scopedPath,
@@ -292,6 +676,12 @@ export async function validateBuild(
       output = "Build failed with no error output";
     }
 
+    // Cache successful build results
+    if (exitCode === 0 && workspace.buildCache) {
+      const cacheKey = await generateBuildCacheKey(scopedPath);
+      workspace.buildCache.set(cacheKey, output);
+    }
+
     return {
       success: exitCode === 0,
       output,
@@ -301,5 +691,51 @@ export async function validateBuild(
       success: false,
       output: String(e),
     };
+  }
+}
+
+// Helper function to generate a cache key based on file timestamps
+async function generateBuildCacheKey(directory: string): Promise<string> {
+  try {
+    // Get all TypeScript files in the directory
+    const { stdout } = await captureCommand(
+      "find",
+      [directory, "-type", "f", "-name", "*.ts", "-o", "-name", "*.tsx"],
+      directory,
+    );
+
+    const files = stdout.trim().split("\n").filter(Boolean);
+    
+    // Get modification times for all files
+    const modTimes = await Promise.all(
+      files.map(async (file) => {
+        const stats = await fsPromises.stat(file);
+        return `${file}:${stats.mtimeMs}`;
+      })
+    );
+    
+    // Create a hash from all file mod times
+    return modTimes.sort().join("|");
+  } catch (error) {
+    console.error("Error generating build cache key:", error);
+    // Return current timestamp as fallback
+    return Date.now().toString();
+  }
+}
+
+// Helper function to check if we can use cached build results
+async function checkBuildCache(
+  workspace: Workspace,
+  directory: string,
+): Promise<string | null> {
+  if (!workspace.buildCache) return null;
+  
+  try {
+    const currentKey = await generateBuildCacheKey(directory);
+    const cachedOutput = workspace.buildCache.get(currentKey);
+    return cachedOutput || null;
+  } catch (error) {
+    console.error("Error checking build cache:", error);
+    return null;
   }
 }
