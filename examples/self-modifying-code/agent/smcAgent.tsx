@@ -17,6 +17,7 @@ import { CodeAgent } from "./codeAgent.js";
 import { ErrorRecovery } from "./steps/errorRecovery.js";
 import { GenerateGoalState } from "./steps/generateGoalState.js";
 import { GeneratePlan } from "./steps/generatePlan.js";
+import { TrackChanges } from "./steps/trackChanges.js";
 import { ValidateChanges } from "./steps/validateChanges.js";
 
 export interface AgentProps {
@@ -362,7 +363,7 @@ const CommitResults = gensx.Component<CommitResultsProps, boolean>(
             });
             
             // Return false if git operations ultimately failed
-            return false;
+            return recoveryResult.success;
           }}
         </ErrorRecovery>
       );
@@ -377,82 +378,110 @@ export const SelfModifyingCodeAgent = gensx.Component<AgentProps, AgentResult>(
       <AnthropicProvider apiKey={process.env.ANTHROPIC_API_KEY}>
         <WorkspaceProvider workspace={workspace}>
           <GenerateGoalState>
-            {() => (
+            {(goalState) => (
               <GeneratePlan>
                 {(plan) => (
-                  <ModifyCode plan={plan}>
-                    {({ success: modifySuccess, modifiedFiles }) => {
-                      if (!modifySuccess) {
-                        // If code modification fails, attempt error recovery
-                        return (
-                          <ErrorRecovery 
-                            error={{
-                              message: "Code modification failed",
-                              type: "build"
-                            }} 
-                            operation="code-modification" 
-                            maxRetries={2}
-                          >
-                            {(recoveryResult) => (
-                              <CommitResults success={false}>
-                                {(committed) => ({
-                                  success: committed,
-                                  modified: false,
-                                  error: "Code modification failed: " + recoveryResult.analysis.rootCause
-                                })}
-                              </CommitResults>
-                            )}
-                          </ErrorRecovery>
-                        );
-                      }
-                      
-                      return (
-                        <ValidateChanges modifiedFiles={modifiedFiles}>
-                          {(validationResult) => {
-                            // If validation fails, handle the error with recovery
-                            if (!validationResult.success) {
-                              return (
-                                <HandleValidationError 
-                                  error={{
-                                    message: validationResult.details.buildOutput || "Validation failed",
-                                    type: "validation"
-                                  }}
-                                  modifiedFiles={modifiedFiles}
-                                >
-                                  {(recoveredValidation) => (
-                                    <RunFinalValidation validationResult={recoveredValidation}>
-                                      {(validated) => (
-                                        <CommitResults success={validated}>
-                                          {(committed) => ({
-                                            success: committed,
-                                            modified: true,
-                                          })}
-                                        </CommitResults>
-                                      )}
-                                    </RunFinalValidation>
-                                  )}
-                                </HandleValidationError>
-                              );
-                            }
-                            
-                            // Normal flow if validation succeeds
+                  <TrackChanges 
+                    files={[]} 
+                    description="Implementing code changes based on plan"
+                    initiatedBy="agent"
+                    reason={`Plan: ${plan.substring(0, 100)}...`}
+                    includeSnapshots={true}
+                  >
+                    {(trackResult) => (
+                      <ModifyCode plan={plan}>
+                        {({ success: modifySuccess, modifiedFiles }) => {
+                          // Save versions of all modified files
+                          Promise.all(
+                            modifiedFiles.map(async (file) => {
+                              if (workspace.saveFileVersion) {
+                                try {
+                                  await workspace.saveFileVersion(
+                                    file, 
+                                    `Changes made by agent based on plan: ${plan.substring(0, 50)}...`
+                                  );
+                                } catch (error) {
+                                  console.error(`Failed to save version for ${file}:`, error);
+                                }
+                              }
+                            })
+                          ).catch(error => {
+                            console.error("Error saving file versions:", error);
+                          });
+                          
+                          if (!modifySuccess) {
+                            // If code modification fails, attempt error recovery
                             return (
-                              <RunFinalValidation validationResult={validationResult}>
-                                {(validated) => (
-                                  <CommitResults success={validated}>
+                              <ErrorRecovery 
+                                error={{
+                                  message: "Code modification failed",
+                                  type: "build"
+                                }} 
+                                operation="code-modification" 
+                                maxRetries={2}
+                              >
+                                {(recoveryResult) => (
+                                  <CommitResults success={false}>
                                     {(committed) => ({
                                       success: committed,
-                                      modified: true,
+                                      modified: false,
+                                      error: "Code modification failed: " + recoveryResult.analysis.rootCause
                                     })}
                                   </CommitResults>
                                 )}
-                              </RunFinalValidation>
+                              </ErrorRecovery>
                             );
-                          }}
-                        </ValidateChanges>
-                      );
-                    }}
-                  </ModifyCode>
+                          }
+                          
+                          return (
+                            <ValidateChanges modifiedFiles={modifiedFiles}>
+                              {(validationResult) => {
+                                // If validation fails, handle the error with recovery
+                                if (!validationResult.success) {
+                                  return (
+                                    <HandleValidationError 
+                                      error={{
+                                        message: validationResult.details.buildOutput || "Validation failed",
+                                        type: "validation"
+                                      }}
+                                      modifiedFiles={modifiedFiles}
+                                    >
+                                      {(recoveredValidation) => (
+                                        <RunFinalValidation validationResult={recoveredValidation}>
+                                          {(validated) => (
+                                            <CommitResults success={validated}>
+                                              {(committed) => ({
+                                                success: committed,
+                                                modified: true,
+                                              })}
+                                            </CommitResults>
+                                          )}
+                                        </RunFinalValidation>
+                                      )}
+                                    </HandleValidationError>
+                                  );
+                                }
+                                
+                                // Normal flow if validation succeeds
+                                return (
+                                  <RunFinalValidation validationResult={validationResult}>
+                                    {(validated) => (
+                                      <CommitResults success={validated}>
+                                        {(committed) => ({
+                                          success: committed,
+                                          modified: true,
+                                        })}
+                                      </CommitResults>
+                                    )}
+                                  </RunFinalValidation>
+                                );
+                              }}
+                            </ValidateChanges>
+                          );
+                        }}
+                      </ModifyCode>
+                    )}
+                  </TrackChanges>
                 )}
               </GeneratePlan>
             )}
@@ -460,5 +489,5 @@ export const SelfModifyingCodeAgent = gensx.Component<AgentProps, AgentResult>(
         </WorkspaceProvider>
       </AnthropicProvider>
     );
-  },
+  }
 );

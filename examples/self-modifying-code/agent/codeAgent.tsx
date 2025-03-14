@@ -9,9 +9,12 @@ import { bashTool } from "./tools/bashTool.js";
 import { getAnalysisTool } from "./tools/analysisTool.js";
 import { getBuildTool } from "./tools/buildTool.js";
 import { getDiagnosticTool } from "./tools/diagnosticTool.js";
+import { diffTool } from "./tools/diffTool.js";
 import { editTool } from "./tools/editTool.js";
 import { getErrorAnalysisTool } from "./tools/errorAnalysisTool.js";
+import { rollbackTool } from "./tools/rollbackTool.js";
 import { getTestTool } from "./tools/testTool.js";
+import { versionControlTool } from "./tools/versionControlTool.js";
 
 interface CodeAgentProps {
   task: string;
@@ -54,7 +57,18 @@ export const CodeAgent = gensx.Component<CodeAgentProps, CodeAgentOutput>(
       model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
       max_tokens: 10000,
-      tools: [editTool, bashTool, buildTool, testTool, analysisTool, errorAnalysisTool, diagnosticTool],
+      tools: [
+        editTool, 
+        bashTool, 
+        buildTool, 
+        testTool, 
+        analysisTool, 
+        errorAnalysisTool, 
+        diagnosticTool,
+        versionControlTool,
+        diffTool,
+        rollbackTool
+      ],
     });
 
     const textBlock = toolResult.content.find((block) => block.type === "text");
@@ -130,6 +144,14 @@ You have access to these tools to help you:
 - analysis: For analyzing code to identify patterns, issues, and improvement opportunities
 - errorAnalysis: For analyzing build and test errors and suggesting fixes
 - diagnostic: For viewing error patterns, recovery statistics, and system performance
+- versionControl: For tracking file versions, saving snapshots, and managing file history
+- diff: For comparing different versions of files and analyzing changes
+- rollback: For restoring previous versions of files when needed
+
+When making changes:
+1. Use versionControl to save a snapshot of a file before modifying it
+2. After making changes, use diff to verify the changes are as intended
+3. If changes cause issues, use rollback to restore previous versions
 
 When encountering errors:
 1. Use errorAnalysis to understand the root cause

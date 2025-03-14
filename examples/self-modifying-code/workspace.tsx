@@ -3,6 +3,7 @@ import fs from "fs";
 import fsPromises from "fs/promises";
 import os from "os";
 import path from "path";
+import crypto from "crypto";
 
 import * as gensx from "@gensx/core";
 
@@ -44,6 +45,18 @@ export interface WorkspaceConfig {
   branch: string;
 }
 
+export interface FileVersion {
+  id: string;
+  timestamp: Date;
+  content: string;
+  reason?: string;
+  hash: string;
+}
+
+export interface VersionHistory {
+  [filePath: string]: FileVersion[];
+}
+
 export interface AgentContext {
   goalState: string;
   history: {
@@ -52,6 +65,7 @@ export interface AgentContext {
     result: "success" | "failure" | "in_progress";
     details: string;
   }[];
+  versionHistory?: VersionHistory;
 }
 
 export interface TestResult {
@@ -78,6 +92,18 @@ export interface ErrorAnalysisResult {
   affectedFiles: string[];
 }
 
+export interface VersionComparisonResult {
+  filePath: string;
+  versionA: FileVersion;
+  versionB: FileVersion;
+  diff: string;
+  summary: {
+    added: number;
+    removed: number;
+    changed: number;
+  };
+}
+
 export interface Workspace {
   rootDir: string;
   sourceDir: string;
@@ -89,6 +115,12 @@ export interface Workspace {
   analyzeCode?: (path: string, analysisType: string) => Promise<CodeAnalysisResult>;
   analyzeError?: (errorText: string, errorType: string) => Promise<ErrorAnalysisResult>;
   validateBuild: (workspace: Workspace) => Promise<BuildValidationResult>;
+  
+  // Version control methods
+  saveFileVersion?: (filePath: string, reason?: string) => Promise<FileVersion>;
+  getFileVersions?: (filePath: string) => Promise<FileVersion[]>;
+  compareFileVersions?: (filePath: string, versionIdA: string, versionIdB: string) => Promise<VersionComparisonResult>;
+  restoreFileVersion?: (filePath: string, versionId: string) => Promise<boolean>;
   
   // Build caching
   buildCache?: Map<string, string>;
@@ -221,6 +253,12 @@ export async function setupWorkspace(
     workspace.analyzeCode = createCodeAnalyzer(workspace);
     workspace.analyzeError = createErrorAnalyzer(workspace);
     workspace.getLastModifiedTime = getLastModifiedTime;
+    
+    // Add version control capabilities
+    workspace.saveFileVersion = createSaveFileVersion(workspace);
+    workspace.getFileVersions = createGetFileVersions(workspace);
+    workspace.compareFileVersions = createCompareFileVersions(workspace);
+    workspace.restoreFileVersion = createRestoreFileVersion(workspace);
 
     return workspace;
   } catch (error) {
@@ -245,6 +283,7 @@ function readContext(workspace: Workspace): AgentContext {
       const defaultContext: AgentContext = {
         goalState: "Improve code quality and efficiency",
         history: [],
+        versionHistory: {},
       };
       // Write synchronously
       fs.writeFileSync(workspace.contextFile, serializeContext(defaultContext));
@@ -273,6 +312,9 @@ async function updateContext(
     history: update.history
       ? [...current.history, ...update.history]
       : current.history,
+    versionHistory: update.versionHistory 
+      ? { ...current.versionHistory, ...update.versionHistory }
+      : current.versionHistory,
   };
 
   await writeContext(workspace, updated);
@@ -302,6 +344,185 @@ async function getLastModifiedTime(filePath: string): Promise<number> {
   } catch (e) {
     return 0; // Return 0 if file doesn't exist
   }
+}
+
+// Calculate a hash for file content
+function calculateHash(content: string): string {
+  return crypto.createHash('sha256').update(content).digest('hex').substring(0, 16);
+}
+
+// Create a function to save a file version
+function createSaveFileVersion(workspace: Workspace) {
+  return async (filePath: string, reason?: string): Promise<FileVersion> => {
+    try {
+      // Get the full path to the file
+      const fullPath = path.isAbsolute(filePath) 
+        ? filePath 
+        : path.join(workspace.sourceDir, "examples", "self-modifying-code", filePath);
+      
+      // Read the file content
+      const content = await fsPromises.readFile(fullPath, "utf-8");
+      
+      // Calculate a hash for the content
+      const hash = calculateHash(content);
+      
+      // Create a version object
+      const version: FileVersion = {
+        id: `v-${Date.now()}-${hash.substring(0, 8)}`,
+        timestamp: new Date(),
+        content,
+        reason,
+        hash,
+      };
+      
+      // Get the current context
+      const context = readContext(workspace);
+      
+      // Initialize version history if it doesn't exist
+      const versionHistory = context.versionHistory || {};
+      
+      // Add the version to the history
+      const fileVersions = versionHistory[filePath] || [];
+      versionHistory[filePath] = [version, ...fileVersions];
+      
+      // Update the context with the new version history
+      await updateContext(workspace, { versionHistory });
+      
+      return version;
+    } catch (error) {
+      console.error(`Error saving file version for ${filePath}:`, error);
+      throw new Error(`Failed to save file version: ${error}`);
+    }
+  };
+}
+
+// Create a function to get file versions
+function createGetFileVersions(workspace: Workspace) {
+  return async (filePath: string): Promise<FileVersion[]> => {
+    try {
+      // Get the current context
+      const context = readContext(workspace);
+      
+      // Get the version history for the file
+      const versionHistory = context.versionHistory || {};
+      const fileVersions = versionHistory[filePath] || [];
+      
+      return fileVersions;
+    } catch (error) {
+      console.error(`Error getting file versions for ${filePath}:`, error);
+      return [];
+    }
+  };
+}
+
+// Create a function to compare file versions
+function createCompareFileVersions(workspace: Workspace) {
+  return async (filePath: string, versionIdA: string, versionIdB: string): Promise<VersionComparisonResult> => {
+    try {
+      // Get the versions
+      const versions = await workspace.getFileVersions?.(filePath) || [];
+      
+      // Find the specified versions
+      const versionA = versions.find(v => v.id === versionIdA);
+      const versionB = versions.find(v => v.id === versionIdB);
+      
+      if (!versionA) {
+        throw new Error(`Version ${versionIdA} not found for ${filePath}`);
+      }
+      
+      if (!versionB) {
+        throw new Error(`Version ${versionIdB} not found for ${filePath}`);
+      }
+      
+      // Create temp files for diff
+      const tempDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "diff-"));
+      const tempFileA = path.join(tempDir, "versionA.txt");
+      const tempFileB = path.join(tempDir, "versionB.txt");
+      
+      await fsPromises.writeFile(tempFileA, versionA.content, "utf-8");
+      await fsPromises.writeFile(tempFileB, versionB.content, "utf-8");
+      
+      // Generate diff
+      let diffOutput = "";
+      try {
+        diffOutput = execSync(`diff -u ${tempFileA} ${tempFileB}`, { encoding: "utf-8" });
+      } catch (error: any) {
+        // diff returns non-zero exit code when files differ
+        diffOutput = error.stdout || "";
+      }
+      
+      // Calculate summary
+      const lines = diffOutput.split("\n");
+      let added = 0;
+      let removed = 0;
+      
+      lines.forEach(line => {
+        if (line.startsWith("+") && !line.startsWith("+++")) {
+          added++;
+        } else if (line.startsWith("-") && !line.startsWith("---")) {
+          removed++;
+        }
+      });
+      
+      // Estimate changed lines
+      const changed = Math.min(added, removed);
+      added -= changed;
+      removed -= changed;
+      
+      // Clean up temp files
+      await fsPromises.rm(tempDir, { recursive: true, force: true });
+      
+      return {
+        filePath,
+        versionA,
+        versionB,
+        diff: diffOutput,
+        summary: {
+          added,
+          removed,
+          changed,
+        },
+      };
+    } catch (error) {
+      console.error(`Error comparing file versions for ${filePath}:`, error);
+      throw new Error(`Failed to compare file versions: ${error}`);
+    }
+  };
+}
+
+// Create a function to restore a file version
+function createRestoreFileVersion(workspace: Workspace) {
+  return async (filePath: string, versionId: string): Promise<boolean> => {
+    try {
+      // Get the full path to the file
+      const fullPath = path.isAbsolute(filePath) 
+        ? filePath 
+        : path.join(workspace.sourceDir, "examples", "self-modifying-code", filePath);
+      
+      // Get the versions
+      const versions = await workspace.getFileVersions?.(filePath) || [];
+      
+      // Find the specified version
+      const version = versions.find(v => v.id === versionId);
+      
+      if (!version) {
+        throw new Error(`Version ${versionId} not found for ${filePath}`);
+      }
+      
+      // Save the current version before restoring
+      if (workspace.saveFileVersion) {
+        await workspace.saveFileVersion(filePath, `Auto-save before restoring to ${versionId}`);
+      }
+      
+      // Restore the file content
+      await fsPromises.writeFile(fullPath, version.content, "utf-8");
+      
+      return true;
+    } catch (error) {
+      console.error(`Error restoring file version for ${filePath}:`, error);
+      return false;
+    }
+  };
 }
 
 // Implementation of the test runner
@@ -863,4 +1084,15 @@ async function checkBuildCache(
     console.error("Error checking build cache:", error);
     return null;
   }
+}
+
+// Helper function needed for diff operations
+function execSync(command: string, options: { encoding: string }): string {
+  const { stdout } = spawn(
+    "sh",
+    ["-c", command],
+    { stdio: ["ignore", "pipe", "pipe"], ...options }
+  );
+  
+  return stdout.toString();
 }
