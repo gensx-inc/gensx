@@ -92,17 +92,13 @@ For example, when executing the TweetWorkflow, GenSX will:
 
 ### Executing sub-workflows
 
-GenSX also allows you to execute sub-workflows from within a component using both `gensx.execute()` and `Component.run()`.
+GenSX also allows you to execute sub-workflows from within a component using the `run()` method on a component:
 
 ```tsx
-// Using Component.run()
 const result = await MyComponent.run({ input: "some data" });
-
-// Using gensx.execute()
-const result = await gensx.execute(<MyComponent input="some data" />);
 ```
 
-When used inside a component, these operations preserve the current context and maintain the component hierarchy so they will integrate naturally with the rest of the workflow. The result is automatically resolved to a plain JavaScript value, allowing you to work with it directly without additional JSX syntax.
+When used inside a component, `Component.run()` preserves the current context and maintains the component hierarchy so the calls will integrate naturally with the rest of the workflow. The result is automatically resolved to a plain JavaScript value, allowing you to work with it directly without additional JSX syntax.
 
 ## Resolving nested values and complex structures
 

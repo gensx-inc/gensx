@@ -134,17 +134,13 @@ Rather than having to run an entire workflow to test a change to a single compon
 
 ## Executing sub-workflows
 
-In some cases, you may need to run a sub-workflow within a larger workflow. You can do this using both `Component.run()` and `gensx.execute()`:
+In some cases, you may need to run a sub-workflow within a larger workflow. You can do this using the `run()` method on a component:
 
 ```tsx
-// Using Component.run()
 const result = await MyComponent.run({ input: "some data" });
-
-// Using gensx.execute()
-const result = await gensx.execute(<MyComponent input="some data" />);
 ```
 
-This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `gensx.execute()` and `Component.run()` preserve the current context and maintain the component hierarchy so the calls will integrate naturally with the rest of the workflow.
+This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `Component.run()` preserves the current context and maintains the component hierarchy so the calls will integrate naturally with the rest of the workflow.
 
 Sub-workflows are especially useful for more complex operations like map/reduce:
 
@@ -153,16 +149,25 @@ const AnalyzeReviews = gensx.Component<
   AnalyzeReviewsProps,
   AnalyzeReviewsOutput
 >("AnalyzeReviews", async ({ reviews }) => {
-  // Map: Extract topics from each review in parallel
-  const topics = await gensx.execute<GetTopicOutput[]>(
-    reviews.map((r) => <GetTopic review={r} />),
-  );
+  // Map: Extract topics from each review in parallel using the <GetTopic> component
+  const topics = reviews.map((r) => GetTopic.run({ review: r }));
+
   // Reduce: Count frequency of each topic
   return topics.reduce(
     (counts, topic) => ({ ...counts, [topic]: (counts[topic] || 0) + 1 }),
     {},
   );
 });
+```
+
+You can also use `gensx.execute()` to execute a sub-workflow. One benefit of this is that you can execute a tree without assigning it to a component:
+
+```tsx
+const result = await gensx.execute(
+  <Parent input="some data">
+    {(parentResult) => <Child data={parentResult} />}
+  </Parent>,
+);
 ```
 
 ## Contexts
