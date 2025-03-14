@@ -179,10 +179,11 @@ The `ChatCompletion` component accepts all parameters from Anthropic's messages 
 The `AnthropicChatCompletion` component is a low-level component that directly maps to the Anthropic SDK. It has identical inputs and outputs to the Anthropic API, making it suitable for advanced use cases where you need full control.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { AnthropicChatCompletion } from "@gensx/anthropic";
 
 // Non-streaming usage
-const completion = await gsx.execute(
+const completion = await gensx.execute(
   <AnthropicChatCompletion
     model="claude-3-7-sonnet-latest"
     system="You are a helpful assistant."
@@ -193,7 +194,7 @@ const completion = await gsx.execute(
 console.log(completion.content);
 
 // Streaming usage
-const stream = await gsx.execute(
+const stream = await gensx.execute(
   <AnthropicChatCompletion
     model="claude-3-7-sonnet-latest"
     system="You are a helpful assistant."

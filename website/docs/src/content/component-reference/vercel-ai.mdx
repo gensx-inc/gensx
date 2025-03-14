@@ -40,13 +40,14 @@ npm install ai
 The [StreamText](https://sdk.vercel.ai/docs/ai-sdk-core/generating-text#streamtext) component streams text responses from language models, making it ideal for chat interfaces and other applications where you want to show responses as they're generated.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { StreamText } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const languageModel = openai("gpt-4o");
 
 // Streaming text response
-const stream = await gsx.execute(
+const stream = await gensx.execute(
   <StreamText
     prompt="Explain quantum computing in simple terms"
     model={languageModel}
@@ -71,6 +72,7 @@ Returns a streaming response that can be consumed token by token.
 The `StreamObject` component streams structured JSON objects from language models, allowing you to get structured data with type safety.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { StreamObject } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -87,7 +89,7 @@ const recipeSchema = z.object({
 });
 
 // Stream a structured object
-const response = await gsx.execute(
+const response = await gensx.execute(
   <StreamObject
     prompt="Generate a recipe for chocolate chip cookies"
     model={languageModel}
@@ -119,13 +121,14 @@ Returns a structured object matching the provided schema.
 The [GenerateText](https://sdk.vercel.ai/docs/ai-sdk-core/generating-text#generatetext) component generates complete text responses from language models, waiting for the entire response before returning.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { GenerateText } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const languageModel = openai("gpt-4o");
 
 // Generate a complete text response
-const response = await gsx.execute(
+const response = await gensx.execute(
   <GenerateText
     prompt="Write a short poem about programming"
     model={languageModel}
@@ -152,6 +155,7 @@ Returns a complete text string containing the model's response.
 The [GenerateObject](https://sdk.vercel.ai/docs/ai-sdk-core/generating-structured-data#generate-object) component generates complete structured JSON objects from language models, with type safety through Zod schemas.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { GenerateObject } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -172,7 +176,7 @@ const userSchema = z.object({
 });
 
 // Generate a structured object
-const userData = await gsx.execute(
+const userData = await gensx.execute(
   <GenerateObject
     prompt="Generate a fictional user profile"
     model={languageModel}
@@ -204,13 +208,14 @@ Returns a structured object matching the provided schema.
 The [Embed](https://sdk.vercel.ai/docs/ai-sdk-core/embeddings) component generates embeddings for a single text input, which can be used for semantic search, clustering, and other NLP tasks.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { Embed } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const embeddingModel = openai.embedding("text-embedding-3-small");
 
 // Generate an embedding for a single text
-const embedding = await gsx.execute(
+const embedding = await gensx.execute(
   <Embed value="This is a sample text to embed" model={embeddingModel} />,
 );
 
@@ -234,13 +239,14 @@ Returns a vector representation (embedding) of the input text.
 The [EmbedMany](https://sdk.vercel.ai/docs/ai-sdk-core/embeddings#embedding-many-values) component generates embeddings for multiple text inputs in a single call, which is more efficient than making separate calls for each text.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { EmbedMany } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const embeddingModel = openai.embedding("text-embedding-3-small");
 
 // Generate embeddings for multiple texts
-const embeddings = await gsx.execute(
+const embeddings = await gensx.execute(
   <EmbedMany
     values={[
       "First text to embed",
@@ -271,13 +277,14 @@ Returns an array of vector representations (embeddings) for the input texts.
 The [GenerateImage](https://sdk.vercel.ai/docs/ai-sdk-core/image-generation) component generates images from text prompts using image generation models.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { GenerateImage } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const imageModel = openai.image("dall-e-3");
 
 // Generate an image
-const result = await gsx.execute(
+const result = await gensx.execute(
   <GenerateImage
     prompt="A futuristic city with flying cars and neon lights"
     model={imageModel}
@@ -319,11 +326,11 @@ const cohereModel = cohere("command-r-plus");
 // Use with GenSX components
 import { GenerateText } from "@gensx/vercel-ai-sdk";
 
-const openaiResponse = await gsx.execute(
+const openaiResponse = await gensx.execute(
   <GenerateText prompt="Explain quantum computing" model={openaiModel} />,
 );
 
-const anthropicResponse = await gsx.execute(
+const anthropicResponse = await gensx.execute(
   <GenerateText prompt="Explain quantum computing" model={anthropicModel} />,
 );
 ```

@@ -134,13 +134,17 @@ Rather than having to run an entire workflow to test a change to a single compon
 
 ## Executing sub-workflows
 
-In some cases, you may need to run a sub-workflow within a larger workflow. You can do this by using `gensx.execute()`:
+In some cases, you may need to run a sub-workflow within a larger workflow. You can do this using both `Component.run()` and `gensx.execute()`:
 
 ```tsx
+// Using Component.run()
+const result = await MyComponent.run({ input: "some data" });
+
+// Using gensx.execute()
 const result = await gensx.execute(<MyComponent input="some data" />);
 ```
 
-This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `gensx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow.
+This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `gensx.execute()` and `Component.run()` preserve the current context and maintain the component hierarchy so the calls will integrate naturally with the rest of the workflow.
 
 Sub-workflows are especially useful for more complex operations like map/reduce:
 

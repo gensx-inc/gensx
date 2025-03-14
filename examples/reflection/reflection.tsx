@@ -35,14 +35,11 @@ export function createReflectionLoop<TInput>(name: string) {
       maxIterations = 3,
     }) => {
       // Check if we should continue processing
-      const { feedback, continueProcessing } =
-        await gensx.execute<ReflectionOutput>(<EvaluateFn input={input} />);
+      const { feedback, continueProcessing } = await EvaluateFn.run({ input });
 
       if (continueProcessing && iterations < maxIterations) {
         // Process the input
-        const newInput: TInput = await gensx.execute<TInput>(
-          <ImproveFn input={input} feedback={feedback} />,
-        );
+        const newInput: TInput = await ImproveFn.run({ input, feedback });
 
         // Recursive call with updated input and iteration count
         const Reflection = createReflectionLoop<TInput>(name);

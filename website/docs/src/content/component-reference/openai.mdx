@@ -71,11 +71,12 @@ The `OpenAIProvider` accepts all configuration options from the [OpenAI Node.js 
 The `GSXChatCompletion` component is an advanced chat completion component that provides enhanced features beyond the standard OpenAI API. It supports structured output, tool calling, and streaming, with automatic handling of tool execution.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { GSXChatCompletion, GSXTool } from "@gensx/openai";
 import { z } from "zod";
 
 // Example with structured output
-const result = await gsx.execute(
+const result = await gensx.execute(
   <GSXChatCompletion
     model="gpt-4o"
     messages={[
@@ -105,7 +106,7 @@ const calculator = GSXTool.create({
   },
 });
 
-const toolResult = await gsx.execute(
+const toolResult = await gensx.execute(
   <GSXChatCompletion
     model="gpt-4o"
     messages={[{ role: "user", content: "What is 123 * 456?" }]}
@@ -139,10 +140,11 @@ The return type of `GSXChatCompletion` depends on the props:
 The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the OpenAI API.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { ChatCompletion } from "@gensx/openai";
 
 // Non-streaming usage (returns a string)
-const response = await gsx.execute(
+const response = await gensx.execute(
   <ChatCompletion
     model="gpt-4o"
     messages={[
@@ -154,7 +156,7 @@ const response = await gsx.execute(
 );
 
 // Streaming usage (returns an AsyncIterableIterator<string>)
-const stream = await gsx.execute(
+const stream = await gensx.execute(
   <ChatCompletion
     model="gpt-4o"
     messages={[
@@ -189,10 +191,11 @@ The `ChatCompletion` component accepts all parameters from OpenAI's chat complet
 The `OpenAIChatCompletion` component is a low-level component that directly maps to the OpenAI SDK. It has identical inputs and outputs to the OpenAI API, making it suitable for advanced use cases where you need full control.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { OpenAIChatCompletion } from "@gensx/openai";
 
 // Non-streaming usage
-const completion = await gsx.execute(
+const completion = await gensx.execute(
   <OpenAIChatCompletion
     model="gpt-4o"
     messages={[
@@ -204,7 +207,7 @@ const completion = await gsx.execute(
 console.log(completion.choices[0].message.content);
 
 // Streaming usage
-const stream = await gsx.execute(
+const stream = await gensx.execute(
   <OpenAIChatCompletion
     model="gpt-4o"
     messages={[
@@ -242,9 +245,10 @@ The `OpenAIChatCompletion` component accepts all parameters from the OpenAI SDK'
 The `OpenAIResponses` component is a low-level component that directly maps to the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses). It has identical inputs and outputs to the OpenAI Responses API, making it suitable for advanced use cases where you need full control.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { OpenAIResponses, OpenAIProvider } from "@gensx/openai";
 
-const response = await gsx.execute(
+const response = await gensx.execute(
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     <OpenAIResponses
       model="gpt-4o-mini"
