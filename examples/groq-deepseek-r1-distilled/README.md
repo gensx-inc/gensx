@@ -30,9 +30,14 @@ The example provides a `GroqDeepSeekR1Completion` component that can be used to 
 import * as gensx from "@gensx/core";
 import { GroqDeepSeekR1Completion } from "./groq-deepseek-r1-distilled.js";
 
-const result = await gensx.execute(
-  <GroqDeepSeekR1Completion prompt="Write me a blog post about the future of AI." />
+const deepSeekWorkflow = gensx.Workflow(
+  "GroqDeepSeekR1Example",
+  GroqDeepSeekR1Completion,
 );
+
+const result = await deepSeekWorkflow.run({
+  prompt: "Write me a blog post about the future of AI.",
+});
 
 console.log(result);
 ```

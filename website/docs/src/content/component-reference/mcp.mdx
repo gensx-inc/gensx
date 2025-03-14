@@ -110,7 +110,7 @@ Wrapper used to call a prompt resource provided by an MCP server. This makes it 
 
 ```tsx
 import { createMCPServerContext } from "@gensx/mcp";
-import { OpenAIProvider } from "@gensx/openai";
+import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
 
 // Create the MCP server context
 const { Provider, useContext: useMCPContext } = createMCPServerContext({
