@@ -21,6 +21,12 @@ You'll also need to install the Vercel AI SDK:
 npm install ai
 ```
 
+Then import the components you need from the package:
+
+```tsx
+import { GenerateText, GenerateObject } from "@gensx/vercel-ai-sdk";
+```
+
 ## Supported components
 
 | <div style={{width: "150px"}}>Component</div> | Description                                                    |
@@ -40,19 +46,17 @@ npm install ai
 The [StreamText](https://sdk.vercel.ai/docs/ai-sdk-core/generating-text#streamtext) component streams text responses from language models, making it ideal for chat interfaces and other applications where you want to show responses as they're generated.
 
 ```tsx
-import * as gensx from "@gensx/core";
 import { StreamText } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const languageModel = openai("gpt-4o");
+```
 
-// Streaming text response
-const stream = await gensx.execute(
-  <StreamText
-    prompt="Explain quantum computing in simple terms"
-    model={languageModel}
-  />,
-);
+```tsx
+<StreamText
+  prompt="Explain quantum computing in simple terms"
+  model={languageModel}
+/>
 ```
 
 ##### Props
@@ -87,19 +91,15 @@ const recipeSchema = z.object({
     steps: z.array(z.string()),
   }),
 });
+```
 
-// Stream a structured object
-const response = await gensx.execute(
-  <StreamObject
-    prompt="Generate a recipe for chocolate chip cookies"
-    model={languageModel}
-    schema={recipeSchema}
-  />,
-);
-
-// Access the structured data
-console.log(response.recipe.name);
-console.log(response.recipe.ingredients);
+```tsx
+// Streams a structured object when executed
+<StreamObject
+  prompt="Generate a recipe for chocolate chip cookies"
+  model={languageModel}
+  schema={recipeSchema}
+/>
 ```
 
 ##### Props
@@ -126,16 +126,14 @@ import { GenerateText } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const languageModel = openai("gpt-4o");
+```
 
-// Generate a complete text response
-const response = await gensx.execute(
-  <GenerateText
-    prompt="Write a short poem about programming"
-    model={languageModel}
-  />,
-);
-
-console.log(response);
+```tsx
+// Generates a complete text response when executed
+<GenerateText
+  prompt="Write a short poem about programming"
+  model={languageModel}
+/>
 ```
 
 ##### Props
@@ -174,19 +172,15 @@ const userSchema = z.object({
     }),
   }),
 });
+```
 
-// Generate a structured object
-const userData = await gensx.execute(
-  <GenerateObject
-    prompt="Generate a fictional user profile"
-    model={languageModel}
-    schema={userSchema}
-  />,
-);
-
-// Access the structured data
-console.log(userData.user.name);
-console.log(userData.user.interests);
+```tsx
+// Generates a structured object when executed
+<GenerateObject
+  prompt="Generate a fictional user profile"
+  model={languageModel}
+  schema={userSchema}
+/>
 ```
 
 ##### Props
@@ -213,13 +207,11 @@ import { Embed } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const embeddingModel = openai.embedding("text-embedding-3-small");
+```
 
-// Generate an embedding for a single text
-const embedding = await gensx.execute(
-  <Embed value="This is a sample text to embed" model={embeddingModel} />,
-);
-
-console.log(embedding); // Vector representation of the text
+```tsx
+// Generates an embedding when executed
+<Embed value="This is a sample text to embed" model={embeddingModel} />
 ```
 
 ##### Props
@@ -244,20 +236,18 @@ import { EmbedMany } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const embeddingModel = openai.embedding("text-embedding-3-small");
+```
 
-// Generate embeddings for multiple texts
-const embeddings = await gensx.execute(
-  <EmbedMany
-    values={[
-      "First text to embed",
-      "Second text to embed",
-      "Third text to embed",
-    ]}
-    model={embeddingModel}
-  />,
-);
-
-console.log(embeddings); // Array of vector representations
+```tsx
+// Generates embeddings for multiple texts when executed
+<EmbedMany
+  values={[
+    "First text to embed",
+    "Second text to embed",
+    "Third text to embed",
+  ]}
+  model={embeddingModel}
+/>
 ```
 
 ##### Props
@@ -282,16 +272,14 @@ import { GenerateImage } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const imageModel = openai.image("dall-e-3");
+```
 
-// Generate an image
-const result = await gensx.execute(
-  <GenerateImage
-    prompt="A futuristic city with flying cars and neon lights"
-    model={imageModel}
-  />,
-);
-
-console.log(result.url); // URL to the generated image
+```tsx
+// Generates an image when executed
+<GenerateImage
+  prompt="A futuristic city with flying cars and neon lights"
+  model={imageModel}
+/>
 ```
 
 ##### Props

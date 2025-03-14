@@ -15,6 +15,12 @@ To install the package, run the following command:
 npm install @gensx/openai
 ```
 
+Then import the components you need from the package:
+
+```tsx
+import { OpenAIProvider, GSXChatCompletion } from "@gensx/openai";
+```
+
 ## Supported components
 
 | <div style={{width: "150px"}}>Component</div>   | Description                                                                                     |
@@ -40,13 +46,11 @@ The package provides three different chat completion components to suit differen
 The `OpenAIProvider` component initializes and provides an OpenAI client instance to all child components. Any components that use OpenAI's API need to be wrapped in an `OpenAIProvider`.
 
 ```tsx
-import { OpenAIProvider } from "@gensx/openai";
-
 <OpenAIProvider
   apiKey="your-api-key" // Your OpenAI API key
   organization="org-id" // Optional: Your OpenAI organization ID
   baseURL="https://api.openai.com/v1" // Optional: API base URL
-/>;
+/>
 ```
 
 By configuring the baseURL, you can also use the `OpenAIProvider` with other OpenAI compatible APIs like [x.AI](https://docs.x.ai/docs/overview#featured-models) and [Groq](https://console.groq.com/docs/openai).
@@ -70,31 +74,29 @@ The `OpenAIProvider` accepts all configuration options from the [OpenAI Node.js 
 
 The `GSXChatCompletion` component is an advanced chat completion component that provides enhanced features beyond the standard OpenAI API. It supports structured output, tool calling, and streaming, with automatic handling of tool execution.
 
+To get a structured output, pass a [Zod schema](https://www.npmjs.com/package/zod) to the `outputSchema` prop.
+
 ```tsx
-import * as gensx from "@gensx/core";
-import { GSXChatCompletion, GSXTool } from "@gensx/openai";
-import { z } from "zod";
+// Returns an object matching the outputSchema when executed
+<GSXChatCompletion
+  model="gpt-4o"
+  messages={[
+    { role: "system", content: "You are a helpful assistant." },
+    {
+      role: "user",
+      content: "Extract the name and age from: John Doe, 32 years old",
+    },
+  ]}
+  outputSchema={z.object({
+    name: z.string(),
+    age: z.number(),
+  })}
+/>
+```
 
-// Example with structured output
-const result = await gensx.execute(
-  <GSXChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      {
-        role: "user",
-        content: "Extract the name and age from: John Doe, 32 years old",
-      },
-    ]}
-    outputSchema={z.object({
-      name: z.string(),
-      age: z.number(),
-    })}
-  />,
-);
-// result is typed as { name: string, age: number }
+To use tools, create a `GSXTool` object:
 
-// Example with tools
+```tsx
 const calculator = GSXTool.create({
   name: "calculator",
   description: "Perform mathematical calculations",
@@ -105,14 +107,16 @@ const calculator = GSXTool.create({
     return { result: eval(expression) };
   },
 });
+```
 
-const toolResult = await gensx.execute(
-  <GSXChatCompletion
-    model="gpt-4o"
-    messages={[{ role: "user", content: "What is 123 * 456?" }]}
-    tools={[calculator]}
-  />,
-);
+Then pass the tool to the `tools` prop.
+
+```tsx
+<GSXChatCompletion
+  model="gpt-4o"
+  messages={[{ role: "user", content: "What is 123 * 456?" }]}
+  tools={[calculator]}
+/>
 ```
 
 ##### Props
@@ -140,33 +144,26 @@ The return type of `GSXChatCompletion` depends on the props:
 The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the OpenAI API.
 
 ```tsx
-import * as gensx from "@gensx/core";
-import { ChatCompletion } from "@gensx/openai";
+// Returns a string when executed
+<ChatCompletion
+  model="gpt-4o"
+  messages={[
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: "What's a programmable tree?" },
+  ]}
+  temperature={0.7}
+/>
 
-// Non-streaming usage (returns a string)
-const response = await gensx.execute(
-  <ChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "What's a programmable tree?" },
-    ]}
-    temperature={0.7}
-  />,
-);
-
-// Streaming usage (returns an AsyncIterableIterator<string>)
-const stream = await gensx.execute(
-  <ChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "What's a programmable tree?" },
-    ]}
-    temperature={0.7}
-    stream={true}
-  />,
-);
+// Returns an AsyncIterableIterator<string> when executed
+<ChatCompletion
+  model="gpt-4o"
+  messages={[
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: "What's a programmable tree?" },
+  ]}
+  temperature={0.7}
+  stream={true}
+/>
 ```
 
 ##### Props
@@ -191,36 +188,14 @@ The `ChatCompletion` component accepts all parameters from OpenAI's chat complet
 The `OpenAIChatCompletion` component is a low-level component that directly maps to the OpenAI SDK. It has identical inputs and outputs to the OpenAI API, making it suitable for advanced use cases where you need full control.
 
 ```tsx
-import * as gensx from "@gensx/core";
-import { OpenAIChatCompletion } from "@gensx/openai";
-
-// Non-streaming usage
-const completion = await gensx.execute(
-  <OpenAIChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "What's a programmable tree?" },
-    ]}
-  />,
-);
-console.log(completion.choices[0].message.content);
-
-// Streaming usage
-const stream = await gensx.execute(
-  <OpenAIChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "What's a programmable tree?" },
-    ]}
-    stream={true}
-  />,
-);
-
-for await (const chunk of stream) {
-  console.log(chunk.choices[0]?.delta?.content || "");
-}
+<OpenAIChatCompletion
+  model="gpt-4o"
+  messages={[
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: "What's a programmable tree?" },
+  ]}
+  temperature={0.7}
+/>
 ```
 
 ##### Props
@@ -245,25 +220,16 @@ The `OpenAIChatCompletion` component accepts all parameters from the OpenAI SDK'
 The `OpenAIResponses` component is a low-level component that directly maps to the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses). It has identical inputs and outputs to the OpenAI Responses API, making it suitable for advanced use cases where you need full control.
 
 ```tsx
-import * as gensx from "@gensx/core";
-import { OpenAIResponses, OpenAIProvider } from "@gensx/openai";
-
-const response = await gensx.execute(
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <OpenAIResponses
-      model="gpt-4o-mini"
-      input={[
-        {
-          role: "user",
-          content: "What is JSX?",
-        },
-      ]}
-      truncation="auto"
-    />
-  </OpenAIProvider>,
-);
-
-console.log(response.output_text);
+<OpenAIResponses
+  model="gpt-4o-mini"
+  input={[
+    {
+      role: "user",
+      content: "What is JSX?",
+    },
+  ]}
+  truncation="auto"
+/>
 ```
 
 ##### Props

@@ -15,6 +15,12 @@ To install the package, run the following command:
 npm install @gensx/anthropic
 ```
 
+Then import the components you need from the package:
+
+```tsx
+import { AnthropicProvider, GSXChatCompletion } from "@gensx/anthropic";
+```
+
 ## Supported components
 
 | <div style={{width: "150px"}}>Component</div>         | Description                                                                           |
@@ -39,11 +45,9 @@ The package provides three different chat completion components to suit differen
 The `AnthropicProvider` component initializes and provides an Anthropic client instance to all child components. Any components that use Anthropic's API need to be wrapped in an `AnthropicProvider`.
 
 ```tsx
-import { AnthropicProvider } from "@gensx/anthropic";
-
 <AnthropicProvider
   apiKey="your-api-key" // Your Anthropic API key
-/>;
+/>
 ```
 
 ##### Props
@@ -57,31 +61,30 @@ The `AnthropicProvider` accepts all configuration options from the [Anthropic No
 
 The `GSXChatCompletion` component is an advanced chat completion component that provides enhanced features beyond the standard Anthropic API. It supports structured output, tool calling, and streaming, with automatic handling of tool execution.
 
+To get a structured output, pass a [Zod schema](https://www.npmjs.com/package/zod) to the `outputSchema` prop.
+
 ```tsx
-import { GSXChatCompletion, GSXTool } from "@gensx/anthropic";
-import { z } from "zod";
+// Returns an object matching the outputSchema when executed
+<GSXChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[
+    {
+      role: "user",
+      content: "Extract the name and age from: John Doe, 32 years old",
+    },
+  ]}
+  outputSchema={z.object({
+    name: z.string(),
+    age: z.number(),
+  })}
+  max_tokens={1000}
+/>
+```
 
-// Example with structured output
-const result = await gsx.execute(
-  <GSXChatCompletion
-    model="claude-3-5-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[
-      {
-        role: "user",
-        content: "Extract the name and age from: John Doe, 32 years old",
-      },
-    ]}
-    outputSchema={z.object({
-      name: z.string(),
-      age: z.number(),
-    })}
-    max_tokens={1000}
-  />,
-);
-// result is typed as { name: string, age: number }
+To use tools, create a `GSXTool` object:
 
-// Example with tools
+```tsx
 const weatherTool = GSXTool.create({
   name: "get_weather",
   description: "Get the weather for a given location",
@@ -92,16 +95,18 @@ const weatherTool = GSXTool.create({
     return { weather: "sunny" };
   },
 });
+```
 
-const toolResult = await gsx.execute(
-  <GSXChatCompletion
-    model="claude-3-5-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's the weather in Seattle?" }]}
-    tools={[weatherTool]}
-    max_tokens={1000}
-  />,
-);
+Then pass the tool to the `tools` prop.
+
+```tsx
+<GSXChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[{ role: "user", content: "What's the weather in Seattle?" }]}
+  tools={[weatherTool]}
+  max_tokens={1000}
+/>
 ```
 
 ##### Props
@@ -131,30 +136,24 @@ The return type of `GSXChatCompletion` depends on the props:
 The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the Anthropic API.
 
 ```tsx
-import { ChatCompletion } from "@gensx/anthropic";
+// Returns a string when executed
+<ChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[{ role: "user", content: "What's a programmable tree?" }]}
+  temperature={0.7}
+  max_tokens={1000}
+/>
 
-// Non-streaming usage (returns a string)
-const response = await gsx.execute(
-  <ChatCompletion
-    model="claude-3-5-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's a programmable tree?" }]}
-    temperature={0.7}
-    max_tokens={1000}
-  />,
-);
-
-// Streaming usage (returns an AsyncIterableIterator<string>)
-const stream = await gsx.execute(
-  <ChatCompletion
-    model="claude-3-5-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's a programmable tree?" }]}
-    temperature={0.7}
-    max_tokens={1000}
-    stream={true}
-  />,
-);
+// Returns an AsyncIterableIterator<string> when executed
+<ChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[{ role: "user", content: "What's a programmable tree?" }]}
+  temperature={0.7}
+  max_tokens={1000}
+  stream={true}
+/>
 ```
 
 ##### Props
@@ -179,39 +178,12 @@ The `ChatCompletion` component accepts all parameters from Anthropic's messages 
 The `AnthropicChatCompletion` component is a low-level component that directly maps to the Anthropic SDK. It has identical inputs and outputs to the Anthropic API, making it suitable for advanced use cases where you need full control.
 
 ```tsx
-import * as gensx from "@gensx/core";
-import { AnthropicChatCompletion } from "@gensx/anthropic";
-
-// Non-streaming usage
-const completion = await gensx.execute(
-  <AnthropicChatCompletion
-    model="claude-3-7-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's a programmable tree?" }]}
-    max_tokens={1000}
-  />,
-);
-console.log(completion.content);
-
-// Streaming usage
-const stream = await gensx.execute(
-  <AnthropicChatCompletion
-    model="claude-3-7-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's a programmable tree?" }]}
-    stream={true}
-    max_tokens={1000}
-  />,
-);
-
-for await (const chunk of stream) {
-  if (
-    chunk.type === "content_block_delta" &&
-    chunk.delta.type === "text_delta"
-  ) {
-    process.stdout.write(chunk.delta.text);
-  }
-}
+<AnthropicChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[{ role: "user", content: "What's a programmable tree?" }]}
+  max_tokens={1000}
+/>
 ```
 
 ##### Props
@@ -224,7 +196,6 @@ The `AnthropicChatCompletion` component accepts all parameters from the Anthropi
 - `system`: System prompt to set the behavior of the assistant
 - `temperature`: Sampling temperature
 - `stream`: Whether to stream the response
-
 - `tools`: Array of Anthropic tool definitions for function calling
 - Plus all other Anthropic message parameters
 
