@@ -106,14 +106,11 @@ GenSX provides two main types of components:
 The power of a `StreamComponent` is that a single implementation can be used interchangeably in both streaming and non-streaming contexts without any code changes - you just toggle the `stream` prop:
 
 ```tsx
-const stream = await gensx.execute<Streamable>(
-  <MyStreamingComponent input="some data" stream={true} />,
-);
+// Returns a string when executed
+<MyStreamingComponent input="some data" stream={false} />
 
-// Process the streaming response
-for await (const chunk of stream) {
-  process.stdout.write(chunk);
-}
+// Returns a stream when executed
+<MyStreamingComponent input="some data" stream={true} />
 ```
 
 ## Running workflows
