@@ -12,7 +12,7 @@ import {
   GSXChatCompletion,
   GSXChatCompletionResult,
   GSXTool,
-  GSXToolParams,
+  GSXToolProps,
   OpenAIProvider,
 } from "@/index.js";
 import { ToolExecutor, ToolsCompletion } from "@/tools.js";
@@ -23,7 +23,7 @@ suite("Tools", () => {
     input: z.string(),
   });
 
-  const testToolParams: GSXToolParams<typeof testToolSchema> = {
+  const testToolParams: GSXToolProps<typeof testToolSchema> = {
     name: "test_tool",
     description: "A test tool",
     schema: testToolSchema,

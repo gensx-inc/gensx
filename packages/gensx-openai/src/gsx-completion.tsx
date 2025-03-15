@@ -4,7 +4,7 @@
 import "./utils/zod-extensions.js";
 
 import * as gensx from "@gensx/core";
-import { Args, GSXToolParams } from "@gensx/core";
+import { Args, GSXToolProps } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
@@ -25,7 +25,7 @@ export type StreamingProps = Omit<
   "stream" | "tools"
 > & {
   stream: true;
-  tools?: (GSXTool<any> | GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | GSXToolProps<any>)[];
 };
 
 export type StructuredProps<O = unknown> = Omit<
@@ -33,7 +33,7 @@ export type StructuredProps<O = unknown> = Omit<
   "stream" | "tools"
 > & {
   stream?: false;
-  tools?: (GSXTool<any> | GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | GSXToolProps<any>)[];
   outputSchema: z.ZodSchema<O>;
 };
 
@@ -42,7 +42,7 @@ export type StandardProps = Omit<
   "stream" | "tools"
 > & {
   stream?: false;
-  tools?: (GSXTool<any> | GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | GSXToolProps<any>)[];
   outputSchema?: never;
 };
 

@@ -13,7 +13,7 @@ export type {
   StreamArgs,
   GsxStreamComponent,
   GsxComponent,
-  GSXToolParams,
+  GSXToolProps,
   GSXToolAnySchema,
 } from "./types.js";
 export type { GsxArray } from "./array.js";

@@ -7,7 +7,7 @@ import {
   AnthropicProvider,
   GSXChatCompletion,
   GSXTool,
-  GSXToolParams,
+  GSXToolProps,
 } from "@/index.js";
 import { StructuredOutput } from "@/structured-output.js";
 
@@ -102,7 +102,7 @@ suite("StructuredOutput", () => {
     input: z.string(),
   });
 
-  const testToolParams: GSXToolParams<typeof testToolSchema> = {
+  const testToolProps: GSXToolProps<typeof testToolSchema> = {
     name: "test_tool",
     description: "A test tool",
     schema: testToolSchema,
@@ -112,7 +112,7 @@ suite("StructuredOutput", () => {
     },
   };
 
-  const testTool = new GSXTool(testToolParams);
+  const testTool = new GSXTool(testToolProps);
 
   test("StructuredOutput returns structured output", async () => {
     const TestComponent = gensx.Component<{}, User>("TestComponent", () => (
@@ -161,13 +161,13 @@ suite("StructuredOutput", () => {
     });
   });
 
-  test("StructuredOutput works with GSXToolParams", async () => {
+  test("StructuredOutput works with GSXToolProps", async () => {
     const TestComponent = gensx.Component<{}, User>("TestComponent", () => (
       <StructuredOutput
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "Get me user data" }]}
         outputSchema={userSchema}
-        tools={[testToolParams]}
+        tools={[testToolProps]}
         max_tokens={1000}
       />
     ));
@@ -238,7 +238,7 @@ suite("StructuredOutput", () => {
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "Get me user data" }]}
         outputSchema={userSchema}
-        tools={[testToolParams]}
+        tools={[testToolProps]}
         max_tokens={1000}
       />
     ));

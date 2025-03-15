@@ -25,7 +25,7 @@ export class GSXTool<TSchema extends gensx.GSXToolAnySchema> {
   public readonly definition: Tool;
   private readonly executionComponent: ReturnType<typeof gensx.Component>;
 
-  constructor(params: gensx.GSXToolParams<TSchema>) {
+  constructor(params: gensx.GSXToolProps<TSchema>) {
     this.name = params.name;
     this.description = params.description;
     this.schema = params.schema;
@@ -56,7 +56,7 @@ export class GSXTool<TSchema extends gensx.GSXToolAnySchema> {
   }
 
   static create<TSchema extends gensx.GSXToolAnySchema>(
-    params: gensx.GSXToolParams<TSchema>,
+    params: gensx.GSXToolProps<TSchema>,
   ): GSXTool<TSchema> {
     return new GSXTool(params);
   }

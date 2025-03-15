@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as gensx from "@gensx/core";
-import { GSXToolParams } from "@gensx/core";
+import { GSXToolProps } from "@gensx/core";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import {
   ChatCompletion as ChatCompletionOutput,
@@ -21,7 +21,7 @@ type StructuredOutputProps<O = unknown> = Omit<
 > & {
   outputSchema: z.ZodSchema<O>;
   structuredOutputStrategy?: StructuredOutputStrategy;
-  tools?: (GSXTool<any> | GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | GSXToolProps<any>)[];
   retry?: {
     maxAttempts?: number;
     backoff?: "exponential" | "linear";

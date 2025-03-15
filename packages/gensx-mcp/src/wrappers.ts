@@ -1,4 +1,4 @@
-import { GSXToolAnySchema, GSXToolParams } from "@gensx/core";
+import { GSXToolAnySchema, GSXToolProps } from "@gensx/core";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import {
   CallToolResult,
@@ -138,7 +138,7 @@ export class MCPTool {
     return result as CallToolResult;
   }
 
-  asGSXTool(): GSXToolParams<GSXToolAnySchema> {
+  asGSXTool(): GSXToolProps<GSXToolAnySchema> {
     return {
       name: this.name,
       description: this.description ?? "",

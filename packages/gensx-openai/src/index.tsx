@@ -1,4 +1,4 @@
-import type { GSXToolAnySchema, GSXToolParams } from "@gensx/core";
+import type { GSXToolAnySchema, GSXToolProps } from "@gensx/core";
 
 import {
   ChatCompletion,
@@ -38,6 +38,6 @@ export type {
   GSXChatCompletionOutput,
   GSXChatCompletionResult,
   GSXToolAnySchema,
-  GSXToolParams,
+  GSXToolProps,
   OpenAIResponsesProps,
 };

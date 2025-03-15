@@ -31,7 +31,7 @@ export type StructuredProps<O = unknown> = Omit<
   "stream" | "tools"
 > & {
   stream?: false;
-  tools?: (GSXTool<any> | gensx.GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | gensx.GSXToolProps<any>)[];
   outputSchema: z.ZodSchema<O>;
 };
 
@@ -40,7 +40,7 @@ export type StandardProps = Omit<
   "stream" | "tools"
 > & {
   stream?: false;
-  tools?: (GSXTool<any> | gensx.GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | gensx.GSXToolProps<any>)[];
   outputSchema?: never;
 };
 

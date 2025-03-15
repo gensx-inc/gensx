@@ -6,7 +6,7 @@ import {
   AnthropicProvider,
   GSXChatCompletion,
   GSXTool,
-  GSXToolParams,
+  GSXToolProps,
 } from "@/index.js";
 
 // Mock Anthropic client
@@ -52,7 +52,7 @@ suite("GSXChatCompletion with tools and streaming", () => {
   });
 
   // Create a mock tool for testing
-  const mockToolParams: GSXToolParams<typeof schema> = {
+  const mockToolProps: GSXToolProps<typeof schema> = {
     name: "test_tool",
     description: "A test tool",
     schema,
@@ -62,7 +62,7 @@ suite("GSXChatCompletion with tools and streaming", () => {
     },
   };
 
-  const mockTool = GSXTool.create(mockToolParams);
+  const mockTool = GSXTool.create(mockToolProps);
 
   test("throws error when tools and streaming are used together", async () => {
     // We need to bypass TypeScript's type checking to test the runtime error
@@ -115,7 +115,7 @@ suite("GSXChatCompletion with tools and streaming", () => {
     const TestComponent = gensx.Component<{}, unknown>("TestComponent", () => (
       <GSXChatCompletion
         stream={false}
-        tools={[mockToolParams]}
+        tools={[mockToolProps]}
         model="claude-3-5-sonnet-latest"
         messages={[{ role: "user", content: "test" }]}
         max_tokens={1000}

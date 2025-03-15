@@ -8,7 +8,7 @@ import {
 } from "@anthropic-ai/sdk/resources/messages";
 import { Stream } from "@anthropic-ai/sdk/streaming";
 import * as gensx from "@gensx/core";
-import { GSXToolParams } from "@gensx/core";
+import { GSXToolProps } from "@gensx/core";
 
 import { AnthropicChatCompletion } from "./anthropic.js";
 import { GSXTool } from "./tools.js";
@@ -19,7 +19,7 @@ type StreamCompletionProps = Omit<
   "stream" | "tools"
 > & {
   stream: true;
-  tools?: (GSXTool<any> | GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | GSXToolProps<any>)[];
 };
 
 type StreamCompletionOutput = Stream<RawMessageStreamEvent>;

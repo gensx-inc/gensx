@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 import * as gensx from "@gensx/core";
-import { GSXToolAnySchema, GSXToolParams } from "@gensx/core";
+import { GSXToolAnySchema, GSXToolProps } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionCreateParamsNonStreaming,
@@ -23,7 +23,7 @@ export class GSXTool<TSchema extends GSXToolAnySchema> {
   public readonly definition: ChatCompletionTool;
   private readonly executionComponent: ReturnType<typeof gensx.Component>;
 
-  constructor(params: GSXToolParams<TSchema>) {
+  constructor(params: GSXToolProps<TSchema>) {
     this.name = params.name;
     this.description = params.description;
     this.schema = params.schema;
@@ -57,7 +57,7 @@ export class GSXTool<TSchema extends GSXToolAnySchema> {
   }
 
   static create<TSchema extends z.ZodObject<z.ZodRawShape>>(
-    params: GSXToolParams<TSchema>,
+    params: GSXToolProps<TSchema>,
   ): GSXTool<TSchema> {
     return new GSXTool(params);
   }

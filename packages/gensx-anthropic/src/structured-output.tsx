@@ -18,7 +18,7 @@ type StructuredOutputProps<O = unknown> = Omit<
   "stream" | "tools"
 > & {
   outputSchema: z.ZodSchema<O>;
-  tools?: (GSXTool<any> | gensx.GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | gensx.GSXToolProps<any>)[];
   retry?: {
     maxAttempts?: number;
     backoff?: "exponential" | "linear";

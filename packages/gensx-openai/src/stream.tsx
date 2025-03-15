@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as gensx from "@gensx/core";
-import { GSXToolParams } from "@gensx/core";
+import { GSXToolProps } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
@@ -17,7 +17,7 @@ type StreamCompletionProps = Omit<
   "stream" | "tools"
 > & {
   stream: true;
-  tools?: (GSXTool<any> | GSXToolParams<any>)[];
+  tools?: (GSXTool<any> | GSXToolProps<any>)[];
 };
 
 type StreamCompletionOutput = Stream<ChatCompletionChunk>;
