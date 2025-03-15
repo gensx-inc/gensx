@@ -3,6 +3,26 @@
   "separate-pull-requests": false,
   "plugins": ["node-workspace"],
   "packages": {
+    "packages/gensx-cursor-rules": {
+      "component": "gensx-cursor-rules",
+      "release-type": "node",
+      "package-name": "@gensx/cursor-rules",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "initial-version": "0.1.0",
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
     "packages/gensx-core": {
       "component": "gensx-core",
       "release-type": "node",
