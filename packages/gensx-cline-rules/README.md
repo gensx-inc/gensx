@@ -53,7 +53,7 @@ When upgrading the package, only the content within these markers will be update
 
 ## Customization
 
-Add your custom project information outside the managed section to preserve it during package updates. 
+Add your custom project information outside the managed section to preserve it during package updates.
 
 A section at the bottom of the file is provided specifically for your custom content.
 
