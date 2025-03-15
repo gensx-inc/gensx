@@ -43,18 +43,6 @@ npm run gensx -- run src/index.tsx
   - Constants: UPPER_SNAKE_CASE
   - Types/Interfaces: PascalCase
 
-## Project Structure
-
-- `src/`: Source code
-  - `components/`: Reusable GenSX components
-  - `workflows/`: Complete GenSX workflows
-  - `utils/`: Shared utility functions
-  - `types/`: TypeScript type definitions
-  - `providers/`: LLM provider implementations
-- `tests/`: Test files
-- `examples/`: Example workflows and usage
-- `.cursor/`: Cursor rules for code completion
-
 ## Common Patterns
 
 ### Component Definition
