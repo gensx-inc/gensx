@@ -1,0 +1,103 @@
+---
+title: Tools
+description: Using tools with GenSX
+---
+
+# Using tools with GenSX
+
+Using tools provides a powerful and flexible way to extend the capabilities of an LLM. GenSX offers several different ways for you to work with tools:
+
+- Using the `GSXChatCompletion` component from `@gensx/openai` or `@gensx/anthropic` for fully automated tool calling
+- Using the `OpenAIChatCompletion` or `AnthropicChatCompletion` components from `@gensx/openai` or `@gensx/anthropic` and following the same pattern as described in the [OpenAI](https://platform.openai.com/docs/guides/function-calling?api-mode=responses) and [Anthropic](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview) docs
+- Using tools with the [Vercel AI SDK](https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling) via the `@gensx/vercel-ai-sdk` package
+
+This guide will focus on the first option: using `GSXTool` and the `GSXChatCompletion` component for fully automated tool calling.
+
+## Defining a tool
+
+Start by defining the tool. A `GSXTool` contains four main pieces:
+
+- `name`: The name of the tool
+- `description`: A description of the tool
+- `schema`: The schema of the tool, defined as a Zod object
+- `run`: The function that will be called when the tool is invoked by an LLM
+
+Here's an example of a basic weather tool with mocked functionality:
+
+```tsx
+import { GSXTool } from "@gensx/openai";
+import { z } from "zod";
+
+// Define the schema as a Zod object
+const weatherSchema = z.object({
+  location: z.string(),
+});
+
+// Use z.infer to get the type for our parameters
+type WeatherParams = z.infer<typeof weatherSchema>;
+
+// Create the tool with the correct type - using the schema type, not the inferred type
+const weatherTool = new GSXTool({
+  name: "get_weather",
+  description: "get the weather for a given location",
+  schema: weatherSchema,
+  run: async ({ location }: WeatherParams) => {
+    console.log("getting weather for", location);
+    const weather = ["sunny", "cloudy", "rainy", "snowy"];
+    return Promise.resolve({
+      weather: weather[Math.floor(Math.random() * weather.length)],
+    });
+  },
+});
+```
+
+## Using a tool
+
+Now that the tool is defined, you can pass it to the `GSXChatCompletion` component in the `tools` prop.
+
+If the model chooses to call the tool, GenSX will execute the tool on your behalf and return the response to the LLM to continue the conversation.
+
+```tsx
+const WeatherAssistant = gensx.Component<{}, ChatCompletionOutput>(
+  "WeatherAssistant",
+  () => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <GSXChatCompletion
+        messages={[
+          {
+            role: "system",
+            content:
+              "You're a helpful, friendly weather assistant. You can use the tool `get_weather` to get the weather for a given location.",
+          },
+          {
+            role: "user",
+            content: `Will it be sunny in San Diego today?`,
+          },
+        ]}
+        model="gpt-4o-mini"
+        temperature={0.7}
+        tools={[weatherTool]}
+      />
+    </OpenAIProvider>
+  ),
+);
+
+const workflow = gensx.Workflow("WeatherAssistantWorkflow", WeatherAssistant);
+
+const result = await workflow.run({});
+
+console.log(result.choices[0].message.content);
+```
+
+`GSXChatCompletion` also returns the full message history, including the tool calls, so you can see the sequence of events leading up to the response.
+
+```tsx
+console.log(JSON.stringify(result.messages, null, 2));
+```
+
+## Resources
+
+For more examples of using tools with GenSX, see the following examples:
+
+- [Anthropic tools example](https://github.com/gensx-inc/gensx/blob/main/examples/anthropic)
+- [OpenAI tools example](https://github.com/gensx-inc/gensx/blob/main/examples/gsxChatCompletion)
