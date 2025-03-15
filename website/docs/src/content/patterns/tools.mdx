@@ -51,6 +51,17 @@ const weatherTool = new GSXTool({
 });
 ```
 
+You can also define tools using `gensx.GSXToolProps` which allows you to create a tool independent of the @gensx/openai and @gensx/anthropic packages:
+
+```tsx
+import * as gensx from "@gensx/core";
+
+const weatherToolProps: gensx.GSXToolProps = {
+  name: "get_weather",
+  // rest of the tool definition
+};
+```
+
 ## Using a tool
 
 Now that the tool is defined, you can pass it to the `GSXChatCompletion` component in the `tools` prop.
