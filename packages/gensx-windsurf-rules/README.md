@@ -20,18 +20,18 @@ pnpm add -D @gensx/windsurf-rules
 
 - Automatically installs a `.windsurfrules` file to your project root
 - Provides project-specific guidance to Windsurf's Cascade AI for working with GenSX projects
-- Preserves existing `.windsurfrules` file if one already exists
+- Uses managed sections to preserve your customizations during updates
+- Creates backups of existing files when making updates
 
 ## What's Included
 
 The included `.windsurfrules` file contains:
 
-- GenSX project structure guidelines
-- Code style and patterns
-- GenSX component patterns
+- Common GenSX coding patterns and conventions
+- Code style preferences
+- GenSX component patterns with code examples
 - Provider usage examples
-- Testing requirements
-- Documentation standards
+- Testing and documentation standards
 
 ## Usage
 
@@ -39,13 +39,27 @@ After installation, the package will automatically add a `.windsurfrules` file t
 
 Cascade AI will automatically read this file and use it to provide more accurate and project-specific assistance.
 
-## Note
+## Managed Sections
 
-As mentioned in the Windsurf documentation, you may want to add `.windsurfrules` to your project's `.gitignore` to ensure that the rules are only applied to your local project.
+The `.windsurfrules` file uses managed sections delimited by HTML comments:
+
+```
+<!-- BEGIN_MANAGED_SECTION -->
+... managed content that will be updated ...
+<!-- END_MANAGED_SECTION -->
+```
+
+When upgrading the package, only the content within these markers will be updated, preserving any custom content you've added outside of the managed section.
 
 ## Customization
 
-You can modify the installed `.windsurfrules` file to suit your project's specific needs.
+Add your custom project information outside the managed section to preserve it during package updates. 
+
+A section at the bottom of the file is provided specifically for your custom content.
+
+## Note
+
+As mentioned in the Windsurf documentation, you may want to add `.windsurfrules` to your project's `.gitignore` to ensure that the rules are only applied to your local project.
 
 ## License
 
