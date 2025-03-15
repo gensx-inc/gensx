@@ -1,5 +1,9 @@
 # GenSX Project Claude Memory
 
+<!-- BEGIN_MANAGED_SECTION -->
+<!-- WARNING: Everything between BEGIN_MANAGED_SECTION and END_MANAGED_SECTION will be overwritten when updating @gensx/claude-md -->
+<!-- Add your custom content outside of this section to preserve it during updates -->
+
 This file serves as persistent memory for Claude when working with GenSX projects.
 
 ## Project Commands
@@ -134,3 +138,9 @@ const { Provider: MCPProvider } = createMCPServerContext({
 ## Notes
 
 Add project-specific notes here that you'd like Claude to remember between sessions.
+
+<!-- END_MANAGED_SECTION -->
+
+## Custom Project Information
+
+Add your custom project information here. This section will not be overwritten during updates.
