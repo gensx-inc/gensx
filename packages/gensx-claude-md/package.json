@@ -1,0 +1,31 @@
+{
+  "name": "@gensx/claude-md",
+  "version": "0.1.0",
+  "type": "commonjs",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "description": "CLAUDE.md templates for GenSX projects.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/gensx-claude-md"
+  },
+  "files": [
+    "templates",
+    "scripts"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "postinstall": "node ./scripts/postinstall.js"
+  },
+  "dependencies": {
+    "fs-extra": "^11.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
