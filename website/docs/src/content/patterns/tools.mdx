@@ -7,11 +7,11 @@ description: Using tools with GenSX
 
 Using tools provides a powerful and flexible way to extend the capabilities of an LLM. GenSX offers several different ways for you to work with tools:
 
-- Using the `GSXChatCompletion` component from `@gensx/openai` or `@gensx/anthropic` for fully automated tool calling
-- Using the `OpenAIChatCompletion` or `AnthropicChatCompletion` components from `@gensx/openai` or `@gensx/anthropic` and following the same pattern as described in the [OpenAI](https://platform.openai.com/docs/guides/function-calling?api-mode=responses) and [Anthropic](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview) docs
-- Using tools with the [Vercel AI SDK](https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling) via the `@gensx/vercel-ai-sdk` package
+- Using the `GSXChatCompletion` component from [@gensx/openai](../component-reference/openai.mdx) or [@gensx/anthropic](../component-reference/anthropic.mdx) for fully automated tool calling
+- Using the `OpenAIChatCompletion` or `AnthropicChatCompletion` components from [@gensx/openai](../component-reference/openai.mdx) or [@gensx/anthropic](../component-reference/anthropic.mdx) and following the same pattern as described in the [OpenAI](https://platform.openai.com/docs/guides/function-calling?api-mode=responses) and [Anthropic](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview) docs
+- Using tools with the [Vercel AI SDK](https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling) via the [@gensx/vercel-ai-sdk](../component-reference/vercel-ai.mdx) package
 
-This guide will focus on the first option: using `GSXTool` and the `GSXChatCompletion` component for fully automated tool calling.
+This guide will focus on the first option: using `GSXTool` and the `GSXChatCompletion` component for automated tool calling. The examples below show how to work with the [@gensx/openai](../component-reference/openai.mdx) package but you can follow a similar pattern with the [@gensx/anthropic](../component-reference/anthropic.mdx) package.
 
 ## Defining a tool
 
@@ -66,8 +66,7 @@ const WeatherAssistant = gensx.Component<{}, ChatCompletionOutput>(
         messages={[
           {
             role: "system",
-            content:
-              "You're a helpful, friendly weather assistant. You can use the tool `get_weather` to get the weather for a given location.",
+            content: "You're a helpful, friendly weather assistant.",
           },
           {
             role: "user",
