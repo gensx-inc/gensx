@@ -750,6 +750,8 @@ importers:
         specifier: ^11.2.0
         version: 11.2.0
 
+  packages/gensx-cline-rules: {}
+
   packages/gensx-core:
     dependencies:
       ini:
