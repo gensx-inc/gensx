@@ -1,0 +1,65 @@
+# GenSX Project Guidelines
+
+## Project Structure
+- `/src/`: Source code
+  - `/components/`: Reusable GenSX components
+  - `/workflows/`: Complete GenSX workflows
+  - `/utils/`: Shared utility functions
+  - `/types/`: TypeScript type definitions
+  - `/providers/`: LLM provider implementations
+- `/tests/`: Test files
+- `/examples/`: Example workflows and usage
+
+## Code Style & Patterns
+- Use TypeScript for all new files
+- Use functional components with hooks where possible
+- Prefer async/await over promise chains
+- Add proper JSDoc comments for all exported functions and types
+- Use consistent naming conventions:
+  - Components: PascalCase
+  - Functions: camelCase
+  - Constants: UPPER_SNAKE_CASE
+  - Types/Interfaces: PascalCase
+
+## GenSX Component Patterns
+- Each component should have a clearly defined purpose
+- Components should follow the GenSX Component structure:
+```typescript
+interface MyComponentProps {
+  // Props definition
+}
+
+const MyComponent = gensx.Component<MyComponentProps, ReturnType>(
+  "MyComponent",
+  async (props) => {
+    // Component implementation
+  }
+);
+```
+
+## Provider Usage
+- Properly handle environment variables for API keys
+- Use provider components to wrap child components:
+```typescript
+<OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+  <ChatCompletion
+    model="gpt-4o-mini"
+    messages={[
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "Tell me about GenSX." }
+    ]}
+  />
+</OpenAIProvider>
+```
+
+## Testing Requirements
+- Write unit tests for components with complex logic
+- Test each component's success and error paths
+- Mock external API calls in tests
+- Use appropriate test helpers and utilities
+
+## Documentation
+- Keep README.md updated with current functionality
+- Document component props and return types with JSDoc
+- Include examples of how to use components
+- Document any environment variables required

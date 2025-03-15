@@ -1,0 +1,23 @@
+{
+  "name": "@gensx/cline-rules",
+  "version": "0.0.1",
+  "description": "Cline rules for GenSX projects",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "node ./scripts/postinstall.js"
+  },
+  "keywords": [
+    "gensx",
+    "cline",
+    "rules"
+  ],
+  "files": [
+    "scripts",
+    "templates"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "GenSX Inc.",
+  "license": "MIT"
+}
