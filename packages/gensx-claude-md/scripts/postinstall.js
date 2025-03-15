@@ -39,20 +39,32 @@ async function copyTemplate() {
       // File doesn't exist
     }
     
-    // If file exists, we'll check if it's a default template or has been customized
+    // If file exists, decide what to do based on its content
     if (fileExists) {
       try {
         const destContent = await fs.readFile(destination, 'utf8');
         const sourceContent = await fs.readFile(source, 'utf8');
         
-        // If the content is identical to our template, it hasn't been customized
+        // If the content is identical to our template, no need to update
         if (destContent === sourceContent) {
-          // Update it
-          await fs.copy(source, destination, { overwrite: true });
-          console.log('✅ Updated existing CLAUDE.md template.');
+          console.log('✅ CLAUDE.md is already up to date.');
         } else {
-          // Otherwise, it has been customized - don't overwrite
-          console.log('ℹ️ Existing CLAUDE.md detected with customizations - preserving your changes.');
+          // If it contains the default header with edits, likely customized
+          const defaultHeaderRegex = /^# GenSX Project Claude Memory/;
+          const hasStandardHeader = defaultHeaderRegex.test(destContent);
+          
+          if (hasStandardHeader) {
+            // Create a backup before overwriting
+            const backupPath = path.join(projectRoot, 'CLAUDE.md.backup');
+            await fs.copy(destination, backupPath);
+            await fs.copy(source, destination);
+            console.log('✅ Updated CLAUDE.md to the latest version. Your previous file was backed up to CLAUDE.md.backup');
+            console.log('ℹ️ To preserve your customizations, please merge your changes from the backup.');
+          } else {
+            // If it doesn't have our standard header, it might be entirely custom
+            console.log('ℹ️ Found an existing CLAUDE.md that appears to be fully customized - preserving your file.');
+            console.log('ℹ️ To get the latest template, you can manually copy it from node_modules/@gensx/claude-md/templates/CLAUDE.md');
+          }
         }
       } catch (error) {
         console.error('Error comparing files:', error);
