@@ -1,35 +1,37 @@
 #!/usr/bin/env node
-'use strict';
+"use strict";
 
-const fs = require('fs-extra');
-const path = require('path');
+const fs = require("fs-extra");
+const path = require("path");
 
 // Skip in production environments
-if (process.env.NODE_ENV === 'production') {
-  console.log('Skipping GenSX Claude template installation in production environment.');
+if (process.env.NODE_ENV === "production") {
+  console.log(
+    "Skipping GenSX Claude template installation in production environment.",
+  );
   process.exit(0);
 }
 
 // Get the directory of the package
-const pkgDir = path.resolve(__dirname, '..');
+const pkgDir = path.resolve(__dirname, "..");
 
 // Path to the template directory
-const templateDir = path.resolve(pkgDir, 'templates');
+const templateDir = path.resolve(pkgDir, "templates");
 
 // Attempt to determine the user's project root
 // This is typically where package.json is located
 // When installed as a dependency, this will be in node_modules/@gensx/claude-templates
 // So we need to go up 3 levels to reach the project root
-const projectRoot = path.resolve(pkgDir, '../../..');
+const projectRoot = path.resolve(pkgDir, "../../..");
 
 async function copyTemplate() {
   try {
-    console.log('Installing GenSX Claude template...');
-    
+    console.log("Installing GenSX Claude template...");
+
     // Source and destination paths
-    const source = path.join(templateDir, 'CLAUDE.md');
-    const destination = path.join(projectRoot, 'CLAUDE.md');
-    
+    const source = path.join(templateDir, "CLAUDE.md");
+    const destination = path.join(projectRoot, "CLAUDE.md");
+
     // Check if destination file already exists
     let fileExists = false;
     try {
@@ -38,74 +40,96 @@ async function copyTemplate() {
     } catch (error) {
       // File doesn't exist
     }
-    
+
     // If file exists, update only the managed section
     if (fileExists) {
       try {
-        const destContent = await fs.readFile(destination, 'utf8');
-        const sourceContent = await fs.readFile(source, 'utf8');
-        
+        const destContent = await fs.readFile(destination, "utf8");
+        const sourceContent = await fs.readFile(source, "utf8");
+
         // If the content is identical to our template, no need to update
         if (destContent === sourceContent) {
-          console.log('✅ CLAUDE.md is already up to date.');
+          console.log("✅ CLAUDE.md is already up to date.");
           return;
         }
-        
+
         // Extract the managed section from the source template
-        const sourceStartMatch = sourceContent.match(/<!-- BEGIN_MANAGED_SECTION -->/);
-        const sourceEndMatch = sourceContent.match(/<!-- END_MANAGED_SECTION -->/);
-        
+        const sourceStartMatch = sourceContent.match(
+          /<!-- BEGIN_MANAGED_SECTION -->/,
+        );
+        const sourceEndMatch = sourceContent.match(
+          /<!-- END_MANAGED_SECTION -->/,
+        );
+
         if (!sourceStartMatch || !sourceEndMatch) {
-          console.error('Error: Source template does not have proper managed section markers');
+          console.error(
+            "Error: Source template does not have proper managed section markers",
+          );
           return;
         }
-        
+
         const managedSectionStart = sourceStartMatch.index;
-        const managedSectionEnd = sourceEndMatch.index + sourceEndMatch[0].length;
-        const managedSection = sourceContent.substring(managedSectionStart, managedSectionEnd);
-        
+        const managedSectionEnd =
+          sourceEndMatch.index + sourceEndMatch[0].length;
+        const managedSection = sourceContent.substring(
+          managedSectionStart,
+          managedSectionEnd,
+        );
+
         // Check if destination file has managed section markers
-        const destStartMatch = destContent.match(/<!-- BEGIN_MANAGED_SECTION -->/);
+        const destStartMatch = destContent.match(
+          /<!-- BEGIN_MANAGED_SECTION -->/,
+        );
         const destEndMatch = destContent.match(/<!-- END_MANAGED_SECTION -->/);
-        
+
         if (destStartMatch && destEndMatch) {
           // If destination has managed section markers, update only that section
           const destStartIndex = destStartMatch.index;
           const destEndIndex = destEndMatch.index + destEndMatch[0].length;
-          
+
           // Create new content by replacing just the managed section
-          const newContent = 
-            destContent.substring(0, destStartIndex) + 
-            managedSection + 
+          const newContent =
+            destContent.substring(0, destStartIndex) +
+            managedSection +
             destContent.substring(destEndIndex);
-          
+
           // Write the updated file
           await fs.writeFile(destination, newContent);
-          console.log('✅ Updated managed section of CLAUDE.md while preserving your customizations.');
+          console.log(
+            "✅ Updated managed section of CLAUDE.md while preserving your customizations.",
+          );
         } else {
           // If destination doesn't have managed section markers, it's from an older version or fully custom
           // Create a backup before replacing
-          const backupPath = path.join(projectRoot, 'CLAUDE.md.backup');
+          const backupPath = path.join(projectRoot, "CLAUDE.md.backup");
           await fs.copy(destination, backupPath);
-          
+
           // Copy the new template
           await fs.copy(source, destination);
-          console.log('✅ Updated CLAUDE.md to the latest version with managed sections.');
-          console.log('ℹ️ Your previous file was backed up to CLAUDE.md.backup');
-          console.log('ℹ️ Add your custom content outside the managed section to preserve it during future updates.');
+          console.log(
+            "✅ Updated CLAUDE.md to the latest version with managed sections.",
+          );
+          console.log(
+            "ℹ️ Your previous file was backed up to CLAUDE.md.backup",
+          );
+          console.log(
+            "ℹ️ Add your custom content outside the managed section to preserve it during future updates.",
+          );
         }
       } catch (error) {
-        console.error('Error updating CLAUDE.md:', error);
+        console.error("Error updating CLAUDE.md:", error);
       }
     } else {
       // File doesn't exist, create it
       await fs.copy(source, destination);
-      console.log('✅ Created new CLAUDE.md template in project root.');
+      console.log("✅ Created new CLAUDE.md template in project root.");
     }
   } catch (error) {
     // Handle case where we might not be in a project (e.g., global install)
-    console.error('Failed to install Claude template:', error);
-    console.log('You can manually copy the template from node_modules/@gensx/claude-md/templates/CLAUDE.md to your project root.');
+    console.error("Failed to install Claude template:", error);
+    console.log(
+      "You can manually copy the template from node_modules/@gensx/claude-md/templates/CLAUDE.md to your project root.",
+    );
   }
 }
 

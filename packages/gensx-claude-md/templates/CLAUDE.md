@@ -70,7 +70,7 @@ const Greeting = gensx.Component<GreetingProps, string>(
   async ({ name, formatOutput = false }) => {
     const greeting = `Hello, ${name}!`;
     return formatOutput ? `## ${greeting}` : greeting;
-  }
+  },
 );
 ```
 
@@ -111,7 +111,7 @@ const ParentComponent = gensx.Component(
 ### OpenAI
 
 ```typescript
-<OpenAIProvider 
+<OpenAIProvider
   apiKey={process.env.OPENAI_API_KEY}
   defaultOptions={{ temperature: 0.7 }}
 />
@@ -120,7 +120,7 @@ const ParentComponent = gensx.Component(
 ### Anthropic
 
 ```typescript
-<AnthropicProvider 
+<AnthropicProvider
   apiKey={process.env.ANTHROPIC_API_KEY}
   defaultOptions={{ temperature: 0.7 }}
 />
@@ -131,7 +131,7 @@ const ParentComponent = gensx.Component(
 ```typescript
 const { Provider: MCPProvider } = createMCPServerContext({
   serverCommand: "npx",
-  serverArgs: ["-y", "@mcp-server/package"]
+  serverArgs: ["-y", "@mcp-server/package"],
 });
 ```
 

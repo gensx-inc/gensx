@@ -39,19 +39,24 @@ The CLAUDE.md file includes clearly marked managed and custom sections:
 
 ```md
 <!-- BEGIN_MANAGED_SECTION -->
+
 ... Template content that will be updated automatically ...
+
 <!-- END_MANAGED_SECTION -->
 
 ## Custom Project Information
+
 ... Your custom content here ...
 ```
 
 When you update the package:
+
 1. Only the content between the managed section markers will be updated
 2. Any content outside these markers will be preserved
 3. If you're updating from a previous version without managed sections, your old file will be backed up
 
 This approach allows you to both:
+
 - Receive updates to the template content (like new patterns or examples)
 - Keep your project-specific customizations intact
 
