@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.1.15](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.14...gensx-openai-v0.1.15) (2025-03-15)
+
+
+### ✨ New Features
+
+* adding support for openai responses api and a computer use example ([#452](https://github.com/gensx-inc/gensx/issues/452)) ([bad77a8](https://github.com/gensx-inc/gensx/commit/bad77a86b341504cf14013a208f49d8e5aed20da))
+
+
+### 🐛 Bug Fixes
+
+* renaming gsxtoolparams to gsxtoolprops ([#469](https://github.com/gensx-inc/gensx/issues/469)) ([f332239](https://github.com/gensx-inc/gensx/commit/f33223921a40976ab5084d8482be6c0af677da3e))
+* Use @types/node for minimum supported version (v18) in packages. ([#457](https://github.com/gensx-inc/gensx/issues/457)) ([9b5f7a5](https://github.com/gensx-inc/gensx/commit/9b5f7a54820bd282b955685b7f809f25d7a0f58f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.3
+
 ## [0.1.14](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.13...gensx-openai-v0.1.14) (2025-03-12)
 
 

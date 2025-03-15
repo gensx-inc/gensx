@@ -1,6 +1,6 @@
 {
   "name": "@gensx/cline-rules",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Cline rules for GenSX projects",
   "main": "index.js",
   "scripts": {

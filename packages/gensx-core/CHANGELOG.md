@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.2...gensx-core-v0.3.3) (2025-03-15)
+
+
+### 🐛 Bug Fixes
+
+* renaming gsxtoolparams to gsxtoolprops ([#469](https://github.com/gensx-inc/gensx/issues/469)) ([f332239](https://github.com/gensx-inc/gensx/commit/f33223921a40976ab5084d8482be6c0af677da3e))
+* Use @types/node for minimum supported version (v18) in packages. ([#457](https://github.com/gensx-inc/gensx/issues/457)) ([9b5f7a5](https://github.com/gensx-inc/gensx/commit/9b5f7a54820bd282b955685b7f809f25d7a0f58f))
+
 ## [0.3.2](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.1...gensx-core-v0.3.2) (2025-03-12)
 
 
