@@ -1,0 +1,23 @@
+{
+  "name": "@gensx/windsurf-rules",
+  "version": "0.0.1",
+  "description": "Windsurf rules for GenSX projects",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "node ./scripts/postinstall.js"
+  },
+  "keywords": [
+    "gensx",
+    "windsurf",
+    "rules"
+  ],
+  "files": [
+    "scripts",
+    "templates"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "GenSX Inc.",
+  "license": "MIT"
+}
