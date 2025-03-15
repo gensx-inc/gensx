@@ -1,5 +1,9 @@
 # GenSX Project Guidelines
 
+<!-- BEGIN_MANAGED_SECTION -->
+<!-- WARNING: Everything between BEGIN_MANAGED_SECTION and END_MANAGED_SECTION will be overwritten when updating @gensx/cline-rules -->
+<!-- Add your custom content outside of this section to preserve it during future updates -->
+
 This file serves as guidance for Cline when working with GenSX projects.
 
 ## Project Commands
@@ -38,18 +42,6 @@ npm run gensx -- run src/index.tsx
   - Functions: camelCase
   - Constants: UPPER_SNAKE_CASE
   - Types/Interfaces: PascalCase
-
-## Project Structure
-
-- `src/`: Source code
-  - `components/`: Reusable GenSX components
-  - `workflows/`: Complete GenSX workflows
-  - `utils/`: Shared utility functions
-  - `types/`: TypeScript type definitions
-  - `providers/`: LLM provider implementations
-- `tests/`: Test files
-- `examples/`: Example workflows and usage
-- `.cursor/`: Cursor rules for code completion
 
 ## Common Patterns
 
@@ -130,3 +122,9 @@ const { Provider: MCPProvider } = createMCPServerContext({
   serverArgs: ["-y", "@mcp-server/package"]
 });
 ```
+
+<!-- END_MANAGED_SECTION -->
+
+## Custom Project Information
+
+Add your custom project information here. This section will not be overwritten during updates.
