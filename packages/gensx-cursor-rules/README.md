@@ -25,6 +25,7 @@ When you upgrade the package, the rules will be automatically updated.
 Cursor rules provide documentation and code snippets for GenSX components, which can be surfaced by IDEs and development tools that integrate with [Cursor](https://cursor.sh/).
 
 These rules help with:
+
 - Providing accurate code examples for GenSX components
 - Showing proper parameter usage for LLM providers
 - Enabling proper code completion for GenSX workflows
@@ -32,6 +33,7 @@ These rules help with:
 ## Included Rules
 
 This package includes rules for:
+
 - `gensx.mdc` - Core GenSX concepts and syntax
 - `gensx-openai.mdc` - OpenAI integration
 - `gensx-anthropic.mdc` - Anthropic integration
