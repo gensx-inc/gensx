@@ -1,0 +1,136 @@
+# GenSX Project Claude Memory
+
+This file serves as persistent memory for Claude when working with GenSX projects.
+
+## Project Commands
+
+### Development
+
+```bash
+# Start the development server
+npm run dev
+
+# Build the project
+npm run build
+
+# Run tests
+npm run test
+
+# Lint code
+npm run lint
+```
+
+### GenSX Commands
+
+```bash
+# Execute a GenSX workflow
+npm run gensx -- run src/index.tsx
+```
+
+## Code Style Preferences
+
+- Use TypeScript for all new files
+- Use functional components with hooks where possible
+- Prefer async/await over promise chains
+- Add proper JSDoc comments for all exported functions and types
+- Use consistent naming conventions:
+  - Components: PascalCase
+  - Functions: camelCase
+  - Constants: UPPER_SNAKE_CASE
+  - Types/Interfaces: PascalCase
+
+## Project Structure
+
+- `src/`: Source code
+  - `components/`: Reusable GenSX components
+  - `workflows/`: Complete GenSX workflows
+  - `utils/`: Shared utility functions
+  - `types/`: TypeScript type definitions
+  - `providers/`: LLM provider implementations
+- `tests/`: Test files
+- `examples/`: Example workflows and usage
+- `.cursor/`: Cursor rules for code completion
+
+## Common Patterns
+
+### Component Definition
+
+```typescript
+interface GreetingProps {
+  name: string;
+  formatOutput?: boolean;
+}
+
+const Greeting = gensx.Component<GreetingProps, string>(
+  "Greeting",
+  async ({ name, formatOutput = false }) => {
+    const greeting = `Hello, ${name}!`;
+    return formatOutput ? `## ${greeting}` : greeting;
+  }
+);
+```
+
+### Provider Usage
+
+```typescript
+const MyWorkflow = gensx.Component(
+  "MyWorkflow",
+  () => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <ChatCompletion
+        model="gpt-4o-mini"
+        messages={[
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: "Tell me about GenSX." }
+        ]}
+      />
+    </OpenAIProvider>
+  )
+);
+```
+
+### Component Nesting with Child Functions
+
+```typescript
+const ParentComponent = gensx.Component(
+  "ParentComponent",
+  () => (
+    <ChildComponent input="data">
+      {(childOutput) => `Result: ${childOutput}`}
+    </ChildComponent>
+  )
+);
+```
+
+## LLM Provider Configuration
+
+### OpenAI
+
+```typescript
+<OpenAIProvider 
+  apiKey={process.env.OPENAI_API_KEY}
+  defaultOptions={{ temperature: 0.7 }}
+/>
+```
+
+### Anthropic
+
+```typescript
+<AnthropicProvider 
+  apiKey={process.env.ANTHROPIC_API_KEY}
+  defaultOptions={{ temperature: 0.7 }}
+/>
+```
+
+### Model Control Protocol (MCP)
+
+```typescript
+const { Provider: MCPProvider } = createMCPServerContext({
+  serverCommand: "npx",
+  serverArgs: ["-y", "@mcp-server/package"]
+});
+```
+
+## Notes
+
+Add project-specific notes here that you'd like Claude to remember between sessions.
