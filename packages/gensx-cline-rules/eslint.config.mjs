@@ -1,14 +1,13 @@
-import globals from "globals";
+import rootConfig from "../../eslint.config.mjs";
 
 export default [
+  ...rootConfig,
   {
-    languageOptions: {
-      globals: {
-        ...globals.node,
-      },
-    },
+    files: ["**/*.{js,mjs,cjs,jsx}"],
     rules: {
       "no-console": "off",
+      "n/shebang": "off",
+      "n/no-process-exit": "off",
     },
   },
 ];
