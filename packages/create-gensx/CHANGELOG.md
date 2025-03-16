@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.19](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.18...create-gensx-v0.1.19) (2025-03-16)
+
+
+### ✨ New Features
+
+* Add IDE AI rules integration to gensx new command ([#473](https://github.com/gensx-inc/gensx/issues/473)) ([ff57843](https://github.com/gensx-inc/gensx/commit/ff57843e9c5ca91083c330eb2cff910ee63abc23)), closes [#450](https://github.com/gensx-inc/gensx/issues/450)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.3.7
+
 ## [0.1.18](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.17...create-gensx-v0.1.18) (2025-03-15)
 
 

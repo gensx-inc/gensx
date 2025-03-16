@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.7](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.6...gensx-v0.3.7) (2025-03-16)
+
+
+### ✨ New Features
+
+* Add IDE AI rules integration to gensx new command ([#473](https://github.com/gensx-inc/gensx/issues/473)) ([ff57843](https://github.com/gensx-inc/gensx/commit/ff57843e9c5ca91083c330eb2cff910ee63abc23)), closes [#450](https://github.com/gensx-inc/gensx/issues/450)
+
 ## [0.3.6](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.5...gensx-v0.3.6) (2025-03-15)
 
 
