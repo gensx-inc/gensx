@@ -206,6 +206,7 @@ export interface NewCommandOptions {
   force: boolean;
   skipLogin?: boolean;
   skipAiAssistants?: boolean;
+  aiAssistants?: string;
 }
 
 export async function newProject(
@@ -296,8 +297,36 @@ export async function newProject(
         spinner.succeed();
       }
 
-      // Ask for AI assistant integrations
-      if (!options.skipAiAssistants) {
+      // Handle AI assistant integrations
+      if (options.aiAssistants) {
+        // Parse comma-separated list of assistants
+        const assistantMap: Record<string, string> = {
+          claude: "@gensx/claude-md",
+          cursor: "@gensx/cursor-rules",
+          cline: "@gensx/cline-rules",
+          windsurf: "@gensx/windsurf-rules"
+        };
+        
+        const requestedAssistants = options.aiAssistants.split(",").map(a => a.trim().toLowerCase());
+        const selectedAssistants = requestedAssistants
+          .map(name => assistantMap[name])
+          .filter(Boolean);
+        
+        if (selectedAssistants.length > 0) {
+          spinner.start("Installing AI assistant integrations");
+          await exec(`npm install -D ${selectedAssistants.join(" ")}`);
+          spinner.succeed();
+          logger.log(
+            pc.green(
+              `\nSuccessfully installed ${selectedAssistants.length} AI assistant integration${
+                selectedAssistants.length === 1 ? "" : "s"
+              }.`,
+            ),
+          );
+        }
+      } 
+      // Interactive assistant selection if not skipped and not pre-specified
+      else if (!options.skipAiAssistants) {
         logger.log(
           pc.yellow("\nWould you like to integrate with AI assistants?"),
         );
