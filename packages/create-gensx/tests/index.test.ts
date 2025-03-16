@@ -1,5 +1,5 @@
 import { exec as execCallback } from "child_process";
-import { mkdtemp, readFile, readdir, rm, writeFile } from "fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "fs/promises";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -16,9 +16,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const gensxPackagePath = path.resolve(__dirname, "../../gensx-core");
 const gensxOpenaiPackagePath = path.resolve(__dirname, "../../gensx-openai");
 const gensxClaudeMdPath = path.resolve(__dirname, "../../gensx-claude-md");
-const gensxCursorRulesPath = path.resolve(__dirname, "../../gensx-cursor-rules");
-const gensxClineRulesPath = path.resolve(__dirname, "../../gensx-cline-rules");
-const gensxWindsurfRulesPath = path.resolve(__dirname, "../../gensx-windsurf-rules");
+const gensxCursorRulesPath = path.resolve(
+  __dirname,
+  "../../gensx-cursor-rules",
+);
+// Other AI assistant packages are available but not used in tests
 suite("create-gensx", () => {
   let tempDir: string;
 
@@ -27,7 +29,7 @@ suite("create-gensx", () => {
     if (tempDir) {
       await rm(tempDir, { recursive: true, force: true });
     }
-    
+
     // Reset all mocks
     vi.restoreAllMocks();
   });
@@ -102,7 +104,7 @@ suite("create-gensx", () => {
       force: false,
       skipLogin: true,
       // Specify assistants directly instead of using the interactive prompt
-      aiAssistants: "claude,cursor"
+      aiAssistants: "claude,cursor",
     };
 
     // Create the project with AI assistant integrations
@@ -119,16 +121,18 @@ suite("create-gensx", () => {
       devDependencies: Record<string, string>;
       [key: string]: unknown;
     };
-    
+
     packageJson.dependencies["@gensx/core"] = `file:${gensxPackagePath}`;
-    packageJson.dependencies["@gensx/openai"] = `file:${gensxOpenaiPackagePath}`;
-    
+    packageJson.dependencies["@gensx/openai"] =
+      `file:${gensxOpenaiPackagePath}`;
+
     // Add local paths for AI assistant packages
-    if (!packageJson.devDependencies) {
-      packageJson.devDependencies = {};
-    }
-    packageJson.devDependencies["@gensx/claude-md"] = `file:${gensxClaudeMdPath}`;
-    packageJson.devDependencies["@gensx/cursor-rules"] = `file:${gensxCursorRulesPath}`;
+    // Initialize devDependencies
+    packageJson.devDependencies = {};
+    packageJson.devDependencies["@gensx/claude-md"] =
+      `file:${gensxClaudeMdPath}`;
+    packageJson.devDependencies["@gensx/cursor-rules"] =
+      `file:${gensxCursorRulesPath}`;
 
     await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
@@ -140,25 +144,32 @@ suite("create-gensx", () => {
     expect(files).toContain("package.json");
     expect(files).toContain("tsconfig.json");
     expect(files).toContain("src");
-    
+
     // Verify AI assistant integration package files are created
     expect(files).toContain("CLAUDE.md"); // For claude integration
-    expect(files).toContain(".cursor");   // For cursor integration
+    expect(files).toContain(".cursor"); // For cursor integration
 
     // Check package.json for AI assistant dependencies
     const updatedPackageJson = JSON.parse(
-      await readFile(packageJsonPath, "utf-8")
+      await readFile(packageJsonPath, "utf-8"),
     ) as { devDependencies: Record<string, string> };
-    
-    expect(updatedPackageJson.devDependencies["@gensx/claude-md"]).toBeDefined();
-    expect(updatedPackageJson.devDependencies["@gensx/cursor-rules"]).toBeDefined();
-    
+
+    expect(
+      updatedPackageJson.devDependencies["@gensx/claude-md"],
+    ).toBeDefined();
+    expect(
+      updatedPackageJson.devDependencies["@gensx/cursor-rules"],
+    ).toBeDefined();
+
     // Check for AI assistant-specific files
     try {
       // Check for Claude integration files
-      const claudeMdContent = await readFile(path.join(projectPath, "CLAUDE.md"), "utf-8");
+      const claudeMdContent = await readFile(
+        path.join(projectPath, "CLAUDE.md"),
+        "utf-8",
+      );
       expect(claudeMdContent).toContain("GenSX Project Claude Memory");
-      
+
       // Check for Cursor integration files
       const cursorFiles = await readdir(path.join(projectPath, ".cursor"));
       expect(cursorFiles.length).toBeGreaterThan(0);

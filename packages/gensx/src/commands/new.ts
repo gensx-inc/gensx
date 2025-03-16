@@ -182,8 +182,9 @@ async function selectAiAssistants(): Promise<string[]> {
       // Custom result function to return the actual values
       result(names: string[]) {
         // Convert selected names to their corresponding values
-        return names.map((name) => 
-          aiAssistantOptions.find((opt) => opt.name === name)?.value || name
+        return names.map(
+          (name) =>
+            aiAssistantOptions.find((opt) => opt.name === name)?.value ?? name,
         );
       },
     });
@@ -304,14 +305,16 @@ export async function newProject(
           claude: "@gensx/claude-md",
           cursor: "@gensx/cursor-rules",
           cline: "@gensx/cline-rules",
-          windsurf: "@gensx/windsurf-rules"
+          windsurf: "@gensx/windsurf-rules",
         };
-        
-        const requestedAssistants = options.aiAssistants.split(",").map(a => a.trim().toLowerCase());
+
+        const requestedAssistants = options.aiAssistants
+          .split(",")
+          .map((a) => a.trim().toLowerCase());
         const selectedAssistants = requestedAssistants
-          .map(name => assistantMap[name])
+          .map((name) => assistantMap[name])
           .filter(Boolean);
-        
+
         if (selectedAssistants.length > 0) {
           spinner.start("Installing AI assistant integrations");
           await exec(`npm install -D ${selectedAssistants.join(" ")}`);
@@ -324,7 +327,7 @@ export async function newProject(
             ),
           );
         }
-      } 
+      }
       // Interactive assistant selection if not skipped and not pre-specified
       else if (!options.skipAiAssistants) {
         logger.log(
@@ -335,9 +338,9 @@ export async function newProject(
             "These packages help AI assistants understand your GenSX project better.",
           ),
         );
-        
+
         const selectedAssistants = await selectAiAssistants();
-        
+
         if (selectedAssistants.length > 0) {
           spinner.start("Installing AI assistant integrations");
           await exec(`npm install -D ${selectedAssistants.join(" ")}`);
