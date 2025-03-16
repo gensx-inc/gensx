@@ -1,4 +1,5 @@
 import commonjs from "@rollup/plugin-commonjs";
+import json from "@rollup/plugin-json";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 import builtinModules from "builtin-modules";
@@ -128,6 +129,8 @@ export function getRollupConfig(
         sourceMap: false,
       }),
       denoCompat(),
+      // @ts-expect-error - This is a known issue with rollup-plugin-json
+      json(),
     ],
     external: [/^https:\/\/deno\.land\/std\/.*/, /^node:.*/],
     output: {
