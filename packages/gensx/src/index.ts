@@ -27,8 +27,15 @@ export async function runCLI() {
     .argument("<project-directory>", "Directory to create the project in")
     .option("-t, --template <type>", "Template to use (ts)")
     .option("-f, --force", "Overwrite existing files", false)
-    .option("--skip-ai-assistants", "Skip AI assistant integration selection", false)
-    .option("--ai-assistants <assistants>", "Comma-separated list of AI assistants to install (claude,cursor,cline,windsurf)")
+    .option(
+      "--skip-ai-assistants",
+      "Skip AI assistant integration selection",
+      false,
+    )
+    .option(
+      "--ai-assistants <assistants>",
+      "Comma-separated list of AI assistants to install (claude,cursor,cline,windsurf)",
+    )
     .action(newProject);
 
   await program.parseAsync();
