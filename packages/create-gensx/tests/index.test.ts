@@ -98,13 +98,13 @@ suite("create-gensx", () => {
     const projectName = "ai-test-project";
     const projectPath = path.join(tempDir, projectName);
 
-    // Use the --ai-assistants flag to specify assistants directly
+    // Use the --ide-rules flag to specify assistants directly
     const options = {
       template: "ts",
       force: false,
       skipLogin: true,
       // Specify all AI assistants directly
-      aiAssistants: "claude,cursor,cline,windsurf",
+      ideRules: "claude,cursor,cline,windsurf",
     };
 
     // Create the project with AI assistant integrations
