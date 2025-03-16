@@ -141,9 +141,9 @@ suite("create-gensx", () => {
     expect(files).toContain("tsconfig.json");
     expect(files).toContain("src");
     
-    // Verify AI assistant files exist
-    expect(files).toContain("CLAUDE.md");
-    expect(files).toContain(".cursor");
+    // Verify AI assistant integration package files are created
+    expect(files).toContain("CLAUDE.md"); // For claude integration
+    expect(files).toContain(".cursor");   // For cursor integration
 
     // Check package.json for AI assistant dependencies
     const updatedPackageJson = JSON.parse(
