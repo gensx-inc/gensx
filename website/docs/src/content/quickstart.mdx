@@ -69,16 +69,16 @@ gensx new .
 npx gensx new .
 ```
 
-When creating a new project, you'll be prompted to select AI assistant integrations to add to your project. These integrations help AI assistants like Claude, Cursor, Cline, and Windsurf understand your GenSX project better, providing more accurate code suggestions and help.
+When creating a new project, you'll be prompted to select IDE rules to add to your project. These rules help AI assistants like Claude, Cursor, Cline, and Windsurf understand your GenSX project better, providing more accurate code suggestions and help.
 
-You can also specify AI assistants directly using the `--ai-assistants` flag:
+You can also specify IDE rules directly using the `--ide-rules` flag:
 
 ```bash
-# Install Claude and Cursor integrations
-gensx new . --ai-assistants claude,cursor
+# Install Cline and Windsurf rules
+gensx new . --ide-rules cline,windsurf
 
-# Skip AI assistant selection
-gensx new . --skip-ai-assistants
+# Skip IDE rule selection
+gensx new . --skip-ide-rules
 ```
 
 This will create a new started project, ready for you to run your first workflow:
