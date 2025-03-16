@@ -331,7 +331,9 @@ export async function newProject(
       // Interactive assistant selection if not skipped and not pre-specified
       else if (!options.skipAiAssistants) {
         logger.log(
-          pc.yellow("\nWould you like to integrate with AI assistants?"),
+          pc.yellow(
+            "\nWould you like to integrate with AI assistants? (Use space bar to select)",
+          ),
         );
         logger.log(
           pc.dim(
