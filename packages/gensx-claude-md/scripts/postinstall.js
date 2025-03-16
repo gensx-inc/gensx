@@ -4,6 +4,18 @@
 const fs = require("fs-extra");
 const path = require("path");
 
+// Get the paths we need to check
+const packagePath = path.resolve(process.cwd());
+
+// Check if we're in the monorepo by looking for a packages directory
+const isMonorepo = packagePath.includes(path.join("gensx", "packages"));
+
+// Skip if we're in the monorepo
+if (isMonorepo) {
+  console.log("Skipping postinstall script in monorepo environment");
+  process.exit(0);
+}
+
 // Skip in production environments
 if (process.env.NODE_ENV === "production") {
   console.log(

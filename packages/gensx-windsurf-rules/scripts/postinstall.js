@@ -1,7 +1,21 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
 const path = require("path");
+
+// Get the paths we need to check
+const packagePath = path.resolve(process.cwd());
+const initCWD = process.env.INIT_CWD;
+
+// Check if we're in the monorepo by looking for a packages directory
+const isMonorepo = packagePath.includes(path.join("gensx", "packages"));
+
+// Skip if we're in the monorepo
+if (isMonorepo) {
+  console.log("Skipping postinstall script in monorepo environment");
+  process.exit(0);
+}
+
+const fs = require("fs");
 
 // Constants for managed section markers
 const BEGIN_MANAGED_SECTION = "<!-- BEGIN_MANAGED_SECTION -->";
