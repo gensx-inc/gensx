@@ -27,6 +27,7 @@ export async function runCLI() {
     .argument("<project-directory>", "Directory to create the project in")
     .option("-t, --template <type>", "Template to use (ts)")
     .option("-f, --force", "Overwrite existing files", false)
+    .option("--skip-ai-assistants", "Skip AI assistant integration selection", false)
     .action(newProject);
 
   await program.parseAsync();

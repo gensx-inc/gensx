@@ -133,10 +133,79 @@ async function copyTemplateFiles(templateName: string, targetPath: string) {
   await copyDir(templatePath, targetPath);
 }
 
+interface AiAssistantOption {
+  name: string;
+  value: string;
+  message: string;
+  hint: string;
+}
+
+async function selectAiAssistants(): Promise<string[]> {
+  const aiAssistantOptions: AiAssistantOption[] = [
+    {
+      name: "claude",
+      value: "@gensx/claude-md",
+      message: "Claude AI",
+      hint: "Adds CLAUDE.md for Anthropic Claude integration",
+    },
+    {
+      name: "cursor",
+      value: "@gensx/cursor-rules",
+      message: "Cursor",
+      hint: "Adds Cursor IDE integration rules",
+    },
+    {
+      name: "cline",
+      value: "@gensx/cline-rules",
+      message: "Cline",
+      hint: "Adds Cline VS Code extension integration rules",
+    },
+    {
+      name: "windsurf",
+      value: "@gensx/windsurf-rules",
+      message: "Windsurf",
+      hint: "Adds Windsurf Cascade AI integration rules",
+    },
+  ];
+
+  try {
+    const prompter = enquirer as PromptModule;
+    const response = await prompter.prompt<{ assistants: string[] }>({
+      type: "multiselect",
+      name: "assistants",
+      message: "Select AI assistants to integrate with your project",
+      choices: aiAssistantOptions.map((option) => ({
+        name: option.name,
+        value: option.value,
+        message: `${option.message} ${pc.dim(`(${option.hint})`)}`,
+      })),
+      // Custom result function to return the actual values
+      result(names: string[]) {
+        // Convert selected names to their corresponding values
+        return names.map((name) => 
+          aiAssistantOptions.find((opt) => opt.name === name)?.value || name
+        );
+      },
+    });
+
+    return response.assistants;
+  } catch (error) {
+    if (error instanceof Error) {
+      // If the user cancels the selection, return an empty array
+      if (error.message.includes("canceled")) {
+        return [];
+      }
+      throw new Error(`Failed to select AI assistants: ${error.message}`);
+    }
+    throw new Error("Failed to select AI assistants");
+  }
+}
+
 export interface NewCommandOptions {
   template?: string;
   force: boolean;
   skipLogin?: boolean;
+  skipAiAssistants?: boolean;
 }
 
 export async function newProject(
@@ -225,6 +294,33 @@ export async function newProject(
         spinner.start("Installing development dependencies");
         await exec(`npm install -D ${template.devDependencies.join(" ")}`);
         spinner.succeed();
+      }
+
+      // Ask for AI assistant integrations
+      if (!options.skipAiAssistants) {
+        logger.log(
+          pc.yellow("\nWould you like to integrate with AI assistants?"),
+        );
+        logger.log(
+          pc.dim(
+            "These packages help AI assistants understand your GenSX project better.",
+          ),
+        );
+        
+        const selectedAssistants = await selectAiAssistants();
+        
+        if (selectedAssistants.length > 0) {
+          spinner.start("Installing AI assistant integrations");
+          await exec(`npm install -D ${selectedAssistants.join(" ")}`);
+          spinner.succeed();
+          logger.log(
+            pc.green(
+              `\nSuccessfully installed ${selectedAssistants.length} AI assistant integration${
+                selectedAssistants.length === 1 ? "" : "s"
+              }.`,
+            ),
+          );
+        }
       }
 
       // Show success message
