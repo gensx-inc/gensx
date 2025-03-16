@@ -45,7 +45,7 @@ suite("create-gensx", () => {
       template: "ts",
       force: false,
       skipLogin: true,
-      skipAiAssistants: true, // Skip AI assistant selection in tests
+      skipIdeRules: true, // Skip IDE rules selection in tests
     });
 
     // Update package.json to use local version of @gensx/core and @gensx/openai

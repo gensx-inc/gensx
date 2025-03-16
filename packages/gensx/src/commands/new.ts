@@ -206,8 +206,8 @@ export interface NewCommandOptions {
   template?: string;
   force: boolean;
   skipLogin?: boolean;
-  skipAiAssistants?: boolean;
-  aiAssistants?: string;
+  skipIdeRules?: boolean;
+  ideRules?: string;
 }
 
 export async function newProject(
@@ -299,7 +299,7 @@ export async function newProject(
       }
 
       // Handle AI assistant integrations
-      if (options.aiAssistants) {
+      if (options.ideRules) {
         // Parse comma-separated list of assistants
         const assistantMap: Record<string, string> = {
           claude: "@gensx/claude-md",
@@ -308,7 +308,7 @@ export async function newProject(
           windsurf: "@gensx/windsurf-rules",
         };
 
-        const requestedAssistants = options.aiAssistants
+        const requestedAssistants = options.ideRules
           .split(",")
           .map((a) => a.trim().toLowerCase());
         const selectedAssistants = requestedAssistants
@@ -329,7 +329,7 @@ export async function newProject(
         }
       }
       // Interactive assistant selection if not skipped and not pre-specified
-      else if (!options.skipAiAssistants) {
+      else if (!options.skipIdeRules) {
         logger.log(
           pc.yellow(
             "\nWould you like to integrate with AI assistants? (Use space bar to select)",
