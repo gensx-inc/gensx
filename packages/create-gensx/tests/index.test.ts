@@ -103,8 +103,8 @@ suite("create-gensx", () => {
       template: "ts",
       force: false,
       skipLogin: true,
-      // Specify assistants directly instead of using the interactive prompt
-      aiAssistants: "claude,cursor",
+      // Specify all AI assistants directly
+      aiAssistants: "claude,cursor,cline,windsurf",
     };
 
     // Create the project with AI assistant integrations
@@ -126,13 +126,17 @@ suite("create-gensx", () => {
     packageJson.dependencies["@gensx/openai"] =
       `file:${gensxOpenaiPackagePath}`;
 
-    // Add local paths for AI assistant packages
+    // Add local paths for all AI assistant packages
     // Initialize devDependencies
     packageJson.devDependencies = {};
     packageJson.devDependencies["@gensx/claude-md"] =
       `file:${gensxClaudeMdPath}`;
     packageJson.devDependencies["@gensx/cursor-rules"] =
       `file:${gensxCursorRulesPath}`;
+    packageJson.devDependencies["@gensx/cline-rules"] =
+      `file:${path.resolve(__dirname, "../../gensx-cline-rules")}`;
+    packageJson.devDependencies["@gensx/windsurf-rules"] =
+      `file:${path.resolve(__dirname, "../../gensx-windsurf-rules")}`;
 
     await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
@@ -145,11 +149,13 @@ suite("create-gensx", () => {
     expect(files).toContain("tsconfig.json");
     expect(files).toContain("src");
 
-    // Verify AI assistant integration package files are created
+    // Verify all AI assistant integration package files are created
     expect(files).toContain("CLAUDE.md"); // For claude integration
     expect(files).toContain(".cursor"); // For cursor integration
+    expect(files).toContain(".clinerules"); // For cline integration
+    expect(files).toContain(".windsurfrules"); // For windsurf integration
 
-    // Check package.json for AI assistant dependencies
+    // Check package.json for all AI assistant dependencies
     const updatedPackageJson = JSON.parse(
       await readFile(packageJsonPath, "utf-8"),
     ) as { devDependencies: Record<string, string> };
@@ -159,6 +165,12 @@ suite("create-gensx", () => {
     ).toBeDefined();
     expect(
       updatedPackageJson.devDependencies["@gensx/cursor-rules"],
+    ).toBeDefined();
+    expect(
+      updatedPackageJson.devDependencies["@gensx/cline-rules"],
+    ).toBeDefined();
+    expect(
+      updatedPackageJson.devDependencies["@gensx/windsurf-rules"],
     ).toBeDefined();
 
     // Check for AI assistant-specific files
