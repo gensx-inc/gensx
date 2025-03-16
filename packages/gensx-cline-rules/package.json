@@ -6,6 +6,11 @@
   "scripts": {
     "postinstall": "node ./scripts/postinstall.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/gensx-cline-rules"
+  },
   "keywords": [
     "gensx",
     "cline",
