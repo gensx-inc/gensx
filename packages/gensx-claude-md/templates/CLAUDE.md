@@ -11,30 +11,19 @@ This file serves as persistent memory for Claude when working with GenSX project
 ### Development
 
 ```bash
-# Start the development server
+# Run the workflow after changes
 npm run dev
 
 # Build the project
 npm run build
 
-# Run tests
-npm run test
-
-# Lint code
-npm run lint
-```
-
-### GenSX Commands
-
-```bash
-# Execute a GenSX workflow
-npm run gensx -- run src/index.tsx
+# Run the workflow once
+npm run start
 ```
 
 ## Code Style Preferences
 
 - Use TypeScript for all new files
-- Use functional components with hooks where possible
 - Prefer async/await over promise chains
 - Add proper JSDoc comments for all exported functions and types
 - Use consistent naming conventions:
@@ -122,10 +111,6 @@ const { Provider: MCPProvider } = createMCPServerContext({
   serverArgs: ["-y", "@mcp-server/package"],
 });
 ```
-
-## Notes
-
-Add project-specific notes here that you'd like Claude to remember between sessions.
 
 <!-- END_MANAGED_SECTION -->
 

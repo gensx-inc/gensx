@@ -11,30 +11,19 @@ This file serves as guidance for Cline when working with GenSX projects.
 ### Development
 
 ```bash
-# Start the development server
+# Run the workflow after changes
 npm run dev
 
 # Build the project
 npm run build
 
-# Run tests
-npm run test
-
-# Lint code
-npm run lint
-```
-
-### GenSX Commands
-
-```bash
-# Execute a GenSX workflow
-npm run gensx -- run src/index.tsx
+# Run the workflow once
+npm run start
 ```
 
 ## Code Style Preferences
 
 - Use TypeScript for all new files
-- Use functional components with hooks where possible
 - Prefer async/await over promise chains
 - Add proper JSDoc comments for all exported functions and types
 - Use consistent naming conventions:
@@ -58,7 +47,7 @@ const Greeting = gensx.Component<GreetingProps, string>(
   async ({ name, formatOutput = false }) => {
     const greeting = `Hello, ${name}!`;
     return formatOutput ? `## ${greeting}` : greeting;
-  }
+  },
 );
 ```
 
@@ -99,7 +88,7 @@ const ParentComponent = gensx.Component(
 ### OpenAI
 
 ```typescript
-<OpenAIProvider 
+<OpenAIProvider
   apiKey={process.env.OPENAI_API_KEY}
   defaultOptions={{ temperature: 0.7 }}
 />
@@ -108,7 +97,7 @@ const ParentComponent = gensx.Component(
 ### Anthropic
 
 ```typescript
-<AnthropicProvider 
+<AnthropicProvider
   apiKey={process.env.ANTHROPIC_API_KEY}
   defaultOptions={{ temperature: 0.7 }}
 />
@@ -119,7 +108,7 @@ const ParentComponent = gensx.Component(
 ```typescript
 const { Provider: MCPProvider } = createMCPServerContext({
   serverCommand: "npx",
-  serverArgs: ["-y", "@mcp-server/package"]
+  serverArgs: ["-y", "@mcp-server/package"],
 });
 ```
 
