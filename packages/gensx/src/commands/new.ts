@@ -266,7 +266,6 @@ export async function newProject(
       // Create and validate project directory
       spinner.start("Creating project directory");
       await mkdir(absoluteProjectPath, { recursive: true });
-      spinner.succeed();
 
       const files = await readdir(absoluteProjectPath);
       if (files.length > 0 && !force) {
