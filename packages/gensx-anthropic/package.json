@@ -36,12 +36,12 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "peerDependencies": {
-    "@anthropic-ai/sdk": "^0.37.0"
+    "@anthropic-ai/sdk": "^0.39.0"
   },
   "devDependencies": {
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "@anthropic-ai/sdk": "^0.37.0",
+    "@anthropic-ai/sdk": "^0.39.0",
     "vitest": "catalog:"
   },
   "publishConfig": {
