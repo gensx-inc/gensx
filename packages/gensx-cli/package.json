@@ -4,7 +4,8 @@
   "description": "This package is not published to npm. It is just a container of scripts to build the CLI binary.",
   "private": true,
   "scripts": {
-    "test": "deno task compile:macos-x64"
+    "#test-comment": "this hangs locally for some reason, so only run in CI",
+    "test": "if [ \"$CI\" = \"true\" ]; then deno task compile:macos-x64; fi"
   },
   "keywords": [],
   "author": "",
