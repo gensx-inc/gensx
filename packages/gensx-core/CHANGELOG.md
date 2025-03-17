@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.3...gensx-core-v0.3.4) (2025-03-17)
+
+
+### ✨ New Features
+
+* Beta commands for serverless execution ([#461](https://github.com/gensx-inc/gensx/issues/461)) ([f06b765](https://github.com/gensx-inc/gensx/commit/f06b7659ea1e7f6840b0e90a497c795966c6d1ad))
+
 ## [0.3.3](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.2...gensx-core-v0.3.3) (2025-03-15)
 
 

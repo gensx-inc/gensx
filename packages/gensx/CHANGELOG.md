@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.8](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.7...gensx-v0.3.8) (2025-03-17)
+
+
+### ✨ New Features
+
+* Beta commands for serverless execution ([#461](https://github.com/gensx-inc/gensx/issues/461)) ([f06b765](https://github.com/gensx-inc/gensx/commit/f06b7659ea1e7f6840b0e90a497c795966c6d1ad))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.4
+
 ## [0.3.7](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.6...gensx-v0.3.7) (2025-03-16)
 
 
