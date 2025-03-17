@@ -37,17 +37,15 @@ export function generateSchema(
   const tjsProgram = getProgramFromFiles([tsFile], tsconfig.options);
   const tjsSettings: PartialArgs = {
     include: [tsFile],
-  };
-
-  const baseSchema = generateSchemaTJS(tjsProgram, "*", {
-    ...tjsSettings,
     ignoreErrors: true,
-    ref: true,
+    ref: false,
     required: true,
     strictNullChecks: true,
-    topRef: true,
+    topRef: false,
     noExtraProps: true,
-  });
+  };
+
+  const baseSchema = generateSchemaTJS(tjsProgram, "*", tjsSettings);
 
   if (!baseSchema?.definitions) {
     throw new Error("Failed to generate schema");
@@ -97,6 +95,28 @@ export function generateSchema(
       workflow.outputType,
       workflow.isStreamComponent,
     );
+
+    // If the input schema has a $ref, try to dereference it from baseSchema
+    if (inputSchema.$ref) {
+      const refType = inputSchema.$ref.split("/").pop();
+      if (refType && baseSchema.definitions[refType]) {
+        const definition = baseSchema.definitions[refType];
+        // Remove the $ref and spread the definition
+        delete inputSchema.$ref;
+        Object.assign(inputSchema, definition);
+      }
+    }
+
+    // If the output schema has a $ref, try to dereference it from baseSchema
+    if (outputSchema.$ref) {
+      const refType = outputSchema.$ref.split("/").pop();
+      if (refType && baseSchema.definitions[refType]) {
+        const definition = baseSchema.definitions[refType];
+        // Remove the $ref and spread the definition
+        delete outputSchema.$ref;
+        Object.assign(outputSchema, definition);
+      }
+    }
 
     workflowSchemas[workflowName] = {
       input: inputSchema,
@@ -428,8 +448,21 @@ export function createOutputSchema(
     return { type: "boolean" };
   }
 
-  console.warn(`\n\nUnsupported output type: ${outputType}\n\n`);
-  return { type: "object" };
+  // Check if this is an inline object type
+  const isInlineObject = outputType.startsWith("{") && outputType.endsWith("}");
+  if (isInlineObject) {
+    return parseInlineObjectType(outputType);
+  }
+
+  // If we get here, it's an unrecognized type
+  console.warn(
+    `\n\nUnrecognized output type: ${outputType}\nPlease use one of: string, number, boolean, Streamable, or an inline object type like { property: type }\n\n`,
+  );
+  return {
+    type: "object",
+    description: `Unrecognized output type: ${outputType}. Expected one of: string, number, boolean, Streamable, or an inline object type.`,
+    additionalProperties: true,
+  };
 }
 
 /**
