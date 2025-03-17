@@ -378,13 +378,13 @@ To get started:
   ${projectPath !== "." ? pc.cyan(`cd ${projectPath}`) : ""}
   ${pc.cyan(template.runCommand)}
 
-Edit ${pc.cyan("src/index.tsx")} to start building your GenSX application.
+Edit ${pc.cyan("src/index.tsx")} to start building your GenSX application.`);
 
-When ready to deploy:
-  ${pc.cyan(`gensx deploy <file>`)}
+      // When ready to deploy:
+      //   ${pc.cyan(`gensx deploy <file>`)}
 
-Your project name "${pc.bold(projectName)}" has been saved to gensx.yaml and will be used for deployment.
-`);
+      // Your project name "${pc.bold(projectName)}" has been saved to gensx.yaml and will be used for deployment.
+      // `);
     } catch (error) {
       // If spinner is still spinning, stop it with failure
       if (spinner.isSpinning) {
