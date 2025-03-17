@@ -261,7 +261,7 @@ export async function newProject(
       const template = await loadTemplate(templateName);
       spinner.succeed();
 
-      const absoluteProjectPath = path.resolve(process.cwd(), projectPath);
+      const absoluteProjectPath = path.resolve(projectPath);
 
       // Create and validate project directory
       spinner.start("Creating project directory");
@@ -395,7 +395,7 @@ Your project name "${pc.bold(projectName)}" has been saved to gensx.yaml and wil
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error(pc.red(`\nError: ${error.message}`));
+      console.error(pc.red(`\nError: ${error.message}`), error.stack);
     } else {
       console.error(pc.red("\nAn unknown error occurred"));
     }

@@ -1,6 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import process from "node:process";
 
 import { z } from "zod";
 
@@ -15,7 +14,7 @@ export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
 /**
  * Get the path to the gensx.yaml file
  */
-export function getProjectConfigPath(dir = process.cwd()): string {
+export function getProjectConfigPath(dir: string): string {
   return path.join(dir, "gensx.yaml");
 }
 
@@ -23,7 +22,7 @@ export function getProjectConfigPath(dir = process.cwd()): string {
  * Read the gensx.yaml file and return the parsed config
  */
 export async function readProjectConfig(
-  dir = process.cwd(),
+  dir: string,
 ): Promise<ProjectConfig | null> {
   try {
     const configPath = getProjectConfigPath(dir);
@@ -57,7 +56,7 @@ export async function readProjectConfig(
  */
 export async function saveProjectConfig(
   config: Partial<ProjectConfig>,
-  dir = process.cwd(),
+  dir: string,
 ): Promise<void> {
   const configPath = getProjectConfigPath(dir);
 

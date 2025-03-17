@@ -46,7 +46,7 @@ export async function deploy(file: string, options: DeployOptions) {
 
     let projectName = options.project;
     if (!projectName) {
-      const projectConfig = await readProjectConfig();
+      const projectConfig = await readProjectConfig(process.cwd());
       if (projectConfig?.projectName) {
         projectName = projectConfig.projectName;
         spinner.info(
