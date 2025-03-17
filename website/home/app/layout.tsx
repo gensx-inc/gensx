@@ -13,7 +13,7 @@ const figtree = Figtree({
 
 export const metadata: Metadata = {
   title: "GenSX",
-  description: "GenSX is a platform for generating and sharing SX designs.",
+  description: "Build agents and workflows with with React-like components",
 };
 
 export default function RootLayout({
