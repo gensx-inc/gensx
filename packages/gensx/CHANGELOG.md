@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.8...gensx-v0.3.9) (2025-03-17)
+
+
+### 🐛 Bug Fixes
+
+* Fix schema extraction for structured types ([#481](https://github.com/gensx-inc/gensx/issues/481)) ([6feee26](https://github.com/gensx-inc/gensx/commit/6feee263b0eb0848fb277ecb14fe6f1246a95257))
+
 ## [0.3.8](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.7...gensx-v0.3.8) (2025-03-17)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.1...gensx-claude-md-v0.1.2) (2025-03-17)
+
+
+### 🐛 Bug Fixes
+
+* Fix schema extraction for structured types ([#481](https://github.com/gensx-inc/gensx/issues/481)) ([6feee26](https://github.com/gensx-inc/gensx/commit/6feee263b0eb0848fb277ecb14fe6f1246a95257))
+
 ## [0.1.1](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.0...gensx-claude-md-v0.1.1) (2025-03-16)
 
 

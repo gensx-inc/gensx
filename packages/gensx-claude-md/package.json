@@ -1,6 +1,6 @@
 {
   "name": "@gensx/claude-md",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "commonjs",
   "license": "Apache-2.0",
   "engines": {
