@@ -48,7 +48,7 @@ export async function runWorkflow(
     if (!wait) {
       spinner.start("Starting workflow execution");
       const url = new URL(
-        `/org/${auth.org}/projects/${projectName}/workflows/${workflow}/start`,
+        `/org/${auth.org}/projects/${projectName}/workflows/${encodeURIComponent(workflow)}/start`,
         auth.apiBaseUrl,
       );
 
@@ -82,7 +82,7 @@ export async function runWorkflow(
       spinner.start("Running workflow");
 
       const url = new URL(
-        `/org/${auth.org}/projects/${projectName}/workflows/${workflow}/run`,
+        `/org/${auth.org}/projects/${projectName}/workflows/${encodeURIComponent(workflow)}/run`,
         auth.apiBaseUrl,
       );
       const response = await fetch(url, {

@@ -1,4 +1,4 @@
-import { existsSync } from "fs";
+import { existsSync, writeFileSync } from "fs";
 import { resolve } from "path";
 
 import ora from "ora";
@@ -32,12 +32,13 @@ export async function build(file: string, options: BuildOptions = {}) {
     }
 
     const outDir = options.outDir ?? resolve(process.cwd(), ".gensx", "dist");
-    const outFile = resolve(outDir, "handler.js");
+    const bundleFile = resolve(outDir, "handler.js");
+    const schemaFile = resolve(outDir, "schema.json");
 
     if (options.watch) {
       spinner.info("Starting build in watch mode...");
 
-      const rollupConfig = getRollupConfig(absolutePath, outFile, true);
+      const rollupConfig = getRollupConfig(absolutePath, bundleFile, true);
       const watcher = watch(rollupConfig);
 
       watcher.on("event", async (event) => {
@@ -47,7 +48,8 @@ export async function build(file: string, options: BuildOptions = {}) {
           try {
             await event.result.write(rollupConfig.output as OutputOptions);
             // Generate schema after successful build
-            generateSchema(absolutePath, options.tsconfig);
+            const schemas = generateSchema(absolutePath, options.tsconfig);
+            writeFileSync(schemaFile, JSON.stringify(schemas, null, 2));
             spinner.succeed("Build completed");
             if (!quiet) {
               outputBuildSuccess();
@@ -88,11 +90,12 @@ export async function build(file: string, options: BuildOptions = {}) {
 
     // Regular build mode
     spinner.start("Bundling handler");
-    await bundleWorkflow(absolutePath, outFile, options.watch);
+    await bundleWorkflow(absolutePath, bundleFile, options.watch);
     spinner.succeed();
 
     spinner.start("Generating schema");
     const workflowSchemas = generateSchema(absolutePath, options.tsconfig);
+    writeFileSync(schemaFile, JSON.stringify(workflowSchemas, null, 2));
     spinner.succeed();
 
     if (!quiet) {
@@ -100,7 +103,8 @@ export async function build(file: string, options: BuildOptions = {}) {
     }
 
     return {
-      bundleFile: outFile,
+      bundleFile: bundleFile,
+      schemaFile: schemaFile,
       schemas: workflowSchemas,
     };
   } catch (error) {

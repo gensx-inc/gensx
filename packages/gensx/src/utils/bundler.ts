@@ -42,31 +42,6 @@ function denoCompat(): Plugin {
       }
       return null;
     },
-    transform(code: string, id: string) {
-      // Transform process.env access to Deno.env.get calls
-      let transformedCode = code
-        .replace(/__dirname/g, '(new URL(".", import.meta.url).pathname)')
-        .replace(/__filename/g, "import.meta.url")
-        // Do this song and dance to replace process.env calls with something compatible with Deno.env.get that does not throw an error.
-        .replace(
-          /process\.env\[(['"`])(.*?)\1\]/g,
-          "((() => { try { return Deno.env.get($1$2$1) } catch { return undefined } })())",
-        )
-        .replace(
-          /process\.env\.([\w]+)/g,
-          '((() => { try { return Deno.env.get("$1") } catch { return undefined } })())',
-        )
-        // Add a process.env getter for compatibility
-        .replace(
-          /process\.env(?!\s*=|\s*\.)/g,
-          "(new Proxy({}, { get: (_, prop) => { try { return Deno.env.get(String(prop)) } catch { return undefined } } }))",
-        );
-
-      return {
-        code: transformedCode,
-        map: { mappings: "", sources: [id], names: [] },
-      };
-    },
   };
 }
 

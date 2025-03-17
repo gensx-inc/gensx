@@ -65,8 +65,26 @@ export function generateSchema(
   const workflowNames: string[] = [];
 
   for (const workflow of workflowInfo) {
-    const normalizedWorkflowName = toTrainCase(workflow.name);
-    workflowNames.push(normalizedWorkflowName);
+    const workflowName = encodeURIComponent(workflow.name);
+    if (workflowName !== workflow.name) {
+      console.warn(
+        `\n\nWorkflow name contains invalid characters and will be encoded: ${workflow.name}\n\n`,
+      );
+    }
+
+    if (!workflowName) {
+      console.warn(
+        `\n\nWorkflow name is undefined: ${workflow.componentName}\n\n`,
+      );
+      continue;
+    }
+
+    if (workflowNames.includes(workflowName)) {
+      console.warn(`\n\nWorkflow name is already defined: ${workflowName}\n\n`);
+      continue;
+    }
+
+    workflowNames.push(workflowName);
 
     // Create input schema
     const inputSchema = createInputSchema(
@@ -80,7 +98,7 @@ export function generateSchema(
       workflow.isStreamComponent,
     );
 
-    workflowSchemas[normalizedWorkflowName] = {
+    workflowSchemas[workflowName] = {
       input: inputSchema,
       output: outputSchema,
     };
@@ -410,8 +428,8 @@ export function createOutputSchema(
     return { type: "boolean" };
   }
 
-  // For other types, reference the type definition
-  return { $ref: `#/definitions/${outputType}` };
+  console.warn(`\n\nUnsupported output type: ${outputType}\n\n`);
+  return { type: "object" };
 }
 
 /**
@@ -512,14 +530,4 @@ function convertTypeToSchema(typeStr: string): Definition {
 
   // Default: assume it's a reference to a named type
   return { $ref: `#/definitions/${typeStr}` };
-}
-
-/**
- * Utility function to convert camelCase to train-case
- */
-function toTrainCase(str: string): string {
-  return str
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .replace(/([A-Z])([A-Z])(?=[a-z])/g, "$1-$2")
-    .toLowerCase();
 }
