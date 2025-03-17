@@ -41,6 +41,7 @@
     "@types/ini": "^4.1.1",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
+    "eslint-plugin-n": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {

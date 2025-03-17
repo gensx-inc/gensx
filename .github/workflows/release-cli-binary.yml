@@ -32,15 +32,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [win, linux, macos-x64, macos-arm64]
+        target: [
+            # win,
+            # linux,
+            macos-x64,
+            macos-arm64,
+          ]
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Deno ⚙️
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
 
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node

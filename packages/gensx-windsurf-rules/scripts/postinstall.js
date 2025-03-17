@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 const path = require("path");
 
 // Get the paths we need to check

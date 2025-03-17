@@ -1,17 +1,5 @@
 # Compiled binaries
-gensx-cli
-gensx-cli.exe
-gensx-cli-windows.exe
-gensx-cli-linux
-gensx-cli-macos
-gensx-cli-macos-x64
-gensx-cli-macos-arm64
-
-# Archives
-gensx-*.tar.gz
-gensx-*.zip
-gensx_*.tar.gz
-gensx_*.zip
+gensx-cli-*
 
 # Deno specific
 .deno_compile_node_modules/

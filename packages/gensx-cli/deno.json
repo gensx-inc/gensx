@@ -13,18 +13,30 @@
     "types": ["npm:@types/node"]
   },
   "imports": {
+    "@gensx/core": "../gensx-core/dist/index.js",
+    "@rollup/plugin-commonjs": "npm:@rollup/plugin-commonjs",
+    "@rollup/plugin-json": "npm:@rollup/plugin-json",
+    "@rollup/plugin-node-resolve": "npm:@rollup/plugin-node-resolve",
+    "@rollup/plugin-typescript": "npm:@rollup/plugin-typescript",
+    "axios": "npm:axios",
+    "builtin-modules": "npm:builtin-modules",
+    "commander": "npm:commander",
+    "consola": "npm:consola",
+    "enquirer": "npm:enquirer",
+    "form-data": "npm:form-data",
+    "ini": "npm:ini",
     "node:buffer": "node:buffer",
     "node:crypto": "node:crypto",
     "node:os": "node:os",
     "node:readline": "node:readline",
-    "@gensx/core": "../gensx-core/dist/index.js",
-    "commander": "npm:commander",
-    "consola": "npm:consola",
     "open": "npm:open",
     "ora": "npm:ora",
     "picocolors": "npm:picocolors",
-    "ini": "npm:ini",
+    "rollup": "npm:rollup",
     "serialize-error": "npm:serialize-error",
-    "enquirer": "npm:enquirer"
+    "typescript-json-schema": "npm:typescript-json-schema",
+    "typescript": "npm:typescript",
+    "zod-to-json-schema": "npm:zod-to-json-schema",
+    "zod": "npm:zod"
   }
 }

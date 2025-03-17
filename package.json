@@ -29,7 +29,7 @@
     "@typescript-eslint/parser": "^8.19.1",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-n": "catalog:",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-vitest": "^0.5.4",
