@@ -741,6 +741,9 @@ importers:
       undici:
         specifier: ^6.6.2
         version: 6.21.1
+      yaml:
+        specifier: ^2.7.0
+        version: 2.7.0
       zod:
         specifier: ^3.24.2
         version: 3.24.2

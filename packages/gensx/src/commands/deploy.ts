@@ -61,6 +61,9 @@ export async function deploy(file: string, options: DeployOptions) {
       }
     }
 
+    // Extract triggers
+    const triggers =
+
     // 3. Create form data with bundle
     const form = new FormData();
     form.append("file", fs.createReadStream(bundleFile), "bundle.js");
