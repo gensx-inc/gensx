@@ -40,7 +40,7 @@ function updateManagedSection(existingContent, templateContent) {
   // Replace just the managed section
   return existingContent.replace(
     existingManagedSection,
-    templateManagedSection
+    templateManagedSection,
   );
 }
 
@@ -53,7 +53,7 @@ try {
     __dirname,
     "..",
     "templates",
-    ".windsurfrules"
+    ".windsurfrules",
   );
 
   // Destination path in the target directory
@@ -83,16 +83,16 @@ try {
     // Update just the managed section
     const updatedContent = updateManagedSection(
       existingContent,
-      templateContent
+      templateContent,
     );
     fs.writeFileSync(destPath, updatedContent);
 
     console.log(
-      `✅ Updated .windsurfrules to the latest version with managed sections.`
+      `✅ Updated .windsurfrules to the latest version with managed sections.`,
     );
     console.log(`ℹ️ Your previous file was backed up to .windsurfrules.backup`);
     console.log(
-      `ℹ️ Add your custom content outside the managed section to preserve it during future updates.`
+      `ℹ️ Add your custom content outside the managed section to preserve it during future updates.`,
     );
   } else {
     // Create a new file from template if it doesn't exist

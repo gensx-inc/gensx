@@ -126,7 +126,7 @@ async function copyTemplate() {
 }
 
 // Run the script
-copyTemplate().catch(err => {
+copyTemplate().catch((err) => {
   console.error(err);
   process.exit(1);
 });

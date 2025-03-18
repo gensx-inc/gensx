@@ -128,12 +128,18 @@ suite("create-gensx", () => {
 
     // Install dependencies
     await exec("npm install", { cwd: projectPath });
-    
+
     // Manually run the AI rules commands to simulate the npx behavior in tests
     await exec(`node ${gensxClaudeMdPath}/bin/cli.js`, { cwd: projectPath });
     await exec(`node ${gensxCursorRulesPath}/bin/cli.js`, { cwd: projectPath });
-    await exec(`node ${path.resolve(__dirname, "../../gensx-cline-rules/bin/cli.js")}`, { cwd: projectPath });
-    await exec(`node ${path.resolve(__dirname, "../../gensx-windsurf-rules/bin/cli.js")}`, { cwd: projectPath });
+    await exec(
+      `node ${path.resolve(__dirname, "../../gensx-cline-rules/bin/cli.js")}`,
+      { cwd: projectPath },
+    );
+    await exec(
+      `node ${path.resolve(__dirname, "../../gensx-windsurf-rules/bin/cli.js")}`,
+      { cwd: projectPath },
+    );
 
     // Verify the project files were created
     const files = await readdir(projectPath);

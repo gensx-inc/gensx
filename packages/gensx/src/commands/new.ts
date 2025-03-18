@@ -330,12 +330,12 @@ export async function newProject(
 
         if (selectedAssistants.length > 0) {
           spinner.start("Installing AI assistant integrations");
-          
+
           // Run each assistant installation command using npx
           for (const assistantPackage of selectedAssistants) {
             await exec(`npx ${assistantPackage}`);
           }
-          
+
           spinner.succeed();
           logger.log(
             pc.green(
@@ -363,12 +363,12 @@ export async function newProject(
 
         if (selectedAssistants.length > 0) {
           spinner.start("Installing AI assistant integrations");
-          
+
           // Run each assistant installation command using npx
           for (const assistantPackage of selectedAssistants) {
             await exec(`npx ${assistantPackage}`);
           }
-          
+
           spinner.succeed();
           logger.log(
             pc.green(

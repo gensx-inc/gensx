@@ -64,7 +64,7 @@ async function installCursorRules() {
 }
 
 // Run the installation
-installCursorRules().catch(err => {
+installCursorRules().catch((err) => {
   console.error(err);
   process.exit(1);
 });
