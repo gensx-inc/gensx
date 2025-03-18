@@ -2,23 +2,28 @@
 
 This package provides a CLAUDE.md template for GenSX projects.
 
-## Installation
+## Installation and Usage
+
+You can install the CLAUDE.md template directly from npm without adding the package as a dependency:
 
 ```bash
-npm install @gensx/claude-md
+# Run directly with npx to install the template
+npx @gensx/claude-md
 ```
 
-or
+Alternatively, you can install it as a dependency:
 
 ```bash
-pnpm add @gensx/claude-md
+npm install --save-dev @gensx/claude-md
+# or
+pnpm add -D @gensx/claude-md
 ```
 
-## Usage
+Then run the CLI:
 
-The CLAUDE.md template is automatically installed into your project's root directory during the `postinstall` script. You don't need to do anything manually.
-
-When you upgrade the package, if you haven't customized the CLAUDE.md file, it will be automatically updated.
+```bash
+npx gensx-claude-md
+```
 
 ## What is CLAUDE.md?
 
@@ -49,7 +54,7 @@ The CLAUDE.md file includes clearly marked managed and custom sections:
 ... Your custom content here ...
 ```
 
-When you update the package:
+When you update the template:
 
 1. Only the content between the managed section markers will be updated
 2. Any content outside these markers will be preserved

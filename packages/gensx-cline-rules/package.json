@@ -3,10 +3,12 @@
   "version": "0.1.1",
   "description": "Cline rules for GenSX projects",
   "main": "index.js",
+  "bin": {
+    "gensx-cline-rules": "./bin/cli.js"
+  },
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "postinstall": "node ./scripts/postinstall.js"
+    "lint:fix": "eslint . --fix"
   },
   "repository": {
     "type": "git",
@@ -19,12 +21,12 @@
     "rules"
   ],
   "files": [
-    "scripts",
-    "templates"
+    "templates",
+    "bin"
   ],
   "publishConfig": {
     "access": "public"
   },
   "author": "GenSX Inc.",
-  "license": "MIT"
+  "license": "Apache-2.0"
 }

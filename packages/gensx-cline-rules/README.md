@@ -6,7 +6,16 @@ This package installs a `.clinerules` file to your project, providing project-sp
 
 Cline's `.clinerules` file provides project-specific instructions that are automatically appended to your custom instructions and referenced in Cline's system prompt, ensuring they influence all interactions within the project context.
 
-## Installation
+## Installation and Usage
+
+You can install the Cline rules directly from npm without adding the package as a dependency:
+
+```bash
+# Run directly with npx to install the rules
+npx @gensx/cline-rules
+```
+
+Alternatively, you can install it as a dependency:
 
 ```bash
 npm install --save-dev @gensx/cline-rules
@@ -16,9 +25,15 @@ yarn add -D @gensx/cline-rules
 pnpm add -D @gensx/cline-rules
 ```
 
+Then run the CLI:
+
+```bash
+npx gensx-cline-rules
+```
+
 ## Features
 
-- Automatically installs a `.clinerules` file to your project root
+- Installs a `.clinerules` file to your project root
 - Provides project-specific guidance to Cline for working with GenSX projects
 - Uses managed sections to preserve your customizations during updates
 - Creates backups of existing files when making updates
@@ -33,12 +48,6 @@ The included `.clinerules` file contains:
 - Provider usage examples
 - Testing and documentation standards
 
-## Usage
-
-After installation, the package will automatically add a `.clinerules` file to your project root directory (if one doesn't already exist).
-
-Cline will automatically read this file and use it to provide more accurate and project-specific assistance.
-
 ## Managed Sections
 
 The `.clinerules` file uses managed sections delimited by HTML comments:
@@ -49,14 +58,14 @@ The `.clinerules` file uses managed sections delimited by HTML comments:
 <!-- END_MANAGED_SECTION -->
 ```
 
-When upgrading the package, only the content within these markers will be updated, preserving any custom content you've added outside of the managed section.
+When upgrading or reinstalling the rules, only the content within these markers will be updated, preserving any custom content you've added outside of the managed section.
 
 ## Customization
 
-Add your custom project information outside the managed section to preserve it during package updates.
+Add your custom project information outside the managed section to preserve it during updates.
 
 A section at the bottom of the file is provided specifically for your custom content.
 
 ## License
 
-MIT
+Apache-2.0

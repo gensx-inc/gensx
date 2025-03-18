@@ -1,27 +1,11 @@
+#!/usr/bin/env node
+
 const fs = require("fs");
 const path = require("path");
 
 // Constants for managed section markers
 const BEGIN_MANAGED_SECTION = "<!-- BEGIN_MANAGED_SECTION -->";
 const END_MANAGED_SECTION = "<!-- END_MANAGED_SECTION -->";
-
-// Get the paths we need to check
-const packagePath = path.resolve(process.cwd());
-
-// Check if we're in the monorepo by looking for a packages directory
-const isMonorepo = packagePath.includes(path.join("gensx", "packages"));
-
-// Skip if we're in the monorepo
-if (isMonorepo) {
-  console.log("Skipping postinstall script in monorepo environment");
-  process.exit(0);
-}
-
-// Skip installation in production environments
-if (process.env.NODE_ENV === "production") {
-  console.log("Skipping Cline rules installation in production environment");
-  process.exit(0);
-}
 
 /**
  * Extract content between managed section markers
@@ -56,19 +40,19 @@ function updateManagedSection(existingContent, templateContent) {
   // Replace just the managed section
   return existingContent.replace(
     existingManagedSection,
-    templateManagedSection,
+    templateManagedSection
   );
 }
 
 try {
-  // Determine the app root directory (the directory where the application using this package is installed)
-  const appRootDir = process.env.INIT_CWD || process.cwd();
+  // Use current working directory as target
+  const targetDir = process.cwd();
 
   // Path to the template .clinerules file
   const templatePath = path.join(__dirname, "..", "templates", ".clinerules");
 
-  // Destination path in the app root
-  const destPath = path.join(appRootDir, ".clinerules");
+  // Destination path in the target directory
+  const destPath = path.join(targetDir, ".clinerules");
 
   // Ensure the template file exists
   if (!fs.existsSync(templatePath)) {
@@ -94,21 +78,21 @@ try {
     // Update just the managed section
     const updatedContent = updateManagedSection(
       existingContent,
-      templateContent,
+      templateContent
     );
     fs.writeFileSync(destPath, updatedContent);
 
     console.log(
-      `✅ Updated .clinerules to the latest version with managed sections.`,
+      `✅ Updated .clinerules to the latest version with managed sections.`
     );
     console.log(`ℹ️ Your previous file was backed up to .clinerules.backup`);
     console.log(
-      `ℹ️ Add your custom content outside the managed section to preserve it during future updates.`,
+      `ℹ️ Add your custom content outside the managed section to preserve it during future updates.`
     );
   } else {
     // Create a new file from template if it doesn't exist
     fs.writeFileSync(destPath, templateContent);
-    console.log(`Installed Cline rules to ${destPath}`);
+    console.log(`✅ Installed Cline rules to ${destPath}`);
   }
 } catch (error) {
   console.error("Error installing Cline rules:", error.message);

@@ -15,6 +15,7 @@
 - ALWAYS run `pnpm lint:fix` after making code changes
 - Test changes thoroughly before committing
 - Update relevant documentation when modifying APIs
+- Do NOT add Claude signature or Co-authored-by lines to commits
 
 ## Code Style Guidelines
 

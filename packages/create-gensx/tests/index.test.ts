@@ -114,11 +114,9 @@ suite("create-gensx", () => {
     const packageJsonPath = path.join(projectPath, "package.json");
     const packageJson: {
       dependencies: Record<string, string>;
-      devDependencies: Record<string, string>;
       [key: string]: unknown;
     } = JSON.parse(await readFile(packageJsonPath, "utf-8")) as {
       dependencies: Record<string, string>;
-      devDependencies: Record<string, string>;
       [key: string]: unknown;
     };
 
@@ -126,22 +124,16 @@ suite("create-gensx", () => {
     packageJson.dependencies["@gensx/openai"] =
       `file:${gensxOpenaiPackagePath}`;
 
-    // Add local paths for all AI assistant packages
-    // Initialize devDependencies
-    packageJson.devDependencies = {};
-    packageJson.devDependencies["@gensx/claude-md"] =
-      `file:${gensxClaudeMdPath}`;
-    packageJson.devDependencies["@gensx/cursor-rules"] =
-      `file:${gensxCursorRulesPath}`;
-    packageJson.devDependencies["@gensx/cline-rules"] =
-      `file:${path.resolve(__dirname, "../../gensx-cline-rules")}`;
-    packageJson.devDependencies["@gensx/windsurf-rules"] =
-      `file:${path.resolve(__dirname, "../../gensx-windsurf-rules")}`;
-
     await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
     // Install dependencies
     await exec("npm install", { cwd: projectPath });
+    
+    // Manually run the AI rules commands to simulate the npx behavior in tests
+    await exec(`node ${gensxClaudeMdPath}/bin/cli.js`, { cwd: projectPath });
+    await exec(`node ${gensxCursorRulesPath}/bin/cli.js`, { cwd: projectPath });
+    await exec(`node ${path.resolve(__dirname, "../../gensx-cline-rules/bin/cli.js")}`, { cwd: projectPath });
+    await exec(`node ${path.resolve(__dirname, "../../gensx-windsurf-rules/bin/cli.js")}`, { cwd: projectPath });
 
     // Verify the project files were created
     const files = await readdir(projectPath);
@@ -155,23 +147,8 @@ suite("create-gensx", () => {
     expect(files).toContain(".clinerules"); // For cline integration
     expect(files).toContain(".windsurfrules"); // For windsurf integration
 
-    // Check package.json for all AI assistant dependencies
-    const updatedPackageJson = JSON.parse(
-      await readFile(packageJsonPath, "utf-8"),
-    ) as { devDependencies: Record<string, string> };
-
-    expect(
-      updatedPackageJson.devDependencies["@gensx/claude-md"],
-    ).toBeDefined();
-    expect(
-      updatedPackageJson.devDependencies["@gensx/cursor-rules"],
-    ).toBeDefined();
-    expect(
-      updatedPackageJson.devDependencies["@gensx/cline-rules"],
-    ).toBeDefined();
-    expect(
-      updatedPackageJson.devDependencies["@gensx/windsurf-rules"],
-    ).toBeDefined();
+    // We no longer check for devDependencies since we're using npx directly
+    // Instead, verify the files were created by the CLI scripts
 
     // Check for AI assistant-specific files
     try {

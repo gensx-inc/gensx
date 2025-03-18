@@ -2,23 +2,28 @@
 
 This package provides cursor rules for GenSX projects.
 
-## Installation
+## Installation and Usage
+
+You can install the cursor rules directly from npm without adding the package as a dependency:
 
 ```bash
-npm install @gensx/cursor-rules
+# Run directly with npx to install the rules
+npx @gensx/cursor-rules
 ```
 
-or
+Alternatively, you can install it as a dependency:
 
 ```bash
-pnpm add @gensx/cursor-rules
+npm install --save-dev @gensx/cursor-rules
+# or
+pnpm add -D @gensx/cursor-rules
 ```
 
-## Usage
+Then run the CLI:
 
-The cursor rules are automatically installed into your project's `.cursor` directory during the `postinstall` script. You don't need to do anything manually.
-
-When you upgrade the package, the rules will be automatically updated.
+```bash
+npx gensx-cursor-rules
+```
 
 ## What are cursor rules?
 

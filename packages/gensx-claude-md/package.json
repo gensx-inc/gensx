@@ -13,14 +13,16 @@
     "url": "https://github.com/gensx-inc/gensx.git",
     "directory": "packages/gensx-claude-md"
   },
+  "bin": {
+    "gensx-claude-md": "./bin/cli.js"
+  },
   "files": [
     "templates",
-    "scripts"
+    "bin"
   ],
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "postinstall": "node ./scripts/postinstall.js"
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "fs-extra": "^11.2.0"

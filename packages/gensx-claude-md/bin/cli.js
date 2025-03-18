@@ -1,47 +1,30 @@
+#!/usr/bin/env node
+
 "use strict";
 
 const fs = require("fs-extra");
 const path = require("path");
 
-// Get the paths we need to check
-const packagePath = path.resolve(process.cwd());
-
-// Check if we're in the monorepo by looking for a packages directory
-const isMonorepo = packagePath.includes(path.join("gensx", "packages"));
-
-// Skip if we're in the monorepo
-if (isMonorepo) {
-  console.log("Skipping postinstall script in monorepo environment");
-  process.exit(0);
-}
-
-// Skip in production environments
-if (process.env.NODE_ENV === "production") {
-  console.log(
-    "Skipping GenSX Claude template installation in production environment.",
-  );
-  process.exit(0);
-}
-
-// Get the directory of the package
-const pkgDir = path.resolve(__dirname, "..");
-
-// Path to the template directory
-const templateDir = path.resolve(pkgDir, "templates");
-
-// Attempt to determine the user's project root
-// This is typically where package.json is located
-// When installed as a dependency, this will be in node_modules/@gensx/claude-templates
-// So we need to go up 3 levels to reach the project root
-const projectRoot = path.resolve(pkgDir, "../../..");
+// Constants for managed section markers
+const BEGIN_MANAGED_SECTION = "<!-- BEGIN_MANAGED_SECTION -->";
+const END_MANAGED_SECTION = "<!-- END_MANAGED_SECTION -->";
 
 async function copyTemplate() {
   try {
     console.log("Installing GenSX Claude template...");
 
+    // Get the directory of the package
+    const pkgDir = path.resolve(__dirname, "..");
+
+    // Path to the template directory
+    const templateDir = path.resolve(pkgDir, "templates");
+
+    // Use current working directory as target
+    const targetDir = process.cwd();
+
     // Source and destination paths
     const source = path.join(templateDir, "CLAUDE.md");
-    const destination = path.join(projectRoot, "CLAUDE.md");
+    const destination = path.join(targetDir, "CLAUDE.md");
 
     // Check if destination file already exists
     let fileExists = false;
@@ -112,7 +95,7 @@ async function copyTemplate() {
         } else {
           // If destination doesn't have managed section markers, it's from an older version or fully custom
           // Create a backup before replacing
-          const backupPath = path.join(projectRoot, "CLAUDE.md.backup");
+          const backupPath = path.join(targetDir, "CLAUDE.md.backup");
           await fs.copy(destination, backupPath);
 
           // Copy the new template
@@ -136,13 +119,14 @@ async function copyTemplate() {
       console.log("✅ Created new CLAUDE.md template in project root.");
     }
   } catch (error) {
-    // Handle case where we might not be in a project (e.g., global install)
+    // Handle errors
     console.error("Failed to install Claude template:", error);
-    console.log(
-      "You can manually copy the template from node_modules/@gensx/claude-md/templates/CLAUDE.md to your project root.",
-    );
+    process.exit(1);
   }
 }
 
 // Run the script
-copyTemplate().catch(console.error);
+copyTemplate().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

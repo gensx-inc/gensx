@@ -6,7 +6,16 @@ This package installs a `.windsurfrules` file to your project, providing project
 
 Windsurf's `.windsurfrules` file provides project-specific instructions that are automatically applied to Cascade AI in your workspace, ensuring it has proper context for working with GenSX projects.
 
-## Installation
+## Installation and Usage
+
+You can install the Windsurf rules directly from npm without adding the package as a dependency:
+
+```bash
+# Run directly with npx to install the rules
+npx @gensx/windsurf-rules
+```
+
+Alternatively, you can install it as a dependency:
 
 ```bash
 npm install --save-dev @gensx/windsurf-rules
@@ -16,9 +25,15 @@ yarn add -D @gensx/windsurf-rules
 pnpm add -D @gensx/windsurf-rules
 ```
 
+Then run the CLI:
+
+```bash
+npx gensx-windsurf-rules
+```
+
 ## Features
 
-- Automatically installs a `.windsurfrules` file to your project root
+- Installs a `.windsurfrules` file to your project root
 - Provides project-specific guidance to Windsurf's Cascade AI for working with GenSX projects
 - Uses managed sections to preserve your customizations during updates
 - Creates backups of existing files when making updates
@@ -33,12 +48,6 @@ The included `.windsurfrules` file contains:
 - Provider usage examples
 - Testing and documentation standards
 
-## Usage
-
-After installation, the package will automatically add a `.windsurfrules` file to your project root directory (if one doesn't already exist).
-
-Cascade AI will automatically read this file and use it to provide more accurate and project-specific assistance.
-
 ## Managed Sections
 
 The `.windsurfrules` file uses managed sections delimited by HTML comments:
@@ -49,11 +58,11 @@ The `.windsurfrules` file uses managed sections delimited by HTML comments:
 <!-- END_MANAGED_SECTION -->
 ```
 
-When upgrading the package, only the content within these markers will be updated, preserving any custom content you've added outside of the managed section.
+When upgrading or reinstalling the rules, only the content within these markers will be updated, preserving any custom content you've added outside of the managed section.
 
 ## Customization
 
-Add your custom project information outside the managed section to preserve it during package updates.
+Add your custom project information outside the managed section to preserve it during updates.
 
 A section at the bottom of the file is provided specifically for your custom content.
 
@@ -63,4 +72,4 @@ As mentioned in the Windsurf documentation, you may want to add `.windsurfrules`
 
 ## License
 
-MIT
+Apache-2.0
