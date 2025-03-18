@@ -19,6 +19,10 @@ export async function runCLI() {
       "--ide-rules <rules>",
       "Comma-separated list of IDE rules to install (cline,windsurf,claude,cursor)",
     )
+    .option(
+      "-f --project-file <file>",
+      "Project metadata file. Defaults to <project-directory>/gensx.yaml",
+    )
     .action(async (projectPath: string, options: NewCommandOptions) => {
       try {
         await createGensxProject(projectPath, options);

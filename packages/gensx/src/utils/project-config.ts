@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -14,18 +15,39 @@ export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
 /**
  * Get the path to the gensx.yaml file
  */
-export function getProjectConfigPath(dir: string): string {
-  return path.join(dir, "gensx.yaml");
+export function getProjectConfigPath(filePath?: string): string | null {
+  if (filePath) {
+    return filePath;
+  }
+
+  // Look for gensx.yaml in the current directory
+  const cwd = process.cwd();
+  const configPath = path.join(cwd, "gensx.yaml");
+  if (existsSync(configPath)) {
+    return configPath;
+  }
+
+  // Look for gensx.json
+  const jsonPath = path.join(cwd, "gensx.json");
+  if (existsSync(jsonPath)) {
+    return jsonPath;
+  }
+
+  return null;
 }
 
 /**
  * Read the gensx.yaml file and return the parsed config
  */
 export async function readProjectConfig(
-  dir: string,
+  filePath?: string,
 ): Promise<ProjectConfig | null> {
   try {
-    const configPath = getProjectConfigPath(dir);
+    const configPath = getProjectConfigPath(filePath);
+    if (!configPath) {
+      return null;
+    }
+
     const content = await readFile(configPath, "utf-8");
 
     // Simple YAML parser for our specific needs
@@ -56,12 +78,15 @@ export async function readProjectConfig(
  */
 export async function saveProjectConfig(
   config: Partial<ProjectConfig>,
-  dir: string,
+  filePath: string,
 ): Promise<void> {
-  const configPath = getProjectConfigPath(dir);
+  const configPath = getProjectConfigPath(filePath);
+  if (!configPath) {
+    throw new Error("No config file found");
+  }
 
   // Get existing config first
-  const existingConfig = (await readProjectConfig(dir)) ?? {};
+  const existingConfig = (await readProjectConfig(configPath)) ?? {};
   const mergedConfig = { ...existingConfig, ...config };
 
   // Basic YAML serialization
