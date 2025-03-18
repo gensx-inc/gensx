@@ -20,6 +20,7 @@ const ProjectConfigSchema = z.object({
             timezone: z.string(),
             description: z.string().optional(),
           }),
+          input: z.object({}).passthrough().optional(),
         }),
       ),
     }),

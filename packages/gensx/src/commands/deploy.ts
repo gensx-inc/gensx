@@ -6,7 +6,7 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { getAuth } from "../utils/config.js";
-import { readProjectConfig } from "../utils/project-config.js";
+import { ProjectConfig, readProjectConfig } from "../utils/project-config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import { build } from "./build.js";
 interface DeployOptions {
@@ -45,9 +45,10 @@ export async function deploy(file: string, options: DeployOptions) {
       throw new Error("Not authenticated. Please run 'gensx login' first.");
     }
 
+    let projectConfig: ProjectConfig | null = null;
     let projectName = options.project;
     if (!projectName) {
-      const projectConfig = await readProjectConfig(options.projectFile);
+      projectConfig = await readProjectConfig(options.projectFile);
       if (projectConfig?.projectName) {
         projectName = projectConfig.projectName;
         spinner.info(
@@ -62,7 +63,21 @@ export async function deploy(file: string, options: DeployOptions) {
     }
 
     // Extract triggers
-    const triggers =
+    const triggers = Object.fromEntries(
+      projectConfig?.workflows.map(
+        (workflow) =>
+          [
+            workflow.name,
+            workflow.on.map((trigger) => ({
+              type: "cron" as const,
+              cronExpression: trigger.schedule.cron,
+              timezone: trigger.schedule.timezone,
+              description: trigger.schedule.description,
+              input: trigger.input,
+            })),
+          ] as const,
+      ) ?? [],
+    );
 
     // 3. Create form data with bundle
     const form = new FormData();
@@ -71,6 +86,7 @@ export async function deploy(file: string, options: DeployOptions) {
       form.append("environmentVariables", JSON.stringify(options.env));
 
     form.append("schemas", JSON.stringify(schemas));
+    form.append("triggers", JSON.stringify(triggers));
 
     // Use the project-specific deploy endpoint
     const url = new URL(
