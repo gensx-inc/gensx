@@ -30,7 +30,7 @@ it("package.json is correctly configured for npm create", async () => {
     path.resolve(__dirname, "../package.json"),
     path.join(pkgDir, "package.json"),
   );
-  await fs.chmod(path.join(pkgDir, "dist/cli.js"), 0o755);
+  await fs.chmod(path.join(pkgDir, "dist/esm/cli.js"), 0o755);
 
   // Fix the "catalog:" dependencies and devDependencies, swapping in the versions from the pnpm-workspace.yaml
   const pkgJson = (await fs.readJson(path.join(pkgDir, "package.json"))) as {
@@ -101,7 +101,7 @@ it("package.json is correctly configured for npm create", async () => {
   try {
     // Try to execute the package bin directly with all AI assistant integrations
     await exec(
-      `${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s --ide-rules claude,cursor,cline,windsurf`,
+      `${path.join(pkgDir, "dist/esm/cli.js")} "${testProjectDir}" -s --ide-rules claude,cursor,cline,windsurf`,
       {
         cwd: pkgDir,
         env: { ...process.env },
