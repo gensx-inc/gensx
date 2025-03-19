@@ -16,7 +16,7 @@ catalogs:
       specifier: ^3.1.9
       version: 3.1.9
     openai:
-      specifier: ^4.87.3
+      specifier: ^4.87.4
       version: 4.91.1
     tsx:
       specifier: ^4.19.2
