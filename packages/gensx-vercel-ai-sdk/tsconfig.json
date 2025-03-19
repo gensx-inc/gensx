@@ -5,7 +5,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "tsBuildInfoFile": ".tsbuildinfo"
   },
   "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
