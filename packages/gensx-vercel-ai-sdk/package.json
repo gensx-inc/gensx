@@ -43,11 +43,11 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@ai-sdk/openai": "^1.1.14",
+    "@ai-sdk/openai": "^1.2.6",
     "@gensx/core": "workspace:*",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "ai": "^4.1.46",
+    "ai": "^4.1.63",
     "vitest": "catalog:",
     "zod": "catalog:",
     "zod-to-json-schema": "catalog:"
@@ -57,7 +57,7 @@
   },
   "peerDependencies": {
     "@gensx/core": "^0.3.0",
-    "ai": "^4.1.46"
+    "ai": "^4.1.63"
   },
   "dependencies": {}
 }
