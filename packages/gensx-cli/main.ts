@@ -1,4 +1,4 @@
-import { runCLI } from "../gensx/dist/esm/index.js";
+import { runCLI } from "../gensx/dist/index.js";
 
 Deno.env.set("DENO_BINARY", "true");
 
