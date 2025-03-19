@@ -11,7 +11,7 @@ export default defineConfig([
     dts: true,
     sourcemap: true,
     clean: true,
-    outDir: "dist/esm",
+    outDir: "dist",
     esbuildOptions(options) {
       options.conditions = ["module", "import"];
       options.platform = "node";
@@ -19,44 +19,7 @@ export default defineConfig([
     },
     async onSuccess() {
       const { cp } = await import("node:fs/promises");
-      await cp("src/templates", "dist/esm/templates", { recursive: true });
+      await cp("src/templates", "dist/templates", { recursive: true });
     },
-  },
-  // CJS Build
-  {
-    entry: {
-      index: "src/index.ts",
-      run: "src/run.ts",
-    },
-    format: ["cjs"],
-    sourcemap: true,
-    outDir: "dist/cjs",
-    esbuildOptions(options) {
-      options.conditions = ["require"];
-      options.platform = "node";
-      options.keepNames = true;
-    },
-    // Handle ESM dependencies properly
-    noExternal: ["serialize-error"],
-    // Bundle mode to properly include ESM dependencies
-    treeshake: true,
-    async onSuccess() {
-      const { cp } = await import("node:fs/promises");
-      await cp("src/templates", "dist/cjs/templates", { recursive: true });
-    },
-  },
-  // Type definitions (only need to generate once)
-  {
-    entry: {
-      index: "src/index.ts",
-      run: "src/run.ts",
-    },
-    format: ["esm"],
-    dts: {
-      only: true,
-    },
-    sourcemap: true,
-    outDir: "dist",
-    clean: false,
-  },
+  }
 ]);
