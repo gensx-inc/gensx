@@ -23,7 +23,7 @@ const TEMPLATE_NAMES: { [key in keyof typeof TEMPLATE_MAP]: string } = {
 
 const TEMPLATE_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
-  process.env.DENO_BINARY ? "src/templates/projects" : "../templates/projects",
+  process.env.DENO_BINARY ? "src/templates/projects" : "./templates/projects",
 );
 
 interface Template {
@@ -45,7 +45,7 @@ async function loadTemplate(templateName: string): Promise<Template> {
     const configContent = await readFile(templateConfigPath, "utf-8");
     const template = JSON.parse(configContent) as Template;
     return template;
-  } catch (_error) {
+  } catch {
     throw new Error(`Template "${templateName}" not found or invalid.`);
   }
 }
