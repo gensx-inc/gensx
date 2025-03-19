@@ -5,8 +5,7 @@ export default defineConfig([
   {
     entry: {
       index: "src/index.ts",
-      "jsx-runtime": "src/jsx-runtime.ts",
-      "jsx-dev-runtime": "src/jsx-dev-runtime.ts",
+      cli: "src/cli.ts",
     },
     format: ["esm"],
     dts: true,
@@ -23,8 +22,7 @@ export default defineConfig([
   {
     entry: {
       index: "src/index.ts",
-      "jsx-runtime": "src/jsx-runtime.ts",
-      "jsx-dev-runtime": "src/jsx-dev-runtime.ts",
+      cli: "src/cli.ts",
     },
     format: ["cjs"],
     sourcemap: true,
@@ -43,8 +41,7 @@ export default defineConfig([
   {
     entry: {
       index: "src/index.ts",
-      "jsx-runtime": "src/jsx-runtime.ts",
-      "jsx-dev-runtime": "src/jsx-dev-runtime.ts",
+      cli: "src/cli.ts",
     },
     format: ["esm"],
     dts: {

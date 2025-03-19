@@ -5,8 +5,7 @@ export default defineConfig([
   {
     entry: {
       index: "src/index.ts",
-      "jsx-runtime": "src/jsx-runtime.ts",
-      "jsx-dev-runtime": "src/jsx-dev-runtime.ts",
+      run: "src/run.ts",
     },
     format: ["esm"],
     dts: true,
@@ -18,13 +17,16 @@ export default defineConfig([
       options.platform = "node";
       options.keepNames = true;
     },
+    async onSuccess() {
+      const { cp } = await import("node:fs/promises");
+      await cp("src/templates", "dist/esm/templates", { recursive: true });
+    },
   },
   // CJS Build
   {
     entry: {
       index: "src/index.ts",
-      "jsx-runtime": "src/jsx-runtime.ts",
-      "jsx-dev-runtime": "src/jsx-dev-runtime.ts",
+      run: "src/run.ts",
     },
     format: ["cjs"],
     sourcemap: true,
@@ -38,13 +40,16 @@ export default defineConfig([
     noExternal: ["serialize-error"],
     // Bundle mode to properly include ESM dependencies
     treeshake: true,
+    async onSuccess() {
+      const { cp } = await import("node:fs/promises");
+      await cp("src/templates", "dist/cjs/templates", { recursive: true });
+    },
   },
   // Type definitions (only need to generate once)
   {
     entry: {
       index: "src/index.ts",
-      "jsx-runtime": "src/jsx-runtime.ts",
-      "jsx-dev-runtime": "src/jsx-dev-runtime.ts",
+      run: "src/run.ts",
     },
     format: ["esm"],
     dts: {
