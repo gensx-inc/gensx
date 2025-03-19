@@ -1,0 +1,5 @@
+{
+  "watch": ["*.ts", "*.tsx"],
+  "exec": "tsx ./index.tsx",
+  "ext": "ts,tsx,json"
+}
