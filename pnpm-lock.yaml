@@ -16,8 +16,8 @@ catalogs:
       specifier: ^3.1.9
       version: 3.1.9
     openai:
-      specifier: ^4.87.3
-      version: 4.87.3
+      specifier: ^4.87.4
+      version: 4.87.4
     tsx:
       specifier: ^4.19.2
       version: 4.19.3
@@ -110,7 +110,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -163,7 +163,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -238,7 +238,7 @@ importers:
         version: 3.3.2
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
       xml2js:
         specifier: ^0.6.2
         version: 0.6.2
@@ -269,7 +269,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -294,7 +294,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
       zod:
         specifier: 'catalog:'
         version: 3.24.2
@@ -322,7 +322,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -378,7 +378,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
       zod:
         specifier: 'catalog:'
         version: 3.24.2
@@ -409,7 +409,7 @@ importers:
         version: 1.15.7(ws@8.18.0)
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -434,7 +434,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -459,7 +459,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
       playwright:
         specifier: ^1.51.0
         version: 1.51.0
@@ -493,7 +493,7 @@ importers:
         version: 1.15.7(ws@8.18.0)
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -518,7 +518,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -546,7 +546,7 @@ importers:
         version: 1.15.7(ws@8.18.0)
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -577,7 +577,7 @@ importers:
         version: link:../../packages/gensx-vercel-ai-sdk
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -636,7 +636,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -661,7 +661,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
       zod:
         specifier: 'catalog:'
         version: 3.24.2
@@ -901,7 +901,7 @@ importers:
         version: 2.1.8(vitest@2.1.8(@types/node@18.19.80)(lightningcss@1.29.1))
       openai:
         specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
+        version: 4.87.4(ws@8.18.0)(zod@3.24.2)
       vitest:
         specifier: 'catalog:'
         version: 2.1.8(@types/node@18.19.80)(lightningcss@1.29.1)
@@ -5791,8 +5791,8 @@ packages:
     resolution: {integrity: sha512-mnkeQ1qP5Ue2wd+aivTD3NHd/lZ96Lu0jgf0pwktLPtx6cTZiH7tyeGRRHs0zX0rbrahXPnXlUnbeXyaBBuIaw==}
     engines: {node: '>=18'}
 
-  openai@4.87.3:
-    resolution: {integrity: sha512-d2D54fzMuBYTxMW8wcNmhT1rYKcTfMJ8t+4KjH2KtvYenygITiGBgHoIrzHwnDQWW+C5oCA+ikIR2jgPCFqcKQ==}
+  openai@4.87.4:
+    resolution: {integrity: sha512-lsfM20jZY4A0lNexfoUAkfmrEXxaTXvv8OKYicpeAJUNHObpRgkvC7pxPgMnB6gc9ID8OCwzzhEhBpNy69UR7w==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -12683,7 +12683,7 @@ snapshots:
       is-inside-container: 1.0.0
       is-wsl: 3.1.0
 
-  openai@4.87.3(ws@8.18.0)(zod@3.24.2):
+  openai@4.87.4(ws@8.18.0)(zod@3.24.2):
     dependencies:
       '@types/node': 18.19.80
       '@types/node-fetch': 2.6.12
