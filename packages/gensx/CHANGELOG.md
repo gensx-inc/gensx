@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.9...gensx-v0.3.10) (2025-03-19)
+
+
+### ✨ New Features
+
+* Convert IDE rules packages to npx commands ([#485](https://github.com/gensx-inc/gensx/issues/485)) ([7636802](https://github.com/gensx-inc/gensx/commit/763680288b99641bd96b6f26b414550bc8ca1b7e))
+
 ## [0.3.9](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.8...gensx-v0.3.9) (2025-03-17)
 
 

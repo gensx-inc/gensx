@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.22](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.21...create-gensx-v0.1.22) (2025-03-19)
+
+
+### ✨ New Features
+
+* Convert IDE rules packages to npx commands ([#485](https://github.com/gensx-inc/gensx/issues/485)) ([7636802](https://github.com/gensx-inc/gensx/commit/763680288b99641bd96b6f26b414550bc8ca1b7e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.3.10
+
 ## [0.1.21](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.20...create-gensx-v0.1.21) (2025-03-17)
 
 

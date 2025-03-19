@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.2...gensx-claude-md-v0.1.3) (2025-03-19)
+
+
+### ✨ New Features
+
+* Convert IDE rules packages to npx commands ([#485](https://github.com/gensx-inc/gensx/issues/485)) ([7636802](https://github.com/gensx-inc/gensx/commit/763680288b99641bd96b6f26b414550bc8ca1b7e))
+
 ## [0.1.2](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.1...gensx-claude-md-v0.1.2) (2025-03-17)
 
 
