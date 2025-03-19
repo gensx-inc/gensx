@@ -12,42 +12,42 @@ export function createTsupConfig(entries) {
     // ESM Build
     {
       entry: entries,
-      format: ['esm'],
+      format: ["esm"],
       dts: true,
       sourcemap: true,
       clean: true,
-      outDir: 'dist/esm',
+      outDir: "dist/esm",
       esbuildOptions(options) {
-        options.conditions = ['module', 'import'];
-        options.platform = 'node';
+        options.conditions = ["module", "import"];
+        options.platform = "node";
         options.keepNames = true;
       },
     },
     // CJS Build
     {
       entry: entries,
-      format: ['cjs'],
+      format: ["cjs"],
       sourcemap: true,
-      outDir: 'dist/cjs',
+      outDir: "dist/cjs",
       esbuildOptions(options) {
-        options.conditions = ['require'];
-        options.platform = 'node';
+        options.conditions = ["require"];
+        options.platform = "node";
         options.keepNames = true;
       },
       // Handle ESM dependencies properly
-      noExternal: ['serialize-error'],
+      noExternal: ["serialize-error"],
       // Bundle mode to properly include ESM dependencies
       treeshake: true,
     },
     // Type definitions (only need to generate once)
     {
       entry: entries,
-      format: ['esm'],
+      format: ["esm"],
       dts: {
         only: true,
       },
       sourcemap: true,
-      outDir: 'dist',
+      outDir: "dist",
       clean: false,
     },
   ];

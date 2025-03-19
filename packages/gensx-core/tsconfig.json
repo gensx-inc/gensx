@@ -11,6 +11,6 @@
     },
     "noUnusedLocals": false
   },
-  "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
+  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "tsup.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
