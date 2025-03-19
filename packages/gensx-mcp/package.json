@@ -46,7 +46,7 @@
     "@gensx/core": "^0.3.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.6.0",
+    "@modelcontextprotocol/sdk": "^1.7.0",
     "tsx": "catalog:",
     "zod": "catalog:"
   }

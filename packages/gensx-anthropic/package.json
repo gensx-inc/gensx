@@ -36,13 +36,13 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "peerDependencies": {
-    "@anthropic-ai/sdk": "^0.37.0",
+    "@anthropic-ai/sdk": "^0.39.0",
     "@gensx/core": "^0.3.0",
     "zod": "catalog:",
     "zod-to-json-schema": "catalog:"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.37.0",
+    "@anthropic-ai/sdk": "^0.39.0",
     "@gensx/core": "workspace:*",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
