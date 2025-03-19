@@ -34,6 +34,7 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@gensx/core": "workspace:*",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:"
@@ -41,9 +42,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "peerDependencies": {
+    "@gensx/core": "^0.3.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.0",
-    "@gensx/core": "workspace:*",
     "tsx": "catalog:",
     "zod": "catalog:"
   }
