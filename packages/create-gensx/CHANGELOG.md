@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.23](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.22...create-gensx-v0.1.23) (2025-03-19)
+
+
+### ✨ New Features
+
+* Support commonjs. ([#495](https://github.com/gensx-inc/gensx/issues/495)) ([953be8c](https://github.com/gensx-inc/gensx/commit/953be8c36db9e2def73e40a32fabf8d9828b39a0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.3.11
+
 ## [0.1.22](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.21...create-gensx-v0.1.22) (2025-03-19)
 
 

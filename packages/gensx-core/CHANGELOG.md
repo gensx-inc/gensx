@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.5](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.4...gensx-core-v0.3.5) (2025-03-19)
+
+
+### ✨ New Features
+
+* Support commonjs. ([#495](https://github.com/gensx-inc/gensx/issues/495)) ([953be8c](https://github.com/gensx-inc/gensx/commit/953be8c36db9e2def73e40a32fabf8d9828b39a0))
+
+
+### 🐛 Bug Fixes
+
+* Switch to peer dependencies. ([#493](https://github.com/gensx-inc/gensx/issues/493)) ([f9da3b3](https://github.com/gensx-inc/gensx/commit/f9da3b3e3a88d8a412737cb26dff52efd01e0841))
+
 ## [0.3.4](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.3...gensx-core-v0.3.4) (2025-03-17)
 
 

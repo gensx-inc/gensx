@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.11](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.10...gensx-v0.3.11) (2025-03-19)
+
+
+### ✨ New Features
+
+* Support commonjs. ([#495](https://github.com/gensx-inc/gensx/issues/495)) ([953be8c](https://github.com/gensx-inc/gensx/commit/953be8c36db9e2def73e40a32fabf8d9828b39a0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.5
+
 ## [0.3.10](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.9...gensx-v0.3.10) (2025-03-19)
 
 

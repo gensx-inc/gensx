@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.17](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.16...gensx-openai-v0.1.17) (2025-03-19)
+
+
+### ✨ New Features
+
+* Support commonjs. ([#495](https://github.com/gensx-inc/gensx/issues/495)) ([953be8c](https://github.com/gensx-inc/gensx/commit/953be8c36db9e2def73e40a32fabf8d9828b39a0))
+
+
+### 🐛 Bug Fixes
+
+* Switch to peer dependencies. ([#493](https://github.com/gensx-inc/gensx/issues/493)) ([f9da3b3](https://github.com/gensx-inc/gensx/commit/f9da3b3e3a88d8a412737cb26dff52efd01e0841))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @gensx/core bumped to 0.3.5
+  * peerDependencies
+    * @gensx/core bumped from ^0.3.0 to ^0.3.5
+
 ## [0.1.16](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.15...gensx-openai-v0.1.16) (2025-03-17)
 
 
