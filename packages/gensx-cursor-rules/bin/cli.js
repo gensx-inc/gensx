@@ -2,7 +2,7 @@
 
 "use strict";
 
-const fs = require("fs-extra");
+const fs = require("fs/promises");
 const path = require("path");
 
 async function installCursorRules() {
@@ -20,7 +20,7 @@ async function installCursorRules() {
 
     // Create .cursor directory if it doesn't exist
     const cursorDir = path.join(targetDir, ".cursor");
-    await fs.ensureDir(cursorDir);
+    await fs.mkdir(cursorDir, { recursive: true });
 
     // Get list of rule files from the package
     const ruleFiles = await fs.readdir(rulesDir);
@@ -46,7 +46,7 @@ async function installCursorRules() {
       const fileExists = existingFiles.includes(file);
 
       // Copy the rule file
-      await fs.copy(source, destination, { overwrite: true });
+      await fs.copyFile(source, destination);
 
       if (fileExists) {
         updated++;

@@ -24,9 +24,6 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
-  "dependencies": {
-    "fs-extra": "^11.2.0"
-  },
   "publishConfig": {
     "access": "public"
   }

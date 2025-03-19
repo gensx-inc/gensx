@@ -820,11 +820,7 @@ importers:
         specifier: 'catalog:'
         version: 2.1.8(@types/node@18.19.80)(lightningcss@1.29.1)
 
-  packages/gensx-claude-md:
-    dependencies:
-      fs-extra:
-        specifier: ^11.2.0
-        version: 11.2.0
+  packages/gensx-claude-md: {}
 
   packages/gensx-cli:
     dependencies:
@@ -859,11 +855,7 @@ importers:
         specifier: 'catalog:'
         version: 2.1.8(@types/node@18.19.80)(lightningcss@1.29.1)
 
-  packages/gensx-cursor-rules:
-    dependencies:
-      fs-extra:
-        specifier: ^11.2.0
-        version: 11.2.0
+  packages/gensx-cursor-rules: {}
 
   packages/gensx-mcp:
     dependencies:

@@ -2,7 +2,7 @@
 
 "use strict";
 
-const fs = require("fs-extra");
+const fs = require("fs/promises");
 const path = require("path");
 
 // Constants for managed section markers
@@ -96,10 +96,10 @@ async function copyTemplate() {
           // If destination doesn't have managed section markers, it's from an older version or fully custom
           // Create a backup before replacing
           const backupPath = path.join(targetDir, "CLAUDE.md.backup");
-          await fs.copy(destination, backupPath);
+          await fs.copyFile(destination, backupPath);
 
           // Copy the new template
-          await fs.copy(source, destination);
+          await fs.copyFile(source, destination);
           console.log(
             "✅ Updated CLAUDE.md to the latest version with managed sections.",
           );
@@ -115,7 +115,7 @@ async function copyTemplate() {
       }
     } else {
       // File doesn't exist, create it
-      await fs.copy(source, destination);
+      await fs.copyFile(source, destination);
       console.log("✅ Created new CLAUDE.md template in project root.");
     }
   } catch (error) {
