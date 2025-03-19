@@ -17,5 +17,5 @@ export default defineConfig([
       options.platform = "node";
       options.keepNames = true;
     },
-  }
+  },
 ]);

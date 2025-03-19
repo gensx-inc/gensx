@@ -21,5 +21,5 @@ export default defineConfig([
       const { cp } = await import("node:fs/promises");
       await cp("src/templates", "dist/templates", { recursive: true });
     },
-  }
+  },
 ]);
