@@ -13,7 +13,7 @@
     "types": ["npm:@types/node"]
   },
   "imports": {
-    "@gensx/core": "../gensx-core/dist/index.js",
+    "@gensx/core": "../gensx-core/dist/esm/index.js",
     "@hono/node-server": "npm:@hono/node-server",
     "@rollup/plugin-commonjs": "npm:@rollup/plugin-commonjs",
     "@rollup/plugin-json": "npm:@rollup/plugin-json",

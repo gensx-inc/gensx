@@ -25,6 +25,6 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": "."
   },
-  "include": ["vitest.workspace.ts"],
+  "include": ["vitest.workspace.ts", "packages/tsup.base.ts"],
   "exclude": ["node_modules", "dist"]
 }
