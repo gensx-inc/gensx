@@ -376,7 +376,7 @@ export async function newProject(
           // Run each assistant installation command using npx
           for (const assistantPackage of selectedAssistants) {
             spinner.start(`Adding rules from ${assistantPackage}`);
-            console.log(await exec(`npx ${assistantPackage}`));
+            await exec(`npx ${assistantPackage}`);
             spinner.succeed();
           }
 
