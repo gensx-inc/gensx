@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.5...gensx-core-v0.3.6) (2025-03-20)
+
+
+### 🐛 Bug Fixes
+
+* Fix type resolution errors. ([#502](https://github.com/gensx-inc/gensx/issues/502)) ([d5d1024](https://github.com/gensx-inc/gensx/commit/d5d1024b3453c604c9a9110c564a91e31c0ba9a1))
+
 ## [0.3.5](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.4...gensx-core-v0.3.5) (2025-03-19)
 
 

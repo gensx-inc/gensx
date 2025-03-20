@@ -1,6 +1,6 @@
 {
   "name": "@gensx/anthropic",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Anthropic integration for GenSX.",
   "type": "module",
   "main": "./dist/index.js",

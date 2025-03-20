@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.10](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-sdk-v0.1.9...gensx-vercel-ai-sdk-v0.1.10) (2025-03-20)
+
+
+### 🐛 Bug Fixes
+
+* Fix type resolution errors. ([#502](https://github.com/gensx-inc/gensx/issues/502)) ([d5d1024](https://github.com/gensx-inc/gensx/commit/d5d1024b3453c604c9a9110c564a91e31c0ba9a1))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.6
+
 ## [0.1.9](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-sdk-v0.1.8...gensx-vercel-ai-sdk-v0.1.9) (2025-03-19)
 
 

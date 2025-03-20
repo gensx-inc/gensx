@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.3...gensx-claude-md-v0.1.4) (2025-03-20)
+
+
+### 🐛 Bug Fixes
+
+* Improve tests for rules packages. ([#498](https://github.com/gensx-inc/gensx/issues/498)) ([ccbc47a](https://github.com/gensx-inc/gensx/commit/ccbc47abc576c4106638ba7e4f6beb3f1f28a68e))
+
 ## [0.1.3](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.2...gensx-claude-md-v0.1.3) (2025-03-19)
 
 

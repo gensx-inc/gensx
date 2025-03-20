@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.12](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.11...gensx-v0.3.12) (2025-03-20)
+
+
+### 🐛 Bug Fixes
+
+* Fix type resolution errors. ([#502](https://github.com/gensx-inc/gensx/issues/502)) ([d5d1024](https://github.com/gensx-inc/gensx/commit/d5d1024b3453c604c9a9110c564a91e31c0ba9a1))
+* Use select instead of multiselect for selecting AI assistant rules. ([#506](https://github.com/gensx-inc/gensx/issues/506)) ([a2c5321](https://github.com/gensx-inc/gensx/commit/a2c5321e3c96b4464ebc8873c63a157060eea6b5)), closes [#503](https://github.com/gensx-inc/gensx/issues/503)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.6
+
 ## [0.3.11](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.10...gensx-v0.3.11) (2025-03-19)
 
 

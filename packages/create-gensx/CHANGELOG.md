@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.24](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.23...create-gensx-v0.1.24) (2025-03-20)
+
+
+### 🐛 Bug Fixes
+
+* Fix type resolution errors. ([#502](https://github.com/gensx-inc/gensx/issues/502)) ([d5d1024](https://github.com/gensx-inc/gensx/commit/d5d1024b3453c604c9a9110c564a91e31c0ba9a1))
+* Improve tests for rules packages. ([#498](https://github.com/gensx-inc/gensx/issues/498)) ([ccbc47a](https://github.com/gensx-inc/gensx/commit/ccbc47abc576c4106638ba7e4f6beb3f1f28a68e))
+* Use select instead of multiselect for selecting AI assistant rules. ([#506](https://github.com/gensx-inc/gensx/issues/506)) ([a2c5321](https://github.com/gensx-inc/gensx/commit/a2c5321e3c96b4464ebc8873c63a157060eea6b5)), closes [#503](https://github.com/gensx-inc/gensx/issues/503)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.3.12
+
 ## [0.1.23](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.22...create-gensx-v0.1.23) (2025-03-19)
 
 
