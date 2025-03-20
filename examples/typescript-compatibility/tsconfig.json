@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "esnext",
+    "target": "es5",
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "rootDir": ".",
     "outDir": "dist",
-    "strict": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "@gensx/core"
+    "jsx": "preserve",
+    "strict": true
   },
   "include": ["*.ts", "*.tsx"],
   "exclude": ["node_modules", "dist"]
