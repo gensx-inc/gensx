@@ -14,19 +14,24 @@
     "directory": "packages/gensx-claude-md"
   },
   "bin": {
-    "gensx-claude-md": "./bin/cli.js"
+    "gensx-claude-md": "./dist/cli.js"
   },
   "files": [
     "templates",
-    "bin"
+    "dist"
   ],
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
+    "clean": "rm -rf dist",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "test:types": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "catalog:packages",
+    "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
   },

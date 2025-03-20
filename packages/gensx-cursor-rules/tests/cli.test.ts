@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { suite } from "vitest";
+import { expect, suite, test } from "vitest";
 
 suite("Gensx Cursor Rules", () => {
   test("should create the rules", async () => {
@@ -16,7 +16,7 @@ suite("Gensx Cursor Rules", () => {
     // execute the bin/cli.js file
     await new Promise((resolve, reject) => {
       exec(
-        `${cwd}/bin/cli.js`,
+        `${cwd}/dist/cli.js`,
         {
           cwd: tmpDir,
         },

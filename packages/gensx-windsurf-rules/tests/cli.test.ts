@@ -3,11 +3,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { suite } from "vitest";
+import { expect, suite, test } from "vitest";
 
-suite("Gensx Claude MD", () => {
-  test("should create the template", async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gensx-claude-md-"));
+suite("Gensx Windsurf Rules", () => {
+  test("should create the rules", async () => {
+    const tmpDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "gensx-windsurf-rules-"),
+    );
 
     const cwd = process.cwd();
 
@@ -25,11 +27,11 @@ suite("Gensx Claude MD", () => {
       );
     });
 
-    // check if the CLAUDE.md file was created
-    const ruleFile = path.join(tmpDir, "CLAUDE.md");
+    // check if the .windsurfrules file was created
+    const ruleFile = path.join(tmpDir, ".windsurfrules");
     expect(fs.existsSync(ruleFile)).toBe(true);
     expect(fs.readFileSync(ruleFile, "utf8")).toContain(
-      "GenSX Project Claude Memory",
+      "GenSX Project Guidelines",
     );
   });
 });

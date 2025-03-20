@@ -3,11 +3,16 @@ import rootConfig from "../../eslint.config.mjs";
 export default [
   ...rootConfig,
   {
-    files: ["**/*.{js,mjs,cjs,jsx}"],
+    files: ["src/**/*.ts", "tests/**/*.ts", "*.ts"],
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.json",
+      },
+    },
     rules: {
-      "no-console": "off",
-      "n/shebang": "off",
+      "no-console": ["error", { allow: ["info", "error", "warn", "log"] }],
       "n/no-process-exit": "off",
+      "n/shebang": "off",
     },
   },
 ];

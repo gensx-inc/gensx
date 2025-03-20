@@ -8,10 +8,13 @@
   },
   "type": "module",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
+    "clean": "rm -rf dist",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "test:types": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -25,7 +28,7 @@
   ],
   "files": [
     "templates",
-    "bin"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -33,6 +36,8 @@
   "author": "GenSX Inc.",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/node": "catalog:packages",
+    "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
   }

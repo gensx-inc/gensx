@@ -14,22 +14,27 @@
   },
   "type": "module",
   "bin": {
-    "gensx-cursor-rules": "./bin/cli.js"
+    "gensx-cursor-rules": "./dist/cli.js"
   },
   "files": [
-    "rules",
-    "bin"
+    "dist",
+    "rules"
   ],
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
+    "clean": "rm -rf dist",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "test:types": "tsc --noEmit"
   },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
+    "@types/node": "catalog:packages",
+    "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
   }

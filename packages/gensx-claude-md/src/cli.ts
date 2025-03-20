@@ -3,10 +3,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-// Constants for managed section markers
-const BEGIN_MANAGED_SECTION = "<!-- BEGIN_MANAGED_SECTION -->";
-const END_MANAGED_SECTION = "<!-- END_MANAGED_SECTION -->";
-
 async function copyTemplate() {
   try {
     console.log("Installing GenSX Claude template...");
@@ -30,7 +26,7 @@ async function copyTemplate() {
     try {
       await fs.access(destination);
       fileExists = true;
-    } catch (error) {
+    } catch {
       // File doesn't exist
     }
 
@@ -47,11 +43,11 @@ async function copyTemplate() {
         }
 
         // Extract the managed section from the source template
-        const sourceStartMatch = sourceContent.match(
-          /<!-- BEGIN_MANAGED_SECTION -->/,
+        const sourceStartMatch = /<!-- BEGIN_MANAGED_SECTION -->/.exec(
+          sourceContent,
         );
-        const sourceEndMatch = sourceContent.match(
-          /<!-- END_MANAGED_SECTION -->/,
+        const sourceEndMatch = /<!-- END_MANAGED_SECTION -->/.exec(
+          sourceContent,
         );
 
         if (!sourceStartMatch || !sourceEndMatch) {
@@ -70,10 +66,10 @@ async function copyTemplate() {
         );
 
         // Check if destination file has managed section markers
-        const destStartMatch = destContent.match(
-          /<!-- BEGIN_MANAGED_SECTION -->/,
+        const destStartMatch = /<!-- BEGIN_MANAGED_SECTION -->/.exec(
+          destContent,
         );
-        const destEndMatch = destContent.match(/<!-- END_MANAGED_SECTION -->/);
+        const destEndMatch = /<!-- END_MANAGED_SECTION -->/.exec(destContent);
 
         if (destStartMatch && destEndMatch) {
           // If destination has managed section markers, update only that section
@@ -125,7 +121,4 @@ async function copyTemplate() {
 }
 
 // Run the script
-copyTemplate().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+await copyTemplate();

@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 import fs from "node:fs/promises";
-import path from "node:path";
+import path, { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
-async function installCursorRules() {
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+async function installCursorRules(): Promise<void> {
   try {
-    const url = new URL(import.meta.url);
-    const dirname = path.dirname(url.pathname);
-
     // Path to the template .clinerules file
-    const rulesDir = path.join(dirname, "..", "rules");
+    const rulesDir = path.join(__dirname, "..", "rules");
 
     // Use current working directory as target
     const targetDir = process.cwd();
@@ -28,10 +28,10 @@ async function installCursorRules() {
     let updated = 0;
 
     // Get list of existing rule files
-    let existingFiles = [];
+    let existingFiles: string[] = [];
     try {
       existingFiles = await fs.readdir(cursorDir);
-    } catch (error) {
+    } catch {
       // If directory doesn't exist or isn't readable
     }
 
@@ -62,7 +62,4 @@ async function installCursorRules() {
 }
 
 // Run the installation
-installCursorRules().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+await installCursorRules();

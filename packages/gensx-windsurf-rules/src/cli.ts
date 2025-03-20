@@ -12,7 +12,7 @@ const END_MANAGED_SECTION = "<!-- END_MANAGED_SECTION -->";
  * @param {string} content - File content
  * @returns {string|null} - Managed section content or null if not found
  */
-function extractManagedSection(content) {
+function extractManagedSection(content: string): string | null {
   const startIndex = content.indexOf(BEGIN_MANAGED_SECTION);
   const endIndex = content.indexOf(END_MANAGED_SECTION);
 
@@ -29,7 +29,10 @@ function extractManagedSection(content) {
  * @param {string} templateContent - Template file content
  * @returns {string} - Updated file content
  */
-function updateManagedSection(existingContent, templateContent) {
+function updateManagedSection(
+  existingContent: string,
+  templateContent: string,
+): string {
   const existingManagedSection = extractManagedSection(existingContent);
   const templateManagedSection = extractManagedSection(templateContent);
 
@@ -98,6 +101,10 @@ try {
     console.log(`✅ Installed Windsurf rules to ${destPath}`);
   }
 } catch (error) {
-  console.error("Error installing Windsurf rules:", error.message);
+  if (error instanceof Error) {
+    console.error("Error installing Windsurf rules:", error.message);
+  } else {
+    console.error("Error installing Windsurf rules:", error);
+  }
   process.exit(1);
 }

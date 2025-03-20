@@ -1,4 +1,5 @@
 import * as path from "path";
+
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -7,6 +8,6 @@ export default defineConfig({
     globals: true,
     isolate: false,
     passWithNoTests: false,
-    include: ["./tests/**/*.test.js"],
+    include: ["./tests/**/*.test.ts"],
   },
 });

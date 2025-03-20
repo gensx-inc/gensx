@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
-import path from "node:path";
+import path, { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Constants for managed section markers
 const BEGIN_MANAGED_SECTION = "<!-- BEGIN_MANAGED_SECTION -->";
@@ -9,10 +12,10 @@ const END_MANAGED_SECTION = "<!-- END_MANAGED_SECTION -->";
 
 /**
  * Extract content between managed section markers
- * @param {string} content - File content
- * @returns {string|null} - Managed section content or null if not found
+ * @param content - File content
+ * @returns Managed section content or null if not found
  */
-function extractManagedSection(content) {
+function extractManagedSection(content: string): string | null {
   const startIndex = content.indexOf(BEGIN_MANAGED_SECTION);
   const endIndex = content.indexOf(END_MANAGED_SECTION);
 
@@ -25,11 +28,14 @@ function extractManagedSection(content) {
 
 /**
  * Update only the managed section of the file
- * @param {string} existingContent - Current file content
- * @param {string} templateContent - Template file content
- * @returns {string} - Updated file content
+ * @param existingContent - Current file content
+ * @param templateContent - Template file content
+ * @returns Updated file content
  */
-function updateManagedSection(existingContent, templateContent) {
+function updateManagedSection(
+  existingContent: string,
+  templateContent: string,
+): string {
   const existingManagedSection = extractManagedSection(existingContent);
   const templateManagedSection = extractManagedSection(templateContent);
 
@@ -44,16 +50,13 @@ function updateManagedSection(existingContent, templateContent) {
   );
 }
 
-function installClineRules() {
+function installClineRules(): void {
   try {
     // Use current working directory as target
     const targetDir = process.cwd();
 
-    const url = new URL(import.meta.url);
-    const dirname = path.dirname(url.pathname);
-
     // Path to the template .clinerules file
-    const templatePath = path.join(dirname, "..", "templates", ".clinerules");
+    const templatePath = path.join(__dirname, "..", "templates", ".clinerules");
 
     // Destination path in the target directory
     const destPath = path.join(targetDir, ".clinerules");
@@ -72,7 +75,7 @@ function installClineRules() {
 
       // Check if content is unchanged
       if (existingContent === templateContent) {
-        console.log(`${destPath} is already up to date.`);
+        console.info(`${destPath} is already up to date.`);
         process.exit(0);
       }
 
@@ -86,20 +89,28 @@ function installClineRules() {
       );
       fs.writeFileSync(destPath, updatedContent);
 
-      console.log(
+      console.info(
         `✅ Updated .clinerules to the latest version with managed sections.`,
       );
-      console.log(`ℹ️ Your previous file was backed up to .clinerules.backup`);
-      console.log(
+      console.info(`ℹ️ Your previous file was backed up to .clinerules.backup`);
+      console.info(
         `ℹ️ Add your custom content outside the managed section to preserve it during future updates.`,
       );
     } else {
       // Create a new file from template if it doesn't exist
       fs.writeFileSync(destPath, templateContent);
-      console.log(`✅ Installed Cline rules to ${destPath}`);
+      console.info(`✅ Installed Cline rules to ${destPath}`);
     }
   } catch (error) {
-    console.error("Error installing Cline rules:", error.message, error.stack);
+    if (error instanceof Error) {
+      console.error(
+        "Error installing Cline rules:",
+        error.message,
+        error.stack,
+      );
+    } else {
+      console.error("Error installing Cline rules:", error);
+    }
     process.exit(1);
   }
 }

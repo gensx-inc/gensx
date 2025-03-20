@@ -1,38 +1,42 @@
 {
   "name": "@gensx/cline-rules",
   "version": "0.1.3",
-  "description": "Cline rules for GenSX projects",
-  "main": "index.js",
-  "type": "module",
-  "bin": {
-    "gensx-cline-rules": "./bin/cli.js"
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
   },
-  "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "test": "vitest run",
-    "test:watch": "vitest watch"
-  },
+  "description": "Cline rules for GenSX projects.",
   "repository": {
     "type": "git",
     "url": "https://github.com/gensx-inc/gensx.git",
     "directory": "packages/gensx-cline-rules"
   },
-  "keywords": [
-    "gensx",
-    "cline",
-    "rules"
-  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "gensx-cline-rules": "./dist/cli.js"
+  },
   "files": [
-    "templates",
-    "bin"
+    "dist",
+    "templates"
   ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
+    "clean": "rm -rf dist",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:types": "tsc --noEmit"
+  },
   "publishConfig": {
     "access": "public"
   },
-  "author": "GenSX Inc.",
-  "license": "Apache-2.0",
   "devDependencies": {
+    "@types/node": "catalog:packages",
+    "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
   }
