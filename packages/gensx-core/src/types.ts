@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { GsxArray } from "./array.js";
+import { WithComponentOpts } from "./component.js";
 import { ExecutionContext } from "./context.js";
 import { JSX } from "./jsx-runtime.js";
 
@@ -86,7 +87,7 @@ export type GsxComponent<P, O> = ((
   readonly __brand: "gensx-component";
   readonly __outputType: O;
   readonly __rawProps: P;
-  run: (props: P) => MaybePromise<O>;
+  run: (props: WithComponentOpts<P>) => MaybePromise<O>;
 };
 
 export type Streamable =
@@ -108,15 +109,20 @@ export type StreamArgs<P> = P & {
   children?: StreamChildrenType<P>;
 };
 
-export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
-  props: StreamArgs<T>,
+export type GsxStreamComponent<P extends object & { length?: never }> = ((
+  props: StreamArgs<P>,
 ) => MaybePromise<
-  | DeepJSXElement<T extends { stream: true } ? Streamable : string>
+  | DeepJSXElement<P extends { stream: true } ? Streamable : string>
   | ExecutableValue
->) & {
-  run: <T extends P & { stream?: boolean }>(
-    props: T,
-  ) => MaybePromise<T extends { stream: true } ? Streamable : string>;
+>) /*
+ * Use branding to preserve output type information.
+ * This allows direct access to the output type O while maintaining
+ * compatibility with the more flexible JSX composition system.
+ */ & {
+  readonly __brand: "gensx-stream-component";
+  readonly __outputType: Streamable;
+  readonly __rawProps: P;
+  run: (props: WithComponentOpts<P>) => MaybePromise<Streamable>;
 };
 
 export interface Context<T> {

@@ -34,7 +34,7 @@ export function Component<P extends object & { length?: never }, O>(
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
   defaultOpts?: DefaultOpts,
 ): GsxComponent<WithComponentOpts<P>, O> {
-  const GsxComponent = async (props: WithComponentOpts<P>) => {
+  const GsxComponentFn = async (props: WithComponentOpts<P>) => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (typeof props !== "object" || Array.isArray(props) || props === null) {
       throw new Error(`Component ${name} received non-object props.`);
@@ -98,34 +98,35 @@ export function Component<P extends object & { length?: never }, O>(
     }
   };
 
-  GsxComponent.run = (props: WithComponentOpts<P>) => {
-    return jsx(GsxComponent, props)();
+  GsxComponentFn.run = (props: WithComponentOpts<P>) => {
+    return jsx(GsxComponentFn, props)();
   };
 
   if (name) {
-    Object.defineProperty(GsxComponent, "name", {
+    Object.defineProperty(GsxComponentFn, "name", {
       value: name,
     });
   }
 
-  Object.defineProperty(GsxComponent, "__gsxFramework", {
+  Object.defineProperty(GsxComponentFn, "__gsxFramework", {
     value: true,
   });
 
   // Brand the component with its output type
-  return GsxComponent as GsxComponent<WithComponentOpts<P>, O>;
+  return GsxComponentFn as GsxComponent<WithComponentOpts<P>, O>;
 }
 
-export function StreamComponent<P>(
+type StreamComponentProps<P extends object & { length?: never }> =
+  WithComponentOpts<P & { stream?: boolean }>;
+
+export function StreamComponent<P extends object & { length?: never }>(
   name: string,
   fn: (
     props: P & { stream?: boolean },
   ) => MaybePromise<Streamable | JSX.Element>,
   defaultOpts?: DefaultOpts,
-): GsxStreamComponent<WithComponentOpts<P & { stream?: boolean }>> {
-  const GsxStreamComponent = async (
-    props: WithComponentOpts<P & { stream?: boolean }>,
-  ) => {
+): GsxStreamComponent<StreamComponentProps<P>> {
+  const GsxStreamComponentFn = async (props: StreamComponentProps<P>) => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -216,27 +217,25 @@ export function StreamComponent<P>(
     }
   };
 
-  GsxStreamComponent.run = <T extends P & { stream?: boolean }>(
-    props: WithComponentOpts<T>,
-  ) => {
-    return jsx(GsxStreamComponent, props)();
+  GsxStreamComponentFn.run = (props: StreamComponentProps<P>) => {
+    return jsx(GsxStreamComponentFn, props)();
   };
 
   if (name) {
-    Object.defineProperty(GsxStreamComponent, "name", {
+    Object.defineProperty(GsxStreamComponentFn, "name", {
       value: name,
     });
   }
 
-  Object.defineProperty(GsxStreamComponent, "__gsxFramework", {
+  Object.defineProperty(GsxStreamComponentFn, "__gsxFramework", {
     value: true,
   });
 
-  Object.defineProperty(GsxStreamComponent, "__gsxStreamComponent", {
+  Object.defineProperty(GsxStreamComponentFn, "__gsxStreamComponent", {
     value: true,
   });
 
-  return GsxStreamComponent as GsxStreamComponent<
-    WithComponentOpts<P & { stream?: boolean }>
+  return GsxStreamComponentFn as unknown as GsxStreamComponent<
+    StreamComponentProps<P>
   >;
 }

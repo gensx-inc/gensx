@@ -178,6 +178,34 @@ suite("component", () => {
     expect(iteratorConsumed).toBe(true);
   });
 
+  suite("type inference", () => {
+    test("props types are enforced for Component", async () => {
+      const TestComponent = gensx.Component<{ input: string }, string>(
+        "TestComponent",
+        async ({ input }) => {
+          await setTimeout(0);
+          return `Hello ${input}`;
+        },
+      );
+
+      // @ts-expect-error - This should is an error because foo is not a valid prop
+      await gensx.execute<string>(<TestComponent input="World" foo={"bar"} />);
+    });
+
+    test("props types are enforced for StreamComponent", async () => {
+      const TestComponent = gensx.StreamComponent<{ input: string }>(
+        "TestComponent",
+        async function* ({ input }) {
+          await setTimeout(0);
+          return `Hello ${input}`;
+        },
+      );
+
+      // @ts-expect-error - This should is an error because foo is not a valid prop
+      await gensx.execute<string>(<TestComponent input="World" foo={"bar"} />);
+    });
+  });
+
   suite("Component.run", () => {
     test("executes component", async () => {
       const TestComponent = gensx.Component<{ input: string }, string>(
@@ -338,10 +366,9 @@ suite("component", () => {
         },
       );
 
-      const WrapperComponent = gensx.Component<{ input: string }, string>(
+      const WrapperComponent = gensx.Component<{ input: string }, Streamable>(
         "WrapperComponent",
         async ({ input }) => {
-          // No need for type assertion since it's correctly typed as string
           const result = await TestStreamComponent.run({
             input,
             componentOpts: { name: "RenamedStreamComponent" },

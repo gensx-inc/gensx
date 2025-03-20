@@ -1,9 +1,10 @@
 import * as gensx from "@gensx/core";
+import { Streamable } from "@gensx/core";
 import { ChatCompletionChunk } from "openai/resources/index.mjs";
 import { Stream } from "openai/streaming.mjs";
 import { expect, suite, test } from "vitest";
 
-import { GSXChatCompletionResult } from "@/gsx-completion.js";
+import { ChatCompletion, GSXChatCompletionResult } from "@/gsx-completion.js";
 import { GSXChatCompletion, OpenAIProvider } from "@/index.js";
 
 suite("GSXChatCompletion", () => {
@@ -107,5 +108,27 @@ suite("GSXChatCompletion", () => {
       messages: [{ role: "user", content: "test" }, { content: "Hello World" }],
       choices: [{ message: { content: "Hello World" } }],
     });
+  });
+});
+
+suite("ChatCompletion", () => {
+  test("enforces types", async () => {
+    const Wrapper = gensx.Component<{}, Streamable>("Wrapper", () => {
+      return (
+        <ChatCompletion
+          model="gpt-4o"
+          messages={[{ role: "user", content: "test" }]}
+          stream={true}
+          // @ts-expect-error - This should be an error because foo is not a valid prop
+          foo={"bar"}
+        />
+      );
+    });
+
+    await gensx.execute<Streamable>(
+      <OpenAIProvider apiKey="test">
+        <Wrapper />
+      </OpenAIProvider>,
+    );
   });
 });
