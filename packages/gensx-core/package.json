@@ -3,8 +3,7 @@
   "version": "0.3.5",
   "description": "Build AI workflows using JSX.",
   "type": "module",
-  "main": "./dist/es5/index.js",
-  "module": "./dist/index.js",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "engines": {
     "node": ">=18.0.0",
@@ -16,24 +15,9 @@
     "directory": "packages/gensx-core"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/es5/index.js",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    },
-    "./jsx-runtime": {
-      "types": "./dist/jsx-runtime.d.ts",
-      "require": "./dist/es5/jsx-runtime.js",
-      "import": "./dist/jsx-runtime.js",
-      "default": "./dist/jsx-runtime.js"
-    },
-    "./jsx-dev-runtime": {
-      "types": "./dist/jsx-dev-runtime.d.ts",
-      "require": "./dist/es5/jsx-dev-runtime.js",
-      "import": "./dist/jsx-dev-runtime.js",
-      "default": "./dist/jsx-dev-runtime.js"
-    }
+    ".": "./dist/index.js",
+    "./jsx-runtime": "./dist/jsx-runtime.js",
+    "./jsx-dev-runtime": "./dist/jsx-dev-runtime.js"
   },
   "typesVersions": {
     "*": {
@@ -49,9 +33,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm run build:modern && pnpm run build:es5",
-    "build:modern": "tsc -p tsconfig.build.json",
-    "build:es5": "tsc -p tsconfig.es5.json",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",

@@ -8,6 +8,7 @@ const meta = {
   examples: "Examples",
   "component-reference": "Components Reference",
   patterns: "Patterns",
+  "typescript-compatibility": "Typescript Compatibility",
 };
 
 export default meta;

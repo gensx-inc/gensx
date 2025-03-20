@@ -3,7 +3,7 @@
   "version": "0.1.17",
   "description": "OpenAI integration for GenSX.",
   "type": "module",
-  "main": "./dist/es5/index.js",
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "engines": {
@@ -16,17 +16,10 @@
     "directory": "packages/gensx-openai"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/es5/index.js",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    }
+    ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "pnpm run build:modern && pnpm run build:es5",
-    "build:modern": "tsc -p tsconfig.build.json",
-    "build:es5": "tsc -p tsconfig.es5.json",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",

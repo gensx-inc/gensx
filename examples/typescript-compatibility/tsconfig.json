@@ -1,16 +1,17 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
+    "target": "es6",
+    "module": "es6",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "rootDir": ".",
     "outDir": "dist",
-    "jsx": "preserve",
+    "jsx": "react-jsx",
+    "jsxImportSource": "@gensx/core",
     "strict": true,
     "skipLibCheck": true,
     "downlevelIteration": true,
-    "lib": ["es5", "dom", "es2015.collection", "es2015.iterable"]
+    "types": ["@gensx/core", "node"]
   },
   "include": ["*.ts", "*.tsx"],
   "exclude": ["node_modules", "dist"]

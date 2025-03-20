@@ -1,0 +1,32 @@
+---
+title: Typescript/ESM Compatibility
+description: GenSX Typescript/ESM Compatibility
+---
+
+# Typescript Compatibility
+
+GenSX is designed to be compatible with TypeScript. This page has some tips and tricks for using GenSX with TypeScript.
+
+## Minimum TypeScript Version
+
+GenSX requires TypeScript version 5.1 or higher.
+
+## TypeScript Configuration
+
+- `target` should be set to at least `es6`
+- `module` should be set to at least `es6`
+- `jsx` should be set to `react-jsx`
+- `jsxImportSource` should be set to `@gensx/core`
+
+### JSX Pragmas
+
+If you are unable to change the `jsx` or `jsxImportSource` settings in your TypeScript configuration, you can use the following pragmas to enable GenSX:
+
+```tsx
+/** @jsxRuntime automatic */
+/** @jsxImportSource @gensx/core */
+```
+
+## ESM Compatibility
+
+GenSX is designed to be compatible with ESM. This means that you can use it in any environment that supports ESM. At this time, GenSX is not compatible with CommonJS.

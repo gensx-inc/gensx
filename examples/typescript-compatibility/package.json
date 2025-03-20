@@ -20,6 +20,6 @@
     "@types/node": "catalog:examples",
     "nodemon": "catalog:",
     "tsx": "catalog:",
-    "typescript": "^5.0"
+    "typescript": "5.1"
   }
 }
