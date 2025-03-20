@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
+import path from "node:path";
 
 // Constants for managed section markers
 const BEGIN_MANAGED_SECTION = "<!-- BEGIN_MANAGED_SECTION -->";
@@ -50,7 +50,7 @@ try {
 
   // Path to the template .windsurfrules file
   const templatePath = path.join(
-    __dirname,
+    import.meta.dirname,
     "..",
     "templates",
     ".windsurfrules",

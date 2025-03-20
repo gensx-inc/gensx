@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
+import path from "node:path";
 
 // Constants for managed section markers
 const BEGIN_MANAGED_SECTION = "<!-- BEGIN_MANAGED_SECTION -->";
@@ -49,7 +49,12 @@ try {
   const targetDir = process.cwd();
 
   // Path to the template .clinerules file
-  const templatePath = path.join(__dirname, "..", "templates", ".clinerules");
+  const templatePath = path.join(
+    import.meta.dirname,
+    "..",
+    "templates",
+    ".clinerules",
+  );
 
   // Destination path in the target directory
   const destPath = path.join(targetDir, ".clinerules");

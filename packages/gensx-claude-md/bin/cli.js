@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-"use strict";
-
-const fs = require("fs/promises");
-const path = require("path");
+import fs from "node:fs/promises";
+import path from "node:path";
 
 // Constants for managed section markers
 const BEGIN_MANAGED_SECTION = "<!-- BEGIN_MANAGED_SECTION -->";
@@ -14,7 +12,7 @@ async function copyTemplate() {
     console.log("Installing GenSX Claude template...");
 
     // Get the directory of the package
-    const pkgDir = path.resolve(__dirname, "..");
+    const pkgDir = path.resolve(import.meta.dirname, "..");
 
     // Path to the template directory
     const templateDir = path.resolve(pkgDir, "templates");

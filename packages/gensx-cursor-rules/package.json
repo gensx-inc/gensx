@@ -1,7 +1,6 @@
 {
   "name": "@gensx/cursor-rules",
   "version": "0.1.3",
-  "type": "commonjs",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=18.0.0",
@@ -13,6 +12,7 @@
     "url": "https://github.com/gensx-inc/gensx.git",
     "directory": "packages/gensx-cursor-rules"
   },
+  "type": "module",
   "bin": {
     "gensx-cursor-rules": "./bin/cli.js"
   },
@@ -22,9 +22,15 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

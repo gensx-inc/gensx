@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 
-"use strict";
-
-const fs = require("fs/promises");
-const path = require("path");
+import fs from "node:fs/promises";
+import path from "node:path";
 
 async function installCursorRules() {
   try {
     // Get the directory of the package
-    const pkgDir = path.resolve(__dirname, "..");
+    const pkgDir = path.resolve(import.meta.dirname, "..");
 
     // Path to the rules directory
     const rulesDir = path.resolve(pkgDir, "rules");

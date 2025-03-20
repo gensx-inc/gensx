@@ -100,13 +100,10 @@ it("package.json is correctly configured for npm create", async () => {
 
   try {
     // Try to execute the package bin directly with all AI assistant integrations
-    await exec(
-      `${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s --ide-rules claude,cursor,cline,windsurf`,
-      {
-        cwd: pkgDir,
-        env: { ...process.env },
-      },
-    );
+    await exec(`${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s`, {
+      cwd: pkgDir,
+      env: { ...process.env },
+    });
 
     // Verify the project was created
     const exists = await fs.pathExists(testProjectDir);
@@ -117,13 +114,6 @@ it("package.json is correctly configured for npm create", async () => {
       path.join(testProjectDir, "package.json"),
     );
     expect(projectPkgExists).toBe(true);
-
-    // Verify the rule files were created
-    const ruleFiles = await fs.readdir(testProjectDir);
-    expect(ruleFiles).toContain(".cursor");
-    expect(ruleFiles).toContain(".clinerules");
-    expect(ruleFiles).toContain(".windsurfrules");
-    expect(ruleFiles).toContain("CLAUDE.md");
   } catch (error) {
     // If execution fails, check the package.json configuration
     const pkgJson = (await fs.readJson(path.join(pkgDir, "package.json"))) as {

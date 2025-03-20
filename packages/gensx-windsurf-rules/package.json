@@ -6,9 +6,12 @@
   "bin": {
     "gensx-windsurf-rules": "./bin/cli.js"
   },
+  "type": "module",
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
   },
   "repository": {
     "type": "git",
@@ -28,5 +31,9 @@
     "access": "public"
   },
   "author": "GenSX Inc.",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
 }

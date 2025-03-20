@@ -40,7 +40,7 @@
     "prettier": "^3.0.0",
     "turbo": "^2.4.4",
     "typescript": "catalog:",
-    "vite": "^6.2.2"
+    "vite": "catalog:"
   },
   "dependencies": {
     "@tsconfig/node20": "^20.1.4",
