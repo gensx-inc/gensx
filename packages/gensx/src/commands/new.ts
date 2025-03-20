@@ -167,12 +167,24 @@ async function selectAiAssistants(): Promise<string[]> {
       message: "Windsurf",
       hint: "Adds Windsurf Cascade AI integration rules",
     },
+    {
+      name: "all",
+      value: "all",
+      message: "All",
+      hint: "Adds all AI assistants",
+    },
+    {
+      name: "none",
+      value: "none",
+      message: "None",
+      hint: "No AI assistants will be installed",
+    },
   ];
 
   try {
     const prompter = enquirer as PromptModule;
     const response = await prompter.prompt<{ assistants: string[] }>({
-      type: "multiselect",
+      type: "select",
       name: "assistants",
       message: "Select AI assistants to integrate with your project",
       choices: aiAssistantOptions.map((option) => ({
@@ -181,12 +193,13 @@ async function selectAiAssistants(): Promise<string[]> {
         message: `${option.message} ${pc.dim(`(${option.hint})`)}`,
       })),
       // Custom result function to return the actual values
-      result(names: string[]) {
+      result(selection: string) {
         // Convert selected names to their corresponding values
-        return names.map(
-          (name) =>
-            aiAssistantOptions.find((opt) => opt.name === name)?.value ?? name,
-        );
+        return selection === "none"
+          ? []
+          : selection === "all"
+            ? aiAssistantOptions.map((opt) => opt.value)
+            : [aiAssistantOptions.find((opt) => opt.name === selection)?.value];
       },
     });
 
@@ -349,9 +362,7 @@ export async function newProject(
       // Interactive assistant selection if not skipped and not pre-specified
       else if (!options.skipIdeRules) {
         logger.log(
-          pc.yellow(
-            "\nWould you like to integrate with AI assistants? (Use space bar to select)",
-          ),
+          pc.yellow("\nWould you like to integrate with AI assistants?"),
         );
         logger.log(
           pc.dim(
@@ -362,14 +373,13 @@ export async function newProject(
         const selectedAssistants = await selectAiAssistants();
 
         if (selectedAssistants.length > 0) {
-          spinner.start("Installing AI assistant integrations");
-
           // Run each assistant installation command using npx
           for (const assistantPackage of selectedAssistants) {
-            await exec(`npx ${assistantPackage}`);
+            spinner.start(`Adding rules from ${assistantPackage}`);
+            console.log(await exec(`npx ${assistantPackage}`));
+            spinner.succeed();
           }
 
-          spinner.succeed();
           logger.log(
             pc.green(
               `\nSuccessfully installed ${selectedAssistants.length} AI assistant integration${

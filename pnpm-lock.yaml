@@ -712,6 +712,9 @@ importers:
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.19.3
       vitest:
         specifier: 'catalog:'
         version: 2.1.8(@types/node@18.19.80)(lightningcss@1.29.1)

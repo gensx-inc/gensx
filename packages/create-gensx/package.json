@@ -22,6 +22,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
+    "start": "tsx src/cli.ts",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "test:types": "tsc --noEmit",
@@ -38,6 +39,7 @@
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "fs-extra": "^11.2.0",
+    "tsx": "catalog:",
     "vitest": "catalog:"
   }
 }
