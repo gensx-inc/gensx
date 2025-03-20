@@ -115,8 +115,9 @@ export async function getAuth(): Promise<AuthConfig | null> {
     ? {
         token: config.api.token,
         org: config.api.org,
-        apiBaseUrl: config.api.baseUrl ?? API_BASE_URL,
-        consoleBaseUrl: config.console?.baseUrl ?? APP_BASE_URL,
+        apiBaseUrl: API_BASE_URL ?? config.api.baseUrl ?? DEFAULT_API_URL,
+        consoleBaseUrl:
+          APP_BASE_URL ?? config.console?.baseUrl ?? DEFAULT_CONSOLE_URL,
       }
     : null;
 }
@@ -179,9 +180,8 @@ export async function saveState(state: Partial<CliState>): Promise<void> {
 }
 
 // Export base URLs that respect config precedence
-export const API_BASE_URL = process.env.GENSX_API_BASE_URL ?? DEFAULT_API_URL;
-export const APP_BASE_URL =
-  process.env.GENSX_APP_BASE_URL ?? DEFAULT_CONSOLE_URL;
+export const API_BASE_URL = process.env.GENSX_API_BASE_URL;
+export const APP_BASE_URL = process.env.GENSX_APP_BASE_URL;
 
 // Backwards compatibility layer
 export async function readConfig() {
