@@ -9,14 +9,16 @@
   "description": "Use GenSX to create a chat completion",
   "scripts": {
     "dev": "nodemon",
-    "start": "tsx ./index.tsx",
+    "start": "tsx ./index.ts",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@gensx/openai": "workspace:*",
     "@gensx/core": "workspace:*",
+    "@gensx/openai": "workspace:*",
+    "@hono/node-server": "^1.13.8",
+    "hono": "^4.7.5",
     "openai": "catalog:",
     "zod": "catalog:"
   },
