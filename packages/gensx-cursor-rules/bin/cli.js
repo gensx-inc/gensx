@@ -5,11 +5,11 @@ import path from "node:path";
 
 async function installCursorRules() {
   try {
-    // Get the directory of the package
-    const pkgDir = path.resolve(import.meta.dirname, "..");
+    const url = new URL(import.meta.url);
+    const dirname = path.dirname(url.pathname);
 
-    // Path to the rules directory
-    const rulesDir = path.resolve(pkgDir, "rules");
+    // Path to the template .clinerules file
+    const rulesDir = path.join(dirname, "..", "rules");
 
     // Use current working directory as target
     const targetDir = process.cwd();

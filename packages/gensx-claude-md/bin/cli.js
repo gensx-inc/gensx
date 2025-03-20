@@ -12,10 +12,11 @@ async function copyTemplate() {
     console.log("Installing GenSX Claude template...");
 
     // Get the directory of the package
-    const pkgDir = path.resolve(import.meta.dirname, "..");
+    const url = new URL(import.meta.url);
+    const dirname = path.dirname(url.pathname);
 
     // Path to the template directory
-    const templateDir = path.resolve(pkgDir, "templates");
+    const templateDir = path.join(dirname, "..", "templates");
 
     // Use current working directory as target
     const targetDir = process.cwd();

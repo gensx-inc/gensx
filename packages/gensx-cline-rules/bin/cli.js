@@ -44,62 +44,64 @@ function updateManagedSection(existingContent, templateContent) {
   );
 }
 
-try {
-  // Use current working directory as target
-  const targetDir = process.cwd();
+function installClineRules() {
+  try {
+    // Use current working directory as target
+    const targetDir = process.cwd();
 
-  // Path to the template .clinerules file
-  const templatePath = path.join(
-    import.meta.dirname,
-    "..",
-    "templates",
-    ".clinerules",
-  );
+    const url = new URL(import.meta.url);
+    const dirname = path.dirname(url.pathname);
 
-  // Destination path in the target directory
-  const destPath = path.join(targetDir, ".clinerules");
+    // Path to the template .clinerules file
+    const templatePath = path.join(dirname, "..", "templates", ".clinerules");
 
-  // Ensure the template file exists
-  if (!fs.existsSync(templatePath)) {
-    console.error(`Template file not found at ${templatePath}`);
-    process.exit(1);
-  }
+    // Destination path in the target directory
+    const destPath = path.join(targetDir, ".clinerules");
 
-  const templateContent = fs.readFileSync(templatePath, "utf8");
-
-  // Check if destination file already exists
-  if (fs.existsSync(destPath)) {
-    const existingContent = fs.readFileSync(destPath, "utf8");
-
-    // Check if content is unchanged
-    if (existingContent === templateContent) {
-      console.log(`${destPath} is already up to date.`);
-      process.exit(0);
+    // Ensure the template file exists
+    if (!fs.existsSync(templatePath)) {
+      console.error(`Template file not found at ${templatePath}`);
+      process.exit(1);
     }
 
-    // Create a backup of the existing file
-    fs.writeFileSync(`${destPath}.backup`, existingContent);
+    const templateContent = fs.readFileSync(templatePath, "utf8");
 
-    // Update just the managed section
-    const updatedContent = updateManagedSection(
-      existingContent,
-      templateContent,
-    );
-    fs.writeFileSync(destPath, updatedContent);
+    // Check if destination file already exists
+    if (fs.existsSync(destPath)) {
+      const existingContent = fs.readFileSync(destPath, "utf8");
 
-    console.log(
-      `✅ Updated .clinerules to the latest version with managed sections.`,
-    );
-    console.log(`ℹ️ Your previous file was backed up to .clinerules.backup`);
-    console.log(
-      `ℹ️ Add your custom content outside the managed section to preserve it during future updates.`,
-    );
-  } else {
-    // Create a new file from template if it doesn't exist
-    fs.writeFileSync(destPath, templateContent);
-    console.log(`✅ Installed Cline rules to ${destPath}`);
+      // Check if content is unchanged
+      if (existingContent === templateContent) {
+        console.log(`${destPath} is already up to date.`);
+        process.exit(0);
+      }
+
+      // Create a backup of the existing file
+      fs.writeFileSync(`${destPath}.backup`, existingContent);
+
+      // Update just the managed section
+      const updatedContent = updateManagedSection(
+        existingContent,
+        templateContent,
+      );
+      fs.writeFileSync(destPath, updatedContent);
+
+      console.log(
+        `✅ Updated .clinerules to the latest version with managed sections.`,
+      );
+      console.log(`ℹ️ Your previous file was backed up to .clinerules.backup`);
+      console.log(
+        `ℹ️ Add your custom content outside the managed section to preserve it during future updates.`,
+      );
+    } else {
+      // Create a new file from template if it doesn't exist
+      fs.writeFileSync(destPath, templateContent);
+      console.log(`✅ Installed Cline rules to ${destPath}`);
+    }
+  } catch (error) {
+    console.error("Error installing Cline rules:", error.message, error.stack);
+    process.exit(1);
   }
-} catch (error) {
-  console.error("Error installing Cline rules:", error.message);
-  process.exit(1);
 }
+
+installClineRules();

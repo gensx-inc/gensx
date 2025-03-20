@@ -49,12 +49,10 @@ try {
   const targetDir = process.cwd();
 
   // Path to the template .windsurfrules file
-  const templatePath = path.join(
-    import.meta.dirname,
-    "..",
-    "templates",
-    ".windsurfrules",
-  );
+  const url = new URL(import.meta.url);
+  const dirname = path.dirname(url.pathname);
+
+  const templatePath = path.join(dirname, "..", "templates", ".windsurfrules");
 
   // Destination path in the target directory
   const destPath = path.join(targetDir, ".windsurfrules");
