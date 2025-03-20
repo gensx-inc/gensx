@@ -109,7 +109,7 @@ const ProcessComputerCalls = gensx.Component<
       previous_response_id: currentResponse.id,
       tools: [
         {
-          type: "computer-preview",
+          type: "computer_use_preview",
           display_width: 1024,
           display_height: 768,
           environment: "browser",
@@ -120,7 +120,7 @@ const ProcessComputerCalls = gensx.Component<
           call_id: lastCallId,
           type: "computer_call_output",
           output: {
-            type: "computer_screenshot",
+            type: "input_image",
             image_url: `data:image/png;base64,${screenshotBase64}`,
           },
         },
@@ -151,7 +151,7 @@ const ComputerUseExample = gensx.Component<ComputerUseExampleProps, Response>(
             model="computer-use-preview"
             tools={[
               {
-                type: "computer-preview",
+                type: "computer_use_preview",
                 display_width: 1024,
                 display_height: 768,
                 environment: "browser",
@@ -165,10 +165,10 @@ const ComputerUseExample = gensx.Component<ComputerUseExampleProps, Response>(
             ]}
             truncation="auto"
           >
-            {async (response) => {
+            {async (response: Response) => {
               // Process initial response
               const { updatedResponse } = await ProcessComputerCalls.run({
-                response: response as Response,
+                response,
               });
 
               // If human feedback is not allowed, return the response immediately
@@ -198,7 +198,7 @@ const ComputerUseExample = gensx.Component<ComputerUseExampleProps, Response>(
                   previous_response_id: currentResponse.id,
                   tools: [
                     {
-                      type: "computer-preview",
+                      type: "computer_use_preview",
                       display_width: 1024,
                       display_height: 768,
                       environment: "browser",

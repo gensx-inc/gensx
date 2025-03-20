@@ -3,8 +3,7 @@
   "version": "0.3.5",
   "description": "Build AI workflows using JSX.",
   "type": "module",
-  "main": "./dist/cjs/index.cjs",
-  "module": "./dist/esm/index.js",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "engines": {
     "node": ">=18.0.0",
@@ -18,25 +17,22 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.cjs"
+      "default": "./dist/index.js"
     },
     "./jsx-runtime": {
       "types": "./dist/jsx-runtime.d.ts",
-      "import": "./dist/esm/jsx-runtime.js",
-      "require": "./dist/cjs/jsx-runtime.cjs"
+      "default": "./dist/jsx-runtime.js"
     },
     "./jsx-dev-runtime": {
       "types": "./dist/jsx-dev-runtime.d.ts",
-      "import": "./dist/esm/jsx-dev-runtime.js",
-      "require": "./dist/cjs/jsx-dev-runtime.cjs"
+      "default": "./dist/jsx-dev-runtime.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",

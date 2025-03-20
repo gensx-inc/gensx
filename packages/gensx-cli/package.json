@@ -1,7 +1,6 @@
 {
   "name": "gensx-cli",
   "version": "1.0.0",
-  "type": "module",
   "description": "This package is not published to npm. It is just a container of scripts to build the CLI binary.",
   "private": true,
   "scripts": {
