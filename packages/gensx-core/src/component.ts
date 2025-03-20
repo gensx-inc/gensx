@@ -29,12 +29,15 @@ export type WithComponentOpts<P> = P & {
   componentOpts?: ComponentOpts;
 };
 
+type ComponentProps<P extends object & { length?: never }> =
+  WithComponentOpts<P>;
+
 export function Component<P extends object & { length?: never }, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
   defaultOpts?: DefaultOpts,
-): GsxComponent<WithComponentOpts<P>, O> {
-  const GsxComponentFn = async (props: WithComponentOpts<P>) => {
+): GsxComponent<ComponentProps<P>, O> {
+  const GsxComponentFn = async (props: ComponentProps<P>) => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (typeof props !== "object" || Array.isArray(props) || props === null) {
       throw new Error(`Component ${name} received non-object props.`);
@@ -113,7 +116,7 @@ export function Component<P extends object & { length?: never }, O>(
   });
 
   // Brand the component with its output type
-  return GsxComponentFn as GsxComponent<WithComponentOpts<P>, O>;
+  return GsxComponentFn as unknown as GsxComponent<WithComponentOpts<P>, O>;
 }
 
 type StreamComponentProps<P extends object & { length?: never }> =

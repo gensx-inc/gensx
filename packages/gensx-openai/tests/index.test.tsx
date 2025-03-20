@@ -52,6 +52,15 @@ suite("OpenAIContext", () => {
       </OpenAIContext.Provider>,
     );
   });
+
+  test("enforces types", async () => {
+    await gensx.execute<string>(
+      // @ts-expect-error - This should be an error because foo is not a valid prop
+      <OpenAIProvider apiKey="test" foo="bar">
+        {() => gensx.useContext(OpenAIContext)}
+      </OpenAIProvider>,
+    );
+  });
 });
 
 suite("ChatCompletion", () => {

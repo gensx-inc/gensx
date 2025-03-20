@@ -272,5 +272,14 @@ suite("context", () => {
       );
       expect(result).toEqual(["value outer1", "value outer2"]);
     });
+
+    test("enforces types", async () => {
+      await gensx.execute<string>(
+        // @ts-expect-error - This should be an error because foo is not a valid prop
+        <MyProvider value="value" foo="bar">
+          {() => gensx.useContext(TestContext)}
+        </MyProvider>,
+      );
+    });
   });
 });

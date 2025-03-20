@@ -151,7 +151,8 @@ export const WriteBlog = gensx.StreamComponent<BlogWriterProps>(
   "WriteBlog",
   ({ prompt }) => {
     return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      // @ts-expect-error - This should be an error because foo is not a valid prop
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY} foo={"bar"}>
         <Research prompt={prompt}>
           {(research) => (
             <WriteDraft prompt={prompt} research={research.flat()}>
