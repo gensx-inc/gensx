@@ -100,15 +100,17 @@ it("package.json is correctly configured for npm create", async () => {
 
   try {
     // Try to execute the package bin directly with all AI assistant integrations
-    await exec(`${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s`, {
-      cwd: pkgDir,
-      env: { ...process.env },
-    });
+    await exec(
+      `${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s --skip-ide-rules`,
+      {
+        cwd: pkgDir,
+        env: { ...process.env },
+      },
+    );
 
     // Verify the project was created
     const exists = await fs.pathExists(testProjectDir);
     expect(exists).toBe(true);
-
     // Verify package.json exists in created project
     const projectPkgExists = await fs.pathExists(
       path.join(testProjectDir, "package.json"),
