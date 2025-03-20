@@ -662,12 +662,6 @@ importers:
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      openai:
-        specifier: ^4.88.0
-        version: 4.88.0(ws@8.18.0)(zod@3.24.2)
-      zod:
-        specifier: 'catalog:'
-        version: 3.24.2
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -679,7 +673,7 @@ importers:
         specifier: 'catalog:'
         version: 4.19.3
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.0
         version: 5.8.2
 
   packages/create-gensx:
@@ -5771,18 +5765,6 @@ packages:
 
   openai@4.87.3:
     resolution: {integrity: sha512-d2D54fzMuBYTxMW8wcNmhT1rYKcTfMJ8t+4KjH2KtvYenygITiGBgHoIrzHwnDQWW+C5oCA+ikIR2jgPCFqcKQ==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.23.8
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-
-  openai@4.88.0:
-    resolution: {integrity: sha512-Ll2ZJCdX/56WcCF/wLtAFou+zWRyLeneoXy+qya5T5/wm5LkIr6heJfSn53c5ujXWPB+24cgumiOetbFqcppFA==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -12595,21 +12577,6 @@ snapshots:
       is-wsl: 3.1.0
 
   openai@4.87.3(ws@8.18.0)(zod@3.24.2):
-    dependencies:
-      '@types/node': 18.19.80
-      '@types/node-fetch': 2.6.12
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-    optionalDependencies:
-      ws: 8.18.0
-      zod: 3.24.2
-    transitivePeerDependencies:
-      - encoding
-
-  openai@4.88.0(ws@8.18.0)(zod@3.24.2):
     dependencies:
       '@types/node': 18.19.80
       '@types/node-fetch': 2.6.12

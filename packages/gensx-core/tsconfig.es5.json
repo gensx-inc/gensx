@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.es5.base.json",
+  "compilerOptions": {
+    "outDir": "./dist/es5",
+    "declarationDir": "./dist/es5",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"]
+}

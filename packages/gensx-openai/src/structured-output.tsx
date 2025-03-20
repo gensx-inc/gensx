@@ -2,7 +2,7 @@
 
 import * as gensx from "@gensx/core";
 import { GSXToolProps } from "@gensx/core";
-import { zodResponseFormat } from "openai/helpers/zod.mjs";
+import { zodResponseFormat } from "openai/helpers/zod";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionCreateParamsNonStreaming,

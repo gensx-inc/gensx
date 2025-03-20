@@ -21,10 +21,13 @@ const RespondToInput = gensx.Component<{ input: string }, string>(
             content: input,
           },
         ]}
-      />
+      >
+        {(response) => response.choices[0].message.content ?? ""}
+      </GSXChatCompletion>
     );
   },
 );
+
 const Wrapper = gensx.Component<{ input: string }, string>(
   "Wrapper",
   ({ input }) => (

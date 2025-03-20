@@ -1,12 +1,16 @@
 {
   "compilerOptions": {
     "target": "es5",
-    "moduleResolution": "Node",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "rootDir": ".",
     "outDir": "dist",
     "jsx": "preserve",
-    "strict": true
+    "strict": true,
+    "skipLibCheck": true,
+    "downlevelIteration": true,
+    "lib": ["es5", "dom", "es2015.collection", "es2015.iterable"]
   },
   "include": ["*.ts", "*.tsx"],
   "exclude": ["node_modules", "dist"]

@@ -1,5 +1,5 @@
 {
-  "name": "@examples/commonjs-compatibility",
+  "name": "@examples/typescript-compatibility",
   "private": true,
   "version": "0.0.0",
   "engines": {
@@ -14,14 +14,12 @@
   },
   "dependencies": {
     "@gensx/core": "workspace:*",
-    "@gensx/openai": "workspace:*",
-    "openai": "^4.88.0",
-    "zod": "catalog:"
+    "@gensx/openai": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:examples",
     "nodemon": "catalog:",
     "tsx": "catalog:",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0"
   }
 }

@@ -153,13 +153,19 @@ export const ChatCompletion = gensx.StreamComponent<ChatCompletionProps>(
       const stream = await gsxChatCompletionImpl({ ...props, stream: true });
 
       // Transform Stream<ChatCompletionChunk> into AsyncIterableIterator<string>
-      const generateTokens = async function* () {
-        for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content;
-          if (content) {
-            yield content;
-          }
-        }
+      const generateTokens = (): AsyncIterableIterator<string> => {
+        const iterator = stream[Symbol.asyncIterator]();
+        return {
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+          async next() {
+            const result = await iterator.next();
+            if (result.done) return { done: true, value: undefined };
+            const content = result.value.choices[0]?.delta?.content;
+            return content ? { done: false, value: content } : this.next();
+          },
+        };
       };
 
       return generateTokens();
@@ -167,10 +173,22 @@ export const ChatCompletion = gensx.StreamComponent<ChatCompletionProps>(
       const response = await gsxChatCompletionImpl({ ...props, stream: false });
       const content = response.choices[0]?.message?.content ?? "";
 
-      // Use sync iterator for non-streaming case, matching ChatCompletion's behavior
-      function* generateTokens() {
-        yield content;
-      }
+      // Use sync iterator for non-streaming case
+      const generateTokens = (): IterableIterator<string> => {
+        let yielded = false;
+        return {
+          [Symbol.iterator]() {
+            return this;
+          },
+          next() {
+            if (!yielded) {
+              yielded = true;
+              return { done: false, value: content };
+            }
+            return { done: true, value: undefined };
+          },
+        };
+      };
 
       return generateTokens();
     }

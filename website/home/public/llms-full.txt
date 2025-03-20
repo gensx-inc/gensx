@@ -207,6 +207,34 @@ gensx new .
 npx gensx new .
 ```
 
+When creating a new project, you'll be prompted to select IDE rules to add to your project. These rules help AI assistants like Claude, Cursor, Cline, and Windsurf understand your GenSX project better, providing more accurate code suggestions and help.
+
+You can also specify IDE rules directly using the `--ide-rules` flag:
+
+```bash
+# Install Cline and Windsurf rules
+gensx new . --ide-rules cline,windsurf
+
+# Skip IDE rule selection
+gensx new . --skip-ide-rules
+```
+
+You can also install or update these rules later using npx:
+
+```bash
+# Install Claude.md template
+npx @gensx/claude-md
+
+# Install Cursor rules
+npx @gensx/cursor-rules
+
+# Install Cline rules
+npx @gensx/cline-rules
+
+# Install Windsurf rules
+npx @gensx/windsurf-rules
+```
+
 This will create a new started project, ready for you to run your first workflow:
 
 ![create project](/quickstart/gensx-new.png)
@@ -852,14 +880,11 @@ GenSX provides two main types of components:
 The power of a `StreamComponent` is that a single implementation can be used interchangeably in both streaming and non-streaming contexts without any code changes - you just toggle the `stream` prop:
 
 ```tsx
-const stream = await gensx.execute<Streamable>(
-  <MyStreamingComponent input="some data" stream={true} />,
-);
+// Returns a string when executed
+<MyStreamingComponent input="some data" stream={false} />
 
-// Process the streaming response
-for await (const chunk of stream) {
-  process.stdout.write(chunk);
-}
+// Returns a stream when executed
+<MyStreamingComponent input="some data" stream={true} />
 ```
 
 ## Running workflows
@@ -880,13 +905,13 @@ Rather than having to run an entire workflow to test a change to a single compon
 
 ## Executing sub-workflows
 
-In some cases, you may need to run a sub-workflow within a larger workflow. You can do this by using `gensx.execute()`:
+In some cases, you may need to run a sub-workflow within a larger workflow. You can do this using the `run()` method on a component:
 
 ```tsx
-const result = await gensx.execute(<MyComponent input="some data" />);
+const result = await MyComponent.run({ input: "some data" });
 ```
 
-This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `gensx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow.
+This allows you to work with a component in TypeScript without having to drop into the JSX layer. When used inside a component, `Component.run()` preserves the current context and maintains the component hierarchy so the calls will integrate naturally with the rest of the workflow.
 
 Sub-workflows are especially useful for more complex operations like map/reduce:
 
@@ -895,16 +920,25 @@ const AnalyzeReviews = gensx.Component<
   AnalyzeReviewsProps,
   AnalyzeReviewsOutput
 >("AnalyzeReviews", async ({ reviews }) => {
-  // Map: Extract topics from each review in parallel
-  const topics = await gensx.execute<GetTopicOutput[]>(
-    reviews.map((r) => <GetTopic review={r} />),
-  );
+  // Map: Extract topics from each review in parallel using the <GetTopic> component
+  const topics = reviews.map((r) => GetTopic.run({ review: r }));
+
   // Reduce: Count frequency of each topic
   return topics.reduce(
     (counts, topic) => ({ ...counts, [topic]: (counts[topic] || 0) + 1 }),
     {},
   );
 });
+```
+
+You can also use `gensx.execute()` to execute a sub-workflow. One benefit of this is that you can execute a tree without assigning it to a component:
+
+```tsx
+const result = await gensx.execute(
+  <Parent input="some data">
+    {(parentResult) => <Child data={parentResult} />}
+  </Parent>,
+);
 ```
 
 ## Contexts
@@ -966,6 +1000,115 @@ const BasicChat = gensx.Component<BasicChatProps, string>(
 ```
 
 For more details on providers, see the [Context and Providers](/docs/concepts/context) page.
+
+# Using tools with GenSX
+
+Using tools provides a powerful and flexible way to extend the capabilities of an LLM. GenSX offers several different ways for you to work with tools:
+
+- Using the `GSXChatCompletion` component from [@gensx/openai](../component-reference/openai.mdx) or [@gensx/anthropic](../component-reference/anthropic.mdx) for fully automated tool calling
+- Using the `OpenAIChatCompletion` or `AnthropicChatCompletion` components from [@gensx/openai](../component-reference/openai.mdx) or [@gensx/anthropic](../component-reference/anthropic.mdx) and following the same pattern as described in the [OpenAI](https://platform.openai.com/docs/guides/function-calling?api-mode=responses) and [Anthropic](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview) docs
+- Using tools with the [Vercel AI SDK](https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling) via the [@gensx/vercel-ai-sdk](../component-reference/vercel-ai.mdx) package
+
+This guide will focus on the first option: using `GSXTool` and the `GSXChatCompletion` component for automated tool calling. The examples below show how to work with the [@gensx/openai](../component-reference/openai.mdx) package but you can follow a similar pattern with the [@gensx/anthropic](../component-reference/anthropic.mdx) package.
+
+## Defining a tool
+
+Start by defining the tool. A `GSXTool` contains four main pieces:
+
+- `name`: The name of the tool
+- `description`: A description of the tool
+- `schema`: The schema of the tool, defined as a Zod object
+- `run`: The function that will be called when the tool is invoked by an LLM
+
+Here's an example of a basic weather tool with mocked functionality:
+
+```tsx
+import { GSXTool } from "@gensx/openai";
+import { z } from "zod";
+
+// Define the schema as a Zod object
+const weatherSchema = z.object({
+  location: z.string(),
+});
+
+// Use z.infer to get the type for our parameters
+type WeatherParams = z.infer<typeof weatherSchema>;
+
+// Create the tool with the correct type - using the schema type, not the inferred type
+const weatherTool = new GSXTool({
+  name: "get_weather",
+  description: "get the weather for a given location",
+  schema: weatherSchema,
+  run: async ({ location }: WeatherParams) => {
+    console.log("getting weather for", location);
+    const weather = ["sunny", "cloudy", "rainy", "snowy"];
+    return Promise.resolve({
+      weather: weather[Math.floor(Math.random() * weather.length)],
+    });
+  },
+});
+```
+
+You can also define tools using `gensx.GSXToolProps` which allows you to create a tool independent of the @gensx/openai and @gensx/anthropic packages:
+
+```tsx
+import * as gensx from "@gensx/core";
+
+const weatherToolProps: gensx.GSXToolProps = {
+  name: "get_weather",
+  // rest of the tool definition
+};
+```
+
+## Using a tool
+
+Now that the tool is defined, you can pass it to the `GSXChatCompletion` component in the `tools` prop.
+
+If the model chooses to call the tool, GenSX will execute the tool on your behalf and return the response to the LLM to continue the conversation.
+
+```tsx
+const WeatherAssistant = gensx.Component<{}, ChatCompletionOutput>(
+  "WeatherAssistant",
+  () => (
+    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+      <GSXChatCompletion
+        messages={[
+          {
+            role: "system",
+            content: "You're a helpful, friendly weather assistant.",
+          },
+          {
+            role: "user",
+            content: `Will it be sunny in San Diego today?`,
+          },
+        ]}
+        model="gpt-4o-mini"
+        temperature={0.7}
+        tools={[weatherTool]}
+      />
+    </OpenAIProvider>
+  ),
+);
+
+const workflow = gensx.Workflow("WeatherAssistantWorkflow", WeatherAssistant);
+
+const result = await workflow.run({});
+
+console.log(result.choices[0].message.content);
+```
+
+`GSXChatCompletion` also returns the full message history, including the tool calls, so you can see the sequence of events leading up to the response.
+
+```tsx
+console.log(JSON.stringify(result.messages, null, 2));
+```
+
+## Resources
+
+For more examples of using tools with GenSX, see the following examples:
+
+- [Anthropic tools example](https://github.com/gensx-inc/gensx/blob/main/examples/anthropic)
+- [OpenAI tools example](https://github.com/gensx-inc/gensx/blob/main/examples/gsxChatCompletion)
 
 # Structured outputs
 
@@ -1178,14 +1321,11 @@ export function createReflectionLoop<TInput>(name: string) {
       maxIterations = 3,
     }) => {
       // Check if we should continue processing
-      const { feedback, continueProcessing } =
-        await gensx.execute<ReflectionOutput>(<EvaluateFn input={input} />);
+      const { feedback, continueProcessing } = await EvaluateFn.run({ input });
 
       if (continueProcessing && iterations < maxIterations) {
         // Process the input
-        const newInput: TInput = await gensx.execute<TInput>(
-          <ImproveFn input={input} feedback={feedback} />,
-        );
+        const newInput: TInput = await ImproveFn.run({ input, feedback });
 
         // Recursive call with updated input and iteration count
         const Reflection = createReflectionLoop<TInput>(
@@ -1342,6 +1482,436 @@ console.log("🎯 Final text:\n", improvedText);
 ```
 
 You can find the complete example code in the [reflection example](https://github.com/gensx-inc/gensx/tree/main/examples/reflection).
+
+# OpenAI Computer Use
+
+The [OpenAI Computer Use](https://github.com/gensx-inc/gensx/tree/main/examples/openai-computer-use) example show how to use OpenAI's computer-use model with GenSX to control a web browser with natural language.
+
+## Workflow
+
+The OpenAI Computer Use workflow consists of the following steps:
+
+1. Launch a browser session with Playwright (`<BrowserProvider>`)
+2. Send an initial user prompt to the OpenAI computer-use model (`<OpenAIResponses>`)
+3. Process any computer actions requested by the model
+   - Execute browser actions like clicking, scrolling, typing, etc. (`<UseBrowser>`)
+   - Take a screenshot after each action and send it back to the model
+4. Optionally collect human feedback and continue the conversation (`<HumanFeedback>`)
+5. Process subsequent model responses and browser actions until completion
+
+Here's an example trace of the workflow showing the actions taken at each step:
+![OpenAI Computer Use Workflow](/docs/computer-use-trace.png)
+
+## Running the example
+
+From the root of the [GensX Github Repo](https://github.com/gensx-inc/gensx), run the following commands:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Install playwright
+npx playwright install
+
+# Run the example
+OPENAI_API_KEY=<your_api_key> pnpm start:example openai-computer-use
+```
+
+The default prompt is `how long does it take to drive from seattle to portland? use google maps` but you can change this by editing the `index.tsx` file. You can also control whether or not the example is multi-turn by toggling the `allowHumanFeedback` prop. This is set to `false` by default but you might what to change this to `true` so you can continue the conversation with the model in the terminal.
+
+When you run the example, you'll see an output like the following:
+
+```bash
+🚀 Starting the computer use example
+
+🎯 PROMPT: how long does it take to drive from seattle to portland? use google maps
+💻 Action: screenshot
+💻 Action: click at (188, 180) with button 'left'
+💻 Action: type text 'Google Maps'
+💻 Action: keypress 'ENTER'
+💻 Action: wait
+💻 Action: click at (233, 230) with button 'left'
+💻 New tab opened
+💻 Action: wait
+💻 Action: click at (389, 38) with button 'left'
+💻 Action: type text 'Seattle to Portland'
+💻 Action: keypress 'ENTER'
+💻 Action: wait
+✅ Computer use complete
+
+✨ Final response: The estimated driving time from Seattle to Portland on Google Maps is approximately 2 hours and 58 minutes via I-5 S, covering a distance of 174 miles. Would you like any more assistance with your route?
+```
+
+## Key patterns
+
+### Browser automation
+
+The example uses Playwright to control a web browser, creating a context that's shared throughout the workflow. The `BrowserProvider` component initializes a browser session and makes it available to child components:
+
+```tsx
+const BrowserProvider = gensx.Component<BrowserProviderProps, never>(
+  "BrowserProvider",
+  async ({ initialUrl }) => {
+    const browser = await chromium.launch({
+      headless: false,
+      chromiumSandbox: true,
+      env: {},
+      args: ["--disable-extensions", "--disable-file-system"],
+    });
+    const page = await browser.newPage();
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto(initialUrl);
+
+    return <BrowserContext.Provider value={{ page }} />;
+  },
+);
+```
+
+### Processing model actions
+
+The `ProcessComputerCalls` component handles the computer actions returned by the model. For each action, it:
+
+1. Extracts the action from the model response
+2. Executes the action on the browser using the `UseBrowser` component
+3. Takes a screenshot of the result
+4. Sends the screenshot back to the model
+5. Processes the next model response
+
+```tsx
+const ProcessComputerCalls = gensx.Component<
+  ProcessComputerCallsProps,
+  ProcessComputerCallsResult
+>("ProcessComputerCalls", async ({ response }) => {
+  let currentResponse = response;
+  let computerCalls = currentResponse.output.filter(
+    (item) => item.type === "computer_call",
+  );
+
+  while (computerCalls.length > 0) {
+    // Execute browser action and take screenshot
+    // ...
+    // Send screenshot back to model
+    // ...
+    // Get updated response
+    // ...
+  }
+
+  return { updatedResponse: currentResponse };
+});
+```
+
+### Interactive feedback loop
+
+The example supports an interactive conversation with the model, allowing you to provide feedback or additional instructions once the model finishes an initial turn:
+
+```tsx
+// Start conversation loop with human feedback
+let currentResponse = updatedResponse;
+let continueConversation = true;
+
+while (continueConversation) {
+  // Get human feedback
+  const { userMessage, shouldExit } = await HumanFeedback.run({
+    assistantMessage: currentResponse.output_text,
+  });
+
+  // Exit if requested
+  if (shouldExit) {
+    continueConversation = false;
+    continue;
+  }
+
+  // Send user message to model
+  // ...
+  // Process any computer calls in the response
+  // ...
+}
+```
+
+## Additional resources
+
+Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
+
+# Model Context Protocol
+
+This example demonstrates how to integrate an MCP server into your workflow, and enable those tools to be used in a GenSX workflow.
+
+See it on [Github](https://github.com/gensx-inc/gensx/tree/main/examples/mcp).
+
+### What it demonstrates
+
+- Instantiate an MCP server
+- Pass the tools to OpenAI for execution
+
+## Getting Started
+
+1. Install dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Run the example:
+
+   ```bash
+   # From the root of the repo
+   OPENAI_API_KEY=<your_api_key> pnpm start:example mcp
+   ```
+
+## What is the Model Context Protocol (MCP)?
+
+The Model Context Protocol is an open standard that enables developers to build secure, two-way connections between their data sources and AI-powered tools. MCP allows AI assistants to access relevant context from various systems where data lives, including content repositories, business tools, and development environments.
+
+This example demonstrates how to create components that connect to and interact with MCP servers.
+
+## Learn More
+
+For more information about the Model Context Protocol, visit [Anthropic's MCP page](https://www.anthropic.com/news/model-context-protocol).
+
+### Sample Output for this example
+
+```
+Sequential Thinking MCP Server running on stdio
+
+┌────────────────────────────────────────────────────┐
+│ 💭 Thought 1/5 │
+├────────────────────────────────────────────────────┤
+│ I need to find the area of the 25x25 room first.   │
+└────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 2/5 (from thought 1, ID: area_calculation) │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ The area of the full room is calculated by multiplying the length and the width: 25 ft * 25 ft = 625 square feet.   │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 3/5 (from thought 2, ID: area_calculation) │
+├────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Next, calculate the area to be subtracted from the total, which is the 3.5 ft x 3 ft region.   │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 4/5 (from thought 3, ID: area_calculation) │
+├────────────────────────────────────────────────────────────┤
+│ The subtracted area is 3.5 ft * 3 ft = 10.5 square feet.   │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 5/5 (from thought 4, ID: area_calculation) │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Subtract the unused area from the total room area to get the flooring area required: 625 square feet - 10.5 square feet = 614.5 square feet.   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 💭 Thought 6/8 │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Now, I need to calculate the amount of flooring based on the size of each piece, which is 5 inches x 4 feet.   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 7/8 (from thought 6, ID: flooring_calculation) │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ Convert the dimensions of the flooring from inches to feet: 5 inches is 5/12 feet.   │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 8/8 (from thought 7, ID: flooring_calculation) │
+├──────────────────────────────────────────────────────────────────┤
+│ Calculate the area of one piece of flooring: (5/12 ft) * 4 ft.   │
+└──────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 9/10 (from thought 8, ID: flooring_calculation) │
+├────────────────────────────────────────────────────────────────────────────┤
+│ The area of one piece of flooring is (5/12 ft) * 4 ft = 5/3 square feet.   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 10/10 (from thought 9, ID: flooring_calculation) │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Divide the total flooring area by the area of one piece of flooring to determine the number of pieces needed: 614.5 square feet / (5/3 square feet per piece).   │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌿 Branch 11/11 (from thought 10, ID: flooring_calculation) │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ The number of pieces needed is 614.5 / (5/3) = 368.7, so approximately 369 pieces are required after rounding up.   │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+To cover the 25x25 room while excluding the 3.5 x 3 ft area, you'll need approximately **369 pieces** of flooring, given each piece measures 5 inches by 4 feet.
+```
+
+# Hacker News analyzer
+
+The [Hacker News Analyzer](https://github.com/gensx-inc/gensx/tree/main/examples/hackerNewsAnalyzer) example uses GenSX to fetch, analyze, and extract trends from the top Hacker News posts. It shows how to combine data fetching, parallel analysis, and content generation in a single workflow to create two outputs: a detailed report and a tweet of the trends.
+
+## Workflow
+
+The Hacker News Analyzer workflow is composed of the following steps:
+
+1. Fetch the top 500 Hacker News posts and filters down to `text` posts (`<FetchHNPosts>`)
+2. Process each post in parallel (`<AnalyzeHNPosts>`)
+   - Summarize the content (`<SummarizePost>`)
+   - Analyze the comments (`<AnalyzeComments>`)
+3. Writes a detailed report identifying the key trends across all posts (`<GenerateReport>`)
+4. Edits the report into the style of Paul Graham (`<EditReport>`)
+5. Generates a tweet in the voice of Paul Graham (`<WriteTweet>`)
+
+## Running the example
+
+```bash
+# From the root of the repo
+
+# Install dependencies
+pnpm install
+
+# Set your OpenAI API key
+export OPENAI_API_KEY=<your_api_key>
+
+# Run the example
+pnpm start:example hackerNewsAnalyzer
+```
+
+The workflow will create two files:
+
+- `hn_analysis_report.md`: A detailed analysis report
+- `hn_analysis_tweet.txt`: A tweet-sized summary of the analysis
+
+## Key patterns
+
+### Parallel processing
+
+The workflow uses the `<AnalyzeHNPosts>` component to process each post in parallel. GenSX extends JSX to support returning objects so that components can return arrays and structured objects containing other components, which will all be resolved at runtime.
+
+This component takes advantage of this and uses `array.map` to return a list of `analyses`, each containing a summary of the post and an analysis of its comments.
+
+```tsx
+const AnalyzeHNPosts = gensx.Component<
+  AnalyzeHNPostsProps,
+  AnalyzeHNPostsOutput
+>("AnalyzeHNPosts", ({ stories }) => {
+  return {
+    analyses: stories.map((story) => ({
+      summary: <SummarizePost story={story} />,
+      commentAnalysis: (
+        <AnalyzeComments postId={story.id} comments={story.comments} />
+      ),
+    })),
+  };
+});
+```
+
+### Multiple outputs
+
+This example also shows a simple pattern returning multiple outputs from a workflow. In this case, both the outputs of `<GenerateReport>` and `<WriteTweet>` are returned as a single object. This is done by using the the child function of `<GenerateReport>` to combine the outputs of multiple components into a single object.
+
+```tsx
+<GenerateReport analyses={analyses}>
+  {(report) => (
+    <EditReport content={report}>
+      {(editedReport) => (
+        <WriteTweet
+          context={editedReport}
+          prompt="Summarize the HN trends in a tweet"
+        >
+          {(tweet) => ({ report: editedReport, tweet })}
+        </WriteTweet>
+      )}
+    </EditReport>
+  )}
+</GenerateReport>
+```
+
+## Additional resources
+
+Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
+
+# Blog writer
+
+Breaking down complex tasks into smaller, discrete steps is one of the best ways to improve the quality of LLM outputs. The [blog writer workflow example](https://github.com/gensx-inc/gensx/tree/main/examples/blogWriter) does this by following the same approach a human would take to write a blog post: first conducting research, then generating a first draft, and finally editing that draft.
+
+## Workflow
+
+The Blog Writer workflow consists of the following steps:
+
+1. Parallel research phase:
+   - Brainstorm topics using LLM (`<BrainstormTopics>`)
+   - Research each topic in detail (`<ResearchTopic>`)
+   - Gather web research (`<SearchWeb>`)
+2. Write initial draft based on research (`<WriteDraft>`)
+3. Edit and polish the content (`<EditDraft>`)
+
+## Running the example
+
+```bash
+# From the root of the repo
+
+# Install dependencies
+pnpm install
+
+# Set your OpenAI API key
+export OPENAI_API_KEY=<your_api_key>
+
+# Run the example
+pnpm run start
+```
+
+## Key patterns
+
+### Running components in parallel
+
+The `<Research>` component runs both the `BrainstormTopics` and `SearchWeb` components in parallel. Both sub-workflows return an array of strings which are automatically combined into a single array.
+
+```tsx
+const Research = gensx.Component<ResearchComponentProps, ResearchOutput>(
+  "Research",
+  ({ prompt }) => {
+    return (
+      <>
+        <BrainstormTopics prompt={prompt}>
+          {({ topics }) => {
+            return topics.map((topic) => <ResearchTopic topic={topic} />);
+          }}
+        </BrainstormTopics>
+        <SearchWeb prompt={prompt} />
+      </>
+    );
+  },
+);
+```
+
+### Streaming Output
+
+The workflow streams back the final output to reduce the time that it takes for the user to receive the first token. The `<EditDraft>` component is a [`StreamComponent`](/docs/basic-concepts#component-types) and the `<ChatCompletion>` component has `stream={true}`.
+
+```tsx
+const EditDraft = gensx.StreamComponent<EditDraftProps>(
+  "EditDraft",
+  ({ draft }) => {
+    return (
+      <ChatCompletion
+        stream={true}
+        model="gpt-4o-mini"
+        temperature={0}
+        messages={[
+          { role: "system", content: systemPrompt },
+          { role: "user", content: draft },
+        ]}
+      />
+    );
+  },
+);
+```
+
+Then when the component is invoked, `stream={true}` is passed to the component so that the output is streamed back and can be surfaced to the user:
+
+```tsx
+<EditDraft draft={draft} stream={true} />
+```
+
+## Additional resources
+
+Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
 
 # Building reusable components
 
@@ -1587,13 +2157,13 @@ For example, when executing the TweetWorkflow, GenSX will:
 
 ### Executing sub-workflows
 
-GenSX also allows you to execute sub-workflows from within a component using `gensx.execute()`.
+GenSX also allows you to execute sub-workflows from within a component using the `run()` method on a component:
 
 ```tsx
-const result = await gensx.execute(<MyComponent input="some data" />);
+const result = await MyComponent.run({ input: "some data" });
 ```
 
-When used inside a component, `gensx.execute()` preserves the current context and maintains the component hierarchy so it will integrate naturally with the rest of the workflow. The result is automatically resolved to a plain JavaScript value, allowing you to work with it directly without additional JSX syntax.
+When used inside a component, `Component.run()` preserves the current context and maintains the component hierarchy so the calls will integrate naturally with the rest of the workflow. The result is automatically resolved to a plain JavaScript value, allowing you to work with it directly without additional JSX syntax.
 
 ## Resolving nested values and complex structures
 
@@ -2139,287 +2709,6 @@ const result = await gensx.execute<number[]>(
 
 When using `gensx.array`, each operation in the chain will execute in sequence so if you have `gensx.array().map().map()`, all of the components in the first `map` will execute in parallel and will complete before the second `map` starts.
 
-# Model Context Protocol
-
-This example demonstrates how to integrate an MCP server into your workflow, and enable those tools to be used in a GenSX workflow.
-
-See it on [Github](https://github.com/gensx-inc/gensx/tree/main/examples/mcp).
-
-### What it demonstrates
-
-- Instantiate an MCP server
-- Pass the tools to OpenAI for execution
-
-## Getting Started
-
-1. Install dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-2. Run the example:
-
-   ```bash
-   # From the root of the repo
-   OPENAI_API_KEY=<your_api_key> pnpm start:example mcp
-   ```
-
-## What is the Model Context Protocol (MCP)?
-
-The Model Context Protocol is an open standard that enables developers to build secure, two-way connections between their data sources and AI-powered tools. MCP allows AI assistants to access relevant context from various systems where data lives, including content repositories, business tools, and development environments.
-
-This example demonstrates how to create components that connect to and interact with MCP servers.
-
-## Learn More
-
-For more information about the Model Context Protocol, visit [Anthropic's MCP page](https://www.anthropic.com/news/model-context-protocol).
-
-### Sample Output for this example
-
-```
-Sequential Thinking MCP Server running on stdio
-
-┌────────────────────────────────────────────────────┐
-│ 💭 Thought 1/5 │
-├────────────────────────────────────────────────────┤
-│ I need to find the area of the 25x25 room first.   │
-└────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 2/5 (from thought 1, ID: area_calculation) │
-├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ The area of the full room is calculated by multiplying the length and the width: 25 ft * 25 ft = 625 square feet.   │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 3/5 (from thought 2, ID: area_calculation) │
-├────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Next, calculate the area to be subtracted from the total, which is the 3.5 ft x 3 ft region.   │
-└────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 4/5 (from thought 3, ID: area_calculation) │
-├────────────────────────────────────────────────────────────┤
-│ The subtracted area is 3.5 ft * 3 ft = 10.5 square feet.   │
-└────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 5/5 (from thought 4, ID: area_calculation) │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Subtract the unused area from the total room area to get the flooring area required: 625 square feet - 10.5 square feet = 614.5 square feet.   │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 💭 Thought 6/8 │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Now, I need to calculate the amount of flooring based on the size of each piece, which is 5 inches x 4 feet.   │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 7/8 (from thought 6, ID: flooring_calculation) │
-├──────────────────────────────────────────────────────────────────────────────────────┤
-│ Convert the dimensions of the flooring from inches to feet: 5 inches is 5/12 feet.   │
-└──────────────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 8/8 (from thought 7, ID: flooring_calculation) │
-├──────────────────────────────────────────────────────────────────┤
-│ Calculate the area of one piece of flooring: (5/12 ft) * 4 ft.   │
-└──────────────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 9/10 (from thought 8, ID: flooring_calculation) │
-├────────────────────────────────────────────────────────────────────────────┤
-│ The area of one piece of flooring is (5/12 ft) * 4 ft = 5/3 square feet.   │
-└────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 10/10 (from thought 9, ID: flooring_calculation) │
-├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Divide the total flooring area by the area of one piece of flooring to determine the number of pieces needed: 614.5 square feet / (5/3 square feet per piece).   │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🌿 Branch 11/11 (from thought 10, ID: flooring_calculation) │
-├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ The number of pieces needed is 614.5 / (5/3) = 368.7, so approximately 369 pieces are required after rounding up.   │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-To cover the 25x25 room while excluding the 3.5 x 3 ft area, you'll need approximately **369 pieces** of flooring, given each piece measures 5 inches by 4 feet.
-```
-
-# Hacker News analyzer
-
-The [Hacker News Analyzer](https://github.com/gensx-inc/gensx/tree/main/examples/hackerNewsAnalyzer) example uses GenSX to fetch, analyze, and extract trends from the top Hacker News posts. It shows how to combine data fetching, parallel analysis, and content generation in a single workflow to create two outputs: a detailed report and a tweet of the trends.
-
-## Workflow
-
-The Hacker News Analyzer workflow is composed of the following steps:
-
-1. Fetch the top 500 Hacker News posts and filters down to `text` posts (`<FetchHNPosts>`)
-2. Process each post in parallel (`<AnalyzeHNPosts>`)
-   - Summarize the content (`<SummarizePost>`)
-   - Analyze the comments (`<AnalyzeComments>`)
-3. Writes a detailed report identifying the key trends across all posts (`<GenerateReport>`)
-4. Edits the report into the style of Paul Graham (`<EditReport>`)
-5. Generates a tweet in the voice of Paul Graham (`<WriteTweet>`)
-
-## Running the example
-
-```bash
-# From the root of the repo
-
-# Install dependencies
-pnpm install
-
-# Set your OpenAI API key
-export OPENAI_API_KEY=<your_api_key>
-
-# Run the example
-pnpm start:example hackerNewsAnalyzer
-```
-
-The workflow will create two files:
-
-- `hn_analysis_report.md`: A detailed analysis report
-- `hn_analysis_tweet.txt`: A tweet-sized summary of the analysis
-
-## Key patterns
-
-### Parallel processing
-
-The workflow uses the `<AnalyzeHNPosts>` component to process each post in parallel. GenSX extends JSX to support returning objects so that components can return arrays and structured objects containing other components, which will all be resolved at runtime.
-
-This component takes advantage of this and uses `array.map` to return a list of `analyses`, each containing a summary of the post and an analysis of its comments.
-
-```tsx
-const AnalyzeHNPosts = gensx.Component<
-  AnalyzeHNPostsProps,
-  AnalyzeHNPostsOutput
->("AnalyzeHNPosts", ({ stories }) => {
-  return {
-    analyses: stories.map((story) => ({
-      summary: <SummarizePost story={story} />,
-      commentAnalysis: (
-        <AnalyzeComments postId={story.id} comments={story.comments} />
-      ),
-    })),
-  };
-});
-```
-
-### Multiple outputs
-
-This example also shows a simple pattern returning multiple outputs from a workflow. In this case, both the outputs of `<GenerateReport>` and `<WriteTweet>` are returned as a single object. This is done by using the the child function of `<GenerateReport>` to combine the outputs of multiple components into a single object.
-
-```tsx
-<GenerateReport analyses={analyses}>
-  {(report) => (
-    <EditReport content={report}>
-      {(editedReport) => (
-        <WriteTweet
-          context={editedReport}
-          prompt="Summarize the HN trends in a tweet"
-        >
-          {(tweet) => ({ report: editedReport, tweet })}
-        </WriteTweet>
-      )}
-    </EditReport>
-  )}
-</GenerateReport>
-```
-
-## Additional resources
-
-Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
-
-# Blog writer
-
-Breaking down complex tasks into smaller, discrete steps is one of the best ways to improve the quality of LLM outputs. The [blog writer workflow example](https://github.com/gensx-inc/gensx/tree/main/examples/blogWriter) does this by following the same approach a human would take to write a blog post: first conducting research, then generating a first draft, and finally editing that draft.
-
-## Workflow
-
-The Blog Writer workflow consists of the following steps:
-
-1. Parallel research phase:
-   - Brainstorm topics using LLM (`<BrainstormTopics>`)
-   - Research each topic in detail (`<ResearchTopic>`)
-   - Gather web research (`<SearchWeb>`)
-2. Write initial draft based on research (`<WriteDraft>`)
-3. Edit and polish the content (`<EditDraft>`)
-
-## Running the example
-
-```bash
-# From the root of the repo
-
-# Install dependencies
-pnpm install
-
-# Set your OpenAI API key
-export OPENAI_API_KEY=<your_api_key>
-
-# Run the example
-pnpm run start
-```
-
-## Key patterns
-
-### Running components in parallel
-
-The `<Research>` component runs both the `BrainstormTopics` and `SearchWeb` components in parallel. Both sub-workflows return an array of strings which are automatically combined into a single array.
-
-```tsx
-const Research = gensx.Component<ResearchComponentProps, ResearchOutput>(
-  "Research",
-  ({ prompt }) => {
-    return (
-      <>
-        <BrainstormTopics prompt={prompt}>
-          {({ topics }) => {
-            return topics.map((topic) => <ResearchTopic topic={topic} />);
-          }}
-        </BrainstormTopics>
-        <SearchWeb prompt={prompt} />
-      </>
-    );
-  },
-);
-```
-
-### Streaming Output
-
-The workflow streams back the final output to reduce the time that it takes for the user to receive the first token. The `<EditDraft>` component is a [`StreamComponent`](/docs/basic-concepts#component-types) and the `<ChatCompletion>` component has `stream={true}`.
-
-```tsx
-const EditDraft = gensx.StreamComponent<EditDraftProps>(
-  "EditDraft",
-  ({ draft }) => {
-    return (
-      <ChatCompletion
-        stream={true}
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: draft },
-        ]}
-      />
-    );
-  },
-);
-```
-
-Then when the component is invoked, `stream={true}` is passed to the component so that the output is streamed back and can be surfaced to the user:
-
-```tsx
-<EditDraft draft={draft} stream={true} />
-```
-
-## Additional resources
-
-Check out the other examples in the [GenSX Github Repo](https://github.com/gensx-inc/gensx/tree/main/examples).
-
 # Vercel AI SDK
 
 The [@gensx/vercel-ai-sdk](https://www.npmjs.com/package/@gensx/vercel-ai-sdk) package provides [Vercel AI SDK](https://sdk.vercel.ai/docs/introduction) compatible components for GenSX, allowing you to use Vercel's AI SDK with GenSX's component model.
@@ -2436,6 +2725,12 @@ You'll also need to install the Vercel AI SDK:
 
 ```bash
 npm install ai
+```
+
+Then import the components you need from the package:
+
+```tsx
+import { GenerateText, GenerateObject } from "@gensx/vercel-ai-sdk";
 ```
 
 ## Supported components
@@ -2461,14 +2756,13 @@ import { StreamText } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const languageModel = openai("gpt-4o");
+```
 
-// Streaming text response
-const stream = await gsx.execute(
-  <StreamText
-    prompt="Explain quantum computing in simple terms"
-    model={languageModel}
-  />,
-);
+```tsx
+<StreamText
+  prompt="Explain quantum computing in simple terms"
+  model={languageModel}
+/>
 ```
 
 ##### Props
@@ -2488,6 +2782,7 @@ Returns a streaming response that can be consumed token by token.
 The `StreamObject` component streams structured JSON objects from language models, allowing you to get structured data with type safety.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { StreamObject } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -2502,19 +2797,15 @@ const recipeSchema = z.object({
     steps: z.array(z.string()),
   }),
 });
+```
 
-// Stream a structured object
-const response = await gsx.execute(
-  <StreamObject
-    prompt="Generate a recipe for chocolate chip cookies"
-    model={languageModel}
-    schema={recipeSchema}
-  />,
-);
-
-// Access the structured data
-console.log(response.recipe.name);
-console.log(response.recipe.ingredients);
+```tsx
+// Streams a structured object when executed
+<StreamObject
+  prompt="Generate a recipe for chocolate chip cookies"
+  model={languageModel}
+  schema={recipeSchema}
+/>
 ```
 
 ##### Props
@@ -2536,20 +2827,19 @@ Returns a structured object matching the provided schema.
 The [GenerateText](https://sdk.vercel.ai/docs/ai-sdk-core/generating-text#generatetext) component generates complete text responses from language models, waiting for the entire response before returning.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { GenerateText } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const languageModel = openai("gpt-4o");
+```
 
-// Generate a complete text response
-const response = await gsx.execute(
-  <GenerateText
-    prompt="Write a short poem about programming"
-    model={languageModel}
-  />,
-);
-
-console.log(response);
+```tsx
+// Generates a complete text response when executed
+<GenerateText
+  prompt="Write a short poem about programming"
+  model={languageModel}
+/>
 ```
 
 ##### Props
@@ -2569,6 +2859,7 @@ Returns a complete text string containing the model's response.
 The [GenerateObject](https://sdk.vercel.ai/docs/ai-sdk-core/generating-structured-data#generate-object) component generates complete structured JSON objects from language models, with type safety through Zod schemas.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { GenerateObject } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -2587,19 +2878,15 @@ const userSchema = z.object({
     }),
   }),
 });
+```
 
-// Generate a structured object
-const userData = await gsx.execute(
-  <GenerateObject
-    prompt="Generate a fictional user profile"
-    model={languageModel}
-    schema={userSchema}
-  />,
-);
-
-// Access the structured data
-console.log(userData.user.name);
-console.log(userData.user.interests);
+```tsx
+// Generates a structured object when executed
+<GenerateObject
+  prompt="Generate a fictional user profile"
+  model={languageModel}
+  schema={userSchema}
+/>
 ```
 
 ##### Props
@@ -2621,17 +2908,16 @@ Returns a structured object matching the provided schema.
 The [Embed](https://sdk.vercel.ai/docs/ai-sdk-core/embeddings) component generates embeddings for a single text input, which can be used for semantic search, clustering, and other NLP tasks.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { Embed } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const embeddingModel = openai.embedding("text-embedding-3-small");
+```
 
-// Generate an embedding for a single text
-const embedding = await gsx.execute(
-  <Embed value="This is a sample text to embed" model={embeddingModel} />,
-);
-
-console.log(embedding); // Vector representation of the text
+```tsx
+// Generates an embedding when executed
+<Embed value="This is a sample text to embed" model={embeddingModel} />
 ```
 
 ##### Props
@@ -2651,24 +2937,23 @@ Returns a vector representation (embedding) of the input text.
 The [EmbedMany](https://sdk.vercel.ai/docs/ai-sdk-core/embeddings#embedding-many-values) component generates embeddings for multiple text inputs in a single call, which is more efficient than making separate calls for each text.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { EmbedMany } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const embeddingModel = openai.embedding("text-embedding-3-small");
+```
 
-// Generate embeddings for multiple texts
-const embeddings = await gsx.execute(
-  <EmbedMany
-    values={[
-      "First text to embed",
-      "Second text to embed",
-      "Third text to embed",
-    ]}
-    model={embeddingModel}
-  />,
-);
-
-console.log(embeddings); // Array of vector representations
+```tsx
+// Generates embeddings for multiple texts when executed
+<EmbedMany
+  values={[
+    "First text to embed",
+    "Second text to embed",
+    "Third text to embed",
+  ]}
+  model={embeddingModel}
+/>
 ```
 
 ##### Props
@@ -2688,20 +2973,19 @@ Returns an array of vector representations (embeddings) for the input texts.
 The [GenerateImage](https://sdk.vercel.ai/docs/ai-sdk-core/image-generation) component generates images from text prompts using image generation models.
 
 ```tsx
+import * as gensx from "@gensx/core";
 import { GenerateImage } from "@gensx/vercel-ai-sdk";
 import { openai } from "@ai-sdk/openai";
 
 const imageModel = openai.image("dall-e-3");
+```
 
-// Generate an image
-const result = await gsx.execute(
-  <GenerateImage
-    prompt="A futuristic city with flying cars and neon lights"
-    model={imageModel}
-  />,
-);
-
-console.log(result.url); // URL to the generated image
+```tsx
+// Generates an image when executed
+<GenerateImage
+  prompt="A futuristic city with flying cars and neon lights"
+  model={imageModel}
+/>
 ```
 
 ##### Props
@@ -2736,11 +3020,11 @@ const cohereModel = cohere("command-r-plus");
 // Use with GenSX components
 import { GenerateText } from "@gensx/vercel-ai-sdk";
 
-const openaiResponse = await gsx.execute(
+const openaiResponse = await gensx.execute(
   <GenerateText prompt="Explain quantum computing" model={openaiModel} />,
 );
 
-const anthropicResponse = await gsx.execute(
+const anthropicResponse = await gensx.execute(
   <GenerateText prompt="Explain quantum computing" model={anthropicModel} />,
 );
 ```
@@ -2875,14 +3159,21 @@ To install the package, run the following command:
 npm install @gensx/openai
 ```
 
+Then import the components you need from the package:
+
+```tsx
+import { OpenAIProvider, GSXChatCompletion } from "@gensx/openai";
+```
+
 ## Supported components
 
-| <div style={{width: "150px"}}>Component</div>   | Description                                                                        |
-| :---------------------------------------------- | :--------------------------------------------------------------------------------- |
-| [`OpenAIProvider`](#openaiprovider)             | OpenAI Provider that handles configuration and authentication for child components |
-| [`GSXChatCompletion`](#gsxchatcompletion)       | Enhanced component with enhanced features for OpenAI chat completions              |
-| [`ChatCompletion`](#chatcompletion)             | Simplified component for chat completions with streamlined output interface        |
-| [`OpenAIChatCompletion`](#openaichatcompletion) | Low-level component that directly matches the OpenAI SDK interface                 |
+| <div style={{width: "150px"}}>Component</div>   | Description                                                                                     |
+| :---------------------------------------------- | :---------------------------------------------------------------------------------------------- |
+| [`OpenAIProvider`](#openaiprovider)             | OpenAI Provider that handles configuration and authentication for child components              |
+| [`GSXChatCompletion`](#gsxchatcompletion)       | Enhanced component with enhanced features for OpenAI chat completions                           |
+| [`ChatCompletion`](#chatcompletion)             | Simplified component for chat completions with streamlined output interface                     |
+| [`OpenAIChatCompletion`](#openaichatcompletion) | Low-level component that directly matches the OpenAI SDK interface for the Chat Completions API |
+| [`OpenAIResponses`](#openairesponses)           | Low-level component that directly matches the OpenAI SDK interface for the Responses API        |
 
 ## Component Comparison
 
@@ -2899,13 +3190,11 @@ The package provides three different chat completion components to suit differen
 The `OpenAIProvider` component initializes and provides an OpenAI client instance to all child components. Any components that use OpenAI's API need to be wrapped in an `OpenAIProvider`.
 
 ```tsx
-import { OpenAIProvider } from "@gensx/openai";
-
 <OpenAIProvider
   apiKey="your-api-key" // Your OpenAI API key
   organization="org-id" // Optional: Your OpenAI organization ID
   baseURL="https://api.openai.com/v1" // Optional: API base URL
-/>;
+/>
 ```
 
 By configuring the baseURL, you can also use the `OpenAIProvider` with other OpenAI compatible APIs like [x.AI](https://docs.x.ai/docs/overview#featured-models) and [Groq](https://console.groq.com/docs/openai).
@@ -2929,30 +3218,29 @@ The `OpenAIProvider` accepts all configuration options from the [OpenAI Node.js 
 
 The `GSXChatCompletion` component is an advanced chat completion component that provides enhanced features beyond the standard OpenAI API. It supports structured output, tool calling, and streaming, with automatic handling of tool execution.
 
+To get a structured output, pass a [Zod schema](https://www.npmjs.com/package/zod) to the `outputSchema` prop.
+
 ```tsx
-import { GSXChatCompletion, GSXTool } from "@gensx/openai";
-import { z } from "zod";
+// Returns an object matching the outputSchema when executed
+<GSXChatCompletion
+  model="gpt-4o"
+  messages={[
+    { role: "system", content: "You are a helpful assistant." },
+    {
+      role: "user",
+      content: "Extract the name and age from: John Doe, 32 years old",
+    },
+  ]}
+  outputSchema={z.object({
+    name: z.string(),
+    age: z.number(),
+  })}
+/>
+```
 
-// Example with structured output
-const result = await gsx.execute(
-  <GSXChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      {
-        role: "user",
-        content: "Extract the name and age from: John Doe, 32 years old",
-      },
-    ]}
-    outputSchema={z.object({
-      name: z.string(),
-      age: z.number(),
-    })}
-  />,
-);
-// result is typed as { name: string, age: number }
+To use tools, create a `GSXTool` object:
 
-// Example with tools
+```tsx
 const calculator = GSXTool.create({
   name: "calculator",
   description: "Perform mathematical calculations",
@@ -2963,14 +3251,16 @@ const calculator = GSXTool.create({
     return { result: eval(expression) };
   },
 });
+```
 
-const toolResult = await gsx.execute(
-  <GSXChatCompletion
-    model="gpt-4o"
-    messages={[{ role: "user", content: "What is 123 * 456?" }]}
-    tools={[calculator]}
-  />,
-);
+Then pass the tool to the `tools` prop.
+
+```tsx
+<GSXChatCompletion
+  model="gpt-4o"
+  messages={[{ role: "user", content: "What is 123 * 456?" }]}
+  tools={[calculator]}
+/>
 ```
 
 ##### Props
@@ -2998,32 +3288,26 @@ The return type of `GSXChatCompletion` depends on the props:
 The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the OpenAI API.
 
 ```tsx
-import { ChatCompletion } from "@gensx/openai";
+// Returns a string when executed
+<ChatCompletion
+  model="gpt-4o"
+  messages={[
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: "What's a programmable tree?" },
+  ]}
+  temperature={0.7}
+/>
 
-// Non-streaming usage (returns a string)
-const response = await gsx.execute(
-  <ChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "What's a programmable tree?" },
-    ]}
-    temperature={0.7}
-  />,
-);
-
-// Streaming usage (returns an AsyncIterableIterator<string>)
-const stream = await gsx.execute(
-  <ChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "What's a programmable tree?" },
-    ]}
-    temperature={0.7}
-    stream={true}
-  />,
-);
+// Returns an AsyncIterableIterator<string> when executed
+<ChatCompletion
+  model="gpt-4o"
+  messages={[
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: "What's a programmable tree?" },
+  ]}
+  temperature={0.7}
+  stream={true}
+/>
 ```
 
 ##### Props
@@ -3048,35 +3332,14 @@ The `ChatCompletion` component accepts all parameters from OpenAI's chat complet
 The `OpenAIChatCompletion` component is a low-level component that directly maps to the OpenAI SDK. It has identical inputs and outputs to the OpenAI API, making it suitable for advanced use cases where you need full control.
 
 ```tsx
-import { OpenAIChatCompletion } from "@gensx/openai";
-
-// Non-streaming usage
-const completion = await gsx.execute(
-  <OpenAIChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "What's a programmable tree?" },
-    ]}
-  />,
-);
-console.log(completion.choices[0].message.content);
-
-// Streaming usage
-const stream = await gsx.execute(
-  <OpenAIChatCompletion
-    model="gpt-4o"
-    messages={[
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: "What's a programmable tree?" },
-    ]}
-    stream={true}
-  />,
-);
-
-for await (const chunk of stream) {
-  console.log(chunk.choices[0]?.delta?.content || "");
-}
+<OpenAIChatCompletion
+  model="gpt-4o"
+  messages={[
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: "What's a programmable tree?" },
+  ]}
+  temperature={0.7}
+/>
 ```
 
 ##### Props
@@ -3095,6 +3358,36 @@ The `OpenAIChatCompletion` component accepts all parameters from the OpenAI SDK'
 
 - With `stream: false` (default): Returns the full `ChatCompletionOutput` object from OpenAI SDK
 - With `stream: true`: Returns a `Stream<ChatCompletionChunk>` from OpenAI SDK
+
+#### `<OpenAIResponses/>`
+
+The `OpenAIResponses` component is a low-level component that directly maps to the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses). It has identical inputs and outputs to the OpenAI Responses API, making it suitable for advanced use cases where you need full control.
+
+```tsx
+<OpenAIResponses
+  model="gpt-4o-mini"
+  input={[
+    {
+      role: "user",
+      content: "What is JSX?",
+    },
+  ]}
+  truncation="auto"
+/>
+```
+
+##### Props
+
+The `OpenAIResponses` component accepts all parameters from the OpenAI SDK's `responses.create` method:
+
+- `model` (required): ID of the model to use
+- `input` (required): The input to the response
+- Plus all other optional parameters from the OpenAI Responses API
+
+##### Return Types
+
+- With `stream: false` (default): Returns the full `Response` object from OpenAI SDK
+- With `stream: true`: Returns a `Stream<ResponseStreamEvent>` from OpenAI SDK
 
 # MCP Components
 
@@ -3203,7 +3496,7 @@ Wrapper used to call a prompt resource provided by an MCP server. This makes it 
 
 ```tsx
 import { createMCPServerContext } from "@gensx/mcp";
-import { OpenAIProvider } from "@gensx/openai";
+import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
 
 // Create the MCP server context
 const { Provider, useContext: useMCPContext } = createMCPServerContext({
@@ -3246,6 +3539,12 @@ To install the package, run the following command:
 npm install @gensx/anthropic
 ```
 
+Then import the components you need from the package:
+
+```tsx
+import { AnthropicProvider, GSXChatCompletion } from "@gensx/anthropic";
+```
+
 ## Supported components
 
 | <div style={{width: "150px"}}>Component</div>         | Description                                                                           |
@@ -3270,11 +3569,9 @@ The package provides three different chat completion components to suit differen
 The `AnthropicProvider` component initializes and provides an Anthropic client instance to all child components. Any components that use Anthropic's API need to be wrapped in an `AnthropicProvider`.
 
 ```tsx
-import { AnthropicProvider } from "@gensx/anthropic";
-
 <AnthropicProvider
   apiKey="your-api-key" // Your Anthropic API key
-/>;
+/>
 ```
 
 ##### Props
@@ -3288,31 +3585,30 @@ The `AnthropicProvider` accepts all configuration options from the [Anthropic No
 
 The `GSXChatCompletion` component is an advanced chat completion component that provides enhanced features beyond the standard Anthropic API. It supports structured output, tool calling, and streaming, with automatic handling of tool execution.
 
+To get a structured output, pass a [Zod schema](https://www.npmjs.com/package/zod) to the `outputSchema` prop.
+
 ```tsx
-import { GSXChatCompletion, GSXTool } from "@gensx/anthropic";
-import { z } from "zod";
+// Returns an object matching the outputSchema when executed
+<GSXChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[
+    {
+      role: "user",
+      content: "Extract the name and age from: John Doe, 32 years old",
+    },
+  ]}
+  outputSchema={z.object({
+    name: z.string(),
+    age: z.number(),
+  })}
+  max_tokens={1000}
+/>
+```
 
-// Example with structured output
-const result = await gsx.execute(
-  <GSXChatCompletion
-    model="claude-3-5-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[
-      {
-        role: "user",
-        content: "Extract the name and age from: John Doe, 32 years old",
-      },
-    ]}
-    outputSchema={z.object({
-      name: z.string(),
-      age: z.number(),
-    })}
-    max_tokens={1000}
-  />,
-);
-// result is typed as { name: string, age: number }
+To use tools, create a `GSXTool` object:
 
-// Example with tools
+```tsx
 const weatherTool = GSXTool.create({
   name: "get_weather",
   description: "Get the weather for a given location",
@@ -3323,16 +3619,18 @@ const weatherTool = GSXTool.create({
     return { weather: "sunny" };
   },
 });
+```
 
-const toolResult = await gsx.execute(
-  <GSXChatCompletion
-    model="claude-3-5-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's the weather in Seattle?" }]}
-    tools={[weatherTool]}
-    max_tokens={1000}
-  />,
-);
+Then pass the tool to the `tools` prop.
+
+```tsx
+<GSXChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[{ role: "user", content: "What's the weather in Seattle?" }]}
+  tools={[weatherTool]}
+  max_tokens={1000}
+/>
 ```
 
 ##### Props
@@ -3362,30 +3660,24 @@ The return type of `GSXChatCompletion` depends on the props:
 The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the Anthropic API.
 
 ```tsx
-import { ChatCompletion } from "@gensx/anthropic";
+// Returns a string when executed
+<ChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[{ role: "user", content: "What's a programmable tree?" }]}
+  temperature={0.7}
+  max_tokens={1000}
+/>
 
-// Non-streaming usage (returns a string)
-const response = await gsx.execute(
-  <ChatCompletion
-    model="claude-3-5-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's a programmable tree?" }]}
-    temperature={0.7}
-    max_tokens={1000}
-  />,
-);
-
-// Streaming usage (returns an AsyncIterableIterator<string>)
-const stream = await gsx.execute(
-  <ChatCompletion
-    model="claude-3-5-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's a programmable tree?" }]}
-    temperature={0.7}
-    max_tokens={1000}
-    stream={true}
-  />,
-);
+// Returns an AsyncIterableIterator<string> when executed
+<ChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[{ role: "user", content: "What's a programmable tree?" }]}
+  temperature={0.7}
+  max_tokens={1000}
+  stream={true}
+/>
 ```
 
 ##### Props
@@ -3410,38 +3702,12 @@ The `ChatCompletion` component accepts all parameters from Anthropic's messages 
 The `AnthropicChatCompletion` component is a low-level component that directly maps to the Anthropic SDK. It has identical inputs and outputs to the Anthropic API, making it suitable for advanced use cases where you need full control.
 
 ```tsx
-import { AnthropicChatCompletion } from "@gensx/anthropic";
-
-// Non-streaming usage
-const completion = await gsx.execute(
-  <AnthropicChatCompletion
-    model="claude-3-7-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's a programmable tree?" }]}
-    max_tokens={1000}
-  />,
-);
-console.log(completion.content);
-
-// Streaming usage
-const stream = await gsx.execute(
-  <AnthropicChatCompletion
-    model="claude-3-7-sonnet-latest"
-    system="You are a helpful assistant."
-    messages={[{ role: "user", content: "What's a programmable tree?" }]}
-    stream={true}
-    max_tokens={1000}
-  />,
-);
-
-for await (const chunk of stream) {
-  if (
-    chunk.type === "content_block_delta" &&
-    chunk.delta.type === "text_delta"
-  ) {
-    process.stdout.write(chunk.delta.text);
-  }
-}
+<AnthropicChatCompletion
+  model="claude-3-7-sonnet-latest"
+  system="You are a helpful assistant."
+  messages={[{ role: "user", content: "What's a programmable tree?" }]}
+  max_tokens={1000}
+/>
 ```
 
 ##### Props
@@ -3454,7 +3720,6 @@ The `AnthropicChatCompletion` component accepts all parameters from the Anthropi
 - `system`: System prompt to set the behavior of the assistant
 - `temperature`: Sampling temperature
 - `stream`: Whether to stream the response
-
 - `tools`: Array of Anthropic tool definitions for function calling
 - Plus all other Anthropic message parameters
 
