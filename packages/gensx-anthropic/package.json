@@ -36,22 +36,20 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "peerDependencies": {
-    "@anthropic-ai/sdk": "^0.37.0",
-    "@gensx/core": "^0.3.0",
-    "zod": "catalog:",
-    "zod-to-json-schema": "catalog:"
+    "@anthropic-ai/sdk": "^0.37.0"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.37.0",
-    "@gensx/core": "workspace:*",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "vitest": "catalog:",
-    "zod": "catalog:",
-    "zod-to-json-schema": "catalog:"
+    "@anthropic-ai/sdk": "^0.37.0",
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@gensx/core": "workspace:*",
+    "zod": "catalog:",
+    "zod-to-json-schema": "catalog:"
+  }
 }
