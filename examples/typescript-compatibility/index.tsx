@@ -2,17 +2,11 @@
 /** @jsxImportSource @gensx/core */
 
 import * as gensx from "@gensx/core";
-import {
-  GSXChatCompletion,
-  OpenAIContext,
-  OpenAIProvider,
-} from "@gensx/openai";
+import { GSXChatCompletion, OpenAIProvider } from "@gensx/openai";
 
 const RespondToInput = gensx.Component<{ input: string }, string>(
   "RespondToInput",
   ({ input }) => {
-    console.log(Symbol.for("gensx.context.0") === OpenAIContext.symbol);
-
     return (
       <GSXChatCompletion
         model="gpt-4o-mini"

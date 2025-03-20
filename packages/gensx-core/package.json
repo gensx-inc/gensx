@@ -28,6 +28,16 @@
       "default": "./dist/jsx-dev-runtime.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      "jsx-runtime": [
+        "./dist/jsx-runtime.d.ts"
+      ],
+      "jsx-dev-runtime": [
+        "./dist/jsx-dev-runtime.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist"
   ],
