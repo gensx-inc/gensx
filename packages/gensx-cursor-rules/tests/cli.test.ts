@@ -13,7 +13,7 @@ suite("Gensx Cursor Rules", () => {
 
     const cwd = process.cwd();
 
-    // execute the bin/cli.js file
+    // execute the cli.js file
     await new Promise((resolve, reject) => {
       exec(
         `${cwd}/dist/cli.js`,

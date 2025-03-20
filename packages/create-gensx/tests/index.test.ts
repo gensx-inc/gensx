@@ -128,14 +128,16 @@ suite("create-gensx", () => {
     await exec("npm install", { cwd: projectPath });
 
     // Manually run the AI rules commands to simulate the npx behavior in tests
-    await exec(`node ${gensxClaudeMdPath}/bin/cli.js`, { cwd: projectPath });
-    await exec(`node ${gensxCursorRulesPath}/bin/cli.js`, { cwd: projectPath });
+    await exec(`node ${gensxClaudeMdPath}/dist/cli.js`, { cwd: projectPath });
+    await exec(`node ${gensxCursorRulesPath}/dist/cli.js`, {
+      cwd: projectPath,
+    });
     await exec(
-      `node ${path.resolve(__dirname, "../../gensx-cline-rules/bin/cli.js")}`,
+      `node ${path.resolve(__dirname, "../../gensx-cline-rules/dist/cli.js")}`,
       { cwd: projectPath },
     );
     await exec(
-      `node ${path.resolve(__dirname, "../../gensx-windsurf-rules/bin/cli.js")}`,
+      `node ${path.resolve(__dirname, "../../gensx-windsurf-rules/dist/cli.js")}`,
       { cwd: projectPath },
     );
 

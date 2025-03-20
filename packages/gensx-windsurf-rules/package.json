@@ -2,9 +2,8 @@
   "name": "@gensx/windsurf-rules",
   "version": "0.1.3",
   "description": "Windsurf rules for GenSX projects",
-  "main": "index.js",
   "bin": {
-    "gensx-windsurf-rules": "./bin/cli.js"
+    "gensx-windsurf-rules": "./dist/cli.js"
   },
   "type": "module",
   "scripts": {
