@@ -5,6 +5,7 @@ GenSX is a simple typescript framework for building complex LLM applications. It
 ## Docs
 
 - [Why JSX?](https://gensx.com/docs/why-jsx)
+- [Typescript/ESM Compatibility](https://gensx.com/docs/typescript-compatibility)
 - [Quickstart](https://gensx.com/docs/quickstart)
 - [GenSX Overview](https://gensx.com/docs/index)
 - [GenSX Cloud (Beta)](https://gensx.com/docs/cloud)
