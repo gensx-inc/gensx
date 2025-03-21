@@ -121,6 +121,10 @@ export type StreamComponentProps<P> = P & {
 export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
   props: StreamComponentProps<
     T &
+      // This is necessary to disallow extra props. Because of the extends statement above,
+      // typescript would allow props that have all the necessary keys, but also have extra keys.
+      // We want to prevent that, as it can be surprising for the developer.
+      // This hack is not necessary for the Component type because we don't use extends in the same way.
       (Exclude<keyof T, keyof StreamComponentProps<P>> extends never
         ? T
         : Record<Exclude<keyof T, keyof StreamComponentProps<P>>, never>)
