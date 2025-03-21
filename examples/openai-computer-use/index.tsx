@@ -122,7 +122,8 @@ const ProcessComputerCalls = gensx.Component<
           call_id: lastCallId,
           type: "computer_call_output",
           output: {
-            type: "computer_screenshot",
+            // The types are wrong. Docs online and the JSDoc both say "computer_screenshot"
+            type: "input_image" as unknown as "computer_screenshot",
             image_url: `data:image/png;base64,${screenshotBase64}`,
           },
         },
