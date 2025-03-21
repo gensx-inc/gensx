@@ -24,7 +24,7 @@ type RunResult<P> = P extends { stream: true }
   : Promise<string>;
 
 // Overload for GsxComponent
-export function Workflow<P, O>(
+export function Workflow<P extends object & { length?: never }, O>(
   name: string,
   component: GsxComponent<P, O>,
   opts?: {

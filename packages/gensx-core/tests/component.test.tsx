@@ -372,6 +372,7 @@ suite("component", () => {
           const result = await TestStreamComponent.run({
             input,
             componentOpts: { name: "RenamedStreamComponent" },
+            stream: true,
           });
           return result;
         },

@@ -11,8 +11,9 @@ import * as gensx from "@gensx/core";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace gsx {
-  export type Args<P, O> = gensx.Args<P, O>;
-  export type StreamArgs<P> = gensx.StreamArgs<P>;
+  export type Args<P extends object & { length?: never }, O> = gensx.Args<P, O>;
+  export type StreamArgs<P extends object & { length?: never }> =
+    gensx.StreamArgs<P>;
 }
 
 export const gsx = {

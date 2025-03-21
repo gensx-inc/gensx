@@ -135,7 +135,7 @@ suite("streaming", () => {
           let result = "";
           await gensx.execute(
             <MyComponent stream={true} foo="bar">
-              {async (response: Streamable) => {
+              {async (response) => {
                 for await (const token of response) {
                   result += token;
                 }

@@ -73,7 +73,7 @@ export type Args<P, O> = P & {
  * - JSX that will resolve to type O
  * - A promise of either of the above
  */
-export type GsxComponent<P, O> = ((
+export type GsxComponent<P extends object & { length?: never }, O> = ((
   props: Args<P, O>,
 ) => MaybePromise<
   O extends (infer Item)[]
@@ -105,14 +105,13 @@ type StreamChildrenType<T> = T extends { stream: true }
       | ((output: string) => Promise<void>);
 
 export type StreamArgs<P> = P & {
-  stream?: boolean;
   children?: StreamChildrenType<P>;
 };
 
-export type GsxStreamComponent<P extends object & { length?: never }> = ((
-  props: StreamArgs<P>,
+export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
+  props: StreamArgs<T>,
 ) => MaybePromise<
-  | DeepJSXElement<P extends { stream: true } ? Streamable : string>
+  | DeepJSXElement<T extends { stream: true } ? Streamable : string>
   | ExecutableValue
 >) /*
  * Use branding to preserve output type information.
@@ -122,7 +121,9 @@ export type GsxStreamComponent<P extends object & { length?: never }> = ((
   readonly __brand: "gensx-stream-component";
   readonly __outputType: Streamable;
   readonly __rawProps: P;
-  run: (props: WithComponentOpts<P>) => MaybePromise<Streamable>;
+  run: <U extends StreamArgs<P>>(
+    props: WithComponentOpts<U>,
+  ) => MaybePromise<U extends { stream: true } ? Streamable : string>;
 };
 
 export interface Context<T> {
