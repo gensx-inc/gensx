@@ -90,7 +90,7 @@ export const MakeMove = gensx.Component<MakeMoveProps, MakeMoveResult>(
         response = await gensx.execute<string>(
           <AnthropicProvider apiKey={player.provider.apiKey}>
             <ChatCompletionAnthropic
-              model={player.model}
+              model={player.model!}
               system={getSystemMessage(playerSymbol, player.strategy)}
               max_tokens={1000}
               messages={[
@@ -109,7 +109,7 @@ export const MakeMove = gensx.Component<MakeMoveProps, MakeMoveResult>(
             baseURL={player.provider?.baseURL}
           >
             <ChatCompletion
-              model={player.model}
+              model={player.model!}
               messages={[
                 {
                   role: "system",

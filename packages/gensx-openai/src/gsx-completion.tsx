@@ -146,51 +146,61 @@ export type ChatCompletionProps = Omit<
   tools?: GSXTool<any>[];
 };
 
-export const ChatCompletion = gensx.StreamComponent<ChatCompletionProps>(
-  "ChatCompletion",
-  async (props) => {
-    if (props.stream) {
-      const stream = await gsxChatCompletionImpl({ ...props, stream: true });
+export const ChatCompletion = gensx.StreamComponent<
+  ChatCompletionProps & {
+    // Support OpenRouter params
+    provider?: {
+      order?: string[];
+      allow_fallbacks?: boolean;
+      require_parameters?: boolean;
+      data_collection?: "allow" | "deny";
+      ignore?: string[];
+      quantizations?: string[];
+      sort?: string;
+    };
+  }
+>("ChatCompletion", async (props) => {
+  if (props.stream) {
+    const stream = await gsxChatCompletionImpl({ ...props, stream: true });
 
-      // Transform Stream<ChatCompletionChunk> into AsyncIterableIterator<string>
-      const generateTokens = (): AsyncIterableIterator<string> => {
-        const iterator = stream[Symbol.asyncIterator]();
-        return {
-          [Symbol.asyncIterator]() {
-            return this;
-          },
-          async next() {
-            const result = await iterator.next();
-            if (result.done) return { done: true, value: undefined };
-            const content = result.value.choices[0]?.delta?.content;
-            return content ? { done: false, value: content } : this.next();
-          },
-        };
+    // Transform Stream<ChatCompletionChunk> into AsyncIterableIterator<string>
+    const generateTokens = (): AsyncIterableIterator<string> => {
+      const iterator = stream[Symbol.asyncIterator]();
+      return {
+        [Symbol.asyncIterator]() {
+          return this;
+        },
+        async next() {
+          const result = await iterator.next();
+          if (result.done) return { done: true, value: undefined };
+          const content = result.value.choices[0]?.delta?.content;
+          return content ? { done: false, value: content } : this.next();
+        },
       };
+    };
 
-      return generateTokens();
-    } else {
-      const response = await gsxChatCompletionImpl({ ...props, stream: false });
-      const content = response.choices[0]?.message?.content ?? "";
+    return generateTokens();
+  } else {
+    const response = await gsxChatCompletionImpl({ ...props, stream: false });
+    const content = response.choices[0]?.message?.content ?? "";
 
-      // Use sync iterator for non-streaming case
-      const generateTokens = (): IterableIterator<string> => {
-        let yielded = false;
-        return {
-          [Symbol.iterator]() {
-            return this;
-          },
-          next() {
-            if (!yielded) {
-              yielded = true;
-              return { done: false, value: content };
-            }
-            return { done: true, value: undefined };
-          },
-        };
+    // Use sync iterator for non-streaming case
+    const generateTokens = (): IterableIterator<string> => {
+      let yielded = false;
+      return {
+        [Symbol.iterator]() {
+          return this;
+        },
+        next() {
+          if (!yielded) {
+            yielded = true;
+            return { done: false, value: content };
+          }
+          return { done: true, value: undefined };
+        },
       };
+    };
 
-      return generateTokens();
-    }
-  },
-);
+    return generateTokens();
+  }
+});

@@ -62,7 +62,9 @@ export type OpenAIResponsesProps =
   | ResponseCreateParamsStreaming
   | ResponseCreateParamsNonStreaming;
 
-export type OpenAIResponsesOutput = Stream<ResponseStreamEvent> | Response;
+export type OpenAIResponsesOutput<
+  P extends OpenAIResponsesProps = OpenAIResponsesProps,
+> = P extends { stream: true } ? Stream<ResponseStreamEvent> : Response;
 
 export const OpenAIResponses = gensx.Component<
   OpenAIResponsesProps,
