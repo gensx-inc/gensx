@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.7](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.6...gensx-core-v0.3.7) (2025-03-21)
+
+
+### 🐛 Bug Fixes
+
+* Fix type inference for StreamComponent and Provider ([#509](https://github.com/gensx-inc/gensx/issues/509)) ([2321574](https://github.com/gensx-inc/gensx/commit/232157454f65dbd5fda5817bd416dda627c154e8)), closes [#491](https://github.com/gensx-inc/gensx/issues/491)
+
 ## [0.3.6](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.5...gensx-core-v0.3.6) (2025-03-20)
 
 

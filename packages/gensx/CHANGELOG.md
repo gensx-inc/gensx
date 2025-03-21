@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.13](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.12...gensx-v0.3.13) (2025-03-21)
+
+
+### 🐛 Bug Fixes
+
+* Ensure we are respecting the env vars for app/api base urls properly. ([#507](https://github.com/gensx-inc/gensx/issues/507)) ([30e8b4b](https://github.com/gensx-inc/gensx/commit/30e8b4b14f1c29532379b871bfcca203c189932c))
+* Fix type inference for StreamComponent and Provider ([#509](https://github.com/gensx-inc/gensx/issues/509)) ([2321574](https://github.com/gensx-inc/gensx/commit/232157454f65dbd5fda5817bd416dda627c154e8)), closes [#491](https://github.com/gensx-inc/gensx/issues/491)
+
 ## [0.3.12](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.11...gensx-v0.3.12) (2025-03-20)
 
 

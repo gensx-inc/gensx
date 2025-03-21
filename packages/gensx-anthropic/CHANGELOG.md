@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.11](https://github.com/gensx-inc/gensx/compare/gensx-anthropic-v0.1.10...gensx-anthropic-v0.1.11) (2025-03-21)
+
+
+### 🐛 Bug Fixes
+
+* Fix type inference for StreamComponent and Provider ([#509](https://github.com/gensx-inc/gensx/issues/509)) ([2321574](https://github.com/gensx-inc/gensx/commit/232157454f65dbd5fda5817bd416dda627c154e8)), closes [#491](https://github.com/gensx-inc/gensx/issues/491)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.7
+
 ## [0.1.10](https://github.com/gensx-inc/gensx/compare/gensx-anthropic-v0.1.9...gensx-anthropic-v0.1.10) (2025-03-20)
 
 
