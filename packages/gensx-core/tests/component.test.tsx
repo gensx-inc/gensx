@@ -393,7 +393,8 @@ suite("component", () => {
 
       const { result, checkpoints } =
         await executeWorkflowWithCheckpoints<string>(
-          <WrapperComponent input="World" />,
+          // @ts-expect-error - This should be an error because foo is not a valid prop
+          <WrapperComponent input="World" foo="bar" />,
         );
 
       expect(result).toBe("Hello World");
