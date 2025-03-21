@@ -1,5 +1,7 @@
 import type {
+  ComponentOpts,
   DeepJSXElement,
+  DefaultOpts,
   ExecutableValue,
   GsxComponent,
   GsxStreamComponent,
@@ -15,29 +17,14 @@ import { resolveDeep } from "./resolve.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
-export interface ComponentOpts {
-  secretProps?: string[]; // Property paths to mask in checkpoints
-  secretOutputs?: boolean; // Whether to mask the output of the component
-  name?: string; // Allows you to override the name of the component
-  metadata?: Record<string, unknown>; // Metadata to attach to the component
-}
-
-// omit name from ComponentOpts
-export type DefaultOpts = Omit<ComponentOpts, "name">;
-
-export type WithComponentOpts<P> = P & {
-  componentOpts?: ComponentOpts;
-};
-
-type ComponentProps<P extends object & { length?: never }> =
-  WithComponentOpts<P>;
-
-export function Component<P extends object & { length?: never }, O>(
+export function Component<P, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
   defaultOpts?: DefaultOpts,
-): GsxComponent<ComponentProps<P>, O> {
-  const GsxComponentFn = async (props: ComponentProps<P>) => {
+): GsxComponent<P, O> {
+  const GsxComponentFn = async (
+    props: P & { componentOpts?: ComponentOpts },
+  ) => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (typeof props !== "object" || Array.isArray(props) || props === null) {
       throw new Error(`Component ${name} received non-object props.`);
@@ -101,8 +88,9 @@ export function Component<P extends object & { length?: never }, O>(
     }
   };
 
-  GsxComponentFn.run = (props: WithComponentOpts<P>) => {
-    return jsx(GsxComponentFn, props)();
+  GsxComponentFn.run = (props: P & { componentOpts?: ComponentOpts }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+    return jsx(GsxComponentFn as any, props)() as Promise<O>;
   };
 
   if (name) {
@@ -116,11 +104,8 @@ export function Component<P extends object & { length?: never }, O>(
   });
 
   // Brand the component with its output type
-  return GsxComponentFn as unknown as GsxComponent<WithComponentOpts<P>, O>;
+  return GsxComponentFn as unknown as GsxComponent<P, O>;
 }
-
-type StreamComponentProps<P extends object & { length?: never }> =
-  WithComponentOpts<P & { stream?: boolean }>;
 
 export function StreamComponent<P extends object & { length?: never }>(
   name: string,
@@ -128,8 +113,10 @@ export function StreamComponent<P extends object & { length?: never }>(
     props: P & { stream?: boolean },
   ) => MaybePromise<Streamable | JSX.Element>,
   defaultOpts?: DefaultOpts,
-): GsxStreamComponent<StreamComponentProps<P>> {
-  const GsxStreamComponentFn = async (props: StreamComponentProps<P>) => {
+): GsxStreamComponent<P & { stream?: boolean }> {
+  const GsxStreamComponentFn = async (
+    props: P & { stream?: boolean; componentOpts?: ComponentOpts },
+  ) => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -220,8 +207,15 @@ export function StreamComponent<P extends object & { length?: never }>(
     }
   };
 
-  GsxStreamComponentFn.run = (props: StreamComponentProps<P>) => {
-    return jsx(GsxStreamComponentFn, props)();
+  GsxStreamComponentFn.run = <
+    T extends P & { stream?: boolean; componentOpts?: ComponentOpts },
+  >(
+    props: T,
+  ): Promise<T extends { stream: true } ? Streamable : string> => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+    return jsx(GsxStreamComponentFn as any, props)() as Promise<
+      T extends { stream: true } ? Streamable : string
+    >;
   };
 
   if (name) {
@@ -239,6 +233,6 @@ export function StreamComponent<P extends object & { length?: never }>(
   });
 
   return GsxStreamComponentFn as unknown as GsxStreamComponent<
-    StreamComponentProps<P>
+    P & { stream?: boolean }
   >;
 }

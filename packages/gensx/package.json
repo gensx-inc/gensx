@@ -45,7 +45,6 @@
     "vitest": "catalog:"
   },
   "dependencies": {
-    "@gensx/core": "workspace:*",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.2.3",

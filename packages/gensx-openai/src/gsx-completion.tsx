@@ -4,7 +4,7 @@
 import "./utils/zod-extensions.js";
 
 import * as gensx from "@gensx/core";
-import { Args, GSXToolProps } from "@gensx/core";
+import { GSXToolProps } from "@gensx/core";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,
@@ -120,7 +120,7 @@ interface GSXChatCompletionComponent {
   readonly __outputType: GSXChatCompletionOutput<GSXChatCompletionProps<any>>;
   readonly __rawProps: GSXChatCompletionProps<any>;
   <P extends GSXChatCompletionProps<any>>(
-    props: Args<P, InferSchemaType<P>>,
+    props: gensx.ComponentProps<P, InferSchemaType<P>>,
   ): InferSchemaType<P>;
 
   run<P extends GSXChatCompletionProps<any>>(

@@ -3,9 +3,10 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { gzip } from "node:zlib";
 
-import { ComponentOpts, STREAMING_PLACEHOLDER } from "./component.js";
+import { STREAMING_PLACEHOLDER } from "./component.js";
 import { readConfig } from "./config.js";
 import { ExecutionContext } from "./context.js";
+import { ComponentOpts } from "./types.js";
 
 const gzipAsync = promisify(gzip);
 

@@ -131,11 +131,11 @@ interface GSXChatCompletionComponent {
   readonly __outputType: GSXChatCompletionOutput<GSXChatCompletionProps<any>>;
   readonly __rawProps: GSXChatCompletionProps<any>;
   <P extends GSXChatCompletionProps<any>>(
-    props: gensx.Args<P, InferSchemaType<P>>,
+    props: gensx.ComponentProps<P, InferSchemaType<P>>,
   ): InferSchemaType<P>;
 
   run<P extends GSXChatCompletionProps<any>>(
-    props: P,
+    props: gensx.ComponentProps<P, InferSchemaType<P>>,
   ): Promise<InferSchemaType<P>>;
 }
 

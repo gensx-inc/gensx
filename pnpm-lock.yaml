@@ -724,9 +724,6 @@ importers:
 
   packages/gensx:
     dependencies:
-      '@gensx/core':
-        specifier: workspace:*
-        version: link:../gensx-core
       '@rollup/plugin-commonjs':
         specifier: ^25.0.7
         version: 25.0.8(rollup@4.34.8)

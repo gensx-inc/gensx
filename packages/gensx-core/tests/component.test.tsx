@@ -189,10 +189,13 @@ suite("component", () => {
       );
 
       // @ts-expect-error - This should is an error because foo is not a valid prop
+      await TestComponent.run({ input: "World", foo: "bar" });
+
+      // @ts-expect-error - This should is an error because foo is not a valid prop
       await gensx.execute<string>(<TestComponent input="World" foo={"bar"} />);
     });
 
-    test("props types are enforced for StreamComponent", async () => {
+    test("props types and return types are enforced for StreamComponent", async () => {
       const TestComponent = gensx.StreamComponent<{ input: string }>(
         "TestComponent",
         async function* ({ input }) {
@@ -200,6 +203,17 @@ suite("component", () => {
           return `Hello ${input}`;
         },
       );
+
+      // Verify that the return type is Streamable for streaming mode
+      const _stream: Streamable = await TestComponent.run({
+        input: "World",
+        stream: true,
+      });
+
+      // Verify that the return type is string for non-streaming mode
+      const _stream2: string = await TestComponent.run({
+        input: "World",
+      });
 
       // @ts-expect-error - This should is an error because foo is not a valid prop
       await gensx.execute<string>(<TestComponent input="World" foo={"bar"} />);

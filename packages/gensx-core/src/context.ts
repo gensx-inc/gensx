@@ -1,5 +1,5 @@
 import { resolveDeep } from "./resolve.js";
-import { Args, Context, GsxComponent } from "./types.js";
+import { ComponentProps, Context, GsxComponent } from "./types.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
@@ -18,7 +18,7 @@ export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
 
   const Provider = (
-    props: Args<
+    props: ComponentProps<
       { value: T; onComplete?: () => Promise<void> | void },
       ExecutionContext
     >,
