@@ -118,10 +118,15 @@ export type StreamComponentProps<P> = P & {
   children?: StreamChildrenType<P>;
 };
 
-export type GsxStreamComponent<P extends object & { length?: never }> = ((
-  props: StreamComponentProps<P>,
+export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
+  props: StreamComponentProps<
+    T &
+      (Exclude<keyof T, keyof StreamComponentProps<P>> extends never
+        ? T
+        : "T must be exactly of type P")
+  >,
 ) => MaybePromise<
-  | DeepJSXElement<P extends { stream: true } ? Streamable : string>
+  | DeepJSXElement<T extends { stream: true } ? Streamable : string>
   | ExecutableValue
 >) /*
  * Use branding to preserve output type information.
@@ -131,9 +136,9 @@ export type GsxStreamComponent<P extends object & { length?: never }> = ((
   readonly __brand: "gensx-stream-component";
   readonly __outputType: Streamable;
   readonly __rawProps: P;
-  run: <T extends P & { stream?: boolean; componentOpts?: ComponentOpts }>(
-    props: T,
-  ) => MaybePromise<T extends { stream: true } ? Streamable : string>;
+  run: <U extends P & { stream?: boolean; componentOpts?: ComponentOpts }>(
+    props: U,
+  ) => MaybePromise<U extends { stream: true } ? Streamable : string>;
 };
 
 export interface Context<T> {
