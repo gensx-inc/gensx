@@ -123,7 +123,7 @@ export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
     T &
       (Exclude<keyof T, keyof StreamComponentProps<P>> extends never
         ? T
-        : "T must be exactly of type P")
+        : Record<Exclude<keyof T, keyof StreamComponentProps<P>>, never>)
   >,
 ) => MaybePromise<
   | DeepJSXElement<T extends { stream: true } ? Streamable : string>
