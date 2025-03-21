@@ -13,7 +13,7 @@ type Assert<T, U> =
     : { error: "Types are not equal"; type1: T; type2: U };
 
 suite("execute", () => {
-  const WorkflowComponent = gensx.Component("test", async () => {
+  const WorkflowComponent = gensx.Component<{}, string>("test", async () => {
     await setTimeout(0);
     return "hello";
   });

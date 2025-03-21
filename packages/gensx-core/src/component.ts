@@ -17,7 +17,7 @@ import { resolveDeep } from "./resolve.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
-export function Component<P, O>(
+export function Component<P extends object & { length?: never }, O>(
   name: string,
   fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
   defaultOpts?: DefaultOpts,

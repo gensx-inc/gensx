@@ -6,7 +6,8 @@
     "declaration": true,
     "declarationMap": true,
     "incremental": false,
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "noUnusedLocals": false
   },
   "include": ["src/**/*"]
 }

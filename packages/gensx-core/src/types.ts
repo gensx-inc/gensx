@@ -103,24 +103,23 @@ export type Streamable =
   | AsyncIterableIterator<string>
   | IterableIterator<string>;
 
-export type GsxStreamComponent<
-  P extends object & { length?: never; stream?: boolean },
-> = ((
-  props: P & {
-    stream?: boolean;
-    componentOpts?: ComponentOpts;
-    children?: P extends {
-      stream: true;
-    }
-      ?
-          | ((output: Streamable) => MaybePromise<ExecutableValue | Primitive>)
-          | ((output: Streamable) => void)
-          | ((output: Streamable) => Promise<void>)
-      :
-          | ((output: string) => MaybePromise<ExecutableValue | Primitive>)
-          | ((output: string) => void)
-          | ((output: string) => Promise<void>);
-  },
+export type StreamChildrenType<T> =
+  | ((
+      output: T extends { stream: true } ? Streamable : string,
+    ) => MaybePromise<ExecutableValue | Primitive>)
+  | ((output: T extends { stream: true } ? Streamable : string) => void)
+  | ((
+      output: T extends { stream: true } ? Streamable : string,
+    ) => Promise<void>);
+
+export type StreamComponentProps<P> = P & {
+  stream?: boolean;
+  componentOpts?: ComponentOpts;
+  children?: StreamChildrenType<P>;
+};
+
+export type GsxStreamComponent<P extends object & { length?: never }> = ((
+  props: StreamComponentProps<P>,
 ) => MaybePromise<
   | DeepJSXElement<P extends { stream: true } ? Streamable : string>
   | ExecutableValue
@@ -132,9 +131,9 @@ export type GsxStreamComponent<
   readonly __brand: "gensx-stream-component";
   readonly __outputType: Streamable;
   readonly __rawProps: P;
-  run: <U extends P & { stream?: boolean; componentOpts?: ComponentOpts }>(
-    props: U,
-  ) => MaybePromise<U extends { stream: true } ? Streamable : string>;
+  run: <T extends P & { stream?: boolean; componentOpts?: ComponentOpts }>(
+    props: T,
+  ) => MaybePromise<T extends { stream: true } ? Streamable : string>;
 };
 
 export interface Context<T> {

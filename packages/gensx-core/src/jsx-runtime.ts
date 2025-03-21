@@ -6,13 +6,10 @@ import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
 import { ComponentProps } from "./index.js";
 import { resolveDeep } from "./resolve.js";
 import {
-  ComponentOpts,
   ExecutableValue,
-  GsxComponent,
-  GsxStreamComponent,
   MaybePromise,
   Primitive,
-  Streamable,
+  StreamComponentProps,
 } from "./types.js";
 
 export namespace JSX {
@@ -39,41 +36,12 @@ export const Fragment = (props: { children?: JSX.Element[] | JSX.Element }) => {
 
 (Fragment as any).__gsxFragment = true;
 
-function jsx<TOutput, TProps>(
-  component: GsxComponent<TProps, TOutput>,
+export const jsx = <TOutput, TProps>(
+  component: (
+    props: ComponentProps<TProps, TOutput> | StreamComponentProps<TProps>,
+  ) => MaybePromise<TOutput>,
   fullProps: ComponentProps<TProps, TOutput> | null,
-): () => Promise<Awaited<TOutput> | Awaited<TOutput>[]>;
-function jsx<TOutput, TProps extends { stream?: boolean }>(
-  component: GsxStreamComponent<TProps>,
-  fullProps:
-    | (TProps & {
-        componentOpts?: ComponentOpts;
-        children?: TProps extends { stream: true }
-          ?
-              | ((
-                  output: Streamable,
-                ) => MaybePromise<ExecutableValue | Primitive>)
-              | ((output: Streamable) => void)
-              | ((output: Streamable) => Promise<void>)
-          :
-              | ((output: string) => MaybePromise<ExecutableValue | Primitive>)
-              | ((output: string) => void)
-              | ((output: string) => Promise<void>);
-      })
-    | null,
-): () => Promise<Awaited<TOutput> | Awaited<TOutput>[]>;
-function jsx<TOutput, TProps extends { stream?: boolean }>(
-  component: GsxComponent<TProps, TOutput> | GsxStreamComponent<TProps>,
-  fullProps:
-    | (TProps & {
-        componentOpts?: ComponentOpts;
-        children?:
-          | ((output: TOutput) => MaybePromise<ExecutableValue<TOutput>>)
-          | ((output: TOutput) => void)
-          | ((output: TOutput) => Promise<void>);
-      })
-    | null,
-): () => Promise<Awaited<TOutput> | Awaited<TOutput>[]> {
+): (() => Promise<Awaited<TOutput> | Awaited<TOutput>[]>) => {
   // Only set name if children is a function and doesn't already have our naming pattern
   if (
     fullProps?.children &&
@@ -92,22 +60,14 @@ function jsx<TOutput, TProps extends { stream?: boolean }>(
 
     // For Fragment, we need to pass the children through
     if ((component as any).__gsxFragment) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const result = await component(fullProps as any);
+      const result = await component(fullProps!);
       return await resolveDeep(result);
     }
 
     // For regular components, we handle children separately
     const { children, ...props } =
-      fullProps ??
-      ({} as TProps & {
-        componentOpts?: ComponentOpts;
-        children?:
-          | ((output: TOutput) => MaybePromise<ExecutableValue<TOutput>>)
-          | ((output: TOutput) => void)
-          | ((output: TOutput) => Promise<void>);
-      });
-    const rawResult = await component(props as TProps);
+      fullProps ?? ({} as ComponentProps<TProps, TOutput>);
+    const rawResult = await component(props as ComponentProps<TProps, TOutput>);
     const result = await resolveDeep(rawResult);
 
     if (children) {
@@ -163,9 +123,8 @@ function jsx<TOutput, TProps extends { stream?: boolean }>(
   });
 
   return JsxWrapper;
-}
+};
 
-export { jsx as jsx };
 export const jsxs = jsx;
 
 function resolveChildren<O>(
