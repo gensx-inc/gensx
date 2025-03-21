@@ -12,6 +12,7 @@ import {
   OpenAIChatCompletion,
   OpenAIChatCompletionProps,
   OpenAIContext,
+  OpenAIEmbedding,
   OpenAIProvider,
   OpenAIResponses,
   OpenAIResponsesProps,
@@ -26,6 +27,7 @@ export {
   ChatCompletion,
   OpenAIContext,
   OpenAIResponses,
+  OpenAIEmbedding,
 };
 
 // Export the type of GSXChatCompletion itself
