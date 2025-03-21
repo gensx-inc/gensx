@@ -115,11 +115,11 @@ suite("ChatCompletion", () => {
   test("enforces types", async () => {
     const Wrapper = gensx.Component<{}, Streamable>("Wrapper", () => {
       return (
+        // @ts-expect-error - This should be an error because foo is not a valid prop
         <ChatCompletion
           model="gpt-4o"
           messages={[{ role: "user", content: "test" }]}
           stream={true}
-          // @ts-expect-error - This should be an error because foo is not a valid prop
           foo={"bar"}
         />
       );

@@ -380,13 +380,12 @@ suite("component", () => {
         },
       );
 
-      const WrapperComponent = gensx.Component<{ input: string }, Streamable>(
+      const WrapperComponent = gensx.Component<{ input: string }, string>(
         "WrapperComponent",
         async ({ input }) => {
           const result = await TestStreamComponent.run({
             input,
             componentOpts: { name: "RenamedStreamComponent" },
-            stream: true,
           });
           return result;
         },
