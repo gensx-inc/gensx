@@ -36,6 +36,7 @@
     "serialize-error": "npm:serialize-error",
     "typescript-json-schema": "npm:typescript-json-schema",
     "typescript": "npm:typescript",
+    "yaml": "npm:yaml",
     "zod-to-json-schema": "npm:zod-to-json-schema",
     "zod": "npm:zod"
   }

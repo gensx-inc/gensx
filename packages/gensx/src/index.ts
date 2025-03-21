@@ -37,6 +37,10 @@ export async function runCLI() {
       "Comma-separated list of IDE rules to install (cline,windsurf,claude,cursor)",
     )
     .option("-d, --description <desc>", "Optional project description")
+    .option(
+      "-f --project-file <file>",
+      "Project metadata file. Defaults to <project-directory>/gensx.yaml",
+    )
     .action(newProject);
 
   const auth = await getAuth();
@@ -82,6 +86,10 @@ export async function runCLI() {
         {},
       )
       .option("-p, --project <name>", "Project name to deploy to")
+      .option(
+        "-f --project-file <file>",
+        "Project metadata file. Defaults to ./gensx.yaml",
+      )
       .action(deploy);
 
     program

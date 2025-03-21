@@ -223,6 +223,7 @@ export interface NewCommandOptions {
   skipIdeRules?: boolean;
   ideRules?: string;
   description?: string;
+  projectFile?: string;
 }
 
 export async function newProject(
@@ -296,7 +297,7 @@ export async function newProject(
           projectName,
           description: options.description,
         },
-        absoluteProjectPath,
+        options.projectFile ?? path.join(absoluteProjectPath, "gensx.yaml"),
       );
       spinner.succeed();
 
