@@ -38,7 +38,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "fs-extra": "^11.2.0",
+    "fs-extra": "^11.3.0",
     "tsx": "catalog:",
     "vitest": "catalog:"
   }
