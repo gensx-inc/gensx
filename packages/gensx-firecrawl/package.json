@@ -1,0 +1,50 @@
+{
+  "name": "@gensx/firecrawl",
+  "version": "0.1.0",
+  "description": "Firecrawl integration for GenSX.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/gensx-firecrawl"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "test:types": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [
+    "gensx",
+    "anthropic",
+    "claude",
+    "ai",
+    "jsx"
+  ],
+  "files": [
+    "dist"
+  ],
+  "author": "GenSX Team",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "catalog:packages",
+    "@vitest/coverage-istanbul": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@gensx/core": "workspace:*",
+    "@mendable/firecrawl-js": "^1.20.1"
+  }
+}

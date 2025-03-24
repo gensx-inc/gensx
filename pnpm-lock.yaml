@@ -831,6 +831,25 @@ importers:
         specifier: ^11.2.0
         version: 11.2.0
 
+  packages/gensx-firecrawl:
+    dependencies:
+      '@gensx/core':
+        specifier: workspace:*
+        version: link:../gensx-core
+      '@mendable/firecrawl-js':
+        specifier: ^1.20.1
+        version: 1.20.1(ws@8.18.0)
+    devDependencies:
+      '@types/node':
+        specifier: catalog:packages
+        version: 18.19.80
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 2.1.8(vitest@2.1.8(@types/node@18.19.80)(lightningcss@1.29.1))
+      vitest:
+        specifier: 'catalog:'
+        version: 2.1.8(@types/node@18.19.80)(lightningcss@1.29.1)
+
   packages/gensx-mcp:
     dependencies:
       '@gensx/core':
@@ -1905,6 +1924,9 @@ packages:
 
   '@mendable/firecrawl-js@1.18.2':
     resolution: {integrity: sha512-KkTm5iFI8v1p50xsxFclHNt54XkS9qDYbkGIyc63eBGW8vnJZwc/mmgf+RFBOrQOfMZIQnAAfbbMNUJsdKl3AQ==}
+
+  '@mendable/firecrawl-js@1.20.1':
+    resolution: {integrity: sha512-ihUp1rwDLkCZEpVBNlBTaSTJ7+IE0FW+EUGQcg5x49Y/JvnhUIPlHT3b4MFHdmeULBeLOuxrmX7LunJq9PkTFw==}
 
   '@mermaid-js/parser@0.3.0':
     resolution: {integrity: sha512-HsvL6zgE5sUPGgkIDlmAWR1HTNHz2Iy11BAWPTa4Jjabkpguy4Ze2gzfLrg6pdRuBvFwgUYyxiaNqZwrEEXepA==}
@@ -8024,6 +8046,17 @@ snapshots:
   '@mendable/firecrawl-js@1.18.2(ws@8.18.0)':
     dependencies:
       axios: 1.7.9
+      isows: 1.0.6(ws@8.18.0)
+      typescript-event-target: 1.1.1
+      zod: 3.24.2
+      zod-to-json-schema: 3.24.1(zod@3.24.2)
+    transitivePeerDependencies:
+      - debug
+      - ws
+
+  '@mendable/firecrawl-js@1.20.1(ws@8.18.0)':
+    dependencies:
+      axios: 1.8.1
       isows: 1.0.6(ws@8.18.0)
       typescript-event-target: 1.1.1
       zod: 3.24.2
