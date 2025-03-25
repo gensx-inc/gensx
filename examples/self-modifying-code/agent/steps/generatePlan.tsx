@@ -6,6 +6,8 @@ import {
   useWorkspaceContext,
 } from "../../workspace.js";
 import { bashTool } from "../tools/bashTool.js";
+import { codeAnalyzerTool } from "../tools/codeAnalyzer.js";
+import { customizeTemplate, findBestTemplate } from "./planTemplates.js";
 
 interface GeneratePlanProps {}
 
@@ -13,6 +15,23 @@ export const GeneratePlan = gensx.Component<GeneratePlanProps, string>(
   "GeneratePlan",
   async () => {
     const context = useWorkspaceContext();
+
+    // Check if we have a suitable template for this goal
+    const bestTemplate = findBestTemplate(context.goalState);
+    let templateSuggestion = "";
+    
+    if (bestTemplate) {
+      templateSuggestion = `
+I've identified a suitable plan template for your goal: "${bestTemplate.name}".
+This template is designed for: ${bestTemplate.description}
+
+Here's a customized plan based on this template:
+
+${customizeTemplate(bestTemplate, context.goalState)}
+
+You can use this template as a starting point and modify it based on your exploration of the codebase.
+`;
+    }
 
     const systemPrompt = `You are an AI agent tasked with creating a plan to achieve a goal in a codebase.
 
@@ -22,11 +41,12 @@ CURRENT GOAL:
 HISTORY OF ACTIONS:
 ${JSON.stringify(context.history, null, 2)}
 
-You have access to bash commands to explore the codebase:
+You have access to bash commands and code analysis tools to explore the codebase:
 - List files and directories
 - Read file contents
 - Check file existence
 - Analyze project structure
+- Analyze code relationships and dependencies
 
 First, explore the codebase to understand what needs to be changed.
 Then create a clear, descriptive plan that outlines:
@@ -35,18 +55,16 @@ Then create a clear, descriptive plan that outlines:
 3. How we'll validate the changes
 4. What the expected outcome will be
 
-Focus on WHAT needs to be done, not HOW to do it.
-Be specific about files and changes, but don't include actual implementation details.
+Your plan should be:
+- Structured with clear sections
+- Specific about files and changes
+- Detailed enough for implementation
+- Broken down into manageable steps
+- Focused on WHAT needs to be done, not HOW to do it
 
-For example, if modifying a README:
-"To add the raccoon story section to the README:
-1. Locate the README.md file in the root directory
-2. Add a new section titled 'A Raccoon's Tale' after the existing sections
-3. Write a paragraph from the raccoon's perspective using 50% words and 50% emojis
-4. Ensure the new section flows well with the existing content
-5. Verify the markdown formatting is correct"
+${templateSuggestion ? templateSuggestion : ""}
 
-Use the bash tool to explore the codebase before creating your plan.`;
+Use the bash tool and codeAnalyzer tool to explore the codebase before finalizing your plan.`;
 
     // Get the plan from OpenAI
     const plan = await ChatCompletion.run({
@@ -55,13 +73,13 @@ Use the bash tool to explore the codebase before creating your plan.`;
         {
           role: "user",
           content:
-            "Explore the codebase and create a plan to achieve the current goal.",
+            "Explore the codebase and create a detailed, structured plan to achieve the current goal.",
         },
       ],
       model: "claude-3-7-sonnet-latest",
       temperature: 0.7,
       max_tokens: 10000,
-      tools: [bashTool],
+      tools: [bashTool, codeAnalyzerTool],
     });
 
     // Add the plan to history

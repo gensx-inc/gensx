@@ -6,12 +6,14 @@ import { GSXTool } from "@gensx/anthropic";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
 
+import { fileCache } from "./cacheManager.js";
+
 // Define the base schema as a Zod object
 const editToolSchema = z.object({
   command: z
-    .enum(["view", "create", "write"])
+    .enum(["view", "create", "write", "edit"])
     .describe(
-      "The commands to run. Allowed options are: `view` (read file), `create` (new file), `write` (replace entire file).",
+      "The commands to run. Allowed options are: `view` (read file), `create` (new file), `write` (replace entire file), `edit` (modify part of a file).",
     ),
   path: z
     .string()
@@ -24,6 +26,18 @@ const editToolSchema = z.object({
     .describe(
       "Required for create/write commands. The complete content to write to the file.",
     ),
+  startLine: z
+    .number()
+    .optional()
+    .describe("Starting line number for edit operations (1-based indexing)."),
+  endLine: z
+    .number()
+    .optional()
+    .describe("Ending line number for edit operations (inclusive, 1-based indexing)."),
+  mode: z
+    .enum(["replace", "insert", "delete"])
+    .optional()
+    .describe("Mode for edit operation: replace lines, insert at position, or delete lines."),
 });
 
 type EditToolParams = z.infer<typeof editToolSchema>;
@@ -43,7 +57,12 @@ Commands:
   - Creates a backup before modification
   - Writes the new content atomically
   - this does not edit a file in place, it creates a new file with the updated content
-  - Use this for all file modifications`,
+  - Use this for all file modifications
+* edit: Modify part of a file
+  - Requires startLine parameter (1-based indexing)
+  - For replace: requires endLine and content parameters
+  - For insert: requires content parameter (inserts at startLine)
+  - For delete: requires endLine parameter`,
   schema: editToolSchema,
   run: async (params: EditToolParams) => {
     console.log("🛠️ Calling the EditTool:", params);
@@ -54,6 +73,28 @@ Commands:
       !params.content
     ) {
       throw new Error("content is required for create and write commands");
+    }
+
+    if (params.command === "edit") {
+      if (!params.startLine) {
+        throw new Error("startLine is required for edit command");
+      }
+      
+      if (!params.mode) {
+        throw new Error("mode is required for edit command");
+      }
+      
+      if (params.mode === "replace" && (!params.endLine || !params.content)) {
+        throw new Error("endLine and content are required for replace mode");
+      }
+      
+      if (params.mode === "insert" && !params.content) {
+        throw new Error("content is required for insert mode");
+      }
+      
+      if (params.mode === "delete" && !params.endLine) {
+        throw new Error("endLine is required for delete mode");
+      }
     }
 
     try {
@@ -73,8 +114,17 @@ Commands:
             );
             return result;
           } else {
-            // Read and return complete file contents
+            // Check if file content is in cache
+            const cachedContent = fileCache.get(params.path);
+            if (cachedContent !== null) {
+              console.log(`Cache hit for: ${params.path}`);
+              return cachedContent;
+            }
+
+            // If not in cache, read from file system and cache it
+            console.log(`Cache miss for: ${params.path}`);
             const content = await fs.readFile(params.path, "utf-8");
+            fileCache.set(params.path, content);
             return content;
           }
         }
@@ -86,7 +136,14 @@ Commands:
             );
           }
           await fs.mkdir(path.dirname(params.path), { recursive: true });
-          await fs.writeFile(params.path, params.content ?? "", "utf-8");
+          
+          // Make sure content is not undefined
+          const content = params.content || "";
+          await fs.writeFile(params.path, content, "utf-8");
+          
+          // Cache the new file content
+          fileCache.set(params.path, content);
+          
           return `File created successfully: ${params.path}`;
         }
 
@@ -95,9 +152,71 @@ Commands:
             throw new Error(`Target must be an existing file: ${params.path}`);
           }
 
+          // Make sure content is not undefined
+          const content = params.content || "";
+          
           // Write new content atomically
-          await fs.writeFile(params.path, params.content ?? "", "utf-8");
+          await fs.writeFile(params.path, content, "utf-8");
+          
+          // Update the cache with new content
+          fileCache.set(params.path, content);
+          
           return `File updated successfully: ${params.path}`;
+        }
+
+        case "edit": {
+          if (!stats?.isFile()) {
+            throw new Error(`Target must be an existing file: ${params.path}`);
+          }
+
+          // Get the current content (from cache if available)
+          let currentContent = fileCache.get(params.path);
+          if (currentContent === null) {
+            currentContent = await fs.readFile(params.path, "utf-8");
+          }
+
+          const lines = currentContent.split("\n");
+          
+          // Adjust for 1-based indexing
+          const startIdx = (params.startLine as number) - 1;
+          const endIdx = params.endLine ? params.endLine - 1 : startIdx;
+          
+          if (startIdx < 0 || startIdx >= lines.length || endIdx >= lines.length) {
+            throw new Error(`Line numbers out of range. File has ${lines.length} lines.`);
+          }
+
+          let newContent: string;
+          
+          switch (params.mode) {
+            case "replace": {
+              // Replace the specified lines with new content
+              const newLines = (params.content || "").split("\n");
+              lines.splice(startIdx, endIdx - startIdx + 1, ...newLines);
+              newContent = lines.join("\n");
+              break;
+            }
+            case "insert": {
+              // Insert new content at the specified line
+              const newLines = (params.content || "").split("\n");
+              lines.splice(startIdx, 0, ...newLines);
+              newContent = lines.join("\n");
+              break;
+            }
+            case "delete": {
+              // Delete the specified lines
+              lines.splice(startIdx, endIdx - startIdx + 1);
+              newContent = lines.join("\n");
+              break;
+            }
+            default:
+              throw new Error(`Unknown edit mode: ${String(params.mode)}`);
+          }
+
+          // Write the updated content and update the cache
+          await fs.writeFile(params.path, newContent, "utf-8");
+          fileCache.set(params.path, newContent);
+          
+          return `File edited successfully: ${params.path}`;
         }
 
         default:

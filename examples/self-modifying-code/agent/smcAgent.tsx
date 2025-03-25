@@ -2,6 +2,7 @@ import path from "path";
 
 import { AnthropicProvider } from "@gensx/anthropic";
 import * as gensx from "@gensx/core";
+import { serializeError } from "serialize-error";
 
 import {
   runCommand,
@@ -15,6 +16,7 @@ import {
 import { CodeAgent } from "./codeAgent.js";
 import { GenerateGoalState } from "./steps/generateGoalState.js";
 import { GeneratePlan } from "./steps/generatePlan.js";
+import { fileCache } from "./tools/cacheManager.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -62,9 +64,10 @@ const ModifyCode = gensx.Component<ModifyCodeProps, boolean>(
       "self-modifying-code",
     );
 
-    // Run the code agent with our plan
-    const result = await CodeAgent.run({
-      task: `Implement the following changes to the codebase:
+    try {
+      // Run the code agent with our plan
+      const result = await CodeAgent.run({
+        task: `Implement the following changes to the codebase:
 
 ${plan}
 
@@ -72,25 +75,48 @@ Current goal state from context:
 ${context.goalState}
 
 After making changes, the code should successfully build with 'pnpm build'.`,
-      additionalInstructions:
-        "After making changes, use the 'build' tool to verify the changes compile successfully.",
-      repoPath: scopedPath,
-    });
+        additionalInstructions:
+          "After making changes, use the 'build' tool to verify the changes compile successfully.",
+        repoPath: scopedPath,
+      });
 
-    // Add the modification attempt to history
-    await updateWorkspaceContext({
-      history: [
-        {
-          timestamp: new Date(),
-          action: "Attempted code modifications",
-          result: result.success ? "success" : "failure",
-          details: result.summary,
-        },
-      ],
-    });
+      // Add the modification attempt to history
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Attempted code modifications",
+            result: result.success ? "success" : "failure",
+            details: result.summary,
+          },
+        ],
+      });
 
-    // Return whether modifications were successful
-    return result.success;
+      // Clear the file cache after modifications
+      fileCache.clear();
+
+      // Return whether modifications were successful
+      return result.success;
+    } catch (error) {
+      console.error("Error in ModifyCode:", serializeError(error));
+      
+      // Add the error to history
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Attempted code modifications",
+            result: "failure",
+            details: error instanceof Error ? error.message : String(error),
+          },
+        ],
+      });
+      
+      // Clear the file cache after error
+      fileCache.clear();
+      
+      return false;
+    }
   },
 );
 
@@ -119,21 +145,38 @@ const RunFinalValidation = gensx.Component<RunFinalValidationProps, boolean>(
       return false;
     }
 
-    // Run the build validation
-    const { success: buildSuccess, output } = await validateBuild(workspace);
-    console.log("Build success:", buildSuccess);
-    await updateWorkspaceContext({
-      history: [
-        {
-          timestamp: new Date(),
-          action: "Final validation",
-          result: buildSuccess ? "success" : "failure",
-          details: buildSuccess ? "Build succeeded" : `Build failed: ${output}`,
-        },
-      ],
-    });
+    try {
+      // Run the build validation
+      const { success: buildSuccess, output } = await validateBuild(workspace);
+      console.log("Build success:", buildSuccess);
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Final validation",
+            result: buildSuccess ? "success" : "failure",
+            details: buildSuccess ? "Build succeeded" : `Build failed: ${output}`,
+          },
+        ],
+      });
 
-    return buildSuccess;
+      return buildSuccess;
+    } catch (error) {
+      console.error("Error in RunFinalValidation:", serializeError(error));
+      
+      await updateWorkspaceContext({
+        history: [
+          {
+            timestamp: new Date(),
+            action: "Final validation",
+            result: "failure",
+            details: error instanceof Error ? error.message : String(error),
+          },
+        ],
+      });
+      
+      return false;
+    }
   },
 );
 
@@ -180,7 +223,8 @@ const CommitResults = gensx.Component<CommitResultsProps, boolean>(
         scopedPath,
       );
       return true;
-    } catch (_error) {
+    } catch (error) {
+      console.error("Error in CommitResults:", serializeError(error));
       // If git operations fail, return false and let outer control loop handle it
       return false;
     }
