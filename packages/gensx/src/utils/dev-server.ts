@@ -39,18 +39,25 @@ export class GensxServer {
   private workflowMap: Map<string, unknown>;
   private isRunning = false;
   private server: ReturnType<typeof serve> | null = null;
+  private org = "local";
+  private project: string;
 
   /**
    * Create a new GenSX dev server
    */
   constructor(
     workflows: Record<string, unknown> = {},
+    org: string,
+    project: string,
     options: ServerOptions = {},
   ) {
     this.port = options.port ?? 1337;
     this.hostname = options.hostname ?? "localhost";
     this.app = new Hono();
     this.workflowMap = new Map();
+
+    this.org = org;
+    this.project = project;
 
     // Register all workflows from the input
     this.registerWorkflows(workflows);
@@ -97,77 +104,83 @@ export class GensxServer {
     this.app.use("*", logger());
     this.app.use("*", cors());
 
-    // Health check route
-    this.app.get("/", (c) => {
+    // List all workflows
+    this.app.get(`/org/${this.org}/projects/${this.project}/workflows`, (c) => {
       return c.json({
         status: "ok",
-        message: "GenSX Dev Server",
-        version: "1.0.0",
-        availableWorkflows: Array.from(this.workflowMap.keys()),
-      });
-    });
-
-    // List all workflows
-    this.app.get("/projects/local/workflows", (c) => {
-      return c.json({
-        workflows: Array.from(this.workflowMap.entries()).map(([name]) => ({
-          name,
-          url: `/projects/local/workflows/${name}`,
-        })),
+        data: {
+          workflows: Array.from(this.workflowMap.entries()).map(([name]) => ({
+            name,
+            // TODO: Add the rest of the workflow info
+          })),
+        },
       });
     });
 
     // Execute workflow endpoint
-    this.app.post("/projects/local/workflows/:workflowName", async (c) => {
-      const workflowName = c.req.param("workflowName");
-      const workflow = this.workflowMap.get(workflowName);
+    this.app.post(
+      `/org/${this.org}/projects/${this.project}/workflows/:workflowName/run`,
+      async (c) => {
+        const workflowName = c.req.param("workflowName");
+        const workflow = this.workflowMap.get(workflowName);
 
-      if (!workflow) {
-        return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
-      }
-
-      try {
-        // Get request body for workflow parameters
-        const body = await c.req.json().catch(() => ({}));
-
-        console.info(
-          `⚡️ Executing workflow '${workflowName}' with params:`,
-          body,
-        );
-
-        // Execute the workflow - try both run and Run methods
-        const runMethod = (workflow as any).run;
-
-        if (typeof runMethod !== "function") {
-          throw new Error(
-            `Workflow '${workflowName}' doesn't have a run or Run method`,
-          );
+        if (!workflow) {
+          return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
         }
 
-        const result = await runMethod.call(workflow, body);
+        try {
+          // Get request body for workflow parameters
+          const body = await c.req.json().catch(() => ({}));
 
-        // Handle different response types
-        if (result instanceof Stream) {
-          // Handle streaming responses
-          return this.handleStreamingResponse(
-            c,
-            result as Stream<ChatCompletionChunk>,
+          console.info(
+            `⚡️ Executing workflow '${workflowName}' with params:`,
+            body,
+          );
+
+          // Execute the workflow - try both run and Run methods
+          const runMethod = (workflow as any).run;
+
+          if (typeof runMethod !== "function") {
+            throw new Error(
+              `Workflow '${workflowName}' doesn't have a run or Run method`,
+            );
+          }
+
+          const result = await runMethod.call(workflow, body.input);
+
+          // Handle different response types
+          if (result instanceof Stream) {
+            // Handle streaming responses
+            return this.handleStreamingResponse(
+              c,
+              result as Stream<ChatCompletionChunk>,
+            );
+          }
+
+          // Handle regular JSON response
+          return c.json({
+            status: "ok",
+            data: {
+              status: "completed",
+              output: result,
+              // TODO: Add the rest of the response info
+            },
+          });
+        } catch (error) {
+          console.error(
+            `❌ Error executing workflow '${workflowName}':`,
+            error,
+          );
+          return c.json(
+            {
+              error: "Workflow execution failed",
+              message: error instanceof Error ? error.message : String(error),
+            },
+            500,
           );
         }
-
-        // Handle regular JSON response
-        return c.json(result);
-      } catch (error) {
-        console.error(`❌ Error executing workflow '${workflowName}':`, error);
-        return c.json(
-          {
-            error: "Workflow execution failed",
-            message: error instanceof Error ? error.message : String(error),
-          },
-          500,
-        );
-      }
-    });
+      },
+    );
 
     // UI for testing workflows
     this.app.get("/ui", (c) => {
@@ -403,7 +416,7 @@ export class GensxServer {
   public getWorkflows(): WorkflowInfo[] {
     return Array.from(this.workflowMap.entries()).map(([name, _]) => ({
       name,
-      api_url: `http://${this.hostname}:${this.port}/projects/local/workflows/${name}`,
+      api_url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${this.project}/workflows/${name}`,
     }));
   }
 
@@ -425,7 +438,9 @@ export class GensxServer {
  */
 export function createServer(
   workflows: Record<string, unknown> = {},
+  org: string,
+  project: string,
   options: ServerOptions = {},
 ): GensxServer {
-  return new GensxServer(workflows, options);
+  return new GensxServer(workflows, org, project, options);
 }

@@ -1,13 +1,12 @@
 import * as gensx from "@gensx/core";
-import { GSXChatCompletion } from "@gensx/openai";
+import { ChatCompletion } from "@gensx/openai";
 import { OpenAIProvider } from "@gensx/openai";
-import { ChatCompletion as ChatCompletionOutput } from "openai/resources/chat/completions.js";
 
-const BasicCompletionExample = gensx.Component<{}, ChatCompletionOutput>(
+const BasicCompletionExample = gensx.Component<{ message: string }, string>(
   "BasicCompletionExample",
-  () => (
+  ({ message }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
+      <ChatCompletion
         messages={[
           {
             role: "system",
@@ -16,7 +15,7 @@ const BasicCompletionExample = gensx.Component<{}, ChatCompletionOutput>(
           },
           {
             role: "user",
-            content: `What do you think of kubernetes in one paragraph?`,
+            content: message,
           },
         ]}
         model="gpt-4o-mini"
