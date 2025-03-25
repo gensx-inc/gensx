@@ -7,9 +7,9 @@ import enquirer from "enquirer";
 import ora from "ora";
 import pc from "picocolors";
 
-import { exec } from "../../src/utils/exec.js";
 import { logger } from "../logger.js";
 import { readConfig, saveState } from "../utils/config.js";
+import { exec } from "../utils/exec.js";
 import { saveProjectConfig } from "../utils/project-config.js";
 import { login } from "./login.js";
 
