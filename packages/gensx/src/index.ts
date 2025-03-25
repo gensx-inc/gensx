@@ -6,6 +6,7 @@ import { deploy } from "./commands/deploy.js";
 import { login } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
 import { runWorkflow } from "./commands/run.js";
+import { start } from "./commands/start.js";
 import { getAuth } from "./utils/config.js";
 
 export async function runCLI() {
@@ -34,6 +35,12 @@ export async function runCLI() {
     )
     .option("-d, --description <desc>", "Optional project description")
     .action(newProject);
+
+  program
+    .command("start")
+    .description("Start a local GenSX server")
+    .argument("<file>", "File to serve")
+    .action(start);
 
   const auth = await getAuth();
 

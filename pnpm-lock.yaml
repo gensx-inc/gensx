@@ -724,6 +724,12 @@ importers:
 
   packages/gensx:
     dependencies:
+      '@gensx/openai':
+        specifier: workspace:*
+        version: link:../gensx-openai
+      '@hono/node-server':
+        specifier: ^1.13.8
+        version: 1.14.0(hono@4.7.5)
       '@rollup/plugin-commonjs':
         specifier: ^25.0.7
         version: 25.0.8(rollup@4.34.8)
@@ -754,12 +760,18 @@ importers:
       form-data:
         specifier: ^4.0.0
         version: 4.0.1
+      hono:
+        specifier: ^4.7.5
+        version: 4.7.5
       ini:
         specifier: ^5.0.0
         version: 5.0.0
       open:
         specifier: ^10.0.3
         version: 10.1.0
+      openai:
+        specifier: 'catalog:'
+        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
       ora:
         specifier: ^8.2.0
         version: 8.2.0
@@ -1811,6 +1823,12 @@ packages:
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
       react-dom: ^18 || ^19 || ^19.0.0-rc
+
+  '@hono/node-server@1.14.0':
+    resolution: {integrity: sha512-YUCxJwgHRKSqjrdTk9e4VMGKN27MK5r4+MGPyZTgKH+IYbK+KtYbHeOcPGJ91KGGD6RIQiz2dAHxvjauNhOS8g==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -5285,6 +5303,10 @@ packages:
     resolution: {integrity: sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==}
     engines: {node: '>=12.0.0'}
 
+  hono@4.7.5:
+    resolution: {integrity: sha512-fDOK5W2C1vZACsgLONigdZTRZxuBqFtcKh7bUQ5cVSbwI2RWjloJDcgFOVzbQrlI6pCmhlTsVYZ7zpLj4m4qMQ==}
+    engines: {node: '>=16.9.0'}
+
   html-escaper@2.0.2:
     resolution: {integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==}
 
@@ -8517,6 +8539,10 @@ snapshots:
       '@tanstack/react-virtual': 3.13.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@hono/node-server@1.14.0(hono@4.7.5)':
+    dependencies:
+      hono: 4.7.5
 
   '@humanfs/core@0.19.1': {}
 
@@ -12680,6 +12706,8 @@ snapshots:
       space-separated-tokens: 2.0.2
 
   highlight.js@11.11.1: {}
+
+  hono@4.7.5: {}
 
   html-escaper@2.0.2: {}
 
