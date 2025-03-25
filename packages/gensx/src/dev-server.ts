@@ -407,7 +407,6 @@ export class GensxServer {
     }
 
     this.isRunning = false;
-    console.info("🛑 Server stopped");
   }
 
   /**

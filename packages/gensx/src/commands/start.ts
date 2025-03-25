@@ -1,44 +1,52 @@
 import { existsSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
+import ora from "ora";
+import pc from "picocolors";
+import { watch } from "rollup";
+import { OutputOptions } from "rollup";
+
+import { createServer } from "../dev-server.js";
+import { getRollupConfig } from "../utils/bundler.js";
 import { getAuth } from "../utils/config.js";
-import { createServer } from "../utils/dev-server.js";
 import { readProjectConfig } from "../utils/project-config.js";
 
 interface StartOptions {
   project?: string;
+  quiet?: boolean;
+}
+
+interface ServerInstance {
+  stop: () => void;
 }
 
 export async function start(file: string, options: StartOptions) {
+  const quiet = options.quiet ?? false;
+  const spinner = ora({ isSilent: quiet });
+  let currentServer: ServerInstance | null = null;
+
   try {
     console.info("🔍 Starting GenSX Dev Server...");
 
-    // Resolve the file path
-    const workingDir = process.cwd();
-    const resolvedPath = isAbsolute(file) ? file : resolve(workingDir, file);
-
-    // Convert TSX path to compiled JS path
-    const dir = dirname(resolvedPath);
-    const fileName = basename(resolvedPath, ".tsx");
-    const jsPath = join(dir, "dist", `${fileName}.js`);
-
-    // Check if compiled JS file exists
-    if (!existsSync(jsPath)) {
-      throw new Error(
-        `Compiled workflow file not found: ${jsPath}\nPlease ensure your TypeScript files are compiled before running the server.`,
-      );
+    // 1. Validate file exists and is a TypeScript file
+    const absolutePath = resolve(process.cwd(), file);
+    if (!existsSync(absolutePath)) {
+      throw new Error(`File ${file} does not exist`);
     }
 
-    // Convert the file path to a URL for import
-    const fileUrl = `file://${jsPath}`;
-    const workflows = (await import(fileUrl)) as Record<string, unknown>;
+    if (!file.endsWith(".ts") && !file.endsWith(".tsx")) {
+      throw new Error("Only TypeScript files (.ts or .tsx) are supported");
+    }
 
-    // Read the project config from gensx.yaml and throw an error if it's not found
+    // 2. Get project configuration
     let projectName = options.project;
     if (!projectName) {
-      const projectConfig = await readProjectConfig(workingDir);
+      const projectConfig = await readProjectConfig(process.cwd());
       if (projectConfig?.projectName) {
         projectName = projectConfig.projectName;
+        spinner.info(
+          `Using project name from gensx.yaml: ${pc.cyan(projectName)}`,
+        );
       } else {
         throw new Error(
           "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
@@ -46,43 +54,121 @@ export async function start(file: string, options: StartOptions) {
       }
     }
 
-    // Try to get the org name and default to "local" if not found
+    // 3. Get org name
     let orgName = "local";
     try {
       const auth = await getAuth();
       if (auth?.org) {
         orgName = auth.org;
       }
-    } catch {
+    } catch (_error) {
       // Do nothing; org name will default to "local"
     }
 
-    // Create and start the server with the imported workflows
-    const server = createServer(workflows, orgName, projectName, {
-      port: 1337,
-    }).start();
+    // 4. Setup watch mode with Rollup
+    spinner.info("Starting development server in watch mode...");
 
-    // List all available workflows with their API URLs
-    console.info("\n📋 Available workflows:");
+    const bundleFile = resolve(dirname(absolutePath), "dist", "handler.js");
+    const rollupConfig = getRollupConfig(absolutePath, bundleFile, true);
+    const watcher = watch(rollupConfig);
 
-    // Log each workflow
-    const allWorkflows = server.getWorkflows();
-    if (allWorkflows.length === 0) {
-      console.info(
-        "⚠️ No workflows found. Make sure workflows are exported correctly in workflows.tsx",
-      );
-    } else {
-      allWorkflows.forEach((workflow) => {
-        console.info(`- ${workflow.name}: ${workflow.api_url}`);
+    const startServer = (workflows: Record<string, unknown>) => {
+      // Stop the current server if it exists
+      if (currentServer) {
+        currentServer.stop();
+      }
+
+      // Create and start a new server instance
+      const server = createServer(workflows, orgName, projectName, {
+        port: 1337,
       });
-    }
 
-    console.info("\n✅ Server is running. Press Ctrl+C to stop.");
+      const serverInstance = server.start();
+      currentServer = {
+        stop: () => {
+          serverInstance.stop();
+        },
+      };
+
+      // Log available workflows
+      const allWorkflows = serverInstance.getWorkflows();
+      if (allWorkflows.length === 0) {
+        console.info(
+          "\n⚠️ No workflows found. Make sure workflows are exported correctly.",
+        );
+      } else {
+        console.info("\n📋 Available workflows:");
+        allWorkflows.forEach((workflow) => {
+          console.info(`- ${workflow.name}: ${workflow.api_url}`);
+        });
+      }
+
+      return serverInstance;
+    };
+
+    watcher.on("event", async (event) => {
+      if (event.code === "START") {
+        spinner.start("Building...");
+      } else if (event.code === "BUNDLE_END") {
+        try {
+          await event.result.write(rollupConfig.output as OutputOptions);
+          spinner.succeed("Build completed");
+
+          // Import and start/reload server with new workflows
+          const fileUrl = `file://${bundleFile}`;
+          const workflows = (await import(fileUrl)) as Record<string, unknown>;
+
+          if (currentServer) {
+            if (!quiet) {
+              console.info("\n🔄 Restarting server with updated workflows...");
+            }
+          }
+
+          startServer(workflows);
+          if (!currentServer) {
+            if (!quiet) {
+              console.info("\n✅ Server is running. Press Ctrl+C to stop.");
+            }
+          }
+
+          await event.result.close();
+        } catch (error) {
+          spinner.fail("Build failed");
+          console.error(error instanceof Error ? error.message : String(error));
+        }
+      } else if (event.code === "ERROR") {
+        spinner.fail("Build failed");
+        const errorMessage =
+          event.error instanceof Error
+            ? event.error.message
+            : JSON.stringify(event.error);
+        console.error(errorMessage);
+      }
+    });
+
+    // Keep the process running
+    await new Promise<void>((_, reject) => {
+      const cleanup = () => {
+        if (currentServer) {
+          currentServer.stop();
+        }
+        void watcher.close();
+        process.exit(0);
+      };
+
+      try {
+        process.on("SIGINT", cleanup);
+        process.on("SIGTERM", cleanup);
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    });
   } catch (error) {
+    spinner.fail("Server startup failed");
     if (error instanceof Error) {
-      console.error("Error starting server:", error.message);
+      console.error("Error:", error.message);
     } else {
-      console.error("Error starting server:", error);
+      console.error("Error:", error);
     }
     process.exit(1);
   }
