@@ -7,6 +7,7 @@ import { serializeError } from "serialize-error";
 import { z } from "zod";
 
 import { fileCache } from "./cacheManager.js";
+import { trackModifiedFile } from "./testGeneratorTool.js";
 
 // Define the base schema as a Zod object
 const editToolSchema = z.object({
@@ -144,6 +145,13 @@ Commands:
           // Cache the new file content
           fileCache.set(params.path, content);
           
+          // Track file creation for test generation
+          // Only track TypeScript/JavaScript files
+          if (params.path.endsWith('.ts') || params.path.endsWith('.tsx') || 
+              params.path.endsWith('.js') || params.path.endsWith('.jsx')) {
+            trackModifiedFile(params.path);
+          }
+          
           return `File created successfully: ${params.path}`;
         }
 
@@ -160,6 +168,13 @@ Commands:
           
           // Update the cache with new content
           fileCache.set(params.path, content);
+          
+          // Track file modification for test generation
+          // Only track TypeScript/JavaScript files
+          if (params.path.endsWith('.ts') || params.path.endsWith('.tsx') || 
+              params.path.endsWith('.js') || params.path.endsWith('.jsx')) {
+            trackModifiedFile(params.path);
+          }
           
           return `File updated successfully: ${params.path}`;
         }
@@ -215,6 +230,13 @@ Commands:
           // Write the updated content and update the cache
           await fs.writeFile(params.path, newContent, "utf-8");
           fileCache.set(params.path, newContent);
+          
+          // Track file modification for test generation
+          // Only track TypeScript/JavaScript files
+          if (params.path.endsWith('.ts') || params.path.endsWith('.tsx') || 
+              params.path.endsWith('.js') || params.path.endsWith('.jsx')) {
+            trackModifiedFile(params.path);
+          }
           
           return `File edited successfully: ${params.path}`;
         }

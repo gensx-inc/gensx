@@ -13,7 +13,10 @@
     "start": "tsx ./index.tsx",
     "build": "tsc",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
@@ -24,9 +27,14 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@testing-library/react": "catalog:",
+    "@testing-library/react-hooks": "catalog:",
     "@types/node": "catalog:examples",
+    "@vitest/coverage-c8": "catalog:",
+    "jsdom": "catalog:",
     "nodemon": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -17,6 +17,7 @@ import { CodeAgent } from "./codeAgent.js";
 import { GenerateGoalState } from "./steps/generateGoalState.js";
 import { GeneratePlan } from "./steps/generatePlan.js";
 import { fileCache } from "./tools/cacheManager.js";
+import { clearModifiedFiles } from "./tools/testGeneratorTool.js";
 
 export interface AgentProps {
   workspace: Workspace;
@@ -94,6 +95,9 @@ After making changes, the code should successfully build with 'pnpm build'.`,
 
       // Clear the file cache after modifications
       fileCache.clear();
+      
+      // Clear the modified files tracking
+      clearModifiedFiles();
 
       // Return whether modifications were successful
       return result.success;
@@ -114,6 +118,9 @@ After making changes, the code should successfully build with 'pnpm build'.`,
       
       // Clear the file cache after error
       fileCache.clear();
+      
+      // Clear the modified files tracking
+      clearModifiedFiles();
       
       return false;
     }

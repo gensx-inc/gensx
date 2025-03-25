@@ -14,6 +14,7 @@ import { getBuildTool } from "./tools/buildTool.js";
 import { codeAnalyzerTool } from "./tools/codeAnalyzer.js";
 import { editTool } from "./tools/editTool.js";
 import { fileCache } from "./tools/cacheManager.js";
+import { testGeneratorTool, getModifiedFiles, clearModifiedFiles } from "./tools/testGeneratorTool.js";
 
 interface CodeAgentProps {
   task: string;
@@ -108,6 +109,49 @@ async function withRetry<T>(
   }`);
 }
 
+/**
+ * Generate tests for modified files
+ */
+async function generateTestsForModifiedFiles(): Promise<string> {
+  const modifiedFiles = getModifiedFiles();
+  
+  if (modifiedFiles.length === 0) {
+    return "No files were modified, no tests to generate.";
+  }
+  
+  const results: string[] = [];
+  
+  for (const filePath of modifiedFiles) {
+    try {
+      // Skip test files themselves
+      if (filePath.includes('__tests__') || filePath.includes('.test.')) {
+        continue;
+      }
+      
+      console.log(`Generating tests for ${filePath}`);
+      const result = await testGeneratorTool.run({
+        command: 'generate',
+        path: filePath,
+        force: false
+      });
+      
+      if (typeof result === 'string') {
+        results.push(result);
+      } else {
+        results.push(`Failed to generate tests for ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`Error generating tests for ${filePath}:`, serializeError(error));
+      results.push(`Error generating tests for ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  
+  // Clear the modified files list after generating tests
+  clearModifiedFiles();
+  
+  return results.join('\n');
+}
+
 export const CodeAgent = gensx.Component<CodeAgentProps, CodeAgentOutput>(
   "CodeAgent",
   async ({ task, additionalInstructions, repoPath }) => {
@@ -168,6 +212,7 @@ export const CodeAgent = gensx.Component<CodeAgentProps, CodeAgentOutput>(
         bashTool,
         buildTool,
         codeAnalyzerTool,
+        testGeneratorTool,
       ],
     });
 
@@ -176,6 +221,14 @@ export const CodeAgent = gensx.Component<CodeAgentProps, CodeAgentOutput>(
 
     // Check if build was successful by looking for build tool invocation
     const buildSuccessful = toolOutput.includes("Build completed successfully");
+    
+    // If build was successful, generate tests for modified files
+    let testGenerationOutput = "";
+    if (buildSuccessful) {
+      console.log("Build successful. Generating tests for modified files...");
+      testGenerationOutput = await generateTestsForModifiedFiles();
+      console.log(testGenerationOutput);
+    }
     
     // If build failed, attempt to restore files from backups
     if (!buildSuccessful && modifiedFiles.size > 0) {
@@ -211,13 +264,16 @@ Look for:
 - What files were modified
 - Whether the changes were successful
 - If the build succeeded
-- Any errors or issues encountered`,
+- Any errors or issues encountered
+- If tests were generated`,
       messages: [
         {
           role: "user",
           content: `Please analyze this code modification output and provide a structured summary:
 
-${toolOutput}`,
+${toolOutput}
+
+${testGenerationOutput ? `Additional test generation output:\n${testGenerationOutput}` : ''}`,
         },
       ],
       model: "claude-3-7-sonnet-latest",
@@ -255,12 +311,14 @@ Follow these steps:
 5. Use the buildTool to verify your changes compile successfully
 6. If the build fails, examine the error output and fix any issues
 7. Once the build succeeds, verify that your changes meet all the requirements
+8. Use the testGenerator tool to analyze modified files and generate tests for them
 
 You have access to some tools that may be helpful:
 - bash: For exploring the codebase and examining files
 - editor: For making code changes
 - codeAnalyzer: For analyzing code structure, dependencies and finding insertion points
 - build: For verifying changes compile successfully with 'pnpm build'
+- testGenerator: For generating tests for modified files
 
 Be thorough in your thinking and explain your changes in the summary. Make sure to verify the build succeeds before marking success as true.`;
 }
