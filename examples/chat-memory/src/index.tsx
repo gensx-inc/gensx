@@ -1,4 +1,4 @@
-import path from "node:path";
+import * as path from "node:path";
 
 import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
@@ -111,6 +111,9 @@ const WorkflowComponent = gensx.Component<
     <gensx.BlobProvider
       kind="filesystem"
       rootDir={path.join(process.cwd(), "chat-memory")}
+      // kind="cloud"
+      // region="us-west-2"
+      // bucket="gensx-chat-history"
     >
       <ChatWithMemory userInput={userInput} threadId={threadId} />
     </gensx.BlobProvider>

@@ -9,7 +9,7 @@
   "description": "Use GenSX to create a chat completion",
   "scripts": {
     "dev": "nodemon",
-    "start": "tsx ./index.tsx",
+    "start": "tsx ./src/index.tsx",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
