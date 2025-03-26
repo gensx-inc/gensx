@@ -1,0 +1,217 @@
+---
+title: RAG
+description: Using a Vector database to provide context to an LLM
+---
+
+# RAG
+
+RAG stands for Retrieval-Augmented Generation. It's a technique that enables an LLM to retrieve relevant information from a data store (often a Vector database), to augment the LLM and provide better context. This is useful for situations where the data may not be publicly available (such as internal documents) or where there is too much context to provide to the LLM all at once.
+
+## Terms
+
+- **Chunking**: The process of splitting the text into smaller pieces, based on some algorithm that is best for the specific type of text. For example, the way we chunk code vs long form text is different.
+- **Embedding**: The process of converting the data into a vector. This is done by specially trained models called **embeddings models**, that are optimized for the task of extracting features from text.
+- **Vector database**: A database that is optimized for storing and querying vectors. This makes retrieval of the most relevant chunks of text for a given query very fast.
+- **Reranking**: The process of reordering the retrieved chunks of text to improve the quality of the context provided to the LLM. This is performed by another optimized model, called a **reranking model**. The reranking model is often slower/more expensive than the embedding model, so it makes sense to perform the task on a smaller set of chunks.
+
+## How it works
+
+The process of RAG works as follows:
+
+### Ahead of time
+
+1. **Chunking**: The text is chunked into smaller pieces. If you know the type of text you're working with, you can use a specific algorithm to chunk the text. For example, if you're working with code, you can use a code-specific algorithm to chunk the text.
+2. **Embedding**: Each chunk is embedded using an embeddings model. This converts the text into a vector that can be stored in a vector database.
+3. **Storing**: The embedded chunks are stored in a vector database.
+
+### At Query Time
+
+1. **Querying**: When an LLM is given a task, it can use the vector database to retrieve the most relevant chunks of text for the task. This can be implemented in two ways: 1) The vector DB is queried based on the input from the user directly, adn the result provided to the LLM. 2) The LLM generates a query based on the task and the vector DB is queried with that query.
+2. **Reranking**: The retrieved chunks are reordered by a reranking model to improve the quality of the context provided to the LLM.
+3. **Generating**: The LLM uses the retrieved context to generate a response that should be more accurate and relevant to the task.
+
+## Implementing RAG in GenSX
+
+You can checkout the [Vector DB example](https://github.com/gensx-inc/gensx/tree/main/examples/vector-db) to see a complete example of how to implement all the moving parts of RAG in GenSX.
+
+For the examples below, we will use assume the use of the `VectorDBContext` from the example above, you can look at it [here](https://github.com/gensx-inc/gensx/blob/main/examples/vector-db/src/providers/vectorDb.tsx).
+
+### Using the vector database for your LLM
+
+#### As a Tool
+
+```tsx
+const InternalDocsAgent = gensx.Component<
+  { query: string },
+  { response: string }
+>("InternalDocsAgent", async ({ query }) => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <VectorDBProvider>
+      <GSXChatCompletion
+        messages={[
+          {
+            role: "system",
+            content:
+              "You are a helpful assistant that can answer questions about the company's internal documents. You have access to a search interface for the company's internal documents via the `internal_docs` tool.",
+          },
+          { role: "user", content: query },
+        ]}
+        model="gpt-4o-mini"
+        tools={[InternalDocsTool]}
+      />
+    </VectorDBProvider>
+  </OpenAIProvider>
+));
+
+export const InternalDocsAgentWorkflow = gensx.Workflow(
+  "InternalDocsAgentWorkflow",
+  InternalDocsAgent,
+);
+
+const InternalDocsTool: gensx.GSXToolProps = {
+  name: "internal_docs",
+  description:
+    "Use this tool to search for information in the company's internal documents",
+  schema: z.object({
+    query: z.string(),
+  }),
+  run: async ({ query }) => {
+    const { search } = useVectorDB();
+    const results = await search(query);
+    return results;
+  },
+};
+```
+
+#### Querying as part of the workflow
+
+```tsx
+const InternalDocsAgent = gensx.Component<
+  { query: string },
+  { response: string }
+>("InternalDocsAgent", async ({ query }) => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <VectorDBProvider>
+      <QueryVectorDB query={query}>
+        {({ chunks }) => (
+          <GSXChatCompletion
+            messages={[
+              {
+                role: "system",
+                content: `You are a helpful assistant that can answer questions about the company's internal documents. Here is the relevant information from the internal docs, use this context to answer the users question:
+                  ${chunks.join("\n")}
+                `,
+              },
+              { role: "user", content: query },
+            ]}
+            model="gpt-4o-mini"
+          />
+        )}
+      </QueryVectorDB>
+    </VectorDBProvider>
+  </OpenAIProvider>
+));
+
+export const InternalDocsAgentWorkflow = gensx.Workflow(
+  "InternalDocsAgentWorkflow",
+  InternalDocsAgent,
+);
+
+const QueryVectorDB = gensx.Component<{ query: string }, { chunks: string[] }>(
+  "QueryVectorDB",
+  async ({ query }) => {
+    const { search } = useVectorDB();
+    const results = await search(query);
+
+    return results.map((result) => result.metadata.content as string);
+  },
+);
+```
+
+### Inserting documents into the vector database
+
+Here is a simplified example of the step to insert documents into the vector database.
+
+```tsx
+// Here is a workflow that chunks, embeds, and stores documents
+const InsertDocs = gensx.Component<
+  { docs: { filename: string; content: string }[] },
+  never
+>("InsertDocs", async ({ docs }) => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <VectorDBProvider>
+      <ChunkDocs docs={docs}>
+        {({ chunks }) => (
+          <GenerateEmbeddings chunks={chunks}>
+            {({ embeddings }) => <StoreEmbeddings embeddings={embeddings} />}
+          </GenerateEmbeddings>
+        )}
+      </ChunkDocs>
+    </VectorDBProvider>
+  </OpenAIProvider>
+));
+
+export const InsertDocsWorkflow = gensx.Workflow(
+  "InsertDocsWorkflow",
+  InsertDocs,
+);
+
+// Chunk each individual document
+const ChunkDoc = gensx.Component<
+  { doc: { filename: string; content: string } },
+  { chunks: { id: string; content: string }[] }
+>("ChunkDoc", async ({ doc }) => {
+  const chunks = await chunkContent(doc.content);
+  return {
+    chunks: chunks.map((chunk, index) => ({
+      id: `${doc.filename}-${index}`,
+      content: chunk,
+    })),
+  };
+});
+
+// Chunk all the documents in a loop
+const ChunkDocs = gensx.Component<
+  { docs: { filename: string; content: string }[] },
+  { chunks: { id: string; content: string }[] }
+>("ChunkDocs", async ({ docs }) => {
+  return gensx.array(docs).flatMap((doc) => <ChunkDoc doc={doc} />);
+});
+
+// Generate embeddings for each chunk
+const GenerateEmbeddings = gensx.Component<
+  { chunks: { id: string; content: string }[] },
+  { embeddings: { id: string; embedding: number[] }[] }
+>("GenerateEmbeddings", async ({ chunks }) => {
+  const embeddings = await OpenAIEmbedding.run({
+    input: chunks.map((chunk) => chunk.content),
+    model: "text-embedding-3-small",
+  });
+
+  return {
+    embeddings: embeddings.map((embedding, index) => ({
+      id: chunks[index].id,
+      embedding: embedding.embedding,
+      content: chunks[index].content,
+    })),
+  };
+});
+
+// Store the embeddings in the vector database
+const StoreEmbeddings = gensx.Component<
+  { embeddings: { id: string; embedding: number[]; content: string }[] },
+  never
+>("StoreEmbeddings", async ({ embeddings }) => {
+  const { insertVector } = gensx.useContext(VectorDBContext);
+
+  for (const embedding of embeddings) {
+    await insertVector({
+      id: embedding.id,
+      vector: embedding.embedding,
+      metadata: {
+        content: embedding.content,
+      },
+    });
+  }
+});
+```
