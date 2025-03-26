@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import ora from "ora";
 import pc from "picocolors";
@@ -10,6 +10,7 @@ import { createServer } from "../dev-server.js";
 import { getRollupConfig } from "../utils/bundler.js";
 import { getAuth } from "../utils/config.js";
 import { readProjectConfig } from "../utils/project-config.js";
+import { generateSchema } from "../utils/schema.js";
 
 interface StartOptions {
   project?: string;
@@ -24,6 +25,7 @@ export async function start(file: string, options: StartOptions) {
   const quiet = options.quiet ?? false;
   const spinner = ora({ isSilent: quiet });
   let currentServer: ServerInstance | null = null;
+  let isFirstBuild = true;
 
   try {
     console.info("🔍 Starting GenSX Dev Server...");
@@ -67,8 +69,8 @@ export async function start(file: string, options: StartOptions) {
 
     // 4. Setup watch mode with Rollup
     spinner.info("Starting development server in watch mode...");
-
-    const bundleFile = resolve(dirname(absolutePath), "dist", "handler.js");
+    const outDir = resolve(process.cwd(), ".gensx", "dist");
+    const bundleFile = resolve(outDir, "handler.js");
     const rollupConfig = getRollupConfig(absolutePath, bundleFile, true);
     const watcher = watch(rollupConfig);
 
@@ -76,6 +78,9 @@ export async function start(file: string, options: StartOptions) {
       // Stop the current server if it exists
       if (currentServer) {
         currentServer.stop();
+        if (!quiet) {
+          console.info("\n🔄 Restarting server with updated workflows...");
+        }
       }
 
       // Create and start a new server instance
@@ -103,9 +108,26 @@ export async function start(file: string, options: StartOptions) {
         });
       }
 
-      return serverInstance;
+      // Only show the "Server is running" message on first start
+      if (isFirstBuild && !quiet) {
+        console.info("\n✅ Server is running. Press Ctrl+C to stop.");
+        isFirstBuild = false;
+      }
     };
 
+    // Setup cleanup handler
+    const cleanup = () => {
+      if (currentServer) {
+        currentServer.stop();
+      }
+      void watcher.close();
+      process.exit(0);
+    };
+
+    process.on("SIGINT", cleanup);
+    process.on("SIGTERM", cleanup);
+
+    // Handle Rollup watch events
     watcher.on("event", async (event) => {
       if (event.code === "START") {
         spinner.start("Building...");
@@ -114,23 +136,18 @@ export async function start(file: string, options: StartOptions) {
           await event.result.write(rollupConfig.output as OutputOptions);
           spinner.succeed("Build completed");
 
+          // Generate schema
+          const schemas = generateSchema(absolutePath);
+          console.info(
+            "\n📋 Generated schemas:",
+            JSON.stringify(schemas, null, 2),
+          );
+
           // Import and start/reload server with new workflows
           const fileUrl = `file://${bundleFile}`;
           const workflows = (await import(fileUrl)) as Record<string, unknown>;
 
-          if (currentServer) {
-            if (!quiet) {
-              console.info("\n🔄 Restarting server with updated workflows...");
-            }
-          }
-
           startServer(workflows);
-          if (!currentServer) {
-            if (!quiet) {
-              console.info("\n✅ Server is running. Press Ctrl+C to stop.");
-            }
-          }
-
           await event.result.close();
         } catch (error) {
           spinner.fail("Build failed");
@@ -141,26 +158,8 @@ export async function start(file: string, options: StartOptions) {
         const errorMessage =
           event.error instanceof Error
             ? event.error.message
-            : JSON.stringify(event.error);
+            : JSON.stringify(event.error, null, 2);
         console.error(errorMessage);
-      }
-    });
-
-    // Keep the process running
-    await new Promise<void>((_, reject) => {
-      const cleanup = () => {
-        if (currentServer) {
-          currentServer.stop();
-        }
-        void watcher.close();
-        process.exit(0);
-      };
-
-      try {
-        process.on("SIGINT", cleanup);
-        process.on("SIGTERM", cleanup);
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)));
       }
     });
   } catch (error) {
