@@ -8,10 +8,6 @@ import { serve } from "@hono/node-server";
 import { Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { streamSSE } from "hono/streaming";
-import { ChatCompletionChunk } from "openai/resources/chat/completions.js";
-import { Stream } from "openai/streaming";
-
 /**
  * Configuration options for the GenSX dev server
  */
@@ -149,11 +145,11 @@ export class GensxServer {
           const result = await runMethod.call(workflow, body.input);
 
           // Handle different response types
-          if (result instanceof Stream) {
+          if (typeof result === "object" && Symbol.asyncIterator in result) {
             // Handle streaming responses
             return this.handleStreamingResponse(
               c,
-              result as Stream<ChatCompletionChunk>,
+              result as AsyncIterable<unknown>,
             );
           }
 
@@ -193,38 +189,33 @@ export class GensxServer {
    * Handle streaming responses
    */
   private handleStreamingResponse(
-    c: Context,
-    streamResult: Stream<ChatCompletionChunk>,
+    _c: Context,
+    streamResult: AsyncIterable<unknown>,
   ) {
-    return streamSSE(c, async (stream) => {
-      try {
-        for await (const chunk of streamResult) {
-          // Stream content if available
-          const content = chunk.choices[0]?.delta?.content;
-          if (content) {
-            await stream.writeSSE({
-              data: JSON.stringify({ content }),
-            });
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of streamResult) {
+            // Stringify the chunk if it's not already a string
+            const chunkStr =
+              typeof chunk === "string" ? chunk : JSON.stringify(chunk) + "\n";
+            controller.enqueue(new TextEncoder().encode(chunkStr));
           }
 
-          // Stream tool calls if available
-          const toolCalls = chunk.choices[0]?.delta?.tool_calls;
-          if (toolCalls && toolCalls.length > 0) {
-            await stream.writeSSE({
-              data: JSON.stringify({ tool_calls: toolCalls }),
-            });
-          }
+          // Close the stream
+          controller.close();
+        } catch (error) {
+          console.error("❌ Error in streaming response:", error);
+          controller.error(error);
         }
+      },
+    });
 
-        await stream.writeSSE({
-          data: "[DONE]",
-        });
-      } catch (error) {
-        console.error("❌ Error in streaming response:", error);
-        await stream.writeSSE({
-          data: JSON.stringify({ error: "Streaming error occurred" }),
-        });
-      }
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/stream",
+        "Transfer-Encoding": "chunked",
+      },
     });
   }
 
