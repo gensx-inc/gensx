@@ -1,9 +1,15 @@
+import { spawn } from "node:child_process";
+import { mkdirSync, rmSync } from "node:fs";
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 import builtinModules from "builtin-modules";
-import { OutputOptions, Plugin, rollup, RollupOptions } from "rollup";
+import { findUp } from "find-up";
+import { Plugin, RollupOptions } from "rollup";
 
 type NodeBuiltins = Record<string, string>;
 
@@ -125,10 +131,65 @@ export function getRollupConfig(
 
 export async function bundleWorkflow(
   workflowPath: string,
-  outFile: string,
-  watch = false,
+  outDir: string,
+  _watch = false,
 ) {
-  const options = getRollupConfig(workflowPath, outFile, watch);
-  const bundle = await rollup(options);
-  return bundle.write(options.output as OutputOptions);
+  // remove anything in the outDir
+  if (existsSync(outDir)) {
+    rmSync(outDir, { recursive: true, force: true });
+  } else {
+    mkdirSync(outDir, { recursive: true });
+  }
+
+  // run the gensx-bundler docker container, and mount the closest directory to the workflow path that contains a package.json
+  // also mount the output directory
+
+  // find the closest directory to the workflow path that contains a package.json
+  const packageJsonPath = await findUp("package.json", {
+    cwd: path.dirname(workflowPath),
+  });
+
+  if (!packageJsonPath) {
+    throw new Error("No package.json found");
+  }
+
+  const packageJsonDir = path.dirname(packageJsonPath);
+  const relativeWorkflowPath = path.relative(packageJsonDir, workflowPath);
+
+  let stdout = "";
+  let stderr = "";
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const process = spawn("docker", [
+        "run",
+        "--rm",
+        "-v",
+        `${packageJsonDir}:/app`,
+        "-v",
+        `${outDir}:/dist`,
+        "-e",
+        `WORKFLOW_PATH=${relativeWorkflowPath}`,
+        "gensx-bundler",
+      ]);
+      process.stdout.on("data", (data: Buffer) => {
+        stdout += data.toString();
+      });
+
+      process.stderr.on("data", (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      process.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`Bundler exited with code ${code}`));
+        }
+        resolve();
+      });
+    });
+  } catch (error) {
+    console.error("Error bundling workflow", error);
+    console.error("Stdout:\n", stdout);
+    console.error("Stderr:\n", stderr);
+    throw error;
+  }
 }
