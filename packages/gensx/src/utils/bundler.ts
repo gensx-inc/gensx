@@ -101,6 +101,7 @@ export function getRollupConfig(
         jsx: "react-jsx",
         jsxImportSource: "@gensx/core",
         tsconfig: "./tsconfig.json",
+        module: "NodeNext",
         sourceMap: false,
       }),
       denoCompat(),
