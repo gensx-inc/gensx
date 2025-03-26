@@ -11,6 +11,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "deno": "^2.2.4"
+    "deno": "^2.2.5"
   }
 }
