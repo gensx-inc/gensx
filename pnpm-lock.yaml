@@ -769,9 +769,6 @@ importers:
       open:
         specifier: ^10.0.3
         version: 10.1.0
-      openai:
-        specifier: 'catalog:'
-        version: 4.87.3(ws@8.18.0)(zod@3.24.2)
       ora:
         specifier: ^8.2.0
         version: 8.2.0

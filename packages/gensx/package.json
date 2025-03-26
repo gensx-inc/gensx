@@ -60,7 +60,6 @@
     "hono": "^4.7.5",
     "ini": "^5.0.0",
     "open": "^10.0.3",
-    "openai": "catalog:",
     "ora": "^8.2.0",
     "picocolors": "^1.0.1",
     "rollup": "^4.9.6",
