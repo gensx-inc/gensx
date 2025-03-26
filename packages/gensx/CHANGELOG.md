@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.15](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.14...gensx-v0.3.15) (2025-03-26)
+
+
+### 🐛 Bug Fixes
+
+* Add tslib dependency. ([#522](https://github.com/gensx-inc/gensx/issues/522)) ([5b28733](https://github.com/gensx-inc/gensx/commit/5b287335b2f5937967dbcc28271ad5268899aaf2))
+
+## [0.3.14](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.13...gensx-v0.3.14) (2025-03-25)
+
+
+### 🐛 Bug Fixes
+
+* Fallback to defaults if base URL is not supplied. ([#518](https://github.com/gensx-inc/gensx/issues/518)) ([24faa4e](https://github.com/gensx-inc/gensx/commit/24faa4e8915272cc83342ffe551d7471ae25fd51))
+
 ## [0.3.13](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.12...gensx-v0.3.13) (2025-03-21)
 
 

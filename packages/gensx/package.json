@@ -1,6 +1,6 @@
 {
   "name": "gensx",
-  "version": "0.4.0",
+  "version": "0.3.15",
   "description": "`GenSX command line tools.",
   "repository": {
     "type": "git",
@@ -28,7 +28,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "start": "tsx ./src/run.ts",
-    "start:node": "node ./dist/run.js"
+    "start:node": "node ./dist/run.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "typescript",
@@ -63,6 +65,7 @@
     "ora": "^8.2.0",
     "picocolors": "^1.0.1",
     "rollup": "^4.9.6",
+    "tslib": "^2.8.1",
     "typescript": "^5.8.2",
     "typescript-json-schema": "^0.63.0",
     "undici": "^6.6.2",

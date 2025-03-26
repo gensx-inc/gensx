@@ -1,9 +1,7 @@
-import { exec as execCallback } from "node:child_process";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 
 import enquirer from "enquirer";
 import ora from "ora";
@@ -11,10 +9,9 @@ import pc from "picocolors";
 
 import { logger } from "../logger.js";
 import { readConfig, saveState } from "../utils/config.js";
+import { exec } from "../utils/exec.js";
 import { saveProjectConfig } from "../utils/project-config.js";
 import { login } from "./login.js";
-
-const exec = promisify(execCallback);
 
 const TEMPLATE_MAP: Record<string, string> = {
   ts: "typescript",
@@ -205,12 +202,13 @@ async function selectAiAssistants(): Promise<string[]> {
 
     return response.assistants;
   } catch (error) {
-    if (error instanceof Error) {
+    const message = (error as { message?: string }).message;
+    if (message) {
       // If the user cancels the selection, return an empty array
-      if (error.message.includes("canceled")) {
+      if (message.includes("canceled")) {
         return [];
       }
-      throw new Error(`Failed to select AI assistants: ${error.message}`);
+      throw new Error(`Failed to select AI assistants: ${message}`);
     }
     throw new Error("Failed to select AI assistants");
   }

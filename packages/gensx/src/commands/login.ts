@@ -10,8 +10,8 @@ import picocolors from "picocolors";
 
 import { logger } from "../logger.js";
 import {
-  API_BASE_URL,
-  APP_BASE_URL,
+  resolveApiBaseUrl,
+  resolveAppBaseUrl,
   saveAuth,
   saveState,
 } from "../utils/config.js";
@@ -43,7 +43,8 @@ function createCodeHash(code: string): string {
 async function createLoginRequest(
   verificationCode: string,
 ): Promise<DeviceAuthRequest> {
-  const url = new URL("/auth/device/request", API_BASE_URL);
+  const apiBaseUrl = await resolveApiBaseUrl();
+  const url = new URL("/auth/device/request", apiBaseUrl);
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -76,7 +77,8 @@ async function pollLoginStatus(
   requestId: string,
   verificationCode: string,
 ): Promise<DeviceAuthStatus> {
-  const url = new URL(`/auth/device/request/${requestId}`, API_BASE_URL);
+  const apiBaseUrl = await resolveApiBaseUrl();
+  const url = new URL(`/auth/device/request/${requestId}`, apiBaseUrl);
   url.searchParams.set("code_verifier", verificationCode);
   const response = await fetch(url, {
     headers: {
@@ -109,7 +111,7 @@ export async function login(): Promise<{ skipped: boolean }> {
   try {
     logger.log(
       picocolors.yellow(
-        `Press Enter to open your browser and login to GenSX Cloud (or type 'skip' to skip)`,
+        `Press Enter to open your browser and login to GenSX Cloud (or press Escape to skip)`,
       ),
     );
 
@@ -126,7 +128,7 @@ export async function login(): Promise<{ skipped: boolean }> {
       });
     });
 
-    if (input.toLowerCase() === "skip") {
+    if (input === String.fromCharCode(27)) {
       spinner.info("Login skipped");
       return { skipped: true };
     }
@@ -136,7 +138,8 @@ export async function login(): Promise<{ skipped: boolean }> {
     const request = await createLoginRequest(verificationCode);
     spinner.succeed();
 
-    const authUrl = new URL(`/auth/device/${request.requestId}`, APP_BASE_URL);
+    const appBaseUrl = await resolveAppBaseUrl();
+    const authUrl = new URL(`/auth/device/${request.requestId}`, appBaseUrl);
     authUrl.searchParams.set("code_verifier", verificationCode);
 
     spinner.start(`Opening ${picocolors.blue(authUrl.toString())}`);

@@ -115,9 +115,8 @@ export async function getAuth(): Promise<AuthConfig | null> {
     ? {
         token: config.api.token,
         org: config.api.org,
-        apiBaseUrl: API_BASE_URL ?? config.api.baseUrl ?? DEFAULT_API_URL,
-        consoleBaseUrl:
-          APP_BASE_URL ?? config.console?.baseUrl ?? DEFAULT_CONSOLE_URL,
+        apiBaseUrl: await resolveApiBaseUrl(config),
+        consoleBaseUrl: await resolveAppBaseUrl(config),
       }
     : null;
 }
@@ -179,10 +178,6 @@ export async function saveState(state: Partial<CliState>): Promise<void> {
   });
 }
 
-// Export base URLs that respect config precedence
-export const API_BASE_URL = process.env.GENSX_API_BASE_URL;
-export const APP_BASE_URL = process.env.GENSX_APP_BASE_URL;
-
 // Backwards compatibility layer
 export async function readConfig() {
   const config = await readConfigFile();
@@ -191,16 +186,10 @@ export async function readConfig() {
     config: {
       api: {
         ...config.api,
-        baseUrl:
-          process.env.GENSX_API_BASE_URL ??
-          config.api?.baseUrl ??
-          DEFAULT_API_URL,
+        baseUrl: await resolveApiBaseUrl(config),
       },
       console: {
-        baseUrl:
-          process.env.GENSX_APP_BASE_URL ??
-          config.console?.baseUrl ??
-          DEFAULT_CONSOLE_URL,
+        baseUrl: await resolveAppBaseUrl(config),
       },
     },
     state: await getState(),
@@ -215,4 +204,30 @@ export async function saveConfig(
     await saveState(state);
   }
   await saveAuth(auth);
+}
+
+export async function resolveApiBaseUrl(
+  config?: ConfigFileFormat,
+): Promise<string> {
+  if (!config) {
+    config = await readConfigFile();
+  }
+
+  return (
+    process.env.GENSX_API_BASE_URL ?? config.api?.baseUrl ?? DEFAULT_API_URL
+  );
+}
+
+export async function resolveAppBaseUrl(
+  config?: ConfigFileFormat,
+): Promise<string> {
+  if (!config) {
+    config = await readConfigFile();
+  }
+
+  return (
+    process.env.GENSX_APP_BASE_URL ??
+    config.console?.baseUrl ??
+    DEFAULT_CONSOLE_URL
+  );
 }
