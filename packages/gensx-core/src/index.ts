@@ -16,3 +16,13 @@ export type {
   GSXToolAnySchema,
 } from "./types.js";
 export type { GsxArray } from "./array.js";
+
+export type {
+  BlobProviderProps,
+  FilesystemBlobProviderProps,
+  CloudBlobProviderProps,
+  Blob,
+} from "./blob-context.js";
+
+// Export storage functionality
+export { BlobProvider, useBlob } from "./blob-context.js";
