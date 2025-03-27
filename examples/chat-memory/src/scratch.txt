@@ -1,0 +1,9 @@
+      kind="cloud"
+      region="us-west-2"
+      bucket="gensx-chat-history"
+
+      pulumi env run ai-dev -- pnpm start thread-1 "What is the capital of france"
+
+      pnpm run deploy
+
+      npx gensx run ChatMemoryWorkflow -i "$(cat request.json)"
