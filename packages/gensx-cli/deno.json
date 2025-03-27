@@ -24,6 +24,7 @@
     "consola": "npm:consola",
     "enquirer": "npm:enquirer",
     "form-data": "npm:form-data",
+    "hono": "npm:hono",
     "ini": "npm:ini",
     "node:buffer": "node:buffer",
     "node:crypto": "node:crypto",
