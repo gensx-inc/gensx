@@ -30,12 +30,11 @@ export async function build(file: string, options: BuildOptions = {}) {
     }
 
     const outDir = options.outDir ?? resolve(process.cwd(), ".gensx");
-    const distDir = resolve(outDir, "dist");
     const schemaFile = resolve(outDir, "schema.json");
 
     spinner.start("Building workflow using Docker");
 
-    await bundleWorkflow(absolutePath, distDir);
+    const bundleFilePath = await bundleWorkflow(absolutePath, outDir);
 
     spinner.succeed();
 
@@ -50,7 +49,7 @@ export async function build(file: string, options: BuildOptions = {}) {
     }
 
     return {
-      bundleFile: resolve(distDir, "dist.tar.gz"),
+      bundleFile: bundleFilePath,
       schemaFile: schemaFile,
       schemas: workflowSchemas,
     };
