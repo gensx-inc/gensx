@@ -47,14 +47,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
-    "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-esm-shim": "^0.1.8",
-    "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-typescript": "^11.1.6",
-    "@vercel/ncc": "^0.38.3",
     "axios": "^1.8.1",
-    "builtin-modules": "^5.0.0",
     "commander": "^11.0.0",
     "consola": "^3.2.3",
     "enquirer": "^2.4.1",
@@ -64,8 +57,6 @@
     "open": "^10.0.3",
     "ora": "^8.2.0",
     "picocolors": "^1.0.1",
-    "rollup": "^4.9.6",
-    "tslib": "^2.8.1",
     "typescript": "^5.8.2",
     "typescript-json-schema": "^0.63.0",
     "undici": "^6.6.2",
