@@ -339,28 +339,62 @@ export class GensxServer {
           return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
         }
 
+        // Create a unique execution ID for tracking
+        const executionId = _generateWorkflowId(
+          `${workflowName}-${Date.now()}`,
+        );
+        const now = new Date().toISOString();
+        let body: Record<string, unknown> = {};
+
         try {
           // Get request body for workflow parameters
-          const body = await c.req.json().catch(() => ({}));
+          body = await c.req.json().catch(() => ({}));
 
           console.info(
             `⚡️ Executing workflow '${workflowName}' with params:`,
             body,
           );
 
+          // Initialize execution record
+          const execution: WorkflowExecution = {
+            id: executionId,
+            workflowName,
+            executionStatus: "running", // Start directly in running state since this is synchronous
+            createdAt: now,
+            input: body.input,
+          };
+
+          // Store the execution
+          this.executionsMap.set(executionId, execution);
+
           // Execute the workflow - try both run and Run methods
           const runMethod = (workflow as any).run;
 
           if (typeof runMethod !== "function") {
-            throw new Error(
-              `Workflow '${workflowName}' doesn't have a run or Run method`,
-            );
+            // Update execution with error
+            const errorMessage = `Workflow '${workflowName}' doesn't have a run or Run method`;
+            execution.executionStatus = "failed";
+            execution.error = errorMessage;
+            execution.finishedAt = new Date().toISOString();
+            this.executionsMap.set(executionId, execution);
+
+            throw new Error(errorMessage);
           }
 
           const result = await runMethod.call(workflow, body.input);
 
+          // Update execution with result
+          execution.executionStatus = "completed";
+          execution.output = result;
+          execution.finishedAt = new Date().toISOString();
+          this.executionsMap.set(executionId, execution);
+
           // Handle different response types
-          if (typeof result === "object" && Symbol.asyncIterator in result) {
+          if (
+            result &&
+            typeof result === "object" &&
+            Symbol.asyncIterator in result
+          ) {
             // Handle streaming responses
             return this.handleStreamingResponse(
               c,
@@ -372,7 +406,7 @@ export class GensxServer {
           return c.json({
             status: "ok",
             data: {
-              executionId: _generateWorkflowId(workflowName),
+              executionId,
               executionStatus: "completed",
               output: result,
             },
@@ -382,10 +416,27 @@ export class GensxServer {
             `❌ Error executing workflow '${workflowName}':`,
             error,
           );
+
+          // If there's no execution record yet (error happened before we created one)
+          if (!this.executionsMap.has(executionId)) {
+            const errorExecution: WorkflowExecution = {
+              id: executionId,
+              workflowName,
+              executionStatus: "failed",
+              createdAt: new Date().toISOString(),
+              finishedAt: new Date().toISOString(),
+              input: body.input,
+              error: error instanceof Error ? error.message : String(error),
+            };
+            this.executionsMap.set(executionId, errorExecution);
+          }
+
           return c.json(
             {
               error: "Workflow execution failed",
               message: error instanceof Error ? error.message : String(error),
+              executionId: executionId,
+              executionStatus: "failed",
             },
             500,
           );
