@@ -32,6 +32,30 @@ export interface WorkflowInfo {
 }
 
 /**
+ * Execution status type
+ */
+type ExecutionStatus =
+  | "queued"
+  | "starting"
+  | "running"
+  | "completed"
+  | "failed";
+
+/**
+ * Interface representing a workflow execution
+ */
+export interface WorkflowExecution {
+  id: string;
+  workflowName: string;
+  executionStatus: ExecutionStatus;
+  createdAt: string;
+  finishedAt?: string;
+  input: unknown;
+  output?: unknown;
+  error?: string;
+}
+
+/**
  * GenSX Server - A development server for GenSX workflows
  */
 export class GensxServer {
@@ -40,6 +64,7 @@ export class GensxServer {
   private hostname: string;
   private workflowMap: Map<string, unknown>;
   private schemaMap: Map<string, { input: Definition; output: Definition }>;
+  private executionsMap: Map<string, WorkflowExecution>;
   private isRunning = false;
   private server: ReturnType<typeof serve> | null = null;
   private org = "local";
@@ -60,6 +85,7 @@ export class GensxServer {
     this.app = new Hono();
     this.workflowMap = new Map();
     this.schemaMap = new Map(Object.entries(schemas));
+    this.executionsMap = new Map();
 
     this.org = org;
     this.project = project;
@@ -145,6 +171,158 @@ export class GensxServer {
             createdAt: now,
             updatedAt: now,
             url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${this.project}/workflows/${workflowName}`,
+          },
+        });
+      },
+    );
+
+    // Start workflow execution asynchronously
+    this.app.post(
+      `/org/${this.org}/projects/${this.project}/workflows/:workflowName/start`,
+      async (c) => {
+        const workflowName = c.req.param("workflowName");
+        const workflow = this.workflowMap.get(workflowName);
+
+        if (!workflow) {
+          return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
+        }
+
+        try {
+          // Get request body for workflow parameters
+          const body = await c.req.json().catch(() => ({}));
+
+          // Create a unique execution ID
+          const executionId = _generateWorkflowId(
+            `${workflowName}-${Date.now()}`,
+          );
+          const now = new Date().toISOString();
+
+          // Initialize execution record
+          const execution: WorkflowExecution = {
+            id: executionId,
+            workflowName,
+            executionStatus: "queued",
+            createdAt: now,
+            input: body.input,
+          };
+
+          // Store the execution
+          this.executionsMap.set(executionId, execution);
+
+          // Execute the workflow asynchronously
+          void this.executeWorkflowAsync(
+            workflowName,
+            workflow,
+            executionId,
+            body.input,
+          );
+
+          // Return immediately with executionId
+          return c.json({
+            status: "ok",
+            data: {
+              executionId,
+              executionStatus: "queued",
+            },
+          });
+        } catch (error) {
+          console.error(`❌ Error starting workflow '${workflowName}':`, error);
+          return c.json(
+            {
+              error: "Failed to start workflow execution",
+              message: error instanceof Error ? error.message : String(error),
+            },
+            500,
+          );
+        }
+      },
+    );
+
+    // Get execution status
+    this.app.get(
+      `/org/${this.org}/projects/${this.project}/workflows/:workflowName/executions/:executionId`,
+      (c) => {
+        const workflowName = c.req.param("workflowName");
+        const executionId = c.req.param("executionId");
+        const execution = this.executionsMap.get(executionId);
+
+        if (!execution) {
+          return c.json({ error: `Execution '${executionId}' not found` }, 404);
+        }
+
+        if (execution.workflowName !== workflowName) {
+          return c.json(
+            {
+              error: `Execution '${executionId}' does not belong to workflow '${workflowName}'`,
+            },
+            404,
+          );
+        }
+
+        // Construct the response data with proper type safety
+        const responseData: {
+          id: string;
+          executionStatus: ExecutionStatus;
+          createdAt: string;
+          finishedAt?: string;
+          output?: unknown;
+          error?: string;
+        } = {
+          id: execution.id,
+          executionStatus: execution.executionStatus,
+          createdAt: execution.createdAt,
+        };
+
+        // Add optional fields if they exist
+        if (execution.finishedAt) {
+          responseData.finishedAt = execution.finishedAt;
+        }
+
+        if (execution.output !== undefined) {
+          responseData.output = execution.output;
+        }
+
+        if (execution.error) {
+          responseData.error = execution.error;
+        }
+
+        return c.json({
+          status: "ok",
+          data: responseData,
+        });
+      },
+    );
+
+    // List executions for a workflow
+    this.app.get(
+      `/org/${this.org}/projects/${this.project}/workflows/:workflowName/executions`,
+      (c) => {
+        const workflowName = c.req.param("workflowName");
+        const workflow = this.workflowMap.get(workflowName);
+
+        if (!workflow) {
+          return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
+        }
+
+        // Filter executions for this workflow
+        const executions = Array.from(this.executionsMap.values())
+          .filter((exec) => exec.workflowName === workflowName)
+          // Sort by createdAt in descending order (newest first)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
+          .map((exec) => ({
+            id: exec.id,
+            executionStatus: exec.executionStatus,
+            createdAt: exec.createdAt,
+            finishedAt: exec.finishedAt,
+          }));
+
+        return c.json({
+          status: "ok",
+          data: {
+            executions,
           },
         });
       },
@@ -469,6 +647,66 @@ export class GensxServer {
       // Using await to satisfy the linter requirement
       await Promise.resolve();
       yield workflow;
+    }
+  }
+
+  /**
+   * Execute a workflow asynchronously and update its status
+   */
+  private async executeWorkflowAsync(
+    workflowName: string,
+    workflow: unknown,
+    executionId: string,
+    input: unknown,
+  ): Promise<void> {
+    // Get the current execution record
+    const execution = this.executionsMap.get(executionId);
+    if (!execution) {
+      console.error(`Execution ${executionId} not found`);
+      return;
+    }
+
+    try {
+      // Update status to starting
+      execution.executionStatus = "starting";
+      this.executionsMap.set(executionId, execution);
+
+      // Get the run method
+      const runMethod = (workflow as any).run;
+      if (typeof runMethod !== "function") {
+        throw new Error(`Workflow '${workflowName}' doesn't have a run method`);
+      }
+
+      // Update status to running
+      execution.executionStatus = "running";
+      this.executionsMap.set(executionId, execution);
+
+      // Execute the workflow
+      console.info(
+        `⚡️ Executing async workflow '${workflowName}' with execution ID ${executionId}`,
+      );
+      const result = await runMethod.call(workflow, input);
+
+      // Update execution with result
+      execution.executionStatus = "completed";
+      execution.output = result;
+      execution.finishedAt = new Date().toISOString();
+      this.executionsMap.set(executionId, execution);
+
+      console.info(
+        `✅ Completed async workflow '${workflowName}' execution ${executionId}`,
+      );
+    } catch (error) {
+      // Update execution with error
+      execution.executionStatus = "failed";
+      execution.error = error instanceof Error ? error.message : String(error);
+      execution.finishedAt = new Date().toISOString();
+      this.executionsMap.set(executionId, execution);
+
+      console.error(
+        `❌ Failed async workflow '${workflowName}' execution ${executionId}:`,
+        error,
+      );
     }
   }
 }
