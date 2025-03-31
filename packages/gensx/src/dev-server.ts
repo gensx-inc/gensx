@@ -115,7 +115,7 @@ export class GensxServer {
 
     // Execute workflow endpoint
     this.app.post(
-      `/org/${this.org}/projects/${this.project}/workflows/:workflowName/run`,
+      `/org/${this.org}/projects/${this.project}/workflows/:workflowName`,
       async (c) => {
         const workflowName = c.req.param("workflowName");
         const workflow = this.workflowMap.get(workflowName);
@@ -157,9 +157,9 @@ export class GensxServer {
           return c.json({
             status: "ok",
             data: {
-              status: "completed",
+              executionId: generateWorkflowId(workflowName),
+              executionStatus: "completed",
               output: result,
-              // TODO: Add the rest of the response info
             },
           });
         } catch (error) {
@@ -378,7 +378,7 @@ export class GensxServer {
       `🚀 GenSX Dev Server running at http://${this.hostname}:${this.port}`,
     );
     console.info(
-      `🧪 Test UI available at http://${this.hostname}:${this.port}/ui`,
+      `🧪 Swagger UI available at http://${this.hostname}:${this.port}/ui`,
     );
 
     return this;
@@ -433,4 +433,18 @@ export function createServer(
   options: ServerOptions = {},
 ): GensxServer {
   return new GensxServer(workflows, org, project, options);
+}
+
+/**
+ * Generate a deterministic ID for a workflow
+ */
+function generateWorkflowId(name: string): string {
+  const prefix = "01";
+  const encoded = Buffer.from(name)
+    .toString("base64")
+    .replace(/[+/=]/g, "")
+    .toUpperCase()
+    .substring(0, 22);
+
+  return `${prefix}${encoded}`;
 }
