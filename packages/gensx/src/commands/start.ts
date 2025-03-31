@@ -5,6 +5,7 @@ import ora from "ora";
 import pc from "picocolors";
 import { watch } from "rollup";
 import { OutputOptions } from "rollup";
+import { Definition } from "typescript-json-schema";
 
 import { createServer } from "../dev-server.js";
 import { getRollupConfig } from "../utils/bundler.js";
@@ -26,6 +27,8 @@ export async function start(file: string, options: StartOptions) {
   const spinner = ora({ isSilent: quiet });
   let currentServer: ServerInstance | null = null;
   let isFirstBuild = true;
+  // Store schemas outside the event handler
+  let schemas: Record<string, { input: Definition; output: Definition }> = {};
 
   try {
     console.info("🔍 Starting GenSX Dev Server...");
@@ -84,9 +87,15 @@ export async function start(file: string, options: StartOptions) {
       }
 
       // Create and start a new server instance
-      const server = createServer(workflows, orgName, projectName, {
-        port: 1337,
-      });
+      const server = createServer(
+        workflows,
+        orgName,
+        projectName,
+        {
+          port: 1337,
+        },
+        schemas,
+      );
 
       const serverInstance = server.start();
       currentServer = {
@@ -104,7 +113,7 @@ export async function start(file: string, options: StartOptions) {
       } else {
         console.info("\n📋 Available workflows:");
         allWorkflows.forEach((workflow) => {
-          console.info(`- ${workflow.name}: ${workflow.api_url}`);
+          console.info(`- ${workflow.name}: ${workflow.url}`);
         });
       }
 
@@ -137,7 +146,7 @@ export async function start(file: string, options: StartOptions) {
           spinner.succeed("Build completed");
 
           // Generate schema
-          const schemas = generateSchema(absolutePath);
+          schemas = generateSchema(absolutePath);
           console.info(
             "\n📋 Generated schemas:",
             JSON.stringify(schemas, null, 2),

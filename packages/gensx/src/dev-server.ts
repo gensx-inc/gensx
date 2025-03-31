@@ -8,6 +8,8 @@ import { serve } from "@hono/node-server";
 import { Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { Definition } from "typescript-json-schema";
+
 /**
  * Configuration options for the GenSX dev server
  */
@@ -20,9 +22,13 @@ export interface ServerOptions {
  * Interface representing a workflow that can be executed
  */
 export interface WorkflowInfo {
+  id: string;
   name: string;
-  api_url: string;
-  metadata?: Record<string, unknown>;
+  inputSchema?: Definition;
+  outputSchema?: Definition;
+  createdAt: string;
+  updatedAt: string;
+  url: string;
 }
 
 /**
@@ -33,6 +39,7 @@ export class GensxServer {
   private port: number;
   private hostname: string;
   private workflowMap: Map<string, unknown>;
+  private schemaMap: Map<string, { input: Definition; output: Definition }>;
   private isRunning = false;
   private server: ReturnType<typeof serve> | null = null;
   private org = "local";
@@ -46,11 +53,13 @@ export class GensxServer {
     org: string,
     project: string,
     options: ServerOptions = {},
+    schemas: Record<string, { input: Definition; output: Definition }> = {},
   ) {
     this.port = options.port ?? 1337;
     this.hostname = options.hostname ?? "localhost";
     this.app = new Hono();
     this.workflowMap = new Map();
+    this.schemaMap = new Map(Object.entries(schemas));
 
     this.org = org;
     this.project = project;
@@ -105,13 +114,41 @@ export class GensxServer {
       return c.json({
         status: "ok",
         data: {
-          workflows: Array.from(this.workflowMap.entries()).map(([name]) => ({
-            name,
-            // TODO: Add the rest of the workflow info
-          })),
+          workflows: this.getWorkflows(),
         },
       });
     });
+
+    // Get a single workflow by name
+    this.app.get(
+      `/org/${this.org}/projects/${this.project}/workflows/:workflowName`,
+      (c) => {
+        const workflowName = c.req.param("workflowName");
+        const workflow = this.workflowMap.get(workflowName);
+
+        if (!workflow) {
+          return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
+        }
+
+        // Get schema info
+        const schema = this.schemaMap.get(workflowName);
+        const id = _generateWorkflowId(workflowName);
+        const now = new Date().toISOString();
+
+        return c.json({
+          status: "ok",
+          data: {
+            id,
+            name: workflowName,
+            inputSchema: schema?.input ?? { type: "object", properties: {} },
+            outputSchema: schema?.output ?? { type: "object", properties: {} },
+            createdAt: now,
+            updatedAt: now,
+            url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${this.project}/workflows/${workflowName}`,
+          },
+        });
+      },
+    );
 
     // Execute workflow endpoint
     this.app.post(
@@ -157,7 +194,7 @@ export class GensxServer {
           return c.json({
             status: "ok",
             data: {
-              executionId: generateWorkflowId(workflowName),
+              executionId: _generateWorkflowId(workflowName),
               executionStatus: "completed",
               output: result,
             },
@@ -404,10 +441,23 @@ export class GensxServer {
    * Return information about available workflows
    */
   public getWorkflows(): WorkflowInfo[] {
-    return Array.from(this.workflowMap.entries()).map(([name, _]) => ({
-      name,
-      api_url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${this.project}/workflows/${name}`,
-    }));
+    return Array.from(this.workflowMap.entries()).map(([name, _]) => {
+      // Get schema information
+      const schema = this.schemaMap.get(name);
+      // Generate a unique ID for the workflow
+      const id = _generateWorkflowId(name);
+      const now = new Date().toISOString();
+
+      return {
+        id,
+        name,
+        inputSchema: schema?.input ?? { type: "object", properties: {} },
+        outputSchema: schema?.output ?? { type: "object", properties: {} },
+        createdAt: now,
+        updatedAt: now,
+        url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${this.project}/workflows/${name}`,
+      };
+    });
   }
 
   /**
@@ -431,14 +481,15 @@ export function createServer(
   org: string,
   project: string,
   options: ServerOptions = {},
+  schemas: Record<string, { input: Definition; output: Definition }> = {},
 ): GensxServer {
-  return new GensxServer(workflows, org, project, options);
+  return new GensxServer(workflows, org, project, options, schemas);
 }
 
 /**
  * Generate a deterministic ID for a workflow
  */
-function generateWorkflowId(name: string): string {
+function _generateWorkflowId(name: string): string {
   const prefix = "01";
   const encoded = Buffer.from(name)
     .toString("base64")
