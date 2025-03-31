@@ -66,11 +66,5 @@ export const OpenAIResponses = gensx.Component<
   OpenAIResponsesOutput
 >("OpenAIResponses", async (props) => {
   const context = gensx.useContext(OpenAIContext);
-  if (!context.client) {
-    throw new Error(
-      "OpenAI client not found in context. Please wrap your component with OpenAIProvider.",
-    );
-  }
-
   return context.client.responses.create(props);
 });
