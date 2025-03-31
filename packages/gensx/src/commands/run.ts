@@ -64,7 +64,7 @@ export async function runWorkflow(
 
       if (response.status >= 400) {
         throw new Error(
-          `Failed to start workflow: ${response.status} ${response.statusText}`,
+          `❌ Failed to start workflow: ${response.status} ${response.statusText}`,
         );
       }
 
@@ -82,7 +82,7 @@ export async function runWorkflow(
       spinner.start("Running workflow");
 
       const url = new URL(
-        `/org/${auth.org}/projects/${projectName}/workflows/${encodeURIComponent(workflow)}/run`,
+        `/org/${auth.org}/projects/${projectName}/workflows/${encodeURIComponent(workflow)}`,
         auth.apiBaseUrl,
       );
       const response = await fetch(url, {
@@ -97,7 +97,7 @@ export async function runWorkflow(
 
       if (response.status >= 400) {
         throw new Error(
-          `Failed to start workflow: ${response.status} ${response.statusText}`,
+          `❌ Failed to start workflow: ${response.status} ${response.statusText}`,
         );
       }
 
@@ -145,19 +145,11 @@ export async function runWorkflow(
           status: "ok";
           data: {
             output: unknown;
-            status: "success" | "failed";
-            stdout?: string;
-            stderr?: string;
+            executionStatus: "success" | "failed";
           };
         };
-        if (body.data.status === "failed") {
-          console.error("Workflow failed");
-          if (body.data.stderr) {
-            console.error("Stderr:", body.data.stderr);
-          }
-          if (body.data.stdout) {
-            console.error("Stdout:", body.data.stdout);
-          }
+        if (body.data.executionStatus === "failed") {
+          console.error("❌ Workflow failed");
           if (body.data.output) {
             console.error("Output:", JSON.stringify(body.data.output, null, 2));
           }
