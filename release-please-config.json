@@ -121,6 +121,26 @@
         }
       ]
     },
+    "packages/gensx-storage": {
+      "component": "gensx-storage",
+      "release-type": "node",
+      "package-name": "@gensx/storage",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "initial-version": "0.0.1",
+      "draft": false,
+      "prerelease": false,
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
     "packages/gensx-vercel-ai-sdk": {
       "component": "gensx-vercel-ai-sdk",
       "release-type": "node",

@@ -1,0 +1,32 @@
+{
+  "name": "@examples/chat-memory",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "description": "Use GenSX to create a chat completion",
+  "scripts": {
+    "dev": "nodemon",
+    "start": "tsx ./src/index.tsx",
+    "build": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "run:cloud": "npx gensx run ChatMemoryWorkflow -i \"$(cat request.json)\"",
+    "deploy": "pulumi env run ai-dev -- npx gensx deploy -e OPENAI_API_KEY  -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN src/workflows.tsx"
+  },
+  "dependencies": {
+    "@gensx/openai": "workspace:*",
+    "@gensx/core": "workspace:*",
+    "@gensx/storage": "workspace:*",
+    "openai": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:examples",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}
