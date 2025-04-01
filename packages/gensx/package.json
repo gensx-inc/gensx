@@ -40,6 +40,7 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/chokidar": "^2.1.7",
     "@types/ini": "^4.1.1",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
@@ -54,6 +55,7 @@
     "@rollup/plugin-typescript": "^11.1.6",
     "ajv": "^8.17.1",
     "axios": "^1.8.1",
+    "chokidar": "^4.0.3",
     "commander": "^11.0.0",
     "consola": "^3.2.3",
     "enquirer": "^2.4.1",

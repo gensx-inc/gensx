@@ -1,14 +1,13 @@
 import { existsSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import ora from "ora";
 import pc from "picocolors";
-import { watch } from "rollup";
-import { OutputOptions } from "rollup";
 import { Definition } from "typescript-json-schema";
 
 import { createServer } from "../dev-server.js";
-import { getRollupConfig } from "../utils/bundler.js";
+import { bundleWorkflow } from "../utils/bundler.js";
 import { getAuth } from "../utils/config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { generateSchema } from "../utils/schema.js";
@@ -26,7 +25,6 @@ export async function start(file: string, options: StartOptions) {
   const quiet = options.quiet ?? false;
   const spinner = ora({ isSilent: quiet });
   let currentServer: ServerInstance | null = null;
-  let isFirstBuild = true;
   // Store schemas outside the event handler
   let schemas: Record<string, { input: Definition; output: Definition }> = {};
 
@@ -70,20 +68,45 @@ export async function start(file: string, options: StartOptions) {
       // Do nothing; org name will default to "local"
     }
 
-    // 4. Setup watch mode with Rollup
-    spinner.info("Starting development server in watch mode...");
-    const outDir = resolve(process.cwd(), ".gensx", "dist");
-    const bundleFile = resolve(outDir, "handler.js");
-    const rollupConfig = getRollupConfig(absolutePath, bundleFile, true);
-    const watcher = watch(rollupConfig);
+    // 4. Setup for development mode
+    spinner.info("Starting development server...");
+    const outDir = resolve(process.cwd(), ".gensx");
 
-    const startServer = (workflows: Record<string, unknown>) => {
-      // Stop the current server if it exists
-      if (currentServer) {
-        currentServer.stop();
-        if (!quiet) {
-          console.info("\n🔄 Restarting server with updated workflows...");
-        }
+    // Build the workflow
+    spinner.start("Building locally...");
+
+    try {
+      // Bundle the workflow (using local build for dev server)
+      const bundleFile = await bundleWorkflow(
+        absolutePath,
+        outDir,
+        true,
+        false,
+      );
+      spinner.succeed("Build completed");
+
+      // Generate schema
+      spinner.start("Generating schema");
+      schemas = generateSchema(absolutePath);
+      const schemaFile = resolve(outDir, "schema.json");
+      writeFileSync(schemaFile, JSON.stringify(schemas, null, 2));
+      spinner.succeed();
+
+      // Import and start/reload server with new workflows
+      let workflows: Record<string, unknown>;
+
+      // The bundler returns a directory path for local builds or a tarball path for Docker builds
+      // We need to append index.js for directory imports with ES modules
+      const indexPath = bundleFile.endsWith(".tar.gz")
+        ? bundleFile // For Docker builds, use the tarball directly
+        : resolve(bundleFile, "index.js"); // For local builds, point to the index.js file
+
+      if (existsSync(indexPath)) {
+        workflows = (await import(
+          `file://${indexPath}?update=${Date.now().toString()}`
+        )) as Record<string, unknown>;
+      } else {
+        throw new Error(`Could not find module at ${indexPath}`);
       }
 
       // Create and start a new server instance
@@ -117,56 +140,23 @@ export async function start(file: string, options: StartOptions) {
         });
       }
 
-      // Only show the "Server is running" message on first start
-      if (isFirstBuild && !quiet) {
-        console.info("\n✅ Server is running. Press Ctrl+C to stop.");
-        isFirstBuild = false;
-      }
-    };
+      console.info("\n✅ Server is running. Press Ctrl+C to stop.");
 
-    // Setup cleanup handler
-    const cleanup = () => {
-      if (currentServer) {
-        currentServer.stop();
-      }
-      void watcher.close();
-      process.exit(0);
-    };
-
-    process.on("SIGINT", cleanup);
-    process.on("SIGTERM", cleanup);
-
-    // Handle Rollup watch events
-    watcher.on("event", async (event) => {
-      if (event.code === "START") {
-        spinner.start("Building...");
-      } else if (event.code === "BUNDLE_END") {
-        try {
-          await event.result.write(rollupConfig.output as OutputOptions);
-          spinner.succeed("Build completed");
-
-          // Generate schema
-          schemas = generateSchema(absolutePath);
-
-          // Import and start/reload server with new workflows
-          const fileUrl = `file://${bundleFile}`;
-          const workflows = (await import(fileUrl)) as Record<string, unknown>;
-
-          startServer(workflows);
-          await event.result.close();
-        } catch (error) {
-          spinner.fail("Build failed");
-          console.error(error instanceof Error ? error.message : String(error));
+      // Setup cleanup handler
+      const cleanup = () => {
+        if (currentServer) {
+          currentServer.stop();
         }
-      } else if (event.code === "ERROR") {
-        spinner.fail("Build failed");
-        const errorMessage =
-          event.error instanceof Error
-            ? event.error.message
-            : JSON.stringify(event.error, null, 2);
-        console.error(errorMessage);
-      }
-    });
+        process.exit(0);
+      };
+
+      process.on("SIGINT", cleanup);
+      process.on("SIGTERM", cleanup);
+    } catch (error) {
+      spinner.fail("Build failed");
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
   } catch (error) {
     spinner.fail("Server startup failed");
     if (error instanceof Error) {
