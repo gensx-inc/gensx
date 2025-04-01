@@ -27,11 +27,20 @@ jobs:
       - name: Checkout 🛬
         uses: actions/checkout@v4
 
+      - name: Authenticate with Pulumi Cloud
+        uses: pulumi/auth-actions@v1
+        with:
+          organization: gensx
+          requested-token-type: urn:pulumi:token-type:access_token:organization
+
+      - name: Fetch Docker Hub credentials
+        uses: pulumi/esc-action@v1
+        with:
+          environment: "gensx/default/docker-hub"
+
       - name: GenSX Builder 🛠️
         env:
           # Only publish the container on push to main
           PUBLISH_LATEST: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: ./build_container.sh
         working-directory: containers/builder

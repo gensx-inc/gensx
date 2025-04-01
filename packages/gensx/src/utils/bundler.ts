@@ -47,7 +47,7 @@ export async function bundleWorkflow(
         `${outDir}:/out`,
         "-e",
         `WORKFLOW_PATH=${relativeWorkflowPath}`,
-        `gensx/builder:${buildContainerTag}`,
+        `gensxeng/builder:${buildContainerTag}`,
       ]);
       process.stdout.on("data", (data: Buffer) => {
         stdout += data.toString();
