@@ -1039,7 +1039,7 @@ export class GensxServer {
     this.isRunning = true;
 
     console.info(
-      `🚀 GenSX Dev Server running at http://${this.hostname}:${this.port}`,
+      `\n\n🚀 GenSX Dev Server running at http://${this.hostname}:${this.port}`,
     );
     console.info(
       `🧪 Swagger UI available at http://${this.hostname}:${this.port}/swagger-ui`,
