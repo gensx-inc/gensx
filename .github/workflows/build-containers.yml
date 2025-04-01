@@ -1,0 +1,38 @@
+name: "🐳 Build Containers"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "containers/**/*"
+  push:
+    branches: [main]
+    paths:
+      - "containers/**/*"
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛬
+        uses: actions/checkout@v4
+
+      - name: GenSX Builder 🛠️
+        env:
+          # Only publish the container on push to main
+          PUBLISH_LATEST: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          GIT_SHA: ${{ github.sha }}
+        run: ./build_container.sh
+        working-directory: containers/builder

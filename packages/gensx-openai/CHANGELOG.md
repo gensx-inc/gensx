@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.20](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.19...gensx-openai-v0.1.20) (2025-03-31)
+
+
+### ✨ New Features
+
+* add default client for openai package ([#424](https://github.com/gensx-inc/gensx/issues/424)) ([c609a5c](https://github.com/gensx-inc/gensx/commit/c609a5cd0972deeffb948561487ee5cb87440b19))
+
+
+### 🐛 Bug Fixes
+
+* updating cli to match with new api shape ([#530](https://github.com/gensx-inc/gensx/issues/530)) ([f25ec1f](https://github.com/gensx-inc/gensx/commit/f25ec1faef3ba6e454304bbce9312d3446329288))
+
 ## [0.1.19](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.18...gensx-openai-v0.1.19) (2025-03-21)
 
 

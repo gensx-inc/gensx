@@ -25,6 +25,7 @@
     "commander": "npm:commander",
     "consola": "npm:consola",
     "enquirer": "npm:enquirer",
+    "find-up": "npm:find-up",
     "form-data": "npm:form-data",
     "hono": "npm:hono",
     "ini": "npm:ini",
