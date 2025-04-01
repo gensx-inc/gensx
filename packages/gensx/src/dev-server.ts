@@ -11,6 +11,33 @@ import { logger } from "hono/logger";
 import { Definition } from "typescript-json-schema";
 
 /**
+ * Custom error classes for consistent error handling
+ */
+export class NotFoundError extends Error {
+  statusCode = 404;
+  constructor(message: string) {
+    super(message);
+    this.name = "NotFoundError";
+  }
+}
+
+export class BadRequestError extends Error {
+  statusCode = 400;
+  constructor(message: string) {
+    super(message);
+    this.name = "BadRequestError";
+  }
+}
+
+export class ServerError extends Error {
+  statusCode = 500;
+  constructor(message: string) {
+    super(message);
+    this.name = "ServerError";
+  }
+}
+
+/**
  * Configuration options for the GenSX dev server
  */
 export interface ServerOptions {
@@ -93,8 +120,30 @@ export class GensxServer {
     // Register all workflows from the input
     this.registerWorkflows(workflows);
 
+    // Set up error handling middleware
+    this.setupErrorHandler();
+
     // Set up routes
     this.setupRoutes();
+  }
+
+  /**
+   * Set up error handling middleware
+   */
+  private setupErrorHandler(): void {
+    this.app.onError((err, c) => {
+      console.error("Server error:", err);
+
+      // Handle different types of errors
+      if (err instanceof NotFoundError) {
+        return c.json({ error: err.message }, 404);
+      } else if (err instanceof BadRequestError) {
+        return c.json({ error: err.message }, 400);
+      } else {
+        const message = err instanceof Error ? err.message : String(err);
+        return c.json({ error: "Internal server error", message }, 500);
+      }
+    });
   }
 
   /**
@@ -128,6 +177,49 @@ export class GensxServer {
   }
 
   /**
+   * Get a workflow by name or throw NotFoundError
+   */
+  private getWorkflowOrThrow(workflowName: string): unknown {
+    const workflow = this.workflowMap.get(workflowName);
+    if (!workflow) {
+      throw new NotFoundError(`Workflow '${workflowName}' not found`);
+    }
+    return workflow;
+  }
+
+  /**
+   * Get an execution by ID or throw NotFoundError
+   */
+  private getExecutionOrThrow(
+    executionId: string,
+    workflowName?: string,
+  ): WorkflowExecution {
+    const execution = this.executionsMap.get(executionId);
+    if (!execution) {
+      throw new NotFoundError(`Execution '${executionId}' not found`);
+    }
+
+    if (workflowName && execution.workflowName !== workflowName) {
+      throw new NotFoundError(
+        `Execution '${executionId}' does not belong to workflow '${workflowName}'`,
+      );
+    }
+
+    return execution;
+  }
+
+  /**
+   * Parse request body with error handling
+   */
+  private async parseJsonBody(c: Context): Promise<Record<string, unknown>> {
+    try {
+      return await c.req.json();
+    } catch (_) {
+      throw new BadRequestError("Invalid JSON body");
+    }
+  }
+
+  /**
    * Set up server routes
    */
   private setupRoutes(): void {
@@ -150,11 +242,7 @@ export class GensxServer {
       `/org/${this.org}/projects/${this.project}/workflows/:workflowName`,
       (c) => {
         const workflowName = c.req.param("workflowName");
-        const workflow = this.workflowMap.get(workflowName);
-
-        if (!workflow) {
-          return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
-        }
+        this.getWorkflowOrThrow(workflowName);
 
         // Get schema info
         const schema = this.schemaMap.get(workflowName);
@@ -181,15 +269,12 @@ export class GensxServer {
       `/org/${this.org}/projects/${this.project}/workflows/:workflowName/start`,
       async (c) => {
         const workflowName = c.req.param("workflowName");
-        const workflow = this.workflowMap.get(workflowName);
-
-        if (!workflow) {
-          return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
-        }
+        // Will throw NotFoundError if workflow doesn't exist
+        const workflow = this.getWorkflowOrThrow(workflowName);
 
         try {
           // Get request body for workflow parameters
-          const body = await c.req.json().catch(() => ({}));
+          const body = await this.parseJsonBody(c);
 
           // Create a unique execution ID
           const executionId = _generateWorkflowId(
@@ -226,13 +311,12 @@ export class GensxServer {
             },
           });
         } catch (error) {
+          if (error instanceof BadRequestError) {
+            throw error;
+          }
           console.error(`❌ Error starting workflow '${workflowName}':`, error);
-          return c.json(
-            {
-              error: "Failed to start workflow execution",
-              message: error instanceof Error ? error.message : String(error),
-            },
-            500,
+          throw new ServerError(
+            error instanceof Error ? error.message : String(error),
           );
         }
       },
@@ -244,20 +328,9 @@ export class GensxServer {
       (c) => {
         const workflowName = c.req.param("workflowName");
         const executionId = c.req.param("executionId");
-        const execution = this.executionsMap.get(executionId);
 
-        if (!execution) {
-          return c.json({ error: `Execution '${executionId}' not found` }, 404);
-        }
-
-        if (execution.workflowName !== workflowName) {
-          return c.json(
-            {
-              error: `Execution '${executionId}' does not belong to workflow '${workflowName}'`,
-            },
-            404,
-          );
-        }
+        // Will throw NotFoundError if execution doesn't exist or doesn't match workflow
+        const execution = this.getExecutionOrThrow(executionId, workflowName);
 
         // Construct the response data with proper type safety
         const responseData: {
@@ -298,11 +371,8 @@ export class GensxServer {
       `/org/${this.org}/projects/${this.project}/workflows/:workflowName/executions`,
       (c) => {
         const workflowName = c.req.param("workflowName");
-        const workflow = this.workflowMap.get(workflowName);
-
-        if (!workflow) {
-          return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
-        }
+        // Will throw NotFoundError if workflow doesn't exist
+        this.getWorkflowOrThrow(workflowName);
 
         // Filter executions for this workflow
         const executions = Array.from(this.executionsMap.values())
@@ -333,11 +403,8 @@ export class GensxServer {
       `/org/${this.org}/projects/${this.project}/workflows/:workflowName`,
       async (c) => {
         const workflowName = c.req.param("workflowName");
-        const workflow = this.workflowMap.get(workflowName);
-
-        if (!workflow) {
-          return c.json({ error: `Workflow '${workflowName}' not found` }, 404);
-        }
+        // Will throw NotFoundError if workflow doesn't exist
+        const workflow = this.getWorkflowOrThrow(workflowName);
 
         // Create a unique execution ID for tracking
         const executionId = _generateWorkflowId(
@@ -348,7 +415,7 @@ export class GensxServer {
 
         try {
           // Get request body for workflow parameters
-          body = await c.req.json().catch(() => ({}));
+          body = await this.parseJsonBody(c);
 
           console.info(
             `⚡️ Executing workflow '${workflowName}' with params:`,
@@ -367,18 +434,18 @@ export class GensxServer {
           // Store the execution
           this.executionsMap.set(executionId, execution);
 
-          // Execute the workflow - try both run and Run methods
+          // Execute the workflow
           const runMethod = (workflow as any).run;
 
           if (typeof runMethod !== "function") {
             // Update execution with error
-            const errorMessage = `Workflow '${workflowName}' doesn't have a run or Run method`;
+            const errorMessage = `Workflow '${workflowName}' doesn't have a run method`;
             execution.executionStatus = "failed";
             execution.error = errorMessage;
             execution.finishedAt = new Date().toISOString();
             this.executionsMap.set(executionId, execution);
 
-            throw new Error(errorMessage);
+            throw new ServerError(errorMessage);
           }
 
           const result = await runMethod.call(workflow, body.input);
@@ -429,6 +496,16 @@ export class GensxServer {
               error: error instanceof Error ? error.message : String(error),
             };
             this.executionsMap.set(executionId, errorExecution);
+          } else {
+            // Update existing execution with error
+            const execution = this.executionsMap.get(executionId);
+            if (execution) {
+              execution.executionStatus = "failed";
+              execution.error =
+                error instanceof Error ? error.message : String(error);
+              execution.finishedAt = new Date().toISOString();
+              this.executionsMap.set(executionId, execution);
+            }
           }
 
           return c.json(
@@ -515,18 +592,18 @@ export class GensxServer {
       <script>
         // Fetch the list of workflows
         async function fetchWorkflows() {
-          const response = await fetch('/projects/local/workflows');
+          const response = await fetch('/org/${this.org}/projects/${this.project}/workflows');
           const data = await response.json();
 
           const workflowsContainer = document.getElementById('workflows');
           workflowsContainer.innerHTML = '';
 
-          if (data.workflows.length === 0) {
+          if (data.data.workflows.length === 0) {
             workflowsContainer.innerHTML = '<p>No workflows found</p>';
             return;
           }
 
-          data.workflows.forEach(workflow => {
+          data.data.workflows.forEach(workflow => {
             const workflowEl = document.createElement('div');
             workflowEl.className = 'workflow';
             workflowEl.innerHTML = \`
@@ -568,7 +645,7 @@ export class GensxServer {
               }
             }
 
-            const response = await fetch(\`/projects/local/workflows/\${name}\`, {
+            const response = await fetch(\`/org/${this.org}/projects/${this.project}/workflows/\${name}\`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(inputData)
