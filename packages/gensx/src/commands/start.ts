@@ -147,10 +147,6 @@ export async function start(file: string, options: StartOptions) {
 
           // Generate schema
           schemas = generateSchema(absolutePath);
-          console.info(
-            "\n📋 Generated schemas:",
-            JSON.stringify(schemas, null, 2),
-          );
 
           // Import and start/reload server with new workflows
           const fileUrl = `file://${bundleFile}`;
