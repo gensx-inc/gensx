@@ -33,5 +33,6 @@ jobs:
           PUBLISH_LATEST: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_ACCESS_TOKEN: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          GIT_SHA: ${{ github.sha }}
         run: ./build_container.sh
         working-directory: containers/builder
