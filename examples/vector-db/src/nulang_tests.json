@@ -1,0 +1,77 @@
+[
+  {
+    "input": "Goodbye",
+    "expected": "🌘🍃 _nebai_",
+    "description": "Basic Vocabulary"
+  },
+  {
+    "input": "Danger",
+    "expected": "⚠️🐍 _krezh_",
+    "description": "Basic Vocabulary"
+  },
+  {
+    "input": "Be careful",
+    "expected": "⚠️👁️ _krevi elun_",
+    "description": "Phrase Glossary"
+  },
+  {
+    "input": "I need help",
+    "expected": "🆘🙋 _vun drezan_",
+    "description": "Phrase Glossary"
+  },
+  {
+    "input": "Everything is okay",
+    "expected": "✅🌈 _valenu_",
+    "description": "Phrase Glossary"
+  },
+  {
+    "input": "I do not eat",
+    "expected": "👤🍲 _tu nu-mekso_",
+    "description": "Negation"
+  },
+  {
+    "input": "If it rains, I will go home",
+    "expected": "❓🧭 🌧️ _kavi plen_, 🏠 _seloh tu_",
+    "description": "Subordinate Clauses"
+  },
+  {
+    "input": "You go to home",
+    "expected": "👤➡️🏠 _tu tova seloh_",
+    "description": "Location & Direction"
+  },
+  {
+    "input": "I went home",
+    "expected": "👤🏠⏳ _tu seloh-ek_",
+    "description": "Tense & Time"
+  },
+  {
+    "input": "I am tired and I want food",
+    "expected": "👤😴 _tu murak_ ➕ 👤🍲 _tu mekso_",
+    "description": "Coordinating Clauses"
+  },
+  {
+    "input": "The stars are bright tonight. I like to sit outside and look at them.",
+    "expected": "🌌🌟✨ _stelavi vara navi_. 👤🪑🌳🌃👀 _tu sedev natura navi_ ➕ _vilo stel_",
+    "description": "Multi-Sentence"
+  },
+  {
+    "input": "You didn’t come yesterday. I waited for a long time, but it’s okay now.",
+    "expected": "👤⬅️📅🚫 _tu nu-vela deya_. 👤🕒⏳⌛ _tu velum longan_, ⚖️ _zova_ ✅📍 _valenu_",
+    "description": "Multi-Sentence"
+  },
+  {
+    "input": "I was tired because I walked a long way",
+    "expected": "👤😴⏳ _tu murak-ek_ 🔄🎯 _rezan_ 🏃‍♂️📏🛣️ _tu trevak longan_",
+    "description": "Causal Sentence"
+  },
+  {
+    "input": "Even though it was dark, I wasn’t afraid",
+    "expected": "🌀⚖️🌘⏳ _vimzo drek-ek_, 👤😨🚫 _tu nu-krezh_",
+    "description": "Concessive Sentence"
+  },
+  {
+    "input": "We will go outside and play near the river",
+    "expected": "🔮🤝🏃‍♂️🌳 _etu tova natura_ ➕ 🎮🏞️🌊 _ludo rivera_",
+    "description": "Coordinated Actions"
+  }
+]

@@ -30,6 +30,7 @@ import { OpenAIProvider, GSXChatCompletion } from "@gensx/openai";
 | [`ChatCompletion`](#chatcompletion)             | Simplified component for chat completions with streamlined output interface                     |
 | [`OpenAIChatCompletion`](#openaichatcompletion) | Low-level component that directly matches the OpenAI SDK interface for the Chat Completions API |
 | [`OpenAIResponses`](#openairesponses)           | Low-level component that directly matches the OpenAI SDK interface for the Responses API        |
+| [`OpenAIEmbedding`](#openaiembedding)           | Low-level component that directly matches the OpenAI SDK interface for the Embeddings API       |
 
 ## Component Comparison
 
@@ -244,3 +245,23 @@ The `OpenAIResponses` component accepts all parameters from the OpenAI SDK's `re
 
 - With `stream: false` (default): Returns the full `Response` object from OpenAI SDK
 - With `stream: true`: Returns a `Stream<ResponseStreamEvent>` from OpenAI SDK
+
+#### `<OpenAIEmbedding/>`
+
+The `OpenAIEmbedding` component is a low-level component that directly maps to the OpenAI SDK's `embeddings.create` method. It has identical inputs and outputs to the OpenAI Embeddings API, making it suitable for advanced use cases where you need full control.
+
+```tsx
+<OpenAIEmbedding model="text-embedding-3-small" input="Hello, world!" />
+```
+
+##### Props
+
+The `OpenAIEmbedding` component accepts all parameters from the OpenAI SDK's `embeddings.create` method:
+
+- `model` (required): ID of the model to use
+- `input` (required): The input to the embedding (`string` or `string[]`)
+- Plus all other optional parameters from the OpenAI Embeddings API
+
+##### Return Types
+
+- Returns the full `CreateEmbeddingResponse` object from OpenAI SDK
