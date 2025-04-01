@@ -4,10 +4,18 @@ set -e
 
 rm -rf /out/*
 
-# TODO: Don't mangle the user's node_modules
 # TODO: Persist cache for ncc on disk between builds
 
 cd /app
+
+mkdir -p /tmp/project
+
+for file in * .*; do
+  [[ "$file" == "." || "$file" == ".." ]] && continue
+  [[ "$file" == "node_modules" || "$file" == "dist" || "$file" == "dist.tar.gz" || "$file" == ".gensx" ]] && continue
+  echo "copying $file"
+  cp -r "$file" /tmp/project/
+done
 
 # Install required dependencies
 npm install
