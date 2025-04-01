@@ -269,6 +269,24 @@ export class GensxServer {
     this.app.use("*", logger());
     this.app.use("*", cors());
 
+    // Add project validation middleware
+    this.app.use(
+      `/org/${this.org}/projects/:projectName/*`,
+      async (c, next) => {
+        const projectName = c.req.param("projectName");
+        if (projectName !== this.project) {
+          return c.json(
+            {
+              status: "error",
+              error: `Project '${projectName}' not found`,
+            },
+            404,
+          );
+        }
+        await next();
+      },
+    );
+
     // List all workflows
     this.app.get(`/org/${this.org}/projects/${this.project}/workflows`, (c) => {
       return c.json({
