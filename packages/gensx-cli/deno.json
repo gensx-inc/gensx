@@ -19,6 +19,7 @@
     "@rollup/plugin-json": "npm:@rollup/plugin-json",
     "@rollup/plugin-node-resolve": "npm:@rollup/plugin-node-resolve",
     "@rollup/plugin-typescript": "npm:@rollup/plugin-typescript",
+    "ajv": "npm:ajv",
     "axios": "npm:axios",
     "builtin-modules": "npm:builtin-modules",
     "commander": "npm:commander",
@@ -38,6 +39,7 @@
     "serialize-error": "npm:serialize-error",
     "typescript-json-schema": "npm:typescript-json-schema",
     "typescript": "npm:typescript",
+    "ulidx": "npm:ulidx",
     "zod-to-json-schema": "npm:zod-to-json-schema",
     "zod": "npm:zod"
   }

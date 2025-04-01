@@ -47,7 +47,6 @@
     "vitest": "catalog:"
   },
   "dependencies": {
-    "@gensx/openai": "workspace:*",
     "@hono/node-server": "^1.13.8",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.0.0",
