@@ -135,7 +135,7 @@ export class GensxServer {
    */
   private setupErrorHandler(): void {
     this.app.onError((err, c) => {
-      console.error("Server error:", err);
+      console.error("❌ Server error:", err.message);
 
       // Handle different types of errors
       if (err instanceof NotFoundError) {
@@ -198,8 +198,9 @@ export class GensxServer {
    */
   private getExecutionOrThrow(
     executionId: string,
-    workflowName?: string,
+    workflowName: string,
   ): WorkflowExecution {
+    this.getWorkflowOrThrow(workflowName);
     const execution = this.executionsMap.get(executionId);
     if (!execution) {
       throw new NotFoundError(`Execution '${executionId}' not found`);
@@ -221,7 +222,7 @@ export class GensxServer {
     try {
       return await c.req.json();
     } catch (_) {
-      throw new BadRequestError("Invalid JSON body");
+      throw new BadRequestError("Invalid JSON");
     }
   }
 
