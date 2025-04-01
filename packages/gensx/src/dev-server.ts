@@ -590,8 +590,12 @@ export class GensxServer {
     );
 
     // UI for testing workflows
-    this.app.get("/ui", (c) => {
-      const html = this.generateUI();
+    this.app.get("/openapi.json", (c) => {
+      return c.json(this.generateOpenApiSpec());
+    });
+
+    this.app.get("/swagger-ui", (c) => {
+      const html = this.generateSwaggerUI();
       return c.html(html);
     });
   }
@@ -631,138 +635,278 @@ export class GensxServer {
   }
 
   /**
-   * Generate HTML UI for testing workflows
+   * Generate OpenAPI specification dynamically based on server configuration
    */
-  private generateUI(): string {
+  private generateOpenApiSpec(): Record<string, unknown> {
+    const workflows = this.getWorkflows();
+
+    return {
+      openapi: "3.0.0",
+      info: {
+        title: `GenSX API - ${this.project}`,
+        version: "1.0.0",
+        description: `API documentation for ${this.org}/${this.project} GenSX workflows`,
+      },
+      servers: [
+        {
+          url: `http://${this.hostname}:${this.port}`,
+          description: "Development Server",
+        },
+      ],
+      paths: {
+        [`/org/${this.org}/projects/${this.project}/workflows`]: {
+          get: {
+            summary: "List all workflows",
+            responses: {
+              "200": {
+                description: "List of available workflows",
+                content: {
+                  "application/json": {
+                    example: {
+                      status: "ok",
+                      data: { workflows },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        ...Object.fromEntries(
+          workflows.map((workflow) => [
+            `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}`,
+            {
+              post: {
+                summary: `Execute ${workflow.name} workflow`,
+                requestBody: {
+                  required: true,
+                  content: {
+                    "application/json": {
+                      schema: {
+                        type: "object",
+                        properties: {
+                          input: workflow.inputSchema ?? {
+                            type: "object",
+                            properties: {},
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                responses: {
+                  "200": {
+                    description: "Successful execution",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          type: "object",
+                          properties: {
+                            status: { type: "string", enum: ["ok"] },
+                            data: {
+                              type: "object",
+                              properties: {
+                                executionId: { type: "string" },
+                                executionStatus: {
+                                  type: "string",
+                                  enum: [
+                                    "completed",
+                                    "queued",
+                                    "running",
+                                    "failed",
+                                  ],
+                                },
+                                output: workflow.outputSchema ?? {
+                                  type: "object",
+                                  properties: {},
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  "400": {
+                    description: "Bad request",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          type: "object",
+                          properties: {
+                            status: { type: "string", enum: ["error"] },
+                            error: { type: "string" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          ]),
+        ),
+        ...Object.fromEntries(
+          workflows.map((workflow) => [
+            `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}/start`,
+            {
+              post: {
+                summary: `Start ${workflow.name} workflow asynchronously`,
+                requestBody: {
+                  required: true,
+                  content: {
+                    "application/json": {
+                      schema: {
+                        type: "object",
+                        properties: {
+                          input: workflow.inputSchema ?? {
+                            type: "object",
+                            properties: {},
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                responses: {
+                  "200": {
+                    description: "Workflow started",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          type: "object",
+                          properties: {
+                            status: { type: "string", enum: ["ok"] },
+                            data: {
+                              type: "object",
+                              properties: {
+                                executionId: { type: "string" },
+                                executionStatus: {
+                                  type: "string",
+                                  enum: ["queued"],
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          ]),
+        ),
+        ...Object.fromEntries(
+          workflows.map((workflow) => [
+            `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}/executions/{executionId}`,
+            {
+              get: {
+                summary: `Get execution status for ${workflow.name} workflow`,
+                parameters: [
+                  {
+                    name: "executionId",
+                    in: "path",
+                    required: true,
+                    schema: { type: "string" },
+                  },
+                ],
+                responses: {
+                  "200": {
+                    description: "Execution status",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          type: "object",
+                          properties: {
+                            status: { type: "string", enum: ["ok"] },
+                            data: {
+                              type: "object",
+                              properties: {
+                                id: { type: "string" },
+                                executionStatus: {
+                                  type: "string",
+                                  enum: [
+                                    "queued",
+                                    "starting",
+                                    "running",
+                                    "completed",
+                                    "failed",
+                                  ],
+                                },
+                                createdAt: {
+                                  type: "string",
+                                  format: "date-time",
+                                },
+                                finishedAt: {
+                                  type: "string",
+                                  format: "date-time",
+                                },
+                                output: workflow.outputSchema ?? {},
+                                error: { type: "string" },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          ]),
+        ),
+      },
+    };
+  }
+
+  /**
+   * Generate Swagger UI HTML
+   */
+  private generateSwaggerUI(): string {
     return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>GenSX Dev Server</title>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>GenSX API - ${this.project}</title>
+      <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@latest/swagger-ui.css" />
       <style>
-        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }
-        h1 { color: #333; }
-        .workflow { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
-        pre { background: #f5f5f5; padding: 1rem; overflow: auto; }
-        button { background: #0070f3; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0051cc; }
-        textarea { width: 100%; height: 100px; margin-bottom: 1rem; padding: 0.5rem; }
-        .output { margin-top: 1rem; }
-        .hidden { display: none; }
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        #swagger-ui {
+          max-width: 1460px;
+          margin: 0 auto;
+          padding: 20px;
+        }
       </style>
     </head>
     <body>
-      <h1>GenSX Workflow Tester</h1>
-      <div id="workflows">Loading...</div>
-
+      <div id="swagger-ui"></div>
+      <script src="https://unpkg.com/swagger-ui-dist@latest/swagger-ui-bundle.js"></script>
       <script>
-        // Fetch the list of workflows
-        async function fetchWorkflows() {
-          const response = await fetch('/org/${this.org}/projects/${this.project}/workflows');
-          const data = await response.json();
-
-          const workflowsContainer = document.getElementById('workflows');
-          workflowsContainer.innerHTML = '';
-
-          if (data.data.workflows.length === 0) {
-            workflowsContainer.innerHTML = '<p>No workflows found</p>';
-            return;
-          }
-
-          data.data.workflows.forEach(workflow => {
-            const workflowEl = document.createElement('div');
-            workflowEl.className = 'workflow';
-            workflowEl.innerHTML = \`
-              <h2>\${workflow.name}</h2>
-              <p><small>API URL: <code>\${workflow.url}</code></small></p>
-              <textarea id="input-\${workflow.name}" placeholder="Input JSON (optional)"></textarea>
-              <button id="run-\${workflow.name}">Run Workflow</button>
-              <div id="output-\${workflow.name}" class="output hidden">
-                <h3>Output:</h3>
-                <pre id="output-content-\${workflow.name}"></pre>
-              </div>
-            \`;
-            workflowsContainer.appendChild(workflowEl);
-
-            // Add event listener
-            document.getElementById(\`run-\${workflow.name}\`).addEventListener('click', () => {
-              runWorkflow(workflow.name);
-            });
+        window.onload = () => {
+          window.ui = SwaggerUIBundle({
+            url: '/openapi.json',
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+              SwaggerUIBundle.presets.apis,
+              SwaggerUIBundle.SwaggerUIStandalonePreset
+            ],
+            plugins: [
+              SwaggerUIBundle.plugins.DownloadUrl
+            ],
+            layout: "BaseLayout",
+            displayRequestDuration: true,
+            docExpansion: 'list',
+            filter: true,
+            tryItOutEnabled: true
           });
-        }
-
-        // Run a workflow
-        async function runWorkflow(name) {
-          const inputEl = document.getElementById(\`input-\${name}\`);
-          const outputEl = document.getElementById(\`output-\${name}\`);
-          const outputContentEl = document.getElementById(\`output-content-\${name}\`);
-
-          outputEl.classList.remove('hidden');
-          outputContentEl.innerText = 'Running...';
-
-          try {
-            let inputData = {};
-            if (inputEl.value.trim()) {
-              try {
-                inputData = JSON.parse(inputEl.value);
-              } catch (e) {
-                outputContentEl.innerText = 'Invalid JSON input';
-                return;
-              }
-            }
-
-            const response = await fetch(\`/org/${this.org}/projects/${this.project}/workflows/\${name}\`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(inputData)
-            });
-
-            // Check if response is a stream
-            const contentType = response.headers.get('Content-Type');
-
-            if (contentType && contentType.includes('text/event-stream')) {
-              // Handle streaming response
-              outputContentEl.innerText = '';
-              const reader = response.body.getReader();
-              const decoder = new TextDecoder();
-
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const text = decoder.decode(value);
-                const events = text.split('\\n\\n').filter(Boolean);
-
-                for (const event of events) {
-                  if (event.startsWith('data: ')) {
-                    try {
-                      const data = JSON.parse(event.substring(6));
-                      if (data.content) {
-                        outputContentEl.innerText += data.content;
-                      }
-                    } catch (e) {
-                      // If not valid JSON, just append the raw text
-                      if (event !== 'data: [DONE]') {
-                        outputContentEl.innerText += event.substring(6);
-                      }
-                    }
-                  }
-                }
-              }
-            } else {
-              // Handle regular JSON response
-              const data = await response.json();
-              outputContentEl.innerText = JSON.stringify(data, null, 2);
-            }
-          } catch (error) {
-            outputContentEl.innerText = \`Error: \${error.message}\`;
-          }
-        }
-
-        // Initialize
-        fetchWorkflows();
+        };
       </script>
     </body>
     </html>
@@ -789,7 +933,7 @@ export class GensxServer {
       `🚀 GenSX Dev Server running at http://${this.hostname}:${this.port}`,
     );
     console.info(
-      `🧪 Swagger UI available at http://${this.hostname}:${this.port}/ui`,
+      `🧪 Swagger UI available at http://${this.hostname}:${this.port}/swagger-ui`,
     );
 
     return this;
@@ -935,6 +1079,5 @@ function generateWorkflowId(name: string): string {
 }
 
 function generateExecutionId(): string {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return ulid();
 }
