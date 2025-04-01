@@ -32,13 +32,13 @@
   "dependencies": {
     "commander": "^11.1.0",
     "gensx": "workspace:*",
-    "yaml": "^2.7.0"
+    "yaml": "^2.7.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "fs-extra": "^11.2.0",
+    "fs-extra": "^11.3.0",
     "tsx": "catalog:",
     "vitest": "catalog:"
   }
