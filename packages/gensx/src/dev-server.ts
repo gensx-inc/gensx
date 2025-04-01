@@ -645,7 +645,7 @@ export class GensxServer {
       info: {
         title: `GenSX API - ${this.project}`,
         version: "1.0.0",
-        description: `API documentation for ${this.org}/${this.project} GenSX workflows`,
+        description: `API documentation for ${this.org}/${this.project}`,
       },
       servers: [
         {
@@ -653,9 +653,20 @@ export class GensxServer {
           description: "Development Server",
         },
       ],
+      tags: [
+        {
+          name: "Workflows",
+          description: "List and manage workflows",
+        },
+        ...workflows.map((workflow) => ({
+          name: workflow.name,
+          description: `Operations for ${workflow.name} workflow`,
+        })),
+      ],
       paths: {
         [`/org/${this.org}/projects/${this.project}/workflows`]: {
           get: {
+            tags: ["Workflows"],
             summary: "List all workflows",
             responses: {
               "200": {
@@ -676,7 +687,45 @@ export class GensxServer {
           workflows.map((workflow) => [
             `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}`,
             {
+              get: {
+                tags: [workflow.name],
+                summary: `Get ${workflow.name} workflow details`,
+                responses: {
+                  "200": {
+                    description: "Workflow details",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          type: "object",
+                          properties: {
+                            status: { type: "string", enum: ["ok"] },
+                            data: {
+                              type: "object",
+                              properties: {
+                                id: { type: "string" },
+                                name: { type: "string" },
+                                inputSchema: { type: "object" },
+                                outputSchema: { type: "object" },
+                                createdAt: {
+                                  type: "string",
+                                  format: "date-time",
+                                },
+                                updatedAt: {
+                                  type: "string",
+                                  format: "date-time",
+                                },
+                                url: { type: "string" },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
               post: {
+                tags: [workflow.name],
                 summary: `Execute ${workflow.name} workflow`,
                 requestBody: {
                   required: true,
@@ -751,6 +800,7 @@ export class GensxServer {
             `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}/start`,
             {
               post: {
+                tags: [workflow.name],
                 summary: `Start ${workflow.name} workflow asynchronously`,
                 requestBody: {
                   required: true,
@@ -802,6 +852,7 @@ export class GensxServer {
             `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}/executions/{executionId}`,
             {
               get: {
+                tags: [workflow.name],
                 summary: `Get execution status for ${workflow.name} workflow`,
                 parameters: [
                   {
@@ -844,6 +895,64 @@ export class GensxServer {
                                 },
                                 output: workflow.outputSchema ?? {},
                                 error: { type: "string" },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          ]),
+        ),
+        ...Object.fromEntries(
+          workflows.map((workflow) => [
+            `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}/executions`,
+            {
+              get: {
+                tags: [workflow.name],
+                summary: `List executions for ${workflow.name} workflow`,
+                responses: {
+                  "200": {
+                    description: "List of workflow executions",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          type: "object",
+                          properties: {
+                            status: { type: "string", enum: ["ok"] },
+                            data: {
+                              type: "object",
+                              properties: {
+                                executions: {
+                                  type: "array",
+                                  items: {
+                                    type: "object",
+                                    properties: {
+                                      id: { type: "string" },
+                                      executionStatus: {
+                                        type: "string",
+                                        enum: [
+                                          "queued",
+                                          "starting",
+                                          "running",
+                                          "completed",
+                                          "failed",
+                                        ],
+                                      },
+                                      createdAt: {
+                                        type: "string",
+                                        format: "date-time",
+                                      },
+                                      finishedAt: {
+                                        type: "string",
+                                        format: "date-time",
+                                      },
+                                    },
+                                  },
+                                },
                               },
                             },
                           },
