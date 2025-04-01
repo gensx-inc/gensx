@@ -17,7 +17,7 @@
     "@gensx/core": "workspace:*",
     "@gensx/openai": "workspace:*",
     "openai": "catalog:",
-    "playwright": "^1.51.0",
+    "playwright": "^1.51.1",
     "zod": "catalog:"
   },
   "devDependencies": {
