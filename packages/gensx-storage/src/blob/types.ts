@@ -108,7 +108,7 @@ export interface Blob<T> {
    * Get the raw blob response with metadata.
    * @returns The blob response with metadata, or null if not found.
    */
-  getRaw(): Promise<BlobResponse<T> | null>;
+  getRaw(): Promise<BlobResponse<Buffer | string> | null>;
 
   /**
    * Get a readable stream of the blob's content.
@@ -147,7 +147,7 @@ export interface Blob<T> {
    * @returns The etag of the stored blob.
    */
   putRaw(
-    value: BlobResponse<T>,
+    value: BlobResponse<Buffer | string>,
     options?: BlobOptions,
   ): Promise<{ etag: string }>;
 
@@ -212,7 +212,7 @@ export interface Blob<T> {
    * Store raw content with metadata
    */
   putRawWithMetadata(
-    value: T,
+    value: Buffer | string,
     metadata: Record<string, string>,
     options?: BlobOptions,
   ): Promise<{ etag: string }>;

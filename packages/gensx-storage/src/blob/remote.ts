@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
- 
+
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Readable } from "node:stream";
 
@@ -128,7 +128,7 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async getRaw(): Promise<BlobResponse<T> | null> {
+  async getRaw(): Promise<BlobResponse<Buffer | string> | null> {
     try {
       const response = await fetch(`${this.baseUrl}/blobs/${this.key}`, {
         headers: {
@@ -147,7 +147,16 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") ?? undefined;
+      let data: Buffer | string;
+
+      if (contentType?.startsWith("text/") || contentType?.includes("json")) {
+        data = await response.text();
+      } else {
+        const arrayBuffer = await response.arrayBuffer();
+        data = Buffer.from(arrayBuffer);
+      }
+
       const etag = response.headers.get("etag") ?? undefined;
       const lastModified = response.headers.get("last-modified")
         ? new Date(response.headers.get("last-modified")!)
@@ -155,7 +164,6 @@ export class RemoteBlob<T> implements Blob<T> {
       const size = response.headers.get("content-length")
         ? parseInt(response.headers.get("content-length")!, 10)
         : undefined;
-      const contentType = response.headers.get("content-type") ?? undefined;
       const metadata = response.headers.get("x-blob-metadata")
         ? (JSON.parse(response.headers.get("x-blob-metadata")!) as Record<
             string,
@@ -164,7 +172,7 @@ export class RemoteBlob<T> implements Blob<T> {
         : undefined;
 
       return {
-        data: data as T,
+        data,
         etag,
         lastModified,
         size,
@@ -319,7 +327,7 @@ export class RemoteBlob<T> implements Blob<T> {
   }
 
   async putRaw(
-    value: BlobResponse<T>,
+    value: BlobResponse<Buffer | string>,
     options?: BlobOptions,
   ): Promise<{ etag: string }> {
     try {
@@ -327,13 +335,13 @@ export class RemoteBlob<T> implements Blob<T> {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": value.contentType ?? "application/json",
+          "Content-Type": value.contentType ?? "application/octet-stream",
           ...(options?.etag && { "If-Match": options.etag }),
           ...(options?.metadata && {
             "x-blob-metadata": JSON.stringify(options.metadata),
           }),
         },
-        body: JSON.stringify(value.data),
+        body: value.data,
       });
 
       if (!response.ok) {
@@ -605,7 +613,7 @@ export class RemoteBlob<T> implements Blob<T> {
   }
 
   async putRawWithMetadata(
-    value: T,
+    value: Buffer | string,
     metadata: Record<string, string>,
     options?: BlobOptions,
   ): Promise<{ etag: string }> {
@@ -614,11 +622,14 @@ export class RemoteBlob<T> implements Blob<T> {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
+          "Content-Type":
+            typeof value === "string"
+              ? "text/plain"
+              : "application/octet-stream",
           "x-blob-metadata": JSON.stringify(metadata),
           ...(options?.etag && { "If-Match": options.etag }),
         },
-        body: JSON.stringify(value),
+        body: value,
       });
 
       if (!response.ok) {

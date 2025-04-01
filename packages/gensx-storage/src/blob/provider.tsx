@@ -5,7 +5,7 @@ import { Component } from "@gensx/core";
 import { BlobContext } from "./context.js";
 import { FilesystemBlobStorage } from "./filesystem.js";
 import { RemoteBlobStorage } from "./remote.js";
-import { BlobProviderProps, CloudBlobProviderProps } from "./types.js";
+import { BlobProviderProps } from "./types.js";
 
 /**
  * BlobProvider component that provides blob storage to its children
