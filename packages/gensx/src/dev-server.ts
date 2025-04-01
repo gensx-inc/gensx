@@ -5,10 +5,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { serve } from "@hono/node-server";
+import { Ajv, ErrorObject } from "ajv/dist/ajv.js";
 import { Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { Definition } from "typescript-json-schema";
+import { ulid } from "ulidx";
 
 /**
  * Custom error classes for consistent error handling
@@ -96,6 +98,7 @@ export class GensxServer {
   private server: ReturnType<typeof serve> | null = null;
   private org = "local";
   private project: string;
+  private ajv: Ajv;
 
   /**
    * Create a new GenSX dev server
@@ -113,7 +116,7 @@ export class GensxServer {
     this.workflowMap = new Map();
     this.schemaMap = new Map(Object.entries(schemas));
     this.executionsMap = new Map();
-
+    this.ajv = new Ajv();
     this.org = org;
     this.project = project;
 
@@ -136,12 +139,15 @@ export class GensxServer {
 
       // Handle different types of errors
       if (err instanceof NotFoundError) {
-        return c.json({ error: err.message }, 404);
+        return c.json({ status: "error", error: err.message }, 404);
       } else if (err instanceof BadRequestError) {
-        return c.json({ error: err.message }, 400);
+        return c.json({ status: "error", error: err.message }, 400);
       } else {
         const message = err instanceof Error ? err.message : String(err);
-        return c.json({ error: "Internal server error", message }, 500);
+        return c.json(
+          { status: "error", error: "Internal server error", message },
+          500,
+        );
       }
     });
   }
@@ -220,6 +226,41 @@ export class GensxServer {
   }
 
   /**
+   * Validate input against schema
+   * Throws BadRequestError if validation fails
+   */
+  private validateInput(workflowName: string, input: unknown): void {
+    // Check if input is missing
+    if (input === undefined) {
+      throw new BadRequestError(
+        "Missing required 'input' field in request body",
+      );
+    }
+
+    // Get schema for this workflow
+    const schema = this.schemaMap.get(workflowName);
+    if (!schema?.input) {
+      // If no schema, we can't validate
+      return;
+    }
+
+    // Use Ajv to validate the input against the schema
+    const validate = this.ajv.compile(schema.input);
+    const valid = validate(input);
+
+    if (!valid) {
+      const errors = validate.errors ?? [];
+      const errorMessages = errors
+        .map((err: ErrorObject) => `${err.instancePath} ${err.message}`)
+        .join("; ");
+
+      throw new BadRequestError(
+        `Input validation failed: Input${errorMessages}`,
+      );
+    }
+  }
+
+  /**
    * Set up server routes
    */
   private setupRoutes(): void {
@@ -246,7 +287,7 @@ export class GensxServer {
 
         // Get schema info
         const schema = this.schemaMap.get(workflowName);
-        const id = _generateWorkflowId(workflowName);
+        const id = generateWorkflowId(workflowName);
         const now = new Date().toISOString();
 
         return c.json({
@@ -276,10 +317,11 @@ export class GensxServer {
           // Get request body for workflow parameters
           const body = await this.parseJsonBody(c);
 
-          // Create a unique execution ID
-          const executionId = _generateWorkflowId(
-            `${workflowName}-${Date.now()}`,
-          );
+          // Validate that input exists and matches schema
+          this.validateInput(workflowName, body.input);
+
+          // Only create execution ID after validation succeeds
+          const executionId = generateExecutionId();
           const now = new Date().toISOString();
 
           // Initialize execution record
@@ -312,11 +354,26 @@ export class GensxServer {
           });
         } catch (error) {
           if (error instanceof BadRequestError) {
-            throw error;
+            console.error(
+              `❌ Validation error in workflow '${workflowName}':`,
+              error.message,
+            );
+            return c.json(
+              {
+                status: "error",
+                error: error.message,
+              },
+              400,
+            );
           }
+
           console.error(`❌ Error starting workflow '${workflowName}':`, error);
-          throw new ServerError(
-            error instanceof Error ? error.message : String(error),
+          return c.json(
+            {
+              status: "error",
+              error: error instanceof Error ? error.message : String(error),
+            },
+            500,
           );
         }
       },
@@ -406,16 +463,18 @@ export class GensxServer {
         // Will throw NotFoundError if workflow doesn't exist
         const workflow = this.getWorkflowOrThrow(workflowName);
 
-        // Create a unique execution ID for tracking
-        const executionId = _generateWorkflowId(
-          `${workflowName}-${Date.now()}`,
-        );
-        const now = new Date().toISOString();
         let body: Record<string, unknown> = {};
 
         try {
           // Get request body for workflow parameters
           body = await this.parseJsonBody(c);
+
+          // Validate that input exists and matches schema
+          this.validateInput(workflowName, body.input);
+
+          // Only create execution ID after validation succeeds
+          const executionId = generateExecutionId();
+          const now = new Date().toISOString();
 
           console.info(
             `⚡️ Executing workflow '${workflowName}' with params:`,
@@ -479,41 +538,31 @@ export class GensxServer {
             },
           });
         } catch (error) {
+          // For validation errors, don't create an execution record
+          if (error instanceof BadRequestError) {
+            console.error(
+              `❌ Validation error in workflow '${workflowName}':`,
+              error.message,
+            );
+            return c.json(
+              {
+                status: "error",
+                error: error.message,
+              },
+              400,
+            );
+          }
+
           console.error(
             `❌ Error executing workflow '${workflowName}':`,
             error,
           );
 
-          // If there's no execution record yet (error happened before we created one)
-          if (!this.executionsMap.has(executionId)) {
-            const errorExecution: WorkflowExecution = {
-              id: executionId,
-              workflowName,
-              executionStatus: "failed",
-              createdAt: new Date().toISOString(),
-              finishedAt: new Date().toISOString(),
-              input: body.input,
-              error: error instanceof Error ? error.message : String(error),
-            };
-            this.executionsMap.set(executionId, errorExecution);
-          } else {
-            // Update existing execution with error
-            const execution = this.executionsMap.get(executionId);
-            if (execution) {
-              execution.executionStatus = "failed";
-              execution.error =
-                error instanceof Error ? error.message : String(error);
-              execution.finishedAt = new Date().toISOString();
-              this.executionsMap.set(executionId, execution);
-            }
-          }
-
+          // For other errors, proceed with server error
           return c.json(
             {
-              error: "Workflow execution failed",
-              message: error instanceof Error ? error.message : String(error),
-              executionId: executionId,
-              executionStatus: "failed",
+              status: "error",
+              error: error instanceof Error ? error.message : String(error),
             },
             500,
           );
@@ -751,7 +800,7 @@ export class GensxServer {
       // Get schema information
       const schema = this.schemaMap.get(name);
       // Generate a unique ID for the workflow
-      const id = _generateWorkflowId(name);
+      const id = generateWorkflowId(name);
       const now = new Date().toISOString();
 
       return {
@@ -855,7 +904,7 @@ export function createServer(
 /**
  * Generate a deterministic ID for a workflow
  */
-function _generateWorkflowId(name: string): string {
+function generateWorkflowId(name: string): string {
   const prefix = "01";
   const encoded = Buffer.from(name)
     .toString("base64")
@@ -864,4 +913,9 @@ function _generateWorkflowId(name: string): string {
     .substring(0, 22);
 
   return `${prefix}${encoded}`;
+}
+
+function generateExecutionId(): string {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return ulid();
 }
