@@ -13,7 +13,6 @@ mkdir -p /tmp/project
 for file in * .*; do
   [[ "$file" == "." || "$file" == ".." ]] && continue
   [[ "$file" == "node_modules" || "$file" == "dist" || "$file" == "dist.tar.gz" || "$file" == ".gensx" ]] && continue
-  echo "copying $file"
   cp -r "$file" /tmp/project/
 done
 

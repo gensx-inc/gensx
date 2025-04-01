@@ -32,6 +32,8 @@ export async function bundleWorkflow(
   const packageJsonDir = path.dirname(packageJsonPath);
   const relativeWorkflowPath = path.relative(packageJsonDir, workflowPath);
 
+  const buildContainerTag = process.env.BUILD_CONTAINER_TAG ?? "latest";
+
   let stdout = "";
   let stderr = "";
   try {
@@ -45,7 +47,7 @@ export async function bundleWorkflow(
         `${outDir}:/out`,
         "-e",
         `WORKFLOW_PATH=${relativeWorkflowPath}`,
-        "gensx-bundler",
+        `gensx/builder:${buildContainerTag}`,
       ]);
       process.stdout.on("data", (data: Buffer) => {
         stdout += data.toString();
