@@ -13,6 +13,7 @@ import { exec } from "../../src/utils/exec.js";
 vi.mock("../../src/utils/exec.js", async (importOriginal) => {
   const actual = await importOriginal<typeof exec>();
   return {
+    // eslint-disable-next-line @typescript-eslint/no-misused-spread
     ...actual,
     exec: vi.fn(),
   };

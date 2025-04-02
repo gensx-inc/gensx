@@ -77,9 +77,7 @@ export class ExecutionContext {
     private parent?: ExecutionContext,
     public onComplete?: () => Promise<void> | void,
   ) {
-    if (!this.context[WORKFLOW_CONTEXT_SYMBOL]) {
-      this.context[WORKFLOW_CONTEXT_SYMBOL] = createWorkflowContext();
-    }
+    this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext();
   }
 
   withContext(

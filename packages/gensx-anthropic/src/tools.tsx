@@ -21,7 +21,7 @@ import {
 
 // Wrapper for tool parameter schemas
 export class GSXTool<TSchema extends gensx.GSXToolAnySchema> {
-  public readonly type = "function" as const;
+  public readonly type = "function";
   public readonly definition: Tool;
   private readonly executionComponent: ReturnType<typeof gensx.Component>;
 
