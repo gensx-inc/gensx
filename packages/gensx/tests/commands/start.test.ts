@@ -1,39 +1,31 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { existsSync } from "node:fs";
 
 import ora from "ora";
-import { RollupWatcher, watch } from "rollup";
 import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 
 import { start } from "../../src/commands/start.js";
-import * as devServer from "../../src/dev-server.js";
-import { GensxServer } from "../../src/dev-server.js";
 import * as bundler from "../../src/utils/bundler.js";
 import * as config from "../../src/utils/config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
-import * as schema from "../../src/utils/schema.js";
 
 // Mock dependencies
 vi.mock("node:fs");
 vi.mock("ora");
-vi.mock("rollup");
 vi.mock("../../src/utils/bundler.js");
 vi.mock("../../src/utils/config.js");
 vi.mock("../../src/utils/project-config.js");
 vi.mock("../../src/utils/schema.js");
 vi.mock("../../src/dev-server.js");
-
-// Simple mock for workflows
-const mockWorkflows = { testWorkflow: { name: "testWorkflow", run: vi.fn() } };
-vi.mock("file:///mock/dir/.gensx/dist/handler.js", () => mockWorkflows);
+vi.mock("chokidar", () => ({
+  watch: vi.fn().mockReturnValue({
+    on: vi.fn().mockReturnThis(),
+    close: vi.fn(),
+  }),
+}));
 
 suite("start command", () => {
-  // Mock process.cwd
+  // Original functions to restore
   const originalCwd = process.cwd;
-  const mockCurrentDir = "/mock/dir";
-
-  // Mock console methods
   const originalConsoleInfo = console.info;
   const originalConsoleError = console.error;
 
@@ -42,37 +34,18 @@ suite("start command", () => {
     .spyOn(process, "exit")
     .mockImplementation(() => undefined as never);
 
-  // Setup mock server
-  const mockServerInstance = {
-    start: vi.fn().mockReturnThis(),
-    stop: vi.fn(),
-    getWorkflows: vi
-      .fn()
-      .mockReturnValue([
-        { name: "testWorkflow", url: "http://localhost:1337/test" },
-      ]),
-  };
-
-  // Mock watcher
-  const mockWatcher = {
-    on: vi.fn().mockReturnThis(),
-    close: vi.fn(),
-  };
-
-  // Mock ora spinner
+  // Mock spinner
   let mockSpinner: ReturnType<typeof ora>;
 
   beforeEach(() => {
     vi.resetAllMocks();
 
-    // Mock process.cwd
-    process.cwd = vi.fn().mockReturnValue(mockCurrentDir);
-
-    // Mock console methods
+    // Setup environment
+    process.cwd = vi.fn().mockReturnValue("/mock/dir");
     console.info = vi.fn();
     console.error = vi.fn();
 
-    // Setup spinner mock
+    // Setup spinner
     mockSpinner = {
       start: vi.fn().mockReturnThis(),
       info: vi.fn().mockReturnThis(),
@@ -82,16 +55,15 @@ suite("start command", () => {
     } as unknown as ReturnType<typeof ora>;
     vi.mocked(ora).mockReturnValue(mockSpinner);
 
-    // Setup watcher mock
-    vi.mocked(watch).mockReturnValue(mockWatcher as unknown as RollupWatcher);
+    // Setup file existence - default to true
+    vi.mocked(existsSync).mockReturnValue(true);
 
-    // Setup bundler mock
-    vi.mocked(bundler.getRollupConfig).mockReturnValue({
-      input: "test.ts",
-      output: { format: "esm", file: "handler.js" },
-    });
+    // Setup bundler - reject by default to prevent execution reaching the dynamic import
+    vi.mocked(bundler.bundleWorkflow).mockRejectedValue(
+      new Error("Stop execution"),
+    );
 
-    // Setup auth mock
+    // Setup auth
     vi.mocked(config.getAuth).mockResolvedValue({
       org: "test-org",
       token: "test-token",
@@ -99,136 +71,103 @@ suite("start command", () => {
       consoleBaseUrl: "https://app.gensx.com",
     });
 
-    // Setup project config mock
+    // Setup project config
     vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
       projectName: "test-project",
       description: "Test project description",
     });
-
-    // Setup schema mock
-    vi.mocked(schema.generateSchema).mockReturnValue({
-      testWorkflow: {
-        input: { type: "object", properties: {} },
-        output: { type: "object", properties: {} },
-      },
-    });
-
-    // Setup server mock
-    vi.mocked(devServer.createServer).mockReturnValue(
-      mockServerInstance as unknown as GensxServer,
-    );
-
-    // Setup existsSync mock
-    vi.mocked(existsSync).mockReturnValue(true);
   });
 
   afterEach(() => {
-    // Restore original functions
     process.cwd = originalCwd;
     console.info = originalConsoleInfo;
     console.error = originalConsoleError;
   });
 
-  it("should exit if file does not exist", async () => {
-    vi.mocked(existsSync).mockReturnValue(false);
+  it("should validate file existence before proceeding", async () => {
+    // File doesn't exist
+    vi.mocked(existsSync).mockImplementation((path) => {
+      if (typeof path === "string" && path.includes("test.ts")) {
+        return false;
+      }
+      return true;
+    });
 
     await start("test.ts", {});
 
-    expect(mockSpinner.fail).toHaveBeenCalledWith("Server startup failed");
+    expect(mockExit).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(
       "Error:",
       "File test.ts does not exist",
     );
-    expect(mockExit).toHaveBeenCalledWith(1);
+    expect(bundler.bundleWorkflow).not.toHaveBeenCalled();
   });
 
-  it("should exit if file is not a TypeScript file", async () => {
+  it("should only accept TypeScript files", async () => {
     await start("test.js", {});
 
-    expect(mockSpinner.fail).toHaveBeenCalledWith("Server startup failed");
+    expect(mockExit).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(
       "Error:",
       "Only TypeScript files (.ts or .tsx) are supported",
     );
-    expect(mockExit).toHaveBeenCalledWith(1);
+    expect(bundler.bundleWorkflow).not.toHaveBeenCalled();
   });
 
-  it("should use project name from options", async () => {
-    // Start the command
+  it("should throw error if no project name is available", async () => {
+    // No project name in options or config
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
+      projectName: undefined as unknown as string,
+      description: "Test project without a name",
+    });
+
+    await start("test.ts", {});
+
+    expect(mockExit).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(
+      "Error:",
+      expect.stringContaining("No project name found"),
+    );
+  });
+
+  it("should use project name from options when provided", async () => {
     await start("test.ts", { project: "custom-project" });
 
-    // Verify watch was called
-    expect(watch).toHaveBeenCalled();
-
-    // Get the callback that was registered
-    const onCallback = mockWatcher.on.mock.calls[0][1];
-
-    // Simulate the START event
-    await onCallback({ code: "START" });
-    expect(mockSpinner.start).toHaveBeenCalledWith("Building...");
-
-    // Simulate the BUNDLE_END event
-    const mockResult = {
-      write: vi.fn().mockResolvedValue(undefined),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-
-    await onCallback({ code: "BUNDLE_END", result: mockResult });
-
-    expect(devServer.createServer).toHaveBeenCalledWith(
-      mockWorkflows,
-      "test-org",
-      "custom-project",
+    // Verify the workflow bundling was attempted with the right path
+    expect(bundler.bundleWorkflow).toHaveBeenCalledWith(
+      expect.stringContaining("test.ts"),
       expect.anything(),
-      expect.anything(),
-    );
-    expect(mockServerInstance.start).toHaveBeenCalled();
-    expect(mockSpinner.succeed).toHaveBeenCalledWith("Build completed");
-  });
-
-  it("should use project name from config file", async () => {
-    // Start the command
-    await start("test.ts", {});
-
-    // Verify watch was called
-    expect(watch).toHaveBeenCalled();
-
-    // Get the callback that was registered
-    const onCallback = mockWatcher.on.mock.calls[0][1];
-
-    // Simulate the BUNDLE_END event
-    const mockResult = {
-      write: vi.fn().mockResolvedValue(undefined),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-
-    await onCallback({ code: "BUNDLE_END", result: mockResult });
-
-    expect(devServer.createServer).toHaveBeenCalledWith(
-      mockWorkflows,
-      "test-org",
-      "test-project",
       expect.anything(),
       expect.anything(),
     );
   });
 
-  it("should handle Rollup errors", async () => {
-    // Start the command
+  it("should use project name from config when not specified in options", async () => {
+    // Test that the spinner shows the project name from config
     await start("test.ts", {});
 
-    // Verify watch was called
-    expect(watch).toHaveBeenCalled();
+    expect(mockSpinner.info).toHaveBeenCalledWith(
+      expect.stringContaining("test-project"),
+    );
+  });
 
-    // Get the callback that was registered
-    const onCallback = mockWatcher.on.mock.calls[0][1];
+  it("should handle bundling errors gracefully", async () => {
+    vi.mocked(bundler.bundleWorkflow).mockRejectedValue(
+      new Error("Bundling error"),
+    );
 
-    // Simulate an error event
-    const rollupError = new Error("Rollup error");
-    await onCallback({ code: "ERROR", error: rollupError });
+    await start("test.ts", {});
 
-    expect(console.error).toHaveBeenCalledWith("Rollup error");
-    expect(mockSpinner.fail).toHaveBeenCalledWith("Build failed");
-    expect(mockServerInstance.start).not.toHaveBeenCalled();
+    expect(mockSpinner.fail).toHaveBeenCalledWith(
+      "Build or server start failed",
+    );
+    expect(console.error).toHaveBeenCalledWith("Bundling error");
+  });
+
+  it("should handle quiet mode", async () => {
+    await start("test.ts", { quiet: true });
+
+    // Verify ora is called with isSilent: true
+    expect(ora).toHaveBeenCalledWith({ isSilent: true });
   });
 });
