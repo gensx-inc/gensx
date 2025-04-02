@@ -174,10 +174,10 @@ export const mockCreateMethod = vi
 // Create the mock OpenAI class
 const MockOpenAI = vi
   .fn()
-  .mockImplementation((config: { baseURL?: string; apiKey: string }) => {
+  .mockImplementation((config?: { baseURL?: string; apiKey?: string }) => {
     return {
-      baseURL: config.baseURL,
-      apiKey: config.apiKey,
+      baseURL: config?.baseURL,
+      apiKey: config?.apiKey,
       chat: {
         completions: {
           create: mockCreateMethod,

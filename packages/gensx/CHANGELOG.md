@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.17](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.16...gensx-v0.3.17) (2025-04-01)
+
+
+### ✨ New Features
+
+* Bundle with support for native dependencies. ([#525](https://github.com/gensx-inc/gensx/issues/525)) ([7574af5](https://github.com/gensx-inc/gensx/commit/7574af5ffb42416cae936ea9a08b73b93a834a32))
+
+## [0.3.16](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.15...gensx-v0.3.16) (2025-03-31)
+
+
+### 🐛 Bug Fixes
+
+* updating cli to match with new api shape ([#530](https://github.com/gensx-inc/gensx/issues/530)) ([f25ec1f](https://github.com/gensx-inc/gensx/commit/f25ec1faef3ba6e454304bbce9312d3446329288))
+
 ## [0.3.15](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.14...gensx-v0.3.15) (2025-03-26)
 
 

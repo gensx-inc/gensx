@@ -19,7 +19,7 @@ import { OpenAIChatCompletion, OpenAIChatCompletionOutput } from "./openai.js";
 
 // Wrapper for tool parameter schemas
 export class GSXTool<TSchema extends GSXToolAnySchema> {
-  public readonly type = "function" as const;
+  public readonly type = "function";
   public readonly definition: ChatCompletionTool;
   private readonly executionComponent: ReturnType<typeof gensx.Component>;
 

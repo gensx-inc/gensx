@@ -5,12 +5,13 @@
   "private": true,
   "scripts": {
     "#test-comment": "this hangs locally for some reason, so only run in CI",
-    "test": "if [ \"$CI\" = \"true\" ]; then deno task compile:macos-x64; fi"
+    "test": "if [ \"$CI\" = \"true\" ]; then deno task compile:macos-x64; fi",
+    "test:local": "deno task compile:macos-x64"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "deno": "^2.2.4"
+    "deno": "^2.2.6"
   }
 }
