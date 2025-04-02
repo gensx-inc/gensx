@@ -26,7 +26,7 @@ export async function bundleWorkflow(
   // also mount the output directory
 
   // find the closest directory to the workflow path that contains a package.json
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+   
   const packageJsonPath = await findUp("package.json", {
     cwd: path.dirname(workflowPath),
   });
@@ -35,7 +35,7 @@ export async function bundleWorkflow(
     throw new Error("No package.json found");
   }
 
-  const packageJsonDir = path.dirname(packageJsonPath as string);
+  const packageJsonDir = path.dirname(packageJsonPath);
   const relativeWorkflowPath = path.relative(packageJsonDir, workflowPath);
 
   if (useDocker) {

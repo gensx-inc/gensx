@@ -22,6 +22,7 @@
     "ajv": "npm:ajv",
     "axios": "npm:axios",
     "builtin-modules": "npm:builtin-modules",
+    "chokidar": "npm:chokidar",
     "commander": "npm:commander",
     "consola": "npm:consola",
     "enquirer": "npm:enquirer",
