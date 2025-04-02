@@ -99,12 +99,6 @@ export interface Blob<T> {
   getString(): Promise<string | null>;
 
   /**
-   * Get the blob as binary data.
-   * @returns The blob data as a Buffer, or null if not found.
-   */
-  getBinary(): Promise<Buffer | null>;
-
-  /**
    * Get the raw blob response with metadata.
    * @returns The blob response with metadata, or null if not found.
    */
@@ -131,14 +125,6 @@ export interface Blob<T> {
    * @returns The etag of the stored blob.
    */
   putString(value: string, options?: BlobOptions): Promise<{ etag: string }>;
-
-  /**
-   * Put binary data into the blob.
-   * @param value The binary data to store.
-   * @param options Optional metadata and etag for conditional updates.
-   * @returns The etag of the stored blob.
-   */
-  putBinary(value: Buffer, options?: BlobOptions): Promise<{ etag: string }>;
 
   /**
    * Put raw data into the blob with metadata.
@@ -200,15 +186,6 @@ export interface Blob<T> {
   ): Promise<{ etag: string }>;
 
   /**
-   * Store binary content with metadata
-   */
-  putBinaryWithMetadata(
-    value: Buffer,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }>;
-
-  /**
    * Store raw content with metadata
    */
   putRawWithMetadata(
@@ -231,11 +208,6 @@ export interface BlobStorage {
    * List all blobs with the given prefix
    */
   listBlobs(prefix?: string): Promise<string[]>;
-
-  /**
-   * Check if the storage is ready and accessible
-   */
-  isReady(): Promise<boolean>;
 }
 
 /**

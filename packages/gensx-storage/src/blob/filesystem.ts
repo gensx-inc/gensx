@@ -100,38 +100,20 @@ class FilesystemBlob<T> implements Blob<T> {
     }
   }
 
-  async getBinary(): Promise<Buffer | null> {
-    try {
-      return await fs.readFile(this.filePath);
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-        return null;
-      }
-      throw handleFsError(err, "getBinary", this.filePath);
-    }
-  }
-
   async getRaw(): Promise<BlobResponse<Buffer | string> | null> {
     try {
-      const content = await fs.readFile(this.filePath);
+      const content = await fs.readFile(this.filePath, "utf8");
       const stats = await fs.stat(this.filePath);
       const metadata = await this.getMetadata();
-      const contentType = metadata?.contentType ?? "application/octet-stream";
 
       const etag = calculateEtag(content);
 
-      // Determine if content should be returned as string or buffer
-      const data: Buffer | string =
-        contentType.startsWith("text/") || contentType.includes("json")
-          ? content.toString("utf8")
-          : content;
-
       return {
-        data,
+        data: content,
         etag,
         lastModified: stats.mtime,
         size: stats.size,
-        contentType,
+        contentType: metadata?.contentType ?? "text/plain",
         metadata: metadata ?? undefined,
       };
     } catch (err) {
@@ -220,64 +202,19 @@ class FilesystemBlob<T> implements Blob<T> {
     }
   }
 
-  async putBinary(
-    value: Buffer,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-      const newEtag = calculateEtag(value);
-
-      if (options?.etag) {
-        try {
-          const existingContent = await fs.readFile(this.filePath);
-          const existingEtag = calculateEtag(existingContent);
-
-          if (existingEtag !== options.etag) {
-            throw new BlobError(
-              BlobErrorCode.CONFLICT,
-              `ETag mismatch: expected ${options.etag} but found ${existingEtag}`,
-            );
-          }
-        } catch (err) {
-          if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-            throw handleFsError(err, "putBinary:etag-check", this.filePath);
-          }
-        }
-      }
-
-      await fs.writeFile(this.filePath, value);
-
-      if (options?.contentType) {
-        const metadata = (await this.getMetadata()) ?? {};
-        metadata.contentType = options.contentType;
-        await this.updateMetadata(metadata);
-      }
-
-      return { etag: newEtag };
-    } catch (err) {
-      throw handleFsError(err, "putBinary", this.filePath);
-    }
-  }
-
   async putRaw(
     value: BlobResponse<Buffer | string>,
     options?: BlobOptions,
   ): Promise<{ etag: string }> {
     try {
       await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-
-      // Convert string data to buffer if needed
       const content =
-        typeof value.data === "string"
-          ? Buffer.from(value.data, "utf8")
-          : value.data;
-
+        typeof value.data === "string" ? value.data : value.data.toString();
       const newEtag = calculateEtag(content);
 
       if (options?.etag) {
         try {
-          const existingContent = await fs.readFile(this.filePath);
+          const existingContent = await fs.readFile(this.filePath, "utf8");
           const existingEtag = calculateEtag(existingContent);
 
           if (existingEtag !== options.etag) {
@@ -293,7 +230,7 @@ class FilesystemBlob<T> implements Blob<T> {
         }
       }
 
-      await fs.writeFile(this.filePath, content);
+      await fs.writeFile(this.filePath, content, "utf8");
 
       // Store metadata if present
       if (value.metadata) {
@@ -341,69 +278,21 @@ class FilesystemBlob<T> implements Blob<T> {
     }
   }
 
-  async putBinaryWithMetadata(
-    value: Buffer,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      const result = await this.putBinary(value, options);
-      await this.updateMetadata(metadata);
-      return result;
-    } catch (err) {
-      throw handleFsError(err, "putBinaryWithMetadata", this.filePath);
-    }
-  }
-
   async putRawWithMetadata(
     value: Buffer | string,
     metadata: Record<string, string>,
     options?: BlobOptions,
   ): Promise<{ etag: string }> {
     try {
-      await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-
-      // Convert string data to buffer if needed
-      const content =
-        typeof value === "string" ? Buffer.from(value, "utf8") : value;
-
-      const newEtag = calculateEtag(content);
-
-      if (options?.etag) {
-        try {
-          const existingContent = await fs.readFile(this.filePath);
-          const existingEtag = calculateEtag(existingContent);
-
-          if (existingEtag !== options.etag) {
-            throw new BlobError(
-              BlobErrorCode.CONFLICT,
-              `ETag mismatch: expected ${options.etag} but found ${existingEtag}`,
-            );
-          }
-        } catch (err) {
-          if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-            throw handleFsError(
-              err,
-              "putRawWithMetadata:etag-check",
-              this.filePath,
-            );
-          }
-        }
-      }
-
-      await fs.writeFile(this.filePath, content);
-
-      // Store metadata
-      await this.updateMetadata(metadata);
-
-      // Store content type if specified
-      if (options?.contentType) {
-        const currentMetadata = (await this.getMetadata()) ?? {};
-        currentMetadata.contentType = options.contentType;
-        await this.updateMetadata(currentMetadata);
-      }
-
-      return { etag: newEtag };
+      const result = await this.putRaw(
+        {
+          data: value,
+          metadata,
+          contentType: options?.contentType,
+        },
+        options,
+      );
+      return result;
     } catch (err) {
       throw handleFsError(err, "putRawWithMetadata", this.filePath);
     }
@@ -646,15 +535,6 @@ export class FilesystemBlobStorage implements BlobStorage {
       return allFiles;
     } catch (err) {
       throw handleFsError(err, "listBlobs", this.rootDir);
-    }
-  }
-
-  async isReady(): Promise<boolean> {
-    try {
-      await this.ensureRootDir();
-      return true;
-    } catch {
-      return false;
     }
   }
 }
