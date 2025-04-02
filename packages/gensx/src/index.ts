@@ -76,9 +76,7 @@ export async function runCLI() {
               "Environment variables must be in the format KEY=value",
             );
           }
-          if (value === undefined) {
-            value = process.env[key];
-          }
+          value ??= process.env[key];
           if (value === undefined) {
             throw new Error(`Environment variable ${key} has no value.`);
           }

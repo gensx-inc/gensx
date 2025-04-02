@@ -51,6 +51,15 @@ export default [
     },
   },
   {
+    files: ["**/eslint.config.mjs"],
+    rules: {
+      "n/no-unsupported-features/node-builtins": [
+        "error",
+        { version: ">=22.0.0" },
+      ],
+    },
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     plugins: {
       "@typescript-eslint": tseslint,

@@ -24,26 +24,21 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.1",
-    "@parcel/bundler-library": "^2.14.1",
-    "@parcel/config-default": "^2.14.1",
-    "@parcel/transformer-typescript-types": "2.14.1",
-    "@typescript-eslint/eslint-plugin": "^8.19.1",
-    "@typescript-eslint/parser": "^8.19.1",
-    "eslint": "^9.17.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
+    "eslint": "^9.23.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-n": "catalog:",
-    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-prettier": "^5.2.5",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-vitest": "^0.5.4",
-    "parcel": "^2.14.1",
-    "prettier": "^3.0.0",
+    "prettier": "^3.5.3",
     "turbo": "^2.4.4",
     "typescript": "catalog:",
     "vite": "catalog:"
   },
   "dependencies": {
-    "@tsconfig/node20": "^20.1.4",
+    "@tsconfig/node20": "^20.1.5",
     "tsx": "catalog:",
     "vitest": "catalog:"
   }

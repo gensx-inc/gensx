@@ -209,9 +209,7 @@ export async function saveConfig(
 export async function resolveApiBaseUrl(
   config?: ConfigFileFormat,
 ): Promise<string> {
-  if (!config) {
-    config = await readConfigFile();
-  }
+  config ??= await readConfigFile();
 
   return (
     process.env.GENSX_API_BASE_URL ?? config.api?.baseUrl ?? DEFAULT_API_URL
@@ -221,9 +219,7 @@ export async function resolveApiBaseUrl(
 export async function resolveAppBaseUrl(
   config?: ConfigFileFormat,
 ): Promise<string> {
-  if (!config) {
-    config = await readConfigFile();
-  }
+  config ??= await readConfigFile();
 
   return (
     process.env.GENSX_APP_BASE_URL ??
