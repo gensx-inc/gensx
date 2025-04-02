@@ -40,7 +40,7 @@ export const SearchArxiv = gensx.Component<SearchArxivProps, ArxivEntry[]>(
     const parser = new Parser();
     const parsedResult = await parser.parseStringPromise(xml);
 
-    const entries: ArxivEntry[] = (parsedResult.feed.entry || []).map(
+    const entries: ArxivEntry[] = (parsedResult.feed.entry ?? []).map(
       (entry: RawArxivEntry) => ({
         title: entry.title?.[0] ?? "",
         summary: entry.summary?.[0] ?? "",
