@@ -32,15 +32,12 @@ export async function build(file: string, options: BuildOptions = {}) {
     const outDir = options.outDir ?? resolve(process.cwd(), ".gensx");
     const schemaFile = resolve(outDir, "schema.json");
 
-    // Default to using Docker for production builds
-    const useDocker = true;
     spinner.start("Building workflow using Docker");
 
     const bundleFilePath = await bundleWorkflow(
       absolutePath,
       outDir,
       options.watch ?? false,
-      useDocker,
     );
 
     spinner.succeed();

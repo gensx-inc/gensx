@@ -94,8 +94,15 @@ suite("GenSX Dev Server", () => {
     console.warn = originalConsoleWarn;
     console.error = originalConsoleError;
 
+    // Temporarily silence warnings during server.stop()
+    const tempWarn = console.warn;
+    console.warn = vi.fn();
+
     // Stop the server
     server.stop();
+
+    // Restore console.warn
+    console.warn = tempWarn;
   });
 
   it("should create server instance with workflows", () => {

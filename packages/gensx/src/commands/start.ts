@@ -1,14 +1,14 @@
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { resolve } from "node:path";
 
 import ora from "ora";
 import pc from "picocolors";
+import * as ts from "typescript";
 import { Definition } from "typescript-json-schema";
 
 import { createServer } from "../dev-server.js";
-import { bundleWorkflow } from "../utils/bundler.js";
 import { getAuth } from "../utils/config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { generateSchema } from "../utils/schema.js";
@@ -74,6 +74,77 @@ export async function start(file: string, options: StartOptions) {
     spinner.info("Starting development server...");
     const outDir = resolve(process.cwd(), ".gensx");
 
+    // Ensure outDir exists
+    if (!existsSync(outDir)) {
+      mkdirSync(outDir, { recursive: true });
+    }
+
+    // Function to compile TypeScript file
+    function compileTypeScript(tsFile: string): string {
+      // Find and parse tsconfig.json
+      const tsconfigPath = resolve(process.cwd(), "tsconfig.json");
+      if (!existsSync(tsconfigPath)) {
+        throw new Error("Could not find tsconfig.json");
+      }
+
+      let tsconfig;
+      try {
+        const tsconfigContent = readFileSync(tsconfigPath, "utf-8");
+        tsconfig = ts.parseJsonConfigFileContent(
+          JSON.parse(tsconfigContent),
+          ts.sys,
+          process.cwd(),
+        );
+      } catch (error) {
+        throw new Error(
+          `Failed to parse tsconfig.json: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+
+      // Create TypeScript program
+      const program = ts.createProgram([tsFile], tsconfig.options);
+      const sourceFile = program.getSourceFile(tsFile);
+
+      if (!sourceFile) {
+        throw new Error(`Could not find source file: ${tsFile}`);
+      }
+
+      // Get the output directory from tsconfig or use default
+      const configOutDir = tsconfig.options.outDir ?? ".gensx/dist";
+      const absoluteOutDir = resolve(process.cwd(), configOutDir);
+
+      // Ensure output directory exists
+      if (!existsSync(absoluteOutDir)) {
+        mkdirSync(absoluteOutDir, { recursive: true });
+      }
+
+      // Get relative path to maintain directory structure
+      const relativeToRoot = path.relative(process.cwd(), tsFile);
+      const outputPath = path.join(
+        absoluteOutDir,
+        relativeToRoot.replace(/\.tsx?$/, ".js"),
+      );
+
+      // Compile the file
+      const result = program.emit();
+      const diagnostics = ts
+        .getPreEmitDiagnostics(program)
+        .concat(result.diagnostics);
+
+      if (diagnostics.length > 0) {
+        const formattedDiagnostics = ts.formatDiagnostics(diagnostics, {
+          getCurrentDirectory: () => process.cwd(),
+          getCanonicalFileName: (fileName) => fileName,
+          getNewLine: () => "\n",
+        });
+        throw new Error(
+          `TypeScript compilation failed:\n${formattedDiagnostics}`,
+        );
+      }
+
+      return outputPath;
+    }
+
     // Function to build and start/restart the server
     async function buildAndStartServer() {
       // Prevent multiple rebuilds from running simultaneously
@@ -90,17 +161,10 @@ export async function start(file: string, options: StartOptions) {
           currentServer = null;
         }
 
-        // Build the workflow
-        spinner.start("Building locally...");
-
-        // Bundle the workflow (using local build for dev server)
-        const bundleFile = await bundleWorkflow(
-          absolutePath,
-          outDir,
-          false, // Don't use watch mode in bundler
-          false, // Use local build
-        );
-        spinner.succeed("Build completed");
+        // Compile TypeScript file
+        spinner.start("Compiling TypeScript...");
+        const jsPath = compileTypeScript(absolutePath);
+        spinner.succeed("Compilation completed");
 
         // Generate schema
         spinner.start("Generating schema");
@@ -109,23 +173,10 @@ export async function start(file: string, options: StartOptions) {
         writeFileSync(schemaFile, JSON.stringify(schemas, null, 2));
         spinner.succeed();
 
-        // Import and start/reload server with new workflows
-        let workflows: Record<string, unknown>;
-
-        // The bundler returns a directory path for local builds or a tarball path for Docker builds
-        // We need to append index.js for directory imports with ES modules
-        const indexPath = bundleFile.endsWith(".tar.gz")
-          ? bundleFile // For Docker builds, use the tarball directly
-          : resolve(bundleFile, "index.js"); // For local builds, point to the index.js file
-
-        if (existsSync(indexPath)) {
-          // Use query param with timestamp to avoid module caching
-          workflows = (await import(
-            `file://${indexPath}?update=${Date.now().toString()}`
-          )) as Record<string, unknown>;
-        } else {
-          throw new Error(`Could not find module at ${indexPath}`);
-        }
+        // Import the compiled JavaScript file
+        console.info("Importing compiled JavaScript file:", jsPath);
+        const fileUrl = `file://${jsPath}?update=${Date.now().toString()}`;
+        const workflows = (await import(fileUrl)) as Record<string, unknown>;
 
         // Create and start a new server instance
         const server = createServer(

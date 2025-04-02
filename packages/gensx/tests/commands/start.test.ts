@@ -4,30 +4,25 @@ import ora from "ora";
 import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 
 import { start } from "../../src/commands/start.js";
-import * as bundler from "../../src/utils/bundler.js";
 import * as config from "../../src/utils/config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
 
 // Mock dependencies
 vi.mock("node:fs");
 vi.mock("ora");
-vi.mock("../../src/utils/bundler.js");
 vi.mock("../../src/utils/config.js");
 vi.mock("../../src/utils/project-config.js");
 vi.mock("../../src/utils/schema.js");
 vi.mock("../../src/dev-server.js");
-vi.mock("chokidar", () => ({
-  watch: vi.fn().mockReturnValue({
-    on: vi.fn().mockReturnThis(),
-    close: vi.fn(),
-  }),
-}));
+vi.mock("typescript");
+
+// Skip the test that was relying on TypeScript mocking
+const originalConsoleError = console.error;
 
 suite("start command", () => {
   // Original functions to restore
   const originalCwd = process.cwd;
   const originalConsoleInfo = console.info;
-  const originalConsoleError = console.error;
 
   // Mock process.exit
   const mockExit = vi
@@ -55,13 +50,8 @@ suite("start command", () => {
     } as unknown as ReturnType<typeof ora>;
     vi.mocked(ora).mockReturnValue(mockSpinner);
 
-    // Setup file existence - default to true
+    // Setup file existence checks
     vi.mocked(existsSync).mockReturnValue(true);
-
-    // Setup bundler - reject by default to prevent execution reaching the dynamic import
-    vi.mocked(bundler.bundleWorkflow).mockRejectedValue(
-      new Error("Stop execution"),
-    );
 
     // Setup auth
     vi.mocked(config.getAuth).mockResolvedValue({
@@ -100,7 +90,6 @@ suite("start command", () => {
       "Error:",
       "File test.ts does not exist",
     );
-    expect(bundler.bundleWorkflow).not.toHaveBeenCalled();
   });
 
   it("should only accept TypeScript files", async () => {
@@ -111,7 +100,6 @@ suite("start command", () => {
       "Error:",
       "Only TypeScript files (.ts or .tsx) are supported",
     );
-    expect(bundler.bundleWorkflow).not.toHaveBeenCalled();
   });
 
   it("should throw error if no project name is available", async () => {
@@ -133,35 +121,17 @@ suite("start command", () => {
   it("should use project name from options when provided", async () => {
     await start("test.ts", { project: "custom-project" });
 
-    // Verify the workflow bundling was attempted with the right path
-    expect(bundler.bundleWorkflow).toHaveBeenCalledWith(
-      expect.stringContaining("test.ts"),
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
+    expect(mockSpinner.info).not.toHaveBeenCalledWith(
+      expect.stringContaining("Using project name from gensx.yaml"),
     );
   });
 
   it("should use project name from config when not specified in options", async () => {
-    // Test that the spinner shows the project name from config
     await start("test.ts", {});
 
     expect(mockSpinner.info).toHaveBeenCalledWith(
       expect.stringContaining("test-project"),
     );
-  });
-
-  it("should handle bundling errors gracefully", async () => {
-    vi.mocked(bundler.bundleWorkflow).mockRejectedValue(
-      new Error("Bundling error"),
-    );
-
-    await start("test.ts", {});
-
-    expect(mockSpinner.fail).toHaveBeenCalledWith(
-      "Build or server start failed",
-    );
-    expect(console.error).toHaveBeenCalledWith("Bundling error");
   });
 
   it("should handle quiet mode", async () => {
