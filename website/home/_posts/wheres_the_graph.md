@@ -119,7 +119,9 @@ Look, I'm not anti-graph. I'm anti-unnecessary complexity. GenSX still represent
 
 In tree form, data dependencies between steps are crystal clear. Each child component only sees the output of its parent through explicit props or child functions. This explicitness means no mysterious global state, no tangled webs of dependencies, and no edge spaghetti that makes you question your career choices at 2 AM.
 
-## The tree advantage
+What's fascinating is that you can actually trace a line through the execution of any graph to unroll it into a tree that shows the real flow of execution. This execution tree reveals how data actually branches and joins back together during runtime. Even with complex non-deterministic agent workflows that might seem chaotic, there's always a clear start and end to the execution path, no matter how long they run or how many iterations they take. This is why tree representations are so powerful - they match what's actually happening when your code executes.
+
+## Climb a tree or get lost in a graph
 
 Trees aren't just simpler to read—they're also easier to test, debug, and reason about. Isolation is built-in because each component is a pure function of its inputs. Testing flows naturally since you can evaluate components independently. Debugging becomes straightforward because the call stack directly represents your workflow structure.
 
@@ -127,7 +129,7 @@ And the kicker? Functional components can be published and shared on npm, creati
 
 ## But what about...?
 
-Every time I present this approach, someone inevitably asks: "But what about [complex pattern X]? Surely you need a graph for that!"
+Every time I present this approach, someone inevitably asks: "But what about \[complex pattern X\]? Surely you need a graph for that!"
 
 In practice, we've found that the vast majority of workflows are simple linear chains—perfect for trees. A smaller percentage need basic branching, which is trivial with JS conditionals. And those complex patterns like cycles? They're handled elegantly through components and natural JS control flow like loops and conditionals.
 
