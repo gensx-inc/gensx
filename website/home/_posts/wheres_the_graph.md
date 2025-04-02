@@ -1,5 +1,5 @@
 ---
-title: '"But Where''s the Graph?" — Why Trees Beat Graphs for LLM Workflows'
+title: '"But where''s the graph?" — Why trees beat graphs for LLM workflows'
 excerpt: "Trees are graphs too, and they're dramatically easier to reason about."
 date: "2025-04-03T00:00:00.000Z"
 coverImage: "/assets/blog/hello-world/cover.jpg"
