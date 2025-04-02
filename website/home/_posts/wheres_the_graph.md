@@ -129,11 +129,15 @@ And the kicker? Functional components can be published and shared on npm, creati
 
 ## But what about...?
 
-Every time I present this approach, someone inevitably asks: "But what about \[complex pattern X\]? Surely you need a graph for that!"
+Every time I present this approach, someone inevitably asks: "But what about [complex pattern X]? Surely you need a graph for that!" Or better yet: "Why use any framework at all? Why not just write plain functions?"
 
-In practice, we've found that the vast majority of workflows are simple linear chains—perfect for trees. A smaller percentage need basic branching, which is trivial with JS conditionals. And those complex patterns like cycles? They're handled elegantly through components and natural JS control flow like loops and conditionals.
+In practice, we've found that the vast majority of workflows are simple linear chains—perfect for trees. A smaller percentage need basic branching, which is trivial with JS conditionals. And those complex patterns like cycles? They're handled elegantly through components and natural JS control flow like loops and recursion.
 
-From simple RAG pipelines to complex agentic systems, we've yet to encounter a pattern that this model can't handle with grace. The rare edge cases where traditional graphs might shine are easily addressed with standard programming language features.
+As for going framework-free? I've been down that road. Your "simple script" that calls an LLM grows into thousands of lines of spaghetti code with implicit dependencies everywhere. Your teammate changes one function and mysteriously breaks three different workflows. Without structure, it becomes nearly impossible to enforce that steps can be easily shared and remain state-free. Most developers don't realize they need this discipline until they're knee-deep in technical debt.
+
+A good framework provides a productive model to share code, components, and steps across a large team and multiple workflows. Most frameworks fail here because they rely too heavily on global state—exactly what GenSX avoids with its tree-based component model. The framework should come with developer tooling for debugging, tracing, evals, and caching that you'd otherwise have to build yourself or stitch together piece-meal. When you're frantically debugging why your agent is hallucinating before a demo, you'll thank yourself for having proper traces and component-level metrics.
+
+From simple RAG pipelines to complex agentic systems, we've yet to encounter a pattern that this model can't handle with grace. The rare edge cases where traditional graphs might shine are easily addressed with standard programming language features. The key is choosing a framework that guides you toward good patterns without sacrificing flexibility—one that feels like an extension of the language you're already using, not a fight against it.
 
 ## Embrace the tree
 
