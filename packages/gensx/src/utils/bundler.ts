@@ -26,7 +26,7 @@ export async function bundleWorkflow(
   // also mount the output directory
 
   // find the closest directory to the workflow path that contains a package.json
-   
+
   const packageJsonPath = await findUp("package.json", {
     cwd: path.dirname(workflowPath),
   });
