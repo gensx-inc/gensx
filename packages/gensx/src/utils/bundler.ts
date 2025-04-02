@@ -104,7 +104,6 @@ async function bundleLocally(
     mkdirSync(distDir, { recursive: true });
 
     // Move to the project directory
-    const originalDir = process.cwd();
     process.chdir(packageJsonDir);
 
     // Install @vercel/ncc if not already installed
@@ -120,15 +119,8 @@ async function bundleLocally(
     );
 
     if (stderr) {
-      // Process stderr if needed
+      console.error(stderr);
     }
-
-    // Create tar.gz file (for compatibility with Docker build)
-    process.chdir(distDir);
-    await execPromise(`tar -czvf ../dist.tar.gz *`);
-
-    // Return to original directory
-    process.chdir(originalDir);
 
     // Return the compiled directory path for direct file access
     return distDir;
