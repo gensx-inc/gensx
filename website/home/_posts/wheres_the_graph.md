@@ -105,6 +105,8 @@ Want to conditionally branch your workflow? Use a ternary operator!
 </DataFetcher>
 ```
 
+The JSX syntax is just a convenient way to make a function call. Each GenSX component can be called as a function where it makes sense to do so.
+
 ## Why it matters
 
 After building dozens of LLM applications, I've found this approach delivers massive benefits in day-to-day development. The workflow reads top-to-bottom like normal code, with no mental juggling required. You're not constantly context-switching between graph definition and execution flow models.
