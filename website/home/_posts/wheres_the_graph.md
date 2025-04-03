@@ -70,11 +70,11 @@ Here's that same workflow in GenSX:
 
 It's right there. A tree is just a particular kind of graph—one where each node has exactly one parent. And that constraint buys us immense clarity without sacrificing power.
 
-## When trees aren't enough, use JavaScript
+## When trees aren't enough, use Javascript
 
 Trees work beautifully for most linear workflows. But what about loops, conditionals, and cycles? Those places where traditional graphs flex their muscles?
 
-Here's where GenSX's approach really shines. Instead of inventing some custom DSL for these patterns, we use... wait for it... regular JavaScript!
+Here's where GenSX's approach really shines. Instead of inventing some custom DSL for these patterns, we use... wait for it... regular Javascript!
 
 Need to implement an agent that loops until a condition is met? Easy:
 
@@ -113,7 +113,7 @@ After building dozens of LLM applications, I've found this approach delivers mas
 
 Refactoring becomes vastly simpler when dependencies are explicit and components are reusable. We've all been there—trying to modify one part of a complex workflow only to discover hidden dependencies that break something seemingly unrelated. With GenSX's tree approach, those dependencies are right there in the code.
 
-Our team's velocity dramatically increased when we switched to this model. Building reusable components feels natural, not forced. You're writing code the way you'd write any other TypeScript application, using patterns you already know.
+Our team's velocity dramatically increased when we switched to this model. Building reusable components feels natural, not forced. You're writing code the way you'd write any other Typescript application, using patterns you already know.
 
 ## Your graph is still there (just simpler)
 
