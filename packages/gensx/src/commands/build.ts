@@ -34,7 +34,11 @@ export async function build(file: string, options: BuildOptions = {}) {
 
     spinner.start("Building workflow using Docker");
 
-    const bundleFilePath = await bundleWorkflow(absolutePath, outDir);
+    const bundleFilePath = await bundleWorkflow(
+      absolutePath,
+      outDir,
+      options.watch ?? false,
+    );
 
     spinner.succeed();
 

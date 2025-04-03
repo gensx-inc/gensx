@@ -7,3 +7,4 @@ coverage/
 .turbo
 .tsbuildinfo
 .DS_Store
+.gensx/

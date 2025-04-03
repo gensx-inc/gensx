@@ -55,7 +55,7 @@ export async function deploy(file: string, options: DeployOptions) {
       } else {
         spinner.fail("No project name provided");
         throw new Error(
-          "No project name found. Either specify --project or create a gensx.yaml file with a 'name' field.",
+          "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
         );
       }
     }
