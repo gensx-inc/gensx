@@ -382,7 +382,7 @@ export class RemoteBlob<T> implements Blob<T> {
       // Convert stream to buffer - necessary for the current API implementation
       const chunks: Buffer[] = [];
       for await (const chunk of stream) {
-        chunks.push(Buffer.from(chunk));
+        chunks.push(Buffer.from(chunk as ArrayBufferLike));
       }
       const buffer = Buffer.concat(chunks);
 
