@@ -2,6 +2,8 @@
 
 import { Readable } from "stream";
 
+import { readConfig } from "@gensx/core";
+
 import {
   APIResponse,
   Blob,
@@ -560,24 +562,30 @@ export class RemoteBlobStorage implements BlobStorage {
     private defaultPrefix?: string,
     organizationId?: string,
   ) {
-    // Get API key from environment or throw
-    this.apiKey = process.env.GENSX_API_KEY ?? "";
+    // readConfig has internal error handling and always returns a GensxConfig object
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const config = readConfig();
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    this.apiKey = process.env.GENSX_API_KEY ?? config.api?.token ?? "";
     if (!this.apiKey) {
       throw new Error(
         "GENSX_API_KEY environment variable must be set for cloud storage",
       );
     }
 
-    // Get organization ID from environment, parameter, or throw
-    this.org = organizationId ?? process.env.GENSX_ORG ?? "";
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    this.org = organizationId ?? process.env.GENSX_ORG ?? config.api?.org ?? "";
     if (!this.org) {
       throw new Error(
         "Organization ID must be provided via props or GENSX_ORG environment variable",
       );
     }
 
-    // Use API base URL from environment or default
-    this.apiBaseUrl = process.env.GENSX_API_BASE_URL ?? API_BASE_URL;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    this.apiBaseUrl =
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      process.env.GENSX_API_BASE_URL ?? config.api?.baseUrl ?? API_BASE_URL;
   }
 
   getBlob<T>(key: string): Blob<T> {
