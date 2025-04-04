@@ -55,13 +55,14 @@ export class RemoteBlob<T> implements Blob<T> {
     this.org = org;
   }
 
-  async getJSON(): Promise<T | null> {
+  async getJSON(options?: { etag?: string }): Promise<T | null> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
@@ -71,6 +72,9 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get blob: ${response.statusText}`,
@@ -98,13 +102,14 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async getString(): Promise<string | null> {
+  async getString(options?: { etag?: string }): Promise<string | null> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
@@ -114,6 +119,9 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get blob: ${response.statusText}`,
@@ -141,13 +149,16 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async getRaw(): Promise<BlobResponse<Buffer> | null> {
+  async getRaw(options?: {
+    etag?: string;
+  }): Promise<BlobResponse<Buffer> | null> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
@@ -157,6 +168,9 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get blob: ${response.statusText}`,
@@ -206,18 +220,22 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async getStream(): Promise<Readable> {
+  async getStream(options?: { etag?: string }): Promise<Readable> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get blob: ${response.statusText}`,
@@ -257,6 +275,9 @@ export class RemoteBlob<T> implements Blob<T> {
       );
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to put blob: ${response.statusText}`,
@@ -300,6 +321,9 @@ export class RemoteBlob<T> implements Blob<T> {
       );
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to put blob: ${response.statusText}`,
@@ -341,6 +365,7 @@ export class RemoteBlob<T> implements Blob<T> {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            ...(options?.etag && { "If-Match": options.etag }),
           },
           body: JSON.stringify({
             content: value.toString("base64"),
@@ -354,6 +379,9 @@ export class RemoteBlob<T> implements Blob<T> {
       );
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to put blob: ${response.statusText}`,
@@ -408,6 +436,9 @@ export class RemoteBlob<T> implements Blob<T> {
       );
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to put blob: ${response.statusText}`,
@@ -428,7 +459,7 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async delete(): Promise<void> {
+  async delete(options?: { etag?: string }): Promise<void> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
@@ -436,11 +467,15 @@ export class RemoteBlob<T> implements Blob<T> {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
 
       if (!response.ok && response.status !== 404) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to delete blob: ${response.statusText}`,
@@ -486,6 +521,9 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get metadata: ${response.statusText}`,
@@ -522,7 +560,10 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async updateMetadata(metadata: Record<string, string>): Promise<void> {
+  async updateMetadata(
+    metadata: Record<string, string>,
+    options?: { etag?: string },
+  ): Promise<void> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
@@ -531,6 +572,7 @@ export class RemoteBlob<T> implements Blob<T> {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            ...(options?.etag && { "If-Match": options.etag }),
           },
           body: JSON.stringify({
             metadata,
@@ -539,6 +581,9 @@ export class RemoteBlob<T> implements Blob<T> {
       );
 
       if (!response.ok) {
+        if (response.status === 412) {
+          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to update metadata: ${response.statusText}`,

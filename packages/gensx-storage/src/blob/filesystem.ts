@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
 import * as crypto from "node:crypto";
-import * as fs from "node:fs/promises";
 import { createReadStream, createWriteStream } from "node:fs";
+import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { Readable } from "node:stream";
 
@@ -316,7 +316,7 @@ class FileSystemBlob<T> implements Blob<T> {
 
       // Collect chunks and write to file
       for await (const chunk of stream) {
-        const buffer = Buffer.from(chunk);
+        const buffer = Buffer.from(chunk as ArrayBufferLike);
         chunks.push(buffer);
         writeStream.write(buffer);
       }

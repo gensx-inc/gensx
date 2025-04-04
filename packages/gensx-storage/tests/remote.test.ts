@@ -330,6 +330,28 @@ suite("RemoteBlobStorage", () => {
       }
     });
 
+    test("should throw CONFLICT error when etag doesn't match", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 412, // Precondition Failed status code
+        statusText: "Precondition Failed",
+      });
+
+      const storage = new RemoteBlobStorage();
+      const blob = storage.getBlob<string>("etag-mismatch");
+      const outdatedEtag = "outdated-etag-value";
+
+      try {
+        await blob.putString("test data", { etag: outdatedEtag });
+        // Should have thrown
+        expect(true).toBe(false);
+      } catch (err) {
+        expect(err).toBeInstanceOf(BlobError);
+        expect((err as BlobError).code).toBe(BlobErrorCode.CONFLICT);
+        expect((err as BlobError).message).toContain("ETag mismatch");
+      }
+    });
+
     test("should handle missing ETag in response", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
