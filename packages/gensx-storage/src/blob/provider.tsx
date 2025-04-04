@@ -1,9 +1,7 @@
-/** @jsxRuntime automatic */
-/** @jsxImportSource @gensx/core */
 import { Component } from "@gensx/core";
 
 import { BlobContext } from "./context.js";
-import { FilesystemBlobStorage } from "./filesystem.js";
+import { FileSystemBlobStorage } from "./filesystem.js";
 import { RemoteBlobStorage } from "./remote.js";
 import { BlobProviderProps } from "./types.js";
 
@@ -29,7 +27,7 @@ export const BlobProvider = Component<BlobProviderProps, never>(
     // Create the appropriate storage implementation based on kind
     if (props.kind === "filesystem") {
       const { rootDir = process.cwd(), defaultPrefix } = props;
-      const storage = new FilesystemBlobStorage(rootDir, defaultPrefix);
+      const storage = new FileSystemBlobStorage(rootDir, defaultPrefix);
       return <BlobContext.Provider value={storage} />;
     } else {
       // Must be cloud based on our type definitions

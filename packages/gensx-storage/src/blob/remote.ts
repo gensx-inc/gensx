@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { Readable } from "node:stream";
-
 import {
+  APIResponse,
   Blob,
   BlobError,
   BlobErrorCode,
@@ -75,8 +73,22 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const data = await response.json();
-      return data as T;
+      const apiResponse = (await response.json()) as APIResponse<
+        BlobResponse<T>
+      >;
+
+      if (apiResponse.status === "error") {
+        throw new BlobError(
+          BlobErrorCode.INTERNAL_ERROR,
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        return null;
+      }
+
+      return apiResponse.data.content;
     } catch (err) {
       throw handleApiError(err, "getJSON");
     }
@@ -104,13 +116,28 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      return await response.text();
+      const apiResponse = (await response.json()) as APIResponse<
+        BlobResponse<string>
+      >;
+
+      if (apiResponse.status === "error") {
+        throw new BlobError(
+          BlobErrorCode.INTERNAL_ERROR,
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        return null;
+      }
+
+      return apiResponse.data.content;
     } catch (err) {
       throw handleApiError(err, "getString");
     }
   }
 
-  async getRaw(): Promise<BlobResponse<Buffer | string> | null> {
+  async getRaw(): Promise<BlobResponse<Buffer> | null> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
@@ -132,73 +159,79 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const contentType = response.headers.get("content-type") ?? undefined;
-      let data: Buffer | string;
+      const apiResponse = (await response.json()) as APIResponse<{
+        content: string;
+        contentType?: string;
+        etag?: string;
+        lastModified?: string;
+        size?: number;
+        metadata?: Record<string, string>;
+      }>;
 
-      if (contentType?.startsWith("text/") || contentType?.includes("json")) {
-        data = await response.text();
-      } else {
-        const arrayBuffer = await response.arrayBuffer();
-        data = Buffer.from(arrayBuffer);
+      if (apiResponse.status === "error" || !apiResponse.data) {
+        throw new BlobError(
+          BlobErrorCode.INTERNAL_ERROR,
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
       }
 
-      const etag = response.headers.get("etag") ?? undefined;
-      const lastModified = response.headers.get("last-modified")
-        ? new Date(response.headers.get("last-modified")!)
-        : undefined;
-      const size = response.headers.get("content-length")
-        ? parseInt(response.headers.get("content-length")!, 10)
-        : undefined;
-      const metadata = response.headers.get("x-blob-metadata")
-        ? (JSON.parse(response.headers.get("x-blob-metadata")!) as Record<
-            string,
-            string
-          >)
-        : undefined;
-
-      return {
-        data,
+      const {
+        content,
+        contentType,
         etag,
         lastModified,
         size,
+        metadata = {},
+      } = apiResponse.data;
+
+      // Always decode base64 for raw data
+      const buffer = Buffer.from(content, "base64");
+
+      return {
+        content: buffer,
         contentType,
-        metadata,
+        etag,
+        lastModified: lastModified ? new Date(lastModified) : undefined,
+        size,
+        metadata: Object.fromEntries(
+          Object.entries(metadata).filter(([key]) => key !== "isBase64"),
+        ),
       };
     } catch (err) {
       throw handleApiError(err, "getRaw");
     }
   }
 
-  async getStream(): Promise<Readable> {
-    try {
-      const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-          },
-        },
-      );
+  // async getStream(): Promise<Readable> {
+  //   try {
+  //     const response = await fetch(
+  //       `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${this.apiKey}`,
+  //         },
+  //       },
+  //     );
 
-      if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          `Failed to get blob: ${response.statusText}`,
-        );
-      }
+  //     if (!response.ok) {
+  //       throw new BlobError(
+  //         BlobErrorCode.INTERNAL_ERROR,
+  //         `Failed to get blob: ${response.statusText}`,
+  //       );
+  //     }
 
-      if (!response.body) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "Response body is null",
-        );
-      }
+  //     if (!response.body) {
+  //       throw new BlobError(
+  //         BlobErrorCode.INTERNAL_ERROR,
+  //         "Response body is null",
+  //       );
+  //     }
 
-      return Readable.from(response.body);
-    } catch (err) {
-      throw handleApiError(err, "getStream");
-    }
-  }
+  //     return Readable.from(response.body);
+  //   } catch (err) {
+  //     throw handleApiError(err, "getStream");
+  //   }
+  // }
 
   async putJSON(value: T, options?: BlobOptions): Promise<{ etag: string }> {
     try {
@@ -210,11 +243,12 @@ export class RemoteBlob<T> implements Blob<T> {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
             ...(options?.etag && { "If-Match": options.etag }),
-            ...(options?.metadata && {
-              "x-blob-metadata": JSON.stringify(options.metadata),
-            }),
           },
-          body: JSON.stringify(value),
+          body: JSON.stringify({
+            content: JSON.stringify(value),
+            contentType: "application/json",
+            metadata: options?.metadata,
+          }),
         },
       );
 
@@ -250,13 +284,14 @@ export class RemoteBlob<T> implements Blob<T> {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "text/plain",
+            "Content-Type": "application/json",
             ...(options?.etag && { "If-Match": options.etag }),
-            ...(options?.metadata && {
-              "x-blob-metadata": JSON.stringify(options.metadata),
-            }),
           },
-          body: value,
+          body: JSON.stringify({
+            content: value,
+            contentType: "text/plain",
+            metadata: options?.metadata,
+          }),
         },
       );
 
@@ -281,9 +316,18 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Put raw binary data into the blob.
+   * @param value The binary data to store
+   * @param options Optional metadata and content type
+   */
   async putRaw(
-    value: BlobResponse<Buffer | string>,
-    options?: BlobOptions,
+    value: Buffer,
+    options?: {
+      contentType?: string;
+      metadata?: Record<string, string>;
+      etag?: string;
+    },
   ): Promise<{ etag: string }> {
     try {
       const response = await fetch(
@@ -292,13 +336,16 @@ export class RemoteBlob<T> implements Blob<T> {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": value.contentType ?? "application/octet-stream",
-            ...(options?.etag && { "If-Match": options.etag }),
-            ...(options?.metadata && {
-              "x-blob-metadata": JSON.stringify(options.metadata),
-            }),
+            "Content-Type": "application/json",
           },
-          body: value.data,
+          body: JSON.stringify({
+            content: value.toString("base64"),
+            contentType: options?.contentType ?? "application/octet-stream",
+            metadata: {
+              ...(options?.metadata ?? {}),
+              isBase64: "true",
+            },
+          }),
         },
       );
 
@@ -323,53 +370,53 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async putStream(
-    stream: Readable,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of stream) {
-        chunks.push(Buffer.from(chunk));
-      }
-      const buffer = Buffer.concat(chunks);
+  // async putStream(
+  //   stream: Readable,
+  //   options?: BlobOptions,
+  // ): Promise<{ etag: string }> {
+  //   try {
+  //     const chunks: Buffer[] = [];
+  //     for await (const chunk of stream) {
+  //       chunks.push(Buffer.from(chunk));
+  //     }
+  //     const buffer = Buffer.concat(chunks);
 
-      const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "application/octet-stream",
-            ...(options?.etag && { "If-Match": options.etag }),
-            ...(options?.metadata && {
-              "x-blob-metadata": JSON.stringify(options.metadata),
-            }),
-          },
-          body: buffer,
-        },
-      );
+  //     const response = await fetch(
+  //       `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           Authorization: `Bearer ${this.apiKey}`,
+  //           "Content-Type": "application/octet-stream",
+  //           ...(options?.etag && { "If-Match": options.etag }),
+  //           ...(options?.metadata && {
+  //             "x-blob-metadata": JSON.stringify(options.metadata),
+  //           }),
+  //         },
+  //         body: buffer,
+  //       },
+  //     );
 
-      if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          `Failed to put blob: ${response.statusText}`,
-        );
-      }
+  //     if (!response.ok) {
+  //       throw new BlobError(
+  //         BlobErrorCode.INTERNAL_ERROR,
+  //         `Failed to put blob: ${response.statusText}`,
+  //       );
+  //     }
 
-      const etag = response.headers.get("etag");
-      if (!etag) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "No ETag returned from server",
-        );
-      }
+  //     const etag = response.headers.get("etag");
+  //     if (!etag) {
+  //       throw new BlobError(
+  //         BlobErrorCode.INTERNAL_ERROR,
+  //         "No ETag returned from server",
+  //       );
+  //     }
 
-      return { etag };
-    } catch (err) {
-      throw handleApiError(err, "putStream");
-    }
-  }
+  //     return { etag };
+  //   } catch (err) {
+  //     throw handleApiError(err, "putStream");
+  //   }
+  // }
 
   async delete(): Promise<void> {
     try {
@@ -435,12 +482,31 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const metadataHeader = response.headers.get("x-blob-metadata");
-      if (!metadataHeader) {
-        return null;
+      // Extract standard headers
+      const metadata: Record<string, string> = {};
+
+      // Get content type and etag from standard headers
+      const contentType = response.headers.get("content-type");
+      if (contentType) {
+        metadata.contentType = contentType;
       }
 
-      return JSON.parse(metadataHeader) as Record<string, string>;
+      const etag = response.headers.get("etag");
+      if (etag) {
+        metadata.etag = etag;
+      }
+
+      // Get custom metadata from individual x-blob-meta-* headers
+      for (const [name, value] of Object.entries(
+        Object.fromEntries(response.headers),
+      )) {
+        if (name.toLowerCase().startsWith("x-blob-meta-")) {
+          const metaKey = name.substring("x-blob-meta-".length);
+          metadata[metaKey] = value;
+        }
+      }
+
+      return Object.keys(metadata).length > 0 ? metadata : null;
     } catch (err) {
       throw handleApiError(err, "getMetadata");
     }
@@ -455,8 +521,10 @@ export class RemoteBlob<T> implements Blob<T> {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
-            "x-blob-metadata": JSON.stringify(metadata),
           },
+          body: JSON.stringify({
+            metadata,
+          }),
         },
       );
 
@@ -468,132 +536,6 @@ export class RemoteBlob<T> implements Blob<T> {
       }
     } catch (err) {
       throw handleApiError(err, "updateMetadata");
-    }
-  }
-
-  async putJSONWithMetadata(
-    value: T,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "application/json",
-            "x-blob-metadata": JSON.stringify(metadata),
-            ...(options?.etag && { "If-Match": options.etag }),
-          },
-          body: JSON.stringify(value),
-        },
-      );
-
-      if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          `Failed to put blob: ${response.statusText}`,
-        );
-      }
-
-      const etag = response.headers.get("etag");
-      if (!etag) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "No ETag returned from server",
-        );
-      }
-
-      return { etag };
-    } catch (err) {
-      throw handleApiError(err, "putJSONWithMetadata");
-    }
-  }
-
-  async putStringWithMetadata(
-    value: string,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "text/plain",
-            "x-blob-metadata": JSON.stringify(metadata),
-            ...(options?.etag && { "If-Match": options.etag }),
-          },
-          body: value,
-        },
-      );
-
-      if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          `Failed to put blob: ${response.statusText}`,
-        );
-      }
-
-      const etag = response.headers.get("etag");
-      if (!etag) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "No ETag returned from server",
-        );
-      }
-
-      return { etag };
-    } catch (err) {
-      throw handleApiError(err, "putStringWithMetadata");
-    }
-  }
-
-  async putRawWithMetadata(
-    value: Buffer | string,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type":
-              typeof value === "string"
-                ? "text/plain"
-                : "application/octet-stream",
-            "x-blob-metadata": JSON.stringify(metadata),
-            ...(options?.etag && { "If-Match": options.etag }),
-          },
-          body: value,
-        },
-      );
-
-      if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          `Failed to put blob: ${response.statusText}`,
-        );
-      }
-
-      const etag = response.headers.get("etag");
-      if (!etag) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "No ETag returned from server",
-        );
-      }
-
-      return { etag };
-    } catch (err) {
-      throw handleApiError(err, "putRawWithMetadata");
     }
   }
 }

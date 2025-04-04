@@ -1,4 +1,4 @@
-import { Readable } from "stream";
+//import { Readable } from "stream";
 
 /**
  * Error types for blob storage operations
@@ -48,13 +48,22 @@ export interface BlobOptions {
 }
 
 /**
+ * A response from the API
+ */
+export interface APIResponse<T> {
+  status: "ok" | "error";
+  data?: T;
+  error?: string;
+}
+
+/**
  * A response from a blob operation that includes metadata
  */
 export interface BlobResponse<T> {
   /**
    * The data content of the blob
    */
-  data: T;
+  content: T;
 
   /**
    * ETag of the blob
@@ -102,13 +111,13 @@ export interface Blob<T> {
    * Get the raw blob response with metadata.
    * @returns The blob response with metadata, or null if not found.
    */
-  getRaw(): Promise<BlobResponse<Buffer | string> | null>;
+  getRaw(): Promise<BlobResponse<Buffer> | null>;
 
   /**
    * Get a readable stream of the blob's content.
    * @returns A readable stream of the blob's content.
    */
-  getStream(): Promise<Readable>;
+  //getStream(): Promise<Readable>;
 
   /**
    * Put JSON data into the blob.
@@ -132,10 +141,7 @@ export interface Blob<T> {
    * @param options Optional metadata and etag for conditional updates.
    * @returns The etag of the stored blob.
    */
-  putRaw(
-    value: BlobResponse<Buffer | string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }>;
+  putRaw(value: Buffer, options?: BlobOptions): Promise<{ etag: string }>;
 
   /**
    * Put a readable stream into the blob.
@@ -143,7 +149,7 @@ export interface Blob<T> {
    * @param options Optional metadata and etag for conditional updates.
    * @returns The etag of the stored blob.
    */
-  putStream(stream: Readable, options?: BlobOptions): Promise<{ etag: string }>;
+  //putStream(stream: Readable, options?: BlobOptions): Promise<{ etag: string }>;
 
   /**
    * Delete the blob.
@@ -166,33 +172,6 @@ export interface Blob<T> {
    * @param metadata The new metadata to store
    */
   updateMetadata(metadata: Record<string, string>): Promise<void>;
-
-  /**
-   * Store JSON content with metadata
-   */
-  putJSONWithMetadata(
-    value: T,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }>;
-
-  /**
-   * Store string content with metadata
-   */
-  putStringWithMetadata(
-    value: string,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }>;
-
-  /**
-   * Store raw content with metadata
-   */
-  putRawWithMetadata(
-    value: Buffer | string,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }>;
 }
 
 /**
@@ -233,7 +212,7 @@ export interface BaseBlobProviderProps {
 /**
  * Filesystem provider props
  */
-export interface FilesystemBlobProviderProps extends BaseBlobProviderProps {
+export interface FileSystemBlobProviderProps extends BaseBlobProviderProps {
   kind: "filesystem";
 
   /**
@@ -258,5 +237,5 @@ export interface CloudBlobProviderProps extends BaseBlobProviderProps {
  * Union type for blob provider props
  */
 export type BlobProviderProps =
-  | FilesystemBlobProviderProps
+  | FileSystemBlobProviderProps
   | CloudBlobProviderProps;
