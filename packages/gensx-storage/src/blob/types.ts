@@ -1,4 +1,4 @@
-//import { Readable } from "stream";
+import { Readable } from "stream";
 
 /**
  * Error types for blob storage operations
@@ -117,7 +117,7 @@ export interface Blob<T> {
    * Get a readable stream of the blob's content.
    * @returns A readable stream of the blob's content.
    */
-  //getStream(): Promise<Readable>;
+  getStream(): Promise<Readable>;
 
   /**
    * Put JSON data into the blob.
@@ -149,7 +149,7 @@ export interface Blob<T> {
    * @param options Optional metadata and etag for conditional updates.
    * @returns The etag of the stored blob.
    */
-  //putStream(stream: Readable, options?: BlobOptions): Promise<{ etag: string }>;
+  putStream(stream: Readable, options?: BlobOptions): Promise<{ etag: string }>;
 
   /**
    * Delete the blob.

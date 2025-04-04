@@ -2,7 +2,9 @@
 
 import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
+import { createReadStream, createWriteStream } from "node:fs";
 import * as path from "node:path";
+import { Readable } from "node:stream";
 
 import {
   Blob,
@@ -98,8 +100,27 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
-  // async getStream(): Promise<Readable> {
-  // }
+  async getStream(): Promise<Readable> {
+    try {
+      // Check if file exists first
+      try {
+        await fs.access(this.filePath);
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+          throw new BlobError(
+            BlobErrorCode.NOT_FOUND,
+            `Blob not found at path: ${this.filePath}`,
+          );
+        }
+        throw err;
+      }
+
+      // Create and return readable stream
+      return createReadStream(this.filePath);
+    } catch (err) {
+      throw handleFsError(err, "getStream", this.filePath);
+    }
+  }
 
   async getRaw(): Promise<BlobResponse<Buffer> | null> {
     try {
@@ -282,27 +303,53 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
-  // async getStream(): Promise<Readable> {
-  //   try {
-  //     // Check if file exists first
-  //     try {
-  //       await fs.access(this.filePath);
-  //     } catch (err) {
-  //       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-  //         throw new BlobError(
-  //           BlobErrorCode.NOT_FOUND,
-  //           `Blob not found at path: ${this.filePath}`,
-  //         );
-  //       }
-  //       throw err;
-  //     }
+  async putStream(
+    stream: Readable,
+    options?: BlobOptions,
+  ): Promise<{ etag: string }> {
+    try {
+      await fs.mkdir(path.dirname(this.filePath), { recursive: true });
 
-  //     // Create and return readable stream
-  //     return fss.createReadStream(this.filePath);
-  //   } catch (err) {
-  //     throw handleFsError(err, "getStream", this.filePath);
-  //   }
-  // }
+      // Create write stream
+      const writeStream = createWriteStream(this.filePath);
+      const chunks: Buffer[] = [];
+
+      // Collect chunks and write to file
+      for await (const chunk of stream) {
+        const buffer = Buffer.from(chunk);
+        chunks.push(buffer);
+        writeStream.write(buffer);
+      }
+
+      // Wait for write to complete
+      await new Promise<void>((resolve, reject) => {
+        writeStream.end((err?: Error | null) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // Calculate etag from all chunks
+      const buffer = Buffer.concat(chunks);
+      const etag = calculateEtag(buffer);
+
+      // Update metadata if content type is provided
+      if (options?.contentType || options?.metadata) {
+        const metadata = {
+          ...((await this.getMetadata()) ?? {}),
+          ...(options.metadata ?? {}),
+        };
+        if (options.contentType) {
+          metadata.contentType = options.contentType;
+        }
+        await this.updateMetadata(metadata);
+      }
+
+      return { etag };
+    } catch (err) {
+      throw handleFsError(err, "putStream", this.filePath);
+    }
+  }
 
   async delete(): Promise<void> {
     try {
@@ -358,47 +405,6 @@ class FileSystemBlob<T> implements Blob<T> {
       throw handleFsError(err, "updateMetadata", this.metadataPath);
     }
   }
-
-  //   async putStream(
-  //     stream: Readable,
-  //     options?: BlobOptions,
-  //   ): Promise<{ etag: string }> {
-  //     try {
-  //       await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-
-  //       // Create write stream
-  //       const writeStream = fss.createWriteStream(this.filePath);
-  //       const chunks: Buffer[] = [];
-
-  //       // Collect chunks and write to file
-  //       for await (const chunk of stream) {
-  //         chunks.push(Buffer.from(chunk as ArrayBufferLike));
-  //         writeStream.write(chunk);
-  //       }
-
-  //       // Wait for write to complete
-  //       await new Promise<void>((resolve, reject) => {
-  //         writeStream.end((err: Error | null) => {
-  //           if (err) reject(err);
-  //           else resolve();
-  //         });
-  //       });
-
-  //       // Calculate etag from all chunks
-  //       const buffer = Buffer.concat(chunks);
-  //       const etag = calculateEtag(buffer);
-
-  //       if (options?.contentType) {
-  //         const metadata = (await this.getMetadata()) ?? {};
-  //         metadata.contentType = options.contentType;
-  //         await this.updateMetadata(metadata);
-  //       }
-
-  //       return { etag };
-  //     } catch (err) {
-  //       throw handleFsError(err, "putStream", this.filePath);
-  //     }
-  //   }
 }
 
 /**

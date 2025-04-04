@@ -1,4 +1,5 @@
 import path from "path";
+import { Readable } from "stream";
 
 import * as gensx from "@gensx/core";
 import { OpenAIProvider } from "@gensx/openai";
@@ -66,6 +67,20 @@ const TestMemory = gensx.Component<{ id: string }, string>(
 
         const raw = await blob4.getRaw();
         console.log("Raw response: ", raw);
+
+        // Test stream
+        const blob5 = useBlob<string>(`${id}-stream`);
+        await blob5.putStream(Readable.from("Hello world"), {
+          metadata: {
+            test: "test",
+          },
+        });
+
+        const stream = await blob5.getStream();
+        for await (const chunk of stream) {
+          console.log("Chunk: ", chunk);
+        }
+
         return "We made it!";
       } catch (error) {
         console.error("Error in chat processing:", error);

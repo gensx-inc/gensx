@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
+import { Readable } from "stream";
+
 import {
   APIResponse,
   Blob,
@@ -202,36 +204,36 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  // async getStream(): Promise<Readable> {
-  //   try {
-  //     const response = await fetch(
-  //       `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${this.apiKey}`,
-  //         },
-  //       },
-  //     );
+  async getStream(): Promise<Readable> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+        },
+      );
 
-  //     if (!response.ok) {
-  //       throw new BlobError(
-  //         BlobErrorCode.INTERNAL_ERROR,
-  //         `Failed to get blob: ${response.statusText}`,
-  //       );
-  //     }
+      if (!response.ok) {
+        throw new BlobError(
+          BlobErrorCode.INTERNAL_ERROR,
+          `Failed to get blob: ${response.statusText}`,
+        );
+      }
 
-  //     if (!response.body) {
-  //       throw new BlobError(
-  //         BlobErrorCode.INTERNAL_ERROR,
-  //         "Response body is null",
-  //       );
-  //     }
+      if (!response.body) {
+        throw new BlobError(
+          BlobErrorCode.INTERNAL_ERROR,
+          "Response body is null",
+        );
+      }
 
-  //     return Readable.from(response.body);
-  //   } catch (err) {
-  //     throw handleApiError(err, "getStream");
-  //   }
-  // }
+      return Readable.from(response.body);
+    } catch (err) {
+      throw handleApiError(err, "getStream");
+    }
+  }
 
   async putJSON(value: T, options?: BlobOptions): Promise<{ etag: string }> {
     try {
@@ -370,53 +372,59 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  // async putStream(
-  //   stream: Readable,
-  //   options?: BlobOptions,
-  // ): Promise<{ etag: string }> {
-  //   try {
-  //     const chunks: Buffer[] = [];
-  //     for await (const chunk of stream) {
-  //       chunks.push(Buffer.from(chunk));
-  //     }
-  //     const buffer = Buffer.concat(chunks);
+  async putStream(
+    stream: Readable,
+    options?: BlobOptions,
+  ): Promise<{ etag: string }> {
+    try {
+      // Convert stream to buffer - necessary for the current API implementation
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) {
+        chunks.push(Buffer.from(chunk));
+      }
+      const buffer = Buffer.concat(chunks);
 
-  //     const response = await fetch(
-  //       `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
-  //       {
-  //         method: "PUT",
-  //         headers: {
-  //           Authorization: `Bearer ${this.apiKey}`,
-  //           "Content-Type": "application/octet-stream",
-  //           ...(options?.etag && { "If-Match": options.etag }),
-  //           ...(options?.metadata && {
-  //             "x-blob-metadata": JSON.stringify(options.metadata),
-  //           }),
-  //         },
-  //         body: buffer,
-  //       },
-  //     );
+      // Send the buffer as base64-encoded content
+      const response = await fetch(
+        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+            ...(options?.etag && { "If-Match": options.etag }),
+          },
+          body: JSON.stringify({
+            content: buffer.toString("base64"),
+            contentType: options?.contentType ?? "application/octet-stream",
+            metadata: {
+              ...(options?.metadata ?? {}),
+              isBase64: "true",
+            },
+          }),
+        },
+      );
 
-  //     if (!response.ok) {
-  //       throw new BlobError(
-  //         BlobErrorCode.INTERNAL_ERROR,
-  //         `Failed to put blob: ${response.statusText}`,
-  //       );
-  //     }
+      if (!response.ok) {
+        throw new BlobError(
+          BlobErrorCode.INTERNAL_ERROR,
+          `Failed to put blob: ${response.statusText}`,
+        );
+      }
 
-  //     const etag = response.headers.get("etag");
-  //     if (!etag) {
-  //       throw new BlobError(
-  //         BlobErrorCode.INTERNAL_ERROR,
-  //         "No ETag returned from server",
-  //       );
-  //     }
+      const etag = response.headers.get("etag");
+      if (!etag) {
+        throw new BlobError(
+          BlobErrorCode.INTERNAL_ERROR,
+          "No ETag returned from server",
+        );
+      }
 
-  //     return { etag };
-  //   } catch (err) {
-  //     throw handleApiError(err, "putStream");
-  //   }
-  // }
+      return { etag };
+    } catch (err) {
+      throw handleApiError(err, "putStream");
+    }
+  }
 
   async delete(): Promise<void> {
     try {
