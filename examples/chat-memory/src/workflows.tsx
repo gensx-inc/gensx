@@ -1,5 +1,3 @@
-import path from "path";
-
 import * as gensx from "@gensx/core";
 import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
 import { BlobProvider, useBlob } from "@gensx/storage";
@@ -24,14 +22,14 @@ const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
 
     // Function to load chat history
     const loadChatHistory = async (): Promise<ChatMessage[]> => {
-      const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+      const blob = useBlob<ChatMessage[]>(threadId);
       const history = await blob.getJSON();
       return history ?? [];
     };
 
     // Function to save chat history
     const saveChatHistory = async (messages: ChatMessage[]): Promise<void> => {
-      const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+      const blob = useBlob<ChatMessage[]>(threadId);
       await blob.putJSON(messages);
     };
 
@@ -87,11 +85,11 @@ const WorkflowComponent = gensx.Component<
 >("Workflow", ({ userInput, threadId }) => (
   <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
     <BlobProvider
-      kind="filesystem"
-      rootDir={path.join(process.cwd(), "chat-memory")}
-      // kind="cloud"
-      // region="us-west-2"
-      // bucket="gensx-chat-history"
+      //kind="filesystem"
+      //rootDir={path.join(process.cwd(), "chat-memory")}
+      kind="cloud"
+      //region="us-west-2"
+      //bucket="gensx-chat-history"
     >
       <ChatWithMemory userInput={userInput} threadId={threadId} />
     </BlobProvider>

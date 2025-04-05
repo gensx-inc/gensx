@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
 import * as crypto from "node:crypto";
-import * as fss from "node:fs";
+import { createReadStream, createWriteStream } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { Readable } from "node:stream";
@@ -68,7 +68,7 @@ function getMetadataPath(filePath: string): string {
 /**
  * Implementation of Blob interface for filesystem storage
  */
-class FilesystemBlob<T> implements Blob<T> {
+class FileSystemBlob<T> implements Blob<T> {
   private filePath: string;
   private metadataPath: string;
 
@@ -100,20 +100,43 @@ class FilesystemBlob<T> implements Blob<T> {
     }
   }
 
-  async getRaw(): Promise<BlobResponse<Buffer | string> | null> {
+  async getStream(): Promise<Readable> {
     try {
-      const content = await fs.readFile(this.filePath, "utf8");
+      // Check if file exists first
+      try {
+        await fs.access(this.filePath);
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+          throw new BlobError(
+            BlobErrorCode.NOT_FOUND,
+            `Blob not found at path: ${this.filePath}`,
+          );
+        }
+        throw err;
+      }
+
+      // Create and return readable stream
+      return createReadStream(this.filePath);
+    } catch (err) {
+      throw handleFsError(err, "getStream", this.filePath);
+    }
+  }
+
+  async getRaw(): Promise<BlobResponse<Buffer> | null> {
+    try {
+      // Read the raw buffer
+      const content = await fs.readFile(this.filePath);
       const stats = await fs.stat(this.filePath);
       const metadata = await this.getMetadata();
 
       const etag = calculateEtag(content);
 
       return {
-        data: content,
+        content,
         etag,
         lastModified: stats.mtime,
         size: stats.size,
-        contentType: metadata?.contentType ?? "text/plain",
+        contentType: metadata?.contentType ?? "application/octet-stream",
         metadata: metadata ?? undefined,
       };
     } catch (err) {
@@ -203,18 +226,20 @@ class FilesystemBlob<T> implements Blob<T> {
   }
 
   async putRaw(
-    value: BlobResponse<Buffer | string>,
-    options?: BlobOptions,
+    value: Buffer,
+    options?: {
+      contentType?: string;
+      metadata?: Record<string, string>;
+      etag?: string;
+    },
   ): Promise<{ etag: string }> {
     try {
       await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-      const content =
-        typeof value.data === "string" ? value.data : value.data.toString();
-      const newEtag = calculateEtag(content);
+      const newEtag = calculateEtag(value);
 
       if (options?.etag) {
         try {
-          const existingContent = await fs.readFile(this.filePath, "utf8");
+          const existingContent = await fs.readFile(this.filePath);
           const existingEtag = calculateEtag(existingContent);
 
           if (existingEtag !== options.etag) {
@@ -230,71 +255,24 @@ class FilesystemBlob<T> implements Blob<T> {
         }
       }
 
-      await fs.writeFile(this.filePath, content, "utf8");
+      // Write the raw buffer
+      await fs.writeFile(this.filePath, value);
 
-      // Store metadata if present
-      if (value.metadata) {
-        await this.updateMetadata(value.metadata);
-      }
-
-      // Store content type if present
-      if (value.contentType) {
-        const metadata = (await this.getMetadata()) ?? {};
-        metadata.contentType = value.contentType;
+      // Update metadata if provided
+      if (options?.contentType || options?.metadata) {
+        const metadata = {
+          ...((await this.getMetadata()) ?? {}),
+          ...(options.metadata ?? {}),
+        };
+        if (options.contentType) {
+          metadata.contentType = options.contentType;
+        }
         await this.updateMetadata(metadata);
       }
 
       return { etag: newEtag };
     } catch (err) {
       throw handleFsError(err, "putRaw", this.filePath);
-    }
-  }
-
-  async putJSONWithMetadata(
-    value: T,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      const result = await this.putJSON(value, options);
-      await this.updateMetadata(metadata);
-      return result;
-    } catch (err) {
-      throw handleFsError(err, "putJSONWithMetadata", this.filePath);
-    }
-  }
-
-  async putStringWithMetadata(
-    value: string,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      const result = await this.putString(value, options);
-      await this.updateMetadata(metadata);
-      return result;
-    } catch (err) {
-      throw handleFsError(err, "putStringWithMetadata", this.filePath);
-    }
-  }
-
-  async putRawWithMetadata(
-    value: Buffer | string,
-    metadata: Record<string, string>,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      const result = await this.putRaw(
-        {
-          data: value,
-          metadata,
-          contentType: options?.contentType,
-        },
-        options,
-      );
-      return result;
-    } catch (err) {
-      throw handleFsError(err, "putRawWithMetadata", this.filePath);
     }
   }
 
@@ -307,7 +285,7 @@ class FilesystemBlob<T> implements Blob<T> {
       const etag = calculateEtag(content);
 
       return {
-        data: JSON.parse(content) as T,
+        content: JSON.parse(content) as T,
         etag,
         lastModified: stats.mtime,
         size: stats.size,
@@ -325,25 +303,51 @@ class FilesystemBlob<T> implements Blob<T> {
     }
   }
 
-  async getStream(): Promise<Readable> {
+  async putStream(
+    stream: Readable,
+    options?: BlobOptions,
+  ): Promise<{ etag: string }> {
     try {
-      // Check if file exists first
-      try {
-        await fs.access(this.filePath);
-      } catch (err) {
-        if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-          throw new BlobError(
-            BlobErrorCode.NOT_FOUND,
-            `Blob not found at path: ${this.filePath}`,
-          );
-        }
-        throw err;
+      await fs.mkdir(path.dirname(this.filePath), { recursive: true });
+
+      // Create write stream
+      const writeStream = createWriteStream(this.filePath);
+      const chunks: Buffer[] = [];
+
+      // Collect chunks and write to file
+      for await (const chunk of stream) {
+        const buffer = Buffer.from(chunk as ArrayBufferLike);
+        chunks.push(buffer);
+        writeStream.write(buffer);
       }
 
-      // Create and return readable stream
-      return fss.createReadStream(this.filePath);
+      // Wait for write to complete
+      await new Promise<void>((resolve, reject) => {
+        writeStream.end((err?: Error | null) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // Calculate etag from all chunks
+      const buffer = Buffer.concat(chunks);
+      const etag = calculateEtag(buffer);
+
+      // Update metadata if content type is provided
+      if (options?.contentType || options?.metadata) {
+        const metadata = {
+          ...((await this.getMetadata()) ?? {}),
+          ...(options.metadata ?? {}),
+        };
+        if (options.contentType) {
+          metadata.contentType = options.contentType;
+        }
+        await this.updateMetadata(metadata);
+      }
+
+      return { etag };
     } catch (err) {
-      throw handleFsError(err, "getStream", this.filePath);
+      throw handleFsError(err, "putStream", this.filePath);
     }
   }
 
@@ -401,53 +405,12 @@ class FilesystemBlob<T> implements Blob<T> {
       throw handleFsError(err, "updateMetadata", this.metadataPath);
     }
   }
-
-  async putStream(
-    stream: Readable,
-    options?: BlobOptions,
-  ): Promise<{ etag: string }> {
-    try {
-      await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-
-      // Create write stream
-      const writeStream = fss.createWriteStream(this.filePath);
-      const chunks: Buffer[] = [];
-
-      // Collect chunks and write to file
-      for await (const chunk of stream) {
-        chunks.push(Buffer.from(chunk as ArrayBufferLike));
-        writeStream.write(chunk);
-      }
-
-      // Wait for write to complete
-      await new Promise<void>((resolve, reject) => {
-        writeStream.end((err: Error | null) => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
-
-      // Calculate etag from all chunks
-      const buffer = Buffer.concat(chunks);
-      const etag = calculateEtag(buffer);
-
-      if (options?.contentType) {
-        const metadata = (await this.getMetadata()) ?? {};
-        metadata.contentType = options.contentType;
-        await this.updateMetadata(metadata);
-      }
-
-      return { etag };
-    } catch (err) {
-      throw handleFsError(err, "putStream", this.filePath);
-    }
-  }
 }
 
 /**
- * Filesystem implementation of blob storage
+ * FileSystem implementation of blob storage
  */
-export class FilesystemBlobStorage implements BlobStorage {
+export class FileSystemBlobStorage implements BlobStorage {
   constructor(
     private rootDir: string,
     private defaultPrefix?: string,
@@ -473,7 +436,7 @@ export class FilesystemBlobStorage implements BlobStorage {
   }
 
   getBlob<T>(key: string): Blob<T> {
-    return new FilesystemBlob<T>(this.getFullPath(key));
+    return new FileSystemBlob<T>(this.getFullPath(key));
   }
 
   async listBlobs(prefix?: string): Promise<string[]> {
