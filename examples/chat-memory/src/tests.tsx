@@ -21,7 +21,7 @@ const TestMemory = gensx.Component<{ id: string }, string>(
     const run = async (): Promise<string> => {
       try {
         // Test JSON
-        const blob = useBlob<ChatMessage[]>(`${id}-json`);
+        const blob = useBlob<ChatMessage[]>(`threads/${id}-json`);
         await blob.putJSON([{ role: "user", content: "Hello world" }]);
 
         const history = await blob.getJSON();

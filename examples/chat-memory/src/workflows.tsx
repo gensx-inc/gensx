@@ -22,14 +22,14 @@ const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
 
     // Function to load chat history
     const loadChatHistory = async (): Promise<ChatMessage[]> => {
-      const blob = useBlob<ChatMessage[]>(threadId);
+      const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
       const history = await blob.getJSON();
       return history ?? [];
     };
 
     // Function to save chat history
     const saveChatHistory = async (messages: ChatMessage[]): Promise<void> => {
-      const blob = useBlob<ChatMessage[]>(threadId);
+      const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
       await blob.putJSON(messages);
     };
 

@@ -643,14 +643,14 @@ suite("RemoteBlobStorage", () => {
 
     const result = await storage.listBlobs("sub");
 
-    expect(result).toEqual(["key1", "key2"]);
+    expect(result).toEqual(["sub/key1", "sub/key2"]);
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix/sub",
+      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix%2Fsub",
       expect.objectContaining({
-        method: "GET",
         headers: expect.objectContaining({
           Authorization: "Bearer test-api-key",
         }),
+        method: "GET",
       }),
     );
   });

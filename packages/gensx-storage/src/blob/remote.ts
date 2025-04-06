@@ -49,7 +49,7 @@ export class RemoteBlob<T> implements Blob<T> {
   private org: string;
 
   constructor(key: string, baseUrl: string, apiKey: string, org: string) {
-    this.key = key;
+    this.key = encodeURIComponent(key);
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
     this.org = org;
@@ -612,17 +612,22 @@ export class RemoteBlobStorage implements BlobStorage {
   }
 
   getBlob<T>(key: string): Blob<T> {
-    return new RemoteBlob<T>(key, this.apiBaseUrl, this.apiKey, this.org);
+    const fullKey = this.defaultPrefix ? `${this.defaultPrefix}/${key}` : key;
+    return new RemoteBlob<T>(fullKey, this.apiBaseUrl, this.apiKey, this.org);
   }
 
   async listBlobs(prefix?: string): Promise<string[]> {
     try {
-      // Apply default prefix if specified
-      const searchPrefix = this.defaultPrefix
-        ? prefix
-          ? `${this.defaultPrefix}/${prefix}`
-          : this.defaultPrefix
-        : (prefix ?? "");
+      // Normalize prefixes by removing trailing slashes
+      const normalizedDefaultPrefix = this.defaultPrefix?.replace(/\/$/, "");
+      const normalizedPrefix = prefix?.replace(/\/$/, "");
+
+      // Build the search prefix
+      const searchPrefix = normalizedDefaultPrefix
+        ? normalizedPrefix
+          ? `${normalizedDefaultPrefix}/${normalizedPrefix}`
+          : normalizedDefaultPrefix
+        : (normalizedPrefix ?? "");
 
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/blob?prefix=${encodeURIComponent(searchPrefix)}`,
@@ -639,13 +644,21 @@ export class RemoteBlobStorage implements BlobStorage {
       }
 
       const data = (await response.json()) as { keys: string[] };
-      const keys = data.keys;
+      const keys = data.keys.map((key) => decodeURIComponent(key));
 
       // Remove default prefix from results if it exists
-      if (this.defaultPrefix) {
+      if (normalizedDefaultPrefix) {
         return keys
-          .filter((key) => key.startsWith(`${this.defaultPrefix}/`))
-          .map((key) => key.slice((this.defaultPrefix?.length ?? 0) + 1));
+          .filter(
+            (key) =>
+              key === normalizedDefaultPrefix ||
+              key.startsWith(`${normalizedDefaultPrefix}/`),
+          )
+          .map((key) =>
+            key === normalizedDefaultPrefix
+              ? ""
+              : key.slice(normalizedDefaultPrefix.length + 1),
+          );
       }
 
       return keys;
