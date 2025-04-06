@@ -55,14 +55,13 @@ export class RemoteBlob<T> implements Blob<T> {
     this.org = org;
   }
 
-  async getJSON(options?: { etag?: string }): Promise<T | null> {
+  async getJSON(): Promise<T | null> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
-            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
@@ -72,9 +71,6 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
-        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get blob: ${response.statusText}`,
@@ -102,14 +98,13 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async getString(options?: { etag?: string }): Promise<string | null> {
+  async getString(): Promise<string | null> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
-            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
@@ -119,9 +114,6 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
-        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get blob: ${response.statusText}`,
@@ -149,16 +141,13 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async getRaw(options?: {
-    etag?: string;
-  }): Promise<BlobResponse<Buffer> | null> {
+  async getRaw(): Promise<BlobResponse<Buffer> | null> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
-            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
@@ -168,9 +157,6 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
-        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get blob: ${response.statusText}`,
@@ -220,22 +206,18 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async getStream(options?: { etag?: string }): Promise<Readable> {
+  async getStream(): Promise<Readable> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
-            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
 
       if (!response.ok) {
-        if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
-        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get blob: ${response.statusText}`,
@@ -521,9 +503,6 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
-        }
         throw new BlobError(
           BlobErrorCode.INTERNAL_ERROR,
           `Failed to get metadata: ${response.statusText}`,
@@ -533,12 +512,7 @@ export class RemoteBlob<T> implements Blob<T> {
       // Extract standard headers
       const metadata: Record<string, string> = {};
 
-      // Get content type and etag from standard headers
-      const contentType = response.headers.get("content-type");
-      if (contentType) {
-        metadata.contentType = contentType;
-      }
-
+      // Get etag from standard headers
       const etag = response.headers.get("etag");
       if (etag) {
         metadata.etag = etag;
@@ -550,7 +524,11 @@ export class RemoteBlob<T> implements Blob<T> {
       )) {
         if (name.toLowerCase().startsWith("x-blob-meta-")) {
           const metaKey = name.substring("x-blob-meta-".length);
-          metadata[metaKey] = value;
+          if (metaKey === "content-type") {
+            metadata.contentType = value;
+          } else {
+            metadata[metaKey] = value;
+          }
         }
       }
 

@@ -81,6 +81,37 @@ const TestMemory = gensx.Component<{ id: string }, string>(
           console.log("Chunk: ", chunk);
         }
 
+        // test etag
+        const blob6 = useBlob<string>(`${id}-etag`);
+        const response = await blob6.putString("Hello world", {
+          metadata: {
+            test: "test",
+          },
+        });
+        console.log("ETag: ", response.etag);
+        // update the blob with the wrong etag
+
+        try {
+          await blob6.putString("Hello world2", {
+            metadata: {
+              test: "test",
+            },
+            etag: "wrong-etag",
+          });
+        } catch {
+          console.error("Successfully caught wrong etag");
+        }
+
+        // update the blob with the correct etag
+        await blob6.putString("Hello world2", {
+          metadata: {
+            test: "test",
+          },
+          etag: response.etag,
+        });
+        const response2 = await blob6.getString();
+        console.log("Response 2: ", response2);
+
         return "We made it!";
       } catch (error) {
         console.error("Error in chat processing:", error);

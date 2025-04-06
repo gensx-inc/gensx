@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/require-await */
 
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { Readable } from "node:stream";
 
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
@@ -79,7 +81,6 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      // eslint-disable-next-line @typescript-eslint/require-await
       json: async () => ({
         status: "ok",
         data: {
@@ -126,6 +127,11 @@ suite("RemoteBlobStorage", () => {
       headers: {
         get: (name: string) => (name === "etag" ? "mock-etag" : null),
       },
+      body: JSON.stringify({
+        content: JSON.stringify(data),
+        contentType: "application/json",
+        etag: "mock-etag",
+      }),
     });
 
     const blob = storage.getBlob<typeof data>("test-key");
@@ -158,7 +164,6 @@ suite("RemoteBlobStorage", () => {
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      // eslint-disable-next-line @typescript-eslint/require-await
       json: async () => ({ keys: mockKeys }),
     });
 
@@ -253,6 +258,236 @@ suite("RemoteBlobStorage", () => {
     });
   });
 
+  test("should get string from a blob", async () => {
+    const storage = new RemoteBlobStorage();
+    const mockData = "Hello, world!";
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: {
+          content: mockData,
+          etag: "mock-etag",
+        },
+      }),
+    });
+
+    const blob = storage.getBlob<string>("test-key");
+    const result = await blob.getString();
+
+    expect(result).toEqual(mockData);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob/test-key",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-api-key",
+        }),
+      }),
+    );
+  });
+
+  test("should get raw data from a blob", async () => {
+    const storage = new RemoteBlobStorage();
+    const mockData = Buffer.from("Hello, world!");
+    const base64Data = mockData.toString("base64");
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: {
+          content: base64Data,
+          contentType: "application/octet-stream",
+          etag: "mock-etag",
+          lastModified: "2024-01-01T00:00:00Z",
+          size: mockData.length,
+          metadata: { isBase64: "true" },
+        },
+      }),
+    });
+
+    const blob = storage.getBlob<Buffer>("test-key");
+    const result = await blob.getRaw();
+
+    expect(result).toEqual({
+      content: mockData,
+      contentType: "application/octet-stream",
+      etag: "mock-etag",
+      lastModified: new Date("2024-01-01T00:00:00Z"),
+      size: mockData.length,
+      metadata: {},
+    });
+  });
+
+  test("should get stream from a blob", async () => {
+    const storage = new RemoteBlobStorage();
+    const mockData = "Hello, world!";
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      body: Readable.from(mockData),
+    });
+
+    const blob = storage.getBlob<Readable>("test-key");
+    const stream = await blob.getStream();
+
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const result = Buffer.concat(chunks).toString();
+
+    expect(result).toEqual(mockData);
+  });
+
+  test("should put raw data to a blob", async () => {
+    const storage = new RemoteBlobStorage();
+    const data = Buffer.from("Hello, world!");
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      headers: {
+        get: (name: string) => (name === "etag" ? "mock-etag" : null),
+      },
+    });
+
+    const blob = storage.getBlob<Buffer>("test-key");
+    const result = await blob.putRaw(data, {
+      contentType: "application/octet-stream",
+      metadata: { test: "value" },
+    });
+
+    expect(result.etag).toBe("mock-etag");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob/test-key",
+      expect.objectContaining({
+        method: "PUT",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+        }),
+        body: expect.any(String),
+      }),
+    );
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).toEqual({
+      content: data.toString("base64"),
+      contentType: "application/octet-stream",
+      metadata: {
+        test: "value",
+        isBase64: "true",
+      },
+    });
+  });
+
+  test("should put stream to a blob", async () => {
+    const storage = new RemoteBlobStorage();
+    const data = "Hello, world!";
+    const stream = Readable.from(data);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      headers: {
+        get: (name: string) => (name === "etag" ? "mock-etag" : null),
+      },
+    });
+
+    const blob = storage.getBlob<Readable>("test-key");
+    const result = await blob.putStream(stream, {
+      contentType: "text/plain",
+      metadata: { test: "value" },
+    });
+
+    expect(result.etag).toBe("mock-etag");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob/test-key",
+      expect.objectContaining({
+        method: "PUT",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+        }),
+        body: expect.any(String),
+      }),
+    );
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).toEqual({
+      content: Buffer.from(data).toString("base64"),
+      contentType: "text/plain",
+      metadata: {
+        test: "value",
+        isBase64: "true",
+      },
+    });
+  });
+
+  test("should get blob metadata", async () => {
+    const storage = new RemoteBlobStorage();
+    const _mockData = { foo: "bar" };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (name: string) => {
+          switch (name) {
+            case "x-blob-meta-content-type":
+              return "application/json";
+            case "etag":
+              return "mock-etag";
+            case "x-blob-meta-test":
+              return "value";
+            default:
+              return null;
+          }
+        },
+        [Symbol.iterator]: function* () {
+          yield ["x-blob-meta-content-type", "application/json"];
+          yield ["etag", "mock-etag"];
+          yield ["x-blob-meta-test", "value"];
+        },
+      },
+    });
+
+    const blob = storage.getBlob<typeof _mockData>("test-key");
+    const metadata = await blob.getMetadata();
+
+    expect(metadata).toEqual({
+      contentType: "application/json",
+      etag: "mock-etag",
+      test: "value",
+    });
+  });
+
+  test("should update blob metadata", async () => {
+    const storage = new RemoteBlobStorage();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+    });
+
+    const blob = storage.getBlob("test-key");
+    await blob.updateMetadata({ test: "value" });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob/test-key",
+      expect.objectContaining({
+        method: "PATCH",
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-api-key",
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({
+          metadata: { test: "value" },
+        }),
+      }),
+    );
+  });
+
   suite("Error Handling", () => {
     test("should handle HTTP 404 errors", async () => {
       mockFetch.mockResolvedValueOnce({
@@ -272,7 +507,6 @@ suite("RemoteBlobStorage", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        // eslint-disable-next-line @typescript-eslint/require-await
         json: async () => ({
           status: "error",
           error: "API error message",
@@ -372,6 +606,176 @@ suite("RemoteBlobStorage", () => {
         expect((err as BlobError).code).toBe(BlobErrorCode.INTERNAL_ERROR);
         expect((err as BlobError).message).toContain("No ETag");
       }
+    });
+  });
+
+  test("should handle default prefix in listBlobs", async () => {
+    const storage = new RemoteBlobStorage("default-prefix");
+    const mockKeys = ["default-prefix/key1", "default-prefix/key2"];
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ keys: mockKeys }),
+    });
+
+    const result = await storage.listBlobs();
+
+    expect(result).toEqual(["key1", "key2"]);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix",
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-api-key",
+        }),
+      }),
+    );
+  });
+
+  test("should combine default prefix with provided prefix in listBlobs", async () => {
+    const storage = new RemoteBlobStorage("default-prefix");
+    const mockKeys = ["default-prefix/sub/key1", "default-prefix/sub/key2"];
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ keys: mockKeys }),
+    });
+
+    const result = await storage.listBlobs("sub");
+
+    expect(result).toEqual(["key1", "key2"]);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix/sub",
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-api-key",
+        }),
+      }),
+    );
+  });
+
+  test("should handle metadata in responses", async () => {
+    const storage = new RemoteBlobStorage();
+    const _mockData = { foo: "bar" };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (name: string) => {
+          switch (name) {
+            case "content-type":
+              return "application/json";
+            case "etag":
+              return "mock-etag";
+            case "x-blob-meta-test":
+              return "value";
+            default:
+              return null;
+          }
+        },
+      },
+      json: async () => ({
+        status: "ok",
+        data: {
+          content: _mockData,
+          etag: "mock-etag",
+          metadata: { test: "value" },
+        },
+      }),
+    });
+
+    const blob = storage.getBlob<typeof _mockData>("test-key");
+    const result = await blob.getJSON();
+
+    expect(result).toEqual(_mockData);
+    const metadata = await blob.getMetadata();
+    expect(metadata).toEqual({
+      contentType: "application/json",
+      etag: "mock-etag",
+      test: "value",
+    });
+  });
+
+  test("should handle content type in put operations", async () => {
+    const storage = new RemoteBlobStorage();
+    const data = Buffer.from("Hello, world!");
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      headers: {
+        get: (name: string) => (name === "etag" ? "mock-etag" : null),
+      },
+    });
+
+    const blob = storage.getBlob<Buffer>("test-key");
+    const result = await blob.putRaw(data, {
+      contentType: "application/octet-stream",
+      metadata: { test: "value" },
+    });
+
+    expect(result.etag).toBe("mock-etag");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob/test-key",
+      expect.objectContaining({
+        method: "PUT",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+        }),
+        body: expect.any(String),
+      }),
+    );
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).toEqual({
+      content: data.toString("base64"),
+      contentType: "application/octet-stream",
+      metadata: {
+        test: "value",
+        isBase64: "true",
+      },
+    });
+  });
+
+  test("should handle stream operations with proper content type", async () => {
+    const storage = new RemoteBlobStorage();
+    const data = "Hello, world!";
+    const stream = Readable.from(data);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      headers: {
+        get: (name: string) => (name === "etag" ? "mock-etag" : null),
+      },
+    });
+
+    const blob = storage.getBlob<Readable>("test-key");
+    const result = await blob.putStream(stream, {
+      contentType: "text/plain",
+      metadata: { test: "value" },
+    });
+
+    expect(result.etag).toBe("mock-etag");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob/test-key",
+      expect.objectContaining({
+        method: "PUT",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+        }),
+        body: expect.any(String),
+      }),
+    );
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).toEqual({
+      content: Buffer.from(data).toString("base64"),
+      contentType: "text/plain",
+      metadata: {
+        test: "value",
+        isBase64: "true",
+      },
     });
   });
 });
