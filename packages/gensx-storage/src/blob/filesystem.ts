@@ -197,8 +197,12 @@ class FileSystemBlob<T> implements Blob<T> {
         etag,
         lastModified: stats.mtime,
         size: stats.size,
-        contentType: contentType || "application/octet-stream",
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        contentType: metadataResult?.contentType ?? "application/octet-stream",
+        metadata: metadataResult
+          ? Object.keys(metadata).length > 0
+            ? metadata
+            : undefined
+          : undefined,
       };
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
@@ -233,6 +237,11 @@ class FileSystemBlob<T> implements Blob<T> {
             );
           }
         } catch (err) {
+          // If the error is already a BlobError, rethrow it
+          if (err instanceof BlobError) {
+            throw err;
+          }
+          // Only use handleFsError for filesystem errors
           if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
             throw handleFsError(err, "putJSON:etag-check", this.filePath);
           }
@@ -241,18 +250,19 @@ class FileSystemBlob<T> implements Blob<T> {
 
       await fs.writeFile(this.filePath, content, "utf8");
 
-      // Update metadata if content type is provided
-      if (options?.contentType || options?.metadata) {
-        const metadata = {
-          ...((await this.getMetadata()) ?? {}),
-          ...(options.metadata ?? {}),
-          contentType: options.contentType ?? "application/json",
-        };
-        await this.updateMetadata(metadata);
-      }
+      // Always create metadata file with content type
+      const metadata = {
+        ...(options?.metadata ?? {}),
+        contentType: options?.contentType ?? "application/json",
+      };
+      await this.updateMetadata(metadata);
 
       return { etag: newEtag };
     } catch (err) {
+      // If the error is already a BlobError, rethrow it
+      if (err instanceof BlobError) {
+        throw err;
+      }
       throw handleFsError(err, "putJSON", this.filePath);
     }
   }
@@ -292,15 +302,12 @@ class FileSystemBlob<T> implements Blob<T> {
 
       await fs.writeFile(this.filePath, value, "utf8");
 
-      // Update metadata if content type is provided
-      if (options?.contentType || options?.metadata) {
-        const metadata = {
-          ...((await this.getMetadata()) ?? {}),
-          ...(options.metadata ?? {}),
-          contentType: options.contentType ?? "text/plain",
-        };
-        await this.updateMetadata(metadata);
-      }
+      // Always create metadata file with content type
+      const metadata = {
+        ...(options?.metadata ?? {}),
+        contentType: options?.contentType ?? "text/plain",
+      };
+      await this.updateMetadata(metadata);
 
       return { etag: newEtag };
     } catch (err) {
@@ -348,15 +355,12 @@ class FileSystemBlob<T> implements Blob<T> {
       // Write the raw buffer
       await fs.writeFile(this.filePath, value);
 
-      // Update metadata if provided
-      if (options?.contentType || options?.metadata) {
-        const metadata = {
-          ...((await this.getMetadata()) ?? {}),
-          ...(options.metadata ?? {}),
-          contentType: options.contentType ?? "application/octet-stream",
-        };
-        await this.updateMetadata(metadata);
-      }
+      // Always create metadata file with content type
+      const metadata = {
+        ...(options?.metadata ?? {}),
+        contentType: options?.contentType ?? "application/octet-stream",
+      };
+      await this.updateMetadata(metadata);
 
       return { etag: newEtag };
     } catch (err) {
@@ -444,15 +448,12 @@ class FileSystemBlob<T> implements Blob<T> {
       const buffer = Buffer.concat(chunks);
       const etag = calculateEtag(buffer);
 
-      // Update metadata if content type is provided
-      if (options?.contentType || options?.metadata) {
-        const metadata = {
-          ...((await this.getMetadata()) ?? {}),
-          ...(options.metadata ?? {}),
-          contentType: options.contentType ?? "application/octet-stream",
-        };
-        await this.updateMetadata(metadata);
-      }
+      // Always create metadata file with content type
+      const metadata = {
+        ...(options?.metadata ?? {}),
+        contentType: options?.contentType ?? "application/octet-stream",
+      };
+      await this.updateMetadata(metadata);
 
       return { etag };
     } catch (err) {
@@ -511,8 +512,19 @@ class FileSystemBlob<T> implements Blob<T> {
     try {
       const content = await fs.readFile(this.metadataPath, "utf8");
       const metadata = JSON.parse(content) as Record<string, string>;
-      const etag = calculateEtag(content);
-      return { ...metadata, etag };
+
+      // Calculate etag from the blob content instead of the metadata content
+      try {
+        const blobContent = await fs.readFile(this.filePath);
+        const etag = calculateEtag(blobContent);
+        return { ...metadata, etag };
+      } catch (blobErr) {
+        if ((blobErr as NodeJS.ErrnoException).code === "ENOENT") {
+          // If blob doesn't exist but metadata does, return metadata without etag
+          return metadata;
+        }
+        throw handleFsError(blobErr, "getMetadata:blob", this.filePath);
+      }
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
         return null; // Metadata file doesn't exist
@@ -541,7 +553,7 @@ class FileSystemBlob<T> implements Blob<T> {
         }
       }
 
-      // Preserve contentType if it exists
+      // Preserve contentType if it exists in existing metadata
       const contentType = existingMetadata.contentType;
       const newMetadata = { ...metadata };
       if (contentType) {

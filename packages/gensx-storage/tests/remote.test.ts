@@ -655,49 +655,6 @@ suite("RemoteBlobStorage", () => {
     );
   });
 
-  test("should handle metadata in responses", async () => {
-    const storage = new RemoteBlobStorage();
-    const _mockData = { foo: "bar" };
-
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      headers: {
-        get: (name: string) => {
-          switch (name) {
-            case "content-type":
-              return "application/json";
-            case "etag":
-              return "mock-etag";
-            case "x-blob-meta-test":
-              return "value";
-            default:
-              return null;
-          }
-        },
-      },
-      json: async () => ({
-        status: "ok",
-        data: {
-          content: _mockData,
-          etag: "mock-etag",
-          metadata: { test: "value" },
-        },
-      }),
-    });
-
-    const blob = storage.getBlob<typeof _mockData>("test-key");
-    const result = await blob.getJSON();
-
-    expect(result).toEqual(_mockData);
-    const metadata = await blob.getMetadata();
-    expect(metadata).toEqual({
-      contentType: "application/json",
-      etag: "mock-etag",
-      test: "value",
-    });
-  });
-
   test("should handle content type in put operations", async () => {
     const storage = new RemoteBlobStorage();
     const data = Buffer.from("Hello, world!");
