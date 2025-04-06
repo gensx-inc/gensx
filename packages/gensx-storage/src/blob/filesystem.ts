@@ -17,6 +17,10 @@ import {
 
 /**
  * Helper to convert between filesystem errors and BlobErrors
+ * @param err The error to convert
+ * @param operation The operation that failed
+ * @param path The path where the error occurred
+ * @throws BlobError with appropriate error code and message
  */
 function handleFsError(err: unknown, operation: string, path: string): never {
   if (err instanceof Error) {
@@ -40,6 +44,18 @@ function handleFsError(err: unknown, operation: string, path: string): never {
         `File already exists at path: ${path}`,
         err,
       );
+    } else if (nodeErr.code === "ENOTEMPTY") {
+      throw new BlobError(
+        BlobErrorCode.CONFLICT,
+        `Directory not empty at path: ${path}`,
+        err,
+      );
+    } else if (nodeErr.code === "ENOTDIR") {
+      throw new BlobError(
+        BlobErrorCode.INTERNAL_ERROR,
+        `Path is not a directory: ${path}`,
+        err,
+      );
     }
   }
 
@@ -52,7 +68,9 @@ function handleFsError(err: unknown, operation: string, path: string): never {
 }
 
 /**
- * Calculate an MD5 hash of the content
+ * Calculate an MD5 hash of the content for use as an ETag
+ * @param content The content to hash
+ * @returns The MD5 hash as a hex string
  */
 function calculateEtag(content: string | Buffer): string {
   return crypto.createHash("md5").update(content).digest("hex");
@@ -60,6 +78,8 @@ function calculateEtag(content: string | Buffer): string {
 
 /**
  * Generate a unique filename for metadata
+ * @param filePath The path to the blob file
+ * @returns The path to the metadata file
  */
 function getMetadataPath(filePath: string): string {
   return `${filePath}.metadata.json`;
@@ -67,16 +87,26 @@ function getMetadataPath(filePath: string): string {
 
 /**
  * Implementation of Blob interface for filesystem storage
+ * @template T The type of data stored in the blob
  */
 class FileSystemBlob<T> implements Blob<T> {
   private filePath: string;
   private metadataPath: string;
 
+  /**
+   * Create a new FileSystemBlob
+   * @param filePath The path to the blob file
+   */
   constructor(filePath: string) {
     this.filePath = filePath;
     this.metadataPath = getMetadataPath(filePath);
   }
 
+  /**
+   * Get JSON data from the blob
+   * @returns The JSON data or null if the blob doesn't exist
+   * @throws BlobError if there's an error reading the blob
+   */
   async getJSON<R>(): Promise<R | null> {
     try {
       const content = await fs.readFile(this.filePath, "utf8");
@@ -89,6 +119,11 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Get string data from the blob
+   * @returns The string data or null if the blob doesn't exist
+   * @throws BlobError if there's an error reading the blob
+   */
   async getString(): Promise<string | null> {
     try {
       return await fs.readFile(this.filePath, "utf8");
@@ -100,6 +135,11 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Get a readable stream from the blob
+   * @returns A readable stream of the blob content
+   * @throws BlobError if there's an error creating the stream
+   */
   async getStream(): Promise<Readable> {
     try {
       // Check if file exists first
@@ -116,28 +156,49 @@ class FileSystemBlob<T> implements Blob<T> {
       }
 
       // Create and return readable stream
-      return createReadStream(this.filePath);
+      const stream = createReadStream(this.filePath);
+
+      // Handle stream errors
+      stream.on("error", (err) => {
+        throw handleFsError(err, "getStream:read", this.filePath);
+      });
+
+      return stream;
     } catch (err) {
       throw handleFsError(err, "getStream", this.filePath);
     }
   }
 
+  /**
+   * Get raw binary data from the blob
+   * @returns The raw data and metadata or null if the blob doesn't exist
+   * @throws BlobError if there's an error reading the blob
+   */
   async getRaw(): Promise<BlobResponse<Buffer> | null> {
     try {
       // Read the raw buffer
       const content = await fs.readFile(this.filePath);
       const stats = await fs.stat(this.filePath);
-      const metadata = await this.getMetadata();
+      const metadataResult = await this.getMetadata();
 
       const etag = calculateEtag(content);
 
+      // Check if content is base64 encoded
+      const isBase64 = metadataResult?.isBase64 === "true";
+      const decodedContent = isBase64
+        ? Buffer.from(content.toString(), "base64")
+        : content;
+
+      // Remove contentType and etag from metadata if they exist
+      const { contentType, etag: _, ...metadata } = metadataResult ?? {};
+
       return {
-        content,
+        content: decodedContent,
         etag,
         lastModified: stats.mtime,
         size: stats.size,
-        contentType: metadata?.contentType ?? "application/octet-stream",
-        metadata: metadata ?? undefined,
+        contentType: contentType || "application/octet-stream",
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       };
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
@@ -147,6 +208,13 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Put JSON data into the blob
+   * @param value The JSON data to store
+   * @param options Optional metadata and ETag
+   * @returns The ETag of the stored data
+   * @throws BlobError if there's an error storing the data
+   */
   async putJSON(value: T, options?: BlobOptions): Promise<{ etag: string }> {
     try {
       await fs.mkdir(path.dirname(this.filePath), { recursive: true });
@@ -173,9 +241,13 @@ class FileSystemBlob<T> implements Blob<T> {
 
       await fs.writeFile(this.filePath, content, "utf8");
 
-      if (options?.contentType) {
-        const metadata = (await this.getMetadata()) ?? {};
-        metadata.contentType = options.contentType;
+      // Update metadata if content type is provided
+      if (options?.contentType || options?.metadata) {
+        const metadata = {
+          ...((await this.getMetadata()) ?? {}),
+          ...(options.metadata ?? {}),
+          contentType: options.contentType ?? "application/json",
+        };
         await this.updateMetadata(metadata);
       }
 
@@ -185,6 +257,13 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Put string data into the blob
+   * @param value The string data to store
+   * @param options Optional metadata and ETag
+   * @returns The ETag of the stored data
+   * @throws BlobError if there's an error storing the data
+   */
   async putString(
     value: string,
     options?: BlobOptions,
@@ -213,9 +292,13 @@ class FileSystemBlob<T> implements Blob<T> {
 
       await fs.writeFile(this.filePath, value, "utf8");
 
-      if (options?.contentType) {
-        const metadata = (await this.getMetadata()) ?? {};
-        metadata.contentType = options.contentType;
+      // Update metadata if content type is provided
+      if (options?.contentType || options?.metadata) {
+        const metadata = {
+          ...((await this.getMetadata()) ?? {}),
+          ...(options.metadata ?? {}),
+          contentType: options.contentType ?? "text/plain",
+        };
         await this.updateMetadata(metadata);
       }
 
@@ -225,6 +308,13 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Put raw binary data into the blob
+   * @param value The binary data to store
+   * @param options Optional metadata and ETag
+   * @returns The ETag of the stored data
+   * @throws BlobError if there's an error storing the data
+   */
   async putRaw(
     value: Buffer,
     options?: {
@@ -263,10 +353,8 @@ class FileSystemBlob<T> implements Blob<T> {
         const metadata = {
           ...((await this.getMetadata()) ?? {}),
           ...(options.metadata ?? {}),
+          contentType: options.contentType ?? "application/octet-stream",
         };
-        if (options.contentType) {
-          metadata.contentType = options.contentType;
-        }
         await this.updateMetadata(metadata);
       }
 
@@ -276,6 +364,11 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Get the blob content and metadata
+   * @returns The blob content and metadata or null if the blob doesn't exist
+   * @throws BlobError if there's an error reading the blob
+   */
   async get(): Promise<BlobResponse<T> | null> {
     try {
       const content = await fs.readFile(this.filePath, "utf8");
@@ -303,6 +396,13 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Put data from a stream into the blob
+   * @param stream The stream to read from
+   * @param options Optional metadata and ETag
+   * @returns The ETag of the stored data
+   * @throws BlobError if there's an error storing the data
+   */
   async putStream(
     stream: Readable,
     options?: BlobOptions,
@@ -313,6 +413,17 @@ class FileSystemBlob<T> implements Blob<T> {
       // Create write stream
       const writeStream = createWriteStream(this.filePath);
       const chunks: Buffer[] = [];
+
+      // Handle stream errors
+      stream.on("error", (err) => {
+        writeStream.destroy();
+        throw handleFsError(err, "putStream:read", this.filePath);
+      });
+
+      writeStream.on("error", (err) => {
+        stream.destroy();
+        throw handleFsError(err, "putStream:write", this.filePath);
+      });
 
       // Collect chunks and write to file
       for await (const chunk of stream) {
@@ -338,10 +449,8 @@ class FileSystemBlob<T> implements Blob<T> {
         const metadata = {
           ...((await this.getMetadata()) ?? {}),
           ...(options.metadata ?? {}),
+          contentType: options.contentType ?? "application/octet-stream",
         };
-        if (options.contentType) {
-          metadata.contentType = options.contentType;
-        }
         await this.updateMetadata(metadata);
       }
 
@@ -351,6 +460,10 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Delete the blob
+   * @throws BlobError if there's an error deleting the blob
+   */
   async delete(): Promise<void> {
     try {
       try {
@@ -376,6 +489,10 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Check if the blob exists
+   * @returns true if the blob exists, false otherwise
+   */
   async exists(): Promise<boolean> {
     try {
       await fs.access(this.filePath);
@@ -385,10 +502,17 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Get the blob metadata
+   * @returns The blob metadata or null if the blob doesn't exist
+   * @throws BlobError if there's an error reading the metadata
+   */
   async getMetadata(): Promise<Record<string, string> | null> {
     try {
       const content = await fs.readFile(this.metadataPath, "utf8");
-      return JSON.parse(content) as Record<string, string>;
+      const metadata = JSON.parse(content) as Record<string, string>;
+      const etag = calculateEtag(content);
+      return { ...metadata, etag };
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
         return null; // Metadata file doesn't exist
@@ -397,10 +521,38 @@ class FileSystemBlob<T> implements Blob<T> {
     }
   }
 
+  /**
+   * Update metadata associated with the blob
+   * @param metadata The new metadata to store
+   * @throws BlobError if there's an error updating the metadata
+   */
   async updateMetadata(metadata: Record<string, string>): Promise<void> {
     try {
       await fs.mkdir(path.dirname(this.metadataPath), { recursive: true });
-      await fs.writeFile(this.metadataPath, JSON.stringify(metadata), "utf8");
+
+      // Get existing metadata to preserve contentType
+      let existingMetadata: Record<string, string> = {};
+      try {
+        const content = await fs.readFile(this.metadataPath, "utf8");
+        existingMetadata = JSON.parse(content) as Record<string, string>;
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw handleFsError(err, "updateMetadata:read", this.metadataPath);
+        }
+      }
+
+      // Preserve contentType if it exists
+      const contentType = existingMetadata.contentType;
+      const newMetadata = { ...metadata };
+      if (contentType) {
+        newMetadata.contentType = contentType;
+      }
+
+      await fs.writeFile(
+        this.metadataPath,
+        JSON.stringify(newMetadata),
+        "utf8",
+      );
     } catch (err) {
       throw handleFsError(err, "updateMetadata", this.metadataPath);
     }
@@ -411,6 +563,11 @@ class FileSystemBlob<T> implements Blob<T> {
  * FileSystem implementation of blob storage
  */
 export class FileSystemBlobStorage implements BlobStorage {
+  /**
+   * Create a new FileSystemBlobStorage
+   * @param rootDir The root directory for blob storage
+   * @param defaultPrefix Optional default prefix for all blob keys
+   */
   constructor(
     private rootDir: string,
     private defaultPrefix?: string,
@@ -419,6 +576,10 @@ export class FileSystemBlobStorage implements BlobStorage {
     void this.ensureRootDir();
   }
 
+  /**
+   * Ensure the root directory exists
+   * @throws BlobError if there's an error creating the directory
+   */
   private async ensureRootDir(): Promise<void> {
     try {
       await fs.mkdir(this.rootDir, { recursive: true });
@@ -427,26 +588,50 @@ export class FileSystemBlobStorage implements BlobStorage {
     }
   }
 
+  /**
+   * Get the full path for a blob key
+   * @param key The blob key
+   * @returns The full path to the blob
+   */
   private getFullPath(key: string): string {
+    // Normalize key by removing leading/trailing slashes
+    const normalizedKey = key.replace(/^\/+|\/+$/g, "");
+
     // Apply default prefix if specified
     const prefixedKey = this.defaultPrefix
-      ? `${this.defaultPrefix}/${key}`
-      : key;
+      ? `${this.defaultPrefix}/${normalizedKey}`
+      : normalizedKey;
+
     return path.join(this.rootDir, prefixedKey);
   }
 
+  /**
+   * Get a blob by key
+   * @param key The blob key
+   * @returns A Blob instance for the given key
+   */
   getBlob<T>(key: string): Blob<T> {
     return new FileSystemBlob<T>(this.getFullPath(key));
   }
 
+  /**
+   * List all blobs with the given prefix
+   * @param prefix Optional prefix to filter blobs
+   * @returns An array of blob keys
+   * @throws BlobError if there's an error listing blobs
+   */
   async listBlobs(prefix?: string): Promise<string[]> {
     try {
-      // Apply default prefix if specified
-      const searchPrefix = this.defaultPrefix
-        ? prefix
-          ? `${this.defaultPrefix}/${prefix}`
-          : this.defaultPrefix
-        : (prefix ?? "");
+      // Normalize prefixes by removing trailing slashes
+      const normalizedDefaultPrefix = this.defaultPrefix?.replace(/\/$/, "");
+      const normalizedPrefix = prefix?.replace(/\/$/, "");
+
+      // Build the search prefix
+      const searchPrefix = normalizedDefaultPrefix
+        ? normalizedPrefix
+          ? `${normalizedDefaultPrefix}/${normalizedPrefix}`
+          : normalizedDefaultPrefix
+        : (normalizedPrefix ?? "");
 
       const searchPath = path.join(this.rootDir, searchPrefix);
 
@@ -486,13 +671,18 @@ export class FileSystemBlobStorage implements BlobStorage {
       const allFiles = await listFilesRecursively(searchPath, this.rootDir);
 
       // Remove default prefix from results if it exists
-      if (this.defaultPrefix) {
-        return allFiles.map((file) => {
-          if (this.defaultPrefix && file.startsWith(`${this.defaultPrefix}/`)) {
-            return file.slice(this.defaultPrefix.length + 1);
-          }
-          return file;
-        });
+      if (normalizedDefaultPrefix) {
+        return allFiles
+          .filter(
+            (file) =>
+              file === normalizedDefaultPrefix ||
+              file.startsWith(`${normalizedDefaultPrefix}/`),
+          )
+          .map((file) =>
+            file === normalizedDefaultPrefix
+              ? ""
+              : file.slice(normalizedDefaultPrefix.length + 1),
+          );
       }
 
       return allFiles;

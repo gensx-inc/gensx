@@ -1,6 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { Readable } from "node:stream";
 
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
@@ -190,6 +191,67 @@ suite("FileSystemBlobStorage", () => {
     expect(finalData).toEqual(updatedData);
   });
 
+  test("should handle raw data operations", async () => {
+    const key = "raw-test";
+    const data = Buffer.from("Hello, world!", "utf-8") as Buffer;
+    const blob = storage.getBlob<Buffer>(key);
+
+    const result = await blob.putRaw(data, {
+      contentType: "application/octet-stream",
+      metadata: { test: "value" },
+    });
+
+    expect(result).toHaveProperty("etag");
+
+    const retrieved = await blob.getRaw();
+    expect(retrieved).not.toBeNull();
+    if (retrieved) {
+      expect(retrieved.content).toEqual(data);
+      expect(retrieved.contentType).toBe("application/octet-stream");
+      expect(retrieved.metadata).toEqual({ test: "value" });
+    }
+  });
+
+  test("should handle stream operations", async () => {
+    const key = "stream-test";
+    const data = "Hello, world!";
+    const stream = Readable.from(data);
+    const blob = storage.getBlob<Readable>(key);
+
+    const result = await blob.putStream(stream, {
+      contentType: "text/plain",
+      metadata: { test: "value" },
+    });
+
+    expect(result).toHaveProperty("etag");
+
+    const retrievedStream = await blob.getStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of retrievedStream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const retrievedData = Buffer.concat(chunks).toString();
+    expect(retrievedData).toBe(data);
+  });
+
+  test("should handle content type in put operations", async () => {
+    const key = "content-type-test";
+    const data = Buffer.from("Hello, world!");
+    const blob = storage.getBlob<Buffer>(key);
+
+    await blob.putRaw(data, {
+      contentType: "application/octet-stream",
+      metadata: { test: "value" },
+    });
+
+    const metadata = await blob.getMetadata();
+    expect(metadata).not.toBeNull();
+    if (metadata) {
+      expect(metadata.contentType).toBe("application/octet-stream");
+      expect(metadata.test).toBe("value");
+    }
+  });
+
   suite("Error Handling", () => {
     test("should handle NOT_FOUND errors", async () => {
       const blob = storage.getBlob<string>("non-existent");
@@ -277,6 +339,26 @@ suite("FileSystemBlobStorage", () => {
       } catch (err) {
         expect(err).toBeInstanceOf(BlobError);
         expect((err as BlobError).code).toBe(BlobErrorCode.INTERNAL_ERROR);
+      }
+    });
+
+    test("should handle missing ETag in response", async () => {
+      const blob = storage.getBlob<string>("no-etag");
+
+      // Mock fs.writeFile to not set ETag
+      vi.spyOn(fs, "writeFile").mockImplementation(() => {
+        // Simulate successful write without ETag
+        return Promise.resolve();
+      });
+
+      try {
+        await blob.putString("test");
+        // Should have thrown
+        expect(true).toBe(false);
+      } catch (err) {
+        expect(err).toBeInstanceOf(BlobError);
+        expect((err as BlobError).code).toBe(BlobErrorCode.INTERNAL_ERROR);
+        expect((err as BlobError).message).toContain("No ETag");
       }
     });
   });
