@@ -88,21 +88,21 @@ Hook to access a blob by key.
 const blob = useBlob<MyDataType>("path/to/my-data");
 
 // Common operations
-await blob.get(); // Get data
-await blob.put(data); // Store data
+await blob.getString(); // Get data
+await blob.putString(data); // Store data
+
+await blob.putJSON(data); // Store data
+await blob.getJSON(); // Get data
+
+await blob.putRaw(data); // Store data
+await blob.getRaw(); // Get data
+
+await blob.putStream(data); // Store data
+await blob.getStream(); // Get data
+
 await blob.delete(); // Delete data
 await blob.exists(); // Check if exists
 await blob.getMetadata(); // Get metadata
+
+await blob.updateMetadata({ key: "value" }); // Update metadata
 ```
-
-## Coming Soon
-
-- SQLite Database support with Turso integration
-- Vector storage with Turbopuffer integration
-- Configuration via yaml files
-- Advanced querying capabilities
-- Batch operations
-
-## License
-
-MIT
