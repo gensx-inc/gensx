@@ -4,13 +4,13 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
+import * as gensx from "@gensx/core";
+import { afterEach, beforeEach, expect, suite, test } from "vitest";
 
-import { FileSystemBlobStorage } from "../src/blob/filesystem.js";
-// Import the BlobProvider last to ensure mocks are set up
+import { BlobContext } from "../src/blob/context.js";
 import { BlobProvider } from "../src/blob/provider.js";
-import { RemoteBlobStorage } from "../src/blob/remote.js";
 import { BlobProviderProps } from "../src/blob/types.js";
+import { BlobStorage } from "../src/blob/types.js";
 
 // Helper to create temporary test directories
 async function createTempDir(): Promise<string> {
@@ -31,19 +31,6 @@ async function cleanupTempDir(tempDir: string): Promise<void> {
   }
 }
 
-// Mock @gensx/core
-vi.mock("@gensx/core", () => ({
-  Component: vi.fn((_name, fn) => fn),
-  createContext: vi.fn(),
-}));
-
-// Mock the BlobContext
-vi.mock("../src/blob/context.js", () => ({
-  BlobContext: {
-    Provider: vi.fn(({ value }) => value),
-  },
-}));
-
 suite("BlobProvider", () => {
   let tempDir: string;
 
@@ -62,32 +49,65 @@ suite("BlobProvider", () => {
     delete process.env.GENSX_ORG;
   });
 
-  test("BlobProvider should create FileSystemBlobStorage for filesystem kind", () => {
-    // Call the BlobProvider with filesystem props
+  test("provides filesystem storage to children", async () => {
+    let capturedStorage: BlobStorage | undefined;
+
+    const TestComponent = gensx.Component<{}, null>("TestComponent", () => {
+      const context = gensx.useContext(BlobContext);
+      if (!context) throw new Error("BlobContext not found");
+      capturedStorage = context;
+      return null;
+    });
+
     const props: BlobProviderProps = {
       kind: "filesystem",
       rootDir: tempDir,
     };
 
-    const result = BlobProvider(props);
+    await gensx.execute(
+      <BlobProvider {...props}>
+        <TestComponent />
+      </BlobProvider>,
+    );
 
-    // Verify it created a FileSystemBlobStorage
-    expect(result).toBeInstanceOf(FileSystemBlobStorage);
+    expect(capturedStorage).toBeDefined();
+    expect(capturedStorage).toHaveProperty("rootDir", tempDir);
   });
 
-  test("BlobProvider should create RemoteBlobStorage for cloud kind", () => {
-    // Call the BlobProvider with cloud props
+  test("provides cloud storage to children", async () => {
+    let capturedStorage: BlobStorage | undefined;
+
+    const TestComponent = gensx.Component<{}, null>("TestComponent", () => {
+      const context = gensx.useContext(BlobContext);
+      if (!context) throw new Error("BlobContext not found");
+      capturedStorage = context;
+      return null;
+    });
+
     const props: BlobProviderProps = {
       kind: "cloud",
     };
 
-    const result = BlobProvider(props);
+    await gensx.execute(
+      <BlobProvider {...props}>
+        <TestComponent />
+      </BlobProvider>,
+    );
 
-    // Verify it created a RemoteBlobStorage
-    expect(result).toBeInstanceOf(RemoteBlobStorage);
+    expect(capturedStorage).toBeDefined();
+    expect(capturedStorage).toHaveProperty("apiKey", "test-api-key");
   });
 
-  test("BlobProvider should pass defaultPrefix to storage implementations", () => {
+  test("passes defaultPrefix to storage implementations", async () => {
+    let capturedStorage: BlobStorage | undefined;
+
+    const TestComponent = gensx.Component<{}, null>("TestComponent", () => {
+      const context = gensx.useContext(BlobContext);
+      if (!context) throw new Error("BlobContext not found");
+      capturedStorage = context;
+      return null;
+    });
+
     // Test with filesystem storage
     const fsProps: BlobProviderProps = {
       kind: "filesystem",
@@ -95,8 +115,13 @@ suite("BlobProvider", () => {
       defaultPrefix: "fs-prefix",
     };
 
-    const fsResult = BlobProvider(fsProps) as unknown as FileSystemBlobStorage;
-    expect(fsResult).toBeInstanceOf(FileSystemBlobStorage);
+    await gensx.execute(
+      <BlobProvider {...fsProps}>
+        <TestComponent />
+      </BlobProvider>,
+    );
+
+    expect(capturedStorage).toHaveProperty("defaultPrefix", "fs-prefix");
 
     // Test with cloud storage
     const cloudProps: BlobProviderProps = {
@@ -104,12 +129,12 @@ suite("BlobProvider", () => {
       defaultPrefix: "cloud-prefix",
     };
 
-    const cloudResult = BlobProvider(
-      cloudProps,
-    ) as unknown as RemoteBlobStorage;
-    expect(cloudResult).toBeInstanceOf(RemoteBlobStorage);
+    await gensx.execute(
+      <BlobProvider {...cloudProps}>
+        <TestComponent />
+      </BlobProvider>,
+    );
 
-    // Note: We can't directly test defaultPrefix as it's private
-    // The implementation would verify this through behavior
+    expect(capturedStorage).toHaveProperty("defaultPrefix", "cloud-prefix");
   });
 });
