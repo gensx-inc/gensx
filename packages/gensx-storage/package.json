@@ -19,10 +19,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./blob": {
-      "types": "./dist/blob/index.d.ts",
-      "import": "./dist/blob/index.js"
     }
   },
   "scripts": {
