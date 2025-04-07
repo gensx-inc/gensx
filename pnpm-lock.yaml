@@ -985,12 +985,6 @@ importers:
       '@gensx/core':
         specifier: workspace:*
         version: link:../gensx-core
-      zod:
-        specifier: 'catalog:'
-        version: 3.24.2
-      zod-to-json-schema:
-        specifier: 'catalog:'
-        version: 3.24.5(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:packages

@@ -88,8 +88,6 @@ const WorkflowComponent = gensx.Component<
       //kind="filesystem"
       //rootDir={path.join(process.cwd(), "chat-memory")}
       kind="cloud"
-      //region="us-west-2"
-      //bucket="gensx-chat-history"
     >
       <ChatWithMemory userInput={userInput} threadId={threadId} />
     </BlobProvider>

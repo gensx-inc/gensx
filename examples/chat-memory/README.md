@@ -14,7 +14,7 @@ This example demonstrates how to build a chat application with persistent memory
 1. Install dependencies:
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. Set up your environment variables:
