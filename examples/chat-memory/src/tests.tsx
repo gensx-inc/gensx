@@ -129,21 +129,12 @@ const WorkflowComponent = gensx.Component<{ id: string }, string>(
   ({ id }) => (
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <>
-        <BlobProvider
-          //kind="filesystem"
-          //rootDir={path.join(process.cwd(), "chat-memory")}
-          kind="cloud"
-          //region="us-west-2"
-          //bucket="gensx-chat-history"
-        >
+        <BlobProvider kind="cloud">
           <TestMemory id={id} />
         </BlobProvider>
         <BlobProvider
           kind="filesystem"
           rootDir={path.join(process.cwd(), "chat-memory")}
-          //kind="cloud"
-          //region="us-west-2"
-          //bucket="gensx-chat-history"
         >
           <TestMemory id={`${id}-fs`} />
         </BlobProvider>
