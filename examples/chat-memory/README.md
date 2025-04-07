@@ -1,6 +1,6 @@
 # GenSX Chat Memory Example
 
-This example demonstrates how to build a chat application with persistent memory using GenSX. It uses OpenAI's GPT-4o-mini model and stores chat history in cloud blob storage.
+This example demonstrates how to build a chat application with persistent memory using GenSX. It uses OpenAI's GPT-4o-mini model and stores chat history in GenSX Cloud blob storage.
 
 ## Features
 

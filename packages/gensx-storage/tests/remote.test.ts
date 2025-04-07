@@ -3,9 +3,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/require-await */
 
-import * as fs from "node:fs/promises";
-import * as os from "node:os";
-import * as path from "node:path";
 import { Readable } from "node:stream";
 
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
@@ -13,30 +10,10 @@ import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 import { RemoteBlobStorage } from "../src/blob/remote.js";
 import { BlobError, BlobErrorCode } from "../src/index.js";
 
-// Helper to create a clean test environment
-async function createTempDir(): Promise<string> {
-  const tempDir = path.join(
-    os.tmpdir(),
-    `gensx-storage-test-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-  );
-  await fs.mkdir(tempDir, { recursive: true });
-  return tempDir;
-}
-
-// Helper to clean up temporary test directories
-async function cleanupTempDir(tempDir: string): Promise<void> {
-  try {
-    await fs.rm(tempDir, { recursive: true, force: true });
-  } catch (err) {
-    console.warn(`Failed to clean up temp directory ${tempDir}:`, err);
-  }
-}
-
 suite("RemoteBlobStorage", () => {
   // Save original environment
   const originalEnv = { ...process.env };
   let mockFetch: ReturnType<typeof vi.fn>;
-  let tempDir: string;
 
   beforeEach(async () => {
     // Setup mock environment variables
@@ -46,18 +23,12 @@ suite("RemoteBlobStorage", () => {
     // Reset and setup fetch mock
     mockFetch = vi.fn();
     global.fetch = mockFetch;
-
-    // Create temp directory for any file operations
-    tempDir = await createTempDir();
   });
 
   afterEach(async () => {
     // Restore original environment
     process.env = { ...originalEnv };
     vi.clearAllMocks();
-
-    // Clean up temp directory
-    await cleanupTempDir(tempDir);
   });
 
   test("should initialize with environment variables", () => {

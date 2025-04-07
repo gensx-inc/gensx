@@ -3,7 +3,6 @@
   "packages/gensx-anthropic": "0.1.11",
   "packages/gensx-mcp": "0.1.11",
   "packages/gensx-openai": "0.1.20",
-  "packages/gensx-storage": "0.0.1",
   "packages/gensx-vercel-ai-sdk": "0.1.11",
   "packages/gensx": "0.3.17",
   "packages/gensx-core": "0.3.7",
