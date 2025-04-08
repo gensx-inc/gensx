@@ -16,3 +16,4 @@ export type {
   GSXToolAnySchema,
 } from "./types.js";
 export type { GsxArray } from "./array.js";
+export { readConfig } from "./config.js";
