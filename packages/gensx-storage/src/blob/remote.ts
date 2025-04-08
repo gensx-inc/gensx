@@ -75,7 +75,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       const apiResponse = (await response.json()) as APIResponse<
-        BlobResponse<T>
+        BlobResponse<string>
       >;
 
       if (apiResponse.status === "error") {
@@ -88,7 +88,8 @@ export class RemoteBlob<T> implements Blob<T> {
         return null;
       }
 
-      return apiResponse.data.content;
+      // Parse the content as JSON since it's stored as a string
+      return JSON.parse(apiResponse.data.content) as T;
     } catch (err) {
       throw handleApiError(err, "getJSON");
     }
