@@ -1,14 +1,18 @@
 {
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "esnext",
-    "moduleResolution": "Node",
-    "rootDir": ".",
-    "outDir": "dist",
-    "strict": true,
+    "moduleResolution": "node",
+    "module": "commonjs",
     "jsx": "react-jsx",
-    "jsxImportSource": "@gensx/core"
+    "jsxImportSource": "@gensx/core",
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@gensx/core/jsx-runtime": [
+        "./node_modules/@gensx/core/dist/cjs/jsx-runtime"
+      ]
+    }
   },
-  "include": ["*.ts", "*.tsx"],
+  "include": ["*.tsx", "*.ts"],
   "exclude": ["node_modules", "dist"]
 }
