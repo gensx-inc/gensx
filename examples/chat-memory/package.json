@@ -10,7 +10,6 @@
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./src/index.tsx",
-    "test": "tsx ./src/tests.tsx",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
