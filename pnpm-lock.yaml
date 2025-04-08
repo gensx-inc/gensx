@@ -1068,12 +1068,24 @@ importers:
         specifier: workspace:*
         version: link:../gensx-core
     devDependencies:
+      '@rollup/plugin-commonjs':
+        specifier: 'catalog:'
+        version: 25.0.8(rollup@4.39.0)
+      '@rollup/plugin-node-resolve':
+        specifier: 'catalog:'
+        version: 15.3.1(rollup@4.39.0)
+      '@rollup/plugin-typescript':
+        specifier: 'catalog:'
+        version: 11.1.6(rollup@4.39.0)(tslib@2.8.1)(typescript@5.8.2)
       '@types/node':
         specifier: catalog:packages
         version: 18.19.86
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 2.1.9(vitest@2.1.9(@types/node@18.19.86)(lightningcss@1.29.3))
+      rollup:
+        specifier: 'catalog:'
+        version: 4.39.0
       vitest:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@18.19.86)(lightningcss@1.29.3)
@@ -1105,6 +1117,9 @@ importers:
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 2.1.9(vitest@2.1.9(@types/node@18.19.86)(lightningcss@1.29.3))
+      rollup:
+        specifier: 'catalog:'
+        version: 4.39.0
       vitest:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@18.19.86)(lightningcss@1.29.3)

@@ -4,6 +4,12 @@
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "tsconfig.json",
+        "package.json"
+      ],
       "dependsOn": ["^build"],
       "outputs": ["dist"]
     },

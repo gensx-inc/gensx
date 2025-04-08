@@ -54,6 +54,7 @@
     "@rollup/plugin-typescript": "catalog:",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
+    "rollup": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:",
     "zod-to-json-schema": "catalog:"

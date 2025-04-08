@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "description": "Cloud storage, blobs, sqlite, and vector database providers/hooks for GenSX.",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
@@ -17,12 +17,17 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": {
+        "import": "./dist/esm/index.d.ts",
+        "require": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.d.ts"
+      },
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rollup -c",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",
@@ -38,13 +43,18 @@
     "vectorDB"
   ],
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "catalog:",
+    "@rollup/plugin-node-resolve": "catalog:",
+    "@rollup/plugin-typescript": "catalog:",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
+    "rollup": "catalog:",
     "vitest": "catalog:"
   },
   "publishConfig": {
