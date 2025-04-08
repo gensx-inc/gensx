@@ -30,6 +30,10 @@ const createConfig = (entry, entryName, format) => ({
     file: `dist/${format === "es" ? "esm" : "cjs"}/${entryName}.${format === "es" ? "js" : "cjs"}`,
     format,
     sourcemap: true,
+    sourcemapPathTransform: (relativeSourcePath) => {
+      // Transform source paths to be relative to the package root
+      return `@gensx/anthropic/${relativeSourcePath}`;
+    },
   },
   external,
   plugins: [
@@ -43,6 +47,7 @@ const createConfig = (entry, entryName, format) => ({
       compilerOptions: {
         module: "NodeNext",
         moduleResolution: "NodeNext",
+        sourceRoot: "../../src",
       },
     }),
     emitModulePackageJson(),

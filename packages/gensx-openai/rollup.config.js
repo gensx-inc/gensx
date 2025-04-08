@@ -30,6 +30,10 @@ const createConfig = (entry, entryName, format) => ({
     file: `dist/${format === "es" ? "esm" : "cjs"}/${entryName}.${format === "es" ? "js" : "cjs"}`,
     format,
     sourcemap: true,
+    sourcemapPathTransform: (relativeSourcePath) => {
+      // Transform source paths to be relative to the package root
+      return `@gensx/openai/${relativeSourcePath}`;
+    },
   },
   external,
   plugins: [
@@ -39,10 +43,10 @@ const createConfig = (entry, entryName, format) => ({
       tsconfig: "./tsconfig.build.json",
       sourceMap: true,
       noEmitOnError: true,
-      outDir: "dist",
       compilerOptions: {
         module: "NodeNext",
         moduleResolution: "NodeNext",
+        sourceRoot: "../../src",
       },
     }),
     emitModulePackageJson(),

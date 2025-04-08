@@ -1,27 +1,26 @@
 {
   "name": "@gensx/openai",
-  "version": "0.1.20",
+  "version": "0.3.7",
   "description": "OpenAI integration for GenSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
-  "types": "./dist/index.d.ts",
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=9.0.0"
-  },
+  "types": "./dist/cjs/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": {
+        "import": "./dist/esm/index.d.ts",
+        "require": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.d.ts"
+      },
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.cjs"
     }
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/gensx-inc/gensx.git",
-    "directory": "packages/gensx-openai"
-  },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "rollup -c",
     "clean": "rm -rf dist",
@@ -32,20 +31,16 @@
     "lint:fix": "eslint . --fix"
   },
   "keywords": [
-    "gensx",
-    "openai",
     "ai",
-    "gpt",
-    "jsx"
-  ],
-  "files": [
-    "src",
-    "dist"
+    "jsx",
+    "workflow",
+    "openai"
   ],
   "author": "GenSX Team",
   "license": "Apache-2.0",
-  "peerDependencies": {
-    "openai": "catalog:"
+  "dependencies": {
+    "@gensx/core": "workspace:*",
+    "openai": "^4.28.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "catalog:",
@@ -53,16 +48,10 @@
     "@rollup/plugin-typescript": "catalog:",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "openai": "catalog:",
     "rollup": "catalog:",
     "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "@gensx/core": "workspace:*",
-    "zod": "catalog:",
-    "zod-to-json-schema": "catalog:"
   }
 }

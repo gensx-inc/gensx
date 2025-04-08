@@ -907,12 +907,12 @@ importers:
 
   packages/gensx-core:
     dependencies:
+      '@common.js/serialize-error':
+        specifier: ^11.0.3
+        version: 11.0.3
       ini:
         specifier: ^5.0.0
         version: 5.0.0
-      serialize-error:
-        specifier: ^12.0.0
-        version: 12.0.0
       zod:
         specifier: 'catalog:'
         version: 3.24.2
@@ -1426,6 +1426,10 @@ packages:
 
   '@chevrotain/utils@11.0.3':
     resolution: {integrity: sha512-YslZMgtJUyuMbZ+aKvfF3x1f5liK4mWNxghFRv7jqRR9C3R3fAOGTTKvxXDa2Y1s9zSbcpuO0cAxDYsc9SrXoQ==}
+
+  '@common.js/serialize-error@11.0.3':
+    resolution: {integrity: sha512-KDAR5xfCd5HlGyONA6PRDrNUSxgJRnSLhF0YaFNzhIOwKHgXoxkdCzZmzV2y3BW4VGNHDo8yAjdStRyvmBxYNA==}
+    engines: {node: '>=14.16'}
 
   '@corex/deepmerge@4.0.43':
     resolution: {integrity: sha512-N8uEMrMPL0cu/bdboEWpQYb/0i2K5Qn8eCsxzOmxSggJbbQte7ljMRoXm917AbntqTGOzdTu+vP3KOOzoC70HQ==}
@@ -6839,6 +6843,10 @@ packages:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
 
+  type-fest@2.19.0:
+    resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
+    engines: {node: '>=12.20'}
+
   type-fest@4.35.0:
     resolution: {integrity: sha512-2/AwEFQDFEy30iOLjrvHDIH7e4HEWH+f1Yl1bI5XMqzuoCUqwYCdxachgsgv0og/JdVZUhbfjcJAoHj5L1753A==}
     engines: {node: '>=16'}
@@ -7488,6 +7496,10 @@ snapshots:
   '@chevrotain/types@11.0.3': {}
 
   '@chevrotain/utils@11.0.3': {}
+
+  '@common.js/serialize-error@11.0.3':
+    dependencies:
+      type-fest: 2.19.0
 
   '@corex/deepmerge@4.0.43': {}
 
@@ -13780,6 +13792,8 @@ snapshots:
   type-check@0.4.0:
     dependencies:
       prelude-ls: 1.2.1
+
+  type-fest@2.19.0: {}
 
   type-fest@4.35.0: {}
 

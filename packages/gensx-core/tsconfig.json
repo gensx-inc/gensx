@@ -10,6 +10,6 @@
       "@/jsx-dev-runtime": ["src/jsx-dev-runtime.ts"]
     }
   },
-  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "vite.config.ts"],
+  "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }

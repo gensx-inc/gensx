@@ -9,7 +9,7 @@ import type {
   Streamable,
 } from "./types.js";
 
-import { serializeError } from "serialize-error";
+import { serializeError } from "@common.js/serialize-error";
 
 import { getCurrentContext } from "./context.js";
 import { JSX, jsx } from "./jsx-runtime.js";
