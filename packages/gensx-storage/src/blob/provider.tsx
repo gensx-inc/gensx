@@ -30,7 +30,7 @@ export const BlobProvider = Component<BlobProviderProps, never>(
     const kind =
       "kind" in props
         ? props.kind
-        : process.env.STORAGE_MODE === "s3"
+        : process.env.GENSX_RUNTIME === "cloud"
           ? "cloud"
           : "filesystem";
 

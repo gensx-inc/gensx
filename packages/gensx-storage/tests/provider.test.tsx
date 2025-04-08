@@ -53,7 +53,7 @@ suite("BlobProvider", () => {
     // Clear environment variables
     delete process.env.GENSX_API_KEY;
     delete process.env.GENSX_ORG;
-    delete process.env.STORAGE_MODE;
+    delete process.env.GENSX_RUNTIME;
   });
 
   test("provides filesystem storage to children", async () => {
@@ -149,7 +149,7 @@ suite("BlobProvider", () => {
     expect(capturedStorage).toBeInstanceOf(RemoteBlobStorage);
   });
 
-  test("defaults to filesystem storage when kind is not provided and STORAGE_MODE is not s3", async () => {
+  test("defaults to filesystem storage when kind is not provided and GENSX_RUNTIME is not cloud", async () => {
     let capturedStorage: BlobStorage | undefined;
 
     const TestComponent = gensx.Component<{}, null>("TestComponent", () => {
@@ -159,8 +159,8 @@ suite("BlobProvider", () => {
       return null;
     });
 
-    // Ensure STORAGE_MODE is not set
-    delete process.env.STORAGE_MODE;
+    // Ensure GENSX_RUNTIME is not set
+    delete process.env.GENSX_RUNTIME;
 
     const props: FileSystemBlobProviderProps = {
       rootDir: tempDir,
@@ -177,7 +177,7 @@ suite("BlobProvider", () => {
     expect(capturedStorage).toBeInstanceOf(FileSystemBlobStorage);
   });
 
-  test("defaults to cloud storage when kind is not provided and STORAGE_MODE is s3", async () => {
+  test("defaults to cloud storage when kind is not provided and GENSX_RUNTIME is cloud", async () => {
     let capturedStorage: BlobStorage | undefined;
 
     const TestComponent = gensx.Component<{}, null>("TestComponent", () => {
@@ -187,8 +187,8 @@ suite("BlobProvider", () => {
       return null;
     });
 
-    // Set STORAGE_MODE to s3
-    process.env.STORAGE_MODE = "s3";
+    // Set GENSX_RUNTIME to cloud
+    process.env.GENSX_RUNTIME = "cloud";
 
     const props: CloudBlobProviderProps = {
       defaultPrefix: "test-prefix",
@@ -206,7 +206,7 @@ suite("BlobProvider", () => {
     expect(capturedStorage).toBeInstanceOf(RemoteBlobStorage);
   });
 
-  test("uses provided kind even when STORAGE_MODE is set", async () => {
+  test("uses provided kind even when GENSX_RUNTIME is set", async () => {
     let capturedStorage: BlobStorage | undefined;
 
     const TestComponent = gensx.Component<{}, null>("TestComponent", () => {
@@ -216,8 +216,8 @@ suite("BlobProvider", () => {
       return null;
     });
 
-    // Set STORAGE_MODE to s3 but provide filesystem kind
-    process.env.STORAGE_MODE = "s3";
+    // Set GENSX_RUNTIME to cloud but provide filesystem kind
+    process.env.GENSX_RUNTIME = "cloud";
 
     const props: FileSystemBlobProviderProps = {
       kind: "filesystem",
