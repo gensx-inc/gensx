@@ -6,8 +6,8 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/jsx-runtime": ["src/jsx-runtime.ts"]
+      "@/jsx-runtime": ["src/jsx-runtime.ts"],
+      "@/jsx-dev-runtime": ["src/jsx-dev-runtime.ts"]
     },
     "noUnusedLocals": false
   },

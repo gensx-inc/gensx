@@ -3,7 +3,6 @@
     "target": "ES2020",
     "module": "esnext",
     "moduleResolution": "Node",
-    "esModuleInterop": true,
     "rootDir": ".",
     "outDir": "dist",
     "strict": true,

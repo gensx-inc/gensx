@@ -3,9 +3,6 @@
   "compilerOptions": {
     "outDir": "./dist",
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "tsBuildInfoFile": ".tsbuildinfo"
   },
   "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "tsup.config.ts"],

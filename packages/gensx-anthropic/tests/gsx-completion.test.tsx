@@ -6,9 +6,8 @@ import { Stream } from "@anthropic-ai/sdk/streaming";
 import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 
-import { GSXChatCompletionResult } from "@/gsx-completion.js";
-import { AnthropicProvider, GSXChatCompletion } from "@/index.js";
-
+import { GSXChatCompletionResult } from "../src/gsx-completion.js";
+import { AnthropicProvider, GSXChatCompletion } from "../src/index.js";
 import { createMockMessage, createMockTextContent } from "./helpers.js";
 import { createMockStreamEvents } from "./helpers.js";
 

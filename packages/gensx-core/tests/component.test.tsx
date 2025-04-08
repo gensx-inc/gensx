@@ -2,9 +2,8 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import * as gensx from "@/index.js";
-import { Streamable } from "@/types.js";
-
+import * as gensx from "../src/index.js";
+import { Streamable } from "../src/types.js";
 import {
   executeWithCheckpoints,
   executeWorkflowWithCheckpoints,

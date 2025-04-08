@@ -1,13 +1,12 @@
 import { readFileSync } from "fs";
 import { setTimeout } from "timers/promises";
 
-import type { ExecutionNode } from "@/checkpoint.js";
+import type { ExecutionNode } from "../src/checkpoint.js";
 
 import { beforeEach, expect, suite, test, vi } from "vitest";
 
-import { CheckpointManager } from "@/checkpoint.js";
-import * as gensx from "@/index.js";
-
+import { CheckpointManager } from "../src/checkpoint.js";
+import * as gensx from "../src/index.js";
 import {
   executeWithCheckpoints,
   executeWorkflowWithCheckpoints,

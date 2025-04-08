@@ -7,7 +7,7 @@ import {
   GSXChatCompletion,
   GSXTool,
   GSXToolProps,
-} from "@/index.js";
+} from "../src/index.js";
 
 // Mock Anthropic client
 vi.mock("@anthropic-ai/sdk", async (importOriginal) => {

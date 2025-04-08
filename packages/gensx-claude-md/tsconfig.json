@@ -7,9 +7,6 @@
     "tsBuildInfoFile": ".tsbuildinfo",
     "outDir": "./dist",
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "types": ["@types/node"]
   },
   "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "vitest.config.ts"]

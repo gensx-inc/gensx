@@ -8,9 +8,8 @@ import {
   GSXChatCompletion,
   GSXTool,
   GSXToolProps,
-} from "@/index.js";
-import { StructuredOutput } from "@/structured-output.js";
-
+} from "../src/index.js";
+import { StructuredOutput } from "../src/structured-output.js";
 import {
   createMockMessage,
   createMockMessageWithToolUse,

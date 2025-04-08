@@ -3,7 +3,7 @@ import { Streamable } from "@gensx/core";
 import OpenAI from "openai";
 import { expect, suite, test } from "vitest";
 
-import { ChatCompletion, OpenAIContext, OpenAIProvider } from "@/index.js";
+import { ChatCompletion, OpenAIContext, OpenAIProvider } from "../src/index.js";
 
 suite("OpenAIContext", () => {
   test("provides OpenAI client to children", async () => {

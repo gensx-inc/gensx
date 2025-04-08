@@ -8,8 +8,7 @@ import {
   AnthropicContext,
   AnthropicProvider,
   ChatCompletion,
-} from "@/index.js";
-
+} from "../src/index.js";
 import {
   createMockMessage,
   createMockStreamEvents,

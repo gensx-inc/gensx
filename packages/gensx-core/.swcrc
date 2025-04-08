@@ -8,10 +8,6 @@
       "dynamicImport": true
     },
     "baseUrl": "./",
-    "paths": {
-      "@/src/*": ["src/*"],
-      "@/tests/*": ["tests/*"]
-    },
     "target": "esnext"
   },
   "module": {

@@ -15,9 +15,8 @@ import {
   GSXChatCompletion,
   GSXChatCompletionResult,
   GSXTool,
-} from "@/index.js";
-import { ToolExecutor, ToolsCompletion } from "@/tools.js";
-
+} from "../src/index.js";
+import { ToolExecutor, ToolsCompletion } from "../src/tools.js";
 import {
   createMockMessage,
   createMockMessageWithToolUse,
