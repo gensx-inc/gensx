@@ -12,7 +12,7 @@ export { useBlob, useBlobStorage } from "./blob/context.js";
 // export { SQLiteProvider } from "./sqlite/provider.js";
 // export { useSQLite, useSQLiteDatabase } from "./sqlite/context.js";
 
-// export * from "./vector/types.js";
-// export * from "./vector/context.js";
-// export { VectorProvider } from "./vector/provider.js";
-// export { useVectorStore, useVectorCollection } from "./vector/context.js";
+export * from "./search/types.js";
+export * from "./search/context.js";
+export { SearchProvider } from "./search/provider.js";
+export { useNamespace, useSearch } from "./search/context.js";
