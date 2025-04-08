@@ -33,7 +33,6 @@
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-vitest": "^0.5.4",
     "prettier": "^3.5.3",
-    "tsup": "^8.4.0",
     "turbo": "^2.4.4",
     "typescript": "catalog:",
     "vite": "catalog:"

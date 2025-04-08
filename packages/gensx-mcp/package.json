@@ -23,7 +23,7 @@
     "directory": "packages/gensx-mcp"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "rollup -c",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",
@@ -37,13 +37,18 @@
     "mcp"
   ],
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "catalog:",
+    "@rollup/plugin-node-resolve": "catalog:",
+    "@rollup/plugin-typescript": "catalog:",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
+    "rollup": "catalog:",
     "vitest": "catalog:"
   },
   "publishConfig": {

@@ -10,7 +10,7 @@
     "vitest.config.ts",
     "tests/**/*",
     "__mocks__/**/*",
-    "tsup.config.ts"
+    "rollup.config.js"
   ],
   "exclude": ["node_modules", "dist"]
 }

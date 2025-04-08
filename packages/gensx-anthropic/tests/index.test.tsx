@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { Anthropic } from "@anthropic-ai/sdk";
 import { MessageCreateParams } from "@anthropic-ai/sdk/resources/messages";
 import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";

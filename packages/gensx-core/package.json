@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/cjs/index.d.ts",
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
@@ -17,26 +17,27 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/cjs/index.d.ts",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.cjs"
     },
     "./jsx-runtime": {
-      "types": "./dist/jsx-runtime.d.ts",
+      "types": "./dist/cjs/jsx-runtime.d.ts",
       "import": "./dist/esm/jsx-runtime.js",
       "require": "./dist/cjs/jsx-runtime.cjs"
     },
     "./jsx-dev-runtime": {
-      "types": "./dist/jsx-dev-runtime.d.ts",
+      "types": "./dist/cjs/jsx-dev-runtime.d.ts",
       "import": "./dist/esm/jsx-dev-runtime.js",
       "require": "./dist/cjs/jsx-dev-runtime.cjs"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "rollup -c",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",
@@ -57,9 +58,13 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "catalog:",
+    "@rollup/plugin-node-resolve": "catalog:",
+    "@rollup/plugin-typescript": "catalog:",
     "@types/ini": "^4.1.1",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
+    "rollup": "catalog:",
     "vitest": "catalog:"
   },
   "publishConfig": {

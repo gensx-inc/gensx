@@ -3,8 +3,9 @@
   "compilerOptions": {
     "outDir": "./dist",
     "baseUrl": ".",
-    "tsBuildInfoFile": ".tsbuildinfo"
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "noUnusedLocals": false
   },
-  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "tsup.config.ts"],
+  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "rollup.config.js"],
   "exclude": ["node_modules", "dist"]
 }

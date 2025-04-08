@@ -8,9 +8,8 @@
     "paths": {
       "@/jsx-runtime": ["src/jsx-runtime.ts"],
       "@/jsx-dev-runtime": ["src/jsx-dev-runtime.ts"]
-    },
-    "noUnusedLocals": false
+    }
   },
-  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "tsup.config.ts"],
+  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
