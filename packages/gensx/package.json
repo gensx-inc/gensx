@@ -22,7 +22,7 @@
     "bin"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/run.js",
     "test:types": "tsc --noEmit",
     "clean": "rm -rf dist",
     "compile": "tsc",

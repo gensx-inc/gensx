@@ -21,7 +21,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
     "clean": "rm -rf dist",
     "start": "tsx src/cli.ts",
     "test": "vitest run --coverage",
