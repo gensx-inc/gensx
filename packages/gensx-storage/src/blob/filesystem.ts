@@ -8,9 +8,12 @@ import { Readable } from "node:stream";
 
 import {
   Blob,
+  BlobConflictError,
   BlobError,
-  BlobErrorCode,
+  BlobInternalError,
+  BlobNotFoundError,
   BlobOptions,
+  BlobPermissionDeniedError,
   BlobResponse,
   BlobStorage,
 } from "./types.js";
@@ -27,41 +30,23 @@ function handleFsError(err: unknown, operation: string, path: string): never {
     const nodeErr = err as NodeJS.ErrnoException;
 
     if (nodeErr.code === "ENOENT") {
-      throw new BlobError(
-        BlobErrorCode.NOT_FOUND,
-        `Blob not found at path: ${path}`,
-        err,
-      );
+      throw new BlobNotFoundError(`Blob not found at path: ${path}`, err);
     } else if (nodeErr.code === "EACCES") {
-      throw new BlobError(
-        BlobErrorCode.PERMISSION_DENIED,
+      throw new BlobPermissionDeniedError(
         `Permission denied for operation ${operation} on path: ${path}`,
         err,
       );
     } else if (nodeErr.code === "EEXIST") {
-      throw new BlobError(
-        BlobErrorCode.CONFLICT,
-        `File already exists at path: ${path}`,
-        err,
-      );
+      throw new BlobConflictError(`File already exists at path: ${path}`, err);
     } else if (nodeErr.code === "ENOTEMPTY") {
-      throw new BlobError(
-        BlobErrorCode.CONFLICT,
-        `Directory not empty at path: ${path}`,
-        err,
-      );
+      throw new BlobConflictError(`Directory not empty at path: ${path}`, err);
     } else if (nodeErr.code === "ENOTDIR") {
-      throw new BlobError(
-        BlobErrorCode.INTERNAL_ERROR,
-        `Path is not a directory: ${path}`,
-        err,
-      );
+      throw new BlobInternalError(`Path is not a directory: ${path}`, err);
     }
   }
 
   // Default error case
-  throw new BlobError(
-    BlobErrorCode.INTERNAL_ERROR,
+  throw new BlobInternalError(
     `Error during ${operation}: ${String(err)}`,
     err as Error,
   );
@@ -147,8 +132,7 @@ class FileSystemBlob<T> implements Blob<T> {
         await fs.access(this.filePath);
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-          throw new BlobError(
-            BlobErrorCode.NOT_FOUND,
+          throw new BlobNotFoundError(
             `Blob not found at path: ${this.filePath}`,
           );
         }
@@ -231,8 +215,7 @@ class FileSystemBlob<T> implements Blob<T> {
           const existingEtag = calculateEtag(existingContent);
 
           if (existingEtag !== options.etag) {
-            throw new BlobError(
-              BlobErrorCode.CONFLICT,
+            throw new BlobConflictError(
               `ETag mismatch: expected ${options.etag} but found ${existingEtag}`,
             );
           }
@@ -288,8 +271,7 @@ class FileSystemBlob<T> implements Blob<T> {
           const existingEtag = calculateEtag(existingContent);
 
           if (existingEtag !== options.etag) {
-            throw new BlobError(
-              BlobErrorCode.CONFLICT,
+            throw new BlobConflictError(
               `ETag mismatch: expected ${options.etag} but found ${existingEtag}`,
             );
           }
@@ -324,11 +306,7 @@ class FileSystemBlob<T> implements Blob<T> {
    */
   async putRaw(
     value: Buffer,
-    options?: {
-      contentType?: string;
-      metadata?: Record<string, string>;
-      etag?: string;
-    },
+    options?: BlobOptions,
   ): Promise<{ etag: string }> {
     try {
       await fs.mkdir(path.dirname(this.filePath), { recursive: true });
@@ -340,8 +318,7 @@ class FileSystemBlob<T> implements Blob<T> {
           const existingEtag = calculateEtag(existingContent);
 
           if (existingEtag !== options.etag) {
-            throw new BlobError(
-              BlobErrorCode.CONFLICT,
+            throw new BlobConflictError(
               `ETag mismatch: expected ${options.etag} but found ${existingEtag}`,
             );
           }
@@ -536,10 +513,36 @@ class FileSystemBlob<T> implements Blob<T> {
   /**
    * Update metadata associated with the blob
    * @param metadata The new metadata to store
+   * @param options Optional ETag for conditional update
    * @throws BlobError if there's an error updating the metadata
    */
-  async updateMetadata(metadata: Record<string, string>): Promise<void> {
+  async updateMetadata(
+    metadata: Record<string, string>,
+    options?: BlobOptions,
+  ): Promise<void> {
     try {
+      // If etag is provided, verify it matches before updating
+      if (options?.etag) {
+        try {
+          const existingContent = await fs.readFile(this.filePath);
+          const existingEtag = calculateEtag(existingContent);
+
+          if (existingEtag !== options.etag) {
+            throw new BlobConflictError(
+              `ETag mismatch: expected ${options.etag} but found ${existingEtag}`,
+            );
+          }
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+            throw handleFsError(
+              err,
+              "updateMetadata:etag-check",
+              this.filePath,
+            );
+          }
+        }
+      }
+
       await fs.mkdir(path.dirname(this.metadataPath), { recursive: true });
 
       // Get existing metadata to preserve contentType

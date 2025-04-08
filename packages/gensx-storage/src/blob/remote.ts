@@ -7,8 +7,10 @@ import { readConfig } from "@gensx/core";
 import {
   APIResponse,
   Blob,
+  BlobConflictError,
   BlobError,
-  BlobErrorCode,
+  BlobInternalError,
+  BlobNetworkError,
   BlobOptions,
   BlobResponse,
   BlobStorage,
@@ -27,16 +29,12 @@ function handleApiError(err: unknown, operation: string): never {
     throw err;
   }
   if (err instanceof Error) {
-    throw new BlobError(
-      BlobErrorCode.NETWORK_ERROR,
+    throw new BlobNetworkError(
       `Error during ${operation}: ${err.message}`,
       err,
     );
   }
-  throw new BlobError(
-    BlobErrorCode.NETWORK_ERROR,
-    `Error during ${operation}: ${String(err)}`,
-  );
+  throw new BlobNetworkError(`Error during ${operation}: ${String(err)}`);
 }
 
 /**
@@ -71,8 +69,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to get blob: ${response.statusText}`,
         );
       }
@@ -82,8 +79,7 @@ export class RemoteBlob<T> implements Blob<T> {
       >;
 
       if (apiResponse.status === "error") {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
@@ -114,8 +110,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to get blob: ${response.statusText}`,
         );
       }
@@ -125,8 +120,7 @@ export class RemoteBlob<T> implements Blob<T> {
       >;
 
       if (apiResponse.status === "error") {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
@@ -157,8 +151,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to get blob: ${response.statusText}`,
         );
       }
@@ -173,8 +166,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }>;
 
       if (apiResponse.status === "error" || !apiResponse.data) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
@@ -218,17 +210,13 @@ export class RemoteBlob<T> implements Blob<T> {
       );
 
       if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to get blob: ${response.statusText}`,
         );
       }
 
       if (!response.body) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "Response body is null",
-        );
+        throw new BlobInternalError("Response body is null");
       }
 
       return Readable.from(response.body);
@@ -258,20 +246,16 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+          throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to put blob: ${response.statusText}`,
         );
       }
 
       const etag = response.headers.get("etag");
       if (!etag) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "No ETag returned from server",
-        );
+        throw new BlobInternalError("No ETag returned from server");
       }
 
       return { etag };
@@ -304,20 +288,16 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+          throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to put blob: ${response.statusText}`,
         );
       }
 
       const etag = response.headers.get("etag");
       if (!etag) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "No ETag returned from server",
-        );
+        throw new BlobInternalError("No ETag returned from server");
       }
 
       return { etag };
@@ -333,11 +313,7 @@ export class RemoteBlob<T> implements Blob<T> {
    */
   async putRaw(
     value: Buffer,
-    options?: {
-      contentType?: string;
-      metadata?: Record<string, string>;
-      etag?: string;
-    },
+    options?: BlobOptions,
   ): Promise<{ etag: string }> {
     try {
       const response = await fetch(
@@ -362,20 +338,16 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+          throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to put blob: ${response.statusText}`,
         );
       }
 
       const etag = response.headers.get("etag");
       if (!etag) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "No ETag returned from server",
-        );
+        throw new BlobInternalError("No ETag returned from server");
       }
 
       return { etag };
@@ -419,20 +391,16 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+          throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to put blob: ${response.statusText}`,
         );
       }
 
       const etag = response.headers.get("etag");
       if (!etag) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
-          "No ETag returned from server",
-        );
+        throw new BlobInternalError("No ETag returned from server");
       }
 
       return { etag };
@@ -441,7 +409,7 @@ export class RemoteBlob<T> implements Blob<T> {
     }
   }
 
-  async delete(options?: { etag?: string }): Promise<void> {
+  async delete(): Promise<void> {
     try {
       const response = await fetch(
         `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
@@ -449,17 +417,12 @@ export class RemoteBlob<T> implements Blob<T> {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
-            ...(options?.etag && { "If-Match": options.etag }),
           },
         },
       );
 
       if (!response.ok && response.status !== 404) {
-        if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
-        }
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to delete blob: ${response.statusText}`,
         );
       }
@@ -503,8 +466,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to get metadata: ${response.statusText}`,
         );
       }
@@ -540,7 +502,7 @@ export class RemoteBlob<T> implements Blob<T> {
 
   async updateMetadata(
     metadata: Record<string, string>,
-    options?: { etag?: string },
+    options?: BlobOptions,
   ): Promise<void> {
     try {
       const response = await fetch(
@@ -560,10 +522,9 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobError(BlobErrorCode.CONFLICT, "ETag mismatch");
+          throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobError(
-          BlobErrorCode.INTERNAL_ERROR,
+        throw new BlobInternalError(
           `Failed to update metadata: ${response.statusText}`,
         );
       }
@@ -666,8 +627,7 @@ export class RemoteBlobStorage implements BlobStorage {
       if (err instanceof BlobError) {
         throw err;
       }
-      throw new BlobError(
-        BlobErrorCode.NETWORK_ERROR,
+      throw new BlobNetworkError(
         `Error during listBlobs operation: ${String(err)}`,
         err as Error,
       );

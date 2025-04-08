@@ -8,7 +8,12 @@ import { Readable } from "node:stream";
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
 import { RemoteBlobStorage } from "../src/blob/remote.js";
-import { BlobError, BlobErrorCode } from "../src/index.js";
+import {
+  BlobConflictError,
+  BlobError,
+  BlobInternalError,
+  BlobNetworkError,
+} from "../src/index.js";
 
 suite("RemoteBlobStorage", () => {
   // Save original environment
@@ -492,8 +497,8 @@ suite("RemoteBlobStorage", () => {
         // Should have thrown
         expect(true).toBe(false);
       } catch (err) {
-        expect(err).toBeInstanceOf(BlobError);
-        expect((err as BlobError).code).toBe(BlobErrorCode.INTERNAL_ERROR);
+        expect(err).toBeInstanceOf(BlobInternalError);
+        expect((err as BlobError).code).toBe("INTERNAL_ERROR");
         expect((err as BlobError).message).toContain("API error");
       }
     });
@@ -513,8 +518,8 @@ suite("RemoteBlobStorage", () => {
         // Should have thrown
         expect(true).toBe(false);
       } catch (err) {
-        expect(err).toBeInstanceOf(BlobError);
-        expect((err as BlobError).code).toBe(BlobErrorCode.INTERNAL_ERROR);
+        expect(err).toBeInstanceOf(BlobInternalError);
+        expect((err as BlobError).code).toBe("INTERNAL_ERROR");
       }
     });
 
@@ -529,8 +534,8 @@ suite("RemoteBlobStorage", () => {
         // Should have thrown
         expect(true).toBe(false);
       } catch (err) {
-        expect(err).toBeInstanceOf(BlobError);
-        expect((err as BlobError).code).toBe(BlobErrorCode.NETWORK_ERROR);
+        expect(err).toBeInstanceOf(BlobNetworkError);
+        expect((err as BlobError).code).toBe("NETWORK_ERROR");
         expect((err as BlobError).message).toContain("Network failure");
       }
     });
@@ -551,8 +556,8 @@ suite("RemoteBlobStorage", () => {
         // Should have thrown
         expect(true).toBe(false);
       } catch (err) {
-        expect(err).toBeInstanceOf(BlobError);
-        expect((err as BlobError).code).toBe(BlobErrorCode.CONFLICT);
+        expect(err).toBeInstanceOf(BlobConflictError);
+        expect((err as BlobError).code).toBe("CONFLICT");
         expect((err as BlobError).message).toContain("ETag mismatch");
       }
     });
@@ -573,8 +578,8 @@ suite("RemoteBlobStorage", () => {
         // Should have thrown
         expect(true).toBe(false);
       } catch (err) {
-        expect(err).toBeInstanceOf(BlobError);
-        expect((err as BlobError).code).toBe(BlobErrorCode.INTERNAL_ERROR);
+        expect(err).toBeInstanceOf(BlobInternalError);
+        expect((err as BlobError).code).toBe("INTERNAL_ERROR");
         expect((err as BlobError).message).toContain("No ETag");
       }
     });

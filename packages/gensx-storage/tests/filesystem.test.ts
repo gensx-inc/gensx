@@ -6,7 +6,7 @@ import { Readable } from "node:stream";
 import { afterEach, beforeEach, expect, suite, test } from "vitest";
 
 import { FileSystemBlobStorage } from "../src/blob/filesystem.js";
-import { BlobError, BlobErrorCode, BlobStorage } from "../src/index.js";
+import { BlobConflictError, BlobError, BlobStorage } from "../src/index.js";
 
 // Helper to create temporary test directories
 async function createTempDir(): Promise<string> {
@@ -392,8 +392,8 @@ suite("FileSystemBlobStorage", () => {
       // Should not reach here
       expect(false).toBe(true);
     } catch (error) {
-      expect(error).toBeInstanceOf(BlobError);
-      expect((error as BlobError).code).toBe(BlobErrorCode.CONFLICT);
+      expect(error).toBeInstanceOf(BlobConflictError);
+      expect((error as BlobError).code).toBe("CONFLICT");
     }
 
     // Verify the current value
@@ -446,136 +446,4 @@ suite("FileSystemBlobStorage", () => {
     const retrievedData = Buffer.concat(chunks).toString();
     expect(retrievedData).toBe(data);
   });
-
-  // suite("Error Handling", () => {
-  //   test("should handle NOT_FOUND errors", async () => {
-  //     const blob = storage.getBlob<string>("non-existent");
-
-  //     // Mock fs.readFile to throw ENOENT
-  //     vi.spyOn(fs, "readFile").mockImplementation(() => {
-  //       const error = new Error(
-  //         "ENOENT: no such file or directory",
-  //       ) as NodeJS.ErrnoException;
-  //       error.code = "ENOENT";
-  //       throw error;
-  //     });
-
-  //     // getJSON should return null for non-existent files
-  //     const result = await blob.getJSON();
-  //     expect(result).toBeNull();
-
-  //     // If we try to get with an operation that doesn't handle null
-  //     try {
-  //       await blob.getMetadata();
-  //       // It should have thrown before getting here
-  //       expect(true).toBe(false);
-  //     } catch (err) {
-  //       expect(err).toBeInstanceOf(BlobError);
-  //       expect((err as BlobError).code).toBe(BlobErrorCode.NOT_FOUND);
-  //     }
-  //   });
-
-  //   test("should handle PERMISSION_DENIED errors", async () => {
-  //     const blob = storage.getBlob<string>("permission-denied");
-
-  //     // Mock fs.writeFile to throw EACCES
-  //     vi.spyOn(fs, "writeFile").mockImplementation(() => {
-  //       const error = new Error(
-  //         "EACCES: permission denied",
-  //       ) as NodeJS.ErrnoException;
-  //       error.code = "EACCES";
-  //       throw error;
-  //     });
-
-  //     try {
-  //       await blob.putString("test content");
-  //       // It should have thrown before getting here
-  //       expect(true).toBe(false);
-  //     } catch (err) {
-  //       expect(err).toBeInstanceOf(BlobError);
-  //       expect((err as BlobError).code).toBe(BlobErrorCode.PERMISSION_DENIED);
-  //     }
-  //   });
-
-  //   test("should handle CONFLICT errors", async () => {
-  //     const blob = storage.getBlob<string>("conflict-test");
-
-  //     // Mock fs.mkdir to throw EEXIST
-  //     vi.spyOn(fs, "mkdir").mockImplementation(() => {
-  //       const error = new Error(
-  //         "EEXIST: file already exists",
-  //       ) as NodeJS.ErrnoException;
-  //       error.code = "EEXIST";
-  //       throw error;
-  //     });
-
-  //     try {
-  //       await blob.putString("test content");
-  //       // It should have thrown before getting here
-  //       expect(true).toBe(false);
-  //     } catch (err) {
-  //       expect(err).toBeInstanceOf(BlobError);
-  //       expect((err as BlobError).code).toBe(BlobErrorCode.CONFLICT);
-  //     }
-  //   });
-
-  //   test("should handle unknown file system errors", async () => {
-  //     const blob = storage.getBlob<string>("unknown-error");
-
-  //     // Mock fs.readFile to throw an unknown error
-  //     vi.spyOn(fs, "readFile").mockImplementation(() => {
-  //       throw new Error("Unknown error");
-  //     });
-
-  //     try {
-  //       await blob.getJSON();
-  //       // It should have thrown before getting here
-  //       expect(true).toBe(false);
-  //     } catch (err) {
-  //       expect(err).toBeInstanceOf(BlobError);
-  //       expect((err as BlobError).code).toBe(BlobErrorCode.INTERNAL_ERROR);
-  //     }
-  //   });
-
-  //   test("should throw CONFLICT error when etag doesn't match", async () => {
-  //     const key = "etag-mismatch";
-  //     const blob = storage.getBlob<string>(key);
-
-  //     // First write something
-  //     await blob.putString("initial data");
-
-  //     // Then try to update with invalid etag
-  //     const outdatedEtag = "outdated-etag-value";
-
-  //     try {
-  //       await blob.putString("test data", { etag: outdatedEtag });
-  //       // Should have thrown
-  //       expect(true).toBe(false);
-  //     } catch (err) {
-  //       expect(err).toBeInstanceOf(BlobError);
-  //       expect((err as BlobError).code).toBe(BlobErrorCode.CONFLICT);
-  //       expect((err as BlobError).message).toContain("ETag mismatch");
-  //     }
-  //   });
-
-  //   test("should handle missing ETag in response", async () => {
-  //     const blob = storage.getBlob<string>("no-etag");
-
-  //     // Mock fs.writeFile to not set ETag
-  //     vi.spyOn(fs, "writeFile").mockImplementation(() => {
-  //       // Simulate successful write without ETag
-  //       return Promise.resolve();
-  //     });
-
-  //     try {
-  //       await blob.putString("test");
-  //       // Should have thrown
-  //       expect(true).toBe(false);
-  //     } catch (err) {
-  //       expect(err).toBeInstanceOf(BlobError);
-  //       expect((err as BlobError).code).toBe(BlobErrorCode.INTERNAL_ERROR);
-  //       expect((err as BlobError).message).toContain("No ETag");
-  //     }
-  //   });
-  // });
 });

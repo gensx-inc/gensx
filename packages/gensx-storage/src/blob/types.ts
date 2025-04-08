@@ -3,20 +3,19 @@ import { Readable } from "stream";
 /**
  * Error types for blob storage operations
  */
-export enum BlobErrorCode {
-  NOT_FOUND = "NOT_FOUND",
-  PERMISSION_DENIED = "PERMISSION_DENIED",
-  CONFLICT = "CONFLICT",
-  INVALID_ARGUMENT = "INVALID_ARGUMENT",
-  INTERNAL_ERROR = "INTERNAL_ERROR",
-  NOT_IMPLEMENTED = "NOT_IMPLEMENTED",
-  NETWORK_ERROR = "NETWORK_ERROR",
-}
+export type BlobErrorCode =
+  | "NOT_FOUND"
+  | "PERMISSION_DENIED"
+  | "CONFLICT"
+  | "INVALID_ARGUMENT"
+  | "INTERNAL_ERROR"
+  | "NOT_IMPLEMENTED"
+  | "NETWORK_ERROR";
 
 /**
- * Custom error class for blob storage operations
+ * Abstract base error class for blob storage operations
  */
-export class BlobError extends Error {
+export abstract class BlobError extends Error {
   constructor(
     public readonly code: BlobErrorCode,
     message: string,
@@ -24,6 +23,76 @@ export class BlobError extends Error {
   ) {
     super(message);
     this.name = "BlobError";
+  }
+}
+
+/**
+ * Error class for when a blob is not found
+ */
+export class BlobNotFoundError extends BlobError {
+  constructor(message: string, cause?: Error) {
+    super("NOT_FOUND", message, cause);
+    this.name = "BlobNotFoundError";
+  }
+}
+
+/**
+ * Error class for permission denied errors
+ */
+export class BlobPermissionDeniedError extends BlobError {
+  constructor(message: string, cause?: Error) {
+    super("PERMISSION_DENIED", message, cause);
+    this.name = "BlobPermissionDeniedError";
+  }
+}
+
+/**
+ * Error class for conflict errors (e.g., ETag mismatch)
+ */
+export class BlobConflictError extends BlobError {
+  constructor(message: string, cause?: Error) {
+    super("CONFLICT", message, cause);
+    this.name = "BlobConflictError";
+  }
+}
+
+/**
+ * Error class for invalid argument errors
+ */
+export class BlobInvalidArgumentError extends BlobError {
+  constructor(message: string, cause?: Error) {
+    super("INVALID_ARGUMENT", message, cause);
+    this.name = "BlobInvalidArgumentError";
+  }
+}
+
+/**
+ * Error class for internal errors
+ */
+export class BlobInternalError extends BlobError {
+  constructor(message: string, cause?: Error) {
+    super("INTERNAL_ERROR", message, cause);
+    this.name = "BlobInternalError";
+  }
+}
+
+/**
+ * Error class for not implemented errors
+ */
+export class BlobNotImplementedError extends BlobError {
+  constructor(message: string, cause?: Error) {
+    super("NOT_IMPLEMENTED", message, cause);
+    this.name = "BlobNotImplementedError";
+  }
+}
+
+/**
+ * Error class for network errors
+ */
+export class BlobNetworkError extends BlobError {
+  constructor(message: string, cause?: Error) {
+    super("NETWORK_ERROR", message, cause);
+    this.name = "BlobNetworkError";
   }
 }
 
@@ -164,14 +233,19 @@ export interface Blob<T> {
 
   /**
    * Get metadata associated with the blob
+   * @returns The metadata or null if the blob doesn't exist
    */
   getMetadata(): Promise<Record<string, string> | null>;
 
   /**
    * Update metadata associated with the blob
    * @param metadata The new metadata to store
+   * @param options Optional etag for conditional update
    */
-  updateMetadata(metadata: Record<string, string>): Promise<void>;
+  updateMetadata(
+    metadata: Record<string, string>,
+    options?: BlobOptions,
+  ): Promise<void>;
 }
 
 /**
