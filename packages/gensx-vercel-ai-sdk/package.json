@@ -63,6 +63,6 @@
   },
   "dependencies": {
     "@gensx/core": "workspace:*",
-    "ai": "^2.2.35"
+    "ai": "^4.2.10"
   }
 }

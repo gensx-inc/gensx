@@ -29,7 +29,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "start": "tsx ./src/run.ts",
-    "start:node": "node ./dist/run.js"
+    "start:node": "node ./dist/run.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "typescript",

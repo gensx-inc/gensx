@@ -1,6 +1,6 @@
 {
   "name": "@gensx/openai",
-  "version": "0.3.7",
+  "version": "0.1.20",
   "description": "OpenAI integration for GenSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
@@ -31,16 +31,21 @@
     "lint:fix": "eslint . --fix"
   },
   "keywords": [
+    "gensx",
+    "openai",
     "ai",
-    "jsx",
-    "workflow",
-    "openai"
+    "gpt",
+    "jsx"
   ],
   "author": "GenSX Team",
   "license": "Apache-2.0",
+  "peerDependencies": {
+    "openai": "catalog:"
+  },
   "dependencies": {
     "@gensx/core": "workspace:*",
-    "openai": "^4.28.0"
+    "zod": "catalog:",
+    "zod-to-json-schema": "catalog:"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "catalog:",
@@ -48,6 +53,7 @@
     "@rollup/plugin-typescript": "catalog:",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
+    "openai": "catalog:",
     "rollup": "catalog:",
     "vitest": "catalog:"
   },
