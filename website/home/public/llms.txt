@@ -30,5 +30,6 @@ GenSX is a simple typescript framework for building complex LLM applications. It
 ## Blog
 
 - [Why React is surprisingly the best model for LLM workflows](https://gensx.com/blogs/why-react-is-the-best-backend-workflow-engine)
+- ["But where's the graph?" — Why trees beat graphs for LLM workflows](https://gensx.com/blogs/wheres_the_graph)
 - [Self-modifying code agent](https://gensx.com/blogs/self-modifying-code)
 - [LLMs are really bad at Tic-Tac-Toe](https://gensx.com/blogs/llm-tic-tac-toe)

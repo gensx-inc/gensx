@@ -51,6 +51,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@gensx/core": "workspace:*"
+    "@gensx/core": "workspace:*",
+    "@libsql/client": "^0.15.2"
   }
 }
