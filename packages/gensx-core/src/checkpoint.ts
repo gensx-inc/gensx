@@ -74,7 +74,7 @@ export class CheckpointManager implements CheckpointWriter {
   private apiBaseUrl: string;
   private consoleBaseUrl: string;
   private printUrl = false;
-  private runtime: "cloud" | "sdk";
+  private runtime?: "cloud" | "sdk";
   private runtimeVersion?: string;
 
   private traceId?: string;
@@ -120,10 +120,10 @@ export class CheckpointManager implements CheckpointWriter {
     this.consoleBaseUrl = consoleBaseUrl ?? "https://app.gensx.com";
 
     const runtime = opts?.runtime ?? process.env.GENSX_RUNTIME;
-    if (runtime !== "cloud" && runtime !== "sdk") {
+    if (runtime && runtime !== "cloud" && runtime !== "sdk") {
       throw new Error('Invalid runtime. Must be either "cloud" or "sdk"');
     }
-    this.runtime = runtime;
+    this.runtime = runtime as "cloud" | "sdk" | undefined;
     this.runtimeVersion =
       opts?.runtimeVersion ?? process.env.GENSX_RUNTIME_VERSION;
 
