@@ -300,11 +300,6 @@ export interface FileSystemBlobProviderProps extends BaseBlobProviderProps {
  */
 export interface CloudBlobProviderProps extends BaseBlobProviderProps {
   kind?: "cloud";
-
-  /**
-   * Optional organization ID override (default: uses current org from context)
-   */
-  organizationId?: string;
 }
 
 /**

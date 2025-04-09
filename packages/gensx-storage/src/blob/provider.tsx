@@ -46,13 +46,7 @@ export const BlobProvider = Component<BlobProviderProps, never>(
       const storage = new FileSystemBlobStorage(rootDir, props.defaultPrefix);
       return <BlobContext.Provider value={storage} />;
     } else {
-      // Must be cloud based on our type definitions
-      const organizationId =
-        props.kind === "cloud" ? props.organizationId : undefined;
-      const storage = new RemoteBlobStorage(
-        props.defaultPrefix,
-        organizationId,
-      );
+      const storage = new RemoteBlobStorage(props.defaultPrefix);
       return <BlobContext.Provider value={storage} />;
     }
   },
