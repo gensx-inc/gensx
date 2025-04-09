@@ -10,7 +10,8 @@
         "*.ts",
         "*.tsx",
         "tsconfig.json",
-        "package.json"
+        "package.json",
+        "rollup.config.js"
       ],
       "dependsOn": ["^build"],
       "outputs": ["dist"]

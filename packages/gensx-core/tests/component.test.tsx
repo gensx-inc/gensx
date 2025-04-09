@@ -204,15 +204,17 @@ suite("component", () => {
       );
 
       // Verify that the return type is Streamable for streaming mode
-      const _stream: Streamable = await TestComponent.run({
+      const stream: Streamable = await TestComponent.run({
         input: "World",
         stream: true,
       });
+      expect(typeof stream).toBe("object");
 
       // Verify that the return type is string for non-streaming mode
-      const _stream2: string = await TestComponent.run({
+      const stream2: string = await TestComponent.run({
         input: "World",
       });
+      expect(typeof stream2).toBe("string");
 
       // @ts-expect-error - This should is an error because foo is not a valid prop
       await gensx.execute<string>(<TestComponent input="World" foo={"bar"} />);
