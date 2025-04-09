@@ -3,9 +3,9 @@
 import { InArgs } from "@libsql/client";
 
 /**
- * Error types for SQLite operations
+ * Error types for database operations
  */
-export type SQLiteErrorCode =
+export type DatabaseErrorCode =
   | "NOT_FOUND"
   | "PERMISSION_DENIED"
   | "CONFLICT"
@@ -16,93 +16,93 @@ export type SQLiteErrorCode =
   | "TRANSACTION_ERROR";
 
 /**
- * Abstract base error class for SQLite operations
+ * Abstract base error class for database operations
  */
-export abstract class SQLiteError extends Error {
+export abstract class DatabaseError extends Error {
   constructor(
-    public readonly code: SQLiteErrorCode,
+    public readonly code: DatabaseErrorCode,
     message: string,
     public readonly cause?: Error,
   ) {
     super(message);
-    this.name = "SQLiteError";
+    this.name = "DatabaseError";
   }
 }
 
 /**
  * Error class for when a database is not found
  */
-export class SQLiteNotFoundError extends SQLiteError {
+export class DatabaseNotFoundError extends DatabaseError {
   constructor(message: string, cause?: Error) {
     super("NOT_FOUND", message, cause);
-    this.name = "SQLiteNotFoundError";
+    this.name = "DatabaseNotFoundError";
   }
 }
 
 /**
  * Error class for permission denied errors
  */
-export class SQLitePermissionDeniedError extends SQLiteError {
+export class DatabasePermissionDeniedError extends DatabaseError {
   constructor(message: string, cause?: Error) {
     super("PERMISSION_DENIED", message, cause);
-    this.name = "SQLitePermissionDeniedError";
+    this.name = "DatabasePermissionDeniedError";
   }
 }
 
 /**
  * Error class for SQL syntax errors
  */
-export class SQLiteSyntaxError extends SQLiteError {
+export class DatabaseSyntaxError extends DatabaseError {
   constructor(message: string, cause?: Error) {
     super("SYNTAX_ERROR", message, cause);
-    this.name = "SQLiteSyntaxError";
+    this.name = "DatabaseSyntaxError";
   }
 }
 
 /**
  * Error class for constraint violations
  */
-export class SQLiteConstraintError extends SQLiteError {
+export class DatabaseConstraintError extends DatabaseError {
   constructor(message: string, cause?: Error) {
     super("CONSTRAINT_VIOLATION", message, cause);
-    this.name = "SQLiteConstraintError";
+    this.name = "DatabaseConstraintError";
   }
 }
 
 /**
  * Error class for internal errors
  */
-export class SQLiteInternalError extends SQLiteError {
+export class DatabaseInternalError extends DatabaseError {
   constructor(message: string, cause?: Error) {
     super("INTERNAL_ERROR", message, cause);
-    this.name = "SQLiteInternalError";
+    this.name = "DatabaseInternalError";
   }
 }
 
 /**
  * Error class for network errors
  */
-export class SQLiteNetworkError extends SQLiteError {
+export class DatabaseNetworkError extends DatabaseError {
   constructor(message: string, cause?: Error) {
     super("NETWORK_ERROR", message, cause);
-    this.name = "SQLiteNetworkError";
+    this.name = "DatabaseNetworkError";
   }
 }
 
 /**
  * Error class for transaction errors
  */
-export class SQLiteTransactionError extends SQLiteError {
+export class DatabaseTransactionError extends DatabaseError {
   constructor(message: string, cause?: Error) {
     super("TRANSACTION_ERROR", message, cause);
-    this.name = "SQLiteTransactionError";
+    this.name = "DatabaseTransactionError";
   }
 }
 
 /**
  * A response from the API
  */
-export interface SQLiteAPIResponse<T> {
+export interface DatabaseAPIResponse<T> {
   status: "ok" | "error";
   data?: T;
   error?: string;
@@ -111,7 +111,7 @@ export interface SQLiteAPIResponse<T> {
 /**
  * SQL execution result
  */
-export interface SQLiteResult {
+export interface DatabaseResult {
   columns: string[];
   rows: unknown[][];
   rowsAffected: number;
@@ -121,7 +121,7 @@ export interface SQLiteResult {
 /**
  * SQL statement with optional parameters
  */
-export interface SQLiteStatement {
+export interface DatabaseStatement {
   sql: string;
   params?: InArgs;
 }
@@ -129,22 +129,22 @@ export interface SQLiteStatement {
 /**
  * Batch execution results
  */
-export interface SQLiteBatchResult {
-  results: SQLiteResult[];
+export interface DatabaseBatchResult {
+  results: DatabaseResult[];
 }
 
 /**
  * Database table information
  */
-export interface SQLiteTableInfo {
+export interface DatabaseTableInfo {
   name: string;
-  columns: SQLiteColumnInfo[];
+  columns: DatabaseColumnInfo[];
 }
 
 /**
  * Column information
  */
-export interface SQLiteColumnInfo {
+export interface DatabaseColumnInfo {
   name: string;
   type: string;
   notNull: boolean;
@@ -155,11 +155,11 @@ export interface SQLiteColumnInfo {
 /**
  * Database information
  */
-export interface SQLiteDatabaseInfo {
+export interface DatabaseInfo {
   name: string;
   size: number;
   lastModified: Date;
-  tables: SQLiteTableInfo[];
+  tables: DatabaseTableInfo[];
 }
 
 /**
@@ -178,33 +178,33 @@ export interface DeleteDatabaseResult {
 }
 
 /**
- * Interface for a SQLite database
+ * Interface for a database
  */
-export interface SQLiteDatabase {
+export interface Database {
   /**
    * Execute a single SQL statement
    */
-  execute(sql: string, params?: InArgs): Promise<SQLiteResult>;
+  execute(sql: string, params?: InArgs): Promise<DatabaseResult>;
 
   /**
    * Execute multiple SQL statements in a transaction
    */
-  batch(statements: SQLiteStatement[]): Promise<SQLiteBatchResult>;
+  batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult>;
 
   /**
    * Execute multiple SQL statements as a script (without transaction semantics)
    */
-  executeMultiple(sql: string): Promise<SQLiteBatchResult>;
+  executeMultiple(sql: string): Promise<DatabaseBatchResult>;
 
   /**
    * Run SQL migration statements with foreign keys disabled
    */
-  migrate(sql: string): Promise<SQLiteBatchResult>;
+  migrate(sql: string): Promise<DatabaseBatchResult>;
 
   /**
    * Get information about the database
    */
-  getInfo(): Promise<SQLiteDatabaseInfo>;
+  getInfo(): Promise<DatabaseInfo>;
 
   /**
    * Close the database connection
@@ -213,13 +213,13 @@ export interface SQLiteDatabase {
 }
 
 /**
- * Interface for SQLite storage
+ * Interface for database storage
  */
-export interface SQLiteStorage {
+export interface DatabaseStorage {
   /**
    * Get a database by name
    */
-  getDatabase(name: string): SQLiteDatabase;
+  getDatabase(name: string): Database;
 
   /**
    * List all databases
@@ -244,22 +244,23 @@ export interface SQLiteStorage {
 /**
  * Provider configuration kinds
  */
-export type SQLiteStorageKind = "filesystem" | "cloud";
+export type DatabaseStorageKind = "filesystem" | "cloud";
 
 /**
  * Base provider props
  */
-export interface BaseSQLiteProviderProps {
+export interface BaseDatabaseProviderProps {
   /**
    * Storage kind
    */
-  kind: SQLiteStorageKind;
+  kind: DatabaseStorageKind;
 }
 
 /**
  * Filesystem provider props
  */
-export interface FileSystemSQLiteProviderProps extends BaseSQLiteProviderProps {
+export interface FileSystemDatabaseProviderProps
+  extends BaseDatabaseProviderProps {
   kind: "filesystem";
 
   /**
@@ -271,7 +272,7 @@ export interface FileSystemSQLiteProviderProps extends BaseSQLiteProviderProps {
 /**
  * Cloud provider props
  */
-export interface CloudSQLiteProviderProps extends BaseSQLiteProviderProps {
+export interface CloudDatabaseProviderProps extends BaseDatabaseProviderProps {
   kind: "cloud";
 
   /**
@@ -281,8 +282,8 @@ export interface CloudSQLiteProviderProps extends BaseSQLiteProviderProps {
 }
 
 /**
- * Union type for SQLite provider props
+ * Union type for database provider props
  */
-export type SQLiteProviderProps =
-  | FileSystemSQLiteProviderProps
-  | CloudSQLiteProviderProps;
+export type DatabaseProviderProps =
+  | FileSystemDatabaseProviderProps
+  | CloudDatabaseProviderProps;

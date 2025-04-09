@@ -4,18 +4,18 @@ import { readConfig } from "@gensx/core";
 import { InArgs } from "@libsql/client";
 
 import {
+  Database,
+  DatabaseAPIResponse,
+  DatabaseBatchResult,
+  DatabaseError,
+  DatabaseInfo,
+  DatabaseInternalError,
+  DatabaseNetworkError,
+  DatabaseResult,
+  DatabaseStatement,
+  DatabaseStorage,
   DeleteDatabaseResult,
   EnsureDatabaseResult,
-  SQLiteAPIResponse,
-  SQLiteBatchResult,
-  SQLiteDatabase,
-  SQLiteDatabaseInfo,
-  SQLiteError,
-  SQLiteInternalError,
-  SQLiteNetworkError,
-  SQLiteResult,
-  SQLiteStatement,
-  SQLiteStorage,
 } from "./types.js";
 
 /**
@@ -24,25 +24,25 @@ import {
 const API_BASE_URL = "https://api.gensx.com";
 
 /**
- * Helper to convert between API errors and SQLiteErrors
+ * Helper to convert between API errors and DatabaseErrors
  */
 function handleApiError(err: unknown, operation: string): never {
-  if (err instanceof SQLiteError) {
+  if (err instanceof DatabaseError) {
     throw err;
   }
   if (err instanceof Error) {
-    throw new SQLiteNetworkError(
+    throw new DatabaseNetworkError(
       `Error during ${operation}: ${err.message}`,
       err,
     );
   }
-  throw new SQLiteNetworkError(`Error during ${operation}: ${String(err)}`);
+  throw new DatabaseNetworkError(`Error during ${operation}: ${String(err)}`);
 }
 
 /**
- * Implementation of SQLiteDatabase interface for remote cloud storage
+ * Implementation of Database interface for remote cloud storage
  */
-export class RemoteSQLiteDatabase implements SQLiteDatabase {
+export class RemoteDatabase implements Database {
   private databaseName: string;
   private baseUrl: string;
   private apiKey: string;
@@ -60,10 +60,10 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
     this.org = org;
   }
 
-  async execute(sql: string, params?: InArgs): Promise<SQLiteResult> {
+  async execute(sql: string, params?: InArgs): Promise<DatabaseResult> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/sqlite/${this.databaseName}/execute`,
+        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/execute`,
         {
           method: "POST",
           headers: {
@@ -78,22 +78,22 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
       );
 
       if (!response.ok) {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `Failed to execute SQL: ${response.statusText}`,
         );
       }
 
       const apiResponse =
-        (await response.json()) as SQLiteAPIResponse<SQLiteResult>;
+        (await response.json()) as DatabaseAPIResponse<DatabaseResult>;
 
       if (apiResponse.status === "error") {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
 
       if (!apiResponse.data) {
-        throw new SQLiteInternalError("No data returned from API");
+        throw new DatabaseInternalError("No data returned from API");
       }
 
       return apiResponse.data;
@@ -102,10 +102,10 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
     }
   }
 
-  async batch(statements: SQLiteStatement[]): Promise<SQLiteBatchResult> {
+  async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/sqlite/${this.databaseName}/batch`,
+        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/batch`,
         {
           method: "POST",
           headers: {
@@ -117,22 +117,22 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
       );
 
       if (!response.ok) {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `Failed to execute batch: ${response.statusText}`,
         );
       }
 
       const apiResponse =
-        (await response.json()) as SQLiteAPIResponse<SQLiteBatchResult>;
+        (await response.json()) as DatabaseAPIResponse<DatabaseBatchResult>;
 
       if (apiResponse.status === "error") {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
 
       if (!apiResponse.data) {
-        throw new SQLiteInternalError("No data returned from API");
+        throw new DatabaseInternalError("No data returned from API");
       }
 
       return apiResponse.data;
@@ -141,10 +141,10 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
     }
   }
 
-  async executeMultiple(sql: string): Promise<SQLiteBatchResult> {
+  async executeMultiple(sql: string): Promise<DatabaseBatchResult> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/sqlite/${this.databaseName}/multiple`,
+        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/multiple`,
         {
           method: "POST",
           headers: {
@@ -156,22 +156,22 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
       );
 
       if (!response.ok) {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `Failed to execute multiple: ${response.statusText}`,
         );
       }
 
       const apiResponse =
-        (await response.json()) as SQLiteAPIResponse<SQLiteBatchResult>;
+        (await response.json()) as DatabaseAPIResponse<DatabaseBatchResult>;
 
       if (apiResponse.status === "error") {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
 
       if (!apiResponse.data) {
-        throw new SQLiteInternalError("No data returned from API");
+        throw new DatabaseInternalError("No data returned from API");
       }
 
       return apiResponse.data;
@@ -180,10 +180,10 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
     }
   }
 
-  async migrate(sql: string): Promise<SQLiteBatchResult> {
+  async migrate(sql: string): Promise<DatabaseBatchResult> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/sqlite/${this.databaseName}/migrate`,
+        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/migrate`,
         {
           method: "POST",
           headers: {
@@ -195,22 +195,22 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
       );
 
       if (!response.ok) {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `Failed to execute migration: ${response.statusText}`,
         );
       }
 
       const apiResponse =
-        (await response.json()) as SQLiteAPIResponse<SQLiteBatchResult>;
+        (await response.json()) as DatabaseAPIResponse<DatabaseBatchResult>;
 
       if (apiResponse.status === "error") {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
 
       if (!apiResponse.data) {
-        throw new SQLiteInternalError("No data returned from API");
+        throw new DatabaseInternalError("No data returned from API");
       }
 
       return apiResponse.data;
@@ -219,10 +219,10 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
     }
   }
 
-  async getInfo(): Promise<SQLiteDatabaseInfo> {
+  async getInfo(): Promise<DatabaseInfo> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/sqlite/${this.databaseName}/info`,
+        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/info`,
         {
           method: "GET",
           headers: {
@@ -232,22 +232,22 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
       );
 
       if (!response.ok) {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `Failed to get database info: ${response.statusText}`,
         );
       }
 
       const apiResponse =
-        (await response.json()) as SQLiteAPIResponse<SQLiteDatabaseInfo>;
+        (await response.json()) as DatabaseAPIResponse<DatabaseInfo>;
 
       if (apiResponse.status === "error") {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
 
       if (!apiResponse.data) {
-        throw new SQLiteInternalError("No data returned from API");
+        throw new DatabaseInternalError("No data returned from API");
       }
 
       // Convert date string to Date object
@@ -268,15 +268,15 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
 }
 
 /**
- * Remote implementation of SQLite storage using GenSX Console API
+ * Implementation of DatabaseStorage interface for remote cloud storage
  */
-export class RemoteSQLiteStorage implements SQLiteStorage {
+export class RemoteDatabaseStorage implements DatabaseStorage {
   private apiKey: string;
   private apiBaseUrl: string;
   private org: string;
-  private databases: Map<string, RemoteSQLiteDatabase> = new Map<
+  private databases: Map<string, RemoteDatabase> = new Map<
     string,
-    RemoteSQLiteDatabase
+    RemoteDatabase
   >();
 
   constructor(organizationId?: string) {
@@ -302,11 +302,11 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
       process.env.GENSX_API_BASE_URL ?? config.api?.baseUrl ?? API_BASE_URL;
   }
 
-  getDatabase(name: string): SQLiteDatabase {
+  getDatabase(name: string): Database {
     if (!this.databases.has(name)) {
       this.databases.set(
         name,
-        new RemoteSQLiteDatabase(name, this.apiBaseUrl, this.apiKey, this.org),
+        new RemoteDatabase(name, this.apiBaseUrl, this.apiKey, this.org),
       );
     }
 
@@ -316,7 +316,7 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
   async listDatabases(): Promise<string[]> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/sqlite`,
+        `${this.apiBaseUrl}/org/${this.org}/databases`,
         {
           method: "GET",
           headers: {
@@ -326,7 +326,7 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
       );
 
       if (!response.ok) {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `Failed to list databases: ${response.statusText}`,
         );
       }
@@ -334,20 +334,16 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
       const data = (await response.json()) as { databases: string[] };
       return data.databases.map((db) => decodeURIComponent(db));
     } catch (err) {
-      if (err instanceof SQLiteError) {
-        throw err;
-      }
-      throw new SQLiteNetworkError(
-        `Error during listDatabases operation: ${String(err)}`,
-        err as Error,
-      );
+      throw handleApiError(err, "listDatabases");
     }
   }
 
   async ensureDatabase(name: string): Promise<EnsureDatabaseResult> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/sqlite/${encodeURIComponent(name)}/ensure`,
+        `${this.apiBaseUrl}/org/${this.org}/database/${encodeURIComponent(
+          name,
+        )}/ensure`,
         {
           method: "POST",
           headers: {
@@ -358,30 +354,30 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
       );
 
       if (!response.ok) {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `Failed to ensure database: ${response.statusText}`,
         );
       }
 
       const apiResponse =
-        (await response.json()) as SQLiteAPIResponse<EnsureDatabaseResult>;
+        (await response.json()) as DatabaseAPIResponse<EnsureDatabaseResult>;
 
       if (apiResponse.status === "error") {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
 
       if (!apiResponse.data) {
-        throw new SQLiteInternalError("No data returned from API");
+        throw new DatabaseInternalError("No data returned from API");
       }
 
       return apiResponse.data;
     } catch (err) {
-      if (err instanceof SQLiteError) {
+      if (err instanceof DatabaseError) {
         throw err;
       }
-      throw new SQLiteNetworkError(
+      throw new DatabaseNetworkError(
         `Error during ensureDatabase operation: ${String(err)}`,
         err as Error,
       );
@@ -391,7 +387,9 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
   async deleteDatabase(name: string): Promise<DeleteDatabaseResult> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/sqlite/${encodeURIComponent(name)}`,
+        `${this.apiBaseUrl}/org/${this.org}/database/${encodeURIComponent(
+          name,
+        )}`,
         {
           method: "DELETE",
           headers: {
@@ -401,22 +399,22 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
       );
 
       if (!response.ok) {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `Failed to delete database: ${response.statusText}`,
         );
       }
 
       const apiResponse =
-        (await response.json()) as SQLiteAPIResponse<DeleteDatabaseResult>;
+        (await response.json()) as DatabaseAPIResponse<DeleteDatabaseResult>;
 
       if (apiResponse.status === "error") {
-        throw new SQLiteInternalError(
+        throw new DatabaseInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
         );
       }
 
       if (!apiResponse.data) {
-        throw new SQLiteInternalError("No data returned from API");
+        throw new DatabaseInternalError("No data returned from API");
       }
 
       // Remove database from cache if it was successfully deleted
@@ -430,10 +428,10 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
 
       return apiResponse.data;
     } catch (err) {
-      if (err instanceof SQLiteError) {
+      if (err instanceof DatabaseError) {
         throw err;
       }
-      throw new SQLiteNetworkError(
+      throw new DatabaseNetworkError(
         `Error during deleteDatabase operation: ${String(err)}`,
         err as Error,
       );

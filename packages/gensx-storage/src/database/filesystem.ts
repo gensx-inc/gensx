@@ -7,28 +7,28 @@ import { createClient, InArgs } from "@libsql/client";
 import { Client, ResultSet } from "@libsql/client";
 
 import {
+  Database,
+  DatabaseBatchResult,
+  DatabaseConstraintError,
+  DatabaseError,
+  DatabaseInfo,
+  DatabaseInternalError,
+  DatabaseNotFoundError,
+  DatabasePermissionDeniedError,
+  DatabaseResult,
+  DatabaseStatement,
+  DatabaseStorage,
+  DatabaseSyntaxError,
+  DatabaseTableInfo,
   DeleteDatabaseResult,
   EnsureDatabaseResult,
-  SQLiteBatchResult,
-  SQLiteConstraintError,
-  SQLiteDatabase,
-  SQLiteDatabaseInfo,
-  SQLiteError,
-  SQLiteInternalError,
-  SQLiteNotFoundError,
-  SQLitePermissionDeniedError,
-  SQLiteResult,
-  SQLiteStatement,
-  SQLiteStorage,
-  SQLiteSyntaxError,
-  SQLiteTableInfo,
 } from "./types.js";
 
 /**
- * Helper to convert between filesystem/libSQL errors and SQLiteErrors
+ * Helper to convert between filesystem/libSQL errors and DatabaseErrors
  */
 function handleError(err: unknown, operation: string): never {
-  if (err instanceof SQLiteError) {
+  if (err instanceof DatabaseError) {
     throw err;
   }
 
@@ -36,12 +36,12 @@ function handleError(err: unknown, operation: string): never {
     const nodeErr = err as NodeJS.ErrnoException;
 
     if (nodeErr.code === "ENOENT") {
-      throw new SQLiteNotFoundError(
+      throw new DatabaseNotFoundError(
         `Database not found: ${String(err.message)}`,
         err,
       );
     } else if (nodeErr.code === "EACCES") {
-      throw new SQLitePermissionDeniedError(
+      throw new DatabasePermissionDeniedError(
         `Permission denied for operation ${operation}: ${String(err.message)}`,
         err,
       );
@@ -51,7 +51,7 @@ function handleError(err: unknown, operation: string): never {
     const message = err.message.toLowerCase();
 
     if (message.includes("syntax error")) {
-      throw new SQLiteSyntaxError(
+      throw new DatabaseSyntaxError(
         `Syntax error in ${operation}: ${err.message}`,
         err,
       );
@@ -62,7 +62,7 @@ function handleError(err: unknown, operation: string): never {
       message.includes("unique constraint") ||
       message.includes("foreign key constraint")
     ) {
-      throw new SQLiteConstraintError(
+      throw new DatabaseConstraintError(
         `Constraint violation in ${operation}: ${err.message}`,
         err,
       );
@@ -70,16 +70,16 @@ function handleError(err: unknown, operation: string): never {
   }
 
   // Default error case
-  throw new SQLiteInternalError(
+  throw new DatabaseInternalError(
     `Error during ${operation}: ${String(err)}`,
     err as Error,
   );
 }
 
 /**
- * Convert libSQL ResultSet to our SQLiteResult format
+ * Convert libSQL ResultSet to our DatabaseResult format
  */
-function mapResult(result: ResultSet): SQLiteResult {
+function mapResult(result: ResultSet): DatabaseResult {
   return {
     columns: result.columns,
     rows: result.rows.map((row) => Object.values(row)),
@@ -91,9 +91,9 @@ function mapResult(result: ResultSet): SQLiteResult {
 }
 
 /**
- * Implementation of SQLiteDatabase interface for filesystem storage
+ * Implementation of Database interface for filesystem storage
  */
-export class FileSystemSQLiteDatabase implements SQLiteDatabase {
+export class FileSystemDatabase implements Database {
   private client: Client;
   private dbPath: string;
   private dbName: string;
@@ -104,7 +104,7 @@ export class FileSystemSQLiteDatabase implements SQLiteDatabase {
     this.client = createClient({ url: `file:${this.dbPath}` });
   }
 
-  async execute(sql: string, params?: InArgs): Promise<SQLiteResult> {
+  async execute(sql: string, params?: InArgs): Promise<DatabaseResult> {
     try {
       const result = await this.client.execute({
         sql,
@@ -117,9 +117,9 @@ export class FileSystemSQLiteDatabase implements SQLiteDatabase {
     }
   }
 
-  async batch(statements: SQLiteStatement[]): Promise<SQLiteBatchResult> {
+  async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult> {
     try {
-      const results: SQLiteResult[] = [];
+      const results: DatabaseResult[] = [];
 
       // Create a transaction with explicit write mode
       const transactionPromise = this.client.transaction("write");
@@ -148,7 +148,7 @@ export class FileSystemSQLiteDatabase implements SQLiteDatabase {
     }
   }
 
-  async executeMultiple(sql: string): Promise<SQLiteBatchResult> {
+  async executeMultiple(sql: string): Promise<DatabaseBatchResult> {
     try {
       // Split the SQL by semicolons, ignoring those in quotes or comments
       const statements = sql
@@ -157,7 +157,7 @@ export class FileSystemSQLiteDatabase implements SQLiteDatabase {
         .filter((s) => s.length > 0)
         .map((s) => ({ sql: `${s};` }));
 
-      const results: SQLiteResult[] = [];
+      const results: DatabaseResult[] = [];
 
       // Execute each statement without transaction
       for (const statement of statements) {
@@ -181,10 +181,10 @@ export class FileSystemSQLiteDatabase implements SQLiteDatabase {
     }
   }
 
-  async migrate(sql: string): Promise<SQLiteBatchResult> {
+  async migrate(sql: string): Promise<DatabaseBatchResult> {
     try {
       // Disable foreign keys, run migrations, then re-enable foreign keys
-      const results: SQLiteResult[] = [];
+      const results: DatabaseResult[] = [];
 
       // Disable foreign keys
       const disableResult = await this.client.execute({
@@ -223,7 +223,7 @@ export class FileSystemSQLiteDatabase implements SQLiteDatabase {
     }
   }
 
-  async getInfo(): Promise<SQLiteDatabaseInfo> {
+  async getInfo(): Promise<DatabaseInfo> {
     try {
       // Get file stats
       let stats;
@@ -247,7 +247,7 @@ export class FileSystemSQLiteDatabase implements SQLiteDatabase {
         sql: "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
       });
 
-      const tables: SQLiteTableInfo[] = [];
+      const tables: DatabaseTableInfo[] = [];
 
       for (const row of tablesResult.rows) {
         const tableName = row.name as string;
@@ -292,10 +292,10 @@ export class FileSystemSQLiteDatabase implements SQLiteDatabase {
 }
 
 /**
- * FileSystem implementation of SQLite storage
+ * Implementation of DatabaseStorage interface for filesystem storage
  */
-export class FileSystemSQLiteStorage implements SQLiteStorage {
-  private databases = new Map<string, FileSystemSQLiteDatabase>();
+export class FileSystemDatabaseStorage implements DatabaseStorage {
+  private databases = new Map<string, FileSystemDatabase>();
 
   constructor(private rootPath: string) {
     // Ensure rootPath exists on instantiation
@@ -313,15 +313,13 @@ export class FileSystemSQLiteStorage implements SQLiteStorage {
     }
   }
 
-  getDatabase(name: string): SQLiteDatabase {
-    if (!this.databases.has(name)) {
-      this.databases.set(
-        name,
-        new FileSystemSQLiteDatabase(this.rootPath, name),
-      );
+  getDatabase(name: string): Database {
+    let db = this.databases.get(name);
+    if (!db) {
+      db = new FileSystemDatabase(this.rootPath, name);
+      this.databases.set(name, db);
     }
-
-    return this.databases.get(name)!;
+    return db;
   }
 
   async listDatabases(): Promise<string[]> {
@@ -331,7 +329,7 @@ export class FileSystemSQLiteStorage implements SQLiteStorage {
       // Filter for .db files and remove extension
       return files
         .filter((file) => file.endsWith(".db"))
-        .map((file) => file.slice(0, -3));
+        .map((file) => file.slice(0, -3)); // Remove .db extension
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
         return [];
