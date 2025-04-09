@@ -75,6 +75,9 @@ export class CheckpointManager implements CheckpointWriter {
   private consoleBaseUrl: string;
   private printUrl = false;
 
+  private traceId?: string;
+  private executionRunId?: string;
+
   // Provide unified view of all secrets
   get secretValues(): Set<unknown> {
     const allSecrets = new Set<unknown>();
@@ -92,6 +95,7 @@ export class CheckpointManager implements CheckpointWriter {
     disabled?: boolean;
     apiBaseUrl?: string;
     consoleBaseUrl?: string;
+    executionRunId?: string;
   }) {
     // Priority order: constructor opts > env vars > config file
     const config = readConfig();
@@ -99,9 +103,7 @@ export class CheckpointManager implements CheckpointWriter {
       opts?.apiKey ?? process.env.GENSX_API_KEY ?? config.api?.token;
     const org = opts?.org ?? process.env.GENSX_ORG ?? config.api?.org;
     const apiBaseUrl =
-      opts?.apiBaseUrl ??
-      process.env.GENSX_CHECKPOINT_URL ??
-      config.api?.baseUrl;
+      opts?.apiBaseUrl ?? process.env.GENSX_API_BASE_URL ?? config.api?.baseUrl;
     const consoleBaseUrl =
       opts?.consoleBaseUrl ??
       process.env.GENSX_CONSOLE_URL ??
@@ -112,6 +114,9 @@ export class CheckpointManager implements CheckpointWriter {
     this.apiKey = apiKey ?? "";
     this.apiBaseUrl = apiBaseUrl ?? "https://api.gensx.com";
     this.consoleBaseUrl = consoleBaseUrl ?? "https://app.gensx.com";
+
+    this.executionRunId =
+      opts?.executionRunId ?? process.env.GENSX_EXECUTION_RUN_ID;
 
     if (
       opts?.disabled ||
@@ -271,7 +276,6 @@ export class CheckpointManager implements CheckpointWriter {
 
       const treeCopy = cloneWithoutFunctions(this.root);
       const maskedRoot = this.maskExecutionTree(treeCopy as ExecutionNode);
-      const url = join(this.apiBaseUrl, `/org/${this.org}/executions`);
       const steps = this.countSteps(this.root);
 
       // Separately gzip the rawExecution data
@@ -301,16 +305,37 @@ export class CheckpointManager implements CheckpointWriter {
 
       const compressedData = await gzipAsync(JSON.stringify(payload));
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Encoding": "gzip",
-          Authorization: `Bearer ${this.apiKey}`,
-          "accept-encoding": "gzip",
-        },
-        body: compressedData,
-      });
+      let response: Response;
+      if (!this.traceId) {
+        // create the trace
+        const url = join(this.apiBaseUrl, `/org/${this.org}/traces`);
+        response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Encoding": "gzip",
+            Authorization: `Bearer ${this.apiKey}`,
+            "accept-encoding": "gzip",
+          },
+          body: compressedData,
+        });
+      } else {
+        const url = join(
+          this.apiBaseUrl,
+          `/org/${this.org}/traces/${this.traceId}`,
+        );
+        // otherwise update the trace
+        response = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Encoding": "gzip",
+            Authorization: `Bearer ${this.apiKey}`,
+            "accept-encoding": "gzip",
+          },
+          body: compressedData,
+        });
+      }
 
       if (!response.ok) {
         console.error(`[Checkpoint] Failed to save checkpoint, server error:`, {
@@ -319,16 +344,20 @@ export class CheckpointManager implements CheckpointWriter {
         });
       }
 
-      if (this.printUrl && !this.havePrintedUrl && response.ok) {
-        const responseBody = (await response.json()) as {
-          status: "ok";
-          data: {
-            executionId: string;
-            workflowName?: string;
-          };
+      const responseBody = (await response.json()) as {
+        status: "ok";
+        data: {
+          executionId: string;
+          traceId: string;
+          workflowName: string;
         };
+      };
+
+      this.traceId = responseBody.data.traceId;
+
+      if (this.printUrl && !this.havePrintedUrl && response.ok) {
         const executionUrl = new URL(
-          `/${this.org}/workflows/${responseBody.data.workflowName ?? workflowName}/${responseBody.data.executionId}`,
+          `/${this.org}/workflows/${responseBody.data.workflowName}/${responseBody.data.executionId}`,
           this.consoleBaseUrl,
         );
         this.havePrintedUrl = true;
