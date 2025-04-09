@@ -30,9 +30,7 @@ export const DatabaseProvider = Component<DatabaseProviderProps, never>(
       const storage = new FileSystemDatabaseStorage(path);
       return <DatabaseContext.Provider value={storage} />;
     } else {
-      // Must be cloud based on our type definitions
-      const { organizationId } = props;
-      const storage = new RemoteDatabaseStorage(organizationId);
+      const storage = new RemoteDatabaseStorage();
       return <DatabaseContext.Provider value={storage} />;
     }
   },

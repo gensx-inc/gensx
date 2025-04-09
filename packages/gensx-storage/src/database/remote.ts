@@ -279,7 +279,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
     RemoteDatabase
   >();
 
-  constructor(organizationId?: string) {
+  constructor() {
     // readConfig has internal error handling and always returns a GensxConfig object
 
     const config = readConfig();
@@ -291,7 +291,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
       );
     }
 
-    this.org = organizationId ?? process.env.GENSX_ORG ?? config.api?.org ?? "";
+    this.org = process.env.GENSX_ORG ?? config.api?.org ?? "";
     if (!this.org) {
       throw new Error(
         "Organization ID must be provided via props or GENSX_ORG environment variable",

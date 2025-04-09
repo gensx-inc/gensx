@@ -274,11 +274,6 @@ export interface FileSystemDatabaseProviderProps
  */
 export interface CloudDatabaseProviderProps extends BaseDatabaseProviderProps {
   kind: "cloud";
-
-  /**
-   * Optional organization ID override (default: uses current org from context)
-   */
-  organizationId?: string;
 }
 
 /**
