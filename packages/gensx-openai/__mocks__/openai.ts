@@ -190,4 +190,6 @@ const MockOpenAI = vi
 const originalModule = await vi.importActual("openai");
 
 export default MockOpenAI;
+const OpenAI = MockOpenAI;
+export { OpenAI };
 export { originalModule };
