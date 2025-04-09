@@ -1,6 +1,6 @@
-import { SQLiteWorkflow } from "./workflows.js";
+import { DatabaseWorkflow } from "./workflows.js";
 
-const result = await SQLiteWorkflow.run({});
+const result = await DatabaseWorkflow.run({});
 
 console.log("Response:");
 console.log(result);

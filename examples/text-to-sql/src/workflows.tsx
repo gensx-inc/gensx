@@ -1,8 +1,8 @@
 import * as gensx from "@gensx/core";
-import { SQLiteProvider, useSQLite } from "@gensx/storage";
+import { DatabaseProvider, useDatabase } from "@gensx/storage";
 
-const SQLiteQuery = gensx.Component<{}, string>("SQLite", async () => {
-  const db = await useSQLite("test");
+const SQLQuery = gensx.Component<{}, string>("SQL", async () => {
+  const db = await useDatabase("test");
   await db.execute(
     "CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
   );
@@ -13,19 +13,19 @@ const SQLiteQuery = gensx.Component<{}, string>("SQLite", async () => {
 });
 
 // Main workflow component
-const SQLiteWorkflowComponent = gensx.Component<{}, string>(
-  "SQLiteWorkflowComponent",
+const DatabaseWorkflowComponent = gensx.Component<{}, string>(
+  "DatabaseWorkflowComponent",
   () => (
-    <SQLiteProvider kind="cloud">
-      <SQLiteQuery />
-    </SQLiteProvider>
+    <DatabaseProvider kind="cloud">
+      <SQLQuery />
+    </DatabaseProvider>
   ),
 );
 
 // Create the workflow
-const SQLiteWorkflow = gensx.Workflow(
-  "SQLiteWorkflow",
-  SQLiteWorkflowComponent,
+const DatabaseWorkflow = gensx.Workflow(
+  "DatabaseWorkflow",
+  DatabaseWorkflowComponent,
 );
 
-export { SQLiteWorkflow };
+export { DatabaseWorkflow };
