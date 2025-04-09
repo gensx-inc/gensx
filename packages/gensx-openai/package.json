@@ -48,13 +48,9 @@
     "zod-to-json-schema": "catalog:"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "catalog:",
-    "@rollup/plugin-node-resolve": "catalog:",
-    "@rollup/plugin-typescript": "catalog:",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "openai": "catalog:",
-    "rollup": "catalog:",
     "vitest": "catalog:"
   },
   "publishConfig": {

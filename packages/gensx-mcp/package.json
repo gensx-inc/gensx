@@ -48,12 +48,8 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "catalog:",
-    "@rollup/plugin-node-resolve": "catalog:",
-    "@rollup/plugin-typescript": "catalog:",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "rollup": "catalog:",
     "vitest": "catalog:"
   },
   "publishConfig": {

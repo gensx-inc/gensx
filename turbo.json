@@ -11,7 +11,8 @@
         "*.tsx",
         "tsconfig.json",
         "package.json",
-        "rollup.config.js"
+        "rollup.config.js",
+        "$TURBO_ROOT/create-rollup-config.js"
       ],
       "dependsOn": ["^build"],
       "outputs": ["dist"]

@@ -49,12 +49,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@ai-sdk/openai": "^1.3.6",
-    "@rollup/plugin-commonjs": "catalog:",
-    "@rollup/plugin-node-resolve": "catalog:",
-    "@rollup/plugin-typescript": "catalog:",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "rollup": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:",
     "zod-to-json-schema": "catalog:"

@@ -1,6 +1,7 @@
 {
   "name": "gensx-monorepo",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@9.12.2",
   "scripts": {
     "build": "turbo run build --filter=\"./packages/*\"",
@@ -25,6 +26,9 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "catalog:",
+    "@rollup/plugin-node-resolve": "catalog:",
+    "@rollup/plugin-typescript": "catalog:",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
     "eslint": "^9.23.0",
@@ -34,6 +38,7 @@
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-vitest": "^0.5.4",
     "prettier": "^3.5.3",
+    "rollup": "catalog:",
     "turbo": "^2.4.4",
     "typescript": "catalog:",
     "vite": "catalog:"

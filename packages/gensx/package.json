@@ -46,6 +46,7 @@
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "eslint-plugin-n": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {

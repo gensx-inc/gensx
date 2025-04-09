@@ -41,6 +41,7 @@
     "@vitest/coverage-istanbul": "catalog:",
     "fs-extra": "^11.3.0",
     "tsx": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   }
 }

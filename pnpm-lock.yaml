@@ -72,6 +72,15 @@ importers:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@22.13.10)(lightningcss@1.29.3)
     devDependencies:
+      '@rollup/plugin-commonjs':
+        specifier: 'catalog:'
+        version: 25.0.8(rollup@4.39.0)
+      '@rollup/plugin-node-resolve':
+        specifier: 'catalog:'
+        version: 15.3.1(rollup@4.39.0)
+      '@rollup/plugin-typescript':
+        specifier: 'catalog:'
+        version: 11.1.6(rollup@4.39.0)(tslib@2.8.1)(typescript@5.8.2)
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.29.0
         version: 8.29.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2)
@@ -99,6 +108,9 @@ importers:
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
+      rollup:
+        specifier: 'catalog:'
+        version: 4.39.0
       turbo:
         specifier: ^2.4.4
         version: 2.4.4
@@ -768,6 +780,9 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.19.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.2
       vitest:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@18.19.86)(lightningcss@1.29.3)
@@ -878,24 +893,12 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.39.0
         version: 0.39.0
-      '@rollup/plugin-commonjs':
-        specifier: 'catalog:'
-        version: 25.0.8(rollup@4.39.0)
-      '@rollup/plugin-node-resolve':
-        specifier: 'catalog:'
-        version: 15.3.1(rollup@4.39.0)
-      '@rollup/plugin-typescript':
-        specifier: 'catalog:'
-        version: 11.1.6(rollup@4.39.0)(tslib@2.8.1)(typescript@5.8.2)
       '@types/node':
         specifier: catalog:packages
         version: 18.19.86
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 2.1.9(vitest@2.1.9(@types/node@18.19.86)(lightningcss@1.29.3))
-      rollup:
-        specifier: 'catalog:'
-        version: 4.39.0
       vitest:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@18.19.86)(lightningcss@1.29.3)
@@ -948,15 +951,6 @@ importers:
         specifier: 'catalog:'
         version: 3.24.2
     devDependencies:
-      '@rollup/plugin-commonjs':
-        specifier: 'catalog:'
-        version: 25.0.8(rollup@4.39.0)
-      '@rollup/plugin-node-resolve':
-        specifier: 'catalog:'
-        version: 15.3.1(rollup@4.39.0)
-      '@rollup/plugin-typescript':
-        specifier: 'catalog:'
-        version: 11.1.6(rollup@4.39.0)(tslib@2.8.1)(typescript@5.8.2)
       '@types/ini':
         specifier: ^4.1.1
         version: 4.1.1
@@ -966,9 +960,6 @@ importers:
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 2.1.9(vitest@2.1.9(@types/node@18.19.86)(lightningcss@1.29.3))
-      rollup:
-        specifier: 'catalog:'
-        version: 4.39.0
       vitest:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@18.19.86)(lightningcss@1.29.3)
@@ -1003,24 +994,12 @@ importers:
         specifier: 'catalog:'
         version: 3.24.2
     devDependencies:
-      '@rollup/plugin-commonjs':
-        specifier: 'catalog:'
-        version: 25.0.8(rollup@4.39.0)
-      '@rollup/plugin-node-resolve':
-        specifier: 'catalog:'
-        version: 15.3.1(rollup@4.39.0)
-      '@rollup/plugin-typescript':
-        specifier: 'catalog:'
-        version: 11.1.6(rollup@4.39.0)(tslib@2.8.1)(typescript@5.8.2)
       '@types/node':
         specifier: catalog:packages
         version: 18.19.86
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 2.1.9(vitest@2.1.9(@types/node@18.19.86)(lightningcss@1.29.3))
-      rollup:
-        specifier: 'catalog:'
-        version: 4.39.0
       vitest:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@18.19.86)(lightningcss@1.29.3)
@@ -1037,15 +1016,6 @@ importers:
         specifier: 'catalog:'
         version: 3.24.5(zod@3.24.2)
     devDependencies:
-      '@rollup/plugin-commonjs':
-        specifier: 'catalog:'
-        version: 25.0.8(rollup@4.39.0)
-      '@rollup/plugin-node-resolve':
-        specifier: 'catalog:'
-        version: 15.3.1(rollup@4.39.0)
-      '@rollup/plugin-typescript':
-        specifier: 'catalog:'
-        version: 11.1.6(rollup@4.39.0)(tslib@2.8.1)(typescript@5.8.2)
       '@types/node':
         specifier: catalog:packages
         version: 18.19.86
@@ -1055,9 +1025,6 @@ importers:
       openai:
         specifier: 'catalog:'
         version: 4.91.1(ws@8.18.0)(zod@3.24.2)
-      rollup:
-        specifier: 'catalog:'
-        version: 4.39.0
       vitest:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@18.19.86)(lightningcss@1.29.3)
@@ -1068,24 +1035,12 @@ importers:
         specifier: workspace:*
         version: link:../gensx-core
     devDependencies:
-      '@rollup/plugin-commonjs':
-        specifier: 'catalog:'
-        version: 25.0.8(rollup@4.39.0)
-      '@rollup/plugin-node-resolve':
-        specifier: 'catalog:'
-        version: 15.3.1(rollup@4.39.0)
-      '@rollup/plugin-typescript':
-        specifier: 'catalog:'
-        version: 11.1.6(rollup@4.39.0)(tslib@2.8.1)(typescript@5.8.2)
       '@types/node':
         specifier: catalog:packages
         version: 18.19.86
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 2.1.9(vitest@2.1.9(@types/node@18.19.86)(lightningcss@1.29.3))
-      rollup:
-        specifier: 'catalog:'
-        version: 4.39.0
       vitest:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@18.19.86)(lightningcss@1.29.3)
@@ -1102,24 +1057,12 @@ importers:
       '@ai-sdk/openai':
         specifier: ^1.3.6
         version: 1.3.6(zod@3.24.2)
-      '@rollup/plugin-commonjs':
-        specifier: 'catalog:'
-        version: 25.0.8(rollup@4.39.0)
-      '@rollup/plugin-node-resolve':
-        specifier: 'catalog:'
-        version: 15.3.1(rollup@4.39.0)
-      '@rollup/plugin-typescript':
-        specifier: 'catalog:'
-        version: 11.1.6(rollup@4.39.0)(tslib@2.8.1)(typescript@5.8.2)
       '@types/node':
         specifier: catalog:packages
         version: 18.19.86
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 2.1.9(vitest@2.1.9(@types/node@18.19.86)(lightningcss@1.29.3))
-      rollup:
-        specifier: 'catalog:'
-        version: 4.39.0
       vitest:
         specifier: 'catalog:'
         version: 2.1.9(@types/node@18.19.86)(lightningcss@1.29.3)
@@ -10539,7 +10482,7 @@ snapshots:
       eslint: 9.23.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.23.0(jiti@2.4.2)))(eslint@9.23.0(jiti@2.4.2))
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.10.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.23.0(jiti@2.4.2)))(eslint@9.23.0(jiti@2.4.2)))(eslint@9.23.0(jiti@2.4.2))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.10.0)(eslint@9.23.0(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.23.0(jiti@2.4.2))
       eslint-plugin-react: 7.37.4(eslint@9.23.0(jiti@2.4.2))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.23.0(jiti@2.4.2))
@@ -10573,7 +10516,7 @@ snapshots:
       tinyglobby: 0.2.12
       unrs-resolver: 1.3.3
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.10.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.23.0(jiti@2.4.2)))(eslint@9.23.0(jiti@2.4.2)))(eslint@9.23.0(jiti@2.4.2))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.10.0)(eslint@9.23.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
@@ -10595,7 +10538,7 @@ snapshots:
       eslint: 9.23.0(jiti@2.4.2)
       eslint-compat-utils: 0.5.1(eslint@9.23.0(jiti@2.4.2))
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.10.0(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint@9.23.0(jiti@2.4.2)))(eslint@9.23.0(jiti@2.4.2)))(eslint@9.23.0(jiti@2.4.2)):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-typescript@3.10.0)(eslint@9.23.0(jiti@2.4.2)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
