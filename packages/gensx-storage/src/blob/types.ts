@@ -119,7 +119,7 @@ export interface BlobOptions {
 /**
  * A response from the API
  */
-export interface APIResponse<T> {
+export interface BlobAPIResponse<T> {
   status: "ok" | "error";
   data?: T;
   error?: string;
@@ -266,7 +266,7 @@ export interface BlobStorage {
 /**
  * Provider configuration kinds
  */
-export type StorageKind = "filesystem" | "cloud";
+export type BlobStorageKind = "filesystem" | "cloud";
 
 /**
  * Base provider props
@@ -275,7 +275,7 @@ export interface BaseBlobProviderProps {
   /**
    * Storage kind
    */
-  kind: StorageKind;
+  kind: BlobStorageKind;
 
   /**
    * Default prefix for all blob keys

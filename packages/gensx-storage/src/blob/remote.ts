@@ -5,8 +5,8 @@ import { Readable } from "stream";
 import { readConfig } from "@gensx/core";
 
 import {
-  APIResponse,
   Blob,
+  BlobAPIResponse,
   BlobConflictError,
   BlobError,
   BlobInternalError,
@@ -74,7 +74,7 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const apiResponse = (await response.json()) as APIResponse<
+      const apiResponse = (await response.json()) as BlobAPIResponse<
         BlobResponse<T>
       >;
 
@@ -115,7 +115,7 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const apiResponse = (await response.json()) as APIResponse<
+      const apiResponse = (await response.json()) as BlobAPIResponse<
         BlobResponse<string>
       >;
 
@@ -156,7 +156,7 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const apiResponse = (await response.json()) as APIResponse<{
+      const apiResponse = (await response.json()) as BlobAPIResponse<{
         content: string;
         contentType?: string;
         etag?: string;
@@ -547,10 +547,9 @@ export class RemoteBlobStorage implements BlobStorage {
     organizationId?: string,
   ) {
     // readConfig has internal error handling and always returns a GensxConfig object
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+
     const config = readConfig();
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     this.apiKey = process.env.GENSX_API_KEY ?? config.api?.token ?? "";
     if (!this.apiKey) {
       throw new Error(
@@ -558,7 +557,6 @@ export class RemoteBlobStorage implements BlobStorage {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     this.org = organizationId ?? process.env.GENSX_ORG ?? config.api?.org ?? "";
     if (!this.org) {
       throw new Error(
@@ -566,9 +564,7 @@ export class RemoteBlobStorage implements BlobStorage {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.apiBaseUrl =
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       process.env.GENSX_API_BASE_URL ?? config.api?.baseUrl ?? API_BASE_URL;
   }
 

@@ -4,9 +4,9 @@ import { readConfig } from "@gensx/core";
 import { InArgs } from "@libsql/client";
 
 import {
-  APIResponse,
   DeleteDatabaseResult,
   EnsureDatabaseResult,
+  SQLiteAPIResponse,
   SQLiteBatchResult,
   SQLiteDatabase,
   SQLiteDatabaseInfo,
@@ -83,7 +83,8 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
         );
       }
 
-      const apiResponse = (await response.json()) as APIResponse<SQLiteResult>;
+      const apiResponse =
+        (await response.json()) as SQLiteAPIResponse<SQLiteResult>;
 
       if (apiResponse.status === "error") {
         throw new SQLiteInternalError(
@@ -122,7 +123,7 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
       }
 
       const apiResponse =
-        (await response.json()) as APIResponse<SQLiteBatchResult>;
+        (await response.json()) as SQLiteAPIResponse<SQLiteBatchResult>;
 
       if (apiResponse.status === "error") {
         throw new SQLiteInternalError(
@@ -161,7 +162,7 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
       }
 
       const apiResponse =
-        (await response.json()) as APIResponse<SQLiteBatchResult>;
+        (await response.json()) as SQLiteAPIResponse<SQLiteBatchResult>;
 
       if (apiResponse.status === "error") {
         throw new SQLiteInternalError(
@@ -200,7 +201,7 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
       }
 
       const apiResponse =
-        (await response.json()) as APIResponse<SQLiteBatchResult>;
+        (await response.json()) as SQLiteAPIResponse<SQLiteBatchResult>;
 
       if (apiResponse.status === "error") {
         throw new SQLiteInternalError(
@@ -237,7 +238,7 @@ export class RemoteSQLiteDatabase implements SQLiteDatabase {
       }
 
       const apiResponse =
-        (await response.json()) as APIResponse<SQLiteDatabaseInfo>;
+        (await response.json()) as SQLiteAPIResponse<SQLiteDatabaseInfo>;
 
       if (apiResponse.status === "error") {
         throw new SQLiteInternalError(
@@ -363,7 +364,7 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
       }
 
       const apiResponse =
-        (await response.json()) as APIResponse<EnsureDatabaseResult>;
+        (await response.json()) as SQLiteAPIResponse<EnsureDatabaseResult>;
 
       if (apiResponse.status === "error") {
         throw new SQLiteInternalError(
@@ -406,7 +407,7 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
       }
 
       const apiResponse =
-        (await response.json()) as APIResponse<DeleteDatabaseResult>;
+        (await response.json()) as SQLiteAPIResponse<DeleteDatabaseResult>;
 
       if (apiResponse.status === "error") {
         throw new SQLiteInternalError(

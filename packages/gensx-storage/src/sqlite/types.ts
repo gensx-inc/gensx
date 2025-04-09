@@ -102,7 +102,7 @@ export class SQLiteTransactionError extends SQLiteError {
 /**
  * A response from the API
  */
-export interface APIResponse<T> {
+export interface SQLiteAPIResponse<T> {
   status: "ok" | "error";
   data?: T;
   error?: string;

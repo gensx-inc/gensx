@@ -3,6 +3,11 @@ export * from "./blob/types.js";
 export * from "./blob/context.js";
 export { BlobProvider } from "./blob/provider.js";
 
+export * from "./sqlite/types.js";
+export * from "./sqlite/context.js";
+export { SQLiteProvider } from "./sqlite/provider.js";
+export { useSQLite } from "./sqlite/context.js";
+
 // Re-export for convenience
 export { useBlob, useBlobStorage } from "./blob/context.js";
 
