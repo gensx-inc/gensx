@@ -74,6 +74,8 @@ export class CheckpointManager implements CheckpointWriter {
   private apiBaseUrl: string;
   private consoleBaseUrl: string;
   private printUrl = false;
+  private runtime: "cloud" | "sdk";
+  private runtimeVersion?: string;
 
   private traceId?: string;
   private executionRunId?: string;
@@ -96,6 +98,8 @@ export class CheckpointManager implements CheckpointWriter {
     apiBaseUrl?: string;
     consoleBaseUrl?: string;
     executionRunId?: string;
+    runtime?: "cloud" | "sdk";
+    runtimeVersion?: string;
   }) {
     // Priority order: constructor opts > env vars > config file
     const config = readConfig();
@@ -114,6 +118,14 @@ export class CheckpointManager implements CheckpointWriter {
     this.apiKey = apiKey ?? "";
     this.apiBaseUrl = apiBaseUrl ?? "https://api.gensx.com";
     this.consoleBaseUrl = consoleBaseUrl ?? "https://app.gensx.com";
+
+    const runtime = opts?.runtime ?? process.env.GENSX_RUNTIME;
+    if (runtime !== "cloud" && runtime !== "sdk") {
+      throw new Error('Invalid runtime. Must be either "cloud" or "sdk"');
+    }
+    this.runtime = runtime;
+    this.runtimeVersion =
+      opts?.runtimeVersion ?? process.env.GENSX_RUNTIME_VERSION;
 
     this.executionRunId =
       opts?.executionRunId ?? process.env.GENSX_EXECUTION_RUN_ID;
@@ -301,6 +313,9 @@ export class CheckpointManager implements CheckpointWriter {
         completedAt: this.root.endTime,
         rawExecution: base64CompressedExecution,
         steps,
+        runtime: this.runtime,
+        runtimeVersion: this.runtimeVersion,
+        executionRunId: this.executionRunId,
       };
 
       const compressedData = await gzipAsync(JSON.stringify(payload));
