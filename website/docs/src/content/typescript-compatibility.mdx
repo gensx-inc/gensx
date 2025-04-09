@@ -30,3 +30,20 @@ If you are unable to change the `jsx` or `jsxImportSource` settings in your Type
 ## JavaScript Compatibility
 
 GenSX is bundled with builds for both CommonJS and ESM. This means that you can use GenSX in any environment that supports either of these module formats.
+
+When using GenSX in a TypeScript project that targets CommonJS, you may need to configure the paths so that the TypeScript compiler can properly resolve the GenSX types.
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@gensx/core/jsx-runtime": [
+      "./node_modules/@gensx/core/dist/cjs/jsx-runtime"
+      ],
+      "@gensx/core/jsx-dev-runtime": [
+        "./node_modules/@gensx/core/dist/cjs/jsx-dev-runtime",
+      ],
+    },
+  },
+};
+```
