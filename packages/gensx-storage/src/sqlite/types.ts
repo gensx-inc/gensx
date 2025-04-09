@@ -244,7 +244,7 @@ export interface SQLiteStorage {
 /**
  * Provider configuration kinds
  */
-export type StorageKind = "filesystem" | "cloud";
+export type SQLiteStorageKind = "filesystem" | "cloud";
 
 /**
  * Base provider props
@@ -253,7 +253,7 @@ export interface BaseSQLiteProviderProps {
   /**
    * Storage kind
    */
-  kind: StorageKind;
+  kind: SQLiteStorageKind;
 }
 
 /**
