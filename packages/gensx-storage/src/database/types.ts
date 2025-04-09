@@ -253,7 +253,7 @@ export interface BaseDatabaseProviderProps {
   /**
    * Storage kind
    */
-  kind: DatabaseStorageKind;
+  kind?: DatabaseStorageKind;
 }
 
 /**
@@ -261,19 +261,19 @@ export interface BaseDatabaseProviderProps {
  */
 export interface FileSystemDatabaseProviderProps
   extends BaseDatabaseProviderProps {
-  kind: "filesystem";
+  kind?: "filesystem";
 
   /**
    * Root directory for storing database files
    */
-  path?: string;
+  rootDir?: string;
 }
 
 /**
  * Cloud provider props
  */
 export interface CloudDatabaseProviderProps extends BaseDatabaseProviderProps {
-  kind: "cloud";
+  kind?: "cloud";
 }
 
 /**
