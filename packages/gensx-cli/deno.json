@@ -1,24 +1,21 @@
 {
   "tasks": {
     "dev": "deno run --watch main.ts",
-    "compile": "deno compile --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --node-modules-dir --include=../gensx/dist/templates main.ts",
-    "compile:win": "deno compile --target x86_64-pc-windows-msvc --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --node-modules-dir --include=../gensx/dist/templates -o gensx-cli-windows.exe main.ts",
-    "compile:linux": "deno compile --target x86_64-unknown-linux-gnu --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --node-modules-dir --include=../gensx/dist/templates -o gensx-cli-linux main.ts",
-    "compile:macos-x64": "deno compile --target x86_64-apple-darwin --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --node-modules-dir --include=../gensx/dist/templates -o gensx-cli-macos-x64 main.ts",
-    "compile:macos-arm64": "deno compile --target aarch64-apple-darwin --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --node-modules-dir --include=../gensx/dist/templates -o gensx-cli-macos-arm64 main.ts",
+    "compile": "deno compile --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --include=../gensx/dist/templates main.ts",
+    "compile:win": "deno compile --target x86_64-pc-windows-msvc --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --include=../gensx/dist/templates -o gensx-cli-windows.exe main.ts",
+    "compile:linux": "deno compile --target x86_64-unknown-linux-gnu --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --include=../gensx/dist/templates -o gensx-cli-linux main.ts",
+    "compile:macos-x64": "deno compile --target x86_64-apple-darwin --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --include=../gensx/dist/templates -o gensx-cli-macos-x64 main.ts",
+    "compile:macos-arm64": "deno compile --target aarch64-apple-darwin --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --include=../gensx/dist/templates -o gensx-cli-macos-arm64 main.ts",
     "compile:all": "deno task compile:win && deno task compile:linux && deno task compile:macos-x64 && deno task compile:macos-arm64"
   },
   "compilerOptions": {
     "lib": ["deno.window", "deno.unstable", "dom", "esnext"],
     "types": ["npm:@types/node"]
   },
+  "nodeModulesDir": "auto",
   "imports": {
     "@gensx/core": "../gensx-core/dist/esm/index.js",
     "@hono/node-server": "npm:@hono/node-server",
-    "@rollup/plugin-commonjs": "npm:@rollup/plugin-commonjs",
-    "@rollup/plugin-json": "npm:@rollup/plugin-json",
-    "@rollup/plugin-node-resolve": "npm:@rollup/plugin-node-resolve",
-    "@rollup/plugin-typescript": "npm:@rollup/plugin-typescript",
     "ajv": "npm:ajv",
     "axios": "npm:axios",
     "builtin-modules": "npm:builtin-modules",
@@ -37,8 +34,7 @@
     "open": "npm:open",
     "ora": "npm:ora",
     "picocolors": "npm:picocolors",
-    "rollup": "npm:rollup",
-    "serialize-error": "npm:serialize-error",
+    "@common.js/serialize-error": "npm:@common.js/serialize-error",
     "typescript-json-schema": "npm:typescript-json-schema",
     "typescript": "npm:typescript",
     "ulidx": "npm:ulidx",
