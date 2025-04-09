@@ -75,7 +75,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       const apiResponse = (await response.json()) as BlobAPIResponse<
-        BlobResponse<T>
+        BlobResponse<string>
       >;
 
       if (apiResponse.status === "error") {
@@ -88,7 +88,8 @@ export class RemoteBlob<T> implements Blob<T> {
         return null;
       }
 
-      return apiResponse.data.content;
+      // Parse the content as JSON since it's stored as a string
+      return JSON.parse(apiResponse.data.content) as T;
     } catch (err) {
       throw handleApiError(err, "getJSON");
     }
@@ -542,12 +543,8 @@ export class RemoteBlobStorage implements BlobStorage {
   private apiBaseUrl: string;
   private org: string;
 
-  constructor(
-    private defaultPrefix?: string,
-    organizationId?: string,
-  ) {
+  constructor(private defaultPrefix?: string) {
     // readConfig has internal error handling and always returns a GensxConfig object
-
     const config = readConfig();
 
     this.apiKey = process.env.GENSX_API_KEY ?? config.api?.token ?? "";
@@ -557,7 +554,7 @@ export class RemoteBlobStorage implements BlobStorage {
       );
     }
 
-    this.org = organizationId ?? process.env.GENSX_ORG ?? config.api?.org ?? "";
+    this.org = process.env.GENSX_ORG ?? config.api?.org ?? "";
     if (!this.org) {
       throw new Error(
         "Organization ID must be provided via props or GENSX_ORG environment variable",

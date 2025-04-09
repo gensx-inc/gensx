@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.7...gensx-core-v0.3.8) (2025-04-09)
+
+
+### ✨ New Features
+
+* add the @gensx/storage package ([#541](https://github.com/gensx-inc/gensx/issues/541)) ([e279008](https://github.com/gensx-inc/gensx/commit/e279008f57a90c326a4699311bee0c1bbb9b62c4))
+
 ## [0.3.7](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.6...gensx-core-v0.3.7) (2025-03-21)
 
 

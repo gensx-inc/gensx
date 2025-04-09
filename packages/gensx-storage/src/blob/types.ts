@@ -273,9 +273,9 @@ export type BlobStorageKind = "filesystem" | "cloud";
  */
 export interface BaseBlobProviderProps {
   /**
-   * Storage kind
+   * Storage kind - if not provided, will be determined from environment
    */
-  kind: BlobStorageKind;
+  kind?: BlobStorageKind;
 
   /**
    * Default prefix for all blob keys
@@ -287,7 +287,7 @@ export interface BaseBlobProviderProps {
  * Filesystem provider props
  */
 export interface FileSystemBlobProviderProps extends BaseBlobProviderProps {
-  kind: "filesystem";
+  kind?: "filesystem";
 
   /**
    * Root directory for storing blobs
@@ -299,12 +299,7 @@ export interface FileSystemBlobProviderProps extends BaseBlobProviderProps {
  * Cloud provider props
  */
 export interface CloudBlobProviderProps extends BaseBlobProviderProps {
-  kind: "cloud";
-
-  /**
-   * Optional organization ID override (default: uses current org from context)
-   */
-  organizationId?: string;
+  kind?: "cloud";
 }
 
 /**
