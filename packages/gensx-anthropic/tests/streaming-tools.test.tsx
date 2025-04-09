@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 import { z } from "zod";
@@ -41,8 +42,8 @@ vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
 
   return {
     ...originalAnthropicModule,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    default: MockAnthropicClass,
+    default: MockAnthropicClass as unknown as Anthropic,
+    Anthropic: MockAnthropicClass as unknown as Anthropic,
   };
 });
 

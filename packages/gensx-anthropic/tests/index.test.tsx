@@ -41,8 +41,8 @@ vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
 
   return {
     ...originalAnthropicModule,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    default: MockAnthropicClass,
+    default: MockAnthropicClass as unknown as Anthropic,
+    Anthropic: MockAnthropicClass as unknown as Anthropic,
   };
 });
 
