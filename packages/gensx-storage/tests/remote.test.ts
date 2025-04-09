@@ -53,6 +53,7 @@ suite("RemoteBlobStorage", () => {
   test("should get JSON from a blob", async () => {
     const storage = new RemoteBlobStorage();
     const mockData = { foo: "bar" };
+    const mockStringContent = JSON.stringify(mockData);
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -60,7 +61,7 @@ suite("RemoteBlobStorage", () => {
       json: async () => ({
         status: "ok",
         data: {
-          content: mockData,
+          content: mockStringContent,
           etag: "mock-etag",
         },
       }),
@@ -68,6 +69,9 @@ suite("RemoteBlobStorage", () => {
 
     const blob = storage.getBlob<typeof mockData>("test-key");
     const result = await blob.getJSON();
+
+    expect(result).not.toBeNull();
+    if (!result) return;
 
     expect(result).toEqual(mockData);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -78,6 +82,38 @@ suite("RemoteBlobStorage", () => {
         }),
       }),
     );
+  });
+
+  test("should parse JSON string content from API response", async () => {
+    const storage = new RemoteBlobStorage();
+    const mockData = { messages: [{ role: "user", content: "Hello" }] };
+    const mockStringContent = JSON.stringify(mockData);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: {
+          content: mockStringContent,
+          etag: "mock-etag",
+        },
+      }),
+    });
+
+    const blob = storage.getBlob<typeof mockData>("test-key");
+    const result = await blob.getJSON();
+
+    // Ensure we got a result
+    expect(result).not.toBeNull();
+    if (!result) return; // TypeScript guard
+
+    expect(result).toEqual(mockData);
+    expect(result).not.toBe(mockStringContent); // Ensure it's not still a string
+    expect(typeof result).toBe("object");
+    expect(Array.isArray(result.messages)).toBe(true);
+    expect(result.messages[0].role).toBe("user");
+    expect(result.messages[0].content).toBe("Hello");
   });
 
   test("should handle non-existent blobs", async () => {
