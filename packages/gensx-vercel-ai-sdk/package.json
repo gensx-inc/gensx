@@ -1,6 +1,6 @@
 {
   "name": "@gensx/vercel-ai-sdk",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "Vercel AI SDK for GenSX.",
   "type": "module",
   "main": "./dist/index.js",

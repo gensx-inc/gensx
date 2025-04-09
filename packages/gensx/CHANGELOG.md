@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.18](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.17...gensx-v0.3.18) (2025-04-09)
+
+
+### ✨ New Features
+
+* support a local dev server ([#524](https://github.com/gensx-inc/gensx/issues/524)) ([2288609](https://github.com/gensx-inc/gensx/commit/2288609e860210ad32b6e6641425cfefe23e136c))
+
+
+### 🐛 Bug Fixes
+
+* adding platform to docker build command ([#537](https://github.com/gensx-inc/gensx/issues/537)) ([b1d34b2](https://github.com/gensx-inc/gensx/commit/b1d34b285e101caddccd4b471fd42fd804484d7b))
+* Update docker namespace. ([#539](https://github.com/gensx-inc/gensx/issues/539)) ([065ef9f](https://github.com/gensx-inc/gensx/commit/065ef9f7dd19c61bf870c14ae05ed662d56a3368))
+
 ## [0.3.17](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.16...gensx-v0.3.17) (2025-04-01)
 
 
