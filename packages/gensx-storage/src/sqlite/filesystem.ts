@@ -297,10 +297,7 @@ export class FileSystemSQLiteDatabase implements SQLiteDatabase {
 export class FileSystemSQLiteStorage implements SQLiteStorage {
   private databases = new Map<string, FileSystemSQLiteDatabase>();
 
-  constructor(
-    private rootPath: string,
-    private defaultDatabase?: string,
-  ) {
+  constructor(private rootPath: string) {
     // Ensure rootPath exists on instantiation
     void this.ensureRootDir();
   }

@@ -26,13 +26,13 @@ export const SQLiteProvider = Component<SQLiteProviderProps, never>(
   (props) => {
     // Create the appropriate storage implementation based on kind
     if (props.kind === "filesystem") {
-      const { path = process.cwd(), defaultDatabase } = props;
-      const storage = new FileSystemSQLiteStorage(path, defaultDatabase);
+      const { path = process.cwd() } = props;
+      const storage = new FileSystemSQLiteStorage(path);
       return <SQLiteContext.Provider value={storage} />;
     } else {
       // Must be cloud based on our type definitions
-      const { defaultDatabase, organizationId } = props;
-      const storage = new RemoteSQLiteStorage(defaultDatabase, organizationId);
+      const { organizationId } = props;
+      const storage = new RemoteSQLiteStorage(organizationId);
       return <SQLiteContext.Provider value={storage} />;
     }
   },

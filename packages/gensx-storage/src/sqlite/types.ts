@@ -254,11 +254,6 @@ export interface BaseSQLiteProviderProps {
    * Storage kind
    */
   kind: StorageKind;
-
-  /**
-   * Default database name
-   */
-  defaultDatabase?: string;
 }
 
 /**

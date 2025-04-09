@@ -278,10 +278,7 @@ export class RemoteSQLiteStorage implements SQLiteStorage {
     RemoteSQLiteDatabase
   >();
 
-  constructor(
-    private defaultDatabase?: string,
-    organizationId?: string,
-  ) {
+  constructor(organizationId?: string) {
     // readConfig has internal error handling and always returns a GensxConfig object
 
     const config = readConfig();
