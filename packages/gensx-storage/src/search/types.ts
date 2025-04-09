@@ -218,11 +218,6 @@ export interface Search {
  */
 export interface SearchProviderProps {
   /**
-   * Optional organization ID override (default: uses current org from context)
-   */
-  organizationId?: string;
-
-  /**
    * Default prefix for all namespaces
    */
   defaultPrefix?: string;

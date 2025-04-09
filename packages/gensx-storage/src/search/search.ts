@@ -515,12 +515,10 @@ export class Search implements ISearch {
   private org: string;
   private defaultPrefix?: string;
 
-  constructor(organizationId?: string, defaultPrefix?: string) {
+  constructor(defaultPrefix?: string) {
     // readConfig has internal error handling and always returns a GensxConfig object
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const config = readConfig();
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     this.apiKey = process.env.GENSX_API_KEY ?? config.api?.token ?? "";
     if (!this.apiKey) {
       throw new Error(
@@ -528,17 +526,14 @@ export class Search implements ISearch {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    this.org = organizationId ?? process.env.GENSX_ORG ?? config.api?.org ?? "";
+    this.org = process.env.GENSX_ORG ?? config.api?.org ?? "";
     if (!this.org) {
       throw new Error(
         "Organization ID must be provided via constructor or GENSX_ORG environment variable",
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.apiBaseUrl =
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       process.env.GENSX_API_BASE_URL ?? config.api?.baseUrl ?? API_BASE_URL;
 
     this.defaultPrefix = defaultPrefix;

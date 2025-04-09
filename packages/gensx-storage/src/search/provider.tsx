@@ -7,7 +7,7 @@ import { SearchProviderProps } from "./types.js";
 export const SearchProvider = Component<SearchProviderProps, never>(
   "SearchProvider",
   (props) => {
-    const search = new Search(props.organizationId, props.defaultPrefix);
+    const search = new Search(props.defaultPrefix);
     return <SearchContext.Provider value={search} />;
   },
 );
