@@ -1,13 +1,10 @@
-# GenSX Chat Memory Example
+# GenSX Text-to-SQL Example
 
-This example demonstrates how to build a chat application with persistent memory using GenSX. It uses OpenAI's GPT-4o-mini model and stores chat history in GenSX Cloud blob storage.
+This example demonstrates how to use GenSX's `useDatabase` hook to create and query a SQL database. It shows how to:
 
-## Features
-
-- Thread-based chat system with persistent memory
-- Cloud-based storage for chat history
-- OpenAI GPT-4o-mini integration
-- Command-line interface for interaction
+- Initialize a database with a schema
+- Insert data into tables
+- Build a simple agent with a query tool that can answer questions about the data in the database
 
 ## Getting Started
 
@@ -23,36 +20,9 @@ This example demonstrates how to build a chat application with persistent memory
    export OPENAI_API_KEY=your_api_key_here
    ```
 
-3. Run the chat application:
+3. Run the application:
 
    ```bash
-   # Specify a thread ID and message
-   pnpm start thread-1 "Hello, how are you?"
+   # Ask a question about the baseball statistics
+   pnpm start "Who has the highest batting average?"
    ```
-
-   The application will:
-
-   - Load any existing chat history for the specified thread
-   - Process your message using GPT-4o-mini
-   - Save the updated conversation history
-   - Display the assistant's response
-
-## How It Works
-
-The application uses:
-
-- `@gensx/core` for workflow management
-- `@gensx/openai` for OpenAI integration
-- `@gensx/storage` for persistent chat history storage
-
-Each chat thread maintains its own conversation history, allowing for context-aware responses across multiple interactions.
-
-## Example Usage
-
-```bash
-# Start a new conversation in thread-1
-npm start thread-1 "What is the capital of France?"
-
-# Continue the conversation in the same thread
-npm start thread-1 "Tell me more about its history"
-```

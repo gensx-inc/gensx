@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "description": "Text to SQL with GenSX and the useSQLite hook",
+  "description": "Text to SQL with GenSX and the useDatabase hook",
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./src/index.tsx",
