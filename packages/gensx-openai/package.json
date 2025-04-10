@@ -6,6 +6,11 @@
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
   "types": "./dist/cjs/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/gensx-openai"
+  },
   "exports": {
     ".": {
       "types": {
