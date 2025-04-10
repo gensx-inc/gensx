@@ -7,16 +7,16 @@ import * as path from "node:path";
 import * as gensx from "@gensx/core";
 import { afterEach, beforeEach, expect, suite, test } from "vitest";
 
-import { BlobContext } from "../src/blob/context.js";
-import { FileSystemBlobStorage } from "../src/blob/filesystem.js";
-import { BlobProvider } from "../src/blob/provider.js";
-import { RemoteBlobStorage } from "../src/blob/remote.js";
+import { BlobContext } from "../../src/blob/context.js";
+import { FileSystemBlobStorage } from "../../src/blob/filesystem.js";
+import { BlobProvider } from "../../src/blob/provider.js";
+import { RemoteBlobStorage } from "../../src/blob/remote.js";
 import {
   BlobProviderProps,
   CloudBlobProviderProps,
   FileSystemBlobProviderProps,
-} from "../src/blob/types.js";
-import { BlobStorage } from "../src/blob/types.js";
+} from "../../src/blob/types.js";
+import { BlobStorage } from "../../src/blob/types.js";
 
 // Helper to create temporary test directories
 async function createTempDir(): Promise<string> {

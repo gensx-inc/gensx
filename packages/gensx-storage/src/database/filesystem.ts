@@ -354,6 +354,10 @@ export class FileSystemDatabaseStorage implements DatabaseStorage {
       }
 
       if (exists) {
+        // If it exists, make sure it's in our cache
+        if (!this.databases.has(name)) {
+          this.getDatabase(name);
+        }
         return { exists: true, created: false };
       }
 
@@ -400,5 +404,9 @@ export class FileSystemDatabaseStorage implements DatabaseStorage {
     } catch (err) {
       throw handleError(err, "deleteDatabase");
     }
+  }
+
+  hasEnsuredDatabase(name: string): boolean {
+    return this.databases.has(name);
   }
 }

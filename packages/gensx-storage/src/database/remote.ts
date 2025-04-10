@@ -384,6 +384,11 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
         throw new DatabaseInternalError("No data returned from API");
       }
 
+      // Make sure the database is in our cache
+      if (!this.databases.has(name)) {
+        this.getDatabase(name);
+      }
+
       return apiResponse.data;
     } catch (err) {
       if (err instanceof DatabaseError) {
@@ -394,6 +399,10 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
         err as Error,
       );
     }
+  }
+
+  hasEnsuredDatabase(name: string): boolean {
+    return this.databases.has(name);
   }
 
   async deleteDatabase(name: string): Promise<DeleteDatabaseResult> {
@@ -429,12 +438,14 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
         throw new DatabaseInternalError("No data returned from API");
       }
 
-      // Remove database from cache if it was successfully deleted
-      if (apiResponse.data.deleted && this.databases.has(name)) {
-        const db = this.databases.get(name);
-        if (db) {
-          db.close();
-          this.databases.delete(name);
+      // Remove database from caches if it was successfully deleted
+      if (apiResponse.data.deleted) {
+        if (this.databases.has(name)) {
+          const db = this.databases.get(name);
+          if (db) {
+            db.close();
+            this.databases.delete(name);
+          }
         }
       }
 

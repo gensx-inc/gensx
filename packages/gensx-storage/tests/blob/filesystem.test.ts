@@ -5,8 +5,8 @@ import { Readable } from "node:stream";
 
 import { afterEach, beforeEach, expect, suite, test } from "vitest";
 
-import { FileSystemBlobStorage } from "../src/blob/filesystem.js";
-import { BlobConflictError, BlobError, BlobStorage } from "../src/index.js";
+import { FileSystemBlobStorage } from "../../src/blob/filesystem.js";
+import { BlobConflictError, BlobError, BlobStorage } from "../../src/index.js";
 
 // Helper to create temporary test directories
 async function createTempDir(): Promise<string> {

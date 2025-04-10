@@ -33,8 +33,10 @@ export function useDatabaseStorage(): DatabaseStorage {
 export async function useDatabase(name: string): Promise<Database> {
   const storage = useDatabaseStorage();
 
-  // Ensure the database exists before returning it
-  await storage.ensureDatabase(name);
+  // Only ensure the database if it hasn't been ensured before
+  if (!storage.hasEnsuredDatabase(name)) {
+    await storage.ensureDatabase(name);
+  }
 
   return storage.getDatabase(name);
 }

@@ -1,5 +1,3 @@
-// import { Readable } from "stream";
-
 import { InArgs } from "@libsql/client";
 
 /**
@@ -239,6 +237,11 @@ export interface DatabaseStorage {
    * @returns Promise resolving to result with deleted flag
    */
   deleteDatabase(name: string): Promise<DeleteDatabaseResult>;
+
+  /**
+   * Check if a database has been ensured
+   */
+  hasEnsuredDatabase(name: string): boolean;
 }
 
 /**

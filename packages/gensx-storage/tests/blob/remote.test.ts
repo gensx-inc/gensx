@@ -7,13 +7,13 @@ import { Readable } from "node:stream";
 
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
-import { RemoteBlobStorage } from "../src/blob/remote.js";
+import { RemoteBlobStorage } from "../../src/blob/remote.js";
 import {
   BlobConflictError,
   BlobError,
   BlobInternalError,
   BlobNetworkError,
-} from "../src/index.js";
+} from "../../src/index.js";
 
 suite("RemoteBlobStorage", () => {
   // Save original environment
