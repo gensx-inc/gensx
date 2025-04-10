@@ -1,27 +1,15 @@
 import * as gensx from "@gensx/core";
-import {
-  DatabaseProvider,
-  useDatabase,
-  useDatabaseStorage,
-} from "@gensx/storage";
+import { DatabaseProvider, useDatabase } from "@gensx/storage";
 
 // Database initialization component
 const DatabaseInitializer = gensx.Component<{}, string>(
   "DatabaseInitializer",
   async () => {
-    const DB_NAME = "baseball";
+    // UseDatabase will create the database automatically if it doesn't exist.
+    const db = await useDatabase("baseball");
 
-    const storage = useDatabaseStorage();
-    let currentDatabases = await storage.listDatabases();
-
-    // If the database doesn't exist, populate it
-    // Otherwise, just return a message confirming it exists.
-    if (!currentDatabases.includes(DB_NAME)) {
-      // UseDatabase will create the database automatically if it doesn't exist.
-      const db = await useDatabase(DB_NAME);
-
-      // Create the baseball_stats table
-      await db.execute(`
+    // Create the baseball_stats table
+    await db.execute(`
       CREATE TABLE IF NOT EXISTS baseball_stats (
         player TEXT,
         team TEXT,
@@ -38,8 +26,18 @@ const DatabaseInitializer = gensx.Component<{}, string>(
       )
     `);
 
-      // Insert the baseball statistics data
-      await db.execute(`
+    // query to check if the table is already populated
+    const dbResult = await db.execute(`
+        SELECT COUNT(*) FROM baseball_stats
+      `);
+    const numRows = dbResult.rows[0][0] as number;
+
+    if (numRows > 0) {
+      return "Database already exists";
+    }
+
+    // Insert the baseball statistics data
+    await db.execute(`
       INSERT INTO baseball_stats (player, team, position, at_bats, hits, runs, home_runs, rbi, batting_avg, obp, slg, ops)
       VALUES
         ('Marcus Bennett', 'Portland Pioneers', '1B', 550, 85, 25, 32, 98, 0.312, 0.385, 0.545, 0.930),
@@ -54,10 +52,7 @@ const DatabaseInitializer = gensx.Component<{}, string>(
         ('Brandon Reed', 'Las Vegas Legends', '3B', 510, 74, 19, 25, 78, 0.289, 0.358, 0.502, 0.860)
     `);
 
-      return "Database initialized";
-    }
-
-    return "Database already exists";
+    return "Database initialized";
   },
 );
 
