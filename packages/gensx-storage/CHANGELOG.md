@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.2...gensx-storage-v0.0.3) (2025-04-10)
+
+
+### ✨ New Features
+
+* Add DatabaseProvider and useDatabase hook ([#546](https://github.com/gensx-inc/gensx/issues/546)) ([68e77d4](https://github.com/gensx-inc/gensx/commit/68e77d467f20ec32dd96c81036047e75d6ec6f40))
+
 ## [0.0.2](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.1...gensx-storage-v0.0.2) (2025-04-10)
 
 

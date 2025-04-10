@@ -10,5 +10,5 @@
   "packages/gensx-cline-rules": "0.1.5",
   "packages/gensx-cursor-rules": "0.1.5",
   "packages/gensx-windsurf-rules": "0.1.5",
-  "packages/gensx-storage": "0.0.2"
+  "packages/gensx-storage": "0.0.3"
 }
