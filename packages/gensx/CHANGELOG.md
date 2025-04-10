@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.19](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.18...gensx-v0.3.19) (2025-04-10)
+
+
+### ✨ New Features
+
+* Proper commonjs support ([#545](https://github.com/gensx-inc/gensx/issues/545)) ([137c51b](https://github.com/gensx-inc/gensx/commit/137c51bb6ed408440ef9e0330ed3b887a12feeb3))
+
 ## [0.3.18](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.17...gensx-v0.3.18) (2025-04-09)
 
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.2](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.1...gensx-storage-v0.0.2) (2025-04-10)
+
+
+### ✨ New Features
+
+* Proper commonjs support ([#545](https://github.com/gensx-inc/gensx/issues/545)) ([137c51b](https://github.com/gensx-inc/gensx/commit/137c51bb6ed408440ef9e0330ed3b887a12feeb3))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.9
+
 ## 0.0.1 (2025-04-09)
 
 
