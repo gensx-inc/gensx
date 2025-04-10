@@ -1,10 +1,9 @@
-# GenSX Text-to-SQL Example
+# GenSX Text to SQL Example
 
-This example demonstrates how to use GenSX's `useDatabase` hook to create and query a SQL database. It shows how to:
+This example demonstrates how to use GenSX's `useDatabase` hook to create and query a SQL database. It's composed of two main workflows:
 
-- Initialize a database with a schema
-- Insert data into tables
-- Build a simple agent with a query tool that can answer questions about the data in the database
+- `DataIngestionWorkflow`: Initializes a database with a schema and inserts data into tables.
+- `DatabaseWorkflow`: Builds a simple agent with a query tool that can answer questions about the data in the database.
 
 ## Getting Started
 
@@ -26,3 +25,5 @@ This example demonstrates how to use GenSX's `useDatabase` hook to create and qu
    # Ask a question about the baseball statistics
    pnpm start "Who has the highest batting average?"
    ```
+
+When you run the application, the `DataIngestionWorkflow` will be executed first and create/populate the database if it doesn't exist. Then, the `DatabaseWorkflow` will be executed and the will use the agent and database to answer the question.

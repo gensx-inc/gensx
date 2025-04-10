@@ -1,3 +1,4 @@
+import { DataIngestionWorkflow } from "./data-ingestion.js";
 import { DatabaseWorkflow } from "./workflows.js";
 
 // Get the question from command line arguments
@@ -9,6 +10,12 @@ if (!question) {
   process.exit(1);
 }
 
+// First, initialize the database
+console.log("Initializing database...");
+await DataIngestionWorkflow.run({});
+
+// Then run the query
+console.log("Processing your question...");
 const result = await DatabaseWorkflow.run({
   question,
 });

@@ -316,7 +316,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
   async listDatabases(): Promise<string[]> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/databases`,
+        `${this.apiBaseUrl}/org/${this.org}/database`,
         {
           method: "GET",
           headers: {
@@ -331,8 +331,20 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
         );
       }
 
-      const data = (await response.json()) as { databases: string[] };
-      return data.databases.map((db) => decodeURIComponent(db));
+      const data = (await response.json()) as DatabaseAPIResponse<{
+        databases: string[];
+      }>;
+
+      if (data.status === "error") {
+        throw new DatabaseInternalError(
+          `API error: ${data.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!data.data) {
+        throw new DatabaseInternalError("No data returned from API");
+      }
+      return data.data.databases.map((db) => decodeURIComponent(db));
     } catch (err) {
       throw handleApiError(err, "listDatabases");
     }
