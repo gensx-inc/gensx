@@ -14,11 +14,10 @@ const DatabaseInitializer = gensx.Component<{}, string>(
     const storage = useDatabaseStorage();
     let currentDatabases = await storage.listDatabases();
 
-    // If the database doesn't exist, create it.
+    // If the database doesn't exist, populate it
     // Otherwise, just return a message confirming it exists.
     if (!currentDatabases.includes(DB_NAME)) {
-      await storage.ensureDatabase(DB_NAME);
-
+      // UseDatabase will create the database automatically if it doesn't exist.
       const db = await useDatabase(DB_NAME);
 
       // Create the baseball_stats table

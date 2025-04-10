@@ -12,7 +12,8 @@ if (!question) {
 
 // First, initialize the database
 console.log("Initializing database...");
-await DataIngestionWorkflow.run({});
+const initMessage = await DataIngestionWorkflow.run({});
+console.log(initMessage);
 
 // Then run the query
 console.log("Processing your question...");
