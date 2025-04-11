@@ -16,15 +16,23 @@ for file in * .*; do
   cp -r "$file" /tmp/project/
 done
 
+cd /tmp/project
+
 # Install required dependencies
 npm install
 
 WORKFLOW_PATH=${WORKFLOW_PATH:-"workflows.tsx"}
 
 # Build with ncc - this should bundle all dependencies
-ncc build ./${WORKFLOW_PATH} -o /out/dist --target es2022
+ncc build ./${WORKFLOW_PATH} -o /out/dist --target es2022 -e "@libsql/client"
 
 cd /out/dist
+
+# Work around an issue with @libsql/client and bundlers
+# https://github.com/tursodatabase/libsql-client-ts/issues/112
+sed -i 's/@libsql\/linux-arm64-gnu/@libsql\/linux-x64-gnu/g' index.js
+
+npm install @libsql/client
 
 # tar the dist directory
 tar -czvf ../dist.tar.gz *

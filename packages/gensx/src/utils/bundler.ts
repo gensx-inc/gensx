@@ -42,7 +42,7 @@ export async function bundleWorkflow(
         "run",
         "--rm",
         "--platform",
-        "linux/amd64",
+        "linux/x86_64",
         "-v",
         `${packageJsonDir}:/app`,
         "-v",
