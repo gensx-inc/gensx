@@ -2,12 +2,12 @@ const meta = {
   index: "Overview",
   "basic-concepts": "Basic Concepts",
   quickstart: "Quickstart",
-  cloud: "Cloud (Beta)",
+  cloud: "Cloud Platform",
+  "component-reference": "Components Reference",
+  patterns: "Patterns",
   "why-jsx": "Why JSX?",
   concepts: "Concepts",
   examples: "Examples",
-  "component-reference": "Components Reference",
-  patterns: "Patterns",
   "typescript-compatibility": "Typescript Compatibility",
 };
 

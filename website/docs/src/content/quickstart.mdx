@@ -343,8 +343,106 @@ const stream = await workflow.run({ topic: "latest quantum computing chips" });
 
 ## Next steps
 
-Now that you've gone through the quickstart, you should be able to start building with GenSX. Take a look at the following examples to see how you can build more complex workflows.
+Now that you've gone through the quickstart, you should be able to start building with GenSX. You can explore more advanced features and patterns:
+
+### Deploy to GenSX Cloud
+
+GenSX Cloud provides serverless deployment with zero configuration. Deploy your workflow with a single command:
+
+```bash
+gensx deploy src/index.ts
+```
+
+This will create a REST API endpoint for your workflow that you can call from any application. The endpoint supports both synchronous and asynchronous execution, as well as streaming.
+
+### Add Persistence with Cloud Storage
+
+GenSX Cloud provides built-in storage solutions that require zero configuration:
+
+#### Blob Storage
+
+Use the `useBlob` hook to store and retrieve unstructured data:
+
+```tsx
+import { BlobProvider, useBlob } from "@gensx/storage";
+
+const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
+  "ChatWithMemory",
+  async ({ userInput, threadId }) => {
+    // Load chat history from cloud storage
+    const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+    const history = await blob.getJSON() ?? [];
+
+    // Add user message and get AI response
+    // ...
+
+    // Save updated history
+    await blob.putJSON(updatedHistory);
+
+    return response;
+  }
+);
+
+// Wrap your workflow with BlobProvider
+const WorkflowComponent = gensx.Component<
+  { userInput: string; threadId: string },
+  string
+>("Workflow", ({ userInput, threadId }) => (
+  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+    <BlobProvider>
+      <ChatWithMemory userInput={userInput} threadId={threadId} />
+    </BlobProvider>
+  </OpenAIProvider>
+));
+```
+
+#### Database
+
+Use the `useDatabase` hook to work with SQL databases:
+
+```tsx
+import { DatabaseProvider, useDatabase } from "@gensx/storage";
+
+const SqlCopilot = gensx.Component<{ question: string }, string>(
+  "SqlCopilot",
+  async ({ question }) => {
+    const db = await useDatabase("baseball");
+    const result = await db.execute("SELECT * FROM baseball_stats LIMIT 5");
+
+    // Use the result to inform your LLM response
+    // ...
+  }
+);
+
+// Wrap your workflow with DatabaseProvider
+const WorkflowComponent = gensx.Component<{ question: string }, string>(
+  "DatabaseWorkflowComponent",
+  ({ question }) => (
+    <DatabaseProvider kind="cloud">
+      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+        <SqlCopilot question={question} />
+      </OpenAIProvider>
+    </DatabaseProvider>
+  )
+);
+```
+
+### Run a Local Development Server
+
+Test your workflows locally with a development server that mirrors the cloud environment:
+
+```bash
+gensx start src/index.ts
+```
+
+This creates API endpoints for each of your workflows that you can call for testing and debugging.
+
+### Explore Example Projects
+
+Take a look at these examples to see how you can build more complex applications:
 
 - [Blog Writer](https://github.com/gensx-inc/gensx/tree/main/examples/blogWriter)
 - [Hacker News Analyzer](https://github.com/gensx-inc/gensx/tree/main/examples/hackerNewsAnalyzer)
 - [Reflection](https://github.com/gensx-inc/gensx/tree/main/examples/reflection)
+- [Chat with Memory](https://github.com/gensx-inc/gensx/tree/main/examples/chat-memory)
+- [Text to SQL](https://github.com/gensx-inc/gensx/tree/main/examples/text-to-sql)

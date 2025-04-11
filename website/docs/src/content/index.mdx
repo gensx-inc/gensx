@@ -6,7 +6,7 @@ sidebarTitle: Overview
 
 # GenSX Overview
 
-GenSX is a simple typescript framework for building complex LLM applications. It's a workflow engine designed for building agents, chatbot APIs, and more using common patterns like RAG and reflection.
+GenSX is a TypeScript cloud platform for building and deploying complex AI applications. It combines a workflow framework for building agents, chatbot APIs, and RAG applications with a serverless deployment platform and zero-configuration cloud storage.
 
 It uses `jsx` to define and orchestrate workflows with functional, reusable components:
 
@@ -41,6 +41,55 @@ Most LLM frameworks are graph oriented, inspired by popular python tools like Ai
 LLM workflows are fundamentally about function composition and data flow - exactly what JSX was designed to express. There is no need for a graph DSL. GenSX expresses control flow, loops, and recursion using plain old typescript language primitives. To learn more about why GenSX uses JSX, read [Why JSX?](docs/why-jsx).
 
 While GenSX uses JSX, it does not share the same execution model as React, and has zero dependencies.
+
+## Cloud Platform Features
+
+GenSX provides a complete platform for AI application development and deployment:
+
+### Serverless Deployment
+
+Deploy any workflow to a hosted API endpoint with a single command. The GenSX cloud platform handles scaling, infrastructure management, and API generation automatically:
+
+```bash
+# Deploy your workflow to GenSX Cloud
+gensx deploy src/workflows.ts
+```
+
+The platform is optimized for AI workloads with millisecond cold starts and support for long-running executions up to an hour.
+
+### Development Server
+
+Test your workflows locally with a development server that matches the cloud environment:
+
+```bash
+# Start a local API server
+gensx start src/workflows.ts
+```
+
+### Cloud Storage
+
+Build stateful AI applications with zero configuration using built-in storage primitives:
+
+```tsx
+const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
+  "ChatWithMemory",
+  async (props) => {
+    const { userInput, threadId } = props;
+
+    // Load chat history from blob storage
+    const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+    const history = await blob.getJSON();
+
+    // Add new message and run LLM
+    // ...
+
+    // Save updated history
+    await blob.putJSON(updatedHistory);
+
+    return response;
+  }
+);
+```
 
 ## Reusable by default
 
