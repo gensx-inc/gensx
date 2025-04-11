@@ -4,9 +4,9 @@ import * as path from "node:path";
 
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
-import { FileSystemBlobStorage } from "../src/blob/filesystem.js";
-import { RemoteBlobStorage } from "../src/blob/remote.js";
-import { BlobProvider } from "../src/index.js";
+import { FileSystemBlobStorage } from "../../src/blob/filesystem.js";
+import { RemoteBlobStorage } from "../../src/blob/remote.js";
+import { BlobProvider } from "../../src/index.js";
 
 // Helper to create temporary test directories
 async function createTempDir(): Promise<string> {

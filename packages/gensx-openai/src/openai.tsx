@@ -1,5 +1,5 @@
 import * as gensx from "@gensx/core";
-import OpenAI, { ClientOptions } from "openai";
+import { ClientOptions, OpenAI } from "openai";
 import {
   ChatCompletion as ChatCompletionOutput,
   ChatCompletionChunk,

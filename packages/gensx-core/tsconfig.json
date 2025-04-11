@@ -6,10 +6,9 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/jsx-runtime": ["src/jsx-runtime.ts"]
-    },
-    "noUnusedLocals": false
+      "@/jsx-runtime": ["src/jsx-runtime.ts"],
+      "@/jsx-dev-runtime": ["src/jsx-dev-runtime.ts"]
+    }
   },
   "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
   "exclude": ["node_modules", "dist"]

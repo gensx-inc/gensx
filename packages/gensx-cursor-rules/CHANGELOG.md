@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/gensx-inc/gensx/compare/gensx-cursor-rules-v0.1.4...gensx-cursor-rules-v0.1.5) (2025-04-10)
+
+
+### ✨ New Features
+
+* Proper commonjs support ([#545](https://github.com/gensx-inc/gensx/issues/545)) ([137c51b](https://github.com/gensx-inc/gensx/commit/137c51bb6ed408440ef9e0330ed3b887a12feeb3))
+
 ## [0.1.4](https://github.com/gensx-inc/gensx/compare/gensx-cursor-rules-v0.1.3...gensx-cursor-rules-v0.1.4) (2025-03-20)
 
 

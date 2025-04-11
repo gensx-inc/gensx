@@ -1,4 +1,4 @@
-import Anthropic, { ClientOptions } from "@anthropic-ai/sdk";
+import { Anthropic, ClientOptions } from "@anthropic-ai/sdk";
 import {
   Message,
   MessageCreateParamsNonStreaming,

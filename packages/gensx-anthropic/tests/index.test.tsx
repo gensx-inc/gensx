@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { Anthropic } from "@anthropic-ai/sdk";
 import { MessageCreateParams } from "@anthropic-ai/sdk/resources/messages";
 import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
@@ -8,8 +8,7 @@ import {
   AnthropicContext,
   AnthropicProvider,
   ChatCompletion,
-} from "@/index.js";
-
+} from "../src/index.js";
 import {
   createMockMessage,
   createMockStreamEvents,
@@ -42,8 +41,8 @@ vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
 
   return {
     ...originalAnthropicModule,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    default: MockAnthropicClass,
+    default: MockAnthropicClass as unknown as Anthropic,
+    Anthropic: MockAnthropicClass as unknown as Anthropic,
   };
 });
 

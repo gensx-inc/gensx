@@ -123,14 +123,38 @@ export class ExecutionContext {
   }
 }
 
+// Create a global symbol for contextStorage
+const CONTEXT_STORAGE_SYMBOL = Symbol.for("gensx.contextStorage");
+
+// Get the global object in a cross-platform way
+declare const globalThis: Record<symbol, unknown>;
+declare const window: Record<symbol, unknown>;
+declare const global: Record<symbol, unknown>;
+declare const self: Record<symbol, unknown>;
+
+const globalObj: Record<symbol, unknown> =
+  typeof globalThis !== "undefined"
+    ? globalThis
+    : typeof window !== "undefined"
+      ? window
+      : typeof global !== "undefined"
+        ? global
+        : typeof self !== "undefined"
+          ? self
+          : {};
+
+// Initialize the global storage if it doesn't exist
+globalObj[CONTEXT_STORAGE_SYMBOL] ??= null;
+
 // Try to import AsyncLocalStorage if available (Node.js environment)
 let AsyncLocalStorage: (new <T>() => AsyncLocalStorageType<T>) | undefined;
-let contextStorage: AsyncLocalStorageType<ExecutionContext> | null = null;
+
 const configureAsyncLocalStorage = (async () => {
   try {
     const asyncHooksModule = await import("node:async_hooks");
     AsyncLocalStorage = asyncHooksModule.AsyncLocalStorage;
-    contextStorage = new AsyncLocalStorage<ExecutionContext>();
+    globalObj[CONTEXT_STORAGE_SYMBOL] =
+      new AsyncLocalStorage<ExecutionContext>();
   } catch {
     // This is probably an environment without async_hooks, so just use global state and warn the developer
     console.warn(
@@ -141,8 +165,18 @@ const configureAsyncLocalStorage = (async () => {
 
 const rootContext = new ExecutionContext({});
 
-// Private fallback state
-let globalContext = rootContext;
+// Create a global symbol for the fallback context
+const GLOBAL_CONTEXT_SYMBOL = Symbol.for("gensx.globalContext");
+
+// Initialize the global fallback context if it doesn't exist
+globalObj[GLOBAL_CONTEXT_SYMBOL] ??= rootContext;
+
+// Helper to get/set the global context
+const getGlobalContext = (): ExecutionContext =>
+  globalObj[GLOBAL_CONTEXT_SYMBOL] as ExecutionContext;
+const setGlobalContext = (context: ExecutionContext): void => {
+  globalObj[GLOBAL_CONTEXT_SYMBOL] = context;
+};
 
 // Add type for framework functions
 type FrameworkFunction<T> = (() => Promise<T>) & {
@@ -158,24 +192,30 @@ function wrapWithFramework<T>(fn: () => Promise<T>): FrameworkFunction<T> {
 // Update contextManager implementation
 const contextManager = {
   getCurrentContext(): ExecutionContext {
-    if (contextStorage) {
-      const store = contextStorage.getStore();
+    const storage = globalObj[
+      CONTEXT_STORAGE_SYMBOL
+    ] as AsyncLocalStorageType<ExecutionContext> | null;
+    if (storage) {
+      const store = storage.getStore();
       return store ?? rootContext;
     }
-    return globalContext;
+    return getGlobalContext();
   },
 
   run<T>(context: ExecutionContext, fn: () => Promise<T>): Promise<T> {
     const wrappedFn = wrapWithFramework(fn);
-    if (contextStorage) {
-      return contextStorage.run(context, wrappedFn);
+    const storage = globalObj[
+      CONTEXT_STORAGE_SYMBOL
+    ] as AsyncLocalStorageType<ExecutionContext> | null;
+    if (storage) {
+      return storage.run(context, wrappedFn);
     }
-    const prevContext = globalContext;
-    globalContext = context;
+    const prevContext = getGlobalContext();
+    setGlobalContext(context);
     try {
       return wrappedFn();
     } finally {
-      globalContext = prevContext;
+      setGlobalContext(prevContext);
     }
   },
 };

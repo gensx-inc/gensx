@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import {
   Message,
   MessageCreateParams,
@@ -15,9 +16,8 @@ import {
   GSXChatCompletion,
   GSXChatCompletionResult,
   GSXTool,
-} from "@/index.js";
-import { ToolExecutor, ToolsCompletion } from "@/tools.js";
-
+} from "../src/index.js";
+import { ToolExecutor, ToolsCompletion } from "../src/tools.js";
 import {
   createMockMessage,
   createMockMessageWithToolUse,
@@ -83,8 +83,8 @@ vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
 
   return {
     ...originalAnthropicModule,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    default: MockAnthropicClass,
+    default: MockAnthropicClass as unknown as Anthropic,
+    Anthropic: MockAnthropicClass as unknown as Anthropic,
   };
 });
 

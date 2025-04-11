@@ -1,25 +1,33 @@
 {
   "name": "@gensx/openai",
-  "version": "0.1.20",
+  "version": "0.1.22",
   "description": "OpenAI integration for GenSX.",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=9.0.0"
-  },
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/gensx-inc/gensx.git",
     "directory": "packages/gensx-openai"
   },
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": {
+        "import": "./dist/esm/index.d.ts",
+        "require": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.d.ts"
+      },
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
+    }
   },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rollup -c",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",
@@ -34,13 +42,15 @@
     "gpt",
     "jsx"
   ],
-  "files": [
-    "dist"
-  ],
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "peerDependencies": {
     "openai": "catalog:"
+  },
+  "dependencies": {
+    "@gensx/core": "workspace:*",
+    "zod": "catalog:",
+    "zod-to-json-schema": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:packages",
@@ -50,10 +60,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "@gensx/core": "workspace:*",
-    "zod": "catalog:",
-    "zod-to-json-schema": "catalog:"
   }
 }

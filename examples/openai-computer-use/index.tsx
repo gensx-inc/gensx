@@ -177,7 +177,7 @@ const ComputerUseExample = gensx.Component<ComputerUseExampleProps, Response>(
 
               // Process initial response
               const { updatedResponse } = await ProcessComputerCalls.run({
-                response,
+                response: response,
               });
 
               // If human feedback is not allowed, return the response immediately

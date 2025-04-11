@@ -1,13 +1,25 @@
 {
   "name": "@gensx/mcp",
-  "version": "0.1.11",
+  "version": "0.1.13",
   "description": "Model Context Protocol Support for GenSX.",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/esm/index.d.ts",
+        "require": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.d.ts"
+      },
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
+    }
   },
   "repository": {
     "type": "git",
@@ -15,7 +27,7 @@
     "directory": "packages/gensx-mcp"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rollup -c",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",
@@ -26,10 +38,12 @@
   "keywords": [
     "gensx",
     "jsx",
-    "mcp"
+    "mcp",
+    "model context protocol"
   ],
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "author": "GenSX Team",
   "license": "Apache-2.0",

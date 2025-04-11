@@ -1,16 +1,17 @@
 {
   "name": "gensx",
-  "version": "0.3.17",
+  "version": "0.3.20",
   "description": "`GenSX command line tools.",
   "repository": {
     "type": "git",
     "url": "https://github.com/gensx-inc/gensx.git",
-    "directory": "packages/gensx-cli"
+    "directory": "packages/gensx"
   },
   "bin": {
     "gensx": "./dist/run.js"
   },
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "directories": {
     "lib": "src",
@@ -21,7 +22,7 @@
     "bin"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && cp -r src/templates dist/",
+    "build": "tsc -p tsconfig.build.json && cp -r src/templates dist/ && chmod +x dist/run.js",
     "test:types": "tsc --noEmit",
     "clean": "rm -rf dist",
     "compile": "tsc",
@@ -45,6 +46,7 @@
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "eslint-plugin-n": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {

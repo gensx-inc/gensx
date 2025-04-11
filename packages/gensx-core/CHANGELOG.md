@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.9](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.8...gensx-core-v0.3.9) (2025-04-10)
+
+
+### ✨ New Features
+
+* Migrate to use the traces API. ([#549](https://github.com/gensx-inc/gensx/issues/549)) ([40d82d2](https://github.com/gensx-inc/gensx/commit/40d82d2389a8d93ab8f9d576f7410ca73278e776))
+* Proper commonjs support ([#545](https://github.com/gensx-inc/gensx/issues/545)) ([137c51b](https://github.com/gensx-inc/gensx/commit/137c51bb6ed408440ef9e0330ed3b887a12feeb3))
+
+## [0.3.8](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.7...gensx-core-v0.3.8) (2025-04-09)
+
+
+### ✨ New Features
+
+* add the @gensx/storage package ([#541](https://github.com/gensx-inc/gensx/issues/541)) ([e279008](https://github.com/gensx-inc/gensx/commit/e279008f57a90c326a4699311bee0c1bbb9b62c4))
+
 ## [0.3.7](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.6...gensx-core-v0.3.7) (2025-03-21)
 
 

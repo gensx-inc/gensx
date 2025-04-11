@@ -99,7 +99,6 @@ it("package.json is correctly configured for npm create", async () => {
   const testProjectDir = path.join(tempDir, "test-project");
 
   try {
-    // Try to execute the package bin directly with all AI assistant integrations
     await exec(
       `${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s --skip-ide-rules`,
       {

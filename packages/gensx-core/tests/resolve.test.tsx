@@ -1,7 +1,7 @@
 import { expect, suite, test } from "vitest";
 
-import * as gensx from "@/index.js";
-import { resolveDeep } from "@/resolve.js";
+import * as gensx from "../src/index.js";
+import { resolveDeep } from "../src/resolve.js";
 
 suite("resolveDeep", () => {
   const Doubler = gensx.Component<{ foo: number }, number>(

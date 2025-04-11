@@ -2,7 +2,7 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import * as gensx from "@/index.js";
+import * as gensx from "../src/index.js";
 
 suite("context", () => {
   test("can create and use context with default value", async () => {

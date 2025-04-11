@@ -5,10 +5,12 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "type": "commonjs",
   "scripts": {
     "dev": "nodemon",
     "start": "tsx index.tsx",
     "build": "tsc",
+    "test": "pnpm run build && node dist/index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

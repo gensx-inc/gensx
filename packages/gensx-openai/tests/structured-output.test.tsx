@@ -4,9 +4,8 @@ import * as gensx from "@gensx/core";
 import { expect, suite, test } from "vitest";
 import { z } from "zod";
 
-import { GSXChatCompletion, OpenAIProvider } from "@/index.js";
-import { StructuredOutput } from "@/structured-output.js";
-
+import { GSXChatCompletion, OpenAIProvider } from "../src/index.js";
+import { StructuredOutput } from "../src/structured-output.js";
 import { openAISpy } from "./setup.js";
 
 suite("StructuredOutput", () => {

@@ -5,8 +5,8 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createMCPServerContext } from "@/index.js";
-import { MCPTool } from "@/wrappers.js";
+import { createMCPServerContext } from "../src/index.js";
+import { MCPTool } from "../src/wrappers.js";
 
 describe("createMCPServerContext", () => {
   beforeEach(() => {

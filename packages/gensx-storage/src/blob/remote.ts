@@ -5,8 +5,8 @@ import { Readable } from "stream";
 import { readConfig } from "@gensx/core";
 
 import {
-  APIResponse,
   Blob,
+  BlobAPIResponse,
   BlobConflictError,
   BlobError,
   BlobInternalError,
@@ -74,7 +74,7 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const apiResponse = (await response.json()) as APIResponse<
+      const apiResponse = (await response.json()) as BlobAPIResponse<
         BlobResponse<string>
       >;
 
@@ -116,7 +116,7 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const apiResponse = (await response.json()) as APIResponse<
+      const apiResponse = (await response.json()) as BlobAPIResponse<
         BlobResponse<string>
       >;
 
@@ -157,7 +157,7 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const apiResponse = (await response.json()) as APIResponse<{
+      const apiResponse = (await response.json()) as BlobAPIResponse<{
         content: string;
         contentType?: string;
         etag?: string;

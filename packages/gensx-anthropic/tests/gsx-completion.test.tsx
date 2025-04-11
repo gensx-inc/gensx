@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import {
   MessageCreateParams,
   RawMessageStreamEvent,
@@ -6,9 +7,8 @@ import { Stream } from "@anthropic-ai/sdk/streaming";
 import * as gensx from "@gensx/core";
 import { expect, suite, test, vi } from "vitest";
 
-import { GSXChatCompletionResult } from "@/gsx-completion.js";
-import { AnthropicProvider, GSXChatCompletion } from "@/index.js";
-
+import { GSXChatCompletionResult } from "../src/gsx-completion.js";
+import { AnthropicProvider, GSXChatCompletion } from "../src/index.js";
 import { createMockMessage, createMockTextContent } from "./helpers.js";
 import { createMockStreamEvents } from "./helpers.js";
 
@@ -38,8 +38,8 @@ vi.mock("@anthropic-ai/sdk", async (importOriginal) => {
 
   return {
     ...originalAnthropicModule,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    default: MockAnthropicClass,
+    default: MockAnthropicClass as unknown as Anthropic,
+    Anthropic: MockAnthropicClass as unknown as Anthropic,
   };
 });
 

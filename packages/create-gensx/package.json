@@ -1,6 +1,6 @@
 {
   "name": "create-gensx",
-  "version": "0.1.29",
+  "version": "0.1.32",
   "type": "module",
   "license": "Apache-2.0",
   "engines": {
@@ -15,12 +15,13 @@
   },
   "bin": "./dist/cli.js",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
     "clean": "rm -rf dist",
     "start": "tsx src/cli.ts",
     "test": "vitest run --coverage",
@@ -40,6 +41,7 @@
     "@vitest/coverage-istanbul": "catalog:",
     "fs-extra": "^11.3.0",
     "tsx": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   }
 }

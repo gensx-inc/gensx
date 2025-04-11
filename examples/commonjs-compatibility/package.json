@@ -1,0 +1,31 @@
+{
+  "name": "@examples/commonjs-compatibility",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "dev": "nodemon",
+    "start:ts": "tsx index.tsx",
+    "start": "node ./dist/index.js",
+    "start:pure": "node ./pure-commonjs.js",
+    "build": "tsc",
+    "build:jsx": "tsc cjs-jsx.tsx --outDir dist --module commonjs --jsx react-jsx --jsxImportSource @gensx/core --moduleResolution node --target es2022",
+    "start:jsx": "node dist/cjs-jsx.js",
+    "test": "pnpm run build:jsx && node test/verify-commonjs.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@gensx/core": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:examples",
+    "nodemon": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

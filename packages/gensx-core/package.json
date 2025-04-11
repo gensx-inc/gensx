@@ -1,10 +1,11 @@
 {
   "name": "@gensx/core",
-  "version": "0.3.7",
+  "version": "0.3.9",
   "description": "Build AI workflows using JSX.",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
@@ -15,25 +16,40 @@
     "directory": "packages/gensx-core"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./jsx-runtime": "./dist/jsx-runtime.js",
-    "./jsx-dev-runtime": "./dist/jsx-dev-runtime.js"
-  },
-  "typesVersions": {
-    "*": {
-      "jsx-runtime": [
-        "./dist/jsx-runtime.d.ts"
-      ],
-      "jsx-dev-runtime": [
-        "./dist/jsx-dev-runtime.d.ts"
-      ]
+    ".": {
+      "types": {
+        "import": "./dist/esm/index.d.ts",
+        "require": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.d.ts"
+      },
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
+    },
+    "./jsx-runtime": {
+      "types": {
+        "import": "./dist/esm/jsx-runtime.d.ts",
+        "require": "./dist/cjs/jsx-runtime.d.ts",
+        "default": "./dist/cjs/jsx-runtime.d.ts"
+      },
+      "import": "./dist/esm/jsx-runtime.js",
+      "require": "./dist/cjs/jsx-runtime.cjs"
+    },
+    "./jsx-dev-runtime": {
+      "types": {
+        "import": "./dist/esm/jsx-dev-runtime.d.ts",
+        "require": "./dist/cjs/jsx-dev-runtime.d.ts",
+        "default": "./dist/cjs/jsx-dev-runtime.d.ts"
+      },
+      "import": "./dist/esm/jsx-dev-runtime.js",
+      "require": "./dist/cjs/jsx-dev-runtime.cjs"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rollup -c",
     "clean": "rm -rf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch",
@@ -50,7 +66,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "ini": "^5.0.0",
-    "serialize-error": "^12.0.0",
+    "@common.js/serialize-error": "^11.0.3",
     "zod": "catalog:"
   },
   "devDependencies": {

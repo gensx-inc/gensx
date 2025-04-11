@@ -25,6 +25,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x, 20.x, 18.x]
 
     steps:
       - name: Checkout code 🛬
@@ -34,11 +38,15 @@ jobs:
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node
         with:
-          version: 22.x
-          npm_token: ${{ secrets.NPM_TOKEN }}
+          version: ${{ matrix.node-version }}
       - name: Clean build artifacts 🧹
         run: |
           rm -rf examples/**/dist
           rm -rf examples/**/.turbo
       - name: Build 📦
         run: pnpm build:examples
+
+      - name: Test 🧪
+        run: pnpm test:examples
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

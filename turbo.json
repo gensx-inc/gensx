@@ -4,8 +4,18 @@
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "*.ts",
+        "*.tsx",
+        "tsconfig.json",
+        "package.json",
+        "rollup.config.js",
+        "$TURBO_ROOT/create-rollup-config.js"
+      ],
       "dependsOn": ["^build"],
-      "outputs": ["dist"]
+      "outputs": ["./dist/**"]
     },
     "lint": {
       "dependsOn": ["^build"],

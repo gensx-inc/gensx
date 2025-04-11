@@ -1,7 +1,6 @@
 import { expect, suite, test } from "vitest";
 
-import * as gensx from "@/index.js";
-
+import * as gensx from "../src/index.js";
 import { executeWithCheckpoints } from "./utils/executeWithCheckpoints.js";
 
 // Test components

@@ -15,7 +15,6 @@
     "emitDeclarationOnly": false,
     "sourceMap": true,
     "inlineSources": true,
-    "esModuleInterop": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

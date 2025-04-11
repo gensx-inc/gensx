@@ -15,6 +15,7 @@
     "Firecrawl",
     "gensx",
     "jsxs",
+    "libsql",
     "Kysely",
     "modelcontextprotocol",
     "Streamable"
