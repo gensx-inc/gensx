@@ -10,6 +10,8 @@ import type {
 import { readConfig } from "@gensx/core";
 
 import {
+  DeleteNamespaceResult,
+  EnsureNamespaceResult,
   Namespace,
   NamespaceMetadata,
   NamespaceOptions,
@@ -150,9 +152,7 @@ export class SearchNamespace implements Namespace {
   async upsert(vectors: Vector[]): Promise<void> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
-          this.id,
-        )}/vectors`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/vectors`,
         {
           method: "POST",
           headers: {
@@ -181,9 +181,7 @@ export class SearchNamespace implements Namespace {
   async delete(ids: Id[]): Promise<void> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
-          this.id,
-        )}/vectors`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/delete`,
         {
           method: "DELETE",
           headers: {
@@ -212,9 +210,7 @@ export class SearchNamespace implements Namespace {
   async deleteByFilter(filters: Filters): Promise<number> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
-          this.id,
-        )}/vectors/filter`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/deleteByFilter`,
         {
           method: "DELETE",
           headers: {
@@ -246,9 +242,7 @@ export class SearchNamespace implements Namespace {
   async query(options: QueryOptions): Promise<QueryResult[]> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
-          this.id,
-        )}/query`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/query`,
         {
           method: "POST",
           headers: {
@@ -287,9 +281,7 @@ export class SearchNamespace implements Namespace {
   async getSchema(): Promise<Schema> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
-          this.id,
-        )}/schema`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/schema`,
         {
           method: "GET",
           headers: {
@@ -316,9 +308,7 @@ export class SearchNamespace implements Namespace {
   async updateSchema(schema: Schema): Promise<Schema> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
-          this.id,
-        )}/schema`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/schema`,
         {
           method: "POST",
           headers: {
@@ -347,7 +337,7 @@ export class SearchNamespace implements Namespace {
   // async copyFromNamespace(sourceNamespace: string): Promise<void> {
   //   try {
   //     const response = await fetch(
-  //       `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
+  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
   //         this.id,
   //       )}`,
   //       {
@@ -383,7 +373,7 @@ export class SearchNamespace implements Namespace {
   // }): Promise<RecallMeasurement> {
   //   try {
   //     const response = await fetch(
-  //       `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
+  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
   //         this.id,
   //       )}/_debug/recall`,
   //       {
@@ -421,7 +411,7 @@ export class SearchNamespace implements Namespace {
   // async approxNumVectors(): Promise<number> {
   //   try {
   //     const response = await fetch(
-  //       `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
+  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
   //         this.id,
   //       )}/stats`,
   //       {
@@ -448,12 +438,10 @@ export class SearchNamespace implements Namespace {
   //   }
   // }
 
-  async metadata(): Promise<NamespaceMetadata> {
+  async getMetadata(): Promise<NamespaceMetadata> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
-          this.id,
-        )}`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}`,
         {
           method: "GET",
           headers: {
@@ -477,33 +465,6 @@ export class SearchNamespace implements Namespace {
       throw err;
     }
   }
-
-  async deleteAll(): Promise<void> {
-    try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
-          this.id,
-        )}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to delete namespace: ${response.statusText}`,
-        );
-      }
-    } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "deleteAll");
-      }
-      throw err;
-    }
-  }
 }
 
 /**
@@ -514,6 +475,10 @@ export class Search implements ISearch {
   private apiBaseUrl: string;
   private org: string;
   private defaultPrefix?: string;
+  private namespaces: Map<string, SearchNamespace> = new Map<
+    string,
+    SearchNamespace
+  >();
 
   constructor(defaultPrefix?: string) {
     // readConfig has internal error handling and always returns a GensxConfig object
@@ -549,6 +514,44 @@ export class Search implements ISearch {
     );
   }
 
+  // TODO: Implement this correctly
+  async ensureNamespace(name: string): Promise<EnsureNamespaceResult> {
+    const namespaceId = this.defaultPrefix
+      ? `${this.defaultPrefix}/${name}`
+      : name;
+    const response = await fetch(
+      `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(namespaceId)}`,
+    );
+    if (!response.ok) {
+      throw new SearchInternalError(
+        `Failed to ensure namespace: ${response.statusText}`,
+      );
+    }
+    return { exists: true, created: false };
+  }
+
+  // TODO: Implement this correctly
+  async deleteNamespace(name: string): Promise<DeleteNamespaceResult> {
+    const namespaceId = this.defaultPrefix
+      ? `${this.defaultPrefix}/${name}`
+      : name;
+    const response = await fetch(
+      `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(namespaceId)}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+      },
+    );
+    if (!response.ok) {
+      throw new SearchInternalError(
+        `Failed to delete namespace: ${response.statusText}`,
+      );
+    }
+    return { deleted: true };
+  }
+
   async listNamespaces(options?: {
     prefix?: string;
     pageSize?: number;
@@ -565,9 +568,7 @@ export class Search implements ISearch {
           : normalizedDefaultPrefix
         : (normalizedPrefix ?? "");
 
-      const url = new URL(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces`,
-      );
+      const url = new URL(`${this.apiBaseUrl}/org/${this.org}/search`);
 
       if (searchPrefix) {
         url.searchParams.append("prefix", searchPrefix);
@@ -616,6 +617,10 @@ export class Search implements ISearch {
     }
   }
 
+  hasEnsuredNamespace(name: string): boolean {
+    return this.namespaces.has(name);
+  }
+
   /**
    * Create a new namespace with the given options
    * @param id The namespace ID to create
@@ -629,7 +634,7 @@ export class Search implements ISearch {
         : id;
 
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
           namespaceId,
         )}`,
         {
@@ -670,7 +675,7 @@ export class Search implements ISearch {
         : id;
 
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/vector/namespaces/${encodeURIComponent(
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
           namespaceId,
         )}`,
         {

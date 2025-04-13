@@ -81,6 +81,21 @@ export interface QueryOptions {
 }
 
 /**
+ * Result of ensuring a namespace exists
+ */
+export interface EnsureNamespaceResult {
+  exists: boolean;
+  created: boolean;
+}
+
+/**
+ * Result of deleting a namespace
+ */
+export interface DeleteNamespaceResult {
+  deleted: boolean;
+}
+
+/**
  * Interface for a vector namespace
  */
 export interface Namespace {
@@ -137,13 +152,13 @@ export interface Namespace {
    * Get metadata about the namespace
    * @returns Promise with namespace metadata
    */
-  metadata(): Promise<NamespaceMetadata>;
+  getMetadata(): Promise<NamespaceMetadata>;
 
   /**
    * Delete the entire namespace
    * @returns Promise that resolves when the operation is complete
    */
-  deleteAll(): Promise<void>;
+  //deleteAll(): Promise<void>;
 
   /**
    * Get the current schema for the namespace
@@ -197,10 +212,10 @@ export interface NamespaceMetadata extends TurbopufferNamespaceMetadata {
 export interface Search {
   /**
    * Get a namespace object for a specific namespace ID
-   * @param id The namespace ID
+   * @param name The namespace name
    * @returns A namespace object
    */
-  getNamespace(id: string): Namespace;
+  getNamespace(name: string): Namespace;
 
   /**
    * List all namespaces
@@ -211,6 +226,25 @@ export interface Search {
     prefix?: string;
     pageSize?: number;
   }): Promise<string[]>;
+
+  /**
+   * Delete a namespace
+   * @param name The namespace name
+   * @returns Promise with the delete result
+   */
+  deleteNamespace(name: string): Promise<DeleteNamespaceResult>;
+
+  /**
+   * Ensure a namespace exists
+   * @param name The namespace name
+   * @returns Promise with the ensure result
+   */
+  ensureNamespace(name: string): Promise<EnsureNamespaceResult>;
+
+  /**
+   * Check if a namespace has been ensured
+   */
+  hasEnsuredNamespace(name: string): boolean;
 }
 
 /**

@@ -1,7 +1,7 @@
 import { Component } from "@gensx/core";
 
 import { SearchContext } from "./context.js";
-import { Search } from "./search.js";
+import { Search } from "./remote.js";
 import { SearchProviderProps } from "./types.js";
 
 export const SearchProvider = Component<SearchProviderProps, never>(

@@ -26,11 +26,15 @@ export function useSearch(): Search {
 
 /**
  * Hook to access a search namespace
- * @param namespaceId The ID of the namespace to access
- * @returns A namespace object for the given ID
+ * @param name The name of the namespace to access
+ * @returns A namespace object for the given name
  * @throws Error if used outside of a SearchProvider
  */
-export function useNamespace(namespaceId: string): Namespace {
+export async function useNamespace(name: string): Promise<Namespace> {
   const search = useSearch();
-  return search.getNamespace(namespaceId);
+  // Only ensure the database if it hasn't been ensured before
+  if (!search.hasEnsuredNamespace(name)) {
+    await search.ensureNamespace(name);
+  }
+  return search.getNamespace(name);
 }
