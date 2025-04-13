@@ -3,7 +3,7 @@ import type {
   DistanceMetric,
   Filters,
   Id,
-  NamespaceMetadata as TurbopufferNamespaceMetadata,
+  NamespaceMetadata,
   QueryResults,
   RankBy,
   Schema,
@@ -81,6 +81,15 @@ export interface QueryOptions {
 }
 
 /**
+ * A response from the API
+ */
+export interface SearchAPIResponse<T> {
+  status: "ok" | "error";
+  data?: T;
+  error?: string;
+}
+
+/**
  * Result of ensuring a namespace exists
  */
 export interface EnsureNamespaceResult {
@@ -109,7 +118,12 @@ export interface Namespace {
    * @param vectors The vectors to upsert
    * @returns Promise that resolves when the operation is complete
    */
-  upsert(vectors: Vector[]): Promise<void>;
+  upsert(
+    vectors: Vector[],
+    distanceMetric: DistanceMetric,
+    schema: Schema, // TODO add gensx type for schema
+    batchSize?: number,
+  ): Promise<void>;
 
   /**
    * Delete vectors by IDs
@@ -130,23 +144,16 @@ export interface Namespace {
    * @param options Query options
    * @returns Promise with query results
    */
-  query(options: QueryOptions): Promise<QueryResults>;
-
-  /**
-   * Query vectors by similarity and return performance metrics
-   * @param options Query options
-   * @returns Promise with query results and metrics
-   */
-  // queryWithMetrics(options: QueryOptions): Promise<{
-  //   results: QueryResults;
-  //   metrics: QueryMetrics;
-  // }>;
-
-  /**
-   * Get the approximate number of vectors in the namespace
-   * @returns Promise with the approximate count
-   */
-  //approxNumVectors(): Promise<number>;
+  query(
+    vector?: number[],
+    distanceMetric?: DistanceMetric,
+    topK?: number,
+    includeVectors?: boolean,
+    includeAttributes?: boolean | string[],
+    filters?: Filters,
+    rankBy?: RankBy,
+    consistency?: Consistency,
+  ): Promise<QueryResults>;
 
   /**
    * Get metadata about the namespace
@@ -178,33 +185,7 @@ export interface Namespace {
    * @param sourceNamespace The source namespace ID
    */
   //copyFromNamespace(sourceNamespace: string): Promise<void>;
-
-  /**
-   * Evaluate recall performance of ANN queries
-   */
-  // recall(options: {
-  //   num?: number;
-  //   top_k?: number;
-  //   filters?: Filters;
-  //   queries?: number[][];
-  // }): Promise<RecallMeasurement>;
 }
-
-/**
- * Metadata for a namespace
- */
-export interface NamespaceMetadata extends TurbopufferNamespaceMetadata {
-  // Extending the Turbopuffer namespace metadata
-}
-
-/**
- * Recall measurement result
- */
-// export interface RecallMeasurement {
-//   recall: number;
-//   latency_ms: number;
-//   num_queries: number;
-// }
 
 /**
  * Interface for vector search
@@ -233,6 +214,13 @@ export interface Search {
    * @returns Promise with the delete result
    */
   deleteNamespace(name: string): Promise<DeleteNamespaceResult>;
+
+  /**
+   * Check if a namespace exists
+   * @param name The namespace name
+   * @returns Promise that resolves to true if the namespace exists
+   */
+  namespaceExists(name: string): Promise<boolean>;
 
   /**
    * Ensure a namespace exists

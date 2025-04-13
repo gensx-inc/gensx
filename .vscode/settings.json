@@ -18,7 +18,8 @@
     "libsql",
     "Kysely",
     "modelcontextprotocol",
-    "Streamable"
+    "Streamable",
+    "turbopuffer"
   ],
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"

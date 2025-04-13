@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
 import type {
+  Consistency,
+  DistanceMetric,
   Filters,
   Id,
+  NamespaceMetadata,
   QueryResults,
+  RankBy,
   Schema,
 } from "@turbopuffer/turbopuffer";
 
@@ -13,11 +17,8 @@ import {
   DeleteNamespaceResult,
   EnsureNamespaceResult,
   Namespace,
-  NamespaceMetadata,
-  NamespaceOptions,
-  QueryOptions,
-  QueryResult,
   Search as ISearch,
+  SearchAPIResponse,
   Vector,
 } from "./types.js";
 
@@ -149,7 +150,12 @@ export class SearchNamespace implements Namespace {
     private org: string,
   ) {}
 
-  async upsert(vectors: Vector[]): Promise<void> {
+  async upsert(
+    vectors: Vector[],
+    distanceMetric: DistanceMetric,
+    schema: Schema,
+    batchSize = 1000,
+  ): Promise<void> {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/vectors`,
@@ -161,6 +167,9 @@ export class SearchNamespace implements Namespace {
           },
           body: JSON.stringify({
             vectors,
+            distanceMetric,
+            schema,
+            batchSize,
           }),
         },
       );
@@ -199,6 +208,15 @@ export class SearchNamespace implements Namespace {
           `Failed to delete vectors: ${response.statusText}`,
         );
       }
+
+      const apiResponse = (await response.json()) as SearchAPIResponse<{
+        success: boolean;
+      }>;
+      if (apiResponse.status === "error") {
+        throw new SearchInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "delete");
@@ -229,8 +247,21 @@ export class SearchNamespace implements Namespace {
         );
       }
 
-      const data = (await response.json()) as { deleted: number };
-      return data.deleted;
+      const apiResponse = (await response.json()) as SearchAPIResponse<{
+        message: string;
+        rowsAffected: number;
+      }>;
+      if (apiResponse.status === "error") {
+        throw new SearchInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        throw new SearchInternalError("No data returned from API");
+      }
+
+      return apiResponse.data.rowsAffected;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "deleteByFilter");
@@ -239,7 +270,16 @@ export class SearchNamespace implements Namespace {
     }
   }
 
-  async query(options: QueryOptions): Promise<QueryResult[]> {
+  async query(
+    vector?: number[],
+    distanceMetric?: DistanceMetric,
+    topK?: number,
+    includeVectors?: boolean,
+    includeAttributes?: boolean | string[],
+    filters?: Filters,
+    rankBy?: RankBy,
+    consistency?: Consistency,
+  ): Promise<QueryResults> {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/query`,
@@ -250,14 +290,14 @@ export class SearchNamespace implements Namespace {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            vector: options.vector,
-            distanceMetric: options.distanceMetric,
-            topK: options.topK ?? 10,
-            includeVectors: options.includeVectors ?? false,
-            includeAttributes: options.includeAttributes,
-            filters: options.filters,
-            rankBy: options.rankBy,
-            consistency: options.consistency,
+            vector,
+            distanceMetric,
+            topK: topK ?? 10,
+            includeVectors: includeVectors ?? false,
+            includeAttributes,
+            filters,
+            rankBy,
+            consistency,
           }),
         },
       );
@@ -268,8 +308,19 @@ export class SearchNamespace implements Namespace {
         );
       }
 
-      const data = (await response.json()) as { results: QueryResults };
-      return data.results;
+      const apiResponse =
+        (await response.json()) as SearchAPIResponse<QueryResults>;
+      if (apiResponse.status === "error") {
+        throw new SearchInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        throw new SearchInternalError("No data returned from API");
+      }
+
+      return apiResponse.data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "query");
@@ -296,7 +347,18 @@ export class SearchNamespace implements Namespace {
         );
       }
 
-      return (await response.json()) as Schema;
+      const apiResponse = (await response.json()) as SearchAPIResponse<Schema>;
+      if (apiResponse.status === "error") {
+        throw new SearchInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        throw new SearchInternalError("No data returned from API");
+      }
+
+      return apiResponse.data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "schema");
@@ -325,7 +387,18 @@ export class SearchNamespace implements Namespace {
         );
       }
 
-      return (await response.json()) as Schema;
+      const apiResponse = (await response.json()) as SearchAPIResponse<Schema>;
+      if (apiResponse.status === "error") {
+        throw new SearchInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        throw new SearchInternalError("No data returned from API");
+      }
+
+      return apiResponse.data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "updateSchema");
@@ -365,79 +438,6 @@ export class SearchNamespace implements Namespace {
   //   }
   // }
 
-  // async recall(options: {
-  //   num?: number;
-  //   top_k?: number;
-  //   filters?: Filters;
-  //   queries?: number[][];
-  // }): Promise<RecallMeasurement> {
-  //   try {
-  //     const response = await fetch(
-  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
-  //         this.id,
-  //       )}/_debug/recall`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           Authorization: `Bearer ${this.apiKey}`,
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           num: options.num,
-  //           top_k: options.top_k,
-  //           filters: options.filters,
-  //           queries: options.queries
-  //             ? options.queries.reduce((acc, value) => acc.concat(value), [])
-  //             : undefined,
-  //         }),
-  //       },
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new VectorInternalError(
-  //         `Failed to measure recall: ${response.statusText}`,
-  //       );
-  //     }
-
-  //     return (await response.json()) as RecallMeasurement;
-  //   } catch (err) {
-  //     if (!(err instanceof VectorError)) {
-  //       throw handleApiError(err, "recall");
-  //     }
-  //     throw err;
-  //   }
-  // }
-
-  // async approxNumVectors(): Promise<number> {
-  //   try {
-  //     const response = await fetch(
-  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
-  //         this.id,
-  //       )}/stats`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           Authorization: `Bearer ${this.apiKey}`,
-  //         },
-  //       },
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new VectorInternalError(
-  //         `Failed to get namespace stats: ${response.statusText}`,
-  //       );
-  //     }
-
-  //     const data = (await response.json()) as { count: number };
-  //     return data.count;
-  //   } catch (err) {
-  //     if (!(err instanceof VectorError)) {
-  //       throw handleApiError(err, "approxNumVectors");
-  //     }
-  //     throw err;
-  //   }
-  // }
-
   async getMetadata(): Promise<NamespaceMetadata> {
     try {
       const response = await fetch(
@@ -456,8 +456,20 @@ export class SearchNamespace implements Namespace {
         );
       }
 
-      const data = (await response.json()) as { metadata: NamespaceMetadata };
-      return data.metadata;
+      const apiResponse = (await response.json()) as SearchAPIResponse<{
+        metadata: NamespaceMetadata;
+      }>;
+      if (apiResponse.status === "error") {
+        throw new SearchInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        throw new SearchInternalError("No data returned from API");
+      }
+
+      return apiResponse.data.metadata;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "metadata");
@@ -481,7 +493,6 @@ export class Search implements ISearch {
   >();
 
   constructor(defaultPrefix?: string) {
-    // readConfig has internal error handling and always returns a GensxConfig object
     const config = readConfig();
 
     this.apiKey = process.env.GENSX_API_KEY ?? config.api?.token ?? "";
@@ -504,58 +515,126 @@ export class Search implements ISearch {
     this.defaultPrefix = defaultPrefix;
   }
 
-  getNamespace(id: string): Namespace {
-    const namespaceId = this.defaultPrefix ? `${this.defaultPrefix}/${id}` : id;
-    return new SearchNamespace(
-      namespaceId,
-      this.apiBaseUrl,
-      this.apiKey,
-      this.org,
-    );
-  }
-
-  // TODO: Implement this correctly
-  async ensureNamespace(name: string): Promise<EnsureNamespaceResult> {
+  getNamespace(name: string): Namespace {
     const namespaceId = this.defaultPrefix
       ? `${this.defaultPrefix}/${name}`
       : name;
-    const response = await fetch(
-      `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(namespaceId)}`,
-    );
-    if (!response.ok) {
-      throw new SearchInternalError(
-        `Failed to ensure namespace: ${response.statusText}`,
+
+    if (!this.namespaces.has(namespaceId)) {
+      this.namespaces.set(
+        namespaceId,
+        new SearchNamespace(
+          namespaceId,
+          this.apiBaseUrl,
+          this.apiKey,
+          this.org,
+        ),
       );
     }
-    return { exists: true, created: false };
+
+    return this.namespaces.get(namespaceId)!;
+  }
+
+  async ensureNamespace(name: string): Promise<EnsureNamespaceResult> {
+    try {
+      const namespaceId = this.defaultPrefix
+        ? `${this.defaultPrefix}/${name}`
+        : name;
+      const response = await fetch(
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(namespaceId)}/ensure`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+        },
+      );
+      if (!response.ok) {
+        throw new SearchInternalError(
+          `Failed to ensure namespace: ${response.statusText}`,
+        );
+      }
+      const apiResponse =
+        (await response.json()) as SearchAPIResponse<EnsureNamespaceResult>;
+
+      if (apiResponse.status === "error") {
+        throw new SearchInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        throw new SearchInternalError("No data returned from API");
+      }
+
+      // Make sure the namespace is in our cache
+      if (!this.namespaces.has(name)) {
+        this.getNamespace(name);
+      }
+
+      return apiResponse.data;
+    } catch (err) {
+      if (!(err instanceof SearchError)) {
+        throw handleApiError(err, "ensureNamespace");
+      }
+      throw err;
+    }
   }
 
   // TODO: Implement this correctly
   async deleteNamespace(name: string): Promise<DeleteNamespaceResult> {
-    const namespaceId = this.defaultPrefix
-      ? `${this.defaultPrefix}/${name}`
-      : name;
-    const response = await fetch(
-      `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(namespaceId)}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
+    try {
+      const namespaceId = this.defaultPrefix
+        ? `${this.defaultPrefix}/${name}`
+        : name;
+      const response = await fetch(
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(namespaceId)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+          },
         },
-      },
-    );
-    if (!response.ok) {
-      throw new SearchInternalError(
-        `Failed to delete namespace: ${response.statusText}`,
       );
+      if (!response.ok) {
+        throw new SearchInternalError(
+          `Failed to delete namespace: ${response.statusText}`,
+        );
+      }
+
+      const apiResponse =
+        (await response.json()) as SearchAPIResponse<DeleteNamespaceResult>;
+
+      if (apiResponse.status === "error") {
+        throw new SearchInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        throw new SearchInternalError("No data returned from API");
+      }
+
+      // Remove namespace from caches if it was successfully deleted
+      if (apiResponse.data.deleted) {
+        if (this.namespaces.has(name)) {
+          const ns = this.namespaces.get(name);
+          if (ns) {
+            this.namespaces.delete(name);
+          }
+        }
+      }
+
+      return apiResponse.data;
+    } catch (err) {
+      if (!(err instanceof SearchError)) {
+        throw handleApiError(err, "deleteNamespace");
+      }
+      throw err;
     }
-    return { deleted: true };
   }
 
-  async listNamespaces(options?: {
-    prefix?: string;
-    pageSize?: number;
-  }): Promise<string[]> {
+  async listNamespaces(options?: { prefix?: string }): Promise<string[]> {
     try {
       // Normalize prefixes by removing trailing slashes
       const normalizedDefaultPrefix = this.defaultPrefix?.replace(/\/$/, "");
@@ -574,10 +653,6 @@ export class Search implements ISearch {
         url.searchParams.append("prefix", searchPrefix);
       }
 
-      if (options?.pageSize) {
-        url.searchParams.append("pageSize", options.pageSize.toString());
-      }
-
       const response = await fetch(url.toString(), {
         method: "GET",
         headers: {
@@ -591,11 +666,22 @@ export class Search implements ISearch {
         );
       }
 
-      const data = (await response.json()) as { namespaces: string[] };
+      const apiResponse = (await response.json()) as SearchAPIResponse<{
+        namespaces: string[];
+      }>;
+      if (apiResponse.status === "error") {
+        throw new SearchInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        throw new SearchInternalError("No data returned from API");
+      }
 
       // Remove default prefix from results if it exists
       if (normalizedDefaultPrefix) {
-        return data.namespaces
+        return apiResponse.data.namespaces
           .filter(
             (ns) =>
               ns === normalizedDefaultPrefix ||
@@ -608,7 +694,7 @@ export class Search implements ISearch {
           );
       }
 
-      return data.namespaces;
+      return apiResponse.data.namespaces;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "listNamespaces");
@@ -627,52 +713,52 @@ export class Search implements ISearch {
    * @param options Options for creating the namespace
    * @returns Promise that resolves when the operation is complete
    */
-  async createNamespace(id: string, options?: NamespaceOptions): Promise<void> {
-    try {
-      const namespaceId = this.defaultPrefix
-        ? `${this.defaultPrefix}/${id}`
-        : id;
+  // async createNamespace(id: string, options?: NamespaceOptions): Promise<void> {
+  //   try {
+  //     const namespaceId = this.defaultPrefix
+  //       ? `${this.defaultPrefix}/${id}`
+  //       : id;
 
-      const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
-          namespaceId,
-        )}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            distanceMetric: options?.distanceMetric,
-            schema: options?.schema,
-          }),
-        },
-      );
+  //     const response = await fetch(
+  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
+  //         namespaceId,
+  //       )}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           Authorization: `Bearer ${this.apiKey}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           distanceMetric: options?.distanceMetric,
+  //           schema: options?.schema,
+  //         }),
+  //       },
+  //     );
 
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to create namespace: ${response.statusText}`,
-        );
-      }
-    } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "createNamespace");
-      }
-      throw err;
-    }
-  }
+  //     if (!response.ok) {
+  //       throw new SearchInternalError(
+  //         `Failed to create namespace: ${response.statusText}`,
+  //       );
+  //     }
+  //   } catch (err) {
+  //     if (!(err instanceof SearchError)) {
+  //       throw handleApiError(err, "createNamespace");
+  //     }
+  //     throw err;
+  //   }
+  // }
 
   /**
    * Check if a namespace exists
-   * @param id The namespace ID to check
+   * @param name The namespace name to check
    * @returns Promise that resolves to true if the namespace exists
    */
-  async namespaceExists(id: string): Promise<boolean> {
+  async namespaceExists(name: string): Promise<boolean> {
     try {
       const namespaceId = this.defaultPrefix
-        ? `${this.defaultPrefix}/${id}`
-        : id;
+        ? `${this.defaultPrefix}/${name}`
+        : name;
 
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
