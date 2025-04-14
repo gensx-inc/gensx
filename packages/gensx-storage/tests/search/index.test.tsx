@@ -481,7 +481,7 @@ suite("GenSX Search Storage", () => {
       text: { type: "string", filterable: true, fullTextSearch: true },
       rating: { type: "number", filterable: true },
       new_field: { type: "string", filterable: false },
-    } as Schema;
+    } as unknown as Schema;
 
     const updatedSchema = await namespace.updateSchema({ schema });
 
