@@ -1,23 +1,23 @@
 import { createContext, useContext } from "@gensx/core";
 
-import { Namespace, Search } from "./types.js";
+import { Namespace, SearchStorage } from "./types.js";
 
 /**
  * Create the search context
  */
-export const SearchContext = createContext<Search | null>(null);
+export const SearchContext = createContext<SearchStorage | null>(null);
 
 /**
  * Hook to access the search instance
  * @returns The search instance
  * @throws Error if used outside of a SearchProvider
  */
-export function useSearch(): Search {
+export function useSearchStorage(): SearchStorage {
   const search = useContext(SearchContext);
 
   if (!search) {
     throw new Error(
-      "useSearch must be used within a SearchProvider. Wrap your component tree with a SearchProvider.",
+      "useSearchStorage must be used within a SearchProvider. Wrap your component tree with a SearchProvider.",
     );
   }
 
@@ -30,8 +30,8 @@ export function useSearch(): Search {
  * @returns A namespace object for the given name
  * @throws Error if used outside of a SearchProvider
  */
-export async function useNamespace(name: string): Promise<Namespace> {
-  const search = useSearch();
+export async function useSearch(name: string): Promise<Namespace> {
+  const search = useSearchStorage();
   // Only ensure the database if it hasn't been ensured before
   if (!search.hasEnsuredNamespace(name)) {
     await search.ensureNamespace(name);

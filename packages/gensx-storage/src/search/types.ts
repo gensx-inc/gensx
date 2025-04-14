@@ -232,7 +232,7 @@ export interface Namespace {
 /**
  * Interface for vector search
  */
-export interface Search {
+export interface SearchStorage {
   /**
    * Get a namespace object for a specific namespace ID
    * @param name The namespace name

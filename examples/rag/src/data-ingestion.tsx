@@ -1,13 +1,13 @@
 import * as gensx from "@gensx/core";
 import { OpenAIEmbedding, OpenAIProvider } from "@gensx/openai";
-import { SearchProvider, useNamespace } from "@gensx/storage";
+import { SearchProvider, useSearch } from "@gensx/storage";
 
 // Database initialization component
 const SearchInitializer = gensx.Component<{}, string>(
   "SearchInitializer",
   async () => {
-    // UseNamespace will create the namespace automatically if it doesn't exist.
-    const namespace = await useNamespace("baseball");
+    // UseSearch will create the namespace automatically if it doesn't exist.
+    const namespace = await useSearch("baseball");
 
     const documents = [
       {

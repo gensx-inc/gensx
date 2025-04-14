@@ -5,7 +5,7 @@ import {
   OpenAIEmbedding,
   OpenAIProvider,
 } from "@gensx/openai";
-import { SearchProvider, useNamespace } from "@gensx/storage";
+import { SearchProvider, useSearch } from "@gensx/storage";
 import { z } from "zod";
 
 import { DataIngestionWorkflow } from "./data-ingestion.js";
@@ -23,7 +23,7 @@ const queryTool = new GSXTool({
   description: "Query the search index",
   schema: querySchema,
   run: async ({ query }: QueryParams) => {
-    const search = await useNamespace("baseball");
+    const search = await useSearch("baseball");
     const embedding = await OpenAIEmbedding.run({
       model: "text-embedding-3-small",
       input: query,

@@ -7,11 +7,11 @@ export * from "./database/types.js";
 export * from "./database/context.js";
 export { DatabaseProvider } from "./database/provider.js";
 
-// Re-export for convenience
-export { useBlob, useBlobStorage } from "./blob/context.js";
-export { useDatabase, useDatabaseStorage } from "./database/context.js";
-
 export * from "./search/types.js";
 export * from "./search/context.js";
 export { SearchProvider } from "./search/provider.js";
-export { useNamespace, useSearch } from "./search/context.js";
+
+// Re-export for convenience
+export { useBlob, useBlobStorage } from "./blob/context.js";
+export { useDatabase, useDatabaseStorage } from "./database/context.js";
+export { useSearch, useSearchStorage } from "./search/context.js";

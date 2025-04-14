@@ -16,8 +16,8 @@ import {
   EnsureNamespaceResult,
   Namespace,
   QueryOptions,
-  Search as ISearch,
   SearchAPIResponse,
+  SearchStorage as ISearchStorage,
   Vector,
 } from "./types.js";
 
@@ -486,7 +486,7 @@ export class SearchNamespace implements Namespace {
 /**
  * Remote implementation of search
  */
-export class Search implements ISearch {
+export class SearchStorage implements ISearchStorage {
   private apiKey: string;
   private apiBaseUrl: string;
   private org: string;
