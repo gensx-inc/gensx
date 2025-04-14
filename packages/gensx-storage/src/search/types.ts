@@ -204,12 +204,6 @@ export interface Namespace {
   getMetadata(): Promise<NamespaceMetadata>;
 
   /**
-   * Delete the entire namespace
-   * @returns Promise that resolves when the operation is complete
-   */
-  //deleteAll(): Promise<void>;
-
-  /**
    * Get the current schema for the namespace
    * @returns Promise with the current schema
    */
@@ -221,12 +215,6 @@ export interface Namespace {
    * @returns Promise with the updated schema
    */
   updateSchema({ schema }: { schema: Schema }): Promise<Schema>;
-
-  /**
-   * Copy all documents from another namespace
-   * @param sourceNamespace The source namespace ID
-   */
-  //copyFromNamespace(sourceNamespace: string): Promise<void>;
 }
 
 /**

@@ -411,37 +411,6 @@ export class SearchNamespace implements Namespace {
     }
   }
 
-  // async copyFromNamespace(sourceNamespace: string): Promise<void> {
-  //   try {
-  //     const response = await fetch(
-  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
-  //         this.id,
-  //       )}`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           Authorization: `Bearer ${this.apiKey}`,
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           copy_from_namespace: sourceNamespace,
-  //         }),
-  //       },
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new VectorInternalError(
-  //         `Failed to copy namespace: ${response.statusText}`,
-  //       );
-  //     }
-  //   } catch (err) {
-  //     if (!(err instanceof VectorError)) {
-  //       throw handleApiError(err, "copyFromNamespace");
-  //     }
-  //     throw err;
-  //   }
-  // }
-
   async getMetadata(): Promise<NamespaceMetadata> {
     try {
       const response = await fetch(
@@ -585,7 +554,6 @@ export class SearchStorage implements ISearchStorage {
     }
   }
 
-  // TODO: Implement this correctly
   async deleteNamespace(name: string): Promise<DeleteNamespaceResult> {
     try {
       const namespaceId = this.defaultPrefix
@@ -710,48 +678,6 @@ export class SearchStorage implements ISearchStorage {
   hasEnsuredNamespace(name: string): boolean {
     return this.namespaces.has(name);
   }
-
-  /**
-   * Create a new namespace with the given options
-   * @param id The namespace ID to create
-   * @param options Options for creating the namespace
-   * @returns Promise that resolves when the operation is complete
-   */
-  // async createNamespace(id: string, options?: NamespaceOptions): Promise<void> {
-  //   try {
-  //     const namespaceId = this.defaultPrefix
-  //       ? `${this.defaultPrefix}/${id}`
-  //       : id;
-
-  //     const response = await fetch(
-  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
-  //         namespaceId,
-  //       )}`,
-  //       {
-  //         method: "PUT",
-  //         headers: {
-  //           Authorization: `Bearer ${this.apiKey}`,
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           distanceMetric: options?.distanceMetric,
-  //           schema: options?.schema,
-  //         }),
-  //       },
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new SearchInternalError(
-  //         `Failed to create namespace: ${response.statusText}`,
-  //       );
-  //     }
-  //   } catch (err) {
-  //     if (!(err instanceof SearchError)) {
-  //       throw handleApiError(err, "createNamespace");
-  //     }
-  //     throw err;
-  //   }
-  // }
 
   /**
    * Check if a namespace exists
