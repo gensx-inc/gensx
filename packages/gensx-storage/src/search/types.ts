@@ -6,7 +6,7 @@ import type {
   NamespaceMetadata,
   QueryResults,
   RankBy,
-  Schema,
+  SchemaType,
   Vector as TurbopufferVector,
 } from "@turbopuffer/turbopuffer";
 
@@ -79,6 +79,43 @@ export interface QueryOptions {
    */
   consistency?: Consistency;
 }
+
+/**
+ * Schema interface with camelCasing
+ */
+export type Schema = Record<
+  string,
+  {
+    type?: SchemaType;
+    filterable?: boolean;
+    /**
+     * @deprecated use `fullTextSearch` instead
+     */
+    bm25?:
+      | boolean
+      | Partial<{
+          k1: number;
+          b: number;
+          language: string;
+          stemming: boolean;
+          removeStopwords: boolean;
+          caseSensitive: boolean;
+          tokenizer: string;
+        }>;
+    fullTextSearch?:
+      | boolean
+      | Partial<{
+          k1: number;
+          b: number;
+          language: string;
+          stemming: boolean;
+          removeStopwords: boolean;
+          caseSensitive: boolean;
+          tokenizer: string;
+        }>;
+    ann?: boolean;
+  }
+>;
 
 /**
  * A response from the API
