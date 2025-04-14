@@ -148,7 +148,7 @@ export interface Namespace {
   /**
    * Get the namespace ID
    */
-  id: string;
+  namespaceId: string;
 
   /**
    * Upsert vectors into the namespace

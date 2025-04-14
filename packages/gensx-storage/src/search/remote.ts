@@ -143,7 +143,7 @@ function handleApiError(err: unknown, operation: string): never {
  */
 export class SearchNamespace implements Namespace {
   constructor(
-    public readonly id: string,
+    public readonly namespaceId: string,
     private apiBaseUrl: string,
     private apiKey: string,
     private org: string,
@@ -162,7 +162,7 @@ export class SearchNamespace implements Namespace {
   }): Promise<void> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/vectors`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/vectors`,
         {
           method: "POST",
           headers: {
@@ -194,7 +194,7 @@ export class SearchNamespace implements Namespace {
   async delete({ ids }: { ids: Id[] }): Promise<void> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/delete`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/delete`,
         {
           method: "DELETE",
           headers: {
@@ -232,7 +232,7 @@ export class SearchNamespace implements Namespace {
   async deleteByFilter({ filters }: { filters: Filters }): Promise<number> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/deleteByFilter`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/deleteByFilter`,
         {
           method: "DELETE",
           headers: {
@@ -286,7 +286,7 @@ export class SearchNamespace implements Namespace {
   }: QueryOptions): Promise<QueryResults> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/query`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/query`,
         {
           method: "POST",
           headers: {
@@ -336,7 +336,7 @@ export class SearchNamespace implements Namespace {
   async getSchema(): Promise<Schema> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/schema`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/schema`,
         {
           method: "GET",
           headers: {
@@ -374,7 +374,7 @@ export class SearchNamespace implements Namespace {
   async updateSchema({ schema }: { schema: Schema }): Promise<Schema> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/schema`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/schema`,
         {
           method: "POST",
           headers: {
@@ -414,7 +414,7 @@ export class SearchNamespace implements Namespace {
   async getMetadata(): Promise<NamespaceMetadata> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}`,
         {
           method: "GET",
           headers: {
