@@ -118,42 +118,47 @@ export interface Namespace {
    * @param vectors The vectors to upsert
    * @returns Promise that resolves when the operation is complete
    */
-  upsert(
-    vectors: Vector[],
-    distanceMetric: DistanceMetric,
-    schema: Schema, // TODO add gensx type for schema
-    batchSize?: number,
-  ): Promise<void>;
+  upsert({
+    vectors,
+    distanceMetric,
+    schema,
+    batchSize,
+  }: {
+    vectors: Vector[];
+    distanceMetric: DistanceMetric;
+    schema?: Schema;
+    batchSize?: number;
+  }): Promise<void>;
 
   /**
    * Delete vectors by IDs
    * @param ids The IDs of vectors to delete
    * @returns Promise that resolves when the operation is complete
    */
-  delete(ids: Id[]): Promise<void>;
+  delete({ ids }: { ids: Id[] }): Promise<void>;
 
   /**
    * Delete vectors by filter
    * @param filters The filters to apply
    * @returns Promise with the number of vectors deleted
    */
-  deleteByFilter(filters: Filters): Promise<number>;
+  deleteByFilter({ filters }: { filters: Filters }): Promise<number>;
 
   /**
    * Query vectors by similarity
    * @param options Query options
    * @returns Promise with query results
    */
-  query(
-    vector?: number[],
-    distanceMetric?: DistanceMetric,
-    topK?: number,
-    includeVectors?: boolean,
-    includeAttributes?: boolean | string[],
-    filters?: Filters,
-    rankBy?: RankBy,
-    consistency?: Consistency,
-  ): Promise<QueryResults>;
+  query({
+    vector,
+    distanceMetric,
+    topK,
+    includeVectors,
+    includeAttributes,
+    filters,
+    rankBy,
+    consistency,
+  }: QueryOptions): Promise<QueryResults>;
 
   /**
    * Get metadata about the namespace
@@ -178,7 +183,7 @@ export interface Namespace {
    * @param schema The new schema
    * @returns Promise with the updated schema
    */
-  updateSchema(schema: Schema): Promise<Schema>;
+  updateSchema({ schema }: { schema: Schema }): Promise<Schema>;
 
   /**
    * Copy all documents from another namespace

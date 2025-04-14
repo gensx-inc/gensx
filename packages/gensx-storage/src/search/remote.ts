@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
 import type {
-  Consistency,
   DistanceMetric,
   Filters,
   Id,
   NamespaceMetadata,
   QueryResults,
-  RankBy,
   Schema,
 } from "@turbopuffer/turbopuffer";
 
@@ -17,6 +15,7 @@ import {
   DeleteNamespaceResult,
   EnsureNamespaceResult,
   Namespace,
+  QueryOptions,
   Search as ISearch,
   SearchAPIResponse,
   Vector,
@@ -150,12 +149,17 @@ export class SearchNamespace implements Namespace {
     private org: string,
   ) {}
 
-  async upsert(
-    vectors: Vector[],
-    distanceMetric: DistanceMetric,
-    schema: Schema,
+  async upsert({
+    vectors,
+    distanceMetric,
+    schema,
     batchSize = 1000,
-  ): Promise<void> {
+  }: {
+    vectors: Vector[];
+    distanceMetric: DistanceMetric;
+    schema?: Schema;
+    batchSize?: number;
+  }): Promise<void> {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/vectors`,
@@ -187,7 +191,7 @@ export class SearchNamespace implements Namespace {
     }
   }
 
-  async delete(ids: Id[]): Promise<void> {
+  async delete({ ids }: { ids: Id[] }): Promise<void> {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/delete`,
@@ -225,7 +229,7 @@ export class SearchNamespace implements Namespace {
     }
   }
 
-  async deleteByFilter(filters: Filters): Promise<number> {
+  async deleteByFilter({ filters }: { filters: Filters }): Promise<number> {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/deleteByFilter`,
@@ -270,16 +274,16 @@ export class SearchNamespace implements Namespace {
     }
   }
 
-  async query(
-    vector?: number[],
-    distanceMetric?: DistanceMetric,
-    topK?: number,
-    includeVectors?: boolean,
-    includeAttributes?: boolean | string[],
-    filters?: Filters,
-    rankBy?: RankBy,
-    consistency?: Consistency,
-  ): Promise<QueryResults> {
+  async query({
+    vector,
+    distanceMetric,
+    topK,
+    includeVectors,
+    includeAttributes,
+    filters,
+    rankBy,
+    consistency,
+  }: QueryOptions): Promise<QueryResults> {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/query`,
@@ -367,7 +371,7 @@ export class SearchNamespace implements Namespace {
     }
   }
 
-  async updateSchema(schema: Schema): Promise<Schema> {
+  async updateSchema({ schema }: { schema: Schema }): Promise<Schema> {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.id)}/schema`,
