@@ -58,6 +58,6 @@
   },
   "dependencies": {
     "@gensx/core": "workspace:*",
-    "@libsql/client": "^0.15.2"
+    "@libsql/client": "^0.15.3"
   }
 }
