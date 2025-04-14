@@ -8,6 +8,7 @@ import { SearchProvider } from "../../src/search/provider.js";
 import {
   DeleteNamespaceResult,
   EnsureNamespaceResult,
+  Namespace,
   SearchProviderProps,
   SearchStorage,
 } from "../../src/search/types.js";
@@ -26,7 +27,7 @@ vi.mock("../../src/search/remote.js", () => {
         hasEnsuredNamespace: (name: string): boolean =>
           namespacesCache.has(name),
         getNamespace: (name: string) => ({
-          namespaceId: name,
+          namespaceId: defaultPrefix ? `${defaultPrefix}/${name}` : name,
         }),
         ensureNamespace: vi
           .fn()
@@ -133,6 +134,66 @@ suite("SearchProvider", () => {
 
     // Database should be removed from cache
     expect(search.hasEnsuredNamespace("test-db")).toBe(false);
+  });
+
+  test("useSearch hook provides and caches namespaces", async () => {
+    // Import the useSearch hook
+    const { useSearch } = await import("../../src/search/context.js");
+
+    let capturedNamespace: Namespace | undefined;
+    let searchHookSuccess = false;
+
+    const TestComponent = gensx.Component<{}, null>(
+      "TestComponent",
+      async () => {
+        try {
+          // Use the useSearch hook to get a namespace
+          const namespace = await useSearch("test-search-db");
+          capturedNamespace = namespace;
+          searchHookSuccess = true;
+        } catch (_error) {
+          searchHookSuccess = false;
+        }
+        return null;
+      },
+    );
+
+    await gensx.execute(
+      <SearchProvider defaultPrefix="test-prefix">
+        <TestComponent />
+      </SearchProvider>,
+    );
+
+    // The hook should have successfully obtained a namespace
+    expect(searchHookSuccess).toBe(true);
+    expect(capturedNamespace).toBeDefined();
+
+    // Verify the namespace properties
+    if (capturedNamespace) {
+      expect(capturedNamespace.namespaceId).toBe("test-prefix/test-search-db");
+    }
+
+    // Get the storage instance to verify caching
+    let storageInstance: SearchStorage | undefined;
+
+    const StorageCheckComponent = gensx.Component<{}, null>(
+      "StorageCheckComponent",
+      () => {
+        const context = gensx.useContext(SearchContext);
+        if (!context) throw new Error("SearchContext not found");
+        storageInstance = context;
+        return null;
+      },
+    );
+
+    await gensx.execute(
+      <SearchProvider defaultPrefix="test-prefix">
+        <StorageCheckComponent />
+      </SearchProvider>,
+    );
+
+    // Verify the namespace was cached in the storage
+    expect(storageInstance!.hasEnsuredNamespace("test-search-db")).toBe(true);
   });
 
   test("defaultPrefix is used when provided", async () => {
