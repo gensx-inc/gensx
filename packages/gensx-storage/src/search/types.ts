@@ -88,20 +88,6 @@ export type Schema = Record<
   {
     type?: SchemaType;
     filterable?: boolean;
-    /**
-     * @deprecated use `fullTextSearch` instead
-     */
-    bm25?:
-      | boolean
-      | Partial<{
-          k1: number;
-          b: number;
-          language: string;
-          stemming: boolean;
-          removeStopwords: boolean;
-          caseSensitive: boolean;
-          tokenizer: string;
-        }>;
     fullTextSearch?:
       | boolean
       | Partial<{
@@ -263,14 +249,4 @@ export interface SearchStorage {
    * Check if a namespace has been ensured
    */
   hasEnsuredNamespace(name: string): boolean;
-}
-
-/**
- * Provider props for cloud vector storage
- */
-export interface SearchProviderProps {
-  /**
-   * Default prefix for all namespaces
-   */
-  defaultPrefix?: string;
 }

@@ -459,13 +459,12 @@ export class SearchStorage implements ISearchStorage {
   private apiKey: string;
   private apiBaseUrl: string;
   private org: string;
-  private defaultPrefix?: string;
   private namespaces: Map<string, SearchNamespace> = new Map<
     string,
     SearchNamespace
   >();
 
-  constructor(defaultPrefix?: string) {
+  constructor() {
     const config = readConfig();
 
     this.apiKey = process.env.GENSX_API_KEY ?? config.api?.token ?? "";
@@ -484,37 +483,23 @@ export class SearchStorage implements ISearchStorage {
 
     this.apiBaseUrl =
       process.env.GENSX_API_BASE_URL ?? config.api?.baseUrl ?? API_BASE_URL;
-
-    this.defaultPrefix = defaultPrefix;
   }
 
   getNamespace(name: string): Namespace {
-    const namespaceId = this.defaultPrefix
-      ? `${this.defaultPrefix}/${name}`
-      : name;
-
-    if (!this.namespaces.has(namespaceId)) {
+    if (!this.namespaces.has(name)) {
       this.namespaces.set(
-        namespaceId,
-        new SearchNamespace(
-          namespaceId,
-          this.apiBaseUrl,
-          this.apiKey,
-          this.org,
-        ),
+        name,
+        new SearchNamespace(name, this.apiBaseUrl, this.apiKey, this.org),
       );
     }
 
-    return this.namespaces.get(namespaceId)!;
+    return this.namespaces.get(name)!;
   }
 
   async ensureNamespace(name: string): Promise<EnsureNamespaceResult> {
     try {
-      const namespaceId = this.defaultPrefix
-        ? `${this.defaultPrefix}/${name}`
-        : name;
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(namespaceId)}/ensure`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(name)}/ensure`,
         {
           method: "POST",
           headers: {
@@ -556,11 +541,8 @@ export class SearchStorage implements ISearchStorage {
 
   async deleteNamespace(name: string): Promise<DeleteNamespaceResult> {
     try {
-      const namespaceId = this.defaultPrefix
-        ? `${this.defaultPrefix}/${name}`
-        : name;
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(namespaceId)}`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(name)}`,
         {
           method: "DELETE",
           headers: {
@@ -608,21 +590,13 @@ export class SearchStorage implements ISearchStorage {
 
   async listNamespaces(options?: { prefix?: string }): Promise<string[]> {
     try {
-      // Normalize prefixes by removing trailing slashes
-      const normalizedDefaultPrefix = this.defaultPrefix?.replace(/\/$/, "");
+      // Normalize prefix by removing trailing slash
       const normalizedPrefix = options?.prefix?.replace(/\/$/, "");
-
-      // Build the search prefix
-      const searchPrefix = normalizedDefaultPrefix
-        ? normalizedPrefix
-          ? `${normalizedDefaultPrefix}/${normalizedPrefix}`
-          : normalizedDefaultPrefix
-        : (normalizedPrefix ?? "");
 
       const url = new URL(`${this.apiBaseUrl}/org/${this.org}/search`);
 
-      if (searchPrefix) {
-        url.searchParams.append("prefix", searchPrefix);
+      if (normalizedPrefix) {
+        url.searchParams.append("prefix", normalizedPrefix);
       }
 
       const response = await fetch(url.toString(), {
@@ -651,21 +625,6 @@ export class SearchStorage implements ISearchStorage {
         throw new SearchInternalError("No data returned from API");
       }
 
-      // Remove default prefix from results if it exists
-      if (normalizedDefaultPrefix) {
-        return apiResponse.data.namespaces
-          .filter(
-            (ns) =>
-              ns === normalizedDefaultPrefix ||
-              ns.startsWith(`${normalizedDefaultPrefix}/`),
-          )
-          .map((ns) =>
-            ns === normalizedDefaultPrefix
-              ? ""
-              : ns.slice(normalizedDefaultPrefix.length + 1),
-          );
-      }
-
       return apiResponse.data.namespaces;
     } catch (err) {
       if (!(err instanceof SearchError)) {
@@ -686,14 +645,8 @@ export class SearchStorage implements ISearchStorage {
    */
   async namespaceExists(name: string): Promise<boolean> {
     try {
-      const namespaceId = this.defaultPrefix
-        ? `${this.defaultPrefix}/${name}`
-        : name;
-
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(
-          namespaceId,
-        )}`,
+        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(name)}`,
         {
           method: "HEAD",
           headers: {

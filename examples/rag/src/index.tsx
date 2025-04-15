@@ -1,4 +1,4 @@
-import { DataIngestionWorkflow } from "./data-ingestion.js";
+import { initializeBaseballSearchNamespace } from "./data-ingestion.js";
 import { RagWorkflow } from "./workflows.js";
 
 // Get the question from command line arguments
@@ -12,7 +12,7 @@ if (!question) {
 
 // First, initialize the database
 console.log("Initializing database...");
-const initMessage = await DataIngestionWorkflow.run({});
+const initMessage = await initializeBaseballSearchNamespace();
 console.log(initMessage);
 
 // Then run the query

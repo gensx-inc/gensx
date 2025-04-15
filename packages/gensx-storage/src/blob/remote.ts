@@ -14,6 +14,7 @@ import {
   BlobOptions,
   BlobResponse,
   BlobStorage,
+  DeleteBlobResult,
 } from "./types.js";
 
 /**
@@ -622,6 +623,27 @@ export class RemoteBlobStorage implements BlobStorage {
       }
       throw new BlobNetworkError(
         `Error during listBlobs operation: ${String(err)}`,
+        err as Error,
+      );
+    }
+  }
+
+  async blobExists(key: string): Promise<boolean> {
+    const blob = this.getBlob(key);
+    return blob.exists();
+  }
+
+  async deleteBlob(key: string): Promise<DeleteBlobResult> {
+    try {
+      const blob = this.getBlob(key);
+      await blob.delete();
+      return { deleted: true };
+    } catch (err) {
+      if (err instanceof BlobError) {
+        throw err;
+      }
+      throw new BlobNetworkError(
+        `Error during deleteBlob operation: ${String(err)}`,
         err as Error,
       );
     }

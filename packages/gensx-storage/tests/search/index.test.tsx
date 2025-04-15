@@ -75,21 +75,6 @@ suite("GenSX Search Storage", () => {
     expect(typeof namespace.updateSchema).toBe("function");
   });
 
-  test("should honor defaultPrefix", () => {
-    const prefix = "test-prefix";
-    const storage = new SearchStorage(prefix);
-
-    // Spy on internal methods
-    const getNamespaceSpy = vi.spyOn(storage, "getNamespace");
-
-    // Call methods that should use the prefix
-    const namespace = storage.getNamespace("test");
-
-    // Check that the namespace was requested with the prefix
-    expect(getNamespaceSpy).toHaveBeenCalledWith("test");
-    expect(namespace.namespaceId).toBe("test-prefix/test");
-  });
-
   test("should be able to import and use SearchProvider", () => {
     expect(SearchProvider).toBeDefined();
   });
@@ -581,48 +566,6 @@ suite("GenSX Search Storage", () => {
     expect(namespaces).toEqual(["test/ns1", "test/ns2"]);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringMatching(/search.*prefix=test/),
-      expect.any(Object),
-    );
-  });
-
-  test("should handle default prefix in listNamespaces", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        status: "ok",
-        data: { namespaces: ["default-prefix/ns1", "default-prefix/ns2"] },
-      }),
-    });
-
-    const storage = new SearchStorage("default-prefix");
-    const namespaces = await storage.listNamespaces();
-
-    expect(namespaces).toEqual(["ns1", "ns2"]);
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringMatching(/search.*prefix=default-prefix/),
-      expect.any(Object),
-    );
-  });
-
-  test("should combine default prefix with provided prefix", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        status: "ok",
-        data: {
-          namespaces: ["default-prefix/sub/ns1", "default-prefix/sub/ns2"],
-        },
-      }),
-    });
-
-    const storage = new SearchStorage("default-prefix");
-    const namespaces = await storage.listNamespaces({ prefix: "sub" });
-
-    expect(namespaces).toEqual(["sub/ns1", "sub/ns2"]);
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringMatching(/search.*prefix=default-prefix%2Fsub/),
       expect.any(Object),
     );
   });
