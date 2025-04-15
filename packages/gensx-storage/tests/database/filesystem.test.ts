@@ -197,90 +197,90 @@ suite("FileSystemDatabaseStorage", () => {
       expect(queryResult.rows[0][1]).toBe("test-name"); // name
     });
 
-    // test("should handle batch operations", async () => {
-    //   try {
-    //     const storage = new FileSystemDatabaseStorage(tempDir);
-    //     await storage.ensureDatabase("test");
-    //     const db = storage.getDatabase("test");
+    test("should handle batch operations", async () => {
+      try {
+        const storage = new FileSystemDatabaseStorage(tempDir);
+        await storage.ensureDatabase("test");
+        const db = storage.getDatabase("test");
 
-    //     // Create a table
-    //     await db.execute(
-    //       "CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT);",
-    //     );
+        // Create a table
+        await db.execute(
+          "CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT);",
+        );
 
-    //     // Execute batch insert
-    //     const batchResult = await db.batch([
-    //       {
-    //         sql: "INSERT INTO test_table (name) VALUES (?);",
-    //         params: ["batch-1"],
-    //       },
-    //       {
-    //         sql: "INSERT INTO test_table (name) VALUES (?);",
-    //         params: ["batch-2"],
-    //       },
-    //       {
-    //         sql: "INSERT INTO test_table (name) VALUES (?);",
-    //         params: ["batch-3"],
-    //       },
-    //     ]);
+        // // Execute batch insert
+        const batchResult = await db.batch([
+          {
+            sql: "INSERT INTO test_table (name) VALUES (?);",
+            params: ["batch-1"],
+          },
+          {
+            sql: "INSERT INTO test_table (name) VALUES (?);",
+            params: ["batch-2"],
+          },
+          {
+            sql: "INSERT INTO test_table (name) VALUES (?);",
+            params: ["batch-3"],
+          },
+        ]);
 
-    //     expect(batchResult.results.length).toBe(3);
-    //     expect(batchResult.results[0].rowsAffected).toBe(1);
-    //     expect(batchResult.results[1].rowsAffected).toBe(1);
-    //     expect(batchResult.results[2].rowsAffected).toBe(1);
+        expect(batchResult.results.length).toBe(3);
+        expect(batchResult.results[0].rowsAffected).toBe(1);
+        expect(batchResult.results[1].rowsAffected).toBe(1);
+        expect(batchResult.results[2].rowsAffected).toBe(1);
 
-    //     // Check that all data was inserted
-    //     const queryResult = await db.execute(
-    //       "SELECT COUNT(*) FROM test_table;",
-    //     );
-    //     expect(queryResult.rows[0][0]).toBe(3);
-    //   } catch (err) {
-    //     console.error(err);
-    //   }
-    // });
+        // Check that all data was inserted
+        const queryResult = await db.execute(
+          "SELECT COUNT(*) FROM test_table;",
+        );
+        expect(queryResult.rows[0][0]).toBe(3);
+      } catch (err) {
+        console.error(err);
+      }
+    });
 
-    // test("should handle transaction rollback in batch operations", async () => {
-    //   const storage = new FileSystemDatabaseStorage(tempDir);
-    //   await storage.ensureDatabase("test");
-    //   const db = storage.getDatabase("test");
+    test("should handle transaction rollback in batch operations", async () => {
+      const storage = new FileSystemDatabaseStorage(tempDir);
+      await storage.ensureDatabase("test");
+      const db = storage.getDatabase("test");
 
-    //   // Create a table with a unique constraint
-    //   await db.execute(
-    //     "CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT UNIQUE);",
-    //   );
+      // Create a table with a unique constraint
+      await db.execute(
+        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT UNIQUE);",
+      );
 
-    //   // Insert initial data
-    //   await db.execute("INSERT INTO test_table (name) VALUES (?);", [
-    //     "unique-name",
-    //   ]);
+      // Insert initial data
+      await db.execute("INSERT INTO test_table (name) VALUES (?);", [
+        "unique-name",
+      ]);
 
-    //   // Try batch with a statement that will fail due to unique constraint
-    //   try {
-    //     await db.batch([
-    //       {
-    //         sql: "INSERT INTO test_table (name) VALUES (?);",
-    //         params: ["batch-1"],
-    //       },
-    //       {
-    //         sql: "INSERT INTO test_table (name) VALUES (?);",
-    //         params: ["unique-name"],
-    //       }, // This will fail
-    //       {
-    //         sql: "INSERT INTO test_table (name) VALUES (?);",
-    //         params: ["batch-3"],
-    //       },
-    //     ]);
+      // Try batch with a statement that will fail due to unique constraint
+      try {
+        await db.batch([
+          {
+            sql: "INSERT INTO test_table (name) VALUES (?);",
+            params: ["batch-1"],
+          },
+          {
+            sql: "INSERT INTO test_table (name) VALUES (?);",
+            params: ["unique-name"],
+          }, // This will fail
+          {
+            sql: "INSERT INTO test_table (name) VALUES (?);",
+            params: ["batch-3"],
+          },
+        ]);
 
-    //     // Should have thrown
-    //     expect(true).toBe(false);
-    //   } catch (err) {
-    //     expect(err).toBeInstanceOf(DatabaseConstraintError);
-    //   }
+        // Should have thrown
+        expect(true).toBe(false);
+      } catch (err) {
+        expect(err).toBeInstanceOf(DatabaseConstraintError);
+      }
 
-    //   // Only the initial insert should be in the database due to transaction rollback
-    //   const queryResult = await db.execute("SELECT COUNT(*) FROM test_table;");
-    //   expect(queryResult.rows[0][0]).toBe(1);
-    // });
+      // Only the initial insert should be in the database due to transaction rollback
+      const queryResult = await db.execute("SELECT COUNT(*) FROM test_table;");
+      expect(queryResult.rows[0][0]).toBe(1);
+    });
 
     test("should execute multiple SQL statements", async () => {
       const storage = new FileSystemDatabaseStorage(tempDir);
