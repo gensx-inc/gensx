@@ -12,7 +12,7 @@ npm install @gensx/storage
 
 - **Blob Storage**: Store and retrieve unstructured data like JSON, text, or binary data
 - **Database Storage**: Create and query SQL databases
-- **Search Storage** : Create and query vector search namespaces along with full text search
+- **Search Storage**: Create and query vector search namespaces along with full text search
 
 ## Blob Storage
 
