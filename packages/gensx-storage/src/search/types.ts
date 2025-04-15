@@ -232,6 +232,13 @@ export interface SearchStorage {
   deleteNamespace(name: string): Promise<DeleteNamespaceResult>;
 
   /**
+   * Check if a namespace exists
+   * @param name The namespace name
+   * @returns Promise that resolves to true if the namespace exists
+   */
+  namespaceExists(name: string): Promise<boolean>;
+
+  /**
    * Ensure a namespace exists
    * @param name The namespace name
    * @returns Promise with the ensure result
@@ -242,14 +249,4 @@ export interface SearchStorage {
    * Check if a namespace has been ensured
    */
   hasEnsuredNamespace(name: string): boolean;
-}
-
-/**
- * Provider props for cloud vector storage
- */
-export interface SearchProviderProps {
-  /**
-   * Default prefix for all namespaces
-   */
-  defaultPrefix?: string;
 }

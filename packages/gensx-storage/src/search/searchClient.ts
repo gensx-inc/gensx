@@ -13,12 +13,8 @@ import {
 export class SearchClient {
   private storage: SearchStorage;
 
-  /**
-   * Create a new SearchClient
-   * @param defaultPrefix Optional prefix for all namespaces
-   */
-  constructor(defaultPrefix?: string) {
-    this.storage = new SearchStorage(defaultPrefix);
+  constructor() {
+    this.storage = new SearchStorage();
   }
 
   /**
@@ -58,5 +54,14 @@ export class SearchClient {
    */
   async deleteNamespace(name: string): Promise<DeleteNamespaceResult> {
     return this.storage.deleteNamespace(name);
+  }
+
+  /**
+   * Check if a namespace exists
+   * @param name The namespace name
+   * @returns A Promise resolving to a boolean indicating if the namespace exists
+   */
+  async namespaceExists(name: string): Promise<boolean> {
+    return this.storage.namespaceExists(name);
   }
 }

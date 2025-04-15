@@ -9,7 +9,6 @@ import {
   DeleteNamespaceResult,
   EnsureNamespaceResult,
   Namespace,
-  SearchProviderProps,
   SearchStorage,
 } from "../../src/search/types.js";
 
@@ -83,12 +82,8 @@ suite("SearchProvider", () => {
       return null;
     });
 
-    const props: SearchProviderProps = {
-      defaultPrefix: "test-prefix",
-    };
-
     await gensx.execute(
-      <SearchProvider {...props}>
+      <SearchProvider>
         <TestComponent />
       </SearchProvider>,
     );
@@ -159,7 +154,7 @@ suite("SearchProvider", () => {
     );
 
     await gensx.execute(
-      <SearchProvider defaultPrefix="test-prefix">
+      <SearchProvider>
         <TestComponent />
       </SearchProvider>,
     );
@@ -170,7 +165,7 @@ suite("SearchProvider", () => {
 
     // Verify the namespace properties
     if (capturedNamespace) {
-      expect(capturedNamespace.namespaceId).toBe("test-prefix/test-search-db");
+      expect(capturedNamespace.namespaceId).toBe("test-search-db");
     }
 
     // Get the storage instance to verify caching
@@ -187,43 +182,12 @@ suite("SearchProvider", () => {
     );
 
     await gensx.execute(
-      <SearchProvider defaultPrefix="test-prefix">
+      <SearchProvider>
         <StorageCheckComponent />
       </SearchProvider>,
     );
 
     // Verify the namespace was cached in the storage
     expect(storageInstance!.hasEnsuredNamespace("test-search-db")).toBe(true);
-  });
-
-  test("defaultPrefix is used when provided", async () => {
-    let contextProvided = false;
-    let capturedStorage: SearchStorage | undefined;
-    const NestedComponent = gensx.Component<{}, null>("NestedComponent", () => {
-      const context = gensx.useContext(SearchContext);
-      if (context) {
-        contextProvided = true;
-        capturedStorage = context;
-      }
-      return null;
-    });
-
-    const ParentComponent = gensx.Component<{}, null>("ParentComponent", () => {
-      return <NestedComponent />;
-    });
-
-    const props: SearchProviderProps = {
-      defaultPrefix: "test-prefix",
-    };
-
-    await gensx.execute(
-      <SearchProvider {...props}>
-        <ParentComponent />
-      </SearchProvider>,
-    );
-
-    expect(contextProvided).toBe(true);
-    expect(capturedStorage).toBeDefined();
-    expect(capturedStorage).toHaveProperty("defaultPrefix", "test-prefix");
   });
 });
