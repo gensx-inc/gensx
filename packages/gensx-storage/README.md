@@ -107,6 +107,19 @@ await blob.getMetadata(); // Get metadata
 await blob.updateMetadata({ key: "value" }); // Update metadata
 ```
 
+### BlobClient
+
+The `BlobClient` can be used in native TypeScript/JavaScript code (outside of JSX) to manage blob storage programmatically. This is useful for scripts, migrations, or any non-component logic.
+
+```ts
+import { BlobClient } from "@gensx/storage";
+
+const client = new BlobClient({ kind: "filesystem", rootDir: "/tmp/storage" });
+const blob = client.getBlob("my-data");
+await blob.putString("hello world");
+const value = await blob.getString();
+```
+
 ## Database Storage
 
 ### Example
@@ -192,6 +205,21 @@ await db.getInfo(); // Get database info
 await db.close(); // Close connection
 ```
 
+### DatabaseClient
+
+The `DatabaseClient` can be used in native TypeScript/JavaScript code (outside of JSX) to manage SQL databases programmatically. This is useful for scripts, migrations, or any non-component logic.
+
+```ts
+import { DatabaseClient } from "@gensx/storage";
+
+const client = new DatabaseClient({
+  kind: "filesystem",
+  rootDir: "/tmp/database-storage",
+});
+const db = await client.getDatabase("my-database");
+await db.execute("CREATE TABLE IF NOT EXISTS users (name TEXT, age INTEGER)");
+```
+
 ## Search Storage
 
 ### Example
@@ -253,4 +281,16 @@ await namespace.deleteByFilter({ filters: { ... } }); // Delete by filter
 await namespace.getMetadata(); // Get namespace metadata
 await namespace.getSchema(); // Get schema
 await namespace.updateSchema({ schema: { ... } }); // Update schema
+```
+
+### SearchClient
+
+The `SearchClient` can be used in native TypeScript/JavaScript code (outside of JSX) to manage vector search namespaces programmatically. This is useful for scripts, migrations, or any non-component logic.
+
+```ts
+import { SearchClient } from "@gensx/storage";
+
+const client = new SearchClient();
+const namespace = await client.getNamespace("my-namespace");
+const results = await namespace.query({ vector: [0.1, 0.2, 0.3], topK: 3 });
 ```
