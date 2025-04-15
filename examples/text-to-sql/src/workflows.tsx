@@ -73,7 +73,7 @@ const DatabaseWorkflowComponent = gensx.Component<
   DatabaseWorkflowProps,
   string
 >("DatabaseWorkflowComponent", ({ question }) => (
-  <DatabaseProvider kind="cloud">
+  <DatabaseProvider>
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <SqlCopilot question={question} />
     </OpenAIProvider>

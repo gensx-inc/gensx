@@ -1,5 +1,3 @@
-// File: packages/gensx-storage/src/search/client.ts
-
 import { SearchStorage } from "./remote.js";
 import {
   DeleteNamespaceResult,
