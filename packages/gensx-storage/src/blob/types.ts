@@ -117,6 +117,13 @@ export interface BlobOptions {
 }
 
 /**
+ * Result of deleting a blob
+ */
+export interface DeleteBlobResult {
+  deleted: boolean;
+}
+
+/**
  * A response from the API
  */
 export interface BlobAPIResponse<T> {
@@ -261,6 +268,16 @@ export interface BlobStorage {
    * List all blobs with the given prefix
    */
   listBlobs(prefix?: string): Promise<string[]>;
+
+  /**
+   * Check if a blob exists
+   */
+  blobExists(key: string): Promise<boolean>;
+
+  /**
+   * Delete a blob
+   */
+  deleteBlob(key: string): Promise<DeleteBlobResult>;
 }
 
 /**

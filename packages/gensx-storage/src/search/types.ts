@@ -88,20 +88,6 @@ export type Schema = Record<
   {
     type?: SchemaType;
     filterable?: boolean;
-    /**
-     * @deprecated use `fullTextSearch` instead
-     */
-    bm25?:
-      | boolean
-      | Partial<{
-          k1: number;
-          b: number;
-          language: string;
-          stemming: boolean;
-          removeStopwords: boolean;
-          caseSensitive: boolean;
-          tokenizer: string;
-        }>;
     fullTextSearch?:
       | boolean
       | Partial<{
@@ -244,13 +230,6 @@ export interface SearchStorage {
    * @returns Promise with the delete result
    */
   deleteNamespace(name: string): Promise<DeleteNamespaceResult>;
-
-  /**
-   * Check if a namespace exists
-   * @param name The namespace name
-   * @returns Promise that resolves to true if the namespace exists
-   */
-  namespaceExists(name: string): Promise<boolean>;
 
   /**
    * Ensure a namespace exists
