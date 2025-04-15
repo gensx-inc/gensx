@@ -8,8 +8,6 @@ import {
 import { SearchProvider, useSearch } from "@gensx/storage";
 import { z } from "zod";
 
-import { DataIngestionWorkflow } from "./data-ingestion.js";
-
 // Define the query tool schema
 const querySchema = z.object({
   query: z.string().describe("The text query to search for"),
@@ -79,4 +77,4 @@ const RagWorkflowComponent = gensx.Component<RagWorkflowProps, string>(
 // Create the workflow
 const RagWorkflow = gensx.Workflow("RagWorkflow", RagWorkflowComponent);
 
-export { RagWorkflow, DataIngestionWorkflow };
+export { RagWorkflow };
