@@ -2,21 +2,17 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { checkProjectExists } from "../../models/projects.js";
-import { validateAndSelectEnvironment } from "../../utils/environment-config.js";
+import { getSelectedEnvironment } from "../../utils/environment-config.js";
 import { readProjectConfig } from "../../utils/project-config.js";
 
-interface SelectOptions {
+interface ShowOptions {
   project?: string;
 }
 
-export type { SelectOptions };
+export type { ShowOptions };
 
-export async function handleSelectEnvironment(
-  name: string,
-  options: SelectOptions,
-) {
+export async function handleShowEnvironment(options: ShowOptions) {
   const spinner = ora();
-  const environmentName = name;
 
   let projectName = options.project;
   if (!projectName) {
@@ -42,25 +38,22 @@ export async function handleSelectEnvironment(
   }
 
   spinner.start(
-    `Setting ${pc.cyan(environmentName)} as the active environment for project ${pc.cyan(projectName)}...`,
+    `Getting active environment for project ${pc.cyan(projectName)}...`,
   );
 
   try {
-    const success = await validateAndSelectEnvironment(
-      projectName,
-      environmentName,
-    );
+    const selectedEnvironment = await getSelectedEnvironment(projectName);
 
-    if (success) {
+    if (selectedEnvironment) {
       spinner.succeed(
-        `Environment ${pc.cyan(environmentName)} is now active for project ${pc.cyan(projectName)}`,
+        `Active environment for project ${pc.cyan(projectName)} is ${pc.green(selectedEnvironment)}`,
       );
     } else {
-      spinner.fail(
-        `Environment ${pc.cyan(environmentName)} does not exist in project ${pc.cyan(projectName)}`,
+      spinner.info(
+        `No active environment set for project ${pc.cyan(projectName)}`,
       );
     }
   } catch (error) {
-    spinner.fail(`Failed to select environment: ${String(error)}`);
+    spinner.fail(`Failed to get active environment: ${String(error)}`);
   }
 }

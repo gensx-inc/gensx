@@ -4,6 +4,9 @@ import { build, BuildOptions } from "./commands/build.js";
 import { deploy } from "./commands/deploy.js";
 import { handleCreateEnvironment } from "./commands/environment/create.js";
 import { handleListEnvironments } from "./commands/environment/list.js";
+import { handleSelectEnvironment } from "./commands/environment/select.js";
+import { handleShowEnvironment } from "./commands/environment/show.js";
+import { handleUnselectEnvironment } from "./commands/environment/unselect.js";
 import { login } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
 import { runWorkflow } from "./commands/run.js";
@@ -130,28 +133,19 @@ export async function runCLI() {
       .description("Select an environment as active")
       .argument("<name>", "Name of the environment to select")
       .option("-p, --project <name>", "Project name")
-      .action((name) => {
-        console.info(`Selecting environment: ${name}`);
-        // Implementation will go here
-      });
+      .action(handleSelectEnvironment);
 
     environmentCommand
       .command("unselect")
       .description("Unselect an environment")
       .option("-p, --project <name>", "Project name")
-      .action(() => {
-        console.info(`Unselecting environment`);
-        // Implementation will go here
-      });
+      .action(handleUnselectEnvironment);
 
     environmentCommand
       .command("show")
       .description("Get the current environment")
       .option("-p, --project <name>", "Project name")
-      .action(() => {
-        console.info("Getting current environment details");
-        // Implementation will go here
-      });
+      .action(handleShowEnvironment);
   }
 
   await program.parseAsync();
