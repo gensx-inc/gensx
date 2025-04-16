@@ -12,6 +12,7 @@ import { build } from "./build.js";
 interface DeployOptions {
   project?: string;
   env?: string[];
+  environment?: string;
 }
 
 interface DeploymentResponse {
@@ -45,8 +46,9 @@ export async function deploy(file: string, options: DeployOptions) {
     }
 
     let projectName = options.project;
+    let environmentName = options.environment;
+    const projectConfig = await readProjectConfig(process.cwd());
     if (!projectName) {
-      const projectConfig = await readProjectConfig(process.cwd());
       if (projectConfig?.projectName) {
         projectName = projectConfig.projectName;
         spinner.info(
@@ -56,6 +58,20 @@ export async function deploy(file: string, options: DeployOptions) {
         spinner.fail("No project name provided");
         throw new Error(
           "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
+        );
+      }
+    }
+
+    if (!environmentName) {
+      if (projectConfig?.environmentName) {
+        environmentName = projectConfig.environmentName;
+        spinner.info(
+          `Using environment name from gensx.yaml: ${pc.cyan(environmentName)}`,
+        );
+      } else {
+        environmentName = "default";
+        spinner.info(
+          "No environment name found; using 'default'. Either specify --environment or include 'environmentName' in your gensx.yaml file.",
         );
       }
     }
@@ -70,13 +86,13 @@ export async function deploy(file: string, options: DeployOptions) {
 
     // Use the project-specific deploy endpoint
     const url = new URL(
-      `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/deploy`,
+      `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environmentName)}/deploy`,
       auth.apiBaseUrl,
     );
 
     // 4. Deploy project to GenSX Cloud
     spinner.start(
-      `Deploying project to GenSX Cloud (Project: ${pc.cyan(projectName)})`,
+      `Deploying project ${pc.cyan(projectName)} to GenSX Cloud (Environment: ${pc.cyan(environmentName)})`,
     );
 
     const response = await axios.post(url.toString(), form, {

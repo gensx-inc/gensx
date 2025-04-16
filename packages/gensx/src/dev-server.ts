@@ -98,6 +98,7 @@ export class GensxServer {
   private server: ReturnType<typeof serve> | null = null;
   private org = "local";
   private project: string;
+  private environment: string;
   private ajv: Ajv;
 
   /**
@@ -107,6 +108,7 @@ export class GensxServer {
     workflows: Record<string, unknown> = {},
     org: string,
     project: string,
+    environment: string,
     options: ServerOptions = {},
     schemas: Record<string, { input: Definition; output: Definition }> = {},
   ) {
@@ -119,6 +121,7 @@ export class GensxServer {
     this.ajv = new Ajv();
     this.org = org;
     this.project = project;
+    this.environment = environment;
 
     // Register all workflows from the input
     this.registerWorkflows(workflows);
@@ -270,46 +273,63 @@ export class GensxServer {
     this.app.use("*", cors());
 
     // Add organization and project validation middleware
-    this.app.use(`/org/:orgName/projects/:projectName/*`, async (c, next) => {
-      const orgName = c.req.param("orgName");
-      const projectName = c.req.param("projectName");
+    this.app.use(
+      `/org/:orgName/projects/:projectName/environments/:environmentName/*`,
+      async (c, next) => {
+        const orgName = c.req.param("orgName");
+        const projectName = c.req.param("projectName");
+        const environmentName = c.req.param("environmentName");
 
-      if (orgName !== this.org) {
-        return c.json(
-          {
-            status: "error",
-            error: `Organization '${orgName}' not found`,
-          },
-          404,
-        );
-      }
+        if (orgName !== this.org) {
+          return c.json(
+            {
+              status: "error",
+              error: `Organization '${orgName}' not found`,
+            },
+            404,
+          );
+        }
 
-      if (projectName !== this.project) {
-        return c.json(
-          {
-            status: "error",
-            error: `Project '${projectName}' not found`,
-          },
-          404,
-        );
-      }
+        if (projectName !== this.project) {
+          return c.json(
+            {
+              status: "error",
+              error: `Project '${projectName}' not found`,
+            },
+            404,
+          );
+        }
 
-      await next();
-    });
+        if (environmentName !== this.environment) {
+          return c.json(
+            {
+              status: "error",
+              error: `Environment '${environmentName}' not found`,
+            },
+            404,
+          );
+        }
+
+        await next();
+      },
+    );
 
     // List all workflows
-    this.app.get(`/org/${this.org}/projects/${this.project}/workflows`, (c) => {
-      return c.json({
-        status: "ok",
-        data: {
-          workflows: this.getWorkflows(),
-        },
-      });
-    });
+    this.app.get(
+      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows`,
+      (c) => {
+        return c.json({
+          status: "ok",
+          data: {
+            workflows: this.getWorkflows(),
+          },
+        });
+      },
+    );
 
     // Get a single workflow by name
     this.app.get(
-      `/org/${this.org}/projects/${this.project}/workflows/:workflowName`,
+      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName`,
       (c) => {
         const workflowName = c.req.param("workflowName");
         this.getWorkflowOrThrow(workflowName);
@@ -328,7 +348,7 @@ export class GensxServer {
             outputSchema: schema?.output ?? { type: "object", properties: {} },
             createdAt: now,
             updatedAt: now,
-            url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${this.project}/workflows/${workflowName}`,
+            url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflowName}`,
           },
         });
       },
@@ -336,7 +356,7 @@ export class GensxServer {
 
     // Start workflow execution asynchronously
     this.app.post(
-      `/org/${this.org}/projects/${this.project}/workflows/:workflowName/start`,
+      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName/start`,
       async (c) => {
         const workflowName = c.req.param("workflowName");
         // Will throw NotFoundError if workflow doesn't exist
@@ -410,7 +430,7 @@ export class GensxServer {
 
     // Get execution status
     this.app.get(
-      `/org/${this.org}/projects/${this.project}/workflows/:workflowName/executions/:executionId`,
+      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName/executions/:executionId`,
       (c) => {
         const workflowName = c.req.param("workflowName");
         const executionId = c.req.param("executionId");
@@ -454,7 +474,7 @@ export class GensxServer {
 
     // List executions for a workflow
     this.app.get(
-      `/org/${this.org}/projects/${this.project}/workflows/:workflowName/executions`,
+      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName/executions`,
       (c) => {
         const workflowName = c.req.param("workflowName");
         // Will throw NotFoundError if workflow doesn't exist
@@ -486,7 +506,7 @@ export class GensxServer {
 
     // Execute workflow endpoint
     this.app.post(
-      `/org/${this.org}/projects/${this.project}/workflows/:workflowName`,
+      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName`,
       async (c) => {
         const workflowName = c.req.param("workflowName");
         // Will throw NotFoundError if workflow doesn't exist
@@ -674,28 +694,29 @@ export class GensxServer {
         })),
       ],
       paths: {
-        [`/org/${this.org}/projects/${this.project}/workflows`]: {
-          get: {
-            tags: ["Workflows"],
-            summary: "List all workflows",
-            responses: {
-              "200": {
-                description: "List of available workflows",
-                content: {
-                  "application/json": {
-                    example: {
-                      status: "ok",
-                      data: { workflows },
+        [`/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows`]:
+          {
+            get: {
+              tags: ["Workflows"],
+              summary: "List all workflows",
+              responses: {
+                "200": {
+                  description: "List of available workflows",
+                  content: {
+                    "application/json": {
+                      example: {
+                        status: "ok",
+                        data: { workflows },
+                      },
                     },
                   },
                 },
               },
             },
           },
-        },
         ...Object.fromEntries(
           workflows.map((workflow) => [
-            `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}`,
+            `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflow.name}`,
             {
               get: {
                 tags: [workflow.name],
@@ -807,7 +828,7 @@ export class GensxServer {
         ),
         ...Object.fromEntries(
           workflows.map((workflow) => [
-            `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}/start`,
+            `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflow.name}/start`,
             {
               post: {
                 tags: [workflow.name],
@@ -859,7 +880,7 @@ export class GensxServer {
         ),
         ...Object.fromEntries(
           workflows.map((workflow) => [
-            `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}/executions/{executionId}`,
+            `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflow.name}/executions/{executionId}`,
             {
               get: {
                 tags: [workflow.name],
@@ -919,7 +940,7 @@ export class GensxServer {
         ),
         ...Object.fromEntries(
           workflows.map((workflow) => [
-            `/org/${this.org}/projects/${this.project}/workflows/${workflow.name}/executions`,
+            `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflow.name}/executions`,
             {
               get: {
                 tags: [workflow.name],
@@ -1092,7 +1113,7 @@ export class GensxServer {
         outputSchema: schema?.output ?? { type: "object", properties: {} },
         createdAt: now,
         updatedAt: now,
-        url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${this.project}/workflows/${name}`,
+        url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${name}`,
       };
     });
   }
@@ -1177,10 +1198,18 @@ export function createServer(
   workflows: Record<string, unknown> = {},
   org: string,
   project: string,
+  environment: string,
   options: ServerOptions = {},
   schemas: Record<string, { input: Definition; output: Definition }> = {},
 ): GensxServer {
-  return new GensxServer(workflows, org, project, options, schemas);
+  return new GensxServer(
+    workflows,
+    org,
+    project,
+    environment,
+    options,
+    schemas,
+  );
 }
 
 /**

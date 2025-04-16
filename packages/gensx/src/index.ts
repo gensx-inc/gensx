@@ -41,6 +41,7 @@ export async function runCLI() {
     .description("Start a local GenSX server")
     .argument("<file>", "File to serve")
     .option("-p, --project <name>", "Project name")
+    .option("--environment <name>", "Environment name")
     .option("-q, --quiet", "Suppress output", false)
     .action(start);
 
@@ -85,6 +86,7 @@ export async function runCLI() {
         {},
       )
       .option("-p, --project <name>", "Project name to deploy to")
+      .option("--environment <name>", "Environment name to deploy to")
       .action(deploy);
 
     program
@@ -94,6 +96,7 @@ export async function runCLI() {
       .option("-i, --input <input>", "Input to pass to the workflow")
       .option("--no-wait", "Do not wait for the workflow to finish")
       .option("-p, --project <name>", "Project name to run the workflow in")
+      .option("--environment <name>", "Environment name to run the workflow in")
       .option(
         "-o, --output <file>",
         "Output file to write the workflow result to",

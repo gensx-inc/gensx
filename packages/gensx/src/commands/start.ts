@@ -15,6 +15,7 @@ import { generateSchema } from "../utils/schema.js";
 
 interface StartOptions {
   project?: string;
+  environment?: string;
   quiet?: boolean;
 }
 
@@ -45,8 +46,9 @@ export async function start(file: string, options: StartOptions) {
 
     // 2. Get project configuration
     let projectName = options.project;
+    let environmentName = options.environment;
+    const projectConfig = await readProjectConfig(process.cwd());
     if (!projectName) {
-      const projectConfig = await readProjectConfig(process.cwd());
       if (projectConfig?.projectName) {
         projectName = projectConfig.projectName;
         spinner.info(
@@ -55,6 +57,20 @@ export async function start(file: string, options: StartOptions) {
       } else {
         throw new Error(
           "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
+        );
+      }
+    }
+
+    if (!environmentName) {
+      if (projectConfig?.environmentName) {
+        environmentName = projectConfig.environmentName;
+        spinner.info(
+          `Using environment name from gensx.yaml: ${pc.cyan(environmentName)}`,
+        );
+      } else {
+        environmentName = "default";
+        spinner.info(
+          "No environment name found; using 'default'. Either specify --environment or include 'environmentName' in your gensx.yaml file.",
         );
       }
     }
@@ -183,6 +199,7 @@ export async function start(file: string, options: StartOptions) {
           workflows,
           orgName,
           projectName ?? "", // Ensure projectName is not undefined
+          environmentName ?? "default",
           {
             port: 1337,
           },
