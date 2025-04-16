@@ -116,5 +116,4 @@ In order to resolve a complaint regarding the Site or to receive further informa
 **GenSX**  
 **Address: 600 1st Ave., Ste. 330 PMB 30368, Seattle WA, 98104**  
 **Phone: (501) 387-0843‬**  
-**Email: contact@gensx.com**  
-
+**Email: contact@gensx.com**

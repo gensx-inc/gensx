@@ -30,8 +30,8 @@ PLEASE READ THESE TERMS OF SERVICE CAREFULLY BEFORE USING THE SERVICE OFFERED BY
 
 **3.1 Fees**. Customer shall pay to GenSX the fees as set forth in each applicable Service Order (the “Fees”) and will provide accurate and updated billing contact information.
 
-**3.2 Invoicing Terms.** GenSX will invoice Customer either monthly or according to the billing frequency stated in the Service Order. Invoices are due pursuant to the corresponding Service Order. If any invoiced amount is not received by GenSX by the due date, then without limiting GenSX’s rights or remedies: (a) those charges may accrue late interest at the rate of 1.5% of the outstanding balance per month, or the maximum rate permitted by law, whichever is lower, and (b) GenSX may condition future renewals and Service Orders on shorter payment terms.  
-   
+**3.2 Invoicing Terms.** GenSX will invoice Customer either monthly or according to the billing frequency stated in the Service Order. Invoices are due pursuant to the corresponding Service Order. If any invoiced amount is not received by GenSX by the due date, then without limiting GenSX’s rights or remedies: (a) those charges may accrue late interest at the rate of 1.5% of the outstanding balance per month, or the maximum rate permitted by law, whichever is lower, and (b) GenSX may condition future renewals and Service Orders on shorter payment terms.
+
 **3.3 Taxes**. Any and all payments made by Customer in accordance with this Agreement are exclusive of any taxes that might be assessed by any jurisdiction. Customer shall pay or reimburse GenSX for all value-added, sales, use, property, and similar taxes; all customs duties, import fees, stamp duties, license fees and similar charges; and all other mandatory payments to government agencies of whatever kind, except taxes imposed on the net or gross income of GenSX. All amounts payable to GenSX under this Agreement shall be without set-off and without deduction of any taxes, levies, imposts, charges, withholdings or duties of any nature which may be levied or imposed, including without limitation, value added tax, customs duty and withholding tax.
 
 **4\. TERM AND TERMINATION**
@@ -58,9 +58,9 @@ During the term of this Agreement, either party may provide the other party with
 
 **7\. WARRANTY**
 
-**7.1 Warranty.** The Service, when used by Customer in accordance with the provisions of this Agreement and in compliance with the applicable Documentation, will perform, in all material respects, the functions described in the Documentation during the Term.  
-   
- **7.2 Exclusive Remedies.** Customer shall report to GenSX, pursuant to the notice provision of this Agreement, any breach of the warranties set forth in Section 7\. In the event of a breach of warranty by GenSX under this Agreement, Customer’s sole and exclusive remedy, and GenSX’s entire liability, shall be prompt correction of any material non-conformance in order to minimize any material adverse effect on Customer’s business.
+**7.1 Warranty.** The Service, when used by Customer in accordance with the provisions of this Agreement and in compliance with the applicable Documentation, will perform, in all material respects, the functions described in the Documentation during the Term.
+
+**7.2 Exclusive Remedies.** Customer shall report to GenSX, pursuant to the notice provision of this Agreement, any breach of the warranties set forth in Section 7\. In the event of a breach of warranty by GenSX under this Agreement, Customer’s sole and exclusive remedy, and GenSX’s entire liability, shall be prompt correction of any material non-conformance in order to minimize any material adverse effect on Customer’s business.
 
 **7.3 Disclaimer of Warranty**. GenSX does not represent or warrant that the operation of the Service (or any portion thereof) will be uninterrupted or error free, or that the Service (or any portion thereof) will operate in combination with other hardware, software, systems, or data not provided by GenSX, except as expressly specified in the applicable Documentation. GENSX MAKES NO EXPRESS OR IMPLIED REPRESENTATIONS OR WARRANTIES OF ANY KIND WITH RESPECT TO THE SERVICE (OTHER THAN AS EXPRESSLY SET FORTH IN SECTION 7.1), OR OUTPUT. GENSX IS FURNISHING THE WARRANTIES SET FORTH IN SECTION 7.1 IN LIEU OF, AND GENSX HEREBY EXPRESSLY EXCLUDES, ANY AND ALL OTHER EXPRESS OR IMPLIED REPRESENTATIONS OR WARRANTIES, WHETHER UNDER COMMON LAW, STATUTE OR OTHERWISE, INCLUDING WITHOUT LIMITATION ANY AND ALL WARRANTIES AS TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, SATISFACTORY QUALITY OR NON-INFRINGEMENT OF THIRD-PARTY RIGHTS.
 
