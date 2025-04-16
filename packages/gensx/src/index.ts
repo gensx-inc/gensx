@@ -2,6 +2,8 @@ import { Command } from "commander";
 
 import { build, BuildOptions } from "./commands/build.js";
 import { deploy } from "./commands/deploy.js";
+import { handleCreateEnvironment } from "./commands/environment/create.js";
+import { handleListEnvironments } from "./commands/environment/list.js";
 import { login } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
 import { runWorkflow } from "./commands/run.js";
@@ -103,6 +105,53 @@ export async function runCLI() {
         undefined,
       )
       .action(runWorkflow);
+
+    // Environment management commands
+    const environmentCommand = program
+      .command("environment")
+      .description("Manage GenSX environments");
+
+    environmentCommand
+      .command("create")
+      .description("Create a new environment")
+      .argument("<name>", "Name of the environment")
+      .option("-p, --project <name>", "Project name")
+      .option("--set-default", "Set as default environment", false)
+      .action(handleCreateEnvironment);
+
+    environmentCommand
+      .command("ls")
+      .description("List all environments")
+      .option("-p, --project <name>", "Project name")
+      .action(handleListEnvironments);
+
+    environmentCommand
+      .command("select")
+      .description("Select an environment as active")
+      .argument("<name>", "Name of the environment to select")
+      .option("-p, --project <name>", "Project name")
+      .action((name) => {
+        console.info(`Selecting environment: ${name}`);
+        // Implementation will go here
+      });
+
+    environmentCommand
+      .command("unselect")
+      .description("Unselect an environment")
+      .option("-p, --project <name>", "Project name")
+      .action(() => {
+        console.info(`Unselecting environment`);
+        // Implementation will go here
+      });
+
+    environmentCommand
+      .command("show")
+      .description("Get the current environment")
+      .option("-p, --project <name>", "Project name")
+      .action(() => {
+        console.info("Getting current environment details");
+        // Implementation will go here
+      });
   }
 
   await program.parseAsync();
