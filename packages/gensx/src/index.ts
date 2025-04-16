@@ -1,6 +1,5 @@
 import { Command } from "commander";
 
-import packageJson from "../package.json" with { type: "json" };
 import { build, BuildOptions } from "./commands/build.js";
 import { deploy } from "./commands/deploy.js";
 import { login } from "./commands/login.js";
@@ -8,12 +7,13 @@ import { NewCommandOptions, newProject } from "./commands/new.js";
 import { runWorkflow } from "./commands/run.js";
 import { start } from "./commands/start.js";
 import { getAuth } from "./utils/config.js";
+import { VERSION } from "./utils/user-agent.js";
 
 export async function runCLI() {
   const program = new Command()
     .name("gensx")
     .description("CLI tool for GenSX")
-    .version(packageJson.version);
+    .version(VERSION);
 
   program
     .command("login")

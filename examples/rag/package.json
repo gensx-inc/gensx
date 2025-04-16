@@ -1,12 +1,12 @@
 {
-  "name": "@examples/text-to-sql",
+  "name": "@examples/rag",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
-  "description": "Text to SQL with GenSX and the useDatabase hook",
+  "description": "Retrieval Augmented Generation with GenSX and the useSearch hook",
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./src/index.tsx",

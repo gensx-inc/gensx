@@ -128,7 +128,10 @@ export class FileSystemDatabase implements Database {
       try {
         // Execute each statement within the transaction
         for (const statement of statements) {
-          const result = await transaction.execute(statement);
+          const result = await transaction.execute({
+            sql: statement.sql,
+            args: statement.params,
+          });
 
           results.push(mapResult(result));
         }

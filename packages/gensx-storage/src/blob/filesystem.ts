@@ -16,6 +16,7 @@ import {
   BlobPermissionDeniedError,
   BlobResponse,
   BlobStorage,
+  DeleteBlobResult,
 } from "./types.js";
 
 /**
@@ -703,6 +704,35 @@ export class FileSystemBlobStorage implements BlobStorage {
       return allFiles;
     } catch (err) {
       throw handleFsError(err, "listBlobs", this.rootDir);
+    }
+  }
+
+  /**
+   * Check if a blob exists
+   * @param key The blob key
+   * @returns True if the blob exists, false otherwise
+   */
+  async blobExists(key: string): Promise<boolean> {
+    const blob = this.getBlob(key);
+    return blob.exists();
+  }
+
+  /**
+   * Delete a blob
+   * @param key The blob key
+   * @returns The result of the delete operation
+   */
+  async deleteBlob(key: string): Promise<DeleteBlobResult> {
+    try {
+      const blob = this.getBlob(key);
+      const existed = await blob.exists();
+      await blob.delete();
+      return { deleted: existed };
+    } catch (err) {
+      if (err instanceof BlobError) {
+        throw err;
+      }
+      throw handleFsError(err, "deleteBlob", this.getFullPath(key));
     }
   }
 }

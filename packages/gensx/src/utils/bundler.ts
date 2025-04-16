@@ -41,8 +41,10 @@ export async function bundleWorkflow(
       const process = spawn("docker", [
         "run",
         "--rm",
+        "--pull",
+        "always",
         "--platform",
-        "linux/amd64",
+        "linux/x86_64",
         "-v",
         `${packageJsonDir}:/app`,
         "-v",

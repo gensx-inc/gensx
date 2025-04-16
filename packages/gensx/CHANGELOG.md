@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.20](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.19...gensx-v0.3.20) (2025-04-11)
+
+
+### 🐛 Bug Fixes
+
+* Fix bundling of storage package. ([#557](https://github.com/gensx-inc/gensx/issues/557)) ([64531e9](https://github.com/gensx-inc/gensx/commit/64531e92dbedaa6859fc2afa158682bb537090b6))
+
 ## [0.3.19](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.18...gensx-v0.3.19) (2025-04-10)
 
 

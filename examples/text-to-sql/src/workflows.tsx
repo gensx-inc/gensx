@@ -3,8 +3,6 @@ import { GSXChatCompletion, GSXTool, OpenAIProvider } from "@gensx/openai";
 import { DatabaseProvider, useDatabase } from "@gensx/storage";
 import { z } from "zod";
 
-import { DataIngestionWorkflow } from "./data-ingestion.js";
-
 // Define the query tool schema
 const querySchema = z.object({
   query: z.string().describe("The SQL query to execute"),
@@ -75,7 +73,7 @@ const DatabaseWorkflowComponent = gensx.Component<
   DatabaseWorkflowProps,
   string
 >("DatabaseWorkflowComponent", ({ question }) => (
-  <DatabaseProvider kind="cloud">
+  <DatabaseProvider>
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
       <SqlCopilot question={question} />
     </OpenAIProvider>
@@ -88,4 +86,4 @@ const DatabaseWorkflow = gensx.Workflow(
   DatabaseWorkflowComponent,
 );
 
-export { DatabaseWorkflow, DataIngestionWorkflow };
+export { DatabaseWorkflow };

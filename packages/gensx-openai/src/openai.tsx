@@ -8,6 +8,10 @@ import {
   ChatCompletionTool,
 } from "openai/resources/chat/completions";
 import {
+  CreateEmbeddingResponse,
+  EmbeddingCreateParams,
+} from "openai/resources/embeddings.mjs";
+import {
   Response,
   ResponseCreateParamsNonStreaming,
   ResponseCreateParamsStreaming,
@@ -67,4 +71,12 @@ export const OpenAIResponses = gensx.Component<
 >("OpenAIResponses", async (props) => {
   const context = gensx.useContext(OpenAIContext);
   return context.client.responses.create(props);
+});
+
+export const OpenAIEmbedding = gensx.Component<
+  EmbeddingCreateParams,
+  CreateEmbeddingResponse
+>("OpenAIEmbedding", (props) => {
+  const context = gensx.useContext(OpenAIContext);
+  return context.client.embeddings.create(props);
 });

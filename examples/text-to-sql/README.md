@@ -2,7 +2,7 @@
 
 This example demonstrates how to use GenSX's `useDatabase` hook to create and query a SQL database. It's composed of two main workflows:
 
-- `DataIngestionWorkflow`: Initializes a database with a schema and inserts data into tables.
+- `initializeBaseballDatabase()`: Initializes a database with a schema and inserts data into tables.
 - `DatabaseWorkflow`: Builds a simple agent with a query tool that can answer questions about the data in the database.
 
 ## Getting Started
@@ -26,4 +26,4 @@ This example demonstrates how to use GenSX's `useDatabase` hook to create and qu
    pnpm start "Who has the highest batting average?"
    ```
 
-When you run the application, the `DataIngestionWorkflow` will be executed first and create/populate the database if it doesn't exist. Then, the `DatabaseWorkflow` will be executed and the will use the agent and database to answer the question.
+When you run the application, the `initializeBaseballDatabase()` function will be called first to create/populate the database if it doesn't exist. Then, the `DatabaseWorkflow` will be executed and the will use the agent and database to answer the question.
