@@ -25,7 +25,7 @@ async function getProjectsConfigDir(): Promise<string> {
 /**
  * Get the path to a project's environment config file
  */
-async function getProjectConfigPath(projectName: string): Promise<string> {
+async function getProjectsConfigPath(projectName: string): Promise<string> {
   const projectsDir = await getProjectsConfigDir();
   return path.join(projectsDir, `${projectName}.json`);
 }
@@ -37,7 +37,7 @@ export async function getSelectedEnvironment(
   projectName: string,
 ): Promise<string | null> {
   try {
-    const configPath = await getProjectConfigPath(projectName);
+    const configPath = await getProjectsConfigPath(projectName);
     const content = await readFile(configPath, "utf-8");
     const config = JSON.parse(content) as ProjectEnvironmentConfig;
     return config.selectedEnvironment ?? null;
@@ -53,7 +53,7 @@ export async function selectEnvironment(
   projectName: string,
   environmentName: string | null,
 ): Promise<void> {
-  const configPath = await getProjectConfigPath(projectName);
+  const configPath = await getProjectsConfigPath(projectName);
 
   let config: ProjectEnvironmentConfig = {};
 

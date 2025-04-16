@@ -2,7 +2,7 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { checkProjectExists } from "../../models/projects.js";
-import { validateAndSelectEnvironment } from "../../utils/environment-config.js";
+import { validateAndSelectEnvironment } from "../../utils/env-config.js";
 import { readProjectConfig } from "../../utils/project-config.js";
 
 interface SelectOptions {
