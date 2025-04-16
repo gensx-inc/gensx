@@ -138,7 +138,9 @@ suite("GenSX Dev Server", () => {
 
   it("should start server with correct port", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project", "test-env");
+    server = createServer(workflows, "test-org", "test-project", "test-env", {
+      port: 4000,
+    });
 
     server.start();
 
@@ -203,7 +205,7 @@ suite("GenSX Dev Server", () => {
 
     const registeredWorkflows = server.getWorkflows();
     expect(registeredWorkflows[0].url).toBe(
-      "http://localhost:3000/org/test-org/projects/test-project/environments/test-env/workflows/testWorkflow",
+      "http://localhost:1337/org/test-org/projects/test-project/environments/test-env/workflows/testWorkflow",
     );
   });
 
