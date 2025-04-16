@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.23](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.22...gensx-openai-v0.1.23) (2025-04-16)
+
+
+### ✨ New Features
+
+* add SearchProvider and useSearch hook ([#567](https://github.com/gensx-inc/gensx/issues/567)) ([0be7d51](https://github.com/gensx-inc/gensx/commit/0be7d512d6f073c4299de661eda54954e8696812))
+
 ## [0.1.22](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.21...gensx-openai-v0.1.22) (2025-04-10)
 
 

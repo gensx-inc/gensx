@@ -20,6 +20,8 @@ interface DeploymentResponse {
     id: string;
     projectId: string;
     projectName: string;
+    environmentId: string;
+    environmentName: string;
     deploymentId: string;
     bundleSize: number;
     workflows: {
@@ -96,11 +98,15 @@ export async function deploy(file: string, options: DeployOptions) {
 
     spinner.succeed();
 
+    const deploymentIdOption = deployment.data.deploymentId
+      ? `deploymentId=${deployment.data.deploymentId}`
+      : "";
+
     // 5. Show success message with deployment URL
     console.info(`
 ${pc.green("✔")} Successfully deployed project to GenSX Cloud
 
-${pc.bold("Dashboard:")} ${pc.cyan(`${auth.consoleBaseUrl}/${auth.org}/${deployment.data.projectName}/deployments/${deployment.data.deploymentId}`)}
+${pc.bold("Dashboard:")} ${pc.cyan(`${auth.consoleBaseUrl}/${auth.org}/${deployment.data.projectName}/${deployment.data.environmentName}/workflows?${deploymentIdOption}`)}
 
 ${pc.bold("Available workflows:")}
 ${deployment.data.workflows

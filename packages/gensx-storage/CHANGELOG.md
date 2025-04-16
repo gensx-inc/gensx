@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.4](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.3...gensx-storage-v0.0.4) (2025-04-16)
+
+
+### ✨ New Features
+
+* add SearchProvider and useSearch hook ([#567](https://github.com/gensx-inc/gensx/issues/567)) ([0be7d51](https://github.com/gensx-inc/gensx/commit/0be7d512d6f073c4299de661eda54954e8696812))
+* adding native ts/js support for storage APIs ([#569](https://github.com/gensx-inc/gensx/issues/569)) ([f70d657](https://github.com/gensx-inc/gensx/commit/f70d6572a7b99a9247fc77f75ea1c1e7f7b90fbd))
+
+
+### 🐛 Bug Fixes
+
+* fixing bug in db.batch() for filesystem and adding tests ([#572](https://github.com/gensx-inc/gensx/issues/572)) ([3c5593a](https://github.com/gensx-inc/gensx/commit/3c5593a662a5f0ffda4d6b3a88dcde9e6a16f40c))
+
 ## [0.0.3](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.2...gensx-storage-v0.0.3) (2025-04-10)
 
 
