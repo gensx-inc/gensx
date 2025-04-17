@@ -17,6 +17,8 @@ import {
   BlobResponse,
   BlobStorage,
   DeleteBlobResult,
+  ListBlobsOptions,
+  ListBlobsResponse,
 } from "./types.js";
 
 /**
@@ -69,6 +71,35 @@ function calculateEtag(content: string | Buffer): string {
  */
 function getMetadataPath(filePath: string): string {
   return `${filePath}.metadata.json`;
+}
+
+/**
+ * Convert string to URL-safe base64
+ * @param str The string to encode
+ * @returns URL-safe base64 encoded string
+ */
+function toBase64UrlSafe(str: string): string {
+  return Buffer.from(str)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
+
+/**
+ * Convert URL-safe base64 to string
+ * @param base64 The URL-safe base64 string to decode
+ * @returns Decoded string
+ */
+function fromBase64UrlSafe(base64: string): string {
+  // Add back padding if needed
+  const pad = base64.length % 4;
+  const padded = pad ? base64 + "=".repeat(4 - pad) : base64;
+
+  return Buffer.from(
+    padded.replace(/-/g, "+").replace(/_/g, "/"),
+    "base64",
+  ).toString("utf-8");
 }
 
 /**
@@ -631,16 +662,16 @@ export class FileSystemBlobStorage implements BlobStorage {
   }
 
   /**
-   * List all blobs with the given prefix
-   * @param prefix Optional prefix to filter blobs
-   * @returns An array of blob keys
+   * List all blobs with optional pagination
+   * @param options Options for listing blobs including prefix and pagination
+   * @returns A paginated list of blob keys
    * @throws BlobError if there's an error listing blobs
    */
-  async listBlobs(prefix?: string): Promise<string[]> {
+  async listBlobs(options?: ListBlobsOptions): Promise<ListBlobsResponse> {
     try {
       // Normalize prefixes by removing trailing slashes
       const normalizedDefaultPrefix = this.defaultPrefix?.replace(/\/$/, "");
-      const normalizedPrefix = prefix?.replace(/\/$/, "");
+      const normalizedPrefix = options?.prefix?.replace(/\/$/, "");
 
       // Build the search prefix
       const searchPrefix = normalizedDefaultPrefix
@@ -656,7 +687,7 @@ export class FileSystemBlobStorage implements BlobStorage {
         await fs.access(searchPath);
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-          return []; // Directory doesn't exist
+          return { keys: [], nextCursor: null }; // Directory doesn't exist
         }
         throw handleFsError(err, "listBlobs:access", searchPath);
       }
@@ -681,14 +712,14 @@ export class FileSystemBlobStorage implements BlobStorage {
           }
         }
 
-        return files;
+        return files.sort(); // Sort for consistent pagination
       };
 
-      const allFiles = await listFilesRecursively(searchPath, this.rootDir);
+      let allFiles = await listFilesRecursively(searchPath, this.rootDir);
 
       // Remove default prefix from results if it exists
       if (normalizedDefaultPrefix) {
-        return allFiles
+        allFiles = allFiles
           .filter(
             (file) =>
               file === normalizedDefaultPrefix ||
@@ -701,7 +732,29 @@ export class FileSystemBlobStorage implements BlobStorage {
           );
       }
 
-      return allFiles;
+      // Handle cursor-based pagination
+      let startIndex = 0;
+      if (options?.cursor) {
+        const decodedCursor = fromBase64UrlSafe(options.cursor);
+        startIndex = allFiles.findIndex((file) => file > decodedCursor);
+        if (startIndex === -1) startIndex = allFiles.length;
+      }
+
+      // Handle limit
+      const limit = options?.limit ?? 100; // Default limit of 100
+      const endIndex = Math.min(startIndex + limit, allFiles.length);
+      const items = allFiles.slice(startIndex, endIndex);
+
+      // Generate next cursor
+      const nextCursor =
+        endIndex < allFiles.length
+          ? toBase64UrlSafe(allFiles[endIndex - 1])
+          : null;
+
+      return {
+        keys: items,
+        nextCursor,
+      };
     } catch (err) {
       throw handleFsError(err, "listBlobs", this.rootDir);
     }

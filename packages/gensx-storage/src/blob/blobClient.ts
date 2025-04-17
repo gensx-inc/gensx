@@ -7,6 +7,8 @@ import {
   BlobProviderProps,
   BlobStorage,
   DeleteBlobResult,
+  ListBlobsOptions,
+  ListBlobsResponse,
 } from "./types.js";
 
 /**
@@ -46,12 +48,12 @@ export class BlobClient {
   }
 
   /**
-   * List all blobs with an optional prefix
-   * @param prefix Optional prefix to filter blobs
-   * @returns A Promise resolving to an array of blob keys
+   * List all blobs with optional filtering and pagination
+   * @param options Optional listing options including prefix, limit, and cursor for pagination
+   * @returns A Promise resolving to the list response containing keys and pagination info
    */
-  async listBlobs(prefix?: string): Promise<string[]> {
-    return this.storage.listBlobs(prefix);
+  async listBlobs(options?: ListBlobsOptions): Promise<ListBlobsResponse> {
+    return this.storage.listBlobs(options);
   }
 
   /**

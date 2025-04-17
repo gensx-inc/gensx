@@ -15,6 +15,8 @@ import {
   BlobResponse,
   BlobStorage,
   DeleteBlobResult,
+  ListBlobsOptions,
+  ListBlobsResponse,
 } from "./types.js";
 
 /**
@@ -571,11 +573,11 @@ export class RemoteBlobStorage implements BlobStorage {
     return new RemoteBlob<T>(fullKey, this.apiBaseUrl, this.apiKey, this.org);
   }
 
-  async listBlobs(prefix?: string): Promise<string[]> {
+  async listBlobs(options?: ListBlobsOptions): Promise<ListBlobsResponse> {
     try {
       // Normalize prefixes by removing trailing slashes
       const normalizedDefaultPrefix = this.defaultPrefix?.replace(/\/$/, "");
-      const normalizedPrefix = prefix?.replace(/\/$/, "");
+      const normalizedPrefix = options?.prefix?.replace(/\/$/, "");
 
       // Build the search prefix
       const searchPrefix = normalizedDefaultPrefix
@@ -584,8 +586,21 @@ export class RemoteBlobStorage implements BlobStorage {
           : normalizedDefaultPrefix
         : (normalizedPrefix ?? "");
 
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (searchPrefix) {
+        queryParams.append("prefix", searchPrefix);
+      }
+
+      // Default to 100 documents if no limit is specified
+      queryParams.append("limit", (options?.limit ?? 100).toString());
+
+      if (options?.cursor) {
+        queryParams.append("cursor", options.cursor);
+      }
+
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/blob?prefix=${encodeURIComponent(searchPrefix)}`,
+        `${this.apiBaseUrl}/org/${this.org}/blob?${queryParams.toString()}`,
         {
           method: "GET",
           headers: {
@@ -598,12 +613,27 @@ export class RemoteBlobStorage implements BlobStorage {
         handleApiError(response, "listBlobs");
       }
 
-      const data = (await response.json()) as { keys: string[] };
-      const keys = data.keys.map((key) => decodeURIComponent(key));
+      const apiResponse = (await response.json()) as BlobAPIResponse<{
+        keys: string[];
+        nextCursor: string | null;
+      }>;
+
+      if (apiResponse.status === "error") {
+        throw new BlobInternalError(
+          `API error: ${apiResponse.error ?? "Unknown error"}`,
+        );
+      }
+
+      if (!apiResponse.data) {
+        return { keys: [], nextCursor: null };
+      }
+
+      const keys = apiResponse.data.keys.map((key) => decodeURIComponent(key));
 
       // Remove default prefix from results if it exists
+      let items: string[];
       if (normalizedDefaultPrefix) {
-        return keys
+        items = keys
           .filter(
             (key) =>
               key === normalizedDefaultPrefix ||
@@ -614,9 +644,14 @@ export class RemoteBlobStorage implements BlobStorage {
               ? ""
               : key.slice(normalizedDefaultPrefix.length + 1),
           );
+      } else {
+        items = keys;
       }
 
-      return keys;
+      return {
+        keys: items,
+        nextCursor: apiResponse.data.nextCursor,
+      };
     } catch (err) {
       if (err instanceof BlobError) {
         throw err;

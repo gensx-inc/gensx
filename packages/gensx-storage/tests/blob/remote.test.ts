@@ -176,14 +176,166 @@ suite("RemoteBlobStorage", () => {
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ keys: mockKeys }),
+      json: async () => ({
+        status: "ok",
+        data: {
+          keys: mockKeys,
+          nextCursor: null,
+        },
+      }),
     });
 
-    const result = await storage.listBlobs("test-prefix");
+    const result = await storage.listBlobs({ prefix: "test-prefix" });
 
-    expect(result).toEqual(mockKeys);
+    expect(result.keys).toEqual(mockKeys);
+    expect(result.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?prefix=test-prefix",
+      "https://api.gensx.com/org/test-org/blob?prefix=test-prefix&limit=100",
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-api-key",
+        }),
+      }),
+    );
+  });
+
+  test("should handle pagination with limit", async () => {
+    const storage = new RemoteBlobStorage();
+
+    // Mock first page response
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        data: {
+          keys: ["key1", "key2"],
+          nextCursor: "page1cursor",
+        },
+      }),
+    });
+
+    const firstPage = await storage.listBlobs({ limit: 2 });
+    expect(firstPage.keys).toEqual(["key1", "key2"]);
+    expect(firstPage.nextCursor).toBe("page1cursor");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob?limit=2",
+      expect.any(Object),
+    );
+
+    // Mock second page response
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        data: {
+          keys: ["key3"],
+          nextCursor: null,
+        },
+      }),
+    });
+
+    const secondPage = await storage.listBlobs({
+      limit: 2,
+      cursor: firstPage.nextCursor ?? undefined,
+    });
+    expect(secondPage.keys).toEqual(["key3"]);
+    expect(secondPage.nextCursor).toBeNull();
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob?limit=2&cursor=page1cursor",
+      expect.any(Object),
+    );
+  });
+
+  test("should handle pagination with prefix", async () => {
+    const storage = new RemoteBlobStorage();
+
+    // Mock first page response
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        data: {
+          keys: ["prefix/key1", "prefix/key2"],
+          nextCursor: "page1cursor",
+        },
+      }),
+    });
+
+    const firstPage = await storage.listBlobs({
+      prefix: "prefix",
+      limit: 2,
+    });
+    expect(firstPage.keys).toEqual(["prefix/key1", "prefix/key2"]);
+    expect(firstPage.nextCursor).toBe("page1cursor");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob?prefix=prefix&limit=2",
+      expect.any(Object),
+    );
+
+    // Mock second page response
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        data: {
+          keys: ["prefix/key3"],
+          nextCursor: null,
+        },
+      }),
+    });
+
+    const secondPage = await storage.listBlobs({
+      prefix: "prefix",
+      limit: 2,
+      cursor: firstPage.nextCursor ?? undefined,
+    });
+    expect(secondPage.keys).toEqual(["prefix/key3"]);
+    expect(secondPage.nextCursor).toBeNull();
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob?prefix=prefix&limit=2&cursor=page1cursor",
+      expect.any(Object),
+    );
+  });
+
+  test("should handle empty results with pagination", async () => {
+    const storage = new RemoteBlobStorage();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        keys: [],
+        nextCursor: null,
+      }),
+    });
+
+    const result = await storage.listBlobs({ limit: 10 });
+    expect(result.keys).toEqual([]);
+    expect(result.nextCursor).toBeNull();
+  });
+
+  test("should handle default limit in pagination", async () => {
+    const storage = new RemoteBlobStorage();
+
+    // Generate 100 mock keys
+    const mockKeys = Array.from({ length: 100 }, (_, i) => `key${i + 1}`);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        data: {
+          keys: mockKeys,
+          nextCursor: "nextpage",
+        },
+      }),
+    });
+
+    const result = await storage.listBlobs();
+    expect(result.keys).toHaveLength(100); // Default limit
+    expect(result.nextCursor).toBe("nextpage");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.gensx.com/org/test-org/blob?limit=100",
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -627,14 +779,21 @@ suite("RemoteBlobStorage", () => {
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ keys: mockKeys }),
+      json: async () => ({
+        status: "ok",
+        data: {
+          keys: mockKeys,
+          nextCursor: null,
+        },
+      }),
     });
 
     const result = await storage.listBlobs();
 
-    expect(result).toEqual(["key1", "key2"]);
+    expect(result.keys).toEqual(["key1", "key2"]);
+    expect(result.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix",
+      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix&limit=100",
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -650,14 +809,21 @@ suite("RemoteBlobStorage", () => {
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ keys: mockKeys }),
+      json: async () => ({
+        status: "ok",
+        data: {
+          keys: mockKeys,
+          nextCursor: null,
+        },
+      }),
     });
 
-    const result = await storage.listBlobs("sub");
+    const result = await storage.listBlobs({ prefix: "sub" });
 
-    expect(result).toEqual(["sub/key1", "sub/key2"]);
+    expect(result.keys).toEqual(["sub/key1", "sub/key2"]);
+    expect(result.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix%2Fsub",
+      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix%2Fsub&limit=100",
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: "Bearer test-api-key",
