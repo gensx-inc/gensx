@@ -8,6 +8,7 @@ import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 import * as buildCommand from "../../src/commands/build.js";
 import { deploy } from "../../src/commands/deploy.js";
 import * as environmentModel from "../../src/models/environment.js";
+import * as projectModel from "../../src/models/projects.js";
 import * as configUtils from "../../src/utils/config.js";
 import * as envConfig from "../../src/utils/env-config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
@@ -63,6 +64,11 @@ vi.mock("../../src/utils/env-config.js", () => ({
 
 vi.mock("../../src/utils/project-config.js", () => ({
   readProjectConfig: vi.fn(),
+}));
+
+vi.mock("../../src/models/projects.js", () => ({
+  checkProjectExists: vi.fn(),
+  createProject: vi.fn(),
 }));
 
 // Mock FormData since it's not available in the test environment
@@ -182,9 +188,12 @@ suite("deploy command", () => {
     );
   });
 
-  it("should prompt for environment selection when no environment is selected", async () => {
+  it("should prompt for environment selection when no environment is selected and project exists", async () => {
     // Mock no selected environment
     vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(null);
+
+    // Mock project exists
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
 
     // Mock available environments
     vi.mocked(environmentModel.listEnvironments).mockResolvedValue([
@@ -193,9 +202,7 @@ suite("deploy command", () => {
     ]);
 
     // Mock user selects existing environment
-    vi.mocked(enquirer.prompt).mockResolvedValueOnce({ environment: "dev" } as {
-      environment: string;
-    });
+    vi.mocked(enquirer.prompt).mockResolvedValueOnce({ environment: "dev" });
 
     await deploy("workflow.ts", { project: "test-project" });
 
@@ -211,16 +218,8 @@ suite("deploy command", () => {
       { name: "Create a new environment", value: "Create a new environment" },
     ];
 
-    interface PromptOptions {
-      type: string;
-      name: string;
-      message: string;
-      choices?: { name: string; value: string }[];
-      initial?: boolean;
-    }
-
     expect(enquirer.prompt).toHaveBeenCalledWith(
-      expect.objectContaining<PromptOptions>({
+      expect.objectContaining({
         type: "select",
         name: "environment",
         message: "Select an environment to use:",
@@ -237,9 +236,12 @@ suite("deploy command", () => {
     );
   });
 
-  it("should allow creating new environment during deployment", async () => {
+  it("should allow creating new environment during deployment when project exists", async () => {
     // Mock no selected environment
     vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(null);
+
+    // Mock project exists
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
 
     // Mock available environments
     vi.mocked(environmentModel.listEnvironments).mockResolvedValue([
@@ -248,10 +250,8 @@ suite("deploy command", () => {
 
     // Mock user chooses to create new environment
     vi.mocked(enquirer.prompt)
-      .mockResolvedValueOnce({ environment: "Create a new environment" } as {
-        environment: string;
-      })
-      .mockResolvedValueOnce({ name: "staging" } as { name: string });
+      .mockResolvedValueOnce({ environment: "Create a new environment" })
+      .mockResolvedValueOnce({ name: "staging" });
 
     // Mock environment creation
     vi.mocked(environmentModel.createEnvironment).mockResolvedValue({
@@ -275,6 +275,44 @@ suite("deploy command", () => {
     );
   });
 
+  it("should create new project and environment when project doesn't exist", async () => {
+    // Mock no selected environment
+    vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(null);
+
+    // Mock project does not exist
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
+
+    // Mock no existing environments (not needed since project doesn't exist)
+    vi.mocked(environmentModel.listEnvironments).mockResolvedValue([]);
+
+    // Mock user provides environment name
+    vi.mocked(enquirer.prompt).mockResolvedValueOnce({ name: "staging" });
+
+    // Mock project creation
+    vi.mocked(projectModel.createProject).mockResolvedValue({
+      id: "project-1",
+      name: "test-project",
+    });
+
+    await deploy("workflow.ts", { project: "test-project" });
+
+    // Verify project was created with new environment
+    expect(projectModel.createProject).toHaveBeenCalledWith(
+      "test-project",
+      "staging",
+    );
+
+    // Verify environment was not created separately
+    expect(environmentModel.createEnvironment).not.toHaveBeenCalled();
+
+    // Verify deployment was made with new environment
+    expect(axios.post).toHaveBeenCalledWith(
+      expect.stringContaining("/environments/staging/deploy"),
+      expect.any(Object),
+      expect.any(Object),
+    );
+  });
+
   it("should create first environment if none exist", async () => {
     // Mock no selected environment
     vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(null);
@@ -282,24 +320,49 @@ suite("deploy command", () => {
     // Mock no existing environments
     vi.mocked(environmentModel.listEnvironments).mockResolvedValue([]);
 
-    // Mock user creates first environment
-    vi.mocked(enquirer.prompt).mockResolvedValueOnce({ name: "production" } as {
-      name: string;
+    // Mock project config
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
+      projectName: "test-project",
     });
 
-    // Mock environment creation
-    vi.mocked(environmentModel.createEnvironment).mockResolvedValue({
-      id: "env-1",
-      name: "production",
+    // Mock project does not exist
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
+
+    // Mock user creates first environment
+    vi.mocked(enquirer.prompt).mockResolvedValueOnce({ name: "production" });
+
+    // Mock project creation
+    vi.mocked(projectModel.createProject).mockResolvedValue({
+      id: "project-1",
+      name: "test-project",
+    });
+
+    // Mock successful deployment
+    vi.mocked(axios.post).mockResolvedValue({
+      status: 200,
+      data: {
+        status: "ok",
+        data: {
+          id: "deploy-1",
+          projectId: "project-1",
+          projectName: "test-project",
+          deploymentId: "deployment-1",
+          bundleSize: 1000,
+          workflows: [],
+        },
+      },
     });
 
     await deploy("workflow.ts", { project: "test-project" });
 
-    // Verify new environment was created
-    expect(environmentModel.createEnvironment).toHaveBeenCalledWith(
+    // Verify project was created with first environment
+    expect(projectModel.createProject).toHaveBeenCalledWith(
       "test-project",
       "production",
     );
+
+    // Verify environment was not created separately (it's created with the project)
+    expect(environmentModel.createEnvironment).not.toHaveBeenCalled();
 
     // Verify deployment was made with new environment
     expect(axios.post).toHaveBeenCalledWith(
@@ -335,6 +398,113 @@ suite("deploy command", () => {
     expect(mockExit).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(
       "\nError: No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
+    );
+  });
+
+  it("should create new project and environment when project doesn't exist and user confirms", async () => {
+    // Mock project config
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
+      projectName: "new-project",
+    });
+
+    // Mock project does not exist
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
+
+    // Mock user confirms project creation and provides environment name
+    vi.mocked(enquirer.prompt).mockResolvedValueOnce({ name: "development" });
+
+    // Mock project creation
+    vi.mocked(projectModel.createProject).mockResolvedValue({
+      id: "project-1",
+      name: "new-project",
+    });
+
+    // Mock successful deployment
+    vi.mocked(axios.post).mockResolvedValue({
+      status: 200,
+      data: {
+        status: "ok",
+        data: {
+          id: "deploy-1",
+          projectId: "project-1",
+          projectName: "new-project",
+          deploymentId: "deployment-1",
+          bundleSize: 1000,
+          workflows: [],
+        },
+      },
+    });
+
+    await deploy("workflow.ts", {});
+
+    // Verify project existence was checked
+    expect(projectModel.checkProjectExists).toHaveBeenCalledWith("new-project");
+
+    // Verify project was created with the new environment
+    expect(projectModel.createProject).toHaveBeenCalledWith(
+      "new-project",
+      "development",
+    );
+
+    // Verify deployment was made with new project and environment
+    expect(axios.post).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "/projects/new-project/environments/development/deploy",
+      ),
+      expect.any(Object),
+      expect.any(Object),
+    );
+  });
+
+  it("should handle project creation when no environments exist", async () => {
+    // Mock project config
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
+      projectName: "new-project",
+    });
+
+    // Mock project does not exist
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
+
+    // Mock user provides environment name with default value
+    vi.mocked(enquirer.prompt).mockResolvedValueOnce({ name: "default" });
+
+    // Mock project creation
+    vi.mocked(projectModel.createProject).mockResolvedValue({
+      id: "project-1",
+      name: "new-project",
+    });
+
+    // Mock successful deployment
+    vi.mocked(axios.post).mockResolvedValue({
+      status: 200,
+      data: {
+        status: "ok",
+        data: {
+          id: "deploy-1",
+          projectId: "project-1",
+          projectName: "new-project",
+          deploymentId: "deployment-1",
+          bundleSize: 1000,
+          workflows: [],
+        },
+      },
+    });
+
+    await deploy("workflow.ts", {});
+
+    // Verify project was created with default environment
+    expect(projectModel.createProject).toHaveBeenCalledWith(
+      "new-project",
+      "default",
+    );
+
+    // Verify deployment was made with new project and default environment
+    expect(axios.post).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "/projects/new-project/environments/default/deploy",
+      ),
+      expect.any(Object),
+      expect.any(Object),
     );
   });
 });

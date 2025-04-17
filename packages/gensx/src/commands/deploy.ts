@@ -7,6 +7,7 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { createEnvironment, listEnvironments } from "../models/environment.js";
+import { checkProjectExists, createProject } from "../models/projects.js";
 import { PromptModule } from "../types/prompt.js";
 import { getAuth } from "../utils/config.js";
 import { getSelectedEnvironment } from "../utils/env-config.js";
@@ -42,6 +43,7 @@ interface DeploymentResponse {
  */
 export async function getDeploymentEnvironment(
   projectName: string,
+  projectExists: boolean,
   specifiedEnvironment?: string,
 ): Promise<string> {
   const spinner = ora();
@@ -78,7 +80,7 @@ export async function getDeploymentEnvironment(
 
   // If we don't have an environment yet, prompt to select or create one
   spinner.start("Fetching available environments...");
-  const environments = await listEnvironments(projectName);
+  const environments = projectExists ? await listEnvironments(projectName) : [];
   spinner.stop();
 
   // If there are existing environments, show a select prompt
@@ -113,9 +115,21 @@ export async function getDeploymentEnvironment(
         .catch(() => null);
 
       if (newEnvName) {
-        spinner.start(`Creating environment ${pc.cyan(newEnvName)}...`);
-        await createEnvironment(projectName, newEnvName);
-        spinner.succeed(`Environment ${pc.cyan(newEnvName)} created`);
+        if (!projectExists) {
+          spinner.start(
+            `Creating project ${pc.cyan(projectName)} and environment ${pc.cyan(newEnvName)}...`,
+          );
+          await createProject(projectName, newEnvName);
+          spinner.succeed(
+            `Project ${pc.cyan(projectName)} and environment ${pc.cyan(
+              newEnvName,
+            )} created`,
+          );
+        } else {
+          spinner.start(`Creating environment ${pc.cyan(newEnvName)}...`);
+          await createEnvironment(projectName, newEnvName);
+          spinner.succeed(`Environment ${pc.cyan(newEnvName)} created`);
+        }
 
         return newEnvName;
       } else {
@@ -141,9 +155,21 @@ export async function getDeploymentEnvironment(
       .then((result) => result.name)
       .catch(() => "default");
 
-    spinner.start(`Creating environment ${pc.cyan(newEnvName)}...`);
-    await createEnvironment(projectName, newEnvName);
-    spinner.succeed(`Environment ${pc.cyan(newEnvName)} created`);
+    if (!projectExists) {
+      spinner.start(
+        `Creating project ${pc.cyan(projectName)} and environment ${pc.cyan(
+          newEnvName,
+        )}...`,
+      );
+      await createProject(projectName, newEnvName);
+      spinner.succeed(
+        `Project ${pc.cyan(projectName)} and environment ${pc.cyan(newEnvName)} created`,
+      );
+    } else {
+      spinner.start(`Creating environment ${pc.cyan(newEnvName)}...`);
+      await createEnvironment(projectName, newEnvName);
+      spinner.succeed(`Environment ${pc.cyan(newEnvName)} created`);
+    }
 
     return newEnvName;
   }
@@ -178,9 +204,13 @@ export async function deploy(file: string, options: DeployOptions) {
       }
     }
 
+    // Check if the project exists
+    const projectExists = await checkProjectExists(projectName);
+
     // 3. Get the environment to deploy to
     const environmentName = await getDeploymentEnvironment(
       projectName,
+      projectExists,
       options.environment,
     );
 
