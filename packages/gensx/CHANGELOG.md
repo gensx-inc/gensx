@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.21](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.20...gensx-v0.3.21) (2025-04-16)
+
+
+### 🐛 Bug Fixes
+
+* Don't import json so that there is no warning. ([#570](https://github.com/gensx-inc/gensx/issues/570)) ([ce7154f](https://github.com/gensx-inc/gensx/commit/ce7154f767b66393b7d6aba654f0f6cf4aa13f02))
+* update docker command to always pull latest image ([#564](https://github.com/gensx-inc/gensx/issues/564)) ([87d478b](https://github.com/gensx-inc/gensx/commit/87d478bbe8f812ce9a6e5416a23dca863cee186c))
+* Use the right URL after deployments. ([#571](https://github.com/gensx-inc/gensx/issues/571)) ([ebda1d6](https://github.com/gensx-inc/gensx/commit/ebda1d6c7f847554b2379c15dc6bf86c95aa3888))
+
 ## [0.3.20](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.19...gensx-v0.3.20) (2025-04-11)
 
 
