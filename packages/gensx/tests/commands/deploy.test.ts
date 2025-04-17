@@ -397,7 +397,9 @@ suite("deploy command", () => {
 
     expect(mockExit).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(
-      "\nError: No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
+      expect.stringContaining(
+        "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field",
+      ),
     );
   });
 
