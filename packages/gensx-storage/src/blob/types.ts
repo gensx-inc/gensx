@@ -256,6 +256,43 @@ export interface Blob<T> {
 }
 
 /**
+ * Options for listing blobs
+ */
+export interface ListBlobsOptions {
+  /**
+   * Prefix to filter blobs by
+   */
+  prefix?: string;
+
+  /**
+   * Maximum number of results to return per page
+   */
+  limit?: number;
+
+  /**
+   * Cursor for pagination. This should be the cursor from the previous page's response.
+   * If not provided, returns the first page.
+   */
+  cursor?: string;
+}
+
+/**
+ * Response from listing blobs with pagination
+ */
+export interface ListBlobsResponse {
+  /**
+   * List of blob keys
+   */
+  keys: string[];
+
+  /**
+   * Cursor to get the next page of results.
+   * If null, there are no more results.
+   */
+  nextCursor: string | null;
+}
+
+/**
  * Interface for blob storage
  */
 export interface BlobStorage {
@@ -265,9 +302,10 @@ export interface BlobStorage {
   getBlob<T>(key: string): Blob<T>;
 
   /**
-   * List all blobs with the given prefix
+   * List blobs with cursor-based pagination
+   * @param options Options for listing blobs including prefix, pagination, and filtering
    */
-  listBlobs(prefix?: string): Promise<string[]>;
+  listBlobs(options?: ListBlobsOptions): Promise<ListBlobsResponse>;
 
   /**
    * Check if a blob exists

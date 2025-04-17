@@ -100,17 +100,17 @@ suite("FileSystemBlobStorage", () => {
     await storage.getBlob("prefix1/b").putString("b");
     await storage.getBlob("prefix2/c").putString("c");
 
-    const prefix1Blobs = await storage.listBlobs("prefix1");
-    expect(prefix1Blobs).toHaveLength(2);
-    expect(prefix1Blobs).toContain("prefix1/a");
-    expect(prefix1Blobs).toContain("prefix1/b");
+    const result = await storage.listBlobs({ prefix: "prefix1" });
+    expect(result.keys).toHaveLength(2);
+    expect(result.keys).toContain("prefix1/a");
+    expect(result.keys).toContain("prefix1/b");
 
-    const prefix2Blobs = await storage.listBlobs("prefix2");
-    expect(prefix2Blobs).toHaveLength(1);
-    expect(prefix2Blobs).toContain("prefix2/c");
+    const prefix2Result = await storage.listBlobs({ prefix: "prefix2" });
+    expect(prefix2Result.keys).toHaveLength(1);
+    expect(prefix2Result.keys).toContain("prefix2/c");
 
     const allBlobs = await storage.listBlobs();
-    expect(allBlobs).toHaveLength(3);
+    expect(allBlobs.keys).toHaveLength(3);
   });
 
   test("should delete a blob", async () => {
@@ -326,9 +326,9 @@ suite("FileSystemBlobStorage", () => {
     await prefixedStorage.getBlob("test2").putString("test2");
 
     const blobs = await prefixedStorage.listBlobs();
-    expect(blobs).toHaveLength(2);
-    expect(blobs).toContain("test1");
-    expect(blobs).toContain("test2");
+    expect(blobs.keys).toHaveLength(2);
+    expect(blobs.keys).toContain("test1");
+    expect(blobs.keys).toContain("test2");
 
     // The actual files should be under the default prefix
     const filesExist = await fs
@@ -349,9 +349,9 @@ suite("FileSystemBlobStorage", () => {
     await prefixedStorage.getBlob("key2").putString("content2");
 
     const result = await prefixedStorage.listBlobs();
-    expect(result).toHaveLength(2);
-    expect(result).toContain("key1");
-    expect(result).toContain("key2");
+    expect(result.keys).toHaveLength(2);
+    expect(result.keys).toContain("key1");
+    expect(result.keys).toContain("key2");
   });
 
   test("should combine default prefix with provided prefix in listBlobs", async () => {
@@ -365,11 +365,11 @@ suite("FileSystemBlobStorage", () => {
     await prefixedStorage.getBlob("sub/key2").putString("content2");
     await prefixedStorage.getBlob("other/key3").putString("content3");
 
-    const result = await prefixedStorage.listBlobs("sub");
-    expect(result).toHaveLength(2);
-    expect(result).toContain("sub/key1");
-    expect(result).toContain("sub/key2");
-    expect(result).not.toContain("other/key3");
+    const result = await prefixedStorage.listBlobs({ prefix: "sub" });
+    expect(result.keys).toHaveLength(2);
+    expect(result.keys).toContain("sub/key1");
+    expect(result.keys).toContain("sub/key2");
+    expect(result.keys).not.toContain("other/key3");
   });
 
   test("should handle concurrent updates with ETags", async () => {
@@ -445,5 +445,90 @@ suite("FileSystemBlobStorage", () => {
     }
     const retrievedData = Buffer.concat(chunks).toString();
     expect(retrievedData).toBe(data);
+  });
+
+  test("should handle pagination with limit", async () => {
+    // Create test blobs
+    const blobKeys = Array.from({ length: 5 }, (_, i) => `test${i + 1}`);
+    for (const key of blobKeys) {
+      await storage.getBlob(key).putString(key);
+    }
+
+    // Get first page
+    const firstPage = await storage.listBlobs({ limit: 2 });
+    expect(firstPage.keys).toHaveLength(2);
+    expect(firstPage.keys).toEqual(["test1", "test2"]);
+    expect(firstPage.nextCursor).not.toBeNull();
+
+    // Get second page
+    const secondPage = await storage.listBlobs({
+      limit: 2,
+      cursor: firstPage.nextCursor!,
+    });
+    expect(secondPage.keys).toHaveLength(2);
+    expect(secondPage.keys).toEqual(["test3", "test4"]);
+    expect(secondPage.nextCursor).not.toBeNull();
+
+    // Get last page
+    const lastPage = await storage.listBlobs({
+      limit: 2,
+      cursor: secondPage.nextCursor!,
+    });
+    expect(lastPage.keys).toHaveLength(1);
+    expect(lastPage.keys).toEqual(["test5"]);
+    expect(lastPage.nextCursor).toBeNull();
+  });
+
+  test("should handle pagination with prefix", async () => {
+    // Create test blobs with different prefixes
+    await storage.getBlob("prefix1/a").putString("a");
+    await storage.getBlob("prefix1/b").putString("b");
+    await storage.getBlob("prefix1/c").putString("c");
+    await storage.getBlob("prefix2/d").putString("d");
+
+    // Get first page of prefix1
+    const firstPage = await storage.listBlobs({
+      prefix: "prefix1",
+      limit: 2,
+    });
+    expect(firstPage.keys).toHaveLength(2);
+    expect(firstPage.keys).toEqual(["prefix1/a", "prefix1/b"]);
+    expect(firstPage.nextCursor).not.toBeNull();
+
+    // Get second page of prefix1
+    const secondPage = await storage.listBlobs({
+      prefix: "prefix1",
+      limit: 2,
+      cursor: firstPage.nextCursor!,
+    });
+    expect(secondPage.keys).toHaveLength(1);
+    expect(secondPage.keys).toEqual(["prefix1/c"]);
+    expect(secondPage.nextCursor).toBeNull();
+  });
+
+  test("should handle empty results with pagination", async () => {
+    const result = await storage.listBlobs({ limit: 10 });
+    expect(result.keys).toHaveLength(0);
+    expect(result.nextCursor).toBeNull();
+  });
+
+  test("should handle default limit in pagination", async () => {
+    // Create more than the default number of blobs
+    const blobKeys = Array.from({ length: 150 }, (_, i) => `test${i + 1}`);
+    for (const key of blobKeys) {
+      await storage.getBlob(key).putString(key);
+    }
+
+    // Get first page with default limit
+    const firstPage = await storage.listBlobs();
+    expect(firstPage.keys.length).toBe(100); // Default limit
+    expect(firstPage.nextCursor).not.toBeNull();
+
+    // Get remaining items
+    const secondPage = await storage.listBlobs({
+      cursor: firstPage.nextCursor!,
+    });
+    expect(secondPage.keys.length).toBe(50);
+    expect(secondPage.nextCursor).toBeNull();
   });
 });
