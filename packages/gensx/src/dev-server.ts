@@ -96,9 +96,6 @@ export class GensxServer {
   private executionsMap: Map<string, WorkflowExecution>;
   private isRunning = false;
   private server: ReturnType<typeof serve> | null = null;
-  private org = "local";
-  private project: string;
-  private environment: string;
   private ajv: Ajv;
 
   /**
@@ -106,9 +103,6 @@ export class GensxServer {
    */
   constructor(
     workflows: Record<string, unknown> = {},
-    org: string,
-    project: string,
-    environment: string,
     options: ServerOptions = {},
     schemas: Record<string, { input: Definition; output: Definition }> = {},
   ) {
@@ -119,9 +113,6 @@ export class GensxServer {
     this.schemaMap = new Map(Object.entries(schemas));
     this.executionsMap = new Map();
     this.ajv = new Ajv();
-    this.org = org;
-    this.project = project;
-    this.environment = environment;
 
     // Register all workflows from the input
     this.registerWorkflows(workflows);
@@ -272,352 +263,289 @@ export class GensxServer {
     this.app.use("*", logger());
     this.app.use("*", cors());
 
-    // Add organization and project validation middleware
-    this.app.use(
-      `/org/:orgName/projects/:projectName/environments/:environmentName/*`,
-      async (c, next) => {
-        const orgName = c.req.param("orgName");
-        const projectName = c.req.param("projectName");
-        const environmentName = c.req.param("environmentName");
-
-        if (orgName !== this.org) {
-          return c.json(
-            {
-              status: "error",
-              error: `Organization '${orgName}' not found`,
-            },
-            404,
-          );
-        }
-
-        if (projectName !== this.project) {
-          return c.json(
-            {
-              status: "error",
-              error: `Project '${projectName}' not found`,
-            },
-            404,
-          );
-        }
-
-        if (environmentName !== this.environment) {
-          return c.json(
-            {
-              status: "error",
-              error: `Environment '${environmentName}' not found`,
-            },
-            404,
-          );
-        }
-
-        await next();
-      },
-    );
-
     // List all workflows
-    this.app.get(
-      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows`,
-      (c) => {
-        return c.json({
-          status: "ok",
-          data: {
-            workflows: this.getWorkflows(),
-          },
-        });
-      },
-    );
+    this.app.get(`/workflows`, (c) => {
+      return c.json({
+        status: "ok",
+        data: {
+          workflows: this.getWorkflows(),
+        },
+      });
+    });
 
     // Get a single workflow by name
-    this.app.get(
-      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName`,
-      (c) => {
-        const workflowName = c.req.param("workflowName");
-        this.getWorkflowOrThrow(workflowName);
+    this.app.get(`/workflows/:workflowName`, (c) => {
+      const workflowName = c.req.param("workflowName");
+      this.getWorkflowOrThrow(workflowName);
 
-        // Get schema info
-        const schema = this.schemaMap.get(workflowName);
-        const id = generateWorkflowId(workflowName);
+      // Get schema info
+      const schema = this.schemaMap.get(workflowName);
+      const id = generateWorkflowId(workflowName);
+      const now = new Date().toISOString();
+
+      return c.json({
+        status: "ok",
+        data: {
+          id,
+          name: workflowName,
+          inputSchema: schema?.input ?? { type: "object", properties: {} },
+          outputSchema: schema?.output ?? { type: "object", properties: {} },
+          createdAt: now,
+          updatedAt: now,
+          url: `http://${this.hostname}:${this.port}/workflows/${workflowName}`,
+        },
+      });
+    });
+
+    // Start workflow execution asynchronously
+    this.app.post(`/workflows/:workflowName/start`, async (c) => {
+      const workflowName = c.req.param("workflowName");
+      // Will throw NotFoundError if workflow doesn't exist
+      const workflow = this.getWorkflowOrThrow(workflowName);
+
+      try {
+        // Get request body for workflow parameters
+        const body = await this.parseJsonBody(c);
+
+        // Validate that input exists and matches schema
+        this.validateInput(workflowName, body.input);
+
+        // Only create execution ID after validation succeeds
+        const executionId = generateExecutionId();
         const now = new Date().toISOString();
 
+        // Initialize execution record
+        const execution: WorkflowExecution = {
+          id: executionId,
+          workflowName,
+          executionStatus: "queued",
+          createdAt: now,
+          input: body.input,
+        };
+
+        // Store the execution
+        this.executionsMap.set(executionId, execution);
+
+        // Execute the workflow asynchronously
+        void this.executeWorkflowAsync(
+          workflowName,
+          workflow,
+          executionId,
+          body.input,
+        );
+
+        // Return immediately with executionId
         return c.json({
           status: "ok",
           data: {
-            id,
-            name: workflowName,
-            inputSchema: schema?.input ?? { type: "object", properties: {} },
-            outputSchema: schema?.output ?? { type: "object", properties: {} },
-            createdAt: now,
-            updatedAt: now,
-            url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflowName}`,
+            executionId,
+            executionStatus: "queued",
           },
         });
-      },
-    );
-
-    // Start workflow execution asynchronously
-    this.app.post(
-      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName/start`,
-      async (c) => {
-        const workflowName = c.req.param("workflowName");
-        // Will throw NotFoundError if workflow doesn't exist
-        const workflow = this.getWorkflowOrThrow(workflowName);
-
-        try {
-          // Get request body for workflow parameters
-          const body = await this.parseJsonBody(c);
-
-          // Validate that input exists and matches schema
-          this.validateInput(workflowName, body.input);
-
-          // Only create execution ID after validation succeeds
-          const executionId = generateExecutionId();
-          const now = new Date().toISOString();
-
-          // Initialize execution record
-          const execution: WorkflowExecution = {
-            id: executionId,
-            workflowName,
-            executionStatus: "queued",
-            createdAt: now,
-            input: body.input,
-          };
-
-          // Store the execution
-          this.executionsMap.set(executionId, execution);
-
-          // Execute the workflow asynchronously
-          void this.executeWorkflowAsync(
-            workflowName,
-            workflow,
-            executionId,
-            body.input,
+      } catch (error) {
+        if (error instanceof BadRequestError) {
+          console.error(
+            `❌ Validation error in workflow '${workflowName}':`,
+            error.message,
           );
-
-          // Return immediately with executionId
-          return c.json({
-            status: "ok",
-            data: {
-              executionId,
-              executionStatus: "queued",
-            },
-          });
-        } catch (error) {
-          if (error instanceof BadRequestError) {
-            console.error(
-              `❌ Validation error in workflow '${workflowName}':`,
-              error.message,
-            );
-            return c.json(
-              {
-                status: "error",
-                error: error.message,
-              },
-              400,
-            );
-          }
-
-          console.error(`❌ Error starting workflow '${workflowName}':`, error);
           return c.json(
             {
               status: "error",
-              error: error instanceof Error ? error.message : String(error),
+              error: error.message,
             },
-            500,
+            400,
           );
         }
-      },
-    );
+
+        console.error(`❌ Error starting workflow '${workflowName}':`, error);
+        return c.json(
+          {
+            status: "error",
+            error: error instanceof Error ? error.message : String(error),
+          },
+          500,
+        );
+      }
+    });
 
     // Get execution status
-    this.app.get(
-      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName/executions/:executionId`,
-      (c) => {
-        const workflowName = c.req.param("workflowName");
-        const executionId = c.req.param("executionId");
+    this.app.get(`/workflows/:workflowName/executions/:executionId`, (c) => {
+      const workflowName = c.req.param("workflowName");
+      const executionId = c.req.param("executionId");
 
-        // Will throw NotFoundError if execution doesn't exist or doesn't match workflow
-        const execution = this.getExecutionOrThrow(executionId, workflowName);
+      // Will throw NotFoundError if execution doesn't exist or doesn't match workflow
+      const execution = this.getExecutionOrThrow(executionId, workflowName);
 
-        // Construct the response data with proper type safety
-        const responseData: {
-          id: string;
-          executionStatus: ExecutionStatus;
-          createdAt: string;
-          finishedAt?: string;
-          output?: unknown;
-          error?: string;
-        } = {
-          id: execution.id,
-          executionStatus: execution.executionStatus,
-          createdAt: execution.createdAt,
-        };
+      // Construct the response data with proper type safety
+      const responseData: {
+        id: string;
+        executionStatus: ExecutionStatus;
+        createdAt: string;
+        finishedAt?: string;
+        output?: unknown;
+        error?: string;
+      } = {
+        id: execution.id,
+        executionStatus: execution.executionStatus,
+        createdAt: execution.createdAt,
+      };
 
-        // Add optional fields if they exist
-        if (execution.finishedAt) {
-          responseData.finishedAt = execution.finishedAt;
-        }
+      // Add optional fields if they exist
+      if (execution.finishedAt) {
+        responseData.finishedAt = execution.finishedAt;
+      }
 
-        if (execution.output !== undefined) {
-          responseData.output = execution.output;
-        }
+      if (execution.output !== undefined) {
+        responseData.output = execution.output;
+      }
 
-        if (execution.error) {
-          responseData.error = execution.error;
-        }
+      if (execution.error) {
+        responseData.error = execution.error;
+      }
 
-        return c.json({
-          status: "ok",
-          data: responseData,
-        });
-      },
-    );
+      return c.json({
+        status: "ok",
+        data: responseData,
+      });
+    });
 
     // List executions for a workflow
-    this.app.get(
-      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName/executions`,
-      (c) => {
-        const workflowName = c.req.param("workflowName");
-        // Will throw NotFoundError if workflow doesn't exist
-        this.getWorkflowOrThrow(workflowName);
+    this.app.get(`/workflows/:workflowName/executions`, (c) => {
+      const workflowName = c.req.param("workflowName");
+      // Will throw NotFoundError if workflow doesn't exist
+      this.getWorkflowOrThrow(workflowName);
 
-        // Filter executions for this workflow
-        const executions = Array.from(this.executionsMap.values())
-          .filter((exec) => exec.workflowName === workflowName)
-          // Sort by createdAt in descending order (newest first)
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          )
-          .map((exec) => ({
-            id: exec.id,
-            executionStatus: exec.executionStatus,
-            createdAt: exec.createdAt,
-            finishedAt: exec.finishedAt,
-          }));
+      // Filter executions for this workflow
+      const executions = Array.from(this.executionsMap.values())
+        .filter((exec) => exec.workflowName === workflowName)
+        // Sort by createdAt in descending order (newest first)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )
+        .map((exec) => ({
+          id: exec.id,
+          executionStatus: exec.executionStatus,
+          createdAt: exec.createdAt,
+          finishedAt: exec.finishedAt,
+        }));
 
-        return c.json({
-          status: "ok",
-          data: {
-            executions,
-          },
-        });
-      },
-    );
+      return c.json({
+        status: "ok",
+        data: {
+          executions,
+        },
+      });
+    });
 
     // Execute workflow endpoint
-    this.app.post(
-      `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/:workflowName`,
-      async (c) => {
-        const workflowName = c.req.param("workflowName");
-        // Will throw NotFoundError if workflow doesn't exist
-        const workflow = this.getWorkflowOrThrow(workflowName);
+    this.app.post(`/workflows/:workflowName`, async (c) => {
+      const workflowName = c.req.param("workflowName");
+      // Will throw NotFoundError if workflow doesn't exist
+      const workflow = this.getWorkflowOrThrow(workflowName);
 
-        let body: Record<string, unknown> = {};
+      let body: Record<string, unknown> = {};
 
-        try {
-          // Get request body for workflow parameters
-          body = await this.parseJsonBody(c);
+      try {
+        // Get request body for workflow parameters
+        body = await this.parseJsonBody(c);
 
-          // Validate that input exists and matches schema
-          this.validateInput(workflowName, body.input);
+        // Validate that input exists and matches schema
+        this.validateInput(workflowName, body.input);
 
-          // Only create execution ID after validation succeeds
-          const executionId = generateExecutionId();
-          const now = new Date().toISOString();
+        // Only create execution ID after validation succeeds
+        const executionId = generateExecutionId();
+        const now = new Date().toISOString();
 
-          console.info(
-            `⚡️ Executing workflow '${workflowName}' with params:`,
-            body,
-          );
+        console.info(
+          `⚡️ Executing workflow '${workflowName}' with params:`,
+          body,
+        );
 
-          // Initialize execution record
-          const execution: WorkflowExecution = {
-            id: executionId,
-            workflowName,
-            executionStatus: "running", // Start directly in running state since this is synchronous
-            createdAt: now,
-            input: body.input,
-          };
+        // Initialize execution record
+        const execution: WorkflowExecution = {
+          id: executionId,
+          workflowName,
+          executionStatus: "running", // Start directly in running state since this is synchronous
+          createdAt: now,
+          input: body.input,
+        };
 
-          // Store the execution
-          this.executionsMap.set(executionId, execution);
+        // Store the execution
+        this.executionsMap.set(executionId, execution);
 
-          // Execute the workflow
-          const runMethod = (workflow as any).run;
+        // Execute the workflow
+        const runMethod = (workflow as any).run;
 
-          if (typeof runMethod !== "function") {
-            // Update execution with error
-            const errorMessage = `Workflow '${workflowName}' doesn't have a run method`;
-            execution.executionStatus = "failed";
-            execution.error = errorMessage;
-            execution.finishedAt = new Date().toISOString();
-            this.executionsMap.set(executionId, execution);
-
-            throw new ServerError(errorMessage);
-          }
-
-          const result = await runMethod.call(workflow, body.input);
-
-          // Update execution with result
-          execution.executionStatus = "completed";
-          execution.output = result;
+        if (typeof runMethod !== "function") {
+          // Update execution with error
+          const errorMessage = `Workflow '${workflowName}' doesn't have a run method`;
+          execution.executionStatus = "failed";
+          execution.error = errorMessage;
           execution.finishedAt = new Date().toISOString();
           this.executionsMap.set(executionId, execution);
 
-          // Handle different response types
-          if (
-            result &&
-            typeof result === "object" &&
-            Symbol.asyncIterator in result
-          ) {
-            // Handle streaming responses
-            return this.handleStreamingResponse(
-              c,
-              result as AsyncIterable<unknown>,
-            );
-          }
+          throw new ServerError(errorMessage);
+        }
 
-          // Handle regular JSON response
-          return c.json({
-            status: "ok",
-            data: {
-              executionId,
-              executionStatus: "completed",
-              output: result,
-            },
-          });
-        } catch (error) {
-          // For validation errors, don't create an execution record
-          if (error instanceof BadRequestError) {
-            console.error(
-              `❌ Validation error in workflow '${workflowName}':`,
-              error.message,
-            );
-            return c.json(
-              {
-                status: "error",
-                error: error.message,
-              },
-              400,
-            );
-          }
+        const result = await runMethod.call(workflow, body.input);
 
-          console.error(
-            `❌ Error executing workflow '${workflowName}':`,
-            error,
+        // Update execution with result
+        execution.executionStatus = "completed";
+        execution.output = result;
+        execution.finishedAt = new Date().toISOString();
+        this.executionsMap.set(executionId, execution);
+
+        // Handle different response types
+        if (
+          result &&
+          typeof result === "object" &&
+          Symbol.asyncIterator in result
+        ) {
+          // Handle streaming responses
+          return this.handleStreamingResponse(
+            c,
+            result as AsyncIterable<unknown>,
           );
+        }
 
-          // For other errors, proceed with server error
+        // Handle regular JSON response
+        return c.json({
+          status: "ok",
+          data: {
+            executionId,
+            executionStatus: "completed",
+            output: result,
+          },
+        });
+      } catch (error) {
+        // For validation errors, don't create an execution record
+        if (error instanceof BadRequestError) {
+          console.error(
+            `❌ Validation error in workflow '${workflowName}':`,
+            error.message,
+          );
           return c.json(
             {
               status: "error",
-              error: error instanceof Error ? error.message : String(error),
+              error: error.message,
             },
-            500,
+            400,
           );
         }
-      },
-    );
+
+        console.error(`❌ Error executing workflow '${workflowName}':`, error);
+
+        // For other errors, proceed with server error
+        return c.json(
+          {
+            status: "error",
+            error: error instanceof Error ? error.message : String(error),
+          },
+          500,
+        );
+      }
+    });
 
     // UI for testing workflows
     this.app.get("/openapi.json", (c) => {
@@ -673,9 +601,9 @@ export class GensxServer {
     return {
       openapi: "3.0.0",
       info: {
-        title: `GenSX API - ${this.project}`,
+        title: "GenSX API",
         version: "1.0.0",
-        description: `API documentation for ${this.org}/${this.project}`,
+        description: "API documentation for GenSX workflows",
       },
       servers: [
         {
@@ -694,29 +622,28 @@ export class GensxServer {
         })),
       ],
       paths: {
-        [`/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows`]:
-          {
-            get: {
-              tags: ["Workflows"],
-              summary: "List all workflows",
-              responses: {
-                "200": {
-                  description: "List of available workflows",
-                  content: {
-                    "application/json": {
-                      example: {
-                        status: "ok",
-                        data: { workflows },
-                      },
+        "/workflows": {
+          get: {
+            tags: ["Workflows"],
+            summary: "List all workflows",
+            responses: {
+              "200": {
+                description: "List of available workflows",
+                content: {
+                  "application/json": {
+                    example: {
+                      status: "ok",
+                      data: { workflows },
                     },
                   },
                 },
               },
             },
           },
+        },
         ...Object.fromEntries(
           workflows.map((workflow) => [
-            `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflow.name}`,
+            `/workflows/${workflow.name}`,
             {
               get: {
                 tags: [workflow.name],
@@ -828,7 +755,7 @@ export class GensxServer {
         ),
         ...Object.fromEntries(
           workflows.map((workflow) => [
-            `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflow.name}/start`,
+            `/workflows/${workflow.name}/start`,
             {
               post: {
                 tags: [workflow.name],
@@ -880,7 +807,7 @@ export class GensxServer {
         ),
         ...Object.fromEntries(
           workflows.map((workflow) => [
-            `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflow.name}/executions/{executionId}`,
+            `/workflows/${workflow.name}/executions/{executionId}`,
             {
               get: {
                 tags: [workflow.name],
@@ -940,7 +867,7 @@ export class GensxServer {
         ),
         ...Object.fromEntries(
           workflows.map((workflow) => [
-            `/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${workflow.name}/executions`,
+            `/workflows/${workflow.name}/executions`,
             {
               get: {
                 tags: [workflow.name],
@@ -1010,7 +937,7 @@ export class GensxServer {
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>GenSX API - ${this.project}</title>
+      <title>GenSX API</title>
       <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@latest/swagger-ui.css" />
       <style>
         body {
@@ -1113,7 +1040,7 @@ export class GensxServer {
         outputSchema: schema?.output ?? { type: "object", properties: {} },
         createdAt: now,
         updatedAt: now,
-        url: `http://${this.hostname}:${this.port}/org/${this.org}/projects/${encodeURIComponent(this.project)}/environments/${encodeURIComponent(this.environment)}/workflows/${name}`,
+        url: `http://${this.hostname}:${this.port}/workflows/${name}`,
       };
     });
   }
@@ -1196,20 +1123,10 @@ export class GensxServer {
  */
 export function createServer(
   workflows: Record<string, unknown> = {},
-  org: string,
-  project: string,
-  environment: string,
   options: ServerOptions = {},
   schemas: Record<string, { input: Definition; output: Definition }> = {},
 ): GensxServer {
-  return new GensxServer(
-    workflows,
-    org,
-    project,
-    environment,
-    options,
-    schemas,
-  );
+  return new GensxServer(workflows, options, schemas);
 }
 
 /**

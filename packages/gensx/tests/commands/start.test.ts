@@ -105,38 +105,6 @@ suite("start command", () => {
     );
   });
 
-  it("should throw error if no project name is available", async () => {
-    // No project name in options or config
-    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
-      projectName: undefined as unknown as string,
-      description: "Test project without a name",
-    });
-
-    await start("test.ts", {});
-
-    expect(mockExit).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(
-      "Error:",
-      expect.stringContaining("No project name found"),
-    );
-  });
-
-  it("should use project name from options when provided", async () => {
-    await start("test.ts", { project: "custom-project" });
-
-    expect(mockSpinner.info).not.toHaveBeenCalledWith(
-      expect.stringContaining("Using project name from gensx.yaml"),
-    );
-  });
-
-  it("should use project name from config when not specified in options", async () => {
-    await start("test.ts", {});
-
-    expect(mockSpinner.info).toHaveBeenCalledWith(
-      expect.stringContaining("test-project"),
-    );
-  });
-
   it("should handle quiet mode", async () => {
     await start("test.ts", { quiet: true });
 
