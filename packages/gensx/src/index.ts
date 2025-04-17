@@ -45,8 +45,6 @@ export async function runCLI() {
     .command("start")
     .description("Start a local GenSX server")
     .argument("<file>", "File to serve")
-    .option("-p, --project <name>", "Project name")
-    .option("--environment <name>", "Environment name")
     .option("-q, --quiet", "Suppress output", false)
     .action(start);
 
