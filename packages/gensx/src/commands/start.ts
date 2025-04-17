@@ -10,6 +10,7 @@ import { Definition } from "typescript-json-schema";
 
 import { createServer } from "../dev-server.js";
 import { getAuth } from "../utils/config.js";
+import { getSelectedEnvironment } from "../utils/env-config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { generateSchema } from "../utils/schema.js";
 
@@ -47,8 +48,9 @@ export async function start(file: string, options: StartOptions) {
     // 2. Get project configuration
     let projectName = options.project;
     let environmentName = options.environment;
-    const projectConfig = await readProjectConfig(process.cwd());
+
     if (!projectName) {
+      const projectConfig = await readProjectConfig(process.cwd());
       if (projectConfig?.projectName) {
         projectName = projectConfig.projectName;
         spinner.info(
@@ -61,21 +63,21 @@ export async function start(file: string, options: StartOptions) {
       }
     }
 
+    // 3. Get environment name
     if (!environmentName) {
-      if (projectConfig?.environmentName) {
-        environmentName = projectConfig.environmentName;
+      const selectedEnvironment = await getSelectedEnvironment(projectName);
+      if (selectedEnvironment) {
+        environmentName = selectedEnvironment;
         spinner.info(
-          `Using environment name from gensx.yaml: ${pc.cyan(environmentName)}`,
+          `Using environment name from CLI: ${pc.cyan(environmentName)}`,
         );
       } else {
         environmentName = "default";
-        spinner.info(
-          "No environment name found; using 'default'. Either specify --environment or include 'environmentName' in your gensx.yaml file.",
-        );
+        spinner.info(`No environment name found; using ${pc.cyan("default")}.`);
       }
     }
 
-    // 3. Get org name
+    // 4. Get org name
     let orgName = "local";
     try {
       const auth = await getAuth();
@@ -86,7 +88,7 @@ export async function start(file: string, options: StartOptions) {
       // Do nothing; org name will default to "local"
     }
 
-    // 4. Setup for development mode
+    // 5. Setup for development mode
     spinner.info("Starting development server...");
     const outDir = resolve(process.cwd(), ".gensx");
 

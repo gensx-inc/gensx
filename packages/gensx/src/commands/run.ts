@@ -5,6 +5,7 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { getAuth } from "../utils/config.js";
+import { getSelectedEnvironment } from "../utils/env-config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 
@@ -53,15 +54,16 @@ export async function runWorkflow(
     }
 
     if (!environmentName) {
-      if (projectConfig?.environmentName) {
-        environmentName = projectConfig.environmentName;
+      const selectedEnvironment = await getSelectedEnvironment(projectName);
+      if (selectedEnvironment) {
+        environmentName = selectedEnvironment;
         spinner.info(
-          `Using environment name from gensx.yaml: ${pc.cyan(environmentName)}`,
+          `Using environment name from CLI: ${pc.cyan(environmentName)}`,
         );
       } else {
-        environmentName = "default";
-        spinner.info(
-          "No environment name found; using 'default'. Either specify --environment or include 'environmentName' in your gensx.yaml file.",
+        spinner.fail("No environment name provided");
+        throw new Error(
+          "No environment name found. Either specify --environment or run `gensx environment select <environment>`.",
         );
       }
     }
