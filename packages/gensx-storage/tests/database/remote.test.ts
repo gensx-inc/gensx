@@ -293,20 +293,23 @@ suite("RemoteDatabaseStorage", () => {
 
   test("should list databases", async () => {
     const storage = new RemoteDatabaseStorage();
-    const mockDatabases = ["db1", "db2", "db3"];
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
       json: async () => ({
         status: "ok",
-        data: { databases: mockDatabases },
+        data: {
+          databases: ["test-db1", "test-db2"],
+          nextCursor: "next-page-token",
+        },
       }),
     });
 
     const result = await storage.listDatabases();
 
-    expect(result).toEqual(mockDatabases);
+    expect(result.databases).toEqual(["test-db1", "test-db2"]);
+    expect(result.nextCursor).toBe("next-page-token");
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/database",
       expect.objectContaining({
@@ -315,6 +318,82 @@ suite("RemoteDatabaseStorage", () => {
           Authorization: "Bearer test-api-key",
         }),
       }),
+    );
+  });
+
+  test("should handle pagination in listDatabases", async () => {
+    const storage = new RemoteDatabaseStorage();
+
+    // First page
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: {
+          databases: ["db1", "db2"],
+          nextCursor: "page2",
+        },
+      }),
+    });
+
+    // Second page
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: {
+          databases: ["db3", "db4"],
+          nextCursor: undefined,
+        },
+      }),
+    });
+
+    // Get first page
+    const firstPage = await storage.listDatabases({ limit: 2 });
+    expect(firstPage.databases).toEqual(["db1", "db2"]);
+    expect(firstPage.nextCursor).toBe("page2");
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringMatching(/database.*limit=2/),
+      expect.any(Object),
+    );
+
+    // Get second page
+    const secondPage = await storage.listDatabases({
+      limit: 2,
+      cursor: firstPage.nextCursor,
+    });
+    expect(secondPage.databases).toEqual(["db3", "db4"]);
+    expect(secondPage.nextCursor).toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringMatching(/database.*limit=2.*cursor=page2/),
+      expect.any(Object),
+    );
+  });
+
+  test("should handle empty results in listDatabases", async () => {
+    const storage = new RemoteDatabaseStorage();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: {
+          databases: [],
+          nextCursor: undefined,
+        },
+      }),
+    });
+
+    const result = await storage.listDatabases({ limit: 10 });
+
+    expect(result.databases).toEqual([]);
+    expect(result.nextCursor).toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringMatching(/database.*limit=10/),
+      expect.any(Object),
     );
   });
 

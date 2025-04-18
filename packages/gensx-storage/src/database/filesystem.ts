@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { createClient, InArgs } from "@libsql/client";
 import { Client, ResultSet } from "@libsql/client";
 
+import { fromBase64UrlSafe, toBase64UrlSafe } from "../utils.js";
 import {
   Database,
   DatabaseBatchResult,
@@ -325,17 +326,50 @@ export class FileSystemDatabaseStorage implements DatabaseStorage {
     return db;
   }
 
-  async listDatabases(): Promise<string[]> {
+  async listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
+    databases: string[];
+    nextCursor?: string;
+  }> {
     try {
       const files = await fs.readdir(this.rootPath);
 
       // Filter for .db files and remove extension
-      return files
+      let dbFiles = files
         .filter((file) => file.endsWith(".db"))
         .map((file) => file.slice(0, -3)); // Remove .db extension
+
+      // Sort files for consistent pagination
+      dbFiles.sort();
+
+      // If cursor is provided, start after that file
+      if (options?.cursor) {
+        const lastFile = fromBase64UrlSafe(options.cursor);
+        const startIndex = dbFiles.findIndex((file) => file > lastFile);
+        if (startIndex !== -1) {
+          dbFiles = dbFiles.slice(startIndex);
+        } else {
+          dbFiles = [];
+        }
+      }
+
+      // Apply limit if provided
+      let nextCursor: string | undefined;
+      if (options?.limit && options.limit < dbFiles.length) {
+        const limitedFiles = dbFiles.slice(0, options.limit);
+        // Set cursor to last file for next page
+        nextCursor = toBase64UrlSafe(limitedFiles[limitedFiles.length - 1]);
+        dbFiles = limitedFiles;
+      }
+
+      return {
+        databases: dbFiles,
+        ...(nextCursor && { nextCursor }),
+      };
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-        return [];
+        return {
+          databases: [],
+        };
       }
       throw handleError(err, "listDatabases");
     }

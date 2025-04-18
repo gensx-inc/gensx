@@ -147,14 +147,18 @@ suite("GenSX Search Storage", () => {
       status: 200,
       json: async () => ({
         status: "ok",
-        data: { namespaces: ["test-ns1", "test-ns2"] },
+        data: {
+          namespaces: ["test-ns1", "test-ns2"],
+          nextCursor: "next-page-token",
+        },
       }),
     });
 
     const storage = new SearchStorage();
-    const namespaces = await storage.listNamespaces();
+    const result = await storage.listNamespaces();
 
-    expect(namespaces).toEqual(["test-ns1", "test-ns2"]);
+    expect(result.namespaces).toEqual(["test-ns1", "test-ns2"]);
+    expect(result.nextCursor).toBe("next-page-token");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/search"),
       expect.objectContaining({
@@ -556,16 +560,95 @@ suite("GenSX Search Storage", () => {
       status: 200,
       json: async () => ({
         status: "ok",
-        data: { namespaces: ["test/ns1", "test/ns2"] },
+        data: {
+          namespaces: ["test/ns1", "test/ns2"],
+          nextCursor: "next-page-token",
+        },
       }),
     });
 
     const storage = new SearchStorage();
-    const namespaces = await storage.listNamespaces({ prefix: "test" });
+    const result = await storage.listNamespaces({ prefix: "test" });
 
-    expect(namespaces).toEqual(["test/ns1", "test/ns2"]);
+    expect(result.namespaces).toEqual(["test/ns1", "test/ns2"]);
+    expect(result.nextCursor).toBe("next-page-token");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringMatching(/search.*prefix=test/),
+      expect.any(Object),
+    );
+  });
+
+  test("should handle pagination in listNamespaces", async () => {
+    // First page
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: {
+          namespaces: ["ns1", "ns2"],
+          nextCursor: "page2",
+        },
+      }),
+    });
+
+    // Second page
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: {
+          namespaces: ["ns3", "ns4"],
+          nextCursor: undefined,
+        },
+      }),
+    });
+
+    const storage = new SearchStorage();
+
+    // Get first page
+    const firstPage = await storage.listNamespaces({ limit: 2 });
+    expect(firstPage.namespaces).toEqual(["ns1", "ns2"]);
+    expect(firstPage.nextCursor).toBe("page2");
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringMatching(/search.*limit=2/),
+      expect.any(Object),
+    );
+
+    // Get second page
+    const secondPage = await storage.listNamespaces({
+      limit: 2,
+      cursor: firstPage.nextCursor,
+    });
+    expect(secondPage.namespaces).toEqual(["ns3", "ns4"]);
+    expect(secondPage.nextCursor).toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringMatching(/search.*limit=2.*cursor=page2/),
+      expect.any(Object),
+    );
+  });
+
+  test("should handle empty results in listNamespaces", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: {
+          namespaces: [],
+          nextCursor: undefined,
+        },
+      }),
+    });
+
+    const storage = new SearchStorage();
+    const result = await storage.listNamespaces({ limit: 10 });
+
+    expect(result.namespaces).toEqual([]);
+    expect(result.nextCursor).toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringMatching(/search.*limit=10/),
       expect.any(Object),
     );
   });
