@@ -71,7 +71,7 @@ export async function runCLI() {
       .description("Deploy a project to GenSX Cloud")
       .argument("<file>", "File to deploy")
       .option(
-        "-e, --env <VALUE[=value]>",
+        "-ev, --env-var <VALUE[=value]>",
         "Environment variable to include with deployment (can be used multiple times)",
         (val, prev: Record<string, string> = {}) => {
           let [key, value] = val.split("=") as [string, string | undefined];
@@ -89,7 +89,7 @@ export async function runCLI() {
         {},
       )
       .option("-p, --project <name>", "Project name to deploy to")
-      .option("--environment <name>", "Environment name to deploy to")
+      .option("-e, --env <name>", "Environment name to deploy to")
       .action(deploy);
 
     program
@@ -99,7 +99,7 @@ export async function runCLI() {
       .option("-i, --input <input>", "Input to pass to the workflow")
       .option("--no-wait", "Do not wait for the workflow to finish")
       .option("-p, --project <name>", "Project name to run the workflow in")
-      .option("--environment <name>", "Environment name to run the workflow in")
+      .option("-e, --env <name>", "Environment name to run the workflow in")
       .option(
         "-o, --output <file>",
         "Output file to write the workflow result to",
@@ -109,7 +109,7 @@ export async function runCLI() {
 
     // Environment management commands
     const environmentCommand = program
-      .command("environment")
+      .command("env")
       .description("Manage GenSX environments");
 
     environmentCommand

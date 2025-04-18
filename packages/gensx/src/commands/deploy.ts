@@ -17,7 +17,7 @@ import { build } from "./build.js";
 
 interface DeployOptions {
   project?: string;
-  env?: string[];
+  envVars?: string[];
   environment?: string;
 }
 
@@ -219,8 +219,9 @@ export async function deploy(file: string, options: DeployOptions) {
     // 4. Create form data with bundle
     const form = new FormData();
     form.append("file", fs.createReadStream(bundleFile), "bundle.js");
-    if (options.env)
-      form.append("environmentVariables", JSON.stringify(options.env));
+    if (options.envVars) {
+      form.append("environmentVariables", JSON.stringify(options.envVars));
+    }
 
     form.append("schemas", JSON.stringify(schemas));
 
