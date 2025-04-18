@@ -313,17 +313,27 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
     return this.databases.get(name)!;
   }
 
-  async listDatabases(): Promise<string[]> {
+  async listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
+    databases: string[];
+    nextCursor?: string;
+  }> {
     try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/database`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-          },
+      const url = new URL(`${this.apiBaseUrl}/org/${this.org}/database`);
+
+      if (options?.limit) {
+        url.searchParams.append("limit", options.limit.toString());
+      }
+
+      if (options?.cursor) {
+        url.searchParams.append("cursor", options.cursor);
+      }
+
+      const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
         },
-      );
+      });
 
       if (!response.ok) {
         throw new DatabaseInternalError(
@@ -333,6 +343,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
 
       const data = (await response.json()) as DatabaseAPIResponse<{
         databases: string[];
+        nextCursor?: string;
       }>;
 
       if (data.status === "error") {
@@ -344,7 +355,11 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
       if (!data.data) {
         throw new DatabaseInternalError("No data returned from API");
       }
-      return data.data.databases.map((db) => decodeURIComponent(db));
+
+      return {
+        databases: data.data.databases.map((db) => decodeURIComponent(db)),
+        ...(data.data.nextCursor && { nextCursor: data.data.nextCursor }),
+      };
     } catch (err) {
       throw handleApiError(err, "listDatabases");
     }

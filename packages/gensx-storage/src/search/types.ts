@@ -217,12 +217,16 @@ export interface SearchStorage {
   /**
    * List all namespaces
    * @param options Options for listing namespaces
-   * @returns Promise with array of namespace IDs
+   * @returns Promise with array of namespace IDs and optional next cursor for pagination
    */
   listNamespaces(options?: {
     prefix?: string;
-    pageSize?: number;
-  }): Promise<string[]>;
+    limit?: number;
+    cursor?: string;
+  }): Promise<{
+    namespaces: string[];
+    nextCursor?: string;
+  }>;
 
   /**
    * Delete a namespace

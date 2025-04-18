@@ -60,10 +60,14 @@ export class DatabaseClient {
 
   /**
    * List all databases
-   * @returns A Promise resolving to an array of database names
+   * @param options Optional pagination options
+   * @returns A Promise resolving to an array of database names and optional next cursor
    */
-  async listDatabases(): Promise<string[]> {
-    return this.storage.listDatabases();
+  async listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
+    databases: string[];
+    nextCursor?: string;
+  }> {
+    return this.storage.listDatabases(options);
   }
 
   /**
@@ -81,7 +85,7 @@ export class DatabaseClient {
    * @returns A Promise resolving to a boolean indicating if the database exists
    */
   async databaseExists(name: string): Promise<boolean> {
-    const databases = await this.storage.listDatabases();
-    return databases.includes(name);
+    const result = await this.storage.listDatabases();
+    return result.databases.includes(name);
   }
 }

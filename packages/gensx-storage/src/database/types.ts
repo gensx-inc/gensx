@@ -221,8 +221,13 @@ export interface DatabaseStorage {
 
   /**
    * List all databases
+   * @param options Options for listing databases
+   * @returns Promise with array of database names and optional next cursor for pagination
    */
-  listDatabases(): Promise<string[]>;
+  listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
+    databases: string[];
+    nextCursor?: string;
+  }>;
 
   /**
    * Ensure a database exists
