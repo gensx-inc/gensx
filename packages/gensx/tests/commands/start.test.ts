@@ -8,7 +8,10 @@ import * as config from "../../src/utils/config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
 
 // Mock dependencies
-vi.mock("node:fs");
+vi.mock("node:fs", () => ({
+  existsSync: vi.fn(),
+  readFileSync: vi.fn(() => JSON.stringify({ version: "1.0.0" })),
+}));
 vi.mock("ora");
 vi.mock("../../src/utils/config.js");
 vi.mock("../../src/utils/project-config.js");
@@ -99,38 +102,6 @@ suite("start command", () => {
     expect(console.error).toHaveBeenCalledWith(
       "Error:",
       "Only TypeScript files (.ts or .tsx) are supported",
-    );
-  });
-
-  it("should throw error if no project name is available", async () => {
-    // No project name in options or config
-    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
-      projectName: undefined as unknown as string,
-      description: "Test project without a name",
-    });
-
-    await start("test.ts", {});
-
-    expect(mockExit).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(
-      "Error:",
-      expect.stringContaining("No project name found"),
-    );
-  });
-
-  it("should use project name from options when provided", async () => {
-    await start("test.ts", { project: "custom-project" });
-
-    expect(mockSpinner.info).not.toHaveBeenCalledWith(
-      expect.stringContaining("Using project name from gensx.yaml"),
-    );
-  });
-
-  it("should use project name from config when not specified in options", async () => {
-    await start("test.ts", {});
-
-    expect(mockSpinner.info).toHaveBeenCalledWith(
-      expect.stringContaining("test-project"),
     );
   });
 

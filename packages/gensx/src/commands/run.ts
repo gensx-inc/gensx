@@ -5,12 +5,19 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { getAuth } from "../utils/config.js";
+import { getSelectedEnvironment } from "../utils/env-config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 
 export async function runWorkflow(
   workflow: string,
-  options: { input: string; wait: boolean; project?: string; output?: string },
+  options: {
+    input: string;
+    wait: boolean;
+    project?: string;
+    environment?: string;
+    output?: string;
+  },
 ) {
   const spinner = ora();
 
@@ -30,8 +37,9 @@ export async function runWorkflow(
     }
 
     let projectName = options.project;
+    let environmentName = options.environment;
+    const projectConfig = await readProjectConfig(process.cwd());
     if (!projectName) {
-      const projectConfig = await readProjectConfig(process.cwd());
       if (projectConfig?.projectName) {
         projectName = projectConfig.projectName;
         spinner.info(
@@ -45,10 +53,25 @@ export async function runWorkflow(
       }
     }
 
+    if (!environmentName) {
+      const selectedEnvironment = await getSelectedEnvironment(projectName);
+      if (selectedEnvironment) {
+        environmentName = selectedEnvironment;
+        spinner.info(
+          `Using environment name from CLI: ${pc.cyan(environmentName)}`,
+        );
+      } else {
+        spinner.fail("No environment name provided");
+        throw new Error(
+          "No environment name found. Either specify --environment or run `gensx environment select <environment>`.",
+        );
+      }
+    }
+
     if (!wait) {
       spinner.start("Starting workflow execution");
       const url = new URL(
-        `/org/${auth.org}/projects/${projectName}/workflows/${encodeURIComponent(workflow)}/start`,
+        `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environmentName)}/workflows/${encodeURIComponent(workflow)}/start`,
         auth.apiBaseUrl,
       );
 
@@ -82,7 +105,7 @@ export async function runWorkflow(
       spinner.start("Running workflow");
 
       const url = new URL(
-        `/org/${auth.org}/projects/${projectName}/workflows/${encodeURIComponent(workflow)}`,
+        `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environmentName)}/workflows/${encodeURIComponent(workflow)}`,
         auth.apiBaseUrl,
       );
       const response = await fetch(url, {

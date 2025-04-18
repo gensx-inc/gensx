@@ -107,14 +107,14 @@ suite("GenSX Dev Server", () => {
 
   it("should create server instance with workflows", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     expect(server).toBeInstanceOf(GensxServer);
   });
 
   it("should properly register workflows", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     const registeredWorkflows = server.getWorkflows();
     expect(registeredWorkflows).toHaveLength(1);
@@ -122,7 +122,7 @@ suite("GenSX Dev Server", () => {
   });
 
   it("should handle missing workflows gracefully", () => {
-    server = createServer({}, "test-org", "test-project");
+    server = createServer({});
 
     const registeredWorkflows = server.getWorkflows();
     expect(registeredWorkflows).toHaveLength(0);
@@ -138,7 +138,7 @@ suite("GenSX Dev Server", () => {
 
   it("should start server with correct port", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project", {
+    server = createServer(workflows, {
       port: 4000,
     });
 
@@ -154,13 +154,7 @@ suite("GenSX Dev Server", () => {
 
   it("should handle workflows with schemas", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(
-      workflows,
-      "test-org",
-      "test-project",
-      {},
-      mockSchemas,
-    );
+    server = createServer(workflows, {}, mockSchemas);
 
     const registeredWorkflows = server.getWorkflows();
     expect(registeredWorkflows[0].inputSchema).toEqual(
@@ -173,7 +167,7 @@ suite("GenSX Dev Server", () => {
 
   it("should handle starting server multiple times", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     server.start();
     server.start(); // Second call should do nothing
@@ -187,7 +181,7 @@ suite("GenSX Dev Server", () => {
 
   it("should handle stopping server multiple times", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     server.start();
     server.stop();
@@ -200,13 +194,13 @@ suite("GenSX Dev Server", () => {
 
   it("should return correct URLs for workflows", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project", {
-      port: 3000,
+    server = createServer(workflows, {
+      port: 4000,
     });
 
     const registeredWorkflows = server.getWorkflows();
     expect(registeredWorkflows[0].url).toBe(
-      "http://localhost:3000/org/test-org/projects/test-project/workflows/testWorkflow",
+      "http://localhost:4000/workflows/testWorkflow",
     );
   });
 
@@ -216,7 +210,7 @@ suite("GenSX Dev Server", () => {
       workflow2: { name: "workflow2", run: vi.fn() },
     };
 
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     const workflowNames: string[] = [];
     for await (const workflow of server.workflows()) {
@@ -230,7 +224,7 @@ suite("GenSX Dev Server", () => {
 
   it("should handle invalid JSON in request body", async () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     const mockContext = {
       req: {
@@ -246,13 +240,7 @@ suite("GenSX Dev Server", () => {
 
   it("should validate input against schema", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(
-      workflows,
-      "test-org",
-      "test-project",
-      {},
-      mockSchemas,
-    );
+    server = createServer(workflows, {}, mockSchemas);
 
     const privateServer = server as unknown as PrivateServer;
 
@@ -281,7 +269,7 @@ suite("GenSX Dev Server", () => {
     });
 
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     const executionId = "test-execution-id";
     const input = { test: "data" };
@@ -325,7 +313,7 @@ suite("GenSX Dev Server", () => {
     };
 
     const workflows = { failingWorkflow };
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     const executionId = "test-execution-id";
     const input = { test: "data" };
@@ -374,7 +362,7 @@ suite("GenSX Dev Server", () => {
     };
 
     const workflows = { streamingWorkflow };
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     const mockContext = {} as Context;
     const runResult =
@@ -414,7 +402,7 @@ suite("GenSX Dev Server", () => {
 
   it("should handle different types of errors appropriately", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, "test-org", "test-project");
+    server = createServer(workflows);
 
     const mockJsonResponse = vi.fn();
     const mockContext = { json: mockJsonResponse } as unknown as Context;
@@ -468,7 +456,7 @@ suite("GenSX Dev Server", () => {
     console.warn = vi.fn();
 
     // Create a fresh server with no valid workflows
-    const noValidWorkflowsServer = createServer({}, "test-org", "test-project");
+    const noValidWorkflowsServer = createServer({});
     const registeredWorkflows = noValidWorkflowsServer.getWorkflows();
 
     // Should have no registered workflows

@@ -1,0 +1,157 @@
+import { GenSXAPIResponse } from "../types/api.js";
+import { getAuth } from "../utils/config.js";
+import { USER_AGENT } from "../utils/user-agent.js";
+
+interface ListProjectsResponse {
+  projects: {
+    id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+}
+
+/**
+ * List projects
+ */
+export async function listProjects(): Promise<
+  ListProjectsResponse["projects"]
+> {
+  const auth = await getAuth();
+  if (!auth) {
+    throw new Error("Not authenticated. Please run 'gensx login' first.");
+  }
+
+  const url = new URL(`/org/${auth.org}/projects`, auth.apiBaseUrl);
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+      "User-Agent": USER_AGENT,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to list projects: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const data =
+    (await response.json()) as GenSXAPIResponse<ListProjectsResponse>;
+
+  if (data.status === "error") {
+    throw new Error(data.error);
+  }
+
+  return data.data?.projects ?? [];
+}
+
+interface CreateProjectResponse {
+  id: string;
+  name: string;
+}
+
+/**
+ * Create a project
+ */
+export async function createProject(
+  projectName: string,
+  environmentName?: string,
+): Promise<CreateProjectResponse> {
+  const auth = await getAuth();
+  if (!auth) {
+    throw new Error("Not authenticated. Please run 'gensx login' first.");
+  }
+
+  // Check if the environment already exists
+  const exists = await checkProjectExists(projectName);
+  if (exists) {
+    throw new Error(`Project ${projectName} already exists`);
+  }
+
+  const url = new URL(`/org/${auth.org}/projects`, auth.apiBaseUrl);
+
+  let body: { name: string; environmentName?: string } = {
+    name: projectName,
+  };
+
+  if (environmentName) {
+    body.environmentName = environmentName;
+  }
+
+  const response = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+      "User-Agent": USER_AGENT,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to create project: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const data =
+    (await response.json()) as GenSXAPIResponse<CreateProjectResponse>;
+
+  if (data.status === "error" || !data.data) {
+    throw new Error(data.error);
+  }
+
+  return data.data;
+}
+
+interface GetProjectResponse {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Check if a project exists
+ */
+export async function checkProjectExists(
+  projectName: string,
+): Promise<boolean> {
+  const auth = await getAuth();
+  if (!auth) {
+    throw new Error("Not authenticated. Please run 'gensx login' first.");
+  }
+
+  const url = new URL(
+    `/org/${auth.org}/projects/${encodeURIComponent(projectName)}`,
+    auth.apiBaseUrl,
+  );
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+      "User-Agent": USER_AGENT,
+    },
+  });
+
+  if (response.status === 404) {
+    return false;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to check project: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const data = (await response.json()) as GenSXAPIResponse<GetProjectResponse>;
+
+  if (data.status === "error") {
+    throw new Error(data.error);
+  }
+
+  return true;
+}

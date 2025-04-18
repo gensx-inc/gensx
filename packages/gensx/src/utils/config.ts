@@ -41,7 +41,7 @@ const DEFAULT_STATE: CliState = {
 };
 
 // Configuration path management
-function getConfigPaths(): { configDir: string; configFile: string } {
+export function getConfigPaths(): { configDir: string; configFile: string } {
   if (process.env.GENSX_CONFIG_DIR) {
     return {
       configDir: process.env.GENSX_CONFIG_DIR,
