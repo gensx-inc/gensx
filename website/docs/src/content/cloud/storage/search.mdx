@@ -1,0 +1,482 @@
+---
+title: Search
+description: Full-text and vector search for GenSX workflows
+---
+
+# Search
+
+GenSX's Cloud search service provides vector search for AI applications. It enables you to store, query, and manage vector embeddings for semantic search, retrieval-augmented generation (RAG), and other AI use cases.
+
+Search is powered by [Turbopuffer](https://turbopuffer.com/), fully featured and ready for AI workloads:
+
+- **Combined vector and keyword search**: Perform hybrid searches using both semantic similarity (vectors) and keyword matching (BM25).
+- **Millisecond query latency**: Get results quickly, even with large vector collections.
+- **Flexible filtering**: Apply metadata filters to narrow down search results based on categories, timestamps, or any custom attributes.
+
+## Basic usage
+
+To use search in your GenSX application:
+
+1. Install the storage package:
+   ```bash
+   npm install @gensx/storage
+   ```
+
+2. Add the `SearchProvider` to your workflow:
+   ```tsx
+   import { SearchProvider } from "@gensx/storage";
+
+   const Workflow = gensx.Component("SearchWorkflow", { input }) => (
+     <SearchProvider>
+       <YourComponent input={input} />
+     </SearchProvider>
+   );
+   ```
+
+3. Access search namespaces within your components using the `useSearch` hook:
+   ```tsx
+   import { useSearch } from "@gensx/storage";
+
+   const search = await useSearch("documents");
+   ```
+
+### Storing vector embeddings
+
+The first step in using search is to convert your data into vector embeddings and store them:
+
+```tsx
+import * as gensx from "@gensx/core";
+import { OpenAIEmbedding } from "@gensx/openai";
+import { useSearch } from "@gensx/storage";
+
+const IndexDocument = gensx.Component(
+  "IndexDocument",
+  async ({ documents }) => {
+    // Get access to a search namespace
+    const search = await useSearch("documents");
+
+    // Generate embeddings for the documents
+    const embeddings = await OpenAIEmbedding.run({
+      model: "text-embedding-3-small",
+      input: documents.map(doc => doc.text),
+    });
+
+    // Store the embeddings with original text as metadata
+    await search.upsert({
+      vectors: documents.map((doc, index) => ({
+        id: doc.id,
+        vector: embeddings.data[index].embedding,
+        attributes: {
+          text: doc.text,
+          category: doc.category,
+          createdAt: new Date().toISOString()
+        }
+      })),
+      distanceMetric: "cosine_distance",
+    });
+
+    return { success: true, count: documents.length };
+  }
+);
+```
+
+### Searching for similar documents
+
+Once you've stored embeddings, you can search for semantically similar content:
+
+```tsx
+const SearchDocuments = gensx.Component(
+  "SearchDocuments",
+  async ({ query, category }) => {
+    // Get access to the search namespace
+    const search = await useSearch("documents");
+
+    // Generate an embedding for the query
+    const embedding = await OpenAIEmbedding.run({
+      model: "text-embedding-3-small",
+      input: query,
+    });
+
+    // Build query options
+    const queryOptions = {
+      vector: embedding.data[0].embedding,
+      includeAttributes: true,
+      topK: 5  // Return top 5 results
+    };
+
+    // Add filters if category is specified
+    if (category) {
+      queryOptions.filters = {
+        where: { category: { $eq: category } }
+      };
+    }
+
+    // Perform the search
+    const results = await search.query(queryOptions);
+
+    // Process and return results
+    return results.map(result => ({
+      id: result.id,
+      text: result.attributes?.text,
+      score: result.score
+    }));
+  }
+);
+```
+
+## Building a RAG application
+
+Retrieval-Augmented Generation (RAG) is one of the most common use cases for vector search. Here's how to build a complete RAG workflow:
+
+### Step 1: Index your documents
+
+First, create a component to prepare and index your documents:
+
+```tsx
+const PrepareDocuments = gensx.Component(
+  "PrepareDocuments",
+  async () => {
+    // Sample baseball player data
+    const documents = [
+      {
+        id: "1",
+        text: "Marcus Bennett is a first baseman for the Portland Pioneers. He has 32 home runs this season.",
+        category: "player"
+      },
+      {
+        id: "2",
+        text: "Ethan Carter plays shortstop for the San Antonio Stallions with 24 home runs.",
+        category: "player"
+      },
+      {
+        id: "3",
+        text: "The Portland Pioneers are leading the Western Division with a 92-70 record.",
+        category: "team"
+      }
+    ];
+
+    // Index the documents
+    return <IndexDocument documents={documents} />;
+  }
+);
+```
+
+### Step 2: Create a query tool
+
+Next, create a tool that can access your search index:
+
+```tsx
+import { GSXTool } from "@gensx/openai";
+import { z } from "zod";
+
+// Define a tool to query the search index
+const queryTool = new GSXTool({
+  name: "query",
+  description: "Query the baseball knowledge base",
+  schema: z.object({
+    query: z.string().describe("The text query to search for"),
+  }),
+  run: async ({ query }) => {
+    // Access search index
+    const search = await useSearch("baseball");
+
+    // Generate query embedding
+    const embedding = await OpenAIEmbedding.run({
+      model: "text-embedding-3-small",
+      input: query,
+    });
+
+    // Search for relevant documents
+    const results = await search.query({
+      vector: embedding.data[0].embedding,
+      includeAttributes: true,
+    });
+
+    // Return formatted results
+    return JSON.stringify(results.map(r => r.attributes?.text), null, 2);
+  },
+});
+```
+
+### Step 3: Create the RAG agent
+
+Now, create an agent that uses the query tool to access relevant information:
+
+```tsx
+const RagAgent = gensx.Component(
+  "RagAgent",
+  ({ question }) => (
+    <GSXChatCompletion
+      messages={[
+        {
+          role: "system",
+          content: `You are a baseball expert assistant. Use the query tool to
+          look up relevant information before answering questions.`,
+        },
+        { role: "user", content: question },
+      ]}
+      model="gpt-4o-mini"
+      tools={[queryTool]}
+    >
+      {(result) => result.choices[0].message.content}
+    </GSXChatCompletion>
+  ),
+);
+```
+
+### Step 4: Combine Everything in a Workflow
+
+Finally, put it all together in a workflow:
+
+```tsx
+const RagWorkflow = gensx.Component(
+  "RagWorkflow",
+  async ({ question, shouldReindex }) => {
+    // Optionally reindex documents
+    if (shouldReindex) {
+      await PrepareDocuments();
+    }
+
+    // Use the RAG agent to answer the question
+    return <RagAgent question={question} />;
+  }
+);
+```
+
+## Practical examples
+
+### Agent memory system
+
+One powerful application of vector search is creating a long-term memory system for AI agents:
+
+```tsx
+import * as gensx from "@gensx/core";
+import { OpenAIEmbedding } from "@gensx/openai";
+import { useSearch } from "@gensx/storage";
+
+// Component to store a memory
+const StoreMemory = gensx.Component(
+  "StoreMemory",
+  async ({ userId, memory, importance = "medium" }) => {
+    const search = await useSearch(`memories-${userId}`);
+
+    // Generate embedding for this memory
+    const embedding = await OpenAIEmbedding.run({
+      model: "text-embedding-3-small",
+      input: memory,
+    });
+
+    // Store the memory with metadata
+    await search.upsert({
+      vectors: [{
+        id: `memory-${Date.now()}`,
+        vector: embedding.data[0].embedding,
+        attributes: {
+          content: memory,
+          timestamp: new Date().toISOString(),
+          importance: importance, // "high", "medium", "low"
+          source: "user-interaction"
+        }
+      }],
+      distanceMetric: "cosine_distance",
+    });
+
+    return { success: true };
+  }
+);
+
+// Component to recall relevant memories
+const RecallMemories = gensx.Component(
+  "RecallMemories",
+  async ({ userId, context, maxResults = 5 }) => {
+    const search = await useSearch(`memories-${userId}`);
+
+    // Generate embedding for the context
+    const embedding = await OpenAIEmbedding.run({
+      model: "text-embedding-3-small",
+      input: context,
+    });
+
+    // Query for relevant memories, prioritizing important ones
+    const results = await search.query({
+      vector: embedding.data[0].embedding,
+      topK: maxResults,
+      includeAttributes: true,
+      // Optional: rank by both relevance and importance
+      rankBy: {
+        "attributes.importance": {
+          "high": 1.5,   // Boost important memories
+          "medium": 1.0, // Normal weight
+          "low": 0.5     // Lower weight for less important memories
+        }
+      }
+    });
+
+    // Format memories for the agent
+    return results.map(result => ({
+      content: result.attributes?.content,
+      timestamp: result.attributes?.timestamp,
+      relevance: result.score.toFixed(3)
+    }));
+  }
+);
+
+// Component that uses memories in a conversation
+const MemoryAwareAgent = gensx.Component(
+  "MemoryAwareAgent",
+  async ({ userId, userMessage }) => {
+    // Recall relevant memories based on the current conversation
+    const memories = await RecallMemories({
+      userId,
+      context: userMessage,
+      maxResults: 3
+    });
+
+    // Use memories to inform the response
+    const response = await ChatCompletion.run({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are an assistant with memory. Consider these relevant memories about this user:
+          ${memories.map(m => `[${m.timestamp}] ${m.content} (relevance: ${m.relevance})`).join('\n')}`
+        },
+        { role: "user", content: userMessage }
+      ]
+    });
+
+    // Store this interaction as a new memory
+    await StoreMemory({
+      userId,
+      memory: `User asked: "${userMessage}". I replied: "${response}"`,
+      importance: "medium"
+    });
+
+    return response;
+  }
+);
+```
+
+### Knowledge base with faceted search
+
+Another powerful application is a knowledge base with faceted search capabilities:
+
+```tsx
+const SearchKnowledgeBase = gensx.Component(
+  "SearchKnowledgeBase",
+  async ({ query, filters = {} }) => {
+    const search = await useSearch("knowledge-base");
+
+    // Generate embedding for the query
+    const embedding = await OpenAIEmbedding.run({
+      model: "text-embedding-3-small",
+      input: query,
+    });
+
+    // Build filter conditions from user-provided filters
+    const filterConditions = {};
+
+    if (filters.category) {
+      filterConditions.category = { $eq: filters.category };
+    }
+
+    if (filters.dateRange) {
+      filterConditions.publishedDate = {
+        $gte: filters.dateRange.start,
+        $lte: filters.dateRange.end
+      };
+    }
+
+    if (filters.tags && filters.tags.length > 0) {
+      filterConditions.tags = { $containsAny: filters.tags };
+    }
+
+    // Perform hybrid search (vector + keyword) with filters
+    const results = await search.query({
+      vector: embedding.data[0].embedding,
+      text: query,           // Also use keyword search
+      hybridAlpha: 0.3,      // Balance between vector and keyword search
+      includeAttributes: true,
+      topK: 10,
+      filters: Object.keys(filterConditions).length > 0 ?
+        { where: filterConditions } : undefined
+    });
+
+    // Return formatted results
+    return results.map(result => ({
+      title: result.attributes?.title,
+      snippet: result.attributes?.snippet,
+      url: result.attributes?.url,
+      category: result.attributes?.category,
+      tags: result.attributes?.tags,
+      score: result.score
+    }));
+  }
+);
+```
+
+## Advanced usage
+
+### Filtering by metadata
+
+Use filters to narrow down search results:
+
+```tsx
+const search = await useSearch("articles");
+
+// Search with filters
+const results = await search.query({
+  vector: queryEmbedding,
+  filters: {
+    where: {
+      // Filter by category
+      category: { $eq: "sports" },
+      // Filter by date range
+      publishDate: {
+        $gte: "2023-01-01",
+        $lt: "2024-01-01"
+      },
+      // Filter by multiple possible authors
+      author: { $in: ["Alice", "Bob", "Carol"] }
+    }
+  }
+});
+```
+
+### Hybrid search
+
+Combine vector similarity with keyword search:
+
+```tsx
+const search = await useSearch("documents");
+
+const results = await search.query({
+  vector: queryEmbedding,    // Vector for semantic search
+  text: "quarterly report",  // Text for keyword search
+  includeAttributes: true,
+  hybridAlpha: 0.5           // Balance between vector and text search
+                             // 0.0 = vector only, 1.0 = text only
+});
+```
+
+### Updating schema
+
+Manage your vector collection's schema:
+
+```tsx
+const search = await useSearch("products");
+
+// Get current schema
+const currentSchema = await search.getSchema();
+
+// Update schema to add new fields
+await search.updateSchema({
+  ...currentSchema,
+  newField: "number",
+  anotherField: "string[]"
+});
+```
+
+## Reference
+
+See the [search component reference](docs/component-reference/storage-components/search-reference) for full details.

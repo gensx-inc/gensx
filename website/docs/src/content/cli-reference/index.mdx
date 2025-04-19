@@ -1,0 +1,45 @@
+---
+title: CLI Reference
+description: Documentation for the GenSX command-line interface
+---
+
+# GenSX CLI Reference
+
+The GenSX command-line interface (CLI) provides a set of commands to help you build, deploy, and manage your GenSX applications.
+
+## Installation
+
+The GenSX CLI is included when you install the main GenSX package:
+
+```bash
+npm install -g gensx
+```
+
+## Available Commands
+
+| Command | Description |
+|---------|-------------|
+| [`gensx login`](./login) | Log in to GenSX Cloud |
+| [`gensx new`](./new) | Create a new GenSX project |
+| [`gensx start`](./start) | Start a local development server |
+| [`gensx build`](./build) | Build a workflow for deployment |
+| [`gensx deploy`](./deploy) | Deploy a workflow to GenSX Cloud |
+| [`gensx run`](./run) | Run a workflow on GenSX Cloud |
+
+## Basic Usage
+
+```bash
+# Create a new project
+gensx new my-project
+
+# Navigate to project
+cd my-project
+
+# Start local development server
+gensx start src/workflows.tsx
+
+# Deploy a workflow
+gensx deploy src/workflows.tsx
+```
+
+For detailed information about each command, please refer to the corresponding documentation page.

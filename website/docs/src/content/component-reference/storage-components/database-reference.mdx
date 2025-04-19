@@ -1,0 +1,312 @@
+---
+title: SQL database reference
+description: SQL database components for persistent data in GenSX workflows.
+---
+
+# Database Reference
+
+API reference for GenSX Cloud SQL database components.
+
+## DatabaseProvider
+
+Provides SQL database capabilities to its child components.
+
+### Import
+
+```tsx
+import { DatabaseProvider } from "@gensx/storage";
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `defaultPrefix` | `string` | `undefined` | Optional prefix for all database names |
+
+### Example
+
+```tsx
+import { DatabaseProvider } from "@gensx/storage";
+
+const Workflow = gensx.Component(
+  "DatabaseWorkflow",
+  ({ input }) => (
+    <DatabaseProvider>
+      <YourComponent input={input} />
+    </DatabaseProvider>
+  )
+);
+```
+
+## useDatabase
+
+Hook that provides access to a specific SQL database.
+
+### Import
+
+```tsx
+import { useDatabase } from "@gensx/storage";
+```
+
+### Signature
+
+```tsx
+function useDatabase(name: string): Database;
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | `string` | The database name to access |
+
+### Returns
+
+Returns a database object with methods to interact with SQL database.
+
+### Example
+
+```tsx
+const db = await useDatabase("users");
+const result = await db.execute("SELECT * FROM users WHERE id = ?", ["user-123"]);
+```
+
+## Database Methods
+
+The database object returned by `useDatabase` provides these methods:
+
+### execute
+
+Executes a single SQL statement with optional parameters.
+
+```tsx
+async execute(sql: string, params?: InArgs): Promise<DatabaseResult>
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `sql` | `string` | SQL statement to execute |
+| `params` | `InArgs` | Optional parameters for prepared statement |
+
+#### Example
+
+```tsx
+// Query with parameters
+const result = await db.execute(
+  "SELECT * FROM users WHERE email = ?",
+  ["user@example.com"]
+);
+
+// Insert data
+await db.execute(
+  "INSERT INTO users (id, name, email) VALUES (?, ?, ?)",
+  ["user-123", "John Doe", "john@example.com"]
+);
+
+// Update data
+await db.execute(
+  "UPDATE users SET last_login = ? WHERE id = ?",
+  [new Date().toISOString(), "user-123"]
+);
+```
+
+#### Return Value
+
+Returns a result object with the following properties:
+
+```tsx
+{
+  rowsAffected: number;  // Number of rows affected by statement
+  lastInsertRowid?: number;  // ID of last inserted row (for INSERT statements)
+  rows: Record<string, any>[];  // Array of result rows (for SELECT statements)
+}
+```
+
+### batch
+
+Executes multiple SQL statements in a single transaction.
+
+```tsx
+async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult>
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `statements` | `DatabaseStatement[]` | Array of SQL statements with optional parameters |
+
+#### DatabaseStatement Format
+
+```tsx
+{
+  sql: string;     // SQL statement
+  params?: InArgs; // Optional parameters
+}
+```
+
+#### Example
+
+```tsx
+const results = await db.batch([
+  {
+    sql: "INSERT INTO users (id, name) VALUES (?, ?)",
+    params: ["user-123", "John Doe"]
+  },
+  {
+    sql: "INSERT INTO user_preferences (user_id, theme) VALUES (?, ?)",
+    params: ["user-123", "dark"]
+  }
+]);
+```
+
+#### Return Value
+
+Returns an array of result objects, one for each statement executed:
+
+```tsx
+[
+  {
+    rowsAffected: 1,
+    lastInsertRowid: 42,
+    rows: []
+  },
+  {
+    rowsAffected: 1,
+    lastInsertRowid: 43,
+    rows: []
+  }
+]
+```
+
+### executeMultiple
+
+Executes multiple SQL statements in a single string.
+
+```tsx
+async executeMultiple(sql: string): Promise<DatabaseBatchResult>
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `sql` | `string` | Multiple SQL statements separated by semicolons |
+
+#### Example
+
+```tsx
+const results = await db.executeMultiple(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_users_name ON users(name);
+`);
+```
+
+#### Return Value
+
+Returns an array of result objects, one for each statement executed.
+
+### migrate
+
+Executes SQL migration script with transaction handling.
+
+```tsx
+async migrate(sql: string): Promise<DatabaseBatchResult>
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `sql` | `string` | SQL migration statements |
+
+#### Example
+
+```tsx
+const results = await db.migrate(`
+  -- Migration v1: Initial schema
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- Migration v2: Add last_login field
+  ALTER TABLE users ADD COLUMN last_login TEXT;
+`);
+```
+
+#### Return Value
+
+Returns an array of result objects, one for each statement executed.
+
+### getInfo
+
+Retrieves metadata about the database.
+
+```tsx
+async getInfo(): Promise<DatabaseInfo>
+```
+
+#### Example
+
+```tsx
+const info = await db.getInfo();
+console.log(info);
+// {
+//   name: "users",
+//   lastModified: Date("2023-07-15T12:34:56Z"),
+//   sizeBytes: 12800,
+//   tables: ["users", "user_preferences"]
+// }
+```
+
+## Database Management
+
+Higher-level operations for managing databases:
+
+### listDatabases
+
+Lists all databases in your project.
+
+```tsx
+import { DatabaseClient } from "@gensx/storage";
+
+const dbClient = new DatabaseClient();
+const databases = await dbClient.listDatabases();
+console.log(databases); // ["users", "products", "analytics"]
+```
+
+### ensureDatabase
+
+Creates a database if it doesn't exist.
+
+```tsx
+const { created } = await dbClient.ensureDatabase("new-database");
+if (created) {
+  console.log("Database was created");
+} else {
+  console.log("Database already existed");
+}
+```
+
+### deleteDatabase
+
+Deletes a database and all its data.
+
+```tsx
+const { deleted } = await dbClient.deleteDatabase("old-database");
+if (deleted) {
+  console.log("Database was deleted");
+} else {
+  console.log("Database could not be deleted");
+}
+```

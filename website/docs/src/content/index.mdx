@@ -6,7 +6,7 @@ sidebarTitle: Overview
 
 # GenSX Overview
 
-GenSX is a TypeScript cloud platform for building and deploying complex AI applications. It combines a workflow framework for building agents, chatbot APIs, and RAG applications with a serverless deployment platform and zero-configuration cloud storage.
+GenSX is a simple TypeScript framework for building complex LLM applications. It’s a workflow engine designed for building agents, chatbot APIs, and more using common patterns like RAG and reflection.
 
 It uses `jsx` to define and orchestrate workflows with functional, reusable components:
 
@@ -42,20 +42,39 @@ LLM workflows are fundamentally about function composition and data flow - exact
 
 While GenSX uses JSX, it does not share the same execution model as React, and has zero dependencies.
 
-## Cloud Platform Features
+## GenSX Cloud
 
-GenSX provides a complete platform for AI application development and deployment:
+[GenSX Cloud](/docs/cloud) provides everything you need to ship production grade agents and workflow including a serverless runtime designed for long-running workloads, cloud storage to build stateful workflows and agents, tracing and observability, and features for team collaboration.
 
-### Serverless Deployment
+### Serverless deployments
 
 Deploy any workflow to a hosted API endpoint with a single command. The GenSX cloud platform handles scaling, infrastructure management, and API generation automatically:
 
 ```bash
 # Deploy your workflow to GenSX Cloud
-gensx deploy src/workflows.ts
+$ npx gensx deploy ./src/workflows.tsx
+✔ Building workflow using Docker
+✔ Generating schema
+
+✔ Successfully built project
+
+ℹ Using project name from gensx.yaml: support-tools
+✔ Deploying project to GenSX Cloud (Project: support-tools)
+
+✔ Successfully deployed project to GenSX Cloud
+
+Dashboard: https://app.gensx.com/gensx/support-tools/default/workflows
+
+Available workflows:
+- ChatAgent
+- TextToSQLWorkflow
+- RAGWorkflow
+- AnalyzeDiscordWorkflow
+
+Project: support-tools
 ```
 
-The platform is optimized for AI workloads with millisecond cold starts and support for long-running executions up to an hour.
+The platform is optimized for AI workloads with millisecond-level cold starts and support for long-running executions up to an hour.
 
 ### Development Server
 
@@ -68,7 +87,7 @@ gensx start src/workflows.ts
 
 ### Cloud Storage
 
-Build stateful AI applications with zero configuration using built-in storage primitives:
+Build stateful AI applications with zero configuration using built-in storage primitives that provide managed blob storage, SQL databases, and full-text + vector search:
 
 ```tsx
 const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
@@ -90,6 +109,8 @@ const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
   }
 );
 ```
+
+For more details about GenSX Cloud see the [complete cloud reference](/docs/cloud).
 
 ## Reusable by default
 

@@ -1,0 +1,63 @@
+---
+title: gensx start
+description: Start a local development server for your GenSX workflow
+---
+
+# gensx start
+
+The `gensx start` command starts a local development server that enables you to test and debug your GenSX workflows.
+
+## Usage
+
+```bash
+gensx start <file> [options]
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<file>` | The workflow file to serve (e.g., `src/workflows.tsx`). |
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `-p, --project <name>` | Project name for the local server. |
+| `-q, --quiet` | Suppress output. |
+| `-h, --help` | Display help for the command. |
+
+## Description
+
+This command starts a local development server that:
+
+- Watches your workflow file for changes and automatically reloads
+- Provides a web interface to test and debug your workflows
+- Simulates the cloud environment locally
+- Runs your workflow components in a development mode
+
+The development server includes:
+
+- A web UI for testing your workflows
+- Real-time logs and execution visibility
+- Access to the GenSX development dashboard
+
+## Examples
+
+```bash
+# Start server with a specific workflow file
+gensx start src/workflows.tsx
+
+# Start server with a custom project name
+gensx start src/workflows.tsx --project my-custom-name
+
+# Start server with minimal output
+gensx start src/workflows.tsx --quiet
+```
+
+## Notes
+
+- The server runs on port 3000 by default
+- You can access the development UI at `http://localhost:3000`
+- Environment variables from your local environment are available to the workflow
+- For more complex environment variable setups, consider using a `.env` file in your project root

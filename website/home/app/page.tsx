@@ -7,6 +7,7 @@ import { HyperText } from "@/components/ui/hyper-text";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   type ExampleType = "components" | "observability" | "stateful" | "serverless";
@@ -21,7 +22,7 @@ export default function Home() {
   // The active example is the hovered one (if one exists) or the committed one.
   const activeExample = hoveredExample ?? committedExample;
 
-  const examples: Record<ExampleType, string> = {
+  const examples: Record<ExampleType, string | React.ReactNode> = {
     components: `import * as gensx from '@gensx/core';
 import { ChatCompletion } from '@gensx/openai';
 
@@ -55,109 +56,63 @@ const WriteDraft = gensx.Component<WriteDraftProps, string>(
   },
 );
 `,
-    observability: `// Trace & debug your AI workflows in real-time
-import * as gensx from '@gensx/core';
-import { OpenAIProvider, ChatCompletion } from '@gensx/openai';
+    observability: (
+      <div className="relative">
+        <Image
+          src="/assets/home/trace.png"
 
-const AnalyzeDocument = gensx.Component<{ document: string }, string>(
-  "AnalyzeDocument",
-  async ({ document }) => {
-    // Every step of your workflow is automatically traced
-    console.log("Starting document analysis");
+          alt="GenSX Workflow Tracing Dashboard"
+          width={1000}
 
-    const summary = await gensx.execute(
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          { role: "user", content: \`Summarize: \${document}\` }
-        ]}
-      />
-    );
+          height={600}
+          className="rounded-lg shadow-lg w-full border border-gray-200 dark:border-gray-800"
+        />
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
+      </div>
+    ),
+    stateful: `import * as gensx from '@gensx/core';
+import { GSXTool } from '@gensx/openai';
+import { useBlob, useDatabase, useSearch } from '@gensx/storage';
 
-    // Execution traces show:
-    // - Component inputs/outputs at each step
-    // - Execution time and billing costs
-    // - Full LLM prompt and response
-    // - Dependencies between components
-    // - Live updates during execution
-
-    return summary;
+// RAG Tool - Vector search for knowledge retrieval
+const RAGTool = new GSXTool({
+  name: "search_knowledge",
+  run: async ({ query }) => {
+    const docsIndex = useSearch("documentation");
+    return await docsIndex.query(query, { limit: 3 });
   }
-);
+});
 
-// Run workflow with tracing enabled
-// View live at https://app.gensx.com
-const result = await gensx.Workflow("DocumentAnalysis", AnalyzeDocument)
-  .run({ document: "Sample text..." }, { trace: true });
-`,
-    stateful: `// Build a stateful agent with persistent memory
-import * as gensx from '@gensx/core';
-import { ChatCompletion, OpenAIProvider } from '@gensx/openai';
-import { BlobProvider, useBlob } from '@gensx/storage';
-import { DatabaseProvider, useDatabase } from '@gensx/storage';
-
-// Chat agent with persistent memory
-const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
-  "ChatWithMemory",
-  async ({ userInput, threadId }) => {
-    // Load chat history from blob storage - zero configuration
-    const blob = useBlob<ChatMessage[]>(\`chat-history/\${threadId}.json\`);
-    const history = await blob.getJSON() ?? [];
-
-    // Query knowledge base using SQL - instantly provisioned
-    const db = await useDatabase("knowledge");
-    const relevantInfo = await db.execute(\`
-      SELECT content FROM knowledge
-      WHERE MATCH(content) AGAINST('\${userInput}')
-    \`);
-
-    // Generate response with context
-    const response = await ChatCompletion.run({
-      model: "gpt-4o-mini",
-      messages: [
-        ...history,
-        { role: "user", content: userInput }
-      ],
-    });
-
-    // Save conversation to cloud storage
-    await blob.putJSON([...history,
-      { role: "user", content: userInput },
-      { role: "assistant", content: response }
-    ]);
-
-    return response;
+// SQL Tool - Analyze structured data
+const SQLTool = new GSXTool({
+  name: "query_database",
+  run: async ({ sql }) => {
+    const db = await useDatabase("analytics");
+    return await db.execute(sql);
   }
-);`,
-    serverless: `// Turn your workflow into a serverless API
-// 1. Define your workflow
-import * as gensx from '@gensx/core';
-import { ChatCompletion } from '@gensx/openai';
-import { BlobProvider, useBlob } from '@gensx/storage';
+});
 
-const WritingAgent = gensx.Component<WritingRequest, string>(
-  "WritingAgent",
-  async ({ topic, style, length }) => {
-    // Agent implementation
-    // ...
-    return response;
+// Memory Tool - Persist conversation history
+const MemoryTool = new GSXTool({
+  name: "manage_memory",
+  run: async ({ userId, save, retrieve }) => {
+    const blob = useBlob(\`users/\${userId}/memory.json\`);
+    if (save) return await blob.putJSON(save);
+    return await blob.getJSON() || [];
   }
-);
-
-// 2. Create a workflow
-const workflow = gensx.Workflow("WritingService", WritingAgent);
-
-// 3. Deploy with a single command:
-// $ gensx deploy src/workflows.ts
-//
-// This generates:
-// - REST API endpoints
-// - Async execution with status updates
-// - Streaming support
-// - Single-digit ms cold starts
-// - Support for long-running operations
-// - Pay-per-second pricing
-`,
+});`,
+    serverless: (
+      <div className="relative">
+        <Image
+          src="/assets/home/deploy.png"
+          alt="GenSX Cloud Deployment Terminal Output"
+          width={1000}
+          height={600}
+          className="rounded-lg shadow-lg w-full border border-gray-200 dark:border-gray-800"
+        />
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
+      </div>
+    ),
   };
 
   // Define an array of button/tab details so we can map over them.
@@ -172,25 +127,25 @@ const workflow = gensx.Workflow("WritingService", WritingAgent);
       title: "Create Components",
       mobileTitle: "Components",
       description:
-        "Create building blocks for your AI backend with reusable components.",
+        "Create reusable building blocks for your AI backend with components.",
     },
     {
       type: "observability",
       title: "Observe & Debug",
       mobileTitle: "Observe",
-      description: "Visualize and trace your workflows in real-time with full transparency.",
+      description: "Visualize and trace your workflows in real-time.",
     },
     {
       type: "stateful",
       title: "Stateful Agents",
       mobileTitle: "Stateful",
-      description: "Runtime hooks for blob storage, SQL databases, and vector search.",
+      description: "Runtime hooks for fully managed blob storage, SQL databases, and vector search.",
     },
     {
       type: "serverless",
       title: "Serverless Deployments",
       mobileTitle: "Serverless",
-      description: "One command to deploy as sync/async APIs with streaming support.",
+      description: "Deploy projects as REST APIs with sync, async, and streaming out of the box.",
     },
   ];
 
@@ -209,7 +164,7 @@ const workflow = gensx.Workflow("WritingService", WritingAgent);
           className="max-w-4xl mx-auto flex flex-col items-center text-center"
         >
           <h1 className="text-2xl md:text-6xl font-bold text-center">
-            The AI platform for <br/>workflows and agents
+            The TypeScript framework for agents and workflows
 
           </h1>
           <p className="max-w-2xl text-md md:text-xl text-gray-600 mt-6 leading-relaxed text-center">
@@ -329,7 +284,11 @@ const workflow = gensx.Workflow("WritingService", WritingAgent);
               </p>
             </div>
             <div className="mt-4">
-              <CodeBlock code={examples[activeExample]} />
+              {typeof examples[activeExample] === 'string' ? (
+                <CodeBlock code={examples[activeExample] as string} />
+              ) : (
+                examples[activeExample]
+              )}
             </div>
           </div>
 
@@ -379,7 +338,11 @@ const workflow = gensx.Workflow("WritingService", WritingAgent);
               ))}
             </div>
             <div className="col-span-2 h-full">
-              <CodeBlock code={examples[activeExample]} />
+              {typeof examples[activeExample] === 'string' ? (
+                <CodeBlock code={examples[activeExample] as string} />
+              ) : (
+                examples[activeExample]
+              )}
             </div>
           </div>
         </motion.div>

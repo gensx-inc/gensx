@@ -1,0 +1,193 @@
+---
+title: Local development
+description: Run GenSX workflows locally with the dev server
+---
+
+# Local development server
+
+GenSX provides local development experience that mirrors the cloud environment, making it easy to build and test workflows on your machine before deploying them.
+
+## Starting the dev server
+
+The `gensx start` command launches a local development server with hot-reloading:
+
+```bash
+gensx start ./src/workflows.tsx
+🔍 Starting GenSX Dev Server...
+ℹ Using project name from gensx.yaml: support-tools
+ℹ Starting development server...
+✔ Compilation completed
+✔ Generating schema
+Importing compiled JavaScript file: /Users/evan/code/gensx-console/samples/support-tools/dist/src/workflows.js
+
+
+🚀 GenSX Dev Server running at http://localhost:1337
+🧪 Swagger UI available at http://localhost:1337/swagger-ui
+
+📋 Available workflows:
+- RAGWorkflow: http://localhost:1337/org/gensx/projects/support-tools/workflows/RAGWorkflow
+- AnalyzeDiscordWorkflow: http://localhost:1337/org/gensx/projects/support-tools/workflows/AnalyzeDiscordWorkflow
+- TextToSQLWorkflow: http://localhost:1337/org/gensx/projects/support-tools/workflows/TextToSQLWorkflow
+- ChatAgent: http://localhost:1337/org/gensx/projects/support-tools/workflows/ChatAgent
+
+✅ Server is running. Press Ctrl+C to stop.
+```
+
+## Development server features
+
+### Identical API shape
+
+The local API endpoints match exactly what you'll get in production, making it easy to test your workflows before deploying them:
+
+```
+http://localhost:1337/local/{project}/default/workflows/{workflow}/run
+```
+
+Every workflow you export is automatically available as an API endpoint.
+
+### Hot Reloading
+
+The development server watches your TypeScript files and automatically:
+
+1. Recompiles when files change
+2. Regenerates API schemas
+3. Restarts the server with your updated code
+
+This enables a fast development cycle without manual restarts.
+
+### API documentation
+
+The development server includes a built-in Swagger UI for exploring and testing your workflows:
+
+```
+http://localhost:1337/swagger-ui
+```
+
+![Swagger UI for local development](/cloud/local-swagger-ui.png)
+
+The Swagger interface provides:
+
+- Complete documentation of all your workflow APIs
+- Interactive testing
+- Request/response examples
+- Schema information
+
+## Local storage options
+
+GenSX provides local implementations for cloud storage services, enabling you to develop and test stateful workflows without deploying to the cloud.
+
+### Blob storage
+
+When using `BlobProvider` in local development, data is stored in your local filesystem:
+
+```tsx
+import { BlobProvider, useBlob } from "@gensx/storage";
+
+const StoreData = gensx.Component(
+  "StoreData",
+  async ({ key, data }) => {
+    // Locally, this will write to .gensx/blobs directory
+    const blob = useBlob(`data/${key}.json`);
+    await blob.putJSON(data);
+    return { success: true };
+  }
+);
+```
+
+Files are stored in the `.gensx/blobs` directory in your project, making it easy to inspect the stored data.
+
+### SQL databases
+
+When using `DatabaseProvider` locally, GenSX uses [libSQL](https://github.com/libsql/libsql) to provide a SQLite-compatible database:
+
+```tsx
+import { DatabaseProvider, useDatabase } from "@gensx/storage";
+
+const QueryData = gensx.Component(
+  "QueryData",
+  async ({ query }) => {
+    // Locally, this creates a SQLite database in .gensx/databases
+    const db = await useDatabase("my-database");
+    const result = await db.execute(query);
+    return result.rows;
+  }
+);
+```
+
+Database files are stored in the `.gensx/databases` directory as SQLite files that you can inspect with any SQLite client.
+
+### Vector search
+
+For vector search operations with `SearchProvider`, your local environment connects to the cloud service:
+
+```tsx
+import { SearchProvider, useSearch } from "@gensx/storage";
+
+const SearchDocs = gensx.Component(
+  "SearchDocs",
+  async ({ query }) => {
+    // Uses cloud vector search even in local development
+    const namespace = await useSearch("documents");
+    const results = await namespace.query({
+      text: query,
+      topK: 5
+    });
+    return results;
+  }
+);
+```
+
+## Running workflows locally
+
+### Using the API
+
+You can use any HTTP client to interact with your local API:
+
+```bash
+# Run a workflow synchronously
+curl -X POST http://localhost:1337/local/my-app/default/workflows/ChatAgent/run \
+  -H "Content-Type: application/json" \
+  -d '{"input": {"prompt": "Tell me about GenSX"}}'
+
+# Run asynchronously
+curl -X POST http://localhost:1337/local/my-app/default/workflows/ChatAgent/start \
+  -H "Content-Type: application/json" \
+  -d '{"input": {"prompt": "Tell me about GenSX"}}'
+```
+
+The structure of requests and responses matches exactly what you'll encounter in production.
+
+### Using the Swagger UI
+
+The built-in Swagger UI provides an easy way to inspect and test your workflows:
+
+1. Navigate to `http://localhost:1337/swagger-ui`
+2. Select the workflow you want to test
+3. Click the "Try it out" button
+4. Enter your input data
+5. Execute the request and view the response
+
+![Run a workflow from the Swagger UI](/cloud/swagger-execute.png)
+
+## Configuration
+
+### Project name
+
+By default, the development server uses the project name from your `gensx.yaml` file. If you don't have one yet, you can create it in your project root:
+
+```yaml
+# gensx.yaml
+projectName: my-project
+```
+
+Alternatively, you can specify the project name when starting the server:
+
+```bash
+npx gensx start ./src/workflows.tsx --project my-custom-project
+```
+
+## Next steps
+
+- [Deploying to production](/docs/cloud/serverless-deployments)
+- [Working with cloud storage](/docs/cloud/storage)
+- [Setting up observability and tracing](/docs/cloud/observability)

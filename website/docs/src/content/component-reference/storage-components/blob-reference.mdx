@@ -1,0 +1,153 @@
+---
+title: Blob storage reference
+description: Blob storage components for stateful workflows and agents.
+---
+
+# Blob Storage Reference
+
+API reference for GenSX Cloud blob storage components.
+
+## BlobProvider
+
+Provides blob storage capabilities to its child components.
+
+### Import
+
+```tsx
+import { BlobProvider } from "@gensx/storage";
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `kind` | `"filesystem" \| "cloud"` | Auto-detected | Storage backend to use |
+| `rootDir` | `string` | `.gensx/blobs` | Root directory for filesystem storage |
+| `defaultPrefix` | `string` | `undefined` | Optional prefix for all blob keys |
+
+### Example
+
+```tsx
+import { BlobProvider } from "@gensx/storage";
+
+const Workflow = gensx.Component(
+  "Workflow",
+  ({ input }) => (
+    <BlobProvider kind="cloud">
+      <YourComponent input={input} />
+    </BlobProvider>
+  )
+);
+```
+
+## useBlob
+
+Hook that provides access to blob storage for a specific key.
+
+### Import
+
+```tsx
+import { useBlob } from "@gensx/storage";
+```
+
+### Signature
+
+```tsx
+function useBlob<T = unknown>(key: string): Blob<T>;
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `key` | `string` | The unique key for the blob |
+| `T` | Generic type | Type of the JSON data (optional) |
+
+### Returns
+
+Returns a blob object with methods to interact with blob storage.
+
+### Example
+
+```tsx
+const blob = useBlob<UserProfile>("users/123.json");
+const profile = await blob.getJSON();
+```
+
+## Blob Methods
+
+The blob object returned by `useBlob` provides these methods:
+
+### JSON Operations
+
+```tsx
+// Get JSON data
+const data = await blob.getJSON();  // Returns null if not found
+
+// Save JSON data
+await blob.putJSON(data, options);  // Returns { etag: string }
+```
+
+### String Operations
+
+```tsx
+// Get string content
+const text = await blob.getString();  // Returns null if not found
+
+// Save string content
+await blob.putString("Hello world", options);  // Returns { etag: string }
+```
+
+### Binary Operations
+
+```tsx
+// Get binary data with metadata
+const result = await blob.getRaw();  // Returns null if not found
+// Returns { content, contentType, etag, lastModified, size, metadata }
+
+// Save binary data
+await blob.putRaw(buffer, options);  // Returns { etag: string }
+```
+
+### Stream Operations
+
+```tsx
+// Get data as a stream
+const stream = await blob.getStream();
+
+// Save data from a stream
+await blob.putStream(readableStream, options);  // Returns { etag: string }
+```
+
+### Metadata Operations
+
+```tsx
+// Check if blob exists
+const exists = await blob.exists();  // Returns boolean
+
+// Delete blob
+await blob.delete();
+
+// Get metadata
+const metadata = await blob.getMetadata();  // Returns null if not found
+
+// Update metadata
+await blob.updateMetadata({
+  key1: "value1",
+  key2: "value2"
+});
+```
+
+## Options Object
+
+Many methods accept an options object with these properties:
+
+```tsx
+{
+  contentType?: string,         // MIME type of the content
+  etag?: string,                // For optimistic concurrency control
+  metadata?: {                  // Custom metadata key-value pairs
+    [key: string]: string
+  }
+}
+```

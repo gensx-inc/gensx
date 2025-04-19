@@ -1,0 +1,388 @@
+---
+title: Full-text & vector search reference
+description: Vector search components for semantic search and RAG workflows.
+---
+
+# Search Reference
+
+API reference for GenSX Cloud search components.
+
+## SearchProvider
+
+Provides vector search capabilities to its child components.
+
+### Import
+
+```tsx
+import { SearchProvider } from "@gensx/storage";
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `defaultPrefix` | `string` | `undefined` | Optional prefix for all namespace keys |
+
+### Example
+
+```tsx
+import { SearchProvider } from "@gensx/storage";
+
+const Workflow = gensx.Component(
+  "SearchWorkflow",
+  ({ input }) => (
+    <SearchProvider>
+      <YourComponent input={input} />
+    </SearchProvider>
+  )
+);
+```
+
+## useSearch
+
+Hook that provides access to vector search for a specific namespace.
+
+### Import
+
+```tsx
+import { useSearch } from "@gensx/storage";
+```
+
+### Signature
+
+```tsx
+function useSearch(name: string): Namespace;
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | `string` | The namespace name to access |
+
+### Returns
+
+Returns a namespace object with methods to interact with vector search.
+
+### Example
+
+```tsx
+const namespace = await useSearch("documents");
+const results = await namespace.query({
+  vector: queryEmbedding,
+  includeAttributes: true
+});
+```
+
+## Namespace Methods
+
+The namespace object returned by `useSearch` provides these methods:
+
+### upsert
+
+Inserts or updates vectors in the namespace.
+
+```tsx
+async upsert(options: {
+  vectors: Vector[];
+  distanceMetric: DistanceMetric;
+  schema?: Schema;
+  batchSize?: number;
+}): Promise<void>
+```
+
+#### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `vectors` | `Vector[]` | Required | Array of vectors to insert or update |
+| `distanceMetric` | `DistanceMetric` | Required | Distance metric for similarity calculations |
+| `schema` | `Schema` | `undefined` | Optional schema definition for attributes |
+| `batchSize` | `number` | `1000` | Optional batch size for processing vectors |
+
+#### Vector Object Format
+
+```tsx
+{
+  id: string;              // Unique identifier
+  vector: number[];        // Embedding vector
+  attributes?: {           // Optional metadata
+    [key: string]: any;    // Key-value pairs
+  }
+}
+```
+
+#### Example
+
+```tsx
+await namespace.upsert({
+  vectors: [
+    {
+      id: "doc-1",
+      vector: [0.1, 0.2, 0.3, ...],  // Embedding vector
+      attributes: {                   // Optional metadata
+        text: "Document content",
+        category: "article",
+        createdAt: "2023-07-15"
+      }
+    }
+  ],
+  distanceMetric: "cosine_distance",  // "cosine_distance", "euclidean_distance", "dot_product"
+  schema: {                           // Optional schema definition
+    text: "string",
+    category: "string",
+    createdAt: "string"
+  }
+});
+```
+
+### query
+
+Searches for similar vectors based on a query vector.
+
+```tsx
+async query(options: QueryOptions): Promise<QueryResults>
+```
+
+#### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `vector` | `number[]` | Required | Query vector for similarity search |
+| `topK` | `number` | `10` | Number of results to return |
+| `includeVectors` | `boolean` | `false` | Whether to include vectors in results |
+| `includeAttributes` | `boolean \| string[]` | `true` | Include all attributes or specified ones |
+| `filters` | `Filters` | `undefined` | Metadata filters |
+| `rankBy` | `Record<string, Record<string, number>>` | `undefined` | Attribute-based ranking |
+| `consistency` | `string` | `undefined` | Consistency level for reads |
+
+#### Example
+
+```tsx
+const results = await namespace.query({
+  vector: [0.1, 0.2, 0.3, ...],     // Query vector
+  topK: 10,                         // Number of results to return
+  includeVectors: false,            // Whether to include vectors in results
+  includeAttributes: true,          // Include all attributes or specific ones
+  filters: {                        // Optional metadata filters
+    where: {
+      category: { $eq: "article" },
+      createdAt: { $gte: "2023-01-01" }
+    }
+  },
+  rankBy: {                         // Optional attribute-based ranking
+    "attributes.importance": {
+      "high": 1.5,
+      "medium": 1.0,
+      "low": 0.5
+    }
+  }
+});
+```
+
+#### Return Value
+
+Returns an array of matched documents with similarity scores:
+
+```tsx
+[
+  {
+    id: "doc-1",            // Document ID
+    score: 0.87,            // Similarity score (0-1)
+    vector?: number[],      // Original vector (if includeVectors=true)
+    attributes?: {          // Metadata (if includeAttributes=true)
+      text: "Document content",
+      category: "article",
+      createdAt: "2023-07-15"
+    }
+  },
+  // ...more results
+]
+```
+
+### delete
+
+Deletes vectors by their IDs.
+
+```tsx
+async delete(options: { ids: Id[] }): Promise<void>
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `ids` | `string[]` | Array of vector IDs to delete |
+
+#### Example
+
+```tsx
+await namespace.delete({
+  ids: ["doc-1", "doc-2"]
+});
+```
+
+### deleteByFilter
+
+Deletes vectors that match the specified filter.
+
+```tsx
+async deleteByFilter(options: { filters: Filters }): Promise<number>
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `filters` | `Filters` | Filters to match vectors for deletion |
+
+#### Example
+
+```tsx
+const deletedCount = await namespace.deleteByFilter({
+  filters: {
+    where: {
+      category: { $eq: "outdated" }
+    }
+  }
+});
+```
+
+#### Return Value
+
+Returns the number of deleted vectors.
+
+### getSchema
+
+Retrieves the current schema for the namespace.
+
+```tsx
+async getSchema(): Promise<Schema>
+```
+
+#### Example
+
+```tsx
+const schema = await namespace.getSchema();
+console.log(schema);
+// {
+//   text: "string",
+//   category: "string",
+//   createdAt: "string"
+// }
+```
+
+### updateSchema
+
+Updates the schema for the namespace.
+
+```tsx
+async updateSchema(options: { schema: Schema }): Promise<Schema>
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `schema` | `Schema` | New schema definition |
+
+#### Example
+
+```tsx
+const updatedSchema = await namespace.updateSchema({
+  schema: {
+    text: "string",
+    category: "string",
+    createdAt: "string",
+    newField: "number",   // Add new field
+    tags: "string[]"      // Add array field
+  }
+});
+```
+
+#### Return Value
+
+Returns the updated schema.
+
+### getMetadata
+
+Retrieves metadata about the namespace.
+
+```tsx
+async getMetadata(): Promise<NamespaceMetadata>
+```
+
+#### Example
+
+```tsx
+const metadata = await namespace.getMetadata();
+console.log(metadata);
+// {
+//   vectorCount: 1250,
+//   dimensions: 1536,
+//   distanceMetric: "cosine_distance",
+//   created: "2023-07-15T12:34:56Z"
+// }
+```
+
+## Namespace Management
+
+Higher-level operations for managing namespaces (these are accessed directly from the search object, not via `useSearch`):
+
+```tsx
+import { SearchClient } from "@gensx/storage";
+
+const search = new SearchClient();
+
+// List all namespaces
+const namespaces = await search.listNamespaces({
+  prefix: "docs-"  // Optional prefix filter
+});
+
+// Check if namespace exists
+const exists = await search.namespaceExists("my-namespace");
+
+// Create namespace if it doesn't exist
+const { created } = await search.ensureNamespace("my-namespace");
+
+// Delete a namespace
+const { deleted } = await search.deleteNamespace("old-namespace");
+```
+
+## Query Result Format
+
+Results from query operations are returned in this format:
+
+```tsx
+[
+  {
+    id: "doc-1",            // Document ID
+    score: 0.87,            // Similarity score (0-1)
+    vector?: number[],      // Original vector (if includeVectors=true)
+    attributes?: {          // Metadata (if includeAttributes=true)
+      text: "Document content",
+      category: "article",
+      createdAt: "2023-07-15"
+    }
+  },
+  // ...more results
+]
+```
+
+## Filter Operators
+
+Filters support these operators:
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `$eq` | Equals | `{ field: { $eq: "value" } }` |
+| `$ne` | Not equals | `{ field: { $ne: "value" } }` |
+| `$gt` | Greater than | `{ field: { $gt: 10 } }` |
+| `$gte` | Greater than or equal | `{ field: { $gte: 10 } }` |
+| `$lt` | Less than | `{ field: { $lt: 10 } }` |
+| `$lte` | Less than or equal | `{ field: { $lte: 10 } }` |
+| `$in` | In array | `{ field: { $in: ["a", "b"] } }` |
+| `$nin` | Not in array | `{ field: { $nin: ["a", "b"] } }` |
+| `$contains` | String contains | `{ field: { $contains: "text" } }` |
+| `$containsAny` | Contains any of values | `{ tags: { $containsAny: ["news", "tech"] } }` |
+| `$containsAll` | Contains all values | `{ tags: { $containsAll: ["important", "urgent"] } }` |
