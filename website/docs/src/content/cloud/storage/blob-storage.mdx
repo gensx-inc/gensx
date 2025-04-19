@@ -1,13 +1,13 @@
 ---
-title: Blob Storage
+title: Blob storage
 description: Store and retrieve unstructured data with GenSX blob storage
 ---
 
-# Blob Storage
+# Blob storage
 
 Blob storage provides zero-configuration persistent storage for your GenSX applications. It enables you to store JSON, text, or binary data and per-agent or per-workflow storage without worrying about managing infrastructure.
 
-## Basic Usage
+## Basic usage
 
 To use blob storage in your GenSX application:
 
@@ -37,7 +37,7 @@ To use blob storage in your GenSX application:
    const blob = useBlob("your-key.json");
    ```
 
-### Reading Blobs
+### Reading blobs
 
 The `useBlob` hook provides simple methods to read different types of data:
 
@@ -73,7 +73,7 @@ const ReadData = gensx.Component("ReadData", async ({ key }) => {
 });
 ```
 
-### Writing Blobs
+### Writing blobs
 
 You can write data in various formats:
 
@@ -108,9 +108,9 @@ const WriteData = gensx.Component(
 );
 ```
 
-## Practical Examples
+## Practical examples
 
-### Persistent Chat Threads
+### Persistent chat threads
 
 One of the most common use cases for blob storage is maintaining conversation history across multiple interactions:
 
@@ -156,7 +156,7 @@ const ChatWithMemory = gensx.Component(
 );
 ```
 
-### Memory for AI Agents
+### Memory for agents
 
 For more complex agents, you can store structured memory:
 
@@ -193,7 +193,7 @@ const AgentWithMemory = gensx.Component(
 );
 ```
 
-### Saving Files
+### Saving files
 
 You can use blob storage to save and retrieve binary files like images:
 
@@ -237,7 +237,7 @@ const GetImage = gensx.Component("GetImage", async ({ filename }) => {
 });
 ```
 
-### Optimistic Concurrency Control
+### Optimistic concurrency control
 
 For scenarios where multiple processes might update the same data, you can use ETags to prevent conflicts:
 
@@ -273,7 +273,7 @@ const UpdateCounter = gensx.Component(
 );
 ```
 
-## Development vs. Production
+## Development vs. production
 
 GenSX blob storage works identically in both local development and cloud environments:
 
