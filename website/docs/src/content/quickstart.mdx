@@ -525,7 +525,7 @@ const SemanticSearch = gensx.Component<{ query: string }, any[]>(
     // Access a vector search namespace
     const namespace = await useSearch("documents");
 
-    // Generate an embedding vector for the query
+    // Generate an vector embedding for the query
     const embedding = await OpenAIEmbedding.run({
       model: "text-embedding-3-small",
       input: query,

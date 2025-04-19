@@ -7,6 +7,12 @@ description: SQL database components for persistent data in GenSX workflows.
 
 API reference for GenSX Cloud SQL database components.
 
+## Installation
+
+```bash
+npm install @gensx/storage
+```
+
 ## DatabaseProvider
 
 Provides SQL database capabilities to its child components.
@@ -19,17 +25,26 @@ import { DatabaseProvider } from "@gensx/storage";
 
 ### Props
 
-| Prop            | Type     | Default     | Description                            |
-| --------------- | -------- | ----------- | -------------------------------------- |
-| `defaultPrefix` | `string` | `undefined` | Optional prefix for all database names |
+| Prop            | Type                  | Default     | Description                                      |
+| --------------- | --------------------- | ----------- | ------------------------------------------------ |
+| `kind`          | `"filesystem" \| "cloud"` | `"cloud"` | The storage backend to use                   |
+| `rootDir`       | `string`              | `undefined` | Root directory for storing database files (filesystem only) |
 
 ### Example
 
 ```tsx
 import { DatabaseProvider } from "@gensx/storage";
 
+// Cloud storage (production)
 const Workflow = gensx.Component("DatabaseWorkflow", ({ input }) => (
   <DatabaseProvider>
+    <YourComponent input={input} />
+  </DatabaseProvider>
+));
+
+// Local filesystem storage (development)
+const DevWorkflow = gensx.Component("DevDatabaseWorkflow", ({ input }) => (
+  <DatabaseProvider kind="filesystem" rootDir="./data">
     <YourComponent input={input} />
   </DatabaseProvider>
 ));
@@ -117,9 +132,10 @@ Returns a result object with the following properties:
 
 ```tsx
 {
-  rowsAffected: number;  // Number of rows affected by statement
-  lastInsertRowid?: number;  // ID of last inserted row (for INSERT statements)
-  rows: Record<string, any>[];  // Array of result rows (for SELECT statements)
+  columns: string[];        // Column names from result set
+  rows: unknown[][];        // Array of result rows as arrays
+  rowsAffected: number;     // Number of rows affected by statement
+  lastInsertId?: number;    // ID of last inserted row (for INSERT statements)
 }
 ```
 
@@ -163,26 +179,30 @@ const results = await db.batch([
 
 #### Return Value
 
-Returns an array of result objects, one for each statement executed:
+Returns a result object containing an array of individual results:
 
 ```tsx
-[
-  {
-    rowsAffected: 1,
-    lastInsertRowid: 42,
-    rows: [],
-  },
-  {
-    rowsAffected: 1,
-    lastInsertRowid: 43,
-    rows: [],
-  },
-];
+{
+  results: [
+    {
+      columns: [],
+      rows: [],
+      rowsAffected: 1,
+      lastInsertId: 42
+    },
+    {
+      columns: [],
+      rows: [],
+      rowsAffected: 1,
+      lastInsertId: 43
+    }
+  ]
+}
 ```
 
 ### executeMultiple
 
-Executes multiple SQL statements in a single string.
+Executes multiple SQL statements as a script (without transaction semantics).
 
 ```tsx
 async executeMultiple(sql: string): Promise<DatabaseBatchResult>
@@ -210,11 +230,11 @@ const results = await db.executeMultiple(`
 
 #### Return Value
 
-Returns an array of result objects, one for each statement executed.
+Returns a result object containing an array of individual results, one for each statement executed.
 
 ### migrate
 
-Executes SQL migration script with transaction handling.
+Executes SQL migration statements with foreign keys disabled.
 
 ```tsx
 async migrate(sql: string): Promise<DatabaseBatchResult>
@@ -245,7 +265,7 @@ const results = await db.migrate(`
 
 #### Return Value
 
-Returns an array of result objects, one for each statement executed.
+Returns a result object containing an array of individual results, one for each statement executed.
 
 ### getInfo
 
@@ -262,25 +282,56 @@ const info = await db.getInfo();
 console.log(info);
 // {
 //   name: "users",
+//   size: 12800,
 //   lastModified: Date("2023-07-15T12:34:56Z"),
-//   sizeBytes: 12800,
-//   tables: ["users", "user_preferences"]
+//   tables: [
+//     {
+//       name: "users",
+//       columns: [
+//         {
+//           name: "id",
+//           type: "TEXT",
+//           notNull: true,
+//           primaryKey: true
+//         },
+//         {
+//           name: "name",
+//           type: "TEXT",
+//           notNull: true,
+//           primaryKey: false
+//         }
+//       ]
+//     }
+//   ]
 // }
 ```
 
 ## Database Management
 
-Higher-level operations for managing databases:
+Higher-level operations for managing databases are available through the `useDatabaseStorage` hook:
+
+### useDatabaseStorage
+
+Hook that provides access to the database storage instance, which includes higher-level database management functions.
+
+```tsx
+import { useDatabaseStorage } from "@gensx/storage";
+
+// Get access to database management functions
+const dbStorage = useDatabaseStorage();
+```
+
+The database storage object provides these management methods:
 
 ### listDatabases
 
 Lists all databases in your project.
 
 ```tsx
-import { DatabaseClient } from "@gensx/storage";
+import { useDatabaseStorage } from "@gensx/storage";
 
-const dbClient = new DatabaseClient();
-const databases = await dbClient.listDatabases();
+const dbStorage = useDatabaseStorage();
+const databases = await dbStorage.listDatabases();
 console.log(databases); // ["users", "products", "analytics"]
 ```
 
@@ -289,7 +340,8 @@ console.log(databases); // ["users", "products", "analytics"]
 Creates a database if it doesn't exist.
 
 ```tsx
-const { created } = await dbClient.ensureDatabase("new-database");
+const dbStorage = useDatabaseStorage();
+const { created } = await dbStorage.ensureDatabase("new-database");
 if (created) {
   console.log("Database was created");
 } else {
@@ -302,10 +354,197 @@ if (created) {
 Deletes a database and all its data.
 
 ```tsx
-const { deleted } = await dbClient.deleteDatabase("old-database");
+const dbStorage = useDatabaseStorage();
+const { deleted } = await dbStorage.deleteDatabase("old-database");
 if (deleted) {
   console.log("Database was deleted");
 } else {
   console.log("Database could not be deleted");
 }
+```
+
+### hasEnsuredDatabase
+
+Checks if a database has been ensured in the current session.
+
+```tsx
+const dbStorage = useDatabaseStorage();
+const isEnsured = dbStorage.hasEnsuredDatabase("my-database");
+
+if (isEnsured) {
+  console.log("Database has been ensured in this session");
+} else {
+  console.log("Database has not been ensured yet");
+}
+```
+
+### getDatabase
+
+Get a database instance directly (without calling useDatabase).
+
+```tsx
+const dbStorage = useDatabaseStorage();
+
+// Get a database directly
+// Note: This doesn't ensure the database exists, unlike useDatabase
+const db = dbStorage.getDatabase("users");
+
+// You may want to ensure it exists first
+await dbStorage.ensureDatabase("users");
+const db = dbStorage.getDatabase("users");
+```
+
+## DatabaseClient
+
+The `DatabaseClient` class provides a way to interact with GenSX databases outside of the GenSX workflow context, such as from regular Node.js applications or server endpoints.
+
+### Import
+
+```tsx
+import { DatabaseClient } from "@gensx/storage";
+```
+
+### Constructor
+
+```tsx
+constructor(props?: DatabaseProviderProps)
+```
+
+#### Parameters
+
+| Parameter | Type                  | Default     | Description                                      |
+| --------- | --------------------- | ----------- | ------------------------------------------------ |
+| `props`   | `DatabaseProviderProps` | `{}` | Optional configuration properties                |
+
+#### Example
+
+```tsx
+// Default client (uses filesystem locally, cloud in production)
+const dbClient = new DatabaseClient();
+
+// Explicitly use filesystem storage
+const localClient = new DatabaseClient({
+  kind: "filesystem",
+  rootDir: "./my-data"
+});
+
+// Explicitly use cloud storage
+const cloudClient = new DatabaseClient({ kind: "cloud" });
+```
+
+### Methods
+
+#### getDatabase
+
+Get a database instance and ensure it exists first.
+
+```tsx
+async getDatabase(name: string): Promise<Database>
+```
+
+##### Example
+
+```tsx
+const db = await dbClient.getDatabase("users");
+const results = await db.execute("SELECT * FROM users LIMIT 10");
+```
+
+#### ensureDatabase
+
+Create a database if it doesn't exist.
+
+```tsx
+async ensureDatabase(name: string): Promise<EnsureDatabaseResult>
+```
+
+##### Example
+
+```tsx
+const { created } = await dbClient.ensureDatabase("analytics");
+if (created) {
+  console.log("Database was created");
+}
+```
+
+#### listDatabases
+
+List all databases.
+
+```tsx
+async listDatabases(): Promise<string[]>
+```
+
+##### Example
+
+```tsx
+const databases = await dbClient.listDatabases();
+console.log("Available databases:", databases);
+```
+
+#### deleteDatabase
+
+Delete a database.
+
+```tsx
+async deleteDatabase(name: string): Promise<DeleteDatabaseResult>
+```
+
+##### Example
+
+```tsx
+const { deleted } = await dbClient.deleteDatabase("temp-db");
+if (deleted) {
+  console.log("Database was removed");
+}
+```
+
+#### databaseExists
+
+Check if a database exists.
+
+```tsx
+async databaseExists(name: string): Promise<boolean>
+```
+
+##### Example
+
+```tsx
+if (await dbClient.databaseExists("users")) {
+  console.log("Users database exists");
+} else {
+  console.log("Users database doesn't exist yet");
+}
+```
+
+### Usage in applications
+
+The DatabaseClient is particularly useful when you need to access GenSX databases from:
+
+- Regular Express.js or Next.js API routes
+- Background jobs or workers
+- Custom scripts or tools
+- Any Node.js application outside the GenSX workflow context
+
+```tsx
+// Example: Using DatabaseClient in an Express handler
+import express from 'express';
+import { DatabaseClient } from '@gensx/storage';
+
+const app = express();
+const dbClient = new DatabaseClient();
+
+app.get('/api/users', async (req, res) => {
+  try {
+    const db = await dbClient.getDatabase('users');
+    const result = await db.execute('SELECT * FROM users');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
 ```

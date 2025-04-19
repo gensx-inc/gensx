@@ -567,6 +567,7 @@ gensx deploy src/workflows.tsx -ev OPENAI_API_KEY
 ```
 
 This command:
+
 1. Builds your TypeScript code for production
 2. Bundles all dependencies
 3. Uploads the package to GenSX Cloud
@@ -619,22 +620,22 @@ Use the `useBlob` hook to store and retrieve unstructured data:
 ```tsx
 import { BlobProvider, useBlob } from "@gensx/storage";
 
-const ChatWithMemory = gensx.Component<{ userInput: string, threadId: string }, string>(
-  "ChatWithMemory",
-  async ({ userInput, threadId }) => {
-    // Load chat history from cloud storage
-    const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
-    const history = await blob.getJSON() ?? [];
+const ChatWithMemory = gensx.Component<
+  { userInput: string; threadId: string },
+  string
+>("ChatWithMemory", async ({ userInput, threadId }) => {
+  // Load chat history from cloud storage
+  const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+  const history = (await blob.getJSON()) ?? [];
 
-    // Add user message and get AI response
-    // ...
+  // Add user message and get AI response
+  // ...
 
-    // Save updated history
-    await blob.putJSON(updatedHistory);
+  // Save updated history
+  await blob.putJSON(updatedHistory);
 
-    return response;
-  }
-);
+  return response;
+});
 
 // Wrap your workflow with BlobProvider
 const WorkflowComponent = gensx.Component<
@@ -677,7 +678,7 @@ const SqlCopilot = gensx.Component<{ question: string }, string>(
     // ...
 
     return response;
-  }
+  },
 );
 
 // Wrap your workflow with DatabaseProvider
@@ -689,7 +690,7 @@ const WorkflowComponent = gensx.Component<{ question: string }, string>(
         <SqlCopilot question={question} />
       </OpenAIProvider>
     </DatabaseProvider>
-  )
+  ),
 );
 ```
 
@@ -707,21 +708,21 @@ const SemanticSearch = gensx.Component<{ query: string }, any[]>(
     // Access a vector search namespace
     const namespace = await useSearch("documents");
 
-    // Generate an embedding vector for the query
+    // Generate an vector embedding for the query
     const embedding = await OpenAIEmbedding.run({
       model: "text-embedding-3-small",
-      input: query
+      input: query,
     });
 
     // Search for similar documents
     const results = await namespace.query({
       vector: embedding.data[0].embedding,
       topK: 5,
-      includeAttributes: true
+      includeAttributes: true,
     });
 
     return results;
-  }
+  },
 );
 
 // Wrap your workflow with SearchProvider
@@ -733,7 +734,7 @@ const WorkflowComponent = gensx.Component<{ query: string }, any[]>(
         <SemanticSearch query={query} />
       </SearchProvider>
     </OpenAIProvider>
-  )
+  ),
 );
 ```
 
@@ -856,7 +857,7 @@ const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
     await blob.putJSON(updatedHistory);
 
     return response;
-  }
+  },
 );
 ```
 
@@ -4008,6 +4009,373 @@ The `AnthropicChatCompletion` component accepts all parameters from the Anthropi
 - With `stream: false` (default): Returns the full `Message` object from Anthropic SDK
 - With `stream: true`: Returns a `Stream<RawMessageStreamEvent>` from Anthropic SDK
 
+# gensx start
+
+The `gensx start` command starts a local development server that enables you to test and debug your GenSX workflows.
+
+## Usage
+
+```bash
+gensx start <file> [options]
+```
+
+## Arguments
+
+| Argument | Description                                             |
+| -------- | ------------------------------------------------------- |
+| `<file>` | The workflow file to serve (e.g., `src/workflows.tsx`). |
+
+## Options
+
+| Option                 | Description                        |
+| ---------------------- | ---------------------------------- |
+| `-p, --project <name>` | Project name for the local server. |
+| `-q, --quiet`          | Suppress output.                   |
+| `-h, --help`           | Display help for the command.      |
+
+## Description
+
+This command starts a local development server that:
+
+- Watches your workflow file for changes and automatically reloads
+- Provides a web interface to test and debug your workflows
+- Simulates the cloud environment locally
+- Runs your workflow components in a development mode
+
+The development server includes:
+
+- A web UI for testing your workflows
+- Real-time logs and execution visibility
+- Access to the GenSX development dashboard
+
+## Examples
+
+```bash
+# Start server with a specific workflow file
+gensx start src/workflows.tsx
+
+# Start server with a custom project name
+gensx start src/workflows.tsx --project my-custom-name
+
+# Start server with minimal output
+gensx start src/workflows.tsx --quiet
+```
+
+## Notes
+
+- The server runs on port 3000 by default
+- You can access the development UI at `http://localhost:3000`
+- Environment variables from your local environment are available to the workflow
+- For more complex environment variable setups, consider using a `.env` file in your project root
+
+# gensx run
+
+The `gensx run` command executes a workflow that has been deployed to GenSX Cloud.
+
+## Usage
+
+```bash
+gensx run <workflow> [options]
+```
+
+## Arguments
+
+| Argument     | Description                  |
+| ------------ | ---------------------------- |
+| `<workflow>` | Name of the workflow to run. |
+
+## Options
+
+| Option                 | Description                                                  |
+| ---------------------- | ------------------------------------------------------------ |
+| `-i, --input <input>`  | Input to pass to the workflow (as JSON).                     |
+| `--no-wait`            | Do not wait for the workflow to finish (run asynchronously). |
+| `-p, --project <name>` | Project name where the workflow is deployed.                 |
+| `-o, --output <file>`  | Output file to write the workflow result to.                 |
+| `-h, --help`           | Display help for the command.                                |
+
+## Description
+
+This command triggers execution of a deployed workflow on GenSX Cloud with the specified input. By default, it waits for the workflow to complete and displays the result.
+
+When running a workflow, you can:
+
+- Provide input data as JSON
+- Choose whether to wait for completion or run asynchronously
+- Save the output to a file
+
+## Examples
+
+```bash
+# Run a workflow with no input
+gensx run MyWorkflow
+
+# Run a workflow with JSON input
+gensx run MyWorkflow --input '{"text": "Hello, world!"}'
+
+# Run a workflow in a specific project
+gensx run MyWorkflow --project my-production-project
+
+# Run a workflow asynchronously (don't wait for completion)
+gensx run MyWorkflow --no-wait
+
+# Run a workflow and save output to a file
+gensx run MyWorkflow --output result.json
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to run workflows (`gensx login`)
+- The workflow must have been previously deployed using `gensx deploy`
+- When using `--input`, the input must be valid JSON
+- When using `--no-wait`, the command returns immediately with a workflow ID that can be used to check status later
+- Error handling: if the workflow fails, the command will return with a non-zero exit code and display the error
+
+# gensx new
+
+The `gensx new` command creates a new GenSX project with a predefined structure and dependencies.
+
+## Usage
+
+```bash
+gensx new <project-directory> [options]
+```
+
+## Arguments
+
+| Argument              | Description                                                                  |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `<project-directory>` | Directory to create the project in. If it doesn't exist, it will be created. |
+
+## Options
+
+| Option                     | Description                                                                                     |
+| -------------------------- | ----------------------------------------------------------------------------------------------- |
+| `-t, --template <type>`    | Template to use. Currently supports `ts` (TypeScript).                                          |
+| `-f, --force`              | Overwrite existing files in the target directory.                                               |
+| `--skip-ide-rules`         | Skip IDE rules selection.                                                                       |
+| `--ide-rules <rules>`      | Comma-separated list of IDE rules to install. Options: `cline`, `windsurf`, `claude`, `cursor`. |
+| `-d, --description <desc>` | Optional project description.                                                                   |
+| `-h, --help`               | Display help for the command.                                                                   |
+
+## Description
+
+This command scaffolds a new GenSX project with the necessary files and folder structure. It sets up:
+
+- Project configuration files (`package.json`, `tsconfig.json`)
+- Basic project structure with example workflows
+- Development dependencies
+- IDE integrations based on selected rules
+
+## Examples
+
+```bash
+# Create a basic project
+gensx new my-gensx-app
+
+# Create a project with a specific template and description
+gensx new my-gensx-app --template ts --description "My AI workflow app"
+
+# Create a project with specific IDE rules
+gensx new my-gensx-app --ide-rules cursor,claude
+
+# Force create even if directory has existing files
+gensx new my-gensx-app --force
+```
+
+## Notes
+
+- If no template is specified, `ts` (TypeScript) is used by default.
+- The command will install all required dependencies, so make sure you have npm installed.
+- After creation, you can navigate to the project directory and start the development server with `gensx start`.
+
+# gensx login
+
+The `gensx login` command authenticates you with GenSX Cloud, allowing you to deploy and run workflows remotely.
+
+## Usage
+
+```bash
+gensx login
+```
+
+## Description
+
+When you run this command, it will:
+
+1. Open your default web browser to the GenSX authentication page
+2. Prompt you to log in with your GenSX account or create a new one
+3. Store your authentication credentials locally for future CLI commands
+
+After successful login, you can use other commands that require authentication, such as `deploy` and `run`.
+
+## Examples
+
+```bash
+# Log in to GenSX Cloud
+gensx login
+```
+
+## Notes
+
+- Your authentication token is stored in your user directory (typically `~/.gensx/config.json`)
+- The token is valid until you log out or revoke it from the GenSX dashboard
+- If you're behind a corporate firewall or using strict network policies, ensure that outbound connections to `api.gensx.com` are allowed
+
+# GenSX CLI reference
+
+The GenSX command-line interface (CLI) provides a set of commands to help you build, deploy, and manage your GenSX applications.
+
+## Installation
+
+The GenSX CLI is included when you install the main GenSX package:
+
+```bash
+npm install -g gensx
+```
+
+## Available commands
+
+| Command                    | Description                      |
+| -------------------------- | -------------------------------- |
+| [`gensx login`](./login)   | Log in to GenSX Cloud            |
+| [`gensx new`](./new)       | Create a new GenSX project       |
+| [`gensx start`](./start)   | Start a local development server |
+| [`gensx build`](./build)   | Build a workflow for deployment  |
+| [`gensx deploy`](./deploy) | Deploy a workflow to GenSX Cloud |
+| [`gensx run`](./run)       | Run a workflow on GenSX Cloud    |
+
+## Basic usage
+
+```bash
+# Create a new project
+gensx new my-project
+
+# Navigate to project
+cd my-project
+
+# Start local development server
+gensx start src/workflows.tsx
+
+# Deploy a workflow
+gensx deploy src/workflows.tsx
+```
+
+For detailed information about each command, please refer to the corresponding documentation page.
+
+# gensx deploy
+
+The `gensx deploy` command uploads and deploys a workflow to GenSX Cloud, making it available for remote execution.
+
+## Usage
+
+```bash
+gensx deploy <file> [options]
+```
+
+## Arguments
+
+| Argument | Description                                                                                |
+| -------- | ------------------------------------------------------------------------------------------ |
+| `<file>` | File to deploy. This should be a TypeScript/JavaScript file that exports a GenSX Workflow. |
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-e, --env <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
+| `-p, --project <name>`  | Project name to deploy to.                                                   |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Description
+
+This command:
+
+1. Builds your workflow (if not already built)
+2. Uploads it to GenSX Cloud
+3. Creates or updates the deployment
+4. Sets up any environment variables specified
+
+After successful deployment, your workflow will be available for remote execution via the GenSX Cloud dashboard or through the `gensx run` command.
+
+## Examples
+
+```bash
+# Deploy a workflow
+gensx deploy src/workflows.tsx
+
+# Deploy to a specific project
+gensx deploy src/workflows.tsx --project my-production-project
+
+# Deploy with environment variables
+gensx deploy src/workflows.tsx --env API_KEY=abc123 --env DEBUG=true
+
+# Deploy with an environment variable taken from your local environment
+gensx deploy src/workflows.tsx --env OPENAI_API_KEY
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to deploy (`gensx login`)
+- If your workflow requires API keys or other secrets, provide them using the `--env` option
+- For environment variables without a specified value, the CLI will use the value from your local environment
+- After deployment, you can manage your workflows from the GenSX Cloud dashboard
+- The deployment process automatically handles bundling dependencies
+
+# gensx build
+
+The `gensx build` command compiles and bundles a GenSX workflow for deployment to GenSX Cloud.
+
+## Usage
+
+```bash
+gensx build <file> [options]
+```
+
+## Arguments
+
+| Argument | Description                                                                                                    |
+| -------- | -------------------------------------------------------------------------------------------------------------- |
+| `<file>` | Workflow file to build (e.g., `src/workflows.tsx`). This should export a GenSX Workflow as the default export. |
+
+## Options
+
+| Option                  | Description                                     |
+| ----------------------- | ----------------------------------------------- |
+| `-o, --out-dir <dir>`   | Output directory for the built files.           |
+| `-t, --tsconfig <file>` | Path to a custom TypeScript configuration file. |
+| `-h, --help`            | Display help for the command.                   |
+
+## Description
+
+This command builds your GenSX workflow into an optimized bundle that can be deployed to GenSX Cloud. It:
+
+- Transpiles TypeScript to JavaScript
+- Bundles all dependencies
+- Optimizes the code for production
+- Prepares the workflow for deployment
+
+After building, the command outputs the path to the bundled file, which can be used with the `gensx deploy` command.
+
+## Examples
+
+```bash
+# Build a workflow with default options
+gensx build src/workflows.tsx
+
+# Build a workflow with a custom output directory
+gensx build src/workflows.tsx --out-dir ./dist
+
+# Build a workflow with a custom TypeScript configuration
+gensx build src/workflows.tsx --tsconfig ./custom-tsconfig.json
+```
+
+## Notes
+
+- The build process requires that your workflow file exports a GenSX Workflow as the default export
+- If no output directory is specified, the built files will be placed in a `.gensx/build` directory
+- The build process does not include environment variables - these should be provided during deployment
+
 # Serverless deployments
 
 Deploy your GenSX workflows as serverless APIs with support for both synchronous and asynchronous execution, as well as long-running operations.
@@ -4075,12 +4443,12 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 
 ### CLI Run Options
 
-| Option | Description |
-|--------|-------------|
-| `--input` | JSON string with input data |
-| `--wait` | Wait for workflow completion and return results |
-| `--output` | Save results to a file (requires `--wait`) |
-| `--project` | Specify the project name |
+| Option      | Description                                     |
+| ----------- | ----------------------------------------------- |
+| `--input`   | JSON string with input data                     |
+| `--wait`    | Wait for workflow completion and return results |
+| `--output`  | Save results to a file (requires `--wait`)      |
+| `--project` | Specify the project name                        |
 
 ## API Endpoints
 
@@ -4096,6 +4464,7 @@ https://api.gensx.com/v1/org/{org}/projects/{project}/environments/{environment}
 - `{workflow}` - The name of your workflow
 
 For example, if you have a workflow named `BlogWriter` in project `content-tools`, the endpoint would be:
+
 ```
 https://api.gensx.com/v1/org/your-org/projects/content-tools/environments/default/workflows/BlogWriter/run
 ```
@@ -4173,18 +4542,18 @@ The response is delivered as a stream of server-sent events (SSE).
 
 GenSX Cloud is optimized for long-running workflows and agents, with generous execution time limits:
 
-| Plan | Maximum Execution Time |
-|------|------------------------|
-| Free Tier | Up to 5 minutes |
-| Pro Tier | Up to 60 minutes |
+| Plan       | Maximum Execution Time  |
+| ---------- | ----------------------- |
+| Free Tier  | Up to 5 minutes         |
+| Pro Tier   | Up to 60 minutes        |
 | Enterprise | Custom limits available |
 
 These extended timeouts make GenSX ideal for complex AI workflows that might involve:
+
 - Multiple LLM calls in sequence
 - Real-time agent tool use
 - Complex data processing
 - Extensive RAG operations
-
 
 ## Cold Starts and Performance
 
@@ -4210,7 +4579,6 @@ GenSX Cloud provides a console to run, debug, and view all of your workflows.
 The workflow page includes API documentation and code snippets that you can copy/paste to run your workflow from within another app:
 
 ![View projects in the console](/cloud/console-workflow-docs.png)
-
 
 ### Running Workflows Manually
 
@@ -4263,6 +4631,7 @@ Within each project, you can have multiple environments:
 - **Custom environments**: Create any specialized environments you need
 
 Each environment maintains separate:
+
 - Workflow deployments
 - Configuration and environment variables
 - Execution traces and monitoring data
@@ -4337,6 +4706,7 @@ You can also see API documentation and sample code for triggering those workflow
 - [Configure serverless deployments](/docs/cloud/serverless-deployments) for your projects
 - [Set up local development](/docs/cloud/local-development) for testing
 - [Learn about observability](/docs/cloud/observability) across environments
+
 # Pricing & Usage
 
 GenSX Cloud offers flexible pricing tiers designed to scale with your needs, including a free tier for individuals.
@@ -4351,38 +4721,42 @@ GenSX Cloud offers three pricing tiers:
 
 Each plan includes monthly allowances for compute, tracing, and storage:
 
-| Resource | Free Tier | Pro Tier ($20/month/dev) | Overage/Action |
-|----------|-----------|--------------------------|----------------|
-| Serverless Compute | 50K sec | 500K sec | $0.00003/sec |
-| Traces (events) | 100K events | 1M events | $0.20/10K |
-| Blob Storage | 500MB | 5GB | $0.25/GB |
-| SQLite Storage | 500MB | 1GB | $1.50/GB |
-| Vector Storage | 250MB | 1GB | $1.00/GB |
-| Execution time | Up to 5 minutes | Up to 60 minutes | Custom |
-| Observability | 7 days trace retention | 30 days trace retention | Custom retention |
+| Resource           | Free Tier              | Pro Tier ($20/month/dev) | Overage/Action   |
+| ------------------ | ---------------------- | ------------------------ | ---------------- |
+| Serverless Compute | 50K sec                | 500K sec                 | $0.00003/sec     |
+| Traces (events)    | 100K events            | 1M events                | $0.20/10K        |
+| Blob Storage       | 500MB                  | 5GB                      | $0.25/GB         |
+| SQLite Storage     | 500MB                  | 1GB                      | $1.50/GB         |
+| Vector Storage     | 250MB                  | 1GB                      | $1.00/GB         |
+| Execution time     | Up to 5 minutes        | Up to 60 minutes         | Custom           |
+| Observability      | 7 days trace retention | 30 days trace retention  | Custom retention |
 
 ## Limits
 
 When limits are reached, additional operations may be throttled or declined. Exceeding any limits on the free tier requires upgrading to the Pro tier.
 
 ### Serverless
+
 - Free tier: Maximum workflow execution time of 5 minutes
 - Pro tier: Maximum workflow execution time of 60 minutes
 - Maximum payload size: 10MB per request
 - Maximum response size: 10MB
 
 ### Blob storage
+
 - Maximum blob size: 100MB
 - Maximum number of blobs: Unlimited (subject to total storage limits)
 - Rate limits: 100 operations/second on free tier, 1000 operations/second on pro tier
 
 ### Databases
+
 - Maximum database size: Limited by your storage quota
 - Maximum databases: unlimited
 - SQLite Writes: 1M rows/month on free tier, 10M rows/month on pro tier
 - SQLite Reads: 100M rows/month on free tier, 1B rows/month on pro tier
 
 ### Full-text & vector search
+
 - Maximum documents per search namespace: 100M
 - Maximum writes: 10k writes/second per namespace
 - Vector Writes: 1GB written/month on free tier, 10GB written/month on pro tier
@@ -4433,7 +4807,7 @@ The GenSX cloud console includes a trace viewer. You can access traces in severa
 // Executing a workflow with trace URL printing
 const result = await MyWorkflow.run(
   { input: "What is GenSX?" },
-  { printUrl: true }
+  { printUrl: true },
 );
 
 // Console output includes:
@@ -4539,29 +4913,23 @@ Every GenSX component is automatically traced. If want to trace additional sub-s
 ```tsx
 import * as gensx from "@gensx/core";
 
-const MyWorkflow = gensx.Component(
-  "MyWorkflow",
-  async ({ input }) => {
-    // Step 1: Process input
-    const processedData = await ProcessData.run({ data: input });
+const MyWorkflow = gensx.Component("MyWorkflow", async ({ input }) => {
+  // Step 1: Process input
+  const processedData = await ProcessData.run({ data: input });
 
-    // Step 2: Generate response
-    const response = await GenerateResponse.run({ data: processedData });
+  // Step 2: Generate response
+  const response = await GenerateResponse.run({ data: processedData });
 
-    return response;
-  }
-);
+  return response;
+});
 
 // Create a component to trace a specific processing step
-const ProcessData = gensx.Component(
-  "ProcessData",
-  async ({ data }) => {
-    // This entire function execution will be captured in traces
-    const parsedData = JSON.parse(data);
-    const enrichedData = await fetchAdditionalInfo(parsedData);
-    return enrichedData;
-  }
-);
+const ProcessData = gensx.Component("ProcessData", async ({ data }) => {
+  // This entire function execution will be captured in traces
+  const parsedData = JSON.parse(data);
+  const enrichedData = await fetchAdditionalInfo(parsedData);
+  return enrichedData;
+});
 
 // Create a component to trace response generation
 const GenerateResponse = gensx.Component(
@@ -4569,9 +4937,8 @@ const GenerateResponse = gensx.Component(
   async ({ data }) => {
     // This will appear as a separate node in the trace
     return `Processed result: ${JSON.stringify(data)}`;
-  }
+  },
 );
-
 ```
 
 ## Secrets scrubbing
@@ -4603,8 +4970,8 @@ const AuthenticatedClient = gensx.Component(
   },
   {
     // Mark these props as containing sensitive data
-    secretProps: ["apiKey", "credentials.privateKey"]
-  }
+    secretProps: ["apiKey", "credentials.privateKey"],
+  },
 );
 ```
 
@@ -4622,12 +4989,12 @@ const GenerateCredentials = gensx.Component(
     return {
       accessToken: "sk-1234567890abcdef",
       refreshToken: "rt-0987654321fedcba",
-      expiresAt: Date.now() + 3600000
+      expiresAt: Date.now() + 3600000,
     };
   },
   {
-    secretOutputs: true
-  }
+    secretOutputs: true,
+  },
 );
 ```
 
@@ -4644,7 +5011,7 @@ const ParentComponent = gensx.Component(
     // apiKey is marked as secret
     const results = await ChildComponent.run({
       query,
-      headers: { authorization: `Bearer ${apiKey}` }
+      headers: { authorization: `Bearer ${apiKey}` },
     });
 
     // apiKey is also scrubbed here in the trace,
@@ -4652,8 +5019,8 @@ const ParentComponent = gensx.Component(
     return processResults(results, apiKey);
   },
   {
-    secretProps: ["apiKey"]
-  }
+    secretProps: ["apiKey"],
+  },
 );
 ```
 
@@ -4663,12 +5030,12 @@ Secrets remain scrubbed throughout the execution chain, even if they're transfor
 
 GenSX observability features have certain limits based on your subscription tier:
 
-| Feature | Free Tier | Pro Tier ($20/month/dev) | Enterprise |
-|---------|-----------|--------------------------|------------|
-| Traced components | 100K per month | 1M per month | Custom |
-| Overage cost | N/A | $0.20 per 10K components | Custom |
-| Trace retention | 7 days | 30 days | Custom |
-| Maximum input/output size | 4MB each | 4MB each | 4MB each |
+| Feature                   | Free Tier      | Pro Tier ($20/month/dev) | Enterprise |
+| ------------------------- | -------------- | ------------------------ | ---------- |
+| Traced components         | 100K per month | 1M per month             | Custom     |
+| Overage cost              | N/A            | $0.20 per 10K components | Custom     |
+| Trace retention           | 7 days         | 30 days                  | Custom     |
+| Maximum input/output size | 4MB each       | 4MB each                 | 4MB each   |
 
 A few important notes on these limits:
 
@@ -4765,15 +5132,12 @@ When using `BlobProvider` in local development, data is stored in your local fil
 ```tsx
 import { BlobProvider, useBlob } from "@gensx/storage";
 
-const StoreData = gensx.Component(
-  "StoreData",
-  async ({ key, data }) => {
-    // Locally, this will write to .gensx/blobs directory
-    const blob = useBlob(`data/${key}.json`);
-    await blob.putJSON(data);
-    return { success: true };
-  }
-);
+const StoreData = gensx.Component("StoreData", async ({ key, data }) => {
+  // Locally, this will write to .gensx/blobs directory
+  const blob = useBlob(`data/${key}.json`);
+  await blob.putJSON(data);
+  return { success: true };
+});
 ```
 
 Files are stored in the `.gensx/blobs` directory in your project, making it easy to inspect the stored data.
@@ -4785,15 +5149,12 @@ When using `DatabaseProvider` locally, GenSX uses [libSQL](https://github.com/li
 ```tsx
 import { DatabaseProvider, useDatabase } from "@gensx/storage";
 
-const QueryData = gensx.Component(
-  "QueryData",
-  async ({ query }) => {
-    // Locally, this creates a SQLite database in .gensx/databases
-    const db = await useDatabase("my-database");
-    const result = await db.execute(query);
-    return result.rows;
-  }
-);
+const QueryData = gensx.Component("QueryData", async ({ query }) => {
+  // Locally, this creates a SQLite database in .gensx/databases
+  const db = await useDatabase("my-database");
+  const result = await db.execute(query);
+  return result.rows;
+});
 ```
 
 Database files are stored in the `.gensx/databases` directory as SQLite files that you can inspect with any SQLite client.
@@ -4805,18 +5166,15 @@ For vector search operations with `SearchProvider`, your local environment conne
 ```tsx
 import { SearchProvider, useSearch } from "@gensx/storage";
 
-const SearchDocs = gensx.Component(
-  "SearchDocs",
-  async ({ query }) => {
-    // Uses cloud vector search even in local development
-    const namespace = await useSearch("documents");
-    const results = await namespace.query({
-      text: query,
-      topK: 5
-    });
-    return results;
-  }
-);
+const SearchDocs = gensx.Component("SearchDocs", async ({ query }) => {
+  // Uses cloud vector search even in local development
+  const namespace = await useSearch("documents");
+  const results = await namespace.query({
+    text: query,
+    topK: 5,
+  });
+  return results;
+});
 ```
 
 ## Running workflows locally
@@ -4964,7 +5322,7 @@ const ChatWithMemory = gensx.Component(
     const blob = useBlob(`chats/${threadId}.json`);
 
     // Load existing data (returns null if it doesn't exist)
-    const history = await blob.getJSON() ?? [];
+    const history = (await blob.getJSON()) ?? [];
 
     // Add new data
     history.push({ role: "user", content: userInput });
@@ -4973,7 +5331,7 @@ const ChatWithMemory = gensx.Component(
     await blob.putJSON(history);
 
     return "Data stored successfully";
-  }
+  },
 );
 
 // Just wrap your workflow with BlobProvider
@@ -5001,21 +5359,17 @@ GenSX Cloud provides SQLite-compatible databases powered by [Turso](https://turs
 import { DatabaseProvider, useDatabase } from "@gensx/storage";
 
 // Access a database with the useDatabase hook
-const QueryTeamStats = gensx.Component(
-  "QueryTeamStats",
-  async ({ team }) => {
-    // Get access to a database (created on first use)
-    const db = await useDatabase("baseball");
+const QueryTeamStats = gensx.Component("QueryTeamStats", async ({ team }) => {
+  // Get access to a database (created on first use)
+  const db = await useDatabase("baseball");
 
-    // Execute SQL queries directly
-    const result = await db.execute(
-      "SELECT * FROM players WHERE team = ?",
-      [team]
-    );
+  // Execute SQL queries directly
+  const result = await db.execute("SELECT * FROM players WHERE team = ?", [
+    team,
+  ]);
 
-    return result.rows; // Returns the query results
-  }
-);
+  return result.rows; // Returns the query results
+});
 
 // Just wrap your workflow with DatabaseProvider
 const Workflow = ({ team }) => (
@@ -5036,7 +5390,6 @@ GenSX Cloud provides vector and full-text search capabilities powered by [turbop
 - **Hybrid search**: Combine vector similarity with full-text BM25 search to get both semantically relevant results and exact keyword matches in a single query.
 - **Rich filtering**: Apply metadata filters to narrow down search results based on categories, timestamps, or any custom attributes, enhancing precision and relevance.
 
-
 ```tsx
 import { SearchProvider, useNamespace } from "@gensx/storage";
 import { OpenAIEmbedding } from "@gensx/openai";
@@ -5051,17 +5404,17 @@ const SearchDocuments = gensx.Component(
     // Generate an embedding for the query
     const embedding = await OpenAIEmbedding.run({
       model: "text-embedding-3-small",
-      input: query
+      input: query,
     });
 
     // Search for similar documents
     const results = await namespace.query({
       vector: embedding.data[0].embedding,
       topK: 5,
-  });
+    });
 
-    return results.map(r => r.attributes?.title);
-  }
+    return results.map((r) => r.attributes?.title);
+  },
 );
 
 // Just wrap your workflow with SearchProvider
@@ -5074,7 +5427,6 @@ const Workflow = ({ query }) => (
 
 > **Note**: Unlike blob storage and SQL databases, vector search doesn't have a local development implementation. When using `SearchProvider` locally, you'll connect to the cloud service.
 
-
 For more details see the full [storage components reference](docs/component-reference/storage-components/search-reference).
 
 ## Observability
@@ -5086,6 +5438,7 @@ GenSX Cloud provides comprehensive tracing and observability for all your workfl
 - **Complete execution traces**: Every workflow execution generates a detailed trace that captures the entire flow from start to finish, allowing you to understand exactly what happened during execution.
 
 - **Comprehensive component visibility**: Each component in your workflow automatically records its inputs and outputs, including:
+
   - All LLM calls with full prompts, parameters, and responses
   - Every tool invocation with input arguments and return values
   - All intermediate steps and state changes in your agents and workflows
@@ -5165,7 +5518,7 @@ const SaveData = gensx.Component<{ key: string; data: any }, null>(
     const blob = useBlob(`data/${key}.json`);
     await blob.putJSON(data);
     return null;
-  }
+  },
 );
 ```
 
@@ -5210,15 +5563,15 @@ For more details see the full [projects and environments reference](/docs/cloud/
 
 GenSX Cloud offers simple, predictable pricing designed to scale with your needs, including a free tier for individuals:
 
-| Resource | Free Tier | Pro Tier ($20/month/dev) | Overage/Action |
-|----------|-----------|--------------------------|----------------|
-| Serverless Compute | 50K sec | 500K sec | $0.00003/sec |
-| Traces (events) | 100K events | 1M events | $0.20/10K |
-| Blob Storage | 500MB | 5GB | $0.25/GB |
-| SQLite Storage | 500MB | 1GB | $1.50/GB |
-| Vector Storage | 250MB | 1GB | $1.00/GB |
-| Execution time | Up to 5 minutes | Up to 60 minutes | Custom |
-| Observability | 7 days trace retention | 30 days trace retention | Custom retention |
+| Resource           | Free Tier              | Pro Tier ($20/month/dev) | Overage/Action   |
+| ------------------ | ---------------------- | ------------------------ | ---------------- |
+| Serverless Compute | 50K sec                | 500K sec                 | $0.00003/sec     |
+| Traces (events)    | 100K events            | 1M events                | $0.20/10K        |
+| Blob Storage       | 500MB                  | 5GB                      | $0.25/GB         |
+| SQLite Storage     | 500MB                  | 1GB                      | $1.50/GB         |
+| Vector Storage     | 250MB                  | 1GB                      | $1.00/GB         |
+| Execution time     | Up to 5 minutes        | Up to 60 minutes         | Custom           |
+| Observability      | 7 days trace retention | 30 days trace retention  | Custom retention |
 
 For more details, visit our [pricing page](/docs/cloud/pricing) or [contact us](mailto:contact@gensx.com) for enterprise needs.
 
@@ -5231,376 +5584,15 @@ Ready to build AI agents and workflows with GenSX Cloud? Follow our step-by-step
 3. Run it locally: `gensx start src/workflows.tsx`
 4. Deploy to the cloud: `gensx deploy src/workflows.tsx`
 
+# Search reference
 
-# gensx start
-
-The `gensx start` command starts a local development server that enables you to test and debug your GenSX workflows.
-
-## Usage
-
-```bash
-gensx start <file> [options]
-```
-
-## Arguments
-
-| Argument | Description |
-|----------|-------------|
-| `<file>` | The workflow file to serve (e.g., `src/workflows.tsx`). |
-
-## Options
-
-| Option | Description |
-|--------|-------------|
-| `-p, --project <name>` | Project name for the local server. |
-| `-q, --quiet` | Suppress output. |
-| `-h, --help` | Display help for the command. |
-
-## Description
-
-This command starts a local development server that:
-
-- Watches your workflow file for changes and automatically reloads
-- Provides a web interface to test and debug your workflows
-- Simulates the cloud environment locally
-- Runs your workflow components in a development mode
-
-The development server includes:
-
-- A web UI for testing your workflows
-- Real-time logs and execution visibility
-- Access to the GenSX development dashboard
-
-## Examples
-
-```bash
-# Start server with a specific workflow file
-gensx start src/workflows.tsx
-
-# Start server with a custom project name
-gensx start src/workflows.tsx --project my-custom-name
-
-# Start server with minimal output
-gensx start src/workflows.tsx --quiet
-```
-
-## Notes
-
-- The server runs on port 3000 by default
-- You can access the development UI at `http://localhost:3000`
-- Environment variables from your local environment are available to the workflow
-- For more complex environment variable setups, consider using a `.env` file in your project root
-
-# gensx run
-
-The `gensx run` command executes a workflow that has been deployed to GenSX Cloud.
-
-## Usage
-
-```bash
-gensx run <workflow> [options]
-```
-
-## Arguments
-
-| Argument | Description |
-|----------|-------------|
-| `<workflow>` | Name of the workflow to run. |
-
-## Options
-
-| Option | Description |
-|--------|-------------|
-| `-i, --input <input>` | Input to pass to the workflow (as JSON). |
-| `--no-wait` | Do not wait for the workflow to finish (run asynchronously). |
-| `-p, --project <name>` | Project name where the workflow is deployed. |
-| `-o, --output <file>` | Output file to write the workflow result to. |
-| `-h, --help` | Display help for the command. |
-
-## Description
-
-This command triggers execution of a deployed workflow on GenSX Cloud with the specified input. By default, it waits for the workflow to complete and displays the result.
-
-When running a workflow, you can:
-- Provide input data as JSON
-- Choose whether to wait for completion or run asynchronously
-- Save the output to a file
-
-## Examples
-
-```bash
-# Run a workflow with no input
-gensx run MyWorkflow
-
-# Run a workflow with JSON input
-gensx run MyWorkflow --input '{"text": "Hello, world!"}'
-
-# Run a workflow in a specific project
-gensx run MyWorkflow --project my-production-project
-
-# Run a workflow asynchronously (don't wait for completion)
-gensx run MyWorkflow --no-wait
-
-# Run a workflow and save output to a file
-gensx run MyWorkflow --output result.json
-```
-
-## Notes
-
-- You must be logged in to GenSX Cloud to run workflows (`gensx login`)
-- The workflow must have been previously deployed using `gensx deploy`
-- When using `--input`, the input must be valid JSON
-- When using `--no-wait`, the command returns immediately with a workflow ID that can be used to check status later
-- Error handling: if the workflow fails, the command will return with a non-zero exit code and display the error
-
-# gensx new
-
-The `gensx new` command creates a new GenSX project with a predefined structure and dependencies.
-
-## Usage
-
-```bash
-gensx new <project-directory> [options]
-```
-
-## Arguments
-
-| Argument | Description |
-|----------|-------------|
-| `<project-directory>` | Directory to create the project in. If it doesn't exist, it will be created. |
-
-## Options
-
-| Option | Description |
-|--------|-------------|
-| `-t, --template <type>` | Template to use. Currently supports `ts` (TypeScript). |
-| `-f, --force` | Overwrite existing files in the target directory. |
-| `--skip-ide-rules` | Skip IDE rules selection. |
-| `--ide-rules <rules>` | Comma-separated list of IDE rules to install. Options: `cline`, `windsurf`, `claude`, `cursor`. |
-| `-d, --description <desc>` | Optional project description. |
-| `-h, --help` | Display help for the command. |
-
-## Description
-
-This command scaffolds a new GenSX project with the necessary files and folder structure. It sets up:
-
-- Project configuration files (`package.json`, `tsconfig.json`)
-- Basic project structure with example workflows
-- Development dependencies
-- IDE integrations based on selected rules
-
-## Examples
-
-```bash
-# Create a basic project
-gensx new my-gensx-app
-
-# Create a project with a specific template and description
-gensx new my-gensx-app --template ts --description "My AI workflow app"
-
-# Create a project with specific IDE rules
-gensx new my-gensx-app --ide-rules cursor,claude
-
-# Force create even if directory has existing files
-gensx new my-gensx-app --force
-```
-
-## Notes
-
-- If no template is specified, `ts` (TypeScript) is used by default.
-- The command will install all required dependencies, so make sure you have npm installed.
-- After creation, you can navigate to the project directory and start the development server with `gensx start`.
-
-# gensx login
-
-The `gensx login` command authenticates you with GenSX Cloud, allowing you to deploy and run workflows remotely.
-
-## Usage
-
-```bash
-gensx login
-```
-
-## Description
-
-When you run this command, it will:
-
-1. Open your default web browser to the GenSX authentication page
-2. Prompt you to log in with your GenSX account or create a new one
-3. Store your authentication credentials locally for future CLI commands
-
-After successful login, you can use other commands that require authentication, such as `deploy` and `run`.
-
-## Examples
-
-```bash
-# Log in to GenSX Cloud
-gensx login
-```
-
-## Notes
-
-- Your authentication token is stored in your user directory (typically `~/.gensx/config.json`)
-- The token is valid until you log out or revoke it from the GenSX dashboard
-- If you're behind a corporate firewall or using strict network policies, ensure that outbound connections to `api.gensx.com` are allowed
-
-# GenSX CLI Reference
-
-The GenSX command-line interface (CLI) provides a set of commands to help you build, deploy, and manage your GenSX applications.
+API reference for GenSX Cloud search components. Search is powered by turbopuffer, and their documentation for [query](https://turbopuffer.com/docs/query) and [upsert operations](https://turbopuffer.com/docs/write) is a useful reference to augment this document.
 
 ## Installation
 
-The GenSX CLI is included when you install the main GenSX package:
-
 ```bash
-npm install -g gensx
+npm install @gensx/storage
 ```
-
-## Available Commands
-
-| Command | Description |
-|---------|-------------|
-| [`gensx login`](./login) | Log in to GenSX Cloud |
-| [`gensx new`](./new) | Create a new GenSX project |
-| [`gensx start`](./start) | Start a local development server |
-| [`gensx build`](./build) | Build a workflow for deployment |
-| [`gensx deploy`](./deploy) | Deploy a workflow to GenSX Cloud |
-| [`gensx run`](./run) | Run a workflow on GenSX Cloud |
-
-## Basic Usage
-
-```bash
-# Create a new project
-gensx new my-project
-
-# Navigate to project
-cd my-project
-
-# Start local development server
-gensx start src/workflows.tsx
-
-# Deploy a workflow
-gensx deploy src/workflows.tsx
-```
-
-For detailed information about each command, please refer to the corresponding documentation page.
-
-# gensx deploy
-
-The `gensx deploy` command uploads and deploys a workflow to GenSX Cloud, making it available for remote execution.
-
-## Usage
-
-```bash
-gensx deploy <file> [options]
-```
-
-## Arguments
-
-| Argument | Description |
-|----------|-------------|
-| `<file>` | File to deploy. This should be a TypeScript/JavaScript file that exports a GenSX Workflow. |
-
-## Options
-
-| Option | Description |
-|--------|-------------|
-| `-e, --env <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
-| `-p, --project <name>` | Project name to deploy to. |
-| `-h, --help` | Display help for the command. |
-
-## Description
-
-This command:
-
-1. Builds your workflow (if not already built)
-2. Uploads it to GenSX Cloud
-3. Creates or updates the deployment
-4. Sets up any environment variables specified
-
-After successful deployment, your workflow will be available for remote execution via the GenSX Cloud dashboard or through the `gensx run` command.
-
-## Examples
-
-```bash
-# Deploy a workflow
-gensx deploy src/workflows.tsx
-
-# Deploy to a specific project
-gensx deploy src/workflows.tsx --project my-production-project
-
-# Deploy with environment variables
-gensx deploy src/workflows.tsx --env API_KEY=abc123 --env DEBUG=true
-
-# Deploy with an environment variable taken from your local environment
-gensx deploy src/workflows.tsx --env OPENAI_API_KEY
-```
-
-## Notes
-
-- You must be logged in to GenSX Cloud to deploy (`gensx login`)
-- If your workflow requires API keys or other secrets, provide them using the `--env` option
-- For environment variables without a specified value, the CLI will use the value from your local environment
-- After deployment, you can manage your workflows from the GenSX Cloud dashboard
-- The deployment process automatically handles bundling dependencies
-
-# gensx build
-
-The `gensx build` command compiles and bundles a GenSX workflow for deployment to GenSX Cloud.
-
-## Usage
-
-```bash
-gensx build <file> [options]
-```
-
-## Arguments
-
-| Argument | Description |
-|----------|-------------|
-| `<file>` | Workflow file to build (e.g., `src/workflows.tsx`). This should export a GenSX Workflow as the default export. |
-
-## Options
-
-| Option | Description |
-|--------|-------------|
-| `-o, --out-dir <dir>` | Output directory for the built files. |
-| `-t, --tsconfig <file>` | Path to a custom TypeScript configuration file. |
-| `-h, --help` | Display help for the command. |
-
-## Description
-
-This command builds your GenSX workflow into an optimized bundle that can be deployed to GenSX Cloud. It:
-
-- Transpiles TypeScript to JavaScript
-- Bundles all dependencies
-- Optimizes the code for production
-- Prepares the workflow for deployment
-
-After building, the command outputs the path to the bundled file, which can be used with the `gensx deploy` command.
-
-## Examples
-
-```bash
-# Build a workflow with default options
-gensx build src/workflows.tsx
-
-# Build a workflow with a custom output directory
-gensx build src/workflows.tsx --out-dir ./dist
-
-# Build a workflow with a custom TypeScript configuration
-gensx build src/workflows.tsx --tsconfig ./custom-tsconfig.json
-```
-
-## Notes
-
-- The build process requires that your workflow file exports a GenSX Workflow as the default export
-- If no output directory is specified, the built files will be placed in a `.gensx/build` directory
-- The build process does not include environment variables - these should be provided during deployment
-
-# Search Reference
-
-API reference for GenSX Cloud search components.
 
 ## SearchProvider
 
@@ -5612,25 +5604,16 @@ Provides vector search capabilities to its child components.
 import { SearchProvider } from "@gensx/storage";
 ```
 
-### Props
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `defaultPrefix` | `string` | `undefined` | Optional prefix for all namespace keys |
-
 ### Example
 
 ```tsx
 import { SearchProvider } from "@gensx/storage";
 
-const Workflow = gensx.Component(
-  "SearchWorkflow",
-  ({ input }) => (
-    <SearchProvider>
-      <YourComponent input={input} />
-    </SearchProvider>
-  )
-);
+const Workflow = gensx.Component("SearchWorkflow", ({ input }) => (
+  <SearchProvider>
+    <YourComponent input={input} />
+  </SearchProvider>
+));
 ```
 
 ## useSearch
@@ -5651,9 +5634,9 @@ function useSearch(name: string): Namespace;
 
 ### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `name` | `string` | The namespace name to access |
+| Parameter | Type     | Description                  |
+| --------- | -------- | ---------------------------- |
+| `name`    | `string` | The namespace name to access |
 
 ### Returns
 
@@ -5665,7 +5648,7 @@ Returns a namespace object with methods to interact with vector search.
 const namespace = await useSearch("documents");
 const results = await namespace.query({
   vector: queryEmbedding,
-  includeAttributes: true
+  includeAttributes: true,
 });
 ```
 
@@ -5688,19 +5671,19 @@ async upsert(options: {
 
 #### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `vectors` | `Vector[]` | Required | Array of vectors to insert or update |
-| `distanceMetric` | `DistanceMetric` | Required | Distance metric for similarity calculations |
-| `schema` | `Schema` | `undefined` | Optional schema definition for attributes |
-| `batchSize` | `number` | `1000` | Optional batch size for processing vectors |
+| Parameter        | Type             | Default     | Description                                 |
+| ---------------- | ---------------- | ----------- | ------------------------------------------- |
+| `vectors`        | `Vector[]`       | Required    | Array of vectors to insert or update        |
+| `distanceMetric` | `DistanceMetric` | Required    | Distance metric for similarity calculations |
+| `schema`         | `Schema`         | `undefined` | Optional schema definition for attributes   |
+| `batchSize`      | `number`         | `1000`      | Optional batch size for processing vectors  |
 
 #### Vector Object Format
 
 ```tsx
 {
   id: string;              // Unique identifier
-  vector: number[];        // Embedding vector
+  vector: number[];        // Vector embedding
   attributes?: {           // Optional metadata
     [key: string]: any;    // Key-value pairs
   }
@@ -5714,7 +5697,7 @@ await namespace.upsert({
   vectors: [
     {
       id: "doc-1",
-      vector: [0.1, 0.2, 0.3, ...],  // Embedding vector
+      vector: [0.1, 0.2, 0.3, ...],  // Vector embedding
       attributes: {                   // Optional metadata
         text: "Document content",
         category: "article",
@@ -5722,7 +5705,7 @@ await namespace.upsert({
       }
     }
   ],
-  distanceMetric: "cosine_distance",  // "cosine_distance", "euclidean_distance", "dot_product"
+  distanceMetric: "cosine_distance",  // "cosine_distance", "euclidean_squared", "dot_product"
   schema: {                           // Optional schema definition
     text: "string",
     category: "string",
@@ -5741,15 +5724,15 @@ async query(options: QueryOptions): Promise<QueryResults>
 
 #### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `vector` | `number[]` | Required | Query vector for similarity search |
-| `topK` | `number` | `10` | Number of results to return |
-| `includeVectors` | `boolean` | `false` | Whether to include vectors in results |
-| `includeAttributes` | `boolean \| string[]` | `true` | Include all attributes or specified ones |
-| `filters` | `Filters` | `undefined` | Metadata filters |
-| `rankBy` | `Record<string, Record<string, number>>` | `undefined` | Attribute-based ranking |
-| `consistency` | `string` | `undefined` | Consistency level for reads |
+| Parameter           | Type                                     | Default     | Description                              |
+| ------------------- | ---------------------------------------- | ----------- | ---------------------------------------- |
+| `vector`            | `number[]`                               | Required    | Query vector for similarity search       |
+| `topK`              | `number`                                 | `10`        | Number of results to return              |
+| `includeVectors`    | `boolean`                                | `false`     | Whether to include vectors in results    |
+| `includeAttributes` | `boolean \| string[]`                    | `true`      | Include all attributes or specified ones |
+| `filters`           | `Filters`                                | `undefined` | Metadata filters                         |
+| `rankBy`            | `Record<string, Record<string, number>>` | `undefined` | Attribute-based ranking                  |
+| `consistency`       | `string`                                 | `undefined` | Consistency level for reads              |
 
 #### Example
 
@@ -5805,15 +5788,15 @@ async delete(options: { ids: Id[] }): Promise<void>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `ids` | `string[]` | Array of vector IDs to delete |
+| Parameter | Type       | Description                   |
+| --------- | ---------- | ----------------------------- |
+| `ids`     | `string[]` | Array of vector IDs to delete |
 
 #### Example
 
 ```tsx
 await namespace.delete({
-  ids: ["doc-1", "doc-2"]
+  ids: ["doc-1", "doc-2"],
 });
 ```
 
@@ -5827,8 +5810,8 @@ async deleteByFilter(options: { filters: Filters }): Promise<number>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
+| Parameter | Type      | Description                           |
+| --------- | --------- | ------------------------------------- |
 | `filters` | `Filters` | Filters to match vectors for deletion |
 
 #### Example
@@ -5837,9 +5820,9 @@ async deleteByFilter(options: { filters: Filters }): Promise<number>
 const deletedCount = await namespace.deleteByFilter({
   filters: {
     where: {
-      category: { $eq: "outdated" }
-    }
-  }
+      category: { $eq: "outdated" },
+    },
+  },
 });
 ```
 
@@ -5877,9 +5860,9 @@ async updateSchema(options: { schema: Schema }): Promise<Schema>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `schema` | `Schema` | New schema definition |
+| Parameter | Type     | Description           |
+| --------- | -------- | --------------------- |
+| `schema`  | `Schema` | New schema definition |
 
 #### Example
 
@@ -5889,9 +5872,9 @@ const updatedSchema = await namespace.updateSchema({
     text: "string",
     category: "string",
     createdAt: "string",
-    newField: "number",   // Add new field
-    tags: "string[]"      // Add array field
-  }
+    newField: "number", // Add new field
+    tags: "string[]", // Add array field
+  },
 });
 ```
 
@@ -5931,7 +5914,7 @@ const search = new SearchClient();
 
 // List all namespaces
 const namespaces = await search.listNamespaces({
-  prefix: "docs-"  // Optional prefix filter
+  prefix: "docs-", // Optional prefix filter
 });
 
 // Check if namespace exists
@@ -5942,49 +5925,359 @@ const { created } = await search.ensureNamespace("my-namespace");
 
 // Delete a namespace
 const { deleted } = await search.deleteNamespace("old-namespace");
+
+// Get a namespace directly for vector operations
+const namespace = search.getNamespace("products");
+
+// Upsert vectors using the namespace
+await namespace.upsert({
+  vectors: [
+    {
+      id: "product-1",
+      vector: [0.1, 0.3, 0.5, ...], // embedding vector
+      attributes: {
+        name: "Ergonomic Chair",
+        category: "furniture",
+        price: 299.99
+      }
+    },
+    {
+      id: "product-2",
+      vector: [0.2, 0.4, 0.6, ...],
+      attributes: {
+        name: "Standing Desk",
+        category: "furniture",
+        price: 499.99
+      }
+    }
+  ],
+  distanceMetric: "cosine_distance",
+  schema: {
+    name: "string",
+    category: "string",
+    price: "number"
+  }
+});
+
+// Query vectors directly with the namespace
+const searchResults = await namespace.query({
+  vector: [0.15, 0.35, 0.55, ...], // query vector
+  topK: 5,
+  includeAttributes: true,
+  filters: {
+    where: {
+      category: { $eq: "furniture" },
+      price: { $lt: 400 }
+    }
+  }
+});
 ```
 
-## Query Result Format
+The `SearchClient` is a standard typescript library and can be used outside of GenSX workflows in your normal application code as well.
 
-Results from query operations are returned in this format:
+## useSearchStorage
+
+Hook that provides direct access to the search storage instance, which includes higher-level namespace management functions.
+
+### Import
 
 ```tsx
-[
-  {
-    id: "doc-1",            // Document ID
-    score: 0.87,            // Similarity score (0-1)
-    vector?: number[],      // Original vector (if includeVectors=true)
-    attributes?: {          // Metadata (if includeAttributes=true)
-      text: "Document content",
-      category: "article",
-      createdAt: "2023-07-15"
+import { useSearchStorage } from "@gensx/storage";
+```
+
+### Signature
+
+```tsx
+function useSearchStorage(): SearchStorage;
+```
+
+### Example
+
+```tsx
+const searchStorage = useSearchStorage();
+```
+
+The search storage object provides these management methods:
+
+### getNamespace
+
+Get a namespace object for direct interaction.
+
+```tsx
+// Get a namespace directly (without calling useSearch)
+const searchStorage = useSearchStorage();
+const namespace = searchStorage.getNamespace("documents");
+
+// Usage example
+await namespace.upsert({
+  vectors: [/* your vectors */],
+  distanceMetric: "cosine_distance"
+});
+```
+
+### listNamespaces
+
+List all namespaces in your project.
+
+```tsx
+const searchStorage = useSearchStorage();
+const namespaces = await searchStorage.listNamespaces({
+  prefix: "docs-" // Optional prefix filter
+});
+console.log(namespaces); // ["docs-articles", "docs-products"]
+```
+
+### ensureNamespace
+
+Create a namespace if it doesn't exist.
+
+```tsx
+const searchStorage = useSearchStorage();
+const { created } = await searchStorage.ensureNamespace("documents");
+if (created) {
+  console.log("Namespace was created");
+} else {
+  console.log("Namespace already existed");
+}
+```
+
+### deleteNamespace
+
+Delete a namespace and all its data.
+
+```tsx
+const searchStorage = useSearchStorage();
+const { deleted } = await searchStorage.deleteNamespace("old-namespace");
+if (deleted) {
+  console.log("Namespace was deleted");
+} else {
+  console.log("Namespace could not be deleted");
+}
+```
+
+### namespaceExists
+
+Check if a namespace exists.
+
+```tsx
+const searchStorage = useSearchStorage();
+const exists = await searchStorage.namespaceExists("documents");
+if (exists) {
+  console.log("Namespace exists");
+} else {
+  console.log("Namespace does not exist");
+}
+```
+
+### hasEnsuredNamespace
+
+Check if a namespace has been ensured in the current session.
+
+```tsx
+const searchStorage = useSearchStorage();
+const isEnsured = searchStorage.hasEnsuredNamespace("documents");
+if (isEnsured) {
+  console.log("Namespace has been ensured in this session");
+} else {
+  console.log("Namespace has not been ensured yet");
+}
+```
+
+## SearchClient
+
+The `SearchClient` class provides a way to interact with GenSX vector search capabilities outside of the GenSX workflow context, such as from regular Node.js applications or server endpoints.
+
+### Import
+
+```tsx
+import { SearchClient } from "@gensx/storage";
+```
+
+### Constructor
+
+```tsx
+constructor()
+```
+
+#### Example
+
+```tsx
+const searchClient = new SearchClient();
+```
+
+### Methods
+
+#### getNamespace
+
+Get a namespace instance and ensure it exists first.
+
+```tsx
+async getNamespace(name: string): Promise<Namespace>
+```
+
+##### Example
+
+```tsx
+const namespace = await searchClient.getNamespace("products");
+
+// Then use the namespace to upsert or query vectors
+await namespace.upsert({
+  vectors: [
+    {
+      id: "product-1",
+      vector: [0.1, 0.2, 0.3, ...],
+      attributes: { name: "Product 1", category: "electronics" }
     }
-  },
-  // ...more results
-]
+  ],
+  distanceMetric: "cosine_distance"
+});
+```
+
+#### ensureNamespace
+
+Create a namespace if it doesn't exist.
+
+```tsx
+async ensureNamespace(name: string): Promise<EnsureNamespaceResult>
+```
+
+##### Example
+
+```tsx
+const { created } = await searchClient.ensureNamespace("products");
+if (created) {
+  console.log("Namespace was created");
+}
+```
+
+#### listNamespaces
+
+List all namespaces.
+
+```tsx
+async listNamespaces(options?: { prefix?: string }): Promise<string[]>
+```
+
+##### Example
+
+```tsx
+const namespaces = await searchClient.listNamespaces({
+  prefix: "customer-" // Optional prefix filter
+});
+console.log("Available namespaces:", namespaces);
+```
+
+#### deleteNamespace
+
+Delete a namespace.
+
+```tsx
+async deleteNamespace(name: string): Promise<DeleteNamespaceResult>
+```
+
+##### Example
+
+```tsx
+const { deleted } = await searchClient.deleteNamespace("temp-namespace");
+if (deleted) {
+  console.log("Namespace was removed");
+}
+```
+
+#### namespaceExists
+
+Check if a namespace exists.
+
+```tsx
+async namespaceExists(name: string): Promise<boolean>
+```
+
+##### Example
+
+```tsx
+if (await searchClient.namespaceExists("products")) {
+  console.log("Products namespace exists");
+} else {
+  console.log("Products namespace doesn't exist yet");
+}
+```
+
+### Usage in applications
+
+The SearchClient is particularly useful when you need to access vector search functionality from:
+
+- Regular Express.js or Next.js API routes
+- Background jobs or workers
+- Custom scripts or tools
+- Any Node.js application outside the GenSX workflow context
+
+```tsx
+// Example: Using SearchClient in an Express handler
+import express from 'express';
+import { SearchClient } from '@gensx/storage';
+import { OpenAI } from 'openai';
+
+const app = express();
+const searchClient = new SearchClient();
+const openai = new OpenAI();
+
+app.post('/api/search', async (req, res) => {
+  try {
+    const { query } = req.body;
+
+    // Generate embedding for the query
+    const embedding = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: query
+    });
+
+    // Search for similar documents
+    const namespace = await searchClient.getNamespace('documents');
+    const results = await namespace.query({
+      vector: embedding.data[0].embedding,
+      topK: 5,
+      includeAttributes: true
+    });
+
+    res.json(results);
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Search error' });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
 ```
 
 ## Filter Operators
 
 Filters support these operators:
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `$eq` | Equals | `{ field: { $eq: "value" } }` |
-| `$ne` | Not equals | `{ field: { $ne: "value" } }` |
-| `$gt` | Greater than | `{ field: { $gt: 10 } }` |
-| `$gte` | Greater than or equal | `{ field: { $gte: 10 } }` |
-| `$lt` | Less than | `{ field: { $lt: 10 } }` |
-| `$lte` | Less than or equal | `{ field: { $lte: 10 } }` |
-| `$in` | In array | `{ field: { $in: ["a", "b"] } }` |
-| `$nin` | Not in array | `{ field: { $nin: ["a", "b"] } }` |
-| `$contains` | String contains | `{ field: { $contains: "text" } }` |
-| `$containsAny` | Contains any of values | `{ tags: { $containsAny: ["news", "tech"] } }` |
-| `$containsAll` | Contains all values | `{ tags: { $containsAll: ["important", "urgent"] } }` |
+| Operator       | Description            | Example                                               |
+| -------------- | ---------------------- | ----------------------------------------------------- |
+| `$eq`          | Equals                 | `{ field: { $eq: "value" } }`                         |
+| `$ne`          | Not equals             | `{ field: { $ne: "value" } }`                         |
+| `$gt`          | Greater than           | `{ field: { $gt: 10 } }`                              |
+| `$gte`         | Greater than or equal  | `{ field: { $gte: 10 } }`                             |
+| `$lt`          | Less than              | `{ field: { $lt: 10 } }`                              |
+| `$lte`         | Less than or equal     | `{ field: { $lte: 10 } }`                             |
+| `$in`          | In array               | `{ field: { $in: ["a", "b"] } }`                      |
+| `$nin`         | Not in array           | `{ field: { $nin: ["a", "b"] } }`                     |
+| `$contains`    | String contains        | `{ field: { $contains: "text" } }`                    |
+| `$containsAny` | Contains any of values | `{ tags: { $containsAny: ["news", "tech"] } }`        |
+| `$containsAll` | Contains all values    | `{ tags: { $containsAll: ["important", "urgent"] } }` |
 
 # Database Reference
 
 API reference for GenSX Cloud SQL database components.
+
+## Installation
+
+```bash
+npm install @gensx/storage
+```
 
 ## DatabaseProvider
 
@@ -5998,23 +6291,29 @@ import { DatabaseProvider } from "@gensx/storage";
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `defaultPrefix` | `string` | `undefined` | Optional prefix for all database names |
+| Prop            | Type                  | Default     | Description                                      |
+| --------------- | --------------------- | ----------- | ------------------------------------------------ |
+| `kind`          | `"filesystem" \| "cloud"` | `"cloud"` | The storage backend to use                   |
+| `rootDir`       | `string`              | `undefined` | Root directory for storing database files (filesystem only) |
 
 ### Example
 
 ```tsx
 import { DatabaseProvider } from "@gensx/storage";
 
-const Workflow = gensx.Component(
-  "DatabaseWorkflow",
-  ({ input }) => (
-    <DatabaseProvider>
-      <YourComponent input={input} />
-    </DatabaseProvider>
-  )
-);
+// Cloud storage (production)
+const Workflow = gensx.Component("DatabaseWorkflow", ({ input }) => (
+  <DatabaseProvider>
+    <YourComponent input={input} />
+  </DatabaseProvider>
+));
+
+// Local filesystem storage (development)
+const DevWorkflow = gensx.Component("DevDatabaseWorkflow", ({ input }) => (
+  <DatabaseProvider kind="filesystem" rootDir="./data">
+    <YourComponent input={input} />
+  </DatabaseProvider>
+));
 ```
 
 ## useDatabase
@@ -6035,9 +6334,9 @@ function useDatabase(name: string): Database;
 
 ### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `name` | `string` | The database name to access |
+| Parameter | Type     | Description                 |
+| --------- | -------- | --------------------------- |
+| `name`    | `string` | The database name to access |
 
 ### Returns
 
@@ -6047,7 +6346,9 @@ Returns a database object with methods to interact with SQL database.
 
 ```tsx
 const db = await useDatabase("users");
-const result = await db.execute("SELECT * FROM users WHERE id = ?", ["user-123"]);
+const result = await db.execute("SELECT * FROM users WHERE id = ?", [
+  "user-123",
+]);
 ```
 
 ## Database Methods
@@ -6064,31 +6365,31 @@ async execute(sql: string, params?: InArgs): Promise<DatabaseResult>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `sql` | `string` | SQL statement to execute |
-| `params` | `InArgs` | Optional parameters for prepared statement |
+| Parameter | Type     | Description                                |
+| --------- | -------- | ------------------------------------------ |
+| `sql`     | `string` | SQL statement to execute                   |
+| `params`  | `InArgs` | Optional parameters for prepared statement |
 
 #### Example
 
 ```tsx
 // Query with parameters
-const result = await db.execute(
-  "SELECT * FROM users WHERE email = ?",
-  ["user@example.com"]
-);
+const result = await db.execute("SELECT * FROM users WHERE email = ?", [
+  "user@example.com",
+]);
 
 // Insert data
-await db.execute(
-  "INSERT INTO users (id, name, email) VALUES (?, ?, ?)",
-  ["user-123", "John Doe", "john@example.com"]
-);
+await db.execute("INSERT INTO users (id, name, email) VALUES (?, ?, ?)", [
+  "user-123",
+  "John Doe",
+  "john@example.com",
+]);
 
 // Update data
-await db.execute(
-  "UPDATE users SET last_login = ? WHERE id = ?",
-  [new Date().toISOString(), "user-123"]
-);
+await db.execute("UPDATE users SET last_login = ? WHERE id = ?", [
+  new Date().toISOString(),
+  "user-123",
+]);
 ```
 
 #### Return Value
@@ -6097,9 +6398,10 @@ Returns a result object with the following properties:
 
 ```tsx
 {
-  rowsAffected: number;  // Number of rows affected by statement
-  lastInsertRowid?: number;  // ID of last inserted row (for INSERT statements)
-  rows: Record<string, any>[];  // Array of result rows (for SELECT statements)
+  columns: string[];        // Column names from result set
+  rows: unknown[][];        // Array of result rows as arrays
+  rowsAffected: number;     // Number of rows affected by statement
+  lastInsertId?: number;    // ID of last inserted row (for INSERT statements)
 }
 ```
 
@@ -6113,8 +6415,8 @@ async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
+| Parameter    | Type                  | Description                                      |
+| ------------ | --------------------- | ------------------------------------------------ |
 | `statements` | `DatabaseStatement[]` | Array of SQL statements with optional parameters |
 
 #### DatabaseStatement Format
@@ -6132,37 +6434,41 @@ async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult>
 const results = await db.batch([
   {
     sql: "INSERT INTO users (id, name) VALUES (?, ?)",
-    params: ["user-123", "John Doe"]
+    params: ["user-123", "John Doe"],
   },
   {
     sql: "INSERT INTO user_preferences (user_id, theme) VALUES (?, ?)",
-    params: ["user-123", "dark"]
-  }
+    params: ["user-123", "dark"],
+  },
 ]);
 ```
 
 #### Return Value
 
-Returns an array of result objects, one for each statement executed:
+Returns a result object containing an array of individual results:
 
 ```tsx
-[
-  {
-    rowsAffected: 1,
-    lastInsertRowid: 42,
-    rows: []
-  },
-  {
-    rowsAffected: 1,
-    lastInsertRowid: 43,
-    rows: []
-  }
-]
+{
+  results: [
+    {
+      columns: [],
+      rows: [],
+      rowsAffected: 1,
+      lastInsertId: 42
+    },
+    {
+      columns: [],
+      rows: [],
+      rowsAffected: 1,
+      lastInsertId: 43
+    }
+  ]
+}
 ```
 
 ### executeMultiple
 
-Executes multiple SQL statements in a single string.
+Executes multiple SQL statements as a script (without transaction semantics).
 
 ```tsx
 async executeMultiple(sql: string): Promise<DatabaseBatchResult>
@@ -6170,9 +6476,9 @@ async executeMultiple(sql: string): Promise<DatabaseBatchResult>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `sql` | `string` | Multiple SQL statements separated by semicolons |
+| Parameter | Type     | Description                                     |
+| --------- | -------- | ----------------------------------------------- |
+| `sql`     | `string` | Multiple SQL statements separated by semicolons |
 
 #### Example
 
@@ -6190,11 +6496,11 @@ const results = await db.executeMultiple(`
 
 #### Return Value
 
-Returns an array of result objects, one for each statement executed.
+Returns a result object containing an array of individual results, one for each statement executed.
 
 ### migrate
 
-Executes SQL migration script with transaction handling.
+Executes SQL migration statements with foreign keys disabled.
 
 ```tsx
 async migrate(sql: string): Promise<DatabaseBatchResult>
@@ -6202,9 +6508,9 @@ async migrate(sql: string): Promise<DatabaseBatchResult>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `sql` | `string` | SQL migration statements |
+| Parameter | Type     | Description              |
+| --------- | -------- | ------------------------ |
+| `sql`     | `string` | SQL migration statements |
 
 #### Example
 
@@ -6225,7 +6531,7 @@ const results = await db.migrate(`
 
 #### Return Value
 
-Returns an array of result objects, one for each statement executed.
+Returns a result object containing an array of individual results, one for each statement executed.
 
 ### getInfo
 
@@ -6242,25 +6548,56 @@ const info = await db.getInfo();
 console.log(info);
 // {
 //   name: "users",
+//   size: 12800,
 //   lastModified: Date("2023-07-15T12:34:56Z"),
-//   sizeBytes: 12800,
-//   tables: ["users", "user_preferences"]
+//   tables: [
+//     {
+//       name: "users",
+//       columns: [
+//         {
+//           name: "id",
+//           type: "TEXT",
+//           notNull: true,
+//           primaryKey: true
+//         },
+//         {
+//           name: "name",
+//           type: "TEXT",
+//           notNull: true,
+//           primaryKey: false
+//         }
+//       ]
+//     }
+//   ]
 // }
 ```
 
 ## Database Management
 
-Higher-level operations for managing databases:
+Higher-level operations for managing databases are available through the `useDatabaseStorage` hook:
+
+### useDatabaseStorage
+
+Hook that provides access to the database storage instance, which includes higher-level database management functions.
+
+```tsx
+import { useDatabaseStorage } from "@gensx/storage";
+
+// Get access to database management functions
+const dbStorage = useDatabaseStorage();
+```
+
+The database storage object provides these management methods:
 
 ### listDatabases
 
 Lists all databases in your project.
 
 ```tsx
-import { DatabaseClient } from "@gensx/storage";
+import { useDatabaseStorage } from "@gensx/storage";
 
-const dbClient = new DatabaseClient();
-const databases = await dbClient.listDatabases();
+const dbStorage = useDatabaseStorage();
+const databases = await dbStorage.listDatabases();
 console.log(databases); // ["users", "products", "analytics"]
 ```
 
@@ -6269,7 +6606,8 @@ console.log(databases); // ["users", "products", "analytics"]
 Creates a database if it doesn't exist.
 
 ```tsx
-const { created } = await dbClient.ensureDatabase("new-database");
+const dbStorage = useDatabaseStorage();
+const { created } = await dbStorage.ensureDatabase("new-database");
 if (created) {
   console.log("Database was created");
 } else {
@@ -6282,7 +6620,8 @@ if (created) {
 Deletes a database and all its data.
 
 ```tsx
-const { deleted } = await dbClient.deleteDatabase("old-database");
+const dbStorage = useDatabaseStorage();
+const { deleted } = await dbStorage.deleteDatabase("old-database");
 if (deleted) {
   console.log("Database was deleted");
 } else {
@@ -6290,9 +6629,201 @@ if (deleted) {
 }
 ```
 
+### hasEnsuredDatabase
+
+Checks if a database has been ensured in the current session.
+
+```tsx
+const dbStorage = useDatabaseStorage();
+const isEnsured = dbStorage.hasEnsuredDatabase("my-database");
+
+if (isEnsured) {
+  console.log("Database has been ensured in this session");
+} else {
+  console.log("Database has not been ensured yet");
+}
+```
+
+### getDatabase
+
+Get a database instance directly (without calling useDatabase).
+
+```tsx
+const dbStorage = useDatabaseStorage();
+
+// Get a database directly
+// Note: This doesn't ensure the database exists, unlike useDatabase
+const db = dbStorage.getDatabase("users");
+
+// You may want to ensure it exists first
+await dbStorage.ensureDatabase("users");
+const db = dbStorage.getDatabase("users");
+```
+
+## DatabaseClient
+
+The `DatabaseClient` class provides a way to interact with GenSX databases outside of the GenSX workflow context, such as from regular Node.js applications or server endpoints.
+
+### Import
+
+```tsx
+import { DatabaseClient } from "@gensx/storage";
+```
+
+### Constructor
+
+```tsx
+constructor(props?: DatabaseProviderProps)
+```
+
+#### Parameters
+
+| Parameter | Type                  | Default     | Description                                      |
+| --------- | --------------------- | ----------- | ------------------------------------------------ |
+| `props`   | `DatabaseProviderProps` | `{}` | Optional configuration properties                |
+
+#### Example
+
+```tsx
+// Default client (uses filesystem locally, cloud in production)
+const dbClient = new DatabaseClient();
+
+// Explicitly use filesystem storage
+const localClient = new DatabaseClient({
+  kind: "filesystem",
+  rootDir: "./my-data"
+});
+
+// Explicitly use cloud storage
+const cloudClient = new DatabaseClient({ kind: "cloud" });
+```
+
+### Methods
+
+#### getDatabase
+
+Get a database instance and ensure it exists first.
+
+```tsx
+async getDatabase(name: string): Promise<Database>
+```
+
+##### Example
+
+```tsx
+const db = await dbClient.getDatabase("users");
+const results = await db.execute("SELECT * FROM users LIMIT 10");
+```
+
+#### ensureDatabase
+
+Create a database if it doesn't exist.
+
+```tsx
+async ensureDatabase(name: string): Promise<EnsureDatabaseResult>
+```
+
+##### Example
+
+```tsx
+const { created } = await dbClient.ensureDatabase("analytics");
+if (created) {
+  console.log("Database was created");
+}
+```
+
+#### listDatabases
+
+List all databases.
+
+```tsx
+async listDatabases(): Promise<string[]>
+```
+
+##### Example
+
+```tsx
+const databases = await dbClient.listDatabases();
+console.log("Available databases:", databases);
+```
+
+#### deleteDatabase
+
+Delete a database.
+
+```tsx
+async deleteDatabase(name: string): Promise<DeleteDatabaseResult>
+```
+
+##### Example
+
+```tsx
+const { deleted } = await dbClient.deleteDatabase("temp-db");
+if (deleted) {
+  console.log("Database was removed");
+}
+```
+
+#### databaseExists
+
+Check if a database exists.
+
+```tsx
+async databaseExists(name: string): Promise<boolean>
+```
+
+##### Example
+
+```tsx
+if (await dbClient.databaseExists("users")) {
+  console.log("Users database exists");
+} else {
+  console.log("Users database doesn't exist yet");
+}
+```
+
+### Usage in applications
+
+The DatabaseClient is particularly useful when you need to access GenSX databases from:
+
+- Regular Express.js or Next.js API routes
+- Background jobs or workers
+- Custom scripts or tools
+- Any Node.js application outside the GenSX workflow context
+
+```tsx
+// Example: Using DatabaseClient in an Express handler
+import express from 'express';
+import { DatabaseClient } from '@gensx/storage';
+
+const app = express();
+const dbClient = new DatabaseClient();
+
+app.get('/api/users', async (req, res) => {
+  try {
+    const db = await dbClient.getDatabase('users');
+    const result = await db.execute('SELECT * FROM users');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+```
+
 # Blob Storage Reference
 
 API reference for GenSX Cloud blob storage components.
+
+## Installation
+
+```bash
+npm install @gensx/storage
+```
 
 ## BlobProvider
 
@@ -6306,25 +6837,22 @@ import { BlobProvider } from "@gensx/storage";
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `kind` | `"filesystem" \| "cloud"` | Auto-detected | Storage backend to use |
-| `rootDir` | `string` | `.gensx/blobs` | Root directory for filesystem storage |
-| `defaultPrefix` | `string` | `undefined` | Optional prefix for all blob keys |
+| Prop            | Type                      | Default        | Description                           |
+| --------------- | ------------------------- | -------------- | ------------------------------------- |
+| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use                |
+| `rootDir`       | `string`                  | `.gensx/blobs` | Root directory for filesystem storage |
+| `defaultPrefix` | `string`                  | `undefined`    | Optional prefix for all blob keys     |
 
 ### Example
 
 ```tsx
 import { BlobProvider } from "@gensx/storage";
 
-const Workflow = gensx.Component(
-  "Workflow",
-  ({ input }) => (
-    <BlobProvider kind="cloud">
-      <YourComponent input={input} />
-    </BlobProvider>
-  )
-);
+const Workflow = gensx.Component("Workflow", ({ input }) => (
+  <BlobProvider kind="cloud">
+    <YourComponent input={input} />
+  </BlobProvider>
+));
 ```
 
 ## useBlob
@@ -6345,10 +6873,10 @@ function useBlob<T = unknown>(key: string): Blob<T>;
 
 ### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `key` | `string` | The unique key for the blob |
-| `T` | Generic type | Type of the JSON data (optional) |
+| Parameter | Type         | Description                      |
+| --------- | ------------ | -------------------------------- |
+| `key`     | `string`     | The unique key for the blob      |
+| `T`       | Generic type | Type of the JSON data (optional) |
 
 ### Returns
 
@@ -6369,31 +6897,31 @@ The blob object returned by `useBlob` provides these methods:
 
 ```tsx
 // Get JSON data
-const data = await blob.getJSON();  // Returns null if not found
+const data = await blob.getJSON(); // Returns null if not found
 
 // Save JSON data
-await blob.putJSON(data, options);  // Returns { etag: string }
+await blob.putJSON(data, options); // Returns { etag: string }
 ```
 
 ### String Operations
 
 ```tsx
 // Get string content
-const text = await blob.getString();  // Returns null if not found
+const text = await blob.getString(); // Returns null if not found
 
 // Save string content
-await blob.putString("Hello world", options);  // Returns { etag: string }
+await blob.putString("Hello world", options); // Returns { etag: string }
 ```
 
 ### Binary Operations
 
 ```tsx
 // Get binary data with metadata
-const result = await blob.getRaw();  // Returns null if not found
+const result = await blob.getRaw(); // Returns null if not found
 // Returns { content, contentType, etag, lastModified, size, metadata }
 
 // Save binary data
-await blob.putRaw(buffer, options);  // Returns { etag: string }
+await blob.putRaw(buffer, options); // Returns { etag: string }
 ```
 
 ### Stream Operations
@@ -6403,25 +6931,25 @@ await blob.putRaw(buffer, options);  // Returns { etag: string }
 const stream = await blob.getStream();
 
 // Save data from a stream
-await blob.putStream(readableStream, options);  // Returns { etag: string }
+await blob.putStream(readableStream, options); // Returns { etag: string }
 ```
 
 ### Metadata Operations
 
 ```tsx
 // Check if blob exists
-const exists = await blob.exists();  // Returns boolean
+const exists = await blob.exists(); // Returns boolean
 
 // Delete blob
 await blob.delete();
 
 // Get metadata
-const metadata = await blob.getMetadata();  // Returns null if not found
+const metadata = await blob.getMetadata(); // Returns null if not found
 
 // Update metadata
 await blob.updateMetadata({
   key1: "value1",
-  key2: "value2"
+  key2: "value2",
 });
 ```
 
@@ -6438,10 +6966,237 @@ Many methods accept an options object with these properties:
   }
 }
 ```
+
+## useBlobStorage
+
+Hook that provides direct access to the blob storage instance, allowing you to perform blob operations across multiple keys.
+
+### Import
+
+```tsx
+import { useBlobStorage } from "@gensx/storage";
+```
+
+### Signature
+
+```tsx
+function useBlobStorage(): BlobStorage;
+```
+
+### Example
+
+```tsx
+const blobStorage = useBlobStorage();
+```
+
+The blob storage object provides these methods:
+
+### getBlob
+
+Get a blob object for a specific key.
+
+```tsx
+const blobStorage = useBlobStorage();
+const userBlob = blobStorage.getBlob<UserProfile>("users/123.json");
+```
+
+### listBlobs
+
+List all blob keys with an optional prefix filter.
+
+```tsx
+const blobStorage = useBlobStorage();
+const userBlobKeys = await blobStorage.listBlobs("users/");
+console.log(userBlobKeys); // ["users/123.json", "users/456.json"]
+```
+
+### blobExists
+
+Check if a blob exists.
+
+```tsx
+const blobStorage = useBlobStorage();
+const exists = await blobStorage.blobExists("users/123.json");
+if (exists) {
+  console.log("User profile exists");
+}
+```
+
+### deleteBlob
+
+Delete a blob.
+
+```tsx
+const blobStorage = useBlobStorage();
+const { deleted } = await blobStorage.deleteBlob("temp/file.json");
+if (deleted) {
+  console.log("Temporary file deleted");
+}
+```
+
+## BlobClient
+
+The `BlobClient` class provides a way to interact with GenSX blob storage outside of the GenSX workflow context, such as from regular Node.js applications or server endpoints.
+
+### Import
+
+```tsx
+import { BlobClient } from "@gensx/storage";
+```
+
+### Constructor
+
+```tsx
+constructor(props?: BlobProviderProps)
+```
+
+#### Parameters
+
+| Parameter | Type               | Default | Description                           |
+| --------- | ------------------ | ------- | ------------------------------------- |
+| `props`   | `BlobProviderProps` | `{}`   | Optional configuration properties     |
+
+#### Example
+
+```tsx
+// Default client (uses filesystem locally, cloud in production)
+const blobClient = new BlobClient();
+
+// Explicitly use filesystem storage
+const localClient = new BlobClient({
+  kind: "filesystem",
+  rootDir: "./my-data"
+});
+
+// Explicitly use cloud storage with a prefix
+const cloudClient = new BlobClient({
+  kind: "cloud",
+  defaultPrefix: "app-data/"
+});
+```
+
+### Methods
+
+#### getBlob
+
+Get a blob instance for a specific key.
+
+```tsx
+getBlob<T = unknown>(key: string): Blob<T>
+```
+
+##### Example
+
+```tsx
+const userBlob = blobClient.getBlob<UserProfile>("users/123.json");
+const profile = await userBlob.getJSON();
+
+// Update the profile
+profile.lastLogin = new Date().toISOString();
+await userBlob.putJSON(profile);
+```
+
+#### listBlobs
+
+List all blob keys with an optional prefix.
+
+```tsx
+async listBlobs(prefix?: string): Promise<string[]>
+```
+
+##### Example
+
+```tsx
+const chatHistory = await blobClient.listBlobs("chats/");
+console.log("Chat histories:", chatHistory);
+```
+
+#### blobExists
+
+Check if a blob exists.
+
+```tsx
+async blobExists(key: string): Promise<boolean>
+```
+
+##### Example
+
+```tsx
+if (await blobClient.blobExists("settings.json")) {
+  console.log("Settings file exists");
+} else {
+  console.log("Need to create settings file");
+}
+```
+
+#### deleteBlob
+
+Delete a blob.
+
+```tsx
+async deleteBlob(key: string): Promise<DeleteBlobResult>
+```
+
+##### Example
+
+```tsx
+const { deleted } = await blobClient.deleteBlob("temp/cache.json");
+if (deleted) {
+  console.log("Cache file was deleted");
+}
+```
+
+### Usage in applications
+
+The BlobClient is particularly useful when you need to access blob storage from:
+
+- Express.js or Next.js API routes
+- Background jobs or workers
+- Custom scripts or tools
+- Any Node.js application outside the GenSX workflow context
+
+```tsx
+// Example: Using BlobClient in an Express handler
+import express from 'express';
+import { BlobClient } from '@gensx/storage';
+
+const app = express();
+const blobClient = new BlobClient();
+
+// Save user data endpoint
+app.post('/api/users/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userBlob = blobClient.getBlob(`users/${userId}.json`);
+
+    // Get existing profile or create new one
+    const existingProfile = await userBlob.getJSON() || {};
+
+    // Merge with updated data
+    const updatedProfile = {
+      ...existingProfile,
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Save the updated profile
+    await userBlob.putJSON(updatedProfile);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving user data:', error);
+    res.status(500).json({ error: 'Failed to save user data' });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+```
+
 # SQL database
 
 GenSX's SQL database service provides zero-configuration SQLite databases. It enables you to create, query, and manage relational data without worrying about infrastructure or database administration. Because new databases can be provisioned in milliseconds, they are perfect for per-agent or per workflow state.
-
 
 Cloud databases are powered by [Turso](https://turso.tech), with several properties that make them ideal for AI agents and workflows:
 
@@ -6455,11 +7210,13 @@ Cloud databases are powered by [Turso](https://turso.tech), with several propert
 To use SQL databases in your GenSX application:
 
 1. Install the storage package:
+
    ```bash
    npm install @gensx/storage
    ```
 
 2. Add the `DatabaseProvider` to your workflow:
+
    ```tsx
    import { DatabaseProvider } from "@gensx/storage";
 
@@ -6471,6 +7228,7 @@ To use SQL databases in your GenSX application:
    ```
 
 3. Access databases within your components using the `useDatabase` hook:
+
    ```tsx
    import { useDatabase } from "@gensx/storage";
 
@@ -6485,26 +7243,22 @@ The simplest way to interact with a database is by executing SQL queries:
 import * as gensx from "@gensx/core";
 import { useDatabase } from "@gensx/storage";
 
-const QueryTeamStats = gensx.Component(
-  "QueryTeamStats",
-  async ({ team }) => {
-    // Get access to a database (creates it if it doesn't exist)
-    const db = await useDatabase("baseball");
+const QueryTeamStats = gensx.Component("QueryTeamStats", async ({ team }) => {
+  // Get access to a database (creates it if it doesn't exist)
+  const db = await useDatabase("baseball");
 
-    // Execute SQL queries with parameters
-    const result = await db.execute(
-      "SELECT * FROM players WHERE team = ?",
-      [team]
-    );
+  // Execute SQL queries with parameters
+  const result = await db.execute("SELECT * FROM players WHERE team = ?", [
+    team,
+  ]);
 
-    // Access query results
-    console.log(result.columns); // Column names
-    console.log(result.rows);    // Data rows
-    console.log(result.rowsAffected); // Number of rows affected
+  // Access query results
+  console.log(result.columns); // Column names
+  console.log(result.rows); // Data rows
+  console.log(result.rowsAffected); // Number of rows affected
 
-    return result.rows;
-  }
-);
+  return result.rows;
+});
 ```
 
 ### Creating tables and initializing data
@@ -6512,13 +7266,11 @@ const QueryTeamStats = gensx.Component(
 You can create database schema and populate it with data:
 
 ```tsx
-const InitializeDatabase = gensx.Component(
-  "InitializeDatabase",
-  async () => {
-    const db = await useDatabase("baseball");
+const InitializeDatabase = gensx.Component("InitializeDatabase", async () => {
+  const db = await useDatabase("baseball");
 
-    // Create table if it doesn't exist
-    await db.execute(`
+  // Create table if it doesn't exist
+  await db.execute(`
       CREATE TABLE IF NOT EXISTS baseball_stats (
         player TEXT,
         team TEXT,
@@ -6532,23 +7284,22 @@ const InitializeDatabase = gensx.Component(
       )
     `);
 
-    // Check if data already exists
-    const result = await db.execute("SELECT COUNT(*) FROM baseball_stats");
-    const count = result.rows[0][0] as number;
+  // Check if data already exists
+  const result = await db.execute("SELECT COUNT(*) FROM baseball_stats");
+  const count = result.rows[0][0] as number;
 
-    if (count === 0) {
-      // Insert sample data
-      await db.execute(`
+  if (count === 0) {
+    // Insert sample data
+    await db.execute(`
         INSERT INTO baseball_stats (player, team, position, at_bats, hits, runs, home_runs, rbi, batting_avg)
         VALUES
           ('Marcus Bennett', 'Portland Pioneers', '1B', 550, 85, 25, 32, 98, 0.312),
           ('Ethan Carter', 'San Antonio Stallions', 'SS', 520, 92, 18, 24, 76, 0.298)
       `);
-    }
-
-    return "Database initialized";
   }
-);
+
+  return "Database initialized";
+});
 ```
 
 ## Practical examples
@@ -6578,26 +7329,23 @@ const queryTool = new GSXTool({
 });
 
 // SQL Copilot component that answers questions using SQL
-const SqlCopilot = gensx.Component(
-  "SqlCopilot",
-  ({ question }) => (
-    <GSXChatCompletion
-      messages={[
-        {
-          role: "system",
-          content: `You are a SQL assistant. The database has a baseball_stats table with
+const SqlCopilot = gensx.Component("SqlCopilot", ({ question }) => (
+  <GSXChatCompletion
+    messages={[
+      {
+        role: "system",
+        content: `You are a SQL assistant. The database has a baseball_stats table with
           columns: player, team, position, at_bats, hits, runs, home_runs, rbi, batting_avg.
           Use the execute_query tool to run SQL queries.`,
-        },
-        { role: "user", content: question },
-      ]}
-      model="gpt-4o-mini"
-      tools={[queryTool]}
-    >
-      {(result) => result.choices[0].message.content}
-    </GSXChatCompletion>
-  ),
-);
+      },
+      { role: "user", content: question },
+    ]}
+    model="gpt-4o-mini"
+    tools={[queryTool]}
+  >
+    {(result) => result.choices[0].message.content}
+  </GSXChatCompletion>
+));
 ```
 
 ### Transactions with batch operations
@@ -6615,19 +7363,19 @@ const TransferFunds = gensx.Component(
       const result = await db.batch([
         {
           sql: "UPDATE accounts SET balance = balance - ? WHERE account_id = ?",
-          params: [amount, fromAccount]
+          params: [amount, fromAccount],
         },
         {
           sql: "UPDATE accounts SET balance = balance + ? WHERE account_id = ?",
-          params: [amount, toAccount]
-        }
+          params: [amount, toAccount],
+        },
       ]);
 
       return { success: true, rowsAffected: result.rowsAffected };
     } catch (error) {
       return { success: false, error: error.message };
     }
-  }
+  },
 );
 ```
 
@@ -6636,13 +7384,11 @@ const TransferFunds = gensx.Component(
 For complex database changes, you can execute multiple statements at once:
 
 ```tsx
-const SetupUserSystem = gensx.Component(
-  "SetupUserSystem",
-  async () => {
-    const db = await useDatabase("users");
+const SetupUserSystem = gensx.Component("SetupUserSystem", async () => {
+  const db = await useDatabase("users");
 
-    // Execute a SQL script with multiple statements
-    await db.executeMultiple(`
+  // Execute a SQL script with multiple statements
+  await db.executeMultiple(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -6659,9 +7405,8 @@ const SetupUserSystem = gensx.Component(
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     `);
 
-    return "User system set up successfully";
-  }
-);
+  return "User system set up successfully";
+});
 ```
 
 ### Database schema migrations
@@ -6689,7 +7434,7 @@ const MigrateDatabase = gensx.Component(
     }
 
     return "No migration needed";
-  }
+  },
 );
 ```
 
@@ -6709,16 +7454,13 @@ No code changes are needed when moving from development to production.
 Create agents that can query and update structured data:
 
 ```tsx
-const DataAnalyst = gensx.Component(
-  "DataAnalyst",
-  async ({ query }) => {
-    // Initialize the database with the baseball stats
-    await InitializeDatabase();
+const DataAnalyst = gensx.Component("DataAnalyst", async ({ query }) => {
+  // Initialize the database with the baseball stats
+  await InitializeDatabase();
 
-    // Use the SQL Copilot to answer the question
-    return <SqlCopilot question={query} />;
-  }
-);
+  // Use the SQL Copilot to answer the question
+  return <SqlCopilot question={query} />;
+});
 ```
 
 ### User data storage
@@ -6734,17 +7476,17 @@ const UserPreferences = gensx.Component(
     if (action === "get") {
       const result = await db.execute(
         "SELECT * FROM preferences WHERE user_id = ?",
-        [userId]
+        [userId],
       );
       return result.rows.length > 0 ? result.rows[0] : null;
     } else if (action === "set") {
       await db.execute(
         "INSERT OR REPLACE INTO preferences (user_id, settings) VALUES (?, ?)",
-        [userId, JSON.stringify(data)]
+        [userId, JSON.stringify(data)],
       );
       return { success: true };
     }
-  }
+  },
 );
 ```
 
@@ -6753,33 +7495,28 @@ const UserPreferences = gensx.Component(
 Build workflows that share structured data between steps:
 
 ```tsx
-const DataCollector = gensx.Component(
-  "DataCollector",
-  async ({ source }) => {
-    const db = await useDatabase("workflow_data");
-    // Collect data from source and store in database
-    // ...
-    return { success: true };
-  }
-);
+const DataCollector = gensx.Component("DataCollector", async ({ source }) => {
+  const db = await useDatabase("workflow_data");
+  // Collect data from source and store in database
+  // ...
+  return { success: true };
+});
 
-const DataAnalyzer = gensx.Component(
-  "DataAnalyzer",
-  async () => {
-    const db = await useDatabase("workflow_data");
-    // Analyze data from database
-    // ...
-    return { results: "..." };
-  }
-);
+const DataAnalyzer = gensx.Component("DataAnalyzer", async () => {
+  const db = await useDatabase("workflow_data");
+  // Analyze data from database
+  // ...
+  return { results: "..." };
+});
 ```
 
 ## Reference
 
 See the [database component reference](docs/component-reference/storage-components/database-reference) for full details.
+
 # Search
 
-GenSX's Cloud search service provides vector search for AI applications. It enables you to store, query, and manage vector embeddings for semantic search, retrieval-augmented generation (RAG), and other AI use cases.
+GenSX's Cloud search service provides full-text and vector search for AI applications. It enables you to store, query, and manage vector embeddings for semantic search, retrieval-augmented generation (RAG), and other AI use cases.
 
 Search is powered by [Turbopuffer](https://turbopuffer.com/), fully featured and ready for AI workloads:
 
@@ -6792,11 +7529,13 @@ Search is powered by [Turbopuffer](https://turbopuffer.com/), fully featured and
 To use search in your GenSX application:
 
 1. Install the storage package:
+
    ```bash
    npm install @gensx/storage
    ```
 
 2. Add the `SearchProvider` to your workflow:
+
    ```tsx
    import { SearchProvider } from "@gensx/storage";
 
@@ -6808,6 +7547,7 @@ To use search in your GenSX application:
    ```
 
 3. Access search namespaces within your components using the `useSearch` hook:
+
    ```tsx
    import { useSearch } from "@gensx/storage";
 
@@ -6832,7 +7572,7 @@ const IndexDocument = gensx.Component(
     // Generate embeddings for the documents
     const embeddings = await OpenAIEmbedding.run({
       model: "text-embedding-3-small",
-      input: documents.map(doc => doc.text),
+      input: documents.map((doc) => doc.text),
     });
 
     // Store the embeddings with original text as metadata
@@ -6843,14 +7583,14 @@ const IndexDocument = gensx.Component(
         attributes: {
           text: doc.text,
           category: doc.category,
-          createdAt: new Date().toISOString()
-        }
+          createdAt: new Date().toISOString(),
+        },
       })),
       distanceMetric: "cosine_distance",
     });
 
     return { success: true, count: documents.length };
-  }
+  },
 );
 ```
 
@@ -6875,13 +7615,13 @@ const SearchDocuments = gensx.Component(
     const queryOptions = {
       vector: embedding.data[0].embedding,
       includeAttributes: true,
-      topK: 5  // Return top 5 results
+      topK: 5, // Return top 5 results
     };
 
     // Add filters if category is specified
     if (category) {
       queryOptions.filters = {
-        where: { category: { $eq: category } }
+        where: { category: { $eq: category } },
       };
     }
 
@@ -6889,12 +7629,12 @@ const SearchDocuments = gensx.Component(
     const results = await search.query(queryOptions);
 
     // Process and return results
-    return results.map(result => ({
+    return results.map((result) => ({
       id: result.id,
       text: result.attributes?.text,
-      score: result.score
+      score: result.score,
     }));
-  }
+  },
 );
 ```
 
@@ -6907,32 +7647,29 @@ Retrieval-Augmented Generation (RAG) is one of the most common use cases for vec
 First, create a component to prepare and index your documents:
 
 ```tsx
-const PrepareDocuments = gensx.Component(
-  "PrepareDocuments",
-  async () => {
-    // Sample baseball player data
-    const documents = [
-      {
-        id: "1",
-        text: "Marcus Bennett is a first baseman for the Portland Pioneers. He has 32 home runs this season.",
-        category: "player"
-      },
-      {
-        id: "2",
-        text: "Ethan Carter plays shortstop for the San Antonio Stallions with 24 home runs.",
-        category: "player"
-      },
-      {
-        id: "3",
-        text: "The Portland Pioneers are leading the Western Division with a 92-70 record.",
-        category: "team"
-      }
-    ];
+const PrepareDocuments = gensx.Component("PrepareDocuments", async () => {
+  // Sample baseball player data
+  const documents = [
+    {
+      id: "1",
+      text: "Marcus Bennett is a first baseman for the Portland Pioneers. He has 32 home runs this season.",
+      category: "player",
+    },
+    {
+      id: "2",
+      text: "Ethan Carter plays shortstop for the San Antonio Stallions with 24 home runs.",
+      category: "player",
+    },
+    {
+      id: "3",
+      text: "The Portland Pioneers are leading the Western Division with a 92-70 record.",
+      category: "team",
+    },
+  ];
 
-    // Index the documents
-    return <IndexDocument documents={documents} />;
-  }
-);
+  // Index the documents
+  return <IndexDocument documents={documents} />;
+});
 ```
 
 ### Step 2: Create a query tool
@@ -6967,7 +7704,11 @@ const queryTool = new GSXTool({
     });
 
     // Return formatted results
-    return JSON.stringify(results.map(r => r.attributes?.text), null, 2);
+    return JSON.stringify(
+      results.map((r) => r.attributes?.text),
+      null,
+      2,
+    );
   },
 });
 ```
@@ -6977,25 +7718,22 @@ const queryTool = new GSXTool({
 Now, create an agent that uses the query tool to access relevant information:
 
 ```tsx
-const RagAgent = gensx.Component(
-  "RagAgent",
-  ({ question }) => (
-    <GSXChatCompletion
-      messages={[
-        {
-          role: "system",
-          content: `You are a baseball expert assistant. Use the query tool to
+const RagAgent = gensx.Component("RagAgent", ({ question }) => (
+  <GSXChatCompletion
+    messages={[
+      {
+        role: "system",
+        content: `You are a baseball expert assistant. Use the query tool to
           look up relevant information before answering questions.`,
-        },
-        { role: "user", content: question },
-      ]}
-      model="gpt-4o-mini"
-      tools={[queryTool]}
-    >
-      {(result) => result.choices[0].message.content}
-    </GSXChatCompletion>
-  ),
-);
+      },
+      { role: "user", content: question },
+    ]}
+    model="gpt-4o-mini"
+    tools={[queryTool]}
+  >
+    {(result) => result.choices[0].message.content}
+  </GSXChatCompletion>
+));
 ```
 
 ### Step 4: Combine Everything in a Workflow
@@ -7013,7 +7751,7 @@ const RagWorkflow = gensx.Component(
 
     // Use the RAG agent to answer the question
     return <RagAgent question={question} />;
-  }
+  },
 );
 ```
 
@@ -7042,21 +7780,23 @@ const StoreMemory = gensx.Component(
 
     // Store the memory with metadata
     await search.upsert({
-      vectors: [{
-        id: `memory-${Date.now()}`,
-        vector: embedding.data[0].embedding,
-        attributes: {
-          content: memory,
-          timestamp: new Date().toISOString(),
-          importance: importance, // "high", "medium", "low"
-          source: "user-interaction"
-        }
-      }],
+      vectors: [
+        {
+          id: `memory-${Date.now()}`,
+          vector: embedding.data[0].embedding,
+          attributes: {
+            content: memory,
+            timestamp: new Date().toISOString(),
+            importance: importance, // "high", "medium", "low"
+            source: "user-interaction",
+          },
+        },
+      ],
       distanceMetric: "cosine_distance",
     });
 
     return { success: true };
-  }
+  },
 );
 
 // Component to recall relevant memories
@@ -7079,20 +7819,20 @@ const RecallMemories = gensx.Component(
       // Optional: rank by both relevance and importance
       rankBy: {
         "attributes.importance": {
-          "high": 1.5,   // Boost important memories
-          "medium": 1.0, // Normal weight
-          "low": 0.5     // Lower weight for less important memories
-        }
-      }
+          high: 1.5, // Boost important memories
+          medium: 1.0, // Normal weight
+          low: 0.5, // Lower weight for less important memories
+        },
+      },
     });
 
     // Format memories for the agent
-    return results.map(result => ({
+    return results.map((result) => ({
       content: result.attributes?.content,
       timestamp: result.attributes?.timestamp,
-      relevance: result.score.toFixed(3)
+      relevance: result.score.toFixed(3),
     }));
-  }
+  },
 );
 
 // Component that uses memories in a conversation
@@ -7103,7 +7843,7 @@ const MemoryAwareAgent = gensx.Component(
     const memories = await RecallMemories({
       userId,
       context: userMessage,
-      maxResults: 3
+      maxResults: 3,
     });
 
     // Use memories to inform the response
@@ -7113,21 +7853,21 @@ const MemoryAwareAgent = gensx.Component(
         {
           role: "system",
           content: `You are an assistant with memory. Consider these relevant memories about this user:
-          ${memories.map(m => `[${m.timestamp}] ${m.content} (relevance: ${m.relevance})`).join('\n')}`
+          ${memories.map((m) => `[${m.timestamp}] ${m.content} (relevance: ${m.relevance})`).join("\n")}`,
         },
-        { role: "user", content: userMessage }
-      ]
+        { role: "user", content: userMessage },
+      ],
     });
 
     // Store this interaction as a new memory
     await StoreMemory({
       userId,
       memory: `User asked: "${userMessage}". I replied: "${response}"`,
-      importance: "medium"
+      importance: "medium",
     });
 
     return response;
-  }
+  },
 );
 ```
 
@@ -7157,7 +7897,7 @@ const SearchKnowledgeBase = gensx.Component(
     if (filters.dateRange) {
       filterConditions.publishedDate = {
         $gte: filters.dateRange.start,
-        $lte: filters.dateRange.end
+        $lte: filters.dateRange.end,
       };
     }
 
@@ -7168,24 +7908,26 @@ const SearchKnowledgeBase = gensx.Component(
     // Perform hybrid search (vector + keyword) with filters
     const results = await search.query({
       vector: embedding.data[0].embedding,
-      text: query,           // Also use keyword search
-      hybridAlpha: 0.3,      // Balance between vector and keyword search
+      text: query, // Also use keyword search
+      hybridAlpha: 0.3, // Balance between vector and keyword search
       includeAttributes: true,
       topK: 10,
-      filters: Object.keys(filterConditions).length > 0 ?
-        { where: filterConditions } : undefined
+      filters:
+        Object.keys(filterConditions).length > 0
+          ? { where: filterConditions }
+          : undefined,
     });
 
     // Return formatted results
-    return results.map(result => ({
+    return results.map((result) => ({
       title: result.attributes?.title,
       snippet: result.attributes?.snippet,
       url: result.attributes?.url,
       category: result.attributes?.category,
       tags: result.attributes?.tags,
-      score: result.score
+      score: result.score,
     }));
-  }
+  },
 );
 ```
 
@@ -7208,12 +7950,12 @@ const results = await search.query({
       // Filter by date range
       publishDate: {
         $gte: "2023-01-01",
-        $lt: "2024-01-01"
+        $lt: "2024-01-01",
       },
       // Filter by multiple possible authors
-      author: { $in: ["Alice", "Bob", "Carol"] }
-    }
-  }
+      author: { $in: ["Alice", "Bob", "Carol"] },
+    },
+  },
 });
 ```
 
@@ -7225,11 +7967,11 @@ Combine vector similarity with keyword search:
 const search = await useSearch("documents");
 
 const results = await search.query({
-  vector: queryEmbedding,    // Vector for semantic search
-  text: "quarterly report",  // Text for keyword search
+  vector: queryEmbedding, // Vector for semantic search
+  text: "quarterly report", // Text for keyword search
   includeAttributes: true,
-  hybridAlpha: 0.5           // Balance between vector and text search
-                             // 0.0 = vector only, 1.0 = text only
+  hybridAlpha: 0.5, // Balance between vector and text search
+  // 0.0 = vector only, 1.0 = text only
 });
 ```
 
@@ -7247,13 +7989,14 @@ const currentSchema = await search.getSchema();
 await search.updateSchema({
   ...currentSchema,
   newField: "number",
-  anotherField: "string[]"
+  anotherField: "string[]",
 });
 ```
 
 ## Reference
 
 See the [search component reference](docs/component-reference/storage-components/search-reference) for full details.
+
 # Blob Storage
 
 Blob storage provides zero-configuration persistent storage for your GenSX applications. It enables you to store JSON, text, or binary data and per-agent or per-workflow storage without worrying about managing infrastructure.
@@ -7263,11 +8006,13 @@ Blob storage provides zero-configuration persistent storage for your GenSX appli
 To use blob storage in your GenSX application:
 
 1. Install the storage package:
+
    ```bash
    npm install @gensx/storage
    ```
 
 2. Add the `BlobProvider` to your workflow:
+
    ```tsx
    import { BlobProvider } from "@gensx/storage";
 
@@ -7279,6 +8024,7 @@ To use blob storage in your GenSX application:
    ```
 
 3. Access blobs within your components using the `useBlob` hook:
+
    ```tsx
    import { useBlob } from "@gensx/storage";
 
@@ -7293,35 +8039,32 @@ The `useBlob` hook provides simple methods to read different types of data:
 import * as gensx from "@gensx/core";
 import { useBlob } from "@gensx/storage";
 
-const ReadData = gensx.Component(
-  "ReadData",
-  async ({ key }) => {
-    // Get a reference to a blob
-    const blob = useBlob(`data/${key}.json`);
+const ReadData = gensx.Component("ReadData", async ({ key }) => {
+  // Get a reference to a blob
+  const blob = useBlob(`data/${key}.json`);
 
-    // Check if the blob exists
-    const exists = await blob.exists();
-    if (!exists) {
-      return { found: false };
-    }
-
-    // Read JSON data (returns null if doesn't exist)
-    const jsonData = await blob.getJSON();
-
-    // Read as string
-    const textData = await blob.getString();
-
-    // Read as binary with metadata
-    const binaryData = await blob.getRaw();
-
-    return {
-      found: true,
-      jsonData,
-      textLength: textData?.length,
-      contentType: binaryData?.contentType
-    };
+  // Check if the blob exists
+  const exists = await blob.exists();
+  if (!exists) {
+    return { found: false };
   }
-);
+
+  // Read JSON data (returns null if doesn't exist)
+  const jsonData = await blob.getJSON();
+
+  // Read as string
+  const textData = await blob.getString();
+
+  // Read as binary with metadata
+  const binaryData = await blob.getRaw();
+
+  return {
+    found: true,
+    jsonData,
+    textLength: textData?.length,
+    contentType: binaryData?.contentType,
+  };
+});
 ```
 
 ### Writing Blobs
@@ -7349,13 +8092,13 @@ const WriteData = gensx.Component(
       await blob.putRaw(data, {
         contentType: "application/octet-stream",
         metadata: {
-          createdAt: new Date().toISOString()
-        }
+          createdAt: new Date().toISOString(),
+        },
       });
     }
 
     return { success: true, key };
-  }
+  },
 );
 ```
 
@@ -7382,11 +8125,11 @@ const ChatWithMemory = gensx.Component(
     const blob = useBlob<ChatMessage[]>(`chats/${threadId}.json`);
 
     // Load existing messages or start with a system prompt
-    const messages = await blob.getJSON() ?? [
+    const messages = (await blob.getJSON()) ?? [
       {
         role: "system",
-        content: "You are a helpful assistant."
-      }
+        content: "You are a helpful assistant.",
+      },
     ];
 
     // Add the new user message
@@ -7395,7 +8138,7 @@ const ChatWithMemory = gensx.Component(
     // Generate a response using the full conversation history
     const response = await ChatCompletion.run({
       model: "gpt-4o-mini",
-      messages
+      messages,
     });
 
     // Save the assistant's response to the history
@@ -7403,7 +8146,7 @@ const ChatWithMemory = gensx.Component(
     await blob.putJSON(messages);
 
     return response;
-  }
+  },
 );
 ```
 
@@ -7423,10 +8166,10 @@ const AgentWithMemory = gensx.Component(
   async ({ input, agentId }) => {
     // Load agent memory
     const memoryBlob = useBlob<AgentMemory>(`agents/${agentId}/memory.json`);
-    const memory = await memoryBlob.getJSON() ?? {
+    const memory = (await memoryBlob.getJSON()) ?? {
       facts: [],
       tasks: [],
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
 
     // Process input using memory
@@ -7440,7 +8183,7 @@ const AgentWithMemory = gensx.Component(
     await memoryBlob.putJSON(memory);
 
     return "Response that uses memory context";
-  }
+  },
 );
 ```
 
@@ -7459,36 +8202,33 @@ const StoreImage = gensx.Component(
       contentType: "image/png",
       metadata: {
         uploadedAt: new Date().toISOString(),
-        pixelSize: "800x600"
-      }
+        pixelSize: "800x600",
+      },
     });
 
     return { success: true, path: `images/${filename}` };
-  }
+  },
 );
 
-const GetImage = gensx.Component(
-  "GetImage",
-  async ({ filename }) => {
-    const imageBlob = useBlob(`images/${filename}`);
+const GetImage = gensx.Component("GetImage", async ({ filename }) => {
+  const imageBlob = useBlob(`images/${filename}`);
 
-    // Check if image exists
-    const exists = await imageBlob.exists();
-    if (!exists) {
-      return { found: false };
-    }
-
-    // Get the image with metadata
-    const image = await imageBlob.getRaw();
-
-    return {
-      found: true,
-      data: image?.content,
-      contentType: image?.contentType,
-      metadata: image?.metadata
-    };
+  // Check if image exists
+  const exists = await imageBlob.exists();
+  if (!exists) {
+    return { found: false };
   }
-);
+
+  // Get the image with metadata
+  const image = await imageBlob.getRaw();
+
+  return {
+    found: true,
+    data: image?.content,
+    contentType: image?.contentType,
+    metadata: image?.metadata,
+  };
+});
 ```
 
 ### Optimistic Concurrency Control
@@ -7502,7 +8242,7 @@ const UpdateCounter = gensx.Component(
     const blob = useBlob(`counters/${counterName}.json`);
 
     // Get current value and metadata
-    const counter = await blob.getJSON<{ value: number }>() ?? { value: 0 };
+    const counter = (await blob.getJSON<{ value: number }>()) ?? { value: 0 };
     const metadata = await blob.getMetadata();
 
     // Update counter
@@ -7511,16 +8251,19 @@ const UpdateCounter = gensx.Component(
     try {
       // Save with ETag to prevent conflicts
       await blob.putJSON(counter, {
-        etag: metadata?.etag
+        etag: metadata?.etag,
       });
       return { success: true, value: counter.value };
     } catch (error) {
       if (error.name === "BlobConflictError") {
-        return { success: false, message: "Counter was updated by another process" };
+        return {
+          success: false,
+          message: "Counter was updated by another process",
+        };
       }
       throw error;
     }
-  }
+  },
 );
 ```
 
