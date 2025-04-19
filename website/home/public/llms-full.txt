@@ -4009,373 +4009,6 @@ The `AnthropicChatCompletion` component accepts all parameters from the Anthropi
 - With `stream: false` (default): Returns the full `Message` object from Anthropic SDK
 - With `stream: true`: Returns a `Stream<RawMessageStreamEvent>` from Anthropic SDK
 
-# gensx start
-
-The `gensx start` command starts a local development server that enables you to test and debug your GenSX workflows.
-
-## Usage
-
-```bash
-gensx start <file> [options]
-```
-
-## Arguments
-
-| Argument | Description                                             |
-| -------- | ------------------------------------------------------- |
-| `<file>` | The workflow file to serve (e.g., `src/workflows.tsx`). |
-
-## Options
-
-| Option                 | Description                        |
-| ---------------------- | ---------------------------------- |
-| `-p, --project <name>` | Project name for the local server. |
-| `-q, --quiet`          | Suppress output.                   |
-| `-h, --help`           | Display help for the command.      |
-
-## Description
-
-This command starts a local development server that:
-
-- Watches your workflow file for changes and automatically reloads
-- Provides a web interface to test and debug your workflows
-- Simulates the cloud environment locally
-- Runs your workflow components in a development mode
-
-The development server includes:
-
-- A web UI for testing your workflows
-- Real-time logs and execution visibility
-- Access to the GenSX development dashboard
-
-## Examples
-
-```bash
-# Start server with a specific workflow file
-gensx start src/workflows.tsx
-
-# Start server with a custom project name
-gensx start src/workflows.tsx --project my-custom-name
-
-# Start server with minimal output
-gensx start src/workflows.tsx --quiet
-```
-
-## Notes
-
-- The server runs on port 3000 by default
-- You can access the development UI at `http://localhost:3000`
-- Environment variables from your local environment are available to the workflow
-- For more complex environment variable setups, consider using a `.env` file in your project root
-
-# gensx run
-
-The `gensx run` command executes a workflow that has been deployed to GenSX Cloud.
-
-## Usage
-
-```bash
-gensx run <workflow> [options]
-```
-
-## Arguments
-
-| Argument     | Description                  |
-| ------------ | ---------------------------- |
-| `<workflow>` | Name of the workflow to run. |
-
-## Options
-
-| Option                 | Description                                                  |
-| ---------------------- | ------------------------------------------------------------ |
-| `-i, --input <input>`  | Input to pass to the workflow (as JSON).                     |
-| `--no-wait`            | Do not wait for the workflow to finish (run asynchronously). |
-| `-p, --project <name>` | Project name where the workflow is deployed.                 |
-| `-o, --output <file>`  | Output file to write the workflow result to.                 |
-| `-h, --help`           | Display help for the command.                                |
-
-## Description
-
-This command triggers execution of a deployed workflow on GenSX Cloud with the specified input. By default, it waits for the workflow to complete and displays the result.
-
-When running a workflow, you can:
-
-- Provide input data as JSON
-- Choose whether to wait for completion or run asynchronously
-- Save the output to a file
-
-## Examples
-
-```bash
-# Run a workflow with no input
-gensx run MyWorkflow
-
-# Run a workflow with JSON input
-gensx run MyWorkflow --input '{"text": "Hello, world!"}'
-
-# Run a workflow in a specific project
-gensx run MyWorkflow --project my-production-project
-
-# Run a workflow asynchronously (don't wait for completion)
-gensx run MyWorkflow --no-wait
-
-# Run a workflow and save output to a file
-gensx run MyWorkflow --output result.json
-```
-
-## Notes
-
-- You must be logged in to GenSX Cloud to run workflows (`gensx login`)
-- The workflow must have been previously deployed using `gensx deploy`
-- When using `--input`, the input must be valid JSON
-- When using `--no-wait`, the command returns immediately with a workflow ID that can be used to check status later
-- Error handling: if the workflow fails, the command will return with a non-zero exit code and display the error
-
-# gensx new
-
-The `gensx new` command creates a new GenSX project with a predefined structure and dependencies.
-
-## Usage
-
-```bash
-gensx new <project-directory> [options]
-```
-
-## Arguments
-
-| Argument              | Description                                                                  |
-| --------------------- | ---------------------------------------------------------------------------- |
-| `<project-directory>` | Directory to create the project in. If it doesn't exist, it will be created. |
-
-## Options
-
-| Option                     | Description                                                                                     |
-| -------------------------- | ----------------------------------------------------------------------------------------------- |
-| `-t, --template <type>`    | Template to use. Currently supports `ts` (TypeScript).                                          |
-| `-f, --force`              | Overwrite existing files in the target directory.                                               |
-| `--skip-ide-rules`         | Skip IDE rules selection.                                                                       |
-| `--ide-rules <rules>`      | Comma-separated list of IDE rules to install. Options: `cline`, `windsurf`, `claude`, `cursor`. |
-| `-d, --description <desc>` | Optional project description.                                                                   |
-| `-h, --help`               | Display help for the command.                                                                   |
-
-## Description
-
-This command scaffolds a new GenSX project with the necessary files and folder structure. It sets up:
-
-- Project configuration files (`package.json`, `tsconfig.json`)
-- Basic project structure with example workflows
-- Development dependencies
-- IDE integrations based on selected rules
-
-## Examples
-
-```bash
-# Create a basic project
-gensx new my-gensx-app
-
-# Create a project with a specific template and description
-gensx new my-gensx-app --template ts --description "My AI workflow app"
-
-# Create a project with specific IDE rules
-gensx new my-gensx-app --ide-rules cursor,claude
-
-# Force create even if directory has existing files
-gensx new my-gensx-app --force
-```
-
-## Notes
-
-- If no template is specified, `ts` (TypeScript) is used by default.
-- The command will install all required dependencies, so make sure you have npm installed.
-- After creation, you can navigate to the project directory and start the development server with `gensx start`.
-
-# gensx login
-
-The `gensx login` command authenticates you with GenSX Cloud, allowing you to deploy and run workflows remotely.
-
-## Usage
-
-```bash
-gensx login
-```
-
-## Description
-
-When you run this command, it will:
-
-1. Open your default web browser to the GenSX authentication page
-2. Prompt you to log in with your GenSX account or create a new one
-3. Store your authentication credentials locally for future CLI commands
-
-After successful login, you can use other commands that require authentication, such as `deploy` and `run`.
-
-## Examples
-
-```bash
-# Log in to GenSX Cloud
-gensx login
-```
-
-## Notes
-
-- Your authentication token is stored in your user directory (typically `~/.gensx/config.json`)
-- The token is valid until you log out or revoke it from the GenSX dashboard
-- If you're behind a corporate firewall or using strict network policies, ensure that outbound connections to `api.gensx.com` are allowed
-
-# GenSX CLI reference
-
-The GenSX command-line interface (CLI) provides a set of commands to help you build, deploy, and manage your GenSX applications.
-
-## Installation
-
-The GenSX CLI is included when you install the main GenSX package:
-
-```bash
-npm install -g gensx
-```
-
-## Available commands
-
-| Command                    | Description                      |
-| -------------------------- | -------------------------------- |
-| [`gensx login`](./login)   | Log in to GenSX Cloud            |
-| [`gensx new`](./new)       | Create a new GenSX project       |
-| [`gensx start`](./start)   | Start a local development server |
-| [`gensx build`](./build)   | Build a workflow for deployment  |
-| [`gensx deploy`](./deploy) | Deploy a workflow to GenSX Cloud |
-| [`gensx run`](./run)       | Run a workflow on GenSX Cloud    |
-
-## Basic usage
-
-```bash
-# Create a new project
-gensx new my-project
-
-# Navigate to project
-cd my-project
-
-# Start local development server
-gensx start src/workflows.tsx
-
-# Deploy a workflow
-gensx deploy src/workflows.tsx
-```
-
-For detailed information about each command, please refer to the corresponding documentation page.
-
-# gensx deploy
-
-The `gensx deploy` command uploads and deploys a workflow to GenSX Cloud, making it available for remote execution.
-
-## Usage
-
-```bash
-gensx deploy <file> [options]
-```
-
-## Arguments
-
-| Argument | Description                                                                                |
-| -------- | ------------------------------------------------------------------------------------------ |
-| `<file>` | File to deploy. This should be a TypeScript/JavaScript file that exports a GenSX Workflow. |
-
-## Options
-
-| Option                  | Description                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| `-e, --env <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
-| `-p, --project <name>`  | Project name to deploy to.                                                   |
-| `-h, --help`            | Display help for the command.                                                |
-
-## Description
-
-This command:
-
-1. Builds your workflow (if not already built)
-2. Uploads it to GenSX Cloud
-3. Creates or updates the deployment
-4. Sets up any environment variables specified
-
-After successful deployment, your workflow will be available for remote execution via the GenSX Cloud dashboard or through the `gensx run` command.
-
-## Examples
-
-```bash
-# Deploy a workflow
-gensx deploy src/workflows.tsx
-
-# Deploy to a specific project
-gensx deploy src/workflows.tsx --project my-production-project
-
-# Deploy with environment variables
-gensx deploy src/workflows.tsx --env API_KEY=abc123 --env DEBUG=true
-
-# Deploy with an environment variable taken from your local environment
-gensx deploy src/workflows.tsx --env OPENAI_API_KEY
-```
-
-## Notes
-
-- You must be logged in to GenSX Cloud to deploy (`gensx login`)
-- If your workflow requires API keys or other secrets, provide them using the `--env` option
-- For environment variables without a specified value, the CLI will use the value from your local environment
-- After deployment, you can manage your workflows from the GenSX Cloud dashboard
-- The deployment process automatically handles bundling dependencies
-
-# gensx build
-
-The `gensx build` command compiles and bundles a GenSX workflow for deployment to GenSX Cloud.
-
-## Usage
-
-```bash
-gensx build <file> [options]
-```
-
-## Arguments
-
-| Argument | Description                                                                                                    |
-| -------- | -------------------------------------------------------------------------------------------------------------- |
-| `<file>` | Workflow file to build (e.g., `src/workflows.tsx`). This should export a GenSX Workflow as the default export. |
-
-## Options
-
-| Option                  | Description                                     |
-| ----------------------- | ----------------------------------------------- |
-| `-o, --out-dir <dir>`   | Output directory for the built files.           |
-| `-t, --tsconfig <file>` | Path to a custom TypeScript configuration file. |
-| `-h, --help`            | Display help for the command.                   |
-
-## Description
-
-This command builds your GenSX workflow into an optimized bundle that can be deployed to GenSX Cloud. It:
-
-- Transpiles TypeScript to JavaScript
-- Bundles all dependencies
-- Optimizes the code for production
-- Prepares the workflow for deployment
-
-After building, the command outputs the path to the bundled file, which can be used with the `gensx deploy` command.
-
-## Examples
-
-```bash
-# Build a workflow with default options
-gensx build src/workflows.tsx
-
-# Build a workflow with a custom output directory
-gensx build src/workflows.tsx --out-dir ./dist
-
-# Build a workflow with a custom TypeScript configuration
-gensx build src/workflows.tsx --tsconfig ./custom-tsconfig.json
-```
-
-## Notes
-
-- The build process requires that your workflow file exports a GenSX Workflow as the default export
-- If no output directory is specified, the built files will be placed in a `.gensx/build` directory
-- The build process does not include environment variables - these should be provided during deployment
-
 # Serverless deployments
 
 Deploy your GenSX workflows as serverless APIs with support for both synchronous and asynchronous execution, as well as long-running operations.
@@ -4426,7 +4059,7 @@ When you deploy a workflow, GenSX:
 
 The entire process typically takes a few seconds.
 
-## Running Workflows from the CLI
+## Running workflows from the CLI
 
 Once deployed, you can execute workflows directly from the CLI:
 
@@ -4441,7 +4074,7 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --wait 
 npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --project my-app
 ```
 
-### CLI Run Options
+### CLI run options
 
 | Option      | Description                                     |
 | ----------- | ----------------------------------------------- |
@@ -4450,7 +4083,7 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 | `--output`  | Save results to a file (requires `--wait`)      |
 | `--project` | Specify the project name                        |
 
-## API Endpoints
+## API endpoints
 
 Each workflow is exposed as an API endpoint:
 
@@ -4488,7 +4121,7 @@ To generate or manage API keys:
 2. Navigate to Settings > API Keys
 3. Create a new key
 
-## Execution Modes
+## Execution modes
 
 ### Synchronous Execution
 
@@ -4501,7 +4134,7 @@ curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environ
   -d '{"prompt": "Tell me about GenSX"}'
 ```
 
-### Asynchronous Execution
+### Asynchronous execution
 
 For longer-running workflows, use asynchronous execution by calling the `/start` endpoint:
 
@@ -4525,7 +4158,7 @@ curl -X GET https://api.gensx.com/v1/executions/exec_123abc \
   -H "Authorization: Bearer your-api-key"
 ```
 
-### Streaming Responses
+### Streaming responses
 
 For workflows that support streaming, you can receive tokens as they're generated:
 
@@ -4555,7 +4188,7 @@ These extended timeouts make GenSX ideal for complex AI workflows that might inv
 - Complex data processing
 - Extensive RAG operations
 
-## Cold Starts and Performance
+## Cold starts and performance
 
 The GenSX Cloud serverless architecture is designed to minimize cold starts:
 
@@ -4580,7 +4213,7 @@ The workflow page includes API documentation and code snippets that you can copy
 
 ![View projects in the console](/cloud/console-workflow-docs.png)
 
-### Running Workflows Manually
+### Running workflows manually
 
 You can test workflows directly from the console:
 
@@ -4592,7 +4225,7 @@ You can test workflows directly from the console:
 
 ![Run workflows in the console](/cloud/console-playground.png)
 
-### Viewing Execution History
+### Viewing execution history
 
 Each workflow execution generates a trace you can review:
 
@@ -4601,7 +4234,7 @@ Each workflow execution generates a trace you can review:
 3. Click on any execution to see detailed traces
 4. Explore the component tree, inputs/outputs, and execution timeline
 
-## Next Steps
+## Next steps
 
 - [Learn about cloud storage options](/docs/cloud/storage)
 - [Explore observability and tracing](/docs/cloud/observability)
@@ -4610,7 +4243,7 @@ Each workflow execution generates a trace you can review:
 
 GenSX organizes your workflows and deployments using a flexible structure of projects and environments, making it easy to match the rest of your application architecture and CI/CD topology.
 
-## Project Structure
+## Project structure
 
 A project in GenSX is a collection of related workflows that are deployed, managed, and monitored together:
 
@@ -4701,17 +4334,17 @@ You can also see API documentation and sample code for triggering those workflow
 
 ![Workflow API documentation](/cloud/console-workflow-docs.png)
 
-## Next Steps
+## Next steps
 
 - [Configure serverless deployments](/docs/cloud/serverless-deployments) for your projects
 - [Set up local development](/docs/cloud/local-development) for testing
 - [Learn about observability](/docs/cloud/observability) across environments
 
-# Pricing & Usage
+# Pricing & limits
 
 GenSX Cloud offers flexible pricing tiers designed to scale with your needs, including a free tier for individuals.
 
-## Pricing Tiers
+## Pricing tiers
 
 GenSX Cloud offers three pricing tiers:
 
@@ -4787,7 +4420,7 @@ Start with our free tier today - no credit card required:
 
 For any questions about pricing or custom plans, please [contact our sales team](mailto:contact@gensx.com).
 
-# Observability & Tracing
+# Observability & tracing
 
 GenSX provides observability tools that make it easy to understand, debug, and optimize your workflows. Every component execution is automatically traced, giving you full visibility into what's happening inside your LLM workflows. You can view traces in realtime as workflows execute, and view historical traces to debug production issues like hallucinations.
 
@@ -4881,7 +4514,7 @@ GENSX_ENVIRONMENT=your_environment_name        # Separate traces into specific e
 GENSX_CHECKPOINTS=false                        # Explicitly disable
 ```
 
-### Configuring Traces for local development
+### Configuring traces for local development
 
 For local development, tracing configuration is automatically inferred from:
 
@@ -5046,7 +4679,7 @@ A few important notes on these limits:
 
 For use cases requiring higher limits or longer retention, contact the GenSX team for enterprise options.
 
-## Next Steps
+## Next steps
 
 - [Set up serverless deployments](/docs/cloud/serverless-deployments) to automatically trace cloud workflows
 - [Learn about local development](/docs/cloud/local-development) for testing with traces
@@ -5094,7 +4727,7 @@ http://localhost:1337/local/{project}/default/workflows/{workflow}/run
 
 Every workflow you export is automatically available as an API endpoint.
 
-### Hot Reloading
+### Hot reloading
 
 The development server watches your TypeScript files and automatically:
 
@@ -5499,7 +5132,7 @@ npx gensx start ./src/workflows.tsx
 ✅ Server is running. Press Ctrl+C to stop.
 ```
 
-### Local Storage Providers
+### Local storage providers
 
 GenSX provides local implementations for most storage providers, enabling development without cloud dependencies:
 
@@ -5584,6 +5217,373 @@ Ready to build AI agents and workflows with GenSX Cloud? Follow our step-by-step
 3. Run it locally: `gensx start src/workflows.tsx`
 4. Deploy to the cloud: `gensx deploy src/workflows.tsx`
 
+# gensx start
+
+The `gensx start` command starts a local development server that enables you to test and debug your GenSX workflows.
+
+## Usage
+
+```bash
+gensx start <file> [options]
+```
+
+## Arguments
+
+| Argument | Description                                             |
+| -------- | ------------------------------------------------------- |
+| `<file>` | The workflow file to serve (e.g., `src/workflows.tsx`). |
+
+## Options
+
+| Option                 | Description                        |
+| ---------------------- | ---------------------------------- |
+| `-p, --project <name>` | Project name for the local server. |
+| `-q, --quiet`          | Suppress output.                   |
+| `-h, --help`           | Display help for the command.      |
+
+## Description
+
+This command starts a local development server that:
+
+- Watches your workflow file for changes and automatically reloads
+- Provides a web interface to test and debug your workflows
+- Simulates the cloud environment locally
+- Runs your workflow components in a development mode
+
+The development server includes:
+
+- A web UI for testing your workflows
+- Real-time logs and execution visibility
+- Access to the GenSX development dashboard
+
+## Examples
+
+```bash
+# Start server with a specific workflow file
+gensx start src/workflows.tsx
+
+# Start server with a custom project name
+gensx start src/workflows.tsx --project my-custom-name
+
+# Start server with minimal output
+gensx start src/workflows.tsx --quiet
+```
+
+## Notes
+
+- The server runs on port 3000 by default
+- You can access the development UI at `http://localhost:3000`
+- Environment variables from your local environment are available to the workflow
+- For more complex environment variable setups, consider using a `.env` file in your project root
+
+# gensx run
+
+The `gensx run` command executes a workflow that has been deployed to GenSX Cloud.
+
+## Usage
+
+```bash
+gensx run <workflow> [options]
+```
+
+## Arguments
+
+| Argument     | Description                  |
+| ------------ | ---------------------------- |
+| `<workflow>` | Name of the workflow to run. |
+
+## Options
+
+| Option                 | Description                                                  |
+| ---------------------- | ------------------------------------------------------------ |
+| `-i, --input <input>`  | Input to pass to the workflow (as JSON).                     |
+| `--no-wait`            | Do not wait for the workflow to finish (run asynchronously). |
+| `-p, --project <name>` | Project name where the workflow is deployed.                 |
+| `-o, --output <file>`  | Output file to write the workflow result to.                 |
+| `-h, --help`           | Display help for the command.                                |
+
+## Description
+
+This command triggers execution of a deployed workflow on GenSX Cloud with the specified input. By default, it waits for the workflow to complete and displays the result.
+
+When running a workflow, you can:
+
+- Provide input data as JSON
+- Choose whether to wait for completion or run asynchronously
+- Save the output to a file
+
+## Examples
+
+```bash
+# Run a workflow with no input
+gensx run MyWorkflow
+
+# Run a workflow with JSON input
+gensx run MyWorkflow --input '{"text": "Hello, world!"}'
+
+# Run a workflow in a specific project
+gensx run MyWorkflow --project my-production-project
+
+# Run a workflow asynchronously (don't wait for completion)
+gensx run MyWorkflow --no-wait
+
+# Run a workflow and save output to a file
+gensx run MyWorkflow --output result.json
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to run workflows (`gensx login`)
+- The workflow must have been previously deployed using `gensx deploy`
+- When using `--input`, the input must be valid JSON
+- When using `--no-wait`, the command returns immediately with a workflow ID that can be used to check status later
+- Error handling: if the workflow fails, the command will return with a non-zero exit code and display the error
+
+# gensx new
+
+The `gensx new` command creates a new GenSX project with a predefined structure and dependencies.
+
+## Usage
+
+```bash
+gensx new <project-directory> [options]
+```
+
+## Arguments
+
+| Argument              | Description                                                                  |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `<project-directory>` | Directory to create the project in. If it doesn't exist, it will be created. |
+
+## Options
+
+| Option                     | Description                                                                                     |
+| -------------------------- | ----------------------------------------------------------------------------------------------- |
+| `-t, --template <type>`    | Template to use. Currently supports `ts` (TypeScript).                                          |
+| `-f, --force`              | Overwrite existing files in the target directory.                                               |
+| `--skip-ide-rules`         | Skip IDE rules selection.                                                                       |
+| `--ide-rules <rules>`      | Comma-separated list of IDE rules to install. Options: `cline`, `windsurf`, `claude`, `cursor`. |
+| `-d, --description <desc>` | Optional project description.                                                                   |
+| `-h, --help`               | Display help for the command.                                                                   |
+
+## Description
+
+This command scaffolds a new GenSX project with the necessary files and folder structure. It sets up:
+
+- Project configuration files (`package.json`, `tsconfig.json`)
+- Basic project structure with example workflows
+- Development dependencies
+- IDE integrations based on selected rules
+
+## Examples
+
+```bash
+# Create a basic project
+gensx new my-gensx-app
+
+# Create a project with a specific template and description
+gensx new my-gensx-app --template ts --description "My AI workflow app"
+
+# Create a project with specific IDE rules
+gensx new my-gensx-app --ide-rules cursor,claude
+
+# Force create even if directory has existing files
+gensx new my-gensx-app --force
+```
+
+## Notes
+
+- If no template is specified, `ts` (TypeScript) is used by default.
+- The command will install all required dependencies, so make sure you have npm installed.
+- After creation, you can navigate to the project directory and start the development server with `gensx start`.
+
+# gensx login
+
+The `gensx login` command authenticates you with GenSX Cloud, allowing you to deploy and run workflows remotely.
+
+## Usage
+
+```bash
+gensx login
+```
+
+## Description
+
+When you run this command, it will:
+
+1. Open your default web browser to the GenSX authentication page
+2. Prompt you to log in with your GenSX account or create a new one
+3. Store your authentication credentials locally for future CLI commands
+
+After successful login, you can use other commands that require authentication, such as `deploy` and `run`.
+
+## Examples
+
+```bash
+# Log in to GenSX Cloud
+gensx login
+```
+
+## Notes
+
+- Your authentication token is stored in your user directory (typically `~/.gensx/config.json`)
+- The token is valid until you log out or revoke it from the GenSX dashboard
+- If you're behind a corporate firewall or using strict network policies, ensure that outbound connections to `api.gensx.com` are allowed
+
+# GenSX CLI reference
+
+The GenSX command-line interface (CLI) provides a set of commands to help you build, deploy, and manage your GenSX applications.
+
+## Installation
+
+The GenSX CLI is included when you install the main GenSX package:
+
+```bash
+npm install -g gensx
+```
+
+## Available commands
+
+| Command                    | Description                      |
+| -------------------------- | -------------------------------- |
+| [`gensx login`](./login)   | Log in to GenSX Cloud            |
+| [`gensx new`](./new)       | Create a new GenSX project       |
+| [`gensx start`](./start)   | Start a local development server |
+| [`gensx build`](./build)   | Build a workflow for deployment  |
+| [`gensx deploy`](./deploy) | Deploy a workflow to GenSX Cloud |
+| [`gensx run`](./run)       | Run a workflow on GenSX Cloud    |
+
+## Basic usage
+
+```bash
+# Create a new project
+gensx new my-project
+
+# Navigate to project
+cd my-project
+
+# Start local development server
+gensx start src/workflows.tsx
+
+# Deploy a workflow
+gensx deploy src/workflows.tsx
+```
+
+For detailed information about each command, please refer to the corresponding documentation page.
+
+# gensx deploy
+
+The `gensx deploy` command uploads and deploys a workflow to GenSX Cloud, making it available for remote execution.
+
+## Usage
+
+```bash
+gensx deploy <file> [options]
+```
+
+## Arguments
+
+| Argument | Description                                                                                |
+| -------- | ------------------------------------------------------------------------------------------ |
+| `<file>` | File to deploy. This should be a TypeScript/JavaScript file that exports a GenSX Workflow. |
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-e, --env <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
+| `-p, --project <name>`  | Project name to deploy to.                                                   |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Description
+
+This command:
+
+1. Builds your workflow (if not already built)
+2. Uploads it to GenSX Cloud
+3. Creates or updates the deployment
+4. Sets up any environment variables specified
+
+After successful deployment, your workflow will be available for remote execution via the GenSX Cloud dashboard or through the `gensx run` command.
+
+## Examples
+
+```bash
+# Deploy a workflow
+gensx deploy src/workflows.tsx
+
+# Deploy to a specific project
+gensx deploy src/workflows.tsx --project my-production-project
+
+# Deploy with environment variables
+gensx deploy src/workflows.tsx --env API_KEY=abc123 --env DEBUG=true
+
+# Deploy with an environment variable taken from your local environment
+gensx deploy src/workflows.tsx --env OPENAI_API_KEY
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to deploy (`gensx login`)
+- If your workflow requires API keys or other secrets, provide them using the `--env` option
+- For environment variables without a specified value, the CLI will use the value from your local environment
+- After deployment, you can manage your workflows from the GenSX Cloud dashboard
+- The deployment process automatically handles bundling dependencies
+
+# gensx build
+
+The `gensx build` command compiles and bundles a GenSX workflow for deployment to GenSX Cloud.
+
+## Usage
+
+```bash
+gensx build <file> [options]
+```
+
+## Arguments
+
+| Argument | Description                                                                                                    |
+| -------- | -------------------------------------------------------------------------------------------------------------- |
+| `<file>` | Workflow file to build (e.g., `src/workflows.tsx`). This should export a GenSX Workflow as the default export. |
+
+## Options
+
+| Option                  | Description                                     |
+| ----------------------- | ----------------------------------------------- |
+| `-o, --out-dir <dir>`   | Output directory for the built files.           |
+| `-t, --tsconfig <file>` | Path to a custom TypeScript configuration file. |
+| `-h, --help`            | Display help for the command.                   |
+
+## Description
+
+This command builds your GenSX workflow into an optimized bundle that can be deployed to GenSX Cloud. It:
+
+- Transpiles TypeScript to JavaScript
+- Bundles all dependencies
+- Optimizes the code for production
+- Prepares the workflow for deployment
+
+After building, the command outputs the path to the bundled file, which can be used with the `gensx deploy` command.
+
+## Examples
+
+```bash
+# Build a workflow with default options
+gensx build src/workflows.tsx
+
+# Build a workflow with a custom output directory
+gensx build src/workflows.tsx --out-dir ./dist
+
+# Build a workflow with a custom TypeScript configuration
+gensx build src/workflows.tsx --tsconfig ./custom-tsconfig.json
+```
+
+## Notes
+
+- The build process requires that your workflow file exports a GenSX Workflow as the default export
+- If no output directory is specified, the built files will be placed in a `.gensx/build` directory
+- The build process does not include environment variables - these should be provided during deployment
+
 # Search reference
 
 API reference for GenSX Cloud search components. Search is powered by turbopuffer, and their documentation for [query](https://turbopuffer.com/docs/query) and [upsert operations](https://turbopuffer.com/docs/write) is a useful reference to augment this document.
@@ -5652,7 +5652,7 @@ const results = await namespace.query({
 });
 ```
 
-## Namespace Methods
+## Namespace methods
 
 The namespace object returned by `useSearch` provides these methods:
 
@@ -5678,7 +5678,7 @@ async upsert(options: {
 | `schema`         | `Schema`         | `undefined` | Optional schema definition for attributes   |
 | `batchSize`      | `number`         | `1000`      | Optional batch size for processing vectors  |
 
-#### Vector Object Format
+#### Vector object Format
 
 ```tsx
 {
@@ -5758,7 +5758,7 @@ const results = await namespace.query({
 });
 ```
 
-#### Return Value
+#### Return value
 
 Returns an array of matched documents with similarity scores:
 
@@ -5826,7 +5826,7 @@ const deletedCount = await namespace.deleteByFilter({
 });
 ```
 
-#### Return Value
+#### Return value
 
 Returns the number of deleted vectors.
 
@@ -5878,7 +5878,7 @@ const updatedSchema = await namespace.updateSchema({
 });
 ```
 
-#### Return Value
+#### Return value
 
 Returns the updated schema.
 
@@ -5903,7 +5903,7 @@ console.log(metadata);
 // }
 ```
 
-## Namespace Management
+## Namespace management
 
 Higher-level operations for managing namespaces (these are accessed directly from the search object, not via `useSearch`):
 
@@ -6251,7 +6251,7 @@ app.listen(3000, () => {
 });
 ```
 
-## Filter Operators
+## Filter operators
 
 Filters support these operators:
 
@@ -6269,7 +6269,7 @@ Filters support these operators:
 | `$containsAny` | Contains any of values | `{ tags: { $containsAny: ["news", "tech"] } }`        |
 | `$containsAll` | Contains all values    | `{ tags: { $containsAll: ["important", "urgent"] } }` |
 
-# Database Reference
+# Database reference
 
 API reference for GenSX Cloud SQL database components.
 
@@ -6351,7 +6351,7 @@ const result = await db.execute("SELECT * FROM users WHERE id = ?", [
 ]);
 ```
 
-## Database Methods
+## Database methods
 
 The database object returned by `useDatabase` provides these methods:
 
@@ -6392,7 +6392,7 @@ await db.execute("UPDATE users SET last_login = ? WHERE id = ?", [
 ]);
 ```
 
-#### Return Value
+#### Return value
 
 Returns a result object with the following properties:
 
@@ -6419,7 +6419,7 @@ async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult>
 | ------------ | --------------------- | ------------------------------------------------ |
 | `statements` | `DatabaseStatement[]` | Array of SQL statements with optional parameters |
 
-#### DatabaseStatement Format
+#### DatabaseStatement format
 
 ```tsx
 {
@@ -6443,7 +6443,7 @@ const results = await db.batch([
 ]);
 ```
 
-#### Return Value
+#### Return value
 
 Returns a result object containing an array of individual results:
 
@@ -6494,7 +6494,7 @@ const results = await db.executeMultiple(`
 `);
 ```
 
-#### Return Value
+#### Return value
 
 Returns a result object containing an array of individual results, one for each statement executed.
 
@@ -6529,7 +6529,7 @@ const results = await db.migrate(`
 `);
 ```
 
-#### Return Value
+#### Return value
 
 Returns a result object containing an array of individual results, one for each statement executed.
 
@@ -6572,7 +6572,7 @@ console.log(info);
 // }
 ```
 
-## Database Management
+## Database management
 
 Higher-level operations for managing databases are available through the `useDatabaseStorage` hook:
 
@@ -6815,7 +6815,7 @@ app.listen(3000, () => {
 });
 ```
 
-# Blob Storage Reference
+# Blob storage reference
 
 API reference for GenSX Cloud blob storage components.
 
@@ -6889,11 +6889,11 @@ const blob = useBlob<UserProfile>("users/123.json");
 const profile = await blob.getJSON();
 ```
 
-## Blob Methods
+## Blob methods
 
 The blob object returned by `useBlob` provides these methods:
 
-### JSON Operations
+### JSON operations
 
 ```tsx
 // Get JSON data
@@ -6903,7 +6903,7 @@ const data = await blob.getJSON(); // Returns null if not found
 await blob.putJSON(data, options); // Returns { etag: string }
 ```
 
-### String Operations
+### String operations
 
 ```tsx
 // Get string content
@@ -6913,7 +6913,7 @@ const text = await blob.getString(); // Returns null if not found
 await blob.putString("Hello world", options); // Returns { etag: string }
 ```
 
-### Binary Operations
+### Binary operations
 
 ```tsx
 // Get binary data with metadata
@@ -6924,7 +6924,7 @@ const result = await blob.getRaw(); // Returns null if not found
 await blob.putRaw(buffer, options); // Returns { etag: string }
 ```
 
-### Stream Operations
+### Stream operations
 
 ```tsx
 // Get data as a stream
@@ -6934,7 +6934,7 @@ const stream = await blob.getStream();
 await blob.putStream(readableStream, options); // Returns { etag: string }
 ```
 
-### Metadata Operations
+### Metadata operations
 
 ```tsx
 // Check if blob exists
@@ -6953,7 +6953,7 @@ await blob.updateMetadata({
 });
 ```
 
-## Options Object
+## Options object
 
 Many methods accept an options object with these properties:
 
@@ -7447,9 +7447,9 @@ GenSX SQL databases work identically in both local development and cloud environ
 
 No code changes are needed when moving from development to production.
 
-## Use Cases
+## Use cases
 
-### Data-Backed Agents
+### Data-backed agents
 
 Create agents that can query and update structured data:
 
@@ -7871,7 +7871,7 @@ const MemoryAwareAgent = gensx.Component(
 );
 ```
 
-### Knowledge base with faceted search
+### Knowledge base search
 
 Another powerful application is a knowledge base with faceted search capabilities:
 
@@ -7997,11 +7997,11 @@ await search.updateSchema({
 
 See the [search component reference](docs/component-reference/storage-components/search-reference) for full details.
 
-# Blob Storage
+# Blob storage
 
 Blob storage provides zero-configuration persistent storage for your GenSX applications. It enables you to store JSON, text, or binary data and per-agent or per-workflow storage without worrying about managing infrastructure.
 
-## Basic Usage
+## Basic usage
 
 To use blob storage in your GenSX application:
 
@@ -8031,7 +8031,7 @@ To use blob storage in your GenSX application:
    const blob = useBlob("your-key.json");
    ```
 
-### Reading Blobs
+### Reading blobs
 
 The `useBlob` hook provides simple methods to read different types of data:
 
@@ -8067,7 +8067,7 @@ const ReadData = gensx.Component("ReadData", async ({ key }) => {
 });
 ```
 
-### Writing Blobs
+### Writing blobs
 
 You can write data in various formats:
 
@@ -8102,9 +8102,9 @@ const WriteData = gensx.Component(
 );
 ```
 
-## Practical Examples
+## Practical examples
 
-### Persistent Chat Threads
+### Persistent chat threads
 
 One of the most common use cases for blob storage is maintaining conversation history across multiple interactions:
 
@@ -8150,7 +8150,7 @@ const ChatWithMemory = gensx.Component(
 );
 ```
 
-### Memory for AI Agents
+### Memory for agents
 
 For more complex agents, you can store structured memory:
 
@@ -8187,7 +8187,7 @@ const AgentWithMemory = gensx.Component(
 );
 ```
 
-### Saving Files
+### Saving files
 
 You can use blob storage to save and retrieve binary files like images:
 
@@ -8231,7 +8231,7 @@ const GetImage = gensx.Component("GetImage", async ({ filename }) => {
 });
 ```
 
-### Optimistic Concurrency Control
+### Optimistic concurrency control
 
 For scenarios where multiple processes might update the same data, you can use ETags to prevent conflicts:
 
@@ -8267,7 +8267,7 @@ const UpdateCounter = gensx.Component(
 );
 ```
 
-## Development vs. Production
+## Development vs. production
 
 GenSX blob storage works identically in both local development and cloud environments:
 

@@ -71,7 +71,7 @@ const results = await namespace.query({
 });
 ```
 
-## Namespace Methods
+## Namespace methods
 
 The namespace object returned by `useSearch` provides these methods:
 
@@ -97,7 +97,7 @@ async upsert(options: {
 | `schema`         | `Schema`         | `undefined` | Optional schema definition for attributes   |
 | `batchSize`      | `number`         | `1000`      | Optional batch size for processing vectors  |
 
-#### Vector Object Format
+#### Vector object Format
 
 ```tsx
 {
@@ -177,7 +177,7 @@ const results = await namespace.query({
 });
 ```
 
-#### Return Value
+#### Return value
 
 Returns an array of matched documents with similarity scores:
 
@@ -245,7 +245,7 @@ const deletedCount = await namespace.deleteByFilter({
 });
 ```
 
-#### Return Value
+#### Return value
 
 Returns the number of deleted vectors.
 
@@ -297,7 +297,7 @@ const updatedSchema = await namespace.updateSchema({
 });
 ```
 
-#### Return Value
+#### Return value
 
 Returns the updated schema.
 
@@ -322,7 +322,7 @@ console.log(metadata);
 // }
 ```
 
-## Namespace Management
+## Namespace management
 
 Higher-level operations for managing namespaces (these are accessed directly from the search object, not via `useSearch`):
 
@@ -670,7 +670,7 @@ app.listen(3000, () => {
 });
 ```
 
-## Filter Operators
+## Filter operators
 
 Filters support these operators:
 

@@ -3,7 +3,7 @@ title: SQL database reference
 description: SQL database components for persistent data in GenSX workflows.
 ---
 
-# Database Reference
+# Database reference
 
 API reference for GenSX Cloud SQL database components.
 
@@ -85,7 +85,7 @@ const result = await db.execute("SELECT * FROM users WHERE id = ?", [
 ]);
 ```
 
-## Database Methods
+## Database methods
 
 The database object returned by `useDatabase` provides these methods:
 
@@ -126,7 +126,7 @@ await db.execute("UPDATE users SET last_login = ? WHERE id = ?", [
 ]);
 ```
 
-#### Return Value
+#### Return value
 
 Returns a result object with the following properties:
 
@@ -153,7 +153,7 @@ async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult>
 | ------------ | --------------------- | ------------------------------------------------ |
 | `statements` | `DatabaseStatement[]` | Array of SQL statements with optional parameters |
 
-#### DatabaseStatement Format
+#### DatabaseStatement format
 
 ```tsx
 {
@@ -177,7 +177,7 @@ const results = await db.batch([
 ]);
 ```
 
-#### Return Value
+#### Return value
 
 Returns a result object containing an array of individual results:
 
@@ -228,7 +228,7 @@ const results = await db.executeMultiple(`
 `);
 ```
 
-#### Return Value
+#### Return value
 
 Returns a result object containing an array of individual results, one for each statement executed.
 
@@ -263,7 +263,7 @@ const results = await db.migrate(`
 `);
 ```
 
-#### Return Value
+#### Return value
 
 Returns a result object containing an array of individual results, one for each statement executed.
 
@@ -306,7 +306,7 @@ console.log(info);
 // }
 ```
 
-## Database Management
+## Database management
 
 Higher-level operations for managing databases are available through the `useDatabaseStorage` hook:
 
