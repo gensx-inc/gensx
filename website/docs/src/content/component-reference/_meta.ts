@@ -1,10 +1,10 @@
 const meta = {
-  "openai": "OpenAI",
-  "anthropic": "Anthropic",
+  openai: "OpenAI",
+  anthropic: "Anthropic",
   "vercel-ai": "Vercel AI SDK",
   "storage-components": "Cloud storage",
-  "mcp": "MCP",
-  "openrouter": "OpenRouter",
+  mcp: "MCP",
+  openrouter: "OpenRouter",
 };
 
 export default meta;

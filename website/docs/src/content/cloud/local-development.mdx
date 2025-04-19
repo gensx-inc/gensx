@@ -83,15 +83,12 @@ When using `BlobProvider` in local development, data is stored in your local fil
 ```tsx
 import { BlobProvider, useBlob } from "@gensx/storage";
 
-const StoreData = gensx.Component(
-  "StoreData",
-  async ({ key, data }) => {
-    // Locally, this will write to .gensx/blobs directory
-    const blob = useBlob(`data/${key}.json`);
-    await blob.putJSON(data);
-    return { success: true };
-  }
-);
+const StoreData = gensx.Component("StoreData", async ({ key, data }) => {
+  // Locally, this will write to .gensx/blobs directory
+  const blob = useBlob(`data/${key}.json`);
+  await blob.putJSON(data);
+  return { success: true };
+});
 ```
 
 Files are stored in the `.gensx/blobs` directory in your project, making it easy to inspect the stored data.
@@ -103,15 +100,12 @@ When using `DatabaseProvider` locally, GenSX uses [libSQL](https://github.com/li
 ```tsx
 import { DatabaseProvider, useDatabase } from "@gensx/storage";
 
-const QueryData = gensx.Component(
-  "QueryData",
-  async ({ query }) => {
-    // Locally, this creates a SQLite database in .gensx/databases
-    const db = await useDatabase("my-database");
-    const result = await db.execute(query);
-    return result.rows;
-  }
-);
+const QueryData = gensx.Component("QueryData", async ({ query }) => {
+  // Locally, this creates a SQLite database in .gensx/databases
+  const db = await useDatabase("my-database");
+  const result = await db.execute(query);
+  return result.rows;
+});
 ```
 
 Database files are stored in the `.gensx/databases` directory as SQLite files that you can inspect with any SQLite client.
@@ -123,18 +117,15 @@ For vector search operations with `SearchProvider`, your local environment conne
 ```tsx
 import { SearchProvider, useSearch } from "@gensx/storage";
 
-const SearchDocs = gensx.Component(
-  "SearchDocs",
-  async ({ query }) => {
-    // Uses cloud vector search even in local development
-    const namespace = await useSearch("documents");
-    const results = await namespace.query({
-      text: query,
-      topK: 5
-    });
-    return results;
-  }
-);
+const SearchDocs = gensx.Component("SearchDocs", async ({ query }) => {
+  // Uses cloud vector search even in local development
+  const namespace = await useSearch("documents");
+  const results = await namespace.query({
+    text: query,
+    topK: 5,
+  });
+  return results;
+});
 ```
 
 ## Running workflows locally

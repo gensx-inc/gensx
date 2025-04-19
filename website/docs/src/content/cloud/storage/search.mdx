@@ -18,11 +18,13 @@ Search is powered by [Turbopuffer](https://turbopuffer.com/), fully featured and
 To use search in your GenSX application:
 
 1. Install the storage package:
+
    ```bash
    npm install @gensx/storage
    ```
 
 2. Add the `SearchProvider` to your workflow:
+
    ```tsx
    import { SearchProvider } from "@gensx/storage";
 
@@ -34,6 +36,7 @@ To use search in your GenSX application:
    ```
 
 3. Access search namespaces within your components using the `useSearch` hook:
+
    ```tsx
    import { useSearch } from "@gensx/storage";
 
@@ -58,7 +61,7 @@ const IndexDocument = gensx.Component(
     // Generate embeddings for the documents
     const embeddings = await OpenAIEmbedding.run({
       model: "text-embedding-3-small",
-      input: documents.map(doc => doc.text),
+      input: documents.map((doc) => doc.text),
     });
 
     // Store the embeddings with original text as metadata
@@ -69,14 +72,14 @@ const IndexDocument = gensx.Component(
         attributes: {
           text: doc.text,
           category: doc.category,
-          createdAt: new Date().toISOString()
-        }
+          createdAt: new Date().toISOString(),
+        },
       })),
       distanceMetric: "cosine_distance",
     });
 
     return { success: true, count: documents.length };
-  }
+  },
 );
 ```
 
@@ -101,13 +104,13 @@ const SearchDocuments = gensx.Component(
     const queryOptions = {
       vector: embedding.data[0].embedding,
       includeAttributes: true,
-      topK: 5  // Return top 5 results
+      topK: 5, // Return top 5 results
     };
 
     // Add filters if category is specified
     if (category) {
       queryOptions.filters = {
-        where: { category: { $eq: category } }
+        where: { category: { $eq: category } },
       };
     }
 
@@ -115,12 +118,12 @@ const SearchDocuments = gensx.Component(
     const results = await search.query(queryOptions);
 
     // Process and return results
-    return results.map(result => ({
+    return results.map((result) => ({
       id: result.id,
       text: result.attributes?.text,
-      score: result.score
+      score: result.score,
     }));
-  }
+  },
 );
 ```
 
@@ -133,32 +136,29 @@ Retrieval-Augmented Generation (RAG) is one of the most common use cases for vec
 First, create a component to prepare and index your documents:
 
 ```tsx
-const PrepareDocuments = gensx.Component(
-  "PrepareDocuments",
-  async () => {
-    // Sample baseball player data
-    const documents = [
-      {
-        id: "1",
-        text: "Marcus Bennett is a first baseman for the Portland Pioneers. He has 32 home runs this season.",
-        category: "player"
-      },
-      {
-        id: "2",
-        text: "Ethan Carter plays shortstop for the San Antonio Stallions with 24 home runs.",
-        category: "player"
-      },
-      {
-        id: "3",
-        text: "The Portland Pioneers are leading the Western Division with a 92-70 record.",
-        category: "team"
-      }
-    ];
+const PrepareDocuments = gensx.Component("PrepareDocuments", async () => {
+  // Sample baseball player data
+  const documents = [
+    {
+      id: "1",
+      text: "Marcus Bennett is a first baseman for the Portland Pioneers. He has 32 home runs this season.",
+      category: "player",
+    },
+    {
+      id: "2",
+      text: "Ethan Carter plays shortstop for the San Antonio Stallions with 24 home runs.",
+      category: "player",
+    },
+    {
+      id: "3",
+      text: "The Portland Pioneers are leading the Western Division with a 92-70 record.",
+      category: "team",
+    },
+  ];
 
-    // Index the documents
-    return <IndexDocument documents={documents} />;
-  }
-);
+  // Index the documents
+  return <IndexDocument documents={documents} />;
+});
 ```
 
 ### Step 2: Create a query tool
@@ -193,7 +193,11 @@ const queryTool = new GSXTool({
     });
 
     // Return formatted results
-    return JSON.stringify(results.map(r => r.attributes?.text), null, 2);
+    return JSON.stringify(
+      results.map((r) => r.attributes?.text),
+      null,
+      2,
+    );
   },
 });
 ```
@@ -203,25 +207,22 @@ const queryTool = new GSXTool({
 Now, create an agent that uses the query tool to access relevant information:
 
 ```tsx
-const RagAgent = gensx.Component(
-  "RagAgent",
-  ({ question }) => (
-    <GSXChatCompletion
-      messages={[
-        {
-          role: "system",
-          content: `You are a baseball expert assistant. Use the query tool to
+const RagAgent = gensx.Component("RagAgent", ({ question }) => (
+  <GSXChatCompletion
+    messages={[
+      {
+        role: "system",
+        content: `You are a baseball expert assistant. Use the query tool to
           look up relevant information before answering questions.`,
-        },
-        { role: "user", content: question },
-      ]}
-      model="gpt-4o-mini"
-      tools={[queryTool]}
-    >
-      {(result) => result.choices[0].message.content}
-    </GSXChatCompletion>
-  ),
-);
+      },
+      { role: "user", content: question },
+    ]}
+    model="gpt-4o-mini"
+    tools={[queryTool]}
+  >
+    {(result) => result.choices[0].message.content}
+  </GSXChatCompletion>
+));
 ```
 
 ### Step 4: Combine Everything in a Workflow
@@ -239,7 +240,7 @@ const RagWorkflow = gensx.Component(
 
     // Use the RAG agent to answer the question
     return <RagAgent question={question} />;
-  }
+  },
 );
 ```
 
@@ -268,21 +269,23 @@ const StoreMemory = gensx.Component(
 
     // Store the memory with metadata
     await search.upsert({
-      vectors: [{
-        id: `memory-${Date.now()}`,
-        vector: embedding.data[0].embedding,
-        attributes: {
-          content: memory,
-          timestamp: new Date().toISOString(),
-          importance: importance, // "high", "medium", "low"
-          source: "user-interaction"
-        }
-      }],
+      vectors: [
+        {
+          id: `memory-${Date.now()}`,
+          vector: embedding.data[0].embedding,
+          attributes: {
+            content: memory,
+            timestamp: new Date().toISOString(),
+            importance: importance, // "high", "medium", "low"
+            source: "user-interaction",
+          },
+        },
+      ],
       distanceMetric: "cosine_distance",
     });
 
     return { success: true };
-  }
+  },
 );
 
 // Component to recall relevant memories
@@ -305,20 +308,20 @@ const RecallMemories = gensx.Component(
       // Optional: rank by both relevance and importance
       rankBy: {
         "attributes.importance": {
-          "high": 1.5,   // Boost important memories
-          "medium": 1.0, // Normal weight
-          "low": 0.5     // Lower weight for less important memories
-        }
-      }
+          high: 1.5, // Boost important memories
+          medium: 1.0, // Normal weight
+          low: 0.5, // Lower weight for less important memories
+        },
+      },
     });
 
     // Format memories for the agent
-    return results.map(result => ({
+    return results.map((result) => ({
       content: result.attributes?.content,
       timestamp: result.attributes?.timestamp,
-      relevance: result.score.toFixed(3)
+      relevance: result.score.toFixed(3),
     }));
-  }
+  },
 );
 
 // Component that uses memories in a conversation
@@ -329,7 +332,7 @@ const MemoryAwareAgent = gensx.Component(
     const memories = await RecallMemories({
       userId,
       context: userMessage,
-      maxResults: 3
+      maxResults: 3,
     });
 
     // Use memories to inform the response
@@ -339,21 +342,21 @@ const MemoryAwareAgent = gensx.Component(
         {
           role: "system",
           content: `You are an assistant with memory. Consider these relevant memories about this user:
-          ${memories.map(m => `[${m.timestamp}] ${m.content} (relevance: ${m.relevance})`).join('\n')}`
+          ${memories.map((m) => `[${m.timestamp}] ${m.content} (relevance: ${m.relevance})`).join("\n")}`,
         },
-        { role: "user", content: userMessage }
-      ]
+        { role: "user", content: userMessage },
+      ],
     });
 
     // Store this interaction as a new memory
     await StoreMemory({
       userId,
       memory: `User asked: "${userMessage}". I replied: "${response}"`,
-      importance: "medium"
+      importance: "medium",
     });
 
     return response;
-  }
+  },
 );
 ```
 
@@ -383,7 +386,7 @@ const SearchKnowledgeBase = gensx.Component(
     if (filters.dateRange) {
       filterConditions.publishedDate = {
         $gte: filters.dateRange.start,
-        $lte: filters.dateRange.end
+        $lte: filters.dateRange.end,
       };
     }
 
@@ -394,24 +397,26 @@ const SearchKnowledgeBase = gensx.Component(
     // Perform hybrid search (vector + keyword) with filters
     const results = await search.query({
       vector: embedding.data[0].embedding,
-      text: query,           // Also use keyword search
-      hybridAlpha: 0.3,      // Balance between vector and keyword search
+      text: query, // Also use keyword search
+      hybridAlpha: 0.3, // Balance between vector and keyword search
       includeAttributes: true,
       topK: 10,
-      filters: Object.keys(filterConditions).length > 0 ?
-        { where: filterConditions } : undefined
+      filters:
+        Object.keys(filterConditions).length > 0
+          ? { where: filterConditions }
+          : undefined,
     });
 
     // Return formatted results
-    return results.map(result => ({
+    return results.map((result) => ({
       title: result.attributes?.title,
       snippet: result.attributes?.snippet,
       url: result.attributes?.url,
       category: result.attributes?.category,
       tags: result.attributes?.tags,
-      score: result.score
+      score: result.score,
     }));
-  }
+  },
 );
 ```
 
@@ -434,12 +439,12 @@ const results = await search.query({
       // Filter by date range
       publishDate: {
         $gte: "2023-01-01",
-        $lt: "2024-01-01"
+        $lt: "2024-01-01",
       },
       // Filter by multiple possible authors
-      author: { $in: ["Alice", "Bob", "Carol"] }
-    }
-  }
+      author: { $in: ["Alice", "Bob", "Carol"] },
+    },
+  },
 });
 ```
 
@@ -451,11 +456,11 @@ Combine vector similarity with keyword search:
 const search = await useSearch("documents");
 
 const results = await search.query({
-  vector: queryEmbedding,    // Vector for semantic search
-  text: "quarterly report",  // Text for keyword search
+  vector: queryEmbedding, // Vector for semantic search
+  text: "quarterly report", // Text for keyword search
   includeAttributes: true,
-  hybridAlpha: 0.5           // Balance between vector and text search
-                             // 0.0 = vector only, 1.0 = text only
+  hybridAlpha: 0.5, // Balance between vector and text search
+  // 0.0 = vector only, 1.0 = text only
 });
 ```
 
@@ -473,7 +478,7 @@ const currentSchema = await search.getSchema();
 await search.updateSchema({
   ...currentSchema,
   newField: "number",
-  anotherField: "string[]"
+  anotherField: "string[]",
 });
 ```
 

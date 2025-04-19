@@ -15,25 +15,26 @@ gensx run <workflow> [options]
 
 ## Arguments
 
-| Argument | Description |
-|----------|-------------|
+| Argument     | Description                  |
+| ------------ | ---------------------------- |
 | `<workflow>` | Name of the workflow to run. |
 
 ## Options
 
-| Option | Description |
-|--------|-------------|
-| `-i, --input <input>` | Input to pass to the workflow (as JSON). |
-| `--no-wait` | Do not wait for the workflow to finish (run asynchronously). |
-| `-p, --project <name>` | Project name where the workflow is deployed. |
-| `-o, --output <file>` | Output file to write the workflow result to. |
-| `-h, --help` | Display help for the command. |
+| Option                 | Description                                                  |
+| ---------------------- | ------------------------------------------------------------ |
+| `-i, --input <input>`  | Input to pass to the workflow (as JSON).                     |
+| `--no-wait`            | Do not wait for the workflow to finish (run asynchronously). |
+| `-p, --project <name>` | Project name where the workflow is deployed.                 |
+| `-o, --output <file>`  | Output file to write the workflow result to.                 |
+| `-h, --help`           | Display help for the command.                                |
 
 ## Description
 
 This command triggers execution of a deployed workflow on GenSX Cloud with the specified input. By default, it waits for the workflow to complete and displays the result.
 
 When running a workflow, you can:
+
 - Provide input data as JSON
 - Choose whether to wait for completion or run asynchronously
 - Save the output to a file

@@ -19,8 +19,8 @@ import { SearchProvider } from "@gensx/storage";
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop            | Type     | Default     | Description                            |
+| --------------- | -------- | ----------- | -------------------------------------- |
 | `defaultPrefix` | `string` | `undefined` | Optional prefix for all namespace keys |
 
 ### Example
@@ -28,14 +28,11 @@ import { SearchProvider } from "@gensx/storage";
 ```tsx
 import { SearchProvider } from "@gensx/storage";
 
-const Workflow = gensx.Component(
-  "SearchWorkflow",
-  ({ input }) => (
-    <SearchProvider>
-      <YourComponent input={input} />
-    </SearchProvider>
-  )
-);
+const Workflow = gensx.Component("SearchWorkflow", ({ input }) => (
+  <SearchProvider>
+    <YourComponent input={input} />
+  </SearchProvider>
+));
 ```
 
 ## useSearch
@@ -56,9 +53,9 @@ function useSearch(name: string): Namespace;
 
 ### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `name` | `string` | The namespace name to access |
+| Parameter | Type     | Description                  |
+| --------- | -------- | ---------------------------- |
+| `name`    | `string` | The namespace name to access |
 
 ### Returns
 
@@ -70,7 +67,7 @@ Returns a namespace object with methods to interact with vector search.
 const namespace = await useSearch("documents");
 const results = await namespace.query({
   vector: queryEmbedding,
-  includeAttributes: true
+  includeAttributes: true,
 });
 ```
 
@@ -93,12 +90,12 @@ async upsert(options: {
 
 #### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `vectors` | `Vector[]` | Required | Array of vectors to insert or update |
-| `distanceMetric` | `DistanceMetric` | Required | Distance metric for similarity calculations |
-| `schema` | `Schema` | `undefined` | Optional schema definition for attributes |
-| `batchSize` | `number` | `1000` | Optional batch size for processing vectors |
+| Parameter        | Type             | Default     | Description                                 |
+| ---------------- | ---------------- | ----------- | ------------------------------------------- |
+| `vectors`        | `Vector[]`       | Required    | Array of vectors to insert or update        |
+| `distanceMetric` | `DistanceMetric` | Required    | Distance metric for similarity calculations |
+| `schema`         | `Schema`         | `undefined` | Optional schema definition for attributes   |
+| `batchSize`      | `number`         | `1000`      | Optional batch size for processing vectors  |
 
 #### Vector Object Format
 
@@ -146,15 +143,15 @@ async query(options: QueryOptions): Promise<QueryResults>
 
 #### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `vector` | `number[]` | Required | Query vector for similarity search |
-| `topK` | `number` | `10` | Number of results to return |
-| `includeVectors` | `boolean` | `false` | Whether to include vectors in results |
-| `includeAttributes` | `boolean \| string[]` | `true` | Include all attributes or specified ones |
-| `filters` | `Filters` | `undefined` | Metadata filters |
-| `rankBy` | `Record<string, Record<string, number>>` | `undefined` | Attribute-based ranking |
-| `consistency` | `string` | `undefined` | Consistency level for reads |
+| Parameter           | Type                                     | Default     | Description                              |
+| ------------------- | ---------------------------------------- | ----------- | ---------------------------------------- |
+| `vector`            | `number[]`                               | Required    | Query vector for similarity search       |
+| `topK`              | `number`                                 | `10`        | Number of results to return              |
+| `includeVectors`    | `boolean`                                | `false`     | Whether to include vectors in results    |
+| `includeAttributes` | `boolean \| string[]`                    | `true`      | Include all attributes or specified ones |
+| `filters`           | `Filters`                                | `undefined` | Metadata filters                         |
+| `rankBy`            | `Record<string, Record<string, number>>` | `undefined` | Attribute-based ranking                  |
+| `consistency`       | `string`                                 | `undefined` | Consistency level for reads              |
 
 #### Example
 
@@ -210,15 +207,15 @@ async delete(options: { ids: Id[] }): Promise<void>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `ids` | `string[]` | Array of vector IDs to delete |
+| Parameter | Type       | Description                   |
+| --------- | ---------- | ----------------------------- |
+| `ids`     | `string[]` | Array of vector IDs to delete |
 
 #### Example
 
 ```tsx
 await namespace.delete({
-  ids: ["doc-1", "doc-2"]
+  ids: ["doc-1", "doc-2"],
 });
 ```
 
@@ -232,8 +229,8 @@ async deleteByFilter(options: { filters: Filters }): Promise<number>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
+| Parameter | Type      | Description                           |
+| --------- | --------- | ------------------------------------- |
 | `filters` | `Filters` | Filters to match vectors for deletion |
 
 #### Example
@@ -242,9 +239,9 @@ async deleteByFilter(options: { filters: Filters }): Promise<number>
 const deletedCount = await namespace.deleteByFilter({
   filters: {
     where: {
-      category: { $eq: "outdated" }
-    }
-  }
+      category: { $eq: "outdated" },
+    },
+  },
 });
 ```
 
@@ -282,9 +279,9 @@ async updateSchema(options: { schema: Schema }): Promise<Schema>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `schema` | `Schema` | New schema definition |
+| Parameter | Type     | Description           |
+| --------- | -------- | --------------------- |
+| `schema`  | `Schema` | New schema definition |
 
 #### Example
 
@@ -294,9 +291,9 @@ const updatedSchema = await namespace.updateSchema({
     text: "string",
     category: "string",
     createdAt: "string",
-    newField: "number",   // Add new field
-    tags: "string[]"      // Add array field
-  }
+    newField: "number", // Add new field
+    tags: "string[]", // Add array field
+  },
 });
 ```
 
@@ -336,7 +333,7 @@ const search = new SearchClient();
 
 // List all namespaces
 const namespaces = await search.listNamespaces({
-  prefix: "docs-"  // Optional prefix filter
+  prefix: "docs-", // Optional prefix filter
 });
 
 // Check if namespace exists
@@ -373,16 +370,16 @@ Results from query operations are returned in this format:
 
 Filters support these operators:
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `$eq` | Equals | `{ field: { $eq: "value" } }` |
-| `$ne` | Not equals | `{ field: { $ne: "value" } }` |
-| `$gt` | Greater than | `{ field: { $gt: 10 } }` |
-| `$gte` | Greater than or equal | `{ field: { $gte: 10 } }` |
-| `$lt` | Less than | `{ field: { $lt: 10 } }` |
-| `$lte` | Less than or equal | `{ field: { $lte: 10 } }` |
-| `$in` | In array | `{ field: { $in: ["a", "b"] } }` |
-| `$nin` | Not in array | `{ field: { $nin: ["a", "b"] } }` |
-| `$contains` | String contains | `{ field: { $contains: "text" } }` |
-| `$containsAny` | Contains any of values | `{ tags: { $containsAny: ["news", "tech"] } }` |
-| `$containsAll` | Contains all values | `{ tags: { $containsAll: ["important", "urgent"] } }` |
+| Operator       | Description            | Example                                               |
+| -------------- | ---------------------- | ----------------------------------------------------- |
+| `$eq`          | Equals                 | `{ field: { $eq: "value" } }`                         |
+| `$ne`          | Not equals             | `{ field: { $ne: "value" } }`                         |
+| `$gt`          | Greater than           | `{ field: { $gt: 10 } }`                              |
+| `$gte`         | Greater than or equal  | `{ field: { $gte: 10 } }`                             |
+| `$lt`          | Less than              | `{ field: { $lt: 10 } }`                              |
+| `$lte`         | Less than or equal     | `{ field: { $lte: 10 } }`                             |
+| `$in`          | In array               | `{ field: { $in: ["a", "b"] } }`                      |
+| `$nin`         | Not in array           | `{ field: { $nin: ["a", "b"] } }`                     |
+| `$contains`    | String contains        | `{ field: { $contains: "text" } }`                    |
+| `$containsAny` | Contains any of values | `{ tags: { $containsAny: ["news", "tech"] } }`        |
+| `$containsAll` | Contains all values    | `{ tags: { $containsAll: ["important", "urgent"] } }` |

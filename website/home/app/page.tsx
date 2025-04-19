@@ -60,10 +60,8 @@ const WriteDraft = gensx.Component<WriteDraftProps, string>(
       <div className="relative">
         <Image
           src="/assets/home/trace.png"
-
           alt="GenSX Workflow Tracing Dashboard"
           width={1000}
-
           height={600}
           className="rounded-lg shadow-lg w-full border border-gray-200 dark:border-gray-800"
         />
@@ -139,13 +137,15 @@ const MemoryTool = new GSXTool({
       type: "stateful",
       title: "Stateful Agents",
       mobileTitle: "Stateful",
-      description: "Runtime hooks for fully managed blob storage, SQL databases, and vector search.",
+      description:
+        "Runtime hooks for fully managed blob storage, SQL databases, and vector search.",
     },
     {
       type: "serverless",
       title: "Serverless Deployments",
       mobileTitle: "Serverless",
-      description: "Deploy projects as REST APIs with sync, async, and streaming out of the box.",
+      description:
+        "Deploy projects as REST APIs with sync, async, and streaming out of the box.",
     },
   ];
 
@@ -165,10 +165,10 @@ const MemoryTool = new GSXTool({
         >
           <h1 className="text-2xl md:text-6xl font-bold text-center">
             The TypeScript framework for agents and workflows
-
           </h1>
           <p className="max-w-2xl text-md md:text-xl text-gray-600 mt-6 leading-relaxed text-center">
-            GenSX provides simple developer tools and cloud infrastructure to build, deploy, scale, and debug complex AI backends with TypeScript.
+            GenSX provides simple developer tools and cloud infrastructure to
+            build, deploy, scale, and debug complex AI backends with TypeScript.
           </p>
           <div className="flex gap-4 mt-8 justify-center">
             <Link href="/docs/quickstart">
@@ -284,7 +284,7 @@ const MemoryTool = new GSXTool({
               </p>
             </div>
             <div className="mt-4">
-              {typeof examples[activeExample] === 'string' ? (
+              {typeof examples[activeExample] === "string" ? (
                 <CodeBlock code={examples[activeExample] as string} />
               ) : (
                 examples[activeExample]
@@ -338,7 +338,7 @@ const MemoryTool = new GSXTool({
               ))}
             </div>
             <div className="col-span-2 h-full">
-              {typeof examples[activeExample] === 'string' ? (
+              {typeof examples[activeExample] === "string" ? (
                 <CodeBlock code={examples[activeExample] as string} />
               ) : (
                 examples[activeExample]

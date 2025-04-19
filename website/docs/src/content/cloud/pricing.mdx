@@ -17,38 +17,42 @@ GenSX Cloud offers three pricing tiers:
 
 Each plan includes monthly allowances for compute, tracing, and storage:
 
-| Resource | Free Tier | Pro Tier ($20/month/dev) | Overage/Action |
-|----------|-----------|--------------------------|----------------|
-| Serverless Compute | 50K sec | 500K sec | $0.00003/sec |
-| Traces (events) | 100K events | 1M events | $0.20/10K |
-| Blob Storage | 500MB | 5GB | $0.25/GB |
-| SQLite Storage | 500MB | 1GB | $1.50/GB |
-| Vector Storage | 250MB | 1GB | $1.00/GB |
-| Execution time | Up to 5 minutes | Up to 60 minutes | Custom |
-| Observability | 7 days trace retention | 30 days trace retention | Custom retention |
+| Resource           | Free Tier              | Pro Tier ($20/month/dev) | Overage/Action   |
+| ------------------ | ---------------------- | ------------------------ | ---------------- |
+| Serverless Compute | 50K sec                | 500K sec                 | $0.00003/sec     |
+| Traces (events)    | 100K events            | 1M events                | $0.20/10K        |
+| Blob Storage       | 500MB                  | 5GB                      | $0.25/GB         |
+| SQLite Storage     | 500MB                  | 1GB                      | $1.50/GB         |
+| Vector Storage     | 250MB                  | 1GB                      | $1.00/GB         |
+| Execution time     | Up to 5 minutes        | Up to 60 minutes         | Custom           |
+| Observability      | 7 days trace retention | 30 days trace retention  | Custom retention |
 
 ## Limits
 
 When limits are reached, additional operations may be throttled or declined. Exceeding any limits on the free tier requires upgrading to the Pro tier.
 
 ### Serverless
+
 - Free tier: Maximum workflow execution time of 5 minutes
 - Pro tier: Maximum workflow execution time of 60 minutes
 - Maximum payload size: 10MB per request
 - Maximum response size: 10MB
 
 ### Blob storage
+
 - Maximum blob size: 100MB
 - Maximum number of blobs: Unlimited (subject to total storage limits)
 - Rate limits: 100 operations/second on free tier, 1000 operations/second on pro tier
 
 ### Databases
+
 - Maximum database size: Limited by your storage quota
 - Maximum databases: unlimited
 - SQLite Writes: 1M rows/month on free tier, 10M rows/month on pro tier
 - SQLite Reads: 100M rows/month on free tier, 1B rows/month on pro tier
 
 ### Full-text & vector search
+
 - Maximum documents per search namespace: 100M
 - Maximum writes: 10k writes/second per namespace
 - Vector Writes: 1GB written/month on free tier, 10GB written/month on pro tier

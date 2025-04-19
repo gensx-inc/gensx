@@ -23,7 +23,7 @@ The GenSX cloud console includes a trace viewer. You can access traces in severa
 // Executing a workflow with trace URL printing
 const result = await MyWorkflow.run(
   { input: "What is GenSX?" },
-  { printUrl: true }
+  { printUrl: true },
 );
 
 // Console output includes:
@@ -129,29 +129,23 @@ Every GenSX component is automatically traced. If want to trace additional sub-s
 ```tsx
 import * as gensx from "@gensx/core";
 
-const MyWorkflow = gensx.Component(
-  "MyWorkflow",
-  async ({ input }) => {
-    // Step 1: Process input
-    const processedData = await ProcessData.run({ data: input });
+const MyWorkflow = gensx.Component("MyWorkflow", async ({ input }) => {
+  // Step 1: Process input
+  const processedData = await ProcessData.run({ data: input });
 
-    // Step 2: Generate response
-    const response = await GenerateResponse.run({ data: processedData });
+  // Step 2: Generate response
+  const response = await GenerateResponse.run({ data: processedData });
 
-    return response;
-  }
-);
+  return response;
+});
 
 // Create a component to trace a specific processing step
-const ProcessData = gensx.Component(
-  "ProcessData",
-  async ({ data }) => {
-    // This entire function execution will be captured in traces
-    const parsedData = JSON.parse(data);
-    const enrichedData = await fetchAdditionalInfo(parsedData);
-    return enrichedData;
-  }
-);
+const ProcessData = gensx.Component("ProcessData", async ({ data }) => {
+  // This entire function execution will be captured in traces
+  const parsedData = JSON.parse(data);
+  const enrichedData = await fetchAdditionalInfo(parsedData);
+  return enrichedData;
+});
 
 // Create a component to trace response generation
 const GenerateResponse = gensx.Component(
@@ -159,9 +153,8 @@ const GenerateResponse = gensx.Component(
   async ({ data }) => {
     // This will appear as a separate node in the trace
     return `Processed result: ${JSON.stringify(data)}`;
-  }
+  },
 );
-
 ```
 
 ## Secrets scrubbing
@@ -193,8 +186,8 @@ const AuthenticatedClient = gensx.Component(
   },
   {
     // Mark these props as containing sensitive data
-    secretProps: ["apiKey", "credentials.privateKey"]
-  }
+    secretProps: ["apiKey", "credentials.privateKey"],
+  },
 );
 ```
 
@@ -212,12 +205,12 @@ const GenerateCredentials = gensx.Component(
     return {
       accessToken: "sk-1234567890abcdef",
       refreshToken: "rt-0987654321fedcba",
-      expiresAt: Date.now() + 3600000
+      expiresAt: Date.now() + 3600000,
     };
   },
   {
-    secretOutputs: true
-  }
+    secretOutputs: true,
+  },
 );
 ```
 
@@ -234,7 +227,7 @@ const ParentComponent = gensx.Component(
     // apiKey is marked as secret
     const results = await ChildComponent.run({
       query,
-      headers: { authorization: `Bearer ${apiKey}` }
+      headers: { authorization: `Bearer ${apiKey}` },
     });
 
     // apiKey is also scrubbed here in the trace,
@@ -242,8 +235,8 @@ const ParentComponent = gensx.Component(
     return processResults(results, apiKey);
   },
   {
-    secretProps: ["apiKey"]
-  }
+    secretProps: ["apiKey"],
+  },
 );
 ```
 
@@ -253,12 +246,12 @@ Secrets remain scrubbed throughout the execution chain, even if they're transfor
 
 GenSX observability features have certain limits based on your subscription tier:
 
-| Feature | Free Tier | Pro Tier ($20/month/dev) | Enterprise |
-|---------|-----------|--------------------------|------------|
-| Traced components | 100K per month | 1M per month | Custom |
-| Overage cost | N/A | $0.20 per 10K components | Custom |
-| Trace retention | 7 days | 30 days | Custom |
-| Maximum input/output size | 4MB each | 4MB each | 4MB each |
+| Feature                   | Free Tier      | Pro Tier ($20/month/dev) | Enterprise |
+| ------------------------- | -------------- | ------------------------ | ---------- |
+| Traced components         | 100K per month | 1M per month             | Custom     |
+| Overage cost              | N/A            | $0.20 per 10K components | Custom     |
+| Trace retention           | 7 days         | 30 days                  | Custom     |
+| Maximum input/output size | 4MB each       | 4MB each                 | 4MB each   |
 
 A few important notes on these limits:
 

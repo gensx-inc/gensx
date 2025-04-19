@@ -19,8 +19,8 @@ import { DatabaseProvider } from "@gensx/storage";
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop            | Type     | Default     | Description                            |
+| --------------- | -------- | ----------- | -------------------------------------- |
 | `defaultPrefix` | `string` | `undefined` | Optional prefix for all database names |
 
 ### Example
@@ -28,14 +28,11 @@ import { DatabaseProvider } from "@gensx/storage";
 ```tsx
 import { DatabaseProvider } from "@gensx/storage";
 
-const Workflow = gensx.Component(
-  "DatabaseWorkflow",
-  ({ input }) => (
-    <DatabaseProvider>
-      <YourComponent input={input} />
-    </DatabaseProvider>
-  )
-);
+const Workflow = gensx.Component("DatabaseWorkflow", ({ input }) => (
+  <DatabaseProvider>
+    <YourComponent input={input} />
+  </DatabaseProvider>
+));
 ```
 
 ## useDatabase
@@ -56,9 +53,9 @@ function useDatabase(name: string): Database;
 
 ### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `name` | `string` | The database name to access |
+| Parameter | Type     | Description                 |
+| --------- | -------- | --------------------------- |
+| `name`    | `string` | The database name to access |
 
 ### Returns
 
@@ -68,7 +65,9 @@ Returns a database object with methods to interact with SQL database.
 
 ```tsx
 const db = await useDatabase("users");
-const result = await db.execute("SELECT * FROM users WHERE id = ?", ["user-123"]);
+const result = await db.execute("SELECT * FROM users WHERE id = ?", [
+  "user-123",
+]);
 ```
 
 ## Database Methods
@@ -85,31 +84,31 @@ async execute(sql: string, params?: InArgs): Promise<DatabaseResult>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `sql` | `string` | SQL statement to execute |
-| `params` | `InArgs` | Optional parameters for prepared statement |
+| Parameter | Type     | Description                                |
+| --------- | -------- | ------------------------------------------ |
+| `sql`     | `string` | SQL statement to execute                   |
+| `params`  | `InArgs` | Optional parameters for prepared statement |
 
 #### Example
 
 ```tsx
 // Query with parameters
-const result = await db.execute(
-  "SELECT * FROM users WHERE email = ?",
-  ["user@example.com"]
-);
+const result = await db.execute("SELECT * FROM users WHERE email = ?", [
+  "user@example.com",
+]);
 
 // Insert data
-await db.execute(
-  "INSERT INTO users (id, name, email) VALUES (?, ?, ?)",
-  ["user-123", "John Doe", "john@example.com"]
-);
+await db.execute("INSERT INTO users (id, name, email) VALUES (?, ?, ?)", [
+  "user-123",
+  "John Doe",
+  "john@example.com",
+]);
 
 // Update data
-await db.execute(
-  "UPDATE users SET last_login = ? WHERE id = ?",
-  [new Date().toISOString(), "user-123"]
-);
+await db.execute("UPDATE users SET last_login = ? WHERE id = ?", [
+  new Date().toISOString(),
+  "user-123",
+]);
 ```
 
 #### Return Value
@@ -134,8 +133,8 @@ async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
+| Parameter    | Type                  | Description                                      |
+| ------------ | --------------------- | ------------------------------------------------ |
 | `statements` | `DatabaseStatement[]` | Array of SQL statements with optional parameters |
 
 #### DatabaseStatement Format
@@ -153,12 +152,12 @@ async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult>
 const results = await db.batch([
   {
     sql: "INSERT INTO users (id, name) VALUES (?, ?)",
-    params: ["user-123", "John Doe"]
+    params: ["user-123", "John Doe"],
   },
   {
     sql: "INSERT INTO user_preferences (user_id, theme) VALUES (?, ?)",
-    params: ["user-123", "dark"]
-  }
+    params: ["user-123", "dark"],
+  },
 ]);
 ```
 
@@ -171,14 +170,14 @@ Returns an array of result objects, one for each statement executed:
   {
     rowsAffected: 1,
     lastInsertRowid: 42,
-    rows: []
+    rows: [],
   },
   {
     rowsAffected: 1,
     lastInsertRowid: 43,
-    rows: []
-  }
-]
+    rows: [],
+  },
+];
 ```
 
 ### executeMultiple
@@ -191,9 +190,9 @@ async executeMultiple(sql: string): Promise<DatabaseBatchResult>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `sql` | `string` | Multiple SQL statements separated by semicolons |
+| Parameter | Type     | Description                                     |
+| --------- | -------- | ----------------------------------------------- |
+| `sql`     | `string` | Multiple SQL statements separated by semicolons |
 
 #### Example
 
@@ -223,9 +222,9 @@ async migrate(sql: string): Promise<DatabaseBatchResult>
 
 #### Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `sql` | `string` | SQL migration statements |
+| Parameter | Type     | Description              |
+| --------- | -------- | ------------------------ |
+| `sql`     | `string` | SQL migration statements |
 
 #### Example
 

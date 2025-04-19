@@ -93,7 +93,7 @@ const ChatWithMemory = gensx.Component(
     const blob = useBlob(`chats/${threadId}.json`);
 
     // Load existing data (returns null if it doesn't exist)
-    const history = await blob.getJSON() ?? [];
+    const history = (await blob.getJSON()) ?? [];
 
     // Add new data
     history.push({ role: "user", content: userInput });
@@ -102,7 +102,7 @@ const ChatWithMemory = gensx.Component(
     await blob.putJSON(history);
 
     return "Data stored successfully";
-  }
+  },
 );
 
 // Just wrap your workflow with BlobProvider
@@ -130,21 +130,17 @@ GenSX Cloud provides SQLite-compatible databases powered by [Turso](https://turs
 import { DatabaseProvider, useDatabase } from "@gensx/storage";
 
 // Access a database with the useDatabase hook
-const QueryTeamStats = gensx.Component(
-  "QueryTeamStats",
-  async ({ team }) => {
-    // Get access to a database (created on first use)
-    const db = await useDatabase("baseball");
+const QueryTeamStats = gensx.Component("QueryTeamStats", async ({ team }) => {
+  // Get access to a database (created on first use)
+  const db = await useDatabase("baseball");
 
-    // Execute SQL queries directly
-    const result = await db.execute(
-      "SELECT * FROM players WHERE team = ?",
-      [team]
-    );
+  // Execute SQL queries directly
+  const result = await db.execute("SELECT * FROM players WHERE team = ?", [
+    team,
+  ]);
 
-    return result.rows; // Returns the query results
-  }
-);
+  return result.rows; // Returns the query results
+});
 
 // Just wrap your workflow with DatabaseProvider
 const Workflow = ({ team }) => (
@@ -165,7 +161,6 @@ GenSX Cloud provides vector and full-text search capabilities powered by [turbop
 - **Hybrid search**: Combine vector similarity with full-text BM25 search to get both semantically relevant results and exact keyword matches in a single query.
 - **Rich filtering**: Apply metadata filters to narrow down search results based on categories, timestamps, or any custom attributes, enhancing precision and relevance.
 
-
 ```tsx
 import { SearchProvider, useNamespace } from "@gensx/storage";
 import { OpenAIEmbedding } from "@gensx/openai";
@@ -180,17 +175,17 @@ const SearchDocuments = gensx.Component(
     // Generate an embedding for the query
     const embedding = await OpenAIEmbedding.run({
       model: "text-embedding-3-small",
-      input: query
+      input: query,
     });
 
     // Search for similar documents
     const results = await namespace.query({
       vector: embedding.data[0].embedding,
       topK: 5,
-  });
+    });
 
-    return results.map(r => r.attributes?.title);
-  }
+    return results.map((r) => r.attributes?.title);
+  },
 );
 
 // Just wrap your workflow with SearchProvider
@@ -203,7 +198,6 @@ const Workflow = ({ query }) => (
 
 > **Note**: Unlike blob storage and SQL databases, vector search doesn't have a local development implementation. When using `SearchProvider` locally, you'll connect to the cloud service.
 
-
 For more details see the full [storage components reference](docs/component-reference/storage-components/search-reference).
 
 ## Observability
@@ -215,6 +209,7 @@ GenSX Cloud provides comprehensive tracing and observability for all your workfl
 - **Complete execution traces**: Every workflow execution generates a detailed trace that captures the entire flow from start to finish, allowing you to understand exactly what happened during execution.
 
 - **Comprehensive component visibility**: Each component in your workflow automatically records its inputs and outputs, including:
+
   - All LLM calls with full prompts, parameters, and responses
   - Every tool invocation with input arguments and return values
   - All intermediate steps and state changes in your agents and workflows
@@ -294,7 +289,7 @@ const SaveData = gensx.Component<{ key: string; data: any }, null>(
     const blob = useBlob(`data/${key}.json`);
     await blob.putJSON(data);
     return null;
-  }
+  },
 );
 ```
 
@@ -339,15 +334,15 @@ For more details see the full [projects and environments reference](/docs/cloud/
 
 GenSX Cloud offers simple, predictable pricing designed to scale with your needs, including a free tier for individuals:
 
-| Resource | Free Tier | Pro Tier ($20/month/dev) | Overage/Action |
-|----------|-----------|--------------------------|----------------|
-| Serverless Compute | 50K sec | 500K sec | $0.00003/sec |
-| Traces (events) | 100K events | 1M events | $0.20/10K |
-| Blob Storage | 500MB | 5GB | $0.25/GB |
-| SQLite Storage | 500MB | 1GB | $1.50/GB |
-| Vector Storage | 250MB | 1GB | $1.00/GB |
-| Execution time | Up to 5 minutes | Up to 60 minutes | Custom |
-| Observability | 7 days trace retention | 30 days trace retention | Custom retention |
+| Resource           | Free Tier              | Pro Tier ($20/month/dev) | Overage/Action   |
+| ------------------ | ---------------------- | ------------------------ | ---------------- |
+| Serverless Compute | 50K sec                | 500K sec                 | $0.00003/sec     |
+| Traces (events)    | 100K events            | 1M events                | $0.20/10K        |
+| Blob Storage       | 500MB                  | 5GB                      | $0.25/GB         |
+| SQLite Storage     | 500MB                  | 1GB                      | $1.50/GB         |
+| Vector Storage     | 250MB                  | 1GB                      | $1.00/GB         |
+| Execution time     | Up to 5 minutes        | Up to 60 minutes         | Custom           |
+| Observability      | 7 days trace retention | 30 days trace retention  | Custom retention |
 
 For more details, visit our [pricing page](/docs/cloud/pricing) or [contact us](mailto:contact@gensx.com) for enterprise needs.
 
@@ -359,4 +354,3 @@ Ready to build AI agents and workflows with GenSX Cloud? Follow our step-by-step
 2. Create a new project: `gensx new my-project`
 3. Run it locally: `gensx start src/workflows.tsx`
 4. Deploy to the cloud: `gensx deploy src/workflows.tsx`
-

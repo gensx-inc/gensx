@@ -70,12 +70,12 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 
 ### CLI Run Options
 
-| Option | Description |
-|--------|-------------|
-| `--input` | JSON string with input data |
-| `--wait` | Wait for workflow completion and return results |
-| `--output` | Save results to a file (requires `--wait`) |
-| `--project` | Specify the project name |
+| Option      | Description                                     |
+| ----------- | ----------------------------------------------- |
+| `--input`   | JSON string with input data                     |
+| `--wait`    | Wait for workflow completion and return results |
+| `--output`  | Save results to a file (requires `--wait`)      |
+| `--project` | Specify the project name                        |
 
 ## API Endpoints
 
@@ -91,6 +91,7 @@ https://api.gensx.com/v1/org/{org}/projects/{project}/environments/{environment}
 - `{workflow}` - The name of your workflow
 
 For example, if you have a workflow named `BlogWriter` in project `content-tools`, the endpoint would be:
+
 ```
 https://api.gensx.com/v1/org/your-org/projects/content-tools/environments/default/workflows/BlogWriter/run
 ```
@@ -168,18 +169,18 @@ The response is delivered as a stream of server-sent events (SSE).
 
 GenSX Cloud is optimized for long-running workflows and agents, with generous execution time limits:
 
-| Plan | Maximum Execution Time |
-|------|------------------------|
-| Free Tier | Up to 5 minutes |
-| Pro Tier | Up to 60 minutes |
+| Plan       | Maximum Execution Time  |
+| ---------- | ----------------------- |
+| Free Tier  | Up to 5 minutes         |
+| Pro Tier   | Up to 60 minutes        |
 | Enterprise | Custom limits available |
 
 These extended timeouts make GenSX ideal for complex AI workflows that might involve:
+
 - Multiple LLM calls in sequence
 - Real-time agent tool use
 - Complex data processing
 - Extensive RAG operations
-
 
 ## Cold Starts and Performance
 
@@ -205,7 +206,6 @@ GenSX Cloud provides a console to run, debug, and view all of your workflows.
 The workflow page includes API documentation and code snippets that you can copy/paste to run your workflow from within another app:
 
 ![View projects in the console](/cloud/console-workflow-docs.png)
-
 
 ### Running Workflows Manually
 

@@ -384,6 +384,7 @@ gensx deploy src/workflows.tsx -ev OPENAI_API_KEY
 ```
 
 This command:
+
 1. Builds your TypeScript code for production
 2. Bundles all dependencies
 3. Uploads the package to GenSX Cloud
@@ -436,22 +437,22 @@ Use the `useBlob` hook to store and retrieve unstructured data:
 ```tsx
 import { BlobProvider, useBlob } from "@gensx/storage";
 
-const ChatWithMemory = gensx.Component<{ userInput: string, threadId: string }, string>(
-  "ChatWithMemory",
-  async ({ userInput, threadId }) => {
-    // Load chat history from cloud storage
-    const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
-    const history = await blob.getJSON() ?? [];
+const ChatWithMemory = gensx.Component<
+  { userInput: string; threadId: string },
+  string
+>("ChatWithMemory", async ({ userInput, threadId }) => {
+  // Load chat history from cloud storage
+  const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+  const history = (await blob.getJSON()) ?? [];
 
-    // Add user message and get AI response
-    // ...
+  // Add user message and get AI response
+  // ...
 
-    // Save updated history
-    await blob.putJSON(updatedHistory);
+  // Save updated history
+  await blob.putJSON(updatedHistory);
 
-    return response;
-  }
-);
+  return response;
+});
 
 // Wrap your workflow with BlobProvider
 const WorkflowComponent = gensx.Component<
@@ -494,7 +495,7 @@ const SqlCopilot = gensx.Component<{ question: string }, string>(
     // ...
 
     return response;
-  }
+  },
 );
 
 // Wrap your workflow with DatabaseProvider
@@ -506,7 +507,7 @@ const WorkflowComponent = gensx.Component<{ question: string }, string>(
         <SqlCopilot question={question} />
       </OpenAIProvider>
     </DatabaseProvider>
-  )
+  ),
 );
 ```
 
@@ -527,18 +528,18 @@ const SemanticSearch = gensx.Component<{ query: string }, any[]>(
     // Generate an embedding vector for the query
     const embedding = await OpenAIEmbedding.run({
       model: "text-embedding-3-small",
-      input: query
+      input: query,
     });
 
     // Search for similar documents
     const results = await namespace.query({
       vector: embedding.data[0].embedding,
       topK: 5,
-      includeAttributes: true
+      includeAttributes: true,
     });
 
     return results;
-  }
+  },
 );
 
 // Wrap your workflow with SearchProvider
@@ -550,7 +551,7 @@ const WorkflowComponent = gensx.Component<{ query: string }, any[]>(
         <SemanticSearch query={query} />
       </SearchProvider>
     </OpenAIProvider>
-  )
+  ),
 );
 ```
 
