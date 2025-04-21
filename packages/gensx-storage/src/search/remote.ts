@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
 import type {
-  DistanceMetric,
-  Filters,
-  Id,
   NamespaceMetadata,
   QueryResults,
   Schema,
@@ -18,7 +15,7 @@ import {
   QueryOptions,
   SearchAPIResponse,
   SearchStorage as ISearchStorage,
-  Vector,
+  WriteParams,
 } from "./types.js";
 
 /**
@@ -149,17 +146,16 @@ export class SearchNamespace implements Namespace {
     private org: string,
   ) {}
 
-  async upsert({
-    vectors,
+  async write({
+    upsertColumns,
+    upsertRows,
+    patchColumns,
+    patchRows,
+    deletes,
+    deleteByFilter,
     distanceMetric,
     schema,
-    batchSize = 1000,
-  }: {
-    vectors: Vector[];
-    distanceMetric: DistanceMetric;
-    schema?: Schema;
-    batchSize?: number;
-  }): Promise<void> {
+  }: WriteParams): Promise<number> {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/vectors`,
@@ -170,10 +166,14 @@ export class SearchNamespace implements Namespace {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            vectors,
+            upsertColumns,
+            upsertRows,
+            patchColumns,
+            patchRows,
+            deletes,
+            deleteByFilter,
             distanceMetric,
             schema,
-            batchSize,
           }),
         },
       );
@@ -183,78 +183,11 @@ export class SearchNamespace implements Namespace {
           `Failed to upsert vectors: ${response.statusText}`,
         );
       }
-    } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "upsert");
-      }
-      throw err;
-    }
-  }
-
-  async delete({ ids }: { ids: Id[] }): Promise<void> {
-    try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/delete`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ids,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to delete vectors: ${response.statusText}`,
-        );
-      }
 
       const apiResponse = (await response.json()) as SearchAPIResponse<{
-        success: boolean;
-      }>;
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-    } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "delete");
-      }
-      throw err;
-    }
-  }
-
-  async deleteByFilter({ filters }: { filters: Filters }): Promise<number> {
-    try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/deleteByFilter`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filters,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to delete vectors by filter: ${response.statusText}`,
-        );
-      }
-
-      const apiResponse = (await response.json()) as SearchAPIResponse<{
-        message: string;
         rowsAffected: number;
       }>;
+
       if (apiResponse.status === "error") {
         throw new SearchInternalError(
           `API error: ${apiResponse.error ?? "Unknown error"}`,
@@ -268,11 +201,136 @@ export class SearchNamespace implements Namespace {
       return apiResponse.data.rowsAffected;
     } catch (err) {
       if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "deleteByFilter");
+        throw handleApiError(err, "upsert");
       }
       throw err;
     }
   }
+
+  // async upsert({
+  //   vectors,
+  //   distanceMetric,
+  //   schema,
+  //   batchSize = 1000,
+  // }: {
+  //   vectors: Vector[];
+  //   distanceMetric: DistanceMetric;
+  //   schema?: Schema;
+  //   batchSize?: number;
+  // }): Promise<void> {
+  //   try {
+  //     const response = await fetch(
+  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/vectors`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           Authorization: `Bearer ${this.apiKey}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           vectors,
+  //           distanceMetric,
+  //           schema,
+  //           batchSize,
+  //         }),
+  //       },
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new SearchInternalError(
+  //         `Failed to upsert vectors: ${response.statusText}`,
+  //       );
+  //     }
+  //   } catch (err) {
+  //     if (!(err instanceof SearchError)) {
+  //       throw handleApiError(err, "upsert");
+  //     }
+  //     throw err;
+  //   }
+  // }
+
+  // async delete({ ids }: { ids: Id[] }): Promise<void> {
+  //   try {
+  //     const response = await fetch(
+  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/delete`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           Authorization: `Bearer ${this.apiKey}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           ids,
+  //         }),
+  //       },
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new SearchInternalError(
+  //         `Failed to delete vectors: ${response.statusText}`,
+  //       );
+  //     }
+
+  //     const apiResponse = (await response.json()) as SearchAPIResponse<{
+  //       success: boolean;
+  //     }>;
+  //     if (apiResponse.status === "error") {
+  //       throw new SearchInternalError(
+  //         `API error: ${apiResponse.error ?? "Unknown error"}`,
+  //       );
+  //     }
+  //   } catch (err) {
+  //     if (!(err instanceof SearchError)) {
+  //       throw handleApiError(err, "delete");
+  //     }
+  //     throw err;
+  //   }
+  // }
+
+  // async deleteByFilter({ filters }: { filters: Filters }): Promise<number> {
+  //   try {
+  //     const response = await fetch(
+  //       `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/deleteByFilter`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           Authorization: `Bearer ${this.apiKey}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           filters,
+  //         }),
+  //       },
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new SearchInternalError(
+  //         `Failed to delete vectors by filter: ${response.statusText}`,
+  //       );
+  //     }
+
+  //     const apiResponse = (await response.json()) as SearchAPIResponse<{
+  //       message: string;
+  //       rowsAffected: number;
+  //     }>;
+  //     if (apiResponse.status === "error") {
+  //       throw new SearchInternalError(
+  //         `API error: ${apiResponse.error ?? "Unknown error"}`,
+  //       );
+  //     }
+
+  //     if (!apiResponse.data) {
+  //       throw new SearchInternalError("No data returned from API");
+  //     }
+
+  //     return apiResponse.data.rowsAffected;
+  //   } catch (err) {
+  //     if (!(err instanceof SearchError)) {
+  //       throw handleApiError(err, "deleteByFilter");
+  //     }
+  //     throw err;
+  //   }
+  // }
 
   async query({
     vector,

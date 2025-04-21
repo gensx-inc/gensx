@@ -66,9 +66,7 @@ suite("GenSX Search Storage", () => {
     // Check that it returns a valid namespace
     const namespace = storage.getNamespace("test");
     expect(namespace).toBeDefined();
-    expect(typeof namespace.upsert).toBe("function");
-    expect(typeof namespace.delete).toBe("function");
-    expect(typeof namespace.deleteByFilter).toBe("function");
+    expect(typeof namespace.write).toBe("function");
     expect(typeof namespace.query).toBe("function");
     expect(typeof namespace.getMetadata).toBe("function");
     expect(typeof namespace.getSchema).toBe("function");
@@ -246,13 +244,13 @@ suite("GenSX Search Storage", () => {
     });
   });
 
-  test("should upsert vectors", async () => {
+  test("should write vectors with various operations", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
       json: async () => ({
         status: "ok",
-        data: {},
+        data: { rowsAffected: 2 },
       }),
     });
 
@@ -263,20 +261,23 @@ suite("GenSX Search Storage", () => {
       {
         id: "1",
         vector: [0.1, 0.2, 0.3],
-        attributes: { text: "test document" },
+        text: "test document",
       },
       {
         id: "2",
         vector: [0.4, 0.5, 0.6],
-        attributes: { text: "another document" },
+        text: "another document",
       },
     ];
 
-    await namespace.upsert({
-      vectors,
+    const result = await namespace.write({
+      upsertRows: vectors,
       distanceMetric: "cosine_distance" as DistanceMetric,
+      deletes: ["3", "4"],
+      deleteByFilter: ["And", [["text", "Eq", "test document"]]] as Filters,
     });
 
+    expect(result).toBe(2);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/search/test-ns/vectors"),
       expect.objectContaining({
@@ -289,75 +290,52 @@ suite("GenSX Search Storage", () => {
       }),
     );
 
-    // Verify the body contains the vectors
+    // Verify the body contains all operations
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).toEqual({
-      vectors,
+      upsertRows: vectors,
       distanceMetric: "cosine_distance",
-      batchSize: 1000,
-      schema: undefined,
+      deletes: ["3", "4"],
+      deleteByFilter: ["And", [["text", "Eq", "test document"]]],
     });
   });
 
-  test("should delete vectors by ID", async () => {
+  test("should write vectors with upsert only", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
       json: async () => ({
         status: "ok",
-        data: { success: true },
+        data: { rowsAffected: 2 },
       }),
     });
 
     const storage = new SearchStorage();
     const namespace = storage.getNamespace("test-ns");
 
-    await namespace.delete({ ids: ["1", "2"] });
+    const vectors = [
+      {
+        id: "1",
+        vector: [0.1, 0.2, 0.3],
+        text: "test document",
+      },
+      {
+        id: "2",
+        vector: [0.4, 0.5, 0.6],
+        text: "another document",
+      },
+    ];
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/delete"),
-      expect.objectContaining({
-        method: "DELETE",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-api-key",
-        }),
-        body: expect.any(String),
-      }),
-    );
-
-    // Verify the body contains the IDs
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body).toEqual({ ids: ["1", "2"] });
-  });
-
-  test("should delete vectors by filter", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        status: "ok",
-        data: {
-          message: "Deleted 2 vectors",
-          rowsAffected: 2,
-        },
-      }),
+    const result = await namespace.write({
+      upsertRows: vectors,
+      distanceMetric: "cosine_distance" as DistanceMetric,
     });
-
-    const storage = new SearchStorage();
-    const namespace = storage.getNamespace("test-ns");
-
-    const filters = {
-      $and: [{ "attributes.text": { $eq: "test document" } }],
-    } as unknown as Filters;
-
-    const result = await namespace.deleteByFilter({ filters });
 
     expect(result).toBe(2);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/deleteByFilter"),
+      expect.stringContaining("/search/test-ns/vectors"),
       expect.objectContaining({
-        method: "DELETE",
+        method: "POST",
         headers: expect.objectContaining({
           "Content-Type": "application/json",
           Authorization: "Bearer test-api-key",
@@ -366,9 +344,86 @@ suite("GenSX Search Storage", () => {
       }),
     );
 
-    // Verify the body contains the filters
+    // Verify the body contains only upsert operation
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body).toEqual({ filters });
+    expect(body).toEqual({
+      upsertRows: vectors,
+      distanceMetric: "cosine_distance",
+    });
+  });
+
+  test("should write vectors with delete by ID only", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: { rowsAffected: 2 },
+      }),
+    });
+
+    const storage = new SearchStorage();
+    const namespace = storage.getNamespace("test-ns");
+
+    const result = await namespace.write({
+      deletes: ["1", "2"],
+    });
+
+    expect(result).toBe(2);
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/search/test-ns/vectors"),
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          Authorization: "Bearer test-api-key",
+        }),
+        body: expect.any(String),
+      }),
+    );
+
+    // Verify the body contains only delete operation
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).toEqual({
+      deletes: ["1", "2"],
+    });
+  });
+
+  test("should write vectors with delete by filter only", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: "ok",
+        data: { rowsAffected: 2 },
+      }),
+    });
+
+    const storage = new SearchStorage();
+    const namespace = storage.getNamespace("test-ns");
+
+    const result = await namespace.write({
+      deleteByFilter: ["And", [["text", "Eq", "test document"]]] as Filters,
+    });
+
+    expect(result).toBe(2);
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/search/test-ns/vectors"),
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          Authorization: "Bearer test-api-key",
+        }),
+        body: expect.any(String),
+      }),
+    );
+
+    // Verify the body contains only delete by filter operation
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).toEqual({
+      deleteByFilter: ["And", [["text", "Eq", "test document"]]],
+    });
   });
 
   test("should get namespace metadata", async () => {
