@@ -27,7 +27,7 @@ import { BlobProvider } from "@gensx/storage";
 
 | Prop            | Type                      | Default        | Description                           |
 | --------------- | ------------------------- | -------------- | ------------------------------------- |
-| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use                |
+| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                |
 | `rootDir`       | `string`                  | `.gensx/blobs` | Root directory for filesystem storage |
 | `defaultPrefix` | `string`                  | `undefined`    | Optional prefix for all blob keys     |
 

@@ -6293,8 +6293,8 @@ import { DatabaseProvider } from "@gensx/storage";
 
 | Prop            | Type                  | Default     | Description                                      |
 | --------------- | --------------------- | ----------- | ------------------------------------------------ |
-| `kind`          | `"filesystem" \| "cloud"` | `"cloud"` | The storage backend to use                   |
-| `rootDir`       | `string`              | `undefined` | Root directory for storing database files (filesystem only) |
+| `kind`          | `"filesystem" \| "cloud"` | Auto-detected | The storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                   |
+| `rootDir`       | `string`              | `".gensx/databases"` | Root directory for storing database files (filesystem only) |
 
 ### Example
 
@@ -6839,7 +6839,7 @@ import { BlobProvider } from "@gensx/storage";
 
 | Prop            | Type                      | Default        | Description                           |
 | --------------- | ------------------------- | -------------- | ------------------------------------- |
-| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use                |
+| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                |
 | `rootDir`       | `string`                  | `.gensx/blobs` | Root directory for filesystem storage |
 | `defaultPrefix` | `string`                  | `undefined`    | Optional prefix for all blob keys     |
 
@@ -7563,8 +7563,8 @@ import * as gensx from "@gensx/core";
 import { OpenAIEmbedding } from "@gensx/openai";
 import { useSearch } from "@gensx/storage";
 
-const IndexDocument = gensx.Component(
-  "IndexDocument",
+const IndexDocuments = gensx.Component(
+  "IndexDocuments",
   async ({ documents }) => {
     // Get access to a search namespace
     const search = await useSearch("documents");
@@ -7668,7 +7668,7 @@ const PrepareDocuments = gensx.Component("PrepareDocuments", async () => {
   ];
 
   // Index the documents
-  return <IndexDocument documents={documents} />;
+  return <IndexDocuments documents={documents} />;
 });
 ```
 
@@ -7908,8 +7908,7 @@ const SearchKnowledgeBase = gensx.Component(
     // Perform hybrid search (vector + keyword) with filters
     const results = await search.query({
       vector: embedding.data[0].embedding,
-      text: query, // Also use keyword search
-      hybridAlpha: 0.3, // Balance between vector and keyword search
+      rankBy: ["text", "BM25", query]
       includeAttributes: true,
       topK: 10,
       filters:
@@ -7968,9 +7967,8 @@ const search = await useSearch("documents");
 
 const results = await search.query({
   vector: queryEmbedding, // Vector for semantic search
-  text: "quarterly report", // Text for keyword search
+  rankBy: ["text", "BM25", query]
   includeAttributes: true,
-  hybridAlpha: 0.5, // Balance between vector and text search
   // 0.0 = vector only, 1.0 = text only
 });
 ```

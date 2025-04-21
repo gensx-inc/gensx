@@ -27,8 +27,8 @@ import { DatabaseProvider } from "@gensx/storage";
 
 | Prop            | Type                  | Default     | Description                                      |
 | --------------- | --------------------- | ----------- | ------------------------------------------------ |
-| `kind`          | `"filesystem" \| "cloud"` | `"cloud"` | The storage backend to use                   |
-| `rootDir`       | `string`              | `undefined` | Root directory for storing database files (filesystem only) |
+| `kind`          | `"filesystem" \| "cloud"` | Auto-detected | The storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                   |
+| `rootDir`       | `string`              | `".gensx/databases"` | Root directory for storing database files (filesystem only) |
 
 ### Example
 
