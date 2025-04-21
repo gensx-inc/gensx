@@ -104,6 +104,8 @@ async execute(sql: string, params?: InArgs): Promise<DatabaseResult>
 | `sql`     | `string` | SQL statement to execute                   |
 | `params`  | `InArgs` | Optional parameters for prepared statement |
 
+> `InArgs` can be provided as an array of values or as a record with named parameters. Values can be primitives, booleans, Uint8Array, or Date objects.
+
 #### Example
 
 ```tsx

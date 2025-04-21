@@ -150,7 +150,7 @@ async query(options: QueryOptions): Promise<QueryResults>
 | `includeVectors`    | `boolean`                                | `false`     | Whether to include vectors in results    |
 | `includeAttributes` | `boolean \| string[]`                    | `true`      | Include all attributes or specified ones |
 | `filters`           | `Filters`                                | `undefined` | Metadata filters                         |
-| `rankBy`            | `Record<string, Record<string, number>>` | `undefined` | Attribute-based ranking                  |
+| `rankBy`            | `RankBy`                                 | `undefined` | Attribute-based ranking or text ranking  |
 | `consistency`       | `string`                                 | `undefined` | Consistency level for reads              |
 
 #### Example
@@ -161,19 +161,14 @@ const results = await namespace.query({
   topK: 10,                         // Number of results to return
   includeVectors: false,            // Whether to include vectors in results
   includeAttributes: true,          // Include all attributes or specific ones
-  filters: {                        // Optional metadata filters
-    where: {
-      category: { $eq: "article" },
-      createdAt: { $gte: "2023-01-01" }
-    }
-  },
-  rankBy: {                         // Optional attribute-based ranking
-    "attributes.importance": {
-      "high": 1.5,
-      "medium": 1.0,
-      "low": 0.5
-    }
-  }
+  filters: [                        // Optional metadata filters
+    "And",
+    [
+      ["category", "Eq", "article"],
+      ["createdAt", "Gte", "2023-01-01"]
+    ]
+  ],
+  rankBy: ["attributes.importance", "asc"],  // Optional attribute-based ranking
 });
 ```
 
@@ -237,11 +232,12 @@ async deleteByFilter(options: { filters: Filters }): Promise<number>
 
 ```tsx
 const deletedCount = await namespace.deleteByFilter({
-  filters: {
-    where: {
-      category: { $eq: "outdated" },
-    },
-  },
+  filters: [
+    "And",
+    [
+      ["category", "Eq", "outdated"],
+    ]
+  ],
 });
 ```
 
@@ -383,12 +379,13 @@ const searchResults = await namespace.query({
   vector: [0.15, 0.35, 0.55, ...], // query vector
   topK: 5,
   includeAttributes: true,
-  filters: {
-    where: {
-      category: { $eq: "furniture" },
-      price: { $lt: 400 }
-    }
-  }
+  filters: [
+    "And",
+    [
+      ["category", "Eq", "furniture"],
+      ["price", "Lt", 400]
+    ]
+  ]
 });
 ```
 
@@ -672,18 +669,72 @@ app.listen(3000, () => {
 
 ## Filter operators
 
-Filters support these operators:
+Filters use a structured array format with the following pattern:
 
-| Operator       | Description            | Example                                               |
-| -------------- | ---------------------- | ----------------------------------------------------- |
-| `$eq`          | Equals                 | `{ field: { $eq: "value" } }`                         |
-| `$ne`          | Not equals             | `{ field: { $ne: "value" } }`                         |
-| `$gt`          | Greater than           | `{ field: { $gt: 10 } }`                              |
-| `$gte`         | Greater than or equal  | `{ field: { $gte: 10 } }`                             |
-| `$lt`          | Less than              | `{ field: { $lt: 10 } }`                              |
-| `$lte`         | Less than or equal     | `{ field: { $lte: 10 } }`                             |
-| `$in`          | In array               | `{ field: { $in: ["a", "b"] } }`                      |
-| `$nin`         | Not in array           | `{ field: { $nin: ["a", "b"] } }`                     |
-| `$contains`    | String contains        | `{ field: { $contains: "text" } }`                    |
-| `$containsAny` | Contains any of values | `{ tags: { $containsAny: ["news", "tech"] } }`        |
-| `$containsAll` | Contains all values    | `{ tags: { $containsAll: ["important", "urgent"] } }` |
+```tsx
+// Basic filter structure
+[
+  "Operation",      // And, Or, Not
+  [                 // Array of conditions
+    ["field", "Operator", value]
+  ]
+]
+```
+
+Available operators:
+
+| Operator      | Description            | Example                                      |
+| ------------- | ---------------------- | -------------------------------------------- |
+| `Eq`          | Equals                 | `["field", "Eq", "value"]`                   |
+| `Ne`          | Not equals             | `["field", "Ne", "value"]`                   |
+| `Gt`          | Greater than           | `["field", "Gt", 10]`                        |
+| `Gte`         | Greater than or equal  | `["field", "Gte", 10]`                       |
+| `Lt`          | Less than              | `["field", "Lt", 10]`                        |
+| `Lte`         | Less than or equal     | `["field", "Lte", 10]`                       |
+| `In`          | In array               | `["field", "In", ["a", "b"]]`                |
+| `Nin`         | Not in array           | `["field", "Nin", ["a", "b"]]`               |
+| `Contains`    | String contains        | `["field", "Contains", "text"]`              |
+| `ContainsAny` | Contains any of values | `["tags", "ContainsAny", ["news", "tech"]]`  |
+| `ContainsAll` | Contains all values    | `["tags", "ContainsAll", ["imp", "urgent"]]` |
+
+## RankBy options
+
+The `rankBy` parameter can be used in two primary ways:
+
+### Attribute-based ranking
+
+Sorts by a field in ascending or descending order:
+
+```tsx
+// Sort by the createdAt attribute in ascending order
+rankBy: ["createdAt", "asc"]
+
+// Sort by price in descending order (highest first)
+rankBy: ["price", "desc"]
+```
+
+### Text-based ranking
+
+For full-text search relevance scoring:
+
+```tsx
+// Basic BM25 text ranking
+rankBy: ["text", "BM25", "search query"]
+
+// BM25 with multiple search terms
+rankBy: ["text", "BM25", ["term1", "term2"]]
+
+// Combined text ranking strategies
+rankBy: ["Sum", [
+  ["text", "BM25", "search query"],
+  ["text", "BM25", "another term"]
+]]
+
+// Weighted text ranking (multiply BM25 score by 0.5)
+rankBy: ["Product", [["text", "BM25", "search query"], 0.5]]
+
+// Alternative syntax for weighted ranking
+rankBy: ["Product", [0.5, ["text", "BM25", "search query"]]]
+```
+
+Use these options to fine-tune the relevance and ordering of your search results.

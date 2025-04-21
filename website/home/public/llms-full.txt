@@ -526,7 +526,9 @@ const stream = await workflow.run({ topic: "latest quantum computing chips" });
 
 ## Running the dev server
 
-GenSX provides a local development with local REST APIs that match the shape of workflows deployed to GenSX Cloud. Run the dev server from the CLI:
+Now that you've built your workflows, you can easily turn them into REST APIs.
+
+GenSX provides a local development server with local REST APIs that match the shape of workflows deployed to GenSX Cloud. You can run the dev server from the CLI:
 
 ```bash
 # Start the development server
@@ -559,7 +561,7 @@ You can now test your workflow by sending requests to the provided URL using any
 
 ## Deploying your project to GenSX Cloud
 
-GenSX Cloud provides serverless deployment with zero configuration:
+Now that you've tested your APIs locally, you can deploy them to the cloud. GenSX Cloud provides serverless deployment with zero configuration:
 
 ```bash
 # Deploy your project to GenSX Cloud
@@ -611,7 +613,7 @@ The console also provides API documentation and code snippets for your workflows
 
 ## Adding persistence with storage
 
-GenSX Cloud provides built-in storage solutions with zero configuration:
+Now that you've deployed your first workflow, you can add in storage so you can build more sophisticated workflows. GenSX offers three types of builtin storage: blob storage, sql database storage and, full text and vector search storage.
 
 ### Blob storage
 
@@ -757,7 +759,7 @@ Check out these example projects to see GenSX in action:
 
 # GenSX Overview
 
-GenSX is a simple TypeScript framework for building complex LLM applications. It’s a workflow engine designed for building agents, chatbot APIs, and more using common patterns like RAG and reflection.
+GenSX is a simple TypeScript framework for building complex LLM applications. It’s a workflow engine designed for building agents, chatbot APIs, and more using common patterns like RAG and reflection. In addition, GenSX Cloud offers serverless hosting, cloud storage, and tracing and observability to build production-ready agents and workflows.
 
 It uses `jsx` to define and orchestrate workflows with functional, reusable components:
 
@@ -795,7 +797,7 @@ While GenSX uses JSX, it does not share the same execution model as React, and h
 
 ## GenSX Cloud
 
-[GenSX Cloud](/docs/cloud) provides everything you need to ship production grade agents and workflow including a serverless runtime designed for long-running workloads, cloud storage to build stateful workflows and agents, tracing and observability, and features for team collaboration.
+[GenSX Cloud](/docs/cloud) provides everything you need to ship production grade agents and workflow including a serverless runtime designed for long-running workloads, cloud storage to build stateful workflows and agents, and tracing and observability.
 
 ### Serverless deployments
 
@@ -827,7 +829,7 @@ Project: support-tools
 
 The platform is optimized for AI workloads with millisecond-level cold starts and support for long-running executions up to an hour.
 
-### Development Server
+### Development server
 
 Test your workflows locally with a development server that matches the cloud environment:
 
@@ -5731,7 +5733,7 @@ async query(options: QueryOptions): Promise<QueryResults>
 | `includeVectors`    | `boolean`                                | `false`     | Whether to include vectors in results    |
 | `includeAttributes` | `boolean \| string[]`                    | `true`      | Include all attributes or specified ones |
 | `filters`           | `Filters`                                | `undefined` | Metadata filters                         |
-| `rankBy`            | `Record<string, Record<string, number>>` | `undefined` | Attribute-based ranking                  |
+| `rankBy`            | `RankBy`                                 | `undefined` | Attribute-based ranking or text ranking  |
 | `consistency`       | `string`                                 | `undefined` | Consistency level for reads              |
 
 #### Example
@@ -5742,19 +5744,14 @@ const results = await namespace.query({
   topK: 10,                         // Number of results to return
   includeVectors: false,            // Whether to include vectors in results
   includeAttributes: true,          // Include all attributes or specific ones
-  filters: {                        // Optional metadata filters
-    where: {
-      category: { $eq: "article" },
-      createdAt: { $gte: "2023-01-01" }
-    }
-  },
-  rankBy: {                         // Optional attribute-based ranking
-    "attributes.importance": {
-      "high": 1.5,
-      "medium": 1.0,
-      "low": 0.5
-    }
-  }
+  filters: [                        // Optional metadata filters
+    "And",
+    [
+      ["category", "Eq", "article"],
+      ["createdAt", "Gte", "2023-01-01"]
+    ]
+  ],
+  rankBy: ["attributes.importance", "asc"],  // Optional attribute-based ranking
 });
 ```
 
@@ -5818,11 +5815,12 @@ async deleteByFilter(options: { filters: Filters }): Promise<number>
 
 ```tsx
 const deletedCount = await namespace.deleteByFilter({
-  filters: {
-    where: {
-      category: { $eq: "outdated" },
-    },
-  },
+  filters: [
+    "And",
+    [
+      ["category", "Eq", "outdated"],
+    ]
+  ],
 });
 ```
 
@@ -5964,12 +5962,13 @@ const searchResults = await namespace.query({
   vector: [0.15, 0.35, 0.55, ...], // query vector
   topK: 5,
   includeAttributes: true,
-  filters: {
-    where: {
-      category: { $eq: "furniture" },
-      price: { $lt: 400 }
-    }
-  }
+  filters: [
+    "And",
+    [
+      ["category", "Eq", "furniture"],
+      ["price", "Lt", 400]
+    ]
+  ]
 });
 ```
 
@@ -6253,21 +6252,75 @@ app.listen(3000, () => {
 
 ## Filter operators
 
-Filters support these operators:
+Filters use a structured array format with the following pattern:
 
-| Operator       | Description            | Example                                               |
-| -------------- | ---------------------- | ----------------------------------------------------- |
-| `$eq`          | Equals                 | `{ field: { $eq: "value" } }`                         |
-| `$ne`          | Not equals             | `{ field: { $ne: "value" } }`                         |
-| `$gt`          | Greater than           | `{ field: { $gt: 10 } }`                              |
-| `$gte`         | Greater than or equal  | `{ field: { $gte: 10 } }`                             |
-| `$lt`          | Less than              | `{ field: { $lt: 10 } }`                              |
-| `$lte`         | Less than or equal     | `{ field: { $lte: 10 } }`                             |
-| `$in`          | In array               | `{ field: { $in: ["a", "b"] } }`                      |
-| `$nin`         | Not in array           | `{ field: { $nin: ["a", "b"] } }`                     |
-| `$contains`    | String contains        | `{ field: { $contains: "text" } }`                    |
-| `$containsAny` | Contains any of values | `{ tags: { $containsAny: ["news", "tech"] } }`        |
-| `$containsAll` | Contains all values    | `{ tags: { $containsAll: ["important", "urgent"] } }` |
+```tsx
+// Basic filter structure
+[
+  "Operation",      // And, Or, Not
+  [                 // Array of conditions
+    ["field", "Operator", value]
+  ]
+]
+```
+
+Available operators:
+
+| Operator      | Description            | Example                                      |
+| ------------- | ---------------------- | -------------------------------------------- |
+| `Eq`          | Equals                 | `["field", "Eq", "value"]`                   |
+| `Ne`          | Not equals             | `["field", "Ne", "value"]`                   |
+| `Gt`          | Greater than           | `["field", "Gt", 10]`                        |
+| `Gte`         | Greater than or equal  | `["field", "Gte", 10]`                       |
+| `Lt`          | Less than              | `["field", "Lt", 10]`                        |
+| `Lte`         | Less than or equal     | `["field", "Lte", 10]`                       |
+| `In`          | In array               | `["field", "In", ["a", "b"]]`                |
+| `Nin`         | Not in array           | `["field", "Nin", ["a", "b"]]`               |
+| `Contains`    | String contains        | `["field", "Contains", "text"]`              |
+| `ContainsAny` | Contains any of values | `["tags", "ContainsAny", ["news", "tech"]]`  |
+| `ContainsAll` | Contains all values    | `["tags", "ContainsAll", ["imp", "urgent"]]` |
+
+## RankBy options
+
+The `rankBy` parameter can be used in two primary ways:
+
+### Attribute-based ranking
+
+Sorts by a field in ascending or descending order:
+
+```tsx
+// Sort by the createdAt attribute in ascending order
+rankBy: ["createdAt", "asc"]
+
+// Sort by price in descending order (highest first)
+rankBy: ["price", "desc"]
+```
+
+### Text-based ranking
+
+For full-text search relevance scoring:
+
+```tsx
+// Basic BM25 text ranking
+rankBy: ["text", "BM25", "search query"]
+
+// BM25 with multiple search terms
+rankBy: ["text", "BM25", ["term1", "term2"]]
+
+// Combined text ranking strategies
+rankBy: ["Sum", [
+  ["text", "BM25", "search query"],
+  ["text", "BM25", "another term"]
+]]
+
+// Weighted text ranking (multiply BM25 score by 0.5)
+rankBy: ["Product", [["text", "BM25", "search query"], 0.5]]
+
+// Alternative syntax for weighted ranking
+rankBy: ["Product", [0.5, ["text", "BM25", "search query"]]]
+```
+
+Use these options to fine-tune the relevance and ordering of your search results.
 
 # Database reference
 
@@ -6369,6 +6422,8 @@ async execute(sql: string, params?: InArgs): Promise<DatabaseResult>
 | --------- | -------- | ------------------------------------------ |
 | `sql`     | `string` | SQL statement to execute                   |
 | `params`  | `InArgs` | Optional parameters for prepared statement |
+
+> `InArgs` can be provided as an array of values or as a record with named parameters. Values can be primitives, booleans, Uint8Array, or Date objects.
 
 #### Example
 
@@ -7445,13 +7500,15 @@ GenSX SQL databases work identically in both local development and cloud environ
 - **Local development**: Databases are stored as SQLite files in the `.gensx/databases` directory by default
 - **Cloud deployment**: Databases are automatically provisioned in the cloud
 
+If you don't specify a "kind" that the framework auto-infers this value for you based on the runtime environment.
+
 No code changes are needed when moving from development to production.
 
 ## Use cases
 
 ### Data-backed agents
 
-Create agents that can query and update structured data:
+Create agents that can query and update structured data, using the components defined above:
 
 ```tsx
 const DataAnalyst = gensx.Component("DataAnalyst", async ({ query }) => {
@@ -7817,13 +7874,7 @@ const RecallMemories = gensx.Component(
       topK: maxResults,
       includeAttributes: true,
       // Optional: rank by both relevance and importance
-      rankBy: {
-        "attributes.importance": {
-          high: 1.5, // Boost important memories
-          medium: 1.0, // Normal weight
-          low: 0.5, // Lower weight for less important memories
-        },
-      },
+      rankBy: ["attributes.importance", "asc"],
     });
 
     // Format memories for the agent
@@ -7888,33 +7939,28 @@ const SearchKnowledgeBase = gensx.Component(
     });
 
     // Build filter conditions from user-provided filters
-    const filterConditions = {};
+    let filterConditions = ["And", []];
 
     if (filters.category) {
-      filterConditions.category = { $eq: filters.category };
+      filterConditions[1].push(["category", "Eq", filters.category]);
     }
 
     if (filters.dateRange) {
-      filterConditions.publishedDate = {
-        $gte: filters.dateRange.start,
-        $lte: filters.dateRange.end,
-      };
+      filterConditions[1].push(["publishedDate", "Gte", filters.dateRange.start]);
+      filterConditions[1].push(["publishedDate", "Lte", filters.dateRange.end]);
     }
 
     if (filters.tags && filters.tags.length > 0) {
-      filterConditions.tags = { $containsAny: filters.tags };
+      filterConditions[1].push(["tags", "ContainsAny", filters.tags]);
     }
 
     // Perform hybrid search (vector + keyword) with filters
     const results = await search.query({
       vector: embedding.data[0].embedding,
-      rankBy: ["text", "BM25", query]
+      rankBy: ["text", "BM25", query],
       includeAttributes: true,
       topK: 10,
-      filters:
-        Object.keys(filterConditions).length > 0
-          ? { where: filterConditions }
-          : undefined,
+      filters: filterConditions[1].length > 0 ? filterConditions : undefined,
     });
 
     // Return formatted results
@@ -7942,19 +7988,15 @@ const search = await useSearch("articles");
 // Search with filters
 const results = await search.query({
   vector: queryEmbedding,
-  filters: {
-    where: {
-      // Filter by category
-      category: { $eq: "sports" },
-      // Filter by date range
-      publishDate: {
-        $gte: "2023-01-01",
-        $lt: "2024-01-01",
-      },
-      // Filter by multiple possible authors
-      author: { $in: ["Alice", "Bob", "Carol"] },
-    },
-  },
+  filters: [
+    "And",
+    [
+      ["category", "Eq", "sports"],
+      ["publishDate", "Gte", "2023-01-01"],
+      ["publishDate", "Lt", "2024-01-01"],
+      ["author", "In", ["Alice", "Bob", "Carol"]],
+    ],
+  ],
 });
 ```
 
@@ -7965,11 +8007,18 @@ Combine vector similarity with keyword search:
 ```tsx
 const search = await useSearch("documents");
 
+// Basic hybrid search (BM25 text search)
 const results = await search.query({
   vector: queryEmbedding, // Vector for semantic search
-  rankBy: ["text", "BM25", query]
+  rankBy: ["text", "BM25", query],
   includeAttributes: true,
-  // 0.0 = vector only, 1.0 = text only
+});
+
+// More complex ranking with weighted text search (70% vector, 30% text)
+const weightedResults = await search.query({
+  vector: queryEmbedding,
+  rankBy: ["Product", [["text", "BM25", query], 0.3]],
+  includeAttributes: true,
 });
 ```
 
@@ -7986,8 +8035,8 @@ const currentSchema = await search.getSchema();
 // Update schema to add new fields
 await search.updateSchema({
   ...currentSchema,
-  newField: "number",
-  anotherField: "string[]",
+  newField: { type: "number" },
+  anotherField: { type: "string[]" },
 });
 ```
 
@@ -7997,7 +8046,7 @@ See the [search component reference](docs/component-reference/storage-components
 
 # Blob storage
 
-Blob storage provides zero-configuration persistent storage for your GenSX applications. It enables you to store JSON, text, or binary data and per-agent or per-workflow storage without worrying about managing infrastructure.
+Blob storage provides zero-configuration persistent storage for your GenSX applications. It enables you to store JSON, text, or binary data for your agents and workflows without worrying about managing infrastructure.
 
 ## Basic usage
 
@@ -8034,35 +8083,21 @@ To use blob storage in your GenSX application:
 The `useBlob` hook provides simple methods to read different types of data:
 
 ```tsx
-import * as gensx from "@gensx/core";
 import { useBlob } from "@gensx/storage";
 
-const ReadData = gensx.Component("ReadData", async ({ key }) => {
-  // Get a reference to a blob
-  const blob = useBlob(`data/${key}.json`);
+// Read JSON data
+const profileBlob = useBlob("users/profile.json");
+const profile = await profileBlob.getJSON();
+console.log(profile?.name);
 
-  // Check if the blob exists
-  const exists = await blob.exists();
-  if (!exists) {
-    return { found: false };
-  }
+// Read text data
+const notesBlob = useBlob("notes/meeting.txt");
+const notes = await notesBlob.getString();
 
-  // Read JSON data (returns null if doesn't exist)
-  const jsonData = await blob.getJSON();
-
-  // Read as string
-  const textData = await blob.getString();
-
-  // Read as binary with metadata
-  const binaryData = await blob.getRaw();
-
-  return {
-    found: true,
-    jsonData,
-    textLength: textData?.length,
-    contentType: binaryData?.contentType,
-  };
-});
+// Read binary data
+const imageBlob = useBlob("images/photo.jpg");
+const image = await imageBlob.getRaw();
+console.log(image?.contentType); // "image/jpeg"
 ```
 
 ### Writing blobs
@@ -8070,34 +8105,22 @@ const ReadData = gensx.Component("ReadData", async ({ key }) => {
 You can write data in various formats:
 
 ```tsx
-import * as gensx from "@gensx/core";
 import { useBlob } from "@gensx/storage";
 
-const WriteData = gensx.Component(
-  "WriteData",
-  async ({ key, data, format = "json" }) => {
-    // Get a reference to a blob
-    const blob = useBlob(`data/${key}`);
+// Write JSON data
+const profileBlob = useBlob("users/profile.json");
+await profileBlob.putJSON({ name: "Alice", preferences: { theme: "dark" } });
 
-    if (format === "json") {
-      // Save as JSON
-      await blob.putJSON(data);
-    } else if (format === "text") {
-      // Save as text
-      await blob.putString(String(data));
-    } else if (format === "binary" && data instanceof Buffer) {
-      // Save as binary with content type
-      await blob.putRaw(data, {
-        contentType: "application/octet-stream",
-        metadata: {
-          createdAt: new Date().toISOString(),
-        },
-      });
-    }
+// Write text data
+const notesBlob = useBlob("notes/meeting.txt");
+await notesBlob.putString("Meeting agenda:\n1. Project updates\n2. Action items");
 
-    return { success: true, key };
-  },
-);
+// Write binary data
+const imageBlob = useBlob("images/photo.jpg");
+await imageBlob.putRaw(imageBuffer, {
+  contentType: "image/jpeg",
+  metadata: { originalName: "vacation.jpg" }
+});
 ```
 
 ## Practical examples
@@ -8271,6 +8294,8 @@ GenSX blob storage works identically in both local development and cloud environ
 
 - **Local development**: Blobs are stored in the `.gensx/blobs` directory by default
 - **Cloud deployment**: Blobs are automatically stored in cloud storage
+
+If you don't specify a "kind" that the framework auto-infers this value for you based on the runtime environment.
 
 No code changes are needed when moving from development to production.
 

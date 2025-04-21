@@ -343,7 +343,9 @@ const stream = await workflow.run({ topic: "latest quantum computing chips" });
 
 ## Running the dev server
 
-GenSX provides a local development with local REST APIs that match the shape of workflows deployed to GenSX Cloud. Run the dev server from the CLI:
+Now that you've built your workflows, you can easily turn them into REST APIs.
+
+GenSX provides a local development server with local REST APIs that match the shape of workflows deployed to GenSX Cloud. You can run the dev server from the CLI:
 
 ```bash
 # Start the development server
@@ -376,7 +378,7 @@ You can now test your workflow by sending requests to the provided URL using any
 
 ## Deploying your project to GenSX Cloud
 
-GenSX Cloud provides serverless deployment with zero configuration:
+Now that you've tested your APIs locally, you can deploy them to the cloud. GenSX Cloud provides serverless deployment with zero configuration:
 
 ```bash
 # Deploy your project to GenSX Cloud
@@ -428,7 +430,7 @@ The console also provides API documentation and code snippets for your workflows
 
 ## Adding persistence with storage
 
-GenSX Cloud provides built-in storage solutions with zero configuration:
+Now that you've deployed your first workflow, you can add in storage so you can build more sophisticated workflows. GenSX offers three types of builtin storage: blob storage, sql database storage and, full text and vector search storage.
 
 ### Blob storage
 

@@ -306,13 +306,7 @@ const RecallMemories = gensx.Component(
       topK: maxResults,
       includeAttributes: true,
       // Optional: rank by both relevance and importance
-      rankBy: {
-        "attributes.importance": {
-          high: 1.5, // Boost important memories
-          medium: 1.0, // Normal weight
-          low: 0.5, // Lower weight for less important memories
-        },
-      },
+      rankBy: ["attributes.importance", "asc"],
     });
 
     // Format memories for the agent
@@ -377,33 +371,28 @@ const SearchKnowledgeBase = gensx.Component(
     });
 
     // Build filter conditions from user-provided filters
-    const filterConditions = {};
+    let filterConditions = ["And", []];
 
     if (filters.category) {
-      filterConditions.category = { $eq: filters.category };
+      filterConditions[1].push(["category", "Eq", filters.category]);
     }
 
     if (filters.dateRange) {
-      filterConditions.publishedDate = {
-        $gte: filters.dateRange.start,
-        $lte: filters.dateRange.end,
-      };
+      filterConditions[1].push(["publishedDate", "Gte", filters.dateRange.start]);
+      filterConditions[1].push(["publishedDate", "Lte", filters.dateRange.end]);
     }
 
     if (filters.tags && filters.tags.length > 0) {
-      filterConditions.tags = { $containsAny: filters.tags };
+      filterConditions[1].push(["tags", "ContainsAny", filters.tags]);
     }
 
     // Perform hybrid search (vector + keyword) with filters
     const results = await search.query({
       vector: embedding.data[0].embedding,
-      rankBy: ["text", "BM25", query]
+      rankBy: ["text", "BM25", query],
       includeAttributes: true,
       topK: 10,
-      filters:
-        Object.keys(filterConditions).length > 0
-          ? { where: filterConditions }
-          : undefined,
+      filters: filterConditions[1].length > 0 ? filterConditions : undefined,
     });
 
     // Return formatted results
@@ -431,19 +420,15 @@ const search = await useSearch("articles");
 // Search with filters
 const results = await search.query({
   vector: queryEmbedding,
-  filters: {
-    where: {
-      // Filter by category
-      category: { $eq: "sports" },
-      // Filter by date range
-      publishDate: {
-        $gte: "2023-01-01",
-        $lt: "2024-01-01",
-      },
-      // Filter by multiple possible authors
-      author: { $in: ["Alice", "Bob", "Carol"] },
-    },
-  },
+  filters: [
+    "And",
+    [
+      ["category", "Eq", "sports"],
+      ["publishDate", "Gte", "2023-01-01"],
+      ["publishDate", "Lt", "2024-01-01"],
+      ["author", "In", ["Alice", "Bob", "Carol"]],
+    ],
+  ],
 });
 ```
 
@@ -454,11 +439,18 @@ Combine vector similarity with keyword search:
 ```tsx
 const search = await useSearch("documents");
 
+// Basic hybrid search (BM25 text search)
 const results = await search.query({
   vector: queryEmbedding, // Vector for semantic search
-  rankBy: ["text", "BM25", query]
+  rankBy: ["text", "BM25", query],
   includeAttributes: true,
-  // 0.0 = vector only, 1.0 = text only
+});
+
+// More complex ranking with weighted text search (70% vector, 30% text)
+const weightedResults = await search.query({
+  vector: queryEmbedding,
+  rankBy: ["Product", [["text", "BM25", query], 0.3]],
+  includeAttributes: true,
 });
 ```
 
@@ -475,8 +467,8 @@ const currentSchema = await search.getSchema();
 // Update schema to add new fields
 await search.updateSchema({
   ...currentSchema,
-  newField: "number",
-  anotherField: "string[]",
+  newField: { type: "number" },
+  anotherField: { type: "string[]" },
 });
 ```
 

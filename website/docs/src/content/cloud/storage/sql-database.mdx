@@ -254,13 +254,15 @@ GenSX SQL databases work identically in both local development and cloud environ
 - **Local development**: Databases are stored as SQLite files in the `.gensx/databases` directory by default
 - **Cloud deployment**: Databases are automatically provisioned in the cloud
 
+If you don't specify a "kind" that the framework auto-infers this value for you based on the runtime environment.
+
 No code changes are needed when moving from development to production.
 
 ## Use cases
 
 ### Data-backed agents
 
-Create agents that can query and update structured data:
+Create agents that can query and update structured data, using the components defined above:
 
 ```tsx
 const DataAnalyst = gensx.Component("DataAnalyst", async ({ query }) => {
