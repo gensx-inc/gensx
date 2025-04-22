@@ -1,0 +1,106 @@
+---
+title: Projects and environments
+description: Organize your GenSX workflows and deployments
+---
+
+# Projects and environments
+
+GenSX organizes your workflows and deployments using a flexible structure of projects and environments, making it easy to match the rest of your application architecture and CI/CD topology. Projects are a top level resource and environments are instances of a project that you deploy to.
+
+## Project structure
+
+A project in GenSX is a collection of related workflows that are deployed, managed, and monitored together:
+
+- **Projects as logical units**: Group related workflows that serve a common purpose
+- **Shared configuration**: Apply settings across all workflows in a project
+- **Collective deployment**: Deploy all workflows within a project in one operation
+- **Unified monitoring**: View traces and metrics for an entire project
+
+Projects typically correspond to a codebase or application that contains multiple workflows.
+
+## Environment separation
+
+Within each project, you can have multiple environments. For example, you could create three environments for each project:
+
+- **Development**: For building and testing new features
+- **Staging**: For pre-production validation
+- **Production**: For live, user-facing workflows
+
+You have full control over your environments so you can organize them however you see fit.
+
+Each environment maintains separate:
+
+- Workflow deployments
+- Configuration and environment variables
+- Execution traces and monitoring data
+
+## Configuring projects
+
+### Project configuration file
+
+Projects are defined using a `gensx.yaml` file at the root of your codebase:
+
+```yaml
+# gensx.yaml
+projectName: customer-support-bot
+description: AI assistant for customer support
+```
+
+This configuration applies to both local development and cloud deployments.
+
+## Working with environments
+
+### Deploying to different environments
+
+Deploy your workflows to specific environments using the CLI:
+
+```bash
+# Deploy to the default environment
+gensx deploy src/workflows.tsx
+
+# Deploy to a staging environment
+gensx deploy src/workflows.tsx --environment staging
+
+# Deploy to production
+gensx deploy src/workflows.tsx --environment production
+```
+
+### Environment-specific configuration
+
+Set environment-specific variables during deployment:
+
+```bash
+# Development-specific settings
+gensx deploy src/workflows.tsx --environment development \
+  --env LOG_LEVEL=debug \
+  --env OPENAI_API_KEY
+
+# Production-specific settings
+gensx deploy src/workflows.tsx --environment production \
+  --env LOG_LEVEL=error \
+  --env OPENAI_API_KEY
+```
+
+## Projects in the GenSX Console
+
+The GenSX Console organizes everything by project and environment:
+
+![Project structure in console](/cloud/project-structure.png)
+
+Selecting an environment brings you to the workflows view:
+
+![Environment page](/cloud/console-workflows.png)
+
+When you click into a workflow, you can trigger it within the console if you've deployed it to GenSX Cloud:
+
+![Triggering a workflow in the console](/cloud/console-playground.png)
+
+You can also see API documentation and sample code for calling that workflow:
+
+![Workflow API documentation](/cloud/console-workflow-docs.png)
+
+## Next steps
+
+- [Configure serverless deployments](/docs/cloud/serverless-deployments) for your projects
+- [Set up local development](/docs/cloud/local-development) for testing
+- [Learn about observability](/docs/cloud/observability) across environments

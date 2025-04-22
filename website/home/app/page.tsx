@@ -7,9 +7,10 @@ import { HyperText } from "@/components/ui/hyper-text";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
-  type ExampleType = "components" | "workflows" | "agents" | "llms";
+  type ExampleType = "components" | "observability" | "stateful" | "serverless";
 
   // State that remains when you click an example
   const [committedExample, setCommittedExample] =
@@ -21,9 +22,9 @@ export default function Home() {
   // The active example is the hovered one (if one exists) or the committed one.
   const activeExample = hoveredExample ?? committedExample;
 
-  const examples: Record<ExampleType, string> = {
-    components: `import * as gensx from 'gensx';
-import { ChatCompletion } from 'gensx/openai';
+  const examples: Record<ExampleType, string | React.ReactNode> = {
+    components: `import * as gensx from '@gensx/core';
+import { ChatCompletion } from '@gensx/openai';
 
 interface WriteDraftProps {
   research: string[];
@@ -55,110 +56,61 @@ const WriteDraft = gensx.Component<WriteDraftProps, string>(
   },
 );
 `,
-    workflows: `import * as gensx from 'gensx';
-import { OpenAIProvider } from 'gensx/openai';
-import { Research, WriteDraft, EditDraft } from './writeBlog';
+    observability: (
+      <div className="relative">
+        <Image
+          src="/assets/home/trace.png"
+          alt="GenSX Workflow Tracing Dashboard"
+          width={1000}
+          height={600}
+          className="rounded-lg shadow-lg w-full border border-gray-200 dark:border-gray-800"
+        />
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
+      </div>
+    ),
+    stateful: `import * as gensx from '@gensx/core';
+import { GSXTool } from '@gensx/openai';
+import { useBlob, useDatabase, useSearch } from '@gensx/storage';
 
-interface BlogWriterProps {
-  prompt: string;
-}
-
-export const WriteBlog = gensx.StreamComponent<BlogWriterProps>(
-  "WriteBlog",
-  ({ prompt }) => {
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <Research prompt={prompt}>
-          {(research) => (
-            <WriteDraft prompt={prompt} research={research.flat()}>
-              {(draft) => <EditDraft draft={draft} stream={true} />}
-            </WriteDraft>
-          )}
-        </Research>
-      </OpenAIProvider>
-    );
-  },
-);
-
-const workflow = gensx.Workflow("WriteBlogWorkflow", WriteBlog);
-const result = await workflow.run({
-  prompt: "Write a blog post about AI developer tools"
-});
-`,
-    agents: `import * as gensx from 'gensx';
-import { OpenAIProvider, GSXTool, GSXChatCompletion } from 'gensx/openai';
-
-const webSearchTool = new GSXTool({
-  name: "web_search",
-  description: "Search the internet for information",
-  schema: webSearchSchema,
-  run: async ({ query }: WebSearchParams) => {
-    return await searchWeb(query);
-  },
+// RAG Tool - Vector search for knowledge retrieval
+const RAGTool = new GSXTool({
+  name: "search_knowledge",
+  run: async ({ query }) => {
+    const docsIndex = useSearch("documentation");
+    return await docsIndex.query(query, { limit: 3 });
+  }
 });
 
-const WebSearchAgent = gensx.Component<{}, Stream<ChatCompletionChunk>>(
-  "WebSearchAgent",
-  () => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
-        stream={true}
-        messages={[
-          {
-            role: "system",
-            content: "You are a sassy, trash eating racoon.",
-          },
-          {
-            role: "user",
-            content: "Where are the best trash cans near central park?",
-          },
-        ]}
-        model="gpt-4o-mini"
-        temperature={0.7}
-        tools={[webSearchTool]}
-      />
-    </OpenAIProvider>
-  ),
-);`,
-    llms: `import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
-import * as gensx from "@gensx/core";
-import { ClientOptions } from "openai";
-
-const grok3Config = {
-  clientOptions: {
-    apiKey: process.env.GROK_API_KEY,
-    baseURL: "https://api.x.ai/v1",
-  },
-  model: "grok-3",
-};
-
-const DocumentSummarizer = gensx.Component<DocumentSummarizerProps, string>(
-  "DocumentSummarizer",
-  ({ document, provider }) => (
-    <OpenAIProvider {...provider.clientOptions}>
-      <ChatCompletion
-        model={provider.model}
-        messages={[
-          {
-            role: "user",
-            content: \`Summarize the document in 30 words: \${document}\`,
-          },
-        ]}
-      />
-    </OpenAIProvider>
-  ),
-);
-
-const workflow = gensx.Workflow(
-  "DocumentSummarizerWorkflow",
-  DocumentSummarizer,
-);
-
-const result = await workflow.run({
-  document: "The quick brown fox...",
-  provider: grok3Config,
+// SQL Tool - Analyze structured data
+const SQLTool = new GSXTool({
+  name: "query_database",
+  run: async ({ sql }) => {
+    const db = await useDatabase("analytics");
+    return await db.execute(sql);
+  }
 });
-`,
+
+// Memory Tool - Persist conversation history
+const MemoryTool = new GSXTool({
+  name: "manage_memory",
+  run: async ({ userId, save, retrieve }) => {
+    const blob = useBlob(\`users/\${userId}/memory.json\`);
+    if (save) return await blob.putJSON(save);
+    return await blob.getJSON() || [];
+  }
+});`,
+    serverless: (
+      <div className="relative">
+        <Image
+          src="/assets/home/deploy.png"
+          alt="GenSX Cloud Deployment Terminal Output"
+          width={1000}
+          height={600}
+          className="rounded-lg shadow-lg w-full border border-gray-200 dark:border-gray-800"
+        />
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
+      </div>
+    ),
   };
 
   // Define an array of button/tab details so we can map over them.
@@ -171,27 +123,29 @@ const result = await workflow.run({
     {
       type: "components",
       title: "Create Components",
-      mobileTitle: "Create Components",
+      mobileTitle: "Components",
       description:
-        "Create building blocks for your app with reusable components.",
+        "Create reusable building blocks for your AI backend with components.",
     },
     {
-      type: "workflows",
-      title: "Run Workflows",
-      mobileTitle: "Run Workflows",
-      description: "Combine components to build and run powerful workflows.",
+      type: "observability",
+      title: "Observe & Debug",
+      mobileTitle: "Observe",
+      description: "Visualize and trace your workflows in real-time.",
     },
     {
-      type: "agents",
-      title: "Build Agents",
-      mobileTitle: "Build Agents",
-      description: "Create agents to handle complex tasks.",
+      type: "stateful",
+      title: "Stateful Agents",
+      mobileTitle: "Stateful",
+      description:
+        "Runtime hooks for fully managed blob storage, SQL databases, and vector search.",
     },
     {
-      type: "llms",
-      title: "Use any LLM",
-      mobileTitle: "Use any LLM",
-      description: "Easily swap between models and providers.",
+      type: "serverless",
+      title: "Serverless Deployments",
+      mobileTitle: "Serverless",
+      description:
+        "Deploy projects as REST APIs with sync, async, and streaming out of the box.",
     },
   ];
 
@@ -210,10 +164,11 @@ const result = await workflow.run({
           className="max-w-4xl mx-auto flex flex-col items-center text-center"
         >
           <h1 className="text-2xl md:text-6xl font-bold text-center">
-            The TypeScript framework for agents & workflows
+            The TypeScript framework for agents and workflows
           </h1>
           <p className="max-w-2xl text-md md:text-xl text-gray-600 mt-6 leading-relaxed text-center">
-            Build complex AI applications with React-like components.
+            GenSX provides simple developer tools and cloud infrastructure to
+            build, deploy, scale, and debug complex AI backends with TypeScript.
           </p>
           <div className="flex gap-4 mt-8 justify-center">
             <Link href="/docs/quickstart">
@@ -329,7 +284,11 @@ const result = await workflow.run({
               </p>
             </div>
             <div className="mt-4">
-              <CodeBlock code={examples[activeExample]} />
+              {typeof examples[activeExample] === "string" ? (
+                <CodeBlock code={examples[activeExample] as string} />
+              ) : (
+                examples[activeExample]
+              )}
             </div>
           </div>
 
@@ -379,7 +338,11 @@ const result = await workflow.run({
               ))}
             </div>
             <div className="col-span-2 h-full">
-              <CodeBlock code={examples[activeExample]} />
+              {typeof examples[activeExample] === "string" ? (
+                <CodeBlock code={examples[activeExample] as string} />
+              ) : (
+                examples[activeExample]
+              )}
             </div>
           </div>
         </motion.div>

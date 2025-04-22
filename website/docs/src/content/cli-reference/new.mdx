@@ -1,0 +1,62 @@
+---
+title: gensx new
+description: Create a new GenSX project with the specified template
+---
+
+# gensx new
+
+The `gensx new` command creates a new GenSX project with a predefined structure and dependencies.
+
+## Usage
+
+```bash
+gensx new <project-directory> [options]
+```
+
+## Arguments
+
+| Argument              | Description                                                                  |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `<project-directory>` | Directory to create the project in. If it doesn't exist, it will be created. |
+
+## Options
+
+| Option                     | Description                                                                                     |
+| -------------------------- | ----------------------------------------------------------------------------------------------- |
+| `-t, --template <type>`    | Template to use. Currently supports `ts` (TypeScript).                                          |
+| `-f, --force`              | Overwrite existing files in the target directory.                                               |
+| `--skip-ide-rules`         | Skip IDE rules selection.                                                                       |
+| `--ide-rules <rules>`      | Comma-separated list of IDE rules to install. Options: `cline`, `windsurf`, `claude`, `cursor`. |
+| `-d, --description <desc>` | Optional project description.                                                                   |
+| `-h, --help`               | Display help for the command.                                                                   |
+
+## Description
+
+This command scaffolds a new GenSX project with the necessary files and folder structure. It sets up:
+
+- Project configuration files (`package.json`, `tsconfig.json`)
+- Basic project structure with example workflows
+- Development dependencies
+- IDE integrations based on selected rules
+
+## Examples
+
+```bash
+# Create a basic project
+gensx new my-gensx-app
+
+# Create a project with a specific template and description
+gensx new my-gensx-app --template ts --description "My AI workflow app"
+
+# Create a project with specific IDE rules
+gensx new my-gensx-app --ide-rules cursor,claude
+
+# Force create even if directory has existing files
+gensx new my-gensx-app --force
+```
+
+## Notes
+
+- If no template is specified, `ts` (TypeScript) is used by default.
+- The command will install all required dependencies, so make sure you have npm installed.
+- After creation, you can navigate to the project directory and start the development server with `gensx start`.
