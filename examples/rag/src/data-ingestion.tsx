@@ -6,7 +6,7 @@ import { SearchClient } from "@gensx/storage";
  * @returns A promise that resolves to a message indicating the namespace status
  */
 export async function initializeBaseballSearchNamespace(): Promise<string> {
-  const namespaceName = "baseball2";
+  const namespaceName = "baseball";
   // Create a new search client
   const searchClient = new SearchClient();
 
