@@ -1,0 +1,56 @@
+---
+title: gensx env show
+description: Show current GenSX environment details
+---
+
+# gensx env show
+
+The `gensx env show` command displays detailed information about the currently selected environment, including its configuration and status.
+
+## Usage
+
+```bash
+gensx env show [options]
+```
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-p, --project <name>`  | Project name to show environment details for.                                |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Description
+
+This command:
+
+1. Shows detailed information about the currently selected environment
+2. Displays environment configuration and settings
+3. Provides status information about the environment
+
+The output includes:
+- Environment name
+- Project name
+- Creation date
+- Last modified date
+- Whether it's the default environment
+- Environment variables (if any)
+- Associated workflows and their status
+
+## Examples
+
+```bash
+# Show details of the current environment
+gensx env show
+
+# Show environment details for a specific project
+gensx env show --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to show environment details (`gensx login`)
+- If no environment is selected, the command will indicate this
+- The output format is designed to be both human-readable and machine-parseable
+- Environment variables are shown in a secure format (values are masked)
+- You can use this command to verify your current environment before running important operations
