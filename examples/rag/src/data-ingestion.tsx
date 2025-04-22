@@ -6,7 +6,7 @@ import { SearchClient } from "@gensx/storage";
  * @returns A promise that resolves to a message indicating the namespace status
  */
 export async function initializeBaseballSearchNamespace(): Promise<string> {
-  const namespaceName = "baseball";
+  const namespaceName = "baseball2";
   // Create a new search client
   const searchClient = new SearchClient();
 
@@ -37,11 +37,11 @@ export async function initializeBaseballSearchNamespace(): Promise<string> {
     input: documents.map((doc) => doc.text),
   });
 
-  await namespace.upsert({
-    vectors: documents.map((doc, index) => ({
+  await namespace.write({
+    upsertRows: documents.map((doc, index) => ({
       id: doc.id,
       vector: embeddings.data[index].embedding,
-      attributes: { text: doc.text },
+      text: doc.text,
     })),
     distanceMetric: "cosine_distance",
   });

@@ -9,9 +9,10 @@ import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
 import { SearchProvider } from "../../src/search/provider.js";
 import {
+  SearchApiError,
   SearchError,
-  SearchInternalError,
   SearchNetworkError,
+  SearchResponseError,
   SearchStorage,
 } from "../../src/search/remote.js";
 import { Schema } from "../../src/search/types.js";
@@ -563,9 +564,9 @@ suite("GenSX Search Storage", () => {
         // Should have thrown
         expect(true).toBe(false);
       } catch (err) {
-        expect(err).toBeInstanceOf(SearchInternalError);
-        expect((err as SearchError).code).toBe("INTERNAL_ERROR");
-        expect((err as SearchError).message).toContain("API error");
+        expect(err).toBeInstanceOf(SearchApiError);
+        expect((err as SearchError).code).toBe("SEARCH_ERROR");
+        expect((err as SearchError).message).toContain("API error message");
       }
     });
 
@@ -574,6 +575,10 @@ suite("GenSX Search Storage", () => {
         ok: false,
         status: 500,
         statusText: "Internal Server Error",
+        json: async () => ({
+          status: "error",
+          error: "Server error occurred",
+        }),
       });
 
       const storage = new SearchStorage();
@@ -583,8 +588,9 @@ suite("GenSX Search Storage", () => {
         // Should have thrown
         expect(true).toBe(false);
       } catch (err) {
-        expect(err).toBeInstanceOf(SearchInternalError);
-        expect((err as SearchError).code).toBe("INTERNAL_ERROR");
+        expect(err).toBeInstanceOf(SearchApiError);
+        expect((err as SearchError).code).toBe("SEARCH_ERROR");
+        expect((err as SearchError).message).toContain("Server error occurred");
       }
     });
 
@@ -601,6 +607,29 @@ suite("GenSX Search Storage", () => {
         expect(err).toBeInstanceOf(SearchNetworkError);
         expect((err as SearchError).code).toBe("NETWORK_ERROR");
         expect((err as SearchError).message).toContain("Network failure");
+      }
+    });
+
+    test("should handle missing data responses", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: "ok",
+          data: null,
+        }),
+      });
+
+      const storage = new SearchStorage();
+
+      try {
+        await storage.ensureNamespace("missing-data");
+        // Should have thrown
+        expect(true).toBe(false);
+      } catch (err) {
+        expect(err).toBeInstanceOf(SearchResponseError);
+        expect((err as SearchError).code).toBe("SEARCH_ERROR");
+        expect((err as SearchError).message).toBe("No data returned from API");
       }
     });
   });
