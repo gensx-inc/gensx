@@ -117,7 +117,6 @@ export async function runCLI() {
       .description("Create a new environment")
       .argument("<name>", "Name of the environment")
       .option("-p, --project <name>", "Project name")
-      .option("--set-default", "Set as default environment", false)
       .action(handleCreateEnvironment);
 
     environmentCommand
