@@ -23,7 +23,6 @@ gensx start <file> [options]
 
 | Option                 | Description                        |
 | ---------------------- | ---------------------------------- |
-| `-p, --project <name>` | Project name for the local server. |
 | `-q, --quiet`          | Suppress output.                   |
 | `-h, --help`           | Display help for the command.      |
 
@@ -47,9 +46,6 @@ The development server includes:
 ```bash
 # Start server with a specific workflow file
 gensx start src/workflows.tsx
-
-# Start server with a custom project name
-gensx start src/workflows.tsx --project my-custom-name
 
 # Start server with minimal output
 gensx start src/workflows.tsx --quiet
