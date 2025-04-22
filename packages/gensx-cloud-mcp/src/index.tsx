@@ -120,11 +120,41 @@ class GenSXClient {
   }
 
   async runWorkflow(workflowName: string, input: Record<string, unknown>) {
-    const path = `/org/${this.org}/projects/${this.projectName}/environments/${this.environmentName}/workflows/${workflowName}/start`;
-    return this.request<{
-      executionId: string,
-      executionStatus: string,
-    }>(path, "POST", { input });
+    const path = `/org/${this.org}/projects/${this.projectName}/environments/${this.environmentName}/workflows/${workflowName}`;
+
+    // This is a raw response, so we need to handle it differently
+    const url = `${this.baseUrl}${path}`;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${this.apiKey}`,
+    };
+
+    const options = {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input }),
+    };
+
+    debugLog(`API Request: POST ${url}`, { input });
+
+    try {
+      const response = await fetch(url, options);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`GenSX API error (${response.status}): ${errorText}`);
+      }
+
+      // Since this is a raw response, we just get the response text directly
+      const rawResult = await response.text();
+      debugLog(`API Response: POST ${url}`, rawResult);
+
+      return rawResult;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      debugLog(`API Error: POST ${url}`, error.message);
+      throw error;
+    }
   }
 }
 
@@ -250,15 +280,11 @@ async function setupServer() {
         const result = await client.runWorkflow(workflowName, args);
         debugLog(`Workflow ${workflowName} execution result:`, result);
 
-        // For now, we just return the execution ID and status
-        // In a production implementation, you might want to poll for the final result
+        // Return the raw result directly
         return {
           content: [{
             type: "text",
-            text: JSON.stringify({
-              executionId: result.executionId,
-              status: result.executionStatus
-            }, null, 2)
+            text: result
           }],
         };
       } catch (err) {
