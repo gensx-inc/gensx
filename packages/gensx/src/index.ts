@@ -41,6 +41,7 @@ export async function runCLI() {
     .description("Start a local GenSX server")
     .argument("<file>", "File to serve")
     .option("-p, --project <name>", "Project name")
+    .option("--port <port>", "Port to run the server on", "1337")
     .option("-q, --quiet", "Suppress output", false)
     .action(start);
 

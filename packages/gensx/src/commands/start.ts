@@ -16,6 +16,7 @@ import { generateSchema } from "../utils/schema.js";
 interface StartOptions {
   project?: string;
   quiet?: boolean;
+  port?: number;
 }
 
 interface ServerInstance {
@@ -32,6 +33,8 @@ export async function start(file: string, options: StartOptions) {
 
   try {
     console.info("🔍 Starting GenSX Dev Server...");
+
+    const port = options.port ?? 1337;
 
     // 1. Validate file exists and is a TypeScript file
     const absolutePath = resolve(process.cwd(), file);
@@ -184,7 +187,7 @@ export async function start(file: string, options: StartOptions) {
           orgName,
           projectName ?? "", // Ensure projectName is not undefined
           {
-            port: 1337,
+            port,
           },
           schemas,
         );
