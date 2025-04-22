@@ -24,21 +24,7 @@ gensx env create <name> [options]
 | Option                  | Description                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------- |
 | `-p, --project <name>`  | Project name to create the environment in.                                    |
-| `--set-default`         | Set this environment as the default for the project.                         |
 | `-h, --help`            | Display help for the command.                                                |
-
-## Description
-
-This command:
-
-1. Creates a new environment in your specified project
-2. Optionally sets it as the default environment
-3. Allows you to manage different configurations for your workflows
-
-After creating an environment, you can:
-- Select it using `gensx env select`
-- Deploy workflows to it using `gensx deploy --env`
-- Run workflows in it using `gensx run --env`
 
 ## Examples
 
@@ -48,15 +34,11 @@ gensx env create dev
 
 # Create a production environment in a specific project
 gensx env create production --project my-app
-
-# Create and set as default environment
-gensx env create staging --set-default
 ```
 
 ## Notes
 
 - You must be logged in to GenSX Cloud to create environments (`gensx login`)
-- Environment names should be descriptive and follow a consistent naming convention
 - Each project can have multiple environments
-- Only one environment can be the default at a time
-- Environment names are case-sensitive
+- Environment names should be descriptive and follow a consistent naming convention
+

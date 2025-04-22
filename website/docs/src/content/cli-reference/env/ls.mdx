@@ -5,7 +5,7 @@ description: List all GenSX environments in a project
 
 # gensx env ls
 
-The `gensx env ls` command lists all environments in your GenSX project, showing their names and current status.
+The `gensx env ls` command lists all environments in your GenSX project.
 
 ## Usage
 
@@ -20,20 +20,6 @@ gensx env ls [options]
 | `-p, --project <name>`  | Project name to list environments for.                                       |
 | `-h, --help`            | Display help for the command.                                                |
 
-## Description
-
-This command:
-
-1. Lists all environments in your specified project
-2. Shows which environment is currently selected (if any)
-3. Displays environment details in a tabular format
-
-The output includes:
-- Environment name
-- Creation date
-- Whether it's the default environment
-- Current selection status
-
 ## Examples
 
 ```bash
@@ -47,6 +33,4 @@ gensx env ls --project my-app
 ## Notes
 
 - You must be logged in to GenSX Cloud to list environments (`gensx login`)
-- The command shows environments across all projects if no specific project is specified
-- The currently selected environment is marked with an asterisk (*)
-- The default environment is marked with (default)
+
