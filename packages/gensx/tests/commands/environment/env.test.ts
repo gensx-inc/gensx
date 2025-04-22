@@ -33,7 +33,7 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-suite("environment show command", () => {
+suite("env command", () => {
   it("should show selected environment for a specified project", async () => {
     // Mock project exists
     vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);

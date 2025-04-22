@@ -111,7 +111,8 @@ export async function runCLI() {
     // Environment management commands
     const environmentCommand = program
       .command("env")
-      .description("Manage GenSX environments");
+      .description("Manage GenSX environments")
+      .action(handleShowEnvironment);
 
     environmentCommand
       .command("create")
@@ -138,12 +139,6 @@ export async function runCLI() {
       .description("Unselect an environment")
       .option("-p, --project <name>", "Project name")
       .action(handleUnselectEnvironment);
-
-    environmentCommand
-      .command("show")
-      .description("Get the current environment")
-      .option("-p, --project <name>", "Project name")
-      .action(handleShowEnvironment);
   }
 
   await program.parseAsync();
