@@ -399,8 +399,8 @@ const searchStorage = useSearchStorage();
 const namespace = searchStorage.getNamespace("documents");
 
 // Usage example
-await namespace.upsert({
-  vectors: [/* your vectors */],
+await namespace.write({
+  upsertRows: [...],
   distanceMetric: "cosine_distance"
 });
 ```
@@ -511,12 +511,13 @@ async getNamespace(name: string): Promise<Namespace>
 const namespace = await searchClient.getNamespace("products");
 
 // Then use the namespace to upsert or query vectors
-await namespace.upsert({
-  vectors: [
+await namespace.write({
+  upsertRows: [
     {
       id: "product-1",
       vector: [0.1, 0.2, 0.3, ...],
-      attributes: { name: "Product 1", category: "electronics" }
+      name: "Product 1",
+      category: "electronics"
     }
   ],
   distanceMetric: "cosine_distance"

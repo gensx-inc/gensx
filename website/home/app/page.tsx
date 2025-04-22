@@ -69,7 +69,7 @@ const WriteDraft = gensx.Component<WriteDraftProps, string>(
       </div>
     ),
     stateful: `import * as gensx from '@gensx/core';
-import { GSXTool } from '@gensx/openai';
+import { GSXTool, OpenAIEmbedding } from '@gensx/openai';
 import { useBlob, useDatabase, useSearch } from '@gensx/storage';
 
 // RAG Tool - Vector search for knowledge retrieval
@@ -77,7 +77,11 @@ const RAGTool = new GSXTool({
   name: "search_knowledge",
   run: async ({ query }) => {
     const docsIndex = useSearch("documentation");
-    return await docsIndex.query(query, { limit: 3 });
+    const embeddings = await OpenAIEmbedding.run({
+      model: "text-embedding-3-small",
+      input: query,
+    });
+    return await docsIndex.query({ vector: embeddings.data[0].embedding, topK: 3 });
   }
 });
 

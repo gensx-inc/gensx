@@ -274,10 +274,8 @@ Hook to access a vector search namespace by name.
 const namespace = await useSearch("my-namespace");
 
 // Common operations
-await namespace.upsert({ vectors, distanceMetric: "cosine" }); // Upsert vectors
+await namespace.write({ upsertRows: [...], distanceMetric: "cosine_distance" }); // Upsert vectors
 await namespace.query({ vector, topK: 5 }); // Query similar vectors
-await namespace.delete({ ids: ["id1", "id2"] }); // Delete vectors by ID
-await namespace.deleteByFilter({ filters: { ... } }); // Delete by filter
 await namespace.getMetadata(); // Get namespace metadata
 await namespace.getSchema(); // Get schema
 await namespace.updateSchema({ schema: { ... } }); // Update schema
