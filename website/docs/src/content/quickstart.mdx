@@ -369,7 +369,7 @@ You'll see something like this when you start the server:
 ✔ Generating schema
 
 📋 Available workflows:
-- ResearchAndWriteWorkflow: http://localhost:1337/local/my-project/default/workflows/ResearchAndWriteWorkflow/run
+- ResearchAndWriteWorkflow: http://localhost:1337/workflows/ResearchAndWriteWorkflow
 
 ✅ Server is running. Press Ctrl+C to stop.
 ```
@@ -397,7 +397,7 @@ For production deployments, you can target a specific environment:
 
 ```bash
 # Deploy to production environment
-gensx deploy src/index.ts --environment production
+gensx deploy src/index.ts --env production
 ```
 
 ### Running a workflow from the CLI

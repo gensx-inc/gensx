@@ -31,10 +31,10 @@ GenSX supports multiple environments within a project (such as development, stag
 
 ```bash
 # Deploy to a specific environment
-npx gensx deploy src/workflows.tsx --environment production
+npx gensx deploy src/workflows.tsx --env production
 
 # Deploy to staging with environment-specific variables
-npx gensx deploy src/workflows.tsx --environment staging -ev OPENAI_API_KEY -ev LOG_LEVEL=debug
+npx gensx deploy src/workflows.tsx --env staging -ev OPENAI_API_KEY -ev LOG_LEVEL=debug
 ```
 
 Each environment can have its own configuration and environment variables, allowing you to test in isolation before promoting changes to production.
@@ -74,6 +74,7 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 | `--no-wait`    | Do not wait for workflow to finish |
 | `--output`  | Save results to a file                          |
 | `--project` | Specify the project name                        |
+| `--env`     | Specify the environment name                    |
 
 ## API endpoints
 
