@@ -13,6 +13,9 @@ The `gensx start` command launches a local development server with hot-reloading
 
 ```bash
 gensx start ./src/workflows.tsx
+```
+
+```bash
 🔍 Starting GenSX Dev Server...
 ℹ Using project name from gensx.yaml: support-tools
 ℹ Starting development server...
@@ -40,7 +43,7 @@ Importing compiled JavaScript file: /Users/evan/code/gensx-console/samples/suppo
 The local API endpoints match exactly what you'll get in production, making it easy to test your workflows before deploying them:
 
 ```
-http://localhost:1337/local/{project}/default/workflows/{workflow}/run
+http://localhost:1337/org/{org}/project/{project}/workflows/{workflow}
 ```
 
 Every workflow you export is automatically available as an API endpoint.
@@ -71,6 +74,56 @@ The Swagger interface provides:
 - Interactive testing
 - Request/response examples
 - Schema information
+
+## Running workflows locally
+
+### Using the API
+
+You can use any HTTP client to interact with your local API:
+
+```bash
+# Run a workflow synchronously
+curl -X POST http://localhost:1337/org/{org}/project/{project}/workflows/ChatAgent \
+  -H "Content-Type: application/json" \
+  -d '{"input": {"prompt": "Tell me about GenSX"}}'
+
+# Run asynchronously
+
+curl -X POST http://localhost:1337/org/{org}/project/{project}/workflows/ChatAgent/start \
+  -H "Content-Type: application/json" \
+  -d '{"input": {"prompt": "Tell me about GenSX"}}'
+```
+
+The structure of requests and responses matches exactly what you'll encounter in production.
+
+### Using the Swagger UI
+
+The built-in Swagger UI provides an easy way to inspect and test your workflows:
+
+1. Navigate to `http://localhost:1337/swagger-ui`
+2. Select the workflow you want to test
+3. Click the "Try it out" button
+4. Enter your input data
+5. Execute the request and view the response
+
+![Run a workflow from the Swagger UI](/cloud/swagger-execute.png)
+
+## Configuration
+
+### Project name
+
+By default, the development server uses the project name from your `gensx.yaml` file. If you don't have one yet, you can create it in your project root:
+
+```yaml
+# gensx.yaml
+projectName: my-project
+```
+
+Alternatively, you can specify the project name when starting the server:
+
+```bash
+npx gensx start ./src/workflows.tsx --project my-custom-project
+```
 
 ## Local storage options
 
@@ -126,55 +179,6 @@ const SearchDocs = gensx.Component("SearchDocs", async ({ query }) => {
   });
   return results;
 });
-```
-
-## Running workflows locally
-
-### Using the API
-
-You can use any HTTP client to interact with your local API:
-
-```bash
-# Run a workflow synchronously
-curl -X POST http://localhost:1337/local/my-app/default/workflows/ChatAgent/run \
-  -H "Content-Type: application/json" \
-  -d '{"input": {"prompt": "Tell me about GenSX"}}'
-
-# Run asynchronously
-curl -X POST http://localhost:1337/local/my-app/default/workflows/ChatAgent/start \
-  -H "Content-Type: application/json" \
-  -d '{"input": {"prompt": "Tell me about GenSX"}}'
-```
-
-The structure of requests and responses matches exactly what you'll encounter in production.
-
-### Using the Swagger UI
-
-The built-in Swagger UI provides an easy way to inspect and test your workflows:
-
-1. Navigate to `http://localhost:1337/swagger-ui`
-2. Select the workflow you want to test
-3. Click the "Try it out" button
-4. Enter your input data
-5. Execute the request and view the response
-
-![Run a workflow from the Swagger UI](/cloud/swagger-execute.png)
-
-## Configuration
-
-### Project name
-
-By default, the development server uses the project name from your `gensx.yaml` file. If you don't have one yet, you can create it in your project root:
-
-```yaml
-# gensx.yaml
-projectName: my-project
-```
-
-Alternatively, you can specify the project name when starting the server:
-
-```bash
-npx gensx start ./src/workflows.tsx --project my-custom-project
 ```
 
 ## Next steps

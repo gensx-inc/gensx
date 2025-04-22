@@ -17,7 +17,7 @@ gensx build <file> [options]
 
 | Argument | Description                                                                                                    |
 | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `<file>` | Workflow file to build (e.g., `src/workflows.tsx`). This should export a GenSX Workflow as the default export. |
+| `<file>` | Workflow file to build (e.g., `src/workflows.tsx`). This should export an object with one or more GenSX workflows |
 
 ## Options
 
@@ -36,7 +36,7 @@ This command builds your GenSX workflow into an optimized bundle that can be dep
 - Optimizes the code for production
 - Prepares the workflow for deployment
 
-After building, the command outputs the path to the bundled file, which can be used with the `gensx deploy` command.
+After building, the command outputs the path to the bundled file, which can be used with the [`gensx deploy`](/docs/cli-reference/deploy) command.
 
 ## Examples
 
@@ -53,6 +53,7 @@ gensx build src/workflows.tsx --tsconfig ./custom-tsconfig.json
 
 ## Notes
 
-- The build process requires that your workflow file exports a GenSX Workflow as the default export
-- If no output directory is specified, the built files will be placed in a `.gensx/build` directory
+- The build process requires that your workflow file exports an object with one or more GenSX workflows.
+- `gensx build` requires Docker to be running
+- If no output directory is specified, the build files will be placed in a `.gensx` directory
 - The build process does not include environment variables - these should be provided during deployment

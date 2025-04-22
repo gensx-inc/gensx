@@ -5,7 +5,7 @@ description: Organize your GenSX workflows and deployments
 
 # Projects and environments
 
-GenSX organizes your workflows and deployments using a flexible structure of projects and environments, making it easy to match the rest of your application architecture and CI/CD topology.
+GenSX organizes your workflows and deployments using a flexible structure of projects and environments, making it easy to match the rest of your application architecture and CI/CD topology. Projects are a top level resource and environments are instances of a project that you deploy to.
 
 ## Project structure
 
@@ -20,12 +20,13 @@ Projects typically correspond to a codebase or application that contains multipl
 
 ## Environment separation
 
-Within each project, you can have multiple environments:
+Within each project, you can have multiple environments. For example, you could create three environments for each project:
 
 - **Development**: For building and testing new features
 - **Staging**: For pre-production validation
 - **Production**: For live, user-facing workflows
-- **Custom environments**: Create any specialized environments you need
+
+You have full control over your environments so you can organize them however you see fit.
 
 Each environment maintains separate:
 
@@ -72,12 +73,12 @@ Set environment-specific variables during deployment:
 # Development-specific settings
 gensx deploy src/workflows.tsx --environment development \
   --env LOG_LEVEL=debug \
-  --env OPENAI_MODEL=gpt-4
+  --env OPENAI_API_KEY
 
 # Production-specific settings
 gensx deploy src/workflows.tsx --environment production \
   --env LOG_LEVEL=error \
-  --env OPENAI_MODEL=gpt-4-turbo
+  --env OPENAI_API_KEY
 ```
 
 ## Projects in the GenSX Console
@@ -90,11 +91,11 @@ Selecting an environment brings you to the workflows view:
 
 ![Environment page](/cloud/console-workflows.png)
 
-From here you can trigger a workflow within the console for workflows deployed to GenSX Cloud serverless:
+When you click into a workflow, you can trigger it within the console if you've deployed it to GenSX Cloud:
 
 ![Triggering a workflow in the console](/cloud/console-playground.png)
 
-You can also see API documentation and sample code for triggering those workflows:
+You can also see API documentation and sample code for calling that workflow:
 
 ![Workflow API documentation](/cloud/console-workflow-docs.png)
 

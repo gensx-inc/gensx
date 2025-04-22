@@ -7,8 +7,6 @@ description: Deploy GenSX workflows as serverless APIs
 
 Deploy your GenSX workflows as serverless APIs with support for both synchronous and asynchronous execution, as well as long-running operations.
 
-The GenSX Cloud serverless runtime is for near zero cold starts
-
 ## Deploy with the CLI
 
 Projects are a collection of workflows and environment variables that deploy together into an `environment` that you configure.
@@ -51,7 +49,7 @@ When you deploy a workflow, GenSX:
 6. Encrypts and sets up environment variables
 7. Activates the deployment
 
-The entire process typically takes a few seconds.
+The entire process typically takes 15 seconds.
 
 ## Running workflows from the CLI
 
@@ -62,7 +60,7 @@ Once deployed, you can execute workflows directly from the CLI:
 npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --project my-app
 
 # Run and save the output to a file
-npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --wait --output results.json
+npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --output results.json
 
 # Run asynchronously (start the workflow but don't wait for completion)
 npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --project my-app
@@ -73,8 +71,8 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 | Option      | Description                                     |
 | ----------- | ----------------------------------------------- |
 | `--input`   | JSON string with input data                     |
-| `--wait`    | Wait for workflow completion and return results |
-| `--output`  | Save results to a file (requires `--wait`)      |
+| `--no-wait`    | Do not wait for workflow to finish |
+| `--output`  | Save results to a file                          |
 | `--project` | Specify the project name                        |
 
 ## API endpoints
@@ -82,7 +80,7 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 Each workflow is exposed as an API endpoint:
 
 ```
-https://api.gensx.com/v1/org/{org}/projects/{project}/environments/{environment}/workflows/{workflow}/run
+https://api.gensx.com/org/{org}/projects/{project}/environments/{environment}/workflows/{workflow}
 ```
 
 - `{org}` - Your organization ID
@@ -93,7 +91,7 @@ https://api.gensx.com/v1/org/{org}/projects/{project}/environments/{environment}
 For example, if you have a workflow named `BlogWriter` in project `content-tools`, the endpoint would be:
 
 ```
-https://api.gensx.com/v1/org/your-org/projects/content-tools/environments/default/workflows/BlogWriter/run
+https://api.gensx.com/org/your-org/projects/content-tools/environments/default/workflows/BlogWriter
 ```
 
 ## Authentication
@@ -101,7 +99,7 @@ https://api.gensx.com/v1/org/your-org/projects/content-tools/environments/defaul
 All GenSX Cloud API endpoints require authentication using your GenSX API key as a bearer token:
 
 ```bash
-curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/run \
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Tell me about GenSX"}'
@@ -111,7 +109,7 @@ curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environ
 
 To generate or manage API keys:
 
-1. Log in to the [GenSX Cloud dashboard](https://app.gensx.com)
+1. Log in to the [GenSX Cloud console](https://app.gensx.com)
 2. Navigate to Settings > API Keys
 3. Create a new key
 
@@ -122,7 +120,7 @@ To generate or manage API keys:
 By default, API calls execute synchronously, returning the result when the workflow completes:
 
 ```bash
-curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/run \
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Tell me about GenSX"}'
@@ -134,7 +132,7 @@ For longer-running workflows, use asynchronous execution by calling the `/start`
 
 ```bash
 # Request asynchronous execution
-curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/start \
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/start \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Tell me about GenSX"}'
@@ -148,7 +146,7 @@ curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environ
 # }
 
 # Check status later
-curl -X GET https://api.gensx.com/v1/executions/exec_123abc \
+curl -X GET https://api.gensx.com/executions/exec_123abc \
   -H "Authorization: Bearer your-api-key"
 ```
 
@@ -157,10 +155,10 @@ curl -X GET https://api.gensx.com/v1/executions/exec_123abc \
 For workflows that support streaming, you can receive tokens as they're generated:
 
 ```bash
-curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/run?stream=true \
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "Tell me about GenSX"}'
+  -d '{"prompt": "Tell me about GenSX", "stream": true }'
 ```
 
 The response is delivered as a stream of server-sent events (SSE).
@@ -200,7 +198,7 @@ GenSX Cloud provides a console to run, debug, and view all of your workflows.
 
 1. Log in to [app.gensx.com](https://app.gensx.com)
 2. Navigate to your project and environment
-3. The Workflows tab shows all deployed workflows with status information
+3. The workflows tab shows all deployed workflows with status information
 4. Click on a workflow to view its details, including schema, recent executions, and performance metrics
 
 The workflow page includes API documentation and code snippets that you can copy/paste to run your workflow from within another app:

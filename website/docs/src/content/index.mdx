@@ -52,7 +52,10 @@ Deploy any workflow to a hosted API endpoint with a single command. The GenSX cl
 
 ```bash
 # Deploy your workflow to GenSX Cloud
-$ npx gensx deploy ./src/workflows.tsx
+$ gensx deploy ./src/workflows.tsx
+```
+
+```bash
 ✔ Building workflow using Docker
 ✔ Generating schema
 
@@ -76,14 +79,15 @@ Project: support-tools
 
 The platform is optimized for AI workloads with millisecond-level cold starts and support for long-running executions up to an hour.
 
-### Development server
+### Tracing and observability
 
-Test your workflows locally with a development server that matches the cloud environment:
+GenSX Cloud provides comprehensive tracing and observability for all your workflows and agents.
 
-```bash
-# Start a local API server
-gensx start src/workflows.ts
-```
+![Workflow component tree](/cloud/trace.png)
+
+Inputs and outputs are recorded for every component that executes in your workflows, including prompts, tool calls, and token usage. This makes it easy to debug hallucinations, prompt upgrades, and monitor costs.
+
+![Component trace](/cloud/component-trace.png)
 
 ### Cloud Storage
 

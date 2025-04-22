@@ -592,7 +592,7 @@ Once deployed, you can execute your workflows directly from the command line:
 gensx run ResearchAndWriteWorkflow --input '{"topic":"quantum computing"}'
 
 # Save the output to a file
-gensx run ResearchAndWriteWorkflow --input '{"topic":"quantum computing"}' --wait --output result.json
+gensx run ResearchAndWriteWorkflow --input '{"topic":"quantum computing"}' --output result.json
 ```
 
 The CLI makes it easy to test your workflows and integrate them into scripts or automation.
@@ -805,7 +805,10 @@ Deploy any workflow to a hosted API endpoint with a single command. The GenSX cl
 
 ```bash
 # Deploy your workflow to GenSX Cloud
-$ npx gensx deploy ./src/workflows.tsx
+$ gensx deploy ./src/workflows.tsx
+```
+
+```bash
 ✔ Building workflow using Docker
 ✔ Generating schema
 
@@ -829,14 +832,15 @@ Project: support-tools
 
 The platform is optimized for AI workloads with millisecond-level cold starts and support for long-running executions up to an hour.
 
-### Development server
+### Tracing and observability
 
-Test your workflows locally with a development server that matches the cloud environment:
+GenSX Cloud provides comprehensive tracing and observability for all your workflows and agents.
 
-```bash
-# Start a local API server
-gensx start src/workflows.ts
-```
+![Workflow component tree](/cloud/trace.png)
+
+Inputs and outputs are recorded for every component that executes in your workflows, including prompts, tool calls, and token usage. This makes it easy to debug hallucinations, prompt upgrades, and monitor costs.
+
+![Component trace](/cloud/component-trace.png)
 
 ### Cloud Storage
 
@@ -4015,8 +4019,6 @@ The `AnthropicChatCompletion` component accepts all parameters from the Anthropi
 
 Deploy your GenSX workflows as serverless APIs with support for both synchronous and asynchronous execution, as well as long-running operations.
 
-The GenSX Cloud serverless runtime is for near zero cold starts
-
 ## Deploy with the CLI
 
 Projects are a collection of workflows and environment variables that deploy together into an `environment` that you configure.
@@ -4059,7 +4061,7 @@ When you deploy a workflow, GenSX:
 6. Encrypts and sets up environment variables
 7. Activates the deployment
 
-The entire process typically takes a few seconds.
+The entire process typically takes 15 seconds.
 
 ## Running workflows from the CLI
 
@@ -4070,7 +4072,7 @@ Once deployed, you can execute workflows directly from the CLI:
 npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --project my-app
 
 # Run and save the output to a file
-npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --wait --output results.json
+npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --output results.json
 
 # Run asynchronously (start the workflow but don't wait for completion)
 npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --project my-app
@@ -4081,8 +4083,8 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 | Option      | Description                                     |
 | ----------- | ----------------------------------------------- |
 | `--input`   | JSON string with input data                     |
-| `--wait`    | Wait for workflow completion and return results |
-| `--output`  | Save results to a file (requires `--wait`)      |
+| `--no-wait`    | Do not wait for workflow to finish |
+| `--output`  | Save results to a file                          |
 | `--project` | Specify the project name                        |
 
 ## API endpoints
@@ -4090,7 +4092,7 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 Each workflow is exposed as an API endpoint:
 
 ```
-https://api.gensx.com/v1/org/{org}/projects/{project}/environments/{environment}/workflows/{workflow}/run
+https://api.gensx.com/org/{org}/projects/{project}/environments/{environment}/workflows/{workflow}
 ```
 
 - `{org}` - Your organization ID
@@ -4101,7 +4103,7 @@ https://api.gensx.com/v1/org/{org}/projects/{project}/environments/{environment}
 For example, if you have a workflow named `BlogWriter` in project `content-tools`, the endpoint would be:
 
 ```
-https://api.gensx.com/v1/org/your-org/projects/content-tools/environments/default/workflows/BlogWriter/run
+https://api.gensx.com/org/your-org/projects/content-tools/environments/default/workflows/BlogWriter
 ```
 
 ## Authentication
@@ -4109,7 +4111,7 @@ https://api.gensx.com/v1/org/your-org/projects/content-tools/environments/defaul
 All GenSX Cloud API endpoints require authentication using your GenSX API key as a bearer token:
 
 ```bash
-curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/run \
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Tell me about GenSX"}'
@@ -4119,7 +4121,7 @@ curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environ
 
 To generate or manage API keys:
 
-1. Log in to the [GenSX Cloud dashboard](https://app.gensx.com)
+1. Log in to the [GenSX Cloud console](https://app.gensx.com)
 2. Navigate to Settings > API Keys
 3. Create a new key
 
@@ -4130,7 +4132,7 @@ To generate or manage API keys:
 By default, API calls execute synchronously, returning the result when the workflow completes:
 
 ```bash
-curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/run \
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Tell me about GenSX"}'
@@ -4142,7 +4144,7 @@ For longer-running workflows, use asynchronous execution by calling the `/start`
 
 ```bash
 # Request asynchronous execution
-curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/start \
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/start \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Tell me about GenSX"}'
@@ -4156,7 +4158,7 @@ curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environ
 # }
 
 # Check status later
-curl -X GET https://api.gensx.com/v1/executions/exec_123abc \
+curl -X GET https://api.gensx.com/executions/exec_123abc \
   -H "Authorization: Bearer your-api-key"
 ```
 
@@ -4165,10 +4167,10 @@ curl -X GET https://api.gensx.com/v1/executions/exec_123abc \
 For workflows that support streaming, you can receive tokens as they're generated:
 
 ```bash
-curl -X POST https://api.gensx.com/v1/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/run?stream=true \
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "Tell me about GenSX"}'
+  -d '{"prompt": "Tell me about GenSX", "stream": true }'
 ```
 
 The response is delivered as a stream of server-sent events (SSE).
@@ -4208,7 +4210,7 @@ GenSX Cloud provides a console to run, debug, and view all of your workflows.
 
 1. Log in to [app.gensx.com](https://app.gensx.com)
 2. Navigate to your project and environment
-3. The Workflows tab shows all deployed workflows with status information
+3. The workflows tab shows all deployed workflows with status information
 4. Click on a workflow to view its details, including schema, recent executions, and performance metrics
 
 The workflow page includes API documentation and code snippets that you can copy/paste to run your workflow from within another app:
@@ -4243,7 +4245,7 @@ Each workflow execution generates a trace you can review:
 
 # Projects and environments
 
-GenSX organizes your workflows and deployments using a flexible structure of projects and environments, making it easy to match the rest of your application architecture and CI/CD topology.
+GenSX organizes your workflows and deployments using a flexible structure of projects and environments, making it easy to match the rest of your application architecture and CI/CD topology. Projects are a top level resource and environments are instances of a project that you deploy to.
 
 ## Project structure
 
@@ -4258,12 +4260,13 @@ Projects typically correspond to a codebase or application that contains multipl
 
 ## Environment separation
 
-Within each project, you can have multiple environments:
+Within each project, you can have multiple environments. For example, you could create three environments for each project:
 
 - **Development**: For building and testing new features
 - **Staging**: For pre-production validation
 - **Production**: For live, user-facing workflows
-- **Custom environments**: Create any specialized environments you need
+
+You have full control over your environments so you can organize them however you see fit.
 
 Each environment maintains separate:
 
@@ -4310,12 +4313,12 @@ Set environment-specific variables during deployment:
 # Development-specific settings
 gensx deploy src/workflows.tsx --environment development \
   --env LOG_LEVEL=debug \
-  --env OPENAI_MODEL=gpt-4
+  --env OPENAI_API_KEY
 
 # Production-specific settings
 gensx deploy src/workflows.tsx --environment production \
   --env LOG_LEVEL=error \
-  --env OPENAI_MODEL=gpt-4-turbo
+  --env OPENAI_API_KEY
 ```
 
 ## Projects in the GenSX Console
@@ -4328,11 +4331,11 @@ Selecting an environment brings you to the workflows view:
 
 ![Environment page](/cloud/console-workflows.png)
 
-From here you can trigger a workflow within the console for workflows deployed to GenSX Cloud serverless:
+When you click into a workflow, you can trigger it within the console if you've deployed it to GenSX Cloud:
 
 ![Triggering a workflow in the console](/cloud/console-playground.png)
 
-You can also see API documentation and sample code for triggering those workflows:
+You can also see API documentation and sample code for calling that workflow:
 
 ![Workflow API documentation](/cloud/console-workflow-docs.png)
 
@@ -4365,6 +4368,8 @@ Each plan includes monthly allowances for compute, tracing, and storage:
 | Vector Storage     | 250MB                  | 1GB                      | $1.00/GB         |
 | Execution time     | Up to 5 minutes        | Up to 60 minutes         | Custom           |
 | Observability      | 7 days trace retention | 30 days trace retention  | Custom retention |
+
+The free tier is only for individuals, and you will need to upgrade to the Pro tier before adding additional members to your org.
 
 ## Limits
 
@@ -4436,7 +4441,7 @@ The GenSX cloud console includes a trace viewer. You can access traces in severa
 
 1. **From the Console**: Navigate to your project in the [GenSX Console](https://app.gensx.com) and select the "Executions" tab
 2. **Trace URL**: When running a workflow with `printUrl: true`, a direct link to the trace is printed to the console
-3. **API Response**: The execution ID from API responses can be used to view traces in the console
+3. **API Response**: When running a workflow in the cloud, the execution ID from API responses can be used to view traces in the console
 
 ```tsx
 // Executing a workflow with trace URL printing
@@ -4446,10 +4451,10 @@ const result = await MyWorkflow.run(
 );
 
 // Console output includes:
-// [GenSX] View execution at: https://app.gensx.com/your_org/executions/your_execution_idf
+// [GenSX] View execution at: https://app.gensx.com/your_org/executions/your_execution_id
 ```
 
-### Viewing the flame graph
+### Understanding the flame graph
 
 The flame graph visualizes the entire execution tree including branches, all nested sub-components, and timing:
 
@@ -4488,11 +4493,11 @@ Historical traces are automatically organized by project and environment, making
 
 ## Configuring traces
 
-tGenSX provides flexible options for configuring and organizing traces for the GenSX Cloud serverless platform, local development, and any other deployment platform like vercel, cloudflare and AWS.
+GenSX provides flexible options for configuring and organizing traces for the GenSX Cloud serverless platform, local development, and any other deployment platform like vercel, cloudflare and AWS.
 
 ### Tracing GenSX Cloud workflows
 
-When running workflows on GenSX Cloud, tracing is automatically configured:
+When running workflows deployed to GenSX Cloud, tracing is automatically configured:
 
 - **Project context**: Traces are associated with the correct project
 - **Environment segregation**: Development, staging, and production traces are kept separate
@@ -4503,7 +4508,7 @@ No additional configuration is needed – everything works out of the box.
 
 ### Tracing on other deployment platforms
 
-To enable tracing for workflows deployed outside of GenSX Cloud (like AWS Lambda, Google Cloud Functions, etc.), you need to set several environment variables:
+To enable tracing for workflows deployed outside of GenSX Cloud (like AWS Lambda, GCP Cloud Run, etc.), you need to set several environment variables:
 
 ```bash
 # Required variables
@@ -4518,17 +4523,17 @@ GENSX_CHECKPOINTS=false                        # Explicitly disable
 
 ### Configuring traces for local development
 
-For local development, tracing configuration is automatically inferred from:
+For local development, the tracing configuration is automatically inferred from:
 
 1. The `gensx.yaml` file in your project root
 2. Your local configuration managed by the `gensx` CLI in `~/.config/gensx/config`
-3. Optionally the `GENSX_ENVIRONMENT` environment variable to separate local traces from other environments
+3. Optionally the `GENSX_ENVIRONMENT` environment variable can be set to separate local traces from other environments
 
 The local development server started with `gensx start` uses this same configuration scheme as well.
 
 ### Organizing traces by environment
 
-GenSX allows you to organize traces by environment (development, staging, production) to keep your debugging data well-structured:
+GenSX allows you to organize traces by environment (such as development, staging, production, etc.) to keep your debugging data well-structured:
 
 ```bash
 # Deploy to a specific environment with its own traces
@@ -4635,32 +4640,6 @@ const GenerateCredentials = gensx.Component(
 
 When `secretOutputs` is set to `true`, the entire output object or value will be treated as sensitive and masked in traces.
 
-### Secrets propagation
-
-Secrets are automatically propagated through the component hierarchy:
-
-```tsx
-const ParentComponent = gensx.Component(
-  "ParentComponent",
-  async ({ apiKey, query }) => {
-    // apiKey is marked as secret
-    const results = await ChildComponent.run({
-      query,
-      headers: { authorization: `Bearer ${apiKey}` },
-    });
-
-    // apiKey is also scrubbed here in the trace,
-    // even though ChildComponent doesn't explicitly mark it
-    return processResults(results, apiKey);
-  },
-  {
-    secretProps: ["apiKey"],
-  },
-);
-```
-
-Secrets remain scrubbed throughout the execution chain, even if they're transformed or embedded in different objects.
-
 ## Limits
 
 GenSX observability features have certain limits based on your subscription tier:
@@ -4697,6 +4676,9 @@ The `gensx start` command launches a local development server with hot-reloading
 
 ```bash
 gensx start ./src/workflows.tsx
+```
+
+```bash
 🔍 Starting GenSX Dev Server...
 ℹ Using project name from gensx.yaml: support-tools
 ℹ Starting development server...
@@ -4724,7 +4706,7 @@ Importing compiled JavaScript file: /Users/evan/code/gensx-console/samples/suppo
 The local API endpoints match exactly what you'll get in production, making it easy to test your workflows before deploying them:
 
 ```
-http://localhost:1337/local/{project}/default/workflows/{workflow}/run
+http://localhost:1337/org/{org}/project/{project}/workflows/{workflow}
 ```
 
 Every workflow you export is automatically available as an API endpoint.
@@ -4755,6 +4737,56 @@ The Swagger interface provides:
 - Interactive testing
 - Request/response examples
 - Schema information
+
+## Running workflows locally
+
+### Using the API
+
+You can use any HTTP client to interact with your local API:
+
+```bash
+# Run a workflow synchronously
+curl -X POST http://localhost:1337/org/{org}/project/{project}/workflows/ChatAgent \
+  -H "Content-Type: application/json" \
+  -d '{"input": {"prompt": "Tell me about GenSX"}}'
+
+# Run asynchronously
+
+curl -X POST http://localhost:1337/org/{org}/project/{project}/workflows/ChatAgent/start \
+  -H "Content-Type: application/json" \
+  -d '{"input": {"prompt": "Tell me about GenSX"}}'
+```
+
+The structure of requests and responses matches exactly what you'll encounter in production.
+
+### Using the Swagger UI
+
+The built-in Swagger UI provides an easy way to inspect and test your workflows:
+
+1. Navigate to `http://localhost:1337/swagger-ui`
+2. Select the workflow you want to test
+3. Click the "Try it out" button
+4. Enter your input data
+5. Execute the request and view the response
+
+![Run a workflow from the Swagger UI](/cloud/swagger-execute.png)
+
+## Configuration
+
+### Project name
+
+By default, the development server uses the project name from your `gensx.yaml` file. If you don't have one yet, you can create it in your project root:
+
+```yaml
+# gensx.yaml
+projectName: my-project
+```
+
+Alternatively, you can specify the project name when starting the server:
+
+```bash
+npx gensx start ./src/workflows.tsx --project my-custom-project
+```
 
 ## Local storage options
 
@@ -4812,55 +4844,6 @@ const SearchDocs = gensx.Component("SearchDocs", async ({ query }) => {
 });
 ```
 
-## Running workflows locally
-
-### Using the API
-
-You can use any HTTP client to interact with your local API:
-
-```bash
-# Run a workflow synchronously
-curl -X POST http://localhost:1337/local/my-app/default/workflows/ChatAgent/run \
-  -H "Content-Type: application/json" \
-  -d '{"input": {"prompt": "Tell me about GenSX"}}'
-
-# Run asynchronously
-curl -X POST http://localhost:1337/local/my-app/default/workflows/ChatAgent/start \
-  -H "Content-Type: application/json" \
-  -d '{"input": {"prompt": "Tell me about GenSX"}}'
-```
-
-The structure of requests and responses matches exactly what you'll encounter in production.
-
-### Using the Swagger UI
-
-The built-in Swagger UI provides an easy way to inspect and test your workflows:
-
-1. Navigate to `http://localhost:1337/swagger-ui`
-2. Select the workflow you want to test
-3. Click the "Try it out" button
-4. Enter your input data
-5. Execute the request and view the response
-
-![Run a workflow from the Swagger UI](/cloud/swagger-execute.png)
-
-## Configuration
-
-### Project name
-
-By default, the development server uses the project name from your `gensx.yaml` file. If you don't have one yet, you can create it in your project root:
-
-```yaml
-# gensx.yaml
-projectName: my-project
-```
-
-Alternatively, you can specify the project name when starting the server:
-
-```bash
-npx gensx start ./src/workflows.tsx --project my-custom-project
-```
-
 ## Next steps
 
 - [Deploying to production](/docs/cloud/serverless-deployments)
@@ -4869,7 +4852,7 @@ npx gensx start ./src/workflows.tsx --project my-custom-project
 
 # GenSX Cloud
 
-GenSX Cloud provides everything you need to ship production grade agents:
+GenSX Cloud provides everything you need to ship production-grade agents and workflows:
 
 - **Serverless runtime**: One command to deploy all of your workflows and agents as REST APIs running on serverless infrastructure optimized for long-running agents and workflows. Support for synchronous and background invocation, streaming, and intermediate status included.
 - **Cloud storage**: build stateful agents and workflows with builtin blob storage, SQL databases, and full-text + vector search indices -- all provisioned at runtime.
@@ -4882,18 +4865,21 @@ All of this is available on a free tier for individuals and with $20/developer p
 
 ## Serverless deployments
 
-GenSX Cloud provides serverless infrastructure optimized for agents and LLM workflows:
+Serverless deployments allow you to turn your GenSX workflows and agents into APIs with a single command:
 
 - **Generated REST APIs**: `gensx deploy` generates a REST API complete with schema and validation for every workflow in your project.
 - **Long-running**: GenSX Cloud is optimized for long running LLM workloads. Workflows can run up to 5 minutes on the free tier and 60 minutes on the Pro tier.
-- **Millisecond-level cold starts**:
+- **Millisecond-level cold starts**: initial cold starts are on the order of 10s of milliseconds -- an order of magnitude faster than other serverless providers.
 
-Serverless deployments are billed pay-second, with 50,000 seconds included per month in the free tier for individuals.
+Serverless deployments are billed per-second, with 50,000 seconds included per month in the free tier for individuals.
 
 Projects are deployed with a single CLI command:
 
 ```bash
 $ npx gensx deploy ./src/workflows.tsx
+```
+
+```bash
 ✔ Building workflow using Docker
 ✔ Generating schema
 
@@ -4915,11 +4901,11 @@ Available workflows:
 Project: support-tools
 ```
 
-Each workflow is available via APIs for synchronous and asynchronous invocation:
+Each workflow is available via both a synchronous and asynchronous API:
 
 ```
 // For synchronous and streaming calls:
-https://api.gensx.com/org/{orgName}/projects/{projectName}/environments/{environmentName}/workflows/{workflowName}/run
+https://api.gensx.com/org/{orgName}/projects/{projectName}/environments/{environmentName}/workflows/{workflowName}
 // For running workflows async in the background
 https://api.gensx.com/org/{orgName}/projects/{projectName}/environments/{environmentName}/workflows/{workflowName}/start
 ```
@@ -4970,11 +4956,11 @@ const ChatWithMemory = gensx.Component(
 );
 
 // Just wrap your workflow with BlobProvider
-const Workflow = ({ userInput, threadId }) => (
+const Workflow = gensx.Component("MyWorkflow", ({ userInput, threadId }) => (
   <BlobProvider>
     <ChatWithMemory userInput={userInput} threadId={threadId} />
   </BlobProvider>
-);
+));
 ```
 
 Blob storage automatically adapts between local development (using filesystem) and cloud deployment with zero configuration changes.
@@ -5089,7 +5075,7 @@ GenSX Cloud provides comprehensive tracing and observability for all your workfl
 // No additional instrumentation required
 const result = await MyWorkflow.run(
   { input: "User query" },
-  printUrl: true // log the tracing URL
+  { printUrl: true }, // log the tracing URL
 );
 ```
 
@@ -5108,7 +5094,7 @@ For more details see the full [observability reference](/docs/cloud/observabilit
 
 GenSX provides a seamless development experience that mirrors the cloud environment, allowing you to build and test your workflows locally before deployment:
 
-### Development Server
+### Development server
 
 The `gensx start` command launches a local development server that:
 
@@ -5129,7 +5115,7 @@ npx gensx start ./src/workflows.tsx
 ✔ Generating schema
 
 📋 Available workflows:
-- MyWorkflow: http://localhost:1337/local/my-app/default/workflows/MyWorkflow/run
+- MyWorkflow: http://localhost:1337/org/{org}/project/{project}/workflows/MyWorkflow
 
 ✅ Server is running. Press Ctrl+C to stop.
 ```
@@ -5163,7 +5149,7 @@ For more details see the full [local development reference](/docs/cloud/local-de
 
 GenSX Cloud organizes your workflows and deployments using a flexible structure of projects and environments:
 
-- **Projects**: A collection of related workflows that are deployed together, typically corresponding to a codebase or application. Projects help you organize and manage your AI components as cohesive units.
+**Projects** are a collection of related workflows that are deployed together, typically corresponding to a codebase or application. Projects help you organize and manage your AI components as cohesive units.
 
 Projects are defined by the `projectName` field in your `gensx.yaml` configuration file at the root of your codebase:
 
@@ -5172,7 +5158,7 @@ Projects are defined by the `projectName` field in your `gensx.yaml` configurati
 projectName: my-chatbot-app
 ```
 
-- **Environments**: Sub-groupings within a project that allow you to deploy multiple instances of the same workflows with different configuration. This supports the common development pattern of separating dev, staging, and production environments.
+**Environments** are sub-groupings within a project that allow you to deploy multiple instances of the same workflows with different configuration. This supports the common development pattern of separating dev, staging, and production environments.
 
 ```bash
 # Deploy to the default environment
@@ -5273,14 +5259,14 @@ gensx start src/workflows.tsx --quiet
 
 ## Notes
 
-- The server runs on port 3000 by default
-- You can access the development UI at `http://localhost:3000`
+- The server runs on port 1337 by default
+- You can access the development UI at `http://localhost:1337/swagger-ui`
 - Environment variables from your local environment are available to the workflow
 - For more complex environment variable setups, consider using a `.env` file in your project root
 
 # gensx run
 
-The `gensx run` command executes a workflow that has been deployed to GenSX Cloud.
+The `gensx run` command executes a workflow that has been deployed to GenSX Cloud. By default it infers your project from the `gensx.yaml` file in the current working directory.
 
 ## Usage
 
@@ -5487,7 +5473,7 @@ gensx deploy <file> [options]
 
 | Argument | Description                                                                                |
 | -------- | ------------------------------------------------------------------------------------------ |
-| `<file>` | File to deploy. This should be a TypeScript/JavaScript file that exports a GenSX Workflow. |
+| `<file>` | File to deploy. This should be a TypeScript file that exports a GenSX workflow. |
 
 ## Options
 
@@ -5501,12 +5487,12 @@ gensx deploy <file> [options]
 
 This command:
 
-1. Builds your workflow (if not already built)
+1. Builds your workflow
 2. Uploads it to GenSX Cloud
 3. Creates or updates the deployment
 4. Sets up any environment variables specified
 
-After successful deployment, your workflow will be available for remote execution via the GenSX Cloud dashboard or through the `gensx run` command.
+After successful deployment, your workflow will be available for remote execution via the [GenSX Cloud console](https://app.gensx.com) or through the `gensx run` command.
 
 ## Examples
 
@@ -5527,9 +5513,10 @@ gensx deploy src/workflows.tsx --env OPENAI_API_KEY
 ## Notes
 
 - You must be logged in to GenSX Cloud to deploy (`gensx login`)
+- `gensx deploy` requires Docker to be running
 - If your workflow requires API keys or other secrets, provide them using the `--env` option
 - For environment variables without a specified value, the CLI will use the value from your local environment
-- After deployment, you can manage your workflows from the GenSX Cloud dashboard
+- After deployment, you can manage your workflows from the GenSX Cloud console
 - The deployment process automatically handles bundling dependencies
 
 # gensx build
@@ -5546,7 +5533,7 @@ gensx build <file> [options]
 
 | Argument | Description                                                                                                    |
 | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `<file>` | Workflow file to build (e.g., `src/workflows.tsx`). This should export a GenSX Workflow as the default export. |
+| `<file>` | Workflow file to build (e.g., `src/workflows.tsx`). This should export an object with one or more GenSX workflows |
 
 ## Options
 
@@ -5565,7 +5552,7 @@ This command builds your GenSX workflow into an optimized bundle that can be dep
 - Optimizes the code for production
 - Prepares the workflow for deployment
 
-After building, the command outputs the path to the bundled file, which can be used with the `gensx deploy` command.
+After building, the command outputs the path to the bundled file, which can be used with the [`gensx deploy`](/docs/cli-reference/deploy) command.
 
 ## Examples
 
@@ -5582,8 +5569,9 @@ gensx build src/workflows.tsx --tsconfig ./custom-tsconfig.json
 
 ## Notes
 
-- The build process requires that your workflow file exports a GenSX Workflow as the default export
-- If no output directory is specified, the built files will be placed in a `.gensx/build` directory
+- The build process requires that your workflow file exports an object with one or more GenSX workflows.
+- `gensx build` requires Docker to be running
+- If no output directory is specified, the build files will be placed in a `.gensx` directory
 - The build process does not include environment variables - these should be provided during deployment
 
 # Search reference

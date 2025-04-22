@@ -5,7 +5,7 @@ description: Overview of the GenSX Cloud Platform
 
 # GenSX Cloud
 
-GenSX Cloud provides everything you need to ship production grade agents:
+GenSX Cloud provides everything you need to ship production-grade agents and workflows:
 
 - **Serverless runtime**: One command to deploy all of your workflows and agents as REST APIs running on serverless infrastructure optimized for long-running agents and workflows. Support for synchronous and background invocation, streaming, and intermediate status included.
 - **Cloud storage**: build stateful agents and workflows with builtin blob storage, SQL databases, and full-text + vector search indices -- all provisioned at runtime.
@@ -18,18 +18,21 @@ All of this is available on a free tier for individuals and with $20/developer p
 
 ## Serverless deployments
 
-GenSX Cloud provides serverless infrastructure optimized for agents and LLM workflows:
+Serverless deployments allow you to turn your GenSX workflows and agents into APIs with a single command:
 
 - **Generated REST APIs**: `gensx deploy` generates a REST API complete with schema and validation for every workflow in your project.
 - **Long-running**: GenSX Cloud is optimized for long running LLM workloads. Workflows can run up to 5 minutes on the free tier and 60 minutes on the Pro tier.
-- **Millisecond-level cold starts**:
+- **Millisecond-level cold starts**: initial cold starts are on the order of 10s of milliseconds -- an order of magnitude faster than other serverless providers.
 
-Serverless deployments are billed pay-second, with 50,000 seconds included per month in the free tier for individuals.
+Serverless deployments are billed per-second, with 50,000 seconds included per month in the free tier for individuals.
 
 Projects are deployed with a single CLI command:
 
 ```bash
 $ npx gensx deploy ./src/workflows.tsx
+```
+
+```bash
 ✔ Building workflow using Docker
 ✔ Generating schema
 
@@ -51,11 +54,11 @@ Available workflows:
 Project: support-tools
 ```
 
-Each workflow is available via APIs for synchronous and asynchronous invocation:
+Each workflow is available via both a synchronous and asynchronous API:
 
 ```
 // For synchronous and streaming calls:
-https://api.gensx.com/org/{orgName}/projects/{projectName}/environments/{environmentName}/workflows/{workflowName}/run
+https://api.gensx.com/org/{orgName}/projects/{projectName}/environments/{environmentName}/workflows/{workflowName}
 // For running workflows async in the background
 https://api.gensx.com/org/{orgName}/projects/{projectName}/environments/{environmentName}/workflows/{workflowName}/start
 ```
@@ -106,11 +109,11 @@ const ChatWithMemory = gensx.Component(
 );
 
 // Just wrap your workflow with BlobProvider
-const Workflow = ({ userInput, threadId }) => (
+const Workflow = gensx.Component("MyWorkflow", ({ userInput, threadId }) => (
   <BlobProvider>
     <ChatWithMemory userInput={userInput} threadId={threadId} />
   </BlobProvider>
-);
+));
 ```
 
 Blob storage automatically adapts between local development (using filesystem) and cloud deployment with zero configuration changes.
@@ -225,7 +228,7 @@ GenSX Cloud provides comprehensive tracing and observability for all your workfl
 // No additional instrumentation required
 const result = await MyWorkflow.run(
   { input: "User query" },
-  printUrl: true // log the tracing URL
+  { printUrl: true }, // log the tracing URL
 );
 ```
 
@@ -244,7 +247,7 @@ For more details see the full [observability reference](/docs/cloud/observabilit
 
 GenSX provides a seamless development experience that mirrors the cloud environment, allowing you to build and test your workflows locally before deployment:
 
-### Development Server
+### Development server
 
 The `gensx start` command launches a local development server that:
 
@@ -265,7 +268,7 @@ npx gensx start ./src/workflows.tsx
 ✔ Generating schema
 
 📋 Available workflows:
-- MyWorkflow: http://localhost:1337/local/my-app/default/workflows/MyWorkflow/run
+- MyWorkflow: http://localhost:1337/org/{org}/project/{project}/workflows/MyWorkflow
 
 ✅ Server is running. Press Ctrl+C to stop.
 ```
@@ -299,7 +302,7 @@ For more details see the full [local development reference](/docs/cloud/local-de
 
 GenSX Cloud organizes your workflows and deployments using a flexible structure of projects and environments:
 
-- **Projects**: A collection of related workflows that are deployed together, typically corresponding to a codebase or application. Projects help you organize and manage your AI components as cohesive units.
+**Projects** are a collection of related workflows that are deployed together, typically corresponding to a codebase or application. Projects help you organize and manage your AI components as cohesive units.
 
 Projects are defined by the `projectName` field in your `gensx.yaml` configuration file at the root of your codebase:
 
@@ -308,7 +311,7 @@ Projects are defined by the `projectName` field in your `gensx.yaml` configurati
 projectName: my-chatbot-app
 ```
 
-- **Environments**: Sub-groupings within a project that allow you to deploy multiple instances of the same workflows with different configuration. This supports the common development pattern of separating dev, staging, and production environments.
+**Environments** are sub-groupings within a project that allow you to deploy multiple instances of the same workflows with different configuration. This supports the common development pattern of separating dev, staging, and production environments.
 
 ```bash
 # Deploy to the default environment

@@ -17,7 +17,7 @@ The GenSX cloud console includes a trace viewer. You can access traces in severa
 
 1. **From the Console**: Navigate to your project in the [GenSX Console](https://app.gensx.com) and select the "Executions" tab
 2. **Trace URL**: When running a workflow with `printUrl: true`, a direct link to the trace is printed to the console
-3. **API Response**: The execution ID from API responses can be used to view traces in the console
+3. **API Response**: When running a workflow in the cloud, the execution ID from API responses can be used to view traces in the console
 
 ```tsx
 // Executing a workflow with trace URL printing
@@ -27,10 +27,10 @@ const result = await MyWorkflow.run(
 );
 
 // Console output includes:
-// [GenSX] View execution at: https://app.gensx.com/your_org/executions/your_execution_idf
+// [GenSX] View execution at: https://app.gensx.com/your_org/executions/your_execution_id
 ```
 
-### Viewing the flame graph
+### Understanding the flame graph
 
 The flame graph visualizes the entire execution tree including branches, all nested sub-components, and timing:
 
@@ -69,11 +69,11 @@ Historical traces are automatically organized by project and environment, making
 
 ## Configuring traces
 
-tGenSX provides flexible options for configuring and organizing traces for the GenSX Cloud serverless platform, local development, and any other deployment platform like vercel, cloudflare and AWS.
+GenSX provides flexible options for configuring and organizing traces for the GenSX Cloud serverless platform, local development, and any other deployment platform like vercel, cloudflare and AWS.
 
 ### Tracing GenSX Cloud workflows
 
-When running workflows on GenSX Cloud, tracing is automatically configured:
+When running workflows deployed to GenSX Cloud, tracing is automatically configured:
 
 - **Project context**: Traces are associated with the correct project
 - **Environment segregation**: Development, staging, and production traces are kept separate
@@ -84,7 +84,7 @@ No additional configuration is needed – everything works out of the box.
 
 ### Tracing on other deployment platforms
 
-To enable tracing for workflows deployed outside of GenSX Cloud (like AWS Lambda, Google Cloud Functions, etc.), you need to set several environment variables:
+To enable tracing for workflows deployed outside of GenSX Cloud (like AWS Lambda, GCP Cloud Run, etc.), you need to set several environment variables:
 
 ```bash
 # Required variables
@@ -99,17 +99,17 @@ GENSX_CHECKPOINTS=false                        # Explicitly disable
 
 ### Configuring traces for local development
 
-For local development, tracing configuration is automatically inferred from:
+For local development, the tracing configuration is automatically inferred from:
 
 1. The `gensx.yaml` file in your project root
 2. Your local configuration managed by the `gensx` CLI in `~/.config/gensx/config`
-3. Optionally the `GENSX_ENVIRONMENT` environment variable to separate local traces from other environments
+3. Optionally the `GENSX_ENVIRONMENT` environment variable can be set to separate local traces from other environments
 
 The local development server started with `gensx start` uses this same configuration scheme as well.
 
 ### Organizing traces by environment
 
-GenSX allows you to organize traces by environment (development, staging, production) to keep your debugging data well-structured:
+GenSX allows you to organize traces by environment (such as development, staging, production, etc.) to keep your debugging data well-structured:
 
 ```bash
 # Deploy to a specific environment with its own traces
@@ -215,32 +215,6 @@ const GenerateCredentials = gensx.Component(
 ```
 
 When `secretOutputs` is set to `true`, the entire output object or value will be treated as sensitive and masked in traces.
-
-### Secrets propagation
-
-Secrets are automatically propagated through the component hierarchy:
-
-```tsx
-const ParentComponent = gensx.Component(
-  "ParentComponent",
-  async ({ apiKey, query }) => {
-    // apiKey is marked as secret
-    const results = await ChildComponent.run({
-      query,
-      headers: { authorization: `Bearer ${apiKey}` },
-    });
-
-    // apiKey is also scrubbed here in the trace,
-    // even though ChildComponent doesn't explicitly mark it
-    return processResults(results, apiKey);
-  },
-  {
-    secretProps: ["apiKey"],
-  },
-);
-```
-
-Secrets remain scrubbed throughout the execution chain, even if they're transformed or embedded in different objects.
 
 ## Limits
 

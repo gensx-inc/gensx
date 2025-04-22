@@ -17,7 +17,7 @@ gensx deploy <file> [options]
 
 | Argument | Description                                                                                |
 | -------- | ------------------------------------------------------------------------------------------ |
-| `<file>` | File to deploy. This should be a TypeScript/JavaScript file that exports a GenSX Workflow. |
+| `<file>` | File to deploy. This should be a TypeScript file that exports a GenSX workflow. |
 
 ## Options
 
@@ -31,12 +31,12 @@ gensx deploy <file> [options]
 
 This command:
 
-1. Builds your workflow (if not already built)
+1. Builds your workflow
 2. Uploads it to GenSX Cloud
 3. Creates or updates the deployment
 4. Sets up any environment variables specified
 
-After successful deployment, your workflow will be available for remote execution via the GenSX Cloud dashboard or through the `gensx run` command.
+After successful deployment, your workflow will be available for remote execution via the [GenSX Cloud console](https://app.gensx.com) or through the `gensx run` command.
 
 ## Examples
 
@@ -57,7 +57,8 @@ gensx deploy src/workflows.tsx --env OPENAI_API_KEY
 ## Notes
 
 - You must be logged in to GenSX Cloud to deploy (`gensx login`)
+- `gensx deploy` requires Docker to be running
 - If your workflow requires API keys or other secrets, provide them using the `--env` option
 - For environment variables without a specified value, the CLI will use the value from your local environment
-- After deployment, you can manage your workflows from the GenSX Cloud dashboard
+- After deployment, you can manage your workflows from the GenSX Cloud console
 - The deployment process automatically handles bundling dependencies
