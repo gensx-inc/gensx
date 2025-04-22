@@ -21,8 +21,8 @@ import { Stream } from "openai/streaming";
 
 // Create a context for OpenAI
 export const OpenAIContext = gensx.createContext<{
-  client: OpenAI;
-}>({ client: new OpenAI() });
+  client: OpenAI | undefined;
+}>({ client: process.env.OPENAI_API_KEY ? new OpenAI() : undefined });
 
 export const OpenAIProvider = gensx.Component<ClientOptions, never>(
   "OpenAIProvider",
@@ -54,6 +54,12 @@ export const OpenAIChatCompletion = gensx.Component<
 >("OpenAIChatCompletion", async (props) => {
   const context = gensx.useContext(OpenAIContext);
 
+  if (!context.client) {
+    throw new Error(
+      "OpenAI client not found, do you need to wrap your component in an OpenAIProvider?",
+    );
+  }
+
   return context.client.chat.completions.create(props);
 });
 
@@ -70,6 +76,13 @@ export const OpenAIResponses = gensx.Component<
   OpenAIResponsesOutput
 >("OpenAIResponses", async (props) => {
   const context = gensx.useContext(OpenAIContext);
+
+  if (!context.client) {
+    throw new Error(
+      "OpenAI client not found, do you need to wrap your component in an OpenAIProvider?",
+    );
+  }
+
   return context.client.responses.create(props);
 });
 
@@ -78,5 +91,11 @@ export const OpenAIEmbedding = gensx.Component<
   CreateEmbeddingResponse
 >("OpenAIEmbedding", (props) => {
   const context = gensx.useContext(OpenAIContext);
+
+  if (!context.client) {
+    throw new Error(
+      "OpenAI client not found, do you need to wrap your component in an OpenAIProvider?",
+    );
+  }
   return context.client.embeddings.create(props);
 });
