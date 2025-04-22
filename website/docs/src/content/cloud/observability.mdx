@@ -1,0 +1,243 @@
+---
+title: Observability & tracing
+description: Monitor and debug your GenSX workflows
+---
+
+# Observability & tracing
+
+GenSX provides observability tools that make it easy to understand, debug, and optimize your workflows. Every component execution is automatically traced, giving you full visibility into what's happening inside your LLM workflows. You can view traces in realtime as workflows execute, and view historical traces to debug production issues like hallucinations.
+
+## Viewing traces
+
+When you run a workflow, GenSX automatically generates a trace that captures the entire execution flow, including all component inputs, outputs, and timing information.
+
+### Accessing the trace viewer
+
+The GenSX cloud console includes a trace viewer. You can access traces in several ways:
+
+1. **From the Console**: Navigate to your project in the [GenSX Console](https://app.gensx.com) and select the "Executions" tab
+2. **Trace URL**: When running a workflow with `printUrl: true`, a direct link to the trace is printed to the console
+3. **API Response**: When running a workflow in the cloud, the execution ID from API responses can be used to view traces in the console
+
+```tsx
+// Executing a workflow with trace URL printing
+const result = await MyWorkflow.run(
+  { input: "What is GenSX?" },
+  { printUrl: true },
+);
+
+// Console output includes:
+// [GenSX] View execution at: https://app.gensx.com/your_org/executions/your_execution_id
+```
+
+### Understanding the flame graph
+
+The flame graph visualizes the entire execution tree including branches, all nested sub-components, and timing:
+
+![Workflow component tree](/cloud/trace.png)
+
+- **Component hierarchy**: See the nested structure of your components and their relationships
+- **Execution timing**: The width of each bar represents the relative execution time
+- **Status indicators**: Quickly spot errors or warnings with color coding
+- **Component filtering**: Focus on specific components or component types
+
+Click on any component in the flame graph to inspect its details, including inputs, outputs, and timing information.
+
+### Viewing component inputs and outputs
+
+For each component in your workflow, you can inspect:
+
+1. **Input properties**: All props passed to the component
+2. **Output values**: The data returned by the component
+3. **Execution duration**: How long the component took to execute
+4. **Metadata**: Additional information like token counts for LLM calls
+
+![Component trace](/cloud/component-trace.png)
+
+This visualization is particularly valuable for debugging production and user-reported issues like hallucinations.
+
+### Viewing historical traces
+
+The GenSX Console maintains a history of all your workflow executions, allowing you to:
+
+- **Compare executions**: See how behavior changes across different runs
+- **Identify patterns**: Spot recurring issues or performance bottlenecks
+- **Filter by status**: Focus on successful, failed, or in-progress executions
+- **Search**: Find historical executions
+
+Historical traces are automatically organized by project and environment, making it easy to find relevant executions.
+
+## Configuring traces
+
+GenSX provides flexible options for configuring and organizing traces for the GenSX Cloud serverless platform, local development, and any other deployment platform like vercel, cloudflare and AWS.
+
+### Tracing GenSX Cloud workflows
+
+When running workflows deployed to GenSX Cloud, tracing is automatically configured:
+
+- **Project context**: Traces are associated with the correct project
+- **Environment segregation**: Development, staging, and production traces are kept separate
+- **Authentication**: API keys and organization information are handled automatically
+- **Retention**: Traces are stored according to your plan limits
+
+No additional configuration is needed – everything works out of the box.
+
+### Tracing on other deployment platforms
+
+To enable tracing for workflows deployed outside of GenSX Cloud (like AWS Lambda, GCP Cloud Run, etc.), you need to set several environment variables:
+
+```bash
+# Required variables
+GENSX_API_KEY=your_api_key_here
+GENSX_ORG=your_gensx_org_name
+GENSX_PROJECT=your_project_name
+
+# Optional variables
+GENSX_ENVIRONMENT=your_environment_name        # Separate traces into specific environments
+GENSX_CHECKPOINTS=false                        # Explicitly disable
+```
+
+### Configuring traces for local development
+
+For local development, the tracing configuration is automatically inferred from:
+
+1. The `gensx.yaml` file in your project root
+2. Your local configuration managed by the `gensx` CLI in `~/.config/gensx/config`
+3. Optionally the `GENSX_ENVIRONMENT` environment variable can be set to separate local traces from other environments
+
+The local development server started with `gensx start` uses this same configuration scheme as well.
+
+### Organizing traces by environment
+
+GenSX allows you to organize traces by environment (such as development, staging, production, etc.) to keep your debugging data well-structured:
+
+```bash
+# Deploy to a specific environment with its own traces
+gensx deploy src/workflows.tsx --environment production
+```
+
+In the GenSX Console, you can filter traces by environment to focus on relevant executions. This separation also helps when:
+
+- Debugging issues specific to an environment
+- Comparing behavior between environments
+- Isolating production traces from development noise
+
+## Instrumenting additional code
+
+Every GenSX component is automatically traced. If want to trace additional sub-steps of a workflow, wrap that code in a `gensx.Component` and execute it via `myComponent.Run(props)`.
+
+```tsx
+import * as gensx from "@gensx/core";
+
+const MyWorkflow = gensx.Component("MyWorkflow", async ({ input }) => {
+  // Step 1: Process input
+  const processedData = await ProcessData.run({ data: input });
+
+  // Step 2: Generate response
+  const response = await GenerateResponse.run({ data: processedData });
+
+  return response;
+});
+
+// Create a component to trace a specific processing step
+const ProcessData = gensx.Component("ProcessData", async ({ data }) => {
+  // This entire function execution will be captured in traces
+  const parsedData = JSON.parse(data);
+  const enrichedData = await fetchAdditionalInfo(parsedData);
+  return enrichedData;
+});
+
+// Create a component to trace response generation
+const GenerateResponse = gensx.Component(
+  "GenerateResponse",
+  async ({ data }) => {
+    // This will appear as a separate node in the trace
+    return `Processed result: ${JSON.stringify(data)}`;
+  },
+);
+```
+
+## Secrets scrubbing
+
+GenSX enables you to configure which input props and outputs are marked as secrets and redacted from traces. Scrubbing happens locally before traces are sent to GenSX Cloud.
+
+### How secrets scrubbing works
+
+When a component executes, GenSX automatically:
+
+1. Identifies secrets in component props and outputs
+2. Replaces these secrets with `[secret]` in the trace data
+3. Propagates secret detection across the entire component hierarchy
+
+Even if a secret is passed down through multiple components, it remains scrubbed in all traces.
+
+### Marking secrets in component props
+
+To mark specific props as containing secrets:
+
+```tsx
+import * as gensx from "@gensx/core";
+
+const AuthenticatedClient = gensx.Component(
+  "AuthenticatedClient",
+  ({ apiKey, endpoint, query, credentials }) => {
+    // Use apiKey securely, knowing it won't appear in traces
+    return fetchData(endpoint, query, apiKey, credentials);
+  },
+  {
+    // Mark these props as containing sensitive data
+    secretProps: ["apiKey", "credentials.privateKey"],
+  },
+);
+```
+
+The `secretProps` option can specify both top-level props and nested paths using dot notation.
+
+### Marking component outputs as secrets
+
+For components that might return sensitive information, you can mark the entire output as sensitive:
+
+```tsx
+const GenerateCredentials = gensx.Component(
+  "GenerateCredentials",
+  async ({ userId }) => {
+    // This entire output will be marked as secret
+    return {
+      accessToken: "sk-1234567890abcdef",
+      refreshToken: "rt-0987654321fedcba",
+      expiresAt: Date.now() + 3600000,
+    };
+  },
+  {
+    secretOutputs: true,
+  },
+);
+```
+
+When `secretOutputs` is set to `true`, the entire output object or value will be treated as sensitive and masked in traces.
+
+## Limits
+
+GenSX observability features have certain limits based on your subscription tier:
+
+| Feature                   | Free Tier      | Pro Tier ($20/month/dev) | Enterprise |
+| ------------------------- | -------------- | ------------------------ | ---------- |
+| Traced components         | 100K per month | 1M per month             | Custom     |
+| Overage cost              | N/A            | $0.20 per 10K components | Custom     |
+| Trace retention           | 7 days         | 30 days                  | Custom     |
+| Maximum input/output size | 4MB each       | 4MB each                 | 4MB each   |
+
+A few important notes on these limits:
+
+- **Component count**: Each component execution in your workflow counts as one traced component
+- **Size limits**: Component inputs and outputs are limited to 4MB each; larger data is truncated
+- **Secret scrubbing**: API keys and sensitive data are automatically redacted from traces
+- **Retention**: After the retention period, traces are automatically deleted
+
+For use cases requiring higher limits or longer retention, contact the GenSX team for enterprise options.
+
+## Next steps
+
+- [Set up serverless deployments](/docs/cloud/serverless-deployments) to automatically trace cloud workflows
+- [Learn about local development](/docs/cloud/local-development) for testing with traces
+- [Explore project and environment organization](/docs/cloud/projects-environments) to structure your traces

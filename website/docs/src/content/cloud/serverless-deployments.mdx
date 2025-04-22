@@ -1,0 +1,232 @@
+---
+title: Serverless deployments
+description: Deploy GenSX workflows as serverless APIs
+---
+
+# Serverless deployments
+
+Deploy your GenSX workflows as serverless APIs with support for both synchronous and asynchronous execution, as well as long-running operations.
+
+## Deploy with the CLI
+
+Projects are a collection of workflows and environment variables that deploy together into an `environment` that you configure.
+
+Each project has a `gensx.yaml` file at the root and a `workflows.tsx` file that exports all of your deployable workflows.
+
+Run `gensx deploy` from the root of your project to deploy it:
+
+```bash
+# Deploy the workflow file with default settings
+npx gensx deploy src/workflows.tsx
+
+# Deploy with environment variables
+npx gensx deploy src/workflows.tsx -ev OPENAI_API_KEY
+```
+
+Environment variables are encrypted with per-project encryption keys.
+
+### Deploying to different environments
+
+GenSX supports multiple environments within a project (such as development, staging, and production) to help manage your deployment lifecycle.
+
+```bash
+# Deploy to a specific environment
+npx gensx deploy src/workflows.tsx --environment production
+
+# Deploy to staging with environment-specific variables
+npx gensx deploy src/workflows.tsx --environment staging -ev OPENAI_API_KEY -ev LOG_LEVEL=debug
+```
+
+Each environment can have its own configuration and environment variables, allowing you to test in isolation before promoting changes to production.
+
+When you deploy a workflow, GenSX:
+
+1. Builds your TypeScript code for production
+2. Bundles your dependencies
+3. Uploads the package to GenSX Cloud
+4. Configures serverless infrastructure
+5. Creates API endpoints for each exported workflow
+6. Encrypts and sets up environment variables
+7. Activates the deployment
+
+The entire process typically takes 15 seconds.
+
+## Running workflows from the CLI
+
+Once deployed, you can execute workflows directly from the CLI:
+
+```bash
+# Run a workflow synchronously with input data
+npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --project my-app
+
+# Run and save the output to a file
+npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --output results.json
+
+# Run asynchronously (start the workflow but don't wait for completion)
+npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --project my-app
+```
+
+### CLI run options
+
+| Option      | Description                                     |
+| ----------- | ----------------------------------------------- |
+| `--input`   | JSON string with input data                     |
+| `--no-wait`    | Do not wait for workflow to finish |
+| `--output`  | Save results to a file                          |
+| `--project` | Specify the project name                        |
+
+## API endpoints
+
+Each workflow is exposed as an API endpoint:
+
+```
+https://api.gensx.com/org/{org}/projects/{project}/environments/{environment}/workflows/{workflow}
+```
+
+- `{org}` - Your organization ID
+- `{project}` - Your project name
+- `{environment}` - The environment (defaults to "default")
+- `{workflow}` - The name of your workflow
+
+For example, if you have a workflow named `BlogWriter` in project `content-tools`, the endpoint would be:
+
+```
+https://api.gensx.com/org/your-org/projects/content-tools/environments/default/workflows/BlogWriter
+```
+
+## Authentication
+
+All GenSX Cloud API endpoints require authentication using your GenSX API key as a bearer token:
+
+```bash
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Tell me about GenSX"}'
+```
+
+### Obtaining an API Key
+
+To generate or manage API keys:
+
+1. Log in to the [GenSX Cloud console](https://app.gensx.com)
+2. Navigate to Settings > API Keys
+3. Create a new key
+
+## Execution modes
+
+### Synchronous Execution
+
+By default, API calls execute synchronously, returning the result when the workflow completes:
+
+```bash
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Tell me about GenSX"}'
+```
+
+### Asynchronous execution
+
+For longer-running workflows, use asynchronous execution by calling the `/start` endpoint:
+
+```bash
+# Request asynchronous execution
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow/start \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Tell me about GenSX"}'
+
+# Response includes an execution ID
+# {
+#   "status": "ok",
+#   "data": {
+#     "executionId": "exec_123abc"
+#   }
+# }
+
+# Check status later
+curl -X GET https://api.gensx.com/executions/exec_123abc \
+  -H "Authorization: Bearer your-api-key"
+```
+
+### Streaming responses
+
+For workflows that support streaming, you can receive tokens as they're generated:
+
+```bash
+curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/YourWorkflow \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Tell me about GenSX", "stream": true }'
+```
+
+The response is delivered as a stream of server-sent events (SSE).
+
+## Execution time limits
+
+GenSX Cloud is optimized for long-running workflows and agents, with generous execution time limits:
+
+| Plan       | Maximum Execution Time  |
+| ---------- | ----------------------- |
+| Free Tier  | Up to 5 minutes         |
+| Pro Tier   | Up to 60 minutes        |
+| Enterprise | Custom limits available |
+
+These extended timeouts make GenSX ideal for complex AI workflows that might involve:
+
+- Multiple LLM calls in sequence
+- Real-time agent tool use
+- Complex data processing
+- Extensive RAG operations
+
+## Cold starts and performance
+
+The GenSX Cloud serverless architecture is designed to minimize cold starts:
+
+- **Millisecond-level cold starts**: Initial cold starts typically range from 10-30ms
+- **Warm execution**: Subsequent executions of recently used workflows start in 1-5ms
+- **Auto-scaling**: Infrastructure automatically scales with workloads
+
+## Managing deployments in the console
+
+GenSX Cloud provides a console to run, debug, and view all of your workflows.
+
+### Viewing workflows
+
+![View projects in the console](/cloud/console-workflows.png)
+
+1. Log in to [app.gensx.com](https://app.gensx.com)
+2. Navigate to your project and environment
+3. The workflows tab shows all deployed workflows with status information
+4. Click on a workflow to view its details, including schema, recent executions, and performance metrics
+
+The workflow page includes API documentation and code snippets that you can copy/paste to run your workflow from within another app:
+
+![View projects in the console](/cloud/console-workflow-docs.png)
+
+### Running workflows manually
+
+You can test workflows directly from the console:
+
+1. Navigate to the workflow detail page
+2. Click the "Run" button
+3. Enter JSON input in the provided editor
+4. Choose execution mode (sync, async, or streaming)
+5. View results directly in the console
+
+![Run workflows in the console](/cloud/console-playground.png)
+
+### Viewing execution history
+
+Each workflow execution generates a trace you can review:
+
+1. Navigate to the "Executions" tab in your project
+2. Browse the list of recent executions
+3. Click on any execution to see detailed traces
+4. Explore the component tree, inputs/outputs, and execution timeline
+
+## Next steps
+
+- [Learn about cloud storage options](/docs/cloud/storage)
+- [Explore observability and tracing](/docs/cloud/observability)

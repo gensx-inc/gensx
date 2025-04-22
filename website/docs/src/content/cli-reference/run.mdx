@@ -1,0 +1,67 @@
+---
+title: gensx run
+description: Execute a deployed workflow on GenSX Cloud
+---
+
+# gensx run
+
+The `gensx run` command executes a workflow that has been deployed to GenSX Cloud. By default it infers your project from the `gensx.yaml` file in the current working directory.
+
+## Usage
+
+```bash
+gensx run <workflow> [options]
+```
+
+## Arguments
+
+| Argument     | Description                  |
+| ------------ | ---------------------------- |
+| `<workflow>` | Name of the workflow to run. |
+
+## Options
+
+| Option                 | Description                                                  |
+| ---------------------- | ------------------------------------------------------------ |
+| `-i, --input <input>`  | Input to pass to the workflow (as JSON).                     |
+| `--no-wait`            | Do not wait for the workflow to finish (run asynchronously). |
+| `-p, --project <name>` | Project name where the workflow is deployed.                 |
+| `-o, --output <file>`  | Output file to write the workflow result to.                 |
+| `-h, --help`           | Display help for the command.                                |
+
+## Description
+
+This command triggers execution of a deployed workflow on GenSX Cloud with the specified input. By default, it waits for the workflow to complete and displays the result.
+
+When running a workflow, you can:
+
+- Provide input data as JSON
+- Choose whether to wait for completion or run asynchronously
+- Save the output to a file
+
+## Examples
+
+```bash
+# Run a workflow with no input
+gensx run MyWorkflow
+
+# Run a workflow with JSON input
+gensx run MyWorkflow --input '{"text": "Hello, world!"}'
+
+# Run a workflow in a specific project
+gensx run MyWorkflow --project my-production-project
+
+# Run a workflow asynchronously (don't wait for completion)
+gensx run MyWorkflow --no-wait
+
+# Run a workflow and save output to a file
+gensx run MyWorkflow --output result.json
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to run workflows (`gensx login`)
+- The workflow must have been previously deployed using `gensx deploy`
+- When using `--input`, the input must be valid JSON
+- When using `--no-wait`, the command returns immediately with a workflow ID that can be used to check status later
+- Error handling: if the workflow fails, the command will return with a non-zero exit code and display the error

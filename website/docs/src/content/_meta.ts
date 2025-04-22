@@ -1,14 +1,15 @@
 const meta = {
   index: "Overview",
-  "basic-concepts": "Basic Concepts",
+  "basic-concepts": "Basic concepts",
   quickstart: "Quickstart",
-  cloud: "Cloud (Beta)",
   "why-jsx": "Why JSX?",
   concepts: "Concepts",
-  examples: "Examples",
-  "component-reference": "Components Reference",
+  cloud: "GenSX Cloud ",
+  "component-reference": "Components reference",
   patterns: "Patterns",
-  "typescript-compatibility": "Typescript Compatibility",
+  "cli-reference": "CLI reference",
+  examples: "Examples",
+  "typescript-compatibility": "Typescript compatibility",
 };
 
 export default meta;

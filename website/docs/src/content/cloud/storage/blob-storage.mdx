@@ -1,0 +1,263 @@
+---
+title: Blob storage
+description: Store and retrieve unstructured data with GenSX blob storage
+---
+
+# Blob storage
+
+Blob storage provides zero-configuration persistent storage for your GenSX applications. It enables you to store JSON, text, or binary data for your agents and workflows without worrying about managing infrastructure.
+
+## Basic usage
+
+To use blob storage in your GenSX application:
+
+1. Install the storage package:
+
+   ```bash
+   npm install @gensx/storage
+   ```
+
+2. Add the `BlobProvider` to your workflow:
+
+   ```tsx
+   import { BlobProvider } from "@gensx/storage";
+
+   const Workflow = ({ input }) => (
+     <BlobProvider>
+       <YourComponent input={input} />
+     </BlobProvider>
+   );
+   ```
+
+3. Access blobs within your components using the `useBlob` hook:
+
+   ```tsx
+   import { useBlob } from "@gensx/storage";
+
+   const blob = useBlob("your-key.json");
+   ```
+
+### Reading blobs
+
+The `useBlob` hook provides simple methods to read different types of data:
+
+```tsx
+import { useBlob } from "@gensx/storage";
+
+// Read JSON data
+const profileBlob = useBlob("users/profile.json");
+const profile = await profileBlob.getJSON();
+console.log(profile?.name);
+
+// Read text data
+const notesBlob = useBlob("notes/meeting.txt");
+const notes = await notesBlob.getString();
+
+// Read binary data
+const imageBlob = useBlob("images/photo.jpg");
+const image = await imageBlob.getRaw();
+console.log(image?.contentType); // "image/jpeg"
+```
+
+### Writing blobs
+
+You can write data in various formats:
+
+```tsx
+import { useBlob } from "@gensx/storage";
+
+// Write JSON data
+const profileBlob = useBlob("users/profile.json");
+await profileBlob.putJSON({ name: "Alice", preferences: { theme: "dark" } });
+
+// Write text data
+const notesBlob = useBlob("notes/meeting.txt");
+await notesBlob.putString("Meeting agenda:\n1. Project updates\n2. Action items");
+
+// Write binary data
+const imageBlob = useBlob("images/photo.jpg");
+await imageBlob.putRaw(imageBuffer, {
+  contentType: "image/jpeg",
+  metadata: { originalName: "vacation.jpg" }
+});
+```
+
+## Practical examples
+
+### Persistent chat threads
+
+One of the most common use cases for blob storage is maintaining conversation history across multiple interactions:
+
+```tsx
+import * as gensx from "@gensx/core";
+import { ChatCompletion } from "@gensx/openai";
+import { useBlob } from "@gensx/storage";
+
+interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+const ChatWithMemory = gensx.Component(
+  "ChatWithMemory",
+  async ({ userInput, threadId }) => {
+    // Get a reference to the thread's storage
+    const blob = useBlob<ChatMessage[]>(`chats/${threadId}.json`);
+
+    // Load existing messages or start with a system prompt
+    const messages = (await blob.getJSON()) ?? [
+      {
+        role: "system",
+        content: "You are a helpful assistant.",
+      },
+    ];
+
+    // Add the new user message
+    messages.push({ role: "user", content: userInput });
+
+    // Generate a response using the full conversation history
+    const response = await ChatCompletion.run({
+      model: "gpt-4o-mini",
+      messages,
+    });
+
+    // Save the assistant's response to the history
+    messages.push({ role: "assistant", content: response });
+    await blob.putJSON(messages);
+
+    return response;
+  },
+);
+```
+
+### Memory for agents
+
+For more complex agents, you can store structured memory:
+
+```tsx
+interface AgentMemory {
+  facts: string[];
+  tasks: { description: string; completed: boolean }[];
+  lastUpdated: string;
+}
+
+const AgentWithMemory = gensx.Component(
+  "AgentWithMemory",
+  async ({ input, agentId }) => {
+    // Load agent memory
+    const memoryBlob = useBlob<AgentMemory>(`agents/${agentId}/memory.json`);
+    const memory = (await memoryBlob.getJSON()) ?? {
+      facts: [],
+      tasks: [],
+      lastUpdated: new Date().toISOString(),
+    };
+
+    // Process input using memory
+    // ...
+
+    // Update and save memory
+    memory.facts.push("New fact learned from input");
+    memory.tasks.push({ description: "Follow up on X", completed: false });
+    memory.lastUpdated = new Date().toISOString();
+
+    await memoryBlob.putJSON(memory);
+
+    return "Response that uses memory context";
+  },
+);
+```
+
+### Saving files
+
+You can use blob storage to save and retrieve binary files like images:
+
+```tsx
+const StoreImage = gensx.Component(
+  "StoreImage",
+  async ({ imageBuffer, filename }) => {
+    const imageBlob = useBlob(`images/${filename}`);
+
+    // Save image with metadata
+    await imageBlob.putRaw(imageBuffer, {
+      contentType: "image/png",
+      metadata: {
+        uploadedAt: new Date().toISOString(),
+        pixelSize: "800x600",
+      },
+    });
+
+    return { success: true, path: `images/${filename}` };
+  },
+);
+
+const GetImage = gensx.Component("GetImage", async ({ filename }) => {
+  const imageBlob = useBlob(`images/${filename}`);
+
+  // Check if image exists
+  const exists = await imageBlob.exists();
+  if (!exists) {
+    return { found: false };
+  }
+
+  // Get the image with metadata
+  const image = await imageBlob.getRaw();
+
+  return {
+    found: true,
+    data: image?.content,
+    contentType: image?.contentType,
+    metadata: image?.metadata,
+  };
+});
+```
+
+### Optimistic concurrency control
+
+For scenarios where multiple processes might update the same data, you can use ETags to prevent conflicts:
+
+```tsx
+const UpdateCounter = gensx.Component(
+  "UpdateCounter",
+  async ({ counterName }) => {
+    const blob = useBlob(`counters/${counterName}.json`);
+
+    // Get current value and metadata
+    const counter = (await blob.getJSON<{ value: number }>()) ?? { value: 0 };
+    const metadata = await blob.getMetadata();
+
+    // Update counter
+    counter.value += 1;
+
+    try {
+      // Save with ETag to prevent conflicts
+      await blob.putJSON(counter, {
+        etag: metadata?.etag,
+      });
+      return { success: true, value: counter.value };
+    } catch (error) {
+      if (error.name === "BlobConflictError") {
+        return {
+          success: false,
+          message: "Counter was updated by another process",
+        };
+      }
+      throw error;
+    }
+  },
+);
+```
+
+## Development vs. production
+
+GenSX blob storage works identically in both local development and cloud environments:
+
+- **Local development**: Blobs are stored in the `.gensx/blobs` directory by default
+- **Cloud deployment**: Blobs are automatically stored in cloud storage
+
+If you don't specify a "kind" that the framework auto-infers this value for you based on the runtime environment.
+
+No code changes are needed when moving from development to production.
+
+## Reference
+
+See the [blob storage component reference](docs/component-reference/storage-components/blob-reference) for full details.

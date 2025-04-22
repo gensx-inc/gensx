@@ -1,0 +1,359 @@
+---
+title: GenSX Cloud
+description: Overview of the GenSX Cloud Platform
+---
+
+# GenSX Cloud
+
+GenSX Cloud provides everything you need to ship production-grade agents and workflows:
+
+- **Serverless runtime**: One command to deploy all of your workflows and agents as REST APIs running on serverless infrastructure optimized for long-running agents and workflows. Support for synchronous and background invocation, streaming, and intermediate status included.
+- **Cloud storage**: build stateful agents and workflows with builtin blob storage, SQL databases, and full-text + vector search indices -- all provisioned at runtime.
+- **Tracing and observability**: Real-time tracing of all component inputs and outputs, tool calls, and LLM calls within your agents and workflows. Tools to visualize and debug all historic executions.
+- **Collaboration**: Organize agents, workflows, and traces into projects and environments. Search and view traces and to debug historical executions.
+
+Unlike traditional serverless offerings, GenSX Cloud is optimized for long-running workflows. Free tier workflows can run up to 5 minutes and Pro tier workflows can run for up to 60 minutes.
+
+All of this is available on a free tier for individuals and with $20/developer pricing for teams.
+
+## Serverless deployments
+
+Serverless deployments allow you to turn your GenSX workflows and agents into APIs with a single command:
+
+- **Generated REST APIs**: `gensx deploy` generates a REST API complete with schema and validation for every workflow in your project.
+- **Long-running**: GenSX Cloud is optimized for long running LLM workloads. Workflows can run up to 5 minutes on the free tier and 60 minutes on the Pro tier.
+- **Millisecond-level cold starts**: initial cold starts are on the order of 10s of milliseconds -- an order of magnitude faster than other serverless providers.
+
+Serverless deployments are billed per-second, with 50,000 seconds included per month in the free tier for individuals.
+
+Projects are deployed with a single CLI command:
+
+```bash
+$ npx gensx deploy ./src/workflows.tsx
+```
+
+```bash
+✔ Building workflow using Docker
+✔ Generating schema
+
+✔ Successfully built project
+
+ℹ Using project name from gensx.yaml: support-tools
+✔ Deploying project to GenSX Cloud (Project: support-tools)
+
+✔ Successfully deployed project to GenSX Cloud
+
+Dashboard: https://app.gensx.com/gensx/support-tools/default/workflows
+
+Available workflows:
+- ChatAgent
+- TextToSQLWorkflow
+- RAGWorkflow
+- AnalyzeDiscordWorkflow
+
+Project: support-tools
+```
+
+Each workflow is available via both a synchronous and asynchronous API:
+
+```
+// For synchronous and streaming calls:
+https://api.gensx.com/org/{orgName}/projects/{projectName}/environments/{environmentName}/workflows/{workflowName}
+// For running workflows async in the background
+https://api.gensx.com/org/{orgName}/projects/{projectName}/environments/{environmentName}/workflows/{workflowName}/start
+```
+
+For more details see the full [serverless deployments reference](/docs/cloud/serverless-deployments).
+
+## Cloud storage
+
+GenSX Cloud includes runtime-provisioned storage to build stateful agents and workflows:
+
+- **Blob storage**: Store and retrieve JSON and binary data for things like conversation history, agent memory, and audio and image generation.
+- **SQL databases**: Runtime provisioned databases for scenarios like text-to-SQL.
+- **Full-text + vector search**: Store and query vector embeddings for semantic search and retrieval augmented generation (RAG).
+
+State can be long-lived and shared across workflows and agents, or it can be provisioned ephemerally on a per-request basis.
+
+### Blob storage
+
+GenSX Cloud provides blob storage for persisting unstructured data like JSON, text, and binary files. With the `BlobProvider` component and `useBlob` hook, you can easily store and retrieve data across workflow executions.
+
+Common scenarios enabled by blob storage include:
+
+- Persistent chat thread history.
+- Simple memory implementations.
+- Storing generated audio, video, and photo files.
+
+```tsx
+import { BlobProvider, useBlob } from "@gensx/storage";
+
+// Store and retrieve data with the useBlob hook
+const ChatWithMemory = gensx.Component(
+  "ChatWithMemory",
+  async ({ userInput, threadId }) => {
+    // Get access to a blob at a specific path
+    const blob = useBlob(`chats/${threadId}.json`);
+
+    // Load existing data (returns null if it doesn't exist)
+    const history = (await blob.getJSON()) ?? [];
+
+    // Add new data
+    history.push({ role: "user", content: userInput });
+
+    // Save updated data
+    await blob.putJSON(history);
+
+    return "Data stored successfully";
+  },
+);
+
+// Just wrap your workflow with BlobProvider
+const Workflow = gensx.Component("MyWorkflow", ({ userInput, threadId }) => (
+  <BlobProvider>
+    <ChatWithMemory userInput={userInput} threadId={threadId} />
+  </BlobProvider>
+));
+```
+
+Blob storage automatically adapts between local development (using filesystem) and cloud deployment with zero configuration changes.
+
+For more details see the full [storage components reference](docs/component-reference/storage-components/blob-reference).
+
+### SQL databases
+
+GenSX Cloud provides SQLite-compatible databases powered by [Turso](https://turso.tech), enabling structured data storage with several properties important to agentic workloads:
+
+- **Millisecond provisioning**: Databases are created on-demand in milliseconds, making them perfect for ephemeral workloads like parsing and querying user-uploaded CSVs or creating per-agent structured data stores.
+- **Strong consistency**: All operations are linearizable, maintaining an ordered history, with writes fully serialized and subsequent writes awaiting transaction completion.
+- **Zero configuration**: Like all GenSX storage components, databases work identically in both development and production.
+- **Local development**: Uses libsql locally to enable a fast, isolated development loop without external dependencies.
+
+```tsx
+import { DatabaseProvider, useDatabase } from "@gensx/storage";
+
+// Access a database with the useDatabase hook
+const QueryTeamStats = gensx.Component("QueryTeamStats", async ({ team }) => {
+  // Get access to a database (created on first use)
+  const db = await useDatabase("baseball");
+
+  // Execute SQL queries directly
+  const result = await db.execute("SELECT * FROM players WHERE team = ?", [
+    team,
+  ]);
+
+  return result.rows; // Returns the query results
+});
+
+// Just wrap your workflow with DatabaseProvider
+const Workflow = ({ team }) => (
+  <DatabaseProvider>
+    <QueryTeamStats team={team} />
+  </DatabaseProvider>
+);
+```
+
+For more details see the full [storage components reference](docs/component-reference/storage-components/database-reference).
+
+### Full-text and vector search
+
+GenSX Cloud provides vector and full-text search capabilities powered by [turbopuffer](https://turbopuffer.com/), enabling semantic search and retrieval augmented generation (RAG) with minimal setup:
+
+- **Vector search**: Store and query high-dimensional vectors for semantic similarity search with millisecond-level latency, perfect for RAG applications and finding content based on meaning rather than exact matches.
+- **Full-text search**: Built-in BM25 search engine for string and string array fields, enabling traditional keyword search with low latency.
+- **Hybrid search**: Combine vector similarity with full-text BM25 search to get both semantically relevant results and exact keyword matches in a single query.
+- **Rich filtering**: Apply metadata filters to narrow down search results based on categories, timestamps, or any custom attributes, enhancing precision and relevance.
+
+```tsx
+import { SearchProvider, useNamespace } from "@gensx/storage";
+import { OpenAIEmbedding } from "@gensx/openai";
+
+// Perform semantic search with the useNamespace hook
+const SearchDocuments = gensx.Component(
+  "SearchDocuments",
+  async ({ query }) => {
+    // Get access to a vector search namespace
+    const namespace = await useNamespace("documents");
+
+    // Generate an embedding for the query
+    const embedding = await OpenAIEmbedding.run({
+      model: "text-embedding-3-small",
+      input: query,
+    });
+
+    // Search for similar documents
+    const results = await namespace.query({
+      vector: embedding.data[0].embedding,
+      topK: 5,
+    });
+
+    return results.map((r) => r.attributes?.title);
+  },
+);
+
+// Just wrap your workflow with SearchProvider
+const Workflow = ({ query }) => (
+  <SearchProvider>
+    <SearchDocuments query={query} />
+  </SearchProvider>
+);
+```
+
+> **Note**: Unlike blob storage and SQL databases, vector search doesn't have a local development implementation. When using `SearchProvider` locally, you'll connect to the cloud service.
+
+For more details see the full [storage components reference](docs/component-reference/storage-components/search-reference).
+
+## Observability
+
+GenSX Cloud provides comprehensive tracing and observability for all your workflows and agents.
+
+![Workflow component tree](/cloud/trace.png)
+
+- **Complete execution traces**: Every workflow execution generates a detailed trace that captures the entire flow from start to finish, allowing you to understand exactly what happened during execution.
+
+- **Comprehensive component visibility**: Each component in your workflow automatically records its inputs and outputs, including:
+
+  - All LLM calls with full prompts, parameters, and responses
+  - Every tool invocation with input arguments and return values
+  - All intermediate steps and state changes in your agents and workflows
+
+- **Real-time monitoring**: Watch your workflows execute step by step in real time, which is especially valuable for debugging long-running agents or complex multi-step workflows.
+
+- **Historical execution data**: Access and search through all past executions to diagnose issues, analyze performance patterns, and understand user interactions over time.
+
+- **Project and environment organization**: Traces are automatically organized by project (a collection of related workflows in a codebase) and environment (such as development, staging, or production), making it easy to find relevant executions.
+
+```tsx
+// Traces are automatically captured when workflows are executed
+// No additional instrumentation required
+const result = await MyWorkflow.run(
+  { input: "User query" },
+  { printUrl: true }, // log the tracing URL
+);
+```
+
+The trace viewer provides multiple ways to analyze workflow execution:
+
+- **Timeline view**: See how long each component took and their sequence of execution
+- **Component tree**: Navigate the hierarchical structure of your workflow
+- **Input/output inspector**: Examine the exact data flowing between components
+- **Error highlighting**: Quickly identify where failures occurred
+
+![Component trace](/cloud/component-trace.png)
+
+For more details see the full [observability reference](/docs/cloud/observability).
+
+## Local development
+
+GenSX provides a seamless development experience that mirrors the cloud environment, allowing you to build and test your workflows locally before deployment:
+
+### Development server
+
+The `gensx start` command launches a local development server that:
+
+- Compiles your TypeScript workflows on the fly
+- Automatically generates schemas for your workflows
+- Creates local REST API endpoints identical to the cloud endpoints
+- Hot-reloads your code when files change
+- Provides the same API shape locally as in production
+
+```bash
+# Start the development server with a TypeScript file
+npx gensx start ./src/workflows.tsx
+
+🔍 Starting GenSX Dev Server...
+ℹ Using project name from gensx.yaml: my-app
+ℹ Starting development server...
+✔ Compilation completed
+✔ Generating schema
+
+📋 Available workflows:
+- MyWorkflow: http://localhost:1337/org/{org}/project/{project}/workflows/MyWorkflow
+
+✅ Server is running. Press Ctrl+C to stop.
+```
+
+### Local storage providers
+
+GenSX provides local implementations for most storage providers, enabling development without cloud dependencies:
+
+- **BlobProvider**: Uses local filesystem storage (`.gensx/blobs`) for development
+- **DatabaseProvider**: Uses local SQLite databases (`.gensx/databases`) for development
+- **SearchProvider**: Connects to the cloud vector search service even in development mode
+
+The local APIs mirror the cloud APIs exactly, so code that works locally will work identically when deployed:
+
+```tsx
+// This component works the same locally and in the cloud
+const SaveData = gensx.Component<{ key: string; data: any }, null>(
+  "SaveData",
+  async ({ key, data }) => {
+    // Blob storage works the same locally (filesystem) and in cloud
+    const blob = useBlob(`data/${key}.json`);
+    await blob.putJSON(data);
+    return null;
+  },
+);
+```
+
+For more details see the full [local development reference](/docs/cloud/local-development).
+
+## Projects & environments
+
+GenSX Cloud organizes your workflows and deployments using a flexible structure of projects and environments:
+
+**Projects** are a collection of related workflows that are deployed together, typically corresponding to a codebase or application. Projects help you organize and manage your AI components as cohesive units.
+
+Projects are defined by the `projectName` field in your `gensx.yaml` configuration file at the root of your codebase:
+
+```yaml
+# gensx.yaml
+projectName: my-chatbot-app
+```
+
+**Environments** are sub-groupings within a project that allow you to deploy multiple instances of the same workflows with different configuration. This supports the common development pattern of separating dev, staging, and production environments.
+
+```bash
+# Deploy to the default environment
+npx gensx deploy ./src/workflows.tsx
+
+# Deploy to a specific environment
+npx gensx deploy ./src/workflows.tsx --env production
+```
+
+Each environment can have its own configuration and environment variables to match the rest of your deployed infrastructure.
+
+Traces and observability data are also separated by project and environment, making it easier to:
+
+- Distinguish between development testing and production traffic
+- Isolate and debug issues specific to a particular environment
+- Compare performance or behavior between environments
+
+This organizational structure is designed to be flexible and adaptable, allowing you to customize it to fit with the rest of your development, testing, and deployment lifecycle.
+
+For more details see the full [projects and environments reference](/docs/cloud/projects-environments).
+
+## Pricing
+
+GenSX Cloud offers simple, predictable pricing designed to scale with your needs, including a free tier for individuals:
+
+| Resource           | Free Tier              | Pro Tier ($20/month/dev) | Overage/Action   |
+| ------------------ | ---------------------- | ------------------------ | ---------------- |
+| Serverless Compute | 50K sec                | 500K sec                 | $0.00003/sec     |
+| Traces (events)    | 100K events            | 1M events                | $0.20/10K        |
+| Blob Storage       | 500MB                  | 5GB                      | $0.25/GB         |
+| SQLite Storage     | 500MB                  | 1GB                      | $1.50/GB         |
+| Vector Storage     | 250MB                  | 1GB                      | $1.00/GB         |
+| Execution time     | Up to 5 minutes        | Up to 60 minutes         | Custom           |
+| Observability      | 7 days trace retention | 30 days trace retention  | Custom retention |
+
+For more details, visit our [pricing page](/docs/cloud/pricing) or [contact us](mailto:contact@gensx.com) for enterprise needs.
+
+## Get started
+
+Ready to build AI agents and workflows with GenSX Cloud? Follow our step-by-step [quickstart guide](/docs/quickstart) to create and deploy your first project in minutes:
+
+1. Install the GenSX CLI: `npm install -g gensx`
+2. Create a new project: `gensx new my-project`
+3. Run it locally: `gensx start src/workflows.tsx`
+4. Deploy to the cloud: `gensx deploy src/workflows.tsx`

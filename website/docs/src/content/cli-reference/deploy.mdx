@@ -1,0 +1,64 @@
+---
+title: gensx deploy
+description: Deploy a workflow to GenSX Cloud
+---
+
+# gensx deploy
+
+The `gensx deploy` command uploads and deploys a workflow to GenSX Cloud, making it available for remote execution.
+
+## Usage
+
+```bash
+gensx deploy <file> [options]
+```
+
+## Arguments
+
+| Argument | Description                                                                                |
+| -------- | ------------------------------------------------------------------------------------------ |
+| `<file>` | File to deploy. This should be a TypeScript file that exports a GenSX workflow. |
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-e, --env <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
+| `-p, --project <name>`  | Project name to deploy to.                                                   |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Description
+
+This command:
+
+1. Builds your workflow
+2. Uploads it to GenSX Cloud
+3. Creates or updates the deployment
+4. Sets up any environment variables specified
+
+After successful deployment, your workflow will be available for remote execution via the [GenSX Cloud console](https://app.gensx.com) or through the `gensx run` command.
+
+## Examples
+
+```bash
+# Deploy a workflow
+gensx deploy src/workflows.tsx
+
+# Deploy to a specific project
+gensx deploy src/workflows.tsx --project my-production-project
+
+# Deploy with environment variables
+gensx deploy src/workflows.tsx --env API_KEY=abc123 --env DEBUG=true
+
+# Deploy with an environment variable taken from your local environment
+gensx deploy src/workflows.tsx --env OPENAI_API_KEY
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to deploy (`gensx login`)
+- `gensx deploy` requires Docker to be running
+- If your workflow requires API keys or other secrets, provide them using the `--env` option
+- For environment variables without a specified value, the CLI will use the value from your local environment
+- After deployment, you can manage your workflows from the GenSX Cloud console
+- The deployment process automatically handles bundling dependencies
