@@ -24,6 +24,7 @@ gensx start <file> [options]
 | Option                 | Description                        |
 | ---------------------- | ---------------------------------- |
 | `-p, --project <name>` | Project name for the local server. |
+| `--port <port>`        | Port to run the server on.         |
 | `-q, --quiet`          | Suppress output.                   |
 | `-h, --help`           | Display help for the command.      |
 
@@ -51,8 +52,8 @@ gensx start src/workflows.tsx
 # Start server with a custom project name
 gensx start src/workflows.tsx --project my-custom-name
 
-# Start server with minimal output
-gensx start src/workflows.tsx --quiet
+# Start server on port 3000
+gensx start src/workflows.tsx --port 3000
 ```
 
 ## Notes
