@@ -5,6 +5,7 @@ import pc from "picocolors";
 import { createEnvironment } from "../../models/environment.js";
 import { checkProjectExists, createProject } from "../../models/projects.js";
 import { PromptModule } from "../../types/prompt.js";
+import { validateAndSelectEnvironment } from "../../utils/env-config.js";
 import { readProjectConfig } from "../../utils/project-config.js";
 
 interface CreateOptions {
@@ -76,6 +77,31 @@ export async function handleCreateEnvironment(
       );
     } catch (error) {
       spinner.fail(`Failed to create environment: ${String(error)}`);
+      return;
     }
+  }
+
+  // Select the newly created environment
+  spinner.start(
+    `Setting ${pc.cyan(environmentName)} as the active environment for project ${pc.cyan(projectName)}...`,
+  );
+
+  try {
+    const success = await validateAndSelectEnvironment(
+      projectName,
+      environmentName,
+    );
+
+    if (success) {
+      spinner.succeed(
+        `Environment ${pc.cyan(environmentName)} is now active for project ${pc.cyan(projectName)}`,
+      );
+    } else {
+      spinner.fail(
+        `Failed to set ${pc.cyan(environmentName)} as active environment`,
+      );
+    }
+  } catch (error) {
+    spinner.fail(`Failed to select environment: ${String(error)}`);
   }
 }

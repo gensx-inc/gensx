@@ -45,6 +45,7 @@ export async function runCLI() {
     .command("start")
     .description("Start a local GenSX server")
     .argument("<file>", "File to serve")
+    .option("--port <port>", "Port to run the server on", "1337")
     .option("-q, --quiet", "Suppress output", false)
     .action(start);
 
@@ -110,7 +111,8 @@ export async function runCLI() {
     // Environment management commands
     const environmentCommand = program
       .command("env")
-      .description("Manage GenSX environments");
+      .description("Manage GenSX environments")
+      .action(handleShowEnvironment);
 
     environmentCommand
       .command("create")
@@ -137,12 +139,6 @@ export async function runCLI() {
       .description("Unselect an environment")
       .option("-p, --project <name>", "Project name")
       .action(handleUnselectEnvironment);
-
-    environmentCommand
-      .command("show")
-      .description("Get the current environment")
-      .option("-p, --project <name>", "Project name")
-      .action(handleShowEnvironment);
   }
 
   await program.parseAsync();

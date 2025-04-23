@@ -1,16 +1,12 @@
 import fs from "node:fs";
 
 import axios from "axios";
-import enquirer from "enquirer";
 import FormData from "form-data";
 import ora from "ora";
 import pc from "picocolors";
 
-import { createEnvironment, listEnvironments } from "../models/environment.js";
-import { checkProjectExists, createProject } from "../models/projects.js";
-import { PromptModule } from "../types/prompt.js";
 import { getAuth } from "../utils/config.js";
-import { getSelectedEnvironment } from "../utils/env-config.js";
+import { getEnvironmentForOperation } from "../utils/env-config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import { build } from "./build.js";
@@ -40,145 +36,8 @@ interface DeploymentResponse {
   };
 }
 
-/**
- * Get the environment to deploy to, either from options, saved config, or user selection
- */
-export async function getDeploymentEnvironment(
-  projectName: string,
-  projectExists: boolean,
-  specifiedEnvironment?: string,
-): Promise<string> {
-  const spinner = ora();
-
-  // If environment is explicitly specified, use it
-  if (specifiedEnvironment) {
-    return specifiedEnvironment;
-  }
-
-  // Try to get the selected environment
-  const selectedEnvironment = await getSelectedEnvironment(projectName);
-
-  if (selectedEnvironment) {
-    // Confirm with user
-    spinner.stop();
-    const prompter = enquirer as PromptModule;
-    const useSelected = await prompter
-      .prompt<{ confirm: boolean }>({
-        type: "confirm",
-        name: "confirm",
-        message: `Use selected environment ${pc.cyan(selectedEnvironment)}?`,
-        initial: true,
-      })
-      .then((result) => result.confirm)
-      .catch(() => false);
-
-    if (useSelected) {
-      spinner.info(
-        `Using selected environment: ${pc.cyan(selectedEnvironment)}`,
-      );
-      return selectedEnvironment;
-    }
-  }
-
-  // If we don't have an environment yet, prompt to select or create one
-  spinner.start("Fetching available environments...");
-  const environments = projectExists ? await listEnvironments(projectName) : [];
-  spinner.stop();
-
-  // If there are existing environments, show a select prompt
-  if (environments.length > 0) {
-    const prompter = enquirer as PromptModule;
-    const choices = [
-      ...environments.map((env) => ({ name: env.name, value: env.name })),
-      { name: "Create a new environment", value: "Create a new environment" },
-    ];
-
-    const selection = await prompter
-      .prompt<{ environment: string }>({
-        type: "select",
-        name: "environment",
-        message: "Select an environment to use:",
-        choices,
-      })
-      .then((result) => result.environment)
-      .catch(() => null);
-
-    if (selection === "Create a new environment") {
-      // Create a new environment
-      const newEnvName = await prompter
-        .prompt<{ name: string }>({
-          type: "input",
-          name: "name",
-          message: "Enter a name for the new environment:",
-          validate: (value: string) =>
-            value.trim() !== "" || "Environment name cannot be empty",
-        })
-        .then((result) => result.name)
-        .catch(() => null);
-
-      if (newEnvName) {
-        if (!projectExists) {
-          spinner.start(
-            `Creating project ${pc.cyan(projectName)} and environment ${pc.cyan(newEnvName)}...`,
-          );
-          await createProject(projectName, newEnvName);
-          spinner.succeed(
-            `Project ${pc.cyan(projectName)} and environment ${pc.cyan(
-              newEnvName,
-            )} created`,
-          );
-        } else {
-          spinner.start(`Creating environment ${pc.cyan(newEnvName)}...`);
-          await createEnvironment(projectName, newEnvName);
-          spinner.succeed(`Environment ${pc.cyan(newEnvName)} created`);
-        }
-
-        return newEnvName;
-      } else {
-        throw new Error("Environment creation cancelled");
-      }
-    } else if (selection) {
-      return selection;
-    } else {
-      throw new Error("Environment selection cancelled");
-    }
-  } else {
-    // No environments exist, prompt to create one
-    const prompter = enquirer as PromptModule;
-    const newEnvName = await prompter
-      .prompt<{ name: string }>({
-        type: "input",
-        name: "name",
-        message: "No environments found. Enter a name for a new environment:",
-        initial: "default",
-        validate: (value: string) =>
-          value.trim() !== "" || "Environment name cannot be empty",
-      })
-      .then((result) => result.name)
-      .catch(() => "default");
-
-    if (!projectExists) {
-      spinner.start(
-        `Creating project ${pc.cyan(projectName)} and environment ${pc.cyan(
-          newEnvName,
-        )}...`,
-      );
-      await createProject(projectName, newEnvName);
-      spinner.succeed(
-        `Project ${pc.cyan(projectName)} and environment ${pc.cyan(newEnvName)} created`,
-      );
-    } else {
-      spinner.start(`Creating environment ${pc.cyan(newEnvName)}...`);
-      await createEnvironment(projectName, newEnvName);
-      spinner.succeed(`Environment ${pc.cyan(newEnvName)} created`);
-    }
-
-    return newEnvName;
-  }
-}
-
 export async function deploy(file: string, options: DeployOptions) {
-  const spinner = ora();
+  const spinner = ora({ discardStdin: false });
 
   try {
     // 1. Build the workflow
@@ -206,14 +65,12 @@ export async function deploy(file: string, options: DeployOptions) {
       }
     }
 
-    // Check if the project exists
-    const projectExists = await checkProjectExists(projectName);
-
-    // 3. Get the environment to deploy to
-    const environmentName = await getDeploymentEnvironment(
+    // Get environment using the utility function - user will either confirm or select environment
+    const environmentName = await getEnvironmentForOperation(
       projectName,
-      projectExists,
       options.environment,
+      spinner,
+      true,
     );
 
     // 4. Create form data with bundle

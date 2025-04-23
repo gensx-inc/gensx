@@ -14,6 +14,7 @@ interface StartOptions {
   project?: string;
   environment?: string;
   quiet?: boolean;
+  port?: number;
 }
 
 interface ServerInstance {
@@ -30,6 +31,8 @@ export async function start(file: string, options: StartOptions) {
 
   try {
     console.info("🔍 Starting GenSX Dev Server...");
+
+    const port = options.port ?? 1337;
 
     // Validate file exists and is a TypeScript file
     const absolutePath = resolve(process.cwd(), file);
@@ -152,7 +155,7 @@ export async function start(file: string, options: StartOptions) {
         const server = createServer(
           workflows,
           {
-            port: 1337,
+            port,
           },
           schemas,
         );

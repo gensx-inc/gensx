@@ -101,6 +101,11 @@ suite("run command", () => {
     vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(
       "development",
     );
+
+    // Setup default environment operation behavior
+    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
+      "development",
+    );
   });
 
   afterEach(() => {
@@ -182,6 +187,9 @@ suite("run command", () => {
 
   it("should fail if no environment is available", async () => {
     vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(null);
+    vi.mocked(envConfig.getEnvironmentForOperation).mockRejectedValue(
+      new Error("No environments found."),
+    );
 
     await runWorkflow("test-workflow", {
       input: "{}",
@@ -189,10 +197,7 @@ suite("run command", () => {
     });
 
     expect(console.error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        message: expect.stringContaining("No environment name found"),
-      }) as { message: string },
+      new Error("No environments found."),
     );
   });
 

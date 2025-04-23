@@ -5,7 +5,7 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { getAuth } from "../utils/config.js";
-import { getSelectedEnvironment } from "../utils/env-config.js";
+import { getEnvironmentForOperation } from "../utils/env-config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 
@@ -19,7 +19,7 @@ export async function runWorkflow(
     output?: string;
   },
 ) {
-  const spinner = ora();
+  const spinner = ora({ discardStdin: false });
 
   try {
     const { input, wait, output: outputFile } = options;
@@ -37,7 +37,6 @@ export async function runWorkflow(
     }
 
     let projectName = options.project;
-    let environmentName = options.environment;
     const projectConfig = await readProjectConfig(process.cwd());
     if (!projectName) {
       if (projectConfig?.projectName) {
@@ -53,20 +52,13 @@ export async function runWorkflow(
       }
     }
 
-    if (!environmentName) {
-      const selectedEnvironment = await getSelectedEnvironment(projectName);
-      if (selectedEnvironment) {
-        environmentName = selectedEnvironment;
-        spinner.info(
-          `Using environment name from CLI: ${pc.cyan(environmentName)}`,
-        );
-      } else {
-        spinner.fail("No environment name provided");
-        throw new Error(
-          "No environment name found. Either specify --environment or run `gensx environment select <environment>`.",
-        );
-      }
-    }
+    // Get environment using the utility function - user will either confirm or select environment
+    const environmentName = await getEnvironmentForOperation(
+      projectName,
+      options.environment,
+      spinner,
+      false,
+    );
 
     if (!wait) {
       spinner.start("Starting workflow execution");
