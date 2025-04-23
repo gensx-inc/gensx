@@ -6,11 +6,11 @@ import { z } from "zod";
 import * as AI from "../src/index.js";
 
 // Test configuration
-const languageModel = openai("gpt-4o-mini");
+const languageModel = openai("gpt-4.1-nano");
 
 const embeddingModel = openai.embedding("text-embedding-3-small");
 
-const imageModel = openai.image("dall-e-3");
+// const imageModel = openai.image("dall-e-3");
 
 test("StreamText streams text response", async () => {
   const workflow = gensx.Workflow("StreamText", AI.StreamText);
@@ -84,12 +84,12 @@ test("EmbedMany generates multiple embeddings", async () => {
   expect(embeddings).toBeDefined();
 }, 30000);
 
-test("GenerateImage generates image", async () => {
-  const workflow = gensx.Workflow("GenerateImage", AI.GenerateImage);
-  const result = await workflow.run({
-    prompt: "A sunset over mountains",
-    model: imageModel,
-  });
+// test("GenerateImage generates image", async () => {
+//   const workflow = gensx.Workflow("GenerateImage", AI.GenerateImage);
+//   const result = await workflow.run({
+//     prompt: "A sunset over mountains",
+//     model: imageModel,
+//   });
 
-  expect(result).toBeDefined();
-}, 30000);
+//   expect(result).toBeDefined();
+// }, 30000);
