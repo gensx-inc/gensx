@@ -103,7 +103,6 @@ export function Workflow<
       workflowContext.checkpointManager.setPrintUrl(
         mergedOpts.printUrl ?? false,
       );
-      console.log(workflowContext.checkpointManager);
 
       // Use the overridden name from componentOpts if provided
       const workflowName = runOpts.workflowName ?? name;
