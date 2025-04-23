@@ -4,16 +4,14 @@ import type {
   Filters,
   Id,
   NamespaceMetadata,
+  PatchColumns,
+  PatchRows,
   QueryResults,
   RankBy,
   SchemaType,
-  Vector as TurbopufferVector,
+  UpsertColumns,
+  UpsertRows,
 } from "@turbopuffer/turbopuffer";
-
-/**
- * Vector with ID and optional metadata/attributes
- */
-export type Vector = TurbopufferVector;
 
 /**
  * Query result from the vector search
@@ -32,6 +30,29 @@ export interface NamespaceOptions {
   /**
    * Schema for the namespace
    */
+  schema?: Schema;
+}
+
+export interface WriteParams {
+  /** Upserts documents in a column-based format. */
+  upsertColumns?: UpsertColumns;
+  /** Upserts documents in a row-based format. */
+  upsertRows?: UpsertRows;
+  /**
+   * Patches documents in a column-based format. Identical to `upsert_columns`, but
+   * instead of overwriting entire documents, only the specified keys are written.
+   */
+  patchColumns?: PatchColumns;
+  /**
+   * Patches documents in a row-based format. Identical to `upsert_rows`, but
+   * instead of overwriting entire documents, only the specified keys are written.
+   */
+  patchRows?: PatchRows;
+  /** Deletes documents by ID. */
+  deletes?: Id[];
+  /** Deletes documents that match a filter. */
+  deleteByFilter?: Filters;
+  distanceMetric?: DistanceMetric;
   schema?: Schema;
 }
 
@@ -141,31 +162,33 @@ export interface Namespace {
    * @param vectors The vectors to upsert
    * @returns Promise that resolves when the operation is complete
    */
-  upsert({
-    vectors,
-    distanceMetric,
-    schema,
-    batchSize,
-  }: {
-    vectors: Vector[];
-    distanceMetric: DistanceMetric;
-    schema?: Schema;
-    batchSize?: number;
-  }): Promise<void>;
+  // upsert({
+  //   vectors,
+  //   distanceMetric,
+  //   schema,
+  //   batchSize,
+  // }: {
+  //   vectors: Vector[];
+  //   distanceMetric: DistanceMetric;
+  //   schema?: Schema;
+  //   batchSize?: number;
+  // }): Promise<void>;
 
   /**
-   * Delete vectors by IDs
-   * @param ids The IDs of vectors to delete
+   * Upsert vectors into the namespace
+   * @param vectors The vectors to upsert
    * @returns Promise that resolves when the operation is complete
    */
-  delete({ ids }: { ids: Id[] }): Promise<void>;
-
-  /**
-   * Delete vectors by filter
-   * @param filters The filters to apply
-   * @returns Promise with the number of vectors deleted
-   */
-  deleteByFilter({ filters }: { filters: Filters }): Promise<number>;
+  write({
+    upsertColumns,
+    upsertRows,
+    patchColumns,
+    patchRows,
+    deletes,
+    deleteByFilter,
+    distanceMetric,
+    schema,
+  }: WriteParams): Promise<number>;
 
   /**
    * Query vectors by similarity
