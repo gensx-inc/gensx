@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.5](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.4...gensx-storage-v0.0.5) (2025-04-23)
+
+
+### ✨ New Features
+
+* adding pagination for list namespaces/databases ([#581](https://github.com/gensx-inc/gensx/issues/581)) ([3f54ef5](https://github.com/gensx-inc/gensx/commit/3f54ef5455e986de989e7e7c8ec2540a0fd91703))
+* updating search to use the new write api ([#599](https://github.com/gensx-inc/gensx/issues/599)) ([af2c43e](https://github.com/gensx-inc/gensx/commit/af2c43ed4a888bfefc60607f748e20c42cb0338f))
+
 ## [0.0.4](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.3...gensx-storage-v0.0.4) (2025-04-16)
 
 

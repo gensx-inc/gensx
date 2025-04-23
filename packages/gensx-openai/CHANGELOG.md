@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.24](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.23...gensx-openai-v0.1.24) (2025-04-23)
+
+
+### 🐛 Bug Fixes
+
+* Only instantiate default OpenAI client if there is an OPENAI_API_KEY. ([#607](https://github.com/gensx-inc/gensx/issues/607)) ([78117e8](https://github.com/gensx-inc/gensx/commit/78117e854e935fe3c3e5a5da8833310f51e0b93f)), closes [#601](https://github.com/gensx-inc/gensx/issues/601)
+
 ## [0.1.23](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.22...gensx-openai-v0.1.23) (2025-04-16)
 
 

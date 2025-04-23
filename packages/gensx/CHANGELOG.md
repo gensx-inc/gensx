@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.22](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.21...gensx-v0.3.22) (2025-04-23)
+
+
+### ✨ New Features
+
+* adding port option to dev server ([#605](https://github.com/gensx-inc/gensx/issues/605)) ([85d797d](https://github.com/gensx-inc/gensx/commit/85d797ddf1115800ba29bdb21f6ae3d9f945d255)), closes [#598](https://github.com/gensx-inc/gensx/issues/598)
+* updating CLI commands to use environments ([#574](https://github.com/gensx-inc/gensx/issues/574)) ([e596b9e](https://github.com/gensx-inc/gensx/commit/e596b9e11eacbda817a11c8c51189011326a2bf1))
+
+
+### 🐛 Bug Fixes
+
+* fixing bug with env and envvars not being passed properly ([#611](https://github.com/gensx-inc/gensx/issues/611)) ([81002c5](https://github.com/gensx-inc/gensx/commit/81002c5f57d1bd79c0fd3b538370e33fef456d4a))
+* removing input wrapper from run command ([#613](https://github.com/gensx-inc/gensx/issues/613)) ([5b45883](https://github.com/gensx-inc/gensx/commit/5b45883e3c878da0110c418870ac82663914db39))
+
 ## [0.3.21](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.20...gensx-v0.3.21) (2025-04-16)
 
 
