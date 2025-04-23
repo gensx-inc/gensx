@@ -41,7 +41,11 @@ export class SearchClient {
    * @param options Options for listing namespaces
    * @returns A Promise resolving to an array of namespace names
    */
-  async listNamespaces(options?: { prefix?: string }): Promise<{
+  async listNamespaces(options?: {
+    prefix?: string;
+    limit?: number;
+    cursor?: string;
+  }): Promise<{
     namespaces: string[];
     nextCursor?: string;
   }> {

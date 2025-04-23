@@ -4,11 +4,7 @@
  * @returns URL-safe base64 encoded string
  */
 export function toBase64UrlSafe(str: string): string {
-  return Buffer.from(str)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
+  return Buffer.from(str).toString("base64url");
 }
 
 /**
@@ -17,12 +13,5 @@ export function toBase64UrlSafe(str: string): string {
  * @returns Decoded string
  */
 export function fromBase64UrlSafe(base64: string): string {
-  // Add back padding if needed
-  const pad = base64.length % 4;
-  const padded = pad ? base64 + "=".repeat(4 - pad) : base64;
-
-  return Buffer.from(
-    padded.replace(/-/g, "+").replace(/_/g, "/"),
-    "base64",
-  ).toString("utf-8");
+  return Buffer.from(base64, "base64url").toString("utf-8");
 }
