@@ -25,7 +25,7 @@ interface DeploymentResponse {
     projectName: string;
     environmentId: string;
     environmentName: string;
-    deploymentId: string;
+    buildId: string;
     bundleSize: number;
     workflows: {
       id: string;
@@ -110,8 +110,8 @@ export async function deploy(file: string, options: DeployOptions) {
 
     spinner.succeed();
 
-    const deploymentIdOption = deployment.data.deploymentId
-      ? `deploymentId=${deployment.data.deploymentId}`
+    const deploymentIdOption = deployment.data.buildId
+      ? `deploymentId=${deployment.data.buildId}`
       : "";
 
     // 6. Show success message with deployment URL
