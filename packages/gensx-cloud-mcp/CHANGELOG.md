@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/gensx-inc/gensx/compare/gensx-cloud-mcp-v0.0.3...gensx-cloud-mcp-v0.0.4) (2025-04-23)
+
+
+### ✨ New Features
+
+* add bin to mcp server package.json ([#618](https://github.com/gensx-inc/gensx/issues/618)) ([d965fb9](https://github.com/gensx-inc/gensx/commit/d965fb98c971be4ff66c112a55eb46b684b44ca7))
+
 ## [0.0.3](https://github.com/gensx-inc/gensx/compare/gensx-cloud-mcp-v0.0.2...gensx-cloud-mcp-v0.0.3) (2025-04-23)
 
 
