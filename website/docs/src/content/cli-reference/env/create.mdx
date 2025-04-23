@@ -1,0 +1,44 @@
+---
+title: gensx env create
+description: Create a new GenSX environment
+---
+
+# gensx env create
+
+The `gensx env create` command creates a new environment in your GenSX project. Environments allow you to manage different deployment configurations (like development, staging, and production) for your workflows.
+
+## Usage
+
+```bash
+gensx env create <name> [options]
+```
+
+## Arguments
+
+| Argument | Description                                                                                |
+| -------- | ------------------------------------------------------------------------------------------ |
+| `<name>` | Name of the environment to create (e.g., "dev", "staging", "production"). |
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-p, --project <name>`  | Project name to create the environment in.                                    |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Examples
+
+```bash
+# Create a development environment
+gensx env create dev
+
+# Create a production environment in a specific project
+gensx env create production --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to create environments (`gensx login`)
+- Each project can have multiple environments
+- Environment names should be descriptive and follow a consistent naming convention
+

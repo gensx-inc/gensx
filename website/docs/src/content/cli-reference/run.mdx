@@ -26,6 +26,7 @@ gensx run <workflow> [options]
 | `-i, --input <input>`  | Input to pass to the workflow (as JSON).                     |
 | `--no-wait`            | Do not wait for the workflow to finish (run asynchronously). |
 | `-p, --project <name>` | Project name where the workflow is deployed.                 |
+| `-e, --env <name>`     | Environment name where the workflow is deployed.              |
 | `-o, --output <file>`  | Output file to write the workflow result to.                 |
 | `-h, --help`           | Display help for the command.                                |
 
@@ -48,8 +49,8 @@ gensx run MyWorkflow
 # Run a workflow with JSON input
 gensx run MyWorkflow --input '{"text": "Hello, world!"}'
 
-# Run a workflow in a specific project
-gensx run MyWorkflow --project my-production-project
+# Run a workflow in a specific project and environment
+gensx run MyWorkflow --project my-project --env prod
 
 # Run a workflow asynchronously (don't wait for completion)
 gensx run MyWorkflow --no-wait

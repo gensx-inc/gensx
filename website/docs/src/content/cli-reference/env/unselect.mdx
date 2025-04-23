@@ -1,0 +1,39 @@
+---
+title: gensx env unselect
+description: Unselect the current GenSX environment
+---
+
+# gensx env unselect
+
+The `gensx env unselect` command de-selects the currently selected environment for your project. This means subsequent commands will require explicit environment specification.
+
+## Usage
+
+```bash
+gensx env unselect [options]
+```
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-p, --project <name>`  | Project name to unselect the environment in.                                 |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Examples
+
+```bash
+# Unselect the current environment
+gensx env unselect
+
+# Unselect environment in a specific project
+gensx env unselect --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to unselect environments (`gensx login`)
+- Unselecting an environment does not delete it, it just removes the selection.
+- You can check if an environment is selected using `gensx env`
+- To select a new environment, use `gensx env select`
+- After unselecting, you'll need to specify the environment for each command that requires one

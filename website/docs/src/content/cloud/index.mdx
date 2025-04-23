@@ -260,15 +260,21 @@ The `gensx start` command launches a local development server that:
 ```bash
 # Start the development server with a TypeScript file
 npx gensx start ./src/workflows.tsx
+```
 
+When you start the development server, you'll see something like this:
+
+```bash
 🔍 Starting GenSX Dev Server...
-ℹ Using project name from gensx.yaml: my-app
 ℹ Starting development server...
 ✔ Compilation completed
 ✔ Generating schema
 
+🚀 GenSX Dev Server running at http://localhost:1337
+🧪 Swagger UI available at http://localhost:1337/swagger-ui
+
 📋 Available workflows:
-- MyWorkflow: http://localhost:1337/org/{org}/project/{project}/workflows/MyWorkflow
+- MyWorkflow: http://localhost:1337/workflows/MyWorkflow
 
 ✅ Server is running. Press Ctrl+C to stop.
 ```
