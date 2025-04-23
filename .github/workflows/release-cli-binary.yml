@@ -68,7 +68,7 @@ jobs:
           cp gensx-windows.zip gensx_${{ needs.get-version.outputs.version }}_windows.zip
 
       - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2.2.1
+        uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: gensx-cli-binary-v${{ needs.get-version.outputs.version }}
           token: ${{ secrets.PAT_GITHUB_TOKEN }}

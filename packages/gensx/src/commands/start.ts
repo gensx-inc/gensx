@@ -4,18 +4,17 @@ import path from "node:path";
 import { resolve } from "node:path";
 
 import ora from "ora";
-import pc from "picocolors";
 import * as ts from "typescript";
 import { Definition } from "typescript-json-schema";
 
 import { createServer } from "../dev-server.js";
-import { getAuth } from "../utils/config.js";
-import { readProjectConfig } from "../utils/project-config.js";
 import { generateSchema } from "../utils/schema.js";
 
 interface StartOptions {
   project?: string;
+  environment?: string;
   quiet?: boolean;
+  port?: number;
 }
 
 interface ServerInstance {
@@ -33,7 +32,9 @@ export async function start(file: string, options: StartOptions) {
   try {
     console.info("🔍 Starting GenSX Dev Server...");
 
-    // 1. Validate file exists and is a TypeScript file
+    const port = options.port ?? 1337;
+
+    // Validate file exists and is a TypeScript file
     const absolutePath = resolve(process.cwd(), file);
     if (!existsSync(absolutePath)) {
       throw new Error(`File ${file} does not exist`);
@@ -42,35 +43,7 @@ export async function start(file: string, options: StartOptions) {
     if (!file.endsWith(".ts") && !file.endsWith(".tsx")) {
       throw new Error("Only TypeScript files (.ts or .tsx) are supported");
     }
-
-    // 2. Get project configuration
-    let projectName = options.project;
-    if (!projectName) {
-      const projectConfig = await readProjectConfig(process.cwd());
-      if (projectConfig?.projectName) {
-        projectName = projectConfig.projectName;
-        spinner.info(
-          `Using project name from gensx.yaml: ${pc.cyan(projectName)}`,
-        );
-      } else {
-        throw new Error(
-          "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
-        );
-      }
-    }
-
-    // 3. Get org name
-    let orgName = "local";
-    try {
-      const auth = await getAuth();
-      if (auth?.org) {
-        orgName = auth.org;
-      }
-    } catch (_error) {
-      // Do nothing; org name will default to "local"
-    }
-
-    // 4. Setup for development mode
+    // Setup for development mode
     spinner.info("Starting development server...");
     const outDir = resolve(process.cwd(), ".gensx");
 
@@ -181,10 +154,8 @@ export async function start(file: string, options: StartOptions) {
         // Create and start a new server instance
         const server = createServer(
           workflows,
-          orgName,
-          projectName ?? "", // Ensure projectName is not undefined
           {
-            port: 1337,
+            port,
           },
           schemas,
         );

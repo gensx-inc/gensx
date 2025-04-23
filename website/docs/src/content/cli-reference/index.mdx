@@ -17,29 +17,65 @@ npm install -g gensx
 
 ## Available commands
 
+### Auth
 | Command                    | Description                      |
 | -------------------------- | -------------------------------- |
 | [`gensx login`](./login)   | Log in to GenSX Cloud            |
+
+### Development
+| Command                    | Description                      |
+| -------------------------- | -------------------------------- |
 | [`gensx new`](./new)       | Create a new GenSX project       |
 | [`gensx start`](./start)   | Start a local development server |
 | [`gensx build`](./build)   | Build a workflow for deployment  |
+
+### Deployment & Execution
+| Command                    | Description                      |
+| -------------------------- | -------------------------------- |
 | [`gensx deploy`](./deploy) | Deploy a workflow to GenSX Cloud |
 | [`gensx run`](./run)       | Run a workflow on GenSX Cloud    |
 
-## Basic usage
+### Environment Management
+| Command                          | Description                                  |
+| -------------------------------- | -------------------------------------------- |
+| [`gensx env`](./env/show)     | Show the current environment details        |
+| [`gensx env create`](./env/create) | Create a new environment                    |
+| [`gensx env ls`](./env/ls)         | List all environments for a project          |
+| [`gensx env select`](./env/select) | Select an environment as active             |
+| [`gensx env unselect`](./env/unselect) | Unselect the current environment           |
 
+## Common Workflows
+
+### Starting a New Project
 ```bash
+# Log in to GenSX Cloud
+gensx login
+
 # Create a new project
 gensx new my-project
-
-# Navigate to project
 cd my-project
 
-# Start local development server
+# Start local development
 gensx start src/workflows.tsx
-
-# Deploy a workflow
-gensx deploy src/workflows.tsx
 ```
 
-For detailed information about each command, please refer to the corresponding documentation page.
+### Managing Environments
+```bash
+# Create and switch to a development environment
+gensx env create dev
+gensx env select dev
+
+# View current environment
+gensx env
+```
+
+### Deploying and Running Workflows
+```bash
+# Build and deploy your workflow
+gensx deploy src/workflows.tsx
+
+# Run a workflow
+gensx run my-workflow --input '{"message": "Hello, world!"}'
+```
+
+For detailed information about each command, please refer to the corresponding documentation pages.

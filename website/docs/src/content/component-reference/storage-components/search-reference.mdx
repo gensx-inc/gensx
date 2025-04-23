@@ -75,63 +75,94 @@ const results = await namespace.query({
 
 The namespace object returned by `useSearch` provides these methods:
 
-### upsert
+### write
 
-Inserts or updates vectors in the namespace.
+Inserts, updates, or deletes vectors in the namespace.
 
 ```tsx
-async upsert(options: {
-  vectors: Vector[];
-  distanceMetric: DistanceMetric;
-  schema?: Schema;
-  batchSize?: number;
-}): Promise<void>
+async write(options: WriteParams): Promise<number>
 ```
 
 #### Parameters
 
-| Parameter        | Type             | Default     | Description                                 |
-| ---------------- | ---------------- | ----------- | ------------------------------------------- |
-| `vectors`        | `Vector[]`       | Required    | Array of vectors to insert or update        |
-| `distanceMetric` | `DistanceMetric` | Required    | Distance metric for similarity calculations |
-| `schema`         | `Schema`         | `undefined` | Optional schema definition for attributes   |
-| `batchSize`      | `number`         | `1000`      | Optional batch size for processing vectors  |
-
-#### Vector object Format
-
-```tsx
-{
-  id: string;              // Unique identifier
-  vector: number[];        // Vector embedding
-  attributes?: {           // Optional metadata
-    [key: string]: any;    // Key-value pairs
-  }
-}
-```
+| Parameter         | Type             | Default     | Description                                 |
+| ----------------- | ---------------- | ----------- | ------------------------------------------- |
+| `upsertColumns`   | `UpsertColumns`  | `undefined` | Column-based format for upserting documents |
+| `upsertRows`      | `UpsertRows`     | `undefined` | Row-based format for upserting documents    |
+| `patchColumns`    | `PatchColumns`   | `undefined` | Column-based format for patching documents  |
+| `patchRows`       | `PatchRows`      | `undefined` | Row-based format for patching documents     |
+| `deletes`         | `Id[]`           | `undefined` | Array of document IDs to delete             |
+| `deleteByFilter`  | `Filters`        | `undefined` | Filter to match documents for deletion      |
+| `distanceMetric`  | `DistanceMetric` | `undefined` | Distance metric for similarity calculations |
+| `schema`          | `Schema`         | `undefined` | Optional schema definition for attributes   |
 
 #### Example
 
 ```tsx
-await namespace.upsert({
-  vectors: [
-    {
-      id: "doc-1",
-      vector: [0.1, 0.2, 0.3, ...],  // Vector embedding
-      attributes: {                   // Optional metadata
-        text: "Document content",
-        category: "article",
-        createdAt: "2023-07-15"
-      }
-    }
-  ],
-  distanceMetric: "cosine_distance",  // "cosine_distance", "euclidean_squared", "dot_product"
-  schema: {                           // Optional schema definition
-    text: "string",
-    category: "string",
-    createdAt: "string"
+// Upsert documents in column-based format
+await namespace.write({
+  upsertColumns: {
+    id: ["doc-1", "doc-2"],
+    vector: [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+    text: ["Document 1", "Document 2"],
+    category: ["article", "blog"]
+  },
+  distanceMetric: "cosine_distance",
+  schema: {
+    text: { type: "string" },
+    category: { type: "string" }
   }
 });
+
+// Upsert documents in row-based format
+await namespace.write({
+  upsertRows: [
+    {
+      id: "doc-1",
+      vector: [0.1, 0.2, 0.3],
+      text: "Document 1",
+      category: "article"
+    },
+    {
+      id: "doc-2",
+      vector: [0.4, 0.5, 0.6],
+      text: "Document 2",
+      category: "blog"
+    }
+  ],
+  distanceMetric: "cosine_distance"
+});
+
+// Delete documents by ID
+await namespace.write({
+  deletes: ["doc-1", "doc-2"]
+});
+
+// Delete documents by filter
+await namespace.write({
+  deleteByFilter: [
+    "And",
+    [
+      ["category", "Eq", "article"],
+      ["createdAt", "Lt", "2023-01-01"]
+    ]
+  ]
+});
+
+// Patch documents (update specific fields)
+await namespace.write({
+  patchRows: [
+    {
+      id: "doc-1",
+      category: "updated-category"
+    }
+  ]
+});
 ```
+
+#### Return value
+
+Returns the number of rows affected by the operation.
 
 ### query
 
@@ -191,59 +222,6 @@ Returns an array of matched documents with similarity scores:
   // ...more results
 ]
 ```
-
-### delete
-
-Deletes vectors by their IDs.
-
-```tsx
-async delete(options: { ids: Id[] }): Promise<void>
-```
-
-#### Parameters
-
-| Parameter | Type       | Description                   |
-| --------- | ---------- | ----------------------------- |
-| `ids`     | `string[]` | Array of vector IDs to delete |
-
-#### Example
-
-```tsx
-await namespace.delete({
-  ids: ["doc-1", "doc-2"],
-});
-```
-
-### deleteByFilter
-
-Deletes vectors that match the specified filter.
-
-```tsx
-async deleteByFilter(options: { filters: Filters }): Promise<number>
-```
-
-#### Parameters
-
-| Parameter | Type      | Description                           |
-| --------- | --------- | ------------------------------------- |
-| `filters` | `Filters` | Filters to match vectors for deletion |
-
-#### Example
-
-```tsx
-const deletedCount = await namespace.deleteByFilter({
-  filters: [
-    "And",
-    [
-      ["category", "Eq", "outdated"],
-    ]
-  ],
-});
-```
-
-#### Return value
-
-Returns the number of deleted vectors.
 
 ### getSchema
 
@@ -344,33 +322,29 @@ const { deleted } = await search.deleteNamespace("old-namespace");
 // Get a namespace directly for vector operations
 const namespace = search.getNamespace("products");
 
-// Upsert vectors using the namespace
-await namespace.upsert({
-  vectors: [
+// Write vectors using the namespace
+await namespace.write({
+  upsertRows: [
     {
       id: "product-1",
       vector: [0.1, 0.3, 0.5, ...], // embedding vector
-      attributes: {
-        name: "Ergonomic Chair",
-        category: "furniture",
-        price: 299.99
-      }
+      name: "Ergonomic Chair",
+      category: "furniture",
+      price: 299.99
     },
     {
       id: "product-2",
       vector: [0.2, 0.4, 0.6, ...],
-      attributes: {
-        name: "Standing Desk",
-        category: "furniture",
-        price: 499.99
-      }
+      name: "Standing Desk",
+      category: "furniture",
+      price: 499.99
     }
   ],
   distanceMetric: "cosine_distance",
   schema: {
-    name: "string",
-    category: "string",
-    price: "number"
+    name: { type: "string" },
+    category: { type: "string" },
+    price: { type: "number" }
   }
 });
 
@@ -425,8 +399,8 @@ const searchStorage = useSearchStorage();
 const namespace = searchStorage.getNamespace("documents");
 
 // Usage example
-await namespace.upsert({
-  vectors: [/* your vectors */],
+await namespace.write({
+  upsertRows: [...],
   distanceMetric: "cosine_distance"
 });
 ```
@@ -537,12 +511,13 @@ async getNamespace(name: string): Promise<Namespace>
 const namespace = await searchClient.getNamespace("products");
 
 // Then use the namespace to upsert or query vectors
-await namespace.upsert({
-  vectors: [
+await namespace.write({
+  upsertRows: [
     {
       id: "product-1",
       vector: [0.1, 0.2, 0.3, ...],
-      attributes: { name: "Product 1", category: "electronics" }
+      name: "Product 1",
+      category: "electronics"
     }
   ],
   distanceMetric: "cosine_distance"

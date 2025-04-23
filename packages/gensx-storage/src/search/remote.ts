@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
 import type {
-  DistanceMetric,
-  Filters,
-  Id,
   NamespaceMetadata,
   QueryResults,
   Schema,
@@ -18,7 +15,7 @@ import {
   QueryOptions,
   SearchAPIResponse,
   SearchStorage as ISearchStorage,
-  Vector,
+  WriteParams,
 } from "./types.js";
 
 /**
@@ -32,9 +29,8 @@ const API_BASE_URL = "https://api.gensx.com";
 export type SearchErrorCode =
   | "NOT_FOUND"
   | "PERMISSION_DENIED"
-  | "CONFLICT"
   | "INVALID_ARGUMENT"
-  | "INTERNAL_ERROR"
+  | "SEARCH_ERROR"
   | "NOT_IMPLEMENTED"
   | "NETWORK_ERROR";
 
@@ -73,16 +69,6 @@ export class SearchPermissionDeniedError extends SearchError {
 }
 
 /**
- * Error class for conflict errors (e.g., concurrent modifications)
- */
-export class SearchConflictError extends SearchError {
-  constructor(message: string, cause?: Error) {
-    super("CONFLICT", message, cause);
-    this.name = "SearchConflictError";
-  }
-}
-
-/**
  * Error class for invalid argument errors
  */
 export class SearchInvalidArgumentError extends SearchError {
@@ -93,12 +79,22 @@ export class SearchInvalidArgumentError extends SearchError {
 }
 
 /**
- * Error class for internal errors
+ * Error class for API errors (bad requests, server errors, etc.)
  */
-export class SearchInternalError extends SearchError {
+export class SearchApiError extends SearchError {
   constructor(message: string, cause?: Error) {
-    super("INTERNAL_ERROR", message, cause);
-    this.name = "SearchInternalError";
+    super("SEARCH_ERROR", message, cause);
+    this.name = "SearchApiError";
+  }
+}
+
+/**
+ * Error class for malformed or missing API responses
+ */
+export class SearchResponseError extends SearchError {
+  constructor(message: string, cause?: Error) {
+    super("SEARCH_ERROR", message, cause);
+    this.name = "SearchResponseError";
   }
 }
 
@@ -149,17 +145,16 @@ export class SearchNamespace implements Namespace {
     private org: string,
   ) {}
 
-  async upsert({
-    vectors,
+  async write({
+    upsertColumns,
+    upsertRows,
+    patchColumns,
+    patchRows,
+    deletes,
+    deleteByFilter,
     distanceMetric,
     schema,
-    batchSize = 1000,
-  }: {
-    vectors: Vector[];
-    distanceMetric: DistanceMetric;
-    schema?: Schema;
-    batchSize?: number;
-  }): Promise<void> {
+  }: WriteParams): Promise<number> {
     try {
       const response = await fetch(
         `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/vectors`,
@@ -170,105 +165,34 @@ export class SearchNamespace implements Namespace {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            vectors,
+            upsertColumns,
+            upsertRows,
+            patchColumns,
+            patchRows,
+            deletes,
+            deleteByFilter,
             distanceMetric,
             schema,
-            batchSize,
           }),
         },
       );
-
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to upsert vectors: ${response.statusText}`,
-        );
-      }
-    } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "upsert");
-      }
-      throw err;
-    }
-  }
-
-  async delete({ ids }: { ids: Id[] }): Promise<void> {
-    try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/delete`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ids,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to delete vectors: ${response.statusText}`,
-        );
-      }
 
       const apiResponse = (await response.json()) as SearchAPIResponse<{
-        success: boolean;
-      }>;
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-    } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "delete");
-      }
-      throw err;
-    }
-  }
-
-  async deleteByFilter({ filters }: { filters: Filters }): Promise<number> {
-    try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/deleteByFilter`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filters,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to delete vectors by filter: ${response.statusText}`,
-        );
-      }
-
-      const apiResponse = (await response.json()) as SearchAPIResponse<{
-        message: string;
         rowsAffected: number;
       }>;
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
+
+      if (!response.ok || apiResponse.status === "error") {
+        throw new SearchApiError(apiResponse.error ?? response.statusText);
       }
 
       if (!apiResponse.data) {
-        throw new SearchInternalError("No data returned from API");
+        throw new SearchResponseError("No data returned from API");
       }
 
       return apiResponse.data.rowsAffected;
     } catch (err) {
       if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "deleteByFilter");
+        throw handleApiError(err, "upsert");
       }
       throw err;
     }
@@ -306,22 +230,15 @@ export class SearchNamespace implements Namespace {
         },
       );
 
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to query vectors: ${response.statusText}`,
-        );
-      }
-
       const apiResponse =
         (await response.json()) as SearchAPIResponse<QueryResults>;
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
+
+      if (!response.ok || apiResponse.status === "error") {
+        throw new SearchApiError(apiResponse.error ?? response.statusText);
       }
 
       if (!apiResponse.data) {
-        throw new SearchInternalError("No data returned from API");
+        throw new SearchResponseError("No data returned from API");
       }
 
       return apiResponse.data;
@@ -345,21 +262,14 @@ export class SearchNamespace implements Namespace {
         },
       );
 
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to get schema: ${response.statusText}`,
-        );
-      }
-
       const apiResponse = (await response.json()) as SearchAPIResponse<Schema>;
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
+
+      if (!response.ok || apiResponse.status === "error") {
+        throw new SearchApiError(apiResponse.error ?? response.statusText);
       }
 
       if (!apiResponse.data) {
-        throw new SearchInternalError("No data returned from API");
+        throw new SearchResponseError("No data returned from API");
       }
 
       return apiResponse.data;
@@ -385,21 +295,14 @@ export class SearchNamespace implements Namespace {
         },
       );
 
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to update schema: ${response.statusText}`,
-        );
-      }
-
       const apiResponse = (await response.json()) as SearchAPIResponse<Schema>;
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
+
+      if (!response.ok || apiResponse.status === "error") {
+        throw new SearchApiError(apiResponse.error ?? response.statusText);
       }
 
       if (!apiResponse.data) {
-        throw new SearchInternalError("No data returned from API");
+        throw new SearchResponseError("No data returned from API");
       }
 
       return apiResponse.data;
@@ -423,23 +326,16 @@ export class SearchNamespace implements Namespace {
         },
       );
 
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to get namespace metadata: ${response.statusText}`,
-        );
-      }
-
       const apiResponse = (await response.json()) as SearchAPIResponse<{
         metadata: NamespaceMetadata;
       }>;
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
+
+      if (!response.ok || apiResponse.status === "error") {
+        throw new SearchApiError(apiResponse.error ?? response.statusText);
       }
 
       if (!apiResponse.data) {
-        throw new SearchInternalError("No data returned from API");
+        throw new SearchResponseError("No data returned from API");
       }
 
       return apiResponse.data.metadata;
@@ -507,22 +403,16 @@ export class SearchStorage implements ISearchStorage {
           },
         },
       );
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to ensure namespace: ${response.statusText}`,
-        );
-      }
+
       const apiResponse =
         (await response.json()) as SearchAPIResponse<EnsureNamespaceResult>;
 
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
+      if (!response.ok || apiResponse.status === "error") {
+        throw new SearchApiError(apiResponse.error ?? response.statusText);
       }
 
       if (!apiResponse.data) {
-        throw new SearchInternalError("No data returned from API");
+        throw new SearchResponseError("No data returned from API");
       }
 
       // Make sure the namespace is in our cache
@@ -550,23 +440,16 @@ export class SearchStorage implements ISearchStorage {
           },
         },
       );
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to delete namespace: ${response.statusText}`,
-        );
-      }
 
       const apiResponse =
         (await response.json()) as SearchAPIResponse<DeleteNamespaceResult>;
 
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
+      if (!response.ok || apiResponse.status === "error") {
+        throw new SearchApiError(apiResponse.error ?? response.statusText);
       }
 
       if (!apiResponse.data) {
-        throw new SearchInternalError("No data returned from API");
+        throw new SearchResponseError("No data returned from API");
       }
 
       // Remove namespace from caches if it was successfully deleted
@@ -606,23 +489,16 @@ export class SearchStorage implements ISearchStorage {
         },
       });
 
-      if (!response.ok) {
-        throw new SearchInternalError(
-          `Failed to list namespaces: ${response.statusText}`,
-        );
-      }
-
       const apiResponse = (await response.json()) as SearchAPIResponse<{
         namespaces: string[];
       }>;
-      if (apiResponse.status === "error") {
-        throw new SearchInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
+
+      if (!response.ok || apiResponse.status === "error") {
+        throw new SearchApiError(apiResponse.error ?? response.statusText);
       }
 
       if (!apiResponse.data) {
-        throw new SearchInternalError("No data returned from API");
+        throw new SearchResponseError("No data returned from API");
       }
 
       return apiResponse.data.namespaces;

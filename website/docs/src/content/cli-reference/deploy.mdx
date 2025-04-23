@@ -23,8 +23,9 @@ gensx deploy <file> [options]
 
 | Option                  | Description                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------- |
-| `-e, --env <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
+| `-ev, --env-var <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
 | `-p, --project <name>`  | Project name to deploy to.                                                   |
+| `-e, --env <name>`      | Environment name to deploy to.                                               |
 | `-h, --help`            | Display help for the command.                                                |
 
 ## Description
@@ -44,21 +45,21 @@ After successful deployment, your workflow will be available for remote executio
 # Deploy a workflow
 gensx deploy src/workflows.tsx
 
-# Deploy to a specific project
-gensx deploy src/workflows.tsx --project my-production-project
+# Deploy to a specific project and environment
+gensx deploy src/workflows.tsx --project my-production-project --env dev
 
 # Deploy with environment variables
-gensx deploy src/workflows.tsx --env API_KEY=abc123 --env DEBUG=true
+gensx deploy src/workflows.tsx -ev API_KEY=abc123 -ev DEBUG=true
 
 # Deploy with an environment variable taken from your local environment
-gensx deploy src/workflows.tsx --env OPENAI_API_KEY
+gensx deploy src/workflows.tsx -ev OPENAI_API_KEY
 ```
 
 ## Notes
 
 - You must be logged in to GenSX Cloud to deploy (`gensx login`)
 - `gensx deploy` requires Docker to be running
-- If your workflow requires API keys or other secrets, provide them using the `--env` option
+- If your workflow requires API keys or other secrets, provide them using the `-ev` or `--env-var` option
 - For environment variables without a specified value, the CLI will use the value from your local environment
 - After deployment, you can manage your workflows from the GenSX Cloud console
 - The deployment process automatically handles bundling dependencies

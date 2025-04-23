@@ -17,21 +17,19 @@ gensx start ./src/workflows.tsx
 
 ```bash
 🔍 Starting GenSX Dev Server...
-ℹ Using project name from gensx.yaml: support-tools
 ℹ Starting development server...
 ✔ Compilation completed
 ✔ Generating schema
 Importing compiled JavaScript file: /Users/evan/code/gensx-console/samples/support-tools/dist/src/workflows.js
 
-
 🚀 GenSX Dev Server running at http://localhost:1337
 🧪 Swagger UI available at http://localhost:1337/swagger-ui
 
 📋 Available workflows:
-- RAGWorkflow: http://localhost:1337/org/gensx/projects/support-tools/workflows/RAGWorkflow
-- AnalyzeDiscordWorkflow: http://localhost:1337/org/gensx/projects/support-tools/workflows/AnalyzeDiscordWorkflow
-- TextToSQLWorkflow: http://localhost:1337/org/gensx/projects/support-tools/workflows/TextToSQLWorkflow
-- ChatAgent: http://localhost:1337/org/gensx/projects/support-tools/workflows/ChatAgent
+- RAGWorkflow: http://localhost:1337/workflows/RAGWorkflow
+- AnalyzeDiscordWorkflow: http://localhost:1337/workflows/AnalyzeDiscordWorkflow
+- TextToSQLWorkflow: http://localhost:1337/workflows/TextToSQLWorkflow
+- ChatAgent: http://localhost:1337/workflows/ChatAgent
 
 ✅ Server is running. Press Ctrl+C to stop.
 ```
@@ -40,10 +38,10 @@ Importing compiled JavaScript file: /Users/evan/code/gensx-console/samples/suppo
 
 ### Identical API shape
 
-The local API endpoints match exactly what you'll get in production, making it easy to test your workflows before deploying them:
+The local API endpoints match exactly what you'll get in production, making it easy to test your workflows before deploying them. The only difference is that the `/org/{org}/project/{project}/environments/{env}` path is left out of the url for simplicity.
 
 ```
-http://localhost:1337/org/{org}/project/{project}/workflows/{workflow}
+http://localhost:1337/workflows/{workflow}
 ```
 
 Every workflow you export is automatically available as an API endpoint.
@@ -83,18 +81,18 @@ You can use any HTTP client to interact with your local API:
 
 ```bash
 # Run a workflow synchronously
-curl -X POST http://localhost:1337/org/{org}/project/{project}/workflows/ChatAgent \
+curl -X POST http://localhost:1337/workflows/ChatAgent \
   -H "Content-Type: application/json" \
   -d '{"input": {"prompt": "Tell me about GenSX"}}'
 
 # Run asynchronously
 
-curl -X POST http://localhost:1337/org/{org}/project/{project}/workflows/ChatAgent/start \
+curl -X POST http://localhost:1337/workflows/ChatAgent/start \
   -H "Content-Type: application/json" \
   -d '{"input": {"prompt": "Tell me about GenSX"}}'
 ```
 
-The structure of requests and responses matches exactly what you'll encounter in production.
+The inputs and outputs of the APIs match exactly what you'll encounter in production.
 
 ### Using the Swagger UI
 
@@ -107,23 +105,6 @@ The built-in Swagger UI provides an easy way to inspect and test your workflows:
 5. Execute the request and view the response
 
 ![Run a workflow from the Swagger UI](/cloud/swagger-execute.png)
-
-## Configuration
-
-### Project name
-
-By default, the development server uses the project name from your `gensx.yaml` file. If you don't have one yet, you can create it in your project root:
-
-```yaml
-# gensx.yaml
-projectName: my-project
-```
-
-Alternatively, you can specify the project name when starting the server:
-
-```bash
-npx gensx start ./src/workflows.tsx --project my-custom-project
-```
 
 ## Local storage options
 
