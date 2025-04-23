@@ -546,13 +546,12 @@ You'll see something like this when you start the server:
 
 ```bash
 🔍 Starting GenSX Dev Server...
-ℹ Using project name from gensx.yaml: my-project
 ℹ Starting development server...
 ✔ Compilation completed
 ✔ Generating schema
 
 📋 Available workflows:
-- ResearchAndWriteWorkflow: http://localhost:1337/local/my-project/default/workflows/ResearchAndWriteWorkflow/run
+- ResearchAndWriteWorkflow: http://localhost:1337/workflows/ResearchAndWriteWorkflow
 
 ✅ Server is running. Press Ctrl+C to stop.
 ```
@@ -580,7 +579,7 @@ For production deployments, you can target a specific environment:
 
 ```bash
 # Deploy to production environment
-gensx deploy src/index.ts --environment production
+gensx deploy src/index.ts --env production
 ```
 
 ### Running a workflow from the CLI
@@ -828,6 +827,7 @@ Available workflows:
 - AnalyzeDiscordWorkflow
 
 Project: support-tools
+Environment: default
 ```
 
 The platform is optimized for AI workloads with millisecond-level cold starts and support for long-running executions up to an hour.
@@ -4043,10 +4043,10 @@ GenSX supports multiple environments within a project (such as development, stag
 
 ```bash
 # Deploy to a specific environment
-npx gensx deploy src/workflows.tsx --environment production
+npx gensx deploy src/workflows.tsx --env production
 
 # Deploy to staging with environment-specific variables
-npx gensx deploy src/workflows.tsx --environment staging -ev OPENAI_API_KEY -ev LOG_LEVEL=debug
+npx gensx deploy src/workflows.tsx --env staging -ev OPENAI_API_KEY -ev LOG_LEVEL=debug
 ```
 
 Each environment can have its own configuration and environment variables, allowing you to test in isolation before promoting changes to production.
@@ -4086,6 +4086,7 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 | `--no-wait`    | Do not wait for workflow to finish |
 | `--output`  | Save results to a file                          |
 | `--project` | Specify the project name                        |
+| `--env`     | Specify the environment name                    |
 
 ## API endpoints
 
@@ -4299,10 +4300,10 @@ Deploy your workflows to specific environments using the CLI:
 gensx deploy src/workflows.tsx
 
 # Deploy to a staging environment
-gensx deploy src/workflows.tsx --environment staging
+gensx deploy src/workflows.tsx --env staging
 
 # Deploy to production
-gensx deploy src/workflows.tsx --environment production
+gensx deploy src/workflows.tsx --env production
 ```
 
 ### Environment-specific configuration
@@ -4311,14 +4312,14 @@ Set environment-specific variables during deployment:
 
 ```bash
 # Development-specific settings
-gensx deploy src/workflows.tsx --environment development \
-  --env LOG_LEVEL=debug \
-  --env OPENAI_API_KEY
+gensx deploy src/workflows.tsx --env development \
+  -ev LOG_LEVEL=debug \
+  -ev OPENAI_API_KEY
 
 # Production-specific settings
-gensx deploy src/workflows.tsx --environment production \
-  --env LOG_LEVEL=error \
-  --env OPENAI_API_KEY
+gensx deploy src/workflows.tsx --env production \
+  -ev LOG_LEVEL=error \
+  -ev OPENAI_API_KEY
 ```
 
 ## Projects in the GenSX Console
@@ -4537,7 +4538,7 @@ GenSX allows you to organize traces by environment (such as development, staging
 
 ```bash
 # Deploy to a specific environment with its own traces
-gensx deploy src/workflows.tsx --environment production
+gensx deploy src/workflows.tsx --env production
 ```
 
 In the GenSX Console, you can filter traces by environment to focus on relevant executions. This separation also helps when:
@@ -4680,21 +4681,19 @@ gensx start ./src/workflows.tsx
 
 ```bash
 🔍 Starting GenSX Dev Server...
-ℹ Using project name from gensx.yaml: support-tools
 ℹ Starting development server...
 ✔ Compilation completed
 ✔ Generating schema
 Importing compiled JavaScript file: /Users/evan/code/gensx-console/samples/support-tools/dist/src/workflows.js
 
-
 🚀 GenSX Dev Server running at http://localhost:1337
 🧪 Swagger UI available at http://localhost:1337/swagger-ui
 
 📋 Available workflows:
-- RAGWorkflow: http://localhost:1337/org/gensx/projects/support-tools/workflows/RAGWorkflow
-- AnalyzeDiscordWorkflow: http://localhost:1337/org/gensx/projects/support-tools/workflows/AnalyzeDiscordWorkflow
-- TextToSQLWorkflow: http://localhost:1337/org/gensx/projects/support-tools/workflows/TextToSQLWorkflow
-- ChatAgent: http://localhost:1337/org/gensx/projects/support-tools/workflows/ChatAgent
+- RAGWorkflow: http://localhost:1337/workflows/RAGWorkflow
+- AnalyzeDiscordWorkflow: http://localhost:1337/workflows/AnalyzeDiscordWorkflow
+- TextToSQLWorkflow: http://localhost:1337/workflows/TextToSQLWorkflow
+- ChatAgent: http://localhost:1337/workflows/ChatAgent
 
 ✅ Server is running. Press Ctrl+C to stop.
 ```
@@ -4703,10 +4702,10 @@ Importing compiled JavaScript file: /Users/evan/code/gensx-console/samples/suppo
 
 ### Identical API shape
 
-The local API endpoints match exactly what you'll get in production, making it easy to test your workflows before deploying them:
+The local API endpoints match exactly what you'll get in production, making it easy to test your workflows before deploying them. The only difference is that the `/org/{org}/project/{project}/environments/{env}` path is left out of the url for simplicity.
 
 ```
-http://localhost:1337/org/{org}/project/{project}/workflows/{workflow}
+http://localhost:1337/workflows/{workflow}
 ```
 
 Every workflow you export is automatically available as an API endpoint.
@@ -4746,18 +4745,18 @@ You can use any HTTP client to interact with your local API:
 
 ```bash
 # Run a workflow synchronously
-curl -X POST http://localhost:1337/org/{org}/project/{project}/workflows/ChatAgent \
+curl -X POST http://localhost:1337/workflows/ChatAgent \
   -H "Content-Type: application/json" \
   -d '{"input": {"prompt": "Tell me about GenSX"}}'
 
 # Run asynchronously
 
-curl -X POST http://localhost:1337/org/{org}/project/{project}/workflows/ChatAgent/start \
+curl -X POST http://localhost:1337/workflows/ChatAgent/start \
   -H "Content-Type: application/json" \
   -d '{"input": {"prompt": "Tell me about GenSX"}}'
 ```
 
-The structure of requests and responses matches exactly what you'll encounter in production.
+The inputs and outputs of the APIs match exactly what you'll encounter in production.
 
 ### Using the Swagger UI
 
@@ -4770,23 +4769,6 @@ The built-in Swagger UI provides an easy way to inspect and test your workflows:
 5. Execute the request and view the response
 
 ![Run a workflow from the Swagger UI](/cloud/swagger-execute.png)
-
-## Configuration
-
-### Project name
-
-By default, the development server uses the project name from your `gensx.yaml` file. If you don't have one yet, you can create it in your project root:
-
-```yaml
-# gensx.yaml
-projectName: my-project
-```
-
-Alternatively, you can specify the project name when starting the server:
-
-```bash
-npx gensx start ./src/workflows.tsx --project my-custom-project
-```
 
 ## Local storage options
 
@@ -5107,15 +5089,21 @@ The `gensx start` command launches a local development server that:
 ```bash
 # Start the development server with a TypeScript file
 npx gensx start ./src/workflows.tsx
+```
 
+When you start the development server, you'll see something like this:
+
+```bash
 🔍 Starting GenSX Dev Server...
-ℹ Using project name from gensx.yaml: my-app
 ℹ Starting development server...
 ✔ Compilation completed
 ✔ Generating schema
 
+🚀 GenSX Dev Server running at http://localhost:1337
+🧪 Swagger UI available at http://localhost:1337/swagger-ui
+
 📋 Available workflows:
-- MyWorkflow: http://localhost:1337/org/{org}/project/{project}/workflows/MyWorkflow
+- MyWorkflow: http://localhost:1337/workflows/MyWorkflow
 
 ✅ Server is running. Press Ctrl+C to stop.
 ```
@@ -5225,7 +5213,7 @@ gensx start <file> [options]
 
 | Option                 | Description                        |
 | ---------------------- | ---------------------------------- |
-| `-p, --project <name>` | Project name for the local server. |
+| `--port <port>`        | Port to run the server on.         |
 | `-q, --quiet`          | Suppress output.                   |
 | `-h, --help`           | Display help for the command.      |
 
@@ -5250,11 +5238,16 @@ The development server includes:
 # Start server with a specific workflow file
 gensx start src/workflows.tsx
 
+<<<<<<< HEAD
+# Start server with minimal output
+gensx start src/workflows.tsx --quiet
+=======
 # Start server with a custom project name
 gensx start src/workflows.tsx --project my-custom-name
 
-# Start server with minimal output
-gensx start src/workflows.tsx --quiet
+# Start server on port 3000
+gensx start src/workflows.tsx --port 3000
+>>>>>>> 4c75b171c6cd6b0bd9779d07cc1ca5b9e1679e0b
 ```
 
 ## Notes
@@ -5287,6 +5280,7 @@ gensx run <workflow> [options]
 | `-i, --input <input>`  | Input to pass to the workflow (as JSON).                     |
 | `--no-wait`            | Do not wait for the workflow to finish (run asynchronously). |
 | `-p, --project <name>` | Project name where the workflow is deployed.                 |
+| `-e, --env <name>`     | Environment name where the workflow is deployed.              |
 | `-o, --output <file>`  | Output file to write the workflow result to.                 |
 | `-h, --help`           | Display help for the command.                                |
 
@@ -5309,8 +5303,8 @@ gensx run MyWorkflow
 # Run a workflow with JSON input
 gensx run MyWorkflow --input '{"text": "Hello, world!"}'
 
-# Run a workflow in a specific project
-gensx run MyWorkflow --project my-production-project
+# Run a workflow in a specific project and environment
+gensx run MyWorkflow --project my-project --env prod
 
 # Run a workflow asynchronously (don't wait for completion)
 gensx run MyWorkflow --no-wait
@@ -5432,32 +5426,68 @@ npm install -g gensx
 
 ## Available commands
 
+### Auth
 | Command                    | Description                      |
 | -------------------------- | -------------------------------- |
 | [`gensx login`](./login)   | Log in to GenSX Cloud            |
+
+### Development
+| Command                    | Description                      |
+| -------------------------- | -------------------------------- |
 | [`gensx new`](./new)       | Create a new GenSX project       |
 | [`gensx start`](./start)   | Start a local development server |
 | [`gensx build`](./build)   | Build a workflow for deployment  |
+
+### Deployment & Execution
+| Command                    | Description                      |
+| -------------------------- | -------------------------------- |
 | [`gensx deploy`](./deploy) | Deploy a workflow to GenSX Cloud |
 | [`gensx run`](./run)       | Run a workflow on GenSX Cloud    |
 
-## Basic usage
+### Environment Management
+| Command                          | Description                                  |
+| -------------------------------- | -------------------------------------------- |
+| [`gensx env`](./env/show)     | Show the current environment details        |
+| [`gensx env create`](./env/create) | Create a new environment                    |
+| [`gensx env ls`](./env/ls)         | List all environments for a project          |
+| [`gensx env select`](./env/select) | Select an environment as active             |
+| [`gensx env unselect`](./env/unselect) | Unselect the current environment           |
 
+## Common Workflows
+
+### Starting a New Project
 ```bash
+# Log in to GenSX Cloud
+gensx login
+
 # Create a new project
 gensx new my-project
-
-# Navigate to project
 cd my-project
 
-# Start local development server
+# Start local development
 gensx start src/workflows.tsx
-
-# Deploy a workflow
-gensx deploy src/workflows.tsx
 ```
 
-For detailed information about each command, please refer to the corresponding documentation page.
+### Managing Environments
+```bash
+# Create and switch to a development environment
+gensx env create dev
+gensx env select dev
+
+# View current environment
+gensx env
+```
+
+### Deploying and Running Workflows
+```bash
+# Build and deploy your workflow
+gensx deploy src/workflows.tsx
+
+# Run a workflow
+gensx run my-workflow --input '{"message": "Hello, world!"}'
+```
+
+For detailed information about each command, please refer to the corresponding documentation pages.
 
 # gensx deploy
 
@@ -5479,8 +5509,9 @@ gensx deploy <file> [options]
 
 | Option                  | Description                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------- |
-| `-e, --env <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
+| `-ev, --env-var <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
 | `-p, --project <name>`  | Project name to deploy to.                                                   |
+| `-e, --env <name>`      | Environment name to deploy to.                                               |
 | `-h, --help`            | Display help for the command.                                                |
 
 ## Description
@@ -5500,21 +5531,21 @@ After successful deployment, your workflow will be available for remote executio
 # Deploy a workflow
 gensx deploy src/workflows.tsx
 
-# Deploy to a specific project
-gensx deploy src/workflows.tsx --project my-production-project
+# Deploy to a specific project and environment
+gensx deploy src/workflows.tsx --project my-production-project --env dev
 
 # Deploy with environment variables
-gensx deploy src/workflows.tsx --env API_KEY=abc123 --env DEBUG=true
+gensx deploy src/workflows.tsx -ev API_KEY=abc123 -ev DEBUG=true
 
 # Deploy with an environment variable taken from your local environment
-gensx deploy src/workflows.tsx --env OPENAI_API_KEY
+gensx deploy src/workflows.tsx -ev OPENAI_API_KEY
 ```
 
 ## Notes
 
 - You must be logged in to GenSX Cloud to deploy (`gensx login`)
 - `gensx deploy` requires Docker to be running
-- If your workflow requires API keys or other secrets, provide them using the `--env` option
+- If your workflow requires API keys or other secrets, provide them using the `-ev` or `--env-var` option
 - For environment variables without a specified value, the CLI will use the value from your local environment
 - After deployment, you can manage your workflows from the GenSX Cloud console
 - The deployment process automatically handles bundling dependencies
@@ -5646,63 +5677,94 @@ const results = await namespace.query({
 
 The namespace object returned by `useSearch` provides these methods:
 
-### upsert
+### write
 
-Inserts or updates vectors in the namespace.
+Inserts, updates, or deletes vectors in the namespace.
 
 ```tsx
-async upsert(options: {
-  vectors: Vector[];
-  distanceMetric: DistanceMetric;
-  schema?: Schema;
-  batchSize?: number;
-}): Promise<void>
+async write(options: WriteParams): Promise<number>
 ```
 
 #### Parameters
 
-| Parameter        | Type             | Default     | Description                                 |
-| ---------------- | ---------------- | ----------- | ------------------------------------------- |
-| `vectors`        | `Vector[]`       | Required    | Array of vectors to insert or update        |
-| `distanceMetric` | `DistanceMetric` | Required    | Distance metric for similarity calculations |
-| `schema`         | `Schema`         | `undefined` | Optional schema definition for attributes   |
-| `batchSize`      | `number`         | `1000`      | Optional batch size for processing vectors  |
-
-#### Vector object Format
-
-```tsx
-{
-  id: string;              // Unique identifier
-  vector: number[];        // Vector embedding
-  attributes?: {           // Optional metadata
-    [key: string]: any;    // Key-value pairs
-  }
-}
-```
+| Parameter         | Type             | Default     | Description                                 |
+| ----------------- | ---------------- | ----------- | ------------------------------------------- |
+| `upsertColumns`   | `UpsertColumns`  | `undefined` | Column-based format for upserting documents |
+| `upsertRows`      | `UpsertRows`     | `undefined` | Row-based format for upserting documents    |
+| `patchColumns`    | `PatchColumns`   | `undefined` | Column-based format for patching documents  |
+| `patchRows`       | `PatchRows`      | `undefined` | Row-based format for patching documents     |
+| `deletes`         | `Id[]`           | `undefined` | Array of document IDs to delete             |
+| `deleteByFilter`  | `Filters`        | `undefined` | Filter to match documents for deletion      |
+| `distanceMetric`  | `DistanceMetric` | `undefined` | Distance metric for similarity calculations |
+| `schema`          | `Schema`         | `undefined` | Optional schema definition for attributes   |
 
 #### Example
 
 ```tsx
-await namespace.upsert({
-  vectors: [
-    {
-      id: "doc-1",
-      vector: [0.1, 0.2, 0.3, ...],  // Vector embedding
-      attributes: {                   // Optional metadata
-        text: "Document content",
-        category: "article",
-        createdAt: "2023-07-15"
-      }
-    }
-  ],
-  distanceMetric: "cosine_distance",  // "cosine_distance", "euclidean_squared", "dot_product"
-  schema: {                           // Optional schema definition
-    text: "string",
-    category: "string",
-    createdAt: "string"
+// Upsert documents in column-based format
+await namespace.write({
+  upsertColumns: {
+    id: ["doc-1", "doc-2"],
+    vector: [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+    text: ["Document 1", "Document 2"],
+    category: ["article", "blog"]
+  },
+  distanceMetric: "cosine_distance",
+  schema: {
+    text: { type: "string" },
+    category: { type: "string" }
   }
 });
+
+// Upsert documents in row-based format
+await namespace.write({
+  upsertRows: [
+    {
+      id: "doc-1",
+      vector: [0.1, 0.2, 0.3],
+      text: "Document 1",
+      category: "article"
+    },
+    {
+      id: "doc-2",
+      vector: [0.4, 0.5, 0.6],
+      text: "Document 2",
+      category: "blog"
+    }
+  ],
+  distanceMetric: "cosine_distance"
+});
+
+// Delete documents by ID
+await namespace.write({
+  deletes: ["doc-1", "doc-2"]
+});
+
+// Delete documents by filter
+await namespace.write({
+  deleteByFilter: [
+    "And",
+    [
+      ["category", "Eq", "article"],
+      ["createdAt", "Lt", "2023-01-01"]
+    ]
+  ]
+});
+
+// Patch documents (update specific fields)
+await namespace.write({
+  patchRows: [
+    {
+      id: "doc-1",
+      category: "updated-category"
+    }
+  ]
+});
 ```
+
+#### Return value
+
+Returns the number of rows affected by the operation.
 
 ### query
 
@@ -5762,59 +5824,6 @@ Returns an array of matched documents with similarity scores:
   // ...more results
 ]
 ```
-
-### delete
-
-Deletes vectors by their IDs.
-
-```tsx
-async delete(options: { ids: Id[] }): Promise<void>
-```
-
-#### Parameters
-
-| Parameter | Type       | Description                   |
-| --------- | ---------- | ----------------------------- |
-| `ids`     | `string[]` | Array of vector IDs to delete |
-
-#### Example
-
-```tsx
-await namespace.delete({
-  ids: ["doc-1", "doc-2"],
-});
-```
-
-### deleteByFilter
-
-Deletes vectors that match the specified filter.
-
-```tsx
-async deleteByFilter(options: { filters: Filters }): Promise<number>
-```
-
-#### Parameters
-
-| Parameter | Type      | Description                           |
-| --------- | --------- | ------------------------------------- |
-| `filters` | `Filters` | Filters to match vectors for deletion |
-
-#### Example
-
-```tsx
-const deletedCount = await namespace.deleteByFilter({
-  filters: [
-    "And",
-    [
-      ["category", "Eq", "outdated"],
-    ]
-  ],
-});
-```
-
-#### Return value
-
-Returns the number of deleted vectors.
 
 ### getSchema
 
@@ -5915,33 +5924,29 @@ const { deleted } = await search.deleteNamespace("old-namespace");
 // Get a namespace directly for vector operations
 const namespace = search.getNamespace("products");
 
-// Upsert vectors using the namespace
-await namespace.upsert({
-  vectors: [
+// Write vectors using the namespace
+await namespace.write({
+  upsertRows: [
     {
       id: "product-1",
       vector: [0.1, 0.3, 0.5, ...], // embedding vector
-      attributes: {
-        name: "Ergonomic Chair",
-        category: "furniture",
-        price: 299.99
-      }
+      name: "Ergonomic Chair",
+      category: "furniture",
+      price: 299.99
     },
     {
       id: "product-2",
       vector: [0.2, 0.4, 0.6, ...],
-      attributes: {
-        name: "Standing Desk",
-        category: "furniture",
-        price: 499.99
-      }
+      name: "Standing Desk",
+      category: "furniture",
+      price: 499.99
     }
   ],
   distanceMetric: "cosine_distance",
   schema: {
-    name: "string",
-    category: "string",
-    price: "number"
+    name: { type: "string" },
+    category: { type: "string" },
+    price: { type: "number" }
   }
 });
 
@@ -5996,8 +6001,8 @@ const searchStorage = useSearchStorage();
 const namespace = searchStorage.getNamespace("documents");
 
 // Usage example
-await namespace.upsert({
-  vectors: [/* your vectors */],
+await namespace.write({
+  upsertRows: [...],
   distanceMetric: "cosine_distance"
 });
 ```
@@ -6108,12 +6113,13 @@ async getNamespace(name: string): Promise<Namespace>
 const namespace = await searchClient.getNamespace("products");
 
 // Then use the namespace to upsert or query vectors
-await namespace.upsert({
-  vectors: [
+await namespace.write({
+  upsertRows: [
     {
       id: "product-1",
       vector: [0.1, 0.2, 0.3, ...],
-      attributes: { name: "Product 1", category: "electronics" }
+      name: "Product 1",
+      category: "electronics"
     }
   ],
   distanceMetric: "cosine_distance"
@@ -7621,15 +7627,13 @@ const IndexDocuments = gensx.Component(
     });
 
     // Store the embeddings with original text as metadata
-    await search.upsert({
-      vectors: documents.map((doc, index) => ({
+    await search.write({
+      upsertRows: documents.map((doc, index) => ({
         id: doc.id,
         vector: embeddings.data[index].embedding,
-        attributes: {
-          text: doc.text,
-          category: doc.category,
-          createdAt: new Date().toISOString(),
-        },
+        text: doc.text,
+        category: doc.category,
+        createdAt: new Date().toISOString(),
       })),
       distanceMetric: "cosine_distance",
     });
@@ -7824,17 +7828,15 @@ const StoreMemory = gensx.Component(
     });
 
     // Store the memory with metadata
-    await search.upsert({
-      vectors: [
+    await search.write({
+      upsertRows: [
         {
           id: `memory-${Date.now()}`,
           vector: embedding.data[0].embedding,
-          attributes: {
-            content: memory,
-            timestamp: new Date().toISOString(),
-            importance: importance, // "high", "medium", "low"
-            source: "user-interaction",
-          },
+          content: memory,
+          timestamp: new Date().toISOString(),
+          importance: importance, // "high", "medium", "low"
+          source: "user-interaction",
         },
       ],
       distanceMetric: "cosine_distance",
@@ -8290,3 +8292,197 @@ No code changes are needed when moving from development to production.
 ## Reference
 
 See the [blob storage component reference](docs/component-reference/storage-components/blob-reference) for full details.
+
+# gensx env unselect
+
+The `gensx env unselect` command de-selects the currently selected environment for your project. This means subsequent commands will require explicit environment specification.
+
+## Usage
+
+```bash
+gensx env unselect [options]
+```
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-p, --project <name>`  | Project name to unselect the environment in.                                 |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Examples
+
+```bash
+# Unselect the current environment
+gensx env unselect
+
+# Unselect environment in a specific project
+gensx env unselect --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to unselect environments (`gensx login`)
+- Unselecting an environment does not delete it, it just removes the selection.
+- You can check if an environment is selected using `gensx env`
+- To select a new environment, use `gensx env select`
+- After unselecting, you'll need to specify the environment for each command that requires one
+
+# gensx env
+
+The `gensx env` command displays the name of the currently selected environment.
+
+## Usage
+
+```bash
+gensx env [options]
+```
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-p, --project <name>`  | Project name to show environment details for.                                |
+| `-h, --help`            | Display help for the command.                                                |
+
+
+## Examples
+
+```bash
+# Show the current environment
+gensx env
+
+# Show the current environment for a specific project
+gensx env --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to show environment details (`gensx login`)
+- You can use this command to verify your current environment before running important operations
+- If no environment is selected, the command will indicate this
+
+# gensx env select
+
+The `gensx env select` command sets a specific environment as the active environment for your current project. This environment will be used by default for subsequent commands like `deploy` and `run`.
+
+## Usage
+
+```bash
+gensx env select <name> [options]
+```
+
+## Arguments
+
+| Argument | Description                                                                                |
+| -------- | ------------------------------------------------------------------------------------------ |
+| `<name>` | Name of the environment to select. |
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-p, --project <name>`  | Project name to select the environment in.                                   |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Description
+
+This command:
+
+1. Sets the specified environment as active for your current project
+2. Updates your local configuration to remember this selection
+3. Makes this environment the default target for subsequent commands
+
+After selecting an environment:
+- `gensx deploy` will deploy to this environment by default
+- `gensx run` will run workflows in this environment by default
+- You can still override the environment for specific commands using the `--env` option
+
+## Examples
+
+```bash
+# Select the development environment
+gensx env select dev
+
+# Select a production environment in a specific project
+gensx env select production --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to select environments (`gensx login`)
+- The selected environment persists across CLI sessions
+- You can check the currently selected environment using `gensx env show`
+- To unselect an environment, use `gensx env unselect`
+
+# gensx env ls
+
+The `gensx env ls` command lists all environments in your GenSX project.
+
+## Usage
+
+```bash
+gensx env ls [options]
+```
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-p, --project <name>`  | Project name to list environments for.                                       |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Examples
+
+```bash
+# List all environments in the current project
+gensx env ls
+
+# List environments in a specific project
+gensx env ls --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to list environments (`gensx login`)
+
+
+# gensx env create
+
+The `gensx env create` command creates a new environment in your GenSX project. Environments allow you to manage different deployment configurations (like development, staging, and production) for your workflows.
+
+## Usage
+
+```bash
+gensx env create <name> [options]
+```
+
+## Arguments
+
+| Argument | Description                                                                                |
+| -------- | ------------------------------------------------------------------------------------------ |
+| `<name>` | Name of the environment to create (e.g., "dev", "staging", "production"). |
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-p, --project <name>`  | Project name to create the environment in.                                    |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Examples
+
+```bash
+# Create a development environment
+gensx env create dev
+
+# Create a production environment in a specific project
+gensx env create production --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to create environments (`gensx login`)
+- Each project can have multiple environments
+- Environment names should be descriptive and follow a consistent naming convention
+

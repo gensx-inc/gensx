@@ -44,6 +44,11 @@ GenSX is a simple typescript framework for building complex LLM applications. It
 - [SQL database](https://gensx.com/docs/cloud/storage/sql-database)
 - [Search](https://gensx.com/docs/cloud/storage/search)
 - [Blob storage](https://gensx.com/docs/cloud/storage/blob-storage)
+- [gensx env unselect](https://gensx.com/docs/cli-reference/env/unselect)
+- [gensx env](https://gensx.com/docs/cli-reference/env/show)
+- [gensx env select](https://gensx.com/docs/cli-reference/env/select)
+- [gensx env ls](https://gensx.com/docs/cli-reference/env/ls)
+- [gensx env create](https://gensx.com/docs/cli-reference/env/create)
 
 ## Blog
 
