@@ -8,6 +8,8 @@ Model Context Protocol server for [GenSX Cloud](https://gensx.com/docs/cloud) wo
 
 Once you have run [`gensx deploy`](https://www.gensx.com/docs/cli-reference/deploy) to deploy your project to the [GenSX Cloud serverless runtime](https://www.gensx.com/docs/cloud/serverless-deployments), you can consume those workflows via the `@gensx/gensx-cloud-mcp` server.
 
+MCP-compatible tools use a standard JSON file to configure available MCP servers.
+
 Update your MCP config file for your tool of choice to include the following:
 
 ```json
@@ -16,6 +18,7 @@ Update your MCP config file for your tool of choice to include the following:
     "gensx": {
       "command": "npx",
       "args": [
+        "-y",
         "@gensx/gensx-cloud-mcp",
         "you_org_name",
         "your_project_name",
@@ -25,6 +28,8 @@ Update your MCP config file for your tool of choice to include the following:
   }
 }
 ```
+
+Your MCP client will run this command automatically at startup and handle acquiring the GenSX Cloud MCP server on your behalf. See the [Claude desktop](https://modelcontextprotocol.io/quickstart/user), and [Cursor docs](https://docs.cursor.com/context/model-context-protocol) on configuring MCP servers for more details.
 
 By default, the server reads your API credentials from the config saved by running the `gensx login` command. Alternatively, you can specify your GenSX API key as an environment variable in your MCP config:
 
