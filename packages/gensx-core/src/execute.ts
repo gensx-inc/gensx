@@ -1,6 +1,6 @@
 import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
 import { resolveDeep } from "./resolve.js";
-import { isStreamable } from "./stream.js";
+import { isStreamable, onStreamComplete } from "./stream.js";
 import {
   ExecutableValue,
   GsxComponent,
@@ -150,46 +150,9 @@ export function Workflow<
 
       // If this is a streamable result, wrap it to ensure waitForPendingUpdates is called after completion
       if (isStreamable(result)) {
-        const originalStream = result;
-        const wrappedStream: AsyncIterableIterator<string> = {
-          async next(): Promise<IteratorResult<string>> {
-            try {
-              // Handle both async and sync iterators
-              const iterator: AsyncIterator<string> =
-                Symbol.asyncIterator in originalStream
-                  ? originalStream[Symbol.asyncIterator]()
-                  : {
-                      async next(): Promise<IteratorResult<string>> {
-                        const syncResult =
-                          originalStream[Symbol.iterator]().next();
-                        return await Promise.resolve({
-                          value: String(syncResult.value ?? ""),
-                          done: Boolean(syncResult.done),
-                        });
-                      },
-                    };
-
-              const iterResult = await iterator.next();
-              if (iterResult.done) {
-                // Stream is complete, wait for pending updates
-                await workflowContext.checkpointManager.waitForPendingUpdates();
-              }
-              return {
-                value: String(iterResult.value ?? ""),
-                done: Boolean(iterResult.done),
-              };
-            } catch (e) {
-              // Also wait for pending updates if the stream errors
-              await workflowContext.checkpointManager.waitForPendingUpdates();
-              const errorMessage = e instanceof Error ? e.message : String(e);
-              throw new Error(errorMessage, { cause: e });
-            }
-          },
-          [Symbol.asyncIterator]() {
-            return this;
-          },
-        };
-        return wrappedStream as Streamable;
+        return onStreamComplete(result, async () => {
+          await workflowContext.checkpointManager.waitForPendingUpdates();
+        });
       }
 
       return result as O | Streamable | string;
