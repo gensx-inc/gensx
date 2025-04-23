@@ -6,6 +6,9 @@
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
   "types": "./dist/cjs/index.d.ts",
+  "bin": {
+    "gensx-cloud-mcp": "./dist/esm/index.js"
+  },
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
