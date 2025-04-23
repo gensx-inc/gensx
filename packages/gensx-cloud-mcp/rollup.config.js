@@ -8,4 +8,8 @@ const external = [
     : []),
 ];
 
-export default createConfigs("src/index.tsx", "@gensx/gensx-cloud-mcp", external);
+export default createConfigs(
+  "src/index.tsx",
+  "@gensx/gensx-cloud-mcp",
+  external,
+);

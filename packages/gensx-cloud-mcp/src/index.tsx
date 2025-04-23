@@ -5,7 +5,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
-  ListToolsRequestSchema
+  ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
 // Command line argument parsing
@@ -23,18 +23,20 @@ function getApiKey(): string {
   // Environment variable takes precedence
   const envApiKey = process.env.GENSX_API_KEY;
   if (envApiKey) {
-    console.error('Using API key from environment variable');
+    console.error("Using API key from environment variable");
     return envApiKey;
   }
 
   // Fall back to config file
   const config = readConfig();
   if (config.api?.token) {
-    console.error('Using API key from config file');
+    console.error("Using API key from config file");
     return config.api.token;
   }
 
-  console.error('No API key found. Please set GENSX_API_KEY environment variable or configure API key in ~/.gensx/config.json');
+  console.error(
+    "No API key found. Please set GENSX_API_KEY environment variable or configure API key in ~/.gensx/config.json",
+  );
   process.exit(1);
 }
 
@@ -59,14 +61,18 @@ class GenSXClient {
     private readonly projectName: string,
     private readonly environmentName: string,
     private readonly apiKey: string,
-    private readonly baseUrl = "https://api.gensx.com"
+    private readonly baseUrl = "https://api.gensx.com",
   ) {}
 
-  private async request<T>(path: string, method = "GET", body?: Record<string, unknown>): Promise<T> {
+  private async request<T>(
+    path: string,
+    method = "GET",
+    body?: Record<string, unknown>,
+  ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${this.apiKey}`,
+      Authorization: `Bearer ${this.apiKey}`,
     };
 
     const options = {
@@ -85,7 +91,7 @@ class GenSXClient {
         throw new Error(`GenSX API error (${response.status}): ${errorText}`);
       }
 
-      const apiResponse = await response.json() as ApiResponse<T>;
+      const apiResponse = (await response.json()) as ApiResponse<T>;
       debugLog(`API Response: ${method} ${url}`, apiResponse);
 
       if (apiResponse.status !== "ok") {
@@ -103,12 +109,12 @@ class GenSXClient {
   async getProject() {
     const path = `/org/${this.org}/projects/${this.projectName}`;
     return this.request<{
-      id: string,
-      name: string,
-      description: string | null,
-      orgId: string,
-      defaultEnvironmentName: string,
-      defaultEnvironmentId: string,
+      id: string;
+      name: string;
+      description: string | null;
+      orgId: string;
+      defaultEnvironmentName: string;
+      defaultEnvironmentId: string;
     }>(path);
   }
 
@@ -116,27 +122,27 @@ class GenSXClient {
     const path = `/org/${this.org}/projects/${this.projectName}/environments/${this.environmentName}/workflows`;
     return this.request<{
       workflows: {
-        id: string,
-        name: string,
-        inputSchema: Record<string, unknown> | null,
-        outputSchema: Record<string, unknown> | null,
-        createdAt: string,
-        updatedAt: string,
-        url: string,
-      }[],
+        id: string;
+        name: string;
+        inputSchema: Record<string, unknown> | null;
+        outputSchema: Record<string, unknown> | null;
+        createdAt: string;
+        updatedAt: string;
+        url: string;
+      }[];
     }>(path);
   }
 
   async getWorkflow(workflowName: string) {
     const path = `/org/${this.org}/projects/${this.projectName}/environments/${this.environmentName}/workflows/${workflowName}`;
     return this.request<{
-      id: string,
-      name: string,
-      inputSchema: Record<string, unknown> | null,
-      outputSchema: Record<string, unknown> | null,
-      createdAt: string,
-      updatedAt: string,
-      url: string,
+      id: string;
+      name: string;
+      inputSchema: Record<string, unknown> | null;
+      outputSchema: Record<string, unknown> | null;
+      createdAt: string;
+      updatedAt: string;
+      url: string;
     }>(path);
   }
 
@@ -147,7 +153,7 @@ class GenSXClient {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${this.apiKey}`,
+      Authorization: `Bearer ${this.apiKey}`,
     };
 
     const options = {
@@ -193,17 +199,27 @@ async function setupServer() {
     // Get API key
     const apiKey = getApiKey();
 
-    const client = new GenSXClient(org, projectName, environmentName, apiKey, baseUrl);
+    const client = new GenSXClient(
+      org,
+      projectName,
+      environmentName,
+      apiKey,
+      baseUrl,
+    );
 
     // Get project info
     const project = await client.getProject();
     console.error(`Connected to project: ${project.name}`);
-    console.error(`Project description: ${project.description ?? 'No description'}`);
+    console.error(
+      `Project description: ${project.description ?? "No description"}`,
+    );
     debugLog("Project details:", project);
 
     // Get workflows
     const { workflows } = await client.listWorkflows();
-    console.error(`Found ${workflows.length} workflows in environment ${environmentName}`);
+    console.error(
+      `Found ${workflows.length} workflows in environment ${environmentName}`,
+    );
 
     // Convert workflows to tools
     const workflowTools = await Promise.all(
@@ -211,7 +227,9 @@ async function setupServer() {
         try {
           // For workflows without a schema, fetch detailed information
           if (!workflow.inputSchema) {
-            console.error(`Workflow ${workflow.name} has no input schema, fetching details...`);
+            console.error(
+              `Workflow ${workflow.name} has no input schema, fetching details...`,
+            );
             const detailedWorkflow = await client.getWorkflow(workflow.name);
             workflow.inputSchema = detailedWorkflow.inputSchema;
             workflow.outputSchema = detailedWorkflow.outputSchema;
@@ -224,10 +242,14 @@ async function setupServer() {
 
             // Basic validation: check that required fields are present
             const schemaObj = workflow.inputSchema;
-            const requiredFields = Array.isArray(schemaObj.required) ? schemaObj.required as string[] : [];
+            const requiredFields = Array.isArray(schemaObj.required)
+              ? (schemaObj.required as string[])
+              : [];
 
-            return requiredFields.every(field =>
-              Object.prototype.hasOwnProperty.call(input, field) && input[field] !== undefined
+            return requiredFields.every(
+              (field) =>
+                Object.prototype.hasOwnProperty.call(input, field) &&
+                input[field] !== undefined,
             );
           };
 
@@ -235,7 +257,10 @@ async function setupServer() {
           const tool: WorkflowTool = {
             name: workflow.name,
             description: `Run the GenSX Cloud workflow '${workflow.name}' from ${org}/${projectName}/${environmentName}`,
-            inputSchema: workflow.inputSchema ?? { type: "object", properties: {} },
+            inputSchema: workflow.inputSchema ?? {
+              type: "object",
+              properties: {},
+            },
             validator,
           };
 
@@ -247,11 +272,13 @@ async function setupServer() {
           console.error(`Error processing workflow ${workflow.name}:`, error);
           return null;
         }
-      })
+      }),
     );
 
     // Filter out any failed workflow tools
-    const validTools = workflowTools.filter((tool): tool is WorkflowTool => tool !== null);
+    const validTools = workflowTools.filter(
+      (tool): tool is WorkflowTool => tool !== null,
+    );
     console.error(`Successfully registered ${validTools.length} tools`);
 
     // Create server
@@ -271,7 +298,7 @@ async function setupServer() {
     // Set up request handlers
     server.setRequestHandler(ListToolsRequestSchema, () => {
       debugLog("ListTools request received");
-      const tools = validTools.map(tool => ({
+      const tools = validTools.map((tool) => ({
         name: tool.name,
         description: tool.description,
         inputSchema: tool.inputSchema,
@@ -286,7 +313,7 @@ async function setupServer() {
         debugLog(`CallTool request for ${workflowName}`, toolArgs);
 
         // Find the tool/workflow
-        const tool = validTools.find(t => t.name === workflowName);
+        const tool = validTools.find((t) => t.name === workflowName);
         if (!tool) {
           throw new Error(`Unknown workflow: ${workflowName}`);
         }
@@ -296,7 +323,9 @@ async function setupServer() {
 
         // Validate input using our simple validator
         if (!tool.validator(args)) {
-          throw new Error(`Invalid arguments for workflow ${workflowName}: missing required fields`);
+          throw new Error(
+            `Invalid arguments for workflow ${workflowName}: missing required fields`,
+          );
         }
 
         // Run the workflow
@@ -306,10 +335,12 @@ async function setupServer() {
 
         // Return the raw result directly
         return {
-          content: [{
-            type: "text",
-            text: result
-          }],
+          content: [
+            {
+              type: "text",
+              text: result,
+            },
+          ],
         };
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
@@ -332,14 +363,18 @@ async function setupServer() {
 // Start server
 async function runServer() {
   try {
-    console.error(`Starting GenSX Cloud MCP Server for ${org}/${projectName}/${environmentName}`);
+    console.error(
+      `Starting GenSX Cloud MCP Server for ${org}/${projectName}/${environmentName}`,
+    );
     console.error(`Debug mode: enabled`);
 
     const server = await setupServer();
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
-    console.error(`GenSX Cloud MCP Server running on stdio for ${org}/${projectName}/${environmentName}`);
+    console.error(
+      `GenSX Cloud MCP Server running on stdio for ${org}/${projectName}/${environmentName}`,
+    );
   } catch (error) {
     console.error("Fatal error running server:", error);
     process.exit(1);
