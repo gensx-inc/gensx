@@ -1,5 +1,6 @@
 import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
 import { resolveDeep } from "./resolve.js";
+import { isStreamable } from "./stream.js";
 import {
   ExecutableValue,
   GsxComponent,
@@ -102,6 +103,8 @@ export function Workflow<
       workflowContext.checkpointManager.setPrintUrl(
         mergedOpts.printUrl ?? false,
       );
+      console.log(workflowContext.checkpointManager);
+
       // Use the overridden name from componentOpts if provided
       const workflowName = runOpts.workflowName ?? name;
       workflowContext.checkpointManager.setWorkflowName(workflowName);
@@ -134,11 +137,62 @@ export function Workflow<
           workflowName,
         );
       }
-      await workflowContext.checkpointManager.waitForPendingUpdates();
+
+      // For non-stream results, wait for pending updates before returning
+      if (!isStreamable(result)) {
+        await workflowContext.checkpointManager.waitForPendingUpdates();
+      }
 
       if (error) {
-        throw error as Error;
+        const errorMessage =
+          error instanceof Error ? error.message : JSON.stringify(error);
+        throw new Error(errorMessage, { cause: error });
       }
+
+      // If this is a streamable result, wrap it to ensure waitForPendingUpdates is called after completion
+      if (isStreamable(result)) {
+        const originalStream = result;
+        const wrappedStream: AsyncIterableIterator<string> = {
+          async next(): Promise<IteratorResult<string>> {
+            try {
+              // Handle both async and sync iterators
+              const iterator: AsyncIterator<string> =
+                Symbol.asyncIterator in originalStream
+                  ? originalStream[Symbol.asyncIterator]()
+                  : {
+                      async next(): Promise<IteratorResult<string>> {
+                        const syncResult =
+                          originalStream[Symbol.iterator]().next();
+                        return await Promise.resolve({
+                          value: String(syncResult.value ?? ""),
+                          done: Boolean(syncResult.done),
+                        });
+                      },
+                    };
+
+              const iterResult = await iterator.next();
+              if (iterResult.done) {
+                // Stream is complete, wait for pending updates
+                await workflowContext.checkpointManager.waitForPendingUpdates();
+              }
+              return {
+                value: String(iterResult.value ?? ""),
+                done: Boolean(iterResult.done),
+              };
+            } catch (e) {
+              // Also wait for pending updates if the stream errors
+              await workflowContext.checkpointManager.waitForPendingUpdates();
+              const errorMessage = e instanceof Error ? e.message : String(e);
+              throw new Error(errorMessage, { cause: e });
+            }
+          },
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+        };
+        return wrappedStream as Streamable;
+      }
+
       return result as O | Streamable | string;
     },
   };
