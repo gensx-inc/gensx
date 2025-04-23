@@ -7,6 +7,7 @@ import type {
 } from "@turbopuffer/turbopuffer";
 
 import { readConfig } from "@gensx/core";
+import { USER_AGENT } from "src/utils/user-agent.js";
 
 import {
   DeleteNamespaceResult,
@@ -163,6 +164,7 @@ export class SearchNamespace implements Namespace {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({
             upsertColumns,
@@ -216,6 +218,7 @@ export class SearchNamespace implements Namespace {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({
             vector,
@@ -258,6 +261,7 @@ export class SearchNamespace implements Namespace {
           method: "GET",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -290,6 +294,7 @@ export class SearchNamespace implements Namespace {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify(schema),
         },
@@ -322,6 +327,7 @@ export class SearchNamespace implements Namespace {
           method: "GET",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -400,6 +406,7 @@ export class SearchStorage implements ISearchStorage {
           method: "POST",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -437,6 +444,7 @@ export class SearchStorage implements ISearchStorage {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -501,6 +509,7 @@ export class SearchStorage implements ISearchStorage {
         method: "GET",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
+          "User-Agent": USER_AGENT,
         },
       });
 
@@ -543,6 +552,7 @@ export class SearchStorage implements ISearchStorage {
           method: "HEAD",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );

@@ -2,6 +2,7 @@
 
 import { readConfig } from "@gensx/core";
 import { InArgs } from "@libsql/client";
+import { USER_AGENT } from "src/utils/user-agent.js";
 
 import {
   Database,
@@ -69,6 +70,7 @@ export class RemoteDatabase implements Database {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({
             sql,
@@ -111,6 +113,7 @@ export class RemoteDatabase implements Database {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({ statements }),
         },
@@ -150,6 +153,7 @@ export class RemoteDatabase implements Database {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({ sql }),
         },
@@ -189,6 +193,7 @@ export class RemoteDatabase implements Database {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({ sql }),
         },
@@ -227,6 +232,7 @@ export class RemoteDatabase implements Database {
           method: "GET",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -376,6 +382,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -430,6 +437,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );

@@ -8,6 +8,8 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
+import { USER_AGENT } from "./utils/user-agent.js";
+
 // Command line argument parsing
 const args = process.argv.slice(2);
 if (args.length < 3) {
@@ -73,6 +75,7 @@ class GenSXClient {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${this.apiKey}`,
+      "User-Agent": USER_AGENT,
     };
 
     const options = {

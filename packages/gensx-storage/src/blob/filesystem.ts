@@ -6,7 +6,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { Readable } from "node:stream";
 
-import { fromBase64UrlSafe, toBase64UrlSafe } from "../utils.js";
+import { fromBase64UrlSafe, toBase64UrlSafe } from "../utils/base64.js";
 import {
   Blob,
   BlobConflictError,

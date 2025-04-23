@@ -10,7 +10,7 @@ import {
   DatabaseNotFoundError,
   DatabaseSyntaxError,
 } from "../../src/database/types.js";
-import { toBase64UrlSafe } from "../../src/utils.js";
+import { toBase64UrlSafe } from "../../src/utils/base64.js";
 
 // Helper to create temporary test directories
 async function createTempDir(): Promise<string> {

@@ -3,6 +3,7 @@
 import { Readable } from "stream";
 
 import { readConfig } from "@gensx/core";
+import { USER_AGENT } from "src/utils/user-agent.js";
 
 import {
   Blob,
@@ -18,7 +19,6 @@ import {
   ListBlobsOptions,
   ListBlobsResponse,
 } from "./types.js";
-
 /**
  * Base URL for the GenSX Console API
  */
@@ -63,6 +63,7 @@ export class RemoteBlob<T> implements Blob<T> {
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -105,6 +106,7 @@ export class RemoteBlob<T> implements Blob<T> {
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -146,6 +148,7 @@ export class RemoteBlob<T> implements Blob<T> {
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -209,6 +212,7 @@ export class RemoteBlob<T> implements Blob<T> {
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -239,6 +243,7 @@ export class RemoteBlob<T> implements Blob<T> {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
             ...(options?.etag && { "If-Match": options.etag }),
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({
             content: JSON.stringify(value),
@@ -281,6 +286,7 @@ export class RemoteBlob<T> implements Blob<T> {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
             ...(options?.etag && { "If-Match": options.etag }),
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({
             content: value,
@@ -328,6 +334,7 @@ export class RemoteBlob<T> implements Blob<T> {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
             ...(options?.etag && { "If-Match": options.etag }),
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({
             content: value.toString("base64"),
@@ -381,6 +388,7 @@ export class RemoteBlob<T> implements Blob<T> {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
             ...(options?.etag && { "If-Match": options.etag }),
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({
             content: buffer.toString("base64"),
@@ -421,6 +429,7 @@ export class RemoteBlob<T> implements Blob<T> {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -461,6 +470,7 @@ export class RemoteBlob<T> implements Blob<T> {
           method: "HEAD",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
@@ -517,6 +527,7 @@ export class RemoteBlob<T> implements Blob<T> {
             Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
             ...(options?.etag && { "If-Match": options.etag }),
+            "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({
             metadata,
@@ -605,6 +616,7 @@ export class RemoteBlobStorage implements BlobStorage {
           method: "GET",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
+            "User-Agent": USER_AGENT,
           },
         },
       );
