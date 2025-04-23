@@ -8,6 +8,7 @@ let pendingUpdatesCalled = false;
 vi.mock("../src/checkpoint.ts", () => {
   const mockCheckpointManager = {
     waitForPendingUpdates: async () => {
+      console.log("waitForPendingUpdates called");
       await Promise.resolve();
       pendingUpdatesCalled = true;
       return Promise.resolve();
