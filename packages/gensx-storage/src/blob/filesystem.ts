@@ -6,6 +6,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { Readable } from "node:stream";
 
+import { fromBase64UrlSafe, toBase64UrlSafe } from "../utils.js";
 import {
   Blob,
   BlobConflictError,
@@ -71,35 +72,6 @@ function calculateEtag(content: string | Buffer): string {
  */
 function getMetadataPath(filePath: string): string {
   return `${filePath}.metadata.json`;
-}
-
-/**
- * Convert string to URL-safe base64
- * @param str The string to encode
- * @returns URL-safe base64 encoded string
- */
-function toBase64UrlSafe(str: string): string {
-  return Buffer.from(str)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-}
-
-/**
- * Convert URL-safe base64 to string
- * @param base64 The URL-safe base64 string to decode
- * @returns Decoded string
- */
-function fromBase64UrlSafe(base64: string): string {
-  // Add back padding if needed
-  const pad = base64.length % 4;
-  const padded = pad ? base64 + "=".repeat(4 - pad) : base64;
-
-  return Buffer.from(
-    padded.replace(/-/g, "+").replace(/_/g, "/"),
-    "base64",
-  ).toString("utf-8");
 }
 
 /**
@@ -669,16 +641,25 @@ export class FileSystemBlobStorage implements BlobStorage {
    */
   async listBlobs(options?: ListBlobsOptions): Promise<ListBlobsResponse> {
     try {
+      const {
+        prefix = "",
+        limit = 100,
+        cursor = undefined,
+      } = (options ?? {}) as {
+        prefix?: string;
+        limit?: number;
+        cursor?: string;
+      };
       // Normalize prefixes by removing trailing slashes
       const normalizedDefaultPrefix = this.defaultPrefix?.replace(/\/$/, "");
-      const normalizedPrefix = options?.prefix?.replace(/\/$/, "");
+      const normalizedPrefix = prefix.replace(/\/$/, "");
 
       // Build the search prefix
       const searchPrefix = normalizedDefaultPrefix
         ? normalizedPrefix
           ? `${normalizedDefaultPrefix}/${normalizedPrefix}`
           : normalizedDefaultPrefix
-        : (normalizedPrefix ?? "");
+        : normalizedPrefix;
 
       const searchPath = path.join(this.rootDir, searchPrefix);
 
@@ -734,14 +715,13 @@ export class FileSystemBlobStorage implements BlobStorage {
 
       // Handle cursor-based pagination
       let startIndex = 0;
-      if (options?.cursor) {
-        const decodedCursor = fromBase64UrlSafe(options.cursor);
+      if (cursor) {
+        const decodedCursor = fromBase64UrlSafe(cursor);
         startIndex = allFiles.findIndex((file) => file > decodedCursor);
         if (startIndex === -1) startIndex = allFiles.length;
       }
 
       // Handle limit
-      const limit = options?.limit ?? 100; // Default limit of 100
       const endIndex = Math.min(startIndex + limit, allFiles.length);
       const items = allFiles.slice(startIndex, endIndex);
 
