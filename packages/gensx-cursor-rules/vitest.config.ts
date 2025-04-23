@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     isolate: false,
     passWithNoTests: false,
+    silent: "passed-only",
     include: ["./tests/**/*.test.ts"],
   },
 });
