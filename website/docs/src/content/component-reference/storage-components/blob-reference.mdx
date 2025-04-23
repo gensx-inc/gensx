@@ -1,0 +1,383 @@
+---
+title: Blob storage reference
+description: Blob storage components for stateful workflows and agents.
+---
+
+# Blob storage reference
+
+API reference for GenSX Cloud blob storage components.
+
+## Installation
+
+```bash
+npm install @gensx/storage
+```
+
+## BlobProvider
+
+Provides blob storage capabilities to its child components.
+
+### Import
+
+```tsx
+import { BlobProvider } from "@gensx/storage";
+```
+
+### Props
+
+| Prop            | Type                      | Default        | Description                           |
+| --------------- | ------------------------- | -------------- | ------------------------------------- |
+| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                |
+| `rootDir`       | `string`                  | `.gensx/blobs` | Root directory for filesystem storage |
+| `defaultPrefix` | `string`                  | `undefined`    | Optional prefix for all blob keys     |
+
+### Example
+
+```tsx
+import { BlobProvider } from "@gensx/storage";
+
+const Workflow = gensx.Component("Workflow", ({ input }) => (
+  <BlobProvider kind="cloud">
+    <YourComponent input={input} />
+  </BlobProvider>
+));
+```
+
+## useBlob
+
+Hook that provides access to blob storage for a specific key.
+
+### Import
+
+```tsx
+import { useBlob } from "@gensx/storage";
+```
+
+### Signature
+
+```tsx
+function useBlob<T = unknown>(key: string): Blob<T>;
+```
+
+### Parameters
+
+| Parameter | Type         | Description                      |
+| --------- | ------------ | -------------------------------- |
+| `key`     | `string`     | The unique key for the blob      |
+| `T`       | Generic type | Type of the JSON data (optional) |
+
+### Returns
+
+Returns a blob object with methods to interact with blob storage.
+
+### Example
+
+```tsx
+const blob = useBlob<UserProfile>("users/123.json");
+const profile = await blob.getJSON();
+```
+
+## Blob methods
+
+The blob object returned by `useBlob` provides these methods:
+
+### JSON operations
+
+```tsx
+// Get JSON data
+const data = await blob.getJSON(); // Returns null if not found
+
+// Save JSON data
+await blob.putJSON(data, options); // Returns { etag: string }
+```
+
+### String operations
+
+```tsx
+// Get string content
+const text = await blob.getString(); // Returns null if not found
+
+// Save string content
+await blob.putString("Hello world", options); // Returns { etag: string }
+```
+
+### Binary operations
+
+```tsx
+// Get binary data with metadata
+const result = await blob.getRaw(); // Returns null if not found
+// Returns { content, contentType, etag, lastModified, size, metadata }
+
+// Save binary data
+await blob.putRaw(buffer, options); // Returns { etag: string }
+```
+
+### Stream operations
+
+```tsx
+// Get data as a stream
+const stream = await blob.getStream();
+
+// Save data from a stream
+await blob.putStream(readableStream, options); // Returns { etag: string }
+```
+
+### Metadata operations
+
+```tsx
+// Check if blob exists
+const exists = await blob.exists(); // Returns boolean
+
+// Delete blob
+await blob.delete();
+
+// Get metadata
+const metadata = await blob.getMetadata(); // Returns null if not found
+
+// Update metadata
+await blob.updateMetadata({
+  key1: "value1",
+  key2: "value2",
+});
+```
+
+## Options object
+
+Many methods accept an options object with these properties:
+
+```tsx
+{
+  contentType?: string,         // MIME type of the content
+  etag?: string,                // For optimistic concurrency control
+  metadata?: {                  // Custom metadata key-value pairs
+    [key: string]: string
+  }
+}
+```
+
+## useBlobStorage
+
+Hook that provides direct access to the blob storage instance, allowing you to perform blob operations across multiple keys.
+
+### Import
+
+```tsx
+import { useBlobStorage } from "@gensx/storage";
+```
+
+### Signature
+
+```tsx
+function useBlobStorage(): BlobStorage;
+```
+
+### Example
+
+```tsx
+const blobStorage = useBlobStorage();
+```
+
+The blob storage object provides these methods:
+
+### getBlob
+
+Get a blob object for a specific key.
+
+```tsx
+const blobStorage = useBlobStorage();
+const userBlob = blobStorage.getBlob<UserProfile>("users/123.json");
+```
+
+### listBlobs
+
+List all blob keys with an optional prefix filter.
+
+```tsx
+const blobStorage = useBlobStorage();
+const userBlobKeys = await blobStorage.listBlobs("users/");
+console.log(userBlobKeys); // ["users/123.json", "users/456.json"]
+```
+
+### blobExists
+
+Check if a blob exists.
+
+```tsx
+const blobStorage = useBlobStorage();
+const exists = await blobStorage.blobExists("users/123.json");
+if (exists) {
+  console.log("User profile exists");
+}
+```
+
+### deleteBlob
+
+Delete a blob.
+
+```tsx
+const blobStorage = useBlobStorage();
+const { deleted } = await blobStorage.deleteBlob("temp/file.json");
+if (deleted) {
+  console.log("Temporary file deleted");
+}
+```
+
+## BlobClient
+
+The `BlobClient` class provides a way to interact with GenSX blob storage outside of the GenSX workflow context, such as from regular Node.js applications or server endpoints.
+
+### Import
+
+```tsx
+import { BlobClient } from "@gensx/storage";
+```
+
+### Constructor
+
+```tsx
+constructor(props?: BlobProviderProps)
+```
+
+#### Parameters
+
+| Parameter | Type               | Default | Description                           |
+| --------- | ------------------ | ------- | ------------------------------------- |
+| `props`   | `BlobProviderProps` | `{}`   | Optional configuration properties     |
+
+#### Example
+
+```tsx
+// Default client (uses filesystem locally, cloud in production)
+const blobClient = new BlobClient();
+
+// Explicitly use filesystem storage
+const localClient = new BlobClient({
+  kind: "filesystem",
+  rootDir: "./my-data"
+});
+
+// Explicitly use cloud storage with a prefix
+const cloudClient = new BlobClient({
+  kind: "cloud",
+  defaultPrefix: "app-data/"
+});
+```
+
+### Methods
+
+#### getBlob
+
+Get a blob instance for a specific key.
+
+```tsx
+getBlob<T = unknown>(key: string): Blob<T>
+```
+
+##### Example
+
+```tsx
+const userBlob = blobClient.getBlob<UserProfile>("users/123.json");
+const profile = await userBlob.getJSON();
+
+// Update the profile
+profile.lastLogin = new Date().toISOString();
+await userBlob.putJSON(profile);
+```
+
+#### listBlobs
+
+List all blob keys with an optional prefix.
+
+```tsx
+async listBlobs(prefix?: string): Promise<string[]>
+```
+
+##### Example
+
+```tsx
+const chatHistory = await blobClient.listBlobs("chats/");
+console.log("Chat histories:", chatHistory);
+```
+
+#### blobExists
+
+Check if a blob exists.
+
+```tsx
+async blobExists(key: string): Promise<boolean>
+```
+
+##### Example
+
+```tsx
+if (await blobClient.blobExists("settings.json")) {
+  console.log("Settings file exists");
+} else {
+  console.log("Need to create settings file");
+}
+```
+
+#### deleteBlob
+
+Delete a blob.
+
+```tsx
+async deleteBlob(key: string): Promise<DeleteBlobResult>
+```
+
+##### Example
+
+```tsx
+const { deleted } = await blobClient.deleteBlob("temp/cache.json");
+if (deleted) {
+  console.log("Cache file was deleted");
+}
+```
+
+### Usage in applications
+
+The BlobClient is particularly useful when you need to access blob storage from:
+
+- Express.js or Next.js API routes
+- Background jobs or workers
+- Custom scripts or tools
+- Any Node.js application outside the GenSX workflow context
+
+```tsx
+// Example: Using BlobClient in an Express handler
+import express from 'express';
+import { BlobClient } from '@gensx/storage';
+
+const app = express();
+const blobClient = new BlobClient();
+
+// Save user data endpoint
+app.post('/api/users/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userBlob = blobClient.getBlob(`users/${userId}.json`);
+
+    // Get existing profile or create new one
+    const existingProfile = await userBlob.getJSON() || {};
+
+    // Merge with updated data
+    const updatedProfile = {
+      ...existingProfile,
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Save the updated profile
+    await userBlob.putJSON(updatedProfile);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving user data:', error);
+    res.status(500).json({ error: 'Failed to save user data' });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+```

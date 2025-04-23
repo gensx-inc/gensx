@@ -6,7 +6,7 @@ sidebarTitle: Overview
 
 # GenSX Overview
 
-GenSX is a simple typescript framework for building complex LLM applications. It's a workflow engine designed for building agents, chatbot APIs, and more using common patterns like RAG and reflection.
+GenSX is a simple TypeScript framework for building complex LLM applications. It’s a workflow engine designed for building agents, chatbot APIs, and more using common patterns like RAG and reflection. In addition, GenSX Cloud offers serverless hosting, cloud storage, and tracing and observability to build production-ready agents and workflows.
 
 It uses `jsx` to define and orchestrate workflows with functional, reusable components:
 
@@ -41,6 +41,81 @@ Most LLM frameworks are graph oriented, inspired by popular python tools like Ai
 LLM workflows are fundamentally about function composition and data flow - exactly what JSX was designed to express. There is no need for a graph DSL. GenSX expresses control flow, loops, and recursion using plain old typescript language primitives. To learn more about why GenSX uses JSX, read [Why JSX?](docs/why-jsx).
 
 While GenSX uses JSX, it does not share the same execution model as React, and has zero dependencies.
+
+## GenSX Cloud
+
+[GenSX Cloud](/docs/cloud) provides everything you need to ship production grade agents and workflow including a serverless runtime designed for long-running workloads, cloud storage to build stateful workflows and agents, and tracing and observability.
+
+### Serverless deployments
+
+Deploy any workflow to a hosted API endpoint with a single command. The GenSX cloud platform handles scaling, infrastructure management, and API generation automatically:
+
+```bash
+# Deploy your workflow to GenSX Cloud
+$ gensx deploy ./src/workflows.tsx
+```
+
+```bash
+✔ Building workflow using Docker
+✔ Generating schema
+
+✔ Successfully built project
+
+ℹ Using project name from gensx.yaml: support-tools
+✔ Deploying project to GenSX Cloud (Project: support-tools)
+
+✔ Successfully deployed project to GenSX Cloud
+
+Dashboard: https://app.gensx.com/gensx/support-tools/default/workflows
+
+Available workflows:
+- ChatAgent
+- TextToSQLWorkflow
+- RAGWorkflow
+- AnalyzeDiscordWorkflow
+
+Project: support-tools
+Environment: default
+```
+
+The platform is optimized for AI workloads with millisecond-level cold starts and support for long-running executions up to an hour.
+
+### Tracing and observability
+
+GenSX Cloud provides comprehensive tracing and observability for all your workflows and agents.
+
+![Workflow component tree](/cloud/trace.png)
+
+Inputs and outputs are recorded for every component that executes in your workflows, including prompts, tool calls, and token usage. This makes it easy to debug hallucinations, prompt upgrades, and monitor costs.
+
+![Component trace](/cloud/component-trace.png)
+
+### Cloud Storage
+
+Build stateful AI applications with zero configuration using built-in storage primitives that provide managed blob storage, SQL databases, and full-text + vector search:
+
+```tsx
+const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
+  "ChatWithMemory",
+  async (props) => {
+    const { userInput, threadId } = props;
+
+    // Load chat history from blob storage
+    const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+    const history = await blob.getJSON();
+
+    // Add new message and run LLM
+    // ...
+
+    // Save updated history
+    await blob.putJSON(updatedHistory);
+
+    return response;
+  },
+);
+```
+
+For more details about GenSX Cloud see the [complete cloud reference](/docs/cloud).
 
 ## Reusable by default
 

@@ -34,6 +34,9 @@ const ListModels = gensx.Component<{}, ListModelsOutput>(
   "ListModels",
   async () => {
     const context = gensx.useContext(OpenAIContext);
+    if (!context.client) {
+      throw new Error("OpenAI client not found");
+    }
     const models = await context.client.models.list();
     return { models };
   },
@@ -81,8 +84,8 @@ const GetAllModelResponsesFromProvider = gensx.Component<
                 <GenerateText
                   prompt={prompt}
                   model={createOpenAI({
-                    baseURL: context.client.baseURL,
-                    apiKey: context.client.apiKey,
+                    baseURL: context.client?.baseURL,
+                    apiKey: context.client?.apiKey,
                   }).languageModel(model.id)}
                 >
                   {({ text }) => text}

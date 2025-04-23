@@ -1,0 +1,37 @@
+---
+title: gensx login
+description: Log in to GenSX Cloud to deploy and run workflows
+---
+
+# gensx login
+
+The `gensx login` command authenticates you with GenSX Cloud, allowing you to deploy and run workflows remotely.
+
+## Usage
+
+```bash
+gensx login
+```
+
+## Description
+
+When you run this command, it will:
+
+1. Open your default web browser to the GenSX authentication page
+2. Prompt you to log in with your GenSX account or create a new one
+3. Store your authentication credentials locally for future CLI commands
+
+After successful login, you can use other commands that require authentication, such as `deploy` and `run`.
+
+## Examples
+
+```bash
+# Log in to GenSX Cloud
+gensx login
+```
+
+## Notes
+
+- Your authentication token is stored in your user directory (typically `~/.gensx/config.json`)
+- The token is valid until you log out or revoke it from the GenSX dashboard
+- If you're behind a corporate firewall or using strict network policies, ensure that outbound connections to `api.gensx.com` are allowed

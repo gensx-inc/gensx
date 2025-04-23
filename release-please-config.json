@@ -218,6 +218,25 @@
         }
       ]
     },
+    "packages/gensx-cloud-mcp": {
+      "component": "gensx-cloud-mcp",
+      "release-type": "node",
+      "package-name": "@gensx/gensx-cloud-mcp",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
     "packages/gensx-mcp": {
       "component": "gensx-mcp",
       "release-type": "node",

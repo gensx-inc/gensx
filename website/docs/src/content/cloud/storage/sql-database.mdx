@@ -1,0 +1,326 @@
+---
+title: SQL database
+description: Use SQL databases with GenSX's zero-configuration database service
+---
+
+# SQL database
+
+GenSX's SQL database service provides zero-configuration SQLite databases. It enables you to create, query, and manage relational data without worrying about infrastructure or database administration. Because new databases can be provisioned in milliseconds, they are perfect for per-agent or per workflow state.
+
+Cloud databases are powered by [Turso](https://turso.tech), with several properties that make them ideal for AI agents and workflows:
+
+- **Millisecond provisioning**: Databases are created on-demand in milliseconds, making them perfect for ephemeral workloads like parsing and querying user-uploaded CSVs or creating per-agent structured data stores.
+- **Strong consistency**: All operations are linearizable, maintaining an ordered history, with writes fully serialized and subsequent writes awaiting transaction completion.
+- **Zero configuration**: Like all GenSX storage components, databases work identically in both development and production environments with no setup required.
+- **Local development**: Uses libsql locally to enable a fast, isolated development loop without external dependencies.
+
+## Basic usage
+
+To use SQL databases in your GenSX application:
+
+1. Install the storage package:
+
+   ```bash
+   npm install @gensx/storage
+   ```
+
+2. Add the `DatabaseProvider` to your workflow:
+
+   ```tsx
+   import { DatabaseProvider } from "@gensx/storage";
+
+   const Workflow = ({ input }) => (
+     <DatabaseProvider>
+       <YourComponent input={input} />
+     </DatabaseProvider>
+   );
+   ```
+
+3. Access databases within your components using the `useDatabase` hook:
+
+   ```tsx
+   import { useDatabase } from "@gensx/storage";
+
+   const db = await useDatabase("my-database");
+   ```
+
+### Executing queries
+
+The simplest way to interact with a database is by executing SQL queries:
+
+```tsx
+import * as gensx from "@gensx/core";
+import { useDatabase } from "@gensx/storage";
+
+const QueryTeamStats = gensx.Component("QueryTeamStats", async ({ team }) => {
+  // Get access to a database (creates it if it doesn't exist)
+  const db = await useDatabase("baseball");
+
+  // Execute SQL queries with parameters
+  const result = await db.execute("SELECT * FROM players WHERE team = ?", [
+    team,
+  ]);
+
+  // Access query results
+  console.log(result.columns); // Column names
+  console.log(result.rows); // Data rows
+  console.log(result.rowsAffected); // Number of rows affected
+
+  return result.rows;
+});
+```
+
+### Creating tables and initializing data
+
+You can create database schema and populate it with data:
+
+```tsx
+const InitializeDatabase = gensx.Component("InitializeDatabase", async () => {
+  const db = await useDatabase("baseball");
+
+  // Create table if it doesn't exist
+  await db.execute(`
+      CREATE TABLE IF NOT EXISTS baseball_stats (
+        player TEXT,
+        team TEXT,
+        position TEXT,
+        at_bats INTEGER,
+        hits INTEGER,
+        runs INTEGER,
+        home_runs INTEGER,
+        rbi INTEGER,
+        batting_avg REAL
+      )
+    `);
+
+  // Check if data already exists
+  const result = await db.execute("SELECT COUNT(*) FROM baseball_stats");
+  const count = result.rows[0][0] as number;
+
+  if (count === 0) {
+    // Insert sample data
+    await db.execute(`
+        INSERT INTO baseball_stats (player, team, position, at_bats, hits, runs, home_runs, rbi, batting_avg)
+        VALUES
+          ('Marcus Bennett', 'Portland Pioneers', '1B', 550, 85, 25, 32, 98, 0.312),
+          ('Ethan Carter', 'San Antonio Stallions', 'SS', 520, 92, 18, 24, 76, 0.298)
+      `);
+  }
+
+  return "Database initialized";
+});
+```
+
+## Practical examples
+
+### Text-to-SQL agent
+
+One of the most powerful applications is building a natural language to SQL interface:
+
+```tsx
+import * as gensx from "@gensx/core";
+import { GSXChatCompletion, GSXTool } from "@gensx/openai";
+import { useDatabase } from "@gensx/storage";
+import { z } from "zod";
+
+// Create a tool that executes SQL queries
+const queryTool = new GSXTool({
+  name: "execute_query",
+  description: "Execute a SQL query against the baseball database",
+  schema: z.object({
+    query: z.string().describe("The SQL query to execute"),
+  }),
+  run: async ({ query }) => {
+    const db = await useDatabase("baseball");
+    const result = await db.execute(query);
+    return JSON.stringify(result, null, 2);
+  },
+});
+
+// SQL Copilot component that answers questions using SQL
+const SqlCopilot = gensx.Component("SqlCopilot", ({ question }) => (
+  <GSXChatCompletion
+    messages={[
+      {
+        role: "system",
+        content: `You are a SQL assistant. The database has a baseball_stats table with
+          columns: player, team, position, at_bats, hits, runs, home_runs, rbi, batting_avg.
+          Use the execute_query tool to run SQL queries.`,
+      },
+      { role: "user", content: question },
+    ]}
+    model="gpt-4o-mini"
+    tools={[queryTool]}
+  >
+    {(result) => result.choices[0].message.content}
+  </GSXChatCompletion>
+));
+```
+
+### Transactions with batch operations
+
+For operations that need to be performed atomically, you can use batch operations:
+
+```tsx
+const TransferFunds = gensx.Component(
+  "TransferFunds",
+  async ({ fromAccount, toAccount, amount }) => {
+    const db = await useDatabase("banking");
+
+    try {
+      // Execute multiple statements as a transaction
+      const result = await db.batch([
+        {
+          sql: "UPDATE accounts SET balance = balance - ? WHERE account_id = ?",
+          params: [amount, fromAccount],
+        },
+        {
+          sql: "UPDATE accounts SET balance = balance + ? WHERE account_id = ?",
+          params: [amount, toAccount],
+        },
+      ]);
+
+      return { success: true, rowsAffected: result.rowsAffected };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
+);
+```
+
+### Multi-statement scripts
+
+For complex database changes, you can execute multiple statements at once:
+
+```tsx
+const SetupUserSystem = gensx.Component("SetupUserSystem", async () => {
+  const db = await useDatabase("users");
+
+  // Execute a SQL script with multiple statements
+  await db.executeMultiple(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE
+      );
+
+      CREATE TABLE IF NOT EXISTS user_preferences (
+        user_id TEXT PRIMARY KEY,
+        theme TEXT DEFAULT 'light',
+        notifications BOOLEAN DEFAULT 1,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    `);
+
+  return "User system set up successfully";
+});
+```
+
+### Database schema migrations
+
+When you need to update your database schema, use migrations:
+
+```tsx
+const MigrateDatabase = gensx.Component(
+  "MigrateDatabase",
+  async ({ version }) => {
+    const db = await useDatabase("app_data");
+
+    if (version === "v2") {
+      // Run migrations with foreign key checks disabled
+      await db.migrate(`
+        ALTER TABLE products ADD COLUMN category TEXT;
+        CREATE TABLE product_categories (
+          id INTEGER PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT
+        );
+      `);
+
+      return "Database migrated to v2";
+    }
+
+    return "No migration needed";
+  },
+);
+```
+
+## Development vs. production
+
+GenSX SQL databases work identically in both local development and cloud environments:
+
+- **Local development**: Databases are stored as SQLite files in the `.gensx/databases` directory by default
+- **Cloud deployment**: Databases are automatically provisioned in the cloud
+
+If you don't specify a "kind" that the framework auto-infers this value for you based on the runtime environment.
+
+No code changes are needed when moving from development to production.
+
+## Use cases
+
+### Data-backed agents
+
+Create agents that can query and update structured data, using the components defined above:
+
+```tsx
+const DataAnalyst = gensx.Component("DataAnalyst", async ({ query }) => {
+  // Initialize the database with the baseball stats
+  await InitializeDatabase();
+
+  // Use the SQL Copilot to answer the question
+  return <SqlCopilot question={query} />;
+});
+```
+
+### User data storage
+
+Store user data and preferences in a structured format:
+
+```tsx
+const UserPreferences = gensx.Component(
+  "UserPreferences",
+  async ({ userId, action, data }) => {
+    const db = await useDatabase("user_data");
+
+    if (action === "get") {
+      const result = await db.execute(
+        "SELECT * FROM preferences WHERE user_id = ?",
+        [userId],
+      );
+      return result.rows.length > 0 ? result.rows[0] : null;
+    } else if (action === "set") {
+      await db.execute(
+        "INSERT OR REPLACE INTO preferences (user_id, settings) VALUES (?, ?)",
+        [userId, JSON.stringify(data)],
+      );
+      return { success: true };
+    }
+  },
+);
+```
+
+### Collaborative workflows
+
+Build workflows that share structured data between steps:
+
+```tsx
+const DataCollector = gensx.Component("DataCollector", async ({ source }) => {
+  const db = await useDatabase("workflow_data");
+  // Collect data from source and store in database
+  // ...
+  return { success: true };
+});
+
+const DataAnalyzer = gensx.Component("DataAnalyzer", async () => {
+  const db = await useDatabase("workflow_data");
+  // Analyze data from database
+  // ...
+  return { results: "..." };
+});
+```
+
+## Reference
+
+See the [database component reference](docs/component-reference/storage-components/database-reference) for full details.

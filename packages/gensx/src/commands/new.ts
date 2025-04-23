@@ -8,6 +8,7 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { logger } from "../logger.js";
+import { PromptModule } from "../types/prompt.js";
 import { readConfig, saveState } from "../utils/config.js";
 import { exec } from "../utils/exec.js";
 import { saveProjectConfig } from "../utils/project-config.js";
@@ -60,10 +61,6 @@ async function listTemplates(): Promise<string[]> {
   } catch {
     return [];
   }
-}
-
-interface PromptModule {
-  prompt<T>(options: unknown): Promise<T>;
 }
 
 async function selectTemplate(): Promise<string> {

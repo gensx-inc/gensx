@@ -6,12 +6,15 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { getAuth } from "../utils/config.js";
+import { getEnvironmentForOperation } from "../utils/env-config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import { build } from "./build.js";
+
 interface DeployOptions {
   project?: string;
-  env?: string[];
+  envVar?: string[];
+  env?: string;
 }
 
 interface DeploymentResponse {
@@ -34,7 +37,7 @@ interface DeploymentResponse {
 }
 
 export async function deploy(file: string, options: DeployOptions) {
-  const spinner = ora();
+  const spinner = ora({ discardStdin: false });
 
   try {
     // 1. Build the workflow
@@ -47,8 +50,8 @@ export async function deploy(file: string, options: DeployOptions) {
     }
 
     let projectName = options.project;
+    const projectConfig = await readProjectConfig(process.cwd());
     if (!projectName) {
-      const projectConfig = await readProjectConfig(process.cwd());
       if (projectConfig?.projectName) {
         projectName = projectConfig.projectName;
         spinner.info(
@@ -62,23 +65,32 @@ export async function deploy(file: string, options: DeployOptions) {
       }
     }
 
-    // 3. Create form data with bundle
+    // Get environment using the utility function - user will either confirm or select environment
+    const environmentName = await getEnvironmentForOperation(
+      projectName,
+      options.env,
+      spinner,
+      true,
+    );
+
+    // 4. Create form data with bundle
     const form = new FormData();
     form.append("file", fs.createReadStream(bundleFile), "bundle.js");
-    if (options.env)
-      form.append("environmentVariables", JSON.stringify(options.env));
+    if (options.envVar) {
+      form.append("environmentVariables", JSON.stringify(options.envVar));
+    }
 
     form.append("schemas", JSON.stringify(schemas));
 
     // Use the project-specific deploy endpoint
     const url = new URL(
-      `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/deploy`,
+      `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environmentName)}/deploy`,
       auth.apiBaseUrl,
     );
 
-    // 4. Deploy project to GenSX Cloud
+    // 5. Deploy project to GenSX Cloud
     spinner.start(
-      `Deploying project to GenSX Cloud (Project: ${pc.cyan(projectName)})`,
+      `Deploying project ${pc.cyan(projectName)} to GenSX Cloud (Environment: ${pc.cyan(environmentName)})`,
     );
 
     const response = await axios.post(url.toString(), form, {
@@ -102,7 +114,7 @@ export async function deploy(file: string, options: DeployOptions) {
       ? `deploymentId=${deployment.data.deploymentId}`
       : "";
 
-    // 5. Show success message with deployment URL
+    // 6. Show success message with deployment URL
     console.info(`
 ${pc.green("✔")} Successfully deployed project to GenSX Cloud
 
@@ -114,6 +126,7 @@ ${deployment.data.workflows
   .join("\n")}
 
 ${pc.bold("Project:")} ${pc.cyan(deployment.data.projectName)}
+${pc.bold("Environment:")} ${pc.cyan(environmentName)}
 `);
   } catch (error) {
     if (spinner.isSpinning) {

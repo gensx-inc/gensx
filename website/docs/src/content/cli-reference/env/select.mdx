@@ -1,0 +1,57 @@
+---
+title: gensx env select
+description: Select a GenSX environment as active
+---
+
+# gensx env select
+
+The `gensx env select` command sets a specific environment as the active environment for your current project. This environment will be used by default for subsequent commands like `deploy` and `run`.
+
+## Usage
+
+```bash
+gensx env select <name> [options]
+```
+
+## Arguments
+
+| Argument | Description                                                                                |
+| -------- | ------------------------------------------------------------------------------------------ |
+| `<name>` | Name of the environment to select. |
+
+## Options
+
+| Option                  | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `-p, --project <name>`  | Project name to select the environment in.                                   |
+| `-h, --help`            | Display help for the command.                                                |
+
+## Description
+
+This command:
+
+1. Sets the specified environment as active for your current project
+2. Updates your local configuration to remember this selection
+3. Makes this environment the default target for subsequent commands
+
+After selecting an environment:
+- `gensx deploy` will deploy to this environment by default
+- `gensx run` will run workflows in this environment by default
+- You can still override the environment for specific commands using the `--env` option
+
+## Examples
+
+```bash
+# Select the development environment
+gensx env select dev
+
+# Select a production environment in a specific project
+gensx env select production --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to select environments (`gensx login`)
+- The selected environment persists across CLI sessions
+- You can check the currently selected environment using `gensx env show`
+- To unselect an environment, use `gensx env unselect`

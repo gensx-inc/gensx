@@ -2,6 +2,11 @@ import { Command } from "commander";
 
 import { build, BuildOptions } from "./commands/build.js";
 import { deploy } from "./commands/deploy.js";
+import { handleCreateEnvironment } from "./commands/environment/create.js";
+import { handleListEnvironments } from "./commands/environment/list.js";
+import { handleSelectEnvironment } from "./commands/environment/select.js";
+import { handleShowEnvironment } from "./commands/environment/show.js";
+import { handleUnselectEnvironment } from "./commands/environment/unselect.js";
 import { login } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
 import { runWorkflow } from "./commands/run.js";
@@ -40,7 +45,7 @@ export async function runCLI() {
     .command("start")
     .description("Start a local GenSX server")
     .argument("<file>", "File to serve")
-    .option("-p, --project <name>", "Project name")
+    .option("--port <port>", "Port to run the server on", "1337")
     .option("-q, --quiet", "Suppress output", false)
     .action(start);
 
@@ -67,7 +72,7 @@ export async function runCLI() {
       .description("Deploy a project to GenSX Cloud")
       .argument("<file>", "File to deploy")
       .option(
-        "-e, --env <VALUE[=value]>",
+        "-ev, --env-var <VALUE[=value]>",
         "Environment variable to include with deployment (can be used multiple times)",
         (val, prev: Record<string, string> = {}) => {
           let [key, value] = val.split("=") as [string, string | undefined];
@@ -85,6 +90,7 @@ export async function runCLI() {
         {},
       )
       .option("-p, --project <name>", "Project name to deploy to")
+      .option("-e, --env <name>", "Environment name to deploy to")
       .action(deploy);
 
     program
@@ -94,12 +100,45 @@ export async function runCLI() {
       .option("-i, --input <input>", "Input to pass to the workflow")
       .option("--no-wait", "Do not wait for the workflow to finish")
       .option("-p, --project <name>", "Project name to run the workflow in")
+      .option("-e, --env <name>", "Environment name to run the workflow in")
       .option(
         "-o, --output <file>",
         "Output file to write the workflow result to",
         undefined,
       )
       .action(runWorkflow);
+
+    // Environment management commands
+    const environmentCommand = program
+      .command("env")
+      .description("Manage GenSX environments")
+      .action(handleShowEnvironment);
+
+    environmentCommand
+      .command("create")
+      .description("Create a new environment")
+      .argument("<name>", "Name of the environment")
+      .option("-p, --project <name>", "Project name")
+      .action(handleCreateEnvironment);
+
+    environmentCommand
+      .command("ls")
+      .description("List all environments")
+      .option("-p, --project <name>", "Project name")
+      .action(handleListEnvironments);
+
+    environmentCommand
+      .command("select")
+      .description("Select an environment as active")
+      .argument("<name>", "Name of the environment to select")
+      .option("-p, --project <name>", "Project name")
+      .action(handleSelectEnvironment);
+
+    environmentCommand
+      .command("unselect")
+      .description("Unselect an environment")
+      .option("-p, --project <name>", "Project name")
+      .action(handleUnselectEnvironment);
   }
 
   await program.parseAsync();
