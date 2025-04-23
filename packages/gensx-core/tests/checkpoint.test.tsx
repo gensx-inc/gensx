@@ -14,6 +14,11 @@ import {
   mockFetch,
 } from "./utils/executeWithCheckpoints.js";
 
+// Mock file system operations
+vi.mock("node:fs", () => ({
+  readFileSync: vi.fn().mockReturnValue(JSON.stringify({ version: "1.0.0" })),
+}));
+
 // Helper function to generate test IDs
 export function generateTestId(): string {
   return `test-${Math.random().toString(36).substring(7)}`;
