@@ -4677,6 +4677,8 @@ For use cases requiring higher limits or longer retention, contact the GenSX tea
 
 Once you have run [`gensx deploy`](/docs/cli-reference/deploy) to deploy your project to the [GenSX Cloud serverless runtime](/docs/cloud/serverless-deployments), you can consume those workflows via the `@gensx/gensx-cloud-mcp` server.
 
+MCP-compatible tools use a standard JSON file to configure available MCP servers.
+
 Update your MCP config file for your tool of choice to include the following:
 
 ```json
@@ -4685,6 +4687,7 @@ Update your MCP config file for your tool of choice to include the following:
     "gensx": {
       "command": "npx",
       "args": [
+        "-y",
         "@gensx/gensx-cloud-mcp",
         "you_org_name",
         "your_project_name",
@@ -4694,6 +4697,8 @@ Update your MCP config file for your tool of choice to include the following:
   }
 }
 ```
+
+Your MCP client will run this command automatically at startup and handle acquiring the GenSX Cloud MCP server on your behalf. See the [Claude desktop](https://modelcontextprotocol.io/quickstart/user), and [Cursor docs](https://docs.cursor.com/context/model-context-protocol) on configuring MCP servers for more details.
 
 By default, the server reads your API credentials from the config saved by running the `gensx login` command. Alternatively, you can specify your GenSX API key as an environment variable in your MCP config:
 
@@ -7620,7 +7625,7 @@ See the [database component reference](docs/component-reference/storage-componen
 
 GenSX's Cloud search service provides full-text and vector search for AI applications. It enables you to store, query, and manage vector embeddings for semantic search, retrieval-augmented generation (RAG), and other AI use cases.
 
-Search is powered by [Turbopuffer](https://turbopuffer.com/), fully featured and ready for AI workloads:
+Search is powered by [turbopuffer](https://turbopuffer.com/), fully featured and ready for AI workloads:
 
 - **Combined vector and keyword search**: Perform hybrid searches using both semantic similarity (vectors) and keyword matching (BM25).
 - **Millisecond query latency**: Get results quickly, even with large vector collections.
@@ -8038,28 +8043,6 @@ const results = await search.query({
       ["author", "In", ["Alice", "Bob", "Carol"]],
     ],
   ],
-});
-```
-
-### Hybrid search
-
-Combine vector similarity with keyword search:
-
-```tsx
-const search = await useSearch("documents");
-
-// Basic hybrid search (BM25 text search)
-const results = await search.query({
-  vector: queryEmbedding, // Vector for semantic search
-  rankBy: ["text", "BM25", query],
-  includeAttributes: true,
-});
-
-// More complex ranking with weighted text search (70% vector, 30% text)
-const weightedResults = await search.query({
-  vector: queryEmbedding,
-  rankBy: ["Product", [["text", "BM25", query], 0.3]],
-  includeAttributes: true,
 });
 ```
 
