@@ -13,8 +13,8 @@ import { build } from "./build.js";
 
 interface DeployOptions {
   project?: string;
-  envVars?: string[];
-  environment?: string;
+  envVar?: string[];
+  env?: string;
 }
 
 interface DeploymentResponse {
@@ -68,7 +68,7 @@ export async function deploy(file: string, options: DeployOptions) {
     // Get environment using the utility function - user will either confirm or select environment
     const environmentName = await getEnvironmentForOperation(
       projectName,
-      options.environment,
+      options.env,
       spinner,
       true,
     );
@@ -76,8 +76,8 @@ export async function deploy(file: string, options: DeployOptions) {
     // 4. Create form data with bundle
     const form = new FormData();
     form.append("file", fs.createReadStream(bundleFile), "bundle.js");
-    if (options.envVars) {
-      form.append("environmentVariables", JSON.stringify(options.envVars));
+    if (options.envVar) {
+      form.append("environmentVariables", JSON.stringify(options.envVar));
     }
 
     form.append("schemas", JSON.stringify(schemas));
