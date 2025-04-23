@@ -148,7 +148,7 @@ suite("deploy command", () => {
 
     await deploy("workflow.ts", {
       project: "test-project",
-      environment: "production",
+      env: "production",
     });
 
     // Verify getEnvironmentForOperation was called with correct arguments
@@ -296,7 +296,7 @@ suite("deploy command", () => {
       "production",
     );
 
-    await deploy("workflow.ts", { environment: "production" });
+    await deploy("workflow.ts", { env: "production" });
 
     // Verify getEnvironmentForOperation was called with correct arguments
     expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
