@@ -159,7 +159,7 @@ class GenSXClient {
     const options = {
       method: "POST",
       headers,
-      body: JSON.stringify({ input }),
+      body: JSON.stringify(input),
     };
 
     debugLog(`API Request: POST ${url}`, { input });
