@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.23](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.22...gensx-v0.3.23) (2025-04-23)
+
+
+### 🐛 Bug Fixes
+
+* Use buildId instead of deploymentId. ([#616](https://github.com/gensx-inc/gensx/issues/616)) ([99b08c7](https://github.com/gensx-inc/gensx/commit/99b08c70a07c1281607df4e39d53218499db56e8))
+
 ## [0.3.22](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.21...gensx-v0.3.22) (2025-04-23)
 
 

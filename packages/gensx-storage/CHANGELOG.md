@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.6](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.5...gensx-storage-v0.0.6) (2025-04-23)
+
+
+### ✨ New Features
+
+* adding pagination for list blobs ([#580](https://github.com/gensx-inc/gensx/issues/580)) ([edc4e23](https://github.com/gensx-inc/gensx/commit/edc4e232f98cfc7ee1a146244738a0f8da63ef3c))
+
 ## [0.0.5](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.4...gensx-storage-v0.0.5) (2025-04-23)
 
 
