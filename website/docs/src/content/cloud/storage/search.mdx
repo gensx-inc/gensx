@@ -7,7 +7,7 @@ description: Full-text and vector search for GenSX workflows
 
 GenSX's Cloud search service provides full-text and vector search for AI applications. It enables you to store, query, and manage vector embeddings for semantic search, retrieval-augmented generation (RAG), and other AI use cases.
 
-Search is powered by [Turbopuffer](https://turbopuffer.com/), fully featured and ready for AI workloads:
+Search is powered by [turbopuffer](https://turbopuffer.com/), fully featured and ready for AI workloads:
 
 - **Combined vector and keyword search**: Perform hybrid searches using both semantic similarity (vectors) and keyword matching (BM25).
 - **Millisecond query latency**: Get results quickly, even with large vector collections.
@@ -425,28 +425,6 @@ const results = await search.query({
       ["author", "In", ["Alice", "Bob", "Carol"]],
     ],
   ],
-});
-```
-
-### Hybrid search
-
-Combine vector similarity with keyword search:
-
-```tsx
-const search = await useSearch("documents");
-
-// Basic hybrid search (BM25 text search)
-const results = await search.query({
-  vector: queryEmbedding, // Vector for semantic search
-  rankBy: ["text", "BM25", query],
-  includeAttributes: true,
-});
-
-// More complex ranking with weighted text search (70% vector, 30% text)
-const weightedResults = await search.query({
-  vector: queryEmbedding,
-  rankBy: ["Product", [["text", "BM25", query], 0.3]],
-  includeAttributes: true,
 });
 ```
 
