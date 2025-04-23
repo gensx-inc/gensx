@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { readConfig } from "@gensx/core";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -9,13 +10,33 @@ import {
 
 // Command line argument parsing
 const args = process.argv.slice(2);
-if (args.length < 4) {
-  console.error("Usage: gensx-cloud-mcp <org> <projectName> <environmentName> <apiKey>");
+if (args.length < 3) {
+  console.error("Usage: gensx-cloud-mcp <org> <projectName> <environmentName>");
   process.exit(1);
 }
 
-const [org, projectName, environmentName, apiKey] = args;
+const [org, projectName, environmentName] = args;
 const baseUrl = "https://api.gensx.com";
+
+// Get API key from environment variable or config file
+function getApiKey(): string {
+  // Environment variable takes precedence
+  const envApiKey = process.env.GENSX_API_KEY;
+  if (envApiKey) {
+    console.error('Using API key from environment variable');
+    return envApiKey;
+  }
+
+  // Fall back to config file
+  const config = readConfig();
+  if (config.api?.token) {
+    console.error('Using API key from config file');
+    return config.api.token;
+  }
+
+  console.error('No API key found. Please set GENSX_API_KEY environment variable or configure API key in ~/.gensx/config.json');
+  process.exit(1);
+}
 
 // Debug logging function
 function debugLog(message: string, data?: unknown): void {
@@ -169,6 +190,9 @@ interface WorkflowTool {
 // Server setup
 async function setupServer() {
   try {
+    // Get API key
+    const apiKey = getApiKey();
+
     const client = new GenSXClient(org, projectName, environmentName, apiKey, baseUrl);
 
     // Get project info
