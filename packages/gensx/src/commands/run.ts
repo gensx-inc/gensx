@@ -74,7 +74,7 @@ export async function runWorkflow(
           Authorization: `Bearer ${auth.token}`,
           "User-Agent": USER_AGENT,
         },
-        body: JSON.stringify({ input: inputJson }),
+        body: JSON.stringify(inputJson),
       });
 
       if (response.status >= 400) {
@@ -107,7 +107,7 @@ export async function runWorkflow(
           Authorization: `Bearer ${auth.token}`,
           "User-Agent": USER_AGENT,
         },
-        body: JSON.stringify({ input: inputJson }),
+        body: JSON.stringify(inputJson),
       });
 
       if (response.status >= 400) {
