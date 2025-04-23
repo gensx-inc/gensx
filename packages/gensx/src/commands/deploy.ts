@@ -70,6 +70,7 @@ export async function deploy(file: string, options: DeployOptions) {
       projectName,
       options.environment,
       spinner,
+      true,
     );
 
     // 4. Create form data with bundle

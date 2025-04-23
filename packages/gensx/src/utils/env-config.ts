@@ -126,6 +126,7 @@ export async function getEnvironmentForOperation(
   projectName: string,
   specifiedEnvironment?: string,
   existingSpinner?: Ora,
+  allowCreate = true,
 ): Promise<string> {
   // Use the provided spinner or create a new one if not provided
   // Setting discardStdin: false prevents the spinner from interfering with stdin and causing hangs
@@ -165,16 +166,21 @@ export async function getEnvironmentForOperation(
   }
 
   // If we don't have an environment yet, prompt to select or create one
-  spinner.start("Fetching available environments...");
   const environments = projectExists ? await listEnvironments(projectName) : [];
-  spinner.stop();
 
   // If there are existing environments, show a select prompt
   if (environments.length > 0) {
     const prompter = enquirer as PromptModule;
     const choices = [
       ...environments.map((env) => ({ name: env.name, value: env.name })),
-      { name: "Create a new environment", value: "Create a new environment" },
+      ...(allowCreate
+        ? [
+            {
+              name: "Create a new environment",
+              value: "Create a new environment",
+            },
+          ]
+        : []),
     ];
 
     const selection = await prompter
@@ -231,6 +237,9 @@ export async function getEnvironmentForOperation(
       throw new Error("Environment selection cancelled");
     }
   } else {
+    if (!allowCreate) {
+      throw new Error("No environments found.");
+    }
     // No environments exist, prompt to create one
     const prompter = enquirer as PromptModule;
     const newEnvName = await prompter

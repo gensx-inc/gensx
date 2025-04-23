@@ -57,6 +57,7 @@ export async function runWorkflow(
       projectName,
       options.environment,
       spinner,
+      false,
     );
 
     if (!wait) {
