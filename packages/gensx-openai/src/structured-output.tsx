@@ -73,7 +73,7 @@ export const structuredOutputImpl = async <T,>(
   const context = gensx.useContext(OpenAIContext);
 
   // Check if the baseURL is for OpenAI or Azure OpenAI
-  const baseURL = context.client.baseURL;
+  const baseURL = context.client?.baseURL;
   const isOpenAIModel =
     !baseURL ||
     baseURL.includes("openai.com") ||

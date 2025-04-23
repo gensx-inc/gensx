@@ -10,6 +10,7 @@ import {
   DatabaseNotFoundError,
   DatabaseSyntaxError,
 } from "../../src/database/types.js";
+import { toBase64UrlSafe } from "../../src/utils.js";
 
 // Helper to create temporary test directories
 async function createTempDir(): Promise<string> {
@@ -108,19 +109,91 @@ suite("FileSystemDatabaseStorage", () => {
     await storage.ensureDatabase("db3");
 
     // List should include all databases
-    const databases = await storage.listDatabases();
-    expect(databases).toContain("db1");
-    expect(databases).toContain("db2");
-    expect(databases).toContain("db3");
-    expect(databases.length).toBe(3);
+    const result = await storage.listDatabases();
+    expect(result.databases).toContain("db1");
+    expect(result.databases).toContain("db2");
+    expect(result.databases).toContain("db3");
+    expect(result.databases.length).toBe(3);
+    expect(result.nextCursor).toBeUndefined();
+  });
+
+  test("should handle pagination in listDatabases", async () => {
+    const storage = new FileSystemDatabaseStorage(tempDir);
+
+    // Create test databases
+    await storage.ensureDatabase("db1");
+    await storage.ensureDatabase("db2");
+    await storage.ensureDatabase("db3");
+    await storage.ensureDatabase("db4");
+    await storage.ensureDatabase("db5");
+
+    // Test first page
+    const firstPage = await storage.listDatabases({ limit: 2 });
+    expect(firstPage.databases).toEqual(["db1", "db2"]);
+    expect(firstPage.nextCursor).toBeDefined();
+
+    // Test second page using cursor
+    const secondPage = await storage.listDatabases({
+      limit: 2,
+      cursor: firstPage.nextCursor,
+    });
+    expect(secondPage.databases).toEqual(["db3", "db4"]);
+    expect(secondPage.nextCursor).toBeDefined();
+
+    // Test last page
+    const lastPage = await storage.listDatabases({
+      limit: 2,
+      cursor: secondPage.nextCursor,
+    });
+    expect(lastPage.databases).toEqual(["db5"]);
+    expect(lastPage.nextCursor).toBeUndefined();
+  });
+
+  test("should handle empty directory", async () => {
+    const storage = new FileSystemDatabaseStorage(tempDir);
+    const result = await storage.listDatabases({ limit: 10 });
+    expect(result.databases).toEqual([]);
+    expect(result.nextCursor).toBeUndefined();
   });
 
   test("should handle non-existent directory in listDatabases", async () => {
     const nonExistentDir = path.join(tempDir, "non-existent");
     const storage = new FileSystemDatabaseStorage(nonExistentDir);
 
-    const databases = await storage.listDatabases();
-    expect(databases).toEqual([]);
+    const result = await storage.listDatabases();
+    expect(result.databases).toEqual([]);
+    expect(result.nextCursor).toBeUndefined();
+  });
+
+  test("should handle cursor without limit", async () => {
+    const storage = new FileSystemDatabaseStorage(tempDir);
+
+    // Create test databases
+    await storage.ensureDatabase("db1");
+    await storage.ensureDatabase("db2");
+    await storage.ensureDatabase("db3");
+
+    const result = await storage.listDatabases({
+      cursor: toBase64UrlSafe("db1"),
+    });
+    expect(result.databases).toEqual(["db2", "db3"]);
+    expect(result.nextCursor).toBeUndefined();
+  });
+
+  test("should handle invalid cursor gracefully", async () => {
+    const storage = new FileSystemDatabaseStorage(tempDir);
+
+    // Create test databases
+    await storage.ensureDatabase("db1");
+    await storage.ensureDatabase("db2");
+    await storage.ensureDatabase("db3");
+
+    const result = await storage.listDatabases({
+      cursor: toBase64UrlSafe("db99"), // Non-existent database
+      limit: 2,
+    });
+    expect(result.databases).toEqual([]);
+    expect(result.nextCursor).toBeUndefined();
   });
 
   test("should delete database", async () => {

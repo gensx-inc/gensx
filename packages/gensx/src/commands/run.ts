@@ -5,14 +5,21 @@ import ora from "ora";
 import pc from "picocolors";
 
 import { getAuth } from "../utils/config.js";
+import { getEnvironmentForOperation } from "../utils/env-config.js";
 import { readProjectConfig } from "../utils/project-config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 
 export async function runWorkflow(
   workflow: string,
-  options: { input: string; wait: boolean; project?: string; output?: string },
+  options: {
+    input: string;
+    wait: boolean;
+    project?: string;
+    environment?: string;
+    output?: string;
+  },
 ) {
-  const spinner = ora();
+  const spinner = ora({ discardStdin: false });
 
   try {
     const { input, wait, output: outputFile } = options;
@@ -30,8 +37,8 @@ export async function runWorkflow(
     }
 
     let projectName = options.project;
+    const projectConfig = await readProjectConfig(process.cwd());
     if (!projectName) {
-      const projectConfig = await readProjectConfig(process.cwd());
       if (projectConfig?.projectName) {
         projectName = projectConfig.projectName;
         spinner.info(
@@ -45,10 +52,18 @@ export async function runWorkflow(
       }
     }
 
+    // Get environment using the utility function - user will either confirm or select environment
+    const environmentName = await getEnvironmentForOperation(
+      projectName,
+      options.environment,
+      spinner,
+      false,
+    );
+
     if (!wait) {
       spinner.start("Starting workflow execution");
       const url = new URL(
-        `/org/${auth.org}/projects/${projectName}/workflows/${encodeURIComponent(workflow)}/start`,
+        `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environmentName)}/workflows/${encodeURIComponent(workflow)}/start`,
         auth.apiBaseUrl,
       );
 
@@ -59,7 +74,7 @@ export async function runWorkflow(
           Authorization: `Bearer ${auth.token}`,
           "User-Agent": USER_AGENT,
         },
-        body: JSON.stringify({ input: inputJson }),
+        body: JSON.stringify(inputJson),
       });
 
       if (response.status >= 400) {
@@ -82,7 +97,7 @@ export async function runWorkflow(
       spinner.start("Running workflow");
 
       const url = new URL(
-        `/org/${auth.org}/projects/${projectName}/workflows/${encodeURIComponent(workflow)}`,
+        `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environmentName)}/workflows/${encodeURIComponent(workflow)}`,
         auth.apiBaseUrl,
       );
       const response = await fetch(url, {
@@ -92,7 +107,7 @@ export async function runWorkflow(
           Authorization: `Bearer ${auth.token}`,
           "User-Agent": USER_AGENT,
         },
-        body: JSON.stringify({ input: inputJson }),
+        body: JSON.stringify(inputJson),
       });
 
       if (response.status >= 400) {
