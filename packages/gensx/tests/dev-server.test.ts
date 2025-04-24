@@ -411,22 +411,19 @@ suite("GenSX Dev Server", () => {
     // Create an onError handler directly using the same function as in setupErrorHandler
     const onError = (err: Error, c: Context) => {
       if (err instanceof NotFoundError) {
-        return c.json({ status: "error", error: err.message }, 404);
+        return c.json({ error: err.message }, 404);
       } else if (err instanceof BadRequestError) {
-        return c.json({ status: "error", error: err.message }, 400);
+        return c.json({ error: err.message }, 400);
       } else {
         const message = err instanceof Error ? err.message : String(err);
-        return c.json(
-          { status: "error", error: "Internal server error", message },
-          500,
-        );
+        return c.json({ error: "Internal server error", message }, 500);
       }
     };
 
     const notFoundError = new NotFoundError("Resource not found");
     onError(notFoundError, mockContext);
     expect(mockJsonResponse).toHaveBeenCalledWith(
-      { status: "error", error: "Resource not found" },
+      { error: "Resource not found" },
       404,
     );
 
@@ -434,7 +431,7 @@ suite("GenSX Dev Server", () => {
     const badRequestError = new BadRequestError("Invalid input");
     onError(badRequestError, mockContext);
     expect(mockJsonResponse).toHaveBeenCalledWith(
-      { status: "error", error: "Invalid input" },
+      { error: "Invalid input" },
       400,
     );
 
@@ -442,11 +439,7 @@ suite("GenSX Dev Server", () => {
     const serverError = new ServerError("Internal error");
     onError(serverError, mockContext);
     expect(mockJsonResponse).toHaveBeenCalledWith(
-      {
-        status: "error",
-        error: "Internal server error",
-        message: "Internal error",
-      },
+      { error: "Internal server error" },
       500,
     );
   });
