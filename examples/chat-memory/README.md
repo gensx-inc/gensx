@@ -11,7 +11,15 @@ This example demonstrates how to build a chat application with persistent memory
 
 ## Getting Started
 
-1. Install dependencies:
+### Prerequisites
+
+1. Login to GenSX:
+
+    ```bash
+    gensx login
+    ```
+
+2. Install dependencies:
 
    ```bash
    pnpm install
@@ -23,12 +31,46 @@ This example demonstrates how to build a chat application with persistent memory
    export OPENAI_API_KEY=your_api_key_here
    ```
 
-3. Run the chat application:
+### Run the workflow in the cloud
+
+1. Deploy the workflow:
+
+   ```bash
+   pnpm deploy
+   ```
+
+2. Run the chat application:
 
    ```bash
    # Specify a thread ID and message
    pnpm start thread-1 "Hello, how are you?"
    ```
+
+### Run the workflow locally
+
+#### Test the workflow directly
+
+1. Run the workflow:
+
+   ```bash
+   pnpm dev thread-1 "Hello, how are you?"
+   ```
+
+#### Test the workflow API
+
+1. Run the workflow:
+
+   ```bash
+   pnpm start
+   ```
+
+2. Call the workflow API:
+
+   ```bash
+   curl -X POST http://localhost:1337/api/chat -H "Content-Type: application/json" -d '{"threadId": "thread-1", "message": "Hello, how are you?"}'
+   ```
+
+   Alternatively, you can navigate to the swagger UI at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.
 
    The application will:
 

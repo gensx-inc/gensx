@@ -8,24 +8,25 @@
   },
   "description": "Use GenSX to create a chat completion",
   "scripts": {
-    "dev": "nodemon",
-    "start": "tsx ./src/index.tsx",
-    "build": "tsc",
+    "dev": "tsx ./src/index.tsx",
+    "start": "npx gensx start src/workflows.tsx",
+    "build": "npx gensx build src/workflows.tsx",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "deploy": "npx gensx deploy -ev OPENAI_API_KEY  src/workflows.tsx"
   },
   "dependencies": {
-    "@gensx/openai": "workspace:*",
-    "@gensx/core": "workspace:*",
-    "@gensx/storage": "workspace:*",
-    "openai": "catalog:",
-    "zod": "catalog:"
+    "@gensx/openai": "^0.1.26",
+    "@gensx/core": "^0.3.11",
+    "@gensx/storage": "^0.0.8",
+    "openai": "^4.87.4",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "catalog:examples",
-    "nodemon": "catalog:",
-    "tsx": "catalog:",
-    "typescript": "catalog:"
+    "@types/node": "^22",
+    "eslint": "^9.23.0",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }
