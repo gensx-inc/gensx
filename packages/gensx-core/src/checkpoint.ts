@@ -363,19 +363,16 @@ export class CheckpointManager implements CheckpointWriter {
       }
 
       const responseBody = (await response.json()) as {
-        status: "ok";
-        data: {
-          executionId: string;
-          traceId: string;
-          workflowName: string;
-        };
+        executionId: string;
+        traceId: string;
+        workflowName: string;
       };
 
-      this.traceId = responseBody.data.traceId;
+      this.traceId = responseBody.traceId;
 
       if (this.printUrl && !this.havePrintedUrl && response.ok) {
         const executionUrl = new URL(
-          `/${this.org}/workflows/${responseBody.data.workflowName}/${responseBody.data.executionId}`,
+          `/${this.org}/workflows/${responseBody.workflowName}/${responseBody.executionId}`,
           this.consoleBaseUrl,
         );
         this.havePrintedUrl = true;
