@@ -382,5 +382,4 @@ GenSX Cloud provides everything you need to build and deploy production-grade AI
 - **Built-in storage** for blob data, SQL databases, and vector search—provisioned on-demand
 - **Complete observability** for debugging and monitoring
 
-If you're building with GenSX or just starting your AI journey, [give GenSX Cloud a try](https://app.gensx.com/signup). The free tier has everything you need to build and deploy your first production-ready agent.
-
+If you're building with GenSX or just starting your AI journey, [give GenSX Cloud a try](/docs/quickstart). The free tier has everything you need to build and deploy your first production-ready agent. Checkout the open source [GenSX project on GitHub](https://github.com/gensx-inc/gensx) and join our [community of AI engineers on Discord](https://discord.gg/wRmwfz5tCy).
