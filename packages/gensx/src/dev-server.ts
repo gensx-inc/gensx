@@ -516,6 +516,8 @@ export class GensxServer {
 
           return c.json(
             {
+              executionId,
+              executionStatus: "failed",
               error: error instanceof Error ? error.message : String(error),
             },
             422,
@@ -737,6 +739,11 @@ export class GensxServer {
                         schema: {
                           type: "object",
                           properties: {
+                            executionId: { type: "string" },
+                            executionStatus: {
+                              type: "string",
+                              enum: ["failed"],
+                            },
                             error: { type: "string" },
                           },
                         },

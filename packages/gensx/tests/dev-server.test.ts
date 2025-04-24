@@ -67,6 +67,7 @@ interface PrivateServer {
   executionsMap: Map<string, WorkflowExecution>;
   app: {
     onError: (err: Error, c: Context) => Promise<Response | undefined>;
+    fetch: (request: Request) => Promise<Response>;
   };
 }
 
@@ -448,6 +449,48 @@ suite("GenSX Dev Server", () => {
       },
       500,
     );
+  });
+
+  it("should return 422 when workflow execution fails", async () => {
+    const failingWorkflow = {
+      name: "failingWorkflow",
+      run: vi.fn().mockImplementation(() => {
+        return Promise.reject(new Error("Workflow failed"));
+      }),
+    };
+
+    const workflows = { failingWorkflow };
+    server = createServer(workflows);
+
+    // Get the private server instance
+    const privateServer = server as unknown as PrivateServer;
+
+    // Create an execution record
+    const executionId = "test-execution-id";
+    const now = new Date().toISOString();
+    const execution: WorkflowExecution = {
+      id: executionId,
+      workflowName: "failingWorkflow",
+      executionStatus: "queued",
+      createdAt: now,
+      input: { test: "data" },
+    };
+    privateServer.executionsMap.set(executionId, execution);
+
+    // Execute the workflow
+    await privateServer.executeWorkflowAsync(
+      "failingWorkflow",
+      failingWorkflow,
+      executionId,
+      { test: "data" },
+    );
+
+    // Verify the execution was updated with the error
+    const updatedExecution = privateServer.executionsMap.get(executionId);
+    expect(updatedExecution).toBeDefined();
+    expect(updatedExecution?.executionStatus).toBe("failed");
+    expect(updatedExecution?.error).toBe("Workflow failed");
+    expect(updatedExecution?.finishedAt).toBeDefined();
   });
 
   // Test workflow registration edge cases
