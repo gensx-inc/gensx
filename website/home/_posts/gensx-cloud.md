@@ -191,6 +191,8 @@ That realization led to GenSX Cloud.
 
 ## Agents are just workflows (and abstractions are dangerous)
 
+[GenSX](https://github.com/gensx-inc/gensx) is an open source Node.js framework for building agent and workflow backends with reusable components that can be shared across your project and teams. Rather than using a graph-based API to define a DAG, it uses JSX that offers a mixture of declarative easy to read code, and plain old functions for loops conditionals and dynamic behavior where your need it.
+
 Our experience shipping agents to production with other frameworks prior to GenSX made one thing very clear: **abstraction is the devil in agent development**.
 
 The time you save on day one with a fancy agent abstraction, you'll pay back 100x over the coming months as you iterate and hit the edges of what the framework can do. We've built dozens of complex agents, and every time we've regretted starting with high-level abstractions.
