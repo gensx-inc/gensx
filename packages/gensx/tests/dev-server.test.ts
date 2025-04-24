@@ -415,8 +415,7 @@ suite("GenSX Dev Server", () => {
       } else if (err instanceof BadRequestError) {
         return c.json({ error: err.message }, 400);
       } else {
-        const message = err instanceof Error ? err.message : String(err);
-        return c.json({ error: "Internal server error", message }, 500);
+        return c.json({ error: "Internal server error" }, 500);
       }
     };
 
