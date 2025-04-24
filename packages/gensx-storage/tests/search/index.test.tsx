@@ -12,7 +12,6 @@ import {
   SearchApiError,
   SearchError,
   SearchNetworkError,
-  SearchResponseError,
   SearchStorage,
 } from "../../src/search/remote.js";
 import { Schema } from "../../src/search/types.js";
@@ -82,10 +81,7 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: { created: true, exists: false },
-      }),
+      json: async () => ({ created: true, exists: false }),
     });
 
     const storage = new SearchStorage();
@@ -110,10 +106,7 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: { deleted: true },
-      }),
+      json: async () => ({ deleted: true }),
     });
 
     const storage = new SearchStorage();
@@ -145,11 +138,8 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          namespaces: ["test-ns1", "test-ns2"],
-          nextCursor: "next-page-token",
-        },
+        namespaces: ["test-ns1", "test-ns2"],
+        nextCursor: "next-page-token",
       }),
     });
 
@@ -206,13 +196,10 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: [
-          { id: "1", dist: 0.9, attributes: { text: "test document" } },
-          { id: "2", dist: 0.8, attributes: { text: "another document" } },
-        ],
-      }),
+      json: async () => [
+        { id: "1", dist: 0.9, attributes: { text: "test document" } },
+        { id: "2", dist: 0.8, attributes: { text: "another document" } },
+      ],
     });
 
     const storage = new SearchStorage();
@@ -253,10 +240,7 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: { rowsAffected: 2 },
-      }),
+      json: async () => ({ rowsAffected: 2 }),
     });
 
     const storage = new SearchStorage();
@@ -309,10 +293,7 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: { rowsAffected: 2 },
-      }),
+      json: async () => ({ rowsAffected: 2 }),
     });
 
     const storage = new SearchStorage();
@@ -361,10 +342,7 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: { rowsAffected: 2 },
-      }),
+      json: async () => ({ rowsAffected: 2 }),
     });
 
     const storage = new SearchStorage();
@@ -398,10 +376,7 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: { rowsAffected: 2 },
-      }),
+      json: async () => ({ rowsAffected: 2 }),
     });
 
     const storage = new SearchStorage();
@@ -436,13 +411,10 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          metadata: {
-            dimensions: 3,
-            distanceMetric: "cosine",
-            vectorCount: 100,
-          },
+        metadata: {
+          dimensions: 3,
+          distanceMetric: "cosine",
+          vectorCount: 100,
         },
       }),
     });
@@ -474,11 +446,8 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          text: { type: "string", filterable: true, fullTextSearch: true },
-          rating: { type: "number", filterable: true },
-        },
+        text: { type: "string", filterable: true, fullTextSearch: true },
+        rating: { type: "number", filterable: true },
       }),
     });
 
@@ -509,12 +478,9 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          text: { type: "string", filterable: true, fullTextSearch: true },
-          rating: { type: "number", filterable: true },
-          new_field: { type: "string", filterable: false },
-        },
+        text: { type: "string", filterable: true, fullTextSearch: true },
+        rating: { type: "number", filterable: true },
+        new_field: { type: "string", filterable: false },
       }),
     });
 
@@ -553,12 +519,9 @@ suite("GenSX Search Storage", () => {
   suite("Error Handling", () => {
     test("should handle API error responses", async () => {
       mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          status: "error",
-          error: "API error message",
-        }),
+        ok: false,
+        status: 400,
+        statusText: "Bad Request",
       });
 
       const storage = new SearchStorage();
@@ -570,7 +533,7 @@ suite("GenSX Search Storage", () => {
       } catch (err) {
         expect(err).toBeInstanceOf(SearchApiError);
         expect((err as SearchError).code).toBe("SEARCH_ERROR");
-        expect((err as SearchError).message).toContain("API error message");
+        expect((err as SearchError).message).toContain("Bad Request");
       }
     });
 
@@ -579,10 +542,6 @@ suite("GenSX Search Storage", () => {
         ok: false,
         status: 500,
         statusText: "Internal Server Error",
-        json: async () => ({
-          status: "error",
-          error: "Server error occurred",
-        }),
       });
 
       const storage = new SearchStorage();
@@ -594,7 +553,7 @@ suite("GenSX Search Storage", () => {
       } catch (err) {
         expect(err).toBeInstanceOf(SearchApiError);
         expect((err as SearchError).code).toBe("SEARCH_ERROR");
-        expect((err as SearchError).message).toContain("Server error occurred");
+        expect((err as SearchError).message).toContain("Internal Server Error");
       }
     });
 
@@ -616,12 +575,9 @@ suite("GenSX Search Storage", () => {
 
     test("should handle missing data responses", async () => {
       mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          status: "ok",
-          data: null,
-        }),
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
       });
 
       const storage = new SearchStorage();
@@ -631,9 +587,9 @@ suite("GenSX Search Storage", () => {
         // Should have thrown
         expect(true).toBe(false);
       } catch (err) {
-        expect(err).toBeInstanceOf(SearchResponseError);
+        expect(err).toBeInstanceOf(SearchApiError);
         expect((err as SearchError).code).toBe("SEARCH_ERROR");
-        expect((err as SearchError).message).toBe("No data returned from API");
+        expect((err as SearchError).message).toContain("Not Found");
       }
     });
   });
@@ -643,11 +599,8 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          namespaces: ["test/ns1", "test/ns2"],
-          nextCursor: "next-page-token",
-        },
+        namespaces: ["test/ns1", "test/ns2"],
+        nextCursor: "next-page-token",
       }),
     });
 
@@ -668,11 +621,8 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          namespaces: ["ns1", "ns2"],
-          nextCursor: "page2",
-        },
+        namespaces: ["ns1", "ns2"],
+        nextCursor: "page2",
       }),
     });
 
@@ -681,11 +631,8 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          namespaces: ["ns3", "ns4"],
-          nextCursor: undefined,
-        },
+        namespaces: ["ns3", "ns4"],
+        nextCursor: undefined,
       }),
     });
 
@@ -718,11 +665,8 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          namespaces: [],
-          nextCursor: undefined,
-        },
+        namespaces: [],
+        nextCursor: undefined,
       }),
     });
 

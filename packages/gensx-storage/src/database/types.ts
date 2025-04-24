@@ -98,15 +98,6 @@ export class DatabaseTransactionError extends DatabaseError {
 }
 
 /**
- * A response from the API
- */
-export interface DatabaseAPIResponse<T> {
-  status: "ok" | "error";
-  data?: T;
-  error?: string;
-}
-
-/**
  * SQL execution result
  */
 export interface DatabaseResult {

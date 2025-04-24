@@ -7,7 +7,6 @@ import { readConfig } from "@gensx/core";
 import { USER_AGENT } from "../utils/user-agent.js";
 import {
   Blob,
-  BlobAPIResponse,
   BlobConflictError,
   BlobError,
   BlobInternalError,
@@ -78,22 +77,10 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const apiResponse = (await response.json()) as BlobAPIResponse<
-        BlobResponse<string>
-      >;
-
-      if (apiResponse.status === "error") {
-        throw new BlobInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        return null;
-      }
+      const data = (await response.json()) as BlobResponse<string>;
 
       // Parse the content as JSON since it's stored as a string
-      return JSON.parse(apiResponse.data.content) as T;
+      return JSON.parse(data.content) as T;
     } catch (err) {
       throw handleApiError(err, "getJSON");
     }
@@ -121,21 +108,9 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const apiResponse = (await response.json()) as BlobAPIResponse<
-        BlobResponse<string>
-      >;
+      const data = (await response.json()) as BlobResponse<string>;
 
-      if (apiResponse.status === "error") {
-        throw new BlobInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        return null;
-      }
-
-      return apiResponse.data.content;
+      return data.content;
     } catch (err) {
       throw handleApiError(err, "getString");
     }
@@ -163,20 +138,14 @@ export class RemoteBlob<T> implements Blob<T> {
         );
       }
 
-      const apiResponse = (await response.json()) as BlobAPIResponse<{
+      const data = (await response.json()) as {
         content: string;
         contentType?: string;
         etag?: string;
         lastModified?: string;
         size?: number;
         metadata?: Record<string, string>;
-      }>;
-
-      if (apiResponse.status === "error" || !apiResponse.data) {
-        throw new BlobInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
+      };
 
       const {
         content,
@@ -185,7 +154,7 @@ export class RemoteBlob<T> implements Blob<T> {
         lastModified,
         size,
         metadata = {},
-      } = apiResponse.data;
+      } = data;
 
       // Always decode base64 for raw data
       const buffer = Buffer.from(content, "base64");
@@ -625,22 +594,12 @@ export class RemoteBlobStorage implements BlobStorage {
         handleApiError(response, "listBlobs");
       }
 
-      const apiResponse = (await response.json()) as BlobAPIResponse<{
+      const data = (await response.json()) as {
         keys: string[];
         nextCursor: string | null;
-      }>;
+      };
 
-      if (apiResponse.status === "error") {
-        throw new BlobInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        return { keys: [], nextCursor: null };
-      }
-
-      const keys = apiResponse.data.keys.map((key) => decodeURIComponent(key));
+      const keys = data.keys.map((key) => decodeURIComponent(key));
 
       // Remove default prefix from results if it exists
       let items: string[];
@@ -662,7 +621,7 @@ export class RemoteBlobStorage implements BlobStorage {
 
       return {
         keys: items,
-        nextCursor: apiResponse.data.nextCursor,
+        nextCursor: data.nextCursor,
       };
     } catch (err) {
       if (err instanceof BlobError) {

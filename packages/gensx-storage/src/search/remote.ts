@@ -14,7 +14,6 @@ import {
   EnsureNamespaceResult,
   Namespace,
   QueryOptions,
-  SearchAPIResponse,
   SearchStorage as ISearchStorage,
   WriteParams,
 } from "./types.js";
@@ -179,19 +178,12 @@ export class SearchNamespace implements Namespace {
         },
       );
 
-      const apiResponse = (await response.json()) as SearchAPIResponse<{
-        rowsAffected: number;
-      }>;
-
-      if (!response.ok || apiResponse.status === "error") {
-        throw new SearchApiError(apiResponse.error ?? response.statusText);
+      if (!response.ok) {
+        throw new SearchApiError(response.statusText);
       }
 
-      if (!apiResponse.data) {
-        throw new SearchResponseError("No data returned from API");
-      }
-
-      return apiResponse.data.rowsAffected;
+      const data = (await response.json()) as { rowsAffected: number };
+      return data.rowsAffected;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "upsert");
@@ -233,18 +225,12 @@ export class SearchNamespace implements Namespace {
         },
       );
 
-      const apiResponse =
-        (await response.json()) as SearchAPIResponse<QueryResults>;
-
-      if (!response.ok || apiResponse.status === "error") {
-        throw new SearchApiError(apiResponse.error ?? response.statusText);
+      if (!response.ok) {
+        throw new SearchApiError(response.statusText);
       }
 
-      if (!apiResponse.data) {
-        throw new SearchResponseError("No data returned from API");
-      }
-
-      return apiResponse.data;
+      const data = (await response.json()) as QueryResults;
+      return data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "query");
@@ -266,17 +252,12 @@ export class SearchNamespace implements Namespace {
         },
       );
 
-      const apiResponse = (await response.json()) as SearchAPIResponse<Schema>;
-
-      if (!response.ok || apiResponse.status === "error") {
-        throw new SearchApiError(apiResponse.error ?? response.statusText);
+      if (!response.ok) {
+        throw new SearchApiError(response.statusText);
       }
 
-      if (!apiResponse.data) {
-        throw new SearchResponseError("No data returned from API");
-      }
-
-      return apiResponse.data;
+      const data = (await response.json()) as Schema;
+      return data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "schema");
@@ -300,17 +281,12 @@ export class SearchNamespace implements Namespace {
         },
       );
 
-      const apiResponse = (await response.json()) as SearchAPIResponse<Schema>;
-
-      if (!response.ok || apiResponse.status === "error") {
-        throw new SearchApiError(apiResponse.error ?? response.statusText);
+      if (!response.ok) {
+        throw new SearchApiError(response.statusText);
       }
 
-      if (!apiResponse.data) {
-        throw new SearchResponseError("No data returned from API");
-      }
-
-      return apiResponse.data;
+      const data = (await response.json()) as Schema;
+      return data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "updateSchema");
@@ -332,19 +308,12 @@ export class SearchNamespace implements Namespace {
         },
       );
 
-      const apiResponse = (await response.json()) as SearchAPIResponse<{
-        metadata: NamespaceMetadata;
-      }>;
-
-      if (!response.ok || apiResponse.status === "error") {
-        throw new SearchApiError(apiResponse.error ?? response.statusText);
+      if (!response.ok) {
+        throw new SearchApiError(response.statusText);
       }
 
-      if (!apiResponse.data) {
-        throw new SearchResponseError("No data returned from API");
-      }
-
-      return apiResponse.data.metadata;
+      const data = (await response.json()) as { metadata: NamespaceMetadata };
+      return data.metadata;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "metadata");
@@ -411,23 +380,18 @@ export class SearchStorage implements ISearchStorage {
         },
       );
 
-      const apiResponse =
-        (await response.json()) as SearchAPIResponse<EnsureNamespaceResult>;
-
-      if (!response.ok || apiResponse.status === "error") {
-        throw new SearchApiError(apiResponse.error ?? response.statusText);
+      if (!response.ok) {
+        throw new SearchApiError(response.statusText);
       }
 
-      if (!apiResponse.data) {
-        throw new SearchResponseError("No data returned from API");
-      }
+      const data = (await response.json()) as EnsureNamespaceResult;
 
       // Make sure the namespace is in our cache
       if (!this.namespaces.has(name)) {
         this.getNamespace(name);
       }
 
-      return apiResponse.data;
+      return data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "ensureNamespace");
@@ -449,19 +413,14 @@ export class SearchStorage implements ISearchStorage {
         },
       );
 
-      const apiResponse =
-        (await response.json()) as SearchAPIResponse<DeleteNamespaceResult>;
-
-      if (!response.ok || apiResponse.status === "error") {
-        throw new SearchApiError(apiResponse.error ?? response.statusText);
+      if (!response.ok) {
+        throw new SearchApiError(response.statusText);
       }
 
-      if (!apiResponse.data) {
-        throw new SearchResponseError("No data returned from API");
-      }
+      const data = (await response.json()) as DeleteNamespaceResult;
 
       // Remove namespace from caches if it was successfully deleted
-      if (apiResponse.data.deleted) {
+      if (data.deleted) {
         if (this.namespaces.has(name)) {
           const ns = this.namespaces.get(name);
           if (ns) {
@@ -470,7 +429,7 @@ export class SearchStorage implements ISearchStorage {
         }
       }
 
-      return apiResponse.data;
+      return data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "deleteNamespace");
@@ -513,20 +472,16 @@ export class SearchStorage implements ISearchStorage {
         },
       });
 
-      const apiResponse = (await response.json()) as SearchAPIResponse<{
+      if (!response.ok) {
+        throw new SearchApiError(response.statusText);
+      }
+
+      const data = (await response.json()) as {
         namespaces: string[];
         nextCursor?: string;
-      }>;
+      };
 
-      if (!response.ok || apiResponse.status === "error") {
-        throw new SearchApiError(apiResponse.error ?? response.statusText);
-      }
-
-      if (!apiResponse.data) {
-        throw new SearchResponseError("No data returned from API");
-      }
-
-      return apiResponse.data;
+      return data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "listNamespaces");

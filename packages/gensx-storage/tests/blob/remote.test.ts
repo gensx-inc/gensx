@@ -59,11 +59,8 @@ suite("RemoteBlobStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          content: mockStringContent,
-          etag: "mock-etag",
-        },
+        content: mockStringContent,
+        etag: "mock-etag",
       }),
     });
 
@@ -93,11 +90,8 @@ suite("RemoteBlobStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          content: mockStringContent,
-          etag: "mock-etag",
-        },
+        content: mockStringContent,
+        etag: "mock-etag",
       }),
     });
 
@@ -177,11 +171,8 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        status: "ok",
-        data: {
-          keys: mockKeys,
-          nextCursor: null,
-        },
+        keys: mockKeys,
+        nextCursor: null,
       }),
     });
 
@@ -207,11 +198,8 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        status: "ok",
-        data: {
-          keys: ["key1", "key2"],
-          nextCursor: "page1cursor",
-        },
+        keys: ["key1", "key2"],
+        nextCursor: "page1cursor",
       }),
     });
 
@@ -227,11 +215,8 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        status: "ok",
-        data: {
-          keys: ["key3"],
-          nextCursor: null,
-        },
+        keys: ["key3"],
+        nextCursor: null,
       }),
     });
 
@@ -254,11 +239,8 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        status: "ok",
-        data: {
-          keys: ["prefix/key1", "prefix/key2"],
-          nextCursor: "page1cursor",
-        },
+        keys: ["prefix/key1", "prefix/key2"],
+        nextCursor: "page1cursor",
       }),
     });
 
@@ -277,11 +259,8 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        status: "ok",
-        data: {
-          keys: ["prefix/key3"],
-          nextCursor: null,
-        },
+        keys: ["prefix/key3"],
+        nextCursor: null,
       }),
     });
 
@@ -323,11 +302,8 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        status: "ok",
-        data: {
-          keys: mockKeys,
-          nextCursor: "nextpage",
-        },
+        keys: mockKeys,
+        nextCursor: "nextpage",
       }),
     });
 
@@ -430,11 +406,8 @@ suite("RemoteBlobStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          content: mockData,
-          etag: "mock-etag",
-        },
+        content: mockData,
+        etag: "mock-etag",
       }),
     });
 
@@ -461,15 +434,12 @@ suite("RemoteBlobStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          content: base64Data,
-          contentType: "application/octet-stream",
-          etag: "mock-etag",
-          lastModified: "2024-01-01T00:00:00Z",
-          size: mockData.length,
-          metadata: { isBase64: "true" },
-        },
+        content: base64Data,
+        contentType: "application/octet-stream",
+        etag: "mock-etag",
+        lastModified: "2024-01-01T00:00:00Z",
+        size: mockData.length,
+        metadata: { isBase64: "true" },
       }),
     });
 
@@ -669,12 +639,9 @@ suite("RemoteBlobStorage", () => {
 
     test("should handle API error responses", async () => {
       mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          status: "error",
-          error: "API error message",
-        }),
+        ok: false,
+        status: 400,
+        statusText: "Bad Request",
       });
 
       const storage = new RemoteBlobStorage();
@@ -687,7 +654,7 @@ suite("RemoteBlobStorage", () => {
       } catch (err) {
         expect(err).toBeInstanceOf(BlobInternalError);
         expect((err as BlobError).code).toBe("INTERNAL_ERROR");
-        expect((err as BlobError).message).toContain("API error");
+        expect((err as BlobError).message).toContain("Bad Request");
       }
     });
 
@@ -780,11 +747,8 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        status: "ok",
-        data: {
-          keys: mockKeys,
-          nextCursor: null,
-        },
+        keys: mockKeys,
+        nextCursor: null,
       }),
     });
 
@@ -810,11 +774,8 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        status: "ok",
-        data: {
-          keys: mockKeys,
-          nextCursor: null,
-        },
+        keys: mockKeys,
+        nextCursor: null,
       }),
     });
 
