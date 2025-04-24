@@ -372,7 +372,7 @@ export class CheckpointManager implements CheckpointWriter {
 
       if (this.printUrl && !this.havePrintedUrl && response.ok) {
         const executionUrl = new URL(
-          `/${this.org}/workflows/${responseBody.workflowName}/${responseBody.executionId}`,
+          `/${this.org}/executions/${responseBody.executionId}?workflowName=${responseBody.workflowName}`,
           this.consoleBaseUrl,
         );
         this.havePrintedUrl = true;
