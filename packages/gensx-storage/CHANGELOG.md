@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.7](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.6...gensx-storage-v0.0.7) (2025-04-24)
+
+
+### 🐛 Bug Fixes
+
+* adding user agents ([#620](https://github.com/gensx-inc/gensx/issues/620)) ([a872a51](https://github.com/gensx-inc/gensx/commit/a872a5104eabdb5625832b292baa27324bbc6f21))
+* updating packages to remove response envelope ([#623](https://github.com/gensx-inc/gensx/issues/623)) ([fe39cde](https://github.com/gensx-inc/gensx/commit/fe39cdec6bbed38e96e4b4e3f27b0af68b09b977))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.10
+
 ## [0.0.6](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.5...gensx-storage-v0.0.6) (2025-04-23)
 
 

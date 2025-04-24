@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.24](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.23...gensx-v0.3.24) (2025-04-24)
+
+
+### 🐛 Bug Fixes
+
+* updating packages to remove response envelope ([#623](https://github.com/gensx-inc/gensx/issues/623)) ([fe39cde](https://github.com/gensx-inc/gensx/commit/fe39cdec6bbed38e96e4b4e3f27b0af68b09b977))
+
 ## [0.3.23](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.22...gensx-v0.3.23) (2025-04-23)
 
 

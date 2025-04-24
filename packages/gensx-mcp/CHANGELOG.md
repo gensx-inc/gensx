@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.14](https://github.com/gensx-inc/gensx/compare/gensx-mcp-v0.1.13...gensx-mcp-v0.1.14) (2025-04-24)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.10
+
 ## [0.1.13](https://github.com/gensx-inc/gensx/compare/gensx-mcp-v0.1.12...gensx-mcp-v0.1.13) (2025-04-10)
 
 
