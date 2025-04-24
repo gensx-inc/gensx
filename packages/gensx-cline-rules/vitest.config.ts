@@ -5,6 +5,7 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     globals: true,
     isolate: false,
+    silent: "passed-only",
     passWithNoTests: false,
   },
 });

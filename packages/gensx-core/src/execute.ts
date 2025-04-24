@@ -1,5 +1,6 @@
 import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
 import { resolveDeep } from "./resolve.js";
+import { isStreamable, onStreamComplete } from "./stream.js";
 import {
   ExecutableValue,
   GsxComponent,
@@ -102,6 +103,7 @@ export function Workflow<
       workflowContext.checkpointManager.setPrintUrl(
         mergedOpts.printUrl ?? false,
       );
+
       // Use the overridden name from componentOpts if provided
       const workflowName = runOpts.workflowName ?? name;
       workflowContext.checkpointManager.setWorkflowName(workflowName);
@@ -134,11 +136,25 @@ export function Workflow<
           workflowName,
         );
       }
-      await workflowContext.checkpointManager.waitForPendingUpdates();
+
+      // For non-stream results, wait for pending updates before returning
+      if (!isStreamable(result)) {
+        await workflowContext.checkpointManager.waitForPendingUpdates();
+      }
 
       if (error) {
-        throw error as Error;
+        const errorMessage =
+          error instanceof Error ? error.message : JSON.stringify(error);
+        throw new Error(errorMessage, { cause: error });
       }
+
+      // If this is a streamable result, wrap it to ensure waitForPendingUpdates is called after completion
+      if (isStreamable(result)) {
+        return onStreamComplete(result, async () => {
+          await workflowContext.checkpointManager.waitForPendingUpdates();
+        });
+      }
+
       return result as O | Streamable | string;
     },
   };

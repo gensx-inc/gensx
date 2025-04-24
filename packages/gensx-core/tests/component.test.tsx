@@ -2,6 +2,7 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
+import { STREAMING_PLACEHOLDER } from "../src/component.js";
 import * as gensx from "../src/index.js";
 import { Streamable } from "../src/types.js";
 import {
@@ -459,6 +460,47 @@ suite("component", () => {
       } else {
         throw new Error("Stream result is undefined");
       }
+    });
+
+    test("completes checkpoint node after stream is consumed", async () => {
+      const TestComponent = gensx.Component<{}, AsyncGenerator<string>>(
+        "StreamingTestComponent",
+        () => {
+          const stream = (async function* () {
+            await setTimeout(0);
+            yield "Hello";
+            await setTimeout(0);
+            yield " ";
+            await setTimeout(0);
+            yield "World";
+          })();
+          return stream;
+        },
+      );
+
+      const { result, checkpoints, checkpointManager } =
+        await executeWithCheckpoints<AsyncGenerator<string>>(<TestComponent />);
+
+      // Before consuming the stream, verify the checkpoint shows streaming placeholder
+      expect(checkpoints[checkpoints.length - 1].output).toBe(
+        STREAMING_PLACEHOLDER,
+      );
+
+      // Consume the stream
+      let streamedContent = "";
+      for await (const token of result) {
+        expect(checkpoints[checkpoints.length - 1].endTime).toBeUndefined();
+        streamedContent += token;
+      }
+
+      // Wait for any pending checkpoint updates
+      await checkpointManager.waitForPendingUpdates();
+
+      // After consuming, verify the final checkpoint contains the complete output
+      const finalCheckpoint = checkpoints[checkpoints.length - 1];
+      expect(streamedContent).toBe("Hello World");
+      expect(finalCheckpoint.output).toBe(streamedContent);
+      expect(finalCheckpoint.endTime).toBeDefined();
     });
   });
 });

@@ -15,6 +15,7 @@ const { serializeError } = serializeErrorPkg;
 import { getCurrentContext } from "./context.js";
 import { JSX, jsx } from "./jsx-runtime.js";
 import { resolveDeep } from "./resolve.js";
+import { isStreamable, onStreamComplete } from "./stream.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
@@ -74,6 +75,16 @@ export function Component<P extends object & { length?: never }, O>(
           fnResult,
         );
       });
+
+      if (isStreamable(result)) {
+        checkpointManager.updateNode(nodeId, {
+          output: STREAMING_PLACEHOLDER,
+        });
+        return onStreamComplete(result, (finalResult) => {
+          // Complete the checkpoint node with the result
+          checkpointManager.completeNode(nodeId, finalResult);
+        });
+      }
 
       // Complete the checkpoint node with the result
       checkpointManager.completeNode(nodeId, result);

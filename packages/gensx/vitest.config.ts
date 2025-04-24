@@ -10,6 +10,7 @@ export default defineConfig({
     root: path.resolve(__dirname, "./"),
     globals: true,
     isolate: false,
+    silent: "passed-only",
     passWithNoTests: false,
     include: ["./tests/**/*.test.ts"],
     env: loadEnv("test", process.cwd(), ""),
