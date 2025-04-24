@@ -1,6 +1,5 @@
 ---
-title: "GenSX Cloud: agents broke infrastructure and we decided to fix it"
-excerpt: "Agentic workloads break just about every infrastructure assumption we've ever depended on."
+title: "GenSX Cloud: purpose-built infrastructure for agentic workloads"
 date: "2025-04-18T00:00:00.000Z"
 coverImage: "/assets/blog/hello-world/cover.jpg"
 author:
@@ -26,7 +25,7 @@ _What if shipping AI to production was as simple as a single CLI command?_
 $ npx gensx deploy ./src/workflows.tsx
 ```
 
-And just like that, every workflow in your project is deployed as a REST API for streaming and user-facing experiences, and endpoints for background jobs and async workloads.
+And just like that, each workflow in your project is deployed as a set of REST APIs. Each workflow includes a standard `POST` endpoint for synchronous and streaming invocations to power user-facing apps as well as a `/start` endpoint for long-running background jobs.
 
 ```
 ✔ Building workflow using Docker
@@ -66,11 +65,11 @@ const ChatWithMemory = gensx.Component(
 );
 ```
 
-Today we're launching [GenSX Cloud](https://gensx.com/docs/cloud), the fastest path from prototype to production for your GenSX agents and workflows. One command turns your TypeScript code into production APIs with built-in storage, observability, and support for long-running executions. No more cobbling together a dozen different services just to get basic functionality.
+Today we're launching [GenSX Cloud](https://gensx.com/docs/cloud), the fastest path from prototype to production for your agents and workflows. One command turns your TypeScript code into production APIs with built-in storage, observability, and support for long-running executions. No more cobbling together a dozen different services just to get basic functionality.
 
 It includes:
 
-1. **Serverless runtime**: `gensx deploy` turns all of your typescript workflows into REST APIs deployed on serverless infrastructure. A novel architecture that offers cold starts on the order of 10ms and supports long-running execution up to 60 minutes.
+1. **Serverless runtime**: `gensx deploy` turns all of your TypeScript workflows into REST APIs deployed on serverless infrastructure. A novel architecture that enables 10ms cold starts and supports long-running execution up to 60 minutes per request.
 2. **Cloud storage**: runtime hooks for provisioning blob storage, SQL databases, and vector and full-text search indexes in milliseconds for any agent that needs it.
 3. **Tracing and observability**: Automatic tracing of every workflow. Flame graphs of every workflow showing full component inputs and outputs at each step.
 
@@ -79,7 +78,7 @@ It includes:
 
 I've spent a significant part of my career building and deploying infrastructure at scale — five years as an early employee at Pulumi, working on search in the early days of Azure, and operating services at scale at Amazon. I understand infrastructure as code. I've written a hundred thousand of lines of IaC, authored Kubernetes operators, and scaled services to the moon.
 
-But AI agent workloads upend everything I've ever learned about infrastructure.
+But AI agent workloads contradict everything I've ever learned about infrastructure.
 
 ### Static vs ephemeral storage
 
@@ -87,13 +86,14 @@ Infrastructure for traditional web apps is mostly static. You provision resource
 
 Agent workloads flip this model on its head. They need:
 
-1. **Ephemeral, request-scoped resources**: An agent processing a user's CSV needs a database right now, not in 5 minutes after your IaC workflow runs.
 
-2. **Per-user or per-workflow storage**: Each conversation thread, each agent instance, each data processing task might need its own isolated storage.
+1. **Per-user or per-workflow storage**: Each conversation thread, each agent instance, each data processing task might need its own isolated storage.
 
-3. **Physical isolation for security**: When AI generates queries against data, multi-tenant storage becomes a security risk. You need dedicated resources per user or request, not just logical separation. And runtime provisioning needs to happen in milliseconds and not minutes.
+2. **Physical isolation for security**: When AI generates queries against data, multi-tenant storage becomes a security risk. You need dedicated resources per user or request, not just logical separation. And runtime provisioning needs to happen in milliseconds and not minutes.
 
-4. **Storage as part of application code**: Your business logic and storage provisioning are tightly coupled, not separate deployment steps.
+3. **Ephemeral, request-scoped resources**: An agent processing a user's CSV needs a database right now, not in 5 minutes after your IaC workflow runs.
+
+4. **Storage as part of application code**: Your business logic and storage provisioning are tightly coupled, not separate deployment steps. Agentic workloads need hooks to provision storage dynamically at runtime.
 
 Writing separate YAML files or running terraform apply every time an agent needs a database is simply unworkable. The state explosion problem is real—hundreds of agents, each with unique infrastructure needs, quickly becomes thousands of configuration files.
 
@@ -142,32 +142,34 @@ const SemanticMemory = gensx.Component(
 
 GenSX includes runtime provisioned storage hooks to create user, agent, or workflow-scoped storage on demand in milliseconds:
 
-- `useBlob`: For storing JSON, text, audio, video, etc
-- `useDatabase`: For fully featured SQL databases
-- `useSearch`: For full-text and vector search indexes
+- `useBlob`: Store JSON, text, audio, video, etc. Perfect for building agents with memory and persistent chat history.
+- `useDatabase`: Fully featured SQL databases for agentic analytics like text-to-SQL.
+- `useSearch`: Full-text and vector search indexes to power RAG and long-term memory.
 
 These resources are provisioned instantaneously. You can even isolate tenants on storage by user, by agent, or even workflow. This dramatically simplifies the security model for scenarios where you want to give an LLM direct access to query a data store.
 
 ### Long-running compute is the default
 
-Just five years ago, if a request in your application took more than a second, someone was getting paged. The P99 latency target was 500ms. The entire serverless ecosystem was built on this foundation: handle quick stateless requests, talk to your database, and return in 100ms.
+Just five years ago, if a request in your application took more than a second, someone was getting paged. The P99 latency target was well below 500ms. The entire serverless ecosystem was built on this foundation: handle quick stateless requests, talk to your database, and return in 100ms.
 
 But agentic workloads are different:
 
 - **P50 latency is seconds, not milliseconds**: Even a simple LLM call takes 2-3 seconds for the first token.
 - **Workflows run for minutes, not milliseconds**: A document processing workflow might run for 15+ minutes.
 - **Agents can run indefinitely**: An agent might need to poll resources, wait for user input, or perform long-running tasks.
+- **Chatty workloads**: agents often make thousands of subrequests for things like embeddings, multi-step workflows, and recording telemetry events for observability.
 
 Existing platforms buckle under these requirements. Either they time out (most serverless), cost a fortune (container-based), or require complex orchestration (Kubernetes).
 
 GenSX Cloud offers a true serverless environment built for AI compute:
 
-- One command to deploy an entire project complete with REST APIs and storage without any additional configuration
-- A novel architecture enabling 10ms cold starts
-- Request timeouts of 60 minutes with no configuration
-- Both synchronous and background execution modes
-- Streaming responses for responsive user interfaces
-- Simple pricing with no hidden networking or logging costs
+- **Automatic REST API generation**: `gensx deploy` generates REST APIs for every workflow in your project. This includes a sychronous API with streaming to build user facing apps, and a background job endpoint for long-running tasks like data ingestion.
+- **Long-running workloads**: The serverless runtime has a 60 minute timeout to support long-running agents and workflows. And in the coming months we'll remove this limit altogether.
+- **10ms cold starts**: A novel architecture that aims to minimize latency.
+- **No subrequest limits**: No cap on the number of outgoing requests made by a workflow.
+- **MCP Server included**: The [`@gensx/gensx-cloud-mcp`](/docs/cloud/mcp-server) turns all of your deployed workflows into an MCP server that you can consume from Claude desktop, Cursor, or even other agents.
+
+Whether you are building responsive chat bots, summarizing and indexing documents in the background, or building internal tools, GenSX Cloud includes the agent-native infrastructure primitives you need.
 
 ## Learning from mass production
 
