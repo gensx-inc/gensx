@@ -50,12 +50,6 @@ function debugLog(message: string, data?: unknown): void {
   }
 }
 
-// API response type
-interface ApiResponse<T> {
-  status: string;
-  data: T;
-}
-
 // API client for GenSX Cloud
 class GenSXClient {
   constructor(
@@ -94,14 +88,10 @@ class GenSXClient {
         throw new Error(`GenSX API error (${response.status}): ${errorText}`);
       }
 
-      const apiResponse = (await response.json()) as ApiResponse<T>;
-      debugLog(`API Response: ${method} ${url}`, apiResponse);
+      const data = (await response.json()) as T;
+      debugLog(`API Response: ${method} ${url}`, data);
 
-      if (apiResponse.status !== "ok") {
-        throw new Error(`API returned non-ok status: ${apiResponse.status}`);
-      }
-
-      return apiResponse.data;
+      return data;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       debugLog(`API Error: ${method} ${url}`, error.message);
