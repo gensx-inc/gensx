@@ -2,7 +2,7 @@
 
 This example demonstrates how to build a chat application with persistent memory using GenSX. It uses OpenAI's GPT-4o-mini model and stores chat history in [GenSX Cloud blob storage](https://www.gensx.com/docs/cloud/storage/blob-storage).
 
-### How it works
+## How it works
 
 The application uses:
 
@@ -88,7 +88,12 @@ To develop locally, you can either run the workflow directly by running the `src
 2. Call the workflow API:
 
    ```bash
-   curl -X POST http://localhost:1337/workflows/ChatMemoryWorkflow -H "Content-Type: application/json" -d '{"threadId": "thread-1", "message": "Hello, how are you?"}'
+   curl -X POST http://localhost:1337/workflows/ChatMemoryWorkflow \
+     -H "Content-Type: application/json" \
+     -d '{
+       "threadId": "thread-1",
+       "message": "Hello, how are you?"
+     }'
    ```
 
    Alternatively, you can navigate to the swagger UI at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.
