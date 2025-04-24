@@ -109,7 +109,7 @@ const AnalyzeSpreadsheet = gensx.Component(
 
     // Create a table and import CSV
     await db.execute(`CREATE TABLE data (name TEXT, value NUMBER)`);
-    await db.importCSV("data", csvData);
+    await importCSV(db, csvData);
 
     // Generate and run SQL based on the question
     const sql = await generateSQL(question);
