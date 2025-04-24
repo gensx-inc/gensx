@@ -18,22 +18,19 @@ interface DeployOptions {
 }
 
 interface DeploymentResponse {
-  status: "ok";
-  data: {
+  id: string;
+  projectId: string;
+  projectName: string;
+  environmentId: string;
+  environmentName: string;
+  buildId: string;
+  bundleSize: number;
+  workflows: {
     id: string;
-    projectId: string;
-    projectName: string;
-    environmentId: string;
-    environmentName: string;
-    buildId: string;
-    bundleSize: number;
-    workflows: {
-      id: string;
-      name: string;
-      inputSchema: object;
-      outputSchema: object;
-    }[];
-  };
+    name: string;
+    inputSchema: object;
+    outputSchema: object;
+  }[];
 }
 
 export async function deploy(file: string, options: DeployOptions) {
@@ -110,22 +107,22 @@ export async function deploy(file: string, options: DeployOptions) {
 
     spinner.succeed();
 
-    const deploymentIdOption = deployment.data.buildId
-      ? `deploymentId=${deployment.data.buildId}`
+    const deploymentIdOption = deployment.buildId
+      ? `deploymentId=${deployment.buildId}`
       : "";
 
     // 6. Show success message with deployment URL
     console.info(`
 ${pc.green("✔")} Successfully deployed project to GenSX Cloud
 
-${pc.bold("Dashboard:")} ${pc.cyan(`${auth.consoleBaseUrl}/${auth.org}/${deployment.data.projectName}/${deployment.data.environmentName}/workflows?${deploymentIdOption}`)}
+${pc.bold("Dashboard:")} ${pc.cyan(`${auth.consoleBaseUrl}/${auth.org}/${deployment.projectName}/${deployment.environmentName}/workflows?${deploymentIdOption}`)}
 
 ${pc.bold("Available workflows:")}
-${deployment.data.workflows
+${deployment.workflows
   .map((workflow) => pc.cyan("- " + workflow.name))
   .join("\n")}
 
-${pc.bold("Project:")} ${pc.cyan(deployment.data.projectName)}
+${pc.bold("Project:")} ${pc.cyan(deployment.projectName)}
 ${pc.bold("Environment:")} ${pc.cyan(environmentName)}
 `);
   } catch (error) {

@@ -1,4 +1,3 @@
-import { GenSXAPIResponse } from "../types/api.js";
 import { getAuth } from "../utils/config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import { checkProjectExists } from "./projects.js";
@@ -42,14 +41,8 @@ export async function listEnvironments(
     );
   }
 
-  const data =
-    (await response.json()) as GenSXAPIResponse<ListEnvironmentsResponse>;
-
-  if (data.status === "error") {
-    throw new Error(data.error);
-  }
-
-  return data.data?.environments ?? [];
+  const data = (await response.json()) as ListEnvironmentsResponse;
+  return data.environments;
 }
 
 interface CreateEnvironmentResponse {
@@ -106,14 +99,8 @@ export async function createEnvironment(
     );
   }
 
-  const data =
-    (await response.json()) as GenSXAPIResponse<CreateEnvironmentResponse>;
-
-  if (data.status === "error" || !data.data) {
-    throw new Error(data.error);
-  }
-
-  return data.data;
+  const data = (await response.json()) as CreateEnvironmentResponse;
+  return data;
 }
 
 /**
@@ -146,13 +133,7 @@ export async function checkEnvironmentExists(
     );
   }
 
-  const data =
-    (await response.json()) as GenSXAPIResponse<ListEnvironmentsResponse>;
-
-  if (data.status === "error") {
-    throw new Error(data.error);
-  }
-
-  const environments = data.data?.environments ?? [];
+  const data = (await response.json()) as ListEnvironmentsResponse;
+  const environments = data.environments;
   return environments.some((env) => env.name === environmentName);
 }

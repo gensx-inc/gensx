@@ -1,4 +1,3 @@
-import { GenSXAPIResponse } from "../types/api.js";
 import { getAuth } from "../utils/config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 
@@ -37,14 +36,8 @@ export async function listProjects(): Promise<
     );
   }
 
-  const data =
-    (await response.json()) as GenSXAPIResponse<ListProjectsResponse>;
-
-  if (data.status === "error") {
-    throw new Error(data.error);
-  }
-
-  return data.data?.projects ?? [];
+  const data = (await response.json()) as ListProjectsResponse;
+  return data.projects;
 }
 
 interface CreateProjectResponse {
@@ -96,22 +89,8 @@ export async function createProject(
     );
   }
 
-  const data =
-    (await response.json()) as GenSXAPIResponse<CreateProjectResponse>;
-
-  if (data.status === "error" || !data.data) {
-    throw new Error(data.error);
-  }
-
-  return data.data;
-}
-
-interface GetProjectResponse {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
+  const data = (await response.json()) as CreateProjectResponse;
+  return data;
 }
 
 /**
@@ -145,12 +124,6 @@ export async function checkProjectExists(
     throw new Error(
       `Failed to check project: ${response.status} ${response.statusText}`,
     );
-  }
-
-  const data = (await response.json()) as GenSXAPIResponse<GetProjectResponse>;
-
-  if (data.status === "error") {
-    throw new Error(data.error);
   }
 
   return true;
