@@ -2,8 +2,8 @@
 
 import { readConfig } from "@gensx/core";
 import { InArgs } from "@libsql/client";
-import { USER_AGENT } from "src/utils/user-agent.js";
 
+import { USER_AGENT } from "../utils/user-agent.js";
 import {
   Database,
   DatabaseAPIResponse,

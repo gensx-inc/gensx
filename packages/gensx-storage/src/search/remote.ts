@@ -7,8 +7,8 @@ import type {
 } from "@turbopuffer/turbopuffer";
 
 import { readConfig } from "@gensx/core";
-import { USER_AGENT } from "src/utils/user-agent.js";
 
+import { USER_AGENT } from "../utils/user-agent.js";
 import {
   DeleteNamespaceResult,
   EnsureNamespaceResult,
