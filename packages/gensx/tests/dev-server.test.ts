@@ -259,7 +259,7 @@ suite("GenSX Dev Server", () => {
     // Missing input
     expect(() => {
       privateServer.validateInput("testWorkflow", undefined);
-    }).toThrow("Missing required 'input' field");
+    }).toThrow("Missing required input parameters");
   });
 
   it("should execute workflow and handle success", async () => {
