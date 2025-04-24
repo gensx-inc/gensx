@@ -134,8 +134,7 @@ suite("run command", () => {
       status: 200,
       json: () =>
         Promise.resolve({
-          status: "ok",
-          data: { executionId: "test-id" },
+          executionId: "test-id",
         }),
     });
 
@@ -170,8 +169,7 @@ suite("run command", () => {
       status: 200,
       json: () =>
         Promise.resolve({
-          status: "ok",
-          data: { executionId: "test-id" },
+          executionId: "test-id",
         }),
     });
 
@@ -234,11 +232,7 @@ suite("run command", () => {
       headers: new Headers({ "Content-Type": "application/json" }),
       json: () =>
         Promise.resolve({
-          status: "ok",
-          data: {
-            output: { result: "success" },
-            executionStatus: "success",
-          },
+          executionId: "test-id",
         }),
     });
 
@@ -258,11 +252,8 @@ suite("run command", () => {
       headers: new Headers({ "Content-Type": "application/json" }),
       json: () =>
         Promise.resolve({
-          status: "ok",
-          data: {
-            output: { error: "Something went wrong" },
-            executionStatus: "failed",
-          },
+          output: { error: "Something went wrong" },
+          executionStatus: "failed",
         }),
     });
 
@@ -281,11 +272,8 @@ suite("run command", () => {
       headers: new Headers({ "Content-Type": "application/json" }),
       json: () =>
         Promise.resolve({
-          status: "ok",
-          data: {
-            output: { result: "success" },
-            executionStatus: "success",
-          },
+          output: { result: "success" },
+          executionStatus: "success",
         }),
     });
 

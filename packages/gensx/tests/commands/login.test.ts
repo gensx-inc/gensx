@@ -80,11 +80,8 @@ suite("login command", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            status: "ok",
-            data: {
-              requestId: "test-request-id",
-              expiresAt: new Date(Date.now() + 300000).toISOString(), // 5 minutes from now
-            },
+            requestId: "test-request-id",
+            expiresAt: new Date(Date.now() + 300000).toISOString(), // 5 minutes from now
           }),
       })
       // Second call - first poll (pending)
@@ -92,8 +89,7 @@ suite("login command", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            status: "ok",
-            data: { status: "pending" },
+            status: "pending",
           }),
       })
       // Third call - second poll (completed)
@@ -101,12 +97,9 @@ suite("login command", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            status: "ok",
-            data: {
-              status: "completed",
-              token: "test-token",
-              orgSlug: "test-org",
-            },
+            status: "completed",
+            token: "test-token",
+            orgSlug: "test-org",
           }),
       });
 
@@ -173,11 +166,8 @@ suite("login command", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            status: "ok",
-            data: {
-              requestId: "test-request-id",
-              expiresAt: new Date(Date.now() + 300000).toISOString(),
-            },
+            requestId: "test-request-id",
+            expiresAt: new Date(Date.now() + 300000).toISOString(),
           }),
       })
       // Second call - expired
@@ -185,8 +175,7 @@ suite("login command", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            status: "ok",
-            data: { status: "expired" },
+            status: "expired",
           }),
       });
 
@@ -229,11 +218,8 @@ suite("login command", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            status: "ok",
-            data: {
-              requestId: "test-request-id",
-              expiresAt: new Date(Date.now() + 300000).toISOString(),
-            },
+            requestId: "test-request-id",
+            expiresAt: new Date(Date.now() + 300000).toISOString(),
           }),
       })
       // Second call - network error during polling
@@ -261,8 +247,7 @@ suite("login command", () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          status: "ok",
-          data: {}, // Missing required fields
+          // Missing required fields
         }),
     });
 
