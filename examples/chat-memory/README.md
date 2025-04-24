@@ -1,22 +1,29 @@
 # GenSX Chat Memory Example
 
-This example demonstrates how to build a chat application with persistent memory using GenSX. It uses OpenAI's GPT-4o-mini model and stores chat history in GenSX Cloud blob storage.
+This example demonstrates how to build a chat application with persistent memory using GenSX. It uses OpenAI's GPT-4o-mini model and stores chat history in [GenSX Cloud blob storage](https://www.gensx.com/docs/cloud/storage/blob-storage).
 
-## Features
+### How it works
 
-- Thread-based chat system with persistent memory
-- Cloud-based storage for chat history
-- OpenAI GPT-4o-mini integration
-- Command-line interface for interaction
+The application uses:
 
-## Getting Started
+- `@gensx/core` for workflow management
+- `@gensx/openai` for OpenAI integration
+- `@gensx/storage` for persistent chat history storage
 
-### Prerequisites
+ When you run the ChatMemoryWorkflow, you'll specify a `threadId` and a `message`. Each chat thread maintains its own conversation history, allowing for context-aware responses across multiple interactions.
 
-1. Login to GenSX:
+ The workflow will:
+ 1. Load any existing chat history for the specified thread
+ 2. Process the message and chat history using GPT-4o-mini
+ 3. Save the updated conversation history
+ 4. Display the assistant's response
+
+## Prerequisites
+
+1. Login to GenSX if you haven't already:
 
     ```bash
-    gensx login
+    npx gensx login
     ```
 
 2. Install dependencies:
@@ -31,7 +38,9 @@ This example demonstrates how to build a chat application with persistent memory
    export OPENAI_API_KEY=your_api_key_here
    ```
 
-### Run the workflow in the cloud
+## Run the workflow in the cloud
+
+To run the workflow in the GenSX Cloud, follow these steps:
 
 1. Deploy the workflow:
 
@@ -39,62 +48,47 @@ This example demonstrates how to build a chat application with persistent memory
    pnpm deploy
    ```
 
-2. Run the chat application:
+2. Call the workflow:
 
    ```bash
-   # Specify a thread ID and message
-   pnpm start thread-1 "Hello, how are you?"
+   gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "message": "What is the capital of France?"}'
    ```
 
-### Run the workflow locally
+    You can then continue the conversation by calling the workflow again with the same `threadId`.
 
-#### Test the workflow directly
+   ```bash
+   gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "message": "Tell me more about its history"}'
+   ```
+
+
+The deploy command will also print out a URL to the [GenSX console](https://app.gensx.com) where you can view the workflow, test it, and get code snippets to use in your own projects.
+
+## Run the workflow locally
+
+To develop locally, you can either run the workflow directly by running the `src/index.tsx` file or use the local dev server to test the workflow APIs.
+
+### Test the workflow directly
 
 1. Run the workflow:
 
    ```bash
-   pnpm dev thread-1 "Hello, how are you?"
+   pnpm dev thread-1 "What is the capital of France?"
    ```
 
-#### Test the workflow API
 
-1. Run the workflow:
+### Test the workflow API
+
+1. Start the local dev server:
 
    ```bash
    pnpm start
    ```
 
+
 2. Call the workflow API:
 
    ```bash
-   curl -X POST http://localhost:1337/api/chat -H "Content-Type: application/json" -d '{"threadId": "thread-1", "message": "Hello, how are you?"}'
+   curl -X POST http://localhost:1337/workflows/ChatMemoryWorkflow -H "Content-Type: application/json" -d '{"threadId": "thread-1", "message": "Hello, how are you?"}'
    ```
 
    Alternatively, you can navigate to the swagger UI at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.
-
-   The application will:
-
-   - Load any existing chat history for the specified thread
-   - Process your message using GPT-4o-mini
-   - Save the updated conversation history
-   - Display the assistant's response
-
-## How It Works
-
-The application uses:
-
-- `@gensx/core` for workflow management
-- `@gensx/openai` for OpenAI integration
-- `@gensx/storage` for persistent chat history storage
-
-Each chat thread maintains its own conversation history, allowing for context-aware responses across multiple interactions.
-
-## Example Usage
-
-```bash
-# Start a new conversation in thread-1
-npm start thread-1 "What is the capital of France?"
-
-# Continue the conversation in the same thread
-npm start thread-1 "Tell me more about its history"
-```
