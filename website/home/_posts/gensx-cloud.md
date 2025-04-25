@@ -1,6 +1,6 @@
 ---
 title: "GenSX Cloud: purpose-built infrastructure for agentic workloads"
-date: "2025-04-18T00:00:00.000Z"
+date: "2025-04-28T00:00:00.000Z"
 coverImage: "/assets/blog/hello-world/cover.jpg"
 author:
   name: Evan Boyle
@@ -60,7 +60,7 @@ $ npx gensx deploy ./src/workflows.tsx
 
 ```bash
 $ curl -X POST \
-  "https://api.gensx.com/org/gensx/projects/your-project/environments/default/workflows/ChatAgent" \
+  "https://api.gensx.com/org/gensx/projects/your-project/environments/production/workflows/ChatAgent" \
   -H "Authorization: Bearer your_gensx_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -167,134 +167,13 @@ GenSX Cloud automatically captures the entire execution of your workflow, includ
 - Every storage operation
 - The entire execution timeline
 
-## Composing storage and agents
-
-We've designed the GenSX to be composed of building blocks to that click together naturally. Rather than leaning into abstraction, we put you in full control.
-
-Continuing our chat agent examples, we can `useSearch` to add per-user vector search for long-term memory in a few lines of code:
-
-```tsx
-// Create a per-user memory tool that uses vector search
-const createMemoryTool = (userId) => {
-  const memoryTool = new GSXTool({
-    name: "searchMemory",
-    description: "Search the user's long-term memory for relevant information",
-    schema: memorySearchSchema,
-    run: async ({ query }) => {
-      // Provisioned on-demand for each user in milliseconds
-      const memory = await useSearch(`memory-${userId}`);
-      const embedding = await OpenAIEmbedding.run({
-        model: "text-embedding-3-small",
-        input: query,
-      });
-
-      // Search for relevant memories
-      const results = await memory.query({
-        vector: embedding.data[0].embedding,
-        topK: 3,
-      });
-
-      return {
-        memories: results.map((m) => m.text),
-      };
-    },
-  });
-
-  return memoryTool;
-};
-```
-
-And we can add the tools to our agent to have both threading and long-term memory in a just a few lines of code:
-
-```tsx
-// Create memory search tool for this user
-const { searchMemoryTool, addMemoryTool } = createMemoryTools(userId);
-
-// Run the chat completion with memory tool access
-const response = await ChatCompletion.run({
-  model: "gpt-4o",
-  messages: [
-    { role: "system", content: "You are a helpful personal assistant" },
-    ...chatHistory,
-    { role: "user", content: message },
-  ],
-  tools: [searchMemoryTool, addMemoryTool],
-});
-```
-
-With one command we can deploy this agent as a REST API running on serverless infrastructure with 10ms cold starts 60 minute execution timeouts.
-
-```bash
-$ npx gensx deploy ./src/workflows.tsx
-```
-
-And we can run our talk to our agent from the CLI:
-
-```bash
-$ gensx run ChatAgent \
-  --input '{
-    "userId": "abc",
-    "threadId": "123",
-    "message": "Remember that I'm speaking at a meetup on Wednesday at 6pm."
-  }'
-```
-
-We can call the API directly and stream results:
-
-```bash
-$ curl -X POST \
-  "https://api.gensx.com/org/gensx/projects/your-project/environments/default/workflows/ChatAgent" \
-  -H "Authorization: Bearer your_gensx_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": "abc",
-    "threadId": "123",
-    "message": "what time is my meetup of wednesday?"
-  }'
-```
-
-And if this workflow happened to take a long time, we can call it as a background job and poll for results later:
-
-```bash
-$ curl -X POST \
-  "https://api.gensx.com/org/gensx/projects/your-project/environments/default/workflows/ChatAgent/start" \
-  -H "Authorization: Bearer your_gensx_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": "abc",
-    "threadId": "123",
-    "message": "where is wednesday's meetup?"
-  }'
-```
-
-We can even connect it to MCP compatible tools like Claude desktop or cursor:
-
-```json
-{
-  "mcpServers": {
-    "gensx": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@gensx/gensx-cloud-mcp",
-        "my-org",
-        "my-project",
-        "my-environment"
-      ]
-    }
-  }
-}
-```
-
-GenSX makes it easy to consume your workflows wherever you need them, whether you are building user-facing chat apps, background jobs for data processing and ingestion, or internal tools.
-
 ## Agents are just workflows (and abstractions are dangerous)
 
 [GenSX](https://github.com/gensx-inc/gensx) is an open source Node.js framework for building agent and workflow backends with reusable components that can be shared across your project and teams. Rather than using a graph-based API to define a DAG, it uses JSX that offers a mixture of declarative easy to read code, and plain old functions for loops conditionals and dynamic behavior where your need it.
 
 The properties of this component model mean that we can make workflows durable by recording inputs and outputs as the program runs, detecting failures, and replaying the program with checkpoints. We're actively working on making this a reality, and in the coming months we will be able to remove the runtime execution limit from GenSX Cloud entirely as a result.
 
-Our experience shipping agents to production made one thing very clear: **abstraction is the devil in agent development**.
+Our experience shipping agents to production made one thing very clear: **abstraction is the bane of agent development**.
 
 The time you save on day one with a fancy agent abstraction, you'll pay back 100x over the coming months as you iterate and hit the edges of what the framework can do. We've built dozens of complex agents, and every time we've regretted starting with high-level abstractions.
 
