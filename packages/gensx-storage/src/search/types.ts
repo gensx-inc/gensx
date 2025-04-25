@@ -125,15 +125,6 @@ export type Schema = Record<
 >;
 
 /**
- * A response from the API
- */
-export interface SearchAPIResponse<T> {
-  status: "ok" | "error";
-  data?: T;
-  error?: string;
-}
-
-/**
  * Result of ensuring a namespace exists
  */
 export interface EnsureNamespaceResult {

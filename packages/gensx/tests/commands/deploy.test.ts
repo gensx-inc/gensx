@@ -127,15 +127,12 @@ suite("deploy command", () => {
     vi.mocked(axios.post).mockResolvedValue({
       status: 200,
       data: {
-        status: "ok",
-        data: {
-          id: "deploy-1",
-          projectId: "project-1",
-          projectName: "test-project",
-          deploymentId: "deployment-1",
-          bundleSize: 1000,
-          workflows: [],
-        },
+        id: "deploy-1",
+        projectId: "project-1",
+        projectName: "test-project",
+        deploymentId: "deployment-1",
+        bundleSize: 1000,
+        workflows: [],
       },
     });
   });

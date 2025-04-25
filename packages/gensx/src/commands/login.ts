@@ -62,15 +62,12 @@ async function createLoginRequest(
     throw new Error(`Failed to create login request: ${response.statusText}`);
   }
 
-  const body = (await response.json()) as {
-    status: "ok";
-    data: DeviceAuthRequest;
-  };
-  if (!body.data.requestId || !body.data.expiresAt) {
+  const body = (await response.json()) as DeviceAuthRequest;
+  if (!body.requestId || !body.expiresAt) {
     throw new Error("Invalid response from server");
   }
 
-  return body.data;
+  return body;
 }
 
 async function pollLoginStatus(
@@ -90,19 +87,16 @@ async function pollLoginStatus(
     throw new Error(`Failed to check login status: ${response.statusText}`);
   }
 
-  const body = (await response.json()) as {
-    status: "ok";
-    data: DeviceAuthStatus;
-  };
-  if (body.data.status === "pending") {
+  const body = (await response.json()) as DeviceAuthStatus;
+  if (body.status === "pending") {
     return { status: "pending" };
   }
 
-  if (body.data.status === "expired") {
+  if (body.status === "expired") {
     throw new Error("Login expired");
   }
 
-  return body.data;
+  return body;
 }
 
 export async function login(): Promise<{ skipped: boolean }> {

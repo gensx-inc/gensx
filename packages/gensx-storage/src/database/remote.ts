@@ -6,7 +6,6 @@ import { InArgs } from "@libsql/client";
 import { USER_AGENT } from "../utils/user-agent.js";
 import {
   Database,
-  DatabaseAPIResponse,
   DatabaseBatchResult,
   DatabaseError,
   DatabaseInfo,
@@ -85,20 +84,8 @@ export class RemoteDatabase implements Database {
         );
       }
 
-      const apiResponse =
-        (await response.json()) as DatabaseAPIResponse<DatabaseResult>;
-
-      if (apiResponse.status === "error") {
-        throw new DatabaseInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        throw new DatabaseInternalError("No data returned from API");
-      }
-
-      return apiResponse.data;
+      const data = (await response.json()) as DatabaseResult;
+      return data;
     } catch (err) {
       throw handleApiError(err, "execute");
     }
@@ -125,20 +112,8 @@ export class RemoteDatabase implements Database {
         );
       }
 
-      const apiResponse =
-        (await response.json()) as DatabaseAPIResponse<DatabaseBatchResult>;
-
-      if (apiResponse.status === "error") {
-        throw new DatabaseInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        throw new DatabaseInternalError("No data returned from API");
-      }
-
-      return apiResponse.data;
+      const data = (await response.json()) as DatabaseBatchResult;
+      return data;
     } catch (err) {
       throw handleApiError(err, "batch");
     }
@@ -165,20 +140,8 @@ export class RemoteDatabase implements Database {
         );
       }
 
-      const apiResponse =
-        (await response.json()) as DatabaseAPIResponse<DatabaseBatchResult>;
-
-      if (apiResponse.status === "error") {
-        throw new DatabaseInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        throw new DatabaseInternalError("No data returned from API");
-      }
-
-      return apiResponse.data;
+      const data = (await response.json()) as DatabaseBatchResult;
+      return data;
     } catch (err) {
       throw handleApiError(err, "executeMultiple");
     }
@@ -205,20 +168,8 @@ export class RemoteDatabase implements Database {
         );
       }
 
-      const apiResponse =
-        (await response.json()) as DatabaseAPIResponse<DatabaseBatchResult>;
-
-      if (apiResponse.status === "error") {
-        throw new DatabaseInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        throw new DatabaseInternalError("No data returned from API");
-      }
-
-      return apiResponse.data;
+      const data = (await response.json()) as DatabaseBatchResult;
+      return data;
     } catch (err) {
       throw handleApiError(err, "migrate");
     }
@@ -243,21 +194,10 @@ export class RemoteDatabase implements Database {
         );
       }
 
-      const apiResponse =
-        (await response.json()) as DatabaseAPIResponse<DatabaseInfo>;
-
-      if (apiResponse.status === "error") {
-        throw new DatabaseInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        throw new DatabaseInternalError("No data returned from API");
-      }
+      const data = (await response.json()) as DatabaseInfo;
 
       // Convert date string to Date object
-      const { lastModified, ...rest } = apiResponse.data;
+      const { lastModified, ...rest } = data;
       return {
         ...rest,
         lastModified: new Date(lastModified as unknown as string),
@@ -347,24 +287,14 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
         );
       }
 
-      const data = (await response.json()) as DatabaseAPIResponse<{
+      const data = (await response.json()) as {
         databases: string[];
         nextCursor?: string;
-      }>;
-
-      if (data.status === "error") {
-        throw new DatabaseInternalError(
-          `API error: ${data.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!data.data) {
-        throw new DatabaseInternalError("No data returned from API");
-      }
+      };
 
       return {
-        databases: data.data.databases.map((db) => decodeURIComponent(db)),
-        ...(data.data.nextCursor && { nextCursor: data.data.nextCursor }),
+        databases: data.databases.map((db) => decodeURIComponent(db)),
+        ...(data.nextCursor && { nextCursor: data.nextCursor }),
       };
     } catch (err) {
       throw handleApiError(err, "listDatabases");
@@ -393,25 +323,14 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
         );
       }
 
-      const apiResponse =
-        (await response.json()) as DatabaseAPIResponse<EnsureDatabaseResult>;
-
-      if (apiResponse.status === "error") {
-        throw new DatabaseInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        throw new DatabaseInternalError("No data returned from API");
-      }
+      const data = (await response.json()) as EnsureDatabaseResult;
 
       // Make sure the database is in our cache
       if (!this.databases.has(name)) {
         this.getDatabase(name);
       }
 
-      return apiResponse.data;
+      return data;
     } catch (err) {
       if (err instanceof DatabaseError) {
         throw err;
@@ -448,21 +367,10 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
         );
       }
 
-      const apiResponse =
-        (await response.json()) as DatabaseAPIResponse<DeleteDatabaseResult>;
-
-      if (apiResponse.status === "error") {
-        throw new DatabaseInternalError(
-          `API error: ${apiResponse.error ?? "Unknown error"}`,
-        );
-      }
-
-      if (!apiResponse.data) {
-        throw new DatabaseInternalError("No data returned from API");
-      }
+      const data = (await response.json()) as DeleteDatabaseResult;
 
       // Remove database from caches if it was successfully deleted
-      if (apiResponse.data.deleted) {
+      if (data.deleted) {
         if (this.databases.has(name)) {
           const db = this.databases.get(name);
           if (db) {
@@ -472,7 +380,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
         }
       }
 
-      return apiResponse.data;
+      return data;
     } catch (err) {
       if (err instanceof DatabaseError) {
         throw err;

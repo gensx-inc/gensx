@@ -124,15 +124,6 @@ export interface DeleteBlobResult {
 }
 
 /**
- * A response from the API
- */
-export interface BlobAPIResponse<T> {
-  status: "ok" | "error";
-  data?: T;
-  error?: string;
-}
-
-/**
  * A response from a blob operation that includes metadata
  */
 export interface BlobResponse<T> {

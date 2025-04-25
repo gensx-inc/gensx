@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.10](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.9...gensx-core-v0.3.10) (2025-04-24)
+
+
+### 🐛 Bug Fixes
+
+* adding user agents ([#620](https://github.com/gensx-inc/gensx/issues/620)) ([a872a51](https://github.com/gensx-inc/gensx/commit/a872a5104eabdb5625832b292baa27324bbc6f21))
+* updating packages to remove response envelope ([#623](https://github.com/gensx-inc/gensx/issues/623)) ([fe39cde](https://github.com/gensx-inc/gensx/commit/fe39cdec6bbed38e96e4b4e3f27b0af68b09b977))
+
 ## [0.3.9](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.8...gensx-core-v0.3.9) (2025-04-10)
 
 

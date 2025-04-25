@@ -133,15 +133,12 @@ export class GensxServer {
 
       // Handle different types of errors
       if (err instanceof NotFoundError) {
-        return c.json({ status: "error", error: err.message }, 404);
+        return c.json({ error: err.message }, 404);
       } else if (err instanceof BadRequestError) {
-        return c.json({ status: "error", error: err.message }, 400);
+        return c.json({ error: err.message }, 400);
       } else {
         const message = err instanceof Error ? err.message : String(err);
-        return c.json(
-          { status: "error", error: "Internal server error", message },
-          500,
-        );
+        return c.json({ error: "Internal server error", message }, 500);
       }
     });
   }
@@ -227,9 +224,7 @@ export class GensxServer {
   private validateInput(workflowName: string, input: unknown): void {
     // Check if input is missing
     if (input === undefined) {
-      throw new BadRequestError(
-        "Missing required 'input' field in request body",
-      );
+      throw new BadRequestError("Missing required input parameters");
     }
 
     // Get schema for this workflow
@@ -250,7 +245,7 @@ export class GensxServer {
         .join("; ");
 
       throw new BadRequestError(
-        `Input validation failed: Input${errorMessages}`,
+        `Input validation failed: the input${errorMessages}`,
       );
     }
   }
@@ -266,10 +261,7 @@ export class GensxServer {
     // List all workflows
     this.app.get(`/workflows`, (c) => {
       return c.json({
-        status: "ok",
-        data: {
-          workflows: this.getWorkflows(),
-        },
+        workflows: this.getWorkflows(),
       });
     });
 
@@ -284,16 +276,13 @@ export class GensxServer {
       const now = new Date().toISOString();
 
       return c.json({
-        status: "ok",
-        data: {
-          id,
-          name: workflowName,
-          inputSchema: schema?.input ?? { type: "object", properties: {} },
-          outputSchema: schema?.output ?? { type: "object", properties: {} },
-          createdAt: now,
-          updatedAt: now,
-          url: `http://${this.hostname}:${this.port}/workflows/${workflowName}`,
-        },
+        id,
+        name: workflowName,
+        inputSchema: schema?.input ?? { type: "object", properties: {} },
+        outputSchema: schema?.output ?? { type: "object", properties: {} },
+        createdAt: now,
+        updatedAt: now,
+        url: `http://${this.hostname}:${this.port}/workflows/${workflowName}`,
       });
     });
 
@@ -308,7 +297,7 @@ export class GensxServer {
         const body = await this.parseJsonBody(c);
 
         // Validate that input exists and matches schema
-        this.validateInput(workflowName, body.input);
+        this.validateInput(workflowName, body);
 
         // Only create execution ID after validation succeeds
         const executionId = generateExecutionId();
@@ -320,7 +309,7 @@ export class GensxServer {
           workflowName,
           executionStatus: "queued",
           createdAt: now,
-          input: body.input,
+          input: body,
         };
 
         // Store the execution
@@ -331,17 +320,17 @@ export class GensxServer {
           workflowName,
           workflow,
           executionId,
-          body.input,
+          body,
         );
 
         // Return immediately with executionId
-        return c.json({
-          status: "ok",
-          data: {
+        return c.json(
+          {
             executionId,
             executionStatus: "queued",
           },
-        });
+          202,
+        );
       } catch (error) {
         if (error instanceof BadRequestError) {
           console.error(
@@ -350,7 +339,6 @@ export class GensxServer {
           );
           return c.json(
             {
-              status: "error",
               error: error.message,
             },
             400,
@@ -360,7 +348,6 @@ export class GensxServer {
         console.error(`❌ Error starting workflow '${workflowName}':`, error);
         return c.json(
           {
-            status: "error",
             error: error instanceof Error ? error.message : String(error),
           },
           500,
@@ -383,7 +370,10 @@ export class GensxServer {
         createdAt: string;
         finishedAt?: string;
         output?: unknown;
-        error?: string;
+        logs?: {
+          //stdout: string;
+          stderr: string;
+        };
       } = {
         id: execution.id,
         executionStatus: execution.executionStatus,
@@ -400,13 +390,13 @@ export class GensxServer {
       }
 
       if (execution.error) {
-        responseData.error = execution.error;
+        responseData.logs = {
+          //stdout: "", // TODO: ideally this should be the stdout of the workflow
+          stderr: execution.error,
+        };
       }
 
-      return c.json({
-        status: "ok",
-        data: responseData,
-      });
+      return c.json(responseData);
     });
 
     // List executions for a workflow
@@ -431,10 +421,7 @@ export class GensxServer {
         }));
 
       return c.json({
-        status: "ok",
-        data: {
-          executions,
-        },
+        executions,
       });
     });
 
@@ -451,7 +438,7 @@ export class GensxServer {
         body = await this.parseJsonBody(c);
 
         // Validate that input exists and matches schema
-        this.validateInput(workflowName, body.input);
+        this.validateInput(workflowName, body);
 
         // Only create execution ID after validation succeeds
         const executionId = generateExecutionId();
@@ -468,7 +455,7 @@ export class GensxServer {
           workflowName,
           executionStatus: "running", // Start directly in running state since this is synchronous
           createdAt: now,
-          input: body.input,
+          input: body,
         };
 
         // Store the execution
@@ -488,36 +475,54 @@ export class GensxServer {
           throw new ServerError(errorMessage);
         }
 
-        const result = await runMethod.call(workflow, body.input);
+        try {
+          const result = await runMethod.call(workflow, body);
 
-        // Update execution with result
-        execution.executionStatus = "completed";
-        execution.output = result;
-        execution.finishedAt = new Date().toISOString();
-        this.executionsMap.set(executionId, execution);
+          // Update execution with result
+          execution.executionStatus = "completed";
+          execution.output = result;
+          execution.finishedAt = new Date().toISOString();
+          this.executionsMap.set(executionId, execution);
 
-        // Handle different response types
-        if (
-          result &&
-          typeof result === "object" &&
-          Symbol.asyncIterator in result
-        ) {
-          // Handle streaming responses
-          return this.handleStreamingResponse(
-            c,
-            result as AsyncIterable<unknown>,
-          );
-        }
+          // Handle different response types
+          if (
+            result &&
+            typeof result === "object" &&
+            Symbol.asyncIterator in result
+          ) {
+            // Handle streaming responses
+            return this.handleStreamingResponse(
+              c,
+              result as AsyncIterable<unknown>,
+            );
+          }
 
-        // Handle regular JSON response
-        return c.json({
-          status: "ok",
-          data: {
+          // Handle regular JSON response
+          return c.json({
             executionId,
             executionStatus: "completed",
             output: result,
-          },
-        });
+          });
+        } catch (error) {
+          console.error(
+            `❌ Error executing workflow '${workflowName}':`,
+            error,
+          );
+          execution.executionStatus = "failed";
+          execution.error =
+            error instanceof Error ? error.message : String(error);
+          execution.finishedAt = new Date().toISOString();
+          this.executionsMap.set(executionId, execution);
+
+          return c.json(
+            {
+              executionId,
+              executionStatus: "failed",
+              error: error instanceof Error ? error.message : String(error),
+            },
+            422,
+          );
+        }
       } catch (error) {
         // For validation errors, don't create an execution record
         if (error instanceof BadRequestError) {
@@ -527,7 +532,6 @@ export class GensxServer {
           );
           return c.json(
             {
-              status: "error",
               error: error.message,
             },
             400,
@@ -539,7 +543,6 @@ export class GensxServer {
         // For other errors, proceed with server error
         return c.json(
           {
-            status: "error",
             error: error instanceof Error ? error.message : String(error),
           },
           500,
@@ -632,8 +635,7 @@ export class GensxServer {
                 content: {
                   "application/json": {
                     example: {
-                      status: "ok",
-                      data: { workflows },
+                      workflows,
                     },
                   },
                 },
@@ -656,25 +658,19 @@ export class GensxServer {
                         schema: {
                           type: "object",
                           properties: {
-                            status: { type: "string", enum: ["ok"] },
-                            data: {
-                              type: "object",
-                              properties: {
-                                id: { type: "string" },
-                                name: { type: "string" },
-                                inputSchema: { type: "object" },
-                                outputSchema: { type: "object" },
-                                createdAt: {
-                                  type: "string",
-                                  format: "date-time",
-                                },
-                                updatedAt: {
-                                  type: "string",
-                                  format: "date-time",
-                                },
-                                url: { type: "string" },
-                              },
+                            id: { type: "string" },
+                            name: { type: "string" },
+                            inputSchema: { type: "object" },
+                            outputSchema: { type: "object" },
+                            createdAt: {
+                              type: "string",
+                              format: "date-time",
                             },
+                            updatedAt: {
+                              type: "string",
+                              format: "date-time",
+                            },
+                            url: { type: "string" },
                           },
                         },
                       },
@@ -689,14 +685,9 @@ export class GensxServer {
                   required: true,
                   content: {
                     "application/json": {
-                      schema: {
+                      schema: workflow.inputSchema ?? {
                         type: "object",
-                        properties: {
-                          input: workflow.inputSchema ?? {
-                            type: "object",
-                            properties: {},
-                          },
-                        },
+                        properties: {},
                       },
                     },
                   },
@@ -709,25 +700,19 @@ export class GensxServer {
                         schema: {
                           type: "object",
                           properties: {
-                            status: { type: "string", enum: ["ok"] },
-                            data: {
+                            executionId: { type: "string" },
+                            executionStatus: {
+                              type: "string",
+                              enum: [
+                                "completed",
+                                "queued",
+                                "running",
+                                "failed",
+                              ],
+                            },
+                            output: workflow.outputSchema ?? {
                               type: "object",
-                              properties: {
-                                executionId: { type: "string" },
-                                executionStatus: {
-                                  type: "string",
-                                  enum: [
-                                    "completed",
-                                    "queued",
-                                    "running",
-                                    "failed",
-                                  ],
-                                },
-                                output: workflow.outputSchema ?? {
-                                  type: "object",
-                                  properties: {},
-                                },
-                              },
+                              properties: {},
                             },
                           },
                         },
@@ -741,7 +726,24 @@ export class GensxServer {
                         schema: {
                           type: "object",
                           properties: {
-                            status: { type: "string", enum: ["error"] },
+                            error: { type: "string" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  "422": {
+                    description: "Workflow execution failed",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          type: "object",
+                          properties: {
+                            executionId: { type: "string" },
+                            executionStatus: {
+                              type: "string",
+                              enum: ["failed"],
+                            },
                             error: { type: "string" },
                           },
                         },
@@ -764,36 +766,25 @@ export class GensxServer {
                   required: true,
                   content: {
                     "application/json": {
-                      schema: {
+                      schema: workflow.inputSchema ?? {
                         type: "object",
-                        properties: {
-                          input: workflow.inputSchema ?? {
-                            type: "object",
-                            properties: {},
-                          },
-                        },
+                        properties: {},
                       },
                     },
                   },
                 },
                 responses: {
-                  "200": {
+                  "202": {
                     description: "Workflow started",
                     content: {
                       "application/json": {
                         schema: {
                           type: "object",
                           properties: {
-                            status: { type: "string", enum: ["ok"] },
-                            data: {
-                              type: "object",
-                              properties: {
-                                executionId: { type: "string" },
-                                executionStatus: {
-                                  type: "string",
-                                  enum: ["queued"],
-                                },
-                              },
+                            executionId: { type: "string" },
+                            executionStatus: {
+                              type: "string",
+                              enum: ["queued"],
                             },
                           },
                         },
@@ -828,33 +819,27 @@ export class GensxServer {
                         schema: {
                           type: "object",
                           properties: {
-                            status: { type: "string", enum: ["ok"] },
-                            data: {
-                              type: "object",
-                              properties: {
-                                id: { type: "string" },
-                                executionStatus: {
-                                  type: "string",
-                                  enum: [
-                                    "queued",
-                                    "starting",
-                                    "running",
-                                    "completed",
-                                    "failed",
-                                  ],
-                                },
-                                createdAt: {
-                                  type: "string",
-                                  format: "date-time",
-                                },
-                                finishedAt: {
-                                  type: "string",
-                                  format: "date-time",
-                                },
-                                output: workflow.outputSchema ?? {},
-                                error: { type: "string" },
-                              },
+                            id: { type: "string" },
+                            executionStatus: {
+                              type: "string",
+                              enum: [
+                                "queued",
+                                "starting",
+                                "running",
+                                "completed",
+                                "failed",
+                              ],
                             },
+                            createdAt: {
+                              type: "string",
+                              format: "date-time",
+                            },
+                            finishedAt: {
+                              type: "string",
+                              format: "date-time",
+                            },
+                            output: workflow.outputSchema ?? {},
+                            error: { type: "string" },
                           },
                         },
                       },
@@ -880,35 +865,29 @@ export class GensxServer {
                         schema: {
                           type: "object",
                           properties: {
-                            status: { type: "string", enum: ["ok"] },
-                            data: {
-                              type: "object",
-                              properties: {
-                                executions: {
-                                  type: "array",
-                                  items: {
-                                    type: "object",
-                                    properties: {
-                                      id: { type: "string" },
-                                      executionStatus: {
-                                        type: "string",
-                                        enum: [
-                                          "queued",
-                                          "starting",
-                                          "running",
-                                          "completed",
-                                          "failed",
-                                        ],
-                                      },
-                                      createdAt: {
-                                        type: "string",
-                                        format: "date-time",
-                                      },
-                                      finishedAt: {
-                                        type: "string",
-                                        format: "date-time",
-                                      },
-                                    },
+                            executions: {
+                              type: "array",
+                              items: {
+                                type: "object",
+                                properties: {
+                                  id: { type: "string" },
+                                  executionStatus: {
+                                    type: "string",
+                                    enum: [
+                                      "queued",
+                                      "starting",
+                                      "running",
+                                      "completed",
+                                      "failed",
+                                    ],
+                                  },
+                                  createdAt: {
+                                    type: "string",
+                                    format: "date-time",
+                                  },
+                                  finishedAt: {
+                                    type: "string",
+                                    format: "date-time",
                                   },
                                 },
                               },

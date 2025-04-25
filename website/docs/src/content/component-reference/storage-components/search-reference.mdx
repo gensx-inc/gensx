@@ -306,9 +306,7 @@ import { SearchClient } from "@gensx/storage";
 const search = new SearchClient();
 
 // List all namespaces
-const namespaces = await search.listNamespaces({
-  prefix: "docs-", // Optional prefix filter
-});
+const { namespaces } = await search.listNamespaces();
 
 // Check if namespace exists
 const exists = await search.namespaceExists("my-namespace");
@@ -407,15 +405,26 @@ await namespace.write({
 
 ### listNamespaces
 
-List all namespaces in your project.
+List namespaces in your project.
 
 ```tsx
 const searchStorage = useSearchStorage();
-const namespaces = await searchStorage.listNamespaces({
-  prefix: "docs-" // Optional prefix filter
-});
-console.log(namespaces); // ["docs-articles", "docs-products"]
+const { namespaces, nextCursor } = await searchStorage.listNamespaces();
+console.log("Namespaces:", namespaces); // ["docs", "products"]
+
 ```
+
+The method accepts an options object with these properties:
+
+| Option   | Type     | Description                                    |
+| -------- | -------- | ---------------------------------------------- |
+| `prefix` | `string` | Optional prefix to filter namespace names by   |
+| `limit`  | `number` | Maximum number of results to return per page   |
+| `cursor` | `string` | Cursor for pagination from previous response   |
+
+Returns an object with:
+- `namespaces`: Array of namespace names
+- `nextCursor`: Cursor for the next page, or undefined if no more results
 
 ### ensureNamespace
 
@@ -546,16 +555,21 @@ if (created) {
 List all namespaces.
 
 ```tsx
-async listNamespaces(options?: { prefix?: string }): Promise<string[]>
+async listNamespaces(options?: {
+  prefix?: string;
+  limit?: number;
+  cursor?: string;
+}): Promise<{
+  namespaces: string[];
+  nextCursor?: string;
+}>
 ```
 
 ##### Example
 
 ```tsx
-const namespaces = await searchClient.listNamespaces({
-  prefix: "customer-" // Optional prefix filter
-});
-console.log("Available namespaces:", namespaces);
+const { namespaces, nextCursor } = await searchClient.listNamespaces();
+console.log("Available namespaces:", namespaces); // ["products", "customers", "orders"]
 ```
 
 #### deleteNamespace

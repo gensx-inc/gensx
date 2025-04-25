@@ -327,15 +327,27 @@ The database storage object provides these management methods:
 
 ### listDatabases
 
-Lists all databases in your project.
+Lists databases in your project.
 
 ```tsx
 import { useDatabaseStorage } from "@gensx/storage";
 
 const dbStorage = useDatabaseStorage();
-const databases = await dbStorage.listDatabases();
-console.log(databases); // ["users", "products", "analytics"]
+const { databases, nextCursor } = await dbStorage.listDatabases();
+console.log("Databases:", databases); // ["users", "products", "analytics"]
+
 ```
+
+The method accepts an options object with these properties:
+
+| Option   | Type     | Description                                    |
+| -------- | -------- | ---------------------------------------------- |
+| `limit`  | `number` | Maximum number of results to return per page   |
+| `cursor` | `string` | Cursor for pagination from previous response   |
+
+Returns an object with:
+- `databases`: Array of database names
+- `nextCursor`: Cursor for the next page, or undefined if no more results
 
 ### ensureDatabase
 
@@ -470,17 +482,20 @@ if (created) {
 
 #### listDatabases
 
-List all databases.
+List databases.
 
 ```tsx
-async listDatabases(): Promise<string[]>
+async listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
+  databases: string[];
+  nextCursor?: string;
+}>
 ```
 
 ##### Example
 
 ```tsx
-const databases = await dbClient.listDatabases();
-console.log("Available databases:", databases);
+const { databases, nextCursor } = await dbClient.listDatabases();
+console.log("Available databases:", databases); // ["users", "products", "analytics"]
 ```
 
 #### deleteDatabase

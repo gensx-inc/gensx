@@ -61,10 +61,7 @@ suite("RemoteDatabaseStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: mockResult,
-      }),
+      json: async () => mockResult,
     });
 
     const result = await db.execute("SELECT * FROM test_table");
@@ -97,12 +94,9 @@ suite("RemoteDatabaseStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          columns: ["id", "name"],
-          rows: [[1, "test-name"]],
-          rowsAffected: 0,
-        },
+        columns: ["id", "name"],
+        rows: [[1, "test-name"]],
+        rowsAffected: 0,
       }),
     });
 
@@ -129,10 +123,7 @@ suite("RemoteDatabaseStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: mockBatchResult,
-      }),
+      json: async () => mockBatchResult,
     });
 
     const statements = [
@@ -172,10 +163,7 @@ suite("RemoteDatabaseStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: mockMultipleResult,
-      }),
+      json: async () => mockMultipleResult,
     });
 
     const sqlScript = `
@@ -216,10 +204,7 @@ suite("RemoteDatabaseStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: mockMigrateResult,
-      }),
+      json: async () => mockMigrateResult,
     });
 
     const migrationScript = `
@@ -268,10 +253,7 @@ suite("RemoteDatabaseStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: mockDbInfo,
-      }),
+      json: async () => mockDbInfo,
     });
 
     const result = await db.getInfo();
@@ -298,11 +280,8 @@ suite("RemoteDatabaseStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          databases: ["test-db1", "test-db2"],
-          nextCursor: "next-page-token",
-        },
+        databases: ["test-db1", "test-db2"],
+        nextCursor: "next-page-token",
       }),
     });
 
@@ -329,11 +308,8 @@ suite("RemoteDatabaseStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          databases: ["db1", "db2"],
-          nextCursor: "page2",
-        },
+        databases: ["db1", "db2"],
+        nextCursor: "page2",
       }),
     });
 
@@ -342,11 +318,8 @@ suite("RemoteDatabaseStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          databases: ["db3", "db4"],
-          nextCursor: undefined,
-        },
+        databases: ["db3", "db4"],
+        nextCursor: undefined,
       }),
     });
 
@@ -379,11 +352,8 @@ suite("RemoteDatabaseStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          databases: [],
-          nextCursor: undefined,
-        },
+        databases: [],
+        nextCursor: undefined,
       }),
     });
 
@@ -403,10 +373,7 @@ suite("RemoteDatabaseStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: { exists: true, created: true },
-      }),
+      json: async () => ({ exists: true, created: true }),
     });
 
     const result = await storage.ensureDatabase("new-db");
@@ -430,10 +397,7 @@ suite("RemoteDatabaseStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        status: "ok",
-        data: { deleted: true },
-      }),
+      json: async () => ({ deleted: true }),
     });
 
     const result = await storage.deleteDatabase("old-db");
@@ -486,12 +450,9 @@ suite("RemoteDatabaseStorage", () => {
 
     test("should handle API error responses", async () => {
       mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          status: "error",
-          error: "API error message",
-        }),
+        ok: false,
+        status: 400,
+        statusText: "Bad Request",
       });
 
       const storage = new RemoteDatabaseStorage();
@@ -504,7 +465,7 @@ suite("RemoteDatabaseStorage", () => {
       } catch (err) {
         expect(err).toBeInstanceOf(DatabaseInternalError);
         expect((err as DatabaseError).code).toBe("INTERNAL_ERROR");
-        expect((err as DatabaseError).message).toContain("API error");
+        expect((err as DatabaseError).message).toContain("Bad Request");
       }
     });
 
@@ -527,12 +488,9 @@ suite("RemoteDatabaseStorage", () => {
 
     test("should handle missing data in API response", async () => {
       mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          status: "ok",
-          // No data field
-        }),
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
       });
 
       const storage = new RemoteDatabaseStorage();
@@ -545,7 +503,7 @@ suite("RemoteDatabaseStorage", () => {
       } catch (err) {
         expect(err).toBeInstanceOf(DatabaseInternalError);
         expect((err as DatabaseError).code).toBe("INTERNAL_ERROR");
-        expect((err as DatabaseError).message).toContain("No data returned");
+        expect((err as DatabaseError).message).toContain("Not Found");
       }
     });
   });
@@ -571,12 +529,9 @@ suite("RemoteDatabaseStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        status: "ok",
-        data: {
-          columns: [],
-          rows: [],
-          rowsAffected: 0,
-        },
+        columns: [],
+        rows: [],
+        rowsAffected: 0,
       }),
     });
 

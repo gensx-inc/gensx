@@ -190,13 +190,27 @@ const userBlob = blobStorage.getBlob<UserProfile>("users/123.json");
 
 ### listBlobs
 
-List all blob keys with an optional prefix filter.
+List blob keys.
 
 ```tsx
 const blobStorage = useBlobStorage();
-const userBlobKeys = await blobStorage.listBlobs("users/");
-console.log(userBlobKeys); // ["users/123.json", "users/456.json"]
+const { keys, nextCursor } = await blobStorage.listBlobs({
+  prefix: "users",
+});
+console.log("User blobs:", keys); // ["users/123.json", "users/456.json"]
 ```
+
+The method accepts an options object with these properties:
+
+| Option   | Type     | Description                                    |
+| -------- | -------- | ---------------------------------------------- |
+| `prefix` | `string` | Optional prefix to filter blob keys by         |
+| `limit`  | `number` | Maximum number of results to return per page   |
+| `cursor` | `string` | Cursor for pagination from previous response   |
+
+Returns an object with:
+- `keys`: Array of blob keys matching the filter
+- `nextCursor`: Cursor for the next page, or null if no more results
 
 ### blobExists
 
@@ -286,17 +300,22 @@ await userBlob.putJSON(profile);
 
 #### listBlobs
 
-List all blob keys with an optional prefix.
+List all blob keys.
 
 ```tsx
-async listBlobs(prefix?: string): Promise<string[]>
+async listBlobs(options?: { prefix?: string; limit?: number; cursor?: string }): Promise<{
+  keys: string[];
+  nextCursor?: string;
+}>
 ```
 
 ##### Example
 
 ```tsx
-const chatHistory = await blobClient.listBlobs("chats/");
-console.log("Chat histories:", chatHistory);
+const { keys, nextCursor } = await blobClient.listBlobs({
+  prefix: "chats"
+});
+console.log("Chat histories:", keys); // ["chats/123.json", "chats/456.json"]
 ```
 
 #### blobExists

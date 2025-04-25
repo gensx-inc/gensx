@@ -83,15 +83,12 @@ export async function runWorkflow(
         );
       }
 
-      const body = (await response.json()) as {
-        status: "ok";
-        data: { executionId: string };
-      };
+      const body = (await response.json()) as { executionId: string };
 
       spinner.succeed();
 
       console.info(
-        `Workflow execution started with id: ${pc.cyan(body.data.executionId)}`,
+        `Workflow execution started with id: ${pc.cyan(body.executionId)}`,
       );
     } else {
       spinner.start("Running workflow");
@@ -157,29 +154,23 @@ export async function runWorkflow(
         console.info("\n\nWorkflow execution completed");
       } else {
         const body = (await response.json()) as {
-          status: "ok";
-          data: {
-            output: unknown;
-            executionStatus: "success" | "failed";
-          };
+          output: unknown;
+          executionStatus: "success" | "failed";
         };
-        if (body.data.executionStatus === "failed") {
+        if (body.executionStatus === "failed") {
           console.error("❌ Workflow failed");
-          if (body.data.output) {
-            console.error("Output:", JSON.stringify(body.data.output, null, 2));
+          if (body.output) {
+            console.error("Output:", JSON.stringify(body.output, null, 2));
           }
           process.exit(1);
         }
 
         if (outputFile) {
-          await writeFile(
-            outputFile,
-            JSON.stringify(body.data.output, null, 2),
-          );
+          await writeFile(outputFile, JSON.stringify(body.output, null, 2));
           console.info(`Workflow output written to ${pc.cyan(outputFile)}`);
         } else {
           console.info("Workflow execution completed, here is the output:");
-          console.info(JSON.stringify(body.data.output, null, 2));
+          console.info(JSON.stringify(body.output, null, 2));
         }
       }
     }
