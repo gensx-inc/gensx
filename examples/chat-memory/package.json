@@ -9,11 +9,11 @@
   "description": "Use GenSX to create a chat completion",
   "scripts": {
     "dev": "tsx ./src/index.tsx",
-    "start": "npx gensx start src/workflows.tsx",
+    "start": "npx gensx start ./src/workflows.tsx",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "deploy": "npx gensx deploy -ev OPENAI_API_KEY src/workflows.tsx"
+    "deploy": "npx gensx deploy -ev OPENAI_API_KEY ./src/workflows.tsx"
   },
   "dependencies": {
     "@gensx/openai": "^0.1.25",
