@@ -88,6 +88,6 @@ curl -X POST http://localhost:1337/workflows/ChatMemoryWorkflow \
     "threadId": "thread-1",
     "message": "Hello, how are you?"
   }'
-   ```
+```
 
 A swagger UI will also be available at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.
