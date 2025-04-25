@@ -44,7 +44,7 @@ To run the workflow in GenSX Cloud:
 1. Deploy your workflow:
 
    ```bash
-   pnpm deploy
+   pnpm run deploy
    ```
 
 2. Start a conversation by calling the workflow:
