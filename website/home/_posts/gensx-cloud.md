@@ -164,8 +164,8 @@ GenSX Cloud automatically captures the entire execution of your workflow, includ
 
 - Every component's inputs and outputs
 - Every LLM call with full prompts and responses
-- Every storage operation
 - The entire execution timeline
+- The complete history of all previous workflow executions
 
 ## Agents are just workflows (and abstractions are dangerous)
 
