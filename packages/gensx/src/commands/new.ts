@@ -389,11 +389,22 @@ export async function newProject(
       console.info(`
 ${pc.green("✔")} Successfully created GenSX project in ${pc.cyan(absoluteProjectPath)}
 
-To get started:
-  ${projectPath !== "." ? pc.cyan(`cd ${projectPath}`) : ""}
-  ${pc.cyan(template.runCommand)}
+NEXT STEPS:
+  1. Open the project directory:
+     ${projectPath !== "." ? pc.cyan(`cd ${projectPath}`) : ""}
 
-Edit ${pc.cyan("src/workflows.tsx")} to start building your GenSX application.`);
+  2. Choose what you want to do:
+
+     DEPLOY THE PROJECT
+     ${pc.cyan("OPENAI_API_KEY=<your_api_key> npm run deploy")}
+
+     RUN LOCALLY
+     ${pc.cyan("OPENAI_API_KEY=<your_api_key> npm run dev")}
+
+     START API SERVER
+     ${pc.cyan("OPENAI_API_KEY=<your_api_key> npm run start")}
+
+Open ${pc.cyan("src/workflows.tsx")} to start building your workflows.`);
 
       // When ready to deploy:
       //   ${pc.cyan(`gensx deploy <file>`)}
