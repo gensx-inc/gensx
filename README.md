@@ -8,7 +8,7 @@
 
 [GenSX](https://gensx.com/) is a simple typescript framework for building agents and workflows with reusable React-like components.
 
-GenSX takes a lot of inspiration from React, but the programming model is very different - it’s a Node.js framework designed for data flow.
+GenSX takes a lot of inspiration from React, but the programming model is very different - it's a Node.js framework designed for data flow.
 
 But if you know how to write a react component, then building an agent will feel easy and familiar.
 
@@ -149,6 +149,9 @@ pnpm start
 | ✍️ [Blog Writer](./examples/blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |
 | 🔬 [Deep Research](./examples/deepResearch)              | Generates a report from a prompt after researching and summarizing a list of research papers |
 | 💻 [Computer Use](./examples/openai-computer-use)        | Demonstrates how to use the OpenAI computer use tool with GenSX                              |
+| 🗄️ [Text to SQL](./examples/text-to-sql)                 | Shows how to use database storage to translate natural language to SQL queries               |
+| 🔎 [RAG](./examples/rag)                                 | Demonstrates retrieval augmented generation using vector search storage                      |
+| 💬 [Chat Memory](./examples/chat-memory)                 | Shows how to build a chat application with persistent chat history using blob storage        |
 
 ## Working with this repo
 
