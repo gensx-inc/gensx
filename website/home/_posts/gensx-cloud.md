@@ -305,6 +305,8 @@ GenSX Cloud automatically captures the entire execution of your workflow, includ
 
 [GenSX](https://github.com/gensx-inc/gensx) is an open source Node.js framework for building agent and workflow backends with reusable components that can be shared across your project and teams. Rather than using a graph-based API to define a DAG, it uses JSX that offers a mixture of declarative easy to read code, and plain old functions for loops conditionals and dynamic behavior where your need it.
 
+The properties of this component model mean that we can make workflows durable by recording inputs and outputs as the program runs, detecting failures, and replaying the program with checkpoints. We're actively working on making this a reality, and in the coming months we will be able to remove the runtime execution limit from GenSX Cloud entirely as a result.
+
 Our experience shipping agents to production made one thing very clear: **abstraction is the devil in agent development**.
 
 The time you save on day one with a fancy agent abstraction, you'll pay back 100x over the coming months as you iterate and hit the edges of what the framework can do. We've built dozens of complex agents, and every time we've regretted starting with high-level abstractions.
@@ -339,6 +341,8 @@ const ResearchAgent = gensx.Component("ResearchAgent", ({ query }) => (
 ```
 
 Both are valid approaches in GenSX, and you can use whichever fits your use case—or combine them together in the same application.
+
+But we focus on offering powerful and flexible building blocks like storage and reusable components. This is more of a `shadcn`-style approach to agent frameworks than most other take. And we do so because we believe that similar to building a pixel-perfect application, building a reliable agent means owning 100% of the code and not getting locked into abstraction that you can't customize.
 
 ## Pricing for AI workloads
 
