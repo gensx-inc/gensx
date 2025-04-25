@@ -58,19 +58,6 @@ And we can deploy it as a REST API with one command:
 $ npx gensx deploy ./src/workflows.tsx
 ```
 
-```
-✔ Building workflow using Docker
-✔ Generating schema
-✔ Successfully deployed project to GenSX Cloud
-
-Available workflows:
-- ChatAgent
-- TextToSQLWorkflow
-- RAGWorkflow
-
-Dashboard: https://app.gensx.com/gensx/your-project/default/workflows
-```
-
 ```bash
 $ curl -X POST \
   "https://api.gensx.com/org/gensx/projects/your-project/environments/default/workflows/ChatAgent" \
