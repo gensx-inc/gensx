@@ -61,7 +61,7 @@ To run the workflow in the GenSX Cloud, follow these steps:
    ```
 
 
-After you deploy, you can also navigate to the [GenSX console](https://app.gensx.com) to see the workflow, test it, view traces, and get code snippets to use in your own projects.
+Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see your workflow, test it, analyze traces, and get code snippets.
 
 ## Run the workflow locally
 
