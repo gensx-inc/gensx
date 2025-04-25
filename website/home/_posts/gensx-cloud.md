@@ -33,19 +33,19 @@ const createMemoryTool = (userId) => {
       const memory = await useSearch(`memory-${userId}`);
       const embedding = await OpenAIEmbedding.run({
         model: "text-embedding-3-small",
-        input: query
+        input: query,
       });
 
       // Search for relevant memories
       const results = await memory.query({
         vector: embedding.data[0].embedding,
-        topK: 3
+        topK: 3,
       });
 
       return {
-        memories: results.map(m => m.text)
+        memories: results.map((m) => m.text),
       };
-    }
+    },
   });
 
   return memoryTool;
@@ -59,7 +59,7 @@ And we can add blob storage to save and retrieve previous messages per-thread an
 const getChatHistory = async (userId, threadId) => {
   // Automatically organized by user and conversation
   const blob = useBlob(`chats/${userId}/${threadId}.json`);
-  return await blob.getJSON() ?? [];
+  return (await blob.getJSON()) ?? [];
 };
 
 const saveChatHistory = async (userId, threadId, history) => {
@@ -79,7 +79,7 @@ const MemoryEnabledAgent = gensx.Component(
     const chatHistory = await getChatHistory(userId, threadId);
 
     // Create memory search tool for this user
-    const { searchMemoryTool, addMemoryTool} = createMemoryTools(userId);
+    const { searchMemoryTool, addMemoryTool } = createMemoryTools(userId);
 
     // Run the chat completion with memory tool access
     const response = await ChatCompletion.run({
@@ -87,9 +87,9 @@ const MemoryEnabledAgent = gensx.Component(
       messages: [
         { role: "system", content: "You are a helpful personal assistant" },
         ...chatHistory,
-        { role: "user", content: message }
+        { role: "user", content: message },
       ],
-      tools: [searchMemoryTool, addMemoryTool]
+      tools: [searchMemoryTool, addMemoryTool],
     });
 
     // Update and save conversation history
@@ -98,7 +98,7 @@ const MemoryEnabledAgent = gensx.Component(
     await saveChatHistory(userId, threadId, chatHistory);
 
     return response;
-  }
+  },
 );
 ```
 
@@ -179,9 +179,7 @@ We can even connect it to MCP compatible tools like Claude desktop or cursor:
     }
   }
 }
-
 ```
-
 
 On the surface, it would appear that deploying AI to production is a solved problem. There have to be at least 50+ startups who say you can do it in one line of code. It seems like there's a new one on ShowHN every day. And yet, if you talk to AI engineers actually trying to do this, you'll get a different story. The thing is that it's pretty easy to make anything one line of code…but what's under that line?
 
@@ -196,7 +194,6 @@ But AI agent workloads contradict everything I've ever learned about infrastruct
 Infrastructure for traditional web apps is mostly static. You provision resources once, scale them occasionally, and they serve millions of stateless HTTP requests. The infrastructure and application layers are cleanly separated.
 
 Agent workloads flip this model on its head. They need:
-
 
 1. **Per-user or per-workflow storage**: Each conversation thread, each agent instance, each data processing task might need its own isolated storage.
 
@@ -229,7 +226,7 @@ const AnalyzeSpreadsheet = gensx.Component(
     const results = await db.execute(sql);
 
     return formatResults(results);
-  }
+  },
 );
 
 // Vector search for semantic memory, created on-demand
@@ -241,15 +238,15 @@ const SemanticMemory = gensx.Component(
 
     const embedding = await OpenAIEmbedding.run({
       model: "text-embedding-3-small",
-      input: query
+      input: query,
     });
 
     // Search for semantically similar memories
     return await search.query({
       vector: embedding.data[0].embedding,
-      topK: 5
+      topK: 5,
     });
-  }
+  },
 );
 ```
 
@@ -333,7 +330,7 @@ const ResearchAgent = gensx.Component("ResearchAgent", ({ query }) => (
     model="gpt-4o"
     messages={[
       { role: "system", content: "You are a research assistant." },
-      { role: "user", content: query }
+      { role: "user", content: query },
     ]}
     tools={[searchTool, browseTool, summarizeTool]}
   />
