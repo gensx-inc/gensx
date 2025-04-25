@@ -1,69 +1,67 @@
 # GenSX Chat Memory Example
 
-This example demonstrates how to build a chat application with persistent memory using GenSX. It uses OpenAI's GPT-4o-mini model and stores chat history in [GenSX Cloud blob storage](https://www.gensx.com/docs/cloud/storage/blob-storage).
+This example shows you how to build a chat application with persistent memory using GenSX. We'll use OpenAI's GPT-4o-mini model and store chat history in [GenSX Cloud blob storage](https://www.gensx.com/docs/cloud/storage/blob-storage).
 
-## How it works
+## Overview
 
-The application uses:
-
+This application leverages:
 - `@gensx/core` for workflow management
 - `@gensx/openai` for OpenAI integration
 - `@gensx/storage` for persistent chat history storage
 
- When you run the ChatMemoryWorkflow, you'll specify a `threadId` and a `message`. Each chat thread maintains its own conversation history, allowing for context-aware responses across multiple interactions.
+The ChatMemoryWorkflow takes a `threadId` and a `message` as inputs. Each chat thread maintains its own conversation history, enabling context-aware responses across multiple interactions.
 
- The workflow will:
- 1. Load any existing chat history for the specified thread
- 2. Process the message and chat history using GPT-4o-mini
- 3. Save the updated conversation history
- 4. Display the assistant's response
+Here's what happens when you run the workflow:
+1. The system loads any existing chat history for your specified thread
+2. Your message and chat history are processed using GPT-4o-mini
+3. The updated conversation history is saved
+4. The assistant's response is displayed
 
-## Prerequisites
+## Getting Started
 
-1. Login to GenSX if you haven't already:
+1. Log in to GenSX (if you haven't already):
 
     ```bash
     npx gensx login
     ```
 
-2. Install dependencies:
+2. Install the required dependencies:
 
    ```bash
    pnpm install
    ```
 
-2. Set up your environment variables:
+3. Set up your environment variables:
 
    ```bash
    export OPENAI_API_KEY=your_api_key_here
    ```
 
-## Run the workflow in the cloud
+## Running in GenSX Cloud
 
-To run the workflow in the GenSX Cloud, follow these steps:
+To run the workflow in GenSX Cloud:
 
-1. Deploy the workflow:
+1. Deploy your workflow:
 
    ```bash
    pnpm deploy
    ```
 
-2. Call the workflow:
+2. Start a conversation by calling the workflow:
 
    ```bash
    gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "message": "What is the capital of France?"}'
    ```
 
-    You can then continue the conversation by calling the workflow again with the same `threadId`.
+3. Continue the conversation by using the same `threadId`:
 
    ```bash
    gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "message": "Tell me more about its history"}'
    ```
 
-
 Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see your workflow, test it, analyze traces, and get code snippets.
 
-## Run the workflow locally
+## Running locally
 
 ### Test the workflow directly
 
@@ -73,16 +71,15 @@ You can run the workflow directly using the `src/index.tsx` file:
 pnpm dev thread-1 "What is the capital of France?"
 ```
 
+### Run the API locally
 
-### Test the workflow API
-
-Alternatively, you can test the workflow APIs using the local dev server:
+You can also test the workflow through a local API server:
 
 ```bash
 pnpm start
 ```
 
-This will start a local API server and you can call the workflow API via curl or any HTTP client:
+This will start a local API server and you can call the workflow APIs via curl or any HTTP client:
 
 ```bash
 curl -X POST http://localhost:1337/workflows/ChatMemoryWorkflow \
