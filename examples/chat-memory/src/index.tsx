@@ -7,7 +7,7 @@ const userInput =
 
 console.log(`Using thread: ${threadId}`);
 console.log(`User input: ${userInput}`);
-//       OPENAI_API=<your API key> pnpm start thread-1 "What is the capital of france"
+
 const result = await ChatMemoryWorkflow.run(
   {
     userInput,
