@@ -117,26 +117,6 @@ const AnalyzeSpreadsheet = gensx.Component(
     return formatResults(results);
   },
 );
-
-// Vector search for semantic memory, created on-demand
-const SemanticMemory = gensx.Component(
-  "SemanticMemory",
-  async ({ userId, query }) => {
-    // Instant vector index with no setup
-    const search = await useSearch(`memory-${userId}`);
-
-    const embedding = await OpenAIEmbedding.run({
-      model: "text-embedding-3-small",
-      input: query,
-    });
-
-    // Search for semantically similar memories
-    return await search.query({
-      vector: embedding.data[0].embedding,
-      topK: 5,
-    });
-  },
-);
 ```
 
 GenSX includes runtime provisioned storage hooks to create user, agent, or workflow-scoped storage on demand in milliseconds:
