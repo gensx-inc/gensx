@@ -119,13 +119,13 @@ const AnalyzeSpreadsheet = gensx.Component(
 );
 ```
 
-GenSX includes runtime provisioned storage hooks to create user, agent, or workflow-scoped storage on demand in milliseconds:
+Each hook lights up a new kind of stateful agentic workflow:
 
-- `useBlob`: Store JSON, text, audio, video, etc. Perfect for building agents with memory and persistent chat history.
+- `useBlob`: Store JSON, text, audio, video, etc. Perfect for building agents with persistent chat history.
 - `useDatabase`: Fully featured SQL databases for agentic analytics like text-to-SQL.
 - `useSearch`: Full-text and vector search indexes to power RAG and long-term memory.
 
-These resources are provisioned instantaneously. You can even isolate tenants on storage by user, by agent, or even workflow. This dramatically simplifies the security model for scenarios where you want to give an LLM direct access to query a data store.
+These resources are provisioned and available instantaneously. You can even isolate tenants on storage by user, by agent, or even workflow. This dramatically simplifies the security model for scenarios where you want to give an LLM direct access to query a data store.
 
 ### Long-running compute is the default
 
@@ -169,7 +169,7 @@ GenSX Cloud automatically captures the entire execution of your workflow, includ
 
 ## Agents are just workflows (and abstractions are dangerous)
 
-[GenSX](https://github.com/gensx-inc/gensx) is an open source Node.js framework for building agent and workflow backends with reusable components that can be shared across your project and teams. Rather than using a graph-based API to define a DAG, it uses JSX that offers a mixture of declarative easy to read code, and plain old functions for loops conditionals and dynamic behavior where your need it.
+[GenSX](https://github.com/gensx-inc/gensx) is an open source Node.js framework for building agent and workflow backends with reusable components that can be shared across your project and teams. Rather than using a graph-based API to define a DAG, it uses JSX that offers a mixture of declarative and easy to read code, and plain old functions for loops conditionals and dynamic behavior where your need it.
 
 The properties of this component model mean that we can make workflows durable by recording inputs and outputs as the program runs, detecting failures, and replaying the program with checkpoints. We're actively working on making this a reality, and in the coming months we will be able to remove the runtime execution limit from GenSX Cloud entirely as a result.
 
@@ -219,7 +219,7 @@ GenSX Cloud is priced for AI workloads:
 - **Free tier** for individuals: 50K compute seconds/month, 5-minute maximum execution time, 500MB storage
 - **Pro tier** ($20/dev/month): 500K compute seconds/month, 60-minute maximum execution time, and larger storage allocations
 
-We charge for overages if you consume more than your included resources, but the pricing is transparent and predictable—no surprise bills at the end of the month.
+We charge for overages if you consume more than your included resources, but the pricing is transparent and predictable—no surprise bills at the end of the month. For more details see the full [GenSX Cloud pricing page](/docs/cloud/pricing).
 
 ## Full-stack TypeScript AI is here
 
