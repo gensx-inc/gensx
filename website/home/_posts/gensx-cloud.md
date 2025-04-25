@@ -19,6 +19,191 @@ It includes:
 2. **Cloud storage**: runtime hooks for provisioning blob storage, SQL databases, and vector and full-text search indexes in milliseconds for any agent that needs it.
 3. **Tracing and observability**: Automatic tracing of every workflow. Flame graphs of every workflow showing full component inputs and outputs at each step.
 
+In just a few lines of code we can build an agent with per-thread blob storage to save conversation history:
+
+```tsx
+// Simple chat agent with conversation history
+const ChatAgent = gensx.Component(
+  "ChatAgent",
+  async ({ userId, threadId, message }) => {
+    // Automatically create per-thread storage
+    const blob = useBlob(`chats/${userId}/${threadId}.json`);
+
+    // Load existing conversation history
+    const history = (await blob.getJSON()) ?? [];
+
+    // Generate a response using the history for context
+    const response = await ChatCompletion.run({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        ...history,
+        { role: "user", content: message }
+      ]
+    });
+
+    // Save the updated conversation
+    history.push({ role: "user", content: message });
+    history.push({ role: "assistant", content: response });
+    await blob.putJSON(history);
+
+    return response;
+  }
+);
+```
+
+And we can deploy it as a REST API with one command:
+
+```bash
+$ npx gensx deploy ./src/workflows.tsx
+```
+
+```
+✔ Building workflow using Docker
+✔ Generating schema
+✔ Successfully deployed project to GenSX Cloud
+
+Available workflows:
+- ChatAgent
+- TextToSQLWorkflow
+- RAGWorkflow
+
+Dashboard: https://app.gensx.com/gensx/your-project/default/workflows
+```
+
+```bash
+$ curl -X POST \
+  "https://api.gensx.com/org/gensx/projects/your-project/environments/default/workflows/ChatAgent" \
+  -H "Authorization: Bearer your_gensx_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "user123",
+    "threadId": "thread456",
+    "message": "Can you revise the email to be more concise?"
+  }'
+```
+
+On the surface, it would appear that deploying AI to production is a solved problem. There have to be at least 50+ startups who say you can do it in one line of code. It seems like there's a new one on ShowHN every day. And yet, if you talk to AI engineers actually trying to do this, you'll get a different story. The thing is that it's pretty easy to make anything one line of code…but what's under that line?
+
+## How agents broke our assumptions about infra
+
+I've spent a significant part of my career building and deploying infrastructure at scale — five years as an early employee at Pulumi, working on search in the early days of Azure, and operating services at scale at Amazon. I understand infrastructure as code. I've written a hundred thousand of lines of IaC, authored Kubernetes operators, and scaled services to the moon.
+
+But AI agent workloads contradict everything I've ever learned about infrastructure. Agent infrastructure is _dynamic_, and agentic workloads run for a _very long time_ relative to the traditional workloads we're used to operating from web 2.0. These violations of our priors require rethinking the way we approach infrastructure.
+
+### Static vs ephemeral storage
+
+Infrastructure for traditional web apps is mostly static. You provision resources once, scale them occasionally, and they serve millions of stateless HTTP requests. The infrastructure and application layers are cleanly separated.
+
+Agent workloads flip this model on its head. They need:
+
+1. **Per-user or per-workflow storage**: Each conversation thread, each agent instance, each data processing task might need its own isolated storage.
+
+2. **Physical isolation for security**: When AI generates queries against data, multi-tenant storage becomes a security risk. You need dedicated resources per user or request, not just logical separation. And runtime provisioning needs to happen in milliseconds and not minutes.
+
+3. **Ephemeral, request-scoped resources**: An agent processing a user's CSV needs a database right now, not in 5 minutes after your IaC workflow runs.
+
+4. **Storage as part of application code**: Your business logic and storage provisioning are tightly coupled, not separate deployment steps. Agentic workloads need hooks to provision storage dynamically at runtime.
+
+Writing separate YAML files or running terraform apply every time an agent needs a database is simply unworkable. The state explosion problem is real -- hundreds of agents, each with unique infrastructure needs, quickly becomes thousands of configuration files.
+
+Experiencing this first hand, I knew there had to be a better way. And so we built runtime hooks for agent storage: `useSearch`, `useDatabase` and `useBlob`. These hooks can be used to create storage in milliseconds that is scoped globally, per-user, or even per-request.
+
+You should not trust that your agent will follow your natural language RBAC guidelines or apply per-user filters to the SQL queries it generates. Much safer to just provision a dedicated database for the duration of the request or for that specific user:
+
+```tsx
+// Create an on-demand SQL database in milliseconds
+const AnalyzeSpreadsheet = gensx.Component(
+  "AnalyzeSpreadsheet",
+  async ({ csvData, question }) => {
+    // Database provisioned instantly during request
+    const db = await useDatabase("user-data");
+
+    // Create a table and import CSV
+    await db.execute(`CREATE TABLE data (name TEXT, value NUMBER)`);
+    await importCSV(db, csvData);
+
+    // Generate and run SQL based on the question
+    const sql = await generateSQL(question);
+    const results = await db.execute(sql);
+
+    return formatResults(results);
+  },
+);
+
+// Vector search for semantic memory, created on-demand
+const SemanticMemory = gensx.Component(
+  "SemanticMemory",
+  async ({ userId, query }) => {
+    // Instant vector index with no setup
+    const search = await useSearch(`memory-${userId}`);
+
+    const embedding = await OpenAIEmbedding.run({
+      model: "text-embedding-3-small",
+      input: query,
+    });
+
+    // Search for semantically similar memories
+    return await search.query({
+      vector: embedding.data[0].embedding,
+      topK: 5,
+    });
+  },
+);
+```
+
+GenSX includes runtime provisioned storage hooks to create user, agent, or workflow-scoped storage on demand in milliseconds:
+
+- `useBlob`: Store JSON, text, audio, video, etc. Perfect for building agents with memory and persistent chat history.
+- `useDatabase`: Fully featured SQL databases for agentic analytics like text-to-SQL.
+- `useSearch`: Full-text and vector search indexes to power RAG and long-term memory.
+
+These resources are provisioned instantaneously. You can even isolate tenants on storage by user, by agent, or even workflow. This dramatically simplifies the security model for scenarios where you want to give an LLM direct access to query a data store.
+
+### Long-running compute is the default
+
+Just five years ago, if a request in your application took more than a second, someone was getting paged. The P99 latency target was well below 500ms. The entire serverless ecosystem was built on this foundation: handle quick stateless requests, talk to your database, and return in 100ms.
+
+But agentic workloads are different:
+
+- **P50 latency is seconds, not milliseconds**: Even a simple LLM call takes 2-3 seconds for the first token.
+- **Workflows run for minutes, not milliseconds**: A document processing workflow might run for 15+ minutes.
+- **Agents can run indefinitely**: An agent might need to poll resources, wait for user input, or perform long-running tasks.
+- **Chatty workloads**: agents often make thousands of subrequests for things like embeddings, multi-step workflows, and recording telemetry events for observability.
+
+Existing platforms buckle under these requirements. Either they time out (most serverless), cost a fortune (container-based), or require complex orchestration (Kubernetes).
+
+GenSX Cloud offers a true serverless environment built for AI compute:
+
+- **Automatic REST API generation**: `gensx deploy` generates REST APIs for every workflow in your project. This includes a sychronous API with streaming to build user facing apps, and a background job endpoint for long-running tasks like data ingestion.
+- **Long-running workloads**: The serverless runtime has a 60 minute timeout to support long-running agents and workflows. And in the coming months we'll remove this limit altogether.
+- **10ms cold starts**: A novel architecture that aims to minimize latency.
+- **No subrequest limits**: No cap on the number of outgoing requests made by a workflow.
+- **MCP Server included**: The [`@gensx/gensx-cloud-mcp`](/docs/cloud/mcp-server) turns all of your deployed workflows into an MCP server that you can consume from Claude desktop, Cursor, or even other agents.
+
+### Observability on steroids
+
+In the olden days observability was all about identifying which query was slow and needed an index added to it. In the agentic world the task is typically about figuring out how the agent produced a hallucinated response that is pissing off one of your customers and putting a renewal at risk.
+
+Traditional tracing over every function call in the stack trace isn't enough. You still care about timing and performance, but what you really need to see is the precise function inputs and outputs at certain steps such as calls to the LLM providers:
+
+![Workflow component tree](/assets/blog/cloud-launch/component-trace.png)
+
+And you still get the full trace with timing for every step:
+
+![Workflow component tree](/assets/blog/cloud-launch/trace.png)
+
+GenSX Cloud automatically captures the entire execution of your workflow, including:
+
+- Every component's inputs and outputs
+- Every LLM call with full prompts and responses
+- Every storage operation
+- The entire execution timeline
+
+## Building an agent with short-term and long-term memory
+
+We've designed the GenSX building blocks to compose together naturally for scenarios like memory that require per-user and per-thread storage.
+
 In a few lines we can build a tool for long-term memory using vector search provisioned per-user:
 
 ```tsx
@@ -180,123 +365,6 @@ We can even connect it to MCP compatible tools like Claude desktop or cursor:
   }
 }
 ```
-
-On the surface, it would appear that deploying AI to production is a solved problem. There have to be at least 50+ startups who say you can do it in one line of code. It seems like there's a new one on ShowHN every day. And yet, if you talk to AI engineers actually trying to do this, you'll get a different story. The thing is that it's pretty easy to make anything one line of code…but what's under that line?
-
-## How agents broke our assumptions about infra
-
-I've spent a significant part of my career building and deploying infrastructure at scale — five years as an early employee at Pulumi, working on search in the early days of Azure, and operating services at scale at Amazon. I understand infrastructure as code. I've written a hundred thousand of lines of IaC, authored Kubernetes operators, and scaled services to the moon.
-
-But AI agent workloads contradict everything I've ever learned about infrastructure. Agent infrastructure is _dynamic_, and agentic workloads run for a _very long time_ relative to the traditional workloads we're used to operating from web 2.0. These violations of our priors require rethinking the way we approach infrastructure.
-
-### Static vs ephemeral storage
-
-Infrastructure for traditional web apps is mostly static. You provision resources once, scale them occasionally, and they serve millions of stateless HTTP requests. The infrastructure and application layers are cleanly separated.
-
-Agent workloads flip this model on its head. They need:
-
-1. **Per-user or per-workflow storage**: Each conversation thread, each agent instance, each data processing task might need its own isolated storage.
-
-2. **Physical isolation for security**: When AI generates queries against data, multi-tenant storage becomes a security risk. You need dedicated resources per user or request, not just logical separation. And runtime provisioning needs to happen in milliseconds and not minutes.
-
-3. **Ephemeral, request-scoped resources**: An agent processing a user's CSV needs a database right now, not in 5 minutes after your IaC workflow runs.
-
-4. **Storage as part of application code**: Your business logic and storage provisioning are tightly coupled, not separate deployment steps. Agentic workloads need hooks to provision storage dynamically at runtime.
-
-Writing separate YAML files or running terraform apply every time an agent needs a database is simply unworkable. The state explosion problem is real -- hundreds of agents, each with unique infrastructure needs, quickly becomes thousands of configuration files.
-
-Experiencing this first hand, I knew there had to be a better way. And so we built runtime hooks for agent storage: `useSearch`, `useDatabase` and `useBlob`. These hooks can be used to create storage in milliseconds that is scoped globally, per-user, or even per-request.
-
-You should not trust that your agent will follow your natural language RBAC guidelines or apply per-user filters to the SQL queries it generates. Much safer to just provision a dedicated database for the duration of the request or for that specific user:
-
-```tsx
-// Create an on-demand SQL database in milliseconds
-const AnalyzeSpreadsheet = gensx.Component(
-  "AnalyzeSpreadsheet",
-  async ({ csvData, question }) => {
-    // Database provisioned instantly during request
-    const db = await useDatabase("user-data");
-
-    // Create a table and import CSV
-    await db.execute(`CREATE TABLE data (name TEXT, value NUMBER)`);
-    await importCSV(db, csvData);
-
-    // Generate and run SQL based on the question
-    const sql = await generateSQL(question);
-    const results = await db.execute(sql);
-
-    return formatResults(results);
-  },
-);
-
-// Vector search for semantic memory, created on-demand
-const SemanticMemory = gensx.Component(
-  "SemanticMemory",
-  async ({ userId, query }) => {
-    // Instant vector index with no setup
-    const search = await useSearch(`memory-${userId}`);
-
-    const embedding = await OpenAIEmbedding.run({
-      model: "text-embedding-3-small",
-      input: query,
-    });
-
-    // Search for semantically similar memories
-    return await search.query({
-      vector: embedding.data[0].embedding,
-      topK: 5,
-    });
-  },
-);
-```
-
-GenSX includes runtime provisioned storage hooks to create user, agent, or workflow-scoped storage on demand in milliseconds:
-
-- `useBlob`: Store JSON, text, audio, video, etc. Perfect for building agents with memory and persistent chat history.
-- `useDatabase`: Fully featured SQL databases for agentic analytics like text-to-SQL.
-- `useSearch`: Full-text and vector search indexes to power RAG and long-term memory.
-
-These resources are provisioned instantaneously. You can even isolate tenants on storage by user, by agent, or even workflow. This dramatically simplifies the security model for scenarios where you want to give an LLM direct access to query a data store.
-
-### Long-running compute is the default
-
-Just five years ago, if a request in your application took more than a second, someone was getting paged. The P99 latency target was well below 500ms. The entire serverless ecosystem was built on this foundation: handle quick stateless requests, talk to your database, and return in 100ms.
-
-But agentic workloads are different:
-
-- **P50 latency is seconds, not milliseconds**: Even a simple LLM call takes 2-3 seconds for the first token.
-- **Workflows run for minutes, not milliseconds**: A document processing workflow might run for 15+ minutes.
-- **Agents can run indefinitely**: An agent might need to poll resources, wait for user input, or perform long-running tasks.
-- **Chatty workloads**: agents often make thousands of subrequests for things like embeddings, multi-step workflows, and recording telemetry events for observability.
-
-Existing platforms buckle under these requirements. Either they time out (most serverless), cost a fortune (container-based), or require complex orchestration (Kubernetes).
-
-GenSX Cloud offers a true serverless environment built for AI compute:
-
-- **Automatic REST API generation**: `gensx deploy` generates REST APIs for every workflow in your project. This includes a sychronous API with streaming to build user facing apps, and a background job endpoint for long-running tasks like data ingestion.
-- **Long-running workloads**: The serverless runtime has a 60 minute timeout to support long-running agents and workflows. And in the coming months we'll remove this limit altogether.
-- **10ms cold starts**: A novel architecture that aims to minimize latency.
-- **No subrequest limits**: No cap on the number of outgoing requests made by a workflow.
-- **MCP Server included**: The [`@gensx/gensx-cloud-mcp`](/docs/cloud/mcp-server) turns all of your deployed workflows into an MCP server that you can consume from Claude desktop, Cursor, or even other agents.
-
-### Observability on steroids
-
-In the olden days observability was all about identifying which query was slow and needed an index added to it. In the agentic world the task is typically about figuring out how the agent produced a hallucinated response that is pissing off one of your customers and putting a renewal at risk.
-
-Traditional tracing over every function call in the stack trace isn't enough. You still care about timing and performance, but what you really need to see is the precise function inputs and outputs at certain steps such as calls to the LLM providers:
-
-![Workflow component tree](/assets/blog/cloud-launch/component-trace.png)
-
-And you still get the full trace with timing for every step:
-
-![Workflow component tree](/assets/blog/cloud-launch/trace.png)
-
-GenSX Cloud automatically captures the entire execution of your workflow, including:
-
-- Every component's inputs and outputs
-- Every LLM call with full prompts and responses
-- Every storage operation
-- The entire execution timeline
 
 ## Agents are just workflows (and abstractions are dangerous)
 
