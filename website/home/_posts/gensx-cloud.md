@@ -187,11 +187,11 @@ GenSX Cloud automatically captures the entire execution of your workflow, includ
 - Every storage operation
 - The entire execution timeline
 
-## Building an agent with short-term and long-term memory
+## Composing storage and agents
 
-We've designed the GenSX building blocks to compose together naturally for scenarios like memory that require per-user and per-thread storage.
+We've designed the GenSX to be composed of building blocks to that click together naturally. Rather than leaning into abstraction, we put you in full control.
 
-In a few lines we can build a tool for long-term memory using vector search provisioned per-user:
+Continuing our chat agent examples, we can `useSearch` to add per-user vector search for long-term memory in a few lines of code:
 
 ```tsx
 // Create a per-user memory tool that uses vector search
@@ -224,75 +224,29 @@ const createMemoryTool = (userId) => {
 };
 ```
 
-And we can add blob storage to save and retrieve previous messages per-thread and per-user:
+
+And we can add the tools to our agent to have both threading and long-term memory in a just a few lines of code:
 
 ```tsx
-// Chat history persistence using blobs
-const getChatHistory = async (userId, threadId) => {
-  // Automatically organized by user and conversation
-  const blob = useBlob(`chats/${userId}/${threadId}.json`);
-  return (await blob.getJSON()) ?? [];
-};
+// Create memory search tool for this user
+const { searchMemoryTool, addMemoryTool } = createMemoryTools(userId);
 
-const saveChatHistory = async (userId, threadId, history) => {
-  const blob = useBlob(`chats/${userId}/${threadId}.json`);
-  await blob.putJSON(history);
-};
-```
-
-Combining it all together we have a stateful agent with chat history and long-term per-user memory:
-
-```tsx
-// Complete agent with memory and chat history
-const MemoryEnabledAgent = gensx.Component(
-  "ChatAgent",
-  async ({ userId, threadId, message }) => {
-    // Get chat history from blob storage
-    const chatHistory = await getChatHistory(userId, threadId);
-
-    // Create memory search tool for this user
-    const { searchMemoryTool, addMemoryTool } = createMemoryTools(userId);
-
-    // Run the chat completion with memory tool access
-    const response = await ChatCompletion.run({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: "You are a helpful personal assistant" },
-        ...chatHistory,
-        { role: "user", content: message },
-      ],
-      tools: [searchMemoryTool, addMemoryTool],
-    });
-
-    // Update and save conversation history
-    chatHistory.push({ role: "user", content: message });
-    chatHistory.push({ role: "assistant", content: response });
-    await saveChatHistory(userId, threadId, chatHistory);
-
-    return response;
-  },
-);
+// Run the chat completion with memory tool access
+const response = await ChatCompletion.run({
+  model: "gpt-4o",
+  messages: [
+    { role: "system", content: "You are a helpful personal assistant" },
+    ...chatHistory,
+    { role: "user", content: message },
+  ],
+  tools: [searchMemoryTool, addMemoryTool],
+});
 ```
 
 With one command we can deploy this agent as a REST API running on serverless infrastructure with 10ms cold starts 60 minute execution timeouts.
 
 ```bash
 $ npx gensx deploy ./src/workflows.tsx
-```
-
-And just like that, each workflow in your project is deployed as a set of REST APIs. Each workflow includes a standard `POST` endpoint for synchronous and streaming invocations to power user-facing apps as well as a `/start` endpoint for long-running background jobs.
-
-```
-✔ Building workflow using Docker
-✔ Generating schema
-✔ Successfully deployed project to GenSX Cloud
-
-Available workflows:
-- ChatAgent
-- TextToSQLWorkflow
-- RAGWorkflow
-
-Dashboard: https://app.gensx.com/gensx/your-project/default/workflows
 ```
 
 And we can run our talk to our agent from the CLI:
@@ -302,7 +256,7 @@ $ gensx run ChatAgent \
   --input '{
     "userId": "abc",
     "threadId": "123",
-    "message": "what time is my appointment on monday?"
+    "message": "Remember that I'm speaking at a meetup on Wednesday at 6pm."
   }'
 ```
 
@@ -316,7 +270,7 @@ $ curl -X POST \
   -d '{
     "userId": "abc",
     "threadId": "123",
-    "message": "what time is my appointment on monday?"
+    "message": "what time is my meetup of wednesday?"
   }'
 ```
 
@@ -330,7 +284,7 @@ $ curl -X POST \
   -d '{
     "userId": "abc",
     "threadId": "123",
-    "message": "what time is my appointment on monday?"
+    "message": "where is wednesday's meetup?"
   }'
 ```
 
@@ -352,6 +306,8 @@ We can even connect it to MCP compatible tools like Claude desktop or cursor:
   }
 }
 ```
+
+GenSX makes it easy to consume your workflows wherever you need them, whether you are building user-facing chat apps, background jobs for data processing and ingestion, or internal tools.
 
 ## Agents are just workflows (and abstractions are dangerous)
 
