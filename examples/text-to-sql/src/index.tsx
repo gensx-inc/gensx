@@ -1,5 +1,4 @@
-import { initializeBaseballDatabase } from "./data-ingestion.js";
-import { DatabaseWorkflow } from "./workflows.js";
+import { InitializeDatabase, TextToSqlWorkflow } from "./workflows.js";
 
 // Get the question from command line arguments
 const question = process.argv[2];
@@ -12,12 +11,12 @@ if (!question) {
 
 // First, initialize the database
 console.log("Initializing database...");
-const initMessage = await initializeBaseballDatabase();
+const initMessage = await InitializeDatabase.run({});
 console.log(initMessage);
 
 // Then run the query
 console.log("Processing your question...");
-const result = await DatabaseWorkflow.run({
+const result = await TextToSqlWorkflow.run({
   question,
 });
 

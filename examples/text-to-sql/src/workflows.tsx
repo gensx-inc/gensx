@@ -3,6 +3,8 @@ import { GSXChatCompletion, GSXTool, OpenAIProvider } from "@gensx/openai";
 import { DatabaseProvider, useDatabase } from "@gensx/storage";
 import { z } from "zod";
 
+import { InitializeDatabase } from "./data-ingestion.js";
+
 // Define the query tool schema
 const querySchema = z.object({
   query: z.string().describe("The SQL query to execute"),
@@ -23,8 +25,8 @@ const queryTool = new GSXTool({
 });
 
 // SQL Copilot component that wraps GSXChatCompletion
-const SqlCopilot = gensx.Component<{ question: string }, string>(
-  "SqlCopilot",
+const SQLCopilot = gensx.Component<{ question: string }, string>(
+  "SQLCopilot",
   ({ question }) => (
     <GSXChatCompletion
       messages={[
@@ -64,26 +66,26 @@ const SqlCopilot = gensx.Component<{ question: string }, string>(
   ),
 );
 
-interface DatabaseWorkflowProps {
+interface TextToSqlWorkflowProps {
   question: string;
 }
 
 // Main workflow component
-const DatabaseWorkflowComponent = gensx.Component<
-  DatabaseWorkflowProps,
+const TextToSqlWorkflowComponent = gensx.Component<
+  TextToSqlWorkflowProps,
   string
->("DatabaseWorkflowComponent", ({ question }) => (
+>("TextToSqlWorkflowComponent", ({ question }) => (
   <DatabaseProvider>
     <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <SqlCopilot question={question} />
+      <SQLCopilot question={question} />
     </OpenAIProvider>
   </DatabaseProvider>
 ));
 
 // Create the workflow
-const DatabaseWorkflow = gensx.Workflow(
-  "DatabaseWorkflow",
-  DatabaseWorkflowComponent,
+const TextToSqlWorkflow = gensx.Workflow(
+  "TextToSqlWorkflow",
+  TextToSqlWorkflowComponent,
 );
 
-export { DatabaseWorkflow };
+export { TextToSqlWorkflow, InitializeDatabase };
