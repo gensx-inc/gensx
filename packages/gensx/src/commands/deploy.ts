@@ -115,7 +115,7 @@ export async function deploy(file: string, options: DeployOptions) {
     console.info(`
 ${pc.green("✔")} Successfully deployed project to GenSX Cloud
 
-${pc.bold("Dashboard:")} ${pc.cyan(`${auth.consoleBaseUrl}/${auth.org}/${deployment.projectName}/${deployment.environmentName}/workflows?${deploymentIdOption}`)}
+${pc.bold("Dashboard:")} ${pc.cyan(`${auth.consoleBaseUrl}/${auth.org}/workflows?${deploymentIdOption}`)}
 
 ${pc.bold("Available workflows:")}
 ${deployment.workflows
