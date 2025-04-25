@@ -15,7 +15,7 @@ export async function runWorkflow(
     input: string;
     wait: boolean;
     project?: string;
-    environment?: string;
+    env?: string;
     output?: string;
   },
 ) {
@@ -29,6 +29,7 @@ export async function runWorkflow(
       );
       process.exit(1);
     }
+
     const inputJson = JSON.parse(input) as Record<string, unknown>;
 
     const auth = await getAuth();
@@ -55,7 +56,7 @@ export async function runWorkflow(
     // Get environment using the utility function - user will either confirm or select environment
     const environmentName = await getEnvironmentForOperation(
       projectName,
-      options.environment,
+      options.env,
       spinner,
       false,
     );
