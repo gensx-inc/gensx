@@ -7,8 +7,9 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "nodemon",
-    "start": "tsx ./src/index.tsx",
-    "build": "tsc"
+    "dev": "tsx ./src/index.tsx",
+    "start": "npx gensx start ./src/workflows.tsx",
+    "build": "tsc",
+    "deploy": "npx gensx deploy -ev OPENAI_API_KEY ./src/workflows.tsx"
   }
 }

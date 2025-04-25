@@ -84,7 +84,7 @@ suite("create-gensx", () => {
     }
 
     // Run the project and capture its output
-    const { stdout: runOutput } = await exec("npm start", {
+    const { stdout: runOutput } = await exec("npm run dev", {
       cwd: projectPath,
     });
 
