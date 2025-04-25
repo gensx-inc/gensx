@@ -7,12 +7,14 @@ This example shows you how to build a chat application with persistent memory us
 The ChatMemoryWorkflow takes a `threadId` and a `message` as inputs. Each chat thread maintains its own conversation history, enabling context-aware responses across multiple interactions.
 
 Here's what happens when you run the workflow:
+
 1. The system loads any existing chat history for your specified thread
 2. Your message and chat history are processed using GPT-4o-mini
 3. The updated conversation history is saved
 4. The assistant's response is displayed
 
 The workflow uses:
+
 - `@gensx/core` for workflow management
 - `@gensx/openai` for OpenAI integration
 - `@gensx/storage` for persistent chat history storage
@@ -21,9 +23,9 @@ The workflow uses:
 
 1. Log in to GenSX (if you haven't already):
 
-    ```bash
-    npx gensx login
-    ```
+   ```bash
+   npx gensx login
+   ```
 
 2. Install the required dependencies:
 
