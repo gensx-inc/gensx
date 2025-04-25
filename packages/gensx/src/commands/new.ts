@@ -393,7 +393,7 @@ To get started:
   ${projectPath !== "." ? pc.cyan(`cd ${projectPath}`) : ""}
   ${pc.cyan(template.runCommand)}
 
-Edit ${pc.cyan("src/index.tsx")} to start building your GenSX application.`);
+Edit ${pc.cyan("src/workflows.tsx")} to start building your GenSX application.`);
 
       // When ready to deploy:
       //   ${pc.cyan(`gensx deploy <file>`)}
