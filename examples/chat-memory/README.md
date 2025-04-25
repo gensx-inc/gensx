@@ -61,39 +61,36 @@ To run the workflow in the GenSX Cloud, follow these steps:
    ```
 
 
-The deploy command will also print out a URL to the [GenSX console](https://app.gensx.com) where you can view the workflow, test it, and get code snippets to use in your own projects.
+After you deploy, you can also navigate to the [GenSX console](https://app.gensx.com) to see the workflow, test it, view traces, and get code snippets to use in your own projects.
 
 ## Run the workflow locally
 
-To develop locally, you can either run the workflow directly by running the `src/index.tsx` file or use the local dev server to test the workflow APIs.
-
 ### Test the workflow directly
 
-1. Run the workflow:
+You can run the workflow directly using the `src/index.tsx` file:
 
-   ```bash
-   pnpm dev thread-1 "What is the capital of France?"
-   ```
+```bash
+pnpm dev thread-1 "What is the capital of France?"
+```
 
 
 ### Test the workflow API
 
-1. Start the local dev server:
+Alternatively, you can test the workflow APIs using the local dev server:
 
-   ```bash
-   pnpm start
+```bash
+pnpm start
+```
+
+This will start a local API server and you can call the workflow API via curl or any HTTP client:
+
+```bash
+curl -X POST http://localhost:1337/workflows/ChatMemoryWorkflow \
+  -H "Content-Type: application/json" \
+  -d '{
+    "threadId": "thread-1",
+    "message": "Hello, how are you?"
+  }'
    ```
 
-
-2. Call the workflow API:
-
-   ```bash
-   curl -X POST http://localhost:1337/workflows/ChatMemoryWorkflow \
-     -H "Content-Type: application/json" \
-     -d '{
-       "threadId": "thread-1",
-       "message": "Hello, how are you?"
-     }'
-   ```
-
-   Alternatively, you can navigate to the swagger UI at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.
+A swagger UI will also be available at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.
