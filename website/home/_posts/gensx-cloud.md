@@ -224,7 +224,6 @@ const createMemoryTool = (userId) => {
 };
 ```
 
-
 And we can add the tools to our agent to have both threading and long-term memory in a just a few lines of code:
 
 ```tsx
