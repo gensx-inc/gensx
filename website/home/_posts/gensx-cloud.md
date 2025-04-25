@@ -38,8 +38,8 @@ const ChatAgent = gensx.Component(
       messages: [
         { role: "system", content: "You are a helpful assistant." },
         ...history,
-        { role: "user", content: message }
-      ]
+        { role: "user", content: message },
+      ],
     });
 
     // Save the updated conversation
@@ -48,7 +48,7 @@ const ChatAgent = gensx.Component(
     await blob.putJSON(history);
 
     return response;
-  }
+  },
 );
 ```
 
