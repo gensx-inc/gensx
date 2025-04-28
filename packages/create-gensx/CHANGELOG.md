@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.37](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.36...create-gensx-v0.1.37) (2025-04-28)
+
+
+### ✨ New Features
+
+* updating template project to be deployable ([#632](https://github.com/gensx-inc/gensx/issues/632)) ([41fa055](https://github.com/gensx-inc/gensx/commit/41fa05506b9d67f3acf666d3e8dfea2b73353f4b)), closes [#586](https://github.com/gensx-inc/gensx/issues/586)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.3.25
+
 ## [0.1.36](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.35...create-gensx-v0.1.36) (2025-04-24)
 
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.8](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.7...gensx-storage-v0.0.8) (2025-04-28)
+
+
+### ✨ New Features
+
+* adding createdAt to listDatabases response ([#638](https://github.com/gensx-inc/gensx/issues/638)) ([5b16c03](https://github.com/gensx-inc/gensx/commit/5b16c039dfbfb2015d0b3c4a9e50acb495dab152))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.11
+
 ## [0.0.7](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.6...gensx-storage-v0.0.7) (2025-04-24)
 
 

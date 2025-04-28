@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.25](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.24...gensx-v0.3.25) (2025-04-28)
+
+
+### ✨ New Features
+
+* updating dev server to be at parity with prod APIs ([#626](https://github.com/gensx-inc/gensx/issues/626)) ([74a4ce6](https://github.com/gensx-inc/gensx/commit/74a4ce6f763969ce431479c0c51e46b7ed0f990e))
+* updating template project to be deployable ([#632](https://github.com/gensx-inc/gensx/issues/632)) ([41fa055](https://github.com/gensx-inc/gensx/commit/41fa05506b9d67f3acf666d3e8dfea2b73353f4b)), closes [#586](https://github.com/gensx-inc/gensx/issues/586)
+
+
+### 🐛 Bug Fixes
+
+* fixing env in run command and allowing empty inputs ([#633](https://github.com/gensx-inc/gensx/issues/633)) ([abfce37](https://github.com/gensx-inc/gensx/commit/abfce37b8cf4fc4c3e341a13c89defe0f20f4a74))
+
 ## [0.3.24](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.23...gensx-v0.3.24) (2025-04-24)
 
 

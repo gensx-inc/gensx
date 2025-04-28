@@ -1,6 +1,6 @@
 {
   "name": "@gensx/core",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "description": "Build AI workflows using JSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",

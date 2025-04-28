@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.11](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.10...gensx-core-v0.3.11) (2025-04-28)
+
+
+### 🐛 Bug Fixes
+
+* fixing the execution trace url that's printed ([#629](https://github.com/gensx-inc/gensx/issues/629)) ([42eaa03](https://github.com/gensx-inc/gensx/commit/42eaa032289e0458a63431f3a2066c948b80c260)), closes [#617](https://github.com/gensx-inc/gensx/issues/617)
+
 ## [0.3.10](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.9...gensx-core-v0.3.10) (2025-04-24)
 
 
