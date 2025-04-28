@@ -19,14 +19,14 @@
     "@gensx/openai": "^0.1.25",
     "@gensx/core": "^0.3.10",
     "@gensx/storage": "^0.0.7",
-    "openai": "^4.87.4",
-    "zod": "^3.24.2"
+    "openai": "^4.96.0",
+    "zod": "^3.24.3"
   },
   "devDependencies": {
-    "@types/node": "^22",
-    "eslint": "^9.23.0",
-    "nodemon": "^3.1.9",
+    "@types/node": "^20",
+    "eslint": "^9.25.1",
+    "nodemon": "^3.1.10",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.8.3"
   }
 }

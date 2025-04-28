@@ -16,7 +16,7 @@
   "dependencies": {
     "@gensx/anthropic": "workspace:*",
     "@gensx/core": "workspace:*",
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/sdk": "^0.40.1",
     "zod": "catalog:"
   },
   "devDependencies": {
