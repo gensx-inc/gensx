@@ -64,7 +64,7 @@ export class DatabaseClient {
    * @returns A Promise resolving to an array of database names and optional next cursor
    */
   async listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
-    databases: string[];
+    databases: { name: string; createdAt: Date }[];
     nextCursor?: string;
   }> {
     return this.storage.listDatabases(options);
@@ -86,6 +86,6 @@ export class DatabaseClient {
    */
   async databaseExists(name: string): Promise<boolean> {
     const result = await this.storage.listDatabases();
-    return result.databases.includes(name);
+    return result.databases.some((db) => db.name === name);
   }
 }

@@ -280,14 +280,20 @@ suite("RemoteDatabaseStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        databases: ["test-db1", "test-db2"],
+        databases: [
+          { name: "test-db1", createdAt: "2024-01-01T00:00:00.000Z" },
+          { name: "test-db2", createdAt: "2024-01-02T00:00:00.000Z" },
+        ],
         nextCursor: "next-page-token",
       }),
     });
 
     const result = await storage.listDatabases();
 
-    expect(result.databases).toEqual(["test-db1", "test-db2"]);
+    expect(result.databases).toEqual([
+      { name: "test-db1", createdAt: new Date("2024-01-01T00:00:00.000Z") },
+      { name: "test-db2", createdAt: new Date("2024-01-02T00:00:00.000Z") },
+    ]);
     expect(result.nextCursor).toBe("next-page-token");
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/database",
@@ -308,7 +314,10 @@ suite("RemoteDatabaseStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        databases: ["db1", "db2"],
+        databases: [
+          { name: "db1", createdAt: "2024-01-01T00:00:00.000Z" },
+          { name: "db2", createdAt: "2024-01-02T00:00:00.000Z" },
+        ],
         nextCursor: "page2",
       }),
     });
@@ -318,14 +327,20 @@ suite("RemoteDatabaseStorage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        databases: ["db3", "db4"],
+        databases: [
+          { name: "db3", createdAt: "2024-01-03T00:00:00.000Z" },
+          { name: "db4", createdAt: "2024-01-04T00:00:00.000Z" },
+        ],
         nextCursor: undefined,
       }),
     });
 
     // Get first page
     const firstPage = await storage.listDatabases({ limit: 2 });
-    expect(firstPage.databases).toEqual(["db1", "db2"]);
+    expect(firstPage.databases).toEqual([
+      { name: "db1", createdAt: new Date("2024-01-01T00:00:00.000Z") },
+      { name: "db2", createdAt: new Date("2024-01-02T00:00:00.000Z") },
+    ]);
     expect(firstPage.nextCursor).toBe("page2");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringMatching(/database.*limit=2/),
@@ -337,7 +352,10 @@ suite("RemoteDatabaseStorage", () => {
       limit: 2,
       cursor: firstPage.nextCursor,
     });
-    expect(secondPage.databases).toEqual(["db3", "db4"]);
+    expect(secondPage.databases).toEqual([
+      { name: "db3", createdAt: new Date("2024-01-03T00:00:00.000Z") },
+      { name: "db4", createdAt: new Date("2024-01-04T00:00:00.000Z") },
+    ]);
     expect(secondPage.nextCursor).toBeUndefined();
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringMatching(/database.*limit=2.*cursor=page2/),

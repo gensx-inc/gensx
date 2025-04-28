@@ -260,7 +260,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
   }
 
   async listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
-    databases: string[];
+    databases: { name: string; createdAt: Date }[];
     nextCursor?: string;
   }> {
     try {
@@ -288,12 +288,15 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
       }
 
       const data = (await response.json()) as {
-        databases: string[];
+        databases: { name: string; createdAt: string }[];
         nextCursor?: string;
       };
 
       return {
-        databases: data.databases.map((db) => decodeURIComponent(db)),
+        databases: data.databases.map((db) => ({
+          name: decodeURIComponent(db.name),
+          createdAt: new Date(db.createdAt),
+        })),
         ...(data.nextCursor && { nextCursor: data.nextCursor }),
       };
     } catch (err) {

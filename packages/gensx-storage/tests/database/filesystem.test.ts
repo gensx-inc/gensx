@@ -110,10 +110,10 @@ suite("FileSystemDatabaseStorage", () => {
 
     // List should include all databases
     const result = await storage.listDatabases();
-    expect(result.databases).toContain("db1");
-    expect(result.databases).toContain("db2");
-    expect(result.databases).toContain("db3");
-    expect(result.databases.length).toBe(3);
+    expect(result.databases).toHaveLength(3);
+    expect(result.databases.map((db) => db.name)).toContain("db1");
+    expect(result.databases.map((db) => db.name)).toContain("db2");
+    expect(result.databases.map((db) => db.name)).toContain("db3");
     expect(result.nextCursor).toBeUndefined();
   });
 
@@ -129,7 +129,9 @@ suite("FileSystemDatabaseStorage", () => {
 
     // Test first page
     const firstPage = await storage.listDatabases({ limit: 2 });
-    expect(firstPage.databases).toEqual(["db1", "db2"]);
+    expect(firstPage.databases).toHaveLength(2);
+    expect(firstPage.databases[0].name).toBe("db1");
+    expect(firstPage.databases[1].name).toBe("db2");
     expect(firstPage.nextCursor).toBeDefined();
 
     // Test second page using cursor
@@ -137,7 +139,9 @@ suite("FileSystemDatabaseStorage", () => {
       limit: 2,
       cursor: firstPage.nextCursor,
     });
-    expect(secondPage.databases).toEqual(["db3", "db4"]);
+    expect(secondPage.databases).toHaveLength(2);
+    expect(secondPage.databases[0].name).toBe("db3");
+    expect(secondPage.databases[1].name).toBe("db4");
     expect(secondPage.nextCursor).toBeDefined();
 
     // Test last page
@@ -145,7 +149,8 @@ suite("FileSystemDatabaseStorage", () => {
       limit: 2,
       cursor: secondPage.nextCursor,
     });
-    expect(lastPage.databases).toEqual(["db5"]);
+    expect(lastPage.databases).toHaveLength(1);
+    expect(lastPage.databases[0].name).toBe("db5");
     expect(lastPage.nextCursor).toBeUndefined();
   });
 
@@ -176,7 +181,9 @@ suite("FileSystemDatabaseStorage", () => {
     const result = await storage.listDatabases({
       cursor: toBase64UrlSafe("db1"),
     });
-    expect(result.databases).toEqual(["db2", "db3"]);
+    expect(result.databases).toHaveLength(2);
+    expect(result.databases[0].name).toBe("db2");
+    expect(result.databases[1].name).toBe("db3");
     expect(result.nextCursor).toBeUndefined();
   });
 

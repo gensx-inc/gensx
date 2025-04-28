@@ -327,7 +327,7 @@ export class FileSystemDatabaseStorage implements DatabaseStorage {
   }
 
   async listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
-    databases: string[];
+    databases: { name: string; createdAt: Date }[];
     nextCursor?: string;
   }> {
     try {
@@ -361,8 +361,20 @@ export class FileSystemDatabaseStorage implements DatabaseStorage {
         dbFiles = limitedFiles;
       }
 
+      // Get creation dates for each database file
+      const databases = await Promise.all(
+        dbFiles.map(async (file) => {
+          const filePath = path.join(this.rootPath, `${file}.db`);
+          const stats = await fs.stat(filePath);
+          return {
+            name: file,
+            createdAt: stats.birthtime,
+          };
+        }),
+      );
+
       return {
-        databases: dbFiles,
+        databases,
         ...(nextCursor && { nextCursor }),
       };
     } catch (err) {

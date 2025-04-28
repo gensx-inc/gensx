@@ -216,7 +216,7 @@ export interface DatabaseStorage {
    * @returns Promise with array of database names and optional next cursor for pagination
    */
   listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
-    databases: string[];
+    databases: { name: string; createdAt: Date }[];
     nextCursor?: string;
   }>;
 
