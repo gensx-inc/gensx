@@ -79,6 +79,10 @@ export async function deploy(file: string, options: DeployOptions) {
 
     form.append("schemas", JSON.stringify(schemas));
 
+    if (projectConfig?.description) {
+      form.append("description", projectConfig.description);
+    }
+
     // Use the project-specific deploy endpoint
     const url = new URL(
       `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environmentName)}/deploy`,

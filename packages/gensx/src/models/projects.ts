@@ -51,6 +51,7 @@ interface CreateProjectResponse {
 export async function createProject(
   projectName: string,
   environmentName?: string,
+  description?: string,
 ): Promise<CreateProjectResponse> {
   const auth = await getAuth();
   if (!auth) {
@@ -65,12 +66,16 @@ export async function createProject(
 
   const url = new URL(`/org/${auth.org}/projects`, auth.apiBaseUrl);
 
-  let body: { name: string; environmentName?: string } = {
+  let body: { name: string; environmentName?: string; description?: string } = {
     name: projectName,
   };
 
   if (environmentName) {
     body.environmentName = environmentName;
+  }
+
+  if (description) {
+    body.description = description;
   }
 
   const response = await fetch(url.toString(), {

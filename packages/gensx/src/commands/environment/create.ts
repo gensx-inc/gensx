@@ -21,8 +21,8 @@ export async function handleCreateEnvironment(
   const spinner = ora();
 
   let projectName = options.project;
+  const projectConfig = await readProjectConfig(process.cwd());
   if (!projectName) {
-    const projectConfig = await readProjectConfig(process.cwd());
     if (projectConfig?.projectName) {
       projectName = projectConfig.projectName;
       spinner.info(
@@ -53,7 +53,11 @@ export async function handleCreateEnvironment(
 
     if (shouldCreateProject) {
       spinner.start("Creating project and environment...");
-      await createProject(projectName, environmentName);
+      await createProject(
+        projectName,
+        environmentName,
+        projectConfig?.description,
+      );
       spinner.succeed(
         `Project ${pc.cyan(projectName)} and environment ${pc.cyan(
           environmentName,

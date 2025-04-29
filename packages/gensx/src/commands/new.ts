@@ -284,12 +284,30 @@ export async function newProject(
       }
       spinner.succeed();
 
+      // Prompt for description if not provided
+      let description = options.description;
+      if (!description) {
+        try {
+          const prompter = enquirer as PromptModule;
+          const response = await prompter.prompt<{ description: string }>({
+            type: "input",
+            name: "description",
+            message: "Enter a project description (or press enter to skip):",
+            initial: "",
+          });
+          description = response.description || undefined;
+        } catch (_error) {
+          // If user cancels, continue without a description
+          description = undefined;
+        }
+      }
+
       spinner.start("Creating project configuration file");
       const projectName = path.basename(absoluteProjectPath);
       await saveProjectConfig(
         {
           projectName,
-          description: options.description,
+          ...(description && { description }),
         },
         absoluteProjectPath,
       );
