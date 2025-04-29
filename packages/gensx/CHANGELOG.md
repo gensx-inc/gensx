@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.26](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.25...gensx-v0.3.26) (2025-04-29)
+
+
+### 🐛 Bug Fixes
+
+* Remove gating for deploy/environment/etc. ([#642](https://github.com/gensx-inc/gensx/issues/642)) ([76ec7c4](https://github.com/gensx-inc/gensx/commit/76ec7c433149d006a159ccd1b3ee00bddb7bee1e))
+
 ## [0.3.25](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.24...gensx-v0.3.25) (2025-04-28)
 
 
