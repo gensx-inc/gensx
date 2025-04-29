@@ -46,6 +46,7 @@ suite("create-gensx", () => {
       force: false,
       skipLogin: true,
       skipIdeRules: true, // Skip IDE rules selection in tests
+      description: "A test TypeScript project", // Add description to skip the prompt
     });
 
     // Update package.json to use local version of @gensx/core and @gensx/openai
@@ -103,6 +104,7 @@ suite("create-gensx", () => {
       force: false,
       skipLogin: true,
       skipIdeRules: true,
+      description: "A test project with AI assistant integrations", // Add description to skip the prompt
     };
 
     // Create the project with AI assistant integrations
