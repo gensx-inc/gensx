@@ -2,8 +2,8 @@ import { mkdir } from "fs/promises";
 import { join } from "path";
 
 import { Component } from "@gensx/core";
-import { getProjectAndEnvironment } from "src/utils/config.js";
 
+import { getProjectAndEnvironment } from "../utils/config.js";
 import { DatabaseContext } from "./context.js";
 import { FileSystemDatabaseStorage } from "./filesystem.js";
 import { RemoteDatabaseStorage } from "./remote.js";

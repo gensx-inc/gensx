@@ -1,5 +1,4 @@
-import { getProjectAndEnvironment } from "src/utils/config.js";
-
+import { getProjectAndEnvironment } from "../utils/config.js";
 import { SearchStorage } from "./remote.js";
 import {
   DeleteNamespaceResult,

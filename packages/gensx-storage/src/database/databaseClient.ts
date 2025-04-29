@@ -1,7 +1,6 @@
 import { join } from "path";
 
-import { getProjectAndEnvironment } from "src/utils/config.js";
-
+import { getProjectAndEnvironment } from "../utils/config.js";
 import { FileSystemDatabaseStorage } from "./filesystem.js";
 import { RemoteDatabaseStorage } from "./remote.js";
 import {

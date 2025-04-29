@@ -37,21 +37,27 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should initialize with environment variables", () => {
-    expect(() => new RemoteBlobStorage()).not.toThrow();
+    expect(
+      () => new RemoteBlobStorage("test-project", "test-environment"),
+    ).not.toThrow();
   });
 
   test("should throw if API key is missing", () => {
     delete process.env.GENSX_API_KEY;
-    expect(() => new RemoteBlobStorage()).toThrow("GENSX_API_KEY");
+    expect(
+      () => new RemoteBlobStorage("test-project", "test-environment"),
+    ).toThrow("GENSX_API_KEY");
   });
 
   test("should throw if organization ID is missing", () => {
     delete process.env.GENSX_ORG;
-    expect(() => new RemoteBlobStorage()).toThrow("Organization ID");
+    expect(
+      () => new RemoteBlobStorage("test-project", "test-environment"),
+    ).toThrow("Organization must");
   });
 
   test("should get JSON from a blob", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const mockData = { foo: "bar" };
     const mockStringContent = JSON.stringify(mockData);
 
@@ -72,7 +78,7 @@ suite("RemoteBlobStorage", () => {
 
     expect(result).toEqual(mockData);
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/test-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/test-key",
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: "Bearer test-api-key",
@@ -82,7 +88,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should parse JSON string content from API response", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const mockData = { messages: [{ role: "user", content: "Hello" }] };
     const mockStringContent = JSON.stringify(mockData);
 
@@ -111,7 +117,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should handle non-existent blobs", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
 
     mockFetch.mockResolvedValueOnce({
       ok: false,
@@ -125,7 +131,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should put JSON to a blob", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const data = { foo: "bar" };
 
     mockFetch.mockResolvedValueOnce({
@@ -145,7 +151,7 @@ suite("RemoteBlobStorage", () => {
 
     expect(result.etag).toBe("mock-etag");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/test-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/test-key",
       expect.objectContaining({
         method: "PUT",
         headers: expect.objectContaining({
@@ -165,7 +171,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should list blobs with prefix", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const mockKeys = ["key1", "key2", "key3"];
 
     mockFetch.mockResolvedValueOnce({
@@ -181,7 +187,7 @@ suite("RemoteBlobStorage", () => {
     expect(result.keys).toEqual(mockKeys);
     expect(result.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?prefix=test-prefix&limit=100",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=test-prefix&limit=100",
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -192,7 +198,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should handle pagination with limit", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
 
     // Mock first page response
     mockFetch.mockResolvedValueOnce({
@@ -207,7 +213,7 @@ suite("RemoteBlobStorage", () => {
     expect(firstPage.keys).toEqual(["key1", "key2"]);
     expect(firstPage.nextCursor).toBe("page1cursor");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?limit=2",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?limit=2",
       expect.any(Object),
     );
 
@@ -227,13 +233,13 @@ suite("RemoteBlobStorage", () => {
     expect(secondPage.keys).toEqual(["key3"]);
     expect(secondPage.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?limit=2&cursor=page1cursor",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?limit=2&cursor=page1cursor",
       expect.any(Object),
     );
   });
 
   test("should handle pagination with prefix", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
 
     // Mock first page response
     mockFetch.mockResolvedValueOnce({
@@ -251,7 +257,7 @@ suite("RemoteBlobStorage", () => {
     expect(firstPage.keys).toEqual(["prefix/key1", "prefix/key2"]);
     expect(firstPage.nextCursor).toBe("page1cursor");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?prefix=prefix&limit=2",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=prefix&limit=2",
       expect.any(Object),
     );
 
@@ -272,13 +278,13 @@ suite("RemoteBlobStorage", () => {
     expect(secondPage.keys).toEqual(["prefix/key3"]);
     expect(secondPage.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?prefix=prefix&limit=2&cursor=page1cursor",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=prefix&limit=2&cursor=page1cursor",
       expect.any(Object),
     );
   });
 
   test("should handle empty results with pagination", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -294,7 +300,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should handle default limit in pagination", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
 
     // Generate 100 mock keys
     const mockKeys = Array.from({ length: 100 }, (_, i) => `key${i + 1}`);
@@ -311,7 +317,7 @@ suite("RemoteBlobStorage", () => {
     expect(result.keys).toHaveLength(100); // Default limit
     expect(result.nextCursor).toBe("nextpage");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?limit=100",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?limit=100",
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -322,7 +328,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should delete a blob", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -332,7 +338,7 @@ suite("RemoteBlobStorage", () => {
     await blob.delete();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/test-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/test-key",
       expect.objectContaining({
         method: "DELETE",
         headers: expect.objectContaining({
@@ -343,7 +349,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should check if a blob exists", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -354,7 +360,7 @@ suite("RemoteBlobStorage", () => {
 
     expect(exists).toBe(true);
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/exists-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/exists-key",
       expect.objectContaining({
         method: "HEAD",
         headers: expect.objectContaining({
@@ -365,7 +371,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should put string to a blob", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const data = "Hello, remote world!";
 
     mockFetch.mockResolvedValueOnce({
@@ -380,7 +386,7 @@ suite("RemoteBlobStorage", () => {
 
     expect(result.etag).toBe("mock-etag");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/string-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/string-key",
       expect.objectContaining({
         method: "PUT",
         headers: expect.objectContaining({
@@ -399,7 +405,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should get string from a blob", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const mockData = "Hello, world!";
 
     mockFetch.mockResolvedValueOnce({
@@ -416,7 +422,7 @@ suite("RemoteBlobStorage", () => {
 
     expect(result).toEqual(mockData);
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/test-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/test-key",
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: "Bearer test-api-key",
@@ -426,7 +432,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should get raw data from a blob", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const mockData = Buffer.from("Hello, world!");
     const base64Data = mockData.toString("base64");
 
@@ -457,7 +463,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should get stream from a blob", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const mockData = "Hello, world!";
 
     mockFetch.mockResolvedValueOnce({
@@ -479,7 +485,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should put raw data to a blob", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const data = Buffer.from("Hello, world!");
 
     mockFetch.mockResolvedValueOnce({
@@ -497,7 +503,7 @@ suite("RemoteBlobStorage", () => {
 
     expect(result.etag).toBe("mock-etag");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/test-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/test-key",
       expect.objectContaining({
         method: "PUT",
         headers: expect.objectContaining({
@@ -519,7 +525,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should put stream to a blob", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const data = "Hello, world!";
     const stream = Readable.from(data);
 
@@ -538,7 +544,7 @@ suite("RemoteBlobStorage", () => {
 
     expect(result.etag).toBe("mock-etag");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/test-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/test-key",
       expect.objectContaining({
         method: "PUT",
         headers: expect.objectContaining({
@@ -560,7 +566,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should get blob metadata", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const _mockData = { foo: "bar" };
 
     mockFetch.mockResolvedValueOnce({
@@ -598,7 +604,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should update blob metadata", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -608,7 +614,7 @@ suite("RemoteBlobStorage", () => {
     await blob.updateMetadata({ test: "value" });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/test-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/test-key",
       expect.objectContaining({
         method: "PATCH",
         headers: expect.objectContaining({
@@ -630,7 +636,7 @@ suite("RemoteBlobStorage", () => {
         statusText: "Not Found",
       });
 
-      const storage = new RemoteBlobStorage();
+      const storage = new RemoteBlobStorage("test-project", "test-environment");
       const blob = storage.getBlob<string>("not-found");
 
       const result = await blob.getJSON();
@@ -644,7 +650,7 @@ suite("RemoteBlobStorage", () => {
         statusText: "Bad Request",
       });
 
-      const storage = new RemoteBlobStorage();
+      const storage = new RemoteBlobStorage("test-project", "test-environment");
       const blob = storage.getBlob<string>("api-error");
 
       try {
@@ -665,7 +671,7 @@ suite("RemoteBlobStorage", () => {
         statusText: "Internal Server Error",
       });
 
-      const storage = new RemoteBlobStorage();
+      const storage = new RemoteBlobStorage("test-project", "test-environment");
       const blob = storage.getBlob<string>("server-error");
 
       try {
@@ -681,7 +687,7 @@ suite("RemoteBlobStorage", () => {
     test("should handle network errors", async () => {
       mockFetch.mockRejectedValueOnce(new Error("Network failure"));
 
-      const storage = new RemoteBlobStorage();
+      const storage = new RemoteBlobStorage("test-project", "test-environment");
       const blob = storage.getBlob<string>("network-error");
 
       try {
@@ -702,7 +708,7 @@ suite("RemoteBlobStorage", () => {
         statusText: "Precondition Failed",
       });
 
-      const storage = new RemoteBlobStorage();
+      const storage = new RemoteBlobStorage("test-project", "test-environment");
       const blob = storage.getBlob<string>("etag-mismatch");
       const outdatedEtag = "outdated-etag-value";
 
@@ -725,7 +731,7 @@ suite("RemoteBlobStorage", () => {
         },
       });
 
-      const storage = new RemoteBlobStorage();
+      const storage = new RemoteBlobStorage("test-project", "test-environment");
       const blob = storage.getBlob<string>("no-etag");
 
       try {
@@ -741,7 +747,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should handle default prefix in listBlobs", async () => {
-    const storage = new RemoteBlobStorage("default-prefix");
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const mockKeys = ["default-prefix/key1", "default-prefix/key2"];
 
     mockFetch.mockResolvedValueOnce({
@@ -757,7 +763,7 @@ suite("RemoteBlobStorage", () => {
     expect(result.keys).toEqual(["key1", "key2"]);
     expect(result.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix&limit=100",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=default-prefix&limit=100",
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -768,7 +774,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should combine default prefix with provided prefix in listBlobs", async () => {
-    const storage = new RemoteBlobStorage("default-prefix");
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const mockKeys = ["default-prefix/sub/key1", "default-prefix/sub/key2"];
 
     mockFetch.mockResolvedValueOnce({
@@ -784,7 +790,7 @@ suite("RemoteBlobStorage", () => {
     expect(result.keys).toEqual(["sub/key1", "sub/key2"]);
     expect(result.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob?prefix=default-prefix%2Fsub&limit=100",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=default-prefix%2Fsub&limit=100",
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: "Bearer test-api-key",
@@ -795,7 +801,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should handle content type in put operations", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const data = Buffer.from("Hello, world!");
 
     mockFetch.mockResolvedValueOnce({
@@ -813,7 +819,7 @@ suite("RemoteBlobStorage", () => {
 
     expect(result.etag).toBe("mock-etag");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/test-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/test-key",
       expect.objectContaining({
         method: "PUT",
         headers: expect.objectContaining({
@@ -835,7 +841,7 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should handle stream operations with proper content type", async () => {
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
     const data = "Hello, world!";
     const stream = Readable.from(data);
 
@@ -854,7 +860,7 @@ suite("RemoteBlobStorage", () => {
 
     expect(result.etag).toBe("mock-etag");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/blob/test-key",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob/test-key",
       expect.objectContaining({
         method: "PUT",
         headers: expect.objectContaining({

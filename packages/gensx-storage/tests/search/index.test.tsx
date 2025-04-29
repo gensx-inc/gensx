@@ -38,21 +38,27 @@ suite("GenSX Search Storage", () => {
   });
 
   test("should initialize with environment variables", () => {
-    expect(() => new SearchStorage()).not.toThrow();
+    expect(
+      () => new SearchStorage("test-project", "test-environment"),
+    ).not.toThrow();
   });
 
   test("should throw if API key is missing", () => {
     delete process.env.GENSX_API_KEY;
-    expect(() => new SearchStorage()).toThrow("GENSX_API_KEY");
+    expect(() => new SearchStorage("test-project", "test-environment")).toThrow(
+      "GENSX_API_KEY",
+    );
   });
 
   test("should throw if organization ID is missing", () => {
     delete process.env.GENSX_ORG;
-    expect(() => new SearchStorage()).toThrow("Organization ID");
+    expect(() => new SearchStorage("test-project", "test-environment")).toThrow(
+      "Organization ID",
+    );
   });
 
   test("should implement SearchStorage interface when properly configured", () => {
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
 
     // Check if it implements the SearchStorage interface
     expect(storage).toBeDefined();
@@ -84,7 +90,7 @@ suite("GenSX Search Storage", () => {
       json: async () => ({ created: true, exists: false }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const result = await storage.ensureNamespace("test-ns");
 
     expect(result).toEqual({ created: true, exists: false });
@@ -109,7 +115,7 @@ suite("GenSX Search Storage", () => {
       json: async () => ({ deleted: true }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
 
     // First make sure namespace is in the cache
     storage.getNamespace("test-ns");
@@ -143,7 +149,7 @@ suite("GenSX Search Storage", () => {
       }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const result = await storage.listNamespaces();
 
     expect(result.namespaces).toEqual(["test-ns1", "test-ns2"]);
@@ -165,7 +171,7 @@ suite("GenSX Search Storage", () => {
       status: 200,
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const exists = await storage.namespaceExists("test-ns");
 
     expect(exists).toBe(true);
@@ -186,7 +192,7 @@ suite("GenSX Search Storage", () => {
       status: 404,
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const exists = await storage.namespaceExists("non-existent");
 
     expect(exists).toBe(false);
@@ -202,7 +208,7 @@ suite("GenSX Search Storage", () => {
       ],
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     const results = await namespace.query({
@@ -243,7 +249,7 @@ suite("GenSX Search Storage", () => {
       json: async () => ({ rowsAffected: 2 }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     const vectors = [
@@ -296,7 +302,7 @@ suite("GenSX Search Storage", () => {
       json: async () => ({ rowsAffected: 2 }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     const vectors = [
@@ -345,7 +351,7 @@ suite("GenSX Search Storage", () => {
       json: async () => ({ rowsAffected: 2 }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     const result = await namespace.write({
@@ -379,7 +385,7 @@ suite("GenSX Search Storage", () => {
       json: async () => ({ rowsAffected: 2 }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     const result = await namespace.write({
@@ -419,7 +425,7 @@ suite("GenSX Search Storage", () => {
       }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     const metadata = await namespace.getMetadata();
@@ -451,7 +457,7 @@ suite("GenSX Search Storage", () => {
       }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     const schema = await namespace.getSchema();
@@ -484,7 +490,7 @@ suite("GenSX Search Storage", () => {
       }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     // Use any to work around the Schema type issues
@@ -524,7 +530,7 @@ suite("GenSX Search Storage", () => {
         statusText: "Bad Request",
       });
 
-      const storage = new SearchStorage();
+      const storage = new SearchStorage("test-project", "test-environment");
 
       try {
         await storage.ensureNamespace("api-error");
@@ -544,7 +550,7 @@ suite("GenSX Search Storage", () => {
         statusText: "Internal Server Error",
       });
 
-      const storage = new SearchStorage();
+      const storage = new SearchStorage("test-project", "test-environment");
 
       try {
         await storage.ensureNamespace("server-error");
@@ -560,7 +566,7 @@ suite("GenSX Search Storage", () => {
     test("should handle network errors", async () => {
       mockFetch.mockRejectedValueOnce(new Error("Network failure"));
 
-      const storage = new SearchStorage();
+      const storage = new SearchStorage("test-project", "test-environment");
 
       try {
         await storage.ensureNamespace("network-error");
@@ -580,7 +586,7 @@ suite("GenSX Search Storage", () => {
         statusText: "Not Found",
       });
 
-      const storage = new SearchStorage();
+      const storage = new SearchStorage("test-project", "test-environment");
 
       try {
         await storage.ensureNamespace("missing-data");
@@ -604,7 +610,7 @@ suite("GenSX Search Storage", () => {
       }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const result = await storage.listNamespaces({ prefix: "test" });
 
     expect(result.namespaces).toEqual(["test/ns1", "test/ns2"]);
@@ -636,7 +642,7 @@ suite("GenSX Search Storage", () => {
       }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
 
     // Get first page
     const firstPage = await storage.listNamespaces({ limit: 2 });
@@ -670,7 +676,7 @@ suite("GenSX Search Storage", () => {
       }),
     });
 
-    const storage = new SearchStorage();
+    const storage = new SearchStorage("test-project", "test-environment");
     const result = await storage.listNamespaces({ limit: 10 });
 
     expect(result.namespaces).toEqual([]);

@@ -63,12 +63,16 @@ suite("SearchProvider", () => {
     // Mock environment variables for cloud provider tests
     process.env.GENSX_API_KEY = "test-api-key";
     process.env.GENSX_ORG = "test-org";
+    process.env.GENSX_PROJECT = "test-project";
+    process.env.GENSX_ENV = "test-environment";
   });
 
   afterEach(() => {
     // Clear environment variables
     delete process.env.GENSX_API_KEY;
     delete process.env.GENSX_ORG;
+    delete process.env.GENSX_PROJECT;
+    delete process.env.GENSX_ENV;
   });
 
   test("provides search context to children", async () => {

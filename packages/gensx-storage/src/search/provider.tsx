@@ -1,6 +1,6 @@
 import { Component } from "@gensx/core";
-import { getProjectAndEnvironment } from "src/utils/config.js";
 
+import { getProjectAndEnvironment } from "../utils/config.js";
 import { SearchContext } from "./context.js";
 import { SearchStorage } from "./remote.js";
 import { SearchProviderProps } from "./types.js";
