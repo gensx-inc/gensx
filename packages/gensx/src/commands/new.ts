@@ -296,7 +296,7 @@ export async function newProject(
             initial: "",
           });
           description = response.description || undefined;
-        } catch (_error) {
+        } catch {
           // If user cancels, continue without a description
           description = undefined;
         }

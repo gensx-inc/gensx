@@ -55,10 +55,17 @@ suite("new command", () => {
   });
 
   it("selects AI assistants interactively", async () => {
-    // Mock the prompt response to select Claude and Cursor
-    vi.mocked(enquirer.prompt).mockResolvedValueOnce({
-      assistants: ["@gensx/claude-md", "@gensx/cursor-rules"],
-    });
+    // Mock the prompt responses
+    const promptMock = vi.mocked(enquirer.prompt);
+    promptMock
+      // First call - description
+      .mockResolvedValueOnce({
+        description: "",
+      })
+      // Second call - AI assistants
+      .mockResolvedValueOnce({
+        assistants: ["@gensx/claude-md", "@gensx/cursor-rules"],
+      });
 
     await newProject(path.join(tempDir, "test-project"), {
       template: "ts",
@@ -73,11 +80,15 @@ suite("new command", () => {
   });
 
   it("handles cancellation of AI assistant selection", async () => {
-    // Mock the prompt to simulate user cancellation
-    vi.mocked(enquirer.prompt).mockRejectedValueOnce({
-      name: "Error",
-      message: "canceled",
-    });
+    // Mock the prompt responses
+    const promptMock = vi.mocked(enquirer.prompt);
+    promptMock
+      // First call - description
+      .mockResolvedValueOnce({
+        description: "",
+      })
+      // Second call - AI assistants (cancelled)
+      .mockRejectedValueOnce(new Error("canceled"));
 
     await newProject(path.join(tempDir, "test-project"), {
       template: "ts",
@@ -93,15 +104,22 @@ suite("new command", () => {
   });
 
   it("selects all AI assistants when 'all' is chosen", async () => {
-    // Mock the prompt to select 'all' assistants
-    vi.mocked(enquirer.prompt).mockResolvedValueOnce({
-      assistants: [
-        "@gensx/claude-md",
-        "@gensx/cursor-rules",
-        "@gensx/cline-rules",
-        "@gensx/windsurf-rules",
-      ],
-    });
+    // Mock the prompt responses
+    const promptMock = vi.mocked(enquirer.prompt);
+    promptMock
+      // First call - description
+      .mockResolvedValueOnce({
+        description: "",
+      })
+      // Second call - AI assistants
+      .mockResolvedValueOnce({
+        assistants: [
+          "@gensx/claude-md",
+          "@gensx/cursor-rules",
+          "@gensx/cline-rules",
+          "@gensx/windsurf-rules",
+        ],
+      });
 
     await newProject(path.join(tempDir, "test-project"), {
       template: "ts",
@@ -115,5 +133,71 @@ suite("new command", () => {
     expect(exec).toHaveBeenCalledWith("npx @gensx/cursor-rules");
     expect(exec).toHaveBeenCalledWith("npx @gensx/cline-rules");
     expect(exec).toHaveBeenCalledWith("npx @gensx/windsurf-rules");
+  });
+
+  it("handles project description input", async () => {
+    // Mock the prompt responses
+    const promptMock = vi.mocked(enquirer.prompt);
+    promptMock
+      // First call - description
+      .mockResolvedValueOnce({
+        description: "A test project description",
+      })
+      // Second call - AI assistants
+      .mockResolvedValueOnce({
+        assistants: ["@gensx/claude-md"],
+      });
+
+    await newProject(path.join(tempDir, "test-project"), {
+      template: "ts",
+      force: false,
+      skipLogin: true,
+      skipIdeRules: false,
+    });
+
+    // Verify project was created successfully
+    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
+  });
+
+  it("handles cancellation of description prompt", async () => {
+    // Mock the prompt responses
+    const promptMock = vi.mocked(enquirer.prompt);
+    promptMock
+      // First call - description (cancelled)
+      .mockRejectedValueOnce(new Error("canceled"))
+      // Second call - AI assistants
+      .mockResolvedValueOnce({
+        assistants: ["@gensx/claude-md"],
+      });
+
+    await newProject(path.join(tempDir, "test-project"), {
+      template: "ts",
+      force: false,
+      skipLogin: true,
+      skipIdeRules: false,
+    });
+
+    // Verify project was still created successfully
+    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
+  });
+
+  it("uses provided description without prompting", async () => {
+    // Mock the prompt response - only for AI assistants since description is provided
+    vi.mocked(enquirer.prompt).mockResolvedValueOnce({
+      assistants: ["@gensx/claude-md"],
+    });
+
+    await newProject(path.join(tempDir, "test-project"), {
+      template: "ts",
+      force: false,
+      skipLogin: true,
+      skipIdeRules: false,
+      description: "Pre-provided description",
+    });
+
+    // Verify project was created successfully
+    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
+    // Verify description prompt was not shown
+    expect(enquirer.prompt).toHaveBeenCalledTimes(1); // Only for AI assistants
   });
 });
