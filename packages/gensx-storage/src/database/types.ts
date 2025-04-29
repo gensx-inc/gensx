@@ -253,6 +253,16 @@ export interface BaseDatabaseProviderProps {
    * Storage kind
    */
   kind?: DatabaseStorageKind;
+
+  /**
+   * Project name
+   */
+  project?: string;
+
+  /**
+   * Environment name
+   */
+  environment?: string;
 }
 
 /**

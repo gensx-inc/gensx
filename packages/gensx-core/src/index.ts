@@ -16,4 +16,6 @@ export type {
   GSXToolAnySchema,
 } from "./types.js";
 export type { GsxArray } from "./array.js";
-export { readConfig } from "./config.js";
+export { readConfig } from "./utils/config.js";
+export { getSelectedEnvironment } from "./utils/env-config.js";
+export { readProjectConfig } from "./utils/project-config.js";

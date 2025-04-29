@@ -1,5 +1,7 @@
 import { join } from "path";
 
+import { getProjectAndEnvironment } from "src/utils/config.js";
+
 import { FileSystemBlobStorage } from "./filesystem.js";
 import { RemoteBlobStorage } from "./remote.js";
 import {
@@ -34,7 +36,15 @@ export class BlobClient {
 
       this.storage = new FileSystemBlobStorage(rootDir, props.defaultPrefix);
     } else {
-      this.storage = new RemoteBlobStorage(props.defaultPrefix);
+      const { project, environment } = getProjectAndEnvironment({
+        project: props.project,
+        environment: props.environment,
+      });
+      this.storage = new RemoteBlobStorage(
+        project,
+        environment,
+        props.defaultPrefix,
+      );
     }
   }
 

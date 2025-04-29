@@ -1,8 +1,11 @@
+import { getProjectAndEnvironment } from "src/utils/config.js";
+
 import { SearchStorage } from "./remote.js";
 import {
   DeleteNamespaceResult,
   EnsureNamespaceResult,
   Namespace,
+  SearchProviderProps,
 } from "./types.js";
 
 /**
@@ -11,8 +14,12 @@ import {
 export class SearchClient {
   private storage: SearchStorage;
 
-  constructor() {
-    this.storage = new SearchStorage();
+  constructor(props: SearchProviderProps) {
+    const { project, environment } = getProjectAndEnvironment({
+      project: props.project,
+      environment: props.environment,
+    });
+    this.storage = new SearchStorage(project, environment);
   }
 
   /**

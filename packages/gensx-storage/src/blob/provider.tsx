@@ -3,6 +3,7 @@ import { join } from "path";
 
 import { Component } from "@gensx/core";
 
+import { getProjectAndEnvironment } from "../utils/config.js";
 import { BlobContext } from "./context.js";
 import { FileSystemBlobStorage } from "./filesystem.js";
 import { RemoteBlobStorage } from "./remote.js";
@@ -46,7 +47,16 @@ export const BlobProvider = Component<BlobProviderProps, never>(
       const storage = new FileSystemBlobStorage(rootDir, props.defaultPrefix);
       return <BlobContext.Provider value={storage} />;
     } else {
-      const storage = new RemoteBlobStorage(props.defaultPrefix);
+      const { project, environment } = getProjectAndEnvironment({
+        project: props.project,
+        environment: props.environment,
+      });
+
+      const storage = new RemoteBlobStorage(
+        project,
+        environment,
+        props.defaultPrefix,
+      );
       return <BlobContext.Provider value={storage} />;
     }
   },

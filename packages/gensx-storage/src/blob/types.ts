@@ -327,6 +327,16 @@ export interface BaseBlobProviderProps {
    * Default prefix for all blob keys
    */
   defaultPrefix?: string;
+
+  /**
+   * Project name
+   */
+  project?: string;
+
+  /**
+   * Environment name
+   */
+  environment?: string;
 }
 
 /**

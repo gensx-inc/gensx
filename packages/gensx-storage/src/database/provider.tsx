@@ -2,6 +2,7 @@ import { mkdir } from "fs/promises";
 import { join } from "path";
 
 import { Component } from "@gensx/core";
+import { getProjectAndEnvironment } from "src/utils/config.js";
 
 import { DatabaseContext } from "./context.js";
 import { FileSystemDatabaseStorage } from "./filesystem.js";
@@ -46,7 +47,12 @@ export const DatabaseProvider = Component<DatabaseProviderProps, never>(
       const storage = new FileSystemDatabaseStorage(rootDir);
       return <DatabaseContext.Provider value={storage} />;
     } else {
-      const storage = new RemoteDatabaseStorage();
+      const { project, environment } = getProjectAndEnvironment({
+        project: props.project,
+        environment: props.environment,
+      });
+
+      const storage = new RemoteDatabaseStorage(project, environment);
       return <DatabaseContext.Provider value={storage} />;
     }
   },

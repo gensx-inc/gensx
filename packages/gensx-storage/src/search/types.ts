@@ -268,3 +268,11 @@ export interface SearchStorage {
    */
   hasEnsuredNamespace(name: string): boolean;
 }
+
+/**
+ * Provider configuration for search
+ */
+export interface SearchProviderProps {
+  project?: string;
+  environment?: string;
+}

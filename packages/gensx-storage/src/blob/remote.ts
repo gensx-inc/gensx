@@ -47,18 +47,29 @@ export class RemoteBlob<T> implements Blob<T> {
   private baseUrl: string;
   private apiKey: string;
   private org: string;
+  private project: string;
+  private environment: string;
 
-  constructor(key: string, baseUrl: string, apiKey: string, org: string) {
+  constructor(
+    key: string,
+    baseUrl: string,
+    apiKey: string,
+    org: string,
+    project: string,
+    environment: string,
+  ) {
     this.key = encodeURIComponent(key);
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
     this.org = org;
+    this.project = project;
+    this.environment = environment;
   }
 
   async getJSON(): Promise<T | null> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
@@ -89,7 +100,7 @@ export class RemoteBlob<T> implements Blob<T> {
   async getString(): Promise<string | null> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
@@ -119,7 +130,7 @@ export class RemoteBlob<T> implements Blob<T> {
   async getRaw(): Promise<BlobResponse<Buffer> | null> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
@@ -177,7 +188,7 @@ export class RemoteBlob<T> implements Blob<T> {
   async getStream(): Promise<Readable> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
@@ -205,7 +216,7 @@ export class RemoteBlob<T> implements Blob<T> {
   async putJSON(value: T, options?: BlobOptions): Promise<{ etag: string }> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           method: "PUT",
           headers: {
@@ -248,7 +259,7 @@ export class RemoteBlob<T> implements Blob<T> {
   ): Promise<{ etag: string }> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           method: "PUT",
           headers: {
@@ -296,7 +307,7 @@ export class RemoteBlob<T> implements Blob<T> {
   ): Promise<{ etag: string }> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           method: "PUT",
           headers: {
@@ -350,7 +361,7 @@ export class RemoteBlob<T> implements Blob<T> {
 
       // Send the buffer as base64-encoded content
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           method: "PUT",
           headers: {
@@ -393,7 +404,7 @@ export class RemoteBlob<T> implements Blob<T> {
   async delete(): Promise<void> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           method: "DELETE",
           headers: {
@@ -416,7 +427,7 @@ export class RemoteBlob<T> implements Blob<T> {
   async exists(): Promise<boolean> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           method: "HEAD",
           headers: {
@@ -434,7 +445,7 @@ export class RemoteBlob<T> implements Blob<T> {
   async getMetadata(): Promise<Record<string, string> | null> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           method: "HEAD",
           headers: {
@@ -489,7 +500,7 @@ export class RemoteBlob<T> implements Blob<T> {
   ): Promise<void> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/blob/${this.key}`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob/${this.key}`,
         {
           method: "PATCH",
           headers: {
@@ -525,8 +536,13 @@ export class RemoteBlobStorage implements BlobStorage {
   private apiKey: string;
   private apiBaseUrl: string;
   private org: string;
-
-  constructor(private defaultPrefix?: string) {
+  private project: string;
+  private environment: string;
+  private defaultPrefix?: string;
+  constructor(project: string, environment: string, defaultPrefix?: string) {
+    this.project = project;
+    this.environment = environment;
+    this.defaultPrefix = defaultPrefix;
     // readConfig has internal error handling and always returns a GensxConfig object
     const config = readConfig();
 
@@ -540,7 +556,7 @@ export class RemoteBlobStorage implements BlobStorage {
     this.org = process.env.GENSX_ORG ?? config.api?.org ?? "";
     if (!this.org) {
       throw new Error(
-        "Organization ID must be provided via props or GENSX_ORG environment variable",
+        "Organization must be provided via props or GENSX_ORG environment variable",
       );
     }
 
@@ -550,7 +566,14 @@ export class RemoteBlobStorage implements BlobStorage {
 
   getBlob<T>(key: string): Blob<T> {
     const fullKey = this.defaultPrefix ? `${this.defaultPrefix}/${key}` : key;
-    return new RemoteBlob<T>(fullKey, this.apiBaseUrl, this.apiKey, this.org);
+    return new RemoteBlob<T>(
+      fullKey,
+      this.apiBaseUrl,
+      this.apiKey,
+      this.org,
+      this.project,
+      this.environment,
+    );
   }
 
   async listBlobs(options?: ListBlobsOptions): Promise<ListBlobsResponse> {
@@ -580,7 +603,7 @@ export class RemoteBlobStorage implements BlobStorage {
       }
 
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/blob?${queryParams.toString()}`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/blob?${queryParams.toString()}`,
         {
           method: "GET",
           headers: {
