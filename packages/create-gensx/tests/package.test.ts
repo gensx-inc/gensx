@@ -100,7 +100,7 @@ it("package.json is correctly configured for npm create", async () => {
 
   try {
     await exec(
-      `${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s --skip-ide-rules -d "A test project"`,
+      `${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s --skip-ide-rules --description "A test project"`,
       {
         cwd: pkgDir,
         env: { ...process.env },
