@@ -67,6 +67,31 @@ function NavMenu({ simple = false }: NavMenuProps) {
             </span>
           </motion.a>
         </li>
+        <li>
+          <motion.a
+            href="/docs/cloud/pricing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`relative py-2 transition-colors text-sm group inline-flex items-center gap-1
+              ${
+                pathname === "/docs/cloud/pricing"
+                  ? "text-gray-900 font-medium"
+                  : pathname === "/"
+                    ? "text-gray-900 hover:text-gray-900"
+                    : "text-gray-800 hover:text-gray-900"
+              }
+              after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full
+              after:origin-left after:scale-x-0 after:bg-[#ffde59] after:transition-transform after:duration-300
+              after:z-10
+              ${pathname === "/docs/cloud/pricing" ? "after:scale-x-100" : "hover:after:scale-x-100 group-hover:after:scale-x-100"}
+            `}
+          >
+            <span>Pricing</span>
+            <span className="inline-block opacity-0 -translate-x-2 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0">
+              <ArrowUpRight size={16} />
+            </span>
+          </motion.a>
+        </li>
       </ul>
     );
   }
@@ -109,6 +134,29 @@ function NavMenu({ simple = false }: NavMenuProps) {
         `}
       >
         <span>Docs</span>
+        <span className="inline-block opacity-0 -translate-x-2 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0">
+          <ArrowUpRight size={16} />
+        </span>
+      </motion.a>
+      <motion.a
+        href="/docs/cloud/pricing"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`relative py-2 transition-colors text-sm group inline-flex items-center gap-1
+          ${
+            pathname === "/docs/cloud/pricing"
+              ? "text-gray-900 font-medium"
+              : pathname === "/"
+                ? "text-gray-900 hover:text-gray-900"
+                : "text-gray-800 hover:text-gray-900"
+          }
+          after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full
+          after:origin-left after:scale-x-0 after:bg-[#ffde59] after:transition-transform after:duration-300
+          after:z-10
+          ${pathname === "/docs/cloud/pricing" ? "after:scale-x-100" : "hover:after:scale-x-100 group-hover:after:scale-x-100"}
+        `}
+      >
+        <span>Pricing</span>
         <span className="inline-block opacity-0 -translate-x-2 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0">
           <ArrowUpRight size={16} />
         </span>
