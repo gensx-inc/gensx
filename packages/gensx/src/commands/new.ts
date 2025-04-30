@@ -295,7 +295,7 @@ export async function newProject(
             message: "Enter a project description (or press enter to skip):",
             initial: "",
           });
-          description = response.description || undefined;
+          description = response.description || "My GenSX Project";
         } catch {
           // If user cancels, continue without a description
           description = undefined;
