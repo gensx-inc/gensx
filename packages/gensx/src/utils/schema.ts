@@ -24,7 +24,7 @@ export function generateSchema(
     process.cwd(),
   );
 
-  // Create TypeScript program
+  // Create TypeScript program with all source files
   const program = ts.createProgram([tsFile], tsconfig.options);
   const sourceFile = program.getSourceFile(tsFile);
   const typeChecker = program.getTypeChecker();
@@ -33,98 +33,159 @@ export function generateSchema(
     throw new Error(`Could not find source file: ${tsFile}`);
   }
 
-  // Generate schema for all types using typescript-json-schema
-  const tjsProgram = getProgramFromFiles([tsFile], tsconfig.options);
-  const tjsSettings: PartialArgs = {
-    include: [tsFile],
-    ignoreErrors: true,
-    ref: false,
-    required: true,
-    strictNullChecks: true,
-    topRef: false,
-    noExtraProps: true,
-  };
+  // Track processed files to avoid circular dependencies
+  const processedFiles = new Set<string>();
 
-  const baseSchema = generateSchemaTJS(tjsProgram, "*", tjsSettings);
+  // Function to recursively process files and extract schemas
+  function processFile(
+    filePath: string,
+  ): Record<string, { input: Definition; output: Definition }> {
+    if (processedFiles.has(filePath)) {
+      return {};
+    }
+    processedFiles.add(filePath);
 
-  if (!baseSchema?.definitions) {
-    throw new Error("Failed to generate schema");
-  }
-
-  // Extract workflow information using TypeScript compiler
-  const workflowInfo = extractWorkflowInfo(sourceFile, typeChecker);
-
-  // Build schemas for each workflow
-  const workflowSchemas: Record<
-    string,
-    { input: Definition; output: Definition }
-  > = {};
-
-  const workflowNames: string[] = [];
-
-  for (const workflow of workflowInfo) {
-    const workflowName = encodeURIComponent(workflow.name);
-    if (workflowName !== workflow.name) {
-      console.warn(
-        `\n\nWorkflow name contains invalid characters and will be encoded: ${workflow.name}\n\n`,
-      );
+    const fileSource = program.getSourceFile(filePath);
+    if (!fileSource) {
+      return {};
     }
 
-    if (!workflowName) {
-      console.warn(
-        `\n\nWorkflow name is undefined: ${workflow.componentName}\n\n`,
-      );
-      continue;
-    }
-
-    if (workflowNames.includes(workflowName)) {
-      console.warn(`\n\nWorkflow name is already defined: ${workflowName}\n\n`);
-      continue;
-    }
-
-    workflowNames.push(workflowName);
-
-    // Create input schema
-    const inputSchema = createInputSchema(
-      workflow.inputType,
-      workflow.isStreamComponent,
-    );
-
-    // Create output schema
-    const outputSchema = createOutputSchema(
-      workflow.outputType,
-      workflow.isStreamComponent,
-    );
-
-    // If the input schema has a $ref, try to dereference it from baseSchema
-    if (inputSchema.$ref) {
-      const refType = inputSchema.$ref.split("/").pop();
-      if (refType && baseSchema.definitions[refType]) {
-        const definition = baseSchema.definitions[refType];
-        // Remove the $ref and spread the definition
-        delete inputSchema.$ref;
-        Object.assign(inputSchema, definition);
-      }
-    }
-
-    // If the output schema has a $ref, try to dereference it from baseSchema
-    if (outputSchema.$ref) {
-      const refType = outputSchema.$ref.split("/").pop();
-      if (refType && baseSchema.definitions[refType]) {
-        const definition = baseSchema.definitions[refType];
-        // Remove the $ref and spread the definition
-        delete outputSchema.$ref;
-        Object.assign(outputSchema, definition);
-      }
-    }
-
-    workflowSchemas[workflowName] = {
-      input: inputSchema,
-      output: outputSchema,
+    // Generate schema for all types using typescript-json-schema
+    const tjsProgram = getProgramFromFiles([filePath], tsconfig.options);
+    const tjsSettings: PartialArgs = {
+      include: [filePath],
+      ignoreErrors: true,
+      ref: false,
+      required: true,
+      strictNullChecks: true,
+      topRef: false,
+      noExtraProps: true,
     };
+
+    const baseSchema = generateSchemaTJS(tjsProgram, "*", tjsSettings);
+    if (!baseSchema?.definitions) {
+      return {};
+    }
+
+    // Extract workflow information using TypeScript compiler
+    const workflowInfo = extractWorkflowInfo(fileSource, typeChecker);
+
+    // Build schemas for each workflow
+    const workflowSchemas: Record<
+      string,
+      { input: Definition; output: Definition }
+    > = {};
+    const workflowNames: string[] = [];
+
+    for (const workflow of workflowInfo) {
+      const workflowName = encodeURIComponent(workflow.name);
+      if (workflowName !== workflow.name) {
+        console.warn(
+          `\n\nWorkflow name contains invalid characters and will be encoded: ${workflow.name}\n\n`,
+        );
+      }
+
+      if (!workflowName) {
+        console.warn(
+          `\n\nWorkflow name is undefined: ${workflow.componentName}\n\n`,
+        );
+        continue;
+      }
+
+      if (workflowNames.includes(workflowName)) {
+        console.warn(
+          `\n\nWorkflow name is already defined: ${workflowName}\n\n`,
+        );
+        continue;
+      }
+
+      workflowNames.push(workflowName);
+
+      // Create input schema
+      const inputSchema = createInputSchema(
+        workflow.inputType,
+        workflow.isStreamComponent,
+      );
+
+      // Create output schema
+      const outputSchema = createOutputSchema(
+        workflow.outputType,
+        workflow.isStreamComponent,
+      );
+
+      // If the input schema has a $ref, try to dereference it from baseSchema
+      if (inputSchema.$ref) {
+        const refType = inputSchema.$ref.split("/").pop();
+        if (refType && baseSchema.definitions[refType]) {
+          const definition = baseSchema.definitions[refType];
+          // Remove the $ref and spread the definition
+          delete inputSchema.$ref;
+          Object.assign(inputSchema, definition);
+        }
+      }
+
+      // If the output schema has a $ref, try to dereference it from baseSchema
+      if (outputSchema.$ref) {
+        const refType = outputSchema.$ref.split("/").pop();
+        if (refType && baseSchema.definitions[refType]) {
+          const definition = baseSchema.definitions[refType];
+          // Remove the $ref and spread the definition
+          delete outputSchema.$ref;
+          Object.assign(outputSchema, definition);
+        }
+      }
+
+      workflowSchemas[workflowName] = {
+        input: inputSchema,
+        output: outputSchema,
+      };
+    }
+
+    // Process imported files recursively
+    const importedFiles = getImportedFiles(fileSource, program);
+    for (const importedFile of importedFiles) {
+      const importedSchemas = processFile(importedFile);
+      Object.assign(workflowSchemas, importedSchemas);
+    }
+
+    return workflowSchemas;
   }
 
-  return workflowSchemas;
+  return processFile(tsFile);
+}
+
+/**
+ * Gets all imported files from a source file
+ */
+function getImportedFiles(
+  sourceFile: ts.SourceFile,
+  program: ts.Program,
+): string[] {
+  const importedFiles = new Set<string>();
+
+  function visit(node: ts.Node) {
+    if (ts.isImportDeclaration(node)) {
+      const moduleSpecifier = node.moduleSpecifier;
+      if (ts.isStringLiteral(moduleSpecifier)) {
+        const importPath = moduleSpecifier.text;
+        // Resolve the import path
+        const resolvedModule = ts.resolveModuleName(
+          importPath,
+          sourceFile.fileName,
+          program.getCompilerOptions(),
+          ts.sys,
+        );
+
+        if (resolvedModule.resolvedModule) {
+          importedFiles.add(resolvedModule.resolvedModule.resolvedFileName);
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return Array.from(importedFiles);
 }
 
 /**
