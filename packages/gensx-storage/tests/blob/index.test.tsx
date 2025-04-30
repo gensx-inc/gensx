@@ -78,7 +78,7 @@ suite("GenSX Storage", () => {
       } as unknown as Response),
     );
 
-    const storage = new RemoteBlobStorage();
+    const storage = new RemoteBlobStorage("test-project", "test-environment");
 
     // Check if it implements the BlobStorage interface
     expect(storage).toBeDefined();

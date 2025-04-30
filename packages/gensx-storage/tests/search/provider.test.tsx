@@ -20,38 +20,41 @@ vi.mock("../../src/search/remote.js", () => {
   // Mock class implementation
   const MockSearchStorage = vi
     .fn()
-    .mockImplementation((defaultPrefix?: string) => {
-      return {
-        defaultPrefix,
-        hasEnsuredNamespace: (name: string): boolean =>
-          namespacesCache.has(name),
-        getNamespace: (name: string) => ({
-          namespaceId: defaultPrefix ? `${defaultPrefix}/${name}` : name,
-        }),
-        ensureNamespace: vi
-          .fn()
-          .mockImplementation(
-            (name: string): Promise<EnsureNamespaceResult> => {
-              const exists = namespacesCache.has(name);
-              if (!exists) {
-                namespacesCache.set(name, true);
-                return Promise.resolve({ created: true, exists: false });
-              }
-              return Promise.resolve({ created: false, exists: true });
-            },
-          ),
-        deleteNamespace: vi
-          .fn()
-          .mockImplementation(
-            (name: string): Promise<DeleteNamespaceResult> => {
-              namespacesCache.delete(name);
-              return Promise.resolve({ deleted: true });
-            },
-          ),
-        listNamespaces: vi.fn().mockResolvedValue([]),
-        namespaceExists: vi.fn().mockResolvedValue(false),
-      };
-    });
+    .mockImplementation(
+      (project: string, environment: string, defaultPrefix?: string) => {
+        return {
+          project,
+          environment,
+          hasEnsuredNamespace: (name: string): boolean =>
+            namespacesCache.has(name),
+          getNamespace: (name: string) => ({
+            namespaceId: defaultPrefix ? `${defaultPrefix}/${name}` : name,
+          }),
+          ensureNamespace: vi
+            .fn()
+            .mockImplementation(
+              (name: string): Promise<EnsureNamespaceResult> => {
+                const exists = namespacesCache.has(name);
+                if (!exists) {
+                  namespacesCache.set(name, true);
+                  return Promise.resolve({ created: true, exists: false });
+                }
+                return Promise.resolve({ created: false, exists: true });
+              },
+            ),
+          deleteNamespace: vi
+            .fn()
+            .mockImplementation(
+              (name: string): Promise<DeleteNamespaceResult> => {
+                namespacesCache.delete(name);
+                return Promise.resolve({ deleted: true });
+              },
+            ),
+          listNamespaces: vi.fn().mockResolvedValue([]),
+          namespaceExists: vi.fn().mockResolvedValue(false),
+        };
+      },
+    );
 
   return {
     SearchStorage: MockSearchStorage,
@@ -63,12 +66,16 @@ suite("SearchProvider", () => {
     // Mock environment variables for cloud provider tests
     process.env.GENSX_API_KEY = "test-api-key";
     process.env.GENSX_ORG = "test-org";
+    process.env.GENSX_PROJECT = "test-project";
+    process.env.GENSX_ENV = "test-environment";
   });
 
   afterEach(() => {
     // Clear environment variables
     delete process.env.GENSX_API_KEY;
     delete process.env.GENSX_ORG;
+    delete process.env.GENSX_PROJECT;
+    delete process.env.GENSX_ENV;
   });
 
   test("provides search context to children", async () => {

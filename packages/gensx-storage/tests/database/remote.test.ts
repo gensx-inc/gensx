@@ -34,21 +34,30 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should initialize with environment variables", () => {
-    expect(() => new RemoteDatabaseStorage()).not.toThrow();
+    expect(
+      () => new RemoteDatabaseStorage("test-project", "test-environment"),
+    ).not.toThrow();
   });
 
   test("should throw if API key is missing", () => {
     delete process.env.GENSX_API_KEY;
-    expect(() => new RemoteDatabaseStorage()).toThrow("GENSX_API_KEY");
+    expect(
+      () => new RemoteDatabaseStorage("test-project", "test-environment"),
+    ).toThrow("GENSX_API_KEY");
   });
 
   test("should throw if organization ID is missing", () => {
     delete process.env.GENSX_ORG;
-    expect(() => new RemoteDatabaseStorage()).toThrow("Organization ID");
+    expect(
+      () => new RemoteDatabaseStorage("test-project", "test-environment"),
+    ).toThrow("Organization ID");
   });
 
   test("should execute SQL queries", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
     const db = storage.getDatabase("test-db");
 
     const mockResult = {
@@ -68,7 +77,7 @@ suite("RemoteDatabaseStorage", () => {
 
     expect(result).toEqual(mockResult);
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/database/test-db/execute",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/database/test-db/execute",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -87,7 +96,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should execute SQL queries with parameters", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
     const db = storage.getDatabase("test-db");
 
     mockFetch.mockResolvedValueOnce({
@@ -110,7 +122,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should execute batch operations", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
     const db = storage.getDatabase("test-db");
 
     const mockBatchResult = {
@@ -134,7 +149,7 @@ suite("RemoteDatabaseStorage", () => {
 
     expect(result).toEqual(mockBatchResult);
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/database/test-db/batch",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/database/test-db/batch",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -150,7 +165,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should execute multiple SQL statements", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
     const db = storage.getDatabase("test-db");
 
     const mockMultipleResult = {
@@ -174,7 +192,7 @@ suite("RemoteDatabaseStorage", () => {
 
     expect(result).toEqual(mockMultipleResult);
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/database/test-db/multiple",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/database/test-db/multiple",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -190,7 +208,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should execute migrations", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
     const db = storage.getDatabase("test-db");
 
     const mockMigrateResult = {
@@ -215,7 +236,7 @@ suite("RemoteDatabaseStorage", () => {
 
     expect(result).toEqual(mockMigrateResult);
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/database/test-db/migrate",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/database/test-db/migrate",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -231,7 +252,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should get database info", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
     const db = storage.getDatabase("test-db");
 
     const mockLastModified = new Date().toISOString();
@@ -263,7 +287,7 @@ suite("RemoteDatabaseStorage", () => {
       lastModified: new Date(mockLastModified),
     });
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/database/test-db/info",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/database/test-db/info",
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -274,7 +298,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should list databases", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -296,7 +323,7 @@ suite("RemoteDatabaseStorage", () => {
     ]);
     expect(result.nextCursor).toBe("next-page-token");
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/database",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/database",
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({
@@ -307,7 +334,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should handle pagination in listDatabases", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
 
     // First page
     mockFetch.mockResolvedValueOnce({
@@ -364,7 +394,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should handle empty results in listDatabases", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -386,7 +419,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should ensure database exists", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -398,7 +434,7 @@ suite("RemoteDatabaseStorage", () => {
 
     expect(result).toEqual({ exists: true, created: true });
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/database/new-db/ensure",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/database/new-db/ensure",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -410,7 +446,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should delete database", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -422,7 +461,7 @@ suite("RemoteDatabaseStorage", () => {
 
     expect(result).toEqual({ deleted: true });
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.gensx.com/org/test-org/database/old-db",
+      "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/database/old-db",
       expect.objectContaining({
         method: "DELETE",
         headers: expect.objectContaining({
@@ -433,7 +472,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should check if database has been ensured", () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
 
     // Not ensured initially
     expect(storage.hasEnsuredDatabase("test-db")).toBe(false);
@@ -453,7 +495,10 @@ suite("RemoteDatabaseStorage", () => {
         statusText: "Internal Server Error",
       });
 
-      const storage = new RemoteDatabaseStorage();
+      const storage = new RemoteDatabaseStorage(
+        "test-project",
+        "test-environment",
+      );
       const db = storage.getDatabase("error-db");
 
       try {
@@ -473,7 +518,10 @@ suite("RemoteDatabaseStorage", () => {
         statusText: "Bad Request",
       });
 
-      const storage = new RemoteDatabaseStorage();
+      const storage = new RemoteDatabaseStorage(
+        "test-project",
+        "test-environment",
+      );
       const db = storage.getDatabase("api-error");
 
       try {
@@ -490,7 +538,10 @@ suite("RemoteDatabaseStorage", () => {
     test("should handle network errors", async () => {
       mockFetch.mockRejectedValueOnce(new Error("Network failure"));
 
-      const storage = new RemoteDatabaseStorage();
+      const storage = new RemoteDatabaseStorage(
+        "test-project",
+        "test-environment",
+      );
       const db = storage.getDatabase("network-error");
 
       try {
@@ -511,7 +562,10 @@ suite("RemoteDatabaseStorage", () => {
         statusText: "Not Found",
       });
 
-      const storage = new RemoteDatabaseStorage();
+      const storage = new RemoteDatabaseStorage(
+        "test-project",
+        "test-environment",
+      );
       const db = storage.getDatabase("missing-data");
 
       try {
@@ -527,7 +581,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("database close method should be a no-op for remote database", () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
     const db = storage.getDatabase("test-db");
 
     // Should not throw
@@ -537,7 +594,10 @@ suite("RemoteDatabaseStorage", () => {
   });
 
   test("should handle URL encoding of database names", async () => {
-    const storage = new RemoteDatabaseStorage();
+    const storage = new RemoteDatabaseStorage(
+      "test-project",
+      "test-environment",
+    );
 
     // Database name with special characters
     const dbName = "test/db with spaces";

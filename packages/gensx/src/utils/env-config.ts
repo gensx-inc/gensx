@@ -127,6 +127,7 @@ export async function getEnvironmentForOperation(
   specifiedEnvironment?: string,
   existingSpinner?: Ora,
   allowCreate = true,
+  yes = false,
 ): Promise<string> {
   // Use the provided spinner or create a new one if not provided
   // Setting discardStdin: false prevents the spinner from interfering with stdin and causing hangs
@@ -144,6 +145,14 @@ export async function getEnvironmentForOperation(
   const selectedEnvironment = await getSelectedEnvironment(projectName);
 
   if (selectedEnvironment) {
+    // If yes flag is set, use the selected environment without prompting
+    if (yes) {
+      spinner.info(
+        `Using selected environment: ${pc.cyan(selectedEnvironment)}`,
+      );
+      return selectedEnvironment;
+    }
+
     // Confirm with user
     spinner.stop();
     const prompter = enquirer as PromptModule;
@@ -170,6 +179,14 @@ export async function getEnvironmentForOperation(
 
   // If there are existing environments, show a select prompt
   if (environments.length > 0) {
+    // If yes flag is set, use the first environment without prompting
+    if (yes) {
+      const firstEnv = environments[0].name;
+      spinner.info(`Using environment: ${pc.cyan(firstEnv)}`);
+      await selectEnvironment(projectName, firstEnv);
+      return firstEnv;
+    }
+
     const prompter = enquirer as PromptModule;
     const choices = [
       ...environments.map((env) => ({ name: env.name, value: env.name })),
@@ -241,6 +258,30 @@ export async function getEnvironmentForOperation(
       throw new Error("No environments found.");
     }
     // No environments exist, prompt to create one
+    if (yes) {
+      // If yes flag is set, create a default environment without prompting
+      const newEnvName = "default";
+      if (!projectExists) {
+        spinner.start(
+          `Creating project ${pc.cyan(projectName)} and environment ${pc.cyan(
+            newEnvName,
+          )}...`,
+        );
+        await createProject(projectName, newEnvName);
+        spinner.succeed(
+          `Project ${pc.cyan(projectName)} and environment ${pc.cyan(newEnvName)} created`,
+        );
+      } else {
+        spinner.start(`Creating environment ${pc.cyan(newEnvName)}...`);
+        await createEnvironment(projectName, newEnvName);
+        spinner.succeed(`Environment ${pc.cyan(newEnvName)} created`);
+      }
+
+      // Save as selected environment
+      await selectEnvironment(projectName, newEnvName);
+      return newEnvName;
+    }
+
     const prompter = enquirer as PromptModule;
     const newEnvName = await prompter
       .prompt<{ name: string }>({

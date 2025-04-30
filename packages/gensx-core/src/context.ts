@@ -16,7 +16,6 @@ function createContextSymbol() {
 
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
-
   const Provider = (
     props: ComponentProps<
       { value: T; onComplete?: () => Promise<void> | void },

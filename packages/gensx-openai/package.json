@@ -1,6 +1,6 @@
 {
   "name": "@gensx/openai",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "description": "OpenAI integration for GenSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",

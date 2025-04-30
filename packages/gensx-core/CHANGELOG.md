@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.12](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.11...gensx-core-v0.3.12) (2025-04-30)
+
+
+### ✨ New Features
+
+* scoping storage to project/env ([#647](https://github.com/gensx-inc/gensx/issues/647)) ([8153d24](https://github.com/gensx-inc/gensx/commit/8153d245901584c79fcb6c551febd7ee9b6804fa))
+
 ## [0.3.11](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.10...gensx-core-v0.3.11) (2025-04-28)
 
 

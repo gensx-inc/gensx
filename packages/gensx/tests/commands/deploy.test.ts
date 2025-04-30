@@ -154,6 +154,7 @@ suite("deploy command", () => {
       "production",
       expect.any(Object),
       true,
+      undefined,
     );
 
     // Verify deployment was made with correct environment
@@ -178,6 +179,7 @@ suite("deploy command", () => {
       undefined,
       expect.any(Object),
       true,
+      undefined,
     );
 
     // Verify deployment was made with selected environment
@@ -200,6 +202,7 @@ suite("deploy command", () => {
       undefined,
       expect.any(Object),
       true,
+      undefined,
     );
 
     // Verify deployment was made with selected environment
@@ -224,6 +227,7 @@ suite("deploy command", () => {
       undefined,
       expect.any(Object),
       true,
+      undefined,
     );
 
     // Verify deployment was made with new environment
@@ -248,6 +252,7 @@ suite("deploy command", () => {
       undefined,
       expect.any(Object),
       true,
+      undefined,
     );
 
     // Verify deployment was made with new environment
@@ -272,6 +277,7 @@ suite("deploy command", () => {
       undefined,
       expect.any(Object),
       true,
+      undefined,
     );
 
     // Verify deployment was made with new environment
@@ -301,6 +307,7 @@ suite("deploy command", () => {
       "production",
       expect.any(Object),
       true,
+      undefined,
     );
 
     // Verify deployment was made with config project name
@@ -344,6 +351,7 @@ suite("deploy command", () => {
       undefined,
       expect.any(Object),
       true,
+      undefined,
     );
 
     // Verify deployment was made with new project and environment
@@ -375,6 +383,7 @@ suite("deploy command", () => {
       undefined,
       expect.any(Object),
       true,
+      undefined,
     );
 
     // Verify deployment was made with new project and default environment
@@ -382,6 +391,36 @@ suite("deploy command", () => {
       expect.stringContaining(
         "/projects/new-project/environments/default/deploy",
       ),
+      expect.any(Object),
+      expect.any(Object),
+    );
+  });
+
+  it("should skip prompts when yes flag is set", async () => {
+    // Mock project config
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
+      projectName: "test-project",
+    });
+
+    // Mock getEnvironmentForOperation to return the specified environment
+    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
+      "production",
+    );
+
+    await deploy("workflow.ts", { yes: true });
+
+    // Verify getEnvironmentForOperation was called with yes flag
+    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
+      "test-project",
+      undefined,
+      expect.any(Object),
+      true,
+      true,
+    );
+
+    // Verify deployment was made with correct environment
+    expect(axios.post).toHaveBeenCalledWith(
+      expect.stringContaining("/environments/production/deploy"),
       expect.any(Object),
       expect.any(Object),
     );

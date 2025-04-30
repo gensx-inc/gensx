@@ -15,6 +15,7 @@ interface DeployOptions {
   project?: string;
   envVar?: string[];
   env?: string;
+  yes?: boolean;
 }
 
 interface DeploymentResponse {
@@ -68,6 +69,7 @@ export async function deploy(file: string, options: DeployOptions) {
       options.env,
       spinner,
       true,
+      options.yes,
     );
 
     // 4. Create form data with bundle

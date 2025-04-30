@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.9](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.8...gensx-storage-v0.0.9) (2025-04-30)
+
+
+### ✨ New Features
+
+* scoping storage to project/env ([#647](https://github.com/gensx-inc/gensx/issues/647)) ([8153d24](https://github.com/gensx-inc/gensx/commit/8153d245901584c79fcb6c551febd7ee9b6804fa))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.12
+
 ## [0.0.8](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.7...gensx-storage-v0.0.8) (2025-04-28)
 
 

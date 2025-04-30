@@ -47,23 +47,29 @@ export class RemoteDatabase implements Database {
   private baseUrl: string;
   private apiKey: string;
   private org: string;
+  private project: string;
+  private environment: string;
 
   constructor(
     databaseName: string,
     baseUrl: string,
     apiKey: string,
     org: string,
+    project: string,
+    environment: string,
   ) {
     this.databaseName = encodeURIComponent(databaseName);
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
     this.org = org;
+    this.project = project;
+    this.environment = environment;
   }
 
   async execute(sql: string, params?: InArgs): Promise<DatabaseResult> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/execute`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/database/${this.databaseName}/execute`,
         {
           method: "POST",
           headers: {
@@ -94,7 +100,7 @@ export class RemoteDatabase implements Database {
   async batch(statements: DatabaseStatement[]): Promise<DatabaseBatchResult> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/batch`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/database/${this.databaseName}/batch`,
         {
           method: "POST",
           headers: {
@@ -122,7 +128,7 @@ export class RemoteDatabase implements Database {
   async executeMultiple(sql: string): Promise<DatabaseBatchResult> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/multiple`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/database/${this.databaseName}/multiple`,
         {
           method: "POST",
           headers: {
@@ -150,7 +156,7 @@ export class RemoteDatabase implements Database {
   async migrate(sql: string): Promise<DatabaseBatchResult> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/migrate`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/database/${this.databaseName}/migrate`,
         {
           method: "POST",
           headers: {
@@ -178,7 +184,7 @@ export class RemoteDatabase implements Database {
   async getInfo(): Promise<DatabaseInfo> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/org/${this.org}/database/${this.databaseName}/info`,
+        `${this.baseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/database/${this.databaseName}/info`,
         {
           method: "GET",
           headers: {
@@ -220,13 +226,16 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
   private apiKey: string;
   private apiBaseUrl: string;
   private org: string;
+  private project: string;
+  private environment: string;
   private databases: Map<string, RemoteDatabase> = new Map<
     string,
     RemoteDatabase
   >();
 
-  constructor() {
-    // readConfig has internal error handling and always returns a GensxConfig object
+  constructor(project: string, environment: string) {
+    this.project = project;
+    this.environment = environment;
 
     const config = readConfig();
 
@@ -252,7 +261,14 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
     if (!this.databases.has(name)) {
       this.databases.set(
         name,
-        new RemoteDatabase(name, this.apiBaseUrl, this.apiKey, this.org),
+        new RemoteDatabase(
+          name,
+          this.apiBaseUrl,
+          this.apiKey,
+          this.org,
+          this.project,
+          this.environment,
+        ),
       );
     }
 
@@ -264,7 +280,9 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
     nextCursor?: string;
   }> {
     try {
-      const url = new URL(`${this.apiBaseUrl}/org/${this.org}/database`);
+      const url = new URL(
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/database`,
+      );
 
       if (options?.limit) {
         url.searchParams.append("limit", options.limit.toString());
@@ -307,7 +325,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
   async ensureDatabase(name: string): Promise<EnsureDatabaseResult> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/database/${encodeURIComponent(
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/database/${encodeURIComponent(
           name,
         )}/ensure`,
         {
@@ -352,7 +370,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
   async deleteDatabase(name: string): Promise<DeleteDatabaseResult> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/database/${encodeURIComponent(
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/database/${encodeURIComponent(
           name,
         )}`,
         {

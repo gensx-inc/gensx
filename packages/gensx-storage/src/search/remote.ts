@@ -143,6 +143,8 @@ export class SearchNamespace implements Namespace {
     private apiBaseUrl: string,
     private apiKey: string,
     private org: string,
+    private project: string,
+    private environment: string,
   ) {}
 
   async write({
@@ -157,7 +159,7 @@ export class SearchNamespace implements Namespace {
   }: WriteParams): Promise<number> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/vectors`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(this.namespaceId)}/vectors`,
         {
           method: "POST",
           headers: {
@@ -204,7 +206,7 @@ export class SearchNamespace implements Namespace {
   }: QueryOptions): Promise<QueryResults> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/query`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(this.namespaceId)}/query`,
         {
           method: "POST",
           headers: {
@@ -242,7 +244,7 @@ export class SearchNamespace implements Namespace {
   async getSchema(): Promise<Schema> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/schema`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(this.namespaceId)}/schema`,
         {
           method: "GET",
           headers: {
@@ -269,7 +271,7 @@ export class SearchNamespace implements Namespace {
   async updateSchema({ schema }: { schema: Schema }): Promise<Schema> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}/schema`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(this.namespaceId)}/schema`,
         {
           method: "POST",
           headers: {
@@ -298,7 +300,7 @@ export class SearchNamespace implements Namespace {
   async getMetadata(): Promise<NamespaceMetadata> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(this.namespaceId)}`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(this.namespaceId)}`,
         {
           method: "GET",
           headers: {
@@ -330,12 +332,17 @@ export class SearchStorage implements ISearchStorage {
   private apiKey: string;
   private apiBaseUrl: string;
   private org: string;
+  private project: string;
+  private environment: string;
   private namespaces: Map<string, SearchNamespace> = new Map<
     string,
     SearchNamespace
   >();
 
-  constructor() {
+  constructor(project: string, environment: string) {
+    this.project = project;
+    this.environment = environment;
+
     const config = readConfig();
 
     this.apiKey = process.env.GENSX_API_KEY ?? config.api?.token ?? "";
@@ -360,7 +367,14 @@ export class SearchStorage implements ISearchStorage {
     if (!this.namespaces.has(name)) {
       this.namespaces.set(
         name,
-        new SearchNamespace(name, this.apiBaseUrl, this.apiKey, this.org),
+        new SearchNamespace(
+          name,
+          this.apiBaseUrl,
+          this.apiKey,
+          this.org,
+          this.project,
+          this.environment,
+        ),
       );
     }
 
@@ -370,7 +384,7 @@ export class SearchStorage implements ISearchStorage {
   async ensureNamespace(name: string): Promise<EnsureNamespaceResult> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(name)}/ensure`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(name)}/ensure`,
         {
           method: "POST",
           headers: {
@@ -403,7 +417,7 @@ export class SearchStorage implements ISearchStorage {
   async deleteNamespace(name: string): Promise<DeleteNamespaceResult> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(name)}`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(name)}`,
         {
           method: "DELETE",
           headers: {
@@ -502,7 +516,7 @@ export class SearchStorage implements ISearchStorage {
   async namespaceExists(name: string): Promise<boolean> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/search/${encodeURIComponent(name)}`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(name)}`,
         {
           method: "HEAD",
           headers: {

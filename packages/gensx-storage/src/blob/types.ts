@@ -327,6 +327,16 @@ export interface BaseBlobProviderProps {
    * Default prefix for all blob keys
    */
   defaultPrefix?: string;
+
+  /**
+   * Optional project name. By default, the GENSX_PROJECT environment variable will be used then the projectName from the gensx.yaml file.
+   */
+  project?: string;
+
+  /**
+   * Optional environment name. By default, the GENSX_ENV environment variable will be used then the currently selected environment in the CLI (e.g. `gensx env select`).
+   */
+  environment?: string;
 }
 
 /**

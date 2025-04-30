@@ -1,5 +1,6 @@
 import { join } from "path";
 
+import { getProjectAndEnvironment } from "../utils/config.js";
 import { FileSystemDatabaseStorage } from "./filesystem.js";
 import { RemoteDatabaseStorage } from "./remote.js";
 import {
@@ -33,7 +34,11 @@ export class DatabaseClient {
 
       this.storage = new FileSystemDatabaseStorage(rootDir);
     } else {
-      this.storage = new RemoteDatabaseStorage();
+      const { project, environment } = getProjectAndEnvironment({
+        project: props.project,
+        environment: props.environment,
+      });
+      this.storage = new RemoteDatabaseStorage(project, environment);
     }
   }
 

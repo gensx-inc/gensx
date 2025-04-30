@@ -6,7 +6,6 @@ import { BlobStorage } from "./types.js";
  * Create the blob storage context
  */
 export const BlobContext = createContext<BlobStorage | null>(null);
-
 /**
  * Hook to access the blob storage instance
  * @returns The blob storage instance

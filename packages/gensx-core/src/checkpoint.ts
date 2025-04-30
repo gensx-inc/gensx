@@ -4,9 +4,9 @@ import { promisify } from "node:util";
 import { gzip } from "node:zlib";
 
 import { STREAMING_PLACEHOLDER } from "./component.js";
-import { readConfig } from "./config.js";
 import { ExecutionContext } from "./context.js";
 import { ComponentOpts } from "./types.js";
+import { readConfig } from "./utils/config.js";
 import { USER_AGENT } from "./utils/user-agent.js";
 
 const gzipAsync = promisify(gzip);

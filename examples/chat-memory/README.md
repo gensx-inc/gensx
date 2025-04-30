@@ -52,13 +52,13 @@ To run the workflow in GenSX Cloud:
 2. Start a conversation by calling the workflow:
 
    ```bash
-   gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "message": "What is the capital of France?"}'
+   gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "userInput": "What is the capital of France?"}'
    ```
 
 3. Continue the conversation by using the same `threadId`:
 
    ```bash
-   gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "message": "Tell me more about its history"}'
+   gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "userInput": "Tell me more about its history"}'
    ```
 
 Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see your workflow, test it, analyze traces, and get code snippets.
