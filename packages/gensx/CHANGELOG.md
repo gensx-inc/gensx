@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.27](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.26...gensx-v0.3.27) (2025-04-30)
+
+
+### ✨ New Features
+
+* adding --yes param for bypassing confirmation prompts ([#656](https://github.com/gensx-inc/gensx/issues/656)) ([44092af](https://github.com/gensx-inc/gensx/commit/44092af10c6d099dc476133568c21b5e55bd72b5))
+
+
+### 🐛 Bug Fixes
+
+* fixing but with schema detection only using main file ([#653](https://github.com/gensx-inc/gensx/issues/653)) ([c84e5aa](https://github.com/gensx-inc/gensx/commit/c84e5aac3dc966867c19452feb157ad4327b5619)), closes [#634](https://github.com/gensx-inc/gensx/issues/634)
+
 ## [0.3.26](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.25...gensx-v0.3.26) (2025-04-29)
 
 
