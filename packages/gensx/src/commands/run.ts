@@ -17,6 +17,7 @@ export async function runWorkflow(
     project?: string;
     env?: string;
     output?: string;
+    yes?: boolean;
   },
 ) {
   const spinner = ora({ discardStdin: false });
@@ -59,6 +60,7 @@ export async function runWorkflow(
       options.env,
       spinner,
       false,
+      options.yes,
     );
 
     if (!wait) {

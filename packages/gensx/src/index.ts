@@ -86,6 +86,7 @@ export async function runCLI() {
     )
     .option("-p, --project <name>", "Project name to deploy to")
     .option("-e, --env <name>", "Environment name to deploy to")
+    .option("-y, --yes", "Automatically answer yes to all prompts", false)
     .action(deploy);
 
   program
@@ -101,6 +102,7 @@ export async function runCLI() {
       "Output file to write the workflow result to",
       undefined,
     )
+    .option("-y, --yes", "Automatically answer yes to all prompts", false)
     .action(runWorkflow);
 
   // Environment management commands
