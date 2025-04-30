@@ -747,7 +747,11 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should handle default prefix in listBlobs", async () => {
-    const storage = new RemoteBlobStorage("test-project", "test-environment");
+    const storage = new RemoteBlobStorage(
+      "test-project",
+      "test-environment",
+      "default-prefix",
+    );
     const mockKeys = ["default-prefix/key1", "default-prefix/key2"];
 
     mockFetch.mockResolvedValueOnce({
@@ -774,7 +778,11 @@ suite("RemoteBlobStorage", () => {
   });
 
   test("should combine default prefix with provided prefix in listBlobs", async () => {
-    const storage = new RemoteBlobStorage("test-project", "test-environment");
+    const storage = new RemoteBlobStorage(
+      "test-project",
+      "test-environment",
+      "default-prefix",
+    );
     const mockKeys = ["default-prefix/sub/key1", "default-prefix/sub/key2"];
 
     mockFetch.mockResolvedValueOnce({
