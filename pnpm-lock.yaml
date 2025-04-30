@@ -202,14 +202,14 @@ importers:
   examples/chat-memory:
     dependencies:
       '@gensx/core':
-        specifier: ^0.3.10
-        version: 0.3.10
+        specifier: ^0.3.12
+        version: 0.3.12
       '@gensx/openai':
-        specifier: ^0.1.25
-        version: 0.1.25(openai@4.91.1(ws@8.18.0)(zod@3.24.2))
+        specifier: ^0.1.27
+        version: 0.1.27(openai@4.91.1(ws@8.18.0)(zod@3.24.2))
       '@gensx/storage':
-        specifier: ^0.0.7
-        version: 0.0.7
+        specifier: ^0.0.9
+        version: 0.0.9
       openai:
         specifier: ^4.87.4
         version: 4.91.1(ws@8.18.0)(zod@3.24.2)
@@ -566,14 +566,14 @@ importers:
   examples/rag:
     dependencies:
       '@gensx/core':
-        specifier: ^0.3.10
-        version: 0.3.10
+        specifier: ^0.3.12
+        version: 0.3.12
       '@gensx/openai':
-        specifier: ^0.1.25
-        version: 0.1.25(openai@4.91.1(ws@8.18.0)(zod@3.24.2))
+        specifier: ^0.1.27
+        version: 0.1.27(openai@4.91.1(ws@8.18.0)(zod@3.24.2))
       '@gensx/storage':
-        specifier: ^0.0.7
-        version: 0.0.7
+        specifier: ^0.0.9
+        version: 0.0.9
       openai:
         specifier: ^4.87.4
         version: 4.91.1(ws@8.18.0)(zod@3.24.2)
@@ -771,14 +771,14 @@ importers:
   examples/text-to-sql:
     dependencies:
       '@gensx/core':
-        specifier: ^0.3.10
-        version: 0.3.10
+        specifier: ^0.3.12
+        version: 0.3.12
       '@gensx/openai':
-        specifier: ^0.1.25
-        version: 0.1.25(openai@4.91.1(ws@8.18.0)(zod@3.24.2))
+        specifier: ^0.1.27
+        version: 0.1.27(openai@4.91.1(ws@8.18.0)(zod@3.24.2))
       '@gensx/storage':
-        specifier: ^0.0.7
-        version: 0.0.7
+        specifier: ^0.0.9
+        version: 0.0.9
       openai:
         specifier: ^4.87.4
         version: 4.91.1(ws@8.18.0)(zod@3.24.2)
@@ -1945,17 +1945,17 @@ packages:
   '@formatjs/intl-localematcher@0.6.1':
     resolution: {integrity: sha512-ePEgLgVCqi2BBFnTMWPfIghu6FkbZnnBVhO2sSxvLfrdFw7wCHAHiDoM2h4NRgjbaY7+B7HgOLZGkK187pZTZg==}
 
-  '@gensx/core@0.3.10':
-    resolution: {integrity: sha512-wohsqsM5lmW/DN5mnnXcqfSwHgBWwkpmWf+zqkAwlQ1DR0pvmUhhE1EUdk78HDXbhlY9uYaYU51jyMzUOVHHUw==}
+  '@gensx/core@0.3.12':
+    resolution: {integrity: sha512-lAGZ+vjnbaC/LQFbGlwgbzE6yDcVj5PTyUJqxVrAvB/ekAuvGUfVUr6UAHthSeSSJI8oyXtvMbE1NU1IzKUWfg==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
-  '@gensx/openai@0.1.25':
-    resolution: {integrity: sha512-gRNhbwu/LKqbuRZFdlDww20WPgFxnAMXqp3UhcfxUMZau0875WNzESCc3l0nIaoBgjHnhmjbJhRiVe8eQhz+QQ==}
+  '@gensx/openai@0.1.27':
+    resolution: {integrity: sha512-QRPJGwB21U8e+++1rwClEAA4af4GmX64RPNvo+vDFNVtcq6lcWnOBdAKtFp/HzfAbY9oS90KOhtw5mmBtAeYbw==}
     peerDependencies:
       openai: ^4.87.4
 
-  '@gensx/storage@0.0.7':
-    resolution: {integrity: sha512-qB6YJ0UE0hiGcDzh21MSDQNyxVOq134/WWRy1z5qeHox8LNwDFEbbspeaeJOtgCnP9Vt/1o/toSIP3RB3RjAaw==}
+  '@gensx/storage@0.0.9':
+    resolution: {integrity: sha512-1842MiNqcJ4XL6kugdnuxM2fhoo6YgyWV9k5h3N4ekzNWxxWurQCXeTuxUqKa7DNNugUYRKB+stFVuN3jsLq9w==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@headlessui/react@2.2.0':
@@ -8039,22 +8039,22 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@gensx/core@0.3.10':
+  '@gensx/core@0.3.12':
     dependencies:
       '@common.js/serialize-error': 11.0.3
       ini: 5.0.0
       zod: 3.24.2
 
-  '@gensx/openai@0.1.25(openai@4.91.1(ws@8.18.0)(zod@3.24.2))':
+  '@gensx/openai@0.1.27(openai@4.91.1(ws@8.18.0)(zod@3.24.2))':
     dependencies:
-      '@gensx/core': 0.3.10
+      '@gensx/core': 0.3.12
       openai: 4.91.1(ws@8.18.0)(zod@3.24.2)
       zod: 3.24.2
       zod-to-json-schema: 3.24.5(zod@3.24.2)
 
-  '@gensx/storage@0.0.7':
+  '@gensx/storage@0.0.9':
     dependencies:
-      '@gensx/core': 0.3.10
+      '@gensx/core': 0.3.12
       '@libsql/client': 0.15.2
       '@turbopuffer/turbopuffer': 0.7.0
     transitivePeerDependencies:

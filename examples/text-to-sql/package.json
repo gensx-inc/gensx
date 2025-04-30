@@ -16,9 +16,9 @@
     "deploy": "npx gensx deploy -ev OPENAI_API_KEY ./src/workflows.tsx"
   },
   "dependencies": {
-    "@gensx/openai": "^0.1.25",
-    "@gensx/core": "^0.3.10",
-    "@gensx/storage": "^0.0.7",
+    "@gensx/openai": "^0.1.27",
+    "@gensx/core": "^0.3.12",
+    "@gensx/storage": "^0.0.9",
     "openai": "^4.87.4",
     "zod": "^3.24.2"
   },
