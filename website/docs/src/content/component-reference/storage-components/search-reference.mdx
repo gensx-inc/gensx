@@ -23,6 +23,14 @@ Provides vector search capabilities to its child components.
 import { SearchProvider } from "@gensx/storage";
 ```
 
+### Props
+
+| Prop            | Type                  | Default     | Description                                      |
+| --------------- | --------------------- | ----------- | ------------------------------------------------ |
+| `project`       | `string`                  | Auto-detected    | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file. |
+| `environment`   | `string`                  | Auto-detected    | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |
+
+
 ### Example
 
 ```tsx
