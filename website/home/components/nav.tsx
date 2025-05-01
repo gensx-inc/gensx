@@ -130,28 +130,9 @@ function SocialLinks({ showLabels = false }: { showLabels?: boolean }) {
     tap: { scale: 0.95, transition: { duration: 0.1 } },
   };
 
-  // const docsTextVariants = {
-  //   rest: { x: 0 },
-  //   hover: { x: -5, transition: { duration: 0.3 } },
-  // };
-
-  // const docsArrowVariants = {
-  //   rest: { opacity: 0, x: 8 },
-  //   hover: { opacity: 1, x: 0, transition: { duration: 0.3 } },
-  // };
-
   if (showLabels) {
     return (
       <div className="flex flex-col gap-4">
-        <a
-          href="/docs"
-          rel="noopener noreferrer"
-          className="block text-gray-800 hover:text-gray-900 transition-colors text-sm"
-        >
-          <div className="flex items-center gap-2">
-            <span>Docs</span>
-          </div>
-        </a>
         <div className="flex items-center gap-2">
           <MotionLink
             href="https://github.com/gensx-inc/gensx"
