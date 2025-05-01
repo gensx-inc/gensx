@@ -1,9 +1,11 @@
 import { Command } from "commander";
+import { render } from "ink";
+import React from "react";
 
 import { build, BuildOptions } from "./commands/build.js";
 import { deploy } from "./commands/deploy.js";
 import { handleCreateEnvironment } from "./commands/environment/create.js";
-import { handleListEnvironments } from "./commands/environment/list.js";
+import { ListEnvironmentsUI } from "./commands/environment/list.js";
 import { handleSelectEnvironment } from "./commands/environment/select.js";
 import { handleShowEnvironment } from "./commands/environment/show.js";
 import { handleUnselectEnvironment } from "./commands/environment/unselect.js";
@@ -12,6 +14,10 @@ import { NewCommandOptions, newProject } from "./commands/new.js";
 import { runWorkflow } from "./commands/run.js";
 import { start } from "./commands/start.js";
 import { VERSION } from "./utils/user-agent.js";
+
+interface ListEnvironmentOptions {
+  project?: string;
+}
 
 export async function runCLI() {
   const program = new Command()
@@ -46,6 +52,13 @@ export async function runCLI() {
     .argument("<file>", "File to serve")
     .option("--port <port>", "Port to run the server on", "1337")
     .option("-q, --quiet", "Suppress output", false)
+    // .action((file: string, opts: { port?: string; quiet?: boolean }) => {
+    //   const startOpts = {
+    //     ...opts,
+    //     port: opts.port ? parseInt(opts.port, 10) : undefined,
+    //   };
+    //   render(React.createElement(StartUI, { file, opts: startOpts }));
+    // });
     .action(start);
 
   program
@@ -122,7 +135,16 @@ export async function runCLI() {
     .command("ls")
     .description("List all environments")
     .option("-p, --project <name>", "Project name")
-    .action(handleListEnvironments);
+    .action(async (options: ListEnvironmentOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(ListEnvironmentsUI, {
+            projectName: options.project,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   environmentCommand
     .command("select")
