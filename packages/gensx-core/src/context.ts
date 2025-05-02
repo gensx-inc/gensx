@@ -14,14 +14,19 @@ function createContextSymbol() {
   return Symbol.for(`gensx.context.${contextCounter++}`);
 }
 
+// Forward declare ExecutionContext if necessary, or ensure it's defined/imported before use
+// Assuming ExecutionContext is defined later in this file or correctly imported.
+
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
-  const Provider = (
-    props: ComponentProps<
-      { value: T; onComplete?: () => Promise<void> | void },
-      ExecutionContext
-    >,
-  ) => {
+
+  interface ProviderProps {
+    value: T;
+    onComplete?: () => Promise<void> | void;
+  }
+
+  // Define the runtime Provider function
+  const Provider = (props: ComponentProps<ProviderProps, ExecutionContext>) => {
     return wrapWithFramework(() => {
       const currentContext = getCurrentContext();
 
@@ -40,8 +45,9 @@ export function createContext<T>(defaultValue: T): Context<T> {
     __type: "Context" as const,
     defaultValue,
     symbol: contextSymbol,
+    // Use the simple GsxComponent type now
     Provider: Provider as unknown as GsxComponent<
-      { value: T; onComplete?: () => Promise<void> | void },
+      ProviderProps,
       ExecutionContext
     >,
   };

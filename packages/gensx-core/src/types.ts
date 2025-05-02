@@ -58,15 +58,21 @@ export type ExecutableValue<T = unknown> =
   | T[]
   | Record<string, T>;
 
+// Type for the providers array - SIMPLIFY to just JSX.Element
+export type ProviderElementOrConfig = JSX.Element;
+
 export interface ComponentOpts {
   secretProps?: string[]; // Property paths to mask in checkpoints
   secretOutputs?: boolean; // Whether to mask the output of the component
   name?: string; // Allows you to override the name of the component
   metadata?: Record<string, unknown>; // Metadata to attach to the component
+  providers?: ProviderElementOrConfig[]; // Now only JSX.Element[]
 }
 
 // omit name from ComponentOpts
-export type DefaultOpts = Omit<ComponentOpts, "name">;
+export type DefaultOpts = Omit<ComponentOpts, "name"> & {
+  providers?: ProviderElementOrConfig[]; // Now only JSX.Element[]
+};
 
 export type ComponentProps<P, O> = P & {
   componentOpts?: ComponentOpts;
@@ -97,6 +103,7 @@ export type GsxComponent<P, O> = ((
   readonly __outputType: O;
   readonly __rawProps: P;
   run: (props: P & { componentOpts?: ComponentOpts }) => MaybePromise<O>;
+  props: (boundProps: Partial<P>) => GsxComponent<P, O>;
 };
 
 export type Streamable =
@@ -140,6 +147,9 @@ export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
   run: <U extends P & { stream?: boolean; componentOpts?: ComponentOpts }>(
     props: U,
   ) => MaybePromise<U extends { stream: true } ? Streamable : string>;
+  props: (
+    boundProps: Partial<P>,
+  ) => GsxStreamComponent<P & { stream?: boolean }>;
 };
 
 export interface Context<T> {

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+
 import type {
   ComponentOpts,
   DeepJSXElement,
@@ -12,11 +14,24 @@ import type {
 import serializeErrorPkg from "@common.js/serialize-error";
 const { serializeError } = serializeErrorPkg;
 
-import { getCurrentContext } from "./context.js";
+import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
 import { JSX, jsx } from "./jsx-runtime.js";
 import { resolveDeep } from "./resolve.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
+
+// Define interfaces including the .props method
+interface GsxComponentWithProps<P, O> extends GsxComponent<P, O> {
+  props: (boundProps: Partial<P>) => GsxComponentWithProps<P, O>;
+  // run is already part of GsxComponent
+}
+
+interface GsxStreamComponentWithProps<P> extends GsxStreamComponent<P> {
+  props: (
+    boundProps: Partial<P>,
+  ) => GsxStreamComponentWithProps<P & { stream?: boolean }>;
+  // run is already part of GsxStreamComponent
+}
 
 export function Component<P extends object & { length?: never }, O>(
   name: string,
@@ -24,88 +39,173 @@ export function Component<P extends object & { length?: never }, O>(
   defaultOpts?: DefaultOpts,
 ): GsxComponent<P, O> {
   const GsxComponentFn = async (
-    props: P & { componentOpts?: ComponentOpts },
+    runtimeProps: P & { componentOpts?: ComponentOpts },
+    boundProps?: Partial<P>,
   ) => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (typeof props !== "object" || Array.isArray(props) || props === null) {
+    if (
+      typeof runtimeProps !== "object" ||
+      Array.isArray(runtimeProps) ||
+      runtimeProps === null
+    ) {
       throw new Error(`Component ${name} received non-object props.`);
     }
+
+    const { componentOpts: runtimeComponentOpts, ...restRuntimeProps } =
+      runtimeProps;
+    const props = { ...boundProps, ...restRuntimeProps } as P;
 
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
-    const currentNodeId = context.getCurrentNodeId();
+    const parentNodeId = context.getCurrentNodeId();
 
-    // Merge component opts with unique secrets
-    const mergedOpts = {
+    const mergedOpts: ComponentOpts & { providers?: JSX.Element[] } = {
       ...defaultOpts,
-      ...props.componentOpts,
-      ...{
+      ...runtimeComponentOpts,
+      metadata: {
         ...defaultOpts?.metadata,
-        ...props.componentOpts?.metadata,
+        ...runtimeComponentOpts?.metadata,
       },
       secretProps: Array.from(
         new Set([
           ...(defaultOpts?.secretProps ?? []),
-          ...(props.componentOpts?.secretProps ?? []),
+          ...(runtimeComponentOpts?.secretProps ?? []),
         ]),
       ),
       secretOutputs:
-        defaultOpts?.secretOutputs ?? props.componentOpts?.secretOutputs,
+        defaultOpts?.secretOutputs ?? runtimeComponentOpts?.secretOutputs,
+      providers: [
+        ...(defaultOpts?.providers ?? []),
+        ...(runtimeComponentOpts?.providers ?? []),
+      ],
     };
 
-    // Create checkpoint node for this component execution
-    const nodeId = checkpointManager.addNode(
-      {
-        componentName: props.componentOpts?.name ?? name,
-        props: Object.fromEntries(
-          Object.entries(props).filter(([key]) => key !== "children"),
-        ),
-        componentOpts: mergedOpts,
-      },
-      currentNodeId,
-    );
+    let currentExecutionContext = context;
+    let nodeId: string | undefined = undefined;
 
     try {
-      const result = await context.withCurrentNode(nodeId, async () => {
-        const { componentOpts, ...componentProps } = props;
-        const fnResult = await fn(componentProps as P);
-        return resolveDeep<O | DeepJSXElement<O> | ExecutableValue<O>>(
-          fnResult,
-        );
-      });
+      const providers = mergedOpts.providers;
+      if (providers && providers.length > 0) {
+        for (const providerElement of providers) {
+          let nextExecutionContext: ExecutionContext;
+          if (typeof providerElement === "function") {
+            const jsxElement = providerElement as (
+              props: Record<string, unknown>,
+            ) => Promise<unknown>;
+            nextExecutionContext = await withContext(
+              currentExecutionContext,
+              async (): Promise<ExecutionContext> => {
+                const result = await jsxElement({});
+                if (result instanceof ExecutionContext) {
+                  return result;
+                } else {
+                  const errorMsg = `JSX Provider element did not resolve to an ExecutionContext. Resolved value: ${JSON.stringify(result)}`;
+                  console.error(errorMsg);
+                  throw new Error(errorMsg);
+                }
+              },
+            );
+          } else {
+            console.warn("Invalid provider type encountered:", providerElement);
+            nextExecutionContext = currentExecutionContext;
+          }
+          currentExecutionContext = nextExecutionContext;
+        }
+      }
 
-      // Complete the checkpoint node with the result
+      nodeId = checkpointManager.addNode(
+        {
+          componentName: runtimeComponentOpts?.name ?? name,
+          props: Object.fromEntries(
+            Object.entries(props).filter(([key]) => key !== "children"),
+          ),
+          componentOpts: mergedOpts,
+        },
+        parentNodeId,
+      );
+
+      const result = await currentExecutionContext.withCurrentNode(
+        nodeId,
+        async () => {
+          const fnResult = await fn(props);
+          return resolveDeep<O | DeepJSXElement<O> | ExecutableValue<O>>(
+            fnResult,
+          );
+        },
+      );
+
       checkpointManager.completeNode(nodeId, result);
-
       return result;
     } catch (error) {
-      // Record error in checkpoint
-      if (error instanceof Error) {
+      if (nodeId && error instanceof Error) {
         checkpointManager.addMetadata(nodeId, { error: serializeError(error) });
         checkpointManager.completeNode(nodeId, undefined);
+      } else if (!nodeId && error instanceof Error) {
+        console.error(
+          `Error in component ${name} before node creation:`,
+          error,
+        );
       }
       throw error;
     }
   };
 
-  GsxComponentFn.run = (props: P & { componentOpts?: ComponentOpts }) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-    return jsx(GsxComponentFn as any, props)() as Promise<O>;
+  // --- Add .props() method --- GsxComponentFn
+  (GsxComponentFn as GsxComponentWithProps<P, O>).props = (
+    newBoundProps: Partial<P>,
+  ): GsxComponentWithProps<P, O> => {
+    const BoundComponentFn = async (
+      runtimeProps: P & { componentOpts?: ComponentOpts },
+    ) => {
+      return GsxComponentFn(runtimeProps, newBoundProps);
+    };
+
+    Object.defineProperty(BoundComponentFn, "name", {
+      value: name,
+      configurable: true,
+    });
+    Object.defineProperty(BoundComponentFn, "__gsxFramework", {
+      value: true,
+      configurable: true,
+    });
+
+    // Define the .run method for the bound component
+    (BoundComponentFn as GsxComponentWithProps<P, O>).run = (
+      runProps: P & { componentOpts?: ComponentOpts },
+    ): Promise<O> => {
+      const finalProps = { ...newBoundProps, ...runProps };
+      // Cast BoundComponentFn to any for jsx call
+      return jsx(BoundComponentFn, finalProps)() as Promise<O>;
+    };
+
+    // Define the .props method for the *new* bound component (chaining)
+    (BoundComponentFn as GsxComponentWithProps<P, O>).props = (
+      furtherBoundProps: Partial<P>,
+    ): GsxComponentWithProps<P, O> => {
+      const combinedBoundProps = { ...newBoundProps, ...furtherBoundProps };
+      // Call the original .props method using cast
+      return (GsxComponentFn as GsxComponentWithProps<P, O>).props(
+        combinedBoundProps,
+      );
+    };
+
+    // Brand the new component - return as the extended type
+    return BoundComponentFn as unknown as GsxComponentWithProps<P, O>;
   };
 
+  // --- Original GsxComponentFn setup ---
+  (GsxComponentFn as GsxComponentWithProps<P, O>).run = (
+    runProps: P & { componentOpts?: ComponentOpts },
+  ): Promise<O> => {
+    // Cast GsxComponentFn to any for jsx call
+    return jsx(GsxComponentFn, runProps)() as Promise<O>;
+  };
   if (name) {
-    Object.defineProperty(GsxComponentFn, "name", {
-      value: name,
-    });
+    Object.defineProperty(GsxComponentFn, "name", { value: name });
   }
-
-  Object.defineProperty(GsxComponentFn, "__gsxFramework", {
-    value: true,
-  });
-
-  // Brand the component with its output type
-  return GsxComponentFn as unknown as GsxComponent<P, O>;
+  Object.defineProperty(GsxComponentFn, "__gsxFramework", { value: true });
+  // Return the function cast to the extended type initially
+  return GsxComponentFn as unknown as GsxComponentWithProps<P, O>;
 }
 
 export function StreamComponent<P extends object & { length?: never }>(
@@ -116,53 +216,107 @@ export function StreamComponent<P extends object & { length?: never }>(
   defaultOpts?: DefaultOpts,
 ): GsxStreamComponent<P & { stream?: boolean }> {
   const GsxStreamComponentFn = async (
-    props: P & { stream?: boolean; componentOpts?: ComponentOpts },
+    runtimeProps: P & { stream?: boolean; componentOpts?: ComponentOpts },
+    boundProps?: Partial<P>,
   ) => {
+    if (
+      typeof runtimeProps !== "object" ||
+      Array.isArray(runtimeProps) ||
+      runtimeProps === null
+    ) {
+      throw new Error(`Component ${name} received non-object props.`);
+    }
+
+    const {
+      stream,
+      componentOpts: runtimeComponentOpts,
+      ...restRuntimeProps
+    } = runtimeProps;
+    const { stream: _boundStream, ...restBoundProps } = (boundProps ??
+      {}) as P & { stream?: boolean };
+    const props = { ...restBoundProps, ...restRuntimeProps, stream } as P & {
+      stream?: boolean;
+    };
+
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
+    const parentNodeId = context.getCurrentNodeId();
 
-    // Merge component opts with unique secrets
-    const mergedOpts = {
+    const mergedOpts: ComponentOpts & { providers?: JSX.Element[] } = {
       ...defaultOpts,
-      ...props.componentOpts,
-      ...{
+      ...runtimeComponentOpts,
+      metadata: {
         ...defaultOpts?.metadata,
-        ...props.componentOpts?.metadata,
+        ...runtimeComponentOpts?.metadata,
       },
       secretProps: Array.from(
         new Set([
           ...(defaultOpts?.secretProps ?? []),
-          ...(props.componentOpts?.secretProps ?? []),
+          ...(runtimeComponentOpts?.secretProps ?? []),
         ]),
       ),
       secretOutputs:
-        defaultOpts?.secretOutputs ?? props.componentOpts?.secretOutputs,
+        defaultOpts?.secretOutputs ?? runtimeComponentOpts?.secretOutputs,
+      providers: [
+        ...(defaultOpts?.providers ?? []),
+        ...(runtimeComponentOpts?.providers ?? []),
+      ],
     };
 
-    // Create checkpoint node for this component execution
-    const nodeId = checkpointManager.addNode(
-      {
-        componentName: props.componentOpts?.name ?? name,
-        props: Object.fromEntries(
-          Object.entries(props).filter(([key]) => key !== "children"),
-        ),
-        componentOpts: mergedOpts,
-      },
-      context.getCurrentNodeId(),
-    );
+    let currentExecutionContext = context;
+    let nodeId: string | undefined = undefined;
 
     try {
-      const iterator: Streamable = await context.withCurrentNode(nodeId, () => {
-        const { componentOpts, ...componentProps } = props;
-        return resolveDeep(fn(componentProps as P & { stream?: boolean }));
-      });
+      const providers = mergedOpts.providers;
+      if (providers && providers.length > 0) {
+        for (const providerElement of providers) {
+          let nextExecutionContext: ExecutionContext;
+          if (typeof providerElement === "function") {
+            const jsxElement = providerElement as (
+              props: Record<string, unknown>,
+            ) => Promise<unknown>;
+            nextExecutionContext = await withContext(
+              currentExecutionContext,
+              async (): Promise<ExecutionContext> => {
+                const result = await jsxElement({});
+                if (result instanceof ExecutionContext) {
+                  return result;
+                } else {
+                  const errorMsg = `JSX Provider element did not resolve to an ExecutionContext. Resolved value: ${JSON.stringify(result)}`;
+                  console.error(errorMsg);
+                  throw new Error(errorMsg);
+                }
+              },
+            );
+          } else {
+            console.warn("Invalid provider type encountered:", providerElement);
+            nextExecutionContext = currentExecutionContext;
+          }
+          currentExecutionContext = nextExecutionContext;
+        }
+      }
+
+      nodeId = checkpointManager.addNode(
+        {
+          componentName: runtimeComponentOpts?.name ?? name,
+          props: Object.fromEntries(
+            Object.entries(props).filter(
+              ([key]) => key !== "children" && key !== "stream",
+            ),
+          ),
+          componentOpts: mergedOpts,
+        },
+        parentNodeId,
+      );
+
+      const iterator: Streamable =
+        await currentExecutionContext.withCurrentNode(nodeId, () => {
+          return resolveDeep(fn(props));
+        });
 
       if (props.stream) {
-        // Mark as streaming immediately
         checkpointManager.completeNode(nodeId, STREAMING_PLACEHOLDER);
-
-        // Create a wrapper iterator that captures the output while streaming
         const wrappedIterator = async function* () {
           let accumulated = "";
           try {
@@ -170,28 +324,35 @@ export function StreamComponent<P extends object & { length?: never }>(
               accumulated += token;
               yield token;
             }
-            // Update with final content if stream completes
-            checkpointManager.updateNode(nodeId, {
-              output: accumulated,
-              metadata: { streamCompleted: true },
-            });
-          } catch (error) {
-            if (error instanceof Error) {
+            if (nodeId) {
               checkpointManager.updateNode(nodeId, {
                 output: accumulated,
-                metadata: {
-                  error: error.message,
-                  streamCompleted: false,
-                },
+                metadata: { streamCompleted: true },
               });
             }
-            throw error;
+          } catch (streamError) {
+            if (streamError instanceof Error) {
+              if (nodeId) {
+                checkpointManager.updateNode(nodeId, {
+                  output: accumulated,
+                  metadata: {
+                    error: streamError.message,
+                    streamCompleted: false,
+                  },
+                });
+              } else {
+                console.error(
+                  "Stream error occurred but nodeId was undefined.",
+                  streamError,
+                );
+              }
+            }
+            throw streamError;
           }
         };
         return wrappedIterator();
       }
 
-      // Non-streaming case - accumulate all output then checkpoint
       let result = "";
       for await (const token of iterator) {
         result += token;
@@ -199,41 +360,95 @@ export function StreamComponent<P extends object & { length?: never }>(
       checkpointManager.completeNode(nodeId, result);
       return result;
     } catch (error) {
-      // Record error in checkpoint
-      if (error instanceof Error) {
-        checkpointManager.addMetadata(nodeId, { error: error.message });
+      if (nodeId && error instanceof Error) {
+        checkpointManager.addMetadata(nodeId, { error: serializeError(error) });
         checkpointManager.completeNode(nodeId, undefined);
+      } else if (!nodeId && error instanceof Error) {
+        console.error(
+          `Error in stream component ${name} before node creation:`,
+          error,
+        );
       }
       throw error;
     }
   };
 
-  GsxStreamComponentFn.run = <
+  // --- Add .props() method --- GsxStreamComponentFn
+  (GsxStreamComponentFn as GsxStreamComponentWithProps<P>).props = (
+    newBoundProps: Partial<P>,
+  ): GsxStreamComponentWithProps<P & { stream?: boolean }> => {
+    const BoundStreamComponentFn = async (
+      runtimeProps: P & { stream?: boolean; componentOpts?: ComponentOpts },
+    ) => {
+      return GsxStreamComponentFn(runtimeProps, newBoundProps);
+    };
+
+    Object.defineProperty(BoundStreamComponentFn, "name", {
+      value: name,
+      configurable: true,
+    });
+    Object.defineProperty(BoundStreamComponentFn, "__gsxFramework", {
+      value: true,
+      configurable: true,
+    });
+    Object.defineProperty(BoundStreamComponentFn, "__gsxStreamComponent", {
+      value: true,
+      configurable: true,
+    });
+
+    // Define the .run method for the bound stream component
+    (BoundStreamComponentFn as GsxStreamComponentWithProps<P>).run = <
+      T extends P & { stream?: boolean; componentOpts?: ComponentOpts },
+    >(
+      runProps: T,
+    ): Promise<T extends { stream: true } ? Streamable : string> => {
+      const finalProps = { ...newBoundProps, ...runProps };
+      // Cast BoundStreamComponentFn to any for jsx call
+      return jsx(BoundStreamComponentFn, finalProps)() as Promise<
+        T extends { stream: true } ? Streamable : string
+      >;
+    };
+
+    // Define the .props method for the *new* bound component (chaining)
+    (BoundStreamComponentFn as GsxStreamComponentWithProps<P>).props = (
+      furtherBoundProps: Partial<P>,
+    ): GsxStreamComponentWithProps<P & { stream?: boolean }> => {
+      const combinedBoundProps = { ...newBoundProps, ...furtherBoundProps };
+      // Call original .props method using cast
+      return (GsxStreamComponentFn as GsxStreamComponentWithProps<P>).props(
+        combinedBoundProps,
+      );
+    };
+
+    // Brand the new component - return as the extended type
+    return BoundStreamComponentFn as unknown as GsxStreamComponentWithProps<
+      P & { stream?: boolean }
+    >;
+  };
+
+  // --- Original GsxStreamComponentFn setup ---
+  (GsxStreamComponentFn as GsxStreamComponentWithProps<P>).run = <
     T extends P & { stream?: boolean; componentOpts?: ComponentOpts },
   >(
-    props: T,
+    runProps: T,
   ): Promise<T extends { stream: true } ? Streamable : string> => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-    return jsx(GsxStreamComponentFn as any, props)() as Promise<
+    // Cast GsxStreamComponentFn to any for jsx call
+    return jsx(GsxStreamComponentFn, runProps)() as Promise<
       T extends { stream: true } ? Streamable : string
     >;
   };
 
   if (name) {
-    Object.defineProperty(GsxStreamComponentFn, "name", {
-      value: name,
-    });
+    Object.defineProperty(GsxStreamComponentFn, "name", { value: name });
   }
-
   Object.defineProperty(GsxStreamComponentFn, "__gsxFramework", {
     value: true,
   });
-
   Object.defineProperty(GsxStreamComponentFn, "__gsxStreamComponent", {
     value: true,
   });
-
-  return GsxStreamComponentFn as unknown as GsxStreamComponent<
+  // Return the function cast to the extended type initially
+  return GsxStreamComponentFn as unknown as GsxStreamComponentWithProps<
     P & { stream?: boolean }
   >;
 }

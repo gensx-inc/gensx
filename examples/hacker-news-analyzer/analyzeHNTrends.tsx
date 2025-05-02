@@ -321,9 +321,10 @@ export interface AnalyzeHackerNewsTrendsOutput {
 export const AnalyzeHackerNewsTrends = gensx.Component<
   AnalyzeHackerNewsTrendsProps,
   AnalyzeHackerNewsTrendsOutput
->("AnalyzeHackerNewsTrends", ({ postCount }) => {
-  return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
+>(
+  "AnalyzeHackerNewsTrends",
+  ({ postCount }) => {
+    return (
       <FetchHNPosts limit={postCount}>
         {(stories) => (
           <AnalyzeHNPosts stories={stories}>
@@ -346,6 +347,9 @@ export const AnalyzeHackerNewsTrends = gensx.Component<
           </AnalyzeHNPosts>
         )}
       </FetchHNPosts>
-    </OpenAIProvider>
-  );
-});
+    );
+  },
+  {
+    providers: [OpenAIProvider.props({ apiKey: process.env.OPENAI_API_KEY })],
+  },
+);
