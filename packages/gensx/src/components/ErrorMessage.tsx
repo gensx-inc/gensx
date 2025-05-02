@@ -9,7 +9,7 @@ export function ErrorMessage({ message, title = "Error" }: Props) {
   return (
     <Box flexDirection="column">
       <Box>
-        <Text color="red">
+        <Text wrap="end" color="red">
           {title}: {message}
         </Text>
       </Box>
