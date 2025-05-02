@@ -153,7 +153,7 @@ export function ListEnvironmentsUI({ projectName: initialProjectName }: Props) {
           {selectedEnvironment && (
             <Box paddingTop={1}>
               <Text>
-                Selected environment:{" "}
+                Active environment:{" "}
                 <Text color="green">{selectedEnvironment}</Text>
               </Text>
             </Box>

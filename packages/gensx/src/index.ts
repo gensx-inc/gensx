@@ -4,11 +4,11 @@ import React from "react";
 
 import { build, BuildOptions } from "./commands/build.js";
 import { deploy } from "./commands/deploy.js";
-import { handleCreateEnvironment } from "./commands/environment/create.js";
+import { CreateEnvironmentUI } from "./commands/environment/create.js";
 import { ListEnvironmentsUI } from "./commands/environment/list.js";
-import { handleSelectEnvironment } from "./commands/environment/select.js";
-import { handleShowEnvironment } from "./commands/environment/show.js";
-import { handleUnselectEnvironment } from "./commands/environment/unselect.js";
+import { SelectEnvironmentUI } from "./commands/environment/select.js";
+import { ShowEnvironmentUI } from "./commands/environment/show.js";
+import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
 import { login } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
 import { runWorkflow } from "./commands/run.js";
@@ -122,14 +122,33 @@ export async function runCLI() {
   const environmentCommand = program
     .command("env")
     .description("Manage GenSX environments")
-    .action(handleShowEnvironment);
+    .action(async () => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(ShowEnvironmentUI, {
+            projectName: undefined,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   environmentCommand
     .command("create")
     .description("Create a new environment")
     .argument("<name>", "Name of the environment")
     .option("-p, --project <name>", "Project name")
-    .action(handleCreateEnvironment);
+    .action(async (name: string, options: { project?: string }) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(CreateEnvironmentUI, {
+            environmentName: name,
+            projectName: options.project,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   environmentCommand
     .command("ls")
@@ -151,13 +170,32 @@ export async function runCLI() {
     .description("Select an environment as active")
     .argument("<name>", "Name of the environment to select")
     .option("-p, --project <name>", "Project name")
-    .action(handleSelectEnvironment);
+    .action(async (name: string, options: { project?: string }) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(SelectEnvironmentUI, {
+            environmentName: name,
+            projectName: options.project,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   environmentCommand
     .command("unselect")
     .description("Unselect an environment")
     .option("-p, --project <name>", "Project name")
-    .action(handleUnselectEnvironment);
+    .action(async (options: { project?: string }) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(UnselectEnvironmentUI, {
+            projectName: options.project,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   await program.parseAsync();
 }
