@@ -1,0 +1,452 @@
+import * as gensx from "@gensx/core";
+import { createProvider } from "@gensx/core";
+import { ChatCompletion } from "@gensx/openai";
+
+import { getTopStoryDetails, type HNStory } from "./hn.js";
+
+// Add HN URL helper
+const getHNPostUrl = (id: number | string) =>
+  `https://news.ycombinator.com/item?id=${id}`;
+
+interface WriteTweetProps {
+  context: string;
+  prompt: string;
+}
+
+// For components that return strings, we'll use regular Component with string return type
+const WriteTweet = gensx.Component<WriteTweetProps, string>(
+  "WriteTweet",
+  async ({ context, prompt }) => {
+    const PROMPT = `
+You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
+1. Captures the most interesting insight
+2. Uses your characteristic direct style
+3. Provokes thought or discussion
+4. Stays under 280 characters
+
+Focus on the most surprising or counterintuitive point rather than trying to summarize everything.
+    `.trim();
+
+    // Use stream: false to ensure we get a string back
+    const result = await ChatCompletion.run({
+      messages: [
+        { role: "system", content: PROMPT },
+        {
+          role: "user",
+          content: `Context:\n${context}\n\nPrompt: ${prompt}`,
+        },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+
+    return result;
+  },
+);
+
+interface EditReportProps {
+  content: string;
+}
+
+const EditReport = gensx.Component<EditReportProps, string>(
+  "EditReport",
+  async ({ content }) => {
+    const PROMPT = `
+You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
+1. Clear, direct language
+2. Concrete examples and analogies
+3. Contrarian insights that challenge conventional wisdom
+4. A focus on fundamental principles
+5. Your characteristic mix of technical depth and philosophical breadth
+
+IMPORTANT: You MUST preserve all markdown links from the input exactly as they appear.
+For example, if the input mentions "[Project X](https://news.ycombinator.com/item?id=123)",
+you must include this exact link when discussing that project.
+
+Maintain your voice while preserving the key insights and all links from the analysis.
+  `.trim();
+
+    const result = await ChatCompletion.run({
+      messages: [
+        { role: "system", content: PROMPT },
+        { role: "user", content: content },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+
+    return result;
+  },
+);
+
+interface AnalyzeCommentsProps {
+  postId: number;
+  comments: { text: string; score: number }[];
+}
+
+const AnalyzeComments = gensx.Component<AnalyzeCommentsProps, string>(
+  "AnalyzeComments",
+  async ({ postId, comments }) => {
+    const PROMPT = `
+You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
+
+SENTIMENT: [Write a single sentence describing the overall sentiment in 10 words or less]
+
+STATISTICS:
+- Total comments analyzed: ${comments.length}
+- Average comment score: ${(
+      comments.reduce((sum, c) => sum + c.score, 0) / comments.length
+    ).toFixed(1)}
+- Highest scored comment: ${Math.max(...comments.map((c) => c.score))} points
+- Lowest scored comment: ${Math.min(...comments.map((c) => c.score))} points
+
+DEMONSTRATIVE_COMMENTS:
+1. Most upvoted: [Quote the highest-scored comment]
+2. Most controversial: [Quote a comment that sparked debate]
+3. Most insightful: [Quote a comment that provides unique perspective]
+
+ANALYSIS: [Your detailed analysis of key points of agreement/disagreement, using comment scores to indicate community consensus]
+
+Include a link to the discussion in your analysis section using this format: [Discussion](${getHNPostUrl(
+      postId,
+    )})
+
+Focus on substance rather than surface-level reactions. When referencing comments, include their scores to show the weight of different opinions.
+    `.trim();
+
+    // Sort comments by score for easier analysis
+    const sortedComments = [...comments].sort((a, b) => b.score - a.score);
+    const commentsText = sortedComments
+      .map((c) => `[Score: ${c.score}] ${c.text}`)
+      .join("\n\n");
+
+    const result = await ChatCompletion.run({
+      messages: [
+        { role: "system", content: PROMPT },
+        {
+          role: "user",
+          content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
+        },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+
+    return result;
+  },
+);
+
+interface SummarizePostProps {
+  story: HNStory;
+}
+
+const SummarizePost = gensx.Component<SummarizePostProps, string>(
+  "SummarizePost",
+  async ({ story }) => {
+    const PROMPT = `
+You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
+1. The main point or key insight
+2. Notable discussion points from comments (include comment scores to show community agreement)
+3. The overall reception, specifically analyzing:
+   - Post score (${story.score} points indicates community interest)
+   - Comment sentiment and quality
+   - Level of debate or consensus in comments
+
+IMPORTANT: You MUST start your summary with a link to the post in this EXACT format:
+[${story.title}](${getHNPostUrl(story.id)})
+
+When referencing comments, include their scores to show weight of opinion, e.g.:
+"One highly-upvoted comment (42 points) argues..."
+"While some disagree (15 points)..."
+
+Keep the summary clear and objective. Focus on facts and insights rather than opinions.
+    `.trim();
+
+    const context = `
+Title: ${story.title}
+URL: ${getHNPostUrl(story.id)}
+Text: ${story.text}
+Score: ${story.score} points
+Comments (sorted by score):
+${story.comments
+  .sort((a, b) => b.score - a.score)
+  .map((c) => `[Score: ${c.score}] ${c.text}`)
+  .join("\n\n")}
+    `.trim();
+
+    const response = await ChatCompletion.run({
+      messages: [
+        { role: "system", content: PROMPT },
+        { role: "user", content: context },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+
+    if (!response.includes(getHNPostUrl(story.id))) {
+      return `[${story.title}](${getHNPostUrl(story.id)})\n\n${response}`;
+    }
+    return response;
+  },
+);
+
+interface GenerateReportProps {
+  analyses: {
+    summary: string;
+    commentAnalysis: string;
+  }[];
+}
+
+const GenerateReport = gensx.Component<GenerateReportProps, string>(
+  "GenerateReport",
+  async ({ analyses }) => {
+    const PROMPT = `
+You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
+You will be given input summarizing the top posts from hacker news, and an analysis of the comments on each post.
+
+You should write a blog post about the top trends in technology based on this input. You should be sure to cover the following sections:
+
+- Positive themes: 3 ideas/technologies people are excited about
+- Negative themes: 3 concerns or criticisms
+- Surprising themes: 3 unexpected insights or connections
+- Overall sentiment: a single sentence describing the overall mood of software developers as a whole.
+
+IMPORTANT: Your output MUST preserve all links from the input. When you reference a post or discussion, you MUST include its link.
+For example, if the input contains "[Interesting Project](https://news.ycombinator.com/item?id=123)", you must include this exact link when discussing that project.
+
+Important formatting requirements:
+1. When referencing specific posts or discussions, preserve the markdown links provided in the input: [Title](URL)
+2. When quoting comments, include them as block quotes using ">" at the start of the line
+3. Use markdown formatting for sections (## for headings) and lists
+
+Where appropriate, interleave demonstrative comments to help support your points, build connection with the reader, and make the post more engaging.
+
+Shoot for 1000 words.
+    `.trim();
+
+    const context = analyses
+      .map(({ summary, commentAnalysis }) =>
+        `
+### Post Summary
+${summary}
+
+### Comment Analysis
+${commentAnalysis}
+    `.trim(),
+      )
+      .join("\n\n");
+
+    const result = await ChatCompletion.run({
+      messages: [
+        { role: "system", content: PROMPT },
+        { role: "user", content: context },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+
+    return result;
+  },
+);
+
+interface FetchHNPostsProps {
+  limit: number;
+}
+
+const FetchHNPosts = gensx.Component<FetchHNPostsProps, HNStory[]>(
+  "FetchHNPosts",
+  async ({ limit }) => {
+    // We can only get up to 500 stories from the API
+    const MAX_HN_STORIES = 500;
+    const requestLimit = Math.min(limit, MAX_HN_STORIES);
+
+    console.log(
+      `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
+    );
+    const stories = await getTopStoryDetails(requestLimit);
+    console.log(
+      `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
+      stories.length < limit
+        ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
+        : "",
+    );
+
+    return stories;
+  },
+);
+
+interface AnalyzeHNPostsProps {
+  stories: HNStory[];
+}
+
+interface AnalyzeHNPostsOutput {
+  analyses: {
+    summary: string;
+    commentAnalysis: string;
+  }[];
+}
+
+const AnalyzeHNPosts = gensx.Component<
+  AnalyzeHNPostsProps,
+  AnalyzeHNPostsOutput
+>("AnalyzeHNPosts", async ({ stories }) => {
+  // Process each story in parallel
+  const summaries = await Promise.all(
+    stories.map((story) => SummarizePost.run({ story })),
+  );
+
+  const commentAnalyses = await Promise.all(
+    stories.map((story) =>
+      AnalyzeComments.run({
+        postId: story.id,
+        comments: story.comments,
+      }),
+    ),
+  );
+
+  // Combine the results
+  return {
+    analyses: stories.map((_, index) => ({
+      summary: summaries[index],
+      commentAnalysis: commentAnalyses[index],
+    })),
+  };
+});
+
+interface AnalyzeHackerNewsTrendsProps {
+  postCount: number;
+}
+
+export interface AnalyzeHackerNewsTrendsOutput {
+  report: string;
+  tweet: string;
+}
+
+// Existing implementation with regular .run() calls
+export const AnalyzeHackerNewsTrends = gensx.Component<
+  AnalyzeHackerNewsTrendsProps,
+  AnalyzeHackerNewsTrendsOutput
+>("AnalyzeHackerNewsTrends", async ({ postCount }) => {
+  // Create a provider with OpenAI API key
+  const openaiProvider = createProvider({
+    apiKey: process.env.OPENAI_API_KEY ?? "",
+  });
+
+  // Return the provider's execution with our workflow
+  return await openaiProvider.with(async () => {
+    // Get stories and analyze them
+    const stories = await FetchHNPosts.run({ limit: postCount });
+
+    // Analyze posts
+    const result = await AnalyzeHNPosts.run({ stories });
+
+    // Chain the report generation and editing
+    const report = await GenerateReport.run({
+      analyses: result.analyses,
+    });
+
+    const editedReport = await EditReport.run({
+      content: report,
+    });
+
+    // Create a tweet
+    const tweet = await WriteTweet.run({
+      context: editedReport,
+      prompt: "Summarize the HN trends in a tweet",
+    });
+
+    // Return the final output
+    return { report: editedReport, tweet };
+  });
+});
+
+// New implementation demonstrating the fluent API capabilities
+export const AnalyzeHackerNewsTrendsFluent = gensx.Component<
+  AnalyzeHackerNewsTrendsProps,
+  AnalyzeHackerNewsTrendsOutput
+>("AnalyzeHackerNewsTrendsFluent", async ({ postCount }) => {
+  // Create a provider with OpenAI API key
+  const openaiProvider = createProvider({
+    apiKey: process.env.OPENAI_API_KEY ?? "",
+  });
+
+  return await openaiProvider.with(async () => {
+    // Create a pipeline using the fluent API
+    // Start with fetching posts, then pipe through each subsequent step
+    const result = await FetchHNPosts
+      // First pipe to analyze the HN posts
+      .pipe(async (stories) => {
+        const result = await AnalyzeHNPosts.run({ stories });
+        return result.analyses;
+      })
+      // Then pipe to generate a report
+      .pipe(async (analyses) => {
+        const report = await GenerateReport.run({ analyses });
+        return report;
+      })
+      // Then pipe to edit the report
+      .pipe(async (report) => {
+        const editedReport = await EditReport.run({ content: report });
+        return editedReport;
+      })
+      // At this point, fork the flow to generate both the report and tweet
+      .fork(
+        // First fork path generates a tweet
+        async (editedReport) => {
+          const tweet = await WriteTweet.run({
+            context: editedReport,
+            prompt: "Summarize the HN trends in a tweet",
+          });
+          return tweet;
+        },
+        // Second fork path just returns the edited report
+        (editedReport) => editedReport,
+      )
+      // Join the forked paths to create the final output
+      .join((tweet, report) => {
+        return { tweet, report };
+      })
+      // Run the whole pipeline
+      .run({ limit: postCount });
+
+    return result;
+  });
+});
+
+// Even more elegant fluent implementation
+export const AnalyzeHackerNewsTrendsElegant = gensx.Component<
+  AnalyzeHackerNewsTrendsProps,
+  AnalyzeHackerNewsTrendsOutput
+>("AnalyzeHackerNewsTrendsElegant", ({ postCount }) => {
+  // Create a provider with OpenAI API key
+  const openaiProvider = createProvider({
+    apiKey: process.env.OPENAI_API_KEY ?? "",
+  });
+
+  // Return the provider's execution pipeline
+  return openaiProvider.with(() =>
+    // Start with fetching HN posts
+    FetchHNPosts.props({ limit: postCount })
+      // Transform the HN stories into analyses
+      .pipe((stories) => AnalyzeHNPosts.run({ stories }))
+      // Extract just the analyses array
+      .pipe((result) => result.analyses)
+      // Generate a report from the analyses
+      .pipe((analyses) => GenerateReport.run({ analyses }))
+      // Edit the report in PG's style
+      .pipe((report) => EditReport.run({ content: report }))
+      // Fork to create both the report and tweet
+      .fork(
+        // Path 1: Create tweet (returns tweet)
+        (editedReport) =>
+          WriteTweet.run({
+            context: editedReport,
+            prompt: "Summarize the HN trends in a tweet",
+          }),
+        // Path 2: Just pass through the report (returns report)
+        (editedReport) => editedReport,
+      )
+      // Join the results back together into our final shape
+      .join((tweet, report) => ({ tweet, report })),
+  );
+});
