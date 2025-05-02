@@ -5,7 +5,8 @@ interface Props {
   message?: string;
 }
 
-export function LoadingSpinner({ message = "Loading..." }: Props) {
+// By default the message is empty, so just the spinner is shown
+export function LoadingSpinner({ message = "" }: Props) {
   return (
     <Box>
       <Text>

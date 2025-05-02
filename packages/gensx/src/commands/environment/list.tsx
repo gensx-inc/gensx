@@ -5,6 +5,7 @@ import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingSpinner } from "../../components/LoadingSpinner.js";
 import { listEnvironments } from "../../models/environment.js";
 import { checkProjectExists } from "../../models/projects.js";
+import { getSelectedEnvironment } from "../../utils/env-config.js";
 import { readProjectConfig } from "../../utils/project-config.js";
 
 interface Environment {
@@ -20,6 +21,7 @@ interface UseEnvironmentsResult {
   loading: boolean;
   error: Error | null;
   projectName: string | null;
+  selectedEnvironment: string | null;
 }
 
 // Custom hook to handle environment data fetching
@@ -28,6 +30,9 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [projectName, setProjectName] = useState<string | null>(null);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -51,12 +56,16 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
           throw new Error(`Project ${resolvedProjectName} does not exist.`);
         }
 
-        // Fetch environments for the validated project
-        const envs = await listEnvironments(resolvedProjectName);
+        // Fetch environments and selected environment for the validated project
+        const [envs, selected] = await Promise.all([
+          listEnvironments(resolvedProjectName),
+          getSelectedEnvironment(resolvedProjectName),
+        ]);
 
         if (mounted) {
           setProjectName(resolvedProjectName);
           setEnvironments(envs);
+          setSelectedEnvironment(selected);
           setLoading(false);
         }
       } catch (err) {
@@ -74,7 +83,7 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
     };
   }, [initialProjectName]);
 
-  return { environments, loading, error, projectName };
+  return { environments, loading, error, projectName, selectedEnvironment };
 }
 
 interface Props {
@@ -82,7 +91,7 @@ interface Props {
 }
 
 export function ListEnvironmentsUI({ projectName: initialProjectName }: Props) {
-  const { environments, loading, error, projectName } =
+  const { environments, loading, error, projectName, selectedEnvironment } =
     useEnvironments(initialProjectName);
 
   if (error) {
@@ -90,7 +99,7 @@ export function ListEnvironmentsUI({ projectName: initialProjectName }: Props) {
   }
 
   if (loading || !projectName) {
-    return <LoadingSpinner message="Fetching environments..." />;
+    return <LoadingSpinner />;
   }
 
   return (
@@ -101,7 +110,7 @@ export function ListEnvironmentsUI({ projectName: initialProjectName }: Props) {
           <Text bold color="cyan">
             {environments.length}
           </Text>{" "}
-          environments for project{" "}
+          environment{environments.length === 1 ? "" : "s"} for project{" "}
           <Text bold color="cyan">
             {projectName}
           </Text>
@@ -109,27 +118,47 @@ export function ListEnvironmentsUI({ projectName: initialProjectName }: Props) {
       </Box>
 
       {environments.length > 0 ? (
-        <>
-          <Box>
+        <Box flexDirection="column">
+          <Text>{"─".repeat(44)}</Text>
+          <Box paddingLeft={1}>
             <Text bold>
               <Text color="cyan">{"NAME".padEnd(20)}</Text>
-              <Text color="cyan">{"UPDATED AT".padEnd(24)}</Text>
+              <Text color="cyan">{"UPDATED AT"}</Text>
             </Text>
           </Box>
+          <Text>{"─".repeat(44)}</Text>
 
-          <Box flexDirection="column" gap={1}>
+          <Box flexDirection="column">
             {environments.map((env) => (
-              <Box key={env.name}>
+              <Box key={env.name} paddingLeft={1}>
                 <Text>
                   <Text color="green">{env.name.padEnd(20)}</Text>
                   <Text dimColor>
-                    {new Date(env.updatedAt).toLocaleString().padEnd(24)}
+                    {new Date(env.updatedAt)
+                      .toLocaleString(undefined, {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      })
+                      .replace(/,/, "")}
                   </Text>
                 </Text>
               </Box>
             ))}
           </Box>
-        </>
+          <Text>{"─".repeat(44)}</Text>
+          {selectedEnvironment && (
+            <Box paddingTop={1}>
+              <Text>
+                Selected environment:{" "}
+                <Text color="green">{selectedEnvironment}</Text>
+              </Text>
+            </Box>
+          )}
+        </Box>
       ) : (
         <Box>
           <Text dimColor>No environments found</Text>
