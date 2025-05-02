@@ -1,5 +1,5 @@
 import * as gensx from "@gensx/core";
-import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { ChatCompletion } from "@gensx/openai";
 
 import { getTopStoryDetails, type HNStory } from "./hn.js";
 
@@ -321,35 +321,29 @@ export interface AnalyzeHackerNewsTrendsOutput {
 export const AnalyzeHackerNewsTrends = gensx.Component<
   AnalyzeHackerNewsTrendsProps,
   AnalyzeHackerNewsTrendsOutput
->(
-  "AnalyzeHackerNewsTrends",
-  ({ postCount }) => {
-    return (
-      <FetchHNPosts limit={postCount}>
-        {(stories) => (
-          <AnalyzeHNPosts stories={stories}>
-            {({ analyses }) => (
-              <GenerateReport analyses={analyses}>
-                {(report) => (
-                  <EditReport content={report}>
-                    {(editedReport) => (
-                      <WriteTweet
-                        context={editedReport}
-                        prompt="Summarize the HN trends in a tweet"
-                      >
-                        {(tweet) => ({ report: editedReport, tweet })}
-                      </WriteTweet>
-                    )}
-                  </EditReport>
-                )}
-              </GenerateReport>
-            )}
-          </AnalyzeHNPosts>
-        )}
-      </FetchHNPosts>
-    );
-  },
-  {
-    providers: [OpenAIProvider.props({ apiKey: process.env.OPENAI_API_KEY })],
-  },
-);
+>("AnalyzeHackerNewsTrends", ({ postCount }) => {
+  return (
+    <FetchHNPosts limit={postCount}>
+      {(stories) => (
+        <AnalyzeHNPosts stories={stories}>
+          {({ analyses }) => (
+            <GenerateReport analyses={analyses}>
+              {(report) => (
+                <EditReport content={report}>
+                  {(editedReport) => (
+                    <WriteTweet
+                      context={editedReport}
+                      prompt="Summarize the HN trends in a tweet"
+                    >
+                      {(tweet) => ({ report: editedReport, tweet })}
+                    </WriteTweet>
+                  )}
+                </EditReport>
+              )}
+            </GenerateReport>
+          )}
+        </AnalyzeHNPosts>
+      )}
+    </FetchHNPosts>
+  );
+});

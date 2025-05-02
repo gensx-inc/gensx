@@ -1,6 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type {
+  BoundGsxComponent,
+  BoundGsxStreamComponent,
   ComponentOpts,
   DeepJSXElement,
   DefaultOpts,
@@ -19,19 +26,6 @@ import { JSX, jsx } from "./jsx-runtime.js";
 import { resolveDeep } from "./resolve.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
-
-// Define interfaces including the .props method
-interface GsxComponentWithProps<P, O> extends GsxComponent<P, O> {
-  props: (boundProps: Partial<P>) => GsxComponentWithProps<P, O>;
-  // run is already part of GsxComponent
-}
-
-interface GsxStreamComponentWithProps<P> extends GsxStreamComponent<P> {
-  props: (
-    boundProps: Partial<P>,
-  ) => GsxStreamComponentWithProps<P & { stream?: boolean }>;
-  // run is already part of GsxStreamComponent
-}
 
 export function Component<P extends object & { length?: never }, O>(
   name: string,
@@ -59,7 +53,7 @@ export function Component<P extends object & { length?: never }, O>(
     const { checkpointManager } = workflowContext;
     const parentNodeId = context.getCurrentNodeId();
 
-    const mergedOpts: ComponentOpts & { providers?: JSX.Element[] } = {
+    const mergedOpts: ComponentOpts = {
       ...defaultOpts,
       ...runtimeComponentOpts,
       metadata: {
@@ -151,13 +145,13 @@ export function Component<P extends object & { length?: never }, O>(
   };
 
   // --- Add .props() method --- GsxComponentFn
-  (GsxComponentFn as GsxComponentWithProps<P, O>).props = (
+  (GsxComponentFn as GsxComponent<P, O>).props = (
     newBoundProps: Partial<P>,
-  ): GsxComponentWithProps<P, O> => {
-    const BoundComponentFn = async (
-      runtimeProps: P & { componentOpts?: ComponentOpts },
-    ) => {
-      return GsxComponentFn(runtimeProps, newBoundProps);
+  ): BoundGsxComponent<P, O> => {
+    const BoundComponentFn = async (runtimeProps: {
+      componentOpts?: ComponentOpts;
+    }) => {
+      return GsxComponentFn(runtimeProps as any, newBoundProps);
     };
 
     Object.defineProperty(BoundComponentFn, "name", {
@@ -168,44 +162,46 @@ export function Component<P extends object & { length?: never }, O>(
       value: true,
       configurable: true,
     });
-
     // Define the .run method for the bound component
-    (BoundComponentFn as GsxComponentWithProps<P, O>).run = (
-      runProps: P & { componentOpts?: ComponentOpts },
+    (BoundComponentFn as unknown as BoundGsxComponent<P, O>).run = (
+      runProps?: Omit<P, keyof P> & { componentOpts?: ComponentOpts },
     ): Promise<O> => {
-      const finalProps = { ...newBoundProps, ...runProps };
-      // Cast BoundComponentFn to any for jsx call
-      return jsx(BoundComponentFn, finalProps)() as Promise<O>;
+      const finalProps = { ...newBoundProps, ...(runProps ?? {}) };
+      return jsx(
+        BoundComponentFn as any,
+        finalProps as P & { componentOpts?: ComponentOpts },
+      )() as Promise<O>;
     };
 
     // Define the .props method for the *new* bound component (chaining)
-    (BoundComponentFn as GsxComponentWithProps<P, O>).props = (
+    (BoundComponentFn as unknown as BoundGsxComponent<P, O>).props = (
       furtherBoundProps: Partial<P>,
-    ): GsxComponentWithProps<P, O> => {
+    ): BoundGsxComponent<P, O> => {
       const combinedBoundProps = { ...newBoundProps, ...furtherBoundProps };
-      // Call the original .props method using cast
-      return (GsxComponentFn as GsxComponentWithProps<P, O>).props(
-        combinedBoundProps,
-      );
+      return (GsxComponentFn as GsxComponent<P, O>).props(combinedBoundProps);
     };
 
-    // Brand the new component - return as the extended type
-    return BoundComponentFn as unknown as GsxComponentWithProps<P, O>;
+    // Copy necessary internal properties (may need refinement based on Omit behavior)
+    (BoundComponentFn as any).__brand = "gensx-component";
+    (BoundComponentFn as any).__outputType = (
+      GsxComponentFn as any
+    ).__outputType;
+    (BoundComponentFn as any).__rawProps = (GsxComponentFn as any).__rawProps;
+
+    return BoundComponentFn as unknown as BoundGsxComponent<P, O>;
   };
 
   // --- Original GsxComponentFn setup ---
-  (GsxComponentFn as GsxComponentWithProps<P, O>).run = (
+  (GsxComponentFn as GsxComponent<P, O>).run = (
     runProps: P & { componentOpts?: ComponentOpts },
   ): Promise<O> => {
-    // Cast GsxComponentFn to any for jsx call
-    return jsx(GsxComponentFn, runProps)() as Promise<O>;
+    return jsx(GsxComponentFn as any, runProps)() as Promise<O>;
   };
   if (name) {
     Object.defineProperty(GsxComponentFn, "name", { value: name });
   }
   Object.defineProperty(GsxComponentFn, "__gsxFramework", { value: true });
-  // Return the function cast to the extended type initially
-  return GsxComponentFn as unknown as GsxComponentWithProps<P, O>;
+  return GsxComponentFn as unknown as GsxComponent<P, O>;
 }
 
 export function StreamComponent<P extends object & { length?: never }>(
@@ -243,7 +239,7 @@ export function StreamComponent<P extends object & { length?: never }>(
     const { checkpointManager } = workflowContext;
     const parentNodeId = context.getCurrentNodeId();
 
-    const mergedOpts: ComponentOpts & { providers?: JSX.Element[] } = {
+    const mergedOpts: ComponentOpts = {
       ...defaultOpts,
       ...runtimeComponentOpts,
       metadata: {
@@ -374,13 +370,14 @@ export function StreamComponent<P extends object & { length?: never }>(
   };
 
   // --- Add .props() method --- GsxStreamComponentFn
-  (GsxStreamComponentFn as GsxStreamComponentWithProps<P>).props = (
+  (GsxStreamComponentFn as GsxStreamComponent<P>).props = (
     newBoundProps: Partial<P>,
-  ): GsxStreamComponentWithProps<P & { stream?: boolean }> => {
-    const BoundStreamComponentFn = async (
-      runtimeProps: P & { stream?: boolean; componentOpts?: ComponentOpts },
-    ) => {
-      return GsxStreamComponentFn(runtimeProps, newBoundProps);
+  ): BoundGsxStreamComponent<P & { stream?: boolean }> => {
+    const BoundStreamComponentFn = async (runtimeProps: {
+      stream?: boolean;
+      componentOpts?: ComponentOpts;
+    }) => {
+      return GsxStreamComponentFn(runtimeProps as any, newBoundProps);
     };
 
     Object.defineProperty(BoundStreamComponentFn, "name", {
@@ -397,43 +394,55 @@ export function StreamComponent<P extends object & { length?: never }>(
     });
 
     // Define the .run method for the bound stream component
-    (BoundStreamComponentFn as GsxStreamComponentWithProps<P>).run = <
-      T extends P & { stream?: boolean; componentOpts?: ComponentOpts },
+    (BoundStreamComponentFn as unknown as BoundGsxStreamComponent<P>).run = <
+      T extends Omit<P, keyof P> & {
+        stream?: boolean;
+        componentOpts?: ComponentOpts;
+      },
     >(
       runProps: T,
     ): Promise<T extends { stream: true } ? Streamable : string> => {
       const finalProps = { ...newBoundProps, ...runProps };
-      // Cast BoundStreamComponentFn to any for jsx call
-      return jsx(BoundStreamComponentFn, finalProps)() as Promise<
-        T extends { stream: true } ? Streamable : string
-      >;
+      return jsx(
+        BoundStreamComponentFn as any,
+        finalProps as unknown as P & {
+          stream?: boolean;
+          componentOpts?: ComponentOpts;
+        },
+      )() as Promise<T extends { stream: true } ? Streamable : string>;
     };
 
     // Define the .props method for the *new* bound component (chaining)
-    (BoundStreamComponentFn as GsxStreamComponentWithProps<P>).props = (
+    (BoundStreamComponentFn as unknown as BoundGsxStreamComponent<P>).props = (
       furtherBoundProps: Partial<P>,
-    ): GsxStreamComponentWithProps<P & { stream?: boolean }> => {
+    ): BoundGsxStreamComponent<P & { stream?: boolean }> => {
       const combinedBoundProps = { ...newBoundProps, ...furtherBoundProps };
-      // Call original .props method using cast
-      return (GsxStreamComponentFn as GsxStreamComponentWithProps<P>).props(
+      return (GsxStreamComponentFn as GsxStreamComponent<P>).props(
         combinedBoundProps,
       );
     };
 
-    // Brand the new component - return as the extended type
-    return BoundStreamComponentFn as unknown as GsxStreamComponentWithProps<
+    // Copy necessary internal properties (may need refinement based on Omit behavior)
+    (BoundStreamComponentFn as any).__brand = "gensx-stream-component";
+    (BoundStreamComponentFn as any).__outputType = (
+      GsxStreamComponentFn as any
+    ).__outputType;
+    (BoundStreamComponentFn as any).__rawProps = (
+      GsxStreamComponentFn as any
+    ).__rawProps;
+
+    return BoundStreamComponentFn as unknown as BoundGsxStreamComponent<
       P & { stream?: boolean }
     >;
   };
 
   // --- Original GsxStreamComponentFn setup ---
-  (GsxStreamComponentFn as GsxStreamComponentWithProps<P>).run = <
+  (GsxStreamComponentFn as GsxStreamComponent<P>).run = <
     T extends P & { stream?: boolean; componentOpts?: ComponentOpts },
   >(
     runProps: T,
   ): Promise<T extends { stream: true } ? Streamable : string> => {
-    // Cast GsxStreamComponentFn to any for jsx call
-    return jsx(GsxStreamComponentFn, runProps)() as Promise<
+    return jsx(GsxStreamComponentFn as any, runProps)() as Promise<
       T extends { stream: true } ? Streamable : string
     >;
   };
@@ -447,8 +456,7 @@ export function StreamComponent<P extends object & { length?: never }>(
   Object.defineProperty(GsxStreamComponentFn, "__gsxStreamComponent", {
     value: true,
   });
-  // Return the function cast to the extended type initially
-  return GsxStreamComponentFn as unknown as GsxStreamComponentWithProps<
+  return GsxStreamComponentFn as unknown as GsxStreamComponent<
     P & { stream?: boolean }
   >;
 }
