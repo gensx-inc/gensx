@@ -1,5 +1,5 @@
 import { resolveDeep } from "./resolve.js";
-import { ComponentProps, Context, GsxComponent } from "./types.js";
+import { MaybePromise } from "./types.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
@@ -14,42 +14,38 @@ function createContextSymbol() {
   return Symbol.for(`gensx.context.${contextCounter++}`);
 }
 
-export function createContext<T>(defaultValue: T): Context<T> {
+// Context now returns a fluent provider that can be used with our new API
+export function createContext<T>(defaultValue: T) {
   const contextSymbol = createContextSymbol();
-  const Provider = (
-    props: ComponentProps<
-      { value: T; onComplete?: () => Promise<void> | void },
-      ExecutionContext
-    >,
-  ) => {
-    return wrapWithFramework(() => {
-      const currentContext = getCurrentContext();
 
-      const executionContext = currentContext.withContext(
-        {
-          [contextSymbol]: props.value,
-        },
-        props.onComplete,
-      );
-
-      return Promise.resolve(executionContext);
-    });
-  };
-
-  const context = {
+  return {
     __type: "Context" as const,
     defaultValue,
     symbol: contextSymbol,
-    Provider: Provider as unknown as GsxComponent<
-      { value: T; onComplete?: () => Promise<void> | void },
-      ExecutionContext
-    >,
-  };
+    // Create a fluent provider for this context
+    Provider: (value: T) => {
+      const provider = {
+        value,
+        with: async <R>(fn: () => MaybePromise<R>): Promise<R> => {
+          const currentContext = getCurrentContext();
 
-  return context;
+          const executionContext = currentContext.withContext({
+            [contextSymbol]: value,
+          });
+
+          return withContext(executionContext, async () => {
+            const result = await resolveDeep(fn());
+            return result as R;
+          });
+        },
+      };
+
+      return provider;
+    },
+  };
 }
 
-export function useContext<T>(context: Context<T>): T {
+export function useContext<T>(context: { symbol: symbol; defaultValue: T }): T {
   const executionContext = getCurrentContext();
   const value = executionContext.get(context.symbol) as T | undefined;
 

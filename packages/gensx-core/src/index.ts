@@ -1,21 +1,35 @@
+export * from "./types.js";
+export * from "./context.js";
+export * from "./component.js";
+export * from "./stream.js";
+export * from "./resolve.js";
+export * from "./workflow-context.js";
+
+// Re-export key components
+export {
+  Component,
+  StreamComponent,
+  createProvider,
+  withProvider,
+  Workflow,
+} from "./component.js";
+
 export { createContext, useContext } from "./context.js";
-export { execute, Workflow } from "./execute.js";
-export { Fragment, jsx, jsxs } from "./jsx-runtime.js";
-export type { JSX } from "./jsx-runtime.js";
-export { StreamComponent, Component } from "./component.js";
-export { array } from "./array.js";
-export type {
-  Context,
-  ComponentOpts,
-  MaybePromise,
-  Streamable,
-  ComponentProps,
-  GsxStreamComponent,
-  GsxComponent,
-  GSXToolProps,
-  GSXToolAnySchema,
-} from "./types.js";
-export type { GsxArray } from "./array.js";
-export { readConfig } from "./utils/config.js";
-export { getSelectedEnvironment } from "./utils/env-config.js";
-export { readProjectConfig } from "./utils/project-config.js";
+
+export {
+  streamToString,
+  streamFromArray,
+  streamFromString,
+  combineStreams,
+  mapStream,
+  isStreamable,
+  assertString,
+  ensureString,
+} from "./stream.js";
+
+// Re-export checkpoint functionality
+export { CheckpointManager } from "./checkpoint.js";
+export {
+  createWorkflowContext,
+  getWorkflowContext,
+} from "./workflow-context.js";

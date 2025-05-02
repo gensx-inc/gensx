@@ -184,21 +184,12 @@ export const ChatCompletion = gensx.StreamComponent<
     const response = await gsxChatCompletionImpl({ ...props, stream: false });
     const content = response.choices[0]?.message?.content ?? "";
 
-    // Use sync iterator for non-streaming case
-    const generateTokens = (): IterableIterator<string> => {
-      let yielded = false;
-      return {
-        [Symbol.iterator]() {
-          return this;
-        },
-        next() {
-          if (!yielded) {
-            yielded = true;
-            return { done: false, value: content };
-          }
-          return { done: true, value: undefined };
-        },
-      };
+    // For non-streaming case, directly return the content as string
+    // This helps TypeScript infer that when stream: false, we get a string
+    const generateTokens = async function* () {
+      // Add a minimal delay to satisfy the async requirement
+      await Promise.resolve();
+      yield content;
     };
 
     return generateTokens();

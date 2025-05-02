@@ -6,14 +6,21 @@ import { defineConfig } from "vitest/config";
 
 import tsconfig from "./tsconfig.json" with { type: "json" };
 
+// Ensure the paths object exists
+const compilerOptions = tsconfig.compilerOptions || {};
+const paths = compilerOptions.paths || {};
+
 // Create an alias object from the paths in tsconfig.json
 const alias = Object.fromEntries(
   // For Each Path in tsconfig.json
-  Object.entries(tsconfig.compilerOptions.paths).map(([key, [value]]) => [
+  Object.entries(paths).map(([key, values]) => [
     // Remove the "/*" from the key and resolve the path
     key.replace("/*", ""),
     // Remove the "/*" from the value Resolve the relative path
-    path.resolve(__dirname, value.replace("/*", "")),
+    path.resolve(
+      __dirname,
+      Array.isArray(values) ? values[0].replace("/*", "") : "",
+    ),
   ]),
 );
 

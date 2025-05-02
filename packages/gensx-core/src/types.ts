@@ -1,14 +1,12 @@
 import { z } from "zod";
 
-import { GsxArray } from "./array.js";
 import { ExecutionContext } from "./context.js";
-import { JSX } from "./jsx-runtime.js";
 
-export type MaybePromise<T> = T | Promise<T>;
-
-export type Element = JSX.Element;
-
+// Basic primitives
 export type Primitive = string | number | boolean | null | undefined;
+
+// Allows for a Promise or direct value
+export type MaybePromise<T> = T | Promise<T>;
 
 /**
  * This allows an element to return either a plain object or an object with JSX.Element children
@@ -39,108 +37,101 @@ export type Primitive = string | number | boolean | null | undefined;
  * );
  */
 export type DeepJSXElement<T> =
-  | (T extends (infer Item)[]
-      ? DeepJSXElement<Item>[] | GsxArray<Item> | Item[]
-      : T extends GsxArray<infer Item>
-        ? GsxArray<Item>
-        : T extends object
-          ? { [K in keyof T]: DeepJSXElement<T[K]> }
-          : JSX.Element | T)
-  | JSX.Element;
+  | T
+  | Record<string, T>
+  | (T | Record<string, T>)[];
 
-// Allow children function to return plain objects that will be executed
-export type ExecutableValue<T = unknown> =
-  | Element
-  | Element[]
-  | Primitive
-  | Streamable
-  | Record<string, Element | Primitive | Streamable>
-  | T[]
-  | Record<string, T>;
+// Executable values
+export type ExecutableValue<T = unknown> = () => MaybePromise<T>;
 
+// Component options
 export interface ComponentOpts {
-  secretProps?: string[]; // Property paths to mask in checkpoints
-  secretOutputs?: boolean; // Whether to mask the output of the component
-  name?: string; // Allows you to override the name of the component
-  metadata?: Record<string, unknown>; // Metadata to attach to the component
+  name?: string;
+  provider?: unknown;
+  metadata?: Record<string, unknown>;
+  secretProps?: string[];
+  secretOutputs?: boolean;
 }
 
-// omit name from ComponentOpts
-export type DefaultOpts = Omit<ComponentOpts, "name">;
+// Default options for components
+export interface DefaultOpts {
+  metadata?: Record<string, unknown>;
+  secretProps?: string[];
+  secretOutputs?: boolean;
+}
 
+// Streamable output
+export interface Streamable extends AsyncIterable<string> {
+  [Symbol.asyncIterator](): AsyncIterator<string>;
+}
+
+// Props for components
 export type ComponentProps<P, O> = P & {
-  componentOpts?: ComponentOpts;
-  children?:
-    | ((output: O) => MaybePromise<ExecutableValue<O>>)
-    | ((output: O) => void)
-    | ((output: O) => Promise<void>);
+  children?: (result: O) => unknown;
+  length?: never;
 };
 
-/**
- * A component that returns either:
- * - The output type O directly
- * - JSX that will resolve to type O
- * - A promise of either of the above
- */
-export type GsxComponent<P, O> = ((
-  props: ComponentProps<P, O>,
-) => MaybePromise<
-  O extends (infer Item)[]
-    ? DeepJSXElement<O> | GsxArray<Item> | Item[] | (Item | Element)[]
-    : O | DeepJSXElement<O> | ExecutableValue<O>
->) /*
- * Use branding to preserve output type information.
- * This allows direct access to the output type O while maintaining
- * compatibility with the more flexible JSX composition system.
- */ & {
-  readonly __brand: "gensx-component";
-  readonly __outputType: O;
-  readonly __rawProps: P;
-  run: (props: P & { componentOpts?: ComponentOpts }) => MaybePromise<O>;
-};
+// Children function types for streaming
+export type StreamChildrenType<T> = (result: T | Streamable) => unknown;
 
-export type Streamable =
-  | AsyncIterableIterator<string>
-  | IterableIterator<string>;
+// The FluentComponent interface for typings
+export interface FluentComponent<P extends object, O> {
+  // Core execution with overloads for stream parameter
+  run(
+    props?: Partial<P & { stream: true }> & { componentOpts?: ComponentOpts },
+  ): Promise<Streamable>;
+  run(
+    props?: Partial<P & { stream: false }> & { componentOpts?: ComponentOpts },
+  ): Promise<string>;
+  run(props?: Partial<P> & { componentOpts?: ComponentOpts }): Promise<O>;
 
-export type StreamChildrenType<T> =
-  | ((
-      output: T extends { stream: true } ? Streamable : string,
-    ) => MaybePromise<ExecutableValue | Primitive>)
-  | ((output: T extends { stream: true } ? Streamable : string) => void)
-  | ((
-      output: T extends { stream: true } ? Streamable : string,
-    ) => Promise<void>);
+  // Binding operations
+  props(props: Partial<P>): FluentComponent<P, O>;
+  withProvider(provider: unknown): FluentComponent<P, O>;
 
-export type StreamComponentProps<P> = P & {
-  stream?: boolean;
-  componentOpts?: ComponentOpts;
-  children?: StreamChildrenType<P>;
-};
+  // Transform operations
+  pipe<R>(mapFn: (output: O) => MaybePromise<R>): FluentComponent<P, R>;
+  branch<R>(
+    predicate: (output: O) => boolean | Promise<boolean>,
+    ifTrue: (output: O) => MaybePromise<R>,
+    ifFalse: (output: O) => MaybePromise<R>,
+  ): FluentComponent<P, R>;
 
-export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
-  props: StreamComponentProps<
-    // This is necessary to disallow extra props. Because of the extends statement above,
-    // typescript would allow props that have all the necessary keys, but also have extra keys.
-    // We want to prevent that, as it can be surprising for the developer.
-    // This hack is not necessary for the Component type because we don't use extends in the same way.
-    T & Record<Exclude<keyof T, keyof StreamComponentProps<P>>, never>
-  >,
-) => MaybePromise<
-  | DeepJSXElement<T extends { stream: true } ? Streamable : string>
-  | ExecutableValue
->) /*
- * Use branding to preserve output type information.
- * This allows direct access to the output type O while maintaining
- * compatibility with the more flexible JSX composition system.
- */ & {
-  readonly __brand: "gensx-stream-component";
-  readonly __outputType: Streamable;
-  readonly __rawProps: P;
-  run: <U extends P & { stream?: boolean; componentOpts?: ComponentOpts }>(
-    props: U,
-  ) => MaybePromise<U extends { stream: true } ? Streamable : string>;
-};
+  // Array operations
+  map<R>(mapFn: (item: unknown) => MaybePromise<R>): FluentComponent<P, R[]>;
+
+  // Parallel execution
+  fork(
+    ...mapFns: ((output: O) => MaybePromise<unknown>)[]
+  ): FluentFork<P, O, unknown[]>;
+}
+
+// Fork interface for parallel execution
+export interface FluentFork<
+  P extends object,
+  _ParentOutput,
+  R extends unknown[],
+> {
+  join<R2>(joinFn: (...results: R) => MaybePromise<R2>): FluentComponent<P, R2>;
+}
+
+// Provider interface
+export interface Provider<T> {
+  value: T;
+  props(props: Partial<T>): Provider<T>;
+  execute<P extends object, O>(
+    component: FluentComponent<P, O>,
+    props?: P,
+  ): Promise<O>;
+  with<R>(fn: (provider: Provider<T>) => MaybePromise<R>): Promise<R>;
+}
+
+// Legacy types for backwards compatibility
+export type GsxComponent<P extends object, O> = FluentComponent<P, O>;
+export type GsxStreamComponent<P extends object> = FluentComponent<
+  P,
+  string | Streamable
+>;
 
 export interface Context<T> {
   readonly __type: "Context";

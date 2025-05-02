@@ -751,7 +751,7 @@ Explore these resources to dive deeper into GenSX:
 
 Check out these example projects to see GenSX in action:
 
-- [Blog Writer](https://github.com/gensx-inc/gensx/tree/main/examples/blogWriter)
+- [Blog Writer](https://github.com/gensx-inc/gensx/tree/main/examples/blog-writer)
 - [Chat with Memory](https://github.com/gensx-inc/gensx/tree/main/examples/chat-memory)
 - [Text to SQL](https://github.com/gensx-inc/gensx/tree/main/examples/text-to-sql)
 - [RAG](https://github.com/gensx-inc/gensx/tree/main/examples/rag)
@@ -1380,7 +1380,7 @@ For more examples of using tools with GenSX, see the following examples:
 
 Workflows regularly require getting structured outputs (JSON) from LLMs. GenSX supports an easy way to get structured outputs from an LLM by using the `GSXChatCompletion` component and Zod. However, you can also use the `response_format` prop to get a structured output from OpenAI models without using GenSX helpers, just like you would when using the OpenAI SDK or API.
 
-This guide shows how to use structured outputs both with and without the helpers that GenSX provides. You can find the complete example code in the [structured outputs example](https://github.com/gensx-inc/gensx/tree/main/examples/structuredOutputs).
+This guide shows how to use structured outputs both with and without the helpers that GenSX provides. You can find the complete example code in the [structured outputs example](https://github.com/gensx-inc/gensx/tree/main/examples/structured-outputs).
 
 ## Structured outputs with GSXChatCompletion
 
@@ -2009,7 +2009,7 @@ To cover the 25x25 room while excluding the 3.5 x 3 ft area, you'll need approxi
 
 # Hacker News analyzer
 
-The [Hacker News Analyzer](https://github.com/gensx-inc/gensx/tree/main/examples/hackerNewsAnalyzer) example uses GenSX to fetch, analyze, and extract trends from the top Hacker News posts. It shows how to combine data fetching, parallel analysis, and content generation in a single workflow to create two outputs: a detailed report and a tweet of the trends.
+The [Hacker News Analyzer](https://github.com/gensx-inc/gensx/tree/main/examples/hacker-news-analyzer) example uses GenSX to fetch, analyze, and extract trends from the top Hacker News posts. It shows how to combine data fetching, parallel analysis, and content generation in a single workflow to create two outputs: a detailed report and a tweet of the trends.
 
 ## Workflow
 
@@ -2094,7 +2094,7 @@ Check out the other examples in the [GenSX Github Repo](https://github.com/gensx
 
 # Blog writer
 
-Breaking down complex tasks into smaller, discrete steps is one of the best ways to improve the quality of LLM outputs. The [blog writer workflow example](https://github.com/gensx-inc/gensx/tree/main/examples/blogWriter) does this by following the same approach a human would take to write a blog post: first conducting research, then generating a first draft, and finally editing that draft.
+Breaking down complex tasks into smaller, discrete steps is one of the best ways to improve the quality of LLM outputs. The [blog writer workflow example](https://github.com/gensx-inc/gensx/tree/main/examples/blog-writer) does this by following the same approach a human would take to write a blog post: first conducting research, then generating a first draft, and finally editing that draft.
 
 ## Workflow
 
@@ -2305,7 +2305,7 @@ export const ProcessDocument = gensx.Component<
 });
 ```
 
-You can find the full code for the `ProcessDocument` component in the [reusable components example](https://github.com/gensx-inc/gensx/tree/main/examples/reusableComponents).
+You can find the full code for the `ProcessDocument` component in the [reusable components example](https://github.com/gensx-inc/gensx/tree/main/examples/reusable-components).
 
 Finally, to run the workflow, you can invoke the `ProcessDocument` component with the appropriate provider configurations:
 
@@ -2749,7 +2749,7 @@ You can find the full example code demonstrating these concepts on GitHub:
 
 - [Context examples](https://github.com/gensx-inc/gensx/tree/main/examples/contexts)
 - [Provider examples](https://github.com/gensx-inc/gensx/tree/main/examples/providers)
-- [Multiple OpenAI compatible providers example](https://github.com/gensx-inc/gensx/tree/main/examples/nestedProviders)
+- [Multiple OpenAI compatible providers example](https://github.com/gensx-inc/gensx/tree/main/examples/nested-providers)
 
 # Arrays
 
@@ -2791,7 +2791,7 @@ Walking through this code step by step, it:
 4. Chains another `map` operation to call the `FetchAndSummarize` component for each document
 5. Calls `toArray()` to convert the `GsxArray<ArxivSummary>` into a `ArxivSummary[]`
 
-You can find the full code for this in the [Deep Research example](https://github.com/gensx-inc/gensx/tree/main/examples/deepResearch).
+You can find the full code for this in the [Deep Research example](https://github.com/gensx-inc/gensx/tree/main/examples/deep-research).
 
 ## Working with arrays
 
@@ -5964,9 +5964,7 @@ import { SearchClient } from "@gensx/storage";
 const search = new SearchClient();
 
 // List all namespaces
-const namespaces = await search.listNamespaces({
-  prefix: "docs-", // Optional prefix filter
-});
+const { namespaces } = await search.listNamespaces();
 
 // Check if namespace exists
 const exists = await search.namespaceExists("my-namespace");
@@ -6065,15 +6063,26 @@ await namespace.write({
 
 ### listNamespaces
 
-List all namespaces in your project.
+List namespaces in your project.
 
 ```tsx
 const searchStorage = useSearchStorage();
-const namespaces = await searchStorage.listNamespaces({
-  prefix: "docs-" // Optional prefix filter
-});
-console.log(namespaces); // ["docs-articles", "docs-products"]
+const { namespaces, nextCursor } = await searchStorage.listNamespaces();
+console.log("Namespaces:", namespaces); // ["docs", "products"]
+
 ```
+
+The method accepts an options object with these properties:
+
+| Option   | Type     | Description                                    |
+| -------- | -------- | ---------------------------------------------- |
+| `prefix` | `string` | Optional prefix to filter namespace names by   |
+| `limit`  | `number` | Maximum number of results to return per page   |
+| `cursor` | `string` | Cursor for pagination from previous response   |
+
+Returns an object with:
+- `namespaces`: Array of namespace names
+- `nextCursor`: Cursor for the next page, or undefined if no more results
 
 ### ensureNamespace
 
@@ -6204,16 +6213,21 @@ if (created) {
 List all namespaces.
 
 ```tsx
-async listNamespaces(options?: { prefix?: string }): Promise<string[]>
+async listNamespaces(options?: {
+  prefix?: string;
+  limit?: number;
+  cursor?: string;
+}): Promise<{
+  namespaces: string[];
+  nextCursor?: string;
+}>
 ```
 
 ##### Example
 
 ```tsx
-const namespaces = await searchClient.listNamespaces({
-  prefix: "customer-" // Optional prefix filter
-});
-console.log("Available namespaces:", namespaces);
+const { namespaces, nextCursor } = await searchClient.listNamespaces();
+console.log("Available namespaces:", namespaces); // ["products", "customers", "orders"]
 ```
 
 #### deleteNamespace
@@ -6696,15 +6710,27 @@ The database storage object provides these management methods:
 
 ### listDatabases
 
-Lists all databases in your project.
+Lists databases in your project.
 
 ```tsx
 import { useDatabaseStorage } from "@gensx/storage";
 
 const dbStorage = useDatabaseStorage();
-const databases = await dbStorage.listDatabases();
-console.log(databases); // ["users", "products", "analytics"]
+const { databases, nextCursor } = await dbStorage.listDatabases();
+console.log("Databases:", databases); // ["users", "products", "analytics"]
+
 ```
+
+The method accepts an options object with these properties:
+
+| Option   | Type     | Description                                    |
+| -------- | -------- | ---------------------------------------------- |
+| `limit`  | `number` | Maximum number of results to return per page   |
+| `cursor` | `string` | Cursor for pagination from previous response   |
+
+Returns an object with:
+- `databases`: Array of database names
+- `nextCursor`: Cursor for the next page, or undefined if no more results
 
 ### ensureDatabase
 
@@ -6839,17 +6865,20 @@ if (created) {
 
 #### listDatabases
 
-List all databases.
+List databases.
 
 ```tsx
-async listDatabases(): Promise<string[]>
+async listDatabases(options?: { limit?: number; cursor?: string }): Promise<{
+  databases: string[];
+  nextCursor?: string;
+}>
 ```
 
 ##### Example
 
 ```tsx
-const databases = await dbClient.listDatabases();
-console.log("Available databases:", databases);
+const { databases, nextCursor } = await dbClient.listDatabases();
+console.log("Available databases:", databases); // ["users", "products", "analytics"]
 ```
 
 #### deleteDatabase
@@ -7107,13 +7136,27 @@ const userBlob = blobStorage.getBlob<UserProfile>("users/123.json");
 
 ### listBlobs
 
-List all blob keys with an optional prefix filter.
+List blob keys.
 
 ```tsx
 const blobStorage = useBlobStorage();
-const userBlobKeys = await blobStorage.listBlobs("users/");
-console.log(userBlobKeys); // ["users/123.json", "users/456.json"]
+const { keys, nextCursor } = await blobStorage.listBlobs({
+  prefix: "users",
+});
+console.log("User blobs:", keys); // ["users/123.json", "users/456.json"]
 ```
+
+The method accepts an options object with these properties:
+
+| Option   | Type     | Description                                    |
+| -------- | -------- | ---------------------------------------------- |
+| `prefix` | `string` | Optional prefix to filter blob keys by         |
+| `limit`  | `number` | Maximum number of results to return per page   |
+| `cursor` | `string` | Cursor for pagination from previous response   |
+
+Returns an object with:
+- `keys`: Array of blob keys matching the filter
+- `nextCursor`: Cursor for the next page, or null if no more results
 
 ### blobExists
 
@@ -7203,17 +7246,22 @@ await userBlob.putJSON(profile);
 
 #### listBlobs
 
-List all blob keys with an optional prefix.
+List all blob keys.
 
 ```tsx
-async listBlobs(prefix?: string): Promise<string[]>
+async listBlobs(options?: { prefix?: string; limit?: number; cursor?: string }): Promise<{
+  keys: string[];
+  nextCursor?: string;
+}>
 ```
 
 ##### Example
 
 ```tsx
-const chatHistory = await blobClient.listBlobs("chats/");
-console.log("Chat histories:", chatHistory);
+const { keys, nextCursor } = await blobClient.listBlobs({
+  prefix: "chats"
+});
+console.log("Chat histories:", keys); // ["chats/123.json", "chats/456.json"]
 ```
 
 #### blobExists

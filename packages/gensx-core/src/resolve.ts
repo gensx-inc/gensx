@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GsxArray } from "./array.js";
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { ExecutionContext } from "./context.js";
 import { isStreamable } from "./stream.js";
 
 /**
- * Deeply resolves any value, handling promises, arrays, objects, and JSX elements.
- * This is the core resolution logic used by both execute() and the JSX runtime.
+ * Deeply resolves any value, handling promises, arrays, objects, and function values.
+ * This is the core resolution logic used by the fluent API.
  */
 export async function resolveDeep<T>(value: unknown): Promise<T> {
   // Handle promises first
@@ -23,14 +24,9 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
     return value as T;
   }
 
-  // Pass through streamable values - they are handled by execute (StreamComponent)
+  // Pass through streamable values - they are handled by StreamComponent
   if (isStreamable(value)) {
     return value as unknown as T;
-  }
-
-  // handle GsxArray
-  if (value instanceof GsxArray) {
-    return await resolveDeep(await value.toArray());
   }
 
   // Handle arrays
@@ -46,18 +42,17 @@ export async function resolveDeep<T>(value: unknown): Promise<T> {
   if (value instanceof String) return value.valueOf() as T;
   if (value instanceof Boolean) return value.valueOf() as T;
 
-  // Handle functions first
+  // Handle functions
   if (typeof value === "function" && value.name !== "Object") {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    // If it's a fluent component or function with the __gsxFramework property
     if ((value as any).__gsxFramework) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      return await resolveDeep(value());
+      // Execute it and resolve the result
+      return await resolveDeep((value as any)());
     }
-
     return value as T;
   }
 
-  // Then handle plain objects (but not null), but not class instances
+  // Handle plain objects (but not null), but not class instances
   if (
     typeof value === "object" &&
     value !== null &&

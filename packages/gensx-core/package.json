@@ -1,7 +1,7 @@
 {
   "name": "@gensx/core",
   "version": "0.3.12",
-  "description": "Build AI workflows using JSX.",
+  "description": "Build AI workflows using a fluent component API.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
@@ -24,24 +24,6 @@
       },
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.cjs"
-    },
-    "./jsx-runtime": {
-      "types": {
-        "import": "./dist/esm/jsx-runtime.d.ts",
-        "require": "./dist/cjs/jsx-runtime.d.ts",
-        "default": "./dist/cjs/jsx-runtime.d.ts"
-      },
-      "import": "./dist/esm/jsx-runtime.js",
-      "require": "./dist/cjs/jsx-runtime.cjs"
-    },
-    "./jsx-dev-runtime": {
-      "types": {
-        "import": "./dist/esm/jsx-dev-runtime.d.ts",
-        "require": "./dist/cjs/jsx-dev-runtime.d.ts",
-        "default": "./dist/cjs/jsx-dev-runtime.d.ts"
-      },
-      "import": "./dist/esm/jsx-dev-runtime.js",
-      "require": "./dist/cjs/jsx-dev-runtime.cjs"
     }
   },
   "files": [
@@ -59,8 +41,10 @@
   },
   "keywords": [
     "ai",
-    "jsx",
-    "workflow"
+    "workflow",
+    "fluent",
+    "components",
+    "pipeline"
   ],
   "author": "GenSX Team",
   "license": "Apache-2.0",

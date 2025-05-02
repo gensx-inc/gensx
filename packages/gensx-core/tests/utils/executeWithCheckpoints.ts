@@ -9,7 +9,7 @@ import { withContext } from "../../src/context.js";
 import { ExecutionContext } from "../../src/context.js";
 import * as gensx from "../../src/index.js";
 import { resolveDeep } from "../../src/resolve.js";
-import { ExecutableValue } from "../../src/types.js";
+import { MaybePromise } from "../../src/types.js";
 import { createWorkflowContext } from "../../src/workflow-context.js";
 
 // Add types for fetch API
@@ -27,9 +27,9 @@ afterEach(() => {
  * Returns both the execution result and recorded checkpoints for verification
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+// Support fluent API callbacks in tests
 export async function executeWithCheckpoints<T>(
-  element: ExecutableValue,
+  callback: () => MaybePromise<T>,
 ): Promise<{
   result: T;
   checkpoints: ExecutionNode[];
@@ -58,9 +58,10 @@ export async function executeWithCheckpoints<T>(
   });
 
   // Execute with context
-  const result = await withContext(contextWithWorkflow, () =>
-    gensx.execute<T>(element),
-  );
+  const result = await withContext(contextWithWorkflow, async () => {
+    // Use the callback directly for fluent API
+    return resolveDeep(callback());
+  });
 
   // Wait for any pending checkpoints
   await checkpointManager.waitForPendingUpdates();
@@ -68,10 +69,10 @@ export async function executeWithCheckpoints<T>(
   return { result, checkpoints, checkpointManager };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+// Update workflowWithCheckpoints to also support fluent API
 export async function executeWorkflowWithCheckpoints<T>(
-  element: ExecutableValue,
-  metadata?: Record<string, unknown>,
+  callback: () => MaybePromise<T>,
+  _metadata?: Record<string, unknown>,
 ): Promise<{
   result?: T;
   error?: Error;
@@ -93,24 +94,31 @@ export async function executeWorkflowWithCheckpoints<T>(
       options.body as string,
     );
     checkpoints[checkpoint.id] = checkpoint;
-    workflowNames.add(workflowName);
+    if (workflowName) {
+      workflowNames.add(workflowName);
+    }
     return new Response(null, { status: 200 });
   });
 
+  // Create a workflow name for this execution
+  const workflowName =
+    "executeWorkflowWithCheckpoints" +
+    Math.round(Math.random() * 1000).toFixed(0);
+
+  // Add the workflowName to the set before execution
+  workflowNames.add(workflowName);
+
+  // Create a wrapper component to execute the callback with workflow context
   const WorkflowComponent = gensx.Component<{}, T>(
     "WorkflowComponentWrapper",
     async () => {
-      const result = await resolveDeep(element);
-      return result as T;
+      // Execute the callback directly
+      return resolveDeep(callback());
     },
   );
 
-  const workflow = gensx.Workflow(
-    "executeWorkflowWithCheckpoints" +
-      Math.round(Math.random() * 1000).toFixed(0),
-    WorkflowComponent,
-    { metadata },
-  );
+  // Execute the workflow
+  const workflow = gensx.Workflow(workflowName, WorkflowComponent);
 
   // Execute with context
   let result: T | undefined;
@@ -118,7 +126,13 @@ export async function executeWorkflowWithCheckpoints<T>(
   try {
     result = await workflow.run({});
   } catch (err) {
-    error = err as Error;
+    if (err instanceof Error) {
+      error = err;
+    } else if (typeof err === "string") {
+      error = new Error(err);
+    } else {
+      error = new Error("Unknown error occurred");
+    }
   }
 
   process.env.GENSX_ORG = oldOrg;
