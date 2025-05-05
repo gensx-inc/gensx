@@ -16,9 +16,9 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/sdk": "^0.40.1",
     "@gensx/anthropic": "workspace:*",
-    "@mendable/firecrawl-js": "^1.21.0",
+    "@mendable/firecrawl-js": "^1.24.0",
     "@gensx/core": "workspace:*",
     "serialize-error": "^12.0.0",
     "zod": "catalog:"
