@@ -7,26 +7,27 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "nodemon",
-    "start": "tsx ./index.ts",
+    "dev": "tsx ./src/index.tsx",
+    "start": "npx gensx start ./src/workflows.tsx",
     "build": "tsc",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "deploy": "npx gensx deploy -ev OPENAI_API_KEY ./src/workflows.tsx"
   },
   "dependencies": {
-    "@gensx/openai": "workspace:*",
+    "@gensx/openai": "^0.1.27",
+    "@gensx/core": "^0.3.12",
     "@mendable/firecrawl-js": "^1.21.0",
     "@types/node-fetch": "^2.6.12",
-    "@gensx/core": "workspace:*",
     "node-fetch": "^3.3.2",
     "openai": "catalog:",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "@types/node": "catalog:examples",
     "@types/xml2js": "^0.4.14",
-    "nodemon": "catalog:",
-    "tsx": "catalog:",
-    "typescript": "catalog:"
+    "@types/node": "^22",
+    "eslint": "^9.23.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }

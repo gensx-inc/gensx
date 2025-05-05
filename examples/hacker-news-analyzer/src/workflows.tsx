@@ -349,3 +349,10 @@ export const AnalyzeHackerNewsTrends = gensx.Component<
     </OpenAIProvider>
   );
 });
+
+const AnalyzeHackerNewsTrendsWorkflow = gensx.Workflow(
+  "AnalyzeHackerNewsTrendsWorkflow",
+  AnalyzeHackerNewsTrends,
+);
+
+export { AnalyzeHackerNewsTrendsWorkflow };

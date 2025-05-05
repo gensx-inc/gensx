@@ -27,6 +27,9 @@ Here's an example trace of the workflow showing the actions taken at each step:
 From the root of the [GensX Github Repo](https://github.com/gensx-inc/gensx), run the following commands:
 
 ```bash
+# Navigate to the example directory
+cd examples/openai-computer-use
+
 # Install dependencies
 pnpm install
 
@@ -34,7 +37,7 @@ pnpm install
 npx playwright install
 
 # Run the example
-OPENAI_API_KEY=<your_api_key> pnpm start:example openai-computer-use
+OPENAI_API_KEY=<your_api_key> pnpm run start
 ```
 
 The default prompt is `how long does it take to drive from seattle to portland? use google maps` but you can change this by editing the `index.tsx` file. You can also control whether or not the example is multi-turn by toggling the `allowHumanFeedback` prop. This is set to `false` by default but you might what to change this to `true` so you can continue the conversation with the model in the terminal.
