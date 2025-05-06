@@ -668,18 +668,18 @@ export class FileSystemBlobStorage implements BlobStorage {
         await fs.access(searchPath);
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-          return { keys: [], nextCursor: null }; // Directory doesn't exist
+          return { blobs: [], nextCursor: undefined }; // Directory doesn't exist
         }
         throw handleFsError(err, "listBlobs:access", searchPath);
       }
 
-      // Recursive function to list files
+      // Recursive function to list files with stats
       const listFilesRecursively = async (
         dir: string,
         baseDir: string,
-      ): Promise<string[]> => {
+      ): Promise<{ key: string; lastModified: string; size: number }[]> => {
         const items = await fs.readdir(dir, { withFileTypes: true });
-        const files: string[] = [];
+        const files: { key: string; lastModified: string; size: number }[] = [];
 
         for (const item of items) {
           const fullPath = path.join(dir, item.name);
@@ -689,11 +689,17 @@ export class FileSystemBlobStorage implements BlobStorage {
             const subFiles = await listFilesRecursively(fullPath, baseDir);
             files.push(...subFiles);
           } else if (!item.name.endsWith(".metadata.json")) {
-            files.push(relativePath);
+            // Get file stats
+            const stats = await fs.stat(fullPath);
+            files.push({
+              key: relativePath,
+              lastModified: stats.mtime.toISOString(),
+              size: stats.size,
+            });
           }
         }
 
-        return files.sort(); // Sort for consistent pagination
+        return files.sort((a, b) => a.key.localeCompare(b.key)); // Sort for consistent pagination
       };
 
       let allFiles = await listFilesRecursively(searchPath, this.rootDir);
@@ -703,21 +709,23 @@ export class FileSystemBlobStorage implements BlobStorage {
         allFiles = allFiles
           .filter(
             (file) =>
-              file === normalizedDefaultPrefix ||
-              file.startsWith(`${normalizedDefaultPrefix}/`),
+              file.key === normalizedDefaultPrefix ||
+              file.key.startsWith(`${normalizedDefaultPrefix}/`),
           )
-          .map((file) =>
-            file === normalizedDefaultPrefix
-              ? ""
-              : file.slice(normalizedDefaultPrefix.length + 1),
-          );
+          .map((file) => ({
+            ...file,
+            key:
+              file.key === normalizedDefaultPrefix
+                ? ""
+                : file.key.slice(normalizedDefaultPrefix.length + 1),
+          }));
       }
 
       // Handle cursor-based pagination
       let startIndex = 0;
       if (cursor) {
         const decodedCursor = fromBase64UrlSafe(cursor);
-        startIndex = allFiles.findIndex((file) => file > decodedCursor);
+        startIndex = allFiles.findIndex((file) => file.key > decodedCursor);
         if (startIndex === -1) startIndex = allFiles.length;
       }
 
@@ -728,11 +736,11 @@ export class FileSystemBlobStorage implements BlobStorage {
       // Generate next cursor
       const nextCursor =
         endIndex < allFiles.length
-          ? toBase64UrlSafe(allFiles[endIndex - 1])
-          : null;
+          ? toBase64UrlSafe(allFiles[endIndex - 1].key)
+          : undefined;
 
       return {
-        keys: items,
+        blobs: items,
         nextCursor,
       };
     } catch (err) {

@@ -172,19 +172,23 @@ suite("RemoteBlobStorage", () => {
 
   test("should list blobs with prefix", async () => {
     const storage = new RemoteBlobStorage("test-project", "test-environment");
-    const mockKeys = ["key1", "key2", "key3"];
+    const mockBlobs = [
+      { key: "key1", lastModified: "2024-01-01T00:00:00Z", size: 100 },
+      { key: "key2", lastModified: "2024-01-01T00:00:00Z", size: 200 },
+      { key: "key3", lastModified: "2024-01-01T00:00:00Z", size: 300 },
+    ];
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        keys: mockKeys,
+        blobs: mockBlobs,
         nextCursor: null,
       }),
     });
 
     const result = await storage.listBlobs({ prefix: "test-prefix" });
 
-    expect(result.keys).toEqual(mockKeys);
+    expect(result.blobs).toEqual(mockBlobs);
     expect(result.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=test-prefix&limit=100",
@@ -204,13 +208,18 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        keys: ["key1", "key2"],
+        blobs: [
+          { key: "key1", lastModified: "2024-01-01T00:00:00Z", size: 100 },
+          { key: "key2", lastModified: "2024-01-01T00:00:00Z", size: 200 },
+        ],
         nextCursor: "page1cursor",
       }),
     });
 
     const firstPage = await storage.listBlobs({ limit: 2 });
-    expect(firstPage.keys).toEqual(["key1", "key2"]);
+    expect(firstPage.blobs).toHaveLength(2);
+    expect(firstPage.blobs[0].key).toBe("key1");
+    expect(firstPage.blobs[1].key).toBe("key2");
     expect(firstPage.nextCursor).toBe("page1cursor");
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?limit=2",
@@ -221,7 +230,9 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        keys: ["key3"],
+        blobs: [
+          { key: "key3", lastModified: "2024-01-01T00:00:00Z", size: 300 },
+        ],
         nextCursor: null,
       }),
     });
@@ -230,7 +241,8 @@ suite("RemoteBlobStorage", () => {
       limit: 2,
       cursor: firstPage.nextCursor ?? undefined,
     });
-    expect(secondPage.keys).toEqual(["key3"]);
+    expect(secondPage.blobs).toHaveLength(1);
+    expect(secondPage.blobs[0].key).toBe("key3");
     expect(secondPage.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?limit=2&cursor=page1cursor",
@@ -245,7 +257,18 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        keys: ["prefix/key1", "prefix/key2"],
+        blobs: [
+          {
+            key: "prefix/key1",
+            lastModified: "2024-01-01T00:00:00Z",
+            size: 100,
+          },
+          {
+            key: "prefix/key2",
+            lastModified: "2024-01-01T00:00:00Z",
+            size: 200,
+          },
+        ],
         nextCursor: "page1cursor",
       }),
     });
@@ -254,7 +277,9 @@ suite("RemoteBlobStorage", () => {
       prefix: "prefix",
       limit: 2,
     });
-    expect(firstPage.keys).toEqual(["prefix/key1", "prefix/key2"]);
+    expect(firstPage.blobs).toHaveLength(2);
+    expect(firstPage.blobs[0].key).toBe("prefix/key1");
+    expect(firstPage.blobs[1].key).toBe("prefix/key2");
     expect(firstPage.nextCursor).toBe("page1cursor");
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=prefix&limit=2",
@@ -265,7 +290,13 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        keys: ["prefix/key3"],
+        blobs: [
+          {
+            key: "prefix/key3",
+            lastModified: "2024-01-01T00:00:00Z",
+            size: 300,
+          },
+        ],
         nextCursor: null,
       }),
     });
@@ -275,7 +306,8 @@ suite("RemoteBlobStorage", () => {
       limit: 2,
       cursor: firstPage.nextCursor ?? undefined,
     });
-    expect(secondPage.keys).toEqual(["prefix/key3"]);
+    expect(secondPage.blobs).toHaveLength(1);
+    expect(secondPage.blobs[0].key).toBe("prefix/key3");
     expect(secondPage.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=prefix&limit=2&cursor=page1cursor",
@@ -289,32 +321,36 @@ suite("RemoteBlobStorage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        keys: [],
+        blobs: [],
         nextCursor: null,
       }),
     });
 
     const result = await storage.listBlobs({ limit: 10 });
-    expect(result.keys).toEqual([]);
+    expect(result.blobs).toEqual([]);
     expect(result.nextCursor).toBeNull();
   });
 
   test("should handle default limit in pagination", async () => {
     const storage = new RemoteBlobStorage("test-project", "test-environment");
 
-    // Generate 100 mock keys
-    const mockKeys = Array.from({ length: 100 }, (_, i) => `key${i + 1}`);
+    // Generate 100 mock blobs
+    const mockBlobs = Array.from({ length: 100 }, (_, i) => ({
+      key: `key${i + 1}`,
+      lastModified: "2024-01-01T00:00:00Z",
+      size: 100 * (i + 1),
+    }));
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        keys: mockKeys,
+        blobs: mockBlobs,
         nextCursor: "nextpage",
       }),
     });
 
     const result = await storage.listBlobs();
-    expect(result.keys).toHaveLength(100); // Default limit
+    expect(result.blobs).toHaveLength(100); // Default limit
     expect(result.nextCursor).toBe("nextpage");
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?limit=100",
@@ -752,19 +788,33 @@ suite("RemoteBlobStorage", () => {
       "test-environment",
       "default-prefix",
     );
-    const mockKeys = ["default-prefix/key1", "default-prefix/key2"];
+    const mockBlobs = [
+      {
+        key: "default-prefix/key1",
+        lastModified: "2024-01-01T00:00:00Z",
+        size: 100,
+      },
+      {
+        key: "default-prefix/key2",
+        lastModified: "2024-01-01T00:00:00Z",
+        size: 200,
+      },
+    ];
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        keys: mockKeys,
+        blobs: mockBlobs,
         nextCursor: null,
       }),
     });
 
     const result = await storage.listBlobs();
 
-    expect(result.keys).toEqual(["key1", "key2"]);
+    expect(result.blobs).toEqual([
+      { key: "key1", lastModified: "2024-01-01T00:00:00Z", size: 100 },
+      { key: "key2", lastModified: "2024-01-01T00:00:00Z", size: 200 },
+    ]);
     expect(result.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=default-prefix&limit=100",
@@ -783,19 +833,33 @@ suite("RemoteBlobStorage", () => {
       "test-environment",
       "default-prefix",
     );
-    const mockKeys = ["default-prefix/sub/key1", "default-prefix/sub/key2"];
+    const mockBlobs = [
+      {
+        key: "default-prefix/sub/key1",
+        lastModified: "2024-01-01T00:00:00Z",
+        size: 100,
+      },
+      {
+        key: "default-prefix/sub/key2",
+        lastModified: "2024-01-01T00:00:00Z",
+        size: 200,
+      },
+    ];
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        keys: mockKeys,
+        blobs: mockBlobs,
         nextCursor: null,
       }),
     });
 
     const result = await storage.listBlobs({ prefix: "sub" });
 
-    expect(result.keys).toEqual(["sub/key1", "sub/key2"]);
+    expect(result.blobs).toEqual([
+      { key: "sub/key1", lastModified: "2024-01-01T00:00:00Z", size: 100 },
+      { key: "sub/key2", lastModified: "2024-01-01T00:00:00Z", size: 200 },
+    ]);
     expect(result.nextCursor).toBeNull();
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.gensx.com/org/test-org/projects/test-project/environments/test-environment/blob?prefix=default-prefix%2Fsub&limit=100",
