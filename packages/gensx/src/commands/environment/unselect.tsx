@@ -1,4 +1,3 @@
-/** @jsxImportSource react */
 import { Box, Text } from "ink";
 import { useEffect, useState } from "react";
 
@@ -12,26 +11,26 @@ interface Props {
   projectName?: string;
 }
 
-type Status =
-  | { type: "initial" }
-  | { type: "loading" }
-  | { type: "done"; projectName: string }
-  | { type: "error"; message: string };
+interface UseUnselectEnvironmentResult {
+  loading: boolean;
+  error: Error | null;
+  projectName: string | null;
+  success: boolean;
+}
 
-export function UnselectEnvironmentUI({
-  projectName: initialProjectName,
-}: Props) {
-  const [status, setStatus] = useState<Status>({ type: "initial" });
+function useUnselectEnvironment(
+  initialProjectName?: string,
+): UseUnselectEnvironmentResult {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [projectName, setProjectName] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
     async function unselectEnvironmentFlow() {
       try {
-        if (mounted) {
-          setStatus({ type: "loading" });
-        }
-
         // Resolve project name
         let resolvedProjectName = initialProjectName;
         if (!resolvedProjectName) {
@@ -53,17 +52,15 @@ export function UnselectEnvironmentUI({
         await validateAndSelectEnvironment(resolvedProjectName, null);
 
         if (mounted) {
-          setStatus({
-            type: "done",
-            projectName: resolvedProjectName,
-          });
+          setProjectName(resolvedProjectName);
+          setSuccess(true);
+          setLoading(false);
         }
       } catch (err) {
         if (mounted) {
-          setStatus({
-            type: "error",
-            message: err instanceof Error ? err.message : String(err),
-          });
+          const error = err instanceof Error ? err : new Error(String(err));
+          setError(error);
+          setLoading(false);
           // Give time for the message to be displayed before exiting
           setTimeout(() => {
             process.exit(1);
@@ -78,11 +75,20 @@ export function UnselectEnvironmentUI({
     };
   }, [initialProjectName]);
 
-  if (status.type === "error") {
-    return <ErrorMessage message={status.message} />;
+  return { loading, error, projectName, success };
+}
+
+export function UnselectEnvironmentUI({
+  projectName: initialProjectName,
+}: Props) {
+  const { loading, error, projectName } =
+    useUnselectEnvironment(initialProjectName);
+
+  if (error) {
+    return <ErrorMessage message={error.message} />;
   }
 
-  if (status.type === "initial" || status.type === "loading") {
+  if (loading) {
     return <LoadingSpinner />;
   }
 
@@ -90,7 +96,7 @@ export function UnselectEnvironmentUI({
     <Box flexDirection="column" gap={1}>
       <Text>
         <Text color="green">✓</Text> Active environment cleared for project{" "}
-        <Text color="cyan">{status.projectName}</Text>
+        <Text color="cyan">{projectName}</Text>
       </Text>
     </Box>
   );

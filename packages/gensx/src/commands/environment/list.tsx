@@ -74,6 +74,10 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
           setError(error);
           setLoading(false);
         }
+
+        setTimeout(() => {
+          process.exit(1);
+        }, 100);
       }
     }
 

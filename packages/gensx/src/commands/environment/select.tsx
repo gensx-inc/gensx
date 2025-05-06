@@ -1,4 +1,3 @@
-/** @jsxImportSource react */
 import { Box, Text } from "ink";
 import { useEffect, useState } from "react";
 
@@ -13,27 +12,29 @@ interface Props {
   projectName?: string;
 }
 
-type Status =
-  | { type: "initial" }
-  | { type: "loading" }
-  | { type: "done"; projectName: string; environmentName: string }
-  | { type: "error"; message: string };
+interface UseSelectEnvironmentResult {
+  loading: boolean;
+  error: Error | null;
+  projectName: string | null;
+  environmentName: string | null;
+  success: boolean;
+}
 
-export function SelectEnvironmentUI({
-  environmentName,
-  projectName: initialProjectName,
-}: Props) {
-  const [status, setStatus] = useState<Status>({ type: "initial" });
+function useSelectEnvironment(
+  envName: string,
+  initialProjectName?: string,
+): UseSelectEnvironmentResult {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [projectName, setProjectName] = useState<string | null>(null);
+  const [environmentName, setEnvironmentName] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
     async function selectEnvironmentFlow() {
       try {
-        if (mounted) {
-          setStatus({ type: "loading" });
-        }
-
         // Resolve project name
         let resolvedProjectName = initialProjectName;
         if (!resolvedProjectName) {
@@ -54,29 +55,27 @@ export function SelectEnvironmentUI({
 
         const success = await validateAndSelectEnvironment(
           resolvedProjectName,
-          environmentName,
+          envName,
         );
 
         if (!success) {
           throw new Error(
-            `Environment ${environmentName} does not exist in project ${resolvedProjectName}`,
+            `Environment ${envName} does not exist in project ${resolvedProjectName}`,
           );
         }
 
         if (mounted) {
-          setStatus({
-            type: "done",
-            projectName: resolvedProjectName,
-            environmentName,
-          });
+          setProjectName(resolvedProjectName);
+          setEnvironmentName(envName);
+          setSuccess(true);
+          setLoading(false);
         }
       } catch (err) {
         if (mounted) {
-          setStatus({
-            type: "error",
-            message: err instanceof Error ? err.message : String(err),
-          });
-          // Give time for the message to be displayed before exiting
+          const error = err instanceof Error ? err : new Error(String(err));
+          setError(error);
+          setLoading(false);
+
           setTimeout(() => {
             process.exit(1);
           }, 100);
@@ -88,13 +87,27 @@ export function SelectEnvironmentUI({
     return () => {
       mounted = false;
     };
-  }, [environmentName, initialProjectName]);
+  }, [envName, initialProjectName]);
 
-  if (status.type === "error") {
-    return <ErrorMessage message={status.message} />;
+  return { loading, error, projectName, environmentName, success };
+}
+
+export function SelectEnvironmentUI({
+  environmentName,
+  projectName: initialProjectName,
+}: Props) {
+  const {
+    loading,
+    error,
+    projectName,
+    environmentName: selectedEnv,
+  } = useSelectEnvironment(environmentName, initialProjectName);
+
+  if (error) {
+    return <ErrorMessage message={error.message} />;
   }
 
-  if (status.type === "initial" || status.type === "loading") {
+  if (loading) {
     return <LoadingSpinner />;
   }
 
@@ -102,8 +115,8 @@ export function SelectEnvironmentUI({
     <Box flexDirection="column" gap={1}>
       <Text>
         <Text color="green">✓</Text> Environment{" "}
-        <Text color="green">{status.environmentName}</Text> is now active for
-        project <Text color="cyan">{status.projectName}</Text>
+        <Text color="green">{selectedEnv}</Text> is now active for project{" "}
+        <Text color="cyan">{projectName}</Text>
       </Text>
     </Box>
   );
