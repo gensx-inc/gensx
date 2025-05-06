@@ -1,4 +1,4 @@
-import { Box, Text } from "ink";
+import { Box, Text, useApp } from "ink";
 import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "../../components/ErrorMessage.js";
@@ -29,6 +29,8 @@ function useSelectEnvironment(
   const [projectName, setProjectName] = useState<string | null>(null);
   const [environmentName, setEnvironmentName] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const { exit } = useApp();
 
   useEffect(() => {
     let mounted = true;
@@ -77,7 +79,7 @@ function useSelectEnvironment(
           setLoading(false);
 
           setTimeout(() => {
-            process.exit(1);
+            exit();
           }, 100);
         }
       }

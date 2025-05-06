@@ -52,13 +52,6 @@ export async function runCLI() {
     .argument("<file>", "File to serve")
     .option("--port <port>", "Port to run the server on", "1337")
     .option("-q, --quiet", "Suppress output", false)
-    // .action((file: string, opts: { port?: string; quiet?: boolean }) => {
-    //   const startOpts = {
-    //     ...opts,
-    //     port: opts.port ? parseInt(opts.port, 10) : undefined,
-    //   };
-    //   render(React.createElement(StartUI, { file, opts: startOpts }));
-    // });
     .action(start);
 
   program

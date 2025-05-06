@@ -33,9 +33,6 @@ vi.mock("../../../src/models/projects.js", () => ({
   checkProjectExists: vi.fn(),
 }));
 
-// Original process.exit to restore later
-const originalExit = process.exit;
-
 // Set up and tear down the test environment
 beforeAll(async () => {
   // Save original process.cwd
@@ -51,9 +48,6 @@ beforeAll(async () => {
   // Override the config directory by mocking with environment variable
   origConfigDir = process.env.GENSX_CONFIG_DIR;
   process.env.GENSX_CONFIG_DIR = path.join(tempDir, ".gensx");
-
-  // Mock process.exit
-  process.exit = vi.fn() as unknown as typeof process.exit;
 });
 
 afterAll(async () => {
@@ -64,7 +58,6 @@ afterAll(async () => {
   } else {
     delete process.env.GENSX_CONFIG_DIR;
   }
-  process.exit = originalExit;
 
   // Clean up temp directory
   await fs.rm(tempDir, { recursive: true, force: true });
@@ -113,23 +106,6 @@ function waitForText(
         resolve();
       } else if (Date.now() - start > timeout) {
         reject(new Error(`Timed out waiting for text: ${text}`));
-      } else {
-        setTimeout(check, 20);
-      }
-    }
-    check();
-  });
-}
-
-// Helper to wait for process.exit to be called
-function waitForProcessExit(timeout = 200) {
-  return new Promise<void>((resolve, reject) => {
-    const start = Date.now();
-    function check() {
-      if (vi.mocked(process.exit).mock.calls.length > 0) {
-        resolve();
-      } else if (Date.now() - start > timeout) {
-        reject(new Error(`Timed out waiting for process.exit to be called`));
       } else {
         setTimeout(check, 20);
       }
@@ -213,10 +189,6 @@ projectName: config-project
       lastFrame,
       /No project name found\. Either specify --project or create a gensx\.yaml file with a 'projectName' field\./,
     );
-
-    // Verify process.exit was called
-    await waitForProcessExit();
-    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
   it("should show error when project does not exist", async () => {
@@ -227,10 +199,6 @@ projectName: config-project
     );
 
     await waitForText(lastFrame, /Project non-existent does not exist/);
-
-    // Verify process.exit was called
-    await waitForProcessExit();
-    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
   it("should show loading spinner initially", () => {

@@ -1,4 +1,4 @@
-import { Box, Text } from "ink";
+import { Box, Text, useApp } from "ink";
 import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "../../components/ErrorMessage.js";
@@ -21,6 +21,7 @@ interface UseUnselectEnvironmentResult {
 function useUnselectEnvironment(
   initialProjectName?: string,
 ): UseUnselectEnvironmentResult {
+  const { exit } = useApp();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [projectName, setProjectName] = useState<string | null>(null);
@@ -61,9 +62,8 @@ function useUnselectEnvironment(
           const error = err instanceof Error ? err : new Error(String(err));
           setError(error);
           setLoading(false);
-          // Give time for the message to be displayed before exiting
           setTimeout(() => {
-            process.exit(1);
+            exit();
           }, 100);
         }
       }
@@ -73,7 +73,7 @@ function useUnselectEnvironment(
     return () => {
       mounted = false;
     };
-  }, [initialProjectName]);
+  }, [initialProjectName, exit]);
 
   return { loading, error, projectName, success };
 }

@@ -1,4 +1,4 @@
-import { Box, Text, useInput } from "ink";
+import { Box, Text, useApp, useInput } from "ink";
 import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "../../components/ErrorMessage.js";
@@ -37,6 +37,7 @@ function useCreateEnvironment(
   environmentName: string,
   initialProjectName?: string,
 ): UseCreateEnvironmentResult {
+  const { exit } = useApp();
   const [step, setStep] = useState<Step>("initial");
   const [error, setError] = useState<Error | null>(null);
   const [projectName, setProjectName] = useState<string | null>(null);
@@ -102,11 +103,6 @@ function useCreateEnvironment(
           }
 
           setStep("done");
-
-          // Exit after a brief delay to show success message
-          setTimeout(() => {
-            process.exit(0);
-          }, 500);
         }
       } catch (err) {
         if (!mounted) return;
@@ -114,9 +110,8 @@ function useCreateEnvironment(
         setError(thrownError);
         setStep("error");
         setLoading(false);
-
         setTimeout(() => {
-          process.exit(1);
+          exit();
         }, 100);
       }
     }
@@ -152,17 +147,11 @@ function useCreateEnvironment(
           }
 
           setStep("done");
-
-          // Exit after a brief delay to show success message
-          setTimeout(() => {
-            process.exit(0);
-          }, 500);
         } else {
           setError(new Error("Project creation cancelled"));
           setStep("error");
-
           setTimeout(() => {
-            process.exit(1);
+            exit();
           }, 100);
         }
       } catch (err) {
@@ -170,9 +159,8 @@ function useCreateEnvironment(
         const thrownError = err instanceof Error ? err : new Error(String(err));
         setError(thrownError);
         setStep("error");
-
         setTimeout(() => {
-          process.exit(1);
+          exit();
         }, 100);
       }
     }
@@ -190,7 +178,14 @@ function useCreateEnvironment(
     return () => {
       mounted = false;
     };
-  }, [step, shouldCreate, environmentName, initialProjectName, projectName]);
+  }, [
+    step,
+    shouldCreate,
+    environmentName,
+    initialProjectName,
+    projectName,
+    exit,
+  ]);
 
   return {
     loading,

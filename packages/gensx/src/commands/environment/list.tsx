@@ -1,4 +1,4 @@
-import { Box, Text } from "ink";
+import { Box, Text, useApp } from "ink";
 import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "../../components/ErrorMessage.js";
@@ -33,6 +33,7 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
   const [selectedEnvironment, setSelectedEnvironment] = useState<string | null>(
     null,
   );
+  const { exit } = useApp();
 
   useEffect(() => {
     let mounted = true;
@@ -73,11 +74,10 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
           const error = err instanceof Error ? err : new Error(String(err));
           setError(error);
           setLoading(false);
+          setTimeout(() => {
+            exit();
+          }, 100);
         }
-
-        setTimeout(() => {
-          process.exit(1);
-        }, 100);
       }
     }
 
@@ -85,7 +85,7 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
     return () => {
       mounted = false;
     };
-  }, [initialProjectName]);
+  }, [initialProjectName, exit]);
 
   return { environments, loading, error, projectName, selectedEnvironment };
 }
