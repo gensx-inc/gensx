@@ -1,5 +1,3 @@
-import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
 import { render } from "ink-testing-library";
@@ -21,11 +19,17 @@ import * as environmentModel from "../../../src/models/environment.js";
 import * as projectModel from "../../../src/models/projects.js";
 import * as envConfig from "../../../src/utils/env-config.js";
 import * as projectConfig from "../../../src/utils/project-config.js";
+import {
+  cleanupProjectFiles,
+  cleanupTestEnvironment,
+  setupTestEnvironment,
+  waitForText,
+} from "../../test-helpers.js";
 
-// Create a temporary directory for our tests
+// Setup test variables
 let tempDir: string;
-let origConfigDir: string | undefined;
 let origCwd: typeof process.cwd;
+let origConfigDir: string | undefined;
 
 // Mock dependencies that would make API calls
 vi.mock("../../../src/models/environment.js", () => ({
@@ -51,35 +55,17 @@ const originalSetTimeout = global.setTimeout;
 
 // Set up and tear down the test environment
 beforeAll(async () => {
-  // Save original process.cwd
-  origCwd = process.cwd;
-
-  // Create a temp directory for our tests
-  tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gensx-create-test-"));
-
-  // Create project and config directories
-  await fs.mkdir(path.join(tempDir, "project"), { recursive: true });
-  await fs.mkdir(path.join(tempDir, ".gensx", "projects"), { recursive: true });
-
-  // Override the config directory by mocking with environment variable
-  origConfigDir = process.env.GENSX_CONFIG_DIR;
-  process.env.GENSX_CONFIG_DIR = path.join(tempDir, ".gensx");
+  const setup = await setupTestEnvironment("create-test");
+  tempDir = setup.tempDir;
+  origCwd = setup.origCwd;
+  origConfigDir = setup.origConfigDir;
 
   global.setTimeout = originalSetTimeout;
 });
 
 afterAll(async () => {
-  // Restore original environment
-  process.cwd = origCwd;
-  if (origConfigDir) {
-    process.env.GENSX_CONFIG_DIR = origConfigDir;
-  } else {
-    delete process.env.GENSX_CONFIG_DIR;
-  }
+  await cleanupTestEnvironment(tempDir, origCwd, origConfigDir);
   global.setTimeout = originalSetTimeout;
-
-  // Clean up temp directory
-  await fs.rm(tempDir, { recursive: true, force: true });
 });
 
 beforeEach(() => {
@@ -89,53 +75,8 @@ beforeEach(() => {
 
 afterEach(async () => {
   vi.resetAllMocks();
-
-  // Clean up any test files after each test
-  try {
-    const projectsDir = path.join(tempDir, ".gensx", "projects");
-    const files = await fs.readdir(projectsDir);
-
-    for (const file of files) {
-      if (file !== ".gitkeep") {
-        await fs.unlink(path.join(projectsDir, file));
-      }
-    }
-
-    // Clean up project config file
-    try {
-      await fs.unlink(path.join(tempDir, "project", "gensx.yaml"));
-    } catch (_error) {
-      // Ignore if file doesn't exist
-    }
-  } catch (_error) {
-    // Ignore cleanup errors
-  }
+  await cleanupProjectFiles(tempDir);
 });
-
-function waitForText(
-  getFrame: () => string | undefined,
-  text: string | RegExp,
-  timeout = 1000,
-) {
-  return new Promise<void>((resolve, reject) => {
-    const start = Date.now();
-    function check() {
-      const frame = getFrame() ?? ""; // treat undefined as empty string
-      if (typeof text === "string" ? frame.includes(text) : text.test(frame)) {
-        resolve();
-      } else if (Date.now() - start > timeout) {
-        reject(
-          new Error(
-            `Timed out waiting for text: ${text}\nCurrent frame: ${frame}`,
-          ),
-        );
-      } else {
-        setTimeout(check, 20);
-      }
-    }
-    check();
-  });
-}
 
 suite("environment create Ink UI", () => {
   it("should create environment for an existing project", async () => {
