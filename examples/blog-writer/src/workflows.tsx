@@ -164,3 +164,7 @@ export const WriteBlog = gensx.StreamComponent<BlogWriterProps>(
     );
   },
 );
+
+const WriteBlogWorkflow = gensx.Workflow("WriteBlogWorkflow", WriteBlog);
+
+export { WriteBlogWorkflow };

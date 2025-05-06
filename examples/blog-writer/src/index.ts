@@ -1,14 +1,15 @@
-import * as gensx from "@gensx/core";
+import { WriteBlogWorkflow } from "./workflows.js";
 
-import { WriteBlog } from "./writeBlog.js";
+const prompt = process.argv[2] || "Write a blog post about the future of AI";
 
 async function main() {
   console.log("\n🚀 Starting blog writing workflow");
-  const wf = gensx.Workflow("WriteBlogWorkflow", WriteBlog);
-  const stream = await wf.run(
+  console.log(`Prompt: ${prompt}`);
+
+  const stream = await WriteBlogWorkflow.run(
     {
       stream: true,
-      prompt: "Write a blog post about the future of AI",
+      prompt,
     },
     { printUrl: true },
   );

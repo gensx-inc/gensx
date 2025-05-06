@@ -19,7 +19,6 @@
     "test": "turbo run test --filter=\"./packages/*\"",
     "test:examples": "turbo run test --filter=\"./examples/*\"",
     "test:types": "turbo run test:types --filter=\"./packages/*\"",
-    "start:example": "./scripts/runExample.sh",
     "test:all": "turbo run test",
     "clean": "turbo run clean",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
