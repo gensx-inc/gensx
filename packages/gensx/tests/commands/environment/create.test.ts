@@ -113,6 +113,7 @@ suite("environment create command", () => {
     expect(projectModel.createProject).toHaveBeenCalledWith(
       "new-project",
       "development",
+      undefined,
     );
 
     // Verify environment was not created separately (it's created with the project)

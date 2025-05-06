@@ -19,6 +19,7 @@ export async function runCLI() {
       "--ide-rules <rules>",
       "Comma-separated list of IDE rules to install (cline,windsurf,claude,cursor)",
     )
+    .option("-d, --description <desc>", "Description of the project")
     .action(async (projectPath: string, options: NewCommandOptions) => {
       try {
         await createGensxProject(projectPath, options);
