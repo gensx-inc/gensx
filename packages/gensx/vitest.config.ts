@@ -12,9 +12,14 @@ export default defineConfig({
     isolate: false,
     passWithNoTests: false,
     silent: "passed-only",
+    // pool: "threads",
+    // poolOptions: {
+    //   threads: {
+    //     singleThread: true,
+    //   },
+    // },
     include: ["./tests/**/*.test.ts"],
     env: loadEnv("test", process.cwd(), ""),
-    setupFiles: ["./tests/setup.ts"],
     coverage: {
       provider: "istanbul",
       reporter: ["text-summary", "json-summary", "json"],

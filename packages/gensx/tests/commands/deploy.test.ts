@@ -83,9 +83,9 @@ vi.mock("form-data", () => {
 });
 
 // Mock process.exit
-const mockExit = vi
-  .spyOn(process, "exit")
-  .mockImplementation(() => undefined as never);
+const mockExit = vi.spyOn(process, "exit").mockImplementation((code) => {
+  throw new Error(`process.exit unexpectedly called with "${code}"`);
+});
 
 // Mock console.error to prevent output during tests
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -94,7 +94,7 @@ vi.spyOn(console, "error").mockImplementation(() => {});
 // Reset mocks
 afterEach(() => {
   vi.resetAllMocks();
-  mockExit.mockReset();
+  mockExit.mockRestore();
 });
 
 suite("deploy command", () => {
@@ -326,9 +326,9 @@ suite("deploy command", () => {
     // Mock empty project config
     vi.mocked(projectConfig.readProjectConfig).mockResolvedValue(null);
 
-    await deploy("workflow.ts", {});
-
-    expect(mockExit).toHaveBeenCalledWith(1);
+    await expect(deploy("workflow.ts", {})).rejects.toThrow(
+      'process.exit unexpectedly called with "1"',
+    );
     expect(console.error).toHaveBeenCalledWith(
       expect.stringContaining(
         "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field",

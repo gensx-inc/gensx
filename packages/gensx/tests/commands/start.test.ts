@@ -32,9 +32,9 @@ suite("start command", () => {
   const originalConsoleInfo = console.info;
 
   // Mock process.exit
-  const mockExit = vi
-    .spyOn(process, "exit")
-    .mockImplementation(() => undefined as never);
+  const mockExit = vi.spyOn(process, "exit").mockImplementation((code) => {
+    throw new Error(`process.exit called with code ${code}`);
+  });
 
   // Mock spinner
   let mockSpinner: ReturnType<typeof ora>;
@@ -79,6 +79,7 @@ suite("start command", () => {
     process.cwd = originalCwd;
     console.info = originalConsoleInfo;
     console.error = originalConsoleError;
+    mockExit.mockRestore();
   });
 
   it("should validate file existence before proceeding", async () => {
@@ -90,9 +91,9 @@ suite("start command", () => {
       return true;
     });
 
-    await start("test.ts", {});
-
-    expect(mockExit).toHaveBeenCalledWith(1);
+    await expect(start("test.ts", {})).rejects.toThrow(
+      'process.exit unexpectedly called with "1"',
+    );
     expect(console.error).toHaveBeenCalledWith(
       "Error:",
       "File test.ts does not exist",
@@ -100,9 +101,9 @@ suite("start command", () => {
   });
 
   it("should only accept TypeScript files", async () => {
-    await start("test.js", {});
-
-    expect(mockExit).toHaveBeenCalledWith(1);
+    await expect(start("test.js", {})).rejects.toThrow(
+      'process.exit unexpectedly called with "1"',
+    );
     expect(console.error).toHaveBeenCalledWith(
       "Error:",
       "Only TypeScript files (.ts or .tsx) are supported",
