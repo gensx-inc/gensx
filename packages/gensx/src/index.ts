@@ -19,6 +19,7 @@ interface ListEnvironmentOptions {
   project?: string;
 }
 
+<<<<<<< HEAD
 interface CliOptions {
   input: string;
   wait: boolean;
@@ -28,6 +29,8 @@ interface CliOptions {
   yes?: boolean;
 }
 
+=======
+>>>>>>> aad4b26502a240e83b2159f03410017327923cce
 export async function runCLI() {
   const program = new Command()
     .name("gensx")
