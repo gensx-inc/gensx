@@ -12,6 +12,9 @@ export default defineConfig({
     isolate: false,
     passWithNoTests: false,
     pool: "forks",
+    sequence: {
+      concurrent: false,
+    },
     silent: "passed-only",
     include: ["./tests/**/*.test.ts"],
     env: loadEnv("test", process.cwd(), ""),
