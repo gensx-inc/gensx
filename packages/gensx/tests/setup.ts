@@ -3,44 +3,41 @@ import type { ReactElement } from "react";
 import { afterEach, beforeEach, vi } from "vitest";
 
 // Mock WebAssembly module
-vi.mock(
-  "../../node_modules/.pnpm/yoga-layout@3.2.1/node_modules/yoga-layout/dist/binaries/yoga-wasm-base64-esm.js",
-  () => ({
-    default: {
-      loadYoga: () =>
-        Promise.resolve({
-          createNode: () => ({
-            setWidth: vi.fn(),
-            setHeight: vi.fn(),
-            setPosition: vi.fn(),
-            setPositionType: vi.fn(),
-            setFlexDirection: vi.fn(),
-            setFlexWrap: vi.fn(),
-            setJustifyContent: vi.fn(),
-            setAlignItems: vi.fn(),
-            setAlignContent: vi.fn(),
-            setPadding: vi.fn(),
-            setMargin: vi.fn(),
-            setBorder: vi.fn(),
-            setFlex: vi.fn(),
-            setFlexGrow: vi.fn(),
-            setFlexShrink: vi.fn(),
-            setFlexBasis: vi.fn(),
-            setDisplay: vi.fn(),
-            calculateLayout: vi.fn(),
-            getComputedLayout: () => ({
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: 0,
-              height: 0,
-            }),
+vi.mock("yoga-layout/dist/binaries/yoga-wasm-base64-esm.js", () => ({
+  default: {
+    loadYoga: () =>
+      Promise.resolve({
+        createNode: () => ({
+          setWidth: vi.fn(),
+          setHeight: vi.fn(),
+          setPosition: vi.fn(),
+          setPositionType: vi.fn(),
+          setFlexDirection: vi.fn(),
+          setFlexWrap: vi.fn(),
+          setJustifyContent: vi.fn(),
+          setAlignItems: vi.fn(),
+          setAlignContent: vi.fn(),
+          setPadding: vi.fn(),
+          setMargin: vi.fn(),
+          setBorder: vi.fn(),
+          setFlex: vi.fn(),
+          setFlexGrow: vi.fn(),
+          setFlexShrink: vi.fn(),
+          setFlexBasis: vi.fn(),
+          setDisplay: vi.fn(),
+          calculateLayout: vi.fn(),
+          getComputedLayout: () => ({
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 0,
+            height: 0,
           }),
         }),
-    },
-  }),
-);
+      }),
+  },
+}));
 
 // Mock yoga-layout
 vi.mock("yoga-layout", () => ({
