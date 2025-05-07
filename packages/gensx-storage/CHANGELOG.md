@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.10](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.9...gensx-storage-v0.0.10) (2025-05-07)
+
+
+### ✨ New Features
+
+* updating listblobs to return extra metadata ([#669](https://github.com/gensx-inc/gensx/issues/669)) ([09d4941](https://github.com/gensx-inc/gensx/commit/09d4941bc4c9caee53118cd900dc2ef5ebeb572d))
+
 ## [0.0.9](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.8...gensx-storage-v0.0.9) (2025-04-30)
 
 

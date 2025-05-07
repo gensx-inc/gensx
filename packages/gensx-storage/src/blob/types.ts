@@ -272,15 +272,15 @@ export interface ListBlobsOptions {
  */
 export interface ListBlobsResponse {
   /**
-   * List of blob keys
+   * List of blobs
    */
-  keys: string[];
+  blobs: { key: string; lastModified: string; size: number }[];
 
   /**
    * Cursor to get the next page of results.
    * If null, there are no more results.
    */
-  nextCursor: string | null;
+  nextCursor?: string;
 }
 
 /**

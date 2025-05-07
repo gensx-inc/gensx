@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.28](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.27...gensx-v0.3.28) (2025-05-07)
+
+
+### ✨ New Features
+
+* wiring up support for description in gensx.yaml ([#641](https://github.com/gensx-inc/gensx/issues/641)) ([04bbbee](https://github.com/gensx-inc/gensx/commit/04bbbee2443a1110af489db3493ed31e38c1f234))
+
 ## [0.3.27](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.26...gensx-v0.3.27) (2025-04-30)
 
 

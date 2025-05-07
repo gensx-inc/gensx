@@ -618,32 +618,36 @@ export class RemoteBlobStorage implements BlobStorage {
       }
 
       const data = (await response.json()) as {
-        keys: string[];
-        nextCursor: string | null;
+        blobs: { key: string; lastModified: string; size: number }[];
+        nextCursor?: string;
       };
 
-      const keys = data.keys.map((key) => decodeURIComponent(key));
-
-      // Remove default prefix from results if it exists
-      let items: string[];
+      // Process blob keys to handle the default prefix
+      let processedBlobs: {
+        key: string;
+        lastModified: string;
+        size: number;
+      }[] = [];
       if (normalizedDefaultPrefix) {
-        items = keys
+        processedBlobs = data.blobs
           .filter(
-            (key) =>
-              key === normalizedDefaultPrefix ||
-              key.startsWith(`${normalizedDefaultPrefix}/`),
+            (blob) =>
+              blob.key === normalizedDefaultPrefix ||
+              blob.key.startsWith(`${normalizedDefaultPrefix}/`),
           )
-          .map((key) =>
-            key === normalizedDefaultPrefix
-              ? ""
-              : key.slice(normalizedDefaultPrefix.length + 1),
-          );
+          .map((blob) => ({
+            ...blob,
+            key:
+              blob.key === normalizedDefaultPrefix
+                ? ""
+                : blob.key.slice(normalizedDefaultPrefix.length + 1),
+          }));
       } else {
-        items = keys;
+        processedBlobs = data.blobs;
       }
 
       return {
-        keys: items,
+        blobs: processedBlobs,
         nextCursor: data.nextCursor,
       };
     } catch (err) {
