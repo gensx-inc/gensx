@@ -103,6 +103,10 @@ function useCreateEnvironment(
           }
 
           setStep("done");
+
+          setTimeout(() => {
+            exit();
+          }, 100);
         }
       } catch (err) {
         if (!mounted) return;

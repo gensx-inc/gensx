@@ -27,10 +27,7 @@ interface Props {
 
 type Phase = "resolveEnv" | "running" | "streaming" | "done" | "error";
 
-export const RunWorkflowScreen: React.FC<Props> = ({
-  workflowName,
-  options,
-}) => {
+export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
   const { exit } = useApp();
   const { stdout } = useStdout();
 
@@ -84,8 +81,13 @@ export const RunWorkflowScreen: React.FC<Props> = ({
         });
 
         if (response.status >= 400) {
+          const errorBody = (await response.json().catch(() => ({}))) as {
+            error?: string;
+          };
           throw new Error(
-            `Failed to start workflow: ${response.status} ${response.statusText}`,
+            `Failed to start workflow (${response.status} ${response.statusText})\n\n${
+              errorBody.error ?? ""
+            }`,
           );
         }
 
@@ -215,6 +217,7 @@ export const RunWorkflowScreen: React.FC<Props> = ({
         <EnvironmentResolver
           projectName={projectName}
           specifiedEnvironment={options.env}
+          allowCreate={false}
           yes={options.yes}
           onResolved={(env) => {
             void runWorkflow(env);

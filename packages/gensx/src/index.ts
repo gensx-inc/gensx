@@ -11,7 +11,7 @@ import { ShowEnvironmentUI } from "./commands/environment/show.js";
 import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
 import { login } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
-import { RunWorkflowScreen } from "./commands/run.js";
+import { RunWorkflowUI } from "./commands/run.js";
 import { start } from "./commands/start.js";
 import { VERSION } from "./utils/user-agent.js";
 
@@ -19,7 +19,6 @@ interface ListEnvironmentOptions {
   project?: string;
 }
 
-<<<<<<< HEAD
 interface CliOptions {
   input: string;
   wait: boolean;
@@ -29,8 +28,6 @@ interface CliOptions {
   yes?: boolean;
 }
 
-=======
->>>>>>> aad4b26502a240e83b2159f03410017327923cce
 export async function runCLI() {
   const program = new Command()
     .name("gensx")
@@ -124,7 +121,7 @@ export async function runCLI() {
     .action((workflow: string, options: CliOptions) => {
       return new Promise<void>((resolve, reject) => {
         const { waitUntilExit } = render(
-          React.createElement(RunWorkflowScreen, {
+          React.createElement(RunWorkflowUI, {
             workflowName: workflow,
             options,
           }),
