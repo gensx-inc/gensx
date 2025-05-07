@@ -28,6 +28,7 @@ export default defineConfig({
     passWithNoTests: false,
     include: ["./tests/**/*.test.ts", "./tests/**/*.test.tsx"],
     env: loadEnv("test", process.cwd(), ""),
+    silent: "passed-only",
     coverage: {
       provider: "istanbul",
       reporter: ["text-summary", "json-summary", "json"],
