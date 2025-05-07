@@ -11,12 +11,12 @@ import rehypeHighlight from "rehype-highlight";
 const StyledImage = (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
   <span className="block my-4 border border-gray-300 p-1">
     <Image
-      src={props.src || ""}
+      src={props.src?.toString() || ""}
       alt={props.alt || ""}
       width={typeof props.width === "number" ? props.width : 1200}
       height={typeof props.height === "number" ? props.height : 630}
       className="w-full h-auto"
-      unoptimized={!props.src?.startsWith("/")}
+      unoptimized={!props.src?.toString().startsWith("/")}
     />
   </span>
 );
