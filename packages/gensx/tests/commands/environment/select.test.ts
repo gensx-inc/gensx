@@ -123,38 +123,34 @@ suite("environment select command", () => {
     expect(parsed.selectedEnvironment).toBe("development");
   });
 
-  //   it("should use project name from config when not specified", async () => {
-  //     // Create a real gensx.yaml config file
-  //     await fs.writeFile(
-  //       path.join(tempDir, "project", "gensx.yaml"),
-  //       `# GenSX Project Configuration
-  // projectName: config-project
-  // `,
-  //       "utf-8",
-  //     );
+  it("should use project name from config when not specified", async () => {
+    // Create a real gensx.yaml config file
+    await fs.writeFile(
+      path.join(tempDir, "project", "gensx.yaml"),
+      `# GenSX Project Configuration
+  projectName: config-project
+  `,
+      "utf-8",
+    );
 
-  //     // Mock project exists
-  //     vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
+    // Mock project exists
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
 
-  //     // For some reason our mock for checkEnvironmentExists isn't being used correctly
-  //     // So instead we'll test for the error message since that's what's shown
+    // Mock environment doesn't exist
+    vi.mocked(environmentModel.checkEnvironmentExists).mockResolvedValue(false);
 
-  //     const { lastFrame, unmount } = render(
-  //       React.createElement(SelectEnvironmentUI, {
-  //         environmentName: "staging",
-  //       }),
-  //     );
+    const { lastFrame } = render(
+      React.createElement(SelectEnvironmentUI, {
+        environmentName: "staging",
+      }),
+    );
 
-  //     // Wait for the component to render the error message
-  //     await new Promise((resolve) => setTimeout(resolve, 500));
-
-  //     // Check for the error message we're actually getting
-  //     expect(lastFrame()).toContain(
-  //       "Environment staging does not exist in project config-project",
-  //     );
-
-  //     unmount();
-  //   });
+    // Wait for the error message to appear
+    await waitForText(
+      lastFrame,
+      "Environment staging does not exist in project config-project",
+    );
+  });
 
   it("should show error when no project is specified and none in config", async () => {
     // No gensx.yaml file, so it will fail to find a project
