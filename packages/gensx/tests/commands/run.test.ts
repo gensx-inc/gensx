@@ -23,14 +23,18 @@ vi.mock("../../src/utils/project-config.js");
 vi.mock("../../src/utils/env-config.js");
 
 // Mock node:fs with readFileSync
-vi.mock("node:fs", () => ({
-  createWriteStream: vi.fn(() => ({
-    write: vi.fn(),
-    end: vi.fn(),
-  })),
-  WriteStream: vi.fn(),
-  readFileSync: vi.fn(() => JSON.stringify({ version: "1.0.0" })),
-}));
+vi.mock("node:fs", async () => {
+  const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+  return {
+    ...actual,
+    createWriteStream: vi.fn(() => ({
+      write: vi.fn(),
+      end: vi.fn(),
+    })),
+    WriteStream: vi.fn(),
+    readFileSync: vi.fn(() => JSON.stringify({ version: "1.0.0" })),
+  };
+});
 
 vi.mock("node:fs/promises", () => ({
   writeFile: vi.fn(),

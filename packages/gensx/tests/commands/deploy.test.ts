@@ -1,5 +1,3 @@
-import fs from "node:fs";
-
 import axios from "axios";
 import { Definition } from "typescript-json-schema";
 import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
@@ -11,16 +9,22 @@ import * as envConfig from "../../src/utils/env-config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
 
 // Mock dependencies
-vi.mock("node:fs", async (importOriginal) => {
-  const actual = await importOriginal<typeof fs>();
+vi.mock("node:fs", async () => {
+  const actual = (await vi.importActual("node:fs")) as unknown;
+  const actualTyped = actual as typeof import("node:fs") & {
+    default?: Record<string, unknown>;
+  };
   return {
-    ...actual,
+    ...actualTyped,
     default: {
+      ...(actualTyped.default ?? {}),
       createReadStream: vi.fn().mockReturnValue({ pipe: vi.fn() }),
       readFileSync: vi
         .fn()
         .mockReturnValue(JSON.stringify({ version: "1.0.0" })),
     },
+    createReadStream: vi.fn().mockReturnValue({ pipe: vi.fn() }),
+    readFileSync: vi.fn().mockReturnValue(JSON.stringify({ version: "1.0.0" })),
   };
 });
 

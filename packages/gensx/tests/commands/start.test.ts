@@ -8,10 +8,14 @@ import * as config from "../../src/utils/config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
 
 // Mock dependencies
-vi.mock("node:fs", () => ({
-  existsSync: vi.fn(),
-  readFileSync: vi.fn(() => JSON.stringify({ version: "1.0.0" })),
-}));
+vi.mock("node:fs", async () => {
+  const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+  return {
+    ...actual,
+    existsSync: vi.fn(),
+    readFileSync: vi.fn(() => JSON.stringify({ version: "1.0.0" })),
+  };
+});
 vi.mock("ora");
 vi.mock("../../src/utils/config.js");
 vi.mock("../../src/utils/project-config.js");
