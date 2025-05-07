@@ -1,7 +1,7 @@
 import { createWriteStream, WriteStream } from "node:fs";
 import { writeFile } from "node:fs/promises";
 
-import { Box, Static, Text, useApp, useStdout } from "ink";
+import { Box, Static, Text, useApp } from "ink";
 import React, { useCallback, useState } from "react";
 
 import { EnvironmentResolver } from "../components/EnvironmentResolver.js";
@@ -29,11 +29,12 @@ type Phase = "resolveEnv" | "running" | "streaming" | "done" | "error";
 
 export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
   const { exit } = useApp();
-  const { stdout } = useStdout();
 
   const [phase, setPhase] = useState<Phase>("resolveEnv");
   const [error, setError] = useState<string | null>(null);
   const [logLines, setLogLines] = useState<string[]>([]);
+  const [streamContent, setStreamContent] = useState<string>("");
+  const [workflowOutput, setWorkflowOutput] = useState<unknown>(null);
   const {
     loading,
     error: projectError,
@@ -109,11 +110,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
 
         if (isStream) {
           setPhase("streaming");
-          await handleStream(
-            response.body,
-            options.output,
-            stdout.write.bind(stdout),
-          );
+          await handleStream(response.body, options.output, setStreamContent);
           setPhase("done");
           exit();
         } else {
@@ -137,11 +134,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
               `Workflow output written to ${options.output}`,
             ]);
           } else {
-            setLogLines((ls) => [
-              ...ls,
-              "Workflow execution completed:",
-              JSON.stringify(body.output, null, 2),
-            ]);
+            setWorkflowOutput(body.output);
           }
 
           setPhase("done");
@@ -157,14 +150,14 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
         }, 100);
       }
     },
-    [workflowName, options, projectName, exit, stdout],
+    [workflowName, options, projectName, exit],
   );
 
   // Streaming helper — outside render tree
   const handleStream = async (
     stream: ReadableStream<Uint8Array> | null,
     outputPath: string | undefined,
-    write: (s: string) => boolean,
+    setContent: React.Dispatch<React.SetStateAction<string>>,
   ) => {
     if (!stream) {
       throw new Error("No stream returned by server");
@@ -176,9 +169,9 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
 
     if (outputPath) {
       fileStream = createWriteStream(outputPath);
-      write(`Streaming response output to ${outputPath}\n`);
+      setContent(`Streaming response output to ${outputPath}\n`);
     } else {
-      write("Streaming response output:\n");
+      setContent("Streaming response output:\n");
     }
 
     let done = false;
@@ -191,12 +184,12 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
         if (fileStream) {
           fileStream.write(chunk);
         } else {
-          write(chunk);
+          setContent((prev: string) => prev + chunk);
         }
       }
     }
     fileStream?.end();
-    write("\nWorkflow execution completed\n");
+    setLogLines((ls) => [...ls, "Workflow execution completed"]);
   };
 
   if (error || projectError) {
@@ -228,8 +221,34 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
       {phase === "running" && <LoadingSpinner message="Running workflow..." />}
 
       {phase === "streaming" && (
-        <Box>
-          <Text dimColor>Streaming...</Text>
+        <Box flexDirection="column">
+          <Text color="yellow" bold>
+            Streaming output...
+          </Text>
+          <Box borderStyle="round" borderColor="cyan" padding={1} marginTop={1}>
+            <Text color="white">{streamContent}</Text>
+          </Box>
+        </Box>
+      )}
+
+      {phase === "done" && (
+        <Box flexDirection="column">
+          <Box>
+            <Text color="green" bold>
+              ✓
+            </Text>
+            <Text> Workflow execution completed</Text>
+          </Box>
+          {workflowOutput !== null && (
+            <Box flexDirection="column" borderStyle="round" borderColor="cyan">
+              <Text color="cyan">Workflow Output</Text>
+              <Box paddingTop={1}>
+                <Text color="white">
+                  {JSON.stringify(workflowOutput, null, 2)}
+                </Text>
+              </Box>
+            </Box>
+          )}
         </Box>
       )}
 

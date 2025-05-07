@@ -1,4 +1,4 @@
-import { Box, Text, useApp, useInput } from "ink";
+import { Box, Text, useApp } from "ink";
 import SelectInput from "ink-select-input";
 import Spinner from "ink-spinner";
 import TextInput from "ink-text-input";
@@ -159,7 +159,7 @@ export const EnvironmentResolver: React.FC<Props> = ({
     ];
 
     return (
-      <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column">
         <Text>
           Select an environment for project{" "}
           <Text color="cyan">{projectName}</Text>:
@@ -181,7 +181,7 @@ export const EnvironmentResolver: React.FC<Props> = ({
   // 3️⃣ Ask for new env name
   if (phase === "createPrompt") {
     return (
-      <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column">
         <Text>Enter a name for the new environment:</Text>
         <TextInput
           value={newEnvName}
@@ -219,31 +219,26 @@ interface ConfirmProps {
 }
 
 const ConfirmSelected: React.FC<ConfirmProps> = ({ env, onYes, onNo }) => {
-  const [choice, setChoice] = useState<"yes" | "no">("yes");
-
-  useInput((_input, key) => {
-    if (key.leftArrow || key.rightArrow) {
-      setChoice((prev) => (prev === "yes" ? "no" : "yes"));
-    }
-    if (key.return) {
-      if (choice === "yes") {
-        onYes();
-      } else {
-        onNo();
-      }
-    }
-  });
+  const items: Item[] = [
+    { label: "Yes", value: "yes" },
+    { label: "No", value: "no" },
+  ];
 
   return (
-    <Box flexDirection="column" gap={1}>
+    <Box flexDirection="column">
       <Text>
         Use selected environment <Text color="green">{env}</Text>?
       </Text>
-      <Box gap={2}>
-        <Text color={choice === "yes" ? "green" : undefined}>Yes</Text>
-        <Text color={choice === "no" ? "green" : undefined}>No</Text>
-      </Box>
-      <Text dimColor>← → to change, Enter to confirm</Text>
+      <SelectInput
+        items={items}
+        onSelect={(item) => {
+          if (item.value === "yes") {
+            onYes();
+          } else {
+            onNo();
+          }
+        }}
+      />
     </Box>
   );
 };
