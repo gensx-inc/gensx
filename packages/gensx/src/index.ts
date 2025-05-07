@@ -11,12 +11,21 @@ import { ShowEnvironmentUI } from "./commands/environment/show.js";
 import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
 import { login } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
-import { runWorkflow } from "./commands/run.js";
+import { RunWorkflowScreen } from "./commands/run.js";
 import { start } from "./commands/start.js";
 import { VERSION } from "./utils/user-agent.js";
 
 interface ListEnvironmentOptions {
   project?: string;
+}
+
+interface CliOptions {
+  input: string;
+  wait: boolean;
+  project?: string;
+  env?: string;
+  output?: string;
+  yes?: boolean;
 }
 
 export async function runCLI() {
@@ -109,7 +118,17 @@ export async function runCLI() {
       undefined,
     )
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
-    .action(runWorkflow);
+    .action((workflow: string, options: CliOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(RunWorkflowScreen, {
+            workflowName: workflow,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   // Environment management commands
   const environmentCommand = program
