@@ -13,7 +13,6 @@ import {
   vi,
 } from "vitest";
 
-// Import with the correct file extension
 import { CreateEnvironmentUI } from "../../../src/commands/environment/create.js";
 import * as environmentModel from "../../../src/models/environment.js";
 import * as projectModel from "../../../src/models/projects.js";
@@ -164,7 +163,6 @@ suite("environment create Ink UI", () => {
       lastFrame,
       /No project name found\. Either specify --project or create a gensx\.yaml file with a 'projectName' field\./,
     );
-    // No process.exit assertion needed
   });
 
   it("should handle error when environment already exists", async () => {
@@ -186,7 +184,6 @@ suite("environment create Ink UI", () => {
       lastFrame,
       /Environment development already exists for project test-project/,
     );
-    // No process.exit assertion needed
   });
 
   it("should show loading spinner initially", () => {
@@ -210,7 +207,6 @@ suite("environment create Ink UI", () => {
     expect(lastFrame()?.length).toBeGreaterThan(0);
   });
 
-  // Unskip and implement the user input tests properly
   it("should prompt to create project when project does not exist and user confirms", async () => {
     // Mock project does not exist
     vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);

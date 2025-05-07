@@ -24,7 +24,6 @@ interface UseEnvironmentsResult {
   selectedEnvironment: string | null;
 }
 
-// Custom hook to handle environment data fetching
 function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
