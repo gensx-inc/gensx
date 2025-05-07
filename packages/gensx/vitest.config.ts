@@ -9,12 +9,8 @@ export default defineConfig({
     forceRerunTriggers: ["**/*.ts", "**/*.template"],
     root: path.resolve(__dirname, "./"),
     globals: true,
-    isolate: false,
+    isolate: true,
     passWithNoTests: false,
-    pool: "forks",
-    sequence: {
-      concurrent: false,
-    },
     silent: "passed-only",
     include: ["./tests/**/*.test.ts"],
     env: loadEnv("test", process.cwd(), ""),
