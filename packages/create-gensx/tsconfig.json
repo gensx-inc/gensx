@@ -1,10 +1,29 @@
 {
-  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo",
     "outDir": "./dist",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "target": "esnext",
+    "useDefineForClassFields": true,
+    "module": "NodeNext",
+    "lib": ["ESNext"],
+    "incremental": true,
+    "skipLibCheck": true,
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "isolatedModules": true,
+    "emitDeclarationOnly": false,
+    "sourceMap": true,
+    "inlineSources": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
-  "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
+  "include": ["src/**/*", "tests/**/*", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
