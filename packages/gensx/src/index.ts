@@ -9,7 +9,7 @@ import { ListEnvironmentsUI } from "./commands/environment/list.js";
 import { SelectEnvironmentUI } from "./commands/environment/select.js";
 import { ShowEnvironmentUI } from "./commands/environment/show.js";
 import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
-import { login } from "./commands/login.js";
+import { LoginUI } from "./commands/login.js";
 import { NewCommandOptions, newProject } from "./commands/new.js";
 import { RunWorkflowUI } from "./commands/run.js";
 import { start } from "./commands/start.js";
@@ -44,8 +44,11 @@ export async function runCLI() {
   program
     .command("login")
     .description("Login to GenSX Cloud")
-    .action(async () => {
-      await login();
+    .action(() => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(React.createElement(LoginUI));
+        waitUntilExit().then(resolve).catch(reject);
+      });
     });
 
   program

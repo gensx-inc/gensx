@@ -124,7 +124,7 @@ export function BuildWorkflowUI({ file, options }: Props) {
         <Box flexDirection="column">
           <Box>
             <Text color="green" bold>
-              ✓
+              ✔
             </Text>
             <Text> Built workflows</Text>
           </Box>
@@ -137,13 +137,13 @@ export function BuildWorkflowUI({ file, options }: Props) {
           <Box flexDirection="column">
             <Box>
               <Text color="green" bold>
-                ✓
+                ✔
               </Text>
               <Text> Built workflows</Text>
             </Box>
             <Box>
               <Text color="green" bold>
-                ✓
+                ✔
               </Text>
               <Text> Generated schemas</Text>
             </Box>

@@ -246,7 +246,7 @@ export function CreateEnvironmentUI({
           {projectCreated && (
             <Text>
               <Text bold color="green">
-                ✓
+                ✔
               </Text>{" "}
               Project <Text color="cyan">{projectName}</Text> and environment{" "}
               <Text color="green">{environmentName}</Text> created
@@ -255,7 +255,7 @@ export function CreateEnvironmentUI({
           {!projectCreated && (
             <Text>
               <Text bold color="green">
-                ✓
+                ✔
               </Text>{" "}
               Environment <Text color="green">{environmentName}</Text> created
               for project <Text color="cyan">{projectName}</Text>
@@ -263,7 +263,7 @@ export function CreateEnvironmentUI({
           )}
           <Text>
             <Text bold color="green">
-              ✓
+              ✔
             </Text>{" "}
             Environment <Text color="green">{environmentName}</Text> is now
             active

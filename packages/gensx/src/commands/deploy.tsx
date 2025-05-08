@@ -162,13 +162,13 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
         <Box flexDirection="column">
           <Box>
             <Text color="green" bold>
-              ✓
+              ✔
             </Text>
             <Text> Built workflows</Text>
           </Box>
           <Box>
             <Text color="green" bold>
-              ✓
+              ✔
             </Text>
             <Text> Generated schemas</Text>
           </Box>
@@ -189,19 +189,19 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
         <Box flexDirection="column">
           <Box>
             <Text color="green" bold>
-              ✓
+              ✔
             </Text>
             <Text> Built workflows</Text>
           </Box>
           <Box>
             <Text color="green" bold>
-              ✓
+              ✔
             </Text>
             <Text> Generated schemas</Text>
           </Box>
           <Box>
             <Text color="green" bold>
-              ✓
+              ✔
             </Text>
             <Text> Deployed to GenSX Cloud</Text>
           </Box>

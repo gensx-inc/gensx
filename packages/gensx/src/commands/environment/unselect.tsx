@@ -95,7 +95,7 @@ export function UnselectEnvironmentUI({
   return (
     <Box flexDirection="column" gap={1}>
       <Text>
-        <Text color="green">✓</Text> Active environment cleared for project{" "}
+        <Text color="green">✔</Text> Active environment cleared for project{" "}
         <Text color="cyan">{projectName}</Text>
       </Text>
     </Box>

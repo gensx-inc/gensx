@@ -116,7 +116,7 @@ export function SelectEnvironmentUI({
   return (
     <Box flexDirection="column" gap={1}>
       <Text>
-        <Text color="green">✓</Text> Environment{" "}
+        <Text color="green">✔</Text> Environment{" "}
         <Text color="green">{selectedEnv}</Text> is now active for project{" "}
         <Text color="cyan">{projectName}</Text>
       </Text>

@@ -242,7 +242,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
         <Box flexDirection="column">
           <Box>
             <Text color="green" bold>
-              ✓
+              ✔
             </Text>
             <Text> Workflow execution completed</Text>
           </Box>
