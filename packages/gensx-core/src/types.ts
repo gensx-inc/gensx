@@ -1,12 +1,8 @@
 import { z } from "zod";
 
-import { GsxArray } from "./array.js";
 import { ExecutionContext } from "./context.js";
-import { JSX } from "./jsx-runtime.js";
 
 export type MaybePromise<T> = T | Promise<T>;
-
-export type Element = JSX.Element;
 
 export type Primitive = string | number | boolean | null | undefined;
 
@@ -38,23 +34,17 @@ export type Primitive = string | number | boolean | null | undefined;
  *   }),
  * );
  */
-export type DeepJSXElement<T> =
-  | (T extends (infer Item)[]
-      ? DeepJSXElement<Item>[] | GsxArray<Item> | Item[]
-      : T extends GsxArray<infer Item>
-        ? GsxArray<Item>
-        : T extends object
-          ? { [K in keyof T]: DeepJSXElement<T[K]> }
-          : JSX.Element | T)
-  | JSX.Element;
+export type DeepJSXElement<T> = T extends (infer Item)[]
+  ? DeepJSXElement<Item>[] | Item[]
+  : T extends object
+    ? { [K in keyof T]: DeepJSXElement<T[K]> }
+    : T;
 
 // Allow children function to return plain objects that will be executed
 export type ExecutableValue<T = unknown> =
-  | Element
-  | Element[]
   | Primitive
   | Streamable
-  | Record<string, Element | Primitive | Streamable>
+  | Record<string, Primitive | Streamable>
   | T[]
   | Record<string, T>;
 
@@ -68,12 +58,8 @@ export interface ComponentOpts {
 // omit name from ComponentOpts
 export type DefaultOpts = Omit<ComponentOpts, "name">;
 
-export type ComponentProps<P, O> = P & {
+export type ComponentProps<P> = P & {
   componentOpts?: ComponentOpts;
-  children?:
-    | ((output: O) => MaybePromise<ExecutableValue<O>>)
-    | ((output: O) => void)
-    | ((output: O) => Promise<void>);
 };
 
 /**
@@ -83,16 +69,12 @@ export type ComponentProps<P, O> = P & {
  * - A promise of either of the above
  */
 export type GsxComponent<P, O> = ((
-  props: ComponentProps<P, O>,
+  props: ComponentProps<P>,
 ) => MaybePromise<
   O extends (infer Item)[]
-    ? DeepJSXElement<O> | GsxArray<Item> | Item[] | (Item | Element)[]
+    ? DeepJSXElement<O> | Item[]
     : O | DeepJSXElement<O> | ExecutableValue<O>
->) /*
- * Use branding to preserve output type information.
- * This allows direct access to the output type O while maintaining
- * compatibility with the more flexible JSX composition system.
- */ & {
+>) & {
   readonly __brand: "gensx-component";
   readonly __outputType: O;
   readonly __rawProps: P;
@@ -115,25 +97,16 @@ export type StreamChildrenType<T> =
 export type StreamComponentProps<P> = P & {
   stream?: boolean;
   componentOpts?: ComponentOpts;
-  children?: StreamChildrenType<P>;
 };
 
 export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
   props: StreamComponentProps<
-    // This is necessary to disallow extra props. Because of the extends statement above,
-    // typescript would allow props that have all the necessary keys, but also have extra keys.
-    // We want to prevent that, as it can be surprising for the developer.
-    // This hack is not necessary for the Component type because we don't use extends in the same way.
     T & Record<Exclude<keyof T, keyof StreamComponentProps<P>>, never>
   >,
 ) => MaybePromise<
   | DeepJSXElement<T extends { stream: true } ? Streamable : string>
   | ExecutableValue
->) /*
- * Use branding to preserve output type information.
- * This allows direct access to the output type O while maintaining
- * compatibility with the more flexible JSX composition system.
- */ & {
+>) & {
   readonly __brand: "gensx-stream-component";
   readonly __outputType: Streamable;
   readonly __rawProps: P;
