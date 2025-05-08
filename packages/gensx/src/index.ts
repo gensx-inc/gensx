@@ -12,7 +12,7 @@ import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
 import { LoginUI } from "./commands/login.js";
 import { NewCommandOptions, NewProjectUI } from "./commands/new.js";
 import { RunWorkflowUI } from "./commands/run.js";
-import { start } from "./commands/start.js";
+import { StartUI } from "./commands/start.js";
 import { VERSION } from "./utils/user-agent.js";
 
 interface ListEnvironmentOptions {
@@ -81,7 +81,17 @@ export async function runCLI() {
     .argument("<file>", "File to serve")
     .option("--port <port>", "Port to run the server on", "1337")
     .option("-q, --quiet", "Suppress output", false)
-    .action(start);
+    .action((file: string, options: { port: number; quiet: boolean }) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(StartUI, {
+            file,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   program
     .command("build")
