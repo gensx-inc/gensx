@@ -8,6 +8,7 @@ interface UseProjectNameResult {
   loading: boolean;
   error: Error | null;
   projectName: string | null;
+  isFromConfig: boolean;
 }
 
 export function useProjectName(
@@ -17,6 +18,7 @@ export function useProjectName(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [projectName, setProjectName] = useState<string | null>(null);
+  const [isFromConfig, setIsFromConfig] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -32,6 +34,9 @@ export function useProjectName(
             );
           }
           resolvedProjectName = projectConfig.projectName;
+          if (mounted) {
+            setIsFromConfig(true);
+          }
         }
 
         // Check if project exists
@@ -62,5 +67,5 @@ export function useProjectName(
     };
   }, [initialProjectName, exit]);
 
-  return { loading, error, projectName };
+  return { loading, error, projectName, isFromConfig };
 }

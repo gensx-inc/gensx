@@ -2,8 +2,8 @@ import { Command } from "commander";
 import { render } from "ink";
 import React from "react";
 
-import { build, BuildOptions } from "./commands/build.js";
-import { deploy } from "./commands/deploy.js";
+import { BuildOptions, BuildWorkflowUI } from "./commands/build.js";
+import { DeployUI } from "./commands/deploy.js";
 import { CreateEnvironmentUI } from "./commands/environment/create.js";
 import { ListEnvironmentsUI } from "./commands/environment/list.js";
 import { SelectEnvironmentUI } from "./commands/environment/select.js";
@@ -25,6 +25,13 @@ interface CliOptions {
   project?: string;
   env?: string;
   output?: string;
+  yes?: boolean;
+}
+
+interface DeployOptions {
+  project?: string;
+  envVar?: Record<string, string>;
+  env?: string;
   yes?: boolean;
 }
 
@@ -72,9 +79,18 @@ export async function runCLI() {
     )
     .option("-o, --out-dir <dir>", "Output directory")
     .option("-t, --tsconfig <file>", "TypeScript config file")
-    .action(async (file: string, options: BuildOptions) => {
-      const outFile = await build(file, options);
-      console.info(`Workflow built to ${outFile.bundleFile}`);
+    .option("-w, --watch", "Watch for changes", false)
+    .option("-q, --quiet", "Suppress output", false)
+    .action((file: string, options: BuildOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(BuildWorkflowUI, {
+            file,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
     });
 
   program
@@ -102,7 +118,17 @@ export async function runCLI() {
     .option("-p, --project <name>", "Project name to deploy to")
     .option("-e, --env <name>", "Environment name to deploy to")
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
-    .action(deploy);
+    .action((file: string, options: DeployOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(DeployUI, {
+            file,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   program
     .command("run")

@@ -39,6 +39,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
     loading,
     error: projectError,
     projectName,
+    isFromConfig,
   } = useProjectName(options.project);
 
   if (options.output && !options.wait) {
@@ -206,6 +207,12 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
 
   return (
     <Box flexDirection="column" gap={1}>
+      {isFromConfig && phase === "resolveEnv" && (
+        <Text>
+          <Text color="cyan">ℹ</Text> Using project name from gensx.yaml:{" "}
+          <Text color="cyan">{projectName}</Text>
+        </Text>
+      )}
       {phase === "resolveEnv" && (
         <EnvironmentResolver
           projectName={projectName}

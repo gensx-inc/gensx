@@ -14,6 +14,7 @@ interface Item {
 import { createEnvironment, listEnvironments } from "../models/environment.js";
 import { checkProjectExists } from "../models/projects.js";
 import { getSelectedEnvironment } from "../utils/env-config.js";
+import { ErrorMessage } from "./ErrorMessage.js";
 
 interface Props {
   projectName: string;
@@ -48,7 +49,7 @@ export const EnvironmentResolver: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
   const [environments, setEnvironments] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
-  const [newEnvName, setNewEnvName] = useState<string>("default");
+  const [newEnvName, setNewEnvName] = useState<string>("");
 
   //-----------------------------------------------------------
   // Helpers
@@ -96,12 +97,14 @@ export const EnvironmentResolver: React.FC<Props> = ({
       if (preselected) {
         setSelected(preselected);
         setEnvironments(envs.map((env) => env.name));
+        setNewEnvName(envs.length === 0 ? "default" : "");
         setPhase("auto‑resolved");
         return;
       }
 
       // 5. Otherwise show list prompt
       setEnvironments(envs.map((env) => env.name));
+      setNewEnvName(envs.length === 0 ? "default" : "");
       setPhase("select");
     } catch (err) {
       setError((err as Error).message);
@@ -127,11 +130,7 @@ export const EnvironmentResolver: React.FC<Props> = ({
   }
 
   if (phase === "error" && error) {
-    return (
-      <Box>
-        <Text color="red">❌ {error}</Text>
-      </Box>
-    );
+    return <ErrorMessage message={error} />;
   }
 
   // 1️⃣ Confirm use of pre‑selected environment
@@ -153,15 +152,13 @@ export const EnvironmentResolver: React.FC<Props> = ({
   if (phase === "select") {
     const items: Item[] = [
       ...environments.map((name) => ({ label: name, value: name })),
-      ...(allowCreate
-        ? [{ label: "➕  Create a new environment", value: "__create__" }]
-        : []),
+      ...(allowCreate ? [{ label: "+ create new", value: "__create__" }] : []),
     ];
 
     return (
       <Box flexDirection="column">
         <Text>
-          Select an environment for project{" "}
+          <Text color="blue">➜</Text> Select an environment for project{" "}
           <Text color="cyan">{projectName}</Text>:
         </Text>
         <SelectInput
@@ -182,18 +179,20 @@ export const EnvironmentResolver: React.FC<Props> = ({
   if (phase === "createPrompt") {
     return (
       <Box flexDirection="column">
-        <Text>Enter a name for the new environment:</Text>
-        <TextInput
-          value={newEnvName}
-          onChange={setNewEnvName}
-          onSubmit={(value) => {
-            const trimmed = value.trim();
-            if (!trimmed) return;
-            setPhase("creating");
-            void createEnvironment(projectName, trimmed);
-            finish(trimmed);
-          }}
-        />
+        <Text color="blue">
+          ➜ <Text color="white">Enter a name for the new environment:</Text>{" "}
+          <TextInput
+            value={newEnvName}
+            onChange={setNewEnvName}
+            onSubmit={(value) => {
+              const trimmed = value.trim();
+              if (!trimmed) return;
+              setPhase("creating");
+              void createEnvironment(projectName, trimmed);
+              finish(trimmed);
+            }}
+          />
+        </Text>
       </Box>
     );
   }
@@ -227,7 +226,8 @@ const ConfirmSelected: React.FC<ConfirmProps> = ({ env, onYes, onNo }) => {
   return (
     <Box flexDirection="column">
       <Text>
-        Use selected environment <Text color="green">{env}</Text>?
+        <Text color="blue">➜</Text> Use selected environment{" "}
+        <Text color="green">{env}</Text>?
       </Text>
       <SelectInput
         items={items}
