@@ -11,18 +11,11 @@ import pc from "picocolors";
 import { useCallback, useEffect, useState } from "react";
 
 import { ErrorMessage } from "../components/ErrorMessage.js";
+import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { readConfig } from "../utils/config.js";
 import { exec } from "../utils/exec.js";
 import { saveProjectConfig } from "../utils/project-config.js";
 import { login } from "./login.js";
-
-const TEMPLATE_MAP: Record<string, string> = {
-  ts: "typescript",
-};
-
-const TEMPLATE_NAMES: { [key in keyof typeof TEMPLATE_MAP]: string } = {
-  ts: "TypeScript Project",
-};
 
 const TEMPLATE_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -52,7 +45,6 @@ interface AiAssistantOption {
 type Phase =
   | "initial"
   | "login"
-  | "selectTemplate"
   | "createProject"
   | "copyFiles"
   | "installDeps"
@@ -61,7 +53,6 @@ type Phase =
   | "error";
 
 export interface NewCommandOptions {
-  template?: string;
   force: boolean;
   skipLogin?: boolean;
   skipIdeRules?: boolean;
@@ -78,14 +69,11 @@ export function NewProjectUI({ projectPath, options }: Props) {
   const { exit } = useApp();
   const [phase, setPhase] = useState<Phase>("initial");
   const [error, setError] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<string[]>([]);
-  const [_selectedTemplate, setSelectedTemplate] = useState<string | null>(
-    null,
-  );
   const [description, setDescription] = useState<string>("");
   const [_selectedAssistants, setSelectedAssistants] = useState<string[]>([]);
   const [hasCopiedFiles, setHasCopiedFiles] = useState(false);
   const [hasInstalledDeps, setHasInstalledDeps] = useState(false);
+  const [isInstallingAssistants, setIsInstallingAssistants] = useState(false);
 
   const handleError = useCallback(
     (err: unknown) => {
@@ -97,29 +85,6 @@ export function NewProjectUI({ projectPath, options }: Props) {
       }, 100);
     },
     [exit],
-  );
-
-  const loadTemplates = useCallback(async () => {
-    try {
-      const availableTemplates = await listTemplates();
-      setTemplates(availableTemplates);
-      return availableTemplates;
-    } catch (err) {
-      handleError(err);
-      return [];
-    }
-  }, [handleError]);
-
-  const handleTemplateSelect = useCallback(
-    (template: string) => {
-      try {
-        setSelectedTemplate(template);
-        setPhase("createProject");
-      } catch (err) {
-        handleError(err);
-      }
-    },
-    [handleError],
   );
 
   const handleDescriptionSubmit = useCallback(
@@ -137,12 +102,25 @@ export function NewProjectUI({ projectPath, options }: Props) {
 
   const handleAssistantSelect = useCallback(
     (assistants: string[]) => {
-      try {
-        setSelectedAssistants(assistants);
-        setPhase("done");
-      } catch (err) {
-        handleError(err);
-      }
+      setSelectedAssistants(assistants);
+      setIsInstallingAssistants(true);
+
+      // Filter out "all" and "none" from the assistants array
+      const packagesToInstall = assistants.filter(
+        (pkg) => pkg !== "all" && pkg !== "none",
+      );
+
+      // Run each assistant installation command using npx
+      const installPromises = packagesToInstall.map((assistantPackage) =>
+        exec(`npx ${assistantPackage}`).catch(handleError),
+      );
+
+      Promise.all(installPromises)
+        .then(() => {
+          setIsInstallingAssistants(false);
+          setPhase("done");
+        })
+        .catch(handleError);
     },
     [handleError],
   );
@@ -157,22 +135,20 @@ export function NewProjectUI({ projectPath, options }: Props) {
           return;
         }
 
-        // Load templates
-        await loadTemplates();
-        setPhase("selectTemplate");
+        setPhase("createProject");
       } catch (err) {
         handleError(err);
       }
     }
 
     void initialize();
-  }, [loadTemplates, handleError, options.skipLogin]);
+  }, [handleError, options.skipLogin]);
 
   useEffect(() => {
     async function copyFiles() {
       if (phase === "copyFiles" && !hasCopiedFiles) {
         try {
-          await copyTemplateFiles(_selectedTemplate ?? "ts", projectPath);
+          await copyTemplateFiles("ts", projectPath);
           setHasCopiedFiles(true);
           setPhase("installDeps");
         } catch (err) {
@@ -181,13 +157,13 @@ export function NewProjectUI({ projectPath, options }: Props) {
       }
     }
     void copyFiles();
-  }, [phase, _selectedTemplate, projectPath, handleError, hasCopiedFiles]);
+  }, [phase, projectPath, handleError, hasCopiedFiles]);
 
   useEffect(() => {
     async function installDependencies() {
       if (phase === "installDeps" && !hasInstalledDeps) {
         try {
-          const template = await loadTemplate(_selectedTemplate ?? "ts");
+          const template = await loadTemplate("ts");
 
           if (template.dependencies.length > 0) {
             await exec(`npm install ${template.dependencies.join(" ")}`);
@@ -205,7 +181,7 @@ export function NewProjectUI({ projectPath, options }: Props) {
       }
     }
     void installDependencies();
-  }, [phase, _selectedTemplate, handleError, hasInstalledDeps]);
+  }, [phase, handleError, hasInstalledDeps]);
 
   if (error) {
     return <ErrorMessage message={error} />;
@@ -221,28 +197,7 @@ export function NewProjectUI({ projectPath, options }: Props) {
         </Text>
         <LoginUI
           onComplete={() => {
-            setPhase("selectTemplate");
-          }}
-        />
-      </Box>
-    );
-  }
-
-  if (phase === "selectTemplate") {
-    const items: Item[] = templates.map((flag) => ({
-      label: TEMPLATE_NAMES[flag] || flag,
-      value: flag,
-    }));
-
-    return (
-      <Box flexDirection="column">
-        <Text>
-          <Text color="blue">➜</Text> Select a template:
-        </Text>
-        <SelectInput
-          items={items}
-          onSelect={(item) => {
-            handleTemplateSelect(item.value);
+            setPhase("createProject");
           }}
         />
       </Box>
@@ -266,21 +221,19 @@ export function NewProjectUI({ projectPath, options }: Props) {
   }
 
   if (phase === "copyFiles") {
-    return (
-      <Box>
-        <Text>
-          <Spinner /> Creating project...
-        </Text>
-      </Box>
-    );
+    return <LoadingSpinner message="Creating project..." />;
   }
 
   if (phase === "installDeps") {
     return (
-      <Box>
+      <Box flexDirection="column">
         <Text>
-          <Spinner /> Installing dependencies...
+          <Text color="green" bold>
+            ✔
+          </Text>{" "}
+          Created project
         </Text>
+        <LoadingSpinner message="Installing dependencies..." />
       </Box>
     );
   }
@@ -289,9 +242,27 @@ export function NewProjectUI({ projectPath, options }: Props) {
     return (
       <Box flexDirection="column">
         <Text>
-          <Text color="blue">➜</Text> Select AI assistants to integrate:
+          <Text color="green" bold>
+            ✔
+          </Text>{" "}
+          Created project
         </Text>
-        <AiAssistantSelector onSelect={handleAssistantSelect} />
+        <Text>
+          <Text color="green" bold>
+            ✔
+          </Text>{" "}
+          Installed dependencies
+        </Text>
+        <Box marginTop={1} flexDirection="column">
+          <Text>
+            <Text color="blue">➜</Text> Select AI assistants to integrate:
+          </Text>
+          {isInstallingAssistants ? (
+            <LoadingSpinner message="Installing AI assistant integrations..." />
+          ) : (
+            <AiAssistantSelector onSelect={handleAssistantSelect} />
+          )}
+        </Box>
       </Box>
     );
   }
@@ -303,11 +274,83 @@ export function NewProjectUI({ projectPath, options }: Props) {
           <Text color="green" bold>
             ✔
           </Text>{" "}
-          Project created successfully!
+          Created project
         </Text>
-        <Text>Next steps:</Text>
-        <Text>1. cd {projectPath}</Text>
-        <Text>2. npm run dev</Text>
+        <Text>
+          <Text color="green" bold>
+            ✔
+          </Text>{" "}
+          Installed dependencies
+        </Text>
+        <Text>
+          <Text color="green" bold>
+            ✔
+          </Text>{" "}
+          Installed {_selectedAssistants.length} AI assistant integration
+          {_selectedAssistants.length !== 1 ? "s" : ""}
+        </Text>
+
+        <Box>
+          <Text>
+            <Text color="green" bold>
+              ✔
+            </Text>{" "}
+            Successfully created GenSX project in{" "}
+            <Text color="cyan">{projectPath}</Text>
+          </Text>
+        </Box>
+
+        <Box marginTop={2} flexDirection="column">
+          <Text bold>NEXT STEPS:</Text>
+
+          <Box marginTop={1}>
+            <Text>1. Open the project directory:</Text>
+            {projectPath !== "." && (
+              <Text>
+                {" "}
+                <Text color="cyan">cd {projectPath}</Text>
+              </Text>
+            )}
+          </Box>
+
+          <Box marginTop={1} flexDirection="column">
+            <Text>2. Choose what you want to do:</Text>
+
+            <Box marginTop={1} marginLeft={2} flexDirection="column">
+              <Text bold>DEPLOY THE PROJECT</Text>
+              <Text>
+                <Text color="cyan">
+                  OPENAI_API_KEY=your_api_key npm run deploy
+                </Text>
+              </Text>
+            </Box>
+
+            <Box marginTop={1} marginLeft={2} flexDirection="column">
+              <Text bold>RUN LOCALLY</Text>
+              <Text>
+                <Text color="cyan">
+                  OPENAI_API_KEY=your_api_key npm run dev
+                </Text>
+              </Text>
+            </Box>
+
+            <Box marginTop={1} marginLeft={2} flexDirection="column">
+              <Text bold>START API SERVER</Text>
+              <Text>
+                <Text color="cyan">
+                  OPENAI_API_KEY=your_api_key npm run start
+                </Text>
+              </Text>
+            </Box>
+          </Box>
+
+          <Box marginTop={2}>
+            <Text>
+              Open <Text color="cyan">src/workflows.tsx</Text> to start building
+              your workflows.
+            </Text>
+          </Box>
+        </Box>
       </Box>
     );
   }
@@ -388,12 +431,16 @@ function AiAssistantSelector({ onSelect }: AiAssistantSelectorProps) {
   return (
     <SelectInput
       items={items}
-      onSelect={(item) => {
+      onSelect={(item: Item) => {
         const selection = item.value;
         if (selection === "none") {
           onSelect([]);
         } else if (selection === "all") {
-          onSelect(aiAssistantOptions.map((opt) => opt.value));
+          // For "all", get all the actual package values
+          const allPackages = aiAssistantOptions
+            .filter((opt) => opt.value !== "all" && opt.value !== "none")
+            .map((opt) => opt.value);
+          onSelect(allPackages);
         } else {
           onSelect([selection]);
         }
@@ -402,11 +449,8 @@ function AiAssistantSelector({ onSelect }: AiAssistantSelectorProps) {
   );
 }
 
-async function loadTemplate(templateName: string): Promise<Template> {
-  const templatePath = path.join(
-    TEMPLATE_DIR,
-    TEMPLATE_MAP[templateName] || templateName,
-  );
+async function loadTemplate(_templateName: string): Promise<Template> {
+  const templatePath = path.join(TEMPLATE_DIR, "typescript");
   const templateConfigPath = path.join(templatePath, "template.json");
 
   try {
@@ -414,26 +458,12 @@ async function loadTemplate(templateName: string): Promise<Template> {
     const template = JSON.parse(configContent) as Template;
     return template;
   } catch {
-    throw new Error(`Template "${templateName}" not found or invalid.`);
+    throw new Error(`Template "typescript" not found or invalid.`);
   }
 }
 
-async function listTemplates(): Promise<string[]> {
-  try {
-    const templates = await readdir(TEMPLATE_DIR);
-    return Object.entries(TEMPLATE_MAP)
-      .filter(([_, dir]) => templates.includes(dir))
-      .map(([flag]) => flag);
-  } catch {
-    return [];
-  }
-}
-
-async function copyTemplateFiles(templateName: string, targetPath: string) {
-  const templatePath = path.join(
-    TEMPLATE_DIR,
-    TEMPLATE_MAP[templateName] || templateName,
-  );
+async function copyTemplateFiles(_templateName: string, targetPath: string) {
+  const templatePath = path.join(TEMPLATE_DIR, "typescript");
 
   async function copyDir(currentPath: string, targetBase: string) {
     const entries = await readdir(currentPath, { withFileTypes: true });
@@ -481,7 +511,7 @@ export async function newProject(
     process.chdir(absoluteProjectPath);
     await exec("npm init -y");
 
-    const template = await loadTemplate(options.template ?? "ts");
+    const template = await loadTemplate("ts");
     if (template.dependencies.length > 0) {
       await exec(`npm install ${template.dependencies.join(" ")}`);
     }
