@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.29](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.28...gensx-v0.3.29) (2025-05-08)
+
+
+### ✨ New Features
+
+* upgrading env cli commands to use ink ([#670](https://github.com/gensx-inc/gensx/issues/670)) ([aad4b26](https://github.com/gensx-inc/gensx/commit/aad4b26502a240e83b2159f03410017327923cce))
+
+
+### 📚 Documentation
+
+* fixing build of website ([#673](https://github.com/gensx-inc/gensx/issues/673)) ([d5eeb63](https://github.com/gensx-inc/gensx/commit/d5eeb635e2d5dcea5b6bf793b764b408a95684d9))
+
 ## [0.3.28](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.27...gensx-v0.3.28) (2025-05-07)
 
 
