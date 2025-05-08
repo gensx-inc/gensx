@@ -10,7 +10,7 @@ import { SelectEnvironmentUI } from "./commands/environment/select.js";
 import { ShowEnvironmentUI } from "./commands/environment/show.js";
 import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
 import { LoginUI } from "./commands/login.js";
-import { NewCommandOptions, newProject } from "./commands/new.js";
+import { NewCommandOptions, NewProjectUI } from "./commands/new.js";
 import { RunWorkflowUI } from "./commands/run.js";
 import { start } from "./commands/start.js";
 import { VERSION } from "./utils/user-agent.js";
@@ -63,7 +63,17 @@ export async function runCLI() {
       "Comma-separated list of IDE rules to install (cline,windsurf,claude,cursor)",
     )
     .option("-d, --description <desc>", "Optional project description")
-    .action(newProject);
+    .action((projectPath: string, options: NewCommandOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(NewProjectUI, {
+            projectPath,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   program
     .command("start")
@@ -241,6 +251,6 @@ export async function runCLI() {
   await program.parseAsync();
 }
 
-export { newProject };
+export { NewProjectUI };
 
 export type { NewCommandOptions };
