@@ -44,7 +44,7 @@
     "@types/chokidar": "^2.1.7",
     "@types/ini": "^4.1.1",
     "@types/node": "catalog:packages",
-    "@types/react": "^18.2.0",
+    "@types/react": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "eslint-plugin-n": "catalog:",
     "ink-testing-library": "^4.0.0",

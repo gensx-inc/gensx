@@ -42,3 +42,5 @@ next-env.d.ts
 
 public/sitemap*.xml
 public/robots.txt
+public/llms-full.txt
+public/llms.txt
