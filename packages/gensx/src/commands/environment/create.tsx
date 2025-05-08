@@ -1,4 +1,5 @@
-import { Box, Text, useApp, useInput } from "ink";
+import { Box, Text, useApp } from "ink";
+import SelectInput from "ink-select-input";
 import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "../../components/ErrorMessage.js";
@@ -208,16 +209,6 @@ export function CreateEnvironmentUI({
   const { loading, error, projectName, step, setShouldCreate, projectCreated } =
     useCreateEnvironment(environmentName, initialProjectName);
 
-  useInput((input, key) => {
-    if (step === "confirming_project_creation") {
-      if (input === "y" || input === "Y" || key.return) {
-        setShouldCreate(true);
-      } else if (input === "n" || input === "N") {
-        setShouldCreate(false);
-      }
-    }
-  });
-
   if (error) {
     return <ErrorMessage message={error.message} />;
   }
@@ -227,14 +218,28 @@ export function CreateEnvironmentUI({
   }
 
   if (step === "confirming_project_creation") {
+    const items = [
+      { label: "Yes", value: "yes" },
+      { label: "No", value: "no" },
+    ];
+
     return (
-      <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column">
+        <Box paddingBottom={1}>
+          <Text>
+            <Text color="cyan">ℹ</Text> Project{" "}
+            <Text color="cyan">{projectName}</Text> does not exist.
+          </Text>
+        </Box>
         <Text>
-          Project <Text color="cyan">{projectName}</Text> does not exist.
+          <Text color="blue">➜</Text> Would you like to create it?
         </Text>
-        <Text>
-          Would you like to create it? <Text color="gray">(y/N)</Text>
-        </Text>
+        <SelectInput
+          items={items}
+          onSelect={(item) => {
+            setShouldCreate(item.value === "yes");
+          }}
+        />
       </Box>
     );
   }

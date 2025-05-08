@@ -35,12 +35,12 @@
     "gensx": "workspace:*",
     "yaml": "^2.7.1",
     "ink": "catalog:",
-    "react": "catalog:"
+    "react": "^18.2.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "catalog:packages",
-    "@types/react": "catalog:",
+    "@types/react": "^19",
     "@vitest/coverage-istanbul": "catalog:",
     "fs-extra": "^11.3.0",
     "tsx": "catalog:",
