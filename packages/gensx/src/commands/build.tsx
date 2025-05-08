@@ -117,31 +117,47 @@ export function BuildWorkflowUI({ file, options }: Props) {
       )}
 
       {phase === "bundling" && (
-        <LoadingSpinner message="Building workflow using Docker..." />
+        <LoadingSpinner message="Building workflows using Docker..." />
       )}
 
       {phase === "generatingSchema" && (
-        <LoadingSpinner message="Generating schema..." />
-      )}
-
-      {phase === "done" && result && (
         <Box flexDirection="column">
           <Box>
             <Text color="green" bold>
               ✓
             </Text>
-            <Text> Successfully built project</Text>
+            <Text> Built workflows</Text>
           </Box>
-          {!options.quiet && (
-            <Box flexDirection="column" marginTop={1}>
-              <Text>
-                Bundle file: <Text color="cyan">{result.bundleFile}</Text>
+          <LoadingSpinner message="Generating schemas..." />
+        </Box>
+      )}
+
+      {phase === "done" && result && (
+        <Box flexDirection="column">
+          <Box flexDirection="column">
+            <Box>
+              <Text color="green" bold>
+                ✓
               </Text>
-              <Text>
-                Schema file: <Text color="cyan">{result.schemaFile}</Text>
-              </Text>
+              <Text> Built workflows</Text>
             </Box>
-          )}
+            <Box>
+              <Text color="green" bold>
+                ✓
+              </Text>
+              <Text> Generated schemas</Text>
+            </Box>
+            {!options.quiet && (
+              <Box flexDirection="column" marginTop={1}>
+                <Text>
+                  Bundle: <Text color="cyan">{result.bundleFile}</Text>
+                </Text>
+                <Text>
+                  Schema: <Text color="cyan">{result.schemaFile}</Text>
+                </Text>
+              </Box>
+            )}
+          </Box>
         </Box>
       )}
     </Box>

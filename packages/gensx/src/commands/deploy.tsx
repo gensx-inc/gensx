@@ -3,6 +3,7 @@ import fs from "node:fs";
 import axios from "axios";
 import FormData from "form-data";
 import { Box, Text, useApp } from "ink";
+import Spinner from "ink-spinner";
 import React, { useCallback, useState } from "react";
 
 import { EnvironmentResolver } from "../components/EnvironmentResolver.js";
@@ -158,7 +159,30 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
       )}
 
       {phase === "deploying" && (
-        <LoadingSpinner message="Deploying to GenSX Cloud..." />
+        <Box flexDirection="column">
+          <Box>
+            <Text color="green" bold>
+              ✓
+            </Text>
+            <Text> Built workflows</Text>
+          </Box>
+          <Box>
+            <Text color="green" bold>
+              ✓
+            </Text>
+            <Text> Generated schemas</Text>
+          </Box>
+          <Box>
+            <Text>
+              <Spinner type="dots" />{" "}
+              <Text dimColor>
+                Deploying project <Text color="cyan">{projectName}</Text> to
+                GenSX Cloud (Environment:{" "}
+                <Text color="cyan">{options.env}</Text>)
+              </Text>
+            </Text>
+          </Box>
+        </Box>
       )}
 
       {phase === "done" && deployment && (
@@ -167,28 +191,50 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
             <Text color="green" bold>
               ✓
             </Text>
-            <Text> Deployment completed successfully</Text>
+            <Text> Built workflows</Text>
+          </Box>
+          <Box>
+            <Text color="green" bold>
+              ✓
+            </Text>
+            <Text> Generated schemas</Text>
+          </Box>
+          <Box>
+            <Text color="green" bold>
+              ✓
+            </Text>
+            <Text> Deployed to GenSX Cloud</Text>
           </Box>
           <Box flexDirection="column" marginTop={1}>
-            <Text color="cyan">Available Workflows:</Text>
+            <Text color="white">Available Workflows:</Text>
             <Box flexDirection="column">
               {deployment.workflows.map((workflow) => (
-                <Text key={workflow.id} color="white">
+                <Text key={workflow.id} color="cyan">
                   - {workflow.name}
                 </Text>
               ))}
             </Box>
           </Box>
           <Box marginTop={1} flexDirection="column">
-            <Text color="cyan">
-              Dashboard: {auth?.consoleBaseUrl}/{auth?.org}/
-              {deployment.projectName}/{deployment.environmentName}/workflows
-              {deployment.buildId ? `?deploymentId=${deployment.buildId}` : ""}
+            <Text color="white">
+              Dashboard:{" "}
+              <Text color="cyan">
+                {auth?.consoleBaseUrl}/{auth?.org}/{deployment.projectName}/
+                {deployment.environmentName}/workflows
+                {deployment.buildId
+                  ? `?deploymentId=${deployment.buildId}`
+                  : ""}
+              </Text>
             </Text>
           </Box>
           <Box marginTop={1} flexDirection="column">
-            <Text>Project: {deployment.projectName}</Text>
-            <Text>Environment: {deployment.environmentName}</Text>
+            <Text>
+              Project: <Text color="cyan">{deployment.projectName}</Text>
+            </Text>
+            <Text>
+              Environment:{" "}
+              <Text color="cyan">{deployment.environmentName}</Text>
+            </Text>
           </Box>
         </Box>
       )}

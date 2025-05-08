@@ -247,10 +247,10 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
             <Text> Workflow execution completed</Text>
           </Box>
           {workflowOutput !== null && (
-            <Box flexDirection="column" borderStyle="round" borderColor="cyan">
-              <Text color="cyan">Workflow Output</Text>
-              <Box paddingTop={1}>
-                <Text color="white">
+            <Box flexDirection="column" marginTop={1}>
+              <Text color="white">Workflow Output:</Text>
+              <Box>
+                <Text color="cyan">
                   {JSON.stringify(workflowOutput, null, 2)}
                 </Text>
               </Box>
