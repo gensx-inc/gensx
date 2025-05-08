@@ -1,4 +1,3 @@
-import { resolveDeep } from "./resolve.js";
 import { ComponentProps, Context, GsxComponent } from "./types.js";
 import {
   createWorkflowContext,
@@ -17,10 +16,10 @@ function createContextSymbol() {
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
   const Provider = (
-    props: ComponentProps<
-      { value: T; onComplete?: () => Promise<void> | void },
-      ExecutionContext
-    >,
+    props: ComponentProps<{
+      value: T;
+      onComplete?: () => Promise<void> | void;
+    }>,
   ) => {
     return wrapWithFramework(() => {
       const currentContext = getCurrentContext();
@@ -226,7 +225,7 @@ export async function withContext<T>(
 ): Promise<T> {
   await configureAsyncLocalStorage;
   return contextManager.run(context, async () => {
-    const result = await resolveDeep(wrapWithFramework(fn));
+    const result = await fn();
     return result as T;
   });
 }
