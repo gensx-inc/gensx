@@ -3,62 +3,22 @@ import path from "node:path";
 
 import { render } from "ink-testing-library";
 import React from "react";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  expect,
-  it,
-  suite,
-  vi,
-} from "vitest";
+import { expect, it, suite, vi } from "vitest";
 
 import { ListEnvironmentsUI } from "../../../src/commands/environment/list.js";
 import * as environmentModel from "../../../src/models/environment.js";
 import * as projectModel from "../../../src/models/projects.js";
-import {
-  cleanupProjectFiles,
-  cleanupTestEnvironment,
-  setupTestEnvironment,
-  waitForText,
-} from "../../test-helpers.js";
+import { tempDir } from "../../setup.js";
+import { waitForText } from "../../test-helpers.js";
 
-// Setup test variables
-let tempDir: string;
-let origCwd: typeof process.cwd;
-let origConfigDir: string | undefined;
-
-// Mock dependencies that would make API calls
-vi.mock("../../../src/models/environment.js", () => ({
-  listEnvironments: vi.fn(),
-}));
-
+// Mock dependencies that are commonly needed across tests
 vi.mock("../../../src/models/projects.js", () => ({
   checkProjectExists: vi.fn(),
 }));
 
-// Set up and tear down the test environment
-beforeAll(async () => {
-  const setup = await setupTestEnvironment("list-test");
-  tempDir = setup.tempDir;
-  origCwd = setup.origCwd;
-  origConfigDir = setup.origConfigDir;
-});
-
-afterAll(async () => {
-  await cleanupTestEnvironment(tempDir, origCwd, origConfigDir);
-});
-
-beforeEach(() => {
-  // Set working directory to our test project
-  process.cwd = vi.fn().mockReturnValue(path.join(tempDir, "project"));
-});
-
-afterEach(async () => {
-  vi.resetAllMocks();
-  await cleanupProjectFiles(tempDir);
-});
+vi.mock("../../../src/models/environment.js", () => ({
+  listEnvironments: vi.fn(),
+}));
 
 suite("environment list Ink UI", () => {
   it("should list environments for a specified project", async () => {

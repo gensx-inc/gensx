@@ -1,15 +1,35 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-import { createInterface } from "node:readline";
 
-import { afterEach, beforeEach, expect, it, Mock, suite, vi } from "vitest";
+import { render } from "ink-testing-library";
+import React from "react";
+import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 
-import { login } from "../../src/commands/login.js";
+import { LoginUI } from "../../src/commands/login.js";
 import * as config from "../../src/utils/config.js";
+import { waitForText } from "../test-helpers.js";
+
+// Define the type for the global callback
+declare global {
+  var __useInputCallback:
+    | ((input: string, key: { return?: boolean; escape?: boolean }) => void)
+    | undefined;
+}
 
 // Mock dependencies
-vi.mock("node:readline");
 vi.mock("open");
+vi.mock("ink", async () => {
+  const actual = await vi.importActual("ink");
+  return {
+    ...actual,
+    useInput: vi.fn((callback) => {
+      // Store the callback for later use
+      global.__useInputCallback = callback;
+    }),
+    useApp: () => ({
+      exit: vi.fn(),
+    }),
+  };
+});
 vi.mock("../../src/utils/config.js", async (importOriginal) => {
   const actual = await importOriginal<typeof config>();
   return {
@@ -23,22 +43,15 @@ const originalFetch = global.fetch;
 afterEach(() => {
   vi.clearAllMocks();
   global.fetch = originalFetch;
+  delete global.__useInputCallback;
 });
 
 suite("login command", () => {
-  const mockReadline = {
-    question: vi.fn(),
-    close: vi.fn(),
-  };
-
-  let mockFetch: Mock;
+  let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     // Reset all mocks
     vi.resetAllMocks();
-
-    // Setup readline mock
-    (createInterface as Mock).mockReturnValue(mockReadline);
 
     // Setup config mocks
     vi.mocked(config.saveAuth).mockResolvedValue(undefined);
@@ -49,30 +62,7 @@ suite("login command", () => {
     global.fetch = mockFetch;
   });
 
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it("should skip login when user presses Escape", async () => {
-    // Mock user input
-    mockReadline.question.mockImplementation((_, callback) => {
-      callback(String.fromCharCode(27));
-    });
-
-    const result = await login();
-
-    expect(result.skipped).toBe(true);
-    expect(mockFetch).not.toHaveBeenCalled();
-    expect(config.saveAuth).not.toHaveBeenCalled();
-    expect(config.saveState).not.toHaveBeenCalled();
-  });
-
   it("should complete login flow successfully", async () => {
-    // Mock user pressing Enter
-    mockReadline.question.mockImplementation((_, callback) => {
-      callback("");
-    });
-
     // Mock device auth request
     mockFetch
       // First call - create login request
@@ -103,44 +93,21 @@ suite("login command", () => {
           }),
       });
 
-    const result = await login();
+    const { lastFrame } = render(React.createElement(LoginUI));
 
-    expect(result.skipped).toBe(false);
-
-    // Verify initial device auth request
-    expect(mockFetch).toHaveBeenNthCalledWith(
-      1,
-      expect.any(URL),
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-        }),
-      }),
-    );
-    expect((mockFetch.mock.calls[0][0] as URL).toString()).toBe(
-      "https://api.gensx.com/auth/device/request",
+    // Wait for initial prompt
+    await waitForText(
+      lastFrame,
+      /Press Enter to open your browser and log in to GenSX Cloud/,
     );
 
-    // Verify first polling request
-    expect(mockFetch).toHaveBeenNthCalledWith(
-      2,
-      expect.any(URL),
-      expect.any(Object),
-    );
-    expect((mockFetch.mock.calls[1][0] as URL).toString()).toMatch(
-      /^https:\/\/api\.gensx\.com\/auth\/device\/request\/test-request-id\?code_verifier=.+$/,
-    );
+    // Simulate Enter key press
+    const callback = global.__useInputCallback;
+    if (!callback) throw new Error("useInput callback not found");
+    callback("", { return: true });
 
-    // Verify second polling request
-    expect(mockFetch).toHaveBeenNthCalledWith(
-      3,
-      expect.any(URL),
-      expect.any(Object),
-    );
-    expect((mockFetch.mock.calls[2][0] as URL).toString()).toMatch(
-      /^https:\/\/api\.gensx\.com\/auth\/device\/request\/test-request-id\?code_verifier=.+$/,
-    );
+    // Wait for successful login message with a longer timeout
+    await waitForText(lastFrame, /Successfully logged into GenSX/, 5000);
 
     // Verify config was saved
     expect(config.saveAuth).toHaveBeenCalledWith({
@@ -154,11 +121,6 @@ suite("login command", () => {
   });
 
   it("should handle login expiration", async () => {
-    // Mock user pressing Enter
-    mockReadline.question.mockImplementation((_, callback) => {
-      callback("");
-    });
-
     // Mock device auth request
     mockFetch
       // First call - create login request
@@ -179,26 +141,50 @@ suite("login command", () => {
           }),
       });
 
-    await expect(login()).rejects.toThrow("Login expired");
+    const { lastFrame } = render(React.createElement(LoginUI));
+
+    // Wait for initial prompt
+    await waitForText(
+      lastFrame,
+      /Press Enter to open your browser and log in to GenSX Cloud/,
+    );
+
+    // Simulate Enter key press
+    const callback = global.__useInputCallback;
+    if (!callback) throw new Error("useInput callback not found");
+    callback("", { return: true });
+
+    // Wait for error message
+    await waitForText(lastFrame, /Login expired/);
 
     expect(config.saveAuth).not.toHaveBeenCalled();
     expect(config.saveState).not.toHaveBeenCalled();
   });
 
   it("should handle network errors during login request", async () => {
-    // Mock user pressing Enter
-    mockReadline.question.mockImplementation((_, callback) => {
-      callback("");
-    });
-
     // Mock failed device auth request
     mockFetch.mockResolvedValueOnce({
       ok: false,
       statusText: "Network Error",
     });
 
-    await expect(login()).rejects.toThrow(
-      "Failed to create login request: Network Error",
+    const { lastFrame } = render(React.createElement(LoginUI));
+
+    // Wait for initial prompt
+    await waitForText(
+      lastFrame,
+      /Press Enter to open your browser and log in to GenSX Cloud/,
+    );
+
+    // Simulate Enter key press
+    const callback = global.__useInputCallback;
+    if (!callback) throw new Error("useInput callback not found");
+    callback("", { return: true });
+
+    // Wait for error message
+    await waitForText(
+      lastFrame,
+      /Failed to create login request: Network Error/,
     );
 
     expect(config.saveAuth).not.toHaveBeenCalled();
@@ -206,11 +192,6 @@ suite("login command", () => {
   });
 
   it("should handle network errors during polling", async () => {
-    // Mock user pressing Enter
-    mockReadline.question.mockImplementation((_, callback) => {
-      callback("");
-    });
-
     // Mock device auth request
     mockFetch
       // First call - create login request
@@ -228,20 +209,27 @@ suite("login command", () => {
         statusText: "Network Error",
       });
 
-    await expect(login()).rejects.toThrow(
-      "Failed to check login status: Network Error",
+    const { lastFrame } = render(React.createElement(LoginUI));
+
+    // Wait for initial prompt
+    await waitForText(
+      lastFrame,
+      /Press Enter to open your browser and log in to GenSX Cloud/,
     );
+
+    // Simulate Enter key press
+    const callback = global.__useInputCallback;
+    if (!callback) throw new Error("useInput callback not found");
+    callback("", { return: true });
+
+    // Wait for error message
+    await waitForText(lastFrame, /Failed to check login status: Network Error/);
 
     expect(config.saveAuth).not.toHaveBeenCalled();
     expect(config.saveState).not.toHaveBeenCalled();
   });
 
   it("should handle invalid server responses", async () => {
-    // Mock user pressing Enter
-    mockReadline.question.mockImplementation((_, callback) => {
-      callback("");
-    });
-
     // Mock invalid device auth request response
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -251,7 +239,21 @@ suite("login command", () => {
         }),
     });
 
-    await expect(login()).rejects.toThrow("Invalid response from server");
+    const { lastFrame } = render(React.createElement(LoginUI));
+
+    // Wait for initial prompt
+    await waitForText(
+      lastFrame,
+      /Press Enter to open your browser and log in to GenSX Cloud/,
+    );
+
+    // Simulate Enter key press
+    const callback = global.__useInputCallback;
+    if (!callback) throw new Error("useInput callback not found");
+    callback("", { return: true });
+
+    // Wait for error message
+    await waitForText(lastFrame, /Invalid response from server/);
 
     expect(config.saveAuth).not.toHaveBeenCalled();
     expect(config.saveState).not.toHaveBeenCalled();

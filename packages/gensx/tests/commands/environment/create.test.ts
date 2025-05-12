@@ -1,34 +1,37 @@
-import path from "node:path";
-
+import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import React from "react";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  expect,
-  it,
-  suite,
-  vi,
-} from "vitest";
+import { expect, it, suite, vi } from "vitest";
 
 import { CreateEnvironmentUI } from "../../../src/commands/environment/create.js";
 import * as environmentModel from "../../../src/models/environment.js";
 import * as projectModel from "../../../src/models/projects.js";
 import * as envConfig from "../../../src/utils/env-config.js";
 import * as projectConfig from "../../../src/utils/project-config.js";
-import {
-  cleanupProjectFiles,
-  cleanupTestEnvironment,
-  setupTestEnvironment,
-  waitForText,
-} from "../../test-helpers.js";
+import { waitForText } from "../../test-helpers.js";
 
-// Setup test variables
-let tempDir: string;
-let origCwd: typeof process.cwd;
-let origConfigDir: string | undefined;
+// Define the type for the global callback
+declare global {
+  var __selectInputCallback:
+    | ((item: { label: string; value: string }) => void)
+    | undefined;
+}
+
+// Mock SelectInput component
+vi.mock("ink-select-input", () => ({
+  default: ({
+    onSelect,
+  }: {
+    onSelect: (item: { label: string; value: string }) => void;
+  }) => {
+    // Store the onSelect callback for later use
+    global.__selectInputCallback = onSelect;
+    return React.createElement(Box, {}, [
+      React.createElement(Text, { key: "yes" }, "❯ Yes"),
+      React.createElement(Text, { key: "no" }, "  No"),
+    ]);
+  },
+}));
 
 // Mock dependencies that would make API calls
 vi.mock("../../../src/models/environment.js", () => ({
@@ -48,34 +51,6 @@ vi.mock("../../../src/utils/project-config.js", () => ({
 vi.mock("../../../src/utils/env-config.js", () => ({
   validateAndSelectEnvironment: vi.fn().mockResolvedValue(true),
 }));
-
-// Original process.exit to restore later
-const originalSetTimeout = global.setTimeout;
-
-// Set up and tear down the test environment
-beforeAll(async () => {
-  const setup = await setupTestEnvironment("create-test");
-  tempDir = setup.tempDir;
-  origCwd = setup.origCwd;
-  origConfigDir = setup.origConfigDir;
-
-  global.setTimeout = originalSetTimeout;
-});
-
-afterAll(async () => {
-  await cleanupTestEnvironment(tempDir, origCwd, origConfigDir);
-  global.setTimeout = originalSetTimeout;
-});
-
-beforeEach(() => {
-  // Set working directory to our test project
-  process.cwd = vi.fn().mockReturnValue(path.join(tempDir, "project"));
-});
-
-afterEach(async () => {
-  vi.resetAllMocks();
-  await cleanupProjectFiles(tempDir);
-});
 
 suite("environment create Ink UI", () => {
   it("should create environment for an existing project", async () => {
@@ -220,7 +195,7 @@ suite("environment create Ink UI", () => {
     // Mock environment selection
     vi.mocked(envConfig.validateAndSelectEnvironment).mockResolvedValue(true);
 
-    const { lastFrame, stdin } = render(
+    const { lastFrame } = render(
       React.createElement(CreateEnvironmentUI, {
         environmentName: "development",
         projectName: "new-project",
@@ -231,8 +206,10 @@ suite("environment create Ink UI", () => {
     await waitForText(lastFrame, /Project new-project does not exist\./);
     await waitForText(lastFrame, /Would you like to create it\?/);
 
-    // Simulate user confirming by typing 'y'
-    stdin.write("y");
+    // Simulate selecting "Yes" from SelectInput
+    if (global.__selectInputCallback) {
+      global.__selectInputCallback({ label: "Yes", value: "yes" });
+    }
 
     // Wait for success message with a longer timeout
     await waitForText(
@@ -257,7 +234,7 @@ suite("environment create Ink UI", () => {
     // Mock project does not exist
     vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
 
-    const { lastFrame, stdin } = render(
+    const { lastFrame } = render(
       React.createElement(CreateEnvironmentUI, {
         environmentName: "development",
         projectName: "non-existent",
@@ -268,8 +245,10 @@ suite("environment create Ink UI", () => {
     await waitForText(lastFrame, /Project non-existent does not exist\./);
     await waitForText(lastFrame, /Would you like to create it\?/);
 
-    // Simulate user canceling by typing 'n'
-    stdin.write("n");
+    // Simulate selecting "No" from SelectInput
+    if (global.__selectInputCallback) {
+      global.__selectInputCallback({ label: "No", value: "no" });
+    }
 
     // Wait for error message with a longer timeout
     await waitForText(lastFrame, /Project creation cancelled/, 3000);

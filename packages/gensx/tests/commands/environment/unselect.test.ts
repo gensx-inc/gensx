@@ -1,34 +1,12 @@
-import path from "node:path";
-
 import { render } from "ink-testing-library";
 import React from "react";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  expect,
-  it,
-  suite,
-  vi,
-} from "vitest";
+import { expect, it, suite, vi } from "vitest";
 
 import { UnselectEnvironmentUI } from "../../../src/commands/environment/unselect.js";
 import * as projectModel from "../../../src/models/projects.js";
 import * as envConfig from "../../../src/utils/env-config.js";
 import * as projectConfig from "../../../src/utils/project-config.js";
-import {
-  cleanupProjectFiles,
-  cleanupTestEnvironment,
-  setupTestEnvironment,
-  waitForMockCall,
-  waitForText,
-} from "../../test-helpers.js";
-
-// Setup test variables
-let tempDir: string;
-let origCwd: typeof process.cwd;
-let origConfigDir: string | undefined;
+import { waitForMockCall, waitForText } from "../../test-helpers.js";
 
 // Mock dependencies
 vi.mock("../../../src/models/projects.js", () => ({
@@ -42,28 +20,6 @@ vi.mock("../../../src/utils/env-config.js", () => ({
 vi.mock("../../../src/utils/project-config.js", () => ({
   readProjectConfig: vi.fn(),
 }));
-
-// Set up and tear down the test environment
-beforeAll(async () => {
-  const setup = await setupTestEnvironment("unselect-test");
-  tempDir = setup.tempDir;
-  origCwd = setup.origCwd;
-  origConfigDir = setup.origConfigDir;
-});
-
-afterAll(async () => {
-  await cleanupTestEnvironment(tempDir, origCwd, origConfigDir);
-});
-
-beforeEach(() => {
-  // Set working directory to our test project
-  process.cwd = vi.fn().mockReturnValue(path.join(tempDir, "project"));
-});
-
-afterEach(async () => {
-  vi.resetAllMocks();
-  await cleanupProjectFiles(tempDir);
-});
 
 suite("environment unselect command", () => {
   it("should unselect environment for an existing project", async () => {

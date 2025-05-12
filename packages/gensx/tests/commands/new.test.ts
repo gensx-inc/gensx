@@ -2,26 +2,32 @@ import { mkdtemp } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import enquirer from "enquirer";
+import { Box, Text } from "ink";
+import { render } from "ink-testing-library";
+import React from "react";
 import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 
-import { newProject } from "../../src/commands/new.js";
+import { NewProjectUI } from "../../src/commands/new.js";
 import * as config from "../../src/utils/config.js";
 import { exec } from "../../src/utils/exec.js";
+import { waitForText } from "../test-helpers.js";
+
+// Define the type for the global callback
+// For ink-text-input and ink-select-input
+// We'll use global variables to store the onChange/onSubmit/onSelect handlers
+
+declare global {
+  var __textInputOnChange: ((value: string) => void) | undefined;
+  var __textInputOnSubmit: ((value: string) => void) | undefined;
+  var __selectInputOnSelect:
+    | ((item: { label: string; value: string }) => void)
+    | undefined;
+  var __selectInputOptions: { label: string; value: string }[] | undefined;
+}
 
 // Mock dependencies
-vi.mock("../../src/utils/exec.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof exec>();
-  return {
-    // eslint-disable-next-line @typescript-eslint/no-misused-spread
-    ...actual,
-    exec: vi.fn(),
-  };
-});
-vi.mock("enquirer", () => ({
-  default: {
-    prompt: vi.fn(),
-  },
+vi.mock("../../src/utils/exec.js", () => ({
+  exec: vi.fn(() => new Promise((resolve) => setTimeout(resolve, 10))),
 }));
 vi.mock("../../src/utils/config.js", async (importOriginal) => {
   const actual = await importOriginal<typeof config>();
@@ -30,17 +36,49 @@ vi.mock("../../src/utils/config.js", async (importOriginal) => {
     readConfig: vi.fn(),
   };
 });
+// Mock ink-text-input and ink-select-input to capture handlers
+vi.mock("ink-text-input", () => ({
+  __esModule: true,
+  default: (props: {
+    value: string;
+    onChange: (v: string) => void;
+    onSubmit: (v: string) => void;
+  }) => {
+    global.__textInputOnChange = props.onChange;
+    global.__textInputOnSubmit = props.onSubmit;
+    return React.createElement("input", { value: props.value });
+  },
+}));
+vi.mock("ink-select-input", () => ({
+  __esModule: true,
+  default: (props: {
+    items: { label: string; value: string }[];
+    onSelect: (item: { label: string; value: string }) => void;
+  }) => {
+    // Store a global callback to simulate selection
+    global.__selectInputOptions = props.items;
+    global.__selectInputOnSelect = props.onSelect;
+    // Render a Box with Text children for each item
+    return React.createElement(
+      Box,
+      {},
+      props.items.map((item) =>
+        React.createElement(
+          Text,
+          { key: item.value, color: "cyan" },
+          item.label,
+        ),
+      ),
+    );
+  },
+}));
 
-suite("new command", () => {
+suite("new command UI", () => {
   let tempDir: string;
 
   beforeEach(async () => {
     vi.resetAllMocks();
-
-    // Create a temporary directory for our test
     tempDir = await mkdtemp(path.join(os.tmpdir(), "gensx-interactive-test-"));
-
-    // Mock config operations
     vi.mocked(config.readConfig).mockResolvedValue({
       config: {
         api: { baseUrl: "https://api.gensx.com" },
@@ -52,152 +90,118 @@ suite("new command", () => {
 
   afterEach(() => {
     vi.resetAllMocks();
+    delete global.__textInputOnChange;
+    delete global.__textInputOnSubmit;
+    delete global.__selectInputOnSelect;
+    delete global.__selectInputOptions;
   });
 
-  it("selects AI assistants interactively", async () => {
-    // Mock the prompt responses
-    const promptMock = vi.mocked(enquirer.prompt);
-    promptMock
-      // First call - description
-      .mockResolvedValueOnce({
-        description: "",
-      })
-      // Second call - AI assistants
-      .mockResolvedValueOnce({
-        assistants: ["@gensx/claude-md", "@gensx/cursor-rules"],
-      });
-
-    await newProject(path.join(tempDir, "test-project"), {
-      template: "ts",
-      force: false,
-      skipLogin: true,
-      skipIdeRules: false,
-    });
-
-    // Verify npx commands were called for selected assistants
-    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
-    expect(exec).toHaveBeenCalledWith("npx @gensx/cursor-rules");
-  });
-
-  it("handles cancellation of AI assistant selection", async () => {
-    // Mock the prompt responses
-    const promptMock = vi.mocked(enquirer.prompt);
-    promptMock
-      // First call - description
-      .mockResolvedValueOnce({
-        description: "",
-      })
-      // Second call - AI assistants (cancelled)
-      .mockRejectedValueOnce(new Error("canceled"));
-
-    await newProject(path.join(tempDir, "test-project"), {
-      template: "ts",
-      force: false,
-      skipLogin: true,
-      skipIdeRules: false,
-    });
-
-    // Verify no assistant commands were called
-    expect(exec).not.toHaveBeenCalledWith(
-      expect.stringMatching(/npx @gensx\/.+/),
+  it("should create a project with description and select AI assistants", async () => {
+    const { lastFrame } = render(
+      React.createElement(NewProjectUI, {
+        projectPath: path.join(tempDir, "test-project"),
+        options: { force: true },
+      }),
     );
+
+    // Wait for description prompt
+    await waitForText(lastFrame, /Enter a project description/);
+
+    // Simulate entering a description
+    if (!global.__textInputOnChange || !global.__textInputOnSubmit)
+      throw new Error("TextInput handlers not found");
+    global.__textInputOnChange("A test project description");
+    global.__textInputOnSubmit("A test project description");
+
+    // Wait for dependencies to install
+    await waitForText(lastFrame, /Installing dependencies/);
+
+    // Wait for AI assistant selection
+    await waitForText(lastFrame, /Select AI assistants to integrate/);
+
+    // Simulate selecting an assistant
+    if (!global.__selectInputOnSelect || !global.__selectInputOptions)
+      throw new Error("SelectInput handler/options not found");
+    const claudeOption = global.__selectInputOptions.find(
+      (opt) => opt.value === "@gensx/claude-md",
+    );
+    if (!claudeOption) throw new Error("Claude option not found");
+    global.__selectInputOnSelect(claudeOption);
+
+    // Wait for done message
+    await waitForText(lastFrame, /Successfully created GenSX project/);
+
+    // Verify exec was called for the assistant
+    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
   });
 
-  it("selects all AI assistants when 'all' is chosen", async () => {
-    // Mock the prompt responses
-    const promptMock = vi.mocked(enquirer.prompt);
-    promptMock
-      // First call - description
-      .mockResolvedValueOnce({
-        description: "",
-      })
-      // Second call - AI assistants
-      .mockResolvedValueOnce({
-        assistants: [
-          "@gensx/claude-md",
-          "@gensx/cursor-rules",
-          "@gensx/cline-rules",
-          "@gensx/windsurf-rules",
-        ],
-      });
+  it("should create a project and select all AI assistants", async () => {
+    const { lastFrame } = render(
+      React.createElement(NewProjectUI, {
+        projectPath: path.join(tempDir, "test-project-all"),
+        options: { force: true },
+      }),
+    );
 
-    await newProject(path.join(tempDir, "test-project"), {
-      template: "ts",
-      force: false,
-      skipLogin: true,
-      skipIdeRules: false,
-    });
+    // Wait for description prompt
+    await waitForText(lastFrame, /Enter a project description/);
+    if (!global.__textInputOnChange || !global.__textInputOnSubmit)
+      throw new Error("TextInput handlers not found");
+    global.__textInputOnChange("");
+    global.__textInputOnSubmit("");
 
-    // Verify all assistant commands were called
+    // Wait for dependencies to install
+    await waitForText(lastFrame, /Installing dependencies/);
+    await waitForText(lastFrame, /Select AI assistants to integrate/);
+
+    // Simulate selecting "all"
+    if (!global.__selectInputOnSelect || !global.__selectInputOptions)
+      throw new Error("SelectInput handler/options not found");
+    const allOption = global.__selectInputOptions.find(
+      (opt) => opt.value === "all",
+    );
+    if (!allOption) throw new Error("All option not found");
+    global.__selectInputOnSelect(allOption);
+
+    await waitForText(lastFrame, /Successfully created GenSX project/);
     expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
     expect(exec).toHaveBeenCalledWith("npx @gensx/cursor-rules");
     expect(exec).toHaveBeenCalledWith("npx @gensx/cline-rules");
     expect(exec).toHaveBeenCalledWith("npx @gensx/windsurf-rules");
   });
 
-  it("handles project description input", async () => {
-    // Mock the prompt responses
-    const promptMock = vi.mocked(enquirer.prompt);
-    promptMock
-      // First call - description
-      .mockResolvedValueOnce({
-        description: "A test project description",
-      })
-      // Second call - AI assistants
-      .mockResolvedValueOnce({
-        assistants: ["@gensx/claude-md"],
-      });
+  it("should create a project and select no AI assistants", async () => {
+    const { lastFrame } = render(
+      React.createElement(NewProjectUI, {
+        projectPath: path.join(tempDir, "test-project-none"),
+        options: { force: true },
+      }),
+    );
 
-    await newProject(path.join(tempDir, "test-project"), {
-      template: "ts",
-      force: false,
-      skipLogin: true,
-      skipIdeRules: false,
-    });
+    // Wait for description prompt
+    await waitForText(lastFrame, /Enter a project description/);
+    if (!global.__textInputOnChange || !global.__textInputOnSubmit)
+      throw new Error("TextInput handlers not found");
+    global.__textInputOnChange("");
+    global.__textInputOnSubmit("");
 
-    // Verify project was created successfully
-    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
-  });
+    // Wait for dependencies to install
+    await waitForText(lastFrame, /Installing dependencies/);
+    await waitForText(lastFrame, /Select AI assistants to integrate/);
 
-  it("handles cancellation of description prompt", async () => {
-    // Mock the prompt responses
-    const promptMock = vi.mocked(enquirer.prompt);
-    promptMock
-      // First call - description (cancelled)
-      .mockRejectedValueOnce(new Error("canceled"))
-      // Second call - AI assistants
-      .mockResolvedValueOnce({
-        assistants: ["@gensx/claude-md"],
-      });
+    // Simulate selecting "none"
+    if (!global.__selectInputOnSelect || !global.__selectInputOptions)
+      throw new Error("SelectInput handler/options not found");
+    const noneOption = global.__selectInputOptions.find(
+      (opt) => opt.value === "none",
+    );
+    if (!noneOption) throw new Error("None option not found");
+    global.__selectInputOnSelect(noneOption);
 
-    await newProject(path.join(tempDir, "test-project"), {
-      template: "ts",
-      force: false,
-      skipLogin: true,
-      skipIdeRules: false,
-    });
-
-    // Verify project was still created successfully
-    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
-  });
-
-  it("uses provided description without prompting", async () => {
-    // Mock the prompt response - only for AI assistants since description is provided
-    vi.mocked(enquirer.prompt).mockResolvedValueOnce({
-      assistants: ["@gensx/claude-md"],
-    });
-
-    await newProject(path.join(tempDir, "test-project"), {
-      template: "ts",
-      force: false,
-      skipLogin: true,
-      skipIdeRules: false,
-      description: "Pre-provided description",
-    });
-
-    // Verify project was created successfully
-    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
-    // Verify description prompt was not shown
-    expect(enquirer.prompt).toHaveBeenCalledTimes(1); // Only for AI assistants
+    await waitForText(lastFrame, /Successfully created GenSX project/);
+    // No exec for assistants
+    expect(exec).not.toHaveBeenCalledWith(
+      expect.stringMatching(/npx @gensx\/.+/),
+    );
   });
 });

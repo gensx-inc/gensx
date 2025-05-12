@@ -3,31 +3,13 @@ import path from "node:path";
 
 import { render } from "ink-testing-library";
 import React from "react";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  expect,
-  it,
-  suite,
-  vi,
-} from "vitest";
+import { expect, it, suite, vi } from "vitest";
 
 import { SelectEnvironmentUI } from "../../../src/commands/environment/select.js";
 import * as environmentModel from "../../../src/models/environment.js";
 import * as projectModel from "../../../src/models/projects.js";
-import {
-  cleanupProjectFiles,
-  cleanupTestEnvironment,
-  setupTestEnvironment,
-  waitForText,
-} from "../../test-helpers.js";
-
-// Setup test variables
-let tempDir: string;
-let origCwd: typeof process.cwd;
-let origConfigDir: string | undefined;
+import { tempDir } from "../../setup.js";
+import { waitForText } from "../../test-helpers.js";
 
 // Mock only the dependencies that would make API calls
 vi.mock("../../../src/models/projects.js", () => ({
@@ -37,28 +19,6 @@ vi.mock("../../../src/models/projects.js", () => ({
 vi.mock("../../../src/models/environment.js", () => ({
   checkEnvironmentExists: vi.fn(),
 }));
-
-// Set up and tear down the test environment
-beforeAll(async () => {
-  const setup = await setupTestEnvironment("select-test");
-  tempDir = setup.tempDir;
-  origCwd = setup.origCwd;
-  origConfigDir = setup.origConfigDir;
-});
-
-afterAll(async () => {
-  await cleanupTestEnvironment(tempDir, origCwd, origConfigDir);
-});
-
-beforeEach(() => {
-  // Set working directory to our test project
-  process.cwd = vi.fn().mockReturnValue(path.join(tempDir, "project"));
-});
-
-afterEach(async () => {
-  vi.resetAllMocks();
-  await cleanupProjectFiles(tempDir);
-});
 
 // Mock validateAndSelectEnvironment by overriding it for testing
 // This function is needed because we can't easily mock env-config
