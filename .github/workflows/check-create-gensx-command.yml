@@ -81,7 +81,7 @@ jobs:
 
       - name: Send Slack notification on failure
         if: failure()
-        uses: slackapi/slack-github-action@v2.0.0
+        uses: slackapi/slack-github-action@v2.1.0
         with:
           payload: |
             {
