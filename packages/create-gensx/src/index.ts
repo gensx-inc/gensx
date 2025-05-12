@@ -9,14 +9,12 @@ export interface CreateOptions {
   force: boolean;
 }
 
-export function createGensxProject(
+export async function createGensxProject(
   projectPath: string,
   options: NewCommandOptions,
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const { waitUntilExit } = render(
-      React.createElement(NewProjectUI, { projectPath, options }),
-    );
-    waitUntilExit().then(resolve).catch(reject);
-  });
+  const { waitUntilExit } = render(
+    React.createElement(NewProjectUI, { projectPath, options }),
+  );
+  await waitUntilExit();
 }

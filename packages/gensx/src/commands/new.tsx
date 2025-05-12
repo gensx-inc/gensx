@@ -7,7 +7,6 @@ import { Box, Text, useApp } from "ink";
 import SelectInput from "ink-select-input";
 import Spinner from "ink-spinner";
 import TextInput from "ink-text-input";
-import pc from "picocolors";
 import { useCallback, useEffect, useState } from "react";
 
 import { ErrorMessage } from "../components/ErrorMessage.js";
@@ -112,7 +111,9 @@ export function NewProjectUI({ projectPath, options }: Props) {
 
       // Run each assistant installation command using npx
       const installPromises = packagesToInstall.map((assistantPackage) =>
-        exec(`npx ${assistantPackage}`).catch(handleError),
+        exec(`npx ${assistantPackage}`, { cwd: projectPath }).catch(
+          handleError,
+        ),
       );
 
       Promise.all(installPromises)
@@ -122,7 +123,7 @@ export function NewProjectUI({ projectPath, options }: Props) {
         })
         .catch(handleError);
     },
-    [handleError],
+    [handleError, projectPath],
   );
 
   useEffect(() => {
@@ -149,6 +150,17 @@ export function NewProjectUI({ projectPath, options }: Props) {
       if (phase === "copyFiles" && !hasCopiedFiles) {
         try {
           await copyTemplateFiles("ts", projectPath);
+
+          // Save gensx.yaml config
+          const projectName = path.basename(projectPath);
+          await saveProjectConfig(
+            {
+              projectName,
+              description: description || "My GenSX Project",
+            },
+            projectPath,
+          );
+
           setHasCopiedFiles(true);
           setPhase("installDeps");
         } catch (err) {
@@ -157,7 +169,7 @@ export function NewProjectUI({ projectPath, options }: Props) {
       }
     }
     void copyFiles();
-  }, [phase, projectPath, handleError, hasCopiedFiles]);
+  }, [phase, projectPath, handleError, hasCopiedFiles, description]);
 
   useEffect(() => {
     async function installDependencies() {
@@ -166,11 +178,15 @@ export function NewProjectUI({ projectPath, options }: Props) {
           const template = await loadTemplate("ts");
 
           if (template.dependencies.length > 0) {
-            await exec(`npm install ${template.dependencies.join(" ")}`);
+            await exec(`npm install ${template.dependencies.join(" ")}`, {
+              cwd: projectPath,
+            });
           }
 
           if (template.devDependencies.length > 0) {
-            await exec(`npm install -D ${template.devDependencies.join(" ")}`);
+            await exec(`npm install -D ${template.devDependencies.join(" ")}`, {
+              cwd: projectPath,
+            });
           }
 
           setHasInstalledDeps(true);
@@ -488,81 +504,4 @@ async function copyTemplateFiles(_templateName: string, targetPath: string) {
   }
 
   await copyDir(templatePath, targetPath);
-}
-
-export async function newProject(
-  projectPath: string,
-  options: NewCommandOptions,
-) {
-  try {
-    const absoluteProjectPath = path.resolve(projectPath);
-
-    // Create and validate project directory
-    await mkdir(absoluteProjectPath, { recursive: true });
-
-    const files = await readdir(absoluteProjectPath);
-    if (files.length > 0 && !options.force) {
-      throw new Error(
-        `Directory "${absoluteProjectPath}" is not empty. Use --force to overwrite existing files.`,
-      );
-    }
-
-    // Initialize npm project and install dependencies
-    process.chdir(absoluteProjectPath);
-    await exec("npm init -y");
-
-    const template = await loadTemplate("ts");
-    if (template.dependencies.length > 0) {
-      await exec(`npm install ${template.dependencies.join(" ")}`);
-    }
-
-    if (template.devDependencies.length > 0) {
-      await exec(`npm install -D ${template.devDependencies.join(" ")}`);
-    }
-
-    // Handle AI assistant integrations
-    if (options.ideRules) {
-      const assistantMap: Record<string, string> = {
-        claude: "@gensx/claude-md",
-        cursor: "@gensx/cursor-rules",
-        cline: "@gensx/cline-rules",
-        windsurf: "@gensx/windsurf-rules",
-      };
-
-      const requestedAssistants = options.ideRules
-        .split(",")
-        .map((a) => a.trim().toLowerCase());
-      const selectedAssistants = requestedAssistants
-        .map((name) => assistantMap[name])
-        .filter(Boolean);
-
-      if (selectedAssistants.length > 0) {
-        for (const assistantPackage of selectedAssistants) {
-          await exec(`npx ${assistantPackage}`);
-        }
-      }
-    }
-
-    // Save project configuration
-    const projectName = path.basename(absoluteProjectPath);
-    await saveProjectConfig(
-      {
-        projectName,
-        ...(options.description && { description: options.description }),
-      },
-      absoluteProjectPath,
-    );
-
-    return {
-      projectName,
-      projectPath: absoluteProjectPath,
-    };
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error(pc.red(`\nError: ${error.message}`), error.stack);
-    } else {
-      console.error(pc.red("\nAn unknown error occurred"));
-    }
-    process.exit(1);
-  }
 }
