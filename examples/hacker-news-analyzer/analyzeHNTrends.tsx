@@ -1,5 +1,5 @@
 import * as gensx from "@gensx/core";
-import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { ChatCompletion } from "@gensx/openai";
 
 import { getTopStoryDetails, type HNStory } from "./hn.js";
 
@@ -323,29 +323,27 @@ export const AnalyzeHackerNewsTrends = gensx.Component<
   AnalyzeHackerNewsTrendsOutput
 >("AnalyzeHackerNewsTrends", ({ postCount }) => {
   return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <FetchHNPosts limit={postCount}>
-        {(stories) => (
-          <AnalyzeHNPosts stories={stories}>
-            {({ analyses }) => (
-              <GenerateReport analyses={analyses}>
-                {(report) => (
-                  <EditReport content={report}>
-                    {(editedReport) => (
-                      <WriteTweet
-                        context={editedReport}
-                        prompt="Summarize the HN trends in a tweet"
-                      >
-                        {(tweet) => ({ report: editedReport, tweet })}
-                      </WriteTweet>
-                    )}
-                  </EditReport>
-                )}
-              </GenerateReport>
-            )}
-          </AnalyzeHNPosts>
-        )}
-      </FetchHNPosts>
-    </OpenAIProvider>
+    <FetchHNPosts limit={postCount}>
+      {(stories) => (
+        <AnalyzeHNPosts stories={stories}>
+          {({ analyses }) => (
+            <GenerateReport analyses={analyses}>
+              {(report) => (
+                <EditReport content={report}>
+                  {(editedReport) => (
+                    <WriteTweet
+                      context={editedReport}
+                      prompt="Summarize the HN trends in a tweet"
+                    >
+                      {(tweet) => ({ report: editedReport, tweet })}
+                    </WriteTweet>
+                  )}
+                </EditReport>
+              )}
+            </GenerateReport>
+          )}
+        </AnalyzeHNPosts>
+      )}
+    </FetchHNPosts>
   );
 });

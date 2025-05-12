@@ -58,15 +58,33 @@ export type ExecutableValue<T = unknown> =
   | T[]
   | Record<string, T>;
 
+// Define a type for any Gsx Component Function (bound or unbound)
+export type ProviderComponentFunction =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | GsxComponent<any, any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | BoundGsxComponent<any, any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | GsxStreamComponent<any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | BoundGsxStreamComponent<any>;
+
+// Type for the providers array - Allow JSX Elements or Component Functions
+export type ProviderElementOrConfig = JSX.Element | ProviderComponentFunction;
+
 export interface ComponentOpts {
   secretProps?: string[]; // Property paths to mask in checkpoints
   secretOutputs?: boolean; // Whether to mask the output of the component
   name?: string; // Allows you to override the name of the component
   metadata?: Record<string, unknown>; // Metadata to attach to the component
+  providers?: ProviderElementOrConfig[]; // Accept JSX Elements or Component Functions
+  options?: {};
 }
 
 // omit name from ComponentOpts
-export type DefaultOpts = Omit<ComponentOpts, "name">;
+export type DefaultOpts = Omit<ComponentOpts, "name"> & {
+  providers?: ProviderElementOrConfig[]; // Accept JSX Elements or Component Functions
+};
 
 export type ComponentProps<P, O> = P & {
   componentOpts?: ComponentOpts;
@@ -76,28 +94,41 @@ export type ComponentProps<P, O> = P & {
     | ((output: O) => Promise<void>);
 };
 
-/**
- * A component that returns either:
- * - The output type O directly
- * - JSX that will resolve to type O
- * - A promise of either of the above
- */
-export type GsxComponent<P, O> = ((
+/** Base GsxComponent Definition (without .props) */
+export type BaseGsxComponent<P, O> = ((
   props: ComponentProps<P, O>,
 ) => MaybePromise<
   O extends (infer Item)[]
     ? DeepJSXElement<O> | GsxArray<Item> | Item[] | (Item | Element)[]
     : O | DeepJSXElement<O> | ExecutableValue<O>
->) /*
- * Use branding to preserve output type information.
- * This allows direct access to the output type O while maintaining
- * compatibility with the more flexible JSX composition system.
- */ & {
+>) & {
   readonly __brand: "gensx-component";
   readonly __outputType: O;
   readonly __rawProps: P;
   run: (props: P & { componentOpts?: ComponentOpts }) => MaybePromise<O>;
 };
+
+/** Component Returned by .props() - relaxed .run signature */
+export interface BoundGsxComponent<P, O>
+  extends Omit<BaseGsxComponent<P, O>, "run" | "props"> {
+  // Allow calling run with only componentOpts or nothing if all required P are bound
+  run: (
+    props?: /* Use Omit to remove P keys */ Omit<P, keyof P> & {
+      componentOpts?: ComponentOpts;
+    },
+  ) => MaybePromise<O>;
+  // Props on bound component returns another bound component
+  props: (boundProps: Partial<P>) => BoundGsxComponent<P, O>;
+  // Re-add necessary internal properties if Omit removed them
+  readonly __brand: "gensx-component";
+  readonly __outputType: O;
+  readonly __rawProps: P;
+}
+
+/** The full component type including the initial .props method */
+export interface GsxComponent<P, O> extends BaseGsxComponent<P, O> {
+  props: (boundProps: Partial<P>) => BoundGsxComponent<P, O>;
+}
 
 export type Streamable =
   | AsyncIterableIterator<string>
@@ -118,7 +149,8 @@ export type StreamComponentProps<P> = P & {
   children?: StreamChildrenType<P>;
 };
 
-export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
+/** Base GsxStreamComponent Definition (without .props) */
+export type BaseGsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
   props: StreamComponentProps<
     // This is necessary to disallow extra props. Because of the extends statement above,
     // typescript would allow props that have all the necessary keys, but also have extra keys.
@@ -129,11 +161,7 @@ export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
 ) => MaybePromise<
   | DeepJSXElement<T extends { stream: true } ? Streamable : string>
   | ExecutableValue
->) /*
- * Use branding to preserve output type information.
- * This allows direct access to the output type O while maintaining
- * compatibility with the more flexible JSX composition system.
- */ & {
+>) & {
   readonly __brand: "gensx-stream-component";
   readonly __outputType: Streamable;
   readonly __rawProps: P;
@@ -141,6 +169,35 @@ export type GsxStreamComponent<P> = (<T extends P & { stream?: boolean }>(
     props: U,
   ) => MaybePromise<U extends { stream: true } ? Streamable : string>;
 };
+
+/** Stream Component Returned by .props() - relaxed .run signature */
+export interface BoundGsxStreamComponent<P>
+  extends Omit<BaseGsxStreamComponent<P>, "run" | "props"> {
+  // Allow calling run with only componentOpts/stream or nothing if all required P are bound
+  run: <
+    T extends /* Use Omit to remove P keys */ Omit<P, keyof P> & {
+      stream?: boolean;
+      componentOpts?: ComponentOpts;
+    },
+  >(
+    props: T,
+  ) => MaybePromise<T extends { stream: true } ? Streamable : string>;
+  // Props on bound component returns another bound component
+  props: (
+    boundProps: Partial<P>,
+  ) => BoundGsxStreamComponent<P & { stream?: boolean }>;
+  // Re-add necessary internal properties if Omit removed them
+  readonly __brand: "gensx-stream-component";
+  readonly __outputType: Streamable;
+  readonly __rawProps: P;
+}
+
+/** The full stream component type including the initial .props method */
+export interface GsxStreamComponent<P> extends BaseGsxStreamComponent<P> {
+  props: (
+    boundProps: Partial<P>,
+  ) => BoundGsxStreamComponent<P & { stream?: boolean }>;
+}
 
 export interface Context<T> {
   readonly __type: "Context";
