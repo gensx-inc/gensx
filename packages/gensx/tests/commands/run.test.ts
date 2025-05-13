@@ -1,16 +1,16 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
 import { render } from "ink-testing-library";
 import React from "react";
-import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
+import { beforeEach, expect, it, suite, vi } from "vitest";
 
 import { RunWorkflowUI } from "../../src/commands/run.js";
 import * as environmentModel from "../../src/models/environment.js";
 import * as projectModel from "../../src/models/projects.js";
 import * as envConfig from "../../src/utils/env-config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
+import { tempDir } from "../setup.js";
 import { waitForText } from "../test-helpers.js";
 
 // Mock dependencies
@@ -66,16 +66,10 @@ class MockTextDecoder {
 }
 global.TextDecoder = MockTextDecoder as unknown as typeof TextDecoder;
 
-// Reset mocks
-afterEach(() => {
-  vi.resetAllMocks();
-});
-
 suite("run command", () => {
-  let tempDir: string;
   let outputPath: string;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     // Setup common mocks
     vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
     vi.mocked(environmentModel.checkEnvironmentExists).mockResolvedValue(true);
@@ -99,40 +93,32 @@ suite("run command", () => {
       projectName: "test-project",
     });
 
-    // Create temp directory for test files
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gensx-test-"));
+    // Set up output path using global tempDir
     outputPath = path.join(tempDir, "output.json");
   });
 
-  afterEach(async () => {
-    // Clean up temp directory
-    if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
-    }
+  it("should use project name from config when not specified", async () => {
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
+      projectName: "config-project",
+    });
+
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      json: () => Promise.resolve({ executionId: "test-id" }),
+    });
+
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: false,
+        },
+      }),
+    );
+
+    await waitForText(lastFrame, /test-id/);
   });
-
-  // it("should use project name from config when not specified", async () => {
-  //   vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
-  //     projectName: "config-project",
-  //   });
-
-  //   mockFetch.mockResolvedValueOnce({
-  //     status: 200,
-  //     json: () => Promise.resolve({ executionId: "test-id" }),
-  //   });
-
-  //   const { lastFrame } = render(
-  //     React.createElement(RunWorkflowUI, {
-  //       workflowName: "test-workflow",
-  //       options: {
-  //         input: "{}",
-  //         wait: false,
-  //       },
-  //     }),
-  //   );
-
-  //   await waitForText(lastFrame, /test-id/);
-  // });
 
   it("should fail if no project name is available", async () => {
     vi.mocked(projectConfig.readProjectConfig).mockResolvedValue(null);
@@ -150,38 +136,38 @@ suite("run command", () => {
     await waitForText(lastFrame, /No project name found/);
   });
 
-  // it("should handle streaming response when wait is true", async () => {
-  //   const mockReader = {
-  //     read: vi
-  //       .fn()
-  //       .mockResolvedValueOnce({
-  //         value: new TextEncoder().encode("test output"),
-  //         done: false,
-  //       })
-  //       .mockResolvedValueOnce({ done: true }),
-  //   };
+  it("should handle streaming response when wait is true", async () => {
+    const mockReader = {
+      read: vi
+        .fn()
+        .mockResolvedValueOnce({
+          value: new TextEncoder().encode("test output"),
+          done: false,
+        })
+        .mockResolvedValueOnce({ done: true }),
+    };
 
-  //   mockFetch.mockResolvedValueOnce({
-  //     status: 200,
-  //     headers: new Headers({ "Content-Type": "application/stream+json" }),
-  //     body: { getReader: () => mockReader },
-  //   });
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers({ "Content-Type": "application/stream+json" }),
+      body: { getReader: () => mockReader },
+    });
 
-  //   const { lastFrame } = render(
-  //     React.createElement(RunWorkflowUI, {
-  //       workflowName: "test-workflow",
-  //       options: {
-  //         input: "{}",
-  //         wait: true,
-  //       },
-  //     }),
-  //   );
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: true,
+        },
+      }),
+    );
 
-  //   // First check for streaming message
-  //   await waitForText(lastFrame, /Streaming output:/, 2000);
-  //   // Check for the actual mocked output
-  //   await waitForText(lastFrame, /mocked output/);
-  // });
+    // First check for streaming message
+    await waitForText(lastFrame, /Streaming output:/, 2000);
+    // Check for the actual mocked output
+    await waitForText(lastFrame, /mocked output/);
+  });
 
   it("should handle JSON response when wait is true", async () => {
     mockFetch.mockResolvedValueOnce({
@@ -320,30 +306,30 @@ hasCompletedFirstTimeSetup = false
     );
   });
 
-  // it("should skip first-time setup when user has already completed it", async () => {
-  //   // Mock successful workflow execution
-  //   mockFetch.mockResolvedValueOnce({
-  //     status: 200,
-  //     json: () => Promise.resolve({ executionId: "test-id" }),
-  //   });
+  it("should skip first-time setup when user has already completed it", async () => {
+    // Mock successful workflow execution
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      json: () => Promise.resolve({ executionId: "test-id" }),
+    });
 
-  //   const { lastFrame } = render(
-  //     React.createElement(RunWorkflowUI, {
-  //       workflowName: "test-workflow",
-  //       options: {
-  //         input: "{}",
-  //         wait: false,
-  //       },
-  //     }),
-  //   );
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: false,
+        },
+      }),
+    );
 
-  //   // Wait for workflow execution to start
-  //   await waitForText(lastFrame, /test-id/);
+    // Wait for workflow execution to start
+    await waitForText(lastFrame, /test-id/);
 
-  //   // Verify that the welcome message was not shown
-  //   const frame = lastFrame();
-  //   expect(frame).not.toContain(
-  //     "Welcome to GenSX! Let's get you set up first.",
-  //   );
-  // });
+    // Verify that the welcome message was not shown
+    const frame = lastFrame();
+    expect(frame).not.toContain(
+      "Welcome to GenSX! Let's get you set up first.",
+    );
+  });
 });
