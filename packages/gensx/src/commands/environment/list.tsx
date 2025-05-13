@@ -3,11 +3,10 @@ import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingSpinner } from "../../components/LoadingSpinner.js";
+import { useProjectName } from "../../hooks/useProjectName.js";
 import { listEnvironments } from "../../models/environment.js";
-import { checkProjectExists } from "../../models/projects.js";
 import { getAuth } from "../../utils/config.js";
 import { getSelectedEnvironment } from "../../utils/env-config.js";
-import { readProjectConfig } from "../../utils/project-config.js";
 
 interface Environment {
   id: string;
@@ -21,24 +20,30 @@ interface UseEnvironmentsResult {
   environments: Environment[];
   loading: boolean;
   error: Error | null;
-  projectName: string | null;
   selectedEnvironment: string | null;
+  projectName: string | null;
 }
 
 function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [projectName, setProjectName] = useState<string | null>(null);
   const [selectedEnvironment, setSelectedEnvironment] = useState<string | null>(
     null,
   );
   const { exit } = useApp();
+  const {
+    loading: projectLoading,
+    error: projectError,
+    projectName,
+  } = useProjectName(initialProjectName);
 
   useEffect(() => {
     let mounted = true;
 
     async function fetchData() {
+      if (!projectName) return;
+
       try {
         // Check authentication first
         const authConfig = await getAuth();
@@ -46,31 +51,13 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
           throw new Error("Not authenticated. Please run 'gensx login' first.");
         }
 
-        // Resolve and validate project name
-        let resolvedProjectName = initialProjectName;
-        if (!resolvedProjectName) {
-          const projectConfig = await readProjectConfig(process.cwd());
-          if (!projectConfig?.projectName) {
-            throw new Error(
-              "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
-            );
-          }
-          resolvedProjectName = projectConfig.projectName;
-        }
-
-        const projectExists = await checkProjectExists(resolvedProjectName);
-        if (!projectExists) {
-          throw new Error(`Project ${resolvedProjectName} does not exist.`);
-        }
-
-        // Fetch environments and selected environment for the validated project
+        // Fetch environments and selected environment
         const [envs, selected] = await Promise.all([
-          listEnvironments(resolvedProjectName),
-          getSelectedEnvironment(resolvedProjectName),
+          listEnvironments(projectName),
+          getSelectedEnvironment(projectName),
         ]);
 
         if (mounted) {
-          setProjectName(resolvedProjectName);
           setEnvironments(envs);
           setSelectedEnvironment(selected);
           setLoading(false);
@@ -91,9 +78,15 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
     return () => {
       mounted = false;
     };
-  }, [initialProjectName, exit]);
+  }, [projectName, exit]);
 
-  return { environments, loading, error, projectName, selectedEnvironment };
+  return {
+    environments,
+    loading: loading || projectLoading,
+    error: error ?? projectError,
+    selectedEnvironment,
+    projectName,
+  };
 }
 
 interface Props {

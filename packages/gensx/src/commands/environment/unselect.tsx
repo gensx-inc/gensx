@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingSpinner } from "../../components/LoadingSpinner.js";
-import { checkProjectExists } from "../../models/projects.js";
+import { useProjectName } from "../../hooks/useProjectName.js";
 import { getAuth } from "../../utils/config.js";
 import { validateAndSelectEnvironment } from "../../utils/env-config.js";
-import { readProjectConfig } from "../../utils/project-config.js";
 
 interface Props {
   projectName?: string;
@@ -25,13 +24,19 @@ function useUnselectEnvironment(
   const { exit } = useApp();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [projectName, setProjectName] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const {
+    loading: projectLoading,
+    error: projectError,
+    projectName,
+  } = useProjectName(initialProjectName);
 
   useEffect(() => {
     let mounted = true;
 
     async function unselectEnvironmentFlow() {
+      if (!projectName) return;
+
       try {
         // Check authentication first
         const authConfig = await getAuth();
@@ -39,28 +44,9 @@ function useUnselectEnvironment(
           throw new Error("Not authenticated. Please run 'gensx login' first.");
         }
 
-        // Resolve project name
-        let resolvedProjectName = initialProjectName;
-        if (!resolvedProjectName) {
-          const projectConfig = await readProjectConfig(process.cwd());
-          if (!projectConfig?.projectName) {
-            throw new Error(
-              "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
-            );
-          }
-          resolvedProjectName = projectConfig.projectName;
-        }
-
-        // Check if project exists
-        const projectExists = await checkProjectExists(resolvedProjectName);
-        if (!projectExists) {
-          throw new Error(`Project ${resolvedProjectName} does not exist.`);
-        }
-
-        await validateAndSelectEnvironment(resolvedProjectName, null);
+        await validateAndSelectEnvironment(projectName, null);
 
         if (mounted) {
-          setProjectName(resolvedProjectName);
           setSuccess(true);
           setLoading(false);
         }
@@ -80,9 +66,14 @@ function useUnselectEnvironment(
     return () => {
       mounted = false;
     };
-  }, [initialProjectName, exit]);
+  }, [projectName, exit]);
 
-  return { loading, error, projectName, success };
+  return {
+    loading: loading || projectLoading,
+    error: error ?? projectError,
+    projectName,
+    success,
+  };
 }
 
 export function UnselectEnvironmentUI({
@@ -95,7 +86,7 @@ export function UnselectEnvironmentUI({
     return <ErrorMessage message={error.message} />;
   }
 
-  if (loading) {
+  if (loading || !projectName) {
     return <LoadingSpinner />;
   }
 
