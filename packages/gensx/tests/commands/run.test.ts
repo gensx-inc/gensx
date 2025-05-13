@@ -1,9 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { TextEncoder } from "node:util";
 
 import { render } from "ink-testing-library";
 import React from "react";
-import { beforeEach, expect, it, suite, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 
 import { RunWorkflowUI } from "../../src/commands/run.js";
 import * as environmentModel from "../../src/models/environment.js";
@@ -53,7 +54,6 @@ vi.mock("../../src/components/EnvironmentResolver.js", () => ({
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
 
 // Mock TextDecoder properly
 class MockTextDecoder {
@@ -70,6 +70,7 @@ suite("run command", () => {
   let outputPath: string;
 
   beforeEach(() => {
+    global.fetch = mockFetch;
     // Setup common mocks
     vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
     vi.mocked(environmentModel.checkEnvironmentExists).mockResolvedValue(true);
@@ -95,6 +96,35 @@ suite("run command", () => {
 
     // Set up output path using global tempDir
     outputPath = path.join(tempDir, "output.json");
+  });
+
+  afterEach(async () => {
+    // Reset config file to completed state for next test
+    const configPath = path.join(process.env.GENSX_CONFIG_DIR!, "config");
+    await fs.writeFile(
+      configPath,
+      `; GenSX Configuration File
+; Generated on: ${new Date().toISOString()}
+
+[api]
+token = test-token
+org = test-org
+baseUrl = https://api.test.com
+
+[console]
+baseUrl = https://console.test.com
+
+[state]
+hasCompletedFirstTimeSetup = true
+`,
+      "utf-8",
+    );
+    // Clean up any files created during the test
+    if (outputPath) {
+      await fs.rm(outputPath, { force: true }).catch(() => {
+        // Ignore cleanup errors
+      });
+    }
   });
 
   it("should use project name from config when not specified", async () => {
