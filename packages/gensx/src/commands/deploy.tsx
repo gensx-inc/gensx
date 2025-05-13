@@ -8,6 +8,7 @@ import React, { useCallback, useState } from "react";
 
 import { EnvironmentResolver } from "../components/EnvironmentResolver.js";
 import { ErrorMessage } from "../components/ErrorMessage.js";
+import { FirstTimeSetup } from "../components/FirstTimeSetup.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { useProjectName } from "../hooks/useProjectName.js";
 import { getAuth } from "../utils/config.js";
@@ -135,6 +136,8 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
 
   return (
     <Box flexDirection="column" gap={1}>
+      <FirstTimeSetup />
+
       {isFromConfig && phase === "resolveEnv" && (
         <Text>
           <Text color="cyan">ℹ</Text> Using project name from gensx.yaml:{" "}
