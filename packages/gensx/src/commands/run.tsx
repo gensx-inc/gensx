@@ -113,7 +113,6 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
         if (isStream) {
           setPhase("streaming");
           await handleStream(response.body, options.output, setStreamContent);
-          setPhase("done");
           exit();
         } else {
           const body = (await response.json()) as {
@@ -172,8 +171,6 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
     if (outputPath) {
       fileStream = createWriteStream(outputPath);
       setContent(`Streaming response output to ${outputPath}\n`);
-    } else {
-      setContent("Streaming response output:\n");
     }
 
     let done = false;
@@ -191,83 +188,93 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
       }
     }
     fileStream?.end();
-    setLogLines((ls) => [...ls, "Workflow execution completed"]);
   };
-
-  if (error || projectError) {
-    return (
-      <ErrorMessage
-        message={error ?? projectError?.message ?? "Unknown error"}
-      />
-    );
-  }
-
-  if (loading || !projectName) {
-    return <LoadingSpinner message="Resolving project..." />;
-  }
 
   return (
     <Box flexDirection="column" gap={1}>
       <FirstTimeSetup />
 
-      {isFromConfig && phase === "resolveEnv" && (
-        <Text>
-          <Text color="cyan">ℹ</Text> Using project name from gensx.yaml:{" "}
-          <Text color="cyan">{projectName}</Text>
-        </Text>
+      {options.output && !options.wait && (
+        <ErrorMessage message="Output file cannot be specified without --wait." />
       )}
-      {phase === "resolveEnv" && (
-        <EnvironmentResolver
-          projectName={projectName}
-          specifiedEnvironment={options.env}
-          allowCreate={false}
-          yes={options.yes}
-          onResolved={(env) => {
-            void runWorkflow(env);
-          }}
+
+      {!(options.output && !options.wait) && (error ?? projectError) && (
+        <ErrorMessage
+          message={error ?? projectError?.message ?? "Unknown error"}
         />
       )}
 
-      {phase === "running" && <LoadingSpinner message="Running workflow..." />}
+      {!(options.output && !options.wait) &&
+        !(error ?? projectError) &&
+        (loading || !projectName) && (
+          <LoadingSpinner message="Resolving project..." />
+        )}
 
-      {phase === "streaming" && (
-        <Box flexDirection="column">
-          <Text color="yellow" bold>
-            Streaming output...
-          </Text>
-          <Box borderStyle="round" borderColor="cyan" padding={1} marginTop={1}>
-            <Text color="white">{streamContent}</Text>
-          </Box>
-        </Box>
-      )}
+      {!(options.output && !options.wait) &&
+        !(error ?? projectError) &&
+        !(loading || !projectName) && (
+          <>
+            {isFromConfig && phase === "resolveEnv" && (
+              <Text>
+                <Text color="cyan">ℹ</Text> Using project name from gensx.yaml:{" "}
+                <Text color="cyan">{projectName}</Text>
+              </Text>
+            )}
+            {phase === "resolveEnv" && (
+              <EnvironmentResolver
+                projectName={projectName}
+                specifiedEnvironment={options.env}
+                allowCreate={false}
+                yes={options.yes}
+                onResolved={(env) => {
+                  void runWorkflow(env);
+                }}
+              />
+            )}
 
-      {phase === "done" && (
-        <Box flexDirection="column">
-          <Box>
-            <Text color="green" bold>
-              ✔
-            </Text>
-            <Text> Workflow execution completed</Text>
-          </Box>
-          {workflowOutput !== null && (
-            <Box flexDirection="column" marginTop={1}>
-              <Text color="white">Workflow Output:</Text>
-              <Box>
-                <Text color="cyan">
-                  {JSON.stringify(workflowOutput, null, 2)}
+            {phase === "running" && (
+              <LoadingSpinner message="Running workflow..." />
+            )}
+
+            {phase === "streaming" && (
+              <Box flexDirection="column">
+                <Text color="white" bold>
+                  Streaming output:
                 </Text>
+                <Box>
+                  <Text color="cyan">{streamContent}</Text>
+                </Box>
               </Box>
-            </Box>
-          )}
-        </Box>
-      )}
+            )}
 
-      {/* Final immutable logs */}
-      {logLines.length > 0 && (
-        <Static items={logLines}>
-          {(line, index) => <Text key={index}>{line}</Text>}
-        </Static>
-      )}
+            {phase === "done" && (
+              <Box flexDirection="column">
+                <Box>
+                  <Text color="green" bold>
+                    ✔
+                  </Text>
+                  <Text> Workflow execution completed</Text>
+                </Box>
+                {workflowOutput !== null && (
+                  <Box flexDirection="column" marginTop={1}>
+                    <Text color="white">Workflow Output:</Text>
+                    <Box>
+                      <Text color="cyan">
+                        {JSON.stringify(workflowOutput, null, 2)}
+                      </Text>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {logLines.length > 0 && (
+              <Static items={logLines}>
+                {(line, index) => <Text key={index}>{line}</Text>}
+              </Static>
+            )}
+          </>
+        )}
     </Box>
   );
 };

@@ -172,9 +172,9 @@ suite("run command", () => {
     );
 
     // First check for streaming message
-    await waitForText(lastFrame, /Streaming response output:/, 2000);
-    // Then check for completion
-    await waitForText(lastFrame, /Workflow execution completed/);
+    await waitForText(lastFrame, /Streaming output:/, 2000);
+    // Check for the actual mocked output
+    await waitForText(lastFrame, /mocked output/);
   });
 
   it("should handle JSON response when wait is true", async () => {
