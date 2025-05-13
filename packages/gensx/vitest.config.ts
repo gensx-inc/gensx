@@ -36,11 +36,4 @@ export default defineConfig({
       extension: [".ts"],
     },
   },
-  // TODO: Get swc working to speed things up
-  // plugins: [
-  //   swc.vite({
-  //     module: { type: "es6" },
-  //     tsconfigFile: "./tsconfig.json",
-  //   }),
-  // ],
 });
