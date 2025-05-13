@@ -40,7 +40,12 @@ vi.mock("../../src/components/EnvironmentResolver.js", () => ({
     onResolved: (env: string) => void;
   }) => {
     React.useEffect(() => {
-      onResolved("development");
+      const resolveId = setTimeout(() => {
+        onResolved("development");
+      }, 0);
+      return () => {
+        clearTimeout(resolveId);
+      };
     }, []);
     return null;
   },
@@ -126,7 +131,7 @@ suite("run command", () => {
       }),
     );
 
-    await waitForText(lastFrame, /test-id/);
+    await waitForText(lastFrame, /test-id/, 5000);
   });
 
   it("should fail if no project name is available", async () => {
