@@ -1,3 +1,6 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import axios from "axios";
 import { render } from "ink-testing-library";
 import React from "react";
@@ -6,7 +9,6 @@ import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 import * as buildCommand from "../../src/commands/build.js";
 import { DeployUI } from "../../src/commands/deploy.js";
 import * as projectModel from "../../src/models/projects.js";
-import * as configUtils from "../../src/utils/config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
 import { waitForText } from "../test-helpers.js";
 
@@ -34,10 +36,6 @@ vi.mock("axios");
 
 vi.mock("../../src/commands/build.js", () => ({
   build: vi.fn(),
-}));
-
-vi.mock("../../src/utils/config.js", () => ({
-  getAuth: vi.fn(),
 }));
 
 vi.mock("../../src/utils/env-config.js", () => ({
@@ -82,13 +80,6 @@ afterEach(() => {
 });
 
 suite("deploy command", () => {
-  const mockAuth = {
-    token: "test-token",
-    org: "test-org",
-    apiBaseUrl: "https://api.test.com",
-    consoleBaseUrl: "https://console.test.com",
-  };
-
   const mockBuildResult = {
     bundleFile: "test-bundle.js",
     schemaFile: "test-schema.json",
@@ -110,7 +101,6 @@ suite("deploy command", () => {
 
   beforeEach(() => {
     // Setup common mocks
-    vi.mocked(configUtils.getAuth).mockResolvedValue(mockAuth);
     vi.mocked(buildCommand.build).mockResolvedValue(mockBuildResult);
     vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
     vi.mocked(axios.post).mockResolvedValue({
@@ -133,6 +123,111 @@ suite("deploy command", () => {
         ],
       },
     });
+  });
+
+  it("should show first-time setup when user hasn't completed setup", async () => {
+    // Update config file to show first-time setup not completed
+    const configPath = path.join(process.env.GENSX_CONFIG_DIR!, "config");
+    await fs.writeFile(
+      configPath,
+      `; GenSX Configuration File
+; Generated on: ${new Date().toISOString()}
+
+[api]
+token = test-token
+org = test-org
+baseUrl = https://api.test.com
+
+[console]
+baseUrl = https://console.test.com
+
+[state]
+hasCompletedFirstTimeSetup = false
+`,
+      "utf-8",
+    );
+
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
+    );
+
+    // Wait for the welcome message
+    await waitForText(
+      lastFrame,
+      /Welcome to GenSX! Let's get you set up first./,
+    );
+  });
+
+  it("should skip first-time setup when user has already completed it", async () => {
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
+    );
+
+    // Wait for deployment to complete
+    await waitForText(lastFrame, /Deployed to GenSX Cloud/);
+
+    // Verify that the welcome message was not shown
+    const frame = lastFrame();
+    expect(frame).not.toContain(
+      "Welcome to GenSX! Let's get you set up first.",
+    );
+  });
+
+  it("should handle errors during first-time setup", async () => {
+    // Update config file to show first-time setup not completed
+    const configPath = path.join(process.env.GENSX_CONFIG_DIR!, "config");
+    await fs.writeFile(
+      configPath,
+      `; GenSX Configuration File
+; Generated on: ${new Date().toISOString()}
+
+[api]
+token = test-token
+org = test-org
+baseUrl = https://api.test.com
+
+[console]
+baseUrl = https://console.test.com
+
+[state]
+hasCompletedFirstTimeSetup = false
+`,
+      "utf-8",
+    );
+
+    // Make the config file read-only to simulate an error
+    await fs.chmod(configPath, 0o444);
+
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
+    );
+
+    // Wait for the welcome message
+    await waitForText(
+      lastFrame,
+      /Welcome to GenSX! Let's get you set up first./,
+    );
+
+    // Restore write permissions
+    await fs.chmod(configPath, 0o644);
   });
 
   it("should use specified environment from options", async () => {

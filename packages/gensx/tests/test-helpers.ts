@@ -18,6 +18,26 @@ export async function setupTestEnvironment(testPrefix: string) {
   await fs.mkdir(path.join(tempDir, "project"), { recursive: true });
   await fs.mkdir(path.join(tempDir, ".gensx", "projects"), { recursive: true });
 
+  // Create auth config file
+  await fs.writeFile(
+    path.join(tempDir, ".gensx", "config"),
+    `; GenSX Configuration File
+; Generated on: ${new Date().toISOString()}
+
+[api]
+token = test-token
+org = test-org
+baseUrl = https://api.test.com
+
+[console]
+baseUrl = https://console.test.com
+
+[state]
+hasCompletedFirstTimeSetup = true
+`,
+    "utf-8",
+  );
+
   // Override the config directory
   const origConfigDir = process.env.GENSX_CONFIG_DIR;
   process.env.GENSX_CONFIG_DIR = path.join(tempDir, ".gensx");

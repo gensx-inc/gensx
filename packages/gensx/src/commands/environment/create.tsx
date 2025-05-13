@@ -9,6 +9,7 @@ import {
   createEnvironment,
 } from "../../models/environment.js";
 import { checkProjectExists, createProject } from "../../models/projects.js";
+import { getAuth } from "../../utils/config.js";
 import { validateAndSelectEnvironment } from "../../utils/env-config.js";
 import { readProjectConfig } from "../../utils/project-config.js";
 
@@ -53,6 +54,12 @@ function useCreateEnvironment(
 
     async function initializeEnvironment() {
       try {
+        // Check authentication first
+        const authConfig = await getAuth();
+        if (!authConfig) {
+          throw new Error("Not authenticated. Please run 'gensx login' first.");
+        }
+
         // Resolve project name
         let resolvedProjectName = initialProjectName;
 
