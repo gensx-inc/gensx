@@ -15,7 +15,7 @@ import { getAuth } from "../utils/config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import { build } from "./build.js";
 
-interface DeployOptions {
+export interface DeployOptions {
   project?: string;
   envVar?: Record<string, string>;
   env?: string;

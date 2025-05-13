@@ -8,6 +8,10 @@ import { listEnvironments } from "../../models/environment.js";
 import { getAuth } from "../../utils/config.js";
 import { getSelectedEnvironment } from "../../utils/env-config.js";
 
+export interface ListEnvironmentOptions {
+  project?: string;
+}
+
 interface Environment {
   id: string;
   name: string;

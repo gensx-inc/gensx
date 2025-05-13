@@ -39,8 +39,9 @@ vi.mock("../../src/components/EnvironmentResolver.js", () => ({
   }: {
     onResolved: (env: string) => void;
   }) => {
-    // Call onResolved immediately with the environment
-    onResolved("development");
+    React.useEffect(() => {
+      onResolved("development");
+    }, []);
     return null;
   },
 }));

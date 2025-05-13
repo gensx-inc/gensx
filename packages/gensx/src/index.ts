@@ -3,37 +3,20 @@ import { render } from "ink";
 import React from "react";
 
 import { BuildOptions, BuildWorkflowUI } from "./commands/build.js";
-import { DeployUI } from "./commands/deploy.js";
+import { DeployOptions, DeployUI } from "./commands/deploy.js";
 import { CreateEnvironmentUI } from "./commands/environment/create.js";
-import { ListEnvironmentsUI } from "./commands/environment/list.js";
+import {
+  ListEnvironmentOptions,
+  ListEnvironmentsUI,
+} from "./commands/environment/list.js";
 import { SelectEnvironmentUI } from "./commands/environment/select.js";
 import { ShowEnvironmentUI } from "./commands/environment/show.js";
 import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
 import { LoginUI } from "./commands/login.js";
 import { NewCommandOptions, NewProjectUI } from "./commands/new.js";
-import { RunWorkflowUI } from "./commands/run.js";
+import { CliOptions, RunWorkflowUI } from "./commands/run.js";
 import { StartUI } from "./commands/start.js";
 import { VERSION } from "./utils/user-agent.js";
-
-interface ListEnvironmentOptions {
-  project?: string;
-}
-
-interface CliOptions {
-  input: string;
-  wait: boolean;
-  project?: string;
-  env?: string;
-  output?: string;
-  yes?: boolean;
-}
-
-interface DeployOptions {
-  project?: string;
-  envVar?: Record<string, string>;
-  env?: string;
-  yes?: boolean;
-}
 
 export async function runCLI() {
   const program = new Command()

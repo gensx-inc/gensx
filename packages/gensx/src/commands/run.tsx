@@ -12,7 +12,7 @@ import { useProjectName } from "../hooks/useProjectName.js";
 import { getAuth } from "../utils/config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 
-interface CliOptions {
+export interface CliOptions {
   input: string;
   wait: boolean;
   project?: string;
