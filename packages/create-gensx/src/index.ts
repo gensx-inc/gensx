@@ -13,8 +13,10 @@ export async function createGensxProject(
   projectPath: string,
   options: NewCommandOptions,
 ): Promise<void> {
-  const { waitUntilExit } = render(
-    React.createElement(NewProjectUI, { projectPath, options }),
-  );
-  await waitUntilExit();
+  return new Promise<void>((resolve, reject) => {
+    const { waitUntilExit } = render(
+      React.createElement(NewProjectUI, { projectPath, options }),
+    );
+    waitUntilExit().then(resolve).catch(reject);
+  });
 }

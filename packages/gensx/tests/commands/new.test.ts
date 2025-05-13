@@ -132,7 +132,11 @@ suite("new command UI", () => {
     await waitForText(lastFrame, /Successfully created GenSX project/);
 
     // Verify exec was called for the assistant
-    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
+    expect(exec).toHaveBeenCalledWith(
+      "npx @gensx/claude-md",
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      expect.objectContaining({ cwd: expect.stringContaining("test-project") }),
+    );
   });
 
   it("should create a project and select all AI assistants", async () => {
@@ -164,10 +168,34 @@ suite("new command UI", () => {
     global.__selectInputOnSelect(allOption);
 
     await waitForText(lastFrame, /Successfully created GenSX project/);
-    expect(exec).toHaveBeenCalledWith("npx @gensx/claude-md");
-    expect(exec).toHaveBeenCalledWith("npx @gensx/cursor-rules");
-    expect(exec).toHaveBeenCalledWith("npx @gensx/cline-rules");
-    expect(exec).toHaveBeenCalledWith("npx @gensx/windsurf-rules");
+    expect(exec).toHaveBeenCalledWith(
+      "npx @gensx/claude-md",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        cwd: expect.stringContaining("test-project-all"),
+      }),
+    );
+    expect(exec).toHaveBeenCalledWith(
+      "npx @gensx/cursor-rules",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        cwd: expect.stringContaining("test-project-all"),
+      }),
+    );
+    expect(exec).toHaveBeenCalledWith(
+      "npx @gensx/cline-rules",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        cwd: expect.stringContaining("test-project-all"),
+      }),
+    );
+    expect(exec).toHaveBeenCalledWith(
+      "npx @gensx/windsurf-rules",
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        cwd: expect.stringContaining("test-project-all"),
+      }),
+    );
   });
 
   it("should create a project and select no AI assistants", async () => {

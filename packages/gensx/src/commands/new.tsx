@@ -52,6 +52,7 @@ type Phase =
   | "error";
 
 export interface NewCommandOptions {
+  template?: string;
   force: boolean;
   skipLogin?: boolean;
   skipIdeRules?: boolean;
@@ -136,14 +137,20 @@ export function NewProjectUI({ projectPath, options }: Props) {
           return;
         }
 
-        setPhase("createProject");
+        // If description is provided in options, skip the createProject phase
+        if (options.description) {
+          setDescription(options.description);
+          setPhase("copyFiles");
+        } else {
+          setPhase("createProject");
+        }
       } catch (err) {
         handleError(err);
       }
     }
 
     void initialize();
-  }, [handleError, options.skipLogin]);
+  }, [handleError, options.skipLogin, options.description]);
 
   useEffect(() => {
     async function copyFiles() {
@@ -190,14 +197,26 @@ export function NewProjectUI({ projectPath, options }: Props) {
           }
 
           setHasInstalledDeps(true);
-          setPhase("selectAssistants");
+          if (options.skipIdeRules) {
+            setPhase("done");
+
+            setTimeout(() => {
+              exit();
+            }, 100);
+          } else {
+            setPhase("selectAssistants");
+          }
         } catch (err) {
           handleError(err);
+
+          setTimeout(() => {
+            exit();
+          }, 100);
         }
       }
     }
     void installDependencies();
-  }, [phase, handleError, hasInstalledDeps]);
+  }, [phase, handleError, hasInstalledDeps, options.skipIdeRules]);
 
   if (error) {
     return <ErrorMessage message={error} />;
