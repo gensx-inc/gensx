@@ -95,20 +95,35 @@ it("package.json is correctly configured for npm create", async () => {
     cwd: pkgDir,
   });
 
+  // Log the contents of the test directory
+  console.info("Package directory contents:", await fs.readdir(pkgDir));
+  console.info(
+    "Node modules contents:",
+    await fs.readdir(path.join(pkgDir, "node_modules")),
+  );
+  console.info(
+    "Package.json:",
+    await fs.readJson(path.join(pkgDir, "package.json")),
+  );
+
   // Create a test project directory
   const testProjectDir = path.join(tempDir, "test-project");
 
   try {
-    await exec(
-      `${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s --skip-ide-rules --description "A test project"`,
+    // Set NODE_ENV to production to avoid React development mode warnings
+    const { stdout, stderr } = await exec(
+      `NODE_ENV=production node ${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s --skip-ide-rules --description "A test project"`,
       {
         cwd: pkgDir,
         env: { ...process.env },
       },
     );
+    console.info("CLI stdout:", stdout);
+    if (stderr) console.error("CLI stderr:", stderr);
 
     // Verify the project was created
     const exists = await fs.pathExists(testProjectDir);
+    console.info("Test project directory exists:", exists);
     expect(exists).toBe(true);
     // Verify package.json exists in created project
     const projectPkgExists = await fs.pathExists(

@@ -30,6 +30,8 @@
     "ini": "npm:ini",
     "ink": "npm:ink",
     "ink-spinner": "npm:ink-spinner",
+    "ink-select-input": "npm:ink-select-input",
+    "ink-text-input": "npm:ink-text-input",
     "node:buffer": "node:buffer",
     "node:crypto": "node:crypto",
     "node:os": "node:os",
