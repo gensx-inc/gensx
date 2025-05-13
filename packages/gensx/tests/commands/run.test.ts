@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
 import { render } from "ink-testing-library";
@@ -65,7 +66,10 @@ afterEach(() => {
 });
 
 suite("run command", () => {
-  beforeEach(() => {
+  let tempDir: string;
+  let outputPath: string;
+
+  beforeEach(async () => {
     // Setup common mocks
     vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
     vi.mocked(environmentModel.checkEnvironmentExists).mockResolvedValue(true);
@@ -88,6 +92,17 @@ suite("run command", () => {
     vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
       projectName: "test-project",
     });
+
+    // Create temp directory for test files
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "gensx-test-"));
+    outputPath = path.join(tempDir, "output.json");
+  });
+
+  afterEach(async () => {
+    // Clean up temp directory
+    if (tempDir) {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it("should use project name from config when not specified", async () => {
@@ -228,12 +243,16 @@ suite("run command", () => {
         options: {
           input: "{}",
           wait: true,
-          output: "output.json",
+          output: outputPath,
         },
       }),
     );
 
     await waitForText(lastFrame, /output.json/);
+
+    // Verify the file was written with correct content
+    const content = await fs.readFile(outputPath, "utf-8");
+    expect(JSON.parse(content)).toEqual({ result: "success" });
   });
 
   it("should handle API errors", async () => {

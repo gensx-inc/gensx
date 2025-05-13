@@ -5,6 +5,7 @@ import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingSpinner } from "../../components/LoadingSpinner.js";
 import { listEnvironments } from "../../models/environment.js";
 import { checkProjectExists } from "../../models/projects.js";
+import { getAuth } from "../../utils/config.js";
 import { getSelectedEnvironment } from "../../utils/env-config.js";
 import { readProjectConfig } from "../../utils/project-config.js";
 
@@ -39,6 +40,12 @@ function useEnvironments(initialProjectName?: string): UseEnvironmentsResult {
 
     async function fetchData() {
       try {
+        // Check authentication first
+        const authConfig = await getAuth();
+        if (!authConfig) {
+          throw new Error("Not authenticated. Please run 'gensx login' first.");
+        }
+
         // Resolve and validate project name
         let resolvedProjectName = initialProjectName;
         if (!resolvedProjectName) {

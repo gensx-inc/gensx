@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingSpinner } from "../../components/LoadingSpinner.js";
 import { checkProjectExists } from "../../models/projects.js";
+import { getAuth } from "../../utils/config.js";
 import { validateAndSelectEnvironment } from "../../utils/env-config.js";
 import { readProjectConfig } from "../../utils/project-config.js";
 
@@ -32,6 +33,12 @@ function useUnselectEnvironment(
 
     async function unselectEnvironmentFlow() {
       try {
+        // Check authentication first
+        const authConfig = await getAuth();
+        if (!authConfig) {
+          throw new Error("Not authenticated. Please run 'gensx login' first.");
+        }
+
         // Resolve project name
         let resolvedProjectName = initialProjectName;
         if (!resolvedProjectName) {
