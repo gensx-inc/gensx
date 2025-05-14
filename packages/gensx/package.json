@@ -62,7 +62,6 @@
     "chokidar": "^4.0.3",
     "commander": "^11.0.0",
     "consola": "^3.4.2",
-    "enquirer": "^2.4.1",
     "figures": "^6.1.0",
     "find-up": "^7.0.0",
     "form-data": "^4.0.2",
