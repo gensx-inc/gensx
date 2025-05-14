@@ -51,7 +51,7 @@ jobs:
       - name: Build Binary 🏗️
         run: |
           cd packages/gensx-cli
-          deno task compile:${{ matrix.target }}
+          pnpm deno task compile:${{ matrix.target }}
 
       - name: Prepare Archive (Unix)
         if: ${{ !contains(matrix.target, 'win') }}
