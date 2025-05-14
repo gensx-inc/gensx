@@ -100,7 +100,6 @@ it.skip("package.json is correctly configured for npm create", async () => {
   const testProjectDir = path.join(tempDir, "test-project");
 
   try {
-    // Set NODE_ENV to production to avoid React development mode warnings
     await exec(
       `${path.join(pkgDir, "dist/cli.js")} "${testProjectDir}" -s --skip-ide-rules --description "A test project"`,
       {
