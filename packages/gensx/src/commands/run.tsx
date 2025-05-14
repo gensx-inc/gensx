@@ -260,7 +260,9 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
                     <Text color="white">Workflow Output:</Text>
                     <Box>
                       <Text color="cyan">
-                        {JSON.stringify(workflowOutput, null, 2)}
+                        {typeof workflowOutput === "string"
+                          ? workflowOutput
+                          : JSON.stringify(workflowOutput, null, 2)}
                       </Text>
                     </Box>
                   </Box>

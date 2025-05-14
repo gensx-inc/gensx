@@ -51,6 +51,7 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
   const [error, setError] = useState<string | null>(null);
   const [deployment, setDeployment] = useState<DeploymentResponse | null>(null);
   const [auth, setAuth] = useState<Awaited<ReturnType<typeof getAuth>>>(null);
+  const [resolvedEnv, setResolvedEnv] = useState<string | null>(null);
   const {
     loading,
     error: projectError,
@@ -152,6 +153,7 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
           allowCreate={true}
           yes={options.yes}
           onResolved={(env) => {
+            setResolvedEnv(env);
             void deployWorkflow(env);
           }}
         />
@@ -181,7 +183,7 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
               <Text dimColor>
                 Deploying project <Text color="cyan">{projectName}</Text> to
                 GenSX Cloud (Environment:{" "}
-                <Text color="cyan">{options.env}</Text>)
+                <Text color="cyan">{resolvedEnv}</Text>)
               </Text>
             </Text>
           </Box>
