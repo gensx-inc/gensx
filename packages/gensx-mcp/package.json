@@ -56,7 +56,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.8.0",
+    "@modelcontextprotocol/sdk": "^1.11.2",
     "@gensx/core": "workspace:*",
     "tsx": "catalog:",
     "zod": "catalog:"
