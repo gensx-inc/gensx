@@ -144,7 +144,10 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        namespaces: ["test-ns1", "test-ns2"],
+        namespaces: [
+          { name: "test-ns1", createdAt: "2024-01-01T00:00:00Z" },
+          { name: "test-ns2", createdAt: "2024-01-02T00:00:00Z" },
+        ],
         nextCursor: "next-page-token",
       }),
     });
@@ -152,7 +155,10 @@ suite("GenSX Search Storage", () => {
     const storage = new SearchStorage("test-project", "test-environment");
     const result = await storage.listNamespaces();
 
-    expect(result.namespaces).toEqual(["test-ns1", "test-ns2"]);
+    expect(result.namespaces).toEqual([
+      { name: "test-ns1", createdAt: new Date("2024-01-01T00:00:00Z") },
+      { name: "test-ns2", createdAt: new Date("2024-01-02T00:00:00Z") },
+    ]);
     expect(result.nextCursor).toBe("next-page-token");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/search"),
@@ -605,7 +611,10 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        namespaces: ["test/ns1", "test/ns2"],
+        namespaces: [
+          { name: "test/ns1", createdAt: "2024-01-01T00:00:00Z" },
+          { name: "test/ns2", createdAt: "2024-01-02T00:00:00Z" },
+        ],
         nextCursor: "next-page-token",
       }),
     });
@@ -613,7 +622,10 @@ suite("GenSX Search Storage", () => {
     const storage = new SearchStorage("test-project", "test-environment");
     const result = await storage.listNamespaces({ prefix: "test" });
 
-    expect(result.namespaces).toEqual(["test/ns1", "test/ns2"]);
+    expect(result.namespaces).toEqual([
+      { name: "test/ns1", createdAt: new Date("2024-01-01T00:00:00Z") },
+      { name: "test/ns2", createdAt: new Date("2024-01-02T00:00:00Z") },
+    ]);
     expect(result.nextCursor).toBe("next-page-token");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringMatching(/search.*prefix=test/),
@@ -627,7 +639,10 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        namespaces: ["ns1", "ns2"],
+        namespaces: [
+          { name: "ns1", createdAt: "2024-01-01T00:00:00Z" },
+          { name: "ns2", createdAt: "2024-01-02T00:00:00Z" },
+        ],
         nextCursor: "page2",
       }),
     });
@@ -637,7 +652,10 @@ suite("GenSX Search Storage", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        namespaces: ["ns3", "ns4"],
+        namespaces: [
+          { name: "ns3", createdAt: "2024-01-03T00:00:00Z" },
+          { name: "ns4", createdAt: "2024-01-04T00:00:00Z" },
+        ],
         nextCursor: undefined,
       }),
     });
@@ -646,7 +664,10 @@ suite("GenSX Search Storage", () => {
 
     // Get first page
     const firstPage = await storage.listNamespaces({ limit: 2 });
-    expect(firstPage.namespaces).toEqual(["ns1", "ns2"]);
+    expect(firstPage.namespaces).toEqual([
+      { name: "ns1", createdAt: new Date("2024-01-01T00:00:00Z") },
+      { name: "ns2", createdAt: new Date("2024-01-02T00:00:00Z") },
+    ]);
     expect(firstPage.nextCursor).toBe("page2");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringMatching(/search.*limit=2/),
@@ -658,7 +679,10 @@ suite("GenSX Search Storage", () => {
       limit: 2,
       cursor: firstPage.nextCursor,
     });
-    expect(secondPage.namespaces).toEqual(["ns3", "ns4"]);
+    expect(secondPage.namespaces).toEqual([
+      { name: "ns3", createdAt: new Date("2024-01-03T00:00:00Z") },
+      { name: "ns4", createdAt: new Date("2024-01-04T00:00:00Z") },
+    ]);
     expect(secondPage.nextCursor).toBeUndefined();
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringMatching(/search.*limit=2.*cursor=page2/),

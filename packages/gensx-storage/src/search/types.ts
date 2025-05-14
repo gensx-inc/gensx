@@ -238,7 +238,7 @@ export interface SearchStorage {
     limit?: number;
     cursor?: string;
   }): Promise<{
-    namespaces: string[];
+    namespaces: { name: string; createdAt: Date }[];
     nextCursor?: string;
   }>;
 

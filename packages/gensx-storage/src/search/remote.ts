@@ -457,14 +457,16 @@ export class SearchStorage implements ISearchStorage {
     limit?: number;
     cursor?: string;
   }): Promise<{
-    namespaces: string[];
+    namespaces: { name: string; createdAt: Date }[];
     nextCursor?: string;
   }> {
     try {
       // Normalize prefix by removing trailing slash
       const normalizedPrefix = options?.prefix?.replace(/\/$/, "");
 
-      const url = new URL(`${this.apiBaseUrl}/org/${this.org}/search`);
+      const url = new URL(
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search`,
+      );
 
       if (normalizedPrefix) {
         url.searchParams.append("prefix", normalizedPrefix);
@@ -491,11 +493,17 @@ export class SearchStorage implements ISearchStorage {
       }
 
       const data = (await response.json()) as {
-        namespaces: string[];
+        namespaces: { name: string; createdAt: string }[];
         nextCursor?: string;
       };
 
-      return data;
+      return {
+        namespaces: data.namespaces.map((ns) => ({
+          name: ns.name,
+          createdAt: new Date(ns.createdAt),
+        })),
+        nextCursor: data.nextCursor,
+      };
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "listNamespaces");
