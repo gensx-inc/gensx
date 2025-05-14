@@ -75,8 +75,6 @@
     "ink-spinner": "^5.0.0",
     "ink-text-input": "^6.0.0",
     "open": "^10.0.3",
-    "ora": "^8.2.0",
-    "picocolors": "^1.0.1",
     "react": "18.3.1",
     "typescript": "^5.8.2",
     "typescript-json-schema": "^0.65.1",
