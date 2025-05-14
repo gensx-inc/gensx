@@ -4,9 +4,15 @@ import { fileURLToPath } from "node:url";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const localPackageJson = JSON.parse(
-  readFileSync(path.join(dirname, "..", "..", "package.json"), "utf8"),
-) as { version: string };
+let VERSION: string;
+try {
+  const localPackageJson = JSON.parse(
+    readFileSync(path.join(dirname, "..", "..", "package.json"), "utf8"),
+  ) as { version: string };
+  VERSION = localPackageJson.version;
+} catch {
+  VERSION = "unknown";
+}
 
-export const VERSION = localPackageJson.version;
-export const USER_AGENT = `GenSX CLI v${VERSION}`;
+export { VERSION };
+export const USER_AGENT = `GenSX CLI${VERSION === "unknown" ? "" : ` v${VERSION}`}`;
