@@ -85,9 +85,6 @@ suite("run command", () => {
     vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(
       "development",
     );
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "development",
-    );
     // Add default project config
     vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
       projectName: "test-project",
