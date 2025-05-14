@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.28](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.27...gensx-openai-v0.1.28) (2025-05-14)
+
+
+### ✨ New Features
+
+* upgrading env cli commands to use ink ([#670](https://github.com/gensx-inc/gensx/issues/670)) ([aad4b26](https://github.com/gensx-inc/gensx/commit/aad4b26502a240e83b2159f03410017327923cce))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.13
+
 ## [0.1.27](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.1.26...gensx-openai-v0.1.27) (2025-04-30)
 
 

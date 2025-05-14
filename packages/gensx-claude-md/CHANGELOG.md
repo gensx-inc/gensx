@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.5...gensx-claude-md-v0.1.6) (2025-05-14)
+
+
+### ✨ New Features
+
+* upgrading env cli commands to use ink ([#670](https://github.com/gensx-inc/gensx/issues/670)) ([aad4b26](https://github.com/gensx-inc/gensx/commit/aad4b26502a240e83b2159f03410017327923cce))
+
 ## [0.1.5](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.4...gensx-claude-md-v0.1.5) (2025-04-10)
 
 

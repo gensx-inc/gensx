@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.41](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.40...create-gensx-v0.1.41) (2025-05-14)
+
+
+### ✨ New Features
+
+* updating remaining CLI commands to use ink ([#677](https://github.com/gensx-inc/gensx/issues/677)) ([098647e](https://github.com/gensx-inc/gensx/commit/098647e67044bfe460f6a8dd20fa1a8b4ae9fac3))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.3.29
+
 ## [0.1.40](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.39...create-gensx-v0.1.40) (2025-05-07)
 
 

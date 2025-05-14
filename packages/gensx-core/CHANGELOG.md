@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.13](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.12...gensx-core-v0.3.13) (2025-05-14)
+
+
+### ✨ New Features
+
+* upgrading env cli commands to use ink ([#670](https://github.com/gensx-inc/gensx/issues/670)) ([aad4b26](https://github.com/gensx-inc/gensx/commit/aad4b26502a240e83b2159f03410017327923cce))
+
 ## [0.3.12](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.11...gensx-core-v0.3.12) (2025-04-30)
 
 
