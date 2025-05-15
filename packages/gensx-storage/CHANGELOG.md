@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.12](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.11...gensx-storage-v0.0.12) (2025-05-15)
+
+
+### ✨ New Features
+
+* updating listNamespaces to return an object ([#683](https://github.com/gensx-inc/gensx/issues/683)) ([b512d8e](https://github.com/gensx-inc/gensx/commit/b512d8ef596d5661a34d679e8041f3ab85d33833))
+
 ## [0.0.11](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.10...gensx-storage-v0.0.11) (2025-05-14)
 
 

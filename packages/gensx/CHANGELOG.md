@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.30](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.29...gensx-v0.3.30) (2025-05-15)
+
+
+### 🐛 Bug Fixes
+
+* fixing bug writing and finding build files in start command ([#684](https://github.com/gensx-inc/gensx/issues/684)) ([01bf882](https://github.com/gensx-inc/gensx/commit/01bf882e418952a68d4231819a203dfaf9775fdb))
+* making user agent logic permissive ([#682](https://github.com/gensx-inc/gensx/issues/682)) ([9c70e71](https://github.com/gensx-inc/gensx/commit/9c70e71354fa0446d68c6e2eb3e2e0282fd80f86))
+
 ## [0.3.29](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.28...gensx-v0.3.29) (2025-05-14)
 
 
