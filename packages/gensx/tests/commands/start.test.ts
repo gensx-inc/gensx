@@ -132,7 +132,7 @@ export const testWorkflow = () => {
 
       try {
         // Wait for the server to start and schema to be generated
-        await waitForText(lastFrame, "GenSX Dev Server running at");
+        await waitForText(lastFrame, "GenSX Dev Server running at", 5000);
 
         // Add a small delay to ensure schema file is written
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -141,8 +141,6 @@ export const testWorkflow = () => {
         expect(
           existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
         ).toBe(true);
-      } catch (error) {
-        throw error;
       } finally {
         // Clean up
         unmount();
@@ -163,7 +161,7 @@ export const testWorkflow = () => {
 
       try {
         // Wait for the server to start and schema to be generated
-        await waitForText(lastFrame, "GenSX Dev Server running at");
+        await waitForText(lastFrame, "GenSX Dev Server running at", 5000);
 
         // Add a small delay to ensure schema file is written
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -172,8 +170,6 @@ export const testWorkflow = () => {
         expect(
           existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
         ).toBe(true);
-      } catch (error) {
-        throw error;
       } finally {
         // Clean up
         unmount();
@@ -194,7 +190,7 @@ export const testWorkflow = () => {
 
       try {
         // Wait for the server to start and schema to be generated
-        await waitForText(lastFrame, "GenSX Dev Server running at");
+        await waitForText(lastFrame, "GenSX Dev Server running at", 5000);
 
         // Add a small delay to ensure schema file is written
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -203,8 +199,6 @@ export const testWorkflow = () => {
         expect(
           existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
         ).toBe(true);
-      } catch (error) {
-        throw error;
       } finally {
         // Clean up
         unmount();
