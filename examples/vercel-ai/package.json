@@ -1,0 +1,33 @@
+{
+  "name": "@examples/vercel-ai",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "description": "Retrieval Augmented Generation with GenSX and the useSearch hook",
+  "scripts": {
+    "dev": "tsx ./src/index.tsx",
+    "start": "npx gensx start ./src/workflows.tsx",
+    "build": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "deploy": "npx gensx deploy -ev OPENAI_API_KEY ./src/workflows.tsx"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.3.22",
+    "@gensx/core": "workspace:*",
+    "@gensx/vercel-ai-sdk": "workspace:*",
+    "ai": "^4.2.10",
+    "openai": "^4.87.4",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "eslint": "^9.23.0",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

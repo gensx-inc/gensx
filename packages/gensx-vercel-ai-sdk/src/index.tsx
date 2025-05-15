@@ -1,3 +1,4 @@
+import type { LanguageModelV1Middleware } from "ai";
 import type { z } from "zod";
 
 import * as gensx from "@gensx/core";
@@ -37,10 +38,44 @@ export const StreamText: GsxComponent<
   Awaited<ReturnType<typeof ai.streamText>>
 > = createGSXComponent("StreamText", ai.streamText);
 
+export const logMiddleware: LanguageModelV1Middleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    console.info("doGenerate called");
+    console.info(`params: ${JSON.stringify(params, null, 2)}`);
+    const DoGenerateComponent = gensx.Component<
+      typeof params,
+      Awaited<ReturnType<typeof doGenerate>>
+    >("DoGenerate", async (_params) => {
+      const result = await doGenerate();
+      return result;
+    });
+
+    const result = await DoGenerateComponent.run(params);
+
+    console.info("doGenerate finished");
+    console.info(`generated text: ${JSON.stringify(result, null, 2)}`);
+
+    return result;
+  },
+};
+
 export const GenerateText: GsxComponent<
   Parameters<typeof ai.generateText>[0],
   Awaited<ReturnType<typeof ai.generateText>>
-> = createGSXComponent("GenerateText", ai.generateText);
+> = createGSXComponent(
+  "GenerateText",
+  async (params: Parameters<typeof ai.generateText>[0]) => {
+    const wrappedModel = ai.wrapLanguageModel({
+      model: params.model,
+      middleware: logMiddleware,
+    });
+
+    return ai.generateText({
+      ...params,
+      model: wrappedModel,
+    });
+  },
+);
 
 // Define a more specific type for GenerateObject that allows schema
 type GenerateObjectType = GsxComponent<
