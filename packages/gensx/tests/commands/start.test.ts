@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { render } from "ink-testing-library";
@@ -44,14 +44,6 @@ describe("StartUI", () => {
 
     const tsconfigPath = path.join(tempDir, "project", "tsconfig.json");
     writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2));
-    console.info("Wrote tsconfig.json to:", tsconfigPath);
-    console.info("tsconfig.json exists?", existsSync(tsconfigPath));
-
-    // List files in directory
-    console.info(
-      "Files in temp dir:",
-      readdirSync(path.join(tempDir, "project")),
-    );
 
     // Create workflow file
     const workflowContent = `
@@ -70,14 +62,10 @@ export const testWorkflow = () => {
         "workflow.ts",
       );
       writeFileSync(srcWorkflowPath, workflowContent);
-      console.info("Wrote src workflow to:", srcWorkflowPath);
-      console.info("src workflow exists?", existsSync(srcWorkflowPath));
     } else {
       // Create both files for non-rootDir tests
       const rootWorkflowPath = path.join(tempDir, "project", "workflow.ts");
       writeFileSync(rootWorkflowPath, workflowContent);
-      console.info("Wrote root workflow to:", rootWorkflowPath);
-      console.info("root workflow exists?", existsSync(rootWorkflowPath));
 
       const srcWorkflowPath = path.join(
         tempDir,
@@ -86,8 +74,6 @@ export const testWorkflow = () => {
         "workflow.ts",
       );
       writeFileSync(srcWorkflowPath, workflowContent);
-      console.info("Wrote src workflow to:", srcWorkflowPath);
-      console.info("src workflow exists?", existsSync(srcWorkflowPath));
     }
   };
 
@@ -156,8 +142,6 @@ export const testWorkflow = () => {
           existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
         ).toBe(true);
       } catch (error) {
-        console.error("Test failed with error:", error);
-        console.info("Final frame content:", lastFrame());
         throw error;
       } finally {
         // Clean up
@@ -189,8 +173,6 @@ export const testWorkflow = () => {
           existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
         ).toBe(true);
       } catch (error) {
-        console.error("Test failed with error:", error);
-        console.info("Final frame content:", lastFrame());
         throw error;
       } finally {
         // Clean up
@@ -222,8 +204,6 @@ export const testWorkflow = () => {
           existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
         ).toBe(true);
       } catch (error) {
-        console.error("Test failed with error:", error);
-        console.info("Final frame content:", lastFrame());
         throw error;
       } finally {
         // Clean up

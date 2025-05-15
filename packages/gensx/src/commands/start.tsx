@@ -185,11 +185,9 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
           port: options.port ?? 1337,
           logger: {
             info: (msg) => {
-              console.info("[DEBUG] Server info:", msg);
               setServerLogs((logs) => [...logs, msg]);
             },
             error: (msg, err) => {
-              console.error("[DEBUG] Server error:", msg, err);
               const errorStr = err instanceof Error ? err.message : String(err);
               setServerLogs((logs) => [
                 ...logs,
@@ -197,7 +195,6 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
               ]);
             },
             warn: (msg) => {
-              console.warn("[DEBUG] Server warn:", msg);
               setServerLogs((logs) => [...logs, msg]);
             },
           },
@@ -206,13 +203,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       );
 
       try {
-        console.info("[DEBUG] About to start server, server instance:", server);
         const serverInstance = server.start();
-        console.info("[DEBUG] Server started, instance:", serverInstance);
-        console.info(
-          "[DEBUG] Server instance methods:",
-          Object.keys(serverInstance),
-        );
         currentServerRef.current = serverInstance;
         setCurrentServer(serverInstance);
         setPhase("running");
