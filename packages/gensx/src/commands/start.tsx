@@ -106,13 +106,6 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       mkdirSync(absoluteOutDir, { recursive: true });
     }
 
-    // Get relative path to maintain directory structure
-    const relativeToRoot = path.relative(process.cwd(), tsFile);
-    const outputPath = path.join(
-      absoluteOutDir,
-      relativeToRoot.replace(/\.tsx?$/, ".js"),
-    );
-
     // Compile the file
     const result = program.emit();
     const diagnostics = ts
@@ -130,7 +123,16 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       );
     }
 
-    return outputPath;
+    // Get the actual output path that TypeScript generated
+    // If rootDir is specified in tsconfig, use it, otherwise use the source file's directory
+    const rootDir = tsconfig.options.rootDir ?? path.dirname(tsFile);
+    const relativeToRootDir = path.relative(rootDir, tsFile);
+    const actualOutputPath = path.join(
+      absoluteOutDir,
+      relativeToRootDir.replace(/\.tsx?$/, ".js"),
+    );
+
+    return actualOutputPath;
   }, []);
 
   const buildAndStartServer = useCallback(async () => {
@@ -164,6 +166,11 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       const newSchemas = generateSchema(file);
       setSchemas(newSchemas);
       const schemaFile = resolve(process.cwd(), ".gensx", "schema.json");
+      // Ensure .gensx directory exists
+      const schemaDir = path.dirname(schemaFile);
+      if (!existsSync(schemaDir)) {
+        mkdirSync(schemaDir, { recursive: true });
+      }
       writeFileSync(schemaFile, JSON.stringify(newSchemas, null, 2));
 
       setPhase("starting");
@@ -178,9 +185,11 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
           port: options.port ?? 1337,
           logger: {
             info: (msg) => {
+              console.info("[DEBUG] Server info:", msg);
               setServerLogs((logs) => [...logs, msg]);
             },
             error: (msg, err) => {
+              console.error("[DEBUG] Server error:", msg, err);
               const errorStr = err instanceof Error ? err.message : String(err);
               setServerLogs((logs) => [
                 ...logs,
@@ -188,6 +197,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
               ]);
             },
             warn: (msg) => {
+              console.warn("[DEBUG] Server warn:", msg);
               setServerLogs((logs) => [...logs, msg]);
             },
           },
@@ -196,7 +206,13 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       );
 
       try {
+        console.info("[DEBUG] About to start server, server instance:", server);
         const serverInstance = server.start();
+        console.info("[DEBUG] Server started, instance:", serverInstance);
+        console.info(
+          "[DEBUG] Server instance methods:",
+          Object.keys(serverInstance),
+        );
         currentServerRef.current = serverInstance;
         setCurrentServer(serverInstance);
         setPhase("running");
