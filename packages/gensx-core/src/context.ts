@@ -1,4 +1,4 @@
-import { ComponentProps, Context, GsxComponent } from "./types.js";
+import { ComponentProps, Context } from "./types.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
@@ -21,28 +21,23 @@ export function createContext<T>(defaultValue: T): Context<T> {
       onComplete?: () => Promise<void> | void;
     }>,
   ) => {
-    return wrapWithFramework(() => {
-      const currentContext = getCurrentContext();
+    const currentContext = getCurrentContext();
 
-      const executionContext = currentContext.withContext(
-        {
-          [contextSymbol]: props.value,
-        },
-        props.onComplete,
-      );
+    const executionContext = currentContext.withContext(
+      {
+        [contextSymbol]: props.value,
+      },
+      props.onComplete,
+    );
 
-      return Promise.resolve(executionContext);
-    });
+    return executionContext;
   };
 
   const context = {
     __type: "Context" as const,
     defaultValue,
     symbol: contextSymbol,
-    Provider: Provider as unknown as GsxComponent<
-      { value: T; onComplete?: () => Promise<void> | void },
-      ExecutionContext
-    >,
+    Provider,
   };
 
   return context;

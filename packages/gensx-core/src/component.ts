@@ -1,16 +1,13 @@
 import type {
   ComponentOpts as OriginalComponentOpts,
   DefaultOpts,
-  GsxComponent,
-  GsxStreamComponent,
   MaybePromise,
-  Streamable,
 } from "./types.js";
 
 import serializeErrorPkg from "@common.js/serialize-error";
 const { serializeError } = serializeErrorPkg;
 
-import { getCurrentContext } from "./context.js";
+import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
@@ -54,17 +51,14 @@ function getResolvedOpts(
   return merged;
 }
 
-export function Component(decoratorOpts?: DecoratorComponentOpts | string) {
+export function Component(decoratorOpts?: DecoratorComponentOpts) {
   return function <P extends object, R>(
     target: (props: P) => MaybePromise<R>,
-    _context: ClassMethodDecoratorContext | ClassAccessorDecoratorContext,
-  ): GsxComponent<P, R> {
+    _context?: ClassMethodDecoratorContext | ClassAccessorDecoratorContext,
+  ): (props: P) => MaybePromise<R> {
     // Name for the function object itself (e.g., for display, stack traces)
     // Priority: decorator explicit name > target function's actual name.
-    const componentFunctionObjectName =
-      (typeof decoratorOpts === "string"
-        ? decoratorOpts
-        : decoratorOpts?.name) ?? target.name;
+    const componentFunctionObjectName = decoratorOpts?.name ?? target.name;
     if (!componentFunctionObjectName) {
       throw new Error(
         "Component name must be provided either via decorator options or by naming the function.",
@@ -146,157 +140,55 @@ export function Component(decoratorOpts?: DecoratorComponentOpts | string) {
       return ComponentFn(runProps);
     };
 
-    return ComponentFn as unknown as GsxComponent<P, R>;
+    return ComponentFn;
   };
 }
 
-export function StreamComponent(
-  decoratorOpts?: DecoratorComponentOpts | string,
+export function Workflow(
+  decoratorOpts?: DecoratorComponentOpts & {
+    printUrl?: boolean;
+    metadata?: Record<string, unknown>;
+  },
 ) {
-  return function <P extends object>(
-    target: (props: P & { stream?: boolean }) => MaybePromise<Streamable>,
-    _context: ClassMethodDecoratorContext | ClassAccessorDecoratorContext,
-  ): GsxStreamComponent<P & { stream?: boolean }> {
-    const componentFunctionObjectName =
-      (typeof decoratorOpts === "string"
-        ? decoratorOpts
-        : decoratorOpts?.name) ?? target.name;
-    if (!componentFunctionObjectName) {
-      throw new Error(
-        "StreamComponent name must be provided either via decorator options or by naming the function.",
-      );
-    }
+  return function <P extends object, R>(
+    target: (props: P) => MaybePromise<R>,
+    _context?: ClassMethodDecoratorContext | ClassAccessorDecoratorContext,
+  ): (props: P) => MaybePromise<R> {
+    const WorkflowFn = async (props: P) => {
+      const context = new ExecutionContext({});
 
-    const StreamComponentFn = async (
-      props: P & { stream?: boolean; componentOpts?: OriginalComponentOpts },
-    ): Promise<Streamable | string> => {
-      const context = getCurrentContext();
       const workflowContext = context.getWorkflowContext();
-      const { checkpointManager } = workflowContext;
-      const currentNodeId = context.getCurrentNodeId();
-
-      const resolvedComponentOpts = getResolvedOpts(
-        decoratorOpts,
-        props.componentOpts,
-        target.name,
+      workflowContext.checkpointManager.setPrintUrl(
+        decoratorOpts?.printUrl ?? false,
       );
-      const checkpointName = resolvedComponentOpts.name;
+      // Use the overridden name from componentOpts if provided
+      const workflowName = decoratorOpts?.name ?? target.name;
+      workflowContext.checkpointManager.setWorkflowName(workflowName);
 
-      if (!checkpointName) {
-        // Should not happen
-        throw new Error(
-          "Internal error: StreamComponent checkpoint name could not be determined.",
+      const result = await withContext(context, async () => {
+        const result = await Component(decoratorOpts)(target)(props);
+        return result;
+      });
+
+      const rootId = workflowContext.checkpointManager.root?.id;
+      if (rootId) {
+        if (decoratorOpts?.metadata) {
+          workflowContext.checkpointManager.addMetadata(
+            rootId,
+            decoratorOpts.metadata,
+          );
+        }
+      } else {
+        console.warn(
+          "No root checkpoint found for workflow after execution",
+          workflowName,
         );
       }
+      await workflowContext.checkpointManager.waitForPendingUpdates();
 
-      const nodeId = checkpointManager.addNode(
-        {
-          componentName: checkpointName,
-          props: Object.fromEntries(
-            Object.entries(props).filter(
-              ([key]) =>
-                key !== "children" &&
-                key !== "componentOpts" &&
-                key !== "stream",
-            ),
-          ),
-          componentOpts: resolvedComponentOpts,
-        },
-        currentNodeId,
-      );
-
-      try {
-        const iterator = await context.withCurrentNode(nodeId, async () => {
-          const { componentOpts, ...componentProps } = props;
-          return target(componentProps as P & { stream?: boolean });
-        });
-
-        if (props.stream) {
-          checkpointManager.completeNode(nodeId, STREAMING_PLACEHOLDER);
-          const wrappedIterator = async function* () {
-            let accumulated = "";
-            try {
-              for await (const token of iterator) {
-                accumulated += String(token);
-                yield token;
-              }
-              checkpointManager.updateNode(nodeId, {
-                output: accumulated,
-                metadata: { streamCompleted: true },
-              });
-            } catch (error) {
-              if (error instanceof Error) {
-                checkpointManager.updateNode(nodeId, {
-                  output: accumulated,
-                  metadata: {
-                    error: serializeError(error),
-                    streamCompleted: false,
-                  },
-                });
-              }
-              throw error;
-            }
-          };
-          return wrappedIterator();
-        } else {
-          let result = "";
-          for await (const token of iterator) {
-            result += String(token);
-          }
-          checkpointManager.completeNode(nodeId, result);
-          return result;
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          checkpointManager.addMetadata(nodeId, {
-            error: serializeError(error),
-          });
-          checkpointManager.completeNode(nodeId, undefined);
-        }
-        throw error;
-      }
+      return result;
     };
 
-    Object.defineProperty(StreamComponentFn, "name", {
-      value: componentFunctionObjectName,
-      configurable: true,
-    });
-    Object.defineProperty(StreamComponentFn, "__gsxFramework", {
-      value: true,
-      configurable: true,
-    });
-    Object.defineProperty(StreamComponentFn, "__gsxStreamComponent", {
-      value: true,
-      configurable: true,
-    });
-
-    type StreamComponentFunctionWithRun = typeof StreamComponentFn & {
-      run: <
-        T extends P & {
-          stream?: boolean;
-          componentOpts?: OriginalComponentOpts;
-        },
-      >(
-        runProps: T,
-      ) => Promise<T extends { stream: true } ? Streamable : string>;
-    };
-
-    (StreamComponentFn as StreamComponentFunctionWithRun).run = <
-      T extends P & { stream?: boolean; componentOpts?: OriginalComponentOpts },
-    >(
-      runProps: T,
-    ): Promise<T extends { stream: true } ? Streamable : string> => {
-      return StreamComponentFn(runProps) as Promise<
-        T extends { stream: true } ? Streamable : string
-      >;
-    };
-
-    return StreamComponentFn as unknown as GsxStreamComponent<
-      P & { stream?: boolean }
-    >;
+    return WorkflowFn;
   };
-}
-
-export function Workflow(decoratorOpts?: DecoratorComponentOpts | string) {
-  return Component(decoratorOpts);
 }
