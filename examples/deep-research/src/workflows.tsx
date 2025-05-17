@@ -116,3 +116,10 @@ export const DeepResearch = gensx.Component<DeepResearchProps, string>(
     );
   },
 );
+
+const DeepResearchWorkflow = gensx.Workflow(
+  "DeepResearchWorkflow",
+  DeepResearch,
+);
+
+export { DeepResearchWorkflow };
