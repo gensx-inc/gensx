@@ -1,4 +1,4 @@
-import type { LanguageModelV1Middleware } from "ai";
+import type { LanguageModelV1Middleware, Tool, ToolExecutionOptions } from "ai";
 import type { z } from "zod";
 
 import * as gensx from "@gensx/core";
@@ -27,21 +27,49 @@ type StreamObjectType = gensx.GsxComponent<
   Awaited<ReturnType<typeof ai.streamObject>>
 >;
 
-// Cast to the more specific type
-export const StreamObject = createGSXComponent(
-  "StreamObject",
-  ai.streamObject,
-) as StreamObjectType;
+// Helper function to wrap tools in GSX components
+function wrapTools<T extends Record<string, Tool>>(
+  tools: T | undefined,
+): T | undefined {
+  if (!tools) return undefined;
 
-export const StreamText: GsxComponent<
-  Parameters<typeof ai.streamText>[0],
-  Awaited<ReturnType<typeof ai.streamText>>
-> = createGSXComponent("StreamText", ai.streamText);
+  return Object.entries(tools).reduce<Record<string, T[string]>>(
+    (acc, [name, tool]) => {
+      if (!tool.execute) return acc;
 
-export const logMiddleware: LanguageModelV1Middleware = {
+      type ToolParams = Parameters<typeof tool.execute>[0];
+      type ToolResult = Awaited<ReturnType<typeof tool.execute>>;
+
+      const wrappedTool = {
+        ...tool,
+        execute: async (
+          args: ToolParams,
+          options: ToolExecutionOptions,
+        ): Promise<ToolResult> => {
+          const ToolComponent = gensx.Component<ToolParams, ToolResult>(
+            `Tool_${name}`,
+            async (toolArgs) => {
+              if (!tool.execute)
+                throw new Error(`Tool ${name} has no execute function`);
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+              return await tool.execute(toolArgs, options);
+            },
+          );
+          return await ToolComponent.run(args);
+        },
+      } as unknown as T[string];
+
+      return {
+        ...acc,
+        [name]: wrappedTool,
+      };
+    },
+    {},
+  ) as unknown as T;
+}
+
+export const gensxMiddleware: LanguageModelV1Middleware = {
   wrapGenerate: async ({ doGenerate, params }) => {
-    console.info("doGenerate called");
-    console.info(`params: ${JSON.stringify(params, null, 2)}`);
     const DoGenerateComponent = gensx.Component<
       typeof params,
       Awaited<ReturnType<typeof doGenerate>>
@@ -52,12 +80,49 @@ export const logMiddleware: LanguageModelV1Middleware = {
 
     const result = await DoGenerateComponent.run(params);
 
-    console.info("doGenerate finished");
-    console.info(`generated text: ${JSON.stringify(result, null, 2)}`);
+    return result;
+  },
+  wrapStream: async ({ doStream, params }) => {
+    const DoStreamComponent = gensx.Component<
+      typeof params,
+      Awaited<ReturnType<typeof doStream>>
+    >("DoStream", async (_params) => {
+      const result = await doStream();
+      return result;
+    });
+
+    const result = await DoStreamComponent.run(params);
 
     return result;
   },
 };
+
+// Cast to the more specific type
+export const StreamObject = createGSXComponent(
+  "StreamObject",
+  ai.streamObject,
+) as StreamObjectType;
+
+export const StreamText: GsxComponent<
+  Parameters<typeof ai.streamText>[0],
+  Awaited<ReturnType<typeof ai.streamText>>
+> = createGSXComponent(
+  "StreamText",
+  (params: Parameters<typeof ai.streamText>[0]) => {
+    const wrappedModel = ai.wrapLanguageModel({
+      model: params.model,
+      middleware: gensxMiddleware,
+    });
+
+    const wrappedTools = wrapTools(params.tools);
+
+    return ai.streamText({
+      ...params,
+      model: wrappedModel,
+      tools: wrappedTools,
+    });
+  },
+);
 
 export const GenerateText: GsxComponent<
   Parameters<typeof ai.generateText>[0],
@@ -67,12 +132,15 @@ export const GenerateText: GsxComponent<
   async (params: Parameters<typeof ai.generateText>[0]) => {
     const wrappedModel = ai.wrapLanguageModel({
       model: params.model,
-      middleware: logMiddleware,
+      middleware: gensxMiddleware,
     });
+
+    const wrappedTools = wrapTools(params.tools);
 
     return ai.generateText({
       ...params,
       model: wrappedModel,
+      tools: wrappedTools,
     });
   },
 );
@@ -108,3 +176,5 @@ export const GenerateImage: GsxComponent<
   Parameters<typeof ai.experimental_generateImage>[0],
   Awaited<ReturnType<typeof ai.experimental_generateImage>>
 > = createGSXComponent("GenerateImage", ai.experimental_generateImage);
+
+export { wrap, wrapFunction } from "./wrap.js";

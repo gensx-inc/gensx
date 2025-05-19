@@ -17,3 +17,11 @@ const result = await VercelWorkflow.run({
 
 console.log("Response:");
 console.log(result);
+
+// const result = await VercelWorkflowStream.run({
+//   prompt,
+// });
+
+// for await (const chunk of result.textStream) {
+//   console.log(chunk);
+// }
