@@ -1,19 +1,17 @@
-# Vector Search Example
+# Vercel AI Example
 
-This example demonstrates how to use GenSX's `useSearch` hook to create and query a vector search. The workflow provides a RAG (Retrieval Augmented Generation) example where an LLM uses vector search to find relevant information and answer questions. The data is stored in a [GenSX Cloud search namespace](https://www.gensx.com/docs/cloud/storage/search).
+This example demonstrates how to use GenSX with Vercel AI SDK to create various types of chat completions and streaming responses. The example includes multiple workflows showcasing different capabilities like basic chat, tools integration, and structured output.
 
 ## Overview
 
-The example consists of two main components:
+The example consists of six main workflows:
 
-- `InitializeSearch`: Creates and populates a vector search namespace with baseball statistics
-- `RagWorkflow`: Processes questions by searching through the vector database to find relevant information and generate answers
-
-Here's what happens when you run the RAG workflow:
-
-1. Your question is processed to find relevant information in the vector store
-2. The retrieved information is used by the LLM to generate an answer
-3. The results are formatted and displayed
+- `BasicChatWorkflow`: Simple chat completion without any tools
+- `BasicChatWithToolsWorkflow`: Chat completion with weather tool integration
+- `StreamingChatWorkflow`: Streaming chat completion
+- `StreamingChatWithToolsWorkflow`: Streaming chat with weather tool integration
+- `StructuredOutputWorkflow`: Structured JSON output for trash bin reviews
+- `StreamingStructuredOutputWorkflow`: Streaming structured output
 
 ## Getting Started
 
@@ -45,16 +43,15 @@ To run the workflow in GenSX Cloud:
    pnpm run deploy
    ```
 
-2. Initialize the vector search:
+2. Run any of the available workflows:
 
    ```bash
-   gensx run InitializeSearch
-   ```
-
-3. Ask questions about baseball statistics:
-
-   ```bash
-   gensx run RagWorkflow --input '{"question": "Who plays for the Portland Pioneers?"}'
+   gensx run BasicChatWorkflow --input '{"prompt": "Write a poem about a cat"}'
+   gensx run BasicChatWithToolsWorkflow --input '{"prompt": "What\'s the weather like in Seattle?"}'
+   gensx run StreamingChatWorkflow --input '{"prompt": "Tell me a story"}'
+   gensx run StreamingChatWithToolsWorkflow --input '{"prompt": "What\'s the weather like in Portland?"}'
+   gensx run StructuredOutputWorkflow --input '{"prompt": "Review the trash bins in my neighborhood"}'
+   gensx run StreamingStructuredOutputWorkflow --input '{"prompt": "Review the trash bins in my neighborhood"}'
    ```
 
 Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see your workflows, test them, analyze traces, and get code snippets.
@@ -63,13 +60,27 @@ Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see y
 
 ### Test the workflow directly
 
-You can run the workflow directly:
+You can run any of the workflows directly using the command line:
 
 ```bash
-pnpm dev "Who plays for the Portland Pioneers?"
-```
+# Basic chat
+pnpm dev "basic" "Write a poem about a cat"
 
-This will automatically initialize the vector search and run the workflow.
+# Basic chat with tools
+pnpm dev "basic-tools" "What's the weather like in Seattle?"
+
+# Streaming chat
+pnpm dev "stream" "Tell me a short story"
+
+# Streaming chat with tools
+pnpm dev "stream-tools" "What's the weather like in Portland?"
+
+# Structured output
+pnpm dev "structured" "Review the trash bins in my neighborhood"
+
+# Streaming structured output
+pnpm dev "structured-stream" "Review the trash bins in my neighborhood"
+```
 
 ### Run the API locally
 
@@ -81,22 +92,22 @@ pnpm start
 
 This will start a local API server and you can call the workflow APIs via curl or any HTTP client:
 
-Initialize the vector search first:
-
 ```bash
-curl -X POST http://localhost:1337/workflows/InitializeSearch \
-  -H "Content-Type: application/json" \
-  -d '{}'
-```
-
-Then run the workflow:
-
-```bash
-curl -X POST http://localhost:1337/workflows/RagWorkflow \
+# Basic chat
+curl -X POST http://localhost:1337/workflows/BasicChatWorkflow \
   -H "Content-Type: application/json" \
   -d '{
-    "question": "Who plays for the Portland Pioneers?"
+    "prompt": "Write a poem about a cat"
   }'
+
+# Basic chat with tools
+curl -X POST http://localhost:1337/workflows/BasicChatWithToolsWorkflow \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "What is the weather like in Seattle?"
+  }'
+
+# And so on for other workflows...
 ```
 
 A swagger UI will also be available at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.

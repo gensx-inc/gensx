@@ -100,7 +100,17 @@ export const gensxMiddleware: LanguageModelV1Middleware = {
 // Cast to the more specific type
 export const StreamObject = createGSXComponent(
   "StreamObject",
-  ai.streamObject,
+  (params: Parameters<typeof ai.streamObject>[0]) => {
+    const wrappedModel = ai.wrapLanguageModel({
+      model: params.model,
+      middleware: gensxMiddleware,
+    });
+
+    return ai.streamObject({
+      ...params,
+      model: wrappedModel,
+    });
+  },
 ) as StreamObjectType;
 
 export const StreamText: GsxComponent<
@@ -159,7 +169,17 @@ type GenerateObjectType = GsxComponent<
 // Cast to the more specific type
 export const GenerateObject = createGSXComponent(
   "GenerateObject",
-  ai.generateObject,
+  async (params: Parameters<typeof ai.generateObject>[0]) => {
+    const wrappedModel = ai.wrapLanguageModel({
+      model: params.model,
+      middleware: gensxMiddleware,
+    });
+
+    return ai.generateObject({
+      ...params,
+      model: wrappedModel,
+    });
+  },
 ) as GenerateObjectType;
 
 export const Embed: GsxComponent<

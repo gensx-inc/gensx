@@ -6,14 +6,14 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "description": "Retrieval Augmented Generation with GenSX and the useSearch hook",
+  "description": "Example of using GenSX with the Vercel AI SDK",
   "scripts": {
     "dev": "tsx ./src/index.tsx",
     "start": "npx gensx start ./src/workflows.tsx",
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "deploy": "npx gensx deploy -ev OPENAI_API_KEY ./src/workflows.tsx"
+    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.tsx"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",
