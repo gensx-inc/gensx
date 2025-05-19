@@ -9,5 +9,6 @@ export default defineConfig({
     isolate: false,
     passWithNoTests: false,
     include: ["./tests/**/*.test.ts"],
+    silent: "passed-only",
   },
 });

@@ -1,58 +1,41 @@
-import fs from "node:fs";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 import axios from "axios";
-import { Definition } from "typescript-json-schema";
+import { render } from "ink-testing-library";
+import React from "react";
 import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 
 import * as buildCommand from "../../src/commands/build.js";
-import { deploy } from "../../src/commands/deploy.js";
-import * as configUtils from "../../src/utils/config.js";
-import * as envConfig from "../../src/utils/env-config.js";
+import { DeployUI } from "../../src/commands/deploy.js";
+import * as projectModel from "../../src/models/projects.js";
 import * as projectConfig from "../../src/utils/project-config.js";
+import { waitForText } from "../test-helpers.js";
 
 // Mock dependencies
-vi.mock("node:fs", async (importOriginal) => {
-  const actual = await importOriginal<typeof fs>();
+vi.mock("node:fs", async () => {
+  const actual = (await vi.importActual("node:fs")) as unknown;
+  const actualTyped = actual as typeof import("node:fs") & {
+    default?: Record<string, unknown>;
+  };
   return {
-    ...actual,
+    ...actualTyped,
     default: {
+      ...(actualTyped.default ?? {}),
       createReadStream: vi.fn().mockReturnValue({ pipe: vi.fn() }),
       readFileSync: vi
         .fn()
         .mockReturnValue(JSON.stringify({ version: "1.0.0" })),
     },
+    createReadStream: vi.fn().mockReturnValue({ pipe: vi.fn() }),
+    readFileSync: vi.fn().mockReturnValue(JSON.stringify({ version: "1.0.0" })),
   };
 });
 
-vi.mock("ora", () => ({
-  default: () => ({
-    start: vi.fn().mockReturnThis(),
-    stop: vi.fn().mockReturnThis(),
-    succeed: vi.fn().mockReturnThis(),
-    fail: vi.fn().mockReturnThis(),
-    info: vi.fn().mockReturnThis(),
-  }),
-}));
-
 vi.mock("axios");
-
-vi.mock("enquirer", () => ({
-  default: {
-    prompt: vi.fn(),
-  },
-}));
 
 vi.mock("../../src/commands/build.js", () => ({
   build: vi.fn(),
-}));
-
-vi.mock("../../src/models/environment.js", () => ({
-  listEnvironments: vi.fn(),
-  createEnvironment: vi.fn(),
-}));
-
-vi.mock("../../src/utils/config.js", () => ({
-  getAuth: vi.fn(),
 }));
 
 vi.mock("../../src/utils/env-config.js", () => ({
@@ -69,6 +52,19 @@ vi.mock("../../src/models/projects.js", () => ({
   createProject: vi.fn(),
 }));
 
+// Mock EnvironmentResolver component
+vi.mock("../../src/components/EnvironmentResolver.js", () => ({
+  EnvironmentResolver: ({
+    onResolved,
+  }: {
+    onResolved: (env: string) => void;
+  }) => {
+    // Call onResolved immediately with the environment
+    onResolved("production");
+    return null;
+  },
+}));
+
 // Mock FormData since it's not available in the test environment
 vi.mock("form-data", () => {
   return {
@@ -78,29 +74,12 @@ vi.mock("form-data", () => {
   };
 });
 
-// Mock process.exit
-const mockExit = vi
-  .spyOn(process, "exit")
-  .mockImplementation(() => undefined as never);
-
-// Mock console.error to prevent output during tests
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-vi.spyOn(console, "error").mockImplementation(() => {});
-
 // Reset mocks
 afterEach(() => {
   vi.resetAllMocks();
-  mockExit.mockReset();
 });
 
 suite("deploy command", () => {
-  const mockAuth = {
-    token: "test-token",
-    org: "test-org",
-    apiBaseUrl: "https://api.test.com",
-    consoleBaseUrl: "https://console.test.com",
-  };
-
   const mockBuildResult = {
     bundleFile: "test-bundle.js",
     schemaFile: "test-schema.json",
@@ -110,177 +89,162 @@ suite("deploy command", () => {
           type: "object" as const,
           properties: {},
           required: [],
-        } satisfies Definition,
+        },
         output: {
           type: "object" as const,
           properties: {},
           required: [],
-        } satisfies Definition,
+        },
       },
     },
   };
 
   beforeEach(() => {
     // Setup common mocks
-    vi.mocked(configUtils.getAuth).mockResolvedValue(mockAuth);
     vi.mocked(buildCommand.build).mockResolvedValue(mockBuildResult);
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
     vi.mocked(axios.post).mockResolvedValue({
       status: 200,
       data: {
         id: "deploy-1",
         projectId: "project-1",
         projectName: "test-project",
-        deploymentId: "deployment-1",
+        environmentId: "env-1",
+        environmentName: "production",
+        buildId: "build-1",
         bundleSize: 1000,
-        workflows: [],
+        workflows: [
+          {
+            id: "workflow-1",
+            name: "test-workflow",
+            inputSchema: {},
+            outputSchema: {},
+          },
+        ],
       },
     });
   });
 
+  it("should show first-time setup when user hasn't completed setup", async () => {
+    // Update config file to show first-time setup not completed
+    const configPath = path.join(process.env.GENSX_CONFIG_DIR!, "config");
+    await fs.writeFile(
+      configPath,
+      `; GenSX Configuration File
+; Generated on: ${new Date().toISOString()}
+
+[api]
+token = test-token
+org = test-org
+baseUrl = https://api.test.com
+
+[console]
+baseUrl = https://console.test.com
+
+[state]
+hasCompletedFirstTimeSetup = false
+`,
+      "utf-8",
+    );
+
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
+    );
+
+    // Wait for the welcome message
+    await waitForText(
+      lastFrame,
+      /Welcome to GenSX! Let's get you set up first./,
+    );
+  });
+
+  it("should skip first-time setup when user has already completed it", async () => {
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
+    );
+
+    // Wait for deployment to complete
+    await waitForText(lastFrame, /Deployed to GenSX Cloud/);
+
+    // Verify that the welcome message was not shown
+    const frame = lastFrame();
+    expect(frame).not.toContain(
+      "Welcome to GenSX! Let's get you set up first.",
+    );
+  });
+
+  it("should handle errors during first-time setup", async () => {
+    // Update config file to show first-time setup not completed
+    const configPath = path.join(process.env.GENSX_CONFIG_DIR!, "config");
+    await fs.writeFile(
+      configPath,
+      `; GenSX Configuration File
+; Generated on: ${new Date().toISOString()}
+
+[api]
+token = test-token
+org = test-org
+baseUrl = https://api.test.com
+
+[console]
+baseUrl = https://console.test.com
+
+[state]
+hasCompletedFirstTimeSetup = false
+`,
+      "utf-8",
+    );
+
+    // Make the config file read-only to simulate an error
+    await fs.chmod(configPath, 0o444);
+
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
+    );
+
+    // Wait for the welcome message
+    await waitForText(
+      lastFrame,
+      /Welcome to GenSX! Let's get you set up first./,
+    );
+
+    // Restore write permissions
+    await fs.chmod(configPath, 0o644);
+  });
+
   it("should use specified environment from options", async () => {
-    // Mock getEnvironmentForOperation to return the specified environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "production",
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
     );
 
-    await deploy("workflow.ts", {
-      project: "test-project",
-      env: "production",
-    });
-
-    // Verify getEnvironmentForOperation was called with correct arguments
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "test-project",
-      "production",
-      expect.any(Object),
-      true,
-      undefined,
-    );
+    // Wait for deployment to complete
+    await waitForText(lastFrame, /Deployed to GenSX Cloud/);
 
     // Verify deployment was made with correct environment
-    expect(axios.post).toHaveBeenCalledWith(
-      expect.stringContaining("/environments/production/deploy"),
-      expect.any(Object),
-      expect.any(Object),
-    );
-  });
-
-  it("should use selected environment after user confirms", async () => {
-    // Mock getEnvironmentForOperation to return the selected environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "staging",
-    );
-
-    await deploy("workflow.ts", { project: "test-project" });
-
-    // Verify getEnvironmentForOperation was called with correct arguments
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "test-project",
-      undefined,
-      expect.any(Object),
-      true,
-      undefined,
-    );
-
-    // Verify deployment was made with selected environment
-    expect(axios.post).toHaveBeenCalledWith(
-      expect.stringContaining("/environments/staging/deploy"),
-      expect.any(Object),
-      expect.any(Object),
-    );
-  });
-
-  it("should prompt for environment selection when no environment is selected and project exists", async () => {
-    // Mock getEnvironmentForOperation to return the selected environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue("dev");
-
-    await deploy("workflow.ts", { project: "test-project" });
-
-    // Verify getEnvironmentForOperation was called with correct arguments
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "test-project",
-      undefined,
-      expect.any(Object),
-      true,
-      undefined,
-    );
-
-    // Verify deployment was made with selected environment
-    expect(axios.post).toHaveBeenCalledWith(
-      expect.stringContaining("/environments/dev/deploy"),
-      expect.any(Object),
-      expect.any(Object),
-    );
-  });
-
-  it("should allow creating new environment during deployment when project exists", async () => {
-    // Mock getEnvironmentForOperation to return the new environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "staging",
-    );
-
-    await deploy("workflow.ts", { project: "test-project" });
-
-    // Verify getEnvironmentForOperation was called with correct arguments
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "test-project",
-      undefined,
-      expect.any(Object),
-      true,
-      undefined,
-    );
-
-    // Verify deployment was made with new environment
-    expect(axios.post).toHaveBeenCalledWith(
-      expect.stringContaining("/environments/staging/deploy"),
-      expect.any(Object),
-      expect.any(Object),
-    );
-  });
-
-  it("should create new project and environment when project doesn't exist", async () => {
-    // Mock getEnvironmentForOperation to return the new environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "staging",
-    );
-
-    await deploy("workflow.ts", { project: "test-project" });
-
-    // Verify getEnvironmentForOperation was called with correct arguments
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "test-project",
-      undefined,
-      expect.any(Object),
-      true,
-      undefined,
-    );
-
-    // Verify deployment was made with new environment
-    expect(axios.post).toHaveBeenCalledWith(
-      expect.stringContaining("/environments/staging/deploy"),
-      expect.any(Object),
-      expect.any(Object),
-    );
-  });
-
-  it("should create first environment if none exist", async () => {
-    // Mock getEnvironmentForOperation to return the first environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "production",
-    );
-
-    await deploy("workflow.ts", { project: "test-project" });
-
-    // Verify getEnvironmentForOperation was called with correct arguments
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "test-project",
-      undefined,
-      expect.any(Object),
-      true,
-      undefined,
-    );
-
-    // Verify deployment was made with new environment
     expect(axios.post).toHaveBeenCalledWith(
       expect.stringContaining("/environments/production/deploy"),
       expect.any(Object),
@@ -294,21 +258,17 @@ suite("deploy command", () => {
       projectName: "config-project",
     });
 
-    // Mock getEnvironmentForOperation to return the specified environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "production",
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          env: "production",
+        },
+      }),
     );
 
-    await deploy("workflow.ts", { env: "production" });
-
-    // Verify getEnvironmentForOperation was called with correct arguments
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "config-project",
-      "production",
-      expect.any(Object),
-      true,
-      undefined,
-    );
+    // Wait for deployment to complete
+    await waitForText(lastFrame, /Deployed to GenSX Cloud/);
 
     // Verify deployment was made with config project name
     expect(axios.post).toHaveBeenCalledWith(
@@ -318,111 +278,85 @@ suite("deploy command", () => {
     );
   });
 
-  it("should throw error when no project is specified and none in config", async () => {
+  it("should show error when no project is specified and none in config", async () => {
     // Mock empty project config
     vi.mocked(projectConfig.readProjectConfig).mockResolvedValue(null);
 
-    await deploy("workflow.ts", {});
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {},
+      }),
+    );
 
-    expect(mockExit).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining(
-        "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field",
-      ),
+    // Wait for error message
+    await waitForText(
+      lastFrame,
+      /No project name found\. Either specify --project or create a gensx\.yaml file with a 'projectName' field\./,
     );
   });
 
-  it("should create new project and environment when project doesn't exist and user confirms", async () => {
-    // Mock project config
-    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
-      projectName: "new-project",
-    });
-
-    // Mock getEnvironmentForOperation to return the new environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "development",
+  it("should show loading spinner during build phase", async () => {
+    // Mock build to never resolve, keeping component in loading state
+    vi.mocked(buildCommand.build).mockImplementation(
+      () =>
+        new Promise(() => {
+          /* never resolves */
+        }),
     );
 
-    await deploy("workflow.ts", {});
-
-    // Verify getEnvironmentForOperation was called with correct arguments
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "new-project",
-      undefined,
-      expect.any(Object),
-      true,
-      undefined,
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
     );
 
-    // Verify deployment was made with new project and environment
-    expect(axios.post).toHaveBeenCalledWith(
-      expect.stringContaining(
-        "/projects/new-project/environments/development/deploy",
-      ),
-      expect.any(Object),
-      expect.any(Object),
-    );
+    // Wait for the build phase to start
+    await waitForText(lastFrame, /Building workflow using docker\.\.\./);
+
+    // Check for spinner indicator
+    const frame = lastFrame();
+    expect(frame).toBeTruthy();
+    expect(frame?.includes("Building workflow using docker...")).toBe(true);
   });
 
-  it("should handle project creation when no environments exist", async () => {
-    // Mock project config
-    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
-      projectName: "new-project",
-    });
+  it("should show error when build fails", async () => {
+    // Mock build to fail
+    vi.mocked(buildCommand.build).mockRejectedValue(new Error("Build failed"));
 
-    // Mock getEnvironmentForOperation to return the default environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "default",
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
     );
 
-    await deploy("workflow.ts", {});
-
-    // Verify getEnvironmentForOperation was called with correct arguments
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "new-project",
-      undefined,
-      expect.any(Object),
-      true,
-      undefined,
-    );
-
-    // Verify deployment was made with new project and default environment
-    expect(axios.post).toHaveBeenCalledWith(
-      expect.stringContaining(
-        "/projects/new-project/environments/default/deploy",
-      ),
-      expect.any(Object),
-      expect.any(Object),
-    );
+    // Wait for error message
+    await waitForText(lastFrame, /Build failed/);
   });
 
-  it("should skip prompts when yes flag is set", async () => {
-    // Mock project config
-    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
-      projectName: "test-project",
-    });
+  it("should show error when deployment fails", async () => {
+    // Mock deployment to fail
+    vi.mocked(axios.post).mockRejectedValue(new Error("Deployment failed"));
 
-    // Mock getEnvironmentForOperation to return the specified environment
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "production",
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: {
+          project: "test-project",
+          env: "production",
+        },
+      }),
     );
 
-    await deploy("workflow.ts", { yes: true });
-
-    // Verify getEnvironmentForOperation was called with yes flag
-    expect(envConfig.getEnvironmentForOperation).toHaveBeenCalledWith(
-      "test-project",
-      undefined,
-      expect.any(Object),
-      true,
-      true,
-    );
-
-    // Verify deployment was made with correct environment
-    expect(axios.post).toHaveBeenCalledWith(
-      expect.stringContaining("/environments/production/deploy"),
-      expect.any(Object),
-      expect.any(Object),
-    );
+    // Wait for error message
+    await waitForText(lastFrame, /Deployment failed/);
   });
 });

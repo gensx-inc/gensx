@@ -8,7 +8,6 @@ import { serve } from "@hono/node-server";
 import { Ajv, ErrorObject } from "ajv/dist/ajv.js";
 import { Context, Hono } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 import { Definition } from "typescript-json-schema";
 import { ulid } from "ulidx";
 
@@ -45,6 +44,11 @@ export class ServerError extends Error {
 export interface ServerOptions {
   port?: number;
   hostname?: string;
+  logger: {
+    info: (message: string, ...args: unknown[]) => void;
+    error: (message: string, error?: unknown) => void;
+    warn: (message: string) => void;
+  };
 }
 
 /**
@@ -97,13 +101,26 @@ export class GensxServer {
   private isRunning = false;
   private server: ReturnType<typeof serve> | null = null;
   private ajv: Ajv;
+  private logger: ServerOptions["logger"];
 
   /**
    * Create a new GenSX dev server
    */
   constructor(
     workflows: Record<string, unknown> = {},
-    options: ServerOptions = {},
+    options: ServerOptions = {
+      logger: {
+        info: (msg, ...args) => {
+          console.info(msg, ...args);
+        },
+        error: (msg, err) => {
+          console.error(msg, err);
+        },
+        warn: (msg) => {
+          console.warn(msg);
+        },
+      },
+    },
     schemas: Record<string, { input: Definition; output: Definition }> = {},
   ) {
     this.port = options.port ?? 1337;
@@ -113,6 +130,7 @@ export class GensxServer {
     this.schemaMap = new Map(Object.entries(schemas));
     this.executionsMap = new Map();
     this.ajv = new Ajv();
+    this.logger = options.logger;
 
     // Register all workflows from the input
     this.registerWorkflows(workflows);
@@ -129,7 +147,7 @@ export class GensxServer {
    */
   private setupErrorHandler(): void {
     this.app.onError((err, c) => {
-      console.error("❌ Server error:", err.message);
+      this.logger.error("❌ Server error:", err.message);
 
       // Handle different types of errors
       if (err instanceof NotFoundError) {
@@ -147,9 +165,6 @@ export class GensxServer {
    * Register workflows with the server
    */
   private registerWorkflows(workflows: Record<string, unknown>): void {
-    // Log what we're registering
-    // console.info("Attempting to register workflows:", Object.keys(workflows));
-
     for (const [exportName, workflow] of Object.entries(workflows)) {
       // GenSX Workflows expose name and run function
       if (workflow && typeof workflow === "object") {
@@ -164,12 +179,11 @@ export class GensxServer {
         }
 
         this.workflowMap.set(workflowName, workflow);
-        //console.info(`Registered workflow: ${workflowName}`);
       }
     }
 
     if (this.workflowMap.size === 0) {
-      console.warn("⚠️ No valid workflows were registered!");
+      this.logger.warn("⚠️ No valid workflows were registered!");
     }
   }
 
@@ -255,7 +269,14 @@ export class GensxServer {
    */
   private setupRoutes(): void {
     // Add middleware
-    this.app.use("*", logger());
+    this.app.use("*", async (c, next) => {
+      const start = Date.now();
+      const { method, url } = c.req;
+      this.logger.info(`<-- ${method} ${url}`);
+      await next();
+      const duration = Date.now() - start;
+      this.logger.info(`--> ${method} ${url} ${c.res.status} ${duration}ms`);
+    });
     this.app.use("*", cors());
 
     // List all workflows
@@ -333,7 +354,7 @@ export class GensxServer {
         );
       } catch (error) {
         if (error instanceof BadRequestError) {
-          console.error(
+          this.logger.error(
             `❌ Validation error in workflow '${workflowName}':`,
             error.message,
           );
@@ -345,7 +366,10 @@ export class GensxServer {
           );
         }
 
-        console.error(`❌ Error starting workflow '${workflowName}':`, error);
+        this.logger.error(
+          `❌ Error starting workflow '${workflowName}':`,
+          error,
+        );
         return c.json(
           {
             error: error instanceof Error ? error.message : String(error),
@@ -444,7 +468,7 @@ export class GensxServer {
         const executionId = generateExecutionId();
         const now = new Date().toISOString();
 
-        console.info(
+        this.logger.info(
           `⚡️ Executing workflow '${workflowName}' with params:`,
           body,
         );
@@ -504,9 +528,9 @@ export class GensxServer {
             output: result,
           });
         } catch (error) {
-          console.error(
+          this.logger.error(
             `❌ Error executing workflow '${workflowName}':`,
-            error,
+            error instanceof Error ? error.message : String(error),
           );
           execution.executionStatus = "failed";
           execution.error =
@@ -526,7 +550,7 @@ export class GensxServer {
       } catch (error) {
         // For validation errors, don't create an execution record
         if (error instanceof BadRequestError) {
-          console.error(
+          this.logger.error(
             `❌ Validation error in workflow '${workflowName}':`,
             error.message,
           );
@@ -538,7 +562,10 @@ export class GensxServer {
           );
         }
 
-        console.error(`❌ Error executing workflow '${workflowName}':`, error);
+        this.logger.error(
+          `❌ Error executing workflow '${workflowName}':`,
+          error instanceof Error ? error.message : String(error),
+        );
 
         // For other errors, proceed with server error
         return c.json(
@@ -568,6 +595,7 @@ export class GensxServer {
     _c: Context,
     streamResult: AsyncIterable<unknown>,
   ) {
+    const logger = this.logger;
     const stream = new ReadableStream({
       async start(controller) {
         try {
@@ -581,7 +609,10 @@ export class GensxServer {
           // Close the stream
           controller.close();
         } catch (error) {
-          console.error("❌ Error in streaming response:", error);
+          logger.error(
+            `❌ Error in streaming response:`,
+            error instanceof Error ? error.message : String(error),
+          );
           controller.error(error);
         }
       },
@@ -964,23 +995,34 @@ export class GensxServer {
    */
   public start(): this {
     if (this.isRunning) {
-      console.warn("⚠️ Server is already running");
+      this.logger.warn("⚠️ Server is already running");
       return this;
     }
 
-    this.server = serve({
-      fetch: this.app.fetch,
-      port: this.port,
-    });
+    //this.logger.info(`🚀 Starting GenSX server on port ${this.port}...`);
 
-    this.isRunning = true;
+    try {
+      this.server = serve({
+        fetch: this.app.fetch,
+        port: this.port,
+      });
 
-    console.info(
-      `\n\n🚀 GenSX Dev Server running at http://${this.hostname}:${this.port}`,
-    );
-    console.info(
-      `🧪 Swagger UI available at http://${this.hostname}:${this.port}/swagger-ui`,
-    );
+      this.isRunning = true;
+      //this.logger.info("✨ Server started successfully");
+    } catch (error: unknown) {
+      this.logger.error(
+        `❌ Failed to start server on port ${this.port}`,
+        error,
+      );
+      if (error instanceof Error && error.message.includes("EADDRINUSE")) {
+        this.logger.error(
+          `⛔ Port ${this.port} is already in use by another process!`,
+        );
+      }
+      this.isRunning = false; // Ensure we mark as not running in case of error
+      // Re-throw to allow calling code to handle
+      throw error;
+    }
 
     return this;
   }
@@ -988,17 +1030,38 @@ export class GensxServer {
   /**
    * Stop the server if it's running
    */
-  public stop(): void {
-    if (!this.isRunning) {
-      console.warn("⚠️ Server is not running");
-      return;
-    }
+  public stop(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.isRunning || !this.server) {
+        this.logger.warn("⚠️ Server is not running or not initialized");
+        this.isRunning = false; // Ensure consistent state
+        resolve();
+        return;
+      }
 
-    if (this.server) {
-      this.server.close();
-    }
+      //this.logger.info("🛑 Stopping GenSX server...");
 
-    this.isRunning = false;
+      this.server.close((err) => {
+        if (err) {
+          this.logger.error("❌ Error stopping server:", err);
+          this.isRunning = false;
+          reject(err);
+          return;
+        }
+        this.isRunning = false;
+        //this.logger.info("✅ Server stopped successfully");
+        resolve();
+      });
+
+      // Attempt to close all connections if the method exists
+      const serverWithAdvancedClose = this.server as any;
+      if (typeof serverWithAdvancedClose.closeAllConnections === "function") {
+        serverWithAdvancedClose.closeAllConnections();
+      }
+      if (typeof serverWithAdvancedClose.closeIdleConnections === "function") {
+        serverWithAdvancedClose.closeIdleConnections();
+      }
+    });
   }
 
   /**
@@ -1048,7 +1111,7 @@ export class GensxServer {
     // Get the current execution record
     const execution = this.executionsMap.get(executionId);
     if (!execution) {
-      console.error(`Execution ${executionId} not found`);
+      this.logger.error(`Execution ${executionId} not found`);
       return;
     }
 
@@ -1068,7 +1131,7 @@ export class GensxServer {
       this.executionsMap.set(executionId, execution);
 
       // Execute the workflow
-      console.info(
+      this.logger.info(
         `⚡️ Executing async workflow '${workflowName}' with execution ID ${executionId}`,
       );
       const result = await runMethod.call(workflow, input);
@@ -1079,7 +1142,7 @@ export class GensxServer {
       execution.finishedAt = new Date().toISOString();
       this.executionsMap.set(executionId, execution);
 
-      console.info(
+      this.logger.info(
         `✅ Completed async workflow '${workflowName}' execution ${executionId}`,
       );
     } catch (error) {
@@ -1089,7 +1152,7 @@ export class GensxServer {
       execution.finishedAt = new Date().toISOString();
       this.executionsMap.set(executionId, execution);
 
-      console.error(
+      this.logger.error(
         `❌ Failed async workflow '${workflowName}' execution ${executionId}:`,
         error,
       );
@@ -1102,7 +1165,19 @@ export class GensxServer {
  */
 export function createServer(
   workflows: Record<string, unknown> = {},
-  options: ServerOptions = {},
+  options: ServerOptions = {
+    logger: {
+      info: (msg, ...args) => {
+        console.info(msg, ...args);
+      },
+      error: (msg, err) => {
+        console.error(msg, err);
+      },
+      warn: (msg) => {
+        console.warn(msg);
+      },
+    },
+  },
   schemas: Record<string, { input: Definition; output: Definition }> = {},
 ): GensxServer {
   return new GensxServer(workflows, options, schemas);

@@ -1,114 +1,208 @@
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
-import ora from "ora";
-import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
+import { render } from "ink-testing-library";
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { start } from "../../src/commands/start.js";
-import * as config from "../../src/utils/config.js";
-import * as projectConfig from "../../src/utils/project-config.js";
+import { StartUI } from "../../src/commands/start.js";
+import { tempDir } from "../setup.js";
+import { waitForText } from "../test-helpers.js";
 
-// Mock dependencies
-vi.mock("node:fs", () => ({
-  existsSync: vi.fn(),
-  readFileSync: vi.fn(() => JSON.stringify({ version: "1.0.0" })),
-}));
-vi.mock("ora");
-vi.mock("../../src/utils/config.js");
-vi.mock("../../src/utils/project-config.js");
-vi.mock("../../src/utils/schema.js");
-vi.mock("../../src/dev-server.js");
-vi.mock("typescript");
+// Only mock the file watcher to prevent test instability
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return {
+    ...actual,
+    watch: vi.fn().mockReturnValue({
+      close: vi.fn(),
+    }),
+  };
+});
 
-// Skip the test that was relying on TypeScript mocking
-const originalConsoleError = console.error;
-
-suite("start command", () => {
-  // Original functions to restore
-  const originalCwd = process.cwd;
-  const originalConsoleInfo = console.info;
-
-  // Mock process.exit
-  const mockExit = vi
-    .spyOn(process, "exit")
-    .mockImplementation(() => undefined as never);
-
-  // Mock spinner
-  let mockSpinner: ReturnType<typeof ora>;
+describe("StartUI", () => {
+  let portCounter = 1337;
 
   beforeEach(() => {
-    vi.resetAllMocks();
-
-    // Setup environment
-    process.cwd = vi.fn().mockReturnValue("/mock/dir");
-    console.info = vi.fn();
-    console.error = vi.fn();
-
-    // Setup spinner
-    mockSpinner = {
-      start: vi.fn().mockReturnThis(),
-      info: vi.fn().mockReturnThis(),
-      succeed: vi.fn().mockReturnThis(),
-      fail: vi.fn().mockReturnThis(),
-      isSilent: false,
-    } as unknown as ReturnType<typeof ora>;
-    vi.mocked(ora).mockReturnValue(mockSpinner);
-
-    // Setup file existence checks
-    vi.mocked(existsSync).mockReturnValue(true);
-
-    // Setup auth
-    vi.mocked(config.getAuth).mockResolvedValue({
-      org: "test-org",
-      token: "test-token",
-      apiBaseUrl: "https://api.gensx.com",
-      consoleBaseUrl: "https://app.gensx.com",
-    });
-
-    // Setup project config
-    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
-      projectName: "test-project",
-      description: "Test project description",
-    });
+    // Create directory structure
+    mkdirSync(path.join(tempDir, "project", "src"), { recursive: true });
+    mkdirSync(path.join(tempDir, "project", ".gensx"), { recursive: true });
   });
 
-  afterEach(() => {
-    process.cwd = originalCwd;
-    console.info = originalConsoleInfo;
-    console.error = originalConsoleError;
+  const createTestFiles = (config: { rootDir?: string }): void => {
+    // Create tsconfig.json
+    const tsconfig = {
+      compilerOptions: {
+        target: "ES2022",
+        module: "NodeNext",
+        moduleResolution: "NodeNext",
+        esModuleInterop: true,
+        outDir: "./dist",
+        ...(config.rootDir && { rootDir: config.rootDir }),
+      },
+    };
+
+    const tsconfigPath = path.join(tempDir, "project", "tsconfig.json");
+    writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2));
+
+    // Create workflow file
+    const workflowContent = `
+export const testWorkflow = () => {
+  return "test";
+};
+`;
+
+    // Create files based on test scenario
+    if (config.rootDir) {
+      // Only create files in src directory if rootDir is specified
+      const srcWorkflowPath = path.join(
+        tempDir,
+        "project",
+        "src",
+        "workflow.ts",
+      );
+      writeFileSync(srcWorkflowPath, workflowContent);
+    } else {
+      // Create both files for non-rootDir tests
+      const rootWorkflowPath = path.join(tempDir, "project", "workflow.ts");
+      writeFileSync(rootWorkflowPath, workflowContent);
+
+      const srcWorkflowPath = path.join(
+        tempDir,
+        "project",
+        "src",
+        "workflow.ts",
+      );
+      writeFileSync(srcWorkflowPath, workflowContent);
+    }
+  };
+
+  it("renders initial loading state", () => {
+    const { lastFrame } = render(
+      React.createElement(StartUI, {
+        file: "test.ts",
+        options: {
+          port: portCounter++,
+        },
+      }),
+    );
+
+    expect(lastFrame()).toContain("Starting dev server...");
   });
 
-  it("should validate file existence before proceeding", async () => {
-    // File doesn't exist
-    vi.mocked(existsSync).mockImplementation((path) => {
-      if (typeof path === "string" && path.includes("test.ts")) {
-        return false;
+  it("renders error state when error occurs", async () => {
+    const { lastFrame } = render(
+      React.createElement(StartUI, {
+        file: "nonexistent.ts",
+        options: {
+          port: portCounter++,
+        },
+      }),
+    );
+
+    // Wait for the error message to appear
+    await waitForText(lastFrame, /Error/);
+  });
+
+  it("renders with custom port", () => {
+    const { lastFrame } = render(
+      React.createElement(StartUI, {
+        file: "test.ts",
+        options: {
+          port: portCounter++,
+        },
+      }),
+    );
+
+    expect(lastFrame()).toContain("Starting dev server...");
+  });
+
+  describe("path handling", () => {
+    it("handles files in root directory without rootDir specified", async () => {
+      createTestFiles({});
+
+      const { lastFrame, unmount } = render(
+        React.createElement(StartUI, {
+          file: path.join(tempDir, "project", "workflow.ts"),
+          options: {
+            port: portCounter++,
+          },
+        }),
+      );
+
+      try {
+        // Wait for the server to start and schema to be generated
+        await waitForText(lastFrame, "GenSX Dev Server running at", 5000);
+
+        // Add a small delay to ensure schema file is written
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Check that schema file was written
+        expect(
+          existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
+        ).toBe(true);
+      } finally {
+        // Clean up
+        unmount();
       }
-      return true;
     });
 
-    await start("test.ts", {});
+    it("handles files in subdirectories without rootDir specified", async () => {
+      createTestFiles({});
 
-    expect(mockExit).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(
-      "Error:",
-      "File test.ts does not exist",
-    );
-  });
+      const { lastFrame, unmount } = render(
+        React.createElement(StartUI, {
+          file: path.join(tempDir, "project", "src", "workflow.ts"),
+          options: {
+            port: portCounter++,
+          },
+        }),
+      );
 
-  it("should only accept TypeScript files", async () => {
-    await start("test.js", {});
+      try {
+        // Wait for the server to start and schema to be generated
+        await waitForText(lastFrame, "GenSX Dev Server running at", 5000);
 
-    expect(mockExit).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(
-      "Error:",
-      "Only TypeScript files (.ts or .tsx) are supported",
-    );
-  });
+        // Add a small delay to ensure schema file is written
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-  it("should handle quiet mode", async () => {
-    await start("test.ts", { quiet: true });
+        // Check that schema file was written
+        expect(
+          existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
+        ).toBe(true);
+      } finally {
+        // Clean up
+        unmount();
+      }
+    });
 
-    // Verify ora is called with isSilent: true
-    expect(ora).toHaveBeenCalledWith({ isSilent: true });
+    it("handles files with rootDir specified in tsconfig", async () => {
+      createTestFiles({ rootDir: "./src" });
+
+      const { lastFrame, unmount } = render(
+        React.createElement(StartUI, {
+          file: path.join(tempDir, "project", "src", "workflow.ts"),
+          options: {
+            port: portCounter++,
+          },
+        }),
+      );
+
+      try {
+        // Wait for the server to start and schema to be generated
+        await waitForText(lastFrame, "GenSX Dev Server running at", 5000);
+
+        // Add a small delay to ensure schema file is written
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Check that schema file was written
+        expect(
+          existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
+        ).toBe(true);
+      } finally {
+        // Clean up
+        unmount();
+      }
+    });
   });
 });

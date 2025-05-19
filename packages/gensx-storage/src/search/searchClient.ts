@@ -13,7 +13,7 @@ import {
 export class SearchClient {
   private storage: SearchStorage;
 
-  constructor(props: SearchProviderProps) {
+  constructor(props: SearchProviderProps = {}) {
     const { project, environment } = getProjectAndEnvironment({
       project: props.project,
       environment: props.environment,
@@ -52,7 +52,7 @@ export class SearchClient {
     limit?: number;
     cursor?: string;
   }): Promise<{
-    namespaces: string[];
+    namespaces: { name: string; createdAt: Date }[];
     nextCursor?: string;
   }> {
     return this.storage.listNamespaces(options);

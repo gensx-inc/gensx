@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.8](https://github.com/gensx-inc/gensx/compare/gensx-cloud-mcp-v0.0.7...gensx-cloud-mcp-v0.0.8) (2025-05-14)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.3.13
+
 ## [0.0.7](https://github.com/gensx-inc/gensx/compare/gensx-cloud-mcp-v0.0.6...gensx-cloud-mcp-v0.0.7) (2025-04-30)
 
 

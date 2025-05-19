@@ -12,6 +12,7 @@ export default defineConfig({
     passWithNoTests: false,
     include: ["./tests/**/*.test.ts", "./tests/**/*.test.tsx"],
     env: loadEnv("test", process.cwd(), ""),
+    silent: "passed-only",
     setupFiles: ["./tests/setup.ts"],
     coverage: {
       provider: "istanbul",

@@ -89,7 +89,7 @@ suite("GenSX Dev Server", () => {
     vi.resetAllMocks();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     // Restore console methods
     console.info = originalConsoleInfo;
     console.warn = originalConsoleWarn;
@@ -100,7 +100,7 @@ suite("GenSX Dev Server", () => {
     console.warn = vi.fn();
 
     // Stop the server
-    server.stop();
+    await server.stop();
 
     // Restore console.warn
     console.warn = tempWarn;
@@ -141,6 +141,11 @@ suite("GenSX Dev Server", () => {
     const workflows = { testWorkflow: mockWorkflow };
     server = createServer(workflows, {
       port: 4000,
+      logger: {
+        info: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+      },
     });
 
     server.start();
@@ -155,7 +160,17 @@ suite("GenSX Dev Server", () => {
 
   it("should handle workflows with schemas", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, {}, mockSchemas);
+    server = createServer(
+      workflows,
+      {
+        logger: {
+          info: vi.fn(),
+          error: vi.fn(),
+          warn: vi.fn(),
+        },
+      },
+      mockSchemas,
+    );
 
     const registeredWorkflows = server.getWorkflows();
     expect(registeredWorkflows[0].inputSchema).toEqual(
@@ -180,13 +195,13 @@ suite("GenSX Dev Server", () => {
     );
   });
 
-  it("should handle stopping server multiple times", () => {
+  it("should handle stopping server multiple times", async () => {
     const workflows = { testWorkflow: mockWorkflow };
     server = createServer(workflows);
 
     server.start();
-    server.stop();
-    server.stop(); // Second call should do nothing
+    await server.stop();
+    await server.stop(); // Second call should do nothing
 
     expect(console.warn).toHaveBeenCalledWith(
       expect.stringContaining("Server is not running"),
@@ -197,6 +212,11 @@ suite("GenSX Dev Server", () => {
     const workflows = { testWorkflow: mockWorkflow };
     server = createServer(workflows, {
       port: 4000,
+      logger: {
+        info: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+      },
     });
 
     const registeredWorkflows = server.getWorkflows();
@@ -241,7 +261,17 @@ suite("GenSX Dev Server", () => {
 
   it("should validate input against schema", () => {
     const workflows = { testWorkflow: mockWorkflow };
-    server = createServer(workflows, {}, mockSchemas);
+    server = createServer(
+      workflows,
+      {
+        logger: {
+          info: vi.fn(),
+          error: vi.fn(),
+          warn: vi.fn(),
+        },
+      },
+      mockSchemas,
+    );
 
     const privateServer = server as unknown as PrivateServer;
 
@@ -486,7 +516,7 @@ suite("GenSX Dev Server", () => {
   });
 
   // Test workflow registration edge cases
-  it("should handle invalid workflow definitions gracefully", () => {
+  it("should handle invalid workflow definitions gracefully", async () => {
     // Mock console.warn
     console.warn = vi.fn();
 
@@ -506,6 +536,6 @@ suite("GenSX Dev Server", () => {
     );
 
     // Cleanup
-    noValidWorkflowsServer.stop();
+    await noValidWorkflowsServer.stop();
   });
 });

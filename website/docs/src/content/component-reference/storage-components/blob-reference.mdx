@@ -25,11 +25,13 @@ import { BlobProvider } from "@gensx/storage";
 
 ### Props
 
-| Prop            | Type                      | Default        | Description                           |
-| --------------- | ------------------------- | -------------- | ------------------------------------- |
-| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                |
-| `rootDir`       | `string`                  | `.gensx/blobs` | Root directory for filesystem storage |
-| `defaultPrefix` | `string`                  | `undefined`    | Optional prefix for all blob keys     |
+| Prop            | Type                      | Default        | Description                                                                                                                                                                                             |
+| --------------- | ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                                                                                     |
+| `rootDir`       | `string`                  | `.gensx/blobs` | Root directory for filesystem storage                                                                                                                                                                   |
+| `defaultPrefix` | `string`                  | `undefined`    | Optional prefix for all blob keys                                                                                                                                                                       |
+| `project`       | `string`                  | Auto-detected  | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file.                   |
+| `environment`   | `string`                  | Auto-detected  | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |
 
 ### Example
 
@@ -190,27 +192,41 @@ const userBlob = blobStorage.getBlob<UserProfile>("users/123.json");
 
 ### listBlobs
 
-List blob keys.
+List blobs.
 
 ```tsx
 const blobStorage = useBlobStorage();
-const { keys, nextCursor } = await blobStorage.listBlobs({
+const { blobs, nextCursor } = await blobStorage.listBlobs({
   prefix: "users",
 });
-console.log("User blobs:", keys); // ["users/123.json", "users/456.json"]
+console.log(
+  "User blobs:",
+  blobs.map((blob) => blob.key),
+); // ["users/123.json", "users/456.json"]
 ```
 
 The method accepts an options object with these properties:
 
-| Option   | Type     | Description                                    |
-| -------- | -------- | ---------------------------------------------- |
-| `prefix` | `string` | Optional prefix to filter blob keys by         |
-| `limit`  | `number` | Maximum number of results to return per page   |
-| `cursor` | `string` | Cursor for pagination from previous response   |
+| Option   | Type     | Description                                  |
+| -------- | -------- | -------------------------------------------- |
+| `prefix` | `string` | Optional prefix to filter blob keys by       |
+| `limit`  | `number` | Maximum number of results to return per page |
+| `cursor` | `string` | Cursor for pagination from previous response |
 
 Returns an object with:
-- `keys`: Array of blob keys matching the filter
-- `nextCursor`: Cursor for the next page, or null if no more results
+
+- `blobs`: Array of blob objects containing `key`, `lastModified`, and `size` properties
+- `nextCursor`: Cursor for the next page, or undefined if no more results
+
+Example of a blob object:
+
+```tsx
+{
+  key: "users/123.json",
+  lastModified: "2024-01-01T00:00:00Z",
+  size: 1024
+}
+```
 
 ### blobExists
 
@@ -254,9 +270,9 @@ constructor(props?: BlobProviderProps)
 
 #### Parameters
 
-| Parameter | Type               | Default | Description                           |
-| --------- | ------------------ | ------- | ------------------------------------- |
-| `props`   | `BlobProviderProps` | `{}`   | Optional configuration properties     |
+| Parameter | Type                | Default | Description                       |
+| --------- | ------------------- | ------- | --------------------------------- |
+| `props`   | `BlobProviderProps` | `{}`    | Optional configuration properties |
 
 #### Example
 
@@ -267,13 +283,13 @@ const blobClient = new BlobClient();
 // Explicitly use filesystem storage
 const localClient = new BlobClient({
   kind: "filesystem",
-  rootDir: "./my-data"
+  rootDir: "./my-data",
 });
 
 // Explicitly use cloud storage with a prefix
 const cloudClient = new BlobClient({
   kind: "cloud",
-  defaultPrefix: "app-data/"
+  defaultPrefix: "app-data/",
 });
 ```
 
@@ -300,11 +316,11 @@ await userBlob.putJSON(profile);
 
 #### listBlobs
 
-List all blob keys.
+List all blobs.
 
 ```tsx
 async listBlobs(options?: { prefix?: string; limit?: number; cursor?: string }): Promise<{
-  keys: string[];
+  blobs: Array<{ key: string; lastModified: string; size: number }>;
   nextCursor?: string;
 }>
 ```
@@ -312,10 +328,13 @@ async listBlobs(options?: { prefix?: string; limit?: number; cursor?: string }):
 ##### Example
 
 ```tsx
-const { keys, nextCursor } = await blobClient.listBlobs({
-  prefix: "chats"
+const { blobs, nextCursor } = await blobClient.listBlobs({
+  prefix: "chats",
 });
-console.log("Chat histories:", keys); // ["chats/123.json", "chats/456.json"]
+console.log(
+  "Chat histories:",
+  blobs.map((blob) => blob.key),
+); // ["chats/123.json", "chats/456.json"]
 ```
 
 #### blobExists
@@ -364,26 +383,26 @@ The BlobClient is particularly useful when you need to access blob storage from:
 
 ```tsx
 // Example: Using BlobClient in an Express handler
-import express from 'express';
-import { BlobClient } from '@gensx/storage';
+import express from "express";
+import { BlobClient } from "@gensx/storage";
 
 const app = express();
 const blobClient = new BlobClient();
 
 // Save user data endpoint
-app.post('/api/users/:userId', async (req, res) => {
+app.post("/api/users/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     const userBlob = blobClient.getBlob(`users/${userId}.json`);
 
     // Get existing profile or create new one
-    const existingProfile = await userBlob.getJSON() || {};
+    const existingProfile = (await userBlob.getJSON()) || {};
 
     // Merge with updated data
     const updatedProfile = {
       ...existingProfile,
       ...req.body,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     // Save the updated profile
@@ -391,12 +410,12 @@ app.post('/api/users/:userId', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Error saving user data:', error);
-    res.status(500).json({ error: 'Failed to save user data' });
+    console.error("Error saving user data:", error);
+    res.status(500).json({ error: "Failed to save user data" });
   }
 });
 
 app.listen(3000, () => {
-  console.log('Server running on port 3000');
+  console.log("Server running on port 3000");
 });
 ```

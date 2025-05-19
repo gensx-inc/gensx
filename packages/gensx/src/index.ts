@@ -1,16 +1,21 @@
 import { Command } from "commander";
+import { render } from "ink";
+import React from "react";
 
-import { build, BuildOptions } from "./commands/build.js";
-import { deploy } from "./commands/deploy.js";
-import { handleCreateEnvironment } from "./commands/environment/create.js";
-import { handleListEnvironments } from "./commands/environment/list.js";
-import { handleSelectEnvironment } from "./commands/environment/select.js";
-import { handleShowEnvironment } from "./commands/environment/show.js";
-import { handleUnselectEnvironment } from "./commands/environment/unselect.js";
-import { login } from "./commands/login.js";
-import { NewCommandOptions, newProject } from "./commands/new.js";
-import { runWorkflow } from "./commands/run.js";
-import { start } from "./commands/start.js";
+import { BuildOptions, BuildWorkflowUI } from "./commands/build.js";
+import { DeployOptions, DeployUI } from "./commands/deploy.js";
+import { CreateEnvironmentUI } from "./commands/environment/create.js";
+import {
+  ListEnvironmentOptions,
+  ListEnvironmentsUI,
+} from "./commands/environment/list.js";
+import { SelectEnvironmentUI } from "./commands/environment/select.js";
+import { ShowEnvironmentUI } from "./commands/environment/show.js";
+import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
+import { LoginUI } from "./commands/login.js";
+import { NewCommandOptions, NewProjectUI } from "./commands/new.js";
+import { CliOptions, RunWorkflowUI } from "./commands/run.js";
+import { StartUI } from "./commands/start.js";
 import { VERSION } from "./utils/user-agent.js";
 
 export async function runCLI() {
@@ -22,8 +27,11 @@ export async function runCLI() {
   program
     .command("login")
     .description("Login to GenSX Cloud")
-    .action(async () => {
-      await login();
+    .action(() => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(React.createElement(LoginUI));
+        waitUntilExit().then(resolve).catch(reject);
+      });
     });
 
   program
@@ -32,13 +40,24 @@ export async function runCLI() {
     .argument("<project-directory>", "Directory to create the project in")
     .option("-t, --template <type>", "Template to use (ts)")
     .option("-f, --force", "Overwrite existing files", false)
+    .option("-s, --skip-login", "Skip login step", false)
     .option("--skip-ide-rules", "Skip IDE rules selection", false)
     .option(
       "--ide-rules <rules>",
       "Comma-separated list of IDE rules to install (cline,windsurf,claude,cursor)",
     )
     .option("-d, --description <desc>", "Optional project description")
-    .action(newProject);
+    .action((projectPath: string, options: NewCommandOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(NewProjectUI, {
+            projectPath,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   program
     .command("start")
@@ -46,7 +65,17 @@ export async function runCLI() {
     .argument("<file>", "File to serve")
     .option("--port <port>", "Port to run the server on", "1337")
     .option("-q, --quiet", "Suppress output", false)
-    .action(start);
+    .action((file: string, options: { port: number; quiet: boolean }) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(StartUI, {
+            file,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   program
     .command("build")
@@ -57,9 +86,18 @@ export async function runCLI() {
     )
     .option("-o, --out-dir <dir>", "Output directory")
     .option("-t, --tsconfig <file>", "TypeScript config file")
-    .action(async (file: string, options: BuildOptions) => {
-      const outFile = await build(file, options);
-      console.info(`Workflow built to ${outFile.bundleFile}`);
+    .option("-w, --watch", "Watch for changes", false)
+    .option("-q, --quiet", "Suppress output", false)
+    .action((file: string, options: BuildOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(BuildWorkflowUI, {
+            file,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
     });
 
   program
@@ -87,7 +125,17 @@ export async function runCLI() {
     .option("-p, --project <name>", "Project name to deploy to")
     .option("-e, --env <name>", "Environment name to deploy to")
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
-    .action(deploy);
+    .action((file: string, options: DeployOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(DeployUI, {
+            file,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   program
     .command("run")
@@ -103,43 +151,100 @@ export async function runCLI() {
       undefined,
     )
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
-    .action(runWorkflow);
+    .action((workflow: string, options: CliOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(RunWorkflowUI, {
+            workflowName: workflow,
+            options,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   // Environment management commands
   const environmentCommand = program
     .command("env")
     .description("Manage GenSX environments")
-    .action(handleShowEnvironment);
+    .action(async () => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(ShowEnvironmentUI, {
+            projectName: undefined,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   environmentCommand
     .command("create")
     .description("Create a new environment")
     .argument("<name>", "Name of the environment")
     .option("-p, --project <name>", "Project name")
-    .action(handleCreateEnvironment);
+    .action(async (name: string, options: { project?: string }) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(CreateEnvironmentUI, {
+            environmentName: name,
+            projectName: options.project,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   environmentCommand
     .command("ls")
     .description("List all environments")
     .option("-p, --project <name>", "Project name")
-    .action(handleListEnvironments);
+    .action(async (options: ListEnvironmentOptions) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(ListEnvironmentsUI, {
+            projectName: options.project,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   environmentCommand
     .command("select")
     .description("Select an environment as active")
     .argument("<name>", "Name of the environment to select")
     .option("-p, --project <name>", "Project name")
-    .action(handleSelectEnvironment);
+    .action(async (name: string, options: { project?: string }) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(SelectEnvironmentUI, {
+            environmentName: name,
+            projectName: options.project,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   environmentCommand
     .command("unselect")
     .description("Unselect an environment")
     .option("-p, --project <name>", "Project name")
-    .action(handleUnselectEnvironment);
+    .action(async (options: { project?: string }) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(UnselectEnvironmentUI, {
+            projectName: options.project,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
 
   await program.parseAsync();
 }
 
-export { newProject };
+export { NewProjectUI };
 
 export type { NewCommandOptions };

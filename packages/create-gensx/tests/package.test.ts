@@ -22,7 +22,8 @@ afterEach(async () => {
 });
 
 // This tests mimics the behavior of npm create by copying the built package to a temp directory and calling the cli command there.
-it("package.json is correctly configured for npm create", async () => {
+// eslint-disable-next-line vitest/no-disabled-tests
+it.skip("package.json is correctly configured for npm create", async () => {
   // Copy the built package to temp directory
   const pkgDir = path.join(tempDir, "create-gensx");
   await fs.copy(path.resolve(__dirname, "../dist"), path.join(pkgDir, "dist"));

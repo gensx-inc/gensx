@@ -1,62 +1,58 @@
-import type { AuthConfig } from "../../src/utils/config.js";
+import fs from "node:fs/promises";
+import path from "node:path";
 
-import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
+import { render } from "ink-testing-library";
+import React from "react";
+import { beforeEach, expect, it, suite, vi } from "vitest";
 
-import { runWorkflow } from "../../src/commands/run.js";
-import * as config from "../../src/utils/config.js";
+import { RunWorkflowUI } from "../../src/commands/run.js";
+import * as environmentModel from "../../src/models/environment.js";
+import * as projectModel from "../../src/models/projects.js";
 import * as envConfig from "../../src/utils/env-config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
+import { tempDir } from "../setup.js";
+import { waitForText } from "../test-helpers.js";
 
 // Mock dependencies
-vi.mock("ora", () => ({
-  default: () => ({
-    start: vi.fn().mockReturnThis(),
-    stop: vi.fn().mockReturnThis(),
-    succeed: vi.fn().mockReturnThis(),
-    fail: vi.fn().mockReturnThis(),
-    info: vi.fn().mockReturnThis(),
-  }),
+vi.mock("../../src/utils/env-config.js", () => ({
+  getSelectedEnvironment: vi.fn(),
+  getEnvironmentForOperation: vi.fn(),
 }));
 
-vi.mock("../../src/utils/config.js");
-vi.mock("../../src/utils/project-config.js");
-vi.mock("../../src/utils/env-config.js");
-
-// Mock node:fs with readFileSync
-vi.mock("node:fs", () => ({
-  createWriteStream: vi.fn(() => ({
-    write: vi.fn(),
-    end: vi.fn(),
-  })),
-  WriteStream: vi.fn(),
-  readFileSync: vi.fn(() => JSON.stringify({ version: "1.0.0" })),
+vi.mock("../../src/utils/project-config.js", () => ({
+  readProjectConfig: vi.fn(),
 }));
 
-vi.mock("node:fs/promises", () => ({
-  writeFile: vi.fn(),
+vi.mock("../../src/models/projects.js", () => ({
+  checkProjectExists: vi.fn(),
 }));
 
-// Mock node:path
-vi.mock("node:path", () => ({
-  dirname: vi.fn(() => "/mock/dir"),
-  join: vi.fn((...args: string[]) => args.join("/")),
-  default: {
-    dirname: vi.fn(() => "/mock/dir"),
-    join: vi.fn((...args: string[]) => args.join("/")),
-  },
+vi.mock("../../src/models/environment.js", () => ({
+  checkEnvironmentExists: vi.fn(),
+  listEnvironments: vi.fn(),
 }));
 
-// Mock node:url
-vi.mock("node:url", () => ({
-  fileURLToPath: vi.fn(() => "/mock/dir/file.js"),
-  default: {
-    fileURLToPath: vi.fn(() => "/mock/dir/file.js"),
+// Mock EnvironmentResolver component
+vi.mock("../../src/components/EnvironmentResolver.js", () => ({
+  EnvironmentResolver: ({
+    onResolved,
+  }: {
+    onResolved: (env: string) => void;
+  }) => {
+    React.useEffect(() => {
+      const resolveId = setTimeout(() => {
+        onResolved("development");
+      }, 0);
+      return () => {
+        clearTimeout(resolveId);
+      };
+    }, []);
+    return null;
   },
 }));
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
 
 // Mock TextDecoder properly
 class MockTextDecoder {
@@ -70,160 +66,55 @@ class MockTextDecoder {
 global.TextDecoder = MockTextDecoder as unknown as typeof TextDecoder;
 
 suite("run command", () => {
-  const mockAuth: AuthConfig = {
-    org: "test-org",
-    token: "test-token",
-    apiBaseUrl: "https://api.gensx.com",
-    consoleBaseUrl: "https://app.gensx.com",
-  };
-
-  const originalConsoleError = console.error;
-  const originalConsoleInfo = console.info;
-  const originalProcessExit = process.exit;
+  let outputPath: string;
 
   beforeEach(() => {
-    console.error = vi.fn();
-    console.info = vi.fn();
-    process.exit = vi.fn() as never;
-
-    // Reset all mocks
-    vi.clearAllMocks();
-
-    // Setup default auth
-    vi.mocked(config.getAuth).mockResolvedValue(mockAuth);
-
-    // Setup default project config
+    global.fetch = mockFetch;
+    // Setup common mocks
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
+    vi.mocked(environmentModel.checkEnvironmentExists).mockResolvedValue(true);
+    vi.mocked(environmentModel.listEnvironments).mockResolvedValue([
+      {
+        name: "development",
+        id: "dev-123",
+        projectId: "test-project",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
+    vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(
+      "development",
+    );
+    // Add default project config
     vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
       projectName: "test-project",
     });
 
-    // Setup default environment
-    vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(
-      "development",
-    );
-
-    // Setup default environment operation behavior
-    vi.mocked(envConfig.getEnvironmentForOperation).mockResolvedValue(
-      "development",
-    );
-  });
-
-  afterEach(() => {
-    console.error = originalConsoleError;
-    console.info = originalConsoleInfo;
-    process.exit = originalProcessExit;
-  });
-
-  it("should fail if not authenticated", async () => {
-    vi.mocked(config.getAuth).mockResolvedValue(null);
-
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: false,
-    });
-
-    expect(console.error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "Not authenticated. Please run 'gensx login' first.",
-      }),
-    );
-  });
-
-  it("should use project name from config when not specified", async () => {
-    mockFetch.mockResolvedValueOnce({
-      status: 200,
-      json: () =>
-        Promise.resolve({
-          executionId: "test-id",
-        }),
-    });
-
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: false,
-    });
-
-    expect(console.info).toHaveBeenCalledWith(
-      expect.stringContaining("test-id"),
-    );
+    // Set up output path using global tempDir
+    outputPath = path.join(tempDir, "output.json");
   });
 
   it("should fail if no project name is available", async () => {
+    // Mock empty project config
     vi.mocked(projectConfig.readProjectConfig).mockResolvedValue(null);
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
 
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: false,
-    });
-
-    expect(console.error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        message: expect.stringContaining("No project name found"),
-      }) as { message: string },
-    );
-  });
-
-  it("should use environment from CLI when not specified", async () => {
-    mockFetch.mockResolvedValueOnce({
-      status: 200,
-      json: () =>
-        Promise.resolve({
-          executionId: "test-id",
-        }),
-    });
-
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: false,
-    });
-
-    expect(console.info).toHaveBeenCalledWith(
-      expect.stringContaining("test-id"),
-    );
-  });
-
-  it("should fail if no environment is available", async () => {
-    vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(null);
-    vi.mocked(envConfig.getEnvironmentForOperation).mockRejectedValue(
-      new Error("No environments found."),
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: false,
+        },
+      }),
     );
 
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: false,
-    });
+    // Add logging to see what's being rendered
+    console.info("Initial rendered output:", lastFrame());
 
-    expect(console.error).toHaveBeenCalledWith(
-      new Error("No environments found."),
-    );
-  });
-
-  it("should handle streaming response when wait is true", async () => {
-    const mockReader = {
-      read: vi
-        .fn()
-        .mockResolvedValueOnce({
-          value: new TextEncoder().encode("test output"),
-          done: false,
-        })
-        .mockResolvedValueOnce({ done: true }),
-    };
-
-    mockFetch.mockResolvedValueOnce({
-      status: 200,
-      headers: new Headers({ "Content-Type": "application/stream+json" }),
-      body: { getReader: () => mockReader },
-    });
-
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: true,
-    });
-
-    expect(console.info).toHaveBeenCalledWith(
-      expect.stringContaining("Streaming response output"),
-    );
+    // Wait for error message
+    await waitForText(lastFrame, /No project name found/);
+    console.info("Final rendered output:", lastFrame());
   });
 
   it("should handle JSON response when wait is true", async () => {
@@ -232,18 +123,23 @@ suite("run command", () => {
       headers: new Headers({ "Content-Type": "application/json" }),
       json: () =>
         Promise.resolve({
-          executionId: "test-id",
+          output: { result: "success" },
+          executionStatus: "success",
         }),
     });
 
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: true,
-    });
-
-    expect(console.info).toHaveBeenCalledWith(
-      expect.stringContaining("Workflow execution completed"),
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: true,
+          env: "development",
+        },
+      }),
     );
+
+    await waitForText(lastFrame, /Workflow execution completed/);
   });
 
   it("should handle failed workflow execution", async () => {
@@ -257,13 +153,17 @@ suite("run command", () => {
         }),
     });
 
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: true,
-    });
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: true,
+        },
+      }),
+    );
 
-    expect(console.error).toHaveBeenCalledWith("❌ Workflow failed");
-    expect(process.exit).toHaveBeenCalledWith(1);
+    await waitForText(lastFrame, /Workflow failed/);
   });
 
   it("should write output to file when specified", async () => {
@@ -277,33 +177,80 @@ suite("run command", () => {
         }),
     });
 
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: true,
-      output: "output.json",
-    });
-
-    expect(console.info).toHaveBeenCalledWith(
-      expect.stringContaining("output.json"),
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: true,
+          output: outputPath,
+        },
+      }),
     );
+
+    await waitForText(lastFrame, /output.json/);
+
+    // Verify the file was written with correct content
+    const content = await fs.readFile(outputPath, "utf-8");
+    expect(JSON.parse(content)).toEqual({ result: "success" });
   });
 
   it("should handle API errors", async () => {
     mockFetch.mockResolvedValueOnce({
       status: 400,
       statusText: "Bad Request",
+      json: () => Promise.resolve({ error: "Bad Request" }),
     });
 
-    await runWorkflow("test-workflow", {
-      input: "{}",
-      wait: false,
-    });
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: false,
+        },
+      }),
+    );
 
-    expect(console.error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        message: expect.stringContaining("Failed to start workflow"),
-      }) as { message: string },
+    await waitForText(lastFrame, /Failed to start workflow/);
+  });
+
+  it("should show first-time setup when user hasn't completed setup", async () => {
+    // Update config file to show first-time setup not completed
+    const configPath = path.join(process.env.GENSX_CONFIG_DIR!, "config");
+    await fs.writeFile(
+      configPath,
+      `; GenSX Configuration File
+; Generated on: ${new Date().toISOString()}
+
+[api]
+token = test-token
+org = test-org
+baseUrl = https://api.test.com
+
+[console]
+baseUrl = https://console.test.com
+
+[state]
+hasCompletedFirstTimeSetup = false
+`,
+      "utf-8",
+    );
+
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: false,
+        },
+      }),
+    );
+
+    // Wait for the welcome message
+    await waitForText(
+      lastFrame,
+      /Welcome to GenSX! Let's get you set up first./,
     );
   });
 });
