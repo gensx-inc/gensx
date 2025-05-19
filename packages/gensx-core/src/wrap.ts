@@ -1,10 +1,9 @@
-import type { GsxComponent } from "@gensx/core";
+import type { GsxComponent } from "./types.js";
 
-import * as gensx from "@gensx/core";
+import { Component } from "./component.js";
 
 /**
- * Options you might want later (e.g. skip, prefix, concurrency, etc.).
- * Only `prefix` is used for now.
+ * Options for wrapping SDKs and functions.
  */
 export interface WrapOptions {
   /** Optional prefix for all generated component names. */
@@ -21,29 +20,29 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
    * path so we can generate sensible component names like:
    *   "OpenAI.chat.completions.create"
    */
-  const makeProxy = (target: any, path: string[]): any =>
+  const makeProxy = <U extends object>(target: U, path: string[]): U =>
     new Proxy(target, {
       get(origTarget, propKey, receiver) {
         const value = Reflect.get(origTarget, propKey, receiver);
 
-        // ----- Case 1: it’s a function → return a GenSX component
+        // ----- Case 1: it's a function → return a GenSX component
         if (typeof value === "function") {
           const componentName =
             (opts.prefix ? `${opts.prefix}.` : "") +
             [...path, String(propKey)].join(".");
 
           // Bind the original `this` so SDK internals keep working
-          return wrapFunction(value.bind(origTarget), componentName);
+          const boundFn = value.bind(origTarget) as (input: object) => unknown;
+          return wrapFunction(boundFn, componentName);
         }
 
-        // ----- Case 2: it’s an object that might contain more functions
+        // ----- Case 2: it's an object that might contain more functions
         if (
-          value &&
           typeof value === "object" &&
           !Array.isArray(value) &&
           !(value instanceof Date)
         ) {
-          return makeProxy(value, [...path, String(propKey)]);
+          return makeProxy(value as object, [...path, String(propKey)]);
         }
 
         // ----- Case 3: primitive or unhandled → pass through untouched
@@ -51,9 +50,13 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
       },
     });
 
-  // Kick things off with the SDK’s constructor name as the first path element
-  const rootName = sdk.constructor.name.toLowerCase() ?? "sdk";
-  return makeProxy(sdk, [rootName]) as T;
+  // Kick things off with the SDK's constructor name as the first path element
+  const hasCustomConstructor =
+    "constructor" in sdk && sdk.constructor !== Object;
+  const rootName = hasCustomConstructor
+    ? sdk.constructor.name.toLowerCase()
+    : "sdk";
+  return makeProxy(sdk, [rootName]);
 }
 
 /**
@@ -87,5 +90,5 @@ export function wrapFunction<TInput extends object, TOutput>(
   name?: string,
 ): GsxComponent<TInput, TOutput> {
   const componentName = name ?? (fn.name || "AnonymousComponent");
-  return gensx.Component<TInput, TOutput>(componentName, fn);
+  return Component<TInput, TOutput>(componentName, fn);
 }

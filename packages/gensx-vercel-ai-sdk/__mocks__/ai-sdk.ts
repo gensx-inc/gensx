@@ -9,7 +9,7 @@ const createMockOpenAI = (modelId: string) => ({
   doGenerate: vi
     .fn()
     .mockImplementation(async (params: { mode?: { type: string } }) => {
-      await Promise.resolve(); // Add await to satisfy linter
+      await Promise.resolve();
 
       console.info("doGenerate called with params:", params);
 
@@ -54,7 +54,7 @@ const createMockOpenAI = (modelId: string) => ({
       return response;
     }),
   doStream: vi.fn().mockImplementation(async () => {
-    await Promise.resolve(); // Add await to satisfy linter
+    await Promise.resolve();
     return {
       stream: new ReadableStream({
         async start(controller) {
@@ -85,7 +85,7 @@ const createMockOpenAI = (modelId: string) => ({
     };
   }),
   doObject: vi.fn().mockImplementation(async () => {
-    await Promise.resolve(); // Add await to satisfy linter
+    await Promise.resolve();
     return {
       recipe: {
         name: "Chocolate Chip Cookies",
@@ -108,7 +108,7 @@ const createMockEmbedding = (modelId: string) => ({
   maxEmbeddingsPerCall: 100,
   supportsParallelCalls: true,
   doEmbed: vi.fn().mockImplementation(async (params: { values: string[] }) => {
-    await Promise.resolve(); // Add await to satisfy linter
+    await Promise.resolve();
     return {
       embeddings: params.values.map(() => [0.1, 0.2, 0.3]),
       usage: {
