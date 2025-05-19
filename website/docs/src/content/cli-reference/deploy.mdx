@@ -15,19 +15,19 @@ gensx deploy <file> [options]
 
 ## Arguments
 
-| Argument | Description                                                                                |
-| -------- | ------------------------------------------------------------------------------------------ |
+| Argument | Description                                                                     |
+| -------- | ------------------------------------------------------------------------------- |
 | `<file>` | File to deploy. This should be a TypeScript file that exports a GenSX workflow. |
 
 ## Options
 
-| Option                  | Description                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| `-ev, --env-var <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
-| `-p, --project <name>`  | Project name to deploy to.                                                   |
-| `-e, --env <name>`      | Environment name to deploy to.                                               |
-| `-y, --yes`            | Automatically answer yes to all prompts.                                    |
-| `-h, --help`            | Display help for the command.                                                |
+| Option                      | Description                                                                  |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| `-e, --env-var <KEY=value>` | Environment variable to include with deployment. Can be used multiple times. |
+| `-p, --project <name>`      | Project name to deploy to.                                                   |
+| `--env <name>`              | Environment name to deploy to.                                               |
+| `-y, --yes`                 | Automatically answer yes to all prompts.                                     |
+| `-h, --help`                | Display help for the command.                                                |
 
 ## Description
 
@@ -50,17 +50,17 @@ gensx deploy src/workflows.tsx
 gensx deploy src/workflows.tsx --project my-production-project --env dev
 
 # Deploy with environment variables
-gensx deploy src/workflows.tsx -ev API_KEY=abc123 -ev DEBUG=true
+gensx deploy src/workflows.tsx -e API_KEY=abc123 -e DEBUG=true
 
 # Deploy with an environment variable taken from your local environment
-gensx deploy src/workflows.tsx -ev OPENAI_API_KEY
+gensx deploy src/workflows.tsx -e OPENAI_API_KEY
 ```
 
 ## Notes
 
 - You must be logged in to GenSX Cloud to deploy (`gensx login`)
 - `gensx deploy` requires Docker to be running
-- If your workflow requires API keys or other secrets, provide them using the `-ev` or `--env-var` option
+- If your workflow requires API keys or other secrets, provide them using the `-e` or `--env-var` option
 - For environment variables without a specified value, the CLI will use the value from your local environment
 - After deployment, you can manage your workflows from the GenSX Cloud console
 - The deployment process automatically handles bundling dependencies

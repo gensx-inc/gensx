@@ -12,7 +12,7 @@
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "deploy": "npx gensx deploy -ev OPENAI_API_KEY ./src/workflows.tsx"
+    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.tsx"
   },
   "dependencies": {
     "@gensx/openai": "^0.1.27",
