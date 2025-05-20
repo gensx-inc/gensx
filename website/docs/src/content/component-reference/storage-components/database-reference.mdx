@@ -39,15 +39,6 @@ function useDatabase(
 | `name`    | `string`                                            | The database name to access       |
 | `options` | [`DatabaseStorageOptions`](#databasestorageoptions) | Optional configuration properties |
 
-### Configuration Properties
-
-| Prop          | Type                      | Default              | Description                                                                                                                                                                                             |
-| ------------- | ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kind`        | `"filesystem" \| "cloud"` | Auto-detected        | The storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                                                                                 |
-| `rootDir`     | `string`                  | `".gensx/databases"` | Root directory for storing database files (filesystem only)                                                                                                                                             |
-| `project`     | `string`                  | Auto-detected        | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file.                   |
-| `environment` | `string`                  | Auto-detected        | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |
-
 ### Returns
 
 Returns a database object with methods to interact with SQL database.
