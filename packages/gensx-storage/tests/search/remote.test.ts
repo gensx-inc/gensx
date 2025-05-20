@@ -7,7 +7,6 @@ import type { DistanceMetric, Filters } from "@turbopuffer/turbopuffer";
 
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
-import { SearchProvider } from "../../src/search/provider.js";
 import {
   SearchApiError,
   SearchError,
@@ -77,10 +76,6 @@ suite("GenSX Search Storage", () => {
     expect(typeof namespace.getMetadata).toBe("function");
     expect(typeof namespace.getSchema).toBe("function");
     expect(typeof namespace.updateSchema).toBe("function");
-  });
-
-  test("should be able to import and use SearchProvider", () => {
-    expect(SearchProvider).toBeDefined();
   });
 
   test("should ensure a namespace", async () => {

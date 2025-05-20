@@ -5,8 +5,8 @@ import { FileSystemBlobStorage } from "./filesystem.js";
 import { RemoteBlobStorage } from "./remote.js";
 import {
   Blob,
-  BlobProviderProps,
   BlobStorage,
+  BlobStorageOptions,
   DeleteBlobResult,
   ListBlobsOptions,
   ListBlobsResponse,
@@ -20,29 +20,29 @@ export class BlobClient {
 
   /**
    * Create a new BlobClient
-   * @param props Optional configuration properties for the blob storage
+   * @param options Optional configuration properties for the blob storage
    */
-  constructor(props: BlobProviderProps = {}) {
+  constructor(options: BlobStorageOptions = {}) {
     const kind =
-      props.kind ??
+      options.kind ??
       (process.env.GENSX_RUNTIME === "cloud" ? "cloud" : "filesystem");
 
     if (kind === "filesystem") {
       const rootDir =
-        props.kind === "filesystem" && props.rootDir
-          ? props.rootDir
+        options.kind === "filesystem" && options.rootDir
+          ? options.rootDir
           : join(process.cwd(), ".gensx", "blobs");
 
-      this.storage = new FileSystemBlobStorage(rootDir, props.defaultPrefix);
+      this.storage = new FileSystemBlobStorage(rootDir, options.defaultPrefix);
     } else {
       const { project, environment } = getProjectAndEnvironment({
-        project: props.project,
-        environment: props.environment,
+        project: options.project,
+        environment: options.environment,
       });
       this.storage = new RemoteBlobStorage(
         project,
         environment,
-        props.defaultPrefix,
+        options.defaultPrefix,
       );
     }
   }
