@@ -13,36 +13,6 @@ API reference for GenSX Cloud search components. Search is powered by turbopuffe
 npm install @gensx/storage
 ```
 
-## SearchProvider
-
-Provides vector search capabilities to its child components.
-
-### Import
-
-```tsx
-import { SearchProvider } from "@gensx/storage";
-```
-
-### Props
-
-| Prop            | Type                  | Default     | Description                                      |
-| --------------- | --------------------- | ----------- | ------------------------------------------------ |
-| `project`       | `string`                  | Auto-detected    | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file. |
-| `environment`   | `string`                  | Auto-detected    | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |
-
-
-### Example
-
-```tsx
-import { SearchProvider } from "@gensx/storage";
-
-const Workflow = gensx.Component("SearchWorkflow", ({ input }) => (
-  <SearchProvider>
-    <YourComponent input={input} />
-  </SearchProvider>
-));
-```
-
 ## useSearch
 
 Hook that provides access to vector search for a specific namespace.
@@ -56,14 +26,18 @@ import { useSearch } from "@gensx/storage";
 ### Signature
 
 ```tsx
-function useSearch(name: string): Namespace;
+function useSearch(
+  name: string,
+  props?: SearchProviderProps,
+): Promise<Namespace>;
 ```
 
 ### Parameters
 
-| Parameter | Type     | Description                  |
-| --------- | -------- | ---------------------------- |
-| `name`    | `string` | The namespace name to access |
+| Parameter | Type                                          | Default  | Description                       |
+| --------- | --------------------------------------------- | -------- | --------------------------------- |
+| `name`    | `string`                                      | Required | The namespace name to access      |
+| `props`   | [`SearchProviderProps`](#searchproviderprops) | `{}`     | Optional configuration properties |
 
 ### Returns
 
@@ -72,10 +46,17 @@ Returns a namespace object with methods to interact with vector search.
 ### Example
 
 ```tsx
+// Simple usage
 const namespace = await useSearch("documents");
 const results = await namespace.query({
   vector: queryEmbedding,
   includeAttributes: true,
+});
+
+// With configuration
+const namespace = await useSearch("documents", {
+  project: "my-project",
+  environment: "production",
 });
 ```
 
@@ -93,16 +74,16 @@ async write(options: WriteParams): Promise<number>
 
 #### Parameters
 
-| Parameter         | Type             | Default     | Description                                 |
-| ----------------- | ---------------- | ----------- | ------------------------------------------- |
-| `upsertColumns`   | `UpsertColumns`  | `undefined` | Column-based format for upserting documents |
-| `upsertRows`      | `UpsertRows`     | `undefined` | Row-based format for upserting documents    |
-| `patchColumns`    | `PatchColumns`   | `undefined` | Column-based format for patching documents  |
-| `patchRows`       | `PatchRows`      | `undefined` | Row-based format for patching documents     |
-| `deletes`         | `Id[]`           | `undefined` | Array of document IDs to delete             |
-| `deleteByFilter`  | `Filters`        | `undefined` | Filter to match documents for deletion      |
-| `distanceMetric`  | `DistanceMetric` | `undefined` | Distance metric for similarity calculations |
-| `schema`          | `Schema`         | `undefined` | Optional schema definition for attributes   |
+| Parameter        | Type             | Default     | Description                                 |
+| ---------------- | ---------------- | ----------- | ------------------------------------------- |
+| `upsertColumns`  | `UpsertColumns`  | `undefined` | Column-based format for upserting documents |
+| `upsertRows`     | `UpsertRows`     | `undefined` | Row-based format for upserting documents    |
+| `patchColumns`   | `PatchColumns`   | `undefined` | Column-based format for patching documents  |
+| `patchRows`      | `PatchRows`      | `undefined` | Row-based format for patching documents     |
+| `deletes`        | `Id[]`           | `undefined` | Array of document IDs to delete             |
+| `deleteByFilter` | `Filters`        | `undefined` | Filter to match documents for deletion      |
+| `distanceMetric` | `DistanceMetric` | `undefined` | Distance metric for similarity calculations |
+| `schema`         | `Schema`         | `undefined` | Optional schema definition for attributes   |
 
 #### Example
 
@@ -111,15 +92,18 @@ async write(options: WriteParams): Promise<number>
 await namespace.write({
   upsertColumns: {
     id: ["doc-1", "doc-2"],
-    vector: [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+    vector: [
+      [0.1, 0.2, 0.3],
+      [0.4, 0.5, 0.6],
+    ],
     text: ["Document 1", "Document 2"],
-    category: ["article", "blog"]
+    category: ["article", "blog"],
   },
   distanceMetric: "cosine_distance",
   schema: {
     text: { type: "string" },
-    category: { type: "string" }
-  }
+    category: { type: "string" },
+  },
 });
 
 // Upsert documents in row-based format
@@ -129,21 +113,21 @@ await namespace.write({
       id: "doc-1",
       vector: [0.1, 0.2, 0.3],
       text: "Document 1",
-      category: "article"
+      category: "article",
     },
     {
       id: "doc-2",
       vector: [0.4, 0.5, 0.6],
       text: "Document 2",
-      category: "blog"
-    }
+      category: "blog",
+    },
   ],
-  distanceMetric: "cosine_distance"
+  distanceMetric: "cosine_distance",
 });
 
 // Delete documents by ID
 await namespace.write({
-  deletes: ["doc-1", "doc-2"]
+  deletes: ["doc-1", "doc-2"],
 });
 
 // Delete documents by filter
@@ -152,9 +136,9 @@ await namespace.write({
     "And",
     [
       ["category", "Eq", "article"],
-      ["createdAt", "Lt", "2023-01-01"]
-    ]
-  ]
+      ["createdAt", "Lt", "2023-01-01"],
+    ],
+  ],
 });
 
 // Patch documents (update specific fields)
@@ -162,9 +146,9 @@ await namespace.write({
   patchRows: [
     {
       id: "doc-1",
-      category: "updated-category"
-    }
-  ]
+      category: "updated-category",
+    },
+  ],
 });
 ```
 
@@ -182,15 +166,15 @@ async query(options: QueryOptions): Promise<QueryResults>
 
 #### Parameters
 
-| Parameter           | Type                                     | Default     | Description                              |
-| ------------------- | ---------------------------------------- | ----------- | ---------------------------------------- |
-| `vector`            | `number[]`                               | Required    | Query vector for similarity search       |
-| `topK`              | `number`                                 | `10`        | Number of results to return              |
-| `includeVectors`    | `boolean`                                | `false`     | Whether to include vectors in results    |
-| `includeAttributes` | `boolean \| string[]`                    | `true`      | Include all attributes or specified ones |
-| `filters`           | `Filters`                                | `undefined` | Metadata filters                         |
-| `rankBy`            | `RankBy`                                 | `undefined` | Attribute-based ranking or text ranking  |
-| `consistency`       | `string`                                 | `undefined` | Consistency level for reads              |
+| Parameter           | Type                  | Default     | Description                              |
+| ------------------- | --------------------- | ----------- | ---------------------------------------- |
+| `vector`            | `number[]`            | Required    | Query vector for similarity search       |
+| `topK`              | `number`              | `10`        | Number of results to return              |
+| `includeVectors`    | `boolean`             | `false`     | Whether to include vectors in results    |
+| `includeAttributes` | `boolean \| string[]` | `true`      | Include all attributes or specified ones |
+| `filters`           | `Filters`             | `undefined` | Metadata filters                         |
+| `rankBy`            | `RankBy`              | `undefined` | Attribute-based ranking or text ranking  |
+| `consistency`       | `string`              | `undefined` | Consistency level for reads              |
 
 #### Example
 
@@ -304,192 +288,6 @@ console.log(metadata);
 // }
 ```
 
-## Namespace management
-
-Higher-level operations for managing namespaces (these are accessed directly from the search object, not via `useSearch`):
-
-```tsx
-import { SearchClient } from "@gensx/storage";
-
-const search = new SearchClient();
-
-// List all namespaces
-const { namespaces } = await search.listNamespaces();
-
-// Check if namespace exists
-const exists = await search.namespaceExists("my-namespace");
-
-// Create namespace if it doesn't exist
-const { created } = await search.ensureNamespace("my-namespace");
-
-// Delete a namespace
-const { deleted } = await search.deleteNamespace("old-namespace");
-
-// Get a namespace directly for vector operations
-const namespace = search.getNamespace("products");
-
-// Write vectors using the namespace
-await namespace.write({
-  upsertRows: [
-    {
-      id: "product-1",
-      vector: [0.1, 0.3, 0.5, ...], // embedding vector
-      name: "Ergonomic Chair",
-      category: "furniture",
-      price: 299.99
-    },
-    {
-      id: "product-2",
-      vector: [0.2, 0.4, 0.6, ...],
-      name: "Standing Desk",
-      category: "furniture",
-      price: 499.99
-    }
-  ],
-  distanceMetric: "cosine_distance",
-  schema: {
-    name: { type: "string" },
-    category: { type: "string" },
-    price: { type: "number" }
-  }
-});
-
-// Query vectors directly with the namespace
-const searchResults = await namespace.query({
-  vector: [0.15, 0.35, 0.55, ...], // query vector
-  topK: 5,
-  includeAttributes: true,
-  filters: [
-    "And",
-    [
-      ["category", "Eq", "furniture"],
-      ["price", "Lt", 400]
-    ]
-  ]
-});
-```
-
-The `SearchClient` is a standard typescript library and can be used outside of GenSX workflows in your normal application code as well.
-
-## useSearchStorage
-
-Hook that provides direct access to the search storage instance, which includes higher-level namespace management functions.
-
-### Import
-
-```tsx
-import { useSearchStorage } from "@gensx/storage";
-```
-
-### Signature
-
-```tsx
-function useSearchStorage(): SearchStorage;
-```
-
-### Example
-
-```tsx
-const searchStorage = useSearchStorage();
-```
-
-The search storage object provides these management methods:
-
-### getNamespace
-
-Get a namespace object for direct interaction.
-
-```tsx
-// Get a namespace directly (without calling useSearch)
-const searchStorage = useSearchStorage();
-const namespace = searchStorage.getNamespace("documents");
-
-// Usage example
-await namespace.write({
-  upsertRows: [...],
-  distanceMetric: "cosine_distance"
-});
-```
-
-### listNamespaces
-
-List namespaces in your project.
-
-```tsx
-const searchStorage = useSearchStorage();
-const { namespaces, nextCursor } = await searchStorage.listNamespaces();
-console.log("Namespaces:", namespaces); // ["docs", "products"]
-
-```
-
-The method accepts an options object with these properties:
-
-| Option   | Type     | Description                                    |
-| -------- | -------- | ---------------------------------------------- |
-| `prefix` | `string` | Optional prefix to filter namespace names by   |
-| `limit`  | `number` | Maximum number of results to return per page   |
-| `cursor` | `string` | Cursor for pagination from previous response   |
-
-Returns an object with:
-- `namespaces`: Array of namespace names
-- `nextCursor`: Cursor for the next page, or undefined if no more results
-
-### ensureNamespace
-
-Create a namespace if it doesn't exist.
-
-```tsx
-const searchStorage = useSearchStorage();
-const { created } = await searchStorage.ensureNamespace("documents");
-if (created) {
-  console.log("Namespace was created");
-} else {
-  console.log("Namespace already existed");
-}
-```
-
-### deleteNamespace
-
-Delete a namespace and all its data.
-
-```tsx
-const searchStorage = useSearchStorage();
-const { deleted } = await searchStorage.deleteNamespace("old-namespace");
-if (deleted) {
-  console.log("Namespace was deleted");
-} else {
-  console.log("Namespace could not be deleted");
-}
-```
-
-### namespaceExists
-
-Check if a namespace exists.
-
-```tsx
-const searchStorage = useSearchStorage();
-const exists = await searchStorage.namespaceExists("documents");
-if (exists) {
-  console.log("Namespace exists");
-} else {
-  console.log("Namespace does not exist");
-}
-```
-
-### hasEnsuredNamespace
-
-Check if a namespace has been ensured in the current session.
-
-```tsx
-const searchStorage = useSearchStorage();
-const isEnsured = searchStorage.hasEnsuredNamespace("documents");
-if (isEnsured) {
-  console.log("Namespace has been ensured in this session");
-} else {
-  console.log("Namespace has not been ensured yet");
-}
-```
-
 ## SearchClient
 
 The `SearchClient` class provides a way to interact with GenSX vector search capabilities outside of the GenSX workflow context, such as from regular Node.js applications or server endpoints.
@@ -503,13 +301,26 @@ import { SearchClient } from "@gensx/storage";
 ### Constructor
 
 ```tsx
-constructor()
+constructor(props?: SearchProviderProps);
 ```
+
+#### Parameters
+
+| Parameter | Type                                          | Default | Description                       |
+| --------- | --------------------------------------------- | ------- | --------------------------------- |
+| `props`   | [`SearchProviderProps`](#searchproviderprops) | `{}`    | Optional configuration properties |
 
 #### Example
 
 ```tsx
+// Default client
 const searchClient = new SearchClient();
+
+// With configuration
+const searchClient = new SearchClient({
+  project: "my-project",
+  environment: "production",
+});
 ```
 
 ### Methods
@@ -626,41 +437,41 @@ The SearchClient is particularly useful when you need to access vector search fu
 
 ```tsx
 // Example: Using SearchClient in an Express handler
-import express from 'express';
-import { SearchClient } from '@gensx/storage';
-import { OpenAI } from 'openai';
+import express from "express";
+import { SearchClient } from "@gensx/storage";
+import { OpenAI } from "openai";
 
 const app = express();
 const searchClient = new SearchClient();
 const openai = new OpenAI();
 
-app.post('/api/search', async (req, res) => {
+app.post("/api/search", async (req, res) => {
   try {
     const { query } = req.body;
 
     // Generate embedding for the query
     const embedding = await openai.embeddings.create({
       model: "text-embedding-3-small",
-      input: query
+      input: query,
     });
 
     // Search for similar documents
-    const namespace = await searchClient.getNamespace('documents');
+    const namespace = await searchClient.getNamespace("documents");
     const results = await namespace.query({
       vector: embedding.data[0].embedding,
       topK: 5,
-      includeAttributes: true
+      includeAttributes: true,
     });
 
     res.json(results);
   } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({ error: 'Search error' });
+    console.error("Search error:", error);
+    res.status(500).json({ error: "Search error" });
   }
 });
 
 app.listen(3000, () => {
-  console.log('Server running on port 3000');
+  console.log("Server running on port 3000");
 });
 ```
 
@@ -671,11 +482,12 @@ Filters use a structured array format with the following pattern:
 ```tsx
 // Basic filter structure
 [
-  "Operation",      // And, Or, Not
-  [                 // Array of conditions
-    ["field", "Operator", value]
-  ]
-]
+  "Operation", // And, Or, Not
+  [
+    // Array of conditions
+    ["field", "Operator", value],
+  ],
+];
 ```
 
 Available operators:
@@ -704,10 +516,10 @@ Sorts by a field in ascending or descending order:
 
 ```tsx
 // Sort by the createdAt attribute in ascending order
-rankBy: ["createdAt", "asc"]
+rankBy: ["createdAt", "asc"];
 
 // Sort by price in descending order (highest first)
-rankBy: ["price", "desc"]
+rankBy: ["price", "desc"];
 ```
 
 ### Text-based ranking
@@ -716,22 +528,34 @@ For full-text search relevance scoring:
 
 ```tsx
 // Basic BM25 text ranking
-rankBy: ["text", "BM25", "search query"]
+rankBy: ["text", "BM25", "search query"];
 
 // BM25 with multiple search terms
-rankBy: ["text", "BM25", ["term1", "term2"]]
+rankBy: ["text", "BM25", ["term1", "term2"]];
 
 // Combined text ranking strategies
-rankBy: ["Sum", [
-  ["text", "BM25", "search query"],
-  ["text", "BM25", "another term"]
-]]
+rankBy: [
+  "Sum",
+  [
+    ["text", "BM25", "search query"],
+    ["text", "BM25", "another term"],
+  ],
+];
 
 // Weighted text ranking (multiply BM25 score by 0.5)
-rankBy: ["Product", [["text", "BM25", "search query"], 0.5]]
+rankBy: ["Product", [["text", "BM25", "search query"], 0.5]];
 
 // Alternative syntax for weighted ranking
-rankBy: ["Product", [0.5, ["text", "BM25", "search query"]]]
+rankBy: ["Product", [0.5, ["text", "BM25", "search query"]]];
 ```
 
 Use these options to fine-tune the relevance and ordering of your search results.
+
+## SearchProviderProps
+
+Configuration properties for search operations.
+
+| Prop          | Type     | Default       | Description                                                                                                                                                                                             |
+| ------------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `project`     | `string` | Auto-detected | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file.                   |
+| `environment` | `string` | Auto-detected | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |
