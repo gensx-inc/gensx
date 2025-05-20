@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.31](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.30...gensx-v0.3.31) (2025-05-20)
+
+
+### 🐛 Bug Fixes
+
+* removing -ev cli option in favor of -e ([#687](https://github.com/gensx-inc/gensx/issues/687)) ([06cca73](https://github.com/gensx-inc/gensx/commit/06cca732dd59f8cd080e55314e6a09a45802f21e))
+* resolves bug preventing deployment if project doesn't exist ([#689](https://github.com/gensx-inc/gensx/issues/689)) ([2971062](https://github.com/gensx-inc/gensx/commit/2971062f9b9be3c129a6c0c984c03f082134cce7))
+
 ## [0.3.30](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.29...gensx-v0.3.30) (2025-05-15)
 
 
