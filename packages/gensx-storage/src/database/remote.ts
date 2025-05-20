@@ -26,17 +26,45 @@ const API_BASE_URL = "https://api.gensx.com";
 /**
  * Helper to convert between API errors and DatabaseErrors
  */
-function handleApiError(err: unknown, operation: string): never {
-  if (err instanceof DatabaseError) {
-    throw err;
+async function handleApiError(errorOrResponse: unknown, operation: string): Promise<never> {
+  if (errorOrResponse instanceof DatabaseError) {
+    throw errorOrResponse;
   }
-  if (err instanceof Error) {
-    throw new DatabaseNetworkError(
-      `Error during ${operation}: ${err.message}`,
-      err,
-    );
+
+  if (errorOrResponse instanceof Response) {
+    const response = errorOrResponse;
+    let detailedMessage = response.statusText; // Default message
+
+    try {
+      const errorBody = await response.clone().json();
+      if (typeof errorBody.error === 'string' && errorBody.error.trim() !== '') {
+        detailedMessage = errorBody.error;
+      } else {
+        const textResponse = await response.clone().text();
+        if (textResponse.trim() !== '') {
+          detailedMessage = textResponse;
+        }
+      }
+    } catch (e) {
+      if (detailedMessage === response.statusText) {
+          try {
+              const textResponse = await response.clone().text();
+              if (textResponse.trim() !== '') {
+                  detailedMessage = textResponse;
+              }
+          } catch (textEx) {
+              // console.warn(`Failed to get text from response body for ${operation}: ${textEx}`);
+          }
+      }
+    }
+    throw new DatabaseInternalError(`Failed to ${operation}: ${detailedMessage} (Status: ${response.status})`);
   }
-  throw new DatabaseNetworkError(`Error during ${operation}: ${String(err)}`);
+
+  if (errorOrResponse instanceof Error) {
+    throw new DatabaseNetworkError(`Network error during ${operation}: ${errorOrResponse.message}`, errorOrResponse);
+  }
+
+  throw new DatabaseNetworkError(`Unknown error during ${operation}: ${String(errorOrResponse)}`);
 }
 
 /**
@@ -85,15 +113,13 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to execute SQL: ${response.statusText}`,
-        );
+        await handleApiError(response, "execute SQL");
       }
 
       const data = (await response.json()) as DatabaseResult;
       return data;
     } catch (err) {
-      throw handleApiError(err, "execute");
+      await handleApiError(err, "execute");
     }
   }
 
@@ -113,15 +139,13 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to execute batch: ${response.statusText}`,
-        );
+        await handleApiError(response, "execute batch");
       }
 
       const data = (await response.json()) as DatabaseBatchResult;
       return data;
     } catch (err) {
-      throw handleApiError(err, "batch");
+      await handleApiError(err, "batch");
     }
   }
 
@@ -141,15 +165,13 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to execute multiple: ${response.statusText}`,
-        );
+        await handleApiError(response, "execute multiple SQL statements");
       }
 
       const data = (await response.json()) as DatabaseBatchResult;
       return data;
     } catch (err) {
-      throw handleApiError(err, "executeMultiple");
+      await handleApiError(err, "executeMultiple");
     }
   }
 
@@ -169,15 +191,13 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to execute migration: ${response.statusText}`,
-        );
+        await handleApiError(response, "execute migration");
       }
 
       const data = (await response.json()) as DatabaseBatchResult;
       return data;
     } catch (err) {
-      throw handleApiError(err, "migrate");
+      await handleApiError(err, "migrate");
     }
   }
 
@@ -195,9 +215,7 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to get database info: ${response.statusText}`,
-        );
+        await handleApiError(response, "get database info");
       }
 
       const data = (await response.json()) as DatabaseInfo;
@@ -209,7 +227,7 @@ export class RemoteDatabase implements Database {
         lastModified: new Date(lastModified as unknown as string),
       };
     } catch (err) {
-      throw handleApiError(err, "getInfo");
+      await handleApiError(err, "getInfo");
     }
   }
 
@@ -300,9 +318,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
       });
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to list databases: ${response.statusText}`,
-        );
+        await handleApiError(response, "list databases");
       }
 
       const data = (await response.json()) as {
@@ -318,7 +334,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
         ...(data.nextCursor && { nextCursor: data.nextCursor }),
       };
     } catch (err) {
-      throw handleApiError(err, "listDatabases");
+      await handleApiError(err, "listDatabases");
     }
   }
 
@@ -339,9 +355,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
       );
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to ensure database: ${response.statusText}`,
-        );
+        await handleApiError(response, "ensure database");
       }
 
       const data = (await response.json()) as EnsureDatabaseResult;
@@ -353,13 +367,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
 
       return data;
     } catch (err) {
-      if (err instanceof DatabaseError) {
-        throw err;
-      }
-      throw new DatabaseNetworkError(
-        `Error during ensureDatabase operation: ${String(err)}`,
-        err as Error,
-      );
+      await handleApiError(err, "ensureDatabase");
     }
   }
 
@@ -383,9 +391,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
       );
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to delete database: ${response.statusText}`,
-        );
+        await handleApiError(response, "delete database");
       }
 
       const data = (await response.json()) as DeleteDatabaseResult;
@@ -403,13 +409,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
 
       return data;
     } catch (err) {
-      if (err instanceof DatabaseError) {
-        throw err;
-      }
-      throw new DatabaseNetworkError(
-        `Error during deleteDatabase operation: ${String(err)}`,
-        err as Error,
-      );
+      await handleApiError(err, "deleteDatabase");
     }
   }
 }

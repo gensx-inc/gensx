@@ -121,17 +121,48 @@ export class SearchNetworkError extends SearchError {
 /**
  * Helper to convert API errors to more specific errors
  */
-function handleApiError(err: unknown, operation: string): never {
-  if (err instanceof SearchError) {
-    throw err;
+async function handleApiError(errorOrResponse: unknown, operation: string): Promise<never> {
+  if (errorOrResponse instanceof SearchError) { // Base class for search errors
+    throw errorOrResponse;
   }
-  if (err instanceof Error) {
-    throw new SearchNetworkError(
-      `Error during ${operation}: ${err.message}`,
-      err,
-    );
+
+  if (errorOrResponse instanceof Response) {
+    const response = errorOrResponse;
+    let detailedMessage = response.statusText; // Default message
+
+    try {
+      const errorBody = await response.clone().json();
+      if (typeof errorBody.error === 'string' && errorBody.error.trim() !== '') {
+        detailedMessage = errorBody.error;
+      } else {
+        const textResponse = await response.clone().text();
+        if (textResponse.trim() !== '') {
+          detailedMessage = textResponse;
+        }
+      }
+    } catch (e) {
+      if (detailedMessage === response.statusText) {
+          try {
+              const textResponse = await response.clone().text();
+              if (textResponse.trim() !== '') {
+                  detailedMessage = textResponse;
+              }
+          } catch (textEx) {
+              // console.warn(`Failed to get text from response body for ${operation}: ${textEx}`);
+          }
+      }
+    }
+    // Using SearchApiError to align with existing specific error hierarchy for search
+    throw new SearchApiError(`Failed to ${operation}: ${detailedMessage} (Status: ${response.status})`);
   }
-  throw new SearchNetworkError(`Error during ${operation}: ${String(err)}`);
+
+  // Important: Check for SearchError first, then generic Error.
+  // This handles cases where 'err' is an Error but not a SearchError.
+  if (errorOrResponse instanceof Error) { 
+    throw new SearchNetworkError(`Network error during ${operation}: ${errorOrResponse.message}`, errorOrResponse);
+  }
+
+  throw new SearchNetworkError(`Unknown error during ${operation}: ${String(errorOrResponse)}`);
 }
 
 /**
@@ -181,16 +212,13 @@ export class SearchNamespace implements Namespace {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        await handleApiError(response, "write to namespace");
       }
 
       const data = (await response.json()) as { rowsAffected: number };
       return data.rowsAffected;
     } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "upsert");
-      }
-      throw err;
+      await handleApiError(err, "write");
     }
   }
 
@@ -228,16 +256,13 @@ export class SearchNamespace implements Namespace {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        await handleApiError(response, "query namespace");
       }
 
       const data = (await response.json()) as QueryResults;
       return data;
     } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "query");
-      }
-      throw err;
+      await handleApiError(err, "query");
     }
   }
 
@@ -255,16 +280,13 @@ export class SearchNamespace implements Namespace {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        await handleApiError(response, "get namespace schema");
       }
 
       const data = (await response.json()) as Schema;
       return data;
     } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "schema");
-      }
-      throw err;
+      await handleApiError(err, "getSchema");
     }
   }
 
@@ -284,16 +306,13 @@ export class SearchNamespace implements Namespace {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        await handleApiError(response, "update namespace schema");
       }
 
       const data = (await response.json()) as Schema;
       return data;
     } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "updateSchema");
-      }
-      throw err;
+      await handleApiError(err, "updateSchema");
     }
   }
 
@@ -311,16 +330,13 @@ export class SearchNamespace implements Namespace {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        await handleApiError(response, "get namespace metadata");
       }
 
       const data = (await response.json()) as { metadata: NamespaceMetadata };
       return data.metadata;
     } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "metadata");
-      }
-      throw err;
+      await handleApiError(err, "getMetadata");
     }
   }
 }
@@ -395,7 +411,7 @@ export class SearchStorage implements ISearchStorage {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        await handleApiError(response, "ensure namespace");
       }
 
       const data = (await response.json()) as EnsureNamespaceResult;
@@ -407,10 +423,7 @@ export class SearchStorage implements ISearchStorage {
 
       return data;
     } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "ensureNamespace");
-      }
-      throw err;
+      await handleApiError(err, "ensureNamespace");
     }
   }
 
@@ -428,7 +441,15 @@ export class SearchStorage implements ISearchStorage {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        // 404 is not an error for delete, it means already deleted or never existed.
+        // The API currently returns 200 with {deleted: false} if not found,
+        // so this specific 404 check might not be strictly needed if API adheres to that.
+        // However, if API could return 404 for "not found to delete", this would be:
+        // if (response.status !== 404) {
+        //   await handleApiError(response, "delete namespace");
+        // }
+        // For now, assume any non-ok is an issue that handleApiError should process.
+        await handleApiError(response, "delete namespace");
       }
 
       const data = (await response.json()) as DeleteNamespaceResult;
@@ -445,10 +466,7 @@ export class SearchStorage implements ISearchStorage {
 
       return data;
     } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "deleteNamespace");
-      }
-      throw err;
+      await handleApiError(err, "deleteNamespace");
     }
   }
 
@@ -489,7 +507,7 @@ export class SearchStorage implements ISearchStorage {
       });
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        await handleApiError(response, "list namespaces");
       }
 
       const data = (await response.json()) as {
@@ -505,10 +523,7 @@ export class SearchStorage implements ISearchStorage {
         nextCursor: data.nextCursor,
       };
     } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "listNamespaces");
-      }
-      throw err;
+      await handleApiError(err, "listNamespaces");
     }
   }
 
@@ -533,13 +548,15 @@ export class SearchStorage implements ISearchStorage {
           },
         },
       );
-
-      return response.ok;
-    } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "namespaceExists");
+      // For exists, a non-ok response (like 404) means it doesn't exist, not an error.
+      // Any other non-ok response could be an issue.
+      if (!response.ok && response.status !== 404) {
+         await handleApiError(response, "check namespace existence");
       }
-      throw err;
+      return response.ok; // True if 2xx, false if 404 or other non-2xx where fetch itself didn't throw
+    } catch (err) {
+      // Network errors or other unexpected issues from fetch itself
+      await handleApiError(err, "namespaceExists");
     }
   }
 }

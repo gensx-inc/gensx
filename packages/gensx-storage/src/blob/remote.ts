@@ -26,17 +26,48 @@ const API_BASE_URL = "https://api.gensx.com";
 /**
  * Helper to convert between API errors and BlobErrors
  */
-function handleApiError(err: unknown, operation: string): never {
-  if (err instanceof BlobError) {
-    throw err;
+async function handleApiError(errorOrResponse: unknown, operation: string): Promise<never> {
+  if (errorOrResponse instanceof BlobError) {
+    throw errorOrResponse;
   }
-  if (err instanceof Error) {
-    throw new BlobNetworkError(
-      `Error during ${operation}: ${err.message}`,
-      err,
-    );
+
+  if (errorOrResponse instanceof Response) {
+    const response = errorOrResponse;
+    let detailedMessage = response.statusText; // Default message
+
+    try {
+      const errorBody = await response.clone().json();
+      if (typeof errorBody.error === 'string' && errorBody.error.trim() !== '') {
+        detailedMessage = errorBody.error;
+      } else {
+        // Fallback to full text if errorBody.error is not useful
+        const textResponse = await response.clone().text();
+        if (textResponse.trim() !== '') {
+          detailedMessage = textResponse;
+        }
+      }
+    } catch (e) {
+      // JSON parsing failed or error field not present/useful.
+      // Try to get text from a new clone if the first attempt (within the else) wasn't made or failed.
+      if (detailedMessage === response.statusText) { // Only try .text() if JSON didn't yield a better message
+          try {
+              const textResponse = await response.clone().text();
+              if (textResponse.trim() !== '') {
+                  detailedMessage = textResponse;
+              }
+          } catch (textEx) {
+              // console.warn(`Failed to get text from response body for ${operation}: ${textEx}`);
+          }
+      }
+    }
+    throw new BlobInternalError(`Failed to ${operation}: ${detailedMessage} (Status: ${response.status})`);
   }
-  throw new BlobNetworkError(`Error during ${operation}: ${String(err)}`);
+
+  if (errorOrResponse instanceof Error) {
+    throw new BlobNetworkError(`Network error during ${operation}: ${errorOrResponse.message}`, errorOrResponse);
+  }
+
+  throw new BlobNetworkError(`Unknown error during ${operation}: ${String(errorOrResponse)}`);
 }
 
 /**
@@ -83,9 +114,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get blob: ${response.statusText}`,
-        );
+        await handleApiError(response, "get JSON blob");
       }
 
       const data = (await response.json()) as BlobResponse<string>;
@@ -93,7 +122,7 @@ export class RemoteBlob<T> implements Blob<T> {
       // Parse the content as JSON since it's stored as a string
       return JSON.parse(data.content) as T;
     } catch (err) {
-      throw handleApiError(err, "getJSON");
+      await handleApiError(err, "getJSON");
     }
   }
 
@@ -114,16 +143,14 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get blob: ${response.statusText}`,
-        );
+        await handleApiError(response, "get string blob");
       }
 
       const data = (await response.json()) as BlobResponse<string>;
 
       return data.content;
     } catch (err) {
-      throw handleApiError(err, "getString");
+      await handleApiError(err, "getString");
     }
   }
 
@@ -144,9 +171,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get blob: ${response.statusText}`,
-        );
+        await handleApiError(response, "get raw blob");
       }
 
       const data = (await response.json()) as {
@@ -181,7 +206,7 @@ export class RemoteBlob<T> implements Blob<T> {
         ),
       };
     } catch (err) {
-      throw handleApiError(err, "getRaw");
+      await handleApiError(err, "getRaw");
     }
   }
 
@@ -198,18 +223,19 @@ export class RemoteBlob<T> implements Blob<T> {
       );
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get blob: ${response.statusText}`,
-        );
+        await handleApiError(response, "get blob stream");
       }
 
       if (!response.body) {
-        throw new BlobInternalError("Response body is null");
+        // This specific check can remain as it's not directly an API error but a missing body.
+        // However, a non-ok response would be caught by the above.
+        // If response.ok is true but body is null, this is an internal issue.
+        throw new BlobInternalError("Response body is null when getting stream");
       }
 
       return Readable.from(response.body);
     } catch (err) {
-      throw handleApiError(err, "getStream");
+      await handleApiError(err, "getStream");
     }
   }
 
@@ -235,21 +261,21 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobConflictError("ETag mismatch");
+          // Specific error for 412, message can be more generic or use handleApiError if we want consistent format
+          throw new BlobConflictError(`Failed to put JSON blob: ETag mismatch (Status: ${response.status})`);
         }
-        throw new BlobInternalError(
-          `Failed to put blob: ${response.statusText}`,
-        );
+        await handleApiError(response, "put JSON blob");
       }
 
       const etag = response.headers.get("etag");
       if (!etag) {
-        throw new BlobInternalError("No ETag returned from server");
+        // This is a scenario where the server response is not as expected, even if status is 2xx
+        throw new BlobInternalError("No ETag returned from server after putting JSON blob");
       }
 
       return { etag };
     } catch (err) {
-      throw handleApiError(err, "putJSON");
+      await handleApiError(err, "putJSON");
     }
   }
 
@@ -278,21 +304,19 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobConflictError("ETag mismatch");
+          throw new BlobConflictError(`Failed to put string blob: ETag mismatch (Status: ${response.status})`);
         }
-        throw new BlobInternalError(
-          `Failed to put blob: ${response.statusText}`,
-        );
+        await handleApiError(response, "put string blob");
       }
 
       const etag = response.headers.get("etag");
       if (!etag) {
-        throw new BlobInternalError("No ETag returned from server");
+        throw new BlobInternalError("No ETag returned from server after putting string blob");
       }
 
       return { etag };
     } catch (err) {
-      throw handleApiError(err, "putString");
+      await handleApiError(err, "putString");
     }
   }
 
@@ -329,21 +353,19 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobConflictError("ETag mismatch");
+          throw new BlobConflictError(`Failed to put raw blob: ETag mismatch (Status: ${response.status})`);
         }
-        throw new BlobInternalError(
-          `Failed to put blob: ${response.statusText}`,
-        );
+        await handleApiError(response, "put raw blob");
       }
 
       const etag = response.headers.get("etag");
       if (!etag) {
-        throw new BlobInternalError("No ETag returned from server");
+        throw new BlobInternalError("No ETag returned from server after putting raw blob");
       }
 
       return { etag };
     } catch (err) {
-      throw handleApiError(err, "putRaw");
+      await handleApiError(err, "putRaw");
     }
   }
 
@@ -383,21 +405,19 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobConflictError("ETag mismatch");
+          throw new BlobConflictError(`Failed to put blob stream: ETag mismatch (Status: ${response.status})`);
         }
-        throw new BlobInternalError(
-          `Failed to put blob: ${response.statusText}`,
-        );
+        await handleApiError(response, "put blob stream");
       }
 
       const etag = response.headers.get("etag");
       if (!etag) {
-        throw new BlobInternalError("No ETag returned from server");
+        throw new BlobInternalError("No ETag returned from server after putting blob stream");
       }
 
       return { etag };
     } catch (err) {
-      throw handleApiError(err, "putStream");
+      await handleApiError(err, "putStream");
     }
   }
 
@@ -414,13 +434,11 @@ export class RemoteBlob<T> implements Blob<T> {
         },
       );
 
-      if (!response.ok && response.status !== 404) {
-        throw new BlobInternalError(
-          `Failed to delete blob: ${response.statusText}`,
-        );
+      if (!response.ok && response.status !== 404) { // 404 is not an error for delete
+        await handleApiError(response, "delete blob");
       }
     } catch (err) {
-      throw handleApiError(err, "delete");
+      await handleApiError(err, "delete");
     }
   }
 
@@ -436,9 +454,15 @@ export class RemoteBlob<T> implements Blob<T> {
         },
       );
 
-      return response.ok;
+      // For exists, a non-ok response (like 404) means it doesn't exist, not an error.
+      // Any other non-ok response could be an issue.
+      if (!response.ok && response.status !== 404) {
+         await handleApiError(response, "check blob existence");
+      }
+      return response.ok; // True if 2xx, false if 404 or other non-2xx where fetch itself didn't throw
     } catch (err) {
-      throw handleApiError(err, "exists");
+      // Network errors or other unexpected issues from fetch itself
+      await handleApiError(err, "exists");
     }
   }
 
@@ -460,9 +484,7 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get metadata: ${response.statusText}`,
-        );
+        await handleApiError(response, "get blob metadata");
       }
 
       // Extract standard headers
@@ -490,7 +512,7 @@ export class RemoteBlob<T> implements Blob<T> {
 
       return Object.keys(metadata).length > 0 ? metadata : null;
     } catch (err) {
-      throw handleApiError(err, "getMetadata");
+      await handleApiError(err, "getMetadata");
     }
   }
 
@@ -517,14 +539,12 @@ export class RemoteBlob<T> implements Blob<T> {
 
       if (!response.ok) {
         if (response.status === 412) {
-          throw new BlobConflictError("ETag mismatch");
+          throw new BlobConflictError(`Failed to update metadata: ETag mismatch (Status: ${response.status})`);
         }
-        throw new BlobInternalError(
-          `Failed to update metadata: ${response.statusText}`,
-        );
+        await handleApiError(response, "update blob metadata");
       }
     } catch (err) {
-      throw handleApiError(err, "updateMetadata");
+      await handleApiError(err, "updateMetadata");
     }
   }
 }
@@ -614,7 +634,7 @@ export class RemoteBlobStorage implements BlobStorage {
       );
 
       if (!response.ok) {
-        handleApiError(response, "listBlobs");
+        await handleApiError(response, "list blobs");
       }
 
       const data = (await response.json()) as {
@@ -651,13 +671,8 @@ export class RemoteBlobStorage implements BlobStorage {
         nextCursor: data.nextCursor,
       };
     } catch (err) {
-      if (err instanceof BlobError) {
-        throw err;
-      }
-      throw new BlobNetworkError(
-        `Error during listBlobs operation: ${String(err)}`,
-        err as Error,
-      );
+      // Errors from fetch itself or if handleApiError re-throws a BlobError
+      await handleApiError(err, "list blobs");
     }
   }
 
@@ -669,16 +684,11 @@ export class RemoteBlobStorage implements BlobStorage {
   async deleteBlob(key: string): Promise<DeleteBlobResult> {
     try {
       const blob = this.getBlob(key);
-      await blob.delete();
+      await blob.delete(); // RemoteBlob.delete() already uses handleApiError
       return { deleted: true };
     } catch (err) {
-      if (err instanceof BlobError) {
-        throw err;
-      }
-      throw new BlobNetworkError(
-        `Error during deleteBlob operation: ${String(err)}`,
-        err as Error,
-      );
+      // Catch errors from blob.delete() or getBlob() if it could throw BlobError directly
+      await handleApiError(err, "deleteBlob");
     }
   }
 }
