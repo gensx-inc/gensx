@@ -270,9 +270,9 @@ export interface SearchStorage {
 }
 
 /**
- * Provider configuration for search
+ * Storage configuration for search
  */
-export interface SearchProviderProps {
+export interface SearchStorageOptions {
   /**
    * Optional project name. By default, the GENSX_PROJECT environment variable will be used then the projectName from the gensx.yaml file.
    */

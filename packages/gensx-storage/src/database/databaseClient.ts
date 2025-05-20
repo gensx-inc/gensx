@@ -5,8 +5,8 @@ import { FileSystemDatabaseStorage } from "./filesystem.js";
 import { RemoteDatabaseStorage } from "./remote.js";
 import {
   Database,
-  DatabaseProviderProps,
   DatabaseStorage,
+  DatabaseStorageOptions,
   DeleteDatabaseResult,
   EnsureDatabaseResult,
 } from "./types.js";
@@ -19,24 +19,24 @@ export class DatabaseClient {
 
   /**
    * Create a new DatabaseClient
-   * @param props Optional configuration properties for the database storage
+   * @param options Optional configuration properties for the database storage
    */
-  constructor(props: DatabaseProviderProps = {}) {
+  constructor(options: DatabaseStorageOptions = {}) {
     const kind =
-      props.kind ??
+      options.kind ??
       (process.env.GENSX_RUNTIME === "cloud" ? "cloud" : "filesystem");
 
     if (kind === "filesystem") {
       const rootDir =
-        props.kind === "filesystem" && props.rootDir
-          ? props.rootDir
+        options.kind === "filesystem" && options.rootDir
+          ? options.rootDir
           : join(process.cwd(), ".gensx", "databases");
 
       this.storage = new FileSystemDatabaseStorage(rootDir);
     } else {
       const { project, environment } = getProjectAndEnvironment({
-        project: props.project,
-        environment: props.environment,
+        project: options.project,
+        environment: options.environment,
       });
       this.storage = new RemoteDatabaseStorage(project, environment);
     }

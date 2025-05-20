@@ -13,45 +13,6 @@ API reference for GenSX Cloud SQL database components.
 npm install @gensx/storage
 ```
 
-## DatabaseProvider
-
-Provides SQL database capabilities to its child components.
-
-### Import
-
-```tsx
-import { DatabaseProvider } from "@gensx/storage";
-```
-
-### Props
-
-| Prop            | Type                  | Default     | Description                                      |
-| --------------- | --------------------- | ----------- | ------------------------------------------------ |
-| `kind`          | `"filesystem" \| "cloud"` | Auto-detected | The storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                   |
-| `rootDir`       | `string`              | `".gensx/databases"` | Root directory for storing database files (filesystem only) |
-| `project`       | `string`                  | Auto-detected    | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file. |
-| `environment`   | `string`                  | Auto-detected    | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |
-
-### Example
-
-```tsx
-import { DatabaseProvider } from "@gensx/storage";
-
-// Cloud storage (production)
-const Workflow = gensx.Component("DatabaseWorkflow", ({ input }) => (
-  <DatabaseProvider>
-    <YourComponent input={input} />
-  </DatabaseProvider>
-));
-
-// Local filesystem storage (development)
-const DevWorkflow = gensx.Component("DevDatabaseWorkflow", ({ input }) => (
-  <DatabaseProvider kind="filesystem" rootDir="./data">
-    <YourComponent input={input} />
-  </DatabaseProvider>
-));
-```
-
 ## useDatabase
 
 Hook that provides access to a specific SQL database.
@@ -65,14 +26,18 @@ import { useDatabase } from "@gensx/storage";
 ### Signature
 
 ```tsx
-function useDatabase(name: string): Database;
+function useDatabase(
+  name: string,
+  options?: DatabaseStorageOptions,
+): Promise<Database>;
 ```
 
 ### Parameters
 
-| Parameter | Type     | Description                 |
-| --------- | -------- | --------------------------- |
-| `name`    | `string` | The database name to access |
+| Parameter | Type                                                | Description                       |
+| --------- | --------------------------------------------------- | --------------------------------- |
+| `name`    | `string`                                            | The database name to access       |
+| `options` | [`DatabaseStorageOptions`](#databasestorageoptions) | Optional configuration properties |
 
 ### Returns
 
@@ -81,10 +46,18 @@ Returns a database object with methods to interact with SQL database.
 ### Example
 
 ```tsx
+// Simple usage
 const db = await useDatabase("users");
 const result = await db.execute("SELECT * FROM users WHERE id = ?", [
   "user-123",
 ]);
+
+// With configuration
+const db = await useDatabase("users", {
+  kind: "cloud",
+  project: "my-project",
+  environment: "production",
+});
 ```
 
 ## Database methods
@@ -192,15 +165,15 @@ Returns a result object containing an array of individual results:
       columns: [],
       rows: [],
       rowsAffected: 1,
-      lastInsertId: 42
+      lastInsertId: 42,
     },
     {
       columns: [],
       rows: [],
       rowsAffected: 1,
-      lastInsertId: 43
-    }
-  ]
+      lastInsertId: 43,
+    },
+  ];
 }
 ```
 
@@ -310,106 +283,6 @@ console.log(info);
 // }
 ```
 
-## Database management
-
-Higher-level operations for managing databases are available through the `useDatabaseStorage` hook:
-
-### useDatabaseStorage
-
-Hook that provides access to the database storage instance, which includes higher-level database management functions.
-
-```tsx
-import { useDatabaseStorage } from "@gensx/storage";
-
-// Get access to database management functions
-const dbStorage = useDatabaseStorage();
-```
-
-The database storage object provides these management methods:
-
-### listDatabases
-
-Lists databases in your project.
-
-```tsx
-import { useDatabaseStorage } from "@gensx/storage";
-
-const dbStorage = useDatabaseStorage();
-const { databases, nextCursor } = await dbStorage.listDatabases();
-console.log("Databases:", databases); // ["users", "products", "analytics"]
-
-```
-
-The method accepts an options object with these properties:
-
-| Option   | Type     | Description                                    |
-| -------- | -------- | ---------------------------------------------- |
-| `limit`  | `number` | Maximum number of results to return per page   |
-| `cursor` | `string` | Cursor for pagination from previous response   |
-
-Returns an object with:
-- `databases`: Array of database names
-- `nextCursor`: Cursor for the next page, or undefined if no more results
-
-### ensureDatabase
-
-Creates a database if it doesn't exist.
-
-```tsx
-const dbStorage = useDatabaseStorage();
-const { created } = await dbStorage.ensureDatabase("new-database");
-if (created) {
-  console.log("Database was created");
-} else {
-  console.log("Database already existed");
-}
-```
-
-### deleteDatabase
-
-Deletes a database and all its data.
-
-```tsx
-const dbStorage = useDatabaseStorage();
-const { deleted } = await dbStorage.deleteDatabase("old-database");
-if (deleted) {
-  console.log("Database was deleted");
-} else {
-  console.log("Database could not be deleted");
-}
-```
-
-### hasEnsuredDatabase
-
-Checks if a database has been ensured in the current session.
-
-```tsx
-const dbStorage = useDatabaseStorage();
-const isEnsured = dbStorage.hasEnsuredDatabase("my-database");
-
-if (isEnsured) {
-  console.log("Database has been ensured in this session");
-} else {
-  console.log("Database has not been ensured yet");
-}
-```
-
-### getDatabase
-
-Get a database instance directly (without calling useDatabase).
-
-```tsx
-const dbStorage = useDatabaseStorage();
-
-// Get a database directly
-// Note: This doesn't ensure the database exists, unlike useDatabase
-const db = dbStorage.getDatabase("users");
-
-// You may want to ensure it exists first
-await dbStorage.ensureDatabase("users");
-const db = dbStorage.getDatabase("users");
-```
-
 ## DatabaseClient
 
 The `DatabaseClient` class provides a way to interact with GenSX databases outside of the GenSX workflow context, such as from regular Node.js applications or server endpoints.
@@ -423,14 +296,14 @@ import { DatabaseClient } from "@gensx/storage";
 ### Constructor
 
 ```tsx
-constructor(props?: DatabaseProviderProps)
+constructor(options?: DatabaseStorageOptions)
 ```
 
 #### Parameters
 
-| Parameter | Type                  | Default     | Description                                      |
-| --------- | --------------------- | ----------- | ------------------------------------------------ |
-| `props`   | `DatabaseProviderProps` | `{}` | Optional configuration properties                |
+| Parameter | Type                                                | Default | Description                       |
+| --------- | --------------------------------------------------- | ------- | --------------------------------- |
+| `options` | [`DatabaseStorageOptions`](#databasestorageoptions) | `{}`    | Optional configuration properties |
 
 #### Example
 
@@ -441,7 +314,7 @@ const dbClient = new DatabaseClient();
 // Explicitly use filesystem storage
 const localClient = new DatabaseClient({
   kind: "filesystem",
-  rootDir: "./my-data"
+  rootDir: "./my-data",
 });
 
 // Explicitly use cloud storage
@@ -546,24 +419,35 @@ The DatabaseClient is particularly useful when you need to access GenSX database
 
 ```tsx
 // Example: Using DatabaseClient in an Express handler
-import express from 'express';
-import { DatabaseClient } from '@gensx/storage';
+import express from "express";
+import { DatabaseClient } from "@gensx/storage";
 
 const app = express();
 const dbClient = new DatabaseClient();
 
-app.get('/api/users', async (req, res) => {
+app.get("/api/users", async (req, res) => {
   try {
-    const db = await dbClient.getDatabase('users');
-    const result = await db.execute('SELECT * FROM users');
+    const db = await dbClient.getDatabase("users");
+    const result = await db.execute("SELECT * FROM users");
     res.json(result.rows);
   } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ error: 'Database error' });
+    console.error("Database error:", error);
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 app.listen(3000, () => {
-  console.log('Server running on port 3000');
+  console.log("Server running on port 3000");
 });
 ```
+
+## DatabaseStorageOptions
+
+Configuration properties for database operations.
+
+| Prop          | Type                      | Default              | Description                                                                                                                                                                                             |
+| ------------- | ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`        | `"filesystem" \| "cloud"` | Auto-detected        | The storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                                                                                 |
+| `rootDir`     | `string`                  | `".gensx/databases"` | Root directory for storing database files (filesystem only)                                                                                                                                             |
+| `project`     | `string`                  | Auto-detected        | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file.                   |
+| `environment` | `string`                  | Auto-detected        | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |

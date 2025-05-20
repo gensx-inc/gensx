@@ -315,9 +315,9 @@ export interface BlobStorage {
 export type BlobStorageKind = "filesystem" | "cloud";
 
 /**
- * Base provider props
+ * Base storage configuration
  */
-export interface BaseBlobProviderProps {
+export interface BaseBlobStorageOptions {
   /**
    * Storage kind - if not provided, will be determined from environment
    */
@@ -340,9 +340,9 @@ export interface BaseBlobProviderProps {
 }
 
 /**
- * Filesystem provider props
+ * Filesystem storage configuration
  */
-export interface FileSystemBlobProviderProps extends BaseBlobProviderProps {
+export interface FileSystemBlobStorageOptions extends BaseBlobStorageOptions {
   kind?: "filesystem";
 
   /**
@@ -352,15 +352,15 @@ export interface FileSystemBlobProviderProps extends BaseBlobProviderProps {
 }
 
 /**
- * Cloud provider props
+ * Cloud storage configuration
  */
-export interface CloudBlobProviderProps extends BaseBlobProviderProps {
+export interface CloudBlobStorageOptions extends BaseBlobStorageOptions {
   kind?: "cloud";
 }
 
 /**
- * Union type for blob provider props
+ * Union type for blob storage configuration
  */
-export type BlobProviderProps =
-  | FileSystemBlobProviderProps
-  | CloudBlobProviderProps;
+export type BlobStorageOptions =
+  | FileSystemBlobStorageOptions
+  | CloudBlobStorageOptions;

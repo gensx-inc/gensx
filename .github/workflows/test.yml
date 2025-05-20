@@ -2,7 +2,6 @@ name: "🐢 Test and Build Packages"
 
 on:
   pull_request:
-    branches: [main]
     paths:
       - "packages/**/*"
   push:

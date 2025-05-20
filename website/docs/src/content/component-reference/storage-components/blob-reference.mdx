@@ -13,38 +13,6 @@ API reference for GenSX Cloud blob storage components.
 npm install @gensx/storage
 ```
 
-## BlobProvider
-
-Provides blob storage capabilities to its child components.
-
-### Import
-
-```tsx
-import { BlobProvider } from "@gensx/storage";
-```
-
-### Props
-
-| Prop            | Type                      | Default        | Description                                                                                                                                                                                             |
-| --------------- | ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                                                                                     |
-| `rootDir`       | `string`                  | `.gensx/blobs` | Root directory for filesystem storage                                                                                                                                                                   |
-| `defaultPrefix` | `string`                  | `undefined`    | Optional prefix for all blob keys                                                                                                                                                                       |
-| `project`       | `string`                  | Auto-detected  | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file.                   |
-| `environment`   | `string`                  | Auto-detected  | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |
-
-### Example
-
-```tsx
-import { BlobProvider } from "@gensx/storage";
-
-const Workflow = gensx.Component("Workflow", ({ input }) => (
-  <BlobProvider kind="cloud">
-    <YourComponent input={input} />
-  </BlobProvider>
-));
-```
-
 ## useBlob
 
 Hook that provides access to blob storage for a specific key.
@@ -58,15 +26,29 @@ import { useBlob } from "@gensx/storage";
 ### Signature
 
 ```tsx
-function useBlob<T = unknown>(key: string): Blob<T>;
+function useBlob<T = unknown>(
+  key: string,
+  options?: BlobStorageOptions,
+): Blob<T>;
 ```
 
 ### Parameters
 
-| Parameter | Type         | Description                      |
-| --------- | ------------ | -------------------------------- |
-| `key`     | `string`     | The unique key for the blob      |
-| `T`       | Generic type | Type of the JSON data (optional) |
+| Parameter | Type                                        | Description                       |
+| --------- | ------------------------------------------- | --------------------------------- |
+| `key`     | `string`                                    | The unique key for the blob       |
+| `options` | [`BlobStorageOptions`](#blobstorageoptions) | Optional configuration properties |
+| `T`       | Generic type                                | Type of the JSON data (optional)  |
+
+### Configuration Properties
+
+| Prop            | Type                      | Default        | Description                                                                                                                                                                                             |
+| --------------- | ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                                                                                     |
+| `rootDir`       | `string`                  | `.gensx/blobs` | Root directory for filesystem storage                                                                                                                                                                   |
+| `defaultPrefix` | `string`                  | `undefined`    | Optional prefix for all blob keys                                                                                                                                                                       |
+| `project`       | `string`                  | Auto-detected  | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file.                   |
+| `environment`   | `string`                  | Auto-detected  | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |
 
 ### Returns
 
@@ -75,8 +57,15 @@ Returns a blob object with methods to interact with blob storage.
 ### Example
 
 ```tsx
+// Simple usage
 const blob = useBlob<UserProfile>("users/123.json");
 const profile = await blob.getJSON();
+
+// With configuration
+const blob = useBlob<UserProfile>("users/123.json", {
+  kind: "cloud",
+  defaultPrefix: "app-data/",
+});
 ```
 
 ## Blob methods
@@ -157,101 +146,6 @@ Many methods accept an options object with these properties:
 }
 ```
 
-## useBlobStorage
-
-Hook that provides direct access to the blob storage instance, allowing you to perform blob operations across multiple keys.
-
-### Import
-
-```tsx
-import { useBlobStorage } from "@gensx/storage";
-```
-
-### Signature
-
-```tsx
-function useBlobStorage(): BlobStorage;
-```
-
-### Example
-
-```tsx
-const blobStorage = useBlobStorage();
-```
-
-The blob storage object provides these methods:
-
-### getBlob
-
-Get a blob object for a specific key.
-
-```tsx
-const blobStorage = useBlobStorage();
-const userBlob = blobStorage.getBlob<UserProfile>("users/123.json");
-```
-
-### listBlobs
-
-List blobs.
-
-```tsx
-const blobStorage = useBlobStorage();
-const { blobs, nextCursor } = await blobStorage.listBlobs({
-  prefix: "users",
-});
-console.log(
-  "User blobs:",
-  blobs.map((blob) => blob.key),
-); // ["users/123.json", "users/456.json"]
-```
-
-The method accepts an options object with these properties:
-
-| Option   | Type     | Description                                  |
-| -------- | -------- | -------------------------------------------- |
-| `prefix` | `string` | Optional prefix to filter blob keys by       |
-| `limit`  | `number` | Maximum number of results to return per page |
-| `cursor` | `string` | Cursor for pagination from previous response |
-
-Returns an object with:
-
-- `blobs`: Array of blob objects containing `key`, `lastModified`, and `size` properties
-- `nextCursor`: Cursor for the next page, or undefined if no more results
-
-Example of a blob object:
-
-```tsx
-{
-  key: "users/123.json",
-  lastModified: "2024-01-01T00:00:00Z",
-  size: 1024
-}
-```
-
-### blobExists
-
-Check if a blob exists.
-
-```tsx
-const blobStorage = useBlobStorage();
-const exists = await blobStorage.blobExists("users/123.json");
-if (exists) {
-  console.log("User profile exists");
-}
-```
-
-### deleteBlob
-
-Delete a blob.
-
-```tsx
-const blobStorage = useBlobStorage();
-const { deleted } = await blobStorage.deleteBlob("temp/file.json");
-if (deleted) {
-  console.log("Temporary file deleted");
-}
-```
-
 ## BlobClient
 
 The `BlobClient` class provides a way to interact with GenSX blob storage outside of the GenSX workflow context, such as from regular Node.js applications or server endpoints.
@@ -265,14 +159,14 @@ import { BlobClient } from "@gensx/storage";
 ### Constructor
 
 ```tsx
-constructor(props?: BlobProviderProps)
+constructor(options?: BlobStorageOptions)
 ```
 
 #### Parameters
 
-| Parameter | Type                | Default | Description                       |
-| --------- | ------------------- | ------- | --------------------------------- |
-| `props`   | `BlobProviderProps` | `{}`    | Optional configuration properties |
+| Parameter | Type                                        | Default | Description                       |
+| --------- | ------------------------------------------- | ------- | --------------------------------- |
+| `options` | [`BlobStorageOptions`](#blobstorageoptions) | `{}`    | Optional configuration properties |
 
 #### Example
 
@@ -419,3 +313,15 @@ app.listen(3000, () => {
   console.log("Server running on port 3000");
 });
 ```
+
+## BlobStorageOptions
+
+Configuration properties for blob storage operations.
+
+| Prop            | Type                      | Default        | Description                                                                                                                                                                                             |
+| --------------- | ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`          | `"filesystem" \| "cloud"` | Auto-detected  | Storage backend to use. Defaults filesystem when running locally and cloud when deployed to the serverless runtime.                                                                                     |
+| `rootDir`       | `string`                  | `.gensx/blobs` | Root directory for filesystem storage                                                                                                                                                                   |
+| `defaultPrefix` | `string`                  | `undefined`    | Optional prefix for all blob keys                                                                                                                                                                       |
+| `project`       | `string`                  | Auto-detected  | Project to use for cloud storage. If you don't set this, it'll first check your `GENSX_PROJECT` environment variable, then look for the project name in your local `gensx.yaml` file.                   |
+| `environment`   | `string`                  | Auto-detected  | Environment to use for cloud storage. If you don't set this, it'll first check your `GENSX_ENV` environment variable, then use whatever environment you've selected in the CLI with `gensx env select`. |

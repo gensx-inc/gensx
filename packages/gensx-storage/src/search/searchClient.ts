@@ -4,7 +4,7 @@ import {
   DeleteNamespaceResult,
   EnsureNamespaceResult,
   Namespace,
-  SearchProviderProps,
+  SearchStorageOptions,
 } from "./types.js";
 
 /**
@@ -13,10 +13,10 @@ import {
 export class SearchClient {
   private storage: SearchStorage;
 
-  constructor(props: SearchProviderProps = {}) {
+  constructor(options: SearchStorageOptions = {}) {
     const { project, environment } = getProjectAndEnvironment({
-      project: props.project,
-      environment: props.environment,
+      project: options.project,
+      environment: options.environment,
     });
     this.storage = new SearchStorage(project, environment);
   }

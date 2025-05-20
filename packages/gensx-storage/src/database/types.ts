@@ -246,11 +246,11 @@ export interface DatabaseStorage {
 export type DatabaseStorageKind = "filesystem" | "cloud";
 
 /**
- * Base provider props
+ * Base storage configuration
  */
-export interface BaseDatabaseProviderProps {
+export interface BaseDatabaseStorageOptions {
   /**
-   * Storage kind
+   * Storage kind - if not provided, will be determined from environment
    */
   kind?: DatabaseStorageKind;
 
@@ -266,10 +266,10 @@ export interface BaseDatabaseProviderProps {
 }
 
 /**
- * Filesystem provider props
+ * Filesystem storage configuration
  */
-export interface FileSystemDatabaseProviderProps
-  extends BaseDatabaseProviderProps {
+export interface FileSystemDatabaseStorageOptions
+  extends BaseDatabaseStorageOptions {
   kind?: "filesystem";
 
   /**
@@ -279,15 +279,16 @@ export interface FileSystemDatabaseProviderProps
 }
 
 /**
- * Cloud provider props
+ * Cloud storage configuration
  */
-export interface CloudDatabaseProviderProps extends BaseDatabaseProviderProps {
+export interface CloudDatabaseStorageOptions
+  extends BaseDatabaseStorageOptions {
   kind?: "cloud";
 }
 
 /**
- * Union type for database provider props
+ * Union type for database storage configuration
  */
-export type DatabaseProviderProps =
-  | FileSystemDatabaseProviderProps
-  | CloudDatabaseProviderProps;
+export type DatabaseStorageOptions =
+  | FileSystemDatabaseStorageOptions
+  | CloudDatabaseStorageOptions;
