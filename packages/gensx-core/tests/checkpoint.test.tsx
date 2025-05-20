@@ -555,6 +555,53 @@ suite("checkpoint", () => {
   });
 });
 
+suite("CheckpointManager constructor validation", () => {
+  let originalApiKey: string | undefined;
+  let originalOrg: string | undefined;
+
+  beforeEach(() => {
+    // Isolate tests from environment variables
+    originalApiKey = process.env.GENSX_API_KEY;
+    originalOrg = process.env.GENSX_ORG;
+    delete process.env.GENSX_API_KEY;
+    delete process.env.GENSX_ORG;
+  });
+
+  afterEach(() => {
+    // Restore environment variables
+    process.env.GENSX_API_KEY = originalApiKey;
+    process.env.GENSX_ORG = originalOrg;
+  });
+
+  test("throws error if apiKey is present and org is undefined", () => {
+    expect(() => new CheckpointManager({ apiKey: "test-key", org: undefined })).toThrow(
+      "Organization not set or is invalid ('undefined' string). A valid organization ID must be set via constructor options, GENSX_ORG environment variable, or in ~/.config/gensx/config when checkpoints are enabled. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
+    );
+  });
+
+  test("throws error if apiKey is present and org is an empty string", () => {
+    expect(() => new CheckpointManager({ apiKey: "test-key", org: "" })).toThrow(
+      "Organization not set or is invalid ('undefined' string). A valid organization ID must be set via constructor options, GENSX_ORG environment variable, or in ~/.config/gensx/config when checkpoints are enabled. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
+    );
+  });
+
+  test("throws error if apiKey is present and org is 'undefined' string", () => {
+    expect(() => new CheckpointManager({ apiKey: "test-key", org: "undefined" })).toThrow(
+      "Organization not set or is invalid ('undefined' string). A valid organization ID must be set via constructor options, GENSX_ORG environment variable, or in ~/.config/gensx/config when checkpoints are enabled. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
+    );
+  });
+
+  test("does not throw if apiKey is present and org is valid", () => {
+    expect(() => new CheckpointManager({ apiKey: "test-key", org: "test-org" })).not.toThrow();
+  });
+
+  test("does not throw if apiKey is not present, even with problematic org", () => {
+    expect(() => new CheckpointManager({ apiKey: undefined, org: undefined })).not.toThrow();
+    expect(() => new CheckpointManager({ apiKey: undefined, org: "" })).not.toThrow();
+    expect(() => new CheckpointManager({ apiKey: undefined, org: "undefined" })).not.toThrow();
+  });
+});
+
 suite("tree reconstruction", () => {
   beforeEach(() => {
     mockFetch(() => {

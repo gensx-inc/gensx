@@ -141,9 +141,9 @@ export class CheckpointManager implements CheckpointWriter {
       this.checkpointsEnabled = false;
     }
 
-    if (this.checkpointsEnabled && !this.org) {
+    if (this.checkpointsEnabled && (this.org === "" || this.org === "undefined")) {
       throw new Error(
-        "Organization not set. Set it via constructor options, GENSX_ORG environment variable, or in ~/.config/gensx/config. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
+        "Organization not set or is invalid ('undefined' string). A valid organization ID must be set via constructor options, GENSX_ORG environment variable, or in ~/.config/gensx/config when checkpoints are enabled. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
       );
     }
   }
