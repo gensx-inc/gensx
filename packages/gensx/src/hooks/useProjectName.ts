@@ -13,6 +13,7 @@ interface UseProjectNameResult {
 
 export function useProjectName(
   initialProjectName?: string,
+  skipValidation?: boolean,
 ): UseProjectNameResult {
   const { exit } = useApp();
   const [loading, setLoading] = useState(true);
@@ -39,10 +40,12 @@ export function useProjectName(
           }
         }
 
-        // Check if project exists
-        const projectExists = await checkProjectExists(resolvedProjectName);
-        if (!projectExists) {
-          throw new Error(`Project ${resolvedProjectName} does not exist.`);
+        // Only check if project exists if validation is not skipped
+        if (!skipValidation) {
+          const projectExists = await checkProjectExists(resolvedProjectName);
+          if (!projectExists) {
+            throw new Error(`Project ${resolvedProjectName} does not exist.`);
+          }
         }
 
         if (mounted) {
@@ -65,7 +68,7 @@ export function useProjectName(
     return () => {
       mounted = false;
     };
-  }, [initialProjectName, exit]);
+  }, [initialProjectName, exit, skipValidation]);
 
   return { loading, error, projectName, isFromConfig };
 }

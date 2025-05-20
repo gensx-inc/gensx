@@ -17,10 +17,12 @@ vi.mock("../../src/models/environment.js", () => ({
 
 vi.mock("../../src/models/projects.js", () => ({
   checkProjectExists: vi.fn(),
+  createProject: vi.fn(),
 }));
 
 vi.mock("../../src/utils/env-config.js", () => ({
   getSelectedEnvironment: vi.fn(),
+  validateAndSelectEnvironment: vi.fn(),
 }));
 
 // Mock SelectInput component
@@ -150,12 +152,13 @@ suite("EnvironmentResolver component", () => {
     expect(lastFrame()?.includes("Resolving environment...")).toBe(true);
   });
 
-  it("should show error when project does not exist", async () => {
+  it("should show error when project does not exist and creation is not allowed", async () => {
     vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
 
     const { lastFrame } = render(
       React.createElement(EnvironmentResolver, {
         projectName: "non-existent",
+        allowCreate: false,
         onResolved: vi.fn(),
       }),
     );
@@ -163,30 +166,51 @@ suite("EnvironmentResolver component", () => {
     await waitForText(lastFrame, /Project 'non-existent' does not exist/);
   });
 
-  it("should auto-resolve with yes flag", async () => {
-    vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(
-      "development",
-    );
+  it("should allow project creation when it doesn't exist", async () => {
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
     const onResolved = vi.fn();
-
-    render(
+    const { lastFrame } = render(
       React.createElement(EnvironmentResolver, {
-        projectName: "test-project",
-        yes: true,
+        projectName: "new-project",
         onResolved,
       }),
     );
 
+    // Wait for selection list to appear
+    await waitForText(lastFrame, /Select an environment for project/);
+
+    // Simulate selecting create new
+    if (global.__selectInputCallback) {
+      global.__selectInputCallback({
+        label: "+ create new",
+        value: "__create__",
+      });
+    }
+
+    // Wait for create prompt to appear
+    await waitForText(lastFrame, /Enter a name for the new environment/);
+
+    // Simulate entering new environment name
+    if (global.__textInputCallbacks) {
+      global.__textInputCallbacks.onChange("staging");
+      global.__textInputCallbacks.onSubmit("staging");
+    }
+
     // Wait for the component to resolve
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Should resolve with selected environment
-    expect(onResolved).toHaveBeenCalledWith("development");
+    // Should create project and environment
+    expect(projectModel.createProject).toHaveBeenCalledWith(
+      "new-project",
+      "staging",
+    );
+    expect(onResolved).toHaveBeenCalledWith("staging");
   });
 
   it("should create default environment when none exist and yes flag is set", async () => {
     vi.mocked(environmentModel.listEnvironments).mockResolvedValue([]);
     vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(null);
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
     const onResolved = vi.fn();
 
     render(
@@ -200,12 +224,53 @@ suite("EnvironmentResolver component", () => {
     // Wait for the component to resolve
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Should create and resolve with default environment
-    expect(environmentModel.createEnvironment).toHaveBeenCalledWith(
+    // Should create project and default environment
+    expect(projectModel.createProject).toHaveBeenCalledWith(
       "test-project",
       "default",
     );
     expect(onResolved).toHaveBeenCalledWith("default");
+  });
+
+  it("should create new environment in existing project", async () => {
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
+    const onResolved = vi.fn();
+    const { lastFrame } = render(
+      React.createElement(EnvironmentResolver, {
+        projectName: "test-project",
+        onResolved,
+      }),
+    );
+
+    // Wait for selection list to appear
+    await waitForText(lastFrame, /Select an environment for project/);
+
+    // Simulate selecting create new
+    if (global.__selectInputCallback) {
+      global.__selectInputCallback({
+        label: "+ create new",
+        value: "__create__",
+      });
+    }
+
+    // Wait for create prompt to appear
+    await waitForText(lastFrame, /Enter a name for the new environment/);
+
+    // Simulate entering new environment name
+    if (global.__textInputCallbacks) {
+      global.__textInputCallbacks.onChange("staging");
+      global.__textInputCallbacks.onSubmit("staging");
+    }
+
+    // Wait for the component to resolve
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Should create environment in existing project
+    expect(environmentModel.createEnvironment).toHaveBeenCalledWith(
+      "test-project",
+      "staging",
+    );
+    expect(onResolved).toHaveBeenCalledWith("staging");
   });
 
   it("should show environment selection list", async () => {
@@ -274,6 +339,12 @@ suite("EnvironmentResolver component", () => {
   });
 
   it("should create new environment", async () => {
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
+    vi.mocked(environmentModel.createEnvironment).mockResolvedValue({
+      id: "env-3",
+      name: "staging",
+    });
+
     const onResolved = vi.fn();
     const { lastFrame } = render(
       React.createElement(EnvironmentResolver, {
@@ -303,7 +374,7 @@ suite("EnvironmentResolver component", () => {
     }
 
     // Wait for the component to resolve
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Should create and resolve with new environment
     expect(environmentModel.createEnvironment).toHaveBeenCalledWith(
@@ -365,5 +436,27 @@ suite("EnvironmentResolver component", () => {
 
     // Should show selection list instead of resolving
     expect(onResolved).not.toHaveBeenCalled();
+  });
+
+  it("should auto-resolve with yes flag", async () => {
+    vi.mocked(envConfig.getSelectedEnvironment).mockResolvedValue(
+      "development",
+    );
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(true);
+    const onResolved = vi.fn();
+
+    render(
+      React.createElement(EnvironmentResolver, {
+        projectName: "test-project",
+        yes: true,
+        onResolved,
+      }),
+    );
+
+    // Wait for the component to resolve
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Should resolve with selected environment
+    expect(onResolved).toHaveBeenCalledWith("development");
   });
 });
