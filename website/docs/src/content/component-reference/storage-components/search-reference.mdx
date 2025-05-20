@@ -28,16 +28,16 @@ import { useSearch } from "@gensx/storage";
 ```tsx
 function useSearch(
   name: string,
-  props?: SearchProviderProps,
+  options?: SearchStorageOptions,
 ): Promise<Namespace>;
 ```
 
 ### Parameters
 
-| Parameter | Type                                          | Default  | Description                       |
-| --------- | --------------------------------------------- | -------- | --------------------------------- |
-| `name`    | `string`                                      | Required | The namespace name to access      |
-| `props`   | [`SearchProviderProps`](#searchproviderprops) | `{}`     | Optional configuration properties |
+| Parameter | Type                                            | Default  | Description                       |
+| --------- | ----------------------------------------------- | -------- | --------------------------------- |
+| `name`    | `string`                                        | Required | The namespace name to access      |
+| `options` | [`SearchStorageOptions`](#searchstorageoptions) | `{}`     | Optional configuration properties |
 
 ### Returns
 
@@ -301,14 +301,14 @@ import { SearchClient } from "@gensx/storage";
 ### Constructor
 
 ```tsx
-constructor(props?: SearchProviderProps);
+constructor(options?: SearchStorageOptions);
 ```
 
 #### Parameters
 
-| Parameter | Type                                          | Default | Description                       |
-| --------- | --------------------------------------------- | ------- | --------------------------------- |
-| `props`   | [`SearchProviderProps`](#searchproviderprops) | `{}`    | Optional configuration properties |
+| Parameter | Type                                            | Default | Description                       |
+| --------- | ----------------------------------------------- | ------- | --------------------------------- |
+| `options` | [`SearchStorageOptions`](#searchstorageoptions) | `{}`    | Optional configuration properties |
 
 #### Example
 
@@ -551,7 +551,7 @@ rankBy: ["Product", [0.5, ["text", "BM25", "search query"]]];
 
 Use these options to fine-tune the relevance and ordering of your search results.
 
-## SearchProviderProps
+## SearchStorageOptions
 
 Configuration properties for search operations.
 

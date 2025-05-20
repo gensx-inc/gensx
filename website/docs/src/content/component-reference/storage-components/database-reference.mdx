@@ -28,16 +28,16 @@ import { useDatabase } from "@gensx/storage";
 ```tsx
 function useDatabase(
   name: string,
-  props?: DatabaseProviderProps,
+  options?: DatabaseStorageOptions,
 ): Promise<Database>;
 ```
 
 ### Parameters
 
-| Parameter | Type                                              | Description                       |
-| --------- | ------------------------------------------------- | --------------------------------- |
-| `name`    | `string`                                          | The database name to access       |
-| `props`   | [`DatabaseProviderProps`](#databaseproviderprops) | Optional configuration properties |
+| Parameter | Type                                                | Description                       |
+| --------- | --------------------------------------------------- | --------------------------------- |
+| `name`    | `string`                                            | The database name to access       |
+| `options` | [`DatabaseStorageOptions`](#databasestorageoptions) | Optional configuration properties |
 
 ### Configuration Properties
 
@@ -305,14 +305,14 @@ import { DatabaseClient } from "@gensx/storage";
 ### Constructor
 
 ```tsx
-constructor(props?: DatabaseProviderProps)
+constructor(options?: DatabaseStorageOptions)
 ```
 
 #### Parameters
 
-| Parameter | Type                                              | Default | Description                       |
-| --------- | ------------------------------------------------- | ------- | --------------------------------- |
-| `props`   | [`DatabaseProviderProps`](#databaseproviderprops) | `{}`    | Optional configuration properties |
+| Parameter | Type                                                | Default | Description                       |
+| --------- | --------------------------------------------------- | ------- | --------------------------------- |
+| `options` | [`DatabaseStorageOptions`](#databasestorageoptions) | `{}`    | Optional configuration properties |
 
 #### Example
 
@@ -450,7 +450,7 @@ app.listen(3000, () => {
 });
 ```
 
-## DatabaseProviderProps
+## DatabaseStorageOptions
 
 Configuration properties for database operations.
 

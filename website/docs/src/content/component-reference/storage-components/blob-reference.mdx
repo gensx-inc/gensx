@@ -26,16 +26,19 @@ import { useBlob } from "@gensx/storage";
 ### Signature
 
 ```tsx
-function useBlob<T = unknown>(key: string, props?: BlobProviderProps): Blob<T>;
+function useBlob<T = unknown>(
+  key: string,
+  options?: BlobStorageOptions,
+): Blob<T>;
 ```
 
 ### Parameters
 
-| Parameter | Type                                      | Description                       |
-| --------- | ----------------------------------------- | --------------------------------- |
-| `key`     | `string`                                  | The unique key for the blob       |
-| `props`   | [`BlobProviderProps`](#blobproviderprops) | Optional configuration properties |
-| `T`       | Generic type                              | Type of the JSON data (optional)  |
+| Parameter | Type                                        | Description                       |
+| --------- | ------------------------------------------- | --------------------------------- |
+| `key`     | `string`                                    | The unique key for the blob       |
+| `options` | [`BlobStorageOptions`](#blobstorageoptions) | Optional configuration properties |
+| `T`       | Generic type                                | Type of the JSON data (optional)  |
 
 ### Configuration Properties
 
@@ -156,14 +159,14 @@ import { BlobClient } from "@gensx/storage";
 ### Constructor
 
 ```tsx
-constructor(props?: BlobProviderProps)
+constructor(options?: BlobStorageOptions)
 ```
 
 #### Parameters
 
-| Parameter | Type                                      | Default | Description                       |
-| --------- | ----------------------------------------- | ------- | --------------------------------- |
-| `props`   | [`BlobProviderProps`](#blobproviderprops) | `{}`    | Optional configuration properties |
+| Parameter | Type                                        | Default | Description                       |
+| --------- | ------------------------------------------- | ------- | --------------------------------- |
+| `options` | [`BlobStorageOptions`](#blobstorageoptions) | `{}`    | Optional configuration properties |
 
 #### Example
 
@@ -311,7 +314,7 @@ app.listen(3000, () => {
 });
 ```
 
-## BlobProviderProps
+## BlobStorageOptions
 
 Configuration properties for blob storage operations.
 
