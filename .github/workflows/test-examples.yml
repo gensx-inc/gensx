@@ -2,7 +2,6 @@ name: "🐢 Build and Test Examples"
 
 on:
   pull_request:
-    branches: [main]
     paths:
       - "examples/**/*"
       - "packages/**/*"
