@@ -1,12 +1,15 @@
-import { ChatCompletion } from "@gensx/openai";
-// Use .js extension for imports now
+import { OpenAI } from "openai";
+
 import { Component, Workflow, ComponentOpts } from "@gensx/core";
 import { getTopStoryDetails, type HNStory } from "./hn.js";
 
 const getHNPostUrl = (id: number | string) =>
   `https://news.ycombinator.com/item?id=${id}`;
 
-// Add componentOpts?: ComponentOpts to all prop interfaces
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 interface WriteTweetProps {
   context: string;
@@ -14,7 +17,13 @@ interface WriteTweetProps {
   componentOpts?: ComponentOpts;
 }
 
-@Component("WriteTweet")
+@Component()
+async function ChatCompletion(...args: Parameters<typeof openai.chat.completions.create>) {
+  const [base, ...rest] = args;
+  return openai.chat.completions.create({...base, stream: false, ...rest});
+}
+
+@Component()
 async function WriteTweet({ context, prompt }: WriteTweetProps): Promise<string> {
     const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
@@ -26,7 +35,7 @@ You are Paul Graham composing a tweet. Given a longer analysis, distill it into 
 Focus on the most surprising or counterintuitive point rather than trying to summarize everything.
     `.trim();
 
-    const response = await ChatCompletion.run({
+    const response = await ChatCompletion({
         messages: [
           { role: "system", content: PROMPT },
           {
@@ -37,7 +46,7 @@ Focus on the most surprising or counterintuitive point rather than trying to sum
         model: "gpt-4o",
         temperature: 0.7,
     });
-    return response ?? "";
+    return response.choices[0].message.content ?? "";
 }
 
 interface EditReportProps {
@@ -45,7 +54,7 @@ interface EditReportProps {
   componentOpts?: ComponentOpts;
 }
 
-@Component("EditReport")
+@Component()
 async function EditReport({ content }: EditReportProps): Promise<string> {
     const PROMPT = `
 You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
@@ -62,7 +71,7 @@ you must include this exact link when discussing that project.
 Maintain your voice while preserving the key insights and all links from the analysis.
   `.trim();
 
-    const response = await ChatCompletion.run({
+    const response = await ChatCompletion({
         messages: [
           { role: "system", content: PROMPT },
           { role: "user", content: content },
@@ -70,7 +79,7 @@ Maintain your voice while preserving the key insights and all links from the ana
         model: "gpt-4o",
         temperature: 0.7,
     });
-    return response ?? "";
+    return response.choices[0].message.content ?? "";
 }
 
 interface AnalyzeCommentsProps {
@@ -80,7 +89,7 @@ interface AnalyzeCommentsProps {
 }
 
 
-@Component("AnalyzeComments")
+@Component()
 async function AnalyzeComments({ postId, comments }: AnalyzeCommentsProps): Promise<string> {
   const PROMPT = `
 You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
@@ -110,7 +119,7 @@ Focus on substance rather than surface-level reactions. When referencing comment
     .map((c) => `[Score: ${c.score}] ${c.text}`)
     .join("\n\n");
 
-  const response = await ChatCompletion.run({
+  const response = await ChatCompletion({
       messages: [
         { role: "system", content: PROMPT },
         {
@@ -121,7 +130,7 @@ Focus on substance rather than surface-level reactions. When referencing comment
       model: "gpt-4o",
       temperature: 0.7,
   });
-  return response ?? "";
+  return response.choices[0].message.content ?? "";
 }
 
 interface SummarizePostProps {
@@ -129,7 +138,7 @@ interface SummarizePostProps {
   componentOpts?: ComponentOpts;
 }
 
-@Component("SummarizePost")
+@Component()
 async function SummarizePost({ story }: SummarizePostProps): Promise<string> {
     const PROMPT = `
 You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
@@ -162,7 +171,7 @@ ${story.comments
   .join("\n\n")}
     `.trim();
 
-    const response = await ChatCompletion.run({
+    const response = await ChatCompletion({
         messages: [
           { role: "system", content: PROMPT },
           { role: "user", content: context },
@@ -171,7 +180,7 @@ ${story.comments
         temperature: 0.7,
     });
 
-    const ensuredResponse = response ?? "";
+    const ensuredResponse = response.choices[0].message.content ?? "";
 
     if (!ensuredResponse.includes(getHNPostUrl(story.id))) {
         return `[${story.title}](${getHNPostUrl(story.id)})\n\n${ensuredResponse}`;
@@ -188,7 +197,7 @@ interface GenerateReportProps {
 }
 
 
-@Component("GenerateReport")
+@Component()
 async function GenerateReport({ analyses }: GenerateReportProps): Promise<string> {
   const PROMPT = `
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
@@ -226,7 +235,7 @@ ${commentAnalysis}
     )
     .join("\n\n");
 
-  const response = await ChatCompletion.run({
+  const response = await ChatCompletion({
       messages: [
         { role: "system", content: PROMPT },
         { role: "user", content: context },
@@ -234,7 +243,7 @@ ${commentAnalysis}
       model: "gpt-4o",
       temperature: 0.7,
   });
-  return response ?? "";
+  return response.choices[0].message.content ?? "";
 }
 
 interface FetchHNPostsProps {
@@ -242,7 +251,7 @@ interface FetchHNPostsProps {
   componentOpts?: ComponentOpts;
 }
 
-@Component("FetchHNPosts")
+@Component()
 async function FetchHNPosts({ limit }: FetchHNPostsProps): Promise<HNStory[]> {
     const MAX_HN_STORIES = 500;
     const requestLimit = Math.min(limit, MAX_HN_STORIES);
@@ -273,7 +282,7 @@ interface AnalyzeHNPostsOutput {
   }[];
 }
 
-@Component("AnalyzeHNPosts")
+@Component()
 async function AnalyzeHNPosts({ stories }: AnalyzeHNPostsProps): Promise<AnalyzeHNPostsOutput> {
   const analyses = await Promise.all(stories.map(async (story) => {
     // Pass componentOpts down if needed? Or rely on context?
@@ -298,7 +307,7 @@ export interface AnalyzeHackerNewsTrendsOutput {
   tweet: string;
 }
 
-@Workflow("AnalyzeHackerNewsTrends")
+@Workflow()
 export async function AnalyzeHackerNewsTrends({ postCount, componentOpts }: AnalyzeHackerNewsTrendsProps): Promise<AnalyzeHackerNewsTrendsOutput> {
   // Note: componentOpts from the initial call needs to be passed down if sub-components need it.
   // The current implementation doesn't pass it down explicitly.

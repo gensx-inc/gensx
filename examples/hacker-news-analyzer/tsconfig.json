@@ -13,8 +13,12 @@
     "isolatedModules": true,
     "rootDir": ".",
     "outDir": "./dist",
-    "tsBuildInfoFile": ".tsbuildinfo"
+    "plugins": [
+      {
+        "name": "ts-function-decorator-ls"
+      }
+    ]
   },
-  "include": ["./src/**/*.ts", "./src/**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": ["./*.ts", "./*.tsx", "./**/*.ts", "./**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
 }

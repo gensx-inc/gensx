@@ -1,0 +1,5 @@
+{
+  "watch": [".", ".env", "../../packages/**/dist/**"],
+  "exec": "pnpm build && node dist/index.js",
+  "ext": "ts, tsx, js, json"
+}

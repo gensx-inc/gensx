@@ -7,22 +7,22 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "tsx ./src/index.tsx",
-    "start": "npx gensx start ./src/workflows.tsx",
-    "build": "tsc",
+    "dev": "nodemon",
+    "start": "pnpm build && node dist/index.js",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "deploy": "npx gensx deploy -ev OPENAI_API_KEY ./src/workflows.tsx"
+    "prepare": "ts-patch install -s"
   },
   "dependencies": {
-    "@gensx/openai": "^0.1.27",
-    "@gensx/core": "^0.3.12",
+    "@gensx/core": "0.4.0-alpha.1",
     "openai": "^4.87.4"
   },
   "devDependencies": {
-    "@types/node": "^22",
-    "eslint": "^9.23.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "@types/node": "^20",
+    "nodemon": "^3.1.9",
+    "ts-function-decorator": "^0.0.1",
+    "ts-function-decorator-ls": "^0.0.1",
+    "typescript": "^5.8"
   }
 }
