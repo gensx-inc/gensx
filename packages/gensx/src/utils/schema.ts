@@ -246,58 +246,29 @@ function typeToSchema(
 
   // Handle AsyncIterable and Iterable types
   const typeStr = checker.typeToString(tsType);
-  if (typeStr.includes("AsyncIterable") || typeStr.includes("Iterable")) {
-    // Extract the inner type from AsyncIterable<T> or Iterable<T>
-    const innerTypeMatch = /(?:Async)?Iterable<([^>]+)>/.exec(typeStr);
-    const innerType = innerTypeMatch ? innerTypeMatch[1] : "any";
-
-    // For now, we'll use a simple schema based on the type name
-    // This could be enhanced to handle more complex types
-    let valueSchema: Definition = {
-      type: "object",
-      description: `Streaming response of type ${innerType}`,
-      additionalProperties: true,
-    };
-
-    if (innerType === "string") {
-      valueSchema = { type: "string" };
-    } else if (innerType === "number") {
-      valueSchema = { type: "number" };
-    } else if (innerType === "boolean") {
-      valueSchema = { type: "boolean" };
-    } else if (innerType.startsWith("{") && innerType.endsWith("}")) {
-      // Handle inline object types
-      valueSchema = parseInlineObjectType(innerType);
-    } else {
-      // Try to find the interface in the source file
-      ts.forEachChild(sourceFile, (node) => {
-        if (ts.isInterfaceDeclaration(node) && node.name.text === innerType) {
-          const properties: Record<string, Definition> = {};
-          const required: string[] = [];
-
-          node.members.forEach((member) => {
-            if (ts.isPropertySignature(member)) {
-              const propName = member.name.getText(sourceFile);
-              const isOptional = member.questionToken !== undefined;
-              if (!isOptional) {
-                required.push(propName);
-              }
-              if (member.type) {
-                properties[propName] = convertTypeToSchema(
-                  member.type.getText(sourceFile),
-                );
-              }
-            }
-          });
-
-          valueSchema = {
-            type: "object",
-            properties,
-            required: required.length > 0 ? required.sort() : undefined,
-          };
-        }
-      });
+  if (
+    typeStr.includes("AsyncIterable") ||
+    typeStr.includes("Iterable") ||
+    typeStr.includes("AsyncGenerator") ||
+    typeStr.includes("Generator")
+  ) {
+    // Get the type arguments using the compiler API
+    const typeRef = tsType as ts.TypeReference;
+    const typeArgs = typeRef.typeArguments;
+    if (!typeArgs || typeArgs.length === 0) {
+      return {
+        type: "object",
+        properties: {
+          type: { const: "stream" },
+          value: { type: "string" },
+        },
+        required: ["type", "value"],
+      };
     }
+
+    // The first type argument is the yielded type
+    const innerType = typeArgs[0];
+    const valueSchema = typeToSchema(innerType, checker, sourceFile);
 
     return {
       type: "object",

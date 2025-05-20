@@ -328,6 +328,22 @@ describe("schema generator", () => {
           }
         };
       }
+
+      @Workflow()
+      export async function GeneratorWorkflow(props: StreamProps): Promise<AsyncGenerator<string, void, unknown>> {
+        return (async function* () {
+          yield "chunk1";
+          yield "chunk2";
+        })();
+      }
+
+      @Workflow()
+      export async function ObjectGeneratorWorkflow(props: StreamProps): Promise<AsyncGenerator<StreamChunk, void, unknown>> {
+        return (async function* () {
+          yield { content: "chunk1", role: "assistant" };
+          yield { content: "chunk2", role: "assistant" };
+        })();
+      }
     `;
 
     await verifySchemas(content, (schemas) => {
@@ -354,6 +370,53 @@ describe("schema generator", () => {
       // Test object stream
       expect(schemas).toHaveProperty("ObjectStreamWorkflow");
       expect(schemas.ObjectStreamWorkflow).toEqual({
+        input: {
+          type: "object",
+          properties: {
+            query: { type: "string" },
+          },
+          required: ["query"],
+        },
+        output: {
+          type: "object",
+          properties: {
+            type: { const: "stream" },
+            value: {
+              type: "object",
+              properties: {
+                content: { type: "string" },
+                role: { type: "string" },
+              },
+              required: ["content", "role"],
+            },
+          },
+          required: ["type", "value"],
+        },
+      });
+
+      // Test string generator
+      expect(schemas).toHaveProperty("GeneratorWorkflow");
+      expect(schemas.GeneratorWorkflow).toEqual({
+        input: {
+          type: "object",
+          properties: {
+            query: { type: "string" },
+          },
+          required: ["query"],
+        },
+        output: {
+          type: "object",
+          properties: {
+            type: { const: "stream" },
+            value: { type: "string" },
+          },
+          required: ["type", "value"],
+        },
+      });
+
+      // Test object generator
+      expect(schemas).toHaveProperty("ObjectGeneratorWorkflow");
+      expect(schemas.ObjectGeneratorWorkflow).toEqual({
         input: {
           type: "object",
           properties: {
