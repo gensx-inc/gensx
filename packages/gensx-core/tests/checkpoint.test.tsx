@@ -3,10 +3,25 @@ import { setTimeout } from "timers/promises";
 
 import type { ExecutionNode } from "../src/checkpoint.js";
 
-import { beforeEach, expect, suite, test, vi } from "vitest";
+import { readFileSync } from "fs";
+import { setTimeout } from "timers/promises";
+
+import type { ExecutionNode } from "../src/checkpoint.js";
+
+import { afterEach, beforeEach, describe, expect, suite, test, vi } from "vitest";
 
 import { CheckpointManager } from "../src/checkpoint.js";
 import * as gensx from "../src/index.js";
+import { readConfig } from "../src/utils/config.js";
+// Mock readConfig at the top level
+vi.mock("../src/utils/config.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    ...actual,
+    readConfig: vi.fn(),
+  };
+});
 import {
   executeWithCheckpoints,
   executeWorkflowWithCheckpoints,
@@ -551,6 +566,221 @@ suite("checkpoint", () => {
           message: "Test error message",
         },
       },
+    });
+  });
+});
+
+suite("CheckpointManager constructor validation", () => {
+  const EXPECTED_ERROR_MESSAGE =
+    "Organization not set or is invalid ('undefined' string). A valid organization ID must be set via constructor options, GENSX_ORG environment variable, or in ~/.config/gensx/config when checkpoints are enabled. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.";
+
+  describe("using constructor options", () => {
+    let originalApiKeyEnv: string | undefined;
+    let originalOrgEnv: string | undefined;
+
+    beforeEach(() => {
+      // Isolate tests from environment variables
+      originalApiKeyEnv = process.env.GENSX_API_KEY;
+      originalOrgEnv = process.env.GENSX_ORG;
+      delete process.env.GENSX_API_KEY;
+      delete process.env.GENSX_ORG;
+      vi.mocked(readConfig).mockReturnValue({}); // Ensure config is empty
+    });
+
+    afterEach(() => {
+      // Restore environment variables
+      process.env.GENSX_API_KEY = originalApiKeyEnv;
+      process.env.GENSX_ORG = originalOrgEnv;
+      vi.resetAllMocks();
+    });
+
+    test("throws error if apiKey is present and org is undefined", () => {
+      expect(() => new CheckpointManager({ apiKey: "test-key", org: undefined })).toThrow(EXPECTED_ERROR_MESSAGE);
+    });
+
+    test("throws error if apiKey is present and org is an empty string", () => {
+      expect(() => new CheckpointManager({ apiKey: "test-key", org: "" })).toThrow(EXPECTED_ERROR_MESSAGE);
+    });
+
+    test("throws error if apiKey is present and org is 'undefined' string", () => {
+      expect(() => new CheckpointManager({ apiKey: "test-key", org: "undefined" })).toThrow(EXPECTED_ERROR_MESSAGE);
+    });
+
+    test("does not throw if apiKey is present and org is valid", () => {
+      expect(() => new CheckpointManager({ apiKey: "test-key", org: "test-org" })).not.toThrow();
+    });
+
+    test("does not throw if apiKey is not present, even with problematic org", () => {
+      expect(() => new CheckpointManager({ apiKey: undefined, org: undefined })).not.toThrow();
+      expect(() => new CheckpointManager({ apiKey: undefined, org: "" })).not.toThrow();
+      expect(() => new CheckpointManager({ apiKey: undefined, org: "undefined" })).not.toThrow();
+    });
+  });
+
+  describe("using environment variables", () => {
+    beforeEach(() => {
+      vi.mocked(readConfig).mockReturnValue({}); // Ensure config is empty
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.resetAllMocks();
+    });
+
+    test("(Env 1) throws error if GENSX_API_KEY set, GENSX_ORG is empty", () => {
+      vi.stubEnv("GENSX_API_KEY", "env-key");
+      vi.stubEnv("GENSX_ORG", "");
+      expect(() => new CheckpointManager()).toThrow(EXPECTED_ERROR_MESSAGE);
+    });
+
+    test("(Env 2) throws error if GENSX_API_KEY set, GENSX_ORG is 'undefined'", () => {
+      vi.stubEnv("GENSX_API_KEY", "env-key");
+      vi.stubEnv("GENSX_ORG", "undefined");
+      expect(() => new CheckpointManager()).toThrow(EXPECTED_ERROR_MESSAGE);
+    });
+
+    test("(Env 3) throws error if GENSX_API_KEY set, GENSX_ORG is not set", () => {
+      vi.stubEnv("GENSX_API_KEY", "env-key");
+      // GENSX_ORG is unset by default or cleared in afterEach
+      expect(() => new CheckpointManager()).toThrow(EXPECTED_ERROR_MESSAGE);
+    });
+
+    test("(Env 4) does not throw if GENSX_API_KEY and GENSX_ORG are valid", () => {
+      vi.stubEnv("GENSX_API_KEY", "env-key");
+      vi.stubEnv("GENSX_ORG", "env-org");
+      expect(() => new CheckpointManager()).not.toThrow();
+    });
+
+    describe("(Env 5) constructor opts override env vars", () => {
+      beforeEach(() => {
+        vi.stubEnv("GENSX_API_KEY", "env-key");
+        vi.stubEnv("GENSX_ORG", "env-org");
+      });
+
+      test("uses constructor values when valid", () => {
+        const manager = new CheckpointManager({ apiKey: "ctor-key", org: "ctor-org" });
+        expect((manager as any).apiKey).toBe("ctor-key");
+        expect((manager as any).org).toBe("ctor-org");
+      });
+
+      test("throws if constructor org is invalid, despite valid env org", () => {
+        expect(() => new CheckpointManager({ apiKey: "ctor-key", org: "" })).toThrow(EXPECTED_ERROR_MESSAGE);
+      });
+       test("uses constructor apiKey and env org if constructor org is undefined", () => {
+        const manager = new CheckpointManager({ apiKey: "ctor-key", org: undefined });
+        expect((manager as any).apiKey).toBe("ctor-key");
+        expect((manager as any).org).toBe("env-org"); // Falls back to env org
+      });
+    });
+  });
+
+  describe("using config file", () => {
+    let originalApiKeyEnv: string | undefined;
+    let originalOrgEnv: string | undefined;
+
+    beforeEach(() => {
+      // Clear env vars to ensure config is the primary source
+      originalApiKeyEnv = process.env.GENSX_API_KEY;
+      originalOrgEnv = process.env.GENSX_ORG;
+      delete process.env.GENSX_API_KEY;
+      delete process.env.GENSX_ORG;
+    });
+
+    afterEach(() => {
+      process.env.GENSX_API_KEY = originalApiKeyEnv;
+      process.env.GENSX_ORG = originalOrgEnv;
+      vi.resetAllMocks(); // Resets readConfig mock
+    });
+
+    test("(Config 1) throws error if config api.token set, api.org is empty", () => {
+      vi.mocked(readConfig).mockReturnValue({ api: { token: "config-key", org: "" } });
+      expect(() => new CheckpointManager()).toThrow(EXPECTED_ERROR_MESSAGE);
+    });
+
+    test("(Config 2) throws error if config api.token set, api.org is 'undefined'", () => {
+      vi.mocked(readConfig).mockReturnValue({ api: { token: "config-key", org: "undefined" } });
+      expect(() => new CheckpointManager()).toThrow(EXPECTED_ERROR_MESSAGE);
+    });
+
+    test("(Config 3) throws error if config api.token set, api.org is missing", () => {
+      vi.mocked(readConfig).mockReturnValue({ api: { token: "config-key" } });
+      expect(() => new CheckpointManager()).toThrow(EXPECTED_ERROR_MESSAGE);
+    });
+
+    test("(Config 4) does not throw if config api.token and api.org are valid", () => {
+      vi.mocked(readConfig).mockReturnValue({ api: { token: "config-key", org: "config-org" } });
+      expect(() => new CheckpointManager()).not.toThrow();
+    });
+
+    describe("(Config 5) env vars override config", () => {
+      beforeEach(() => {
+        // Config has valid values
+        vi.mocked(readConfig).mockReturnValue({ api: { token: "config-key", org: "config-org" } });
+      });
+      
+      test("uses env values when env vars are valid", () => {
+        vi.stubEnv("GENSX_API_KEY", "env-key");
+        vi.stubEnv("GENSX_ORG", "env-org");
+        const manager = new CheckpointManager();
+        expect((manager as any).apiKey).toBe("env-key");
+        expect((manager as any).org).toBe("env-org");
+        vi.unstubAllEnvs();
+      });
+
+      test("throws if env org is invalid, despite valid config org", () => {
+        vi.stubEnv("GENSX_API_KEY", "env-key");
+        vi.stubEnv("GENSX_ORG", ""); // Invalid env org
+        expect(() => new CheckpointManager()).toThrow(EXPECTED_ERROR_MESSAGE);
+        vi.unstubAllEnvs();
+      });
+
+      test("uses env apiKey and config org if env org is undefined", () => {
+        vi.stubEnv("GENSX_API_KEY", "env-key");
+        // GENSX_ORG is not set via stubEnv, should fallback to config
+        const manager = new CheckpointManager();
+        expect((manager as any).apiKey).toBe("env-key");
+        expect((manager as any).org).toBe("config-org");
+        vi.unstubAllEnvs();
+      });
+    });
+
+    describe("(Config 6) constructor opts override config and env vars", () => {
+      beforeEach(() => {
+        // Config has valid values
+        vi.mocked(readConfig).mockReturnValue({ api: { token: "config-key", org: "config-org" } });
+        // Env vars also have valid values
+        vi.stubEnv("GENSX_API_KEY", "env-key");
+        vi.stubEnv("GENSX_ORG", "env-org");
+      });
+      afterEach(()=> {
+        vi.unstubAllEnvs();
+      })
+
+      test("uses constructor values when valid", () => {
+        const manager = new CheckpointManager({ apiKey: "ctor-key", org: "ctor-org" });
+        expect((manager as any).apiKey).toBe("ctor-key");
+        expect((manager as any).org).toBe("ctor-org");
+      });
+
+      test("throws if constructor org is invalid, despite valid config and env orgs", () => {
+        expect(() => new CheckpointManager({ apiKey: "ctor-key", org: "" })).toThrow(EXPECTED_ERROR_MESSAGE);
+      });
+      
+      test("uses constructor apiKey and env org if ctor org is undefined (env overrides config)", () => {
+        const manager = new CheckpointManager({ apiKey: "ctor-key", org: undefined });
+        expect((manager as any).apiKey).toBe("ctor-key");
+        expect((manager as any).org).toBe("env-org"); // Env takes precedence over config
+      });
+      
+      test("uses constructor apiKey and config org if ctor org is undefined and env org is undefined", () => {
+        vi.unstubAllEnvs(); // Clear env org, GENSX_API_KEY still "env-key" from outer beforeEach
+        delete process.env.GENSX_ORG; // Make sure it's really gone
+         vi.stubEnv("GENSX_API_KEY", "env-key"); // Keep API key from env
+        
+        const manager = new CheckpointManager({ apiKey: "ctor-key", org: undefined });
+        expect((manager as any).apiKey).toBe("ctor-key");
+        expect((manager as any).org).toBe("config-org"); // Fallback to config
+      });
     });
   });
 });
