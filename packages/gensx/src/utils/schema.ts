@@ -96,7 +96,7 @@ export function generateSchema(
     outputType ??= typeChecker.getAnyType();
 
     // Use typeToSchema for input/output
-    let inputSchema = typeToSchema(inputType, typeChecker);
+    let inputSchema = typeToSchema(inputType, typeChecker, sourceFile);
     // Unwrap Promise<T> for output
     let outputSchemaType = outputType;
     const typeArgs = (outputType as ts.TypeReference).typeArguments;
@@ -107,7 +107,7 @@ export function generateSchema(
     ) {
       outputSchemaType = typeArgs[0];
     }
-    let outputSchema = typeToSchema(outputSchemaType, typeChecker);
+    let outputSchema = typeToSchema(outputSchemaType, typeChecker, sourceFile);
 
     workflowSchemas[workflowName] = {
       input: inputSchema,
@@ -215,6 +215,7 @@ function extractWorkflowInfo(
 function typeToSchema(
   tsType: ts.Type,
   checker: ts.TypeChecker,
+  sourceFile: ts.SourceFile,
   isOptionalProp = false,
 ): Definition {
   if (tsType.isStringLiteral()) {
@@ -242,12 +243,78 @@ function typeToSchema(
     // If this is an optional property, don't emit a type for undefined
     return isOptionalProp ? {} : { type: "null" };
   }
+
+  // Handle AsyncIterable and Iterable types
+  const typeStr = checker.typeToString(tsType);
+  if (typeStr.includes("AsyncIterable") || typeStr.includes("Iterable")) {
+    // Extract the inner type from AsyncIterable<T> or Iterable<T>
+    const innerTypeMatch = /(?:Async)?Iterable<([^>]+)>/.exec(typeStr);
+    const innerType = innerTypeMatch ? innerTypeMatch[1] : "any";
+
+    // For now, we'll use a simple schema based on the type name
+    // This could be enhanced to handle more complex types
+    let valueSchema: Definition = {
+      type: "object",
+      description: `Streaming response of type ${innerType}`,
+      additionalProperties: true,
+    };
+
+    if (innerType === "string") {
+      valueSchema = { type: "string" };
+    } else if (innerType === "number") {
+      valueSchema = { type: "number" };
+    } else if (innerType === "boolean") {
+      valueSchema = { type: "boolean" };
+    } else if (innerType.startsWith("{") && innerType.endsWith("}")) {
+      // Handle inline object types
+      valueSchema = parseInlineObjectType(innerType);
+    } else {
+      // Try to find the interface in the source file
+      ts.forEachChild(sourceFile, (node) => {
+        if (ts.isInterfaceDeclaration(node) && node.name.text === innerType) {
+          const properties: Record<string, Definition> = {};
+          const required: string[] = [];
+
+          node.members.forEach((member) => {
+            if (ts.isPropertySignature(member)) {
+              const propName = member.name.getText(sourceFile);
+              const isOptional = member.questionToken !== undefined;
+              if (!isOptional) {
+                required.push(propName);
+              }
+              if (member.type) {
+                properties[propName] = convertTypeToSchema(
+                  member.type.getText(sourceFile),
+                );
+              }
+            }
+          });
+
+          valueSchema = {
+            type: "object",
+            properties,
+            required: required.length > 0 ? required.sort() : undefined,
+          };
+        }
+      });
+    }
+
+    return {
+      type: "object",
+      properties: {
+        type: { const: "stream" },
+        value: valueSchema,
+      },
+      required: ["type", "value"],
+    };
+  }
+
   if (checker.isArrayType(tsType)) {
     const elementType =
       (tsType as ts.TypeReference).typeArguments?.[0] ?? checker.getAnyType();
     return {
       type: "array",
-      items: typeToSchema(elementType, checker),
+      items: typeToSchema(elementType, checker, sourceFile),
     };
   }
   if (tsType.isUnion()) {
@@ -258,24 +325,27 @@ function typeToSchema(
     );
     // If this is an optional property and the only difference is undefined, just use the non-undefined type
     if (isOptionalProp && nonUndefinedTypes.length === 1) {
-      return typeToSchema(nonUndefinedTypes[0], checker);
+      return typeToSchema(nonUndefinedTypes[0], checker, sourceFile);
     }
     // Handle union with null (not undefined)
     if (types.some((t) => t.flags & ts.TypeFlags.Null)) {
       const nonNullTypes = types.filter((t) => !(t.flags & ts.TypeFlags.Null));
       if (nonNullTypes.length === 1) {
         return {
-          oneOf: [typeToSchema(nonNullTypes[0], checker), { type: "null" }],
+          oneOf: [
+            typeToSchema(nonNullTypes[0], checker, sourceFile),
+            { type: "null" },
+          ],
         };
       }
     }
     return {
-      oneOf: nonUndefinedTypes.map((t) => typeToSchema(t, checker)),
+      oneOf: nonUndefinedTypes.map((t) => typeToSchema(t, checker, sourceFile)),
     };
   }
   if (tsType.isIntersection()) {
     return {
-      allOf: tsType.types.map((t) => typeToSchema(t, checker)),
+      allOf: tsType.types.map((t) => typeToSchema(t, checker, sourceFile)),
     };
   }
   // Handle object types (interfaces, type literals)
@@ -287,7 +357,12 @@ function typeToSchema(
       if (decl) {
         const propType = checker.getTypeOfSymbolAtLocation(prop, decl);
         const isOptional = !!(prop.getFlags() & ts.SymbolFlags.Optional);
-        properties[prop.name] = typeToSchema(propType, checker, isOptional);
+        properties[prop.name] = typeToSchema(
+          propType,
+          checker,
+          sourceFile,
+          isOptional,
+        );
         if (!isOptional) {
           required.push(prop.name);
         }

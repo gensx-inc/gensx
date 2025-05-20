@@ -295,4 +295,88 @@ describe("schema generator", () => {
       });
     });
   });
+
+  it("should handle streaming workflows", async () => {
+    const content = `
+      import { Workflow } from "@gensx/core";
+
+      interface StreamProps {
+        query: string;
+      }
+
+      interface StreamChunk {
+        content: string;
+        role: string;
+      }
+
+      @Workflow()
+      export async function StringStreamWorkflow(props: StreamProps): Promise<AsyncIterable<string>> {
+        return {
+          [Symbol.asyncIterator]: async function* () {
+            yield "chunk1";
+            yield "chunk2";
+          }
+        };
+      }
+
+      @Workflow()
+      export async function ObjectStreamWorkflow(props: StreamProps): Promise<AsyncIterable<StreamChunk>> {
+        return {
+          [Symbol.asyncIterator]: async function* () {
+            yield { content: "chunk1", role: "assistant" };
+            yield { content: "chunk2", role: "assistant" };
+          }
+        };
+      }
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      // Test string stream
+      expect(schemas).toHaveProperty("StringStreamWorkflow");
+      expect(schemas.StringStreamWorkflow).toEqual({
+        input: {
+          type: "object",
+          properties: {
+            query: { type: "string" },
+          },
+          required: ["query"],
+        },
+        output: {
+          type: "object",
+          properties: {
+            type: { const: "stream" },
+            value: { type: "string" },
+          },
+          required: ["type", "value"],
+        },
+      });
+
+      // Test object stream
+      expect(schemas).toHaveProperty("ObjectStreamWorkflow");
+      expect(schemas.ObjectStreamWorkflow).toEqual({
+        input: {
+          type: "object",
+          properties: {
+            query: { type: "string" },
+          },
+          required: ["query"],
+        },
+        output: {
+          type: "object",
+          properties: {
+            type: { const: "stream" },
+            value: {
+              type: "object",
+              properties: {
+                content: { type: "string" },
+                role: { type: "string" },
+              },
+              required: ["content", "role"],
+            },
+          },
+          required: ["type", "value"],
+        },
+      });
+    });
+  });
 });
