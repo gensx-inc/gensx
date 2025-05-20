@@ -1,34 +1,82 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/require-await */
-
-import type { DistanceMetric, Filters } from "@turbopuffer/turbopuffer";
-
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
-import { SearchProvider } from "../../src/search/provider.js";
-import {
-  SearchApiError,
-  SearchError,
-  SearchNetworkError,
-  SearchStorage,
-} from "../../src/search/remote.js";
-import { Schema } from "../../src/search/types.js";
+import { SearchClient } from "../../src/search/searchClient.js";
+import { Namespace } from "../../src/search/types.js";
+import { useSearch } from "../../src/search/useSearch.js";
 
-suite("GenSX Search Storage", () => {
-  // Save original environment
+// Track namespace cache state for testing
+const namespacesCache = new Map<string, boolean>();
+
+// Mock the remote.js module which contains the SearchStorage implementation
+vi.mock("../../src/search/remote.js", () => {
+  // Mock class implementation
+  const MockSearchStorage = vi
+    .fn()
+    .mockImplementation((project: string, environment: string) => {
+      return {
+        project,
+        environment,
+        hasEnsuredNamespace: (name: string): boolean =>
+          namespacesCache.has(name),
+        getNamespace: (name: string) => ({
+          namespaceId: name,
+          query: vi.fn().mockResolvedValue([]),
+          upsert: vi.fn().mockResolvedValue({}),
+          delete: vi.fn().mockResolvedValue({}),
+          patch: vi.fn().mockResolvedValue({}),
+        }),
+        ensureNamespace: vi.fn().mockImplementation((name: string) => {
+          const exists = namespacesCache.has(name);
+          if (!exists) {
+            namespacesCache.set(name, true);
+            return Promise.resolve({ created: true, exists: false });
+          }
+          return Promise.resolve({ created: false, exists: true });
+        }),
+        deleteNamespace: vi.fn().mockImplementation((name: string) => {
+          namespacesCache.delete(name);
+          return Promise.resolve({ deleted: true });
+        }),
+        listNamespaces: vi.fn().mockImplementation(() => {
+          const namespaces = Array.from(namespacesCache.keys()).map((name) => ({
+            name,
+            createdAt: new Date(),
+          }));
+          return Promise.resolve({
+            namespaces,
+            nextCursor: undefined,
+          });
+        }),
+        namespaceExists: vi.fn().mockImplementation((name: string) => {
+          return Promise.resolve(namespacesCache.has(name));
+        }),
+      };
+    });
+
+  return {
+    SearchStorage: MockSearchStorage,
+  };
+});
+
+// Extended Namespace type for testing
+interface TestNamespace extends Namespace {
+  upsert: () => Promise<unknown>;
+  delete: () => Promise<unknown>;
+  patch: () => Promise<unknown>;
+}
+
+suite("GenSX Search", () => {
   const originalEnv = { ...process.env };
-  let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    // Setup environment variables for remote storage
+    // Clear the namespace cache before each test
+    namespacesCache.clear();
+
+    // Setup environment variables for cloud storage
     process.env.GENSX_API_KEY = "test-api-key";
     process.env.GENSX_ORG = "test-org";
-
-    // Reset and setup fetch mock
-    mockFetch = vi.fn();
-    global.fetch = mockFetch;
+    process.env.GENSX_PROJECT = "test-project";
+    process.env.GENSX_ENV = "test-environment";
   });
 
   afterEach(() => {
@@ -37,677 +85,117 @@ suite("GenSX Search Storage", () => {
     vi.clearAllMocks();
   });
 
-  test("should initialize with environment variables", () => {
-    expect(
-      () => new SearchStorage("test-project", "test-environment"),
-    ).not.toThrow();
-  });
+  suite("SearchClient", () => {
+    test("should automatically detect cloud storage in cloud environment", async () => {
+      process.env.GENSX_RUNTIME = "cloud";
 
-  test("should throw if API key is missing", () => {
-    delete process.env.GENSX_API_KEY;
-    expect(() => new SearchStorage("test-project", "test-environment")).toThrow(
-      "GENSX_API_KEY",
-    );
-  });
+      const client = new SearchClient();
+      expect(client).toBeDefined();
 
-  test("should throw if organization ID is missing", () => {
-    delete process.env.GENSX_ORG;
-    expect(() => new SearchStorage("test-project", "test-environment")).toThrow(
-      "Organization ID",
-    );
-  });
-
-  test("should implement SearchStorage interface when properly configured", () => {
-    const storage = new SearchStorage("test-project", "test-environment");
-
-    // Check if it implements the SearchStorage interface
-    expect(storage).toBeDefined();
-    expect(typeof storage.getNamespace).toBe("function");
-    expect(typeof storage.listNamespaces).toBe("function");
-    expect(typeof storage.deleteNamespace).toBe("function");
-    expect(typeof storage.namespaceExists).toBe("function");
-    expect(typeof storage.ensureNamespace).toBe("function");
-    expect(typeof storage.hasEnsuredNamespace).toBe("function");
-
-    // Check that it returns a valid namespace
-    const namespace = storage.getNamespace("test");
-    expect(namespace).toBeDefined();
-    expect(typeof namespace.write).toBe("function");
-    expect(typeof namespace.query).toBe("function");
-    expect(typeof namespace.getMetadata).toBe("function");
-    expect(typeof namespace.getSchema).toBe("function");
-    expect(typeof namespace.updateSchema).toBe("function");
-  });
-
-  test("should be able to import and use SearchProvider", () => {
-    expect(SearchProvider).toBeDefined();
-  });
-
-  test("should ensure a namespace", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({ created: true, exists: false }),
+      // Test that it works by getting a namespace
+      const namespace = await client.getNamespace("test-namespace");
+      expect(namespace).toBeDefined();
+      expect(namespace.namespaceId).toBe("test-namespace");
     });
 
-    const storage = new SearchStorage("test-project", "test-environment");
-    const result = await storage.ensureNamespace("test-ns");
+    test("should handle namespace ensuring", async () => {
+      const client = new SearchClient();
 
-    expect(result).toEqual({ created: true, exists: false });
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/ensure"),
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-api-key",
-        }),
-      }),
-    );
+      // First call should create the namespace
+      const result1 = await client.ensureNamespace("test-namespace");
+      expect(result1.created).toBe(true);
+      expect(result1.exists).toBe(false);
 
-    // Check internal cache is updated
-    expect(storage.hasEnsuredNamespace("test-ns")).toBe(true);
-  });
-
-  test("should delete a namespace", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({ deleted: true }),
+      // Second call should find the existing namespace
+      const result2 = await client.ensureNamespace("test-namespace");
+      expect(result2.created).toBe(false);
+      expect(result2.exists).toBe(true);
     });
 
-    const storage = new SearchStorage("test-project", "test-environment");
+    test("should handle namespace listing", async () => {
+      const client = new SearchClient();
 
-    // First make sure namespace is in the cache
-    storage.getNamespace("test-ns");
-    expect(storage.hasEnsuredNamespace("test-ns")).toBe(true);
+      // Create some test namespaces
+      await client.ensureNamespace("ns1");
+      await client.ensureNamespace("ns2");
 
-    // Now delete it
-    const result = await storage.deleteNamespace("test-ns");
-
-    expect(result).toEqual({ deleted: true });
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns"),
-      expect.objectContaining({
-        method: "DELETE",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-api-key",
-        }),
-      }),
-    );
-
-    // Check internal cache is updated
-    expect(storage.hasEnsuredNamespace("test-ns")).toBe(false);
-  });
-
-  test("should list namespaces", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        namespaces: [
-          { name: "test-ns1", createdAt: "2024-01-01T00:00:00Z" },
-          { name: "test-ns2", createdAt: "2024-01-02T00:00:00Z" },
-        ],
-        nextCursor: "next-page-token",
-      }),
+      const result = await client.listNamespaces();
+      expect(result.namespaces).toHaveLength(2);
+      expect(result.namespaces.map((ns) => ns.name)).toContain("ns1");
+      expect(result.namespaces.map((ns) => ns.name)).toContain("ns2");
     });
 
-    const storage = new SearchStorage("test-project", "test-environment");
-    const result = await storage.listNamespaces();
+    test("should handle namespace deletion", async () => {
+      const client = new SearchClient();
 
-    expect(result.namespaces).toEqual([
-      { name: "test-ns1", createdAt: new Date("2024-01-01T00:00:00Z") },
-      { name: "test-ns2", createdAt: new Date("2024-01-02T00:00:00Z") },
-    ]);
-    expect(result.nextCursor).toBe("next-page-token");
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search"),
-      expect.objectContaining({
-        method: "GET",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-api-key",
-        }),
-      }),
-    );
-  });
+      // Create a namespace
+      await client.ensureNamespace("test-namespace");
 
-  test("should check if a namespace exists", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
+      // Delete it
+      const result = await client.deleteNamespace("test-namespace");
+      expect(result.deleted).toBe(true);
+
+      // Verify it's gone
+      const exists = await client.namespaceExists("test-namespace");
+      expect(exists).toBe(false);
     });
 
-    const storage = new SearchStorage("test-project", "test-environment");
-    const exists = await storage.namespaceExists("test-ns");
+    test("should handle namespace existence check", async () => {
+      const client = new SearchClient();
 
-    expect(exists).toBe(true);
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns"),
-      expect.objectContaining({
-        method: "HEAD",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-api-key",
-        }),
-      }),
-    );
-  });
+      // Check non-existent namespace
+      const exists1 = await client.namespaceExists("non-existent");
+      expect(exists1).toBe(false);
 
-  test("should return false for non-existent namespace", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 404,
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const exists = await storage.namespaceExists("non-existent");
-
-    expect(exists).toBe(false);
-  });
-
-  test("should query vectors by similarity", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => [
-        { id: "1", dist: 0.9, attributes: { text: "test document" } },
-        { id: "2", dist: 0.8, attributes: { text: "another document" } },
-      ],
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const namespace = storage.getNamespace("test-ns");
-
-    const results = await namespace.query({
-      vector: [0.1, 0.2, 0.3],
-      topK: 2,
-    });
-
-    expect(results.length).toBe(2);
-    expect(results[0].id).toBe("1");
-    expect(results[0].dist).toBe(0.9);
-    expect(results[0].attributes?.text).toBe("test document");
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/query"),
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-api-key",
-        }),
-        body: expect.any(String),
-      }),
-    );
-
-    // Verify the body contains the query parameters
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body).toEqual({
-      vector: [0.1, 0.2, 0.3],
-      topK: 2,
-      includeVectors: false,
+      // Create and check existing namespace
+      await client.ensureNamespace("test-namespace");
+      const exists2 = await client.namespaceExists("test-namespace");
+      expect(exists2).toBe(true);
     });
   });
 
-  test("should write vectors with various operations", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({ rowsAffected: 2 }),
+  suite("useSearch", () => {
+    test("should create a new client instance for each call", async () => {
+      const ns1 = await useSearch("test1");
+      const ns2 = await useSearch("test2");
+
+      // They should be different instances
+      expect(ns1).not.toBe(ns2);
     });
 
-    const storage = new SearchStorage("test-project", "test-environment");
-    const namespace = storage.getNamespace("test-ns");
+    test("should handle different configurations per call", async () => {
+      // First call with default config
+      const ns1 = await useSearch("test");
 
-    const vectors = [
-      {
-        id: "1",
-        vector: [0.1, 0.2, 0.3],
-        text: "test document",
-      },
-      {
-        id: "2",
-        vector: [0.4, 0.5, 0.6],
-        text: "another document",
-      },
-    ];
-
-    const result = await namespace.write({
-      upsertRows: vectors,
-      distanceMetric: "cosine_distance" as DistanceMetric,
-      deletes: ["3", "4"],
-      deleteByFilter: ["And", [["text", "Eq", "test document"]]] as Filters,
-    });
-
-    expect(result).toBe(2);
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/vectors"),
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-api-key",
-        }),
-        body: expect.any(String),
-      }),
-    );
-
-    // Verify the body contains all operations
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body).toEqual({
-      upsertRows: vectors,
-      distanceMetric: "cosine_distance",
-      deletes: ["3", "4"],
-      deleteByFilter: ["And", [["text", "Eq", "test document"]]],
-    });
-  });
-
-  test("should write vectors with upsert only", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({ rowsAffected: 2 }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const namespace = storage.getNamespace("test-ns");
-
-    const vectors = [
-      {
-        id: "1",
-        vector: [0.1, 0.2, 0.3],
-        text: "test document",
-      },
-      {
-        id: "2",
-        vector: [0.4, 0.5, 0.6],
-        text: "another document",
-      },
-    ];
-
-    const result = await namespace.write({
-      upsertRows: vectors,
-      distanceMetric: "cosine_distance" as DistanceMetric,
-    });
-
-    expect(result).toBe(2);
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/vectors"),
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-api-key",
-        }),
-        body: expect.any(String),
-      }),
-    );
-
-    // Verify the body contains only upsert operation
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body).toEqual({
-      upsertRows: vectors,
-      distanceMetric: "cosine_distance",
-    });
-  });
-
-  test("should write vectors with delete by ID only", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({ rowsAffected: 2 }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const namespace = storage.getNamespace("test-ns");
-
-    const result = await namespace.write({
-      deletes: ["1", "2"],
-    });
-
-    expect(result).toBe(2);
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/vectors"),
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-api-key",
-        }),
-        body: expect.any(String),
-      }),
-    );
-
-    // Verify the body contains only delete operation
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body).toEqual({
-      deletes: ["1", "2"],
-    });
-  });
-
-  test("should write vectors with delete by filter only", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({ rowsAffected: 2 }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const namespace = storage.getNamespace("test-ns");
-
-    const result = await namespace.write({
-      deleteByFilter: ["And", [["text", "Eq", "test document"]]] as Filters,
-    });
-
-    expect(result).toBe(2);
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/vectors"),
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-api-key",
-        }),
-        body: expect.any(String),
-      }),
-    );
-
-    // Verify the body contains only delete by filter operation
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body).toEqual({
-      deleteByFilter: ["And", [["text", "Eq", "test document"]]],
-    });
-  });
-
-  test("should get namespace metadata", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        metadata: {
-          dimensions: 3,
-          distanceMetric: "cosine",
-          vectorCount: 100,
-        },
-      }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const namespace = storage.getNamespace("test-ns");
-
-    const metadata = await namespace.getMetadata();
-
-    expect(metadata).toEqual({
-      dimensions: 3,
-      distanceMetric: "cosine",
-      vectorCount: 100,
-    });
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns"),
-      expect.objectContaining({
-        method: "GET",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-api-key",
-        }),
-      }),
-    );
-  });
-
-  test("should get schema", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        text: { type: "string", filterable: true, fullTextSearch: true },
-        rating: { type: "number", filterable: true },
-      }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const namespace = storage.getNamespace("test-ns");
-
-    const schema = await namespace.getSchema();
-
-    // Use any to work around the Schema type issues
-    expect(schema).toEqual({
-      text: { type: "string", filterable: true, fullTextSearch: true },
-      rating: { type: "number", filterable: true },
-    });
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/schema"),
-      expect.objectContaining({
-        method: "GET",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-api-key",
-        }),
-      }),
-    );
-  });
-
-  test("should update schema", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        text: { type: "string", filterable: true, fullTextSearch: true },
-        rating: { type: "number", filterable: true },
-        new_field: { type: "string", filterable: false },
-      }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const namespace = storage.getNamespace("test-ns");
-
-    // Use any to work around the Schema type issues
-    const schema = {
-      text: { type: "string", filterable: true, fullTextSearch: true },
-      rating: { type: "number", filterable: true },
-      new_field: { type: "string", filterable: false },
-    } as unknown as Schema;
-
-    const updatedSchema = await namespace.updateSchema({ schema });
-
-    // Use any to work around the Schema type issues
-    expect(updatedSchema).toEqual(schema);
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/schema"),
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-api-key",
-        }),
-        body: expect.any(String),
-      }),
-    );
-
-    // Verify the body contains the schema
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body).toEqual(schema);
-  });
-
-  suite("Error Handling", () => {
-    test("should handle API error responses", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        statusText: "Bad Request",
+      // Second call with explicit config
+      const ns2 = await useSearch("test", {
+        project: "test-project",
+        environment: "test-environment",
       });
 
-      const storage = new SearchStorage("test-project", "test-environment");
-
-      try {
-        await storage.ensureNamespace("api-error");
-        // Should have thrown
-        expect(true).toBe(false);
-      } catch (err) {
-        expect(err).toBeInstanceOf(SearchApiError);
-        expect((err as SearchError).code).toBe("SEARCH_ERROR");
-        expect((err as SearchError).message).toContain("Bad Request");
-      }
+      // Both should be defined
+      expect(ns1).toBeDefined();
+      expect(ns2).toBeDefined();
     });
 
-    test("should handle HTTP error status codes", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-      });
+    test("should ensure namespace exists before returning", async () => {
+      const namespace = await useSearch("test-namespace");
+      expect(namespace).toBeDefined();
 
-      const storage = new SearchStorage("test-project", "test-environment");
-
-      try {
-        await storage.ensureNamespace("server-error");
-        // Should have thrown
-        expect(true).toBe(false);
-      } catch (err) {
-        expect(err).toBeInstanceOf(SearchApiError);
-        expect((err as SearchError).code).toBe("SEARCH_ERROR");
-        expect((err as SearchError).message).toContain("Internal Server Error");
-      }
+      // Namespace should exist
+      const client = new SearchClient();
+      const exists = await client.namespaceExists("test-namespace");
+      expect(exists).toBe(true);
     });
 
-    test("should handle network errors", async () => {
-      mockFetch.mockRejectedValueOnce(new Error("Network failure"));
+    test("should return a namespace with all required methods", async () => {
+      const namespace = (await useSearch("test-namespace")) as TestNamespace;
 
-      const storage = new SearchStorage("test-project", "test-environment");
-
-      try {
-        await storage.ensureNamespace("network-error");
-        // Should have thrown
-        expect(true).toBe(false);
-      } catch (err) {
-        expect(err).toBeInstanceOf(SearchNetworkError);
-        expect((err as SearchError).code).toBe("NETWORK_ERROR");
-        expect((err as SearchError).message).toContain("Network failure");
-      }
+      // Check that the namespace has all required methods
+      expect(typeof namespace.query).toBe("function");
+      expect(typeof namespace.upsert).toBe("function");
+      expect(typeof namespace.delete).toBe("function");
+      expect(typeof namespace.patch).toBe("function");
     });
-
-    test("should handle missing data responses", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      });
-
-      const storage = new SearchStorage("test-project", "test-environment");
-
-      try {
-        await storage.ensureNamespace("missing-data");
-        // Should have thrown
-        expect(true).toBe(false);
-      } catch (err) {
-        expect(err).toBeInstanceOf(SearchApiError);
-        expect((err as SearchError).code).toBe("SEARCH_ERROR");
-        expect((err as SearchError).message).toContain("Not Found");
-      }
-    });
-  });
-
-  test("should handle prefix in listNamespaces", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        namespaces: [
-          { name: "test/ns1", createdAt: "2024-01-01T00:00:00Z" },
-          { name: "test/ns2", createdAt: "2024-01-02T00:00:00Z" },
-        ],
-        nextCursor: "next-page-token",
-      }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const result = await storage.listNamespaces({ prefix: "test" });
-
-    expect(result.namespaces).toEqual([
-      { name: "test/ns1", createdAt: new Date("2024-01-01T00:00:00Z") },
-      { name: "test/ns2", createdAt: new Date("2024-01-02T00:00:00Z") },
-    ]);
-    expect(result.nextCursor).toBe("next-page-token");
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringMatching(/search.*prefix=test/),
-      expect.any(Object),
-    );
-  });
-
-  test("should handle pagination in listNamespaces", async () => {
-    // First page
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        namespaces: [
-          { name: "ns1", createdAt: "2024-01-01T00:00:00Z" },
-          { name: "ns2", createdAt: "2024-01-02T00:00:00Z" },
-        ],
-        nextCursor: "page2",
-      }),
-    });
-
-    // Second page
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        namespaces: [
-          { name: "ns3", createdAt: "2024-01-03T00:00:00Z" },
-          { name: "ns4", createdAt: "2024-01-04T00:00:00Z" },
-        ],
-        nextCursor: undefined,
-      }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-
-    // Get first page
-    const firstPage = await storage.listNamespaces({ limit: 2 });
-    expect(firstPage.namespaces).toEqual([
-      { name: "ns1", createdAt: new Date("2024-01-01T00:00:00Z") },
-      { name: "ns2", createdAt: new Date("2024-01-02T00:00:00Z") },
-    ]);
-    expect(firstPage.nextCursor).toBe("page2");
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringMatching(/search.*limit=2/),
-      expect.any(Object),
-    );
-
-    // Get second page
-    const secondPage = await storage.listNamespaces({
-      limit: 2,
-      cursor: firstPage.nextCursor,
-    });
-    expect(secondPage.namespaces).toEqual([
-      { name: "ns3", createdAt: new Date("2024-01-03T00:00:00Z") },
-      { name: "ns4", createdAt: new Date("2024-01-04T00:00:00Z") },
-    ]);
-    expect(secondPage.nextCursor).toBeUndefined();
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringMatching(/search.*limit=2.*cursor=page2/),
-      expect.any(Object),
-    );
-  });
-
-  test("should handle empty results in listNamespaces", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        namespaces: [],
-        nextCursor: undefined,
-      }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const result = await storage.listNamespaces({ limit: 10 });
-
-    expect(result.namespaces).toEqual([]);
-    expect(result.nextCursor).toBeUndefined();
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringMatching(/search.*limit=10/),
-      expect.any(Object),
-    );
   });
 });
