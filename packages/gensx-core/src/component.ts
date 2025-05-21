@@ -141,6 +141,10 @@ export function createComponent<P extends object, R>(
       currentNodeId,
     );
 
+    if (resolvedComponentOpts.metadata) {
+      checkpointManager.addMetadata(nodeId, resolvedComponentOpts.metadata);
+    }
+
     try {
       const result = await context.withCurrentNode(nodeId, () => {
         return target(props);

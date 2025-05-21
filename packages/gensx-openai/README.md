@@ -1,53 +1,64 @@
 # @gensx/openai
 
-OpenAI integration for [GenSX](https://github.com/gensx-inc/gensx) - Build AI workflows using JSX.
+A pre-wrapped version of the OpenAI SDK for GenSX. This package provides a simple way to use OpenAI's API with GenSX components.
 
 ## Installation
 
 ```bash
-npm install @gensx/openai
+npm install @gensx/openai openai
 ```
 
 ## Usage
 
-```tsx
-import * as gensx from "@gensx/core";
-import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
+```ts
+import { openai } from "@gensx/openai";
 
-const ChatBot = gensx.Component(async ({ userInput }) => {
-  return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY!}>
-      <ChatCompletion
-        messages={[
-          { role: "system", content: "You are a helpful assistant." },
-          { role: "user", content: userInput },
-        ]}
-        model="gpt-4o"
-        temperature={0.7}
-      />
-    </OpenAIProvider>
-  );
+// Use chat completions
+const completion = await openai.chat.completions.create({
+  model: "gpt-4",
+  messages: [{ role: "user", content: "Hello!" }],
 });
 
-// Use with streaming
-const StreamingChat = gensx.Component(async ({ userInput }) => {
-  return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY!}>
-      <ChatCompletion
-        messages={[
-          { role: "system", content: "You are a helpful assistant." },
-          { role: "user", content: userInput },
-        ]}
-        model="gpt-4o"
-        stream={true}
-      >
-        {async (stream) => {
-          for await (const token of stream) {
-            process.stdout.write(token);
-          }
-        }}
-      </ChatCompletion>
-    </OpenAIProvider>
-  );
+// Use embeddings
+const embedding = await openai.embeddings.create({
+  model: "text-embedding-ada-002",
+  input: "Hello world!",
+});
+
+// Use responses
+const response = await openai.responses.create({
+  model: "gpt-4",
+  messages: [{ role: "user", content: "Hello!" }],
 });
 ```
+
+## API
+
+The package exports a pre-wrapped version of the OpenAI SDK, making all methods available as GenSX components. The wrapped client is available as the `openai` export.
+
+### Types
+
+All OpenAI types are re-exported for convenience:
+
+```ts
+import type {
+  ChatCompletion,
+  ChatCompletionChunk,
+  ChatCompletionCreateParams,
+  ChatCompletionMessage,
+  ChatCompletionMessageParam,
+  ChatCompletionRole,
+  ChatCompletionTool,
+  ChatCompletionToolChoiceOption,
+  ChatCompletionToolMessageParam,
+  CreateEmbeddingResponse,
+  EmbeddingCreateParams,
+  Response,
+  ResponseCreateParams,
+  ResponseStreamEvent,
+} from "@gensx/openai";
+```
+
+## License
+
+Apache-2.0

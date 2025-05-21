@@ -1,3 +1,5 @@
+import type { ComponentOpts } from "./types.js";
+
 import { createComponent } from "./component.js";
 
 /**
@@ -6,6 +8,8 @@ import { createComponent } from "./component.js";
 export interface WrapOptions {
   /** Optional prefix for all generated component names. */
   prefix?: string;
+  /** Optional function to generate component options based on the path and arguments. */
+  getComponentOpts?: (path: string[], args: unknown) => Partial<ComponentOpts>;
 }
 
 /**
@@ -31,7 +35,8 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
 
           // Bind the original `this` so SDK internals keep working
           const boundFn = value.bind(origTarget) as (input: object) => unknown;
-          return wrapFunction(boundFn, componentName);
+          const componentOpts = opts.getComponentOpts?.(path, boundFn);
+          return wrapFunction(boundFn, componentName, componentOpts);
         }
 
         // ----- Case 2: it's an object that might contain more functions
@@ -64,6 +69,7 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
  *
  * @param fn The function to wrap
  * @param name Optional name for the component. If not provided, the function name will be used.
+ * @param componentOpts Optional component options to apply to the wrapped function.
  * @returns A Gensx component that wraps the provided function
  *
  * @example
@@ -86,9 +92,10 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
 export function wrapFunction<TInput extends object, TOutput>(
   fn: (input: TInput) => Promise<TOutput> | TOutput,
   name?: string,
+  componentOpts?: Partial<ComponentOpts>,
 ) {
   const componentName = name ?? (fn.name || "AnonymousComponent");
-  return createComponent(fn, componentName);
+  return createComponent(fn, { ...componentOpts, name: componentName });
 }
 
 /**

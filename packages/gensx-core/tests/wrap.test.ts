@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Wrap, wrap, wrapFunction } from "../src/wrap.js";
 
@@ -208,5 +208,80 @@ describe("Wrap decorator", () => {
 
     const derivedResult = await derived.derivedMethod({ value: "test" });
     expect(derivedResult).toBe("Derived: test");
+  });
+});
+
+describe("getComponentOpts", () => {
+  it("calls getComponentOpts with correct path and arguments", async () => {
+    const getComponentOpts = vi.fn((path: string[], _args: unknown) => ({
+      metadata: { path },
+    }));
+
+    const api = {
+      users: {
+        get: (input: { id: string }) => Promise.resolve(`User ${input.id}`),
+      },
+    };
+
+    const wrappedApi = wrap(api, { getComponentOpts });
+    await wrappedApi.users.get({ id: "123" });
+
+    expect(getComponentOpts).toHaveBeenCalledWith(
+      ["sdk", "users"],
+      expect.any(Function),
+    );
+  });
+
+  it("applies component options from getComponentOpts", async () => {
+    const getComponentOpts = vi.fn((_path: string[], _args: unknown) => ({
+      metadata: { custom: "value" },
+    }));
+
+    const api = {
+      getData: (input: { id: string }) => Promise.resolve(`Data ${input.id}`),
+    };
+
+    const wrappedApi = wrap(api, { getComponentOpts });
+    const result = await wrappedApi.getData({ id: "123" });
+    expect(result).toBe("Data 123");
+  });
+
+  it("uses prefix in component name but not in path", async () => {
+    const getComponentOpts = vi.fn((path: string[], _args: unknown) => ({
+      metadata: { path },
+    }));
+
+    const api = {
+      getData: (input: { id: string }) => Promise.resolve(`Data ${input.id}`),
+    };
+
+    const wrappedApi = wrap(api, { prefix: "MyAPI", getComponentOpts });
+    await wrappedApi.getData({ id: "123" });
+
+    expect(getComponentOpts).toHaveBeenCalledWith(
+      ["sdk"],
+      expect.any(Function),
+    );
+  });
+
+  it("works with class instances", async () => {
+    const getComponentOpts = vi.fn((path: string[], _args: unknown) => ({
+      metadata: { path },
+    }));
+
+    class Calculator {
+      add(input: { a: number; b: number }) {
+        return Promise.resolve(input.a + input.b);
+      }
+    }
+
+    const calc = new Calculator();
+    const wrappedCalc = wrap(calc, { getComponentOpts });
+    await wrappedCalc.add({ a: 1, b: 2 });
+
+    expect(getComponentOpts).toHaveBeenCalledWith(
+      ["calculator"],
+      expect.any(Function),
+    );
   });
 });
