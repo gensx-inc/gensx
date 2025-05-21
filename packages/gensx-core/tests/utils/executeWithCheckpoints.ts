@@ -16,7 +16,9 @@ export type FetchInput = Parameters<typeof fetch>[0];
 export type FetchInit = Parameters<typeof fetch>[1];
 
 // Type for component functions
-export type ComponentFunction<P extends object, R> = (props: P) => MaybePromise<R>;
+export type ComponentFunction<P extends object, R> = (
+  props: P,
+) => MaybePromise<R>;
 
 const originalFetch = global.fetch;
 afterEach(() => {
@@ -29,11 +31,10 @@ afterEach(() => {
  * Returns both the execution result and recorded checkpoints for verification
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export async function executeWithCheckpoints<T, P extends object = {}>(
   componentFn: ComponentFunction<P, T>,
   props: P = {} as P,
-  options?: { name?: string }
+  options?: { name?: string },
 ): Promise<{
   result: T;
   checkpoints: ExecutionNode[];
@@ -45,7 +46,7 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
   mockFetch((_input: FetchInput, options?: FetchInit) => {
     // Create a unique ID for this test run
     const testId = `test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    
+
     // Save a placeholder checkpoint if we can't parse the real one
     const placeholderCheckpoint: ExecutionNode = {
       id: testId,
@@ -54,12 +55,14 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
       endTime: Date.now(),
       children: [],
       props: {},
-      output: "test-output"
+      output: "test-output",
     };
-    
+
     try {
       if (options?.body) {
-        const { node: checkpoint } = getExecutionFromBody(options.body as string);
+        const { node: checkpoint } = getExecutionFromBody(
+          options.body as string,
+        );
         checkpoints.push(checkpoint);
       } else {
         checkpoints.push(placeholderCheckpoint);
@@ -68,18 +71,18 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
       console.error("Failed to parse checkpoint:", error);
       checkpoints.push(placeholderCheckpoint);
     }
-    
+
     // Return a mock response that the CheckpointManager expects
     return new Response(
-      JSON.stringify({ 
-        executionId: testId, 
-        traceId: testId, 
-        workflowName: "test-workflow" 
-      }), 
-      { 
+      JSON.stringify({
+        executionId: testId,
+        traceId: testId,
+        workflowName: "test-workflow",
+      }),
+      {
         status: 200,
-        headers: { "Content-Type": "application/json" }
-      }
+        headers: { "Content-Type": "application/json" },
+      },
     );
   });
 
@@ -102,8 +105,8 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
   const DecoratedComponent = gensx.Component(options)(componentFn);
 
   // Execute with context
-  const result = await withContext(contextWithWorkflow, () =>
-    DecoratedComponent(props)
+  const result = await withContext(contextWithWorkflow, async () =>
+    DecoratedComponent(props),
   );
 
   // Wait for any pending checkpoints
@@ -112,7 +115,6 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
   return { result, checkpoints, checkpointManager };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export async function executeWorkflowWithCheckpoints<T, P extends object = {}>(
   componentFn: ComponentFunction<P, T>,
   props: P = {} as P,
@@ -135,7 +137,7 @@ export async function executeWorkflowWithCheckpoints<T, P extends object = {}>(
   mockFetch((_input: FetchInput, options?: FetchInit) => {
     // Create a unique ID for this test run
     const testId = `test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    
+
     // Save a placeholder checkpoint if we can't parse the real one
     const placeholderCheckpoint: ExecutionNode = {
       id: testId,
@@ -144,9 +146,9 @@ export async function executeWorkflowWithCheckpoints<T, P extends object = {}>(
       endTime: Date.now(),
       children: [],
       props: {},
-      output: "test-output"
+      output: "test-output",
     };
-    
+
     try {
       if (options?.body) {
         const { node: checkpoint, workflowName } = getExecutionFromBody(
@@ -158,43 +160,38 @@ export async function executeWorkflowWithCheckpoints<T, P extends object = {}>(
         checkpoints[testId] = placeholderCheckpoint;
         workflowNames.add("test-workflow");
       }
-    } catch (error) {
+    } catch {
       checkpoints[testId] = placeholderCheckpoint;
       workflowNames.add("test-workflow");
     }
-    
+
     // Return a mock response that the CheckpointManager expects
     return new Response(
-      JSON.stringify({ 
-        executionId: testId, 
-        traceId: testId, 
-        workflowName: "test-workflow" 
-      }), 
-      { 
+      JSON.stringify({
+        executionId: testId,
+        traceId: testId,
+        workflowName: "test-workflow",
+      }),
+      {
         status: 200,
-        headers: { "Content-Type": "application/json" }
-      }
+        headers: { "Content-Type": "application/json" },
+      },
     );
   });
 
-  // Create decorated components
-  const DecoratedComponent = gensx.Component({
-    name: "WorkflowComponentWrapper"
-  })(componentFn);
-
   // Create a workflow to wrap the component
   const WorkflowComponent = gensx.Workflow({
-    name: "executeWorkflowWithCheckpoints" + Math.round(Math.random() * 1000).toFixed(0),
-    metadata
-  })(async () => {
-    return await DecoratedComponent(props);
-  });
+    name:
+      "executeWorkflowWithCheckpoints" +
+      Math.round(Math.random() * 1000).toFixed(0),
+    metadata,
+  })(componentFn);
 
   // Execute with context
   let result: T | undefined;
   let error: Error | undefined;
   try {
-    result = await WorkflowComponent({});
+    result = await WorkflowComponent(props);
   } catch (err) {
     error = err as Error;
   }
@@ -217,7 +214,9 @@ export function getExecutionFromBody(bodyStr: string): {
     };
     const compressedExecution = Buffer.from(body.rawExecution, "base64");
     const decompressedExecution = zlib.gunzipSync(compressedExecution);
-    const node = JSON.parse(decompressedExecution.toString("utf-8")) as ExecutionNode;
+    const node = JSON.parse(
+      decompressedExecution.toString("utf-8"),
+    ) as ExecutionNode;
     return {
       node,
       workflowName: body.workflowName || "test-workflow",
@@ -227,7 +226,7 @@ export function getExecutionFromBody(bodyStr: string): {
     console.error("Error parsing execution body:", error);
     return {
       node: {
-        id: "test-id-" + Date.now(),
+        id: "test-id-" + Date.now().toString(),
         componentName: "TestComponent",
         startTime: Date.now(),
         children: [],
