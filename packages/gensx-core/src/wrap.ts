@@ -90,3 +90,80 @@ export function wrapFunction<TInput extends object, TOutput>(
   const componentName = name ?? (fn.name || "AnonymousComponent");
   return createComponent(fn, componentName);
 }
+
+/**
+ * A class decorator that wraps all methods of a class into GenSX components.
+ * This allows you to use any class as a collection of GenSX components.
+ *
+ * Compatible with both legacy experimental decorators and the new ECMAScript decorator proposal.
+ *
+ * @param options Optional configuration for the wrapper
+ * @returns A class decorator function
+ *
+ * @example
+ * ```tsx
+ * // Legacy syntax (experimentalDecorators)
+ * @Wrap()
+ * class Calculator {
+ *   add(input: { a: number; b: number }) {
+ *     return input.a + input.b;
+ *   }
+ * }
+ *
+ * // New syntax (ECMAScript decorators)
+ * @Wrap()
+ * class Calculator {
+ *   add(input: { a: number; b: number }) {
+ *     return input.a + input.b;
+ *   }
+ * }
+ * ```
+ */
+export function Wrap(options: WrapOptions = {}) {
+  // Legacy decorator implementation
+  function legacyDecorator<T extends new (...args: unknown[]) => object>(
+    constructor: T,
+  ) {
+    // Create a new constructor function
+    const WrappedClass = function (this: object, ...args: unknown[]) {
+      // Call the original constructor
+      constructor.apply(this, args);
+      // Wrap the instance
+      return wrap(this, options);
+    };
+
+    // Copy prototype so instanceof operator still works
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    WrappedClass.prototype = constructor.prototype;
+    // Copy static properties
+    Object.assign(WrappedClass, constructor);
+
+    return WrappedClass as unknown as T;
+  }
+
+  // New decorator implementation
+  function newDecorator<T extends new (...args: unknown[]) => object>(
+    target: T,
+    context: ClassDecoratorContext,
+  ) {
+    // Add an initializer that wraps the instance
+    context.addInitializer(function (this: object) {
+      return wrap(this, options);
+    });
+
+    return target;
+  }
+
+  // Return the appropriate decorator based on the context
+  return function decorator<T extends new (...args: unknown[]) => object>(
+    target: T,
+    context?: ClassDecoratorContext,
+  ) {
+    // If context is provided, we're using the new decorator syntax
+    if (context) {
+      return newDecorator(target, context);
+    }
+    // Otherwise, we're using the legacy decorator syntax
+    return legacyDecorator(target);
+  };
+}

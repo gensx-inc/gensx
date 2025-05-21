@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { wrap, wrapFunction } from "../src/wrap.js";
+import { Wrap, wrap, wrapFunction } from "../src/wrap.js";
 
 describe("wrapFunction", () => {
   it("wraps a simple function", async () => {
@@ -126,5 +126,87 @@ describe("wrap", () => {
 
     const finalCount = await wrappedCounter.getCount({});
     expect(finalCount).toBe(2);
+  });
+});
+
+describe("Wrap decorator", () => {
+  it("wraps class methods into components", async () => {
+    @Wrap()
+    class Calculator {
+      add(input: { a: number; b: number }) {
+        return Promise.resolve(input.a + input.b);
+      }
+      subtract(input: { a: number; b: number }) {
+        return Promise.resolve(input.a - input.b);
+      }
+    }
+
+    const calc = new Calculator();
+    const addResult = await calc.add({ a: 10, b: 5 });
+    expect(addResult).toBe(15);
+
+    const subtractResult = await calc.subtract({ a: 10, b: 5 });
+    expect(subtractResult).toBe(5);
+  });
+
+  it("handles custom prefixes", async () => {
+    @Wrap({ prefix: "MyAPI" })
+    class API {
+      getData(input: { id: string }) {
+        return Promise.resolve(`Data ${input.id}`);
+      }
+    }
+
+    const api = new API();
+    const result = await api.getData({ id: "123" });
+    expect(result).toBe("Data 123");
+  });
+
+  it("maintains this context in class methods", async () => {
+    @Wrap()
+    class Counter {
+      private count = 0;
+
+      increment(_input: {}) {
+        this.count++;
+        return Promise.resolve(this.count);
+      }
+
+      getCount(_input: {}) {
+        return Promise.resolve(this.count);
+      }
+    }
+
+    const counter = new Counter();
+    const count1 = await counter.increment({});
+    expect(count1).toBe(1);
+
+    const count2 = await counter.increment({});
+    expect(count2).toBe(2);
+
+    const finalCount = await counter.getCount({});
+    expect(finalCount).toBe(2);
+  });
+
+  it("preserves class inheritance", async () => {
+    class Base {
+      baseMethod(input: { value: string }) {
+        return Promise.resolve(`Base: ${input.value}`);
+      }
+    }
+
+    @Wrap()
+    class Derived extends Base {
+      derivedMethod(input: { value: string }) {
+        return Promise.resolve(`Derived: ${input.value}`);
+      }
+    }
+
+    const derived = new Derived();
+    const baseResult = await derived.baseMethod({ value: "test" });
+    expect(baseResult).toBe("Base: test");
+
+    const derivedResult = await derived.derivedMethod({ value: "test" });
+    expect(derivedResult).toBe("Derived: test");
   });
 });
