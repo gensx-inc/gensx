@@ -1,7 +1,7 @@
 import type { ComponentOpts, WrapOptions } from "@gensx/core";
 
 import { wrap } from "@gensx/core";
-import { OpenAI } from "openai";
+import { OpenAI as OriginalOpenAI } from "openai";
 
 /**
  * A pre-wrapped version of the OpenAI SDK that makes all methods available as GenSX components.
@@ -24,7 +24,17 @@ import { OpenAI } from "openai";
  * ```
  */
 
-export const wrapOpenAI = (openAiInstance: OpenAI, opts: WrapOptions = {}) =>
+export class OpenAI extends OriginalOpenAI {
+  constructor(config?: ConstructorParameters<typeof OriginalOpenAI>[0]) {
+    super(config);
+    return wrapOpenAI(this);
+  }
+}
+
+export const wrapOpenAI = (
+  openAiInstance: OriginalOpenAI,
+  opts: WrapOptions = {},
+) =>
   wrap(openAiInstance, {
     ...opts,
     prefix: "OpenAI",

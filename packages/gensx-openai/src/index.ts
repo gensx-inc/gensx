@@ -1,2 +1,1 @@
-// Export the wrapped OpenAI client
-export { wrapOpenAI } from "./openai.js";
+export { OpenAI, wrapOpenAI } from "./openai.js";
