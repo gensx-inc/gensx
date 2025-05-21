@@ -1,6 +1,6 @@
 {
   "name": "@gensx/vercel-ai",
-  "version": "0.1.17",
+  "version": "0.2.0-alpha1",
   "description": "Vercel AI SDK for GenSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
@@ -24,7 +24,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/gensx-inc/gensx.git",
-    "directory": "packages/gensx-vercel-ai-sdk"
+    "directory": "packages/gensx-vercel-ai"
   },
   "scripts": {
     "build": "rollup -c",
