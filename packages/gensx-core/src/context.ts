@@ -1,4 +1,3 @@
-import { ComponentProps, Context } from "./types.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
@@ -6,53 +5,6 @@ import {
 } from "./workflow-context.js";
 
 type WorkflowContext = Record<symbol, unknown>;
-
-// Create unique symbols for each context
-let contextCounter = 0;
-function createContextSymbol() {
-  return Symbol.for(`gensx.context.${contextCounter++}`);
-}
-
-export function createContext<T>(defaultValue: T): Context<T> {
-  const contextSymbol = createContextSymbol();
-  const Provider = (
-    props: ComponentProps<{
-      value: T;
-      onComplete?: () => Promise<void> | void;
-    }>,
-  ) => {
-    const currentContext = getCurrentContext();
-
-    const executionContext = currentContext.withContext(
-      {
-        [contextSymbol]: props.value,
-      },
-      props.onComplete,
-    );
-
-    return executionContext;
-  };
-
-  const context = {
-    __type: "Context" as const,
-    defaultValue,
-    symbol: contextSymbol,
-    Provider,
-  };
-
-  return context;
-}
-
-export function useContext<T>(context: Context<T>): T {
-  const executionContext = getCurrentContext();
-  const value = executionContext.get(context.symbol) as T | undefined;
-
-  if (!value) {
-    return context.defaultValue;
-  }
-
-  return value;
-}
 
 // Define AsyncLocalStorage type based on Node.js definitions
 interface AsyncLocalStorageType<T> {
