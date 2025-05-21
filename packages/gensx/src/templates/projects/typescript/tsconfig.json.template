@@ -13,9 +13,12 @@
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "@gensx/core",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "plugins": [
+      {
+        "name": "ts-function-decorator-ls"
+      }
+    ]
   },
   "include": [
     "./src/**/*.ts",
