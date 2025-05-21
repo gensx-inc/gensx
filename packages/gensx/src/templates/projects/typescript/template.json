@@ -1,7 +1,13 @@
 {
   "name": "typescript",
   "description": "A TypeScript-based GenSX project template",
-  "dependencies": ["@gensx/core", "@gensx/openai", "openai"],
-  "devDependencies": ["@types/node", "nodemon", "tsx", "typescript@5.7.2"],
+  "dependencies": ["@gensx/core", "@gensx/vercel-ai", "vercel-ai"],
+  "devDependencies": [
+    "@types/node",
+    "ts-function-decorator",
+    "ts-function-decorator-ls",
+    "ts-patch",
+    "typescript@5.7.2"
+  ],
   "runCommand": "OPENAI_API_KEY=<your_api_key> npm run dev"
 }

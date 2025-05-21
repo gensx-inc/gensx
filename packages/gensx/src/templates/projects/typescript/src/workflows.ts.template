@@ -1,0 +1,27 @@
+import * as gensx from "@gensx/core";
+
+interface ChatProps {
+  userMessage: string;
+}
+type ChatOutput = string;
+
+@gensx.Component()
+async function ChatCompletion(...args: Parameters<...>) {
+  // TODO
+}
+
+@gensx.Workflow({ printUrl: true })
+async function ChatWorkflow({ userMessage }: ChatProps) {
+  return ChatCompletion({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: "You are a helpful assistant. Respond to the user's input.",
+      },
+      { role: "user", content: userMessage },
+    ],
+  });
+}
+
+export { ChatWorkflow };
