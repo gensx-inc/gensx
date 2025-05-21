@@ -9,9 +9,7 @@
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./src/index.tsx",
-    "build": "tsc",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "build": "tsc"
   },
   "description": "Example project leveraging OpenRouter for LLM inference.",
   "main": "index.js",

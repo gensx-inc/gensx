@@ -466,7 +466,7 @@ suite("component", () => {
         }
         return collected;
       }
-      
+
       // 2. A component that passes through the stream
       async function streamPassThroughComponent({
         input,
@@ -479,16 +479,16 @@ suite("component", () => {
 
       // Apply decorators to both components
       const CollectorComponent = gensx.Component({
-        name: "CollectorComponent"
+        name: "CollectorComponent",
       })(streamCollectorComponent);
-      
+
       const PassThroughComponent = gensx.Component({
-        name: "PassThroughComponent"
+        name: "PassThroughComponent",
       })(streamPassThroughComponent);
 
       // Test the collector component
       const collectedResult = await CollectorComponent({
-        input: "World"
+        input: "World",
       });
 
       expect(typeof collectedResult).toBe("string");
@@ -496,7 +496,7 @@ suite("component", () => {
 
       // Test the pass-through component
       const streamResult = await PassThroughComponent({
-        input: "World"
+        input: "World",
       });
 
       expect(Symbol.asyncIterator in streamResult).toBe(true);
@@ -547,6 +547,131 @@ suite("component", () => {
       }
 
       expect(collected).toBe("HELLO WORLD");
+    });
+  });
+
+  suite("createComponent and createWorkflow helpers", () => {
+    test("createComponent works without decorator syntax", async () => {
+      // Define a basic component function
+      async function testComponent({
+        input,
+      }: {
+        input: string;
+      }): Promise<string> {
+        await setTimeout(0);
+        return `Hello ${input}`;
+      }
+
+      // Create component using helper directly
+      const TestComponent = gensx.createComponent(testComponent, {
+        name: "DirectComponent",
+      });
+
+      // Execute the component
+      const result = await TestComponent({ input: "World" });
+      expect(result).toBe("Hello World");
+    });
+
+    test("createComponent handles errors and checkpoints them", async () => {
+      // Define a component that throws an error
+      async function errorComponent(): Promise<string> {
+        await setTimeout(0);
+        throw new Error("Test error");
+      }
+
+      // Create component using helper
+      const ErrorComponent = gensx.createComponent(errorComponent, {
+        name: "ErrorComponent",
+      });
+
+      // Execute and expect error
+      await expect(ErrorComponent({})).rejects.toThrow("Test error");
+    });
+
+    test("createWorkflow creates a complete workflow", async () => {
+      // Define a workflow function
+      async function testWorkflow({
+        input,
+      }: {
+        input: string;
+      }): Promise<string> {
+        await setTimeout(0);
+        return `Workflow processed: ${input}`;
+      }
+
+      // Create workflow using helper
+      const TestWorkflow = gensx.createWorkflow(testWorkflow, {
+        name: "TestWorkflow",
+      });
+
+      // Execute the workflow
+      const result = await TestWorkflow({ input: "test" });
+      expect(result).toBe("Workflow processed: test");
+    });
+
+    test("createWorkflow handles component composition", async () => {
+      // Define a child component
+      async function childComponent({
+        value,
+      }: {
+        value: string;
+      }): Promise<string> {
+        await setTimeout(0);
+        return `Child: ${value}`;
+      }
+
+      // Create child component
+      const ChildComponent = gensx.createComponent(childComponent, {
+        name: "ChildComponent",
+      });
+
+      // Define workflow that uses the child component
+      async function parentWorkflow({
+        input,
+      }: {
+        input: string;
+      }): Promise<string> {
+        const childResult = await ChildComponent({ value: input });
+        return `Parent: ${childResult}`;
+      }
+
+      // Create workflow
+      const ParentWorkflow = gensx.createWorkflow(parentWorkflow, {
+        name: "ParentWorkflow",
+      });
+
+      // Execute the workflow
+      const result = await ParentWorkflow({ input: "test" });
+      expect(result).toBe("Parent: Child: test");
+    });
+
+    test("createWorkflow preserves component options", async () => {
+      // Define a component with metadata
+      async function metadataComponent(): Promise<string> {
+        await setTimeout(0);
+        return "test";
+      }
+
+      // Create component with metadata
+      const MetadataComponent = gensx.createComponent(metadataComponent, {
+        name: "MetadataComponent",
+        metadata: { test: "value" },
+      });
+
+      // Define workflow that uses the component
+      async function metadataWorkflow(): Promise<string> {
+        return await MetadataComponent({});
+      }
+
+      // Create workflow with its own metadata
+      const MetadataWorkflow = gensx.createWorkflow(metadataWorkflow, {
+        name: "MetadataWorkflow",
+        metadata: { workflow: "test" },
+      });
+
+      // Execute the workflow
+      const result = await MetadataWorkflow({});
+      expect(result).toBe("test");
     });
   });
 });

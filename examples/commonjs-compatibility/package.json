@@ -14,9 +14,7 @@
     "build": "tsc",
     "build:jsx": "tsc cjs-jsx.tsx --outDir dist --module commonjs --jsx react-jsx --jsxImportSource @gensx/core --moduleResolution node --target es2022",
     "start:jsx": "node dist/cjs-jsx.js",
-    "test": "pnpm run build:jsx && node test/verify-commonjs.js",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "test": "pnpm run build:jsx && node test/verify-commonjs.js"
   },
   "dependencies": {
     "@gensx/core": "workspace:*",

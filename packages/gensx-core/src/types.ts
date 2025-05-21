@@ -16,9 +16,18 @@ export interface ComponentOpts {
 // omit name from ComponentOpts
 export type DefaultOpts = Omit<ComponentOpts, "name">;
 
-export type ComponentProps<P> = P & {
-  componentOpts?: ComponentOpts;
-};
+export interface DecoratorComponentOpts extends DefaultOpts {
+  name?: string;
+}
+
+export interface DecoratorWorkflowOpts extends WorkflowOpts {
+  name?: string;
+}
+
+export interface WorkflowOpts extends ComponentOpts {
+  printUrl?: boolean;
+  metadata?: Record<string, unknown>;
+}
 
 export interface Context<T> {
   readonly __type: "Context";

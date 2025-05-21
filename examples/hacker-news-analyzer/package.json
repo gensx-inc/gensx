@@ -10,8 +10,6 @@
     "dev": "nodemon",
     "start": "pnpm build && node dist/index.js",
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
     "prepare": "ts-patch install -s"
   },
   "dependencies": {

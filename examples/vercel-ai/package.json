@@ -1,0 +1,34 @@
+{
+  "name": "@examples/vercel-ai",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "description": "Example of using GenSX with the Vercel AI SDK",
+  "scripts": {
+    "dev": "pnpm build && node dist/index.js",
+    "start": "npx gensx start ./src/workflows.tsx",
+    "build": "tsc -p tsconfig.build.json",
+    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.tsx",
+    "prepare": "ts-patch install -s"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.3.22",
+    "@gensx/core": "workspace:*",
+    "@gensx/vercel-ai": "workspace:*",
+    "ai": "^4.2.10",
+    "openai": "^4.87.4",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.2",
+    "ts-function-decorator": "^0.0.1",
+    "ts-function-decorator-ls": "^0.0.1",
+    "ts-patch": "^3.3.0",
+    "typescript": "^5.7.2"
+  }
+}

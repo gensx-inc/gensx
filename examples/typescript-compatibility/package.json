@@ -10,9 +10,7 @@
     "dev": "nodemon",
     "start": "tsx index.tsx",
     "build": "tsc",
-    "test": "pnpm run build && node dist/index.js",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "test": "pnpm run build && node dist/index.js"
   },
   "dependencies": {
     "@gensx/core": "workspace:*",
