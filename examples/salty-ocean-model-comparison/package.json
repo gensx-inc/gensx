@@ -9,9 +9,7 @@
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./src/index.tsx",
-    "build": "tsc",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "build": "tsc"
   },
   "description": "Compare the performance of different models by asking them why the ocean is salty",
   "main": "index.js",
