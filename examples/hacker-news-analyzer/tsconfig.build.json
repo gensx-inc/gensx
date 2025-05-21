@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "plugins": [
+      {
+        "transform": "ts-function-decorator",
+        "transformProgram": true
+      }
+    ]
+  }
+}

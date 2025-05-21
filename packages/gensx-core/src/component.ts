@@ -1,239 +1,189 @@
 import type {
-  ComponentOpts,
-  DeepJSXElement,
+  ComponentOpts as OriginalComponentOpts,
   DefaultOpts,
-  ExecutableValue,
-  GsxComponent,
-  GsxStreamComponent,
   MaybePromise,
-  Streamable,
 } from "./types.js";
 
 import serializeErrorPkg from "@common.js/serialize-error";
 const { serializeError } = serializeErrorPkg;
 
-import { getCurrentContext } from "./context.js";
-import { JSX, jsx } from "./jsx-runtime.js";
-import { resolveDeep } from "./resolve.js";
+import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
-export function Component<P extends object & { length?: never }, O>(
-  name: string,
-  fn: (props: P) => MaybePromise<O | DeepJSXElement<O> | JSX.Element>,
-  defaultOpts?: DefaultOpts,
-): GsxComponent<P, O> {
-  const GsxComponentFn = async (
-    props: P & { componentOpts?: ComponentOpts },
-  ) => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (typeof props !== "object" || Array.isArray(props) || props === null) {
-      throw new Error(`Component ${name} received non-object props.`);
-    }
+// Decorator-based Component Model
 
-    const context = getCurrentContext();
-    const workflowContext = context.getWorkflowContext();
-    const { checkpointManager } = workflowContext;
-    const currentNodeId = context.getCurrentNodeId();
-
-    // Merge component opts with unique secrets
-    const mergedOpts = {
-      ...defaultOpts,
-      ...props.componentOpts,
-      ...{
-        ...defaultOpts?.metadata,
-        ...props.componentOpts?.metadata,
-      },
-      secretProps: Array.from(
-        new Set([
-          ...(defaultOpts?.secretProps ?? []),
-          ...(props.componentOpts?.secretProps ?? []),
-        ]),
-      ),
-      secretOutputs:
-        defaultOpts?.secretOutputs ?? props.componentOpts?.secretOutputs,
-    };
-
-    // Create checkpoint node for this component execution
-    const nodeId = checkpointManager.addNode(
-      {
-        componentName: props.componentOpts?.name ?? name,
-        props: Object.fromEntries(
-          Object.entries(props).filter(([key]) => key !== "children"),
-        ),
-        componentOpts: mergedOpts,
-      },
-      currentNodeId,
-    );
-
-    try {
-      const result = await context.withCurrentNode(nodeId, async () => {
-        const { componentOpts, ...componentProps } = props;
-        const fnResult = await fn(componentProps as P);
-        return resolveDeep<O | DeepJSXElement<O> | ExecutableValue<O>>(
-          fnResult,
-        );
-      });
-
-      // Complete the checkpoint node with the result
-      checkpointManager.completeNode(nodeId, result);
-
-      return result;
-    } catch (error) {
-      // Record error in checkpoint
-      if (error instanceof Error) {
-        checkpointManager.addMetadata(nodeId, { error: serializeError(error) });
-        checkpointManager.completeNode(nodeId, undefined);
-      }
-      throw error;
-    }
-  };
-
-  GsxComponentFn.run = (props: P & { componentOpts?: ComponentOpts }) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-    return jsx(GsxComponentFn as any, props)() as Promise<O>;
-  };
-
-  if (name) {
-    Object.defineProperty(GsxComponentFn, "name", {
-      value: name,
-    });
-  }
-
-  Object.defineProperty(GsxComponentFn, "__gsxFramework", {
-    value: true,
-  });
-
-  // Brand the component with its output type
-  return GsxComponentFn as unknown as GsxComponent<P, O>;
+export interface DecoratorComponentOpts extends DefaultOpts {
+  name?: string;
 }
 
-export function StreamComponent<P extends object & { length?: never }>(
-  name: string,
-  fn: (
-    props: P & { stream?: boolean },
-  ) => MaybePromise<Streamable | JSX.Element>,
-  defaultOpts?: DefaultOpts,
-): GsxStreamComponent<P & { stream?: boolean }> {
-  const GsxStreamComponentFn = async (
-    props: P & { stream?: boolean; componentOpts?: ComponentOpts },
-  ) => {
-    const context = getCurrentContext();
-    const workflowContext = context.getWorkflowContext();
-    const { checkpointManager } = workflowContext;
+function getResolvedOpts(
+  decoratorOpts?: DecoratorComponentOpts | string,
+  callTimeOpts?: OriginalComponentOpts,
+  functionName?: string,
+): OriginalComponentOpts {
+  const decoratorName =
+    typeof decoratorOpts === "string" ? decoratorOpts : decoratorOpts?.name;
 
-    // Merge component opts with unique secrets
-    const mergedOpts = {
-      ...defaultOpts,
-      ...props.componentOpts,
-      ...{
-        ...defaultOpts?.metadata,
-        ...props.componentOpts?.metadata,
-      },
-      secretProps: Array.from(
-        new Set([
-          ...(defaultOpts?.secretProps ?? []),
-          ...(props.componentOpts?.secretProps ?? []),
-        ]),
-      ),
-      secretOutputs:
-        defaultOpts?.secretOutputs ?? props.componentOpts?.secretOutputs,
+  // Prioritize names: callTimeOpts.name > decoratorName > functionName
+  let name = callTimeOpts?.name ?? decoratorName ?? functionName;
+
+  const baseOpts =
+    typeof decoratorOpts === "string" ? {} : (decoratorOpts ?? {});
+
+  const merged: OriginalComponentOpts = {
+    ...callTimeOpts,
+    ...baseOpts,
+    name,
+    metadata: {
+      ...callTimeOpts?.metadata,
+      ...baseOpts.metadata,
+    },
+    secretProps: Array.from(
+      new Set([
+        ...(callTimeOpts?.secretProps ?? []),
+        ...(baseOpts.secretProps ?? []),
+      ]),
+    ),
+    secretOutputs: baseOpts.secretOutputs ?? callTimeOpts?.secretOutputs,
+  };
+
+  return merged;
+}
+
+export function Component(decoratorOpts?: DecoratorComponentOpts) {
+  return function <P extends object, R>(
+    target: (props: P) => MaybePromise<R>,
+    _context?: ClassMethodDecoratorContext | ClassAccessorDecoratorContext,
+  ): (props: P) => MaybePromise<R> {
+    // Name for the function object itself (e.g., for display, stack traces)
+    // Priority: decorator explicit name > target function's actual name.
+    const componentFunctionObjectName = decoratorOpts?.name ?? target.name;
+    if (!componentFunctionObjectName) {
+      throw new Error(
+        "Component name must be provided either via decorator options or by naming the function.",
+      );
+    }
+
+    const ComponentFn = async (
+      props: P & { componentOpts?: OriginalComponentOpts },
+    ): Promise<R> => {
+      const context = getCurrentContext();
+      const workflowContext = context.getWorkflowContext();
+      const { checkpointManager } = workflowContext;
+      const currentNodeId = context.getCurrentNodeId();
+
+      // Get resolved options for checkpointing, including name (runtime props > decorator > function name)
+      const resolvedComponentOpts = getResolvedOpts(
+        decoratorOpts,
+        props.componentOpts,
+        target.name,
+      );
+      const checkpointName = resolvedComponentOpts.name; // This should now be definitively set by getResolvedOpts
+
+      if (!checkpointName) {
+        // Should not happen if getResolvedOpts guarantees a name
+        throw new Error(
+          "Internal error: Component checkpoint name could not be determined.",
+        );
+      }
+
+      const nodeId = checkpointManager.addNode(
+        {
+          componentName: checkpointName,
+          props: Object.fromEntries(
+            Object.entries(props).filter(
+              ([key]) => key !== "children" && key !== "componentOpts",
+            ),
+          ),
+          componentOpts: resolvedComponentOpts,
+        },
+        currentNodeId,
+      );
+
+      try {
+        const result = await context.withCurrentNode(nodeId, async () => {
+          const { componentOpts, ...componentProps } = props;
+          return target(componentProps as P);
+        });
+        checkpointManager.completeNode(nodeId, result);
+        return result;
+      } catch (error) {
+        if (error instanceof Error) {
+          checkpointManager.addMetadata(nodeId, {
+            error: serializeError(error),
+          });
+          checkpointManager.completeNode(nodeId, undefined);
+        }
+        throw error;
+      }
     };
 
-    // Create checkpoint node for this component execution
-    const nodeId = checkpointManager.addNode(
-      {
-        componentName: props.componentOpts?.name ?? name,
-        props: Object.fromEntries(
-          Object.entries(props).filter(([key]) => key !== "children"),
-        ),
-        componentOpts: mergedOpts,
-      },
-      context.getCurrentNodeId(),
-    );
+    Object.defineProperty(ComponentFn, "name", {
+      value: componentFunctionObjectName,
+      configurable: true,
+    });
+    Object.defineProperty(ComponentFn, "__gsxComponent", {
+      value: true,
+    });
 
-    try {
-      const iterator: Streamable = await context.withCurrentNode(nodeId, () => {
-        const { componentOpts, ...componentProps } = props;
-        return resolveDeep(fn(componentProps as P & { stream?: boolean }));
+    return ComponentFn;
+  };
+}
+
+export function Workflow(
+  decoratorOpts?: DecoratorComponentOpts & {
+    printUrl?: boolean;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  return function <P extends object, R>(
+    target: (props: P) => MaybePromise<R>,
+    _context?: ClassMethodDecoratorContext | ClassAccessorDecoratorContext,
+  ): (props: P) => MaybePromise<R> {
+    const WorkflowFn = async (props: P) => {
+      const context = new ExecutionContext({});
+
+      const workflowContext = context.getWorkflowContext();
+      workflowContext.checkpointManager.setPrintUrl(
+        decoratorOpts?.printUrl ?? false,
+      );
+      // Use the overridden name from componentOpts if provided
+      const workflowName = decoratorOpts?.name ?? target.name;
+      workflowContext.checkpointManager.setWorkflowName(workflowName);
+
+      const result = await withContext(context, async () => {
+        const result = await Component(decoratorOpts)(target)(props);
+        return result;
       });
 
-      if (props.stream) {
-        // Mark as streaming immediately
-        checkpointManager.completeNode(nodeId, STREAMING_PLACEHOLDER);
-
-        // Create a wrapper iterator that captures the output while streaming
-        const wrappedIterator = async function* () {
-          let accumulated = "";
-          try {
-            for await (const token of iterator) {
-              accumulated += token;
-              yield token;
-            }
-            // Update with final content if stream completes
-            checkpointManager.updateNode(nodeId, {
-              output: accumulated,
-              metadata: { streamCompleted: true },
-            });
-          } catch (error) {
-            if (error instanceof Error) {
-              checkpointManager.updateNode(nodeId, {
-                output: accumulated,
-                metadata: {
-                  error: error.message,
-                  streamCompleted: false,
-                },
-              });
-            }
-            throw error;
-          }
-        };
-        return wrappedIterator();
+      const rootId = workflowContext.checkpointManager.root?.id;
+      if (rootId) {
+        if (decoratorOpts?.metadata) {
+          workflowContext.checkpointManager.addMetadata(
+            rootId,
+            decoratorOpts.metadata,
+          );
+        }
+      } else {
+        console.warn(
+          "No root checkpoint found for workflow after execution",
+          workflowName,
+        );
       }
+      await workflowContext.checkpointManager.waitForPendingUpdates();
 
-      // Non-streaming case - accumulate all output then checkpoint
-      let result = "";
-      for await (const token of iterator) {
-        result += token;
-      }
-      checkpointManager.completeNode(nodeId, result);
       return result;
-    } catch (error) {
-      // Record error in checkpoint
-      if (error instanceof Error) {
-        checkpointManager.addMetadata(nodeId, { error: error.message });
-        checkpointManager.completeNode(nodeId, undefined);
-      }
-      throw error;
-    }
-  };
+    };
 
-  GsxStreamComponentFn.run = <
-    T extends P & { stream?: boolean; componentOpts?: ComponentOpts },
-  >(
-    props: T,
-  ): Promise<T extends { stream: true } ? Streamable : string> => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-    return jsx(GsxStreamComponentFn as any, props)() as Promise<
-      T extends { stream: true } ? Streamable : string
-    >;
-  };
-
-  if (name) {
-    Object.defineProperty(GsxStreamComponentFn, "name", {
-      value: name,
+    Object.defineProperty(WorkflowFn, "name", {
+      value: target.name,
+      configurable: true,
     });
-  }
+    Object.defineProperty(WorkflowFn, "__gsxWorkflow", {
+      value: true,
+    });
 
-  Object.defineProperty(GsxStreamComponentFn, "__gsxFramework", {
-    value: true,
-  });
-
-  Object.defineProperty(GsxStreamComponentFn, "__gsxStreamComponent", {
-    value: true,
-  });
-
-  return GsxStreamComponentFn as unknown as GsxStreamComponent<
-    P & { stream?: boolean }
-  >;
+    return WorkflowFn;
+  };
 }

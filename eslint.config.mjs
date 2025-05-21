@@ -134,6 +134,7 @@ export default [
       "vitest/expect-expect": "off",
       "vitest/no-standalone-expect": "off",
       "@typescript-eslint/no-empty-object-type": "off",
+      "vitest/no-focused-tests": ["error", { fixable: false }],
     },
   },
 ];
