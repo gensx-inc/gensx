@@ -88,7 +88,7 @@ export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
   };
 }
 
-export function createComponent<P extends object, R>(
+export function createComponent<P, R>(
   target: (props: P) => MaybePromise<R>,
   componentOpts?: ComponentOpts | string,
 ) {
@@ -132,7 +132,7 @@ export function createComponent<P extends object, R>(
       {
         componentName: checkpointName,
         props: Object.fromEntries(
-          Object.entries(props).filter(
+          Object.entries(props as Record<string, unknown>).filter(
             ([key]) => key !== "children" && key !== "componentOpts",
           ),
         ),
@@ -169,7 +169,7 @@ export function createComponent<P extends object, R>(
   return ComponentFn;
 }
 
-export function createWorkflow<P extends object, R>(
+export function createWorkflow<P, R>(
   target: (props: P) => MaybePromise<R>,
   workflowOpts?: WorkflowOpts | string,
 ) {

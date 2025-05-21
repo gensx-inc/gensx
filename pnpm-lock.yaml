@@ -854,9 +854,6 @@ importers:
       '@types/node':
         specifier: ^22
         version: 22.13.10
-      eslint:
-        specifier: ^9.23.0
-        version: 9.23.0(jiti@2.4.2)
       nodemon:
         specifier: ^3.1.9
         version: 3.1.9

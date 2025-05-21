@@ -1,28 +1,32 @@
-import { Component } from "@gensx/core";
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
+import { createComponent } from "@gensx/core";
 import * as ai from "ai";
 
-export const streamObject = Component({ name: "streamObject" })(
-  ai.streamObject,
-) as typeof ai.streamObject;
+export const streamObject = createComponent(ai.streamObject, {
+  name: "streamObject",
+}) as unknown as typeof ai.streamObject;
 
-export const streamText = Component({ name: "streamText" })(
-  ai.streamText,
-) as typeof ai.streamText;
+export const streamText = createComponent(ai.streamText, {
+  name: "streamText",
+}) as unknown as typeof ai.streamText;
 
-export const generateText = Component({ name: "generateText" })(
-  ai.generateText,
-) as typeof ai.generateText;
+export const generateText = createComponent(ai.generateText, {
+  name: "generateText",
+}) as unknown as typeof ai.generateText;
 
-export const generateObject = Component({ name: "generateObject" })(
-  ai.generateObject,
-) as typeof ai.generateObject;
+export const generateObject = createComponent(ai.generateObject, {
+  name: "generateObject",
+}) as unknown as typeof ai.generateObject;
 
-export const embed = Component({ name: "embed" })(ai.embed) as typeof ai.embed;
+export const embed = createComponent(ai.embed, {
+  name: "embed",
+}) as unknown as typeof ai.embed;
 
-export const embedMany = Component({ name: "embedMany" })(
-  ai.embedMany,
-) as typeof ai.embedMany;
+export const embedMany = createComponent(ai.embedMany, {
+  name: "embedMany",
+}) as unknown as typeof ai.embedMany;
 
-export const generateImage = Component({ name: "generateImage" })(
-  ai.experimental_generateImage,
-) as typeof ai.experimental_generateImage;
+export const generateImage = createComponent(ai.experimental_generateImage, {
+  name: "generateImage",
+}) as unknown as typeof ai.experimental_generateImage;
