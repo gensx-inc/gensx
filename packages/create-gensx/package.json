@@ -33,7 +33,7 @@
   "dependencies": {
     "commander": "^11.1.0",
     "gensx": "workspace:*",
-    "yaml": "^2.7.1",
+    "yaml": "^2.8.0",
     "ink": "catalog:",
     "react": "18.3.1"
   },

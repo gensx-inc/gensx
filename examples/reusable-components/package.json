@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@gensx/openai": "workspace:*",
-    "@mendable/firecrawl-js": "^1.21.0",
+    "@mendable/firecrawl-js": "^1.25.1",
     "@gensx/core": "workspace:*",
     "openai": "catalog:"
   },
