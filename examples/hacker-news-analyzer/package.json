@@ -10,8 +10,6 @@
     "dev": "nodemon",
     "start": "pnpm build && node dist/index.js",
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
     "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts",
     "prepare": "ts-patch install -s"
   },

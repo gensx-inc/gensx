@@ -10,8 +10,6 @@
     "dev": "tsx ./src/index.tsx",
     "start": "npx gensx start ./src/workflows.tsx",
     "build": "tsc",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
     "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.tsx"
   },
   "dependencies": {
