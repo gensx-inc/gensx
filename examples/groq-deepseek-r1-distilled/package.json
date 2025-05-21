@@ -10,9 +10,7 @@
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./src/index.ts",
-    "build": "tsc",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "build": "tsc"
   },
   "description": "Use Groq DeepSeek R1 Distilled to write a blog post",
   "main": "index.js",

@@ -2,7 +2,6 @@ name: "💅 Lint and Format"
 
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
@@ -28,6 +27,6 @@ jobs:
           version: 20.x
 
       - name: Lint code 💅
-        run: pnpm lint:all
+        run: pnpm lint
       - name: Format code 📝
         run: pnpm format:check
