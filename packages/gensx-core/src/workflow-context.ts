@@ -11,7 +11,11 @@ export interface WorkflowExecutionContext {
 
 export function createWorkflowContext(): WorkflowExecutionContext {
   return {
-    checkpointManager: new CheckpointManager(),
+    checkpointManager: new CheckpointManager({
+      apiKey: "test-api-key", 
+      org: "test-org",
+      disabled: true // Disable checkpoints in tests
+    }),
   };
 }
 

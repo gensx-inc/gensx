@@ -30,5 +30,6 @@
     "*.js.template": "javascript",
     "*.json.template": "json",
     "*.md.template": "markdown"
-  }
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

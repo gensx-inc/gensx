@@ -7,7 +7,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     forceRerunTriggers: ["**/*.ts", "**/*.template"],
-    root: path.resolve(__dirname, "./"),
+    root: path.resolve(process.cwd(), "./"),
     globals: true,
     isolate: true,
     passWithNoTests: false,

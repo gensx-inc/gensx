@@ -1,5 +1,4 @@
-import { resolveDeep } from "./resolve.js";
-import { ComponentProps, Context, GsxComponent } from "./types.js";
+import { ComponentProps, Context } from "./types.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
@@ -17,33 +16,28 @@ function createContextSymbol() {
 export function createContext<T>(defaultValue: T): Context<T> {
   const contextSymbol = createContextSymbol();
   const Provider = (
-    props: ComponentProps<
-      { value: T; onComplete?: () => Promise<void> | void },
-      ExecutionContext
-    >,
+    props: ComponentProps<{
+      value: T;
+      onComplete?: () => Promise<void> | void;
+    }>,
   ) => {
-    return wrapWithFramework(() => {
-      const currentContext = getCurrentContext();
+    const currentContext = getCurrentContext();
 
-      const executionContext = currentContext.withContext(
-        {
-          [contextSymbol]: props.value,
-        },
-        props.onComplete,
-      );
+    const executionContext = currentContext.withContext(
+      {
+        [contextSymbol]: props.value,
+      },
+      props.onComplete,
+    );
 
-      return Promise.resolve(executionContext);
-    });
+    return executionContext;
   };
 
   const context = {
     __type: "Context" as const,
     defaultValue,
     symbol: contextSymbol,
-    Provider: Provider as unknown as GsxComponent<
-      { value: T; onComplete?: () => Promise<void> | void },
-      ExecutionContext
-    >,
+    Provider,
   };
 
   return context;
@@ -115,10 +109,7 @@ export class ExecutionContext {
   }
 
   withCurrentNode<T>(nodeId: string, fn: () => Promise<T>): Promise<T> {
-    return withContext(
-      this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }),
-      wrapWithFramework(fn),
-    );
+    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
   }
 }
 
@@ -177,17 +168,6 @@ const setGlobalContext = (context: ExecutionContext): void => {
   globalObj[GLOBAL_CONTEXT_SYMBOL] = context;
 };
 
-// Add type for framework functions
-type FrameworkFunction<T> = (() => Promise<T>) & {
-  __gsxFramework: boolean;
-};
-
-function wrapWithFramework<T>(fn: () => Promise<T>): FrameworkFunction<T> {
-  const wrapper = async () => fn();
-  (wrapper as FrameworkFunction<T>).__gsxFramework = true;
-  return wrapper as FrameworkFunction<T>;
-}
-
 // Update contextManager implementation
 const contextManager = {
   getCurrentContext(): ExecutionContext {
@@ -202,17 +182,16 @@ const contextManager = {
   },
 
   run<T>(context: ExecutionContext, fn: () => Promise<T>): Promise<T> {
-    const wrappedFn = wrapWithFramework(fn);
     const storage = globalObj[
       CONTEXT_STORAGE_SYMBOL
     ] as AsyncLocalStorageType<ExecutionContext> | null;
     if (storage) {
-      return storage.run(context, wrappedFn);
+      return storage.run(context, fn);
     }
     const prevContext = getGlobalContext();
     setGlobalContext(context);
     try {
-      return wrappedFn();
+      return fn();
     } finally {
       setGlobalContext(prevContext);
     }
@@ -226,7 +205,7 @@ export async function withContext<T>(
 ): Promise<T> {
   await configureAsyncLocalStorage;
   return contextManager.run(context, async () => {
-    const result = await resolveDeep(wrapWithFramework(fn));
+    const result = await fn();
     return result as T;
   });
 }

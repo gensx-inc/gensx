@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",
@@ -10,11 +11,14 @@
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "@gensx/core",
     "rootDir": ".",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "plugins": [
+      {
+        "name": "ts-function-decorator-ls"
+      }
+    ]
   },
-  "include": ["./src/**/*.ts", "./src/**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": ["./*.ts", "./*.tsx", "./**/*.ts", "./**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
 }
