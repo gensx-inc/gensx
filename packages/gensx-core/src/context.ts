@@ -109,10 +109,7 @@ export class ExecutionContext {
   }
 
   withCurrentNode<T>(nodeId: string, fn: () => Promise<T>): Promise<T> {
-    return withContext(
-      this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }),
-      wrapWithFramework(fn),
-    );
+    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
   }
 }
 
@@ -171,17 +168,6 @@ const setGlobalContext = (context: ExecutionContext): void => {
   globalObj[GLOBAL_CONTEXT_SYMBOL] = context;
 };
 
-// Add type for framework functions
-type FrameworkFunction<T> = (() => Promise<T>) & {
-  __gsxFramework: boolean;
-};
-
-function wrapWithFramework<T>(fn: () => Promise<T>): FrameworkFunction<T> {
-  const wrapper = async () => fn();
-  (wrapper as FrameworkFunction<T>).__gsxFramework = true;
-  return wrapper as FrameworkFunction<T>;
-}
-
 // Update contextManager implementation
 const contextManager = {
   getCurrentContext(): ExecutionContext {
@@ -196,17 +182,16 @@ const contextManager = {
   },
 
   run<T>(context: ExecutionContext, fn: () => Promise<T>): Promise<T> {
-    const wrappedFn = wrapWithFramework(fn);
     const storage = globalObj[
       CONTEXT_STORAGE_SYMBOL
     ] as AsyncLocalStorageType<ExecutionContext> | null;
     if (storage) {
-      return storage.run(context, wrappedFn);
+      return storage.run(context, fn);
     }
     const prevContext = getGlobalContext();
     setGlobalContext(context);
     try {
-      return wrappedFn();
+      return fn();
     } finally {
       setGlobalContext(prevContext);
     }

@@ -123,22 +123,9 @@ export function Component(decoratorOpts?: DecoratorComponentOpts) {
       value: componentFunctionObjectName,
       configurable: true,
     });
-    Object.defineProperty(ComponentFn, "__gsxFramework", {
+    Object.defineProperty(ComponentFn, "__gsxComponent", {
       value: true,
-      configurable: true,
     });
-
-    type ComponentFunctionWithRun = typeof ComponentFn & {
-      run: (
-        runProps: P & { componentOpts?: OriginalComponentOpts },
-      ) => Promise<R>;
-    };
-
-    (ComponentFn as ComponentFunctionWithRun).run = (
-      runProps: P & { componentOpts?: OriginalComponentOpts },
-    ): Promise<R> => {
-      return ComponentFn(runProps);
-    };
 
     return ComponentFn;
   };
@@ -188,6 +175,14 @@ export function Workflow(
 
       return result;
     };
+
+    Object.defineProperty(WorkflowFn, "name", {
+      value: target.name,
+      configurable: true,
+    });
+    Object.defineProperty(WorkflowFn, "__gsxWorkflow", {
+      value: true,
+    });
 
     return WorkflowFn;
   };
