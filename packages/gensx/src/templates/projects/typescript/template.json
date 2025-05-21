@@ -1,7 +1,11 @@
 {
   "name": "typescript",
   "description": "A TypeScript-based GenSX project template",
-  "dependencies": ["@gensx/core", "@gensx/vercel-ai", "vercel-ai"],
+  "dependencies": [
+    "@gensx/core@0.4.0-alpha.3",
+    "@gensx/vercel-ai@0.2.0-alpha1",
+    "@ai-sdk/openai"
+  ],
   "devDependencies": [
     "@types/node",
     "ts-function-decorator",
