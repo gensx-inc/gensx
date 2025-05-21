@@ -19,6 +19,6 @@
       }
     ]
   },
-  "include": ["./*.ts", "./*.tsx", "./**/*.ts", "./**/*.tsx"],
+  "include": ["./*.ts", "./**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
