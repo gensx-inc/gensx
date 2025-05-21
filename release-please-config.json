@@ -88,6 +88,7 @@
       "release-type": "node",
       "package-name": "@gensx/core",
       "changelog-path": "CHANGELOG.md",
+      "release-as": "0.4.0",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "draft": false,
@@ -141,10 +142,11 @@
         }
       ]
     },
-    "packages/gensx-vercel-ai-sdk": {
-      "component": "gensx-vercel-ai-sdk",
+    "packages/gensx-vercel-ai": {
+      "component": "gensx-vercel-ai",
       "release-type": "node",
-      "package-name": "@gensx/vercel-ai-sdk",
+      "package-name": "@gensx/vercel-ai",
+      "release-as": "0.2.0",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
