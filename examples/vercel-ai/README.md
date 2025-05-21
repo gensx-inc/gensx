@@ -6,12 +6,12 @@ This example demonstrates how to use GenSX with Vercel AI SDK to create various 
 
 The example consists of six main workflows:
 
-- `BasicChatWorkflow`: Simple chat completion without any tools
-- `BasicChatWithToolsWorkflow`: Chat completion with weather tool integration
-- `StreamingChatWorkflow`: Streaming chat completion
-- `StreamingChatWithToolsWorkflow`: Streaming chat with weather tool integration
-- `StructuredOutputWorkflow`: Structured JSON output for trash bin reviews
-- `StreamingStructuredOutputWorkflow`: Streaming structured output
+- `BasicChat`: Simple chat completion without any tools
+- `BasicChatWithTools`: Chat completion with weather tool integration
+- `StreamingChat`: Streaming chat completion
+- `StreamingChatWithTools`: Streaming chat with weather tool integration
+- `StructuredOutput`: Structured JSON output for trash bin reviews
+- `StreamingStructuredOutput`: Streaming structured output
 
 ## Getting Started
 
@@ -46,12 +46,12 @@ To run the workflow in GenSX Cloud:
 2. Run any of the available workflows:
 
    ```bash
-   gensx run BasicChatWorkflow --input '{"prompt": "Write a poem about a cat"}'
-   gensx run BasicChatWithToolsWorkflow --input '{"prompt": "What\'s the weather like in Seattle?"}'
-   gensx run StreamingChatWorkflow --input '{"prompt": "Tell me a story"}'
-   gensx run StreamingChatWithToolsWorkflow --input '{"prompt": "What\'s the weather like in Portland?"}'
-   gensx run StructuredOutputWorkflow --input '{"prompt": "Review the trash bins in my neighborhood"}'
-   gensx run StreamingStructuredOutputWorkflow --input '{"prompt": "Review the trash bins in my neighborhood"}'
+   gensx run BasicChat --input '{"prompt": "Write a poem about a cat"}'
+   gensx run BasicChatWithTools --input '{"prompt": "What\'s the weather like in Seattle?"}'
+   gensx run StreamingChat --input '{"prompt": "Tell me a story"}'
+   gensx run StreamingChatWithTools --input '{"prompt": "What\'s the weather like in Portland?"}'
+   gensx run StructuredOutput --input '{"prompt": "Review the trash bins in my neighborhood"}'
+   gensx run StreamingStructuredOutput --input '{"prompt": "Review the trash bins in my neighborhood"}'
    ```
 
 Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see your workflows, test them, analyze traces, and get code snippets.
@@ -94,14 +94,14 @@ This will start a local API server and you can call the workflow APIs via curl o
 
 ```bash
 # Basic chat
-curl -X POST http://localhost:1337/workflows/BasicChatWorkflow \
+curl -X POST http://localhost:1337/workflows/BasicChat \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "Write a poem about a cat"
   }'
 
 # Basic chat with tools
-curl -X POST http://localhost:1337/workflows/BasicChatWithToolsWorkflow \
+curl -X POST http://localhost:1337/workflows/BasicChatWithTools \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "What is the weather like in Seattle?"
