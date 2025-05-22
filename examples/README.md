@@ -26,10 +26,6 @@ Make sure to check what environment variables are required for each example.
 | 📊 [Structured Outputs](./structured-outputs)   | Demonstrates using structured outputs with GenSX                                                         |
 | 🔄 [Reflection](./reflection)                   | Shows how to use a self-reflection pattern with GenSX                                                    |
 | 🌊 [Streaming](./streaming)                     | Demonstrates how to handle streaming responses with GenSX                                                |
-| 🗃️ [Contexts](./contexts)                       | Shows how to use contexts to manage state in GenSX                                                       |
-| 🔌 [Providers](./providers)                     | Shows how to create a custom provider for GenSX                                                          |
-| 🎭 [Nested Providers](./nested-providers)       | Demonstrates how to nest and combine multiple providers in GenSX                                         |
-| 🧩 [Reusable Components](./reusable-components) | Shows how to create and use reusable components in GenSX                                                 |
 | 🦾 [Anthropic Examples](./anthropic-examples)   | Examples showing how to use [@gensx/anthropic](https://www.gensx.com/docs/component-reference/anthropic) |
 | 🧠 [OpenAI Examples](./openai-examples)         | Examples showing how to use [@gensx/openai](https://www.gensx.com/docs/component-reference/openai)       |
 
