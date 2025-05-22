@@ -354,8 +354,8 @@ importers:
   examples/hacker-news-analyzer:
     dependencies:
       '@gensx/core':
-        specifier: 0.4.0-alpha.1
-        version: 0.4.0-alpha.1
+        specifier: alpha
+        version: 0.4.0-alpha.3
       openai:
         specifier: ^4.87.4
         version: 4.91.1(ws@8.18.0)(zod@3.25.20)
@@ -1924,10 +1924,6 @@ packages:
 
   '@gensx/core@0.3.13':
     resolution: {integrity: sha512-NK0pZWroT39tK8LQTuS3D5a1O9qhGcKr9LZRoFREe0IKntgj6yCmLJA5uzvsztUcSbtITFrDW4HviuIpUadNXg==}
-    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
-
-  '@gensx/core@0.4.0-alpha.1':
-    resolution: {integrity: sha512-nSJZOPzzB8GroeJ7DUbI6yrlDspLZNtUHFfVJjlq97EPb6DzRUtOM5G1QF9bnvS1XkeMm9Jd+7dPwE89vjRFmg==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@gensx/core@0.4.0-alpha.3':
@@ -8421,12 +8417,6 @@ snapshots:
       zod: 3.25.20
 
   '@gensx/core@0.3.13':
-    dependencies:
-      '@common.js/serialize-error': 11.0.3
-      ini: 5.0.0
-      zod: 3.25.20
-
-  '@gensx/core@0.4.0-alpha.1':
     dependencies:
       '@common.js/serialize-error': 11.0.3
       ini: 5.0.0
