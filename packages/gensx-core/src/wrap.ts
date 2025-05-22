@@ -54,7 +54,10 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
           // Bind the original `this` so SDK internals keep working
           const boundFn = value.bind(origTarget) as (input: object) => unknown;
           const componentOpts = opts.getComponentOpts?.(path, boundFn);
-          return wrapFunction(boundFn, componentName, componentOpts);
+          return wrapFunction(boundFn, {
+            name: componentName,
+            ...componentOpts,
+          });
         }
 
         // ----- Case 2: it's an object that might contain more functions
@@ -111,10 +114,9 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
  */
 export function wrapFunction<TInput extends object, TOutput>(
   fn: (input: TInput) => Promise<TOutput> | TOutput,
-  name?: string,
   componentOpts?: Partial<ComponentOpts>,
 ) {
-  const componentName = name ?? (fn.name || "AnonymousComponent");
+  const componentName = componentOpts?.name ?? (fn.name || "AnonymousComponent");
   return createComponent(fn, { ...componentOpts, name: componentName });
 }
 

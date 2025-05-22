@@ -127,7 +127,9 @@ export const wrapOpenAI = (
                   Object.defineProperty(newTool, "$callback", {
                     value: wrapFunction(
                       boundCallback,
-                      `Tool.${tool.function.name}`,
+                      {
+                        name: `Tool.${tool.function.name}`,
+                      },
                     ),
                   });
                   Object.defineProperty(newTool, "$parseRaw", {
@@ -144,7 +146,9 @@ export const wrapOpenAI = (
                       ...runnableTool.function,
                       function: wrapFunction(
                         runnableTool.function.function as (input: object) => unknown,
-                        `Tool.${runnableTool.function.name}`,
+                        {
+                          name: `Tool.${runnableTool.function.name}`,
+                        },
                       ),
                     },
                   };
@@ -160,8 +164,10 @@ export const wrapOpenAI = (
                 ...rest,
               );
             },
-            "beta.chat.completions.runTools",
-            componentOpts,
+            {
+              name: "beta.chat.completions.runTools",
+              ...componentOpts,
+            },
           );
 
           return fn;
