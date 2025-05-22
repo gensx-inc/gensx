@@ -1,3 +1,5 @@
+import { isProxy } from "util/types";
+
 import type { ComponentOpts } from "./types.js";
 
 import { createComponent } from "./component.js";
@@ -10,6 +12,10 @@ export interface WrapOptions {
   prefix?: string;
   /** Optional function to generate component options based on the path and arguments. */
   getComponentOpts?: (path: string[], args: unknown) => Partial<ComponentOpts>;
+  replacementImplementations?: Record<
+    string,
+    (origTarget: object, prop: object) => object
+  >;
 }
 
 /**
@@ -22,10 +28,22 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
    * path so we can generate sensible component names like:
    *   "OpenAI.chat.completions.create"
    */
-  const makeProxy = <U extends object>(target: U, path: string[]): U =>
-    new Proxy(target, {
+  const makeProxy = <U extends object>(target: U, path: string[]): U => {
+    if (isProxy(target)) {
+      return target;
+    }
+
+    const proxy = new Proxy(target, {
       get(origTarget, propKey, receiver) {
         const value = Reflect.get(origTarget, propKey, receiver);
+
+        const newPath = [...path, String(propKey)].join(".");
+        const replacementImplementation =
+          opts.replacementImplementations?.[newPath];
+
+        if (replacementImplementation) {
+          return replacementImplementation(origTarget, value as object);
+        }
 
         // ----- Case 1: it's a function → return a GenSX component
         if (typeof value === "function") {
@@ -52,6 +70,9 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
         return value;
       },
     });
+
+    return proxy;
+  };
 
   // Kick things off with the SDK's constructor name as the first path element
   const hasCustomConstructor =

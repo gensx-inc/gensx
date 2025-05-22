@@ -134,7 +134,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -180,24 +180,27 @@ importers:
   examples/blog-writer:
     dependencies:
       '@gensx/core':
-        specifier: ^0.3.12
-        version: 0.3.12
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
-        specifier: ^0.1.27
-        version: 0.1.27(openai@4.91.1(ws@8.18.0)(zod@3.24.2))
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
       openai:
         specifier: ^4.87.4
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
+      zod:
+        specifier: ^3.25.20
+        version: 3.25.20
     devDependencies:
       '@types/node':
         specifier: ^22
         version: 22.13.10
-      eslint:
-        specifier: ^9.23.0
-        version: 9.23.0(jiti@2.4.2)
-      tsx:
-        specifier: ^4.19.2
-        version: 4.19.3
+      ts-function-decorator:
+        specifier: ^0.0.1
+        version: 0.0.1(ts-patch@3.3.0)(typescript@5.8.2)
+      ts-function-decorator-ls:
+        specifier: ^0.0.1
+        version: 0.0.1(typescript@5.8.2)
       typescript:
         specifier: ^5.7.2
         version: 5.8.2
@@ -327,7 +330,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -349,7 +352,7 @@ importers:
         version: 0.4.0-alpha.1
       openai:
         specifier: ^4.87.4
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -442,7 +445,7 @@ importers:
         version: 1.21.0(ws@8.18.0)
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -467,7 +470,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -554,7 +557,7 @@ importers:
         version: 1.21.0(ws@8.18.0)
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -613,7 +616,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -641,7 +644,7 @@ importers:
         version: 1.21.0(ws@8.18.0)
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -660,7 +663,7 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: ^1.3.6
-        version: 1.3.6(zod@3.24.2)
+        version: 1.3.6(zod@3.25.20)
       '@gensx/core':
         specifier: workspace:*
         version: link:../../packages/gensx-core
@@ -672,7 +675,7 @@ importers:
         version: link:../../packages/gensx-vercel-ai
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -731,7 +734,7 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -1184,12 +1187,6 @@ importers:
       '@gensx/core':
         specifier: workspace:*
         version: link:../gensx-core
-      zod:
-        specifier: 'catalog:'
-        version: 3.24.2
-      zod-to-json-schema:
-        specifier: 'catalog:'
-        version: 3.24.5(zod@3.24.2)
     devDependencies:
       '@types/node':
         specifier: catalog:packages
@@ -1199,7 +1196,7 @@ importers:
         version: 3.1.3(vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))
       openai:
         specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.24.2)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
       vitest:
         specifier: 'catalog:'
         version: 3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
@@ -7910,6 +7907,9 @@ packages:
   zod@3.24.2:
     resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
+  zod@3.25.20:
+    resolution: {integrity: sha512-z03fqpTMDF1G02VLKUMt6vyACE7rNWkh3gpXVHgPTw28NPtDFRGvcpTtPwn2kMKtQ0idtYJUTxchytmnqYswcw==}
+
   zustand@5.0.3:
     resolution: {integrity: sha512-14fwWQtU3pH4dE0dOpdMiWjddcH+QzKIgk1cl8epwSE7yag43k/AD/m4L6+K7DytAOr9gGBe3/EXj9g7cdostg==}
     engines: {node: '>=12.20.0'}
@@ -7939,18 +7939,18 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
       zod: 3.24.2
 
-  '@ai-sdk/openai@1.3.6(zod@3.24.2)':
+  '@ai-sdk/openai@1.3.6(zod@3.25.20)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
-      '@ai-sdk/provider-utils': 2.2.3(zod@3.24.2)
-      zod: 3.24.2
+      '@ai-sdk/provider-utils': 2.2.3(zod@3.25.20)
+      zod: 3.25.20
 
-  '@ai-sdk/provider-utils@2.2.3(zod@3.24.2)':
+  '@ai-sdk/provider-utils@2.2.3(zod@3.25.20)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
       nanoid: 3.3.11
       secure-json-parse: 2.7.0
-      zod: 3.24.2
+      zod: 3.25.20
 
   '@ai-sdk/provider-utils@2.2.6(zod@3.24.2)':
     dependencies:
@@ -13561,6 +13561,21 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
+  openai@4.91.1(ws@8.18.0)(zod@3.25.20):
+    dependencies:
+      '@types/node': 18.19.86
+      '@types/node-fetch': 2.6.12
+      abort-controller: 3.0.0
+      agentkeepalive: 4.6.0
+      form-data-encoder: 1.7.2
+      formdata-node: 4.4.1
+      node-fetch: 2.7.0
+    optionalDependencies:
+      ws: 8.18.0
+      zod: 3.25.20
+    transitivePeerDependencies:
+      - encoding
+
   optionator@0.9.4:
     dependencies:
       deep-is: 0.1.4
@@ -15494,6 +15509,8 @@ snapshots:
       zod: 3.24.2
 
   zod@3.24.2: {}
+
+  zod@3.25.20: {}
 
   zustand@5.0.3(@types/react@19.1.3)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1)):
     optionalDependencies:

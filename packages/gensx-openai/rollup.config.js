@@ -8,4 +8,4 @@ const external = [
     : []),
 ];
 
-export default createConfigs("src/index.tsx", "@gensx/openai", external);
+export default createConfigs("src/index.ts", "@gensx/openai", external);
