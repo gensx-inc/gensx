@@ -1,7 +1,5 @@
 import * as gensx from "@gensx/core";
 import { OpenAI } from "@gensx/openai";
-import { zodFunction } from "openai/helpers/zod.mjs";
-import { z } from "zod";
 
 const openai = new OpenAI();
 
@@ -47,17 +45,37 @@ async function ResearchTopic({ topic }: ResearchTopicProps) {
       { role: "user", content: topic },
     ],
     tools: [
-      zodFunction({
-        name: "research",
-        description: "Research a topic",
-        parameters: z.object({
-          topic: z.string(),
-        }),
-        function: (args: { topic: string }) => {
-          console.log("🔍 Research tool:", args.topic);
-          return `You researched the topic ${args.topic} and found the following: ${args.topic}`;
+      // zodFunction({
+      //   name: "research",
+      //   description: "Research a topic",
+      //   parameters: z.object({
+      //     topic: z.string(),
+      //   }),
+      //   function: (args: { topic: string }) => {
+      //     console.log("🔍 Research tool:", args.topic);
+      //     return `You researched the topic ${args.topic} and found the following: ${args.topic}`;
+      //   },
+      // }),
+      {
+        type: "function",
+        function: {
+          name: "research",
+          description: "Research a topic",
+          parameters: {
+            type: "object",
+            properties: {
+              topic: {
+                type: "string",
+              },
+            },
+          },
+          parse: JSON.parse,
+          function: (args: { topic: string }) => {
+            console.log("🔍 Research tool:", args.topic);
+            return `You researched the topic ${args.topic} and found the following: ${args.topic}`;
+          },
         },
-      }),
+      },
     ],
   });
 
@@ -124,10 +142,10 @@ type SearchWebOutput = string[];
 
 @gensx.Component()
 async function SearchWeb({ prompt }: SearchWebProps) {
-    console.log("🌐 Researching web for:", prompt);
-    const results = await Promise.resolve([
-      "web result 1",
-      "web result 2",
+  console.log("🌐 Researching web for:", prompt);
+  const results = await Promise.resolve([
+    "web result 1",
+    "web result 2",
     "web result 3",
   ]);
   return results;

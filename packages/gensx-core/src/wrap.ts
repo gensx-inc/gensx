@@ -77,9 +77,8 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
   // Kick things off with the SDK's constructor name as the first path element
   const hasCustomConstructor =
     "constructor" in sdk && sdk.constructor !== Object;
-  const rootName = hasCustomConstructor
-    ? sdk.constructor.name.toLowerCase()
-    : "sdk";
+  const rootName = hasCustomConstructor ? sdk.constructor.name : "sdk";
+
   return makeProxy(sdk, [rootName]);
 }
 

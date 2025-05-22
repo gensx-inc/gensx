@@ -1,13 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+
 import type { ComponentOpts, WrapOptions } from "@gensx/core";
 
 import { wrap, wrapFunction } from "@gensx/core";
 import { OpenAI as OriginalOpenAI } from "openai";
+import { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.mjs";
 
 /**
  * A pre-wrapped version of the OpenAI SDK that makes all methods available as GenSX components.
@@ -33,7 +35,7 @@ import { OpenAI as OriginalOpenAI } from "openai";
 export class OpenAI extends OriginalOpenAI {
   constructor(config?: ConstructorParameters<typeof OriginalOpenAI>[0]) {
     super(config);
-    wrapOpenAI(this);
+    return wrapOpenAI(this);
   }
 }
 
@@ -85,7 +87,7 @@ export const wrapOpenAI = (
       };
     },
     replacementImplementations: {
-      "beta.chat.completions.runTools": (target, value) => {
+      "OpenAI.beta.chat.completions.runTools": (target, value) => {
         if (typeof value === "function") {
           // Bind the original `this` so SDK internals keep working
           const boundRunTools = value.bind(target) as (
@@ -94,7 +96,7 @@ export const wrapOpenAI = (
             >
           ) => unknown;
           const componentOpts = opts.getComponentOpts?.(
-            ["beta", "chat", "completions", "runTools"],
+            ["OpenAI", "beta", "chat", "completions", "runTools"],
             boundRunTools,
           );
 
@@ -109,19 +111,44 @@ export const wrapOpenAI = (
 
               // Wrap each tool with GenSX functionality
               const wrappedTools = tools.map((tool) => {
-                return new Proxy(tool, {
-                  get(toolTarget, prop, _receiver) {
-                    console.log("toolTarget", toolTarget, prop);
-                    if (prop === "$callback") {
-                      return wrapFunction(
-                        (toolTarget as any).$callback,
-                        `Tool.${tool.function.name}`,
-                      );
-                    }
+                // These are tools like are returned from the zodFunction helper
+                if ((tool as any).$brand === "auto-parseable-tool") {
+                  // The `tool` under the hood is an object with read-only, non-configurable, hidden properties, $parseRaw, $callback, and $brand.
+                  // We need to recreate this object and wrap the $callback property. This will probably break regularly with new OpenAI SDK versions....
+                  const newTool = { ...tool };
 
-                    return (target as any)[prop];
-                  },
-                });
+                  Object.defineProperty(newTool, "$brand", {
+                    value: (tool as any).$brand,
+                  });
+
+                  const boundCallback = (tool as any).$callback.bind(newTool);
+
+                  // Now we can safely define the $callback property
+                  Object.defineProperty(newTool, "$callback", {
+                    value: wrapFunction(
+                      boundCallback,
+                      `Tool.${tool.function.name}`,
+                    ),
+                  });
+                  Object.defineProperty(newTool, "$parseRaw", {
+                    value: (tool as any).$parseRaw,
+                  });
+
+                  return newTool;
+                } else {
+                  let runnableTool = tool as RunnableToolFunctionWithParse<object>;
+                  // Old style tool
+                  return {
+                    ...runnableTool,
+                    function: {
+                      ...runnableTool.function,
+                      function: wrapFunction(
+                        runnableTool.function.function as (input: object) => unknown,
+                        `Tool.${runnableTool.function.name}`,
+                      ),
+                    },
+                  };
+                }
               });
 
               // Call the original runTools with wrapped tools
