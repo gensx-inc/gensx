@@ -52,7 +52,7 @@ function getResolvedOpts(
 
 export function Component(decoratorOpts?: DecoratorComponentOpts) {
   return function <P extends object, R>(
-    target: (props: P) => MaybePromise<R>,
+    target: (props: P) => R,
     context?:
       | ClassMethodDecoratorContext
       | ClassAccessorDecoratorContext
@@ -71,7 +71,7 @@ export function Component(decoratorOpts?: DecoratorComponentOpts) {
 
 export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
   return function <P extends object, R>(
-    target: (props: P) => MaybePromise<R>,
+    target: (props: P) => R,
     context?:
       | ClassMethodDecoratorContext
       | ClassAccessorDecoratorContext
@@ -89,7 +89,7 @@ export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
 }
 
 export function createComponent<P extends object, R>(
-  target: (props: P) => MaybePromise<R>,
+  target: (props: P) => R,
   componentOpts?: ComponentOpts | string,
 ) {
   // Name for the function object itself (e.g., for display, stack traces)
@@ -141,8 +141,12 @@ export function createComponent<P extends object, R>(
       currentNodeId,
     );
 
+    if (resolvedComponentOpts.metadata) {
+      checkpointManager.addMetadata(nodeId, resolvedComponentOpts.metadata);
+    }
+
     try {
-      const result = await context.withCurrentNode(nodeId, async () => {
+      const result = await context.withCurrentNode(nodeId, () => {
         return target(props);
       });
       checkpointManager.completeNode(nodeId, result);
@@ -170,9 +174,9 @@ export function createComponent<P extends object, R>(
 }
 
 export function createWorkflow<P extends object, R>(
-  target: (props: P) => MaybePromise<R>,
+  target: (props: P) => R,
   workflowOpts?: WorkflowOpts | string,
-) {
+): (props: P) => MaybePromise<R> {
   // Use the overridden name from componentOpts if provided
   const configuredWorkflowName =
     typeof workflowOpts === "string"

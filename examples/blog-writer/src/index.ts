@@ -6,13 +6,7 @@ async function main() {
   console.log("\n🚀 Starting blog writing workflow");
   console.log(`Prompt: ${prompt}`);
 
-  const stream = await WriteBlogWorkflow.run(
-    {
-      stream: true,
-      prompt,
-    },
-    { printUrl: true },
-  );
+  const stream = await WriteBlogWorkflow({ prompt });
   for await (const chunk of stream) {
     process.stdout.write(chunk);
   }

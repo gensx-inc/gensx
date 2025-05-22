@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
+
 import type { LanguageModelV1Middleware, Tool, ToolExecutionOptions } from "ai";
 
 import { createComponent } from "@gensx/core";
@@ -33,7 +33,7 @@ function wrapTools<T extends Record<string, Tool>>(
             },
             { name: `Tool_${name}` },
           );
-          return await ToolComponent(args);
+          return await ToolComponent(args as unknown as object);
         },
       } as unknown as T[string];
 
@@ -58,7 +58,7 @@ export const gensxMiddleware: LanguageModelV1Middleware = {
 
     const result = await DoGenerateComponent(params);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
     return result;
   },
   wrapStream: async ({ doStream, params }) => {
@@ -72,7 +72,6 @@ export const gensxMiddleware: LanguageModelV1Middleware = {
 
     const result = await DoStreamComponent(params);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return result;
   },
 };
@@ -123,7 +122,7 @@ export const generateObject = createComponent(
     } as Parameters<typeof ai.generateObject>[0]);
   },
   { name: "GenerateObject" },
-) as typeof ai.generateObject;
+) as unknown as typeof ai.generateObject;
 
 export const generateText = createComponent(
   async (params: Parameters<typeof ai.generateText>[0]) => {
@@ -141,7 +140,7 @@ export const generateText = createComponent(
     });
   },
   { name: "GenerateText" },
-) as typeof ai.generateText;
+) as unknown as typeof ai.generateText;
 
 export const embed = createComponent(ai.embed, {
   name: "embed",

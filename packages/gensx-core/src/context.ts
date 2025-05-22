@@ -1,3 +1,4 @@
+import { MaybePromise } from "./types.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
@@ -20,14 +21,14 @@ export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
-    public onComplete?: () => Promise<void> | void,
+    public onComplete?: () => MaybePromise<void>,
   ) {
     this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext();
   }
 
   withContext(
     newContext: Partial<WorkflowContext>,
-    onComplete?: () => Promise<void> | void,
+    onComplete?: () => MaybePromise<void>,
   ): ExecutionContext {
     if (Object.getOwnPropertySymbols(newContext).length === 0) {
       return this;
@@ -60,7 +61,10 @@ export class ExecutionContext {
     return this.get(CURRENT_NODE_SYMBOL) as string | undefined;
   }
 
-  withCurrentNode<T>(nodeId: string, fn: () => Promise<T>): Promise<T> {
+  withCurrentNode<T>(
+    nodeId: string,
+    fn: () => MaybePromise<T>,
+  ): MaybePromise<T> {
     return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
   }
 }
@@ -153,7 +157,7 @@ const contextManager = {
 // Update withContext to use contextManager.run
 export async function withContext<T>(
   context: ExecutionContext,
-  fn: () => Promise<T>,
+  fn: () => MaybePromise<T>,
 ): Promise<T> {
   await configureAsyncLocalStorage;
   return contextManager.run(context, async () => {
