@@ -5,18 +5,18 @@ const question = process.argv[2];
 
 if (!question) {
   console.error("Please provide a question as a command line argument");
-  console.error('Example: pnpm start "Who has the highest batting average?"');
+  console.error('Example: pnpm dev "Who has the highest batting average?"');
   process.exit(1);
 }
 
 // First, initialize the database
 console.log("Initializing database...");
-const initMessage = await InitializeDatabase.run({});
+const initMessage = await InitializeDatabase({});
 console.log(initMessage);
 
 // Then run the query
 console.log("Processing your question...");
-const result = await TextToSqlWorkflow.run({
+const result = await TextToSqlWorkflow({
   question,
 });
 

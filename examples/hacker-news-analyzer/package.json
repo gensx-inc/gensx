@@ -7,14 +7,14 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "nodemon",
-    "start": "pnpm build && node dist/index.js",
+    "dev": "pnpm build && node dist/index.js",
+    "start": "npx gensx start ./src/workflows.ts",
     "build": "tsc -p tsconfig.build.json",
     "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts",
     "prepare": "ts-patch install -s"
   },
   "dependencies": {
-    "@gensx/core": "0.4.0-alpha.1",
+    "@gensx/core": "alpha",
     "openai": "^4.87.4"
   },
   "devDependencies": {

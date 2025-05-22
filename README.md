@@ -131,17 +131,13 @@ pnpm start
 
 ### Basic Examples
 
-| Example                                                 | Description                                                                                              |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 📊 [Structured Outputs](./examples/structuredOutputs)   | Shows how to use structured outputs with GenSX                                                           |
-| 🔄 [Reflection](./examples/reflection)                  | Shows how to use a self-reflection pattern with GenSX                                                    |
-| 🌊 [Streaming](./examples/streaming)                    | Shows how to handle streaming responses with GenSX                                                       |
-| 🗃️ [Contexts](./examples/contexts)                      | Shows how to use contexts to manage state in GenSX                                                       |
-| 🔌 [Providers](./examples/providers)                    | Shows how to create a custom provider for GenSX                                                          |
-| 🎭 [Nested Providers](./examples/nestedProviders)       | Demonstrates how to nest and combine multiple providers in GenSX                                         |
-| 🧩 [Reusable Components](./examples/reusableComponents) | Shows how to create and use reusable components in GenSX                                                 |
-| 🦾 [Anthropic Examples](./examples/anthropic-examples)  | Examples showing how to use [@gensx/anthropic](https://www.gensx.com/docs/component-reference/anthropic) |
-| 🧠 [OpenAI Examples](./examples/openai-examples)        | Examples showing how to use [@gensx/openai](https://www.gensx.com/docs/component-reference/openai)       |
+| Example                                                | Description                                                                                              |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| 📊 [Structured Outputs](./examples/structuredOutputs)  | Shows how to use structured outputs with GenSX                                                           |
+| 🔄 [Reflection](./examples/reflection)                 | Shows how to use a self-reflection pattern with GenSX                                                    |
+| 🌊 [Streaming](./examples/streaming)                   | Shows how to handle streaming responses with GenSX                                                       |
+| 🦾 [Anthropic Examples](./examples/anthropic-examples) | Examples showing how to use [@gensx/anthropic](https://www.gensx.com/docs/component-reference/anthropic) |
+| 🧠 [OpenAI Examples](./examples/openai-examples)       | Examples showing how to use [@gensx/openai](https://www.gensx.com/docs/component-reference/openai)       |
 
 ### Full Examples
 

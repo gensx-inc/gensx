@@ -8,13 +8,10 @@ const userInput =
 console.log(`Using thread: ${threadId}`);
 console.log(`User input: ${userInput}`);
 
-const result = await ChatMemoryWorkflow.run(
-  {
-    userInput,
-    threadId,
-  },
-  { printUrl: true },
-);
+const result = await ChatMemoryWorkflow({
+  userInput,
+  threadId,
+});
 
 console.log("\nAssistant response:");
 console.log(result);
