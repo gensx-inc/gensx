@@ -180,11 +180,11 @@ importers:
   examples/blog-writer:
     dependencies:
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.3
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
-        specifier: alpha
-        version: 0.2.0-alpha.1(openai@4.91.1(ws@8.18.0)(zod@3.25.20))
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
       openai:
         specifier: ^4.0.0
         version: 4.91.1(ws@8.18.0)(zod@3.25.20)
@@ -1834,11 +1834,6 @@ packages:
     resolution: {integrity: sha512-QRPJGwB21U8e+++1rwClEAA4af4GmX64RPNvo+vDFNVtcq6lcWnOBdAKtFp/HzfAbY9oS90KOhtw5mmBtAeYbw==}
     peerDependencies:
       openai: ^4.87.4
-
-  '@gensx/openai@0.2.0-alpha.1':
-    resolution: {integrity: sha512-8n7Cdr+hiFh7AE496b4jc+2MLABR5nqpUGKI1IiQY5qUJ5R5gqXNktiLj1MxbSL48v6DwkjW6f6/uRTuz3iLHQ==}
-    peerDependencies:
-      openai: '>=4.0.0'
 
   '@gensx/storage@0.0.12':
     resolution: {integrity: sha512-jIbC5Sc7cysy6sTv40fA+Ef3lfgTXzxuY0ZqmL884W2HYDD18SqLWyn6778pRT3nOFlKTdWruu+TGjyry9u12w==}
@@ -8339,11 +8334,6 @@ snapshots:
       openai: 4.91.1(ws@8.18.0)(zod@3.25.20)
       zod: 3.25.20
       zod-to-json-schema: 3.24.5(zod@3.25.20)
-
-  '@gensx/openai@0.2.0-alpha.1(openai@4.91.1(ws@8.18.0)(zod@3.25.20))':
-    dependencies:
-      '@gensx/core': 0.4.0-alpha.3
-      openai: 4.91.1(ws@8.18.0)(zod@3.25.20)
 
   '@gensx/storage@0.0.12':
     dependencies:
