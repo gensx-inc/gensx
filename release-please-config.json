@@ -106,6 +106,7 @@
     "packages/gensx-openai": {
       "component": "gensx-openai",
       "release-type": "node",
+      "release-as": "0.2.0",
       "package-name": "@gensx/openai",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
@@ -204,6 +205,7 @@
     "packages/gensx-anthropic": {
       "component": "gensx-anthropic",
       "release-type": "node",
+      "release-as": "0.2.0",
       "package-name": "@gensx/anthropic",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
