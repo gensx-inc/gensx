@@ -169,70 +169,79 @@ export function createComponent<P extends object, R>(
 
         let accumulatedResult: unknown[] | string | null = null;
 
-        const wrappedIterator = {
-          async *[Symbol.asyncIterator]() {
-            try {
-              let lastUpdateNodeCall = performance.now();
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-              while (true) {
-                const nextResult = await iterator.next();
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                const value = nextResult.value;
-                const done = nextResult.done ?? false;
+        // Create a wrapper that preserves the original stream's properties
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const wrappedStream = Object.create(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          Object.getPrototypeOf(result as object),
+          {
+            ...Object.getOwnPropertyDescriptors(result as object),
+            [Symbol.asyncIterator]: {
+              value: async function* () {
+                try {
+                  let lastUpdateNodeCall = performance.now();
+                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                  while (true) {
+                    const nextResult = await iterator.next();
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    const value = nextResult.value;
+                    const done = nextResult.done ?? false;
 
-                if (done) {
-                  // Update final checkpoint with accumulated result
-                  checkpointManager.completeNode(nodeId, accumulatedResult);
-                  return;
-                }
-
-                // Accumulate the result
-                if (typeof value === "string") {
-                  if (accumulatedResult === null) {
-                    accumulatedResult = value;
-                  } else {
-                    if (typeof accumulatedResult === "string") {
-                      accumulatedResult += value;
-                    } else {
-                      // This would only happen if the result changed from string to object part way through.
-                      accumulatedResult.push(value);
+                    if (done) {
+                      // Update final checkpoint with accumulated result
+                      checkpointManager.completeNode(nodeId, accumulatedResult);
+                      return;
                     }
-                  }
-                } else {
-                  if (accumulatedResult === null) {
-                    accumulatedResult = [value];
-                  } else {
-                    if (Array.isArray(accumulatedResult)) {
-                      accumulatedResult.push(value);
+
+                    // Accumulate the result
+                    if (typeof value === "string") {
+                      if (accumulatedResult === null) {
+                        accumulatedResult = value;
+                      } else {
+                        if (typeof accumulatedResult === "string") {
+                          accumulatedResult += value;
+                        } else {
+                          // This would only happen if the result changed from string to object part way through.
+                          accumulatedResult.push(value);
+                        }
+                      }
                     } else {
-                      // This would only happen if the result changed from an object to string part way through.
-                      accumulatedResult = [accumulatedResult, value];
+                      if (accumulatedResult === null) {
+                        accumulatedResult = [value];
+                      } else {
+                        if (Array.isArray(accumulatedResult)) {
+                          accumulatedResult.push(value);
+                        } else {
+                          // This would only happen if the result changed from an object to string part way through.
+                          accumulatedResult = [accumulatedResult, value];
+                        }
+                      }
                     }
+
+                    // Update checkpoint with current accumulated result, but we don't want to hammer
+                    // the server, so we only do it every 200ms.
+                    if (performance.now() - lastUpdateNodeCall > 200) {
+                      checkpointManager.updateNode(nodeId, { output: accumulatedResult });
+                      lastUpdateNodeCall = performance.now();
+                    }
+
+                    yield value;
                   }
+                } catch (error) {
+                  if (error instanceof Error) {
+                    checkpointManager.addMetadata(nodeId, {
+                      error: serializeError(error),
+                    });
+                    checkpointManager.completeNode(nodeId, undefined);
+                  }
+                  throw error;
                 }
-
-                // Update checkpoint with current accumulated result, but we don't want to hammer
-                // the server, so we only do it every 200ms.
-                if (performance.now() - lastUpdateNodeCall > 200) {
-                  checkpointManager.updateNode(nodeId, { output: accumulatedResult });
-                  lastUpdateNodeCall = performance.now();
-                }
-
-                yield value;
               }
-            } catch (error) {
-              if (error instanceof Error) {
-                checkpointManager.addMetadata(nodeId, {
-                  error: serializeError(error),
-                });
-                checkpointManager.completeNode(nodeId, undefined);
-              }
-              throw error;
             }
           }
-        };
+        );
 
-        return wrappedIterator as unknown as R;
+        return wrappedStream as unknown as R;
       }
 
       // For non-streaming results, complete the node as before
