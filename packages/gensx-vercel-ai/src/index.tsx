@@ -33,7 +33,7 @@ function wrapTools<T extends Record<string, Tool>>(
             },
             { name: `Tool_${name}` },
           );
-          return await ToolComponent(args);
+          return await ToolComponent(args as unknown as object);
         },
       } as unknown as T[string];
 

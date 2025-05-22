@@ -171,7 +171,7 @@ export const wrapOpenAI = (
           "beta.chat.completions.runTools is not a function. Type: ",
           typeof value,
         );
-        return value as object;
+        return value;
       },
     },
   });
