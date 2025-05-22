@@ -1,267 +1,93 @@
 ---
 title: OpenAI
-description: OpenAI API compatible component reference
+description: OpenAI API compatible SDK reference
 ---
 
 # OpenAI
 
-The [@gensx/openai](https://www.npmjs.com/package/@gensx/openai) package provides OpenAI API compatible components for GenSX.
+The [@gensx/openai](https://www.npmjs.com/package/@gensx/openai) package provides a pre-wrapped version of the OpenAI SDK for GenSX, making it easy to use OpenAI's API with GenSX functionality.
 
 ## Installation
 
 To install the package, run the following command:
 
 ```bash
-npm install @gensx/openai
+npm install @gensx/openai openai
 ```
 
-Then import the components you need from the package:
+## Usage
 
-```tsx
-import { OpenAIProvider, GSXChatCompletion } from "@gensx/openai";
-```
+You can use this package in two ways:
 
-## Supported components
+### 1. Drop-in Replacement (Recommended)
 
-| <div style={{width: "150px"}}>Component</div>   | Description                                                                                     |
-| :---------------------------------------------- | :---------------------------------------------------------------------------------------------- |
-| [`OpenAIProvider`](#openaiprovider)             | OpenAI Provider that handles configuration and authentication for child components              |
-| [`GSXChatCompletion`](#gsxchatcompletion)       | Enhanced component with enhanced features for OpenAI chat completions                           |
-| [`ChatCompletion`](#chatcompletion)             | Simplified component for chat completions with streamlined output interface                     |
-| [`OpenAIChatCompletion`](#openaichatcompletion) | Low-level component that directly matches the OpenAI SDK interface for the Chat Completions API |
-| [`OpenAIResponses`](#openairesponses)           | Low-level component that directly matches the OpenAI SDK interface for the Responses API        |
-| [`OpenAIEmbedding`](#openaiembedding)           | Low-level component that directly matches the OpenAI SDK interface for the Embeddings API       |
+Simply replace your OpenAI import with the GenSX version:
 
-## Component Comparison
+```ts
+// Instead of:
+// import { OpenAI } from 'openai';
 
-The package provides three different chat completion components to suit different use cases:
+// Use:
+import { OpenAI } from "@gensx/openai";
 
-- **OpenAIChatCompletion**: Direct mapping to the OpenAI API with identical inputs and outputs
-- **GSXChatCompletion**: Enhanced component with additional features like structured output and automated tool calling
-- **ChatCompletion**: Simplified interface that returns string responses or simple streams while maintaining identical inputs to the OpenAI API
+// Create a client as usual
+const client = new OpenAI({
+  apiKey: "your-api-key",
+});
 
-## Reference
+// All methods are automatically wrapped with GenSX functionality
+const completion = await client.chat.completions.create({
+  model: "gpt-4",
+  messages: [{ role: "user", content: "Hello!" }],
+});
 
-#### `<OpenAIProvider/>`
+// Use embeddings
+const embedding = await client.embeddings.create({
+  model: "text-embedding-ada-002",
+  input: "Hello world!",
+});
 
-The `OpenAIProvider` component initializes and provides an OpenAI client instance to all child components. Any components that use OpenAI's API need to be wrapped in an `OpenAIProvider`.
-
-```tsx
-<OpenAIProvider
-  apiKey="your-api-key" // Your OpenAI API key
-  organization="org-id" // Optional: Your OpenAI organization ID
-  baseURL="https://api.openai.com/v1" // Optional: API base URL
-/>
-```
-
-By configuring the baseURL, you can also use the `OpenAIProvider` with other OpenAI compatible APIs like [x.AI](https://docs.x.ai/docs/overview#featured-models) and [Groq](https://console.groq.com/docs/openai).
-
-```tsx
-<OpenAIProvider
-  apiKey="your-api-key" // Your Groq API key
-  baseURL="https://api.groq.com/openai/v1"
-/>
-```
-
-##### Props
-
-The `OpenAIProvider` accepts all configuration options from the [OpenAI Node.js client library](https://github.com/openai/openai-node) including:
-
-- `apiKey` (required): Your OpenAI API key
-- `organization`: Optional organization ID
-- `baseURL`: Optional API base URL
-
-#### `<GSXChatCompletion/>`
-
-The `GSXChatCompletion` component is an advanced chat completion component that provides enhanced features beyond the standard OpenAI API. It supports structured output, tool calling, and streaming, with automatic handling of tool execution.
-
-To get a structured output, pass a [Zod schema](https://www.npmjs.com/package/zod) to the `outputSchema` prop.
-
-```tsx
-// Returns an object matching the outputSchema when executed
-<GSXChatCompletion
-  model="gpt-4o"
-  messages={[
-    { role: "system", content: "You are a helpful assistant." },
-    {
-      role: "user",
-      content: "Extract the name and age from: John Doe, 32 years old",
-    },
-  ]}
-  outputSchema={z.object({
-    name: z.string(),
-    age: z.number(),
-  })}
-/>
-```
-
-To use tools, create a `GSXTool` object:
-
-```tsx
-const calculator = GSXTool.create({
-  name: "calculator",
-  description: "Perform mathematical calculations",
-  schema: z.object({
-    expression: z.string(),
-  }),
-  run: async ({ expression }) => {
-    return { result: eval(expression) };
-  },
+// Use responses
+const response = await client.responses.create({
+  model: "gpt-4",
+  messages: [{ role: "user", content: "Hello!" }],
 });
 ```
 
-Then pass the tool to the `tools` prop.
+### 2. Wrap an Existing Instance
 
-```tsx
-<GSXChatCompletion
-  model="gpt-4o"
-  messages={[{ role: "user", content: "What is 123 * 456?" }]}
-  tools={[calculator]}
-/>
+If you already have an OpenAI instance, you can wrap it with GenSX functionality:
+
+```ts
+import { OpenAI } from "openai";
+import { wrapOpenAI } from "@gensx/openai";
+
+// Create your OpenAI instance as usual
+const client = wrapOpenAI(
+  new OpenAI({
+    apiKey: "your-api-key",
+  }),
+);
+
+// Now all methods are wrapped with GenSX functionality
+const completion = await client.chat.completions.create({
+  model: "gpt-4",
+  messages: [{ role: "user", content: "Hello!" }],
+});
 ```
 
-##### Props
+## API Reference
 
-The `GSXChatCompletion` component accepts all parameters from OpenAI's chat completion API plus additional options:
+The package exports:
 
-- `model` (required): ID of the model to use (e.g., `"gpt-4o"`, `"gpt-4o-mini"`)
-- `messages` (required): Array of messages in the conversation
-- `stream`: Whether to stream the response (when `true`, returns a `Stream<ChatCompletionChunk>`)
-- `tools`: Array of `GSXTool` instances for function calling
-- `outputSchema`: Zod schema for structured output (when provided, returns data matching the schema)
-- `structuredOutputStrategy`: Strategy to use for structured output. Supported values are `default`, `tools`, and `response_format`.
-- Plus all standard OpenAI chat completion parameters (temperature, maxTokens, etc.)
+1. `OpenAI` - A drop-in replacement for the OpenAI client that automatically wraps all methods with GenSX functionality
+2. `wrapOpenAI` - A function to manually wrap an OpenAI instance with GenSX functionality
 
-##### Return Types
+All methods from the OpenAI SDK are supported and automatically wrapped with GenSX functionality, including:
 
-The return type of `GSXChatCompletion` depends on the props:
+- Chat Completions
+- Embeddings
+- Responses
+- And all other OpenAI API endpoints
 
-- With `stream: true`: Returns `Stream<ChatCompletionChunk>` from OpenAI SDK
-- With `outputSchema`: Returns data matching the provided Zod schema
-- Default: Returns `GSXChatCompletionResult` (OpenAI response with message history)
-
-#### `<ChatCompletion/>`
-
-The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the OpenAI API.
-
-```tsx
-// Returns a string when executed
-<ChatCompletion
-  model="gpt-4o"
-  messages={[
-    { role: "system", content: "You are a helpful assistant." },
-    { role: "user", content: "What's a programmable tree?" },
-  ]}
-  temperature={0.7}
-/>
-
-// Returns an AsyncIterableIterator<string> when executed
-<ChatCompletion
-  model="gpt-4o"
-  messages={[
-    { role: "system", content: "You are a helpful assistant." },
-    { role: "user", content: "What's a programmable tree?" },
-  ]}
-  temperature={0.7}
-  stream={true}
-/>
-```
-
-##### Props
-
-The `ChatCompletion` component accepts all parameters from OpenAI's chat completion API:
-
-- `model` (required): ID of the model to use (e.g., `"gpt-4o"`, `"gpt-4o-mini"`)
-- `messages` (required): Array of messages in the conversation
-- `temperature`: Sampling temperature (0-2)
-- `stream`: Whether to stream the response
-- `maxTokens`: Maximum number of tokens to generate
-- `responseFormat`: Format of the response (example: `{ "type": "json_object" }`)
-- `tools`: Array of `GSXTool` instances for function calling
-
-##### Return Types
-
-- With `stream: false` (default): Returns a string containing the model's response
-- With `stream: true`: Returns an `AsyncIterableIterator<string>` that yields tokens as they're generated
-
-#### `<OpenAIChatCompletion/>`
-
-The `OpenAIChatCompletion` component is a low-level component that directly maps to the OpenAI SDK. It has identical inputs and outputs to the OpenAI API, making it suitable for advanced use cases where you need full control.
-
-```tsx
-<OpenAIChatCompletion
-  model="gpt-4o"
-  messages={[
-    { role: "system", content: "You are a helpful assistant." },
-    { role: "user", content: "What's a programmable tree?" },
-  ]}
-  temperature={0.7}
-/>
-```
-
-##### Props
-
-The `OpenAIChatCompletion` component accepts all parameters from the OpenAI SDK's `chat.completions.create` method:
-
-- `model` (required): ID of the model to use
-- `messages` (required): Array of messages in the conversation
-- `temperature`: Sampling temperature
-- `stream`: Whether to stream the response
-- `maxTokens`: Maximum number of tokens to generate
-- `tools`: Array of OpenAI tool definitions for function calling
-- Plus all other OpenAI chat completion parameters
-
-##### Return Types
-
-- With `stream: false` (default): Returns the full `ChatCompletionOutput` object from OpenAI SDK
-- With `stream: true`: Returns a `Stream<ChatCompletionChunk>` from OpenAI SDK
-
-#### `<OpenAIResponses/>`
-
-The `OpenAIResponses` component is a low-level component that directly maps to the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses). It has identical inputs and outputs to the OpenAI Responses API, making it suitable for advanced use cases where you need full control.
-
-```tsx
-<OpenAIResponses
-  model="gpt-4o-mini"
-  input={[
-    {
-      role: "user",
-      content: "What is JSX?",
-    },
-  ]}
-  truncation="auto"
-/>
-```
-
-##### Props
-
-The `OpenAIResponses` component accepts all parameters from the OpenAI SDK's `responses.create` method:
-
-- `model` (required): ID of the model to use
-- `input` (required): The input to the response
-- Plus all other optional parameters from the OpenAI Responses API
-
-##### Return Types
-
-- With `stream: false` (default): Returns the full `Response` object from OpenAI SDK
-- With `stream: true`: Returns a `Stream<ResponseStreamEvent>` from OpenAI SDK
-
-#### `<OpenAIEmbedding/>`
-
-The `OpenAIEmbedding` component is a low-level component that directly maps to the OpenAI SDK's `embeddings.create` method. It has identical inputs and outputs to the OpenAI Embeddings API, making it suitable for advanced use cases where you need full control.
-
-```tsx
-<OpenAIEmbedding model="text-embedding-3-small" input="Hello, world!" />
-```
-
-##### Props
-
-The `OpenAIEmbedding` component accepts all parameters from the OpenAI SDK's `embeddings.create` method:
-
-- `model` (required): ID of the model to use
-- `input` (required): The input to the embedding (`string` or `string[]`)
-- Plus all other optional parameters from the OpenAI Embeddings API
-
-##### Return Types
-
-- Returns the full `CreateEmbeddingResponse` object from OpenAI SDK
+The wrapped methods maintain the same interface as the original OpenAI SDK, so you can use them exactly as you would with the standard OpenAI client.
