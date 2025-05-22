@@ -21,8 +21,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
     "baseUrl": "."
   },
   "include": ["vitest.workspace.ts"],

@@ -13,7 +13,12 @@
     "jsx": "react-jsx",
     "jsxImportSource": "@gensx/core",
     "rootDir": ".",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "plugins": [
+      {
+        "name": "ts-function-decorator-ls"
+      }
+    ]
   },
   "include": ["./src/**/*.ts", "./src/**/*.tsx"],
   "exclude": ["node_modules"]

@@ -1,7 +1,7 @@
 {
   "name": "@gensx/openai",
   "version": "0.1.28",
-  "description": "OpenAI integration for GenSX.",
+  "description": "A wrapper around the OpenAI SDK for GenSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
@@ -45,12 +45,10 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "peerDependencies": {
-    "openai": "catalog:"
+    "openai": ">=4.0.0"
   },
   "dependencies": {
-    "@gensx/core": "workspace:*",
-    "zod": "catalog:",
-    "zod-to-json-schema": "catalog:"
+    "@gensx/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:packages",

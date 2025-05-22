@@ -1,6 +1,7 @@
 export * from "./component.js";
 export * from "./types.js";
 export * from "./workflow-context.js";
+export * from "./wrap.js";
 
 export { Component, Workflow } from "./component.js";
 
