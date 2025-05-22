@@ -671,14 +671,14 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.24.2)
       '@gensx/core':
-        specifier: 0.4.0-alpha.3
+        specifier: alpha
         version: 0.4.0-alpha.3
       '@gensx/storage':
         specifier: 0.0.12
         version: 0.0.12
       '@gensx/vercel-ai':
-        specifier: 0.2.0-alpha2
-        version: 0.2.0-alpha2(react@19.1.0)(zod@3.24.2)
+        specifier: alpha
+        version: 0.2.0-alpha.3(react@19.1.0)(zod@3.24.2)
       ai:
         specifier: ^4.2.10
         version: 4.3.4(react@19.1.0)(zod@3.24.2)
@@ -733,11 +733,11 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.24.2)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: 0.4.0-alpha.3
+        version: 0.4.0-alpha.3
       '@gensx/vercel-ai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-vercel-ai
+        specifier: 0.2.0-alpha.3
+        version: 0.2.0-alpha.3(react@19.1.0)(zod@3.24.2)
       ai:
         specifier: ^4.2.10
         version: 4.3.4(react@19.1.0)(zod@3.24.2)
@@ -1829,8 +1829,8 @@ packages:
     resolution: {integrity: sha512-1842MiNqcJ4XL6kugdnuxM2fhoo6YgyWV9k5h3N4ekzNWxxWurQCXeTuxUqKa7DNNugUYRKB+stFVuN3jsLq9w==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
-  '@gensx/vercel-ai@0.2.0-alpha2':
-    resolution: {integrity: sha512-f7i6wOt/LvzFFOFCp9HQCC55X6oK+OP6kNFiHOMVX9Zy3qJwXUh5w4T8J7Gf24050b7NEBmOVgqLrbUMW7KYiA==}
+  '@gensx/vercel-ai@0.2.0-alpha.3':
+    resolution: {integrity: sha512-zbYkBTlRfj3FPL0dTGbow66o+9K9et/ZiSuJEQnCmCmzVo6DvUEDkM9JnAY0EMF4gErAZtEgzRzqMnNRbN0uJA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@headlessui/react@2.2.0':
@@ -8309,7 +8309,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@gensx/vercel-ai@0.2.0-alpha2(react@19.1.0)(zod@3.24.2)':
+  '@gensx/vercel-ai@0.2.0-alpha.3(react@19.1.0)(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
       '@gensx/core': 0.4.0-alpha.3

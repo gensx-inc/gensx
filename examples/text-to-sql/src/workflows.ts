@@ -66,6 +66,7 @@ async function SQLCopilot({ question }: { question: string }) {
       ],
       model: openai("gpt-4o-mini"),
       tools: tools,
+      maxSteps: 10,
   });
   return result.text;
 }
@@ -78,7 +79,7 @@ export async function TextToSqlWorkflow({ question }: { question: string }) {
 
 // Database initialization workflow
 @gensx.Workflow()
-export async function InitializeDatabase() {
+export async function InitializeDatabase({}) {
   // UseDatabase will create the database automatically if it doesn't exist.
   const db = await useDatabase("baseball");
 
