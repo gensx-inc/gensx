@@ -9,7 +9,6 @@ export function getProjectAndEnvironment(props: {
   project?: string;
   environment?: string;
 }): ProjectEnvConfig {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const projectConfig = readProjectConfig(process.cwd()) as
     | { projectName: string }
     | undefined;
@@ -26,7 +25,6 @@ export function getProjectAndEnvironment(props: {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const selectedEnvironment = getSelectedEnvironment(project) as
     | string
     | undefined;

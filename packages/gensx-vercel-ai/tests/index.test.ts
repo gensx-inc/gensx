@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-
 import * as gensx from "@gensx/core";
 import { expect, test } from "vitest";
 import { z } from "zod";
@@ -28,7 +26,7 @@ test("StreamText streams text response", async () => {
   // Collect streaming results
   let streamedContent = "";
   for await (const token of streamTextResult.textStream) {
-    streamedContent += token as string;
+    streamedContent += token;
   }
 
   // Verify the content

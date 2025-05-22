@@ -1,5 +1,3 @@
-
-
 import type { LanguageModelV1Middleware, Tool, ToolExecutionOptions } from "ai";
 
 import { createComponent } from "@gensx/core";
@@ -57,7 +55,6 @@ export const gensxMiddleware: LanguageModelV1Middleware = {
     );
 
     const result = await DoGenerateComponent(params);
-
 
     return result;
   },

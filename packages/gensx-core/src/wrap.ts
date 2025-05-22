@@ -116,7 +116,8 @@ export function wrapFunction<TInput extends object, TOutput>(
   fn: (input: TInput) => Promise<TOutput> | TOutput,
   componentOpts?: Partial<ComponentOpts>,
 ) {
-  const componentName = componentOpts?.name ?? (fn.name || "AnonymousComponent");
+  const componentName =
+    componentOpts?.name ?? (fn.name || "AnonymousComponent");
   return createComponent(fn, { ...componentOpts, name: componentName });
 }
 

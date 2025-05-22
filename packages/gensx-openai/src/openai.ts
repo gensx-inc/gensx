@@ -125,12 +125,9 @@ export const wrapOpenAI = (
 
                   // Now we can safely define the $callback property
                   Object.defineProperty(newTool, "$callback", {
-                    value: wrapFunction(
-                      boundCallback,
-                      {
-                        name: `Tool.${tool.function.name}`,
-                      },
-                    ),
+                    value: wrapFunction(boundCallback, {
+                      name: `Tool.${tool.function.name}`,
+                    }),
                   });
                   Object.defineProperty(newTool, "$parseRaw", {
                     value: (tool as any).$parseRaw,
@@ -138,14 +135,17 @@ export const wrapOpenAI = (
 
                   return newTool;
                 } else {
-                  let runnableTool = tool as RunnableToolFunctionWithParse<object>;
+                  let runnableTool =
+                    tool as RunnableToolFunctionWithParse<object>;
                   // Old style tool
                   return {
                     ...runnableTool,
                     function: {
                       ...runnableTool.function,
                       function: wrapFunction(
-                        runnableTool.function.function as (input: object) => unknown,
+                        runnableTool.function.function as (
+                          input: object,
+                        ) => unknown,
                         {
                           name: `Tool.${runnableTool.function.name}`,
                         },

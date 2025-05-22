@@ -32,32 +32,35 @@ describe("schema generator", () => {
   ) {
     const [tempFile, tempDir] = await createTempFile(fileContent);
     // Create a tsconfig.json file in the temp directory
-    await fs.writeFile(resolve(tempDir, "tsconfig.json"), JSON.stringify({
-      "compilerOptions": {
-        "target": "ESNext",
-        "module": "NodeNext",
-        "lib": [
-          "ESNext",
-          "DOM"
-        ],
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
-        "moduleResolution": "NodeNext",
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "outDir": "./dist",
-        "plugins": [
-          {
-            "name": "ts-function-decorator-ls"
-          }
-        ]
-      }
-    }));
+    await fs.writeFile(
+      resolve(tempDir, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          target: "ESNext",
+          module: "NodeNext",
+          lib: ["ESNext", "DOM"],
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          forceConsistentCasingInFileNames: true,
+          moduleResolution: "NodeNext",
+          resolveJsonModule: true,
+          isolatedModules: true,
+          outDir: "./dist",
+          plugins: [
+            {
+              name: "ts-function-decorator-ls",
+            },
+          ],
+        },
+      }),
+    );
 
     try {
-      const schemas = generateSchema(tempFile, resolve(tempDir, "tsconfig.json"));
+      const schemas = generateSchema(
+        tempFile,
+        resolve(tempDir, "tsconfig.json"),
+      );
       validator(schemas);
     } finally {
       cleanupTempFiles(tempDir);
