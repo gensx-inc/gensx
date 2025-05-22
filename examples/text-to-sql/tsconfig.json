@@ -10,7 +10,7 @@
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "rootDir": ".",
+    "rootDir": "./src",
     "outDir": "./dist",
     "plugins": [
       {
