@@ -151,9 +151,6 @@ importers:
 
   examples/anthropic-examples:
     dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.39.0
-        version: 0.39.0
       '@gensx/anthropic':
         specifier: workspace:*
         version: link:../../packages/gensx-anthropic
@@ -161,20 +158,23 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-core
       zod:
-        specifier: 'catalog:'
+        specifier: ^3.24.2
         version: 3.25.20
     devDependencies:
       '@types/node':
-        specifier: catalog:examples
+        specifier: ^22
         version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
+      ts-function-decorator:
+        specifier: ^0.0.1
+        version: 0.0.1(ts-patch@3.3.0)(typescript@5.8.2)
+      ts-function-decorator-ls:
+        specifier: ^0.0.1
+        version: 0.0.1(typescript@5.8.2)
+      ts-patch:
+        specifier: ^3.3.0
+        version: 3.3.0
       typescript:
-        specifier: 'catalog:'
+        specifier: ^5.7.2
         version: 5.8.2
 
   examples/blog-writer:
