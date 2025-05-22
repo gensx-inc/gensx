@@ -8,7 +8,6 @@
         "src/**/*.ts",
         "src/**/*.tsx",
         "*.ts",
-        "*.tsx",
         "tsconfig.json",
         "package.json",
         "rollup.config.js",
@@ -27,12 +26,7 @@
     "test": {
       "dependsOn": ["^build", "build"],
       "outputs": ["coverage/**"],
-      "inputs": [
-        "src/**/*.tsx",
-        "src/**/*.ts",
-        "test/**/*.ts",
-        "test/**/*.tsx"
-      ],
+      "inputs": ["src/**/*.ts", "test/**/*.ts"],
       "env": ["OPENAI_API_KEY", "FIRECRAWL_API_KEY", "DOCS_URL"]
     },
     "start": {
@@ -46,6 +40,20 @@
     "lint:fix": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "gensx#build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**/*.ts",
+        "*.ts",
+        "src/**/*.template",
+        "src/**/template.json",
+        "tsconfig.json",
+        "package.json",
+        "rollup.config.js",
+        "$TURBO_ROOT/create-rollup-config.js"
+      ],
+      "outputs": ["./dist/**"]
     },
     "create-gensx#test": {
       "dependsOn": ["^build", "build", "gensx#build", "@gensx/openai#build"],
