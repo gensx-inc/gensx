@@ -11,12 +11,12 @@ if (!question) {
 
 // First, initialize the database
 console.log("Initializing database...");
-const initMessage = await InitializeSearch.run({});
+const initMessage = await InitializeSearch({});
 console.log(initMessage);
 
 // Then run the query
 console.log("Processing your question...");
-const result = await RagWorkflow.run({
+const result = await RagWorkflow({
   question,
 });
 
