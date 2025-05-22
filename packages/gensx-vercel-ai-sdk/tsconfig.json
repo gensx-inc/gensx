@@ -5,6 +5,12 @@
     "baseUrl": ".",
     "tsBuildInfoFile": ".tsbuildinfo"
   },
-  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "rollup.config.js"],
+  "include": [
+    "src/**/*",
+    "vitest.config.ts",
+    "tests/**/*",
+    "rollup.config.js",
+    "__mocks__/**/*"
+  ],
   "exclude": ["node_modules", "dist"]
 }

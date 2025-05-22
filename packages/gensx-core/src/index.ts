@@ -4,6 +4,8 @@ export { Fragment, jsx, jsxs } from "./jsx-runtime.js";
 export type { JSX } from "./jsx-runtime.js";
 export { StreamComponent, Component } from "./component.js";
 export { array } from "./array.js";
+export { wrap, wrapFunction } from "./wrap.js";
+export type { WrapOptions } from "./wrap.js";
 export type {
   Context,
   ComponentOpts,
