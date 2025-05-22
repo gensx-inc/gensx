@@ -8,4 +8,4 @@ const external = [
     : []),
 ];
 
-export default createConfigs("src/index.tsx", "@gensx/vercel-ai-sdk", external);
+export default createConfigs("src/index.ts", "@gensx/vercel-ai", external);
