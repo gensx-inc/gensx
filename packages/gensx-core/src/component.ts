@@ -149,6 +149,80 @@ export function createComponent<P extends object, R>(
       const result = await context.withCurrentNode(nodeId, () => {
         return target(props);
       });
+
+      // Handle streaming results
+      if (typeof result === "object" && result !== null && Symbol.asyncIterator in result) {
+        // Create a wrapper async iterator that updates checkpoints
+        const originalIterator = (result as AsyncIterable<string>)[Symbol.asyncIterator]();
+        let accumulatedResult: unknown[] | string | null = null;
+
+        const wrappedIterator = {
+          async *[Symbol.asyncIterator]() {
+            try {
+              let lastUpdateNodeCall = performance.now();
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+              while (true) {
+                const nextResult = await originalIterator.next();
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                const value = nextResult.value;
+                const done = nextResult.done ?? false;
+
+                if (done) {
+                  // Update final checkpoint with accumulated result
+                  checkpointManager.completeNode(nodeId, accumulatedResult);
+                  return;
+                }
+
+                // Accumulate the result
+                if (typeof value === "string") {
+                  if (accumulatedResult === null) {
+                    accumulatedResult = value;
+                  } else {
+                    if (typeof accumulatedResult === "string") {
+                      accumulatedResult += value;
+                    } else {
+                      // This would only happen if the result changed from string to object part way through.
+                      accumulatedResult.push(value);
+                    }
+                  }
+                } else {
+                  if (accumulatedResult === null) {
+                    accumulatedResult = [value];
+                  } else {
+                    if (Array.isArray(accumulatedResult)) {
+                      accumulatedResult.push(value);
+                    } else {
+                      // This would only happen if the result changed from an object to string part way through.
+                      accumulatedResult = [accumulatedResult, value];
+                    }
+                  }
+                }
+
+                // Update checkpoint with current accumulated result, but we don't want to hammer
+                // the server, so we only do it every 200ms.
+                if (performance.now() - lastUpdateNodeCall > 200) {
+                  checkpointManager.updateNode(nodeId, { output: accumulatedResult });
+                  lastUpdateNodeCall = performance.now();
+                }
+
+                yield value;
+              }
+            } catch (error) {
+              if (error instanceof Error) {
+                checkpointManager.addMetadata(nodeId, {
+                  error: serializeError(error),
+                });
+                checkpointManager.completeNode(nodeId, undefined);
+              }
+              throw error;
+            }
+          }
+        };
+
+        return wrappedIterator as unknown as R;
+      }
+
+      // For non-streaming results, complete the node as before
       checkpointManager.completeNode(nodeId, result);
       return result;
     } catch (error) {
