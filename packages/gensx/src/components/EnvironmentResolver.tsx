@@ -1,6 +1,5 @@
 import { Box, Text, useApp } from "ink";
 import SelectInput from "ink-select-input";
-import Spinner from "ink-spinner";
 import TextInput from "ink-text-input";
 import React, { useCallback, useEffect, useState } from "react";
 
@@ -12,9 +11,13 @@ interface Item {
 
 // Core service helpers – replace with real ones
 import { createEnvironment, listEnvironments } from "../models/environment.js";
-import { checkProjectExists } from "../models/projects.js";
-import { getSelectedEnvironment } from "../utils/env-config.js";
+import { checkProjectExists, createProject } from "../models/projects.js";
+import {
+  getSelectedEnvironment,
+  validateAndSelectEnvironment,
+} from "../utils/env-config.js";
 import { ErrorMessage } from "./ErrorMessage.js";
+import { LoadingSpinner } from "./LoadingSpinner.js";
 
 interface Props {
   projectName: string;
@@ -50,6 +53,7 @@ export const EnvironmentResolver: React.FC<Props> = ({
   const [environments, setEnvironments] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [newEnvName, setNewEnvName] = useState<string>("");
+  const [projectExists, setProjectExists] = useState(false);
 
   //-----------------------------------------------------------
   // Helpers
@@ -77,7 +81,9 @@ export const EnvironmentResolver: React.FC<Props> = ({
         getSelectedEnvironment(projectName),
       ]);
 
-      if (!exists) {
+      setProjectExists(exists);
+
+      if (!allowCreate && !exists) {
         throw new Error(`Project '${projectName}' does not exist.`);
       }
 
@@ -87,7 +93,12 @@ export const EnvironmentResolver: React.FC<Props> = ({
         const envName = preselected ?? envs[0]?.name ?? "default";
         // Auto‑create if necessary (but no persistence beyond that)
         if (!envs.some((env) => env.name === envName)) {
-          await createEnvironment(projectName, envName);
+          if (!exists) {
+            await createProject(projectName, envName);
+            await validateAndSelectEnvironment(projectName, envName);
+          } else {
+            await createEnvironment(projectName, envName);
+          }
         }
         finish(envName);
         return;
@@ -122,9 +133,7 @@ export const EnvironmentResolver: React.FC<Props> = ({
   if (phase === "loading") {
     return (
       <Box>
-        <Text>
-          <Spinner /> Resolving environment...
-        </Text>
+        <LoadingSpinner message="Resolving environment..." />
       </Box>
     );
   }
@@ -188,8 +197,23 @@ export const EnvironmentResolver: React.FC<Props> = ({
               const trimmed = value.trim();
               if (!trimmed) return;
               setPhase("creating");
-              void createEnvironment(projectName, trimmed);
-              finish(trimmed);
+              void (async () => {
+                try {
+                  if (!projectExists) {
+                    await createProject(projectName, trimmed);
+                    await validateAndSelectEnvironment(projectName, trimmed);
+                  } else {
+                    await createEnvironment(projectName, trimmed);
+                  }
+                  finish(trimmed);
+                } catch (err) {
+                  setError((err as Error).message);
+                  setPhase("error");
+                  setTimeout(() => {
+                    exit();
+                  }, 50);
+                }
+              })();
             }}
           />
         </Text>
@@ -200,9 +224,13 @@ export const EnvironmentResolver: React.FC<Props> = ({
   if (phase === "creating") {
     return (
       <Box>
-        <Text>
-          <Spinner /> Creating environment {newEnvName}...
-        </Text>
+        <LoadingSpinner
+          message={
+            !projectExists
+              ? `Creating project ${projectName} and environment ${newEnvName}...`
+              : `Creating environment ${newEnvName}...`
+          }
+        />
       </Box>
     );
   }

@@ -7,10 +7,10 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "nodemon",
-    "start": "pnpm build && node dist/index.js",
-    "build": "tsc -p tsconfig.build.json",
-    "prepare": "ts-patch install -s"
+    "dev": "tsx ./src/index.tsx",
+    "start": "npx gensx start ./src/workflows.tsx",
+    "build": "tsc",
+    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.tsx"
   },
   "dependencies": {
     "@gensx/core": "0.4.0-alpha.1",

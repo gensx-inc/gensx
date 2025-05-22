@@ -57,7 +57,7 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
     error: projectError,
     projectName,
     isFromConfig,
-  } = useProjectName(options.project);
+  } = useProjectName(options.project, true);
 
   const deployWorkflow = useCallback(
     async (environment: string) => {

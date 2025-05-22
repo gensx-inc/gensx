@@ -20,7 +20,7 @@ Run `gensx deploy` from the root of your project to deploy it:
 npx gensx deploy src/workflows.tsx
 
 # Deploy with environment variables
-npx gensx deploy src/workflows.tsx -ev OPENAI_API_KEY
+npx gensx deploy src/workflows.tsx -e OPENAI_API_KEY
 ```
 
 Environment variables are encrypted with per-project encryption keys.
@@ -34,7 +34,7 @@ GenSX supports multiple environments within a project (such as development, stag
 npx gensx deploy src/workflows.tsx --env production
 
 # Deploy to staging with environment-specific variables
-npx gensx deploy src/workflows.tsx --env staging -ev OPENAI_API_KEY -ev LOG_LEVEL=debug
+npx gensx deploy src/workflows.tsx --env staging -e OPENAI_API_KEY -e LOG_LEVEL=debug
 ```
 
 Each environment can have its own configuration and environment variables, allowing you to test in isolation before promoting changes to production.
@@ -68,13 +68,13 @@ npx gensx run MyWorkflow --input '{"prompt":"Generate a business name"}' --proje
 
 ### CLI run options
 
-| Option      | Description                                     |
-| ----------- | ----------------------------------------------- |
-| `--input`   | JSON string with input data                     |
-| `--no-wait`    | Do not wait for workflow to finish |
-| `--output`  | Save results to a file                          |
-| `--project` | Specify the project name                        |
-| `--env`     | Specify the environment name                    |
+| Option      | Description                        |
+| ----------- | ---------------------------------- |
+| `--input`   | JSON string with input data        |
+| `--no-wait` | Do not wait for workflow to finish |
+| `--output`  | Save results to a file             |
+| `--project` | Specify the project name           |
+| `--env`     | Specify the environment name       |
 
 ## API endpoints
 

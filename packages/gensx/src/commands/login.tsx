@@ -215,9 +215,7 @@ export function LoginUI() {
             </Text>{" "}
             Browser opened <Text color="cyan">{authUrl}</Text>
           </Text>
-          <Text>
-            <Spinner type="dots" /> Waiting for authentication...
-          </Text>
+          <LoadingSpinner message="Waiting for authentication..." />
         </Box>
       )}
 

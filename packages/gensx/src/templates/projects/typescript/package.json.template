@@ -10,7 +10,7 @@
     "dev": "npm build && node dist/index.js",
     "start": "npx gensx start ./src/workflows.ts",
     "build": "tsc -p tsconfig.build.json",
-    "deploy": "npx gensx deploy -ev OPENAI_API_KEY ./src/workflows.ts",
+    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts",
     "prepare": "ts-patch install -s"
   }
 }

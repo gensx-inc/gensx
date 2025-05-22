@@ -72,13 +72,13 @@ Set environment-specific variables during deployment:
 ```bash
 # Development-specific settings
 gensx deploy src/workflows.tsx --env development \
-  -ev LOG_LEVEL=debug \
-  -ev OPENAI_API_KEY
+  -e LOG_LEVEL=debug \
+  -e OPENAI_API_KEY
 
 # Production-specific settings
 gensx deploy src/workflows.tsx --env production \
-  -ev LOG_LEVEL=error \
-  -ev OPENAI_API_KEY
+  -e LOG_LEVEL=error \
+  -e OPENAI_API_KEY
 ```
 
 ## Projects in the GenSX Console
