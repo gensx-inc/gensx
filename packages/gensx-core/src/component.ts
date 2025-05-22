@@ -151,9 +151,22 @@ export function createComponent<P extends object, R>(
       });
 
       // Handle streaming results
-      if (typeof result === "object" && result !== null && Symbol.asyncIterator in result) {
+      if (typeof result === "object" && result !== null &&
+        (Symbol.asyncIterator in result || ('iterator' in result && typeof result.iterator === 'function'))) {
         // Create a wrapper async iterator that updates checkpoints
-        const originalIterator = (result as AsyncIterable<string>)[Symbol.asyncIterator]();
+        let iterator: AsyncIterator<unknown>;
+
+        // Handle different types of stream objects
+        if ('iterator' in result && typeof result.iterator === 'function') {
+          // Handle Stream class with iterator method
+          iterator = (result.iterator as () => AsyncIterator<unknown>)();
+        } else if (Symbol.asyncIterator in result) {
+          // Handle standard AsyncIterable
+          iterator = (result as AsyncIterable<unknown>)[Symbol.asyncIterator]();
+        } else {
+          throw new Error('Invalid stream object: missing iterator');
+        }
+
         let accumulatedResult: unknown[] | string | null = null;
 
         const wrappedIterator = {
@@ -162,7 +175,7 @@ export function createComponent<P extends object, R>(
               let lastUpdateNodeCall = performance.now();
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               while (true) {
-                const nextResult = await originalIterator.next();
+                const nextResult = await iterator.next();
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const value = nextResult.value;
                 const done = nextResult.done ?? false;
