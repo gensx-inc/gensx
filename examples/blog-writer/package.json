@@ -23,6 +23,7 @@
     "@types/node": "^22",
     "ts-function-decorator": "^0.0.1",
     "ts-function-decorator-ls": "^0.0.1",
+    "ts-patch": "^3.3.0",
     "typescript": "^5.7.2"
   }
 }
