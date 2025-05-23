@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ExecutionContext } from "./context";
+import { ExecutionContext } from "./context.js";
 
 export type MaybePromise<T> = T | Promise<T>;
 
