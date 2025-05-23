@@ -130,10 +130,17 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): WrappedT
 export function wrapFunction<TInput extends object = object, TOutput = unknown>(
   fn: ((input: TInput) => Promise<TOutput> | TOutput) | ((input?: TInput) => Promise<TOutput> | TOutput),
   componentOpts?: Partial<ComponentOpts>,
-) {
+): (props?: TInput, componentOpts?: ComponentOpts) => Promise<Awaited<TOutput>> {
   const componentName =
     componentOpts?.name ?? (fn.name || "AnonymousComponent");
-  return createComponent(fn, { ...componentOpts, name: componentName });
+
+  // Create a wrapper that properly handles Promise unwrapping
+  const wrappedFn = async (input?: TInput): Promise<Awaited<TOutput>> => {
+    const result = await fn(input!);
+    return result;
+  };
+
+  return createComponent(wrappedFn, { ...componentOpts, name: componentName }) as (props?: TInput, componentOpts?: ComponentOpts) => Promise<Awaited<TOutput>>;
 }
 
 /**

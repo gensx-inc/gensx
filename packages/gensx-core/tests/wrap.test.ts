@@ -11,14 +11,6 @@ describe("wrapFunction", () => {
     expect(result).toBe(3);
   });
 
-  it("wraps a simple empty function", async () => {
-    const add = () => 42;
-    const wrappedAdd = wrapFunction(add, { name: "Add" });
-
-    const result = await wrappedAdd();
-    expect(result).toBe(42);
-  });
-
   it("uses function name when no name provided", async () => {
     function multiply(input: { a: number; b: number }) {
       return input.a * input.b;
@@ -44,19 +36,36 @@ describe("wrapFunction", () => {
     const getValue = () => 42;
     const wrappedGetValue = wrapFunction(getValue, { name: "GetValue" });
 
-    const result = await wrappedGetValue({});
+    const result = await wrappedGetValue();
     expect(result).toBe(42);
   });
 
   it("wraps async functions with no parameters", async () => {
     const getAsyncValue = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 1));
       return "async result";
     };
     const wrappedGetAsyncValue = wrapFunction(getAsyncValue, { name: "GetAsyncValue" });
 
-    const result = await wrappedGetAsyncValue({});
-    expect(result).toBe("async result");
+    const asyncResult: Promise<string> = wrappedGetAsyncValue();
+    expect(await asyncResult).toBe("async result");
+  });
+
+  it("has clean return types for no-parameter functions", async () => {
+    const getValue = () => 42;
+    const wrappedGetValue = wrapFunction(getValue, { name: "GetValue" });
+
+    const result: Promise<number> = wrappedGetValue();
+    expect(await result).toBe(42);
+
+    const getAsyncValue = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      return "async result";
+    };
+    const wrappedGetAsyncValue = wrapFunction(getAsyncValue, { name: "GetAsyncValue" });
+
+    const asyncResult: Promise<string> = wrappedGetAsyncValue();
+    expect(await asyncResult).toBe("async result");
   });
 });
 
