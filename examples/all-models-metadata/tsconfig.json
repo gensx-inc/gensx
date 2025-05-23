@@ -1,8 +1,32 @@
 {
-  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist"
+    "target": "ESNext",
+    "module": "NodeNext",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "plugins": [
+      {
+        "name": "ts-function-decorator-ls"
+      }
+    ]
   },
-  "include": ["./*.ts", "./*.tsx", "./**/*.ts", "./**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    "./*.ts",
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

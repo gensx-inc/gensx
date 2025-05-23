@@ -1,16 +1,11 @@
-import { DeepResearchWorkflow } from "./workflows.js";
+import { DeepResearch } from "./workflows.js";
 
 async function main() {
   const prompt =
     process.argv[2] ||
     "find research comparing the writing style of humans and LLMs. We want to figure out how to quantify the differences.";
   console.log("\n🚀 Starting deep research workflow with prompt: ", prompt);
-  const result = await DeepResearchWorkflow.run(
-    {
-      prompt,
-    },
-    { printUrl: true },
-  );
+  const result = await DeepResearch({ prompt });
 
   console.log("\n\n");
   console.log("=".repeat(50));

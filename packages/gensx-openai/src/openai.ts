@@ -35,14 +35,14 @@ import { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.mjs";
 export class OpenAI extends OriginalOpenAI {
   constructor(config?: ConstructorParameters<typeof OriginalOpenAI>[0]) {
     super(config);
-    return wrapOpenAI(this);
+    return wrapOpenAI(this) as unknown as this;
   }
 }
 
 export const wrapOpenAI = (
   openAiInstance: OriginalOpenAI,
   opts: WrapOptions = {},
-) => {
+): ReturnType<typeof wrap<OriginalOpenAI>> => {
   // Create a wrapped instance
   const wrapped = wrap(openAiInstance, {
     ...opts,

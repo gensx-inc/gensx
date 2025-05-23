@@ -36,10 +36,10 @@ const tools = {
 @gensx.Component()
 async function SQLCopilot({ question }: { question: string }) {
   const result = await generateText({
-      messages: [
-        {
-          role: "system",
-          content: `You are a helpful SQL assistant. You have access to a baseball statistics database with the following schema:
+    messages: [
+      {
+        role: "system",
+        content: `You are a helpful SQL assistant. You have access to a baseball statistics database with the following schema:
           TABLE baseball_stats (
             player TEXT,
             team TEXT,
@@ -58,15 +58,15 @@ async function SQLCopilot({ question }: { question: string }) {
           The table contains statistics for various baseball players. You can use the execute_query tool to run SQL queries against this database.
           When asked a question, first think about what SQL query would answer it, then use the tool to execute that query.
           After getting the results, explain them in a clear and concise way.`,
-        },
-        {
-          role: "user",
-          content: question,
-        },
-      ],
-      model: openai("gpt-4o-mini"),
-      tools: tools,
-      maxSteps: 10,
+      },
+      {
+        role: "user",
+        content: question,
+      },
+    ],
+    model: openai("gpt-4o-mini"),
+    tools: tools,
+    maxSteps: 10,
   });
   return result.text;
 }
@@ -79,7 +79,7 @@ export async function TextToSqlWorkflow({ question }: { question: string }) {
 
 // Database initialization workflow
 @gensx.Workflow()
-export async function InitializeDatabase({}) {
+export async function InitializeDatabase() {
   // UseDatabase will create the database automatically if it doesn't exist.
   const db = await useDatabase("baseball");
 

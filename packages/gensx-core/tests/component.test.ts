@@ -75,6 +75,40 @@ suite("component", () => {
     // In the real implementation, it will use the function name
   });
 
+  test("can handle components with no arguments (undefined props)", async () => {
+    // Define a component that doesn't need any props
+    async function noPropsComponent(): Promise<string> {
+      await setTimeout(0);
+      return "no props needed";
+    }
+
+    // Apply decorator
+    const NoPropsComponent = gensx.Component({
+      name: "NoPropsComponent",
+    })(noPropsComponent);
+
+    // Execute without any arguments - this should not throw
+    const result = await NoPropsComponent();
+    expect(result).toBe("no props needed");
+  });
+
+  test("can handle components called with empty object", async () => {
+    // Define a component that doesn't use its props
+    async function emptyPropsComponent(): Promise<string> {
+      await setTimeout(0);
+      return "empty props ok";
+    }
+
+    // Apply decorator
+    const EmptyPropsComponent = gensx.Component({
+      name: "EmptyPropsComponent",
+    })(emptyPropsComponent);
+
+    // Execute with empty object
+    const result = await EmptyPropsComponent({});
+    expect(result).toBe("empty props ok");
+  });
+
   test("stream components can return async iterators", async () => {
     // Define a streaming component function
     async function* streamGenerator(): AsyncGenerator<string> {
@@ -672,6 +706,40 @@ suite("component", () => {
       // Execute the workflow
       const result = await MetadataWorkflow({});
       expect(result).toBe("test");
+    });
+
+    test("can handle workflows with no arguments (undefined props)", async () => {
+      // Define a workflow that doesn't need any props
+      async function noPropsWorkflow(): Promise<string> {
+        await setTimeout(0);
+        return "workflow no props needed";
+      }
+
+      // Create workflow
+      const NoPropsWorkflow = gensx.createWorkflow(noPropsWorkflow, {
+        name: "NoPropsWorkflow",
+      });
+
+      // Execute without any arguments - this should not throw
+      const result = await NoPropsWorkflow();
+      expect(result).toBe("workflow no props needed");
+    });
+
+    test("can handle workflows called with empty object", async () => {
+      // Define a workflow that doesn't use its props
+      async function emptyPropsWorkflow(): Promise<string> {
+        await setTimeout(0);
+        return "workflow empty props ok";
+      }
+
+      // Create workflow
+      const EmptyPropsWorkflow = gensx.createWorkflow(emptyPropsWorkflow, {
+        name: "EmptyPropsWorkflow",
+      });
+
+      // Execute with empty object
+      const result = await EmptyPropsWorkflow({});
+      expect(result).toBe("workflow empty props ok");
     });
   });
 });
