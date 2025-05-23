@@ -6,13 +6,6 @@
     "baseUrl": ".",
     "rootDir": "."
   },
-  "include": [
-    "src/**/*",
-    "vitest.config.ts",
-    "tests/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

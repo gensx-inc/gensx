@@ -4,9 +4,7 @@
     "target": "esnext",
     "useDefineForClassFields": true,
     "module": "NodeNext",
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "incremental": true,
     "skipLibCheck": true,
     "moduleResolution": "NodeNext",
@@ -20,6 +18,6 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+    "noFallthroughCasesInSwitch": true
   }
 }

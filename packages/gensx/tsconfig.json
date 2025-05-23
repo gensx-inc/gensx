@@ -6,13 +6,6 @@
     "jsxImportSource": "react",
     "jsx": "react-jsx"
   },
-  "include": [
-    "src/**/*",
-    "tests/**/*",
-    "vitest.config.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*", "tests/**/*", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }
