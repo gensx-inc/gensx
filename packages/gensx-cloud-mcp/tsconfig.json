@@ -1,10 +1,14 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "tsBuildInfoFile": ".tsbuildinfo",
     "outDir": "./dist",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "emitDeclarationOnly": false
   },
-  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "rollup.config.js"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

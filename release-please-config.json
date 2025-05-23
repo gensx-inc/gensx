@@ -106,6 +106,7 @@
     "packages/gensx-openai": {
       "component": "gensx-openai",
       "release-type": "node",
+      "release-as": "0.2.0",
       "package-name": "@gensx/openai",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
@@ -204,6 +205,7 @@
     "packages/gensx-anthropic": {
       "component": "gensx-anthropic",
       "release-type": "node",
+      "release-as": "0.2.0",
       "package-name": "@gensx/anthropic",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
@@ -224,25 +226,6 @@
       "component": "gensx-cloud-mcp",
       "release-type": "node",
       "package-name": "@gensx/gensx-cloud-mcp",
-      "changelog-path": "CHANGELOG.md",
-      "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "draft": false,
-      "prerelease": false,
-      "include-component-in-tag": true,
-      "include-v-in-tag": true,
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "package.json",
-          "jsonpath": "$.version"
-        }
-      ]
-    },
-    "packages/gensx-mcp": {
-      "component": "gensx-mcp",
-      "release-type": "node",
-      "package-name": "@gensx/mcp",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,

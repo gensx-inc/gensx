@@ -56,7 +56,6 @@ export const gensxMiddleware: LanguageModelV1Middleware = {
 
     const result = await DoGenerateComponent(params);
 
-
     return result;
   },
   wrapStream: async ({ doStream, params }) => {

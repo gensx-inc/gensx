@@ -1,7 +1,7 @@
-import { unlinkSync } from "node:fs";
+import { readdirSync, rmdirSync, unlinkSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
-import { resolve } from "node:path";
+import path, { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -9,31 +9,61 @@ import { generateSchema } from "../../src/utils/schema.js";
 
 describe("schema generator", () => {
   // Helper to create a temporary TypeScript file for testing
-  async function createTempFile(content: string): Promise<string> {
-    const tempFile = resolve(
-      os.tmpdir(),
-      `gensx-${Math.random().toString(36).substring(2, 15)}.ts`,
-    );
+  async function createTempFile(content: string): Promise<[string, string]> {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "schema-test-"));
+    const tempFile = resolve(tempDir, `workflows.ts`);
     await fs.writeFile(tempFile, content);
-    return tempFile;
+
+    return [tempFile, tempDir];
   }
 
   // Helper to clean up temporary files
-  function cleanupTempFile(file: string) {
-    unlinkSync(file);
+  function cleanupTempFiles(dir: string) {
+    const files = readdirSync(dir);
+    files.forEach((file) => {
+      unlinkSync(resolve(dir, file));
+    });
+    rmdirSync(dir);
   }
 
   async function verifySchemas(
     fileContent: string,
     validator: (parsedSchema: Record<string, unknown>) => void,
   ) {
-    const tempFile = await createTempFile(fileContent);
+    const [tempFile, tempDir] = await createTempFile(fileContent);
+    // Create a tsconfig.json file in the temp directory
+    await fs.writeFile(
+      resolve(tempDir, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          target: "ESNext",
+          module: "NodeNext",
+          lib: ["ESNext", "DOM"],
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          forceConsistentCasingInFileNames: true,
+          moduleResolution: "NodeNext",
+          resolveJsonModule: true,
+          isolatedModules: true,
+          outDir: "./dist",
+          plugins: [
+            {
+              name: "ts-function-decorator-ls",
+            },
+          ],
+        },
+      }),
+    );
 
     try {
-      const schemas = generateSchema(tempFile);
+      const schemas = generateSchema(
+        tempFile,
+        resolve(tempDir, "tsconfig.json"),
+      );
       validator(schemas);
     } finally {
-      cleanupTempFile(tempFile);
+      cleanupTempFiles(tempDir);
     }
   }
 

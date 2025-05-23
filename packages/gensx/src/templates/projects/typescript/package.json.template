@@ -7,7 +7,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "npm build && node dist/index.js",
+    "dev": "npm run build && node dist/index.js",
     "start": "npx gensx start ./src/workflows.ts",
     "build": "tsc -p tsconfig.build.json",
     "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts",
