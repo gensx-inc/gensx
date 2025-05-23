@@ -1,5 +1,3 @@
-
-
 import type { LanguageModelV1Middleware, Tool, ToolExecutionOptions } from "ai";
 
 import { createComponent } from "@gensx/core";
@@ -25,7 +23,7 @@ function wrapTools<T extends Record<string, Tool>>(
           options: ToolExecutionOptions,
         ): Promise<ToolResult> => {
           const ToolComponent = createComponent(
-            async (toolArgs) => {
+            async (toolArgs: ToolParams) => {
               if (!tool.execute)
                 throw new Error(`Tool ${name} has no execute function`);
               // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -49,7 +47,7 @@ function wrapTools<T extends Record<string, Tool>>(
 export const gensxMiddleware: LanguageModelV1Middleware = {
   wrapGenerate: async ({ doGenerate, params }) => {
     const DoGenerateComponent = createComponent(
-      async (_params) => {
+      async (_params: typeof params) => {
         const result = await doGenerate();
         return result;
       },
@@ -63,7 +61,7 @@ export const gensxMiddleware: LanguageModelV1Middleware = {
   },
   wrapStream: async ({ doStream, params }) => {
     const DoStreamComponent = createComponent(
-      async (_params) => {
+      async (_params: typeof params) => {
         const result = await doStream();
         return result;
       },
