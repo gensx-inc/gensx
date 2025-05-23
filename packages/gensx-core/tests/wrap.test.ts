@@ -11,6 +11,14 @@ describe("wrapFunction", () => {
     expect(result).toBe(3);
   });
 
+  it("wraps a simple empty function", async () => {
+    const add = () => 42;
+    const wrappedAdd = wrapFunction(add, { name: "Add" });
+
+    const result = await wrappedAdd();
+    expect(result).toBe(42);
+  });
+
   it("uses function name when no name provided", async () => {
     function multiply(input: { a: number; b: number }) {
       return input.a * input.b;
@@ -30,6 +38,25 @@ describe("wrapFunction", () => {
 
     const result = await wrappedAsyncAdd({ a: 5, b: 6 });
     expect(result).toBe(11);
+  });
+
+  it("wraps functions with no parameters", async () => {
+    const getValue = () => 42;
+    const wrappedGetValue = wrapFunction(getValue, { name: "GetValue" });
+
+    const result = await wrappedGetValue({});
+    expect(result).toBe(42);
+  });
+
+  it("wraps async functions with no parameters", async () => {
+    const getAsyncValue = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return "async result";
+    };
+    const wrappedGetAsyncValue = wrapFunction(getAsyncValue, { name: "GetAsyncValue" });
+
+    const result = await wrappedGetAsyncValue({});
+    expect(result).toBe("async result");
   });
 });
 
@@ -127,6 +154,61 @@ describe("wrap", () => {
     const finalCount = await wrappedCounter.getCount({});
     expect(finalCount).toBe(2);
   });
+
+  it("handles methods with no parameters", async () => {
+    class DataProvider {
+      private data = "test data";
+
+      getData() {
+        return Promise.resolve(this.data);
+      }
+
+      getTimestamp() {
+        return Promise.resolve(Date.now());
+      }
+
+      syncMethod() {
+        return "sync result";
+      }
+    }
+
+    const provider = new DataProvider();
+    const wrappedProvider = wrap(provider);
+
+    const data = await wrappedProvider.getData();
+    expect(data).toBe("test data");
+
+    const timestamp = await wrappedProvider.getTimestamp();
+    expect(typeof timestamp).toBe("number");
+
+    const syncResult = await wrappedProvider.syncMethod();
+    expect(syncResult).toBe("sync result");
+  });
+
+  it("handles objects with no-parameter functions", async () => {
+    const utils = {
+      getRandom: () => Math.random(),
+      getConstant: () => Promise.resolve(42),
+      helpers: {
+        getVersion: () => "1.0.0",
+        getEnv: () => Promise.resolve("development"),
+      },
+    };
+
+    const wrappedUtils = wrap(utils);
+
+    const random = await wrappedUtils.getRandom();
+    expect(typeof random).toBe("number");
+
+    const constant = await wrappedUtils.getConstant();
+    expect(constant).toBe(42);
+
+    const version = await wrappedUtils.helpers.getVersion();
+    expect(version).toBe("1.0.0");
+
+    const env = await wrappedUtils.helpers.getEnv();
+    expect(env).toBe("development");
+  });
 });
 
 describe("Wrap decorator", () => {
@@ -208,6 +290,39 @@ describe("Wrap decorator", () => {
 
     const derivedResult = await derived.derivedMethod({ value: "test" });
     expect(derivedResult).toBe("Derived: test");
+  });
+
+  it("handles methods with no parameters in decorator", async () => {
+    @Wrap()
+    class Service {
+      private value = "service data";
+
+      getValue() {
+        return Promise.resolve(this.value);
+      }
+
+      getRandomNumber() {
+        return Math.random();
+      }
+
+      async getAsyncValue() {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return "async service data";
+      }
+    }
+
+    const service = new Service();
+
+    const value = await service.getValue();
+    expect(value).toBe("service data");
+
+    // TODO: figure out how to make linting work properly here
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    const randomNumber = await service.getRandomNumber();
+    expect(typeof randomNumber).toBe("number");
+
+    const asyncValue = await service.getAsyncValue();
+    expect(asyncValue).toBe("async service data");
   });
 });
 
