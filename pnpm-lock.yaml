@@ -151,9 +151,6 @@ importers:
 
   examples/anthropic-examples:
     dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.39.0
-        version: 0.39.0
       '@gensx/anthropic':
         specifier: workspace:*
         version: link:../../packages/gensx-anthropic
@@ -161,20 +158,23 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-core
       zod:
-        specifier: 'catalog:'
+        specifier: ^3.24.2
         version: 3.25.20
     devDependencies:
       '@types/node':
-        specifier: catalog:examples
+        specifier: ^22
         version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
+      ts-function-decorator:
+        specifier: ^0.0.1
+        version: 0.0.1(ts-patch@3.3.0)(typescript@5.8.2)
+      ts-function-decorator-ls:
+        specifier: ^0.0.1
+        version: 0.0.1(typescript@5.8.2)
+      ts-patch:
+        specifier: ^3.3.0
+        version: 3.3.0
       typescript:
-        specifier: 'catalog:'
+        specifier: ^5.7.2
         version: 5.8.2
 
   examples/blog-writer:
@@ -256,25 +256,6 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.20
-    devDependencies:
-      '@types/node':
-        specifier: catalog:examples
-        version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.2
-
-  examples/contexts:
-    dependencies:
-      '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -438,34 +419,6 @@ importers:
         specifier: 'catalog:'
         version: 5.8.2
 
-  examples/nested-providers:
-    dependencies:
-      '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
-      '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      '@mendable/firecrawl-js':
-        specifier: ^1.21.0
-        version: 1.21.0(ws@8.18.0)
-      openai:
-        specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
-    devDependencies:
-      '@types/node':
-        specifier: catalog:examples
-        version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.2
-
   examples/open-router:
     dependencies:
       '@gensx/core':
@@ -531,51 +484,26 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-openai
       openai:
-        specifier: 'catalog:'
+        specifier: ^4.0.0
         version: 4.91.1(ws@8.18.0)(zod@3.25.20)
       zod:
-        specifier: 'catalog:'
+        specifier: ^3.25.20
         version: 3.25.20
     devDependencies:
       '@types/node':
-        specifier: catalog:examples
+        specifier: ^22
         version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
+      ts-function-decorator:
+        specifier: ^0.0.1
+        version: 0.0.1(ts-patch@3.3.0)(typescript@5.8.2)
+      ts-function-decorator-ls:
+        specifier: ^0.0.1
+        version: 0.0.1(typescript@5.8.2)
+      ts-patch:
+        specifier: ^3.3.0
+        version: 3.3.0
       typescript:
-        specifier: 'catalog:'
-        version: 5.8.2
-
-  examples/providers:
-    dependencies:
-      '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
-      '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      '@mendable/firecrawl-js':
-        specifier: ^1.21.0
-        version: 1.21.0(ws@8.18.0)
-      openai:
-        specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
-    devDependencies:
-      '@types/node':
-        specifier: catalog:examples
-        version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
-      typescript:
-        specifier: 'catalog:'
+        specifier: ^5.7.2
         version: 5.8.2
 
   examples/rag:
@@ -626,34 +554,6 @@ importers:
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
-      openai:
-        specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
-    devDependencies:
-      '@types/node':
-        specifier: catalog:examples
-        version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.2
-
-  examples/reusable-components:
-    dependencies:
-      '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
-      '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      '@mendable/firecrawl-js':
-        specifier: ^1.21.0
-        version: 1.21.0(ws@8.18.0)
       openai:
         specifier: 'catalog:'
         version: 4.91.1(ws@8.18.0)(zod@3.25.20)
