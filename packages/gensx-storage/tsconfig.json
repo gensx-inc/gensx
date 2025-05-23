@@ -5,6 +5,14 @@
     "outDir": "./dist",
     "baseUrl": "."
   },
-  "include": ["src/**/*", "vitest.config.ts", "tests/**/*", "__mocks__/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "vitest.config.ts",
+    "tests/**/*",
+    "__mocks__/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -4,7 +4,9 @@
     "target": "esnext",
     "useDefineForClassFields": true,
     "module": "NodeNext",
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "incremental": true,
     "skipLibCheck": true,
     "moduleResolution": "NodeNext",
@@ -19,8 +21,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-
-    "jsx": "react-jsx",
-    "jsxImportSource": "@gensx/core"
   }
 }
