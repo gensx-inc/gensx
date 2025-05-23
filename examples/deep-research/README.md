@@ -47,7 +47,7 @@ To run the workflow in GenSX Cloud:
 2. Start a research job by calling the workflow:
 
    ```bash
-   gensx run DeepResearchWorkflow --input '{"prompt": "find research comparing the writing style of humans and LLMs. We want to figure out how to quantify the differences."}'
+   gensx run DeepResearch --input '{"prompt": "find research comparing the writing style of humans and LLMs. We want to figure out how to quantify the differences."}'
    ```
 
 Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see your workflow, test it, analyze traces, and get code snippets.

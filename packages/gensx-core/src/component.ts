@@ -58,11 +58,11 @@ export function Component(decoratorOpts?: DecoratorComponentOpts) {
       | ClassAccessorDecoratorContext
       | ClassFieldDecoratorContext
       | ClassDecoratorContext,
-  ): (props: P) => MaybePromise<R> {
+  ): (props?: P) => MaybePromise<R> {
     // Only wrap class methods
     if (context && context.kind !== "method") {
       console.warn("Component decorator can only be applied to class methods.");
-      return target;
+      return target as (props?: P) => MaybePromise<R>;
     }
 
     return createComponent(target, decoratorOpts);
@@ -77,11 +77,11 @@ export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
       | ClassAccessorDecoratorContext
       | ClassDecoratorContext
       | ClassFieldDecoratorContext,
-  ): (props: P) => MaybePromise<R> {
+  ): (props?: P) => MaybePromise<R> {
     // Only wrap class methods
     if (context && context.kind !== "method") {
       console.warn("Workflow decorator can only be applied to class methods.");
-      return target;
+      return target as (props?: P) => MaybePromise<R>;
     }
 
     return createWorkflow(target, decoratorOpts);
@@ -89,9 +89,9 @@ export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
 }
 
 export function createComponent<P extends object, R>(
-  target: (props: P) => R,
+  target: ((props: P) => R) | ((props?: P) => R),
   componentOpts?: ComponentOpts | string,
-) {
+): (props?: P, componentOpts?: ComponentOpts) => Promise<R> {
   // Name for the function object itself (e.g., for display, stack traces)
   // Priority: decorator explicit name > target function's actual name.
   const componentFunctionObjectName =
@@ -105,7 +105,7 @@ export function createComponent<P extends object, R>(
   }
 
   const ComponentFn = async (
-    props: P,
+    props?: P,
     runtimeOpts?: ComponentOpts,
   ): Promise<R> => {
     const context = getCurrentContext();
@@ -131,11 +131,11 @@ export function createComponent<P extends object, R>(
     const nodeId = checkpointManager.addNode(
       {
         componentName: checkpointName,
-        props: Object.fromEntries(
+        props: props ? Object.fromEntries(
           Object.entries(props).filter(
             ([key]) => key !== "children" && key !== "componentOpts",
           ),
-        ),
+        ) : {},
         componentOpts: resolvedComponentOpts,
       },
       currentNodeId,
@@ -147,7 +147,7 @@ export function createComponent<P extends object, R>(
 
     try {
       const result = await context.withCurrentNode(nodeId, () => {
-        return target(props);
+        return target(props ?? ({} as P));
       });
       checkpointManager.completeNode(nodeId, result);
       return result;
@@ -174,16 +174,16 @@ export function createComponent<P extends object, R>(
 }
 
 export function createWorkflow<P extends object, R>(
-  target: (props: P) => R,
+  target: ((props: P) => R) | ((props?: P) => R),
   workflowOpts?: WorkflowOpts | string,
-): (props: P) => MaybePromise<R> {
+): (props?: P) => MaybePromise<R> {
   // Use the overridden name from componentOpts if provided
   const configuredWorkflowName =
     typeof workflowOpts === "string"
       ? workflowOpts
       : (workflowOpts?.name ?? target.name);
 
-  const WorkflowFn = async (props: P, runtimeOpts?: WorkflowOpts) => {
+  const WorkflowFn = async (props?: P, runtimeOpts?: WorkflowOpts) => {
     const context = new ExecutionContext({});
 
     const defaultPrintUrl = !Boolean(process.env.CI);
@@ -208,7 +208,7 @@ export function createWorkflow<P extends object, R>(
 
     try {
       const result = await withContext(context, async () => {
-        const result = await component(props, runtimeOpts);
+        const result = await component(props ?? ({} as P), runtimeOpts);
         return result;
       });
 

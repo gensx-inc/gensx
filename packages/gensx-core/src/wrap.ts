@@ -52,7 +52,7 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
             [...path, String(propKey)].join(".");
 
           // Bind the original `this` so SDK internals keep working
-          const boundFn = value.bind(origTarget) as (input: object) => unknown;
+          const boundFn = value.bind(origTarget) as (input?: object) => unknown;
           const componentOpts = opts.getComponentOpts?.(path, boundFn);
           return wrapFunction(boundFn, componentName, componentOpts);
         }
@@ -109,8 +109,8 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
  * // result = "Hello World!"
  * ```
  */
-export function wrapFunction<TInput extends object, TOutput>(
-  fn: (input: TInput) => Promise<TOutput> | TOutput,
+export function wrapFunction<TInput extends object = object, TOutput = unknown>(
+  fn: ((input: TInput) => Promise<TOutput> | TOutput) | ((input?: TInput) => Promise<TOutput> | TOutput),
   name?: string,
   componentOpts?: Partial<ComponentOpts>,
 ) {

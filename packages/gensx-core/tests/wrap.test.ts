@@ -280,7 +280,7 @@ describe("getComponentOpts", () => {
     await wrappedCalc.add({ a: 1, b: 2 });
 
     expect(getComponentOpts).toHaveBeenCalledWith(
-      ["calculator"],
+      ["Calculator"],
       expect.any(Function),
     );
   });
