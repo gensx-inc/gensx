@@ -5,8 +5,7 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-    "incremental": false,
-    "rootDir": "./src"
+    "incremental": false
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*.ts"]
 }

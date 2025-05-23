@@ -2,7 +2,6 @@
   "packages/create-gensx": "0.1.43",
   "packages/gensx-anthropic": "0.1.17",
   "packages/gensx-cloud-mcp": "0.0.8",
-  "packages/gensx-mcp": "0.1.17",
   "packages/gensx-openai": "0.1.28",
   "packages/gensx-vercel-ai-sdk": "0.1.17",
   "packages/gensx": "0.3.31",

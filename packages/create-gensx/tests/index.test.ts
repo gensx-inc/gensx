@@ -84,13 +84,18 @@ suite("create-gensx", () => {
       throw e;
     }
 
-    // Run the project and capture its output
-    const { stdout: runOutput } = await exec("npm run dev", {
-      cwd: projectPath,
-    });
+    try {
+      // Run the project and capture its output
+      const { stdout: runOutput } = await exec("npm run dev", {
+        cwd: projectPath,
+      });
 
-    // Verify the output contains our welcome message
-    expect(runOutput).toContain("Hello, World!");
+      // Verify the output contains our welcome message
+      expect(runOutput).toContain("Hello, World!");
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   }, 60000); // Increase timeout to 60s since npm install can be slow
 
   it("creates a project with AI assistant integrations", async () => {

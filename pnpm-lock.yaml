@@ -388,37 +388,6 @@ importers:
         specifier: 'catalog:'
         version: 5.8.2
 
-  examples/mcp:
-    dependencies:
-      '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
-      '@gensx/mcp':
-        specifier: workspace:*
-        version: link:../../packages/gensx-mcp
-      '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      openai:
-        specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
-      zod:
-        specifier: 'catalog:'
-        version: 3.25.20
-    devDependencies:
-      '@types/node':
-        specifier: catalog:examples
-        version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.2
-
   examples/open-router:
     dependencies:
       '@gensx/core':
@@ -1062,31 +1031,6 @@ importers:
       vite:
         specifier: 'catalog:'
         version: 6.2.4(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
-      vitest:
-        specifier: 'catalog:'
-        version: 3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
-
-  packages/gensx-mcp:
-    dependencies:
-      '@gensx/core':
-        specifier: workspace:*
-        version: link:../gensx-core
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.8.0
-        version: 1.8.0
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
-      zod:
-        specifier: 'catalog:'
-        version: 3.25.20
-    devDependencies:
-      '@types/node':
-        specifier: catalog:packages
-        version: 18.19.86
-      '@vitest/coverage-istanbul':
-        specifier: 'catalog:'
-        version: 3.1.3(vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))
       vitest:
         specifier: 'catalog:'
         version: 3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)

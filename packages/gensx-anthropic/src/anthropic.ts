@@ -1,4 +1,7 @@
-import { Anthropic as OriginalAnthropic, ClientOptions } from "@anthropic-ai/sdk";
+import {
+  Anthropic as OriginalAnthropic,
+  ClientOptions,
+} from "@anthropic-ai/sdk";
 import { wrap } from "@gensx/core";
 
 export class Anthropic extends OriginalAnthropic {

@@ -3,7 +3,8 @@
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo",
     "outDir": "./dist",
-    "jsxImportSource": "react"
+    "jsxImportSource": "react",
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*", "tests/**/*", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"]

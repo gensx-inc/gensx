@@ -1,9 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo",
     "outDir": "./dist",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "rootDir": "."
   },
   "include": ["src/**/*", "vitest.config.ts", "tests/**/*"],
   "exclude": ["node_modules", "dist"]

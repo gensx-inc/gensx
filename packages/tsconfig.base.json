@@ -18,9 +18,6 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    "jsx": "react-jsx",
-    "jsxImportSource": "@gensx/core"
+    "noFallthroughCasesInSwitch": true
   }
 }

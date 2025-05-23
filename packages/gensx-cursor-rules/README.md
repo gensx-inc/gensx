@@ -42,7 +42,6 @@ This package includes rules for:
 - `gensx.mdc` - Core GenSX concepts and syntax
 - `gensx-openai.mdc` - OpenAI integration
 - `gensx-anthropic.mdc` - Anthropic integration
-- `gensx-mcp.mdc` - Model Control Protocol integration
 - `gensx-ai-sdk.mdc` - Vercel AI SDK integration
 
 ## Custom rules
