@@ -1,9 +1,9 @@
 import { openai } from "@ai-sdk/openai";
 import { Workflow } from "@gensx/core";
 import {
-  generateText, streamText
+  generateText, streamText, streamObject, generateObject
 } from "@gensx/vercel-ai";
-import { generateObject, streamObject, tool } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
 
 const tools = {

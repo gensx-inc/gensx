@@ -10,6 +10,8 @@ import type { Tool, ToolExecutionOptions } from "ai";
 import { ComponentOpts, createComponent, wrap } from "@gensx/core";
 import * as ai from "ai";
 
+export type AsyncIterableStream<T> = AsyncIterable<T> & ReadableStream<T>;
+
 // Helper function to wrap tools in GSX components
 function wrapTools<T extends Record<string, Tool>>(
   tools: T | undefined,
@@ -80,7 +82,9 @@ export const streamObject = createComponent(new Proxy(ai.streamObject, {
       ...rest,
     ]);
   },
-}), { name: "StreamObject" }) as typeof ai.streamObject;
+}), {
+  name: "StreamObject"
+}) as typeof ai.streamObject;
 
 export const generateObject = createComponent(new Proxy(ai.generateObject, {
   apply: (target, thisArg, args) => {
@@ -139,7 +143,7 @@ export const wrapVercelAIModel = <T extends object>(
         let __streamingResultKey: string | undefined;
         if (propKey === "doStream") {
           __streamingResultKey = "stream";
-          aggregator = (chunks: { type: 'text-delta' | 'tool-call' | 'finish' | 'something-else', textDelta: string, usage: unknown, finishReason: unknown }[]) => {
+          aggregator = componentOpts?.aggregator ?? ((chunks: { type: 'text-delta' | 'tool-call' | 'finish' | 'something-else', textDelta: string, usage: unknown, finishReason: unknown }[]) => {
             return chunks.reduce(
               (aggregated, chunk) => {
                 if (chunk.type === "text-delta") {
@@ -166,7 +170,7 @@ export const wrapVercelAIModel = <T extends object>(
                 text: "",
               },
             );
-          };
+          });
         }
         return createComponent(originalValue.bind(target) as (input: object) => unknown, {
           name: componentName,

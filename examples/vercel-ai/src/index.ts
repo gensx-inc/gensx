@@ -3,11 +3,7 @@ import {
   BasicChatWithTools,
   StreamingChat,
   StreamingChatWithTools,
-  StreamingStructuredOutput,
-  StructuredOutput,
-  // StreamingChatWithTools,
-  // StreamingStructuredOutput,
-  // StructuredOutput,
+  StreamingStructuredOutput
 } from "./workflows.js";
 
 // Get the workflow type and prompt from command line arguments
@@ -72,14 +68,14 @@ async function main() {
       process.stdout.write("\n");
       break;
 
-    case "structured":
-      console.log("Running structured output workflow...");
-      const structuredResult = await StructuredOutput({
-        prompt,
-      });
-      console.log("Response:");
-      console.log(JSON.stringify(structuredResult, null, 2));
-      break;
+    // case "structured":
+    //   console.log("Running structured output workflow...");
+    //   const structuredResult = await StructuredOutput({
+    //     prompt,
+    //   });
+    //   console.log("Response:");
+    //   console.log(JSON.stringify(structuredResult, null, 2));
+    //   break;
 
     case "structured-stream":
       console.log("Running streaming structured output workflow...");

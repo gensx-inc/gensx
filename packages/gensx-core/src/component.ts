@@ -151,6 +151,11 @@ export function createComponent<P extends object, R>(
     }
 
     function handleResultValue(value: unknown, runInContext: RunInContext) {
+      console.log(resolvedComponentOpts.__streamingResultKey, isAsyncIterable(
+        (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey ?? ""]
+      ), isReadableStream(
+        (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey ?? ""]
+      ));
       if (!Array.isArray(value) &&
         typeof value === "object" &&
         value != null &&
