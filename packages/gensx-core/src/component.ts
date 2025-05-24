@@ -166,7 +166,12 @@ export function createComponent<P extends object, R>(
           { streamKey: resolvedComponentOpts.__streamingResultKey, aggregator: resolvedComponentOpts.aggregator, fullValue: value },
         );
 
-        (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey] = streamingResult;
+        try {
+          (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey] = streamingResult;
+        } catch {
+          // Can't always set the streaming result key, so carry on.
+        }
+
         return value;
       }
 
@@ -334,8 +339,10 @@ function captureReadableStream(
               const { completeNode } = getCurrentNodeCheckpointManager();
               const aggregatedValue = aggregator(chunks);
               if (streamKey) {
-                (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
-                completeNode(fullValue);
+                completeNode({
+                  ...(fullValue as Record<string, unknown>),
+                  [streamKey]: aggregatedValue,
+                });
               } else {
                 completeNode(aggregatedValue);
               }
@@ -349,8 +356,12 @@ function captureReadableStream(
               const { updateNode } = getCurrentNodeCheckpointManager();
               const aggregatedValue = aggregator(chunks);
               if (streamKey) {
-                (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
-                updateNode({ output: fullValue });
+                updateNode({
+                  output: {
+                    ...(fullValue as Record<string, unknown>),
+                    [streamKey]: aggregatedValue,
+                  },
+                });
               } else {
                 updateNode({ output: aggregatedValue });
               }
@@ -364,8 +375,10 @@ function captureReadableStream(
         addMetadata({ error: serializeError(e) });
         const aggregatedValue = aggregator(chunks);
         if (streamKey) {
-          (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
-          completeNode(fullValue);
+          completeNode({
+            ...(fullValue as Record<string, unknown>),
+            [streamKey]: aggregatedValue,
+          });
         } else {
           completeNode(aggregatedValue);
         }
@@ -405,8 +418,10 @@ async function* captureAsyncIterator(
           const { completeNode } = getCurrentNodeCheckpointManager();
           const aggregatedValue = aggregator(chunks);
           if (streamKey) {
-            (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
-            completeNode(fullValue);
+            completeNode({
+              ...(fullValue as Record<string, unknown>),
+              [streamKey]: aggregatedValue,
+            });
           } else {
             completeNode(aggregatedValue);
           }
@@ -419,8 +434,12 @@ async function* captureAsyncIterator(
           const { updateNode } = getCurrentNodeCheckpointManager();
           const aggregatedValue = aggregator(chunks);
           if (streamKey) {
-            (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
-            updateNode({ output: fullValue });
+            updateNode({
+              output: {
+                ...(fullValue as Record<string, unknown>),
+                [streamKey]: aggregatedValue,
+              },
+            });
           } else {
             updateNode({ output: aggregatedValue });
           }
@@ -441,8 +460,10 @@ async function* captureAsyncIterator(
     addMetadata({ error: serializeError(e) });
     const aggregatedValue = aggregator(chunks);
     if (streamKey) {
-      (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
-      completeNode(fullValue);
+      completeNode({
+        ...(fullValue as Record<string, unknown>),
+        [streamKey]: aggregatedValue,
+      });
     } else {
       completeNode(aggregatedValue);
     }

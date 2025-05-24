@@ -62,7 +62,7 @@ export async function BasicChatWithTools({ prompt }: { prompt: string }): Promis
 
 @Workflow()
 export async function StreamingChat({ prompt }: { prompt: string }) {
-  return streamText({
+  const result = streamText({
     messages: [
       {
         role: "system",
@@ -75,6 +75,14 @@ export async function StreamingChat({ prompt }: { prompt: string }) {
     ],
     model: openai("gpt-4o-mini"),
   });
+
+  const generator = async function* () {
+    for await (const chunk of result.textStream) {
+      yield chunk;
+    }
+  }
+
+  return generator();
 }
 
 // @Workflow()

@@ -57,7 +57,7 @@ export const streamText = createComponent(new Proxy(ai.streamText, {
 
     const wrappedTools = wrapTools(first.tools);
 
-    const result = Reflect.apply(target, thisArg, [
+    return Reflect.apply(target, thisArg, [
       {
         ...first,
         model: wrapVercelAIModel(first.model),
@@ -65,23 +65,8 @@ export const streamText = createComponent(new Proxy(ai.streamText, {
       },
       ...rest,
     ]);
-
-
-
-    return result;
   },
-}), {
-  name: "StreamText", __streamingResultKey: "textStream", aggregator: (chunks: unknown[]) => {
-    console.log("aggregating chunks", chunks);
-    return chunks.reduce(
-      (aggregated: string, chunk) => {
-        if (typeof chunk === "object" && chunk !== null && "type" in chunk && chunk.type === "text-delta" && "textDelta" in chunk) {
-          return aggregated + (chunk.textDelta as string);
-        }
-        return aggregated;
-      }, "");
-  },
-}) as typeof ai.streamText;
+}), { name: "StreamText" }) as typeof ai.streamText;
 
 export const streamObject = createComponent(new Proxy(ai.streamObject, {
   apply: (target, thisArg, args) => {

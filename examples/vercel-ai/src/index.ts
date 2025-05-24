@@ -52,7 +52,7 @@ async function main() {
       const streamResult = await StreamingChat({
         prompt,
       });
-      for await (const chunk of streamResult.textStream) {
+      for await (const chunk of streamResult) {
         process.stdout.write(chunk);
       }
       process.stdout.write("\n");
