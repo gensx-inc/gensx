@@ -1,10 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { Workflow } from "@gensx/core";
 import {
-  generateObject,
-  generateText,
-  streamObject,
-  streamText,
+  generateText, streamText, streamObject, generateObject
 } from "@gensx/vercel-ai";
 import { tool } from "ai";
 import { z } from "zod";
@@ -16,6 +13,7 @@ const tools = {
       location: z.string().describe("The location to get the weather for"),
     }),
     execute: async ({ location }: { location: string }) => {
+      console.log("Executing weather tool with location:", location);
       await new Promise((resolve) => setTimeout(resolve, 100));
       return {
         location,
@@ -65,7 +63,7 @@ export async function BasicChatWithTools({ prompt }: { prompt: string }): Promis
 
 @Workflow()
 export async function StreamingChat({ prompt }: { prompt: string }) {
-  return streamText({
+  const result = streamText({
     messages: [
       {
         role: "system",
@@ -78,11 +76,19 @@ export async function StreamingChat({ prompt }: { prompt: string }) {
     ],
     model: openai("gpt-4o-mini"),
   });
+
+  const generator = async function* () {
+    for await (const chunk of result.textStream) {
+      yield chunk;
+    }
+  }
+
+  return generator();
 }
 
 @Workflow()
 export async function StreamingChatWithTools({ prompt }: { prompt: string }) {
-  return streamText({
+  const result = streamText({
     messages: [
       {
         role: "system",
@@ -97,6 +103,14 @@ export async function StreamingChatWithTools({ prompt }: { prompt: string }) {
     model: openai("gpt-4o-mini"),
     tools: tools,
   });
+
+  const generator = async function* () {
+    for await (const chunk of result.textStream) {
+      yield chunk;
+    }
+  }
+
+  return generator();
 }
 
 const trashBinSchema = z.object({
@@ -116,7 +130,7 @@ const trashBinSchema = z.object({
 });
 
 @Workflow()
-export async function StructuredOutput({ prompt }: { prompt: string })  {
+export async function StructuredOutput({ prompt }: { prompt: string }) {
   const result = await generateObject({
     messages: [
       {
@@ -136,7 +150,7 @@ export async function StructuredOutput({ prompt }: { prompt: string })  {
 
 @Workflow()
 export async function StreamingStructuredOutput({ prompt }: { prompt: string }) {
-  return streamObject({
+  const result = streamObject({
     messages: [
       {
         role: "system",
@@ -150,4 +164,12 @@ export async function StreamingStructuredOutput({ prompt }: { prompt: string }) 
     schema: trashBinSchema,
     model: openai("gpt-4o-mini"),
   });
+
+  const generator = async function* () {
+    for await (const chunk of result.partialObjectStream) {
+      yield chunk;
+    }
+  }
+
+  return generator();
 }

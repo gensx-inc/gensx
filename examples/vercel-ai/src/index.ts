@@ -3,8 +3,7 @@ import {
   BasicChatWithTools,
   StreamingChat,
   StreamingChatWithTools,
-  StreamingStructuredOutput,
-  StructuredOutput,
+  StreamingStructuredOutput
 } from "./workflows.js";
 
 // Get the workflow type and prompt from command line arguments
@@ -52,7 +51,7 @@ async function main() {
       const streamResult = await StreamingChat({
         prompt,
       });
-      for await (const chunk of streamResult.textStream) {
+      for await (const chunk of streamResult) {
         process.stdout.write(chunk);
       }
       process.stdout.write("\n");
@@ -63,20 +62,20 @@ async function main() {
       const streamToolsResult = await StreamingChatWithTools({
         prompt,
       });
-      for await (const chunk of streamToolsResult.textStream) {
+      for await (const chunk of streamToolsResult) {
         process.stdout.write(chunk);
       }
       process.stdout.write("\n");
       break;
 
-    case "structured":
-      console.log("Running structured output workflow...");
-      const structuredResult = await StructuredOutput({
-        prompt,
-      });
-      console.log("Response:");
-      console.log(JSON.stringify(structuredResult, null, 2));
-      break;
+    // case "structured":
+    //   console.log("Running structured output workflow...");
+    //   const structuredResult = await StructuredOutput({
+    //     prompt,
+    //   });
+    //   console.log("Response:");
+    //   console.log(JSON.stringify(structuredResult, null, 2));
+    //   break;
 
     case "structured-stream":
       console.log("Running streaming structured output workflow...");
@@ -84,10 +83,10 @@ async function main() {
         prompt,
       });
       console.log("Response:");
-      for await (const chunk of structuredStreamResult.textStream) {
-        process.stdout.write(chunk);
+      for await (const chunk of structuredStreamResult) {
+        console.clear();
+        console.log(chunk);
       }
-      process.stdout.write("\n");
       break;
 
     default:

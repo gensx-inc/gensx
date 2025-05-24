@@ -548,6 +548,150 @@ suite("component", () => {
 
       expect(collected).toBe("HELLO WORLD");
     });
+
+    test("handles Stream class with iterator method", async () => {
+      // Define a Stream class with iterator method
+      class Stream implements AsyncIterable<string> {
+        private data: string[];
+        public controller: AbortController;
+
+        constructor(data: string[]) {
+          this.data = data;
+          this.controller = new AbortController();
+        }
+
+        async *iterator() {
+          for (const item of this.data) {
+            await setTimeout(0);
+            yield item;
+          }
+        }
+
+        [Symbol.asyncIterator]() {
+          return this.iterator();
+        }
+      }
+
+      // Define a component that returns a Stream
+      async function streamClassComponent(): Promise<Stream> {
+        await setTimeout(0);
+        return new Stream(["hello", " ", "world"]);
+      }
+
+      // Apply decorator
+      const StreamClassComponent = gensx.Component()(streamClassComponent);
+
+      // Execute the component
+      const result = await StreamClassComponent({});
+
+      // Verify it has the expected properties and methods
+      expect(result).toHaveProperty('controller');
+      expect(result.controller).toBeInstanceOf(AbortController);
+      expect(typeof result.iterator).toBe('function');
+      expect(Symbol.asyncIterator in result).toBe(true);
+
+      // Collect streaming results
+      let streamedContent = "";
+      for await (const token of result) {
+        streamedContent += token;
+      }
+
+      expect(streamedContent).toBe("hello world");
+    });
+
+    test("handles AsyncGenerator directly", async () => {
+      // Define a component that returns an AsyncGenerator
+      async function asyncGeneratorComponent(): Promise<AsyncGenerator<string>> {
+        await setTimeout(0);
+        return (async function* () {
+          await setTimeout(0);
+          yield "hello";
+          await setTimeout(0);
+          yield " ";
+          await setTimeout(0);
+          yield "world";
+        })();
+      }
+
+      // Apply decorator
+      const AsyncGeneratorComponent = gensx.Component()(asyncGeneratorComponent);
+
+      // Execute the component
+      const result = await AsyncGeneratorComponent({});
+
+      // Verify it's an AsyncGenerator
+      expect(Symbol.asyncIterator in result).toBe(true);
+
+      // Collect streaming results
+      let streamedContent = "";
+      for await (const token of result) {
+        streamedContent += token;
+      }
+
+      expect(streamedContent).toBe("hello world");
+    });
+
+    test("handles object with Symbol.asyncIterator", async () => {
+      // Define a component that returns an object with Symbol.asyncIterator
+      async function symbolAsyncIteratorComponent(): Promise<{ [Symbol.asyncIterator]: () => AsyncIterator<string> }> {
+        await setTimeout(0);
+        return {
+          [Symbol.asyncIterator]: async function* () {
+            await setTimeout(0);
+            yield "hello";
+            await setTimeout(0);
+            yield " ";
+            await setTimeout(0);
+            yield "world";
+          }
+        };
+      }
+
+      // Apply decorator
+      const SymbolAsyncIteratorComponent = gensx.Component()(symbolAsyncIteratorComponent);
+
+      // Execute the component
+      const result = await SymbolAsyncIteratorComponent({});
+
+      // Verify it has Symbol.asyncIterator
+      expect(Symbol.asyncIterator in result).toBe(true);
+
+      // Collect streaming results
+      let streamedContent = "";
+      for await (const token of result) {
+        streamedContent += token;
+      }
+
+      expect(streamedContent).toBe("hello world");
+    });
+
+    test("handles mixed content types in streams", async () => {
+      // Define a component that returns mixed content types
+      async function* mixedContentComponent(): AsyncGenerator<string | number | boolean> {
+        await setTimeout(0);
+        yield "hello";
+        await setTimeout(0);
+        yield 42;
+        await setTimeout(0);
+        yield true;
+        await setTimeout(0);
+        yield " world";
+      }
+
+      // Apply decorator
+      const MixedContentComponent = gensx.Component()(mixedContentComponent);
+
+      // Execute the component
+      const result = await MixedContentComponent({});
+
+      // Collect streaming results
+      const collected: (string | number | boolean)[] = [];
+      for await (const token of result) {
+        collected.push(token);
+      }
+
+      expect(collected).toEqual(["hello", 42, true, " world"]);
+    });
   });
 
   suite("createComponent and createWorkflow helpers", () => {

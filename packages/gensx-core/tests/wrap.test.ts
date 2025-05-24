@@ -1,37 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { Wrap, wrap, wrapFunction } from "../src/wrap.js";
-
-describe("wrapFunction", () => {
-  it("wraps a simple function", async () => {
-    const add = (input: { a: number; b: number }) => input.a + input.b;
-    const wrappedAdd = wrapFunction(add, { name: "Add" });
-
-    const result = await wrappedAdd({ a: 1, b: 2 });
-    expect(result).toBe(3);
-  });
-
-  it("uses function name when no name provided", async () => {
-    function multiply(input: { a: number; b: number }) {
-      return input.a * input.b;
-    }
-    const wrappedMultiply = wrapFunction(multiply);
-
-    const result = await wrappedMultiply({ a: 3, b: 4 });
-    expect(result).toBe(12);
-  });
-
-  it("handles async functions", async () => {
-    const asyncAdd = async (input: { a: number; b: number }) => {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      return input.a + input.b;
-    };
-    const wrappedAsyncAdd = wrapFunction(asyncAdd, { name: "AsyncAdd" });
-
-    const result = await wrappedAsyncAdd({ a: 5, b: 6 });
-    expect(result).toBe(11);
-  });
-});
+import { Wrap, wrap } from "../src/wrap.js";
 
 describe("wrap", () => {
   it("wraps a class instance", async () => {

@@ -7,7 +7,7 @@
 
 import type { ComponentOpts, WrapOptions } from "@gensx/core";
 
-import { wrap, wrapFunction } from "@gensx/core";
+import { createComponent, wrap } from "@gensx/core";
 import { OpenAI as OriginalOpenAI } from "openai";
 import { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.mjs";
 
@@ -100,7 +100,7 @@ export const wrapOpenAI = (
             boundRunTools,
           );
 
-          const fn = wrapFunction(
+          const fn = createComponent(
             (
               ...params: Parameters<
                 typeof openAiInstance.beta.chat.completions.runTools
@@ -125,7 +125,7 @@ export const wrapOpenAI = (
 
                   // Now we can safely define the $callback property
                   Object.defineProperty(newTool, "$callback", {
-                    value: wrapFunction(boundCallback, {
+                    value: createComponent(boundCallback, {
                       name: `Tool.${tool.function.name}`,
                     }),
                   });
@@ -142,7 +142,7 @@ export const wrapOpenAI = (
                     ...runnableTool,
                     function: {
                       ...runnableTool.function,
-                      function: wrapFunction(
+                      function: createComponent(
                         runnableTool.function.function as (
                           input: object,
                         ) => unknown,

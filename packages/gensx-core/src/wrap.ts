@@ -54,7 +54,7 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
           // Bind the original `this` so SDK internals keep working
           const boundFn = value.bind(origTarget) as (input: object) => unknown;
           const componentOpts = opts.getComponentOpts?.(path, boundFn);
-          return wrapFunction(boundFn, {
+          return createComponent(boundFn, {
             name: componentName,
             ...componentOpts,
           });
@@ -83,42 +83,6 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
   const rootName = hasCustomConstructor ? sdk.constructor.name : "sdk";
 
   return makeProxy(sdk, [rootName]);
-}
-
-/**
- * Wraps a single function into a Gensx component.
- * This allows you to use any function as a Gensx component, making it compatible
- * with the Gensx workflow system.
- *
- * @param fn The function to wrap
- * @param name Optional name for the component. If not provided, the function name will be used.
- * @param componentOpts Optional component options to apply to the wrapped function.
- * @returns A Gensx component that wraps the provided function
- *
- * @example
- * ```tsx
- * const MyFunction = (input: string) => {
- *   return `Hello ${input}!`;
- * };
- *
- * // Using function name
- * const MyComponent = wrapFunction(MyFunction);
- *
- * // Or with custom name
- * const MyComponent = wrapFunction(MyFunction, "CustomName");
- *
- * // Use it in a workflow
- * const result = await MyComponent({ input: "World" });
- * // result = "Hello World!"
- * ```
- */
-export function wrapFunction<TInput extends object, TOutput>(
-  fn: (input: TInput) => Promise<TOutput> | TOutput,
-  componentOpts?: Partial<ComponentOpts>,
-) {
-  const componentName =
-    componentOpts?.name ?? (fn.name || "AnonymousComponent");
-  return createComponent(fn, { ...componentOpts, name: componentName });
 }
 
 /**
