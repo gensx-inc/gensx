@@ -1,10 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { Workflow } from "@gensx/core";
 import {
-  generateObject,
-  generateText,
-  streamObject,
-  streamText,
+  generateText, streamText
 } from "@gensx/vercel-ai";
 import { tool } from "ai";
 import { z } from "zod";
@@ -80,74 +77,74 @@ export async function StreamingChat({ prompt }: { prompt: string }) {
   });
 }
 
-@Workflow()
-export async function StreamingChatWithTools({ prompt }: { prompt: string }) {
-  return streamText({
-    messages: [
-      {
-        role: "system",
-        content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    maxSteps: 10,
-    model: openai("gpt-4o-mini"),
-    tools: tools,
-  });
-}
+// @Workflow()
+// export async function StreamingChatWithTools({ prompt }: { prompt: string }) {
+//   return streamText({
+//     messages: [
+//       {
+//         role: "system",
+//         content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+//       },
+//       {
+//         role: "user",
+//         content: prompt,
+//       },
+//     ],
+//     maxSteps: 10,
+//     model: openai("gpt-4o-mini"),
+//     tools: tools,
+//   });
+// }
 
-const trashBinSchema = z.object({
-  bins: z.array(
-    z.object({
-      location: z.string().describe("Location of the trash bin"),
-      rating: z.number().describe("Rating from 1-10"),
-      review: z.string().describe("A sassy review of the trash bin"),
-      bestFinds: z
-        .array(z.string())
-        .describe("List of the best items found in this bin"),
-    }),
-  ),
-  overallVerdict: z
-    .string()
-    .describe("Overall verdict on the neighborhood's trash quality"),
-});
+// const trashBinSchema = z.object({
+//   bins: z.array(
+//     z.object({
+//       location: z.string().describe("Location of the trash bin"),
+//       rating: z.number().describe("Rating from 1-10"),
+//       review: z.string().describe("A sassy review of the trash bin"),
+//       bestFinds: z
+//         .array(z.string())
+//         .describe("List of the best items found in this bin"),
+//     }),
+//   ),
+//   overallVerdict: z
+//     .string()
+//     .describe("Overall verdict on the neighborhood's trash quality"),
+// });
 
-@Workflow()
-export async function StructuredOutput({ prompt }: { prompt: string })  {
-  const result = await generateObject({
-    messages: [
-      {
-        role: "system",
-        content: "you are a trash eating infrastructure engineer embodied as a racoon. Users will send you some prompt but you should just respond with JSON representing some trash bins in the neighborhood Be sassy and fun and try to make the bins relevant to the user's prompt.",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    schema: trashBinSchema,
-    model: openai("gpt-4o-mini"),
-  });
-  return result.object;
-}
+// @Workflow()
+// export async function StructuredOutput({ prompt }: { prompt: string }) {
+//   const result = await generateObject({
+//     messages: [
+//       {
+//         role: "system",
+//         content: "you are a trash eating infrastructure engineer embodied as a racoon. Users will send you some prompt but you should just respond with JSON representing some trash bins in the neighborhood Be sassy and fun and try to make the bins relevant to the user's prompt.",
+//       },
+//       {
+//         role: "user",
+//         content: prompt,
+//       },
+//     ],
+//     schema: trashBinSchema,
+//     model: openai("gpt-4o-mini"),
+//   });
+//   return result.object;
+// }
 
-@Workflow()
-export async function StreamingStructuredOutput({ prompt }: { prompt: string }) {
-  return streamObject({
-    messages: [
-      {
-        role: "system",
-        content: "you are a trash eating infrastructure engineer embodied as a racoon. Users will send you some prompt but you should just respond with JSON representing some trash bins in the neighborhood Be sassy and fun and try to make the bins relevant to the user's prompt.",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    schema: trashBinSchema,
-    model: openai("gpt-4o-mini"),
-  });
-}
+// @Workflow()
+// export async function StreamingStructuredOutput({ prompt }: { prompt: string }) {
+//   return streamObject({
+//     messages: [
+//       {
+//         role: "system",
+//         content: "you are a trash eating infrastructure engineer embodied as a racoon. Users will send you some prompt but you should just respond with JSON representing some trash bins in the neighborhood Be sassy and fun and try to make the bins relevant to the user's prompt.",
+//       },
+//       {
+//         role: "user",
+//         content: prompt,
+//       },
+//     ],
+//     schema: trashBinSchema,
+//     model: openai("gpt-4o-mini"),
+//   });
+// }

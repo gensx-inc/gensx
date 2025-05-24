@@ -1,16 +1,21 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
+import { setTimeout } from "timers/promises";
+
 import type {
   ComponentOpts,
   ComponentOpts as OriginalComponentOpts,
   DecoratorComponentOpts,
-  DecoratorWorkflowOpts,
-  MaybePromise,
-  WorkflowOpts,
+  DecoratorWorkflowOpts, WorkflowOpts
 } from "./types.js";
 
 import serializeErrorPkg from "@common.js/serialize-error";
 const { serializeError } = serializeErrorPkg;
 
-import { ExecutionContext, getCurrentContext, withContext } from "./context.js";
+
+import { ExecutionContext, getContextSnapshot, getCurrentContext, getCurrentNodeCheckpointManager, RunInContext, withContext } from "./context.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
@@ -58,14 +63,14 @@ export function Component(decoratorOpts?: DecoratorComponentOpts) {
       | ClassAccessorDecoratorContext
       | ClassFieldDecoratorContext
       | ClassDecoratorContext,
-  ): (props: P) => MaybePromise<R> {
+  ): (props: P) => R extends Promise<infer U> ? U : R {
     // Only wrap class methods
     if (context && context.kind !== "method") {
       console.warn("Component decorator can only be applied to class methods.");
-      return target;
+      return target as (props: P) => R extends Promise<infer U> ? U : R;
     }
 
-    return createComponent(target, decoratorOpts);
+    return createComponent(target, decoratorOpts) as (props: P) => R extends Promise<infer U> ? U : R;
   };
 }
 
@@ -77,14 +82,14 @@ export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
       | ClassAccessorDecoratorContext
       | ClassDecoratorContext
       | ClassFieldDecoratorContext,
-  ): (props: P) => MaybePromise<R> {
+  ): (props: P) => R extends Promise<infer U> ? U : R {
     // Only wrap class methods
     if (context && context.kind !== "method") {
       console.warn("Workflow decorator can only be applied to class methods.");
-      return target;
+      return target as (props: P) => R extends Promise<infer U> ? U : R;
     }
 
-    return createWorkflow(target, decoratorOpts);
+    return createWorkflow(target, decoratorOpts) as (props: P) => R extends Promise<infer U> ? U : R;
   };
 }
 
@@ -104,10 +109,10 @@ export function createComponent<P extends object, R>(
     );
   }
 
-  const ComponentFn = async (
+  const ComponentFn = (
     props: P,
     runtimeOpts?: ComponentOpts,
-  ): Promise<R> => {
+  ): R => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -145,108 +150,55 @@ export function createComponent<P extends object, R>(
       checkpointManager.addMetadata(nodeId, resolvedComponentOpts.metadata);
     }
 
+    function handleResultValue(value: unknown, runInContext: RunInContext) {
+      if (!Array.isArray(value) &&
+        typeof value === "object" &&
+        value != null &&
+        resolvedComponentOpts.__streamingResultKey !== undefined &&
+        (isAsyncIterable(
+          (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey]
+        ) || isReadableStream(
+          (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey]
+        ))) {
+        const streamingResult = captureAsyncGenerator(
+          (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey] as AsyncIterable<unknown>,
+          runInContext,
+          { streamKey: resolvedComponentOpts.__streamingResultKey, aggregator: resolvedComponentOpts.aggregator, fullValue: value },
+        );
+
+        (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey] = streamingResult;
+        return value;
+      }
+
+      if (isAsyncIterable(value) || isReadableStream(value)) {
+        const streamingResult = captureAsyncGenerator(
+          value as AsyncIterable<unknown>,
+          runInContext,
+          { aggregator: resolvedComponentOpts.aggregator, fullValue: value },
+        );
+
+        return streamingResult;
+      }
+
+      checkpointManager.completeNode(nodeId, value);
+      return value;
+    }
+
+
     try {
-      const result = await context.withCurrentNode(nodeId, () => {
+      let runInContext: RunInContext;
+      const result = context.withCurrentNode(nodeId, () => {
+        runInContext = getContextSnapshot();
         return target(props);
       });
 
-      // Handle streaming results
-      if (typeof result === "object" && result !== null &&
-        (Symbol.asyncIterator in result || ('iterator' in result && typeof result.iterator === 'function'))) {
-        // Create a wrapper async iterator that updates checkpoints
-        let iterator: AsyncIterator<unknown>;
-
-        // Handle different types of stream objects
-        if ('iterator' in result && typeof result.iterator === 'function') {
-          // Handle Stream class with iterator method
-          iterator = (result.iterator as () => AsyncIterator<unknown>)();
-        } else if (Symbol.asyncIterator in result) {
-          // Handle standard AsyncIterable
-          iterator = (result as AsyncIterable<unknown>)[Symbol.asyncIterator]();
-        } else {
-          throw new Error('Invalid stream object: missing iterator');
-        }
-
-        let accumulatedResult: unknown[] | string | null = null;
-
-        // Create a wrapper that preserves the original stream's properties
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const wrappedStream = Object.create(
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          Object.getPrototypeOf(result as object),
-          {
-            ...Object.getOwnPropertyDescriptors(result as object),
-            [Symbol.asyncIterator]: {
-              value: async function* () {
-                try {
-                  let lastUpdateNodeCall = performance.now();
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                  while (true) {
-                    const nextResult = await iterator.next();
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                    const value = nextResult.value;
-                    const done = nextResult.done ?? false;
-
-                    if (done) {
-                      // Update final checkpoint with accumulated result
-                      checkpointManager.completeNode(nodeId, accumulatedResult);
-                      return;
-                    }
-
-                    // Accumulate the result
-                    if (typeof value === "string") {
-                      if (accumulatedResult === null) {
-                        accumulatedResult = value;
-                      } else {
-                        if (typeof accumulatedResult === "string") {
-                          accumulatedResult += value;
-                        } else {
-                          // This would only happen if the result changed from string to object part way through.
-                          accumulatedResult.push(value);
-                        }
-                      }
-                    } else {
-                      if (accumulatedResult === null) {
-                        accumulatedResult = [value];
-                      } else {
-                        if (Array.isArray(accumulatedResult)) {
-                          accumulatedResult.push(value);
-                        } else {
-                          // This would only happen if the result changed from an object to string part way through.
-                          accumulatedResult = [accumulatedResult, value];
-                        }
-                      }
-                    }
-
-                    // Update checkpoint with current accumulated result, but we don't want to hammer
-                    // the server, so we only do it every 200ms.
-                    if (performance.now() - lastUpdateNodeCall > 200) {
-                      checkpointManager.updateNode(nodeId, { output: accumulatedResult });
-                      lastUpdateNodeCall = performance.now();
-                    }
-
-                    yield value;
-                  }
-                } catch (error) {
-                  if (error instanceof Error) {
-                    checkpointManager.addMetadata(nodeId, {
-                      error: serializeError(error),
-                    });
-                    checkpointManager.completeNode(nodeId, undefined);
-                  }
-                  throw error;
-                }
-              }
-            }
-          }
-        );
-
-        return wrappedStream as unknown as R;
+      if (result instanceof Promise) {
+        return result.then((value) => {
+          return handleResultValue(value, runInContext);
+        }) as R;
       }
 
-      // For non-streaming results, complete the node as before
-      checkpointManager.completeNode(nodeId, result);
-      return result;
+      return handleResultValue(result, runInContext!) as R;
     } catch (error) {
       if (error instanceof Error) {
         checkpointManager.addMetadata(nodeId, {
@@ -272,15 +224,16 @@ export function createComponent<P extends object, R>(
 export function createWorkflow<P extends object, R>(
   target: (props: P) => R,
   workflowOpts?: WorkflowOpts | string,
-): (props: P) => MaybePromise<R> {
+): (props: P) => Promise<Awaited<R>> {
   // Use the overridden name from componentOpts if provided
   const configuredWorkflowName =
     typeof workflowOpts === "string"
       ? workflowOpts
       : (workflowOpts?.name ?? target.name);
 
-  const WorkflowFn = async (props: P, runtimeOpts?: WorkflowOpts) => {
+  const WorkflowFn = async (props: P, runtimeOpts?: WorkflowOpts): Promise<Awaited<R>> => {
     const context = new ExecutionContext({});
+    await context.init();
 
     const defaultPrintUrl = !Boolean(process.env.CI);
 
@@ -303,10 +256,7 @@ export function createWorkflow<P extends object, R>(
     const component = createComponent(target);
 
     try {
-      const result = await withContext(context, async () => {
-        const result = await component(props, runtimeOpts);
-        return result;
-      });
+      const result = await withContext(context, () => component(props, runtimeOpts));
 
       const rootId = workflowContext.checkpointManager.root?.id;
       if (rootId) {
@@ -339,3 +289,175 @@ export function createWorkflow<P extends object, R>(
 
   return WorkflowFn;
 }
+
+function captureAsyncGenerator(
+  iterable: AsyncIterable<unknown>,
+  runInContext: RunInContext,
+  { streamKey, aggregator, fullValue }: { streamKey?: string, aggregator?: (chunks: unknown[]) => unknown, fullValue: unknown },
+) {
+  aggregator ??= (chunks: unknown[]) => {
+    // Assume if the first chunk is a string, we're streaming text
+    if (typeof chunks[0] === "string") {
+      return chunks.join("");
+    }
+    return chunks;
+  }
+
+  if (isReadableStream(iterable)) {
+    return captureReadableStream(iterable, runInContext, { streamKey, aggregator, fullValue });
+  }
+  const iterator = iterable[Symbol.asyncIterator]();
+  const wrappedIterator = captureAsyncIterator(iterator, runInContext, { streamKey, aggregator, fullValue });
+  iterable[Symbol.asyncIterator] = () => wrappedIterator;
+  return iterable;
+}
+
+function captureReadableStream(
+  stream: ReadableStream<unknown>,
+  runInContext: (fn: (...args: unknown[]) => unknown) => unknown,
+  { streamKey, aggregator, fullValue }: { streamKey?: string, aggregator: (chunks: unknown[]) => unknown, fullValue: unknown },
+) {
+  const reader = stream.getReader();
+  let done = false;
+  const chunks: unknown[] = [];
+
+  let lastUpdateNodeCall = performance.now();
+  const capturedStream = new ReadableStream({
+    async start(controller) {
+      try {
+
+        while (!done) {
+          await runInContext(async () => {
+            const result = await reader.read();
+            if (result.done) {
+              done = true;
+              const { completeNode } = getCurrentNodeCheckpointManager();
+              const aggregatedValue = aggregator(chunks);
+              if (streamKey) {
+                (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
+                completeNode(fullValue);
+              } else {
+                completeNode(aggregatedValue);
+              }
+              controller.close();
+              return;
+            }
+            chunks.push(result.value);
+            // Only update the node every 200ms to avoid hammering the server
+            if (performance.now() - lastUpdateNodeCall > 200) {
+              await setTimeout(1000);
+              const { updateNode } = getCurrentNodeCheckpointManager();
+              const aggregatedValue = aggregator(chunks);
+              if (streamKey) {
+                (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
+                updateNode({ output: fullValue });
+              } else {
+                updateNode({ output: aggregatedValue });
+              }
+              lastUpdateNodeCall = performance.now();
+            }
+            controller.enqueue(result.value as ArrayBufferView);
+          });
+        }
+      } catch (e) {
+        const { completeNode, addMetadata } = getCurrentNodeCheckpointManager();
+        addMetadata({ error: serializeError(e) });
+        const aggregatedValue = aggregator(chunks);
+        if (streamKey) {
+          (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
+          completeNode(fullValue);
+        } else {
+          completeNode(aggregatedValue);
+        }
+        throw e;
+      }
+    },
+    cancel(reason) {
+      runInContext(() => {
+        if (!done) {
+          const { completeNode, addMetadata } = getCurrentNodeCheckpointManager();
+          addMetadata({ cancelled: true });
+          completeNode(aggregator(chunks));
+        }
+        return reader.cancel(reason);
+      });
+    },
+  });
+
+  return capturedStream;
+}
+
+async function* captureAsyncIterator(
+  iterator: AsyncIterator<unknown, unknown, undefined>,
+  runInContext: RunInContext,
+  { streamKey, aggregator, fullValue }: { streamKey?: string, aggregator: (chunks: unknown[]) => unknown, fullValue: unknown },
+) {
+  const chunks: unknown[] = [];
+
+  let lastUpdateNodeCall = performance.now();
+  try {
+    let isDone = false;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    while (!isDone) {
+      const value = await runInContext(async () => {
+        const { value, done } = await iterator.next();
+        if (done) {
+          const { completeNode } = getCurrentNodeCheckpointManager();
+          const aggregatedValue = aggregator(chunks);
+          if (streamKey) {
+            (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
+            completeNode(fullValue);
+          } else {
+            completeNode(aggregatedValue);
+          }
+          isDone = true;
+          return;
+        }
+        chunks.push(value);
+        // Only update the node every 200ms to avoid hammering the server
+        if (performance.now() - lastUpdateNodeCall > 200) {
+          const { updateNode } = getCurrentNodeCheckpointManager();
+          const aggregatedValue = aggregator(chunks);
+          if (streamKey) {
+            (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
+            updateNode({ output: fullValue });
+          } else {
+            updateNode({ output: aggregatedValue });
+          }
+          lastUpdateNodeCall = performance.now();
+        }
+        return value;
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (isDone) {
+        break;
+      }
+
+      yield value;
+    }
+  } catch (e) {
+    const { completeNode, addMetadata } = getCurrentNodeCheckpointManager();
+    addMetadata({ error: serializeError(e) });
+    const aggregatedValue = aggregator(chunks);
+    if (streamKey) {
+      (fullValue as Record<string, unknown>)[streamKey] = aggregatedValue;
+      completeNode(fullValue);
+    } else {
+      completeNode(aggregatedValue);
+    }
+    throw e;
+  }
+}
+
+export const isReadableStream = (x: unknown): x is ReadableStream =>
+  x != null &&
+  typeof x === "object" &&
+  "getReader" in x &&
+  typeof x.getReader === "function";
+
+export const isAsyncIterable = (x: unknown): x is AsyncIterable<unknown> =>
+  x != null &&
+  typeof x === "object" &&
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  typeof (x as any)[Symbol.asyncIterator] === "function";

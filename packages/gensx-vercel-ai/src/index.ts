@@ -1,6 +1,13 @@
-import type { LanguageModelV1Middleware, Tool, ToolExecutionOptions } from "ai";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-import { createComponent } from "@gensx/core";
+
+
+import type { Tool, ToolExecutionOptions } from "ai";
+
+import { ComponentOpts, createComponent, wrap } from "@gensx/core";
 import * as ai from "ai";
 
 // Helper function to wrap tools in GSX components
@@ -26,7 +33,7 @@ function wrapTools<T extends Record<string, Tool>>(
             async (toolArgs) => {
               if (!tool.execute)
                 throw new Error(`Tool ${name} has no execute function`);
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
               return await tool.execute(toolArgs, options);
             },
             { name: `Tool_${name}` },
@@ -44,100 +51,81 @@ function wrapTools<T extends Record<string, Tool>>(
   ) as unknown as T;
 }
 
-export const gensxMiddleware: LanguageModelV1Middleware = {
-  wrapGenerate: async ({ doGenerate, params }) => {
-    const DoGenerateComponent = createComponent(
-      async (_params) => {
-        const result = await doGenerate();
-        return result;
-      },
-      { name: "DoGenerate" },
-    );
+export const streamText = createComponent(new Proxy(ai.streamText, {
+  apply: (target, thisArg, args) => {
+    const [first, ...rest] = args;
 
-    const result = await DoGenerateComponent(params);
+    const wrappedTools = wrapTools(first.tools);
+
+    const result = Reflect.apply(target, thisArg, [
+      {
+        ...first,
+        model: wrapVercelAIModel(first.model),
+        tools: wrappedTools,
+      },
+      ...rest,
+    ]);
+
+
 
     return result;
   },
-  wrapStream: async ({ doStream, params }) => {
-    const DoStreamComponent = createComponent(
-      async (_params) => {
-        const result = await doStream();
-        return result;
+}), {
+  name: "StreamText", __streamingResultKey: "textStream", aggregator: (chunks: unknown[]) => {
+    console.log("aggregating chunks", chunks);
+    return chunks.reduce(
+      (aggregated: string, chunk) => {
+        if (typeof chunk === "object" && chunk !== null && "type" in chunk && chunk.type === "text-delta" && "textDelta" in chunk) {
+          return aggregated + (chunk.textDelta as string);
+        }
+        return aggregated;
+      }, "");
+  },
+}) as typeof ai.streamText;
+
+export const streamObject = createComponent(new Proxy(ai.streamObject, {
+  apply: (target, thisArg, args) => {
+    const [first, ...rest] = args;
+
+    return Reflect.apply(target, thisArg, [
+      {
+        ...first,
+        model: wrapVercelAIModel(first.model),
       },
-      { name: "DoStream" },
-    );
-
-    const result = await DoStreamComponent(params);
-
-    return result;
+      ...rest,
+    ]);
   },
-};
+}), { name: "StreamObject" }) as typeof ai.streamObject;
 
-export const streamText = createComponent(
-  (params: Parameters<typeof ai.streamText>[0]) => {
-    const wrappedModel = ai.wrapLanguageModel({
-      model: params.model,
-      middleware: gensxMiddleware,
-    });
+export const generateObject = createComponent(new Proxy(ai.generateObject, {
+  apply: (target, thisArg, args) => {
+    const [first, ...rest] = args;
 
-    const wrappedTools = wrapTools(params.tools);
-
-    return ai.streamText({
-      ...params,
-      model: wrappedModel,
-      tools: wrappedTools,
-    });
+    return Reflect.apply(target, thisArg, [
+      {
+        ...first,
+        model: wrapVercelAIModel(first.model),
+      },
+      ...rest,
+    ]);
   },
-  { name: "StreamText" },
-) as unknown as typeof ai.streamText;
+}), { name: "GenerateObject" }) as typeof ai.generateObject;
 
-export const streamObject = createComponent(
-  (params: Parameters<typeof ai.streamObject>[0]) => {
-    const wrappedModel = ai.wrapLanguageModel({
-      model: params.model,
-      middleware: gensxMiddleware,
-    });
+export const generateText = createComponent(new Proxy(ai.generateText, {
+  apply: (target, thisArg, args) => {
+    const [first, ...rest] = args;
 
-    return ai.streamObject({
-      ...params,
-      model: wrappedModel,
-    });
+    const wrappedTools = wrapTools(first.tools);
+
+    return Reflect.apply(target, thisArg, [
+      {
+        ...first,
+        model: wrapVercelAIModel(first.model),
+        tools: wrappedTools,
+      }, ...rest,
+    ]);
   },
-  { name: "StreamObject" },
-) as unknown as typeof ai.streamObject;
-
-export const generateObject = createComponent(
-  async (params: Parameters<typeof ai.generateObject>[0]) => {
-    const wrappedModel = ai.wrapLanguageModel({
-      model: params.model,
-      middleware: gensxMiddleware,
-    });
-
-    return ai.generateObject({
-      ...params,
-      model: wrappedModel,
-    } as Parameters<typeof ai.generateObject>[0]);
-  },
-  { name: "GenerateObject" },
-) as unknown as typeof ai.generateObject;
-
-export const generateText = createComponent(
-  async (params: Parameters<typeof ai.generateText>[0]) => {
-    const wrappedModel = ai.wrapLanguageModel({
-      model: params.model,
-      middleware: gensxMiddleware,
-    });
-
-    const wrappedTools = wrapTools(params.tools);
-
-    return ai.generateText({
-      ...params,
-      model: wrappedModel,
-      tools: wrappedTools,
-    });
-  },
-  { name: "GenerateText" },
-) as unknown as typeof ai.generateText;
+}), { name: "GenerateText" }) as typeof ai.generateText;
 
 export const embed = createComponent(ai.embed, {
   name: "embed",
@@ -150,3 +138,86 @@ export const embedMany = createComponent(ai.embedMany, {
 export const generateImage = createComponent(ai.experimental_generateImage, {
   name: "generateImage",
 }) as unknown as typeof ai.experimental_generateImage;
+
+export const wrapVercelAIModel = <T extends object>(
+  languageModel: T,
+  componentOpts?: ComponentOpts,
+): T => {
+  assertIsLanguageModel(languageModel);
+
+  const componentName = componentOpts?.name ?? languageModel.constructor.name;
+  return new Proxy(languageModel, {
+    get(target, propKey, receiver) {
+      const originalValue = Reflect.get(target, propKey, receiver);
+      if (typeof originalValue === "function") {
+        let aggregator: ((chunks: any[]) => unknown) | undefined;
+        let __streamingResultKey: string | undefined;
+        if (propKey === "doStream") {
+          __streamingResultKey = "stream";
+          aggregator = (chunks: { type: 'text-delta' | 'tool-call' | 'finish' | 'something-else', textDelta: string, usage: unknown, finishReason: unknown }[]) => {
+            return chunks.reduce(
+              (aggregated, chunk) => {
+                if (chunk.type === "text-delta") {
+                  return {
+                    ...aggregated,
+                    text: aggregated.text + chunk.textDelta,
+                  };
+                } else if (chunk.type === "tool-call") {
+                  return {
+                    ...aggregated,
+                    ...chunk,
+                  };
+                } else if (chunk.type === "finish") {
+                  return {
+                    ...aggregated,
+                    usage: chunk.usage,
+                    finishReason: chunk.finishReason,
+                  };
+                } else {
+                  return aggregated;
+                }
+              },
+              {
+                text: "",
+              },
+            );
+          };
+        }
+        return createComponent(originalValue.bind(target) as (input: object) => unknown, {
+          name: componentName,
+          ...componentOpts,
+          aggregator,
+          __streamingResultKey,
+        });
+      } else if (
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        originalValue != null &&
+        !Array.isArray(originalValue) &&
+        !(originalValue instanceof Date) &&
+        typeof originalValue === "object"
+      ) {
+        return wrap(
+          originalValue,
+          {
+            prefix: [componentName, propKey.toString()].join(".")
+          }
+        );
+      } else {
+        return originalValue;
+      }
+    },
+  });
+};
+
+function assertIsLanguageModel(languageModel: object): asserts languageModel is ai.LanguageModelV1 {
+  if (
+    !("doStream" in languageModel) ||
+    typeof languageModel.doStream !== "function" ||
+    !("doGenerate" in languageModel) ||
+    typeof languageModel.doGenerate !== "function"
+  ) {
+    throw new Error(
+      `Invalid model. Is this a LanguageModelV1 instance?`
+    );
+  }
+}

@@ -1,3 +1,4 @@
+import { ExecutionNode } from "./checkpoint.js";
 import { MaybePromise } from "./types.js";
 import {
   createWorkflowContext,
@@ -24,6 +25,10 @@ export class ExecutionContext {
     public onComplete?: () => MaybePromise<void>,
   ) {
     this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext();
+  }
+
+  init() {
+    return contextManager.init();
   }
 
   withContext(
@@ -63,8 +68,8 @@ export class ExecutionContext {
 
   withCurrentNode<T>(
     nodeId: string,
-    fn: () => MaybePromise<T>,
-  ): MaybePromise<T> {
+    fn: () => T,
+  ): T {
     return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
   }
 }
@@ -93,7 +98,7 @@ const globalObj: Record<symbol, unknown> =
 globalObj[CONTEXT_STORAGE_SYMBOL] ??= null;
 
 // Try to import AsyncLocalStorage if available (Node.js environment)
-let AsyncLocalStorage: (new <T>() => AsyncLocalStorageType<T>) | undefined;
+let AsyncLocalStorage: { new <T>(): AsyncLocalStorageType<T>; snapshot: () => (fn: (...args: unknown[]) => unknown) => unknown } | undefined;
 
 const configureAsyncLocalStorage = (async () => {
   try {
@@ -126,6 +131,10 @@ const setGlobalContext = (context: ExecutionContext): void => {
 
 // Update contextManager implementation
 const contextManager = {
+  async init() {
+    await configureAsyncLocalStorage;
+  },
+
   getCurrentContext(): ExecutionContext {
     const storage = globalObj[
       CONTEXT_STORAGE_SYMBOL
@@ -137,7 +146,7 @@ const contextManager = {
     return getGlobalContext();
   },
 
-  run<T>(context: ExecutionContext, fn: () => Promise<T>): Promise<T> {
+  run<T>(context: ExecutionContext, fn: () => T): T {
     const storage = globalObj[
       CONTEXT_STORAGE_SYMBOL
     ] as AsyncLocalStorageType<ExecutionContext> | null;
@@ -152,21 +161,70 @@ const contextManager = {
       setGlobalContext(prevContext);
     }
   },
+
+  getContextSnapshot(): RunInContext {
+    const storage = globalObj[
+      CONTEXT_STORAGE_SYMBOL
+    ] as AsyncLocalStorageType<ExecutionContext> | null;
+    if (storage) {
+      return AsyncLocalStorage?.snapshot() as RunInContext;
+    }
+    const context = getGlobalContext();
+    return ((fn: () => unknown) => {
+      return contextManager.run(context, fn);
+    }) as RunInContext;
+  },
 };
 
+export type RunInContext = <T>(fn: () => T) => T;
+
 // Update withContext to use contextManager.run
-export async function withContext<T>(
+export function withContext<T>(
   context: ExecutionContext,
-  fn: () => MaybePromise<T>,
-): Promise<T> {
-  await configureAsyncLocalStorage;
-  return contextManager.run(context, async () => {
-    const result = await fn();
-    return result as T;
-  });
+  fn: () => T,
+): T {
+  return contextManager.run(context, fn);
 }
 
 // Export for testing or advanced use cases
 export function getCurrentContext(): ExecutionContext {
   return contextManager.getCurrentContext();
+}
+
+export function getContextSnapshot(): RunInContext {
+  return contextManager.getContextSnapshot();
+}
+
+export function getCurrentNodeCheckpointManager() {
+  const context = getCurrentContext();
+  const workflowContext = context.getWorkflowContext();
+  const { checkpointManager } = workflowContext;
+  const currentNodeId = context.getCurrentNodeId();
+
+  if (!currentNodeId) {
+    console.warn("No current node found");
+    return {
+      completeNode: () => {
+        // noop
+      },
+      updateNode: () => {
+        // noop
+      },
+      addMetadata: () => {
+        // noop
+      },
+    };
+  }
+
+  return {
+    completeNode: (output: unknown) => {
+      checkpointManager.completeNode(currentNodeId, output);
+    },
+    updateNode: (updates: Partial<ExecutionNode>) => {
+      checkpointManager.updateNode(currentNodeId, updates);
+    },
+    addMetadata: (metadata: Record<string, unknown>) => {
+      checkpointManager.addMetadata(currentNodeId, metadata);
+    },
+  }
 }
