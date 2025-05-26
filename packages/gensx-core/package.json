@@ -24,24 +24,6 @@
       },
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.cjs"
-    },
-    "./jsx-runtime": {
-      "types": {
-        "import": "./dist/esm/jsx-runtime.d.ts",
-        "require": "./dist/cjs/jsx-runtime.d.ts",
-        "default": "./dist/cjs/jsx-runtime.d.ts"
-      },
-      "import": "./dist/esm/jsx-runtime.js",
-      "require": "./dist/cjs/jsx-runtime.cjs"
-    },
-    "./jsx-dev-runtime": {
-      "types": {
-        "import": "./dist/esm/jsx-dev-runtime.d.ts",
-        "require": "./dist/cjs/jsx-dev-runtime.d.ts",
-        "default": "./dist/cjs/jsx-dev-runtime.d.ts"
-      },
-      "import": "./dist/esm/jsx-dev-runtime.js",
-      "require": "./dist/cjs/jsx-dev-runtime.cjs"
     }
   },
   "files": [
