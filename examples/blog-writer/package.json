@@ -17,12 +17,12 @@
   "dependencies": {
     "@gensx/openai": "^0.1.27",
     "@gensx/core": "^0.3.12",
-    "openai": "^4.87.4"
+    "openai": "^4.103.0"
   },
   "devDependencies": {
-    "@types/node": "^22",
-    "eslint": "^9.23.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "@types/node": "^20",
+    "eslint": "^9.27.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
   }
 }
