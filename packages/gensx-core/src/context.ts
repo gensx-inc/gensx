@@ -66,10 +66,7 @@ export class ExecutionContext {
     return this.get(CURRENT_NODE_SYMBOL) as string | undefined;
   }
 
-  withCurrentNode<T>(
-    nodeId: string,
-    fn: () => T,
-  ): T {
+  withCurrentNode<T>(nodeId: string, fn: () => T): T {
     return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
   }
 }
@@ -98,7 +95,12 @@ const globalObj: Record<symbol, unknown> =
 globalObj[CONTEXT_STORAGE_SYMBOL] ??= null;
 
 // Try to import AsyncLocalStorage if available (Node.js environment)
-let AsyncLocalStorage: { new <T>(): AsyncLocalStorageType<T>; snapshot: () => (fn: (...args: unknown[]) => unknown) => unknown } | undefined;
+let AsyncLocalStorage:
+  | {
+      new <T>(): AsyncLocalStorageType<T>;
+      snapshot: () => (fn: (...args: unknown[]) => unknown) => unknown;
+    }
+  | undefined;
 
 const configureAsyncLocalStorage = (async () => {
   try {
@@ -179,10 +181,7 @@ const contextManager = {
 export type RunInContext = <T>(fn: () => T) => T;
 
 // Update withContext to use contextManager.run
-export function withContext<T>(
-  context: ExecutionContext,
-  fn: () => T,
-): T {
+export function withContext<T>(context: ExecutionContext, fn: () => T): T {
   return contextManager.run(context, fn);
 }
 
@@ -226,5 +225,5 @@ export function getCurrentNodeCheckpointManager() {
     addMetadata: (metadata: Record<string, unknown>) => {
       checkpointManager.addMetadata(currentNodeId, metadata);
     },
-  }
+  };
 }

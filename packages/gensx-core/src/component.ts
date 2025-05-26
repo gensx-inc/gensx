@@ -8,14 +8,21 @@ import type {
   ComponentOpts,
   ComponentOpts as OriginalComponentOpts,
   DecoratorComponentOpts,
-  DecoratorWorkflowOpts, WorkflowOpts
+  DecoratorWorkflowOpts,
+  WorkflowOpts,
 } from "./types.js";
 
 import serializeErrorPkg from "@common.js/serialize-error";
 const { serializeError } = serializeErrorPkg;
 
-
-import { ExecutionContext, getContextSnapshot, getCurrentContext, getCurrentNodeCheckpointManager, RunInContext, withContext } from "./context.js";
+import {
+  ExecutionContext,
+  getContextSnapshot,
+  getCurrentContext,
+  getCurrentNodeCheckpointManager,
+  RunInContext,
+  withContext,
+} from "./context.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
@@ -86,7 +93,9 @@ export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
     // Only wrap class methods
     if (context && context.kind !== "method") {
       console.warn("Workflow decorator can only be applied to class methods.");
-      return (async (props: P) => await target(props)) as (props: P) => Promise<Awaited<R>>;
+      return (async (props: P) => await target(props)) as (
+        props: P,
+      ) => Promise<Awaited<R>>;
     }
 
     return createWorkflow(target, decoratorOpts);
@@ -109,10 +118,7 @@ export function createComponent<P extends object, R>(
     );
   }
 
-  const ComponentFn = (
-    props: P,
-    runtimeOpts?: ComponentOpts,
-  ): R => {
+  const ComponentFn = (props: P, runtimeOpts?: ComponentOpts): R => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -151,23 +157,38 @@ export function createComponent<P extends object, R>(
     }
 
     function handleResultValue(value: unknown, runInContext: RunInContext) {
-      if (!Array.isArray(value) &&
+      if (
+        !Array.isArray(value) &&
         typeof value === "object" &&
         value != null &&
         resolvedComponentOpts.__streamingResultKey !== undefined &&
         (isAsyncIterable(
-          (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey]
-        ) || isReadableStream(
-          (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey]
-        ))) {
+          (value as Record<string, unknown>)[
+            resolvedComponentOpts.__streamingResultKey
+          ],
+        ) ||
+          isReadableStream(
+            (value as Record<string, unknown>)[
+              resolvedComponentOpts.__streamingResultKey
+            ],
+          ))
+      ) {
         const streamingResult = captureAsyncGenerator(
-          (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey] as AsyncIterable<unknown>,
+          (value as Record<string, unknown>)[
+            resolvedComponentOpts.__streamingResultKey
+          ] as AsyncIterable<unknown>,
           runInContext,
-          { streamKey: resolvedComponentOpts.__streamingResultKey, aggregator: resolvedComponentOpts.aggregator, fullValue: value },
+          {
+            streamKey: resolvedComponentOpts.__streamingResultKey,
+            aggregator: resolvedComponentOpts.aggregator,
+            fullValue: value,
+          },
         );
 
         try {
-          (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey] = streamingResult;
+          (value as Record<string, unknown>)[
+            resolvedComponentOpts.__streamingResultKey
+          ] = streamingResult;
         } catch {
           // Can't always set the streaming result key, so carry on.
         }
@@ -188,7 +209,6 @@ export function createComponent<P extends object, R>(
       checkpointManager.completeNode(nodeId, value);
       return value;
     }
-
 
     try {
       let runInContext: RunInContext;
@@ -236,7 +256,10 @@ export function createWorkflow<P extends object, R>(
       ? workflowOpts
       : (workflowOpts?.name ?? target.name);
 
-  const WorkflowFn = async (props: P, runtimeOpts?: WorkflowOpts): Promise<Awaited<R>> => {
+  const WorkflowFn = async (
+    props: P,
+    runtimeOpts?: WorkflowOpts,
+  ): Promise<Awaited<R>> => {
     const context = new ExecutionContext({});
     await context.init();
 
@@ -261,7 +284,9 @@ export function createWorkflow<P extends object, R>(
     const component = createComponent(target);
 
     try {
-      const result = await withContext(context, () => component(props, runtimeOpts));
+      const result = await withContext(context, () =>
+        component(props, runtimeOpts),
+      );
 
       const rootId = workflowContext.checkpointManager.root?.id;
       if (rootId) {
@@ -298,7 +323,15 @@ export function createWorkflow<P extends object, R>(
 function captureAsyncGenerator(
   iterable: AsyncIterable<unknown>,
   runInContext: RunInContext,
-  { streamKey, aggregator, fullValue }: { streamKey?: string, aggregator?: (chunks: unknown[]) => unknown, fullValue: unknown },
+  {
+    streamKey,
+    aggregator,
+    fullValue,
+  }: {
+    streamKey?: string;
+    aggregator?: (chunks: unknown[]) => unknown;
+    fullValue: unknown;
+  },
 ) {
   aggregator ??= (chunks: unknown[]) => {
     // Assume if the first chunk is a string, we're streaming text
@@ -306,13 +339,21 @@ function captureAsyncGenerator(
       return chunks.join("");
     }
     return chunks;
-  }
+  };
 
   if (isReadableStream(iterable)) {
-    return captureReadableStream(iterable, runInContext, { streamKey, aggregator, fullValue });
+    return captureReadableStream(iterable, runInContext, {
+      streamKey,
+      aggregator,
+      fullValue,
+    });
   }
   const iterator = iterable[Symbol.asyncIterator]();
-  const wrappedIterator = captureAsyncIterator(iterator, runInContext, { streamKey, aggregator, fullValue });
+  const wrappedIterator = captureAsyncIterator(iterator, runInContext, {
+    streamKey,
+    aggregator,
+    fullValue,
+  });
   iterable[Symbol.asyncIterator] = () => wrappedIterator;
   return iterable;
 }
@@ -320,7 +361,15 @@ function captureAsyncGenerator(
 function captureReadableStream(
   stream: ReadableStream<unknown>,
   runInContext: (fn: (...args: unknown[]) => unknown) => unknown,
-  { streamKey, aggregator, fullValue }: { streamKey?: string, aggregator: (chunks: unknown[]) => unknown, fullValue: unknown },
+  {
+    streamKey,
+    aggregator,
+    fullValue,
+  }: {
+    streamKey?: string;
+    aggregator: (chunks: unknown[]) => unknown;
+    fullValue: unknown;
+  },
 ) {
   const reader = stream.getReader();
   let done = false;
@@ -330,7 +379,6 @@ function captureReadableStream(
   const capturedStream = new ReadableStream({
     async start(controller) {
       try {
-
         while (!done) {
           await runInContext(async () => {
             const result = await reader.read();
@@ -388,7 +436,8 @@ function captureReadableStream(
     cancel(reason) {
       runInContext(() => {
         if (!done) {
-          const { completeNode, addMetadata } = getCurrentNodeCheckpointManager();
+          const { completeNode, addMetadata } =
+            getCurrentNodeCheckpointManager();
           addMetadata({ cancelled: true });
           completeNode(aggregator(chunks));
         }
@@ -403,7 +452,15 @@ function captureReadableStream(
 async function* captureAsyncIterator(
   iterator: AsyncIterator<unknown, unknown, undefined>,
   runInContext: RunInContext,
-  { streamKey, aggregator, fullValue }: { streamKey?: string, aggregator: (chunks: unknown[]) => unknown, fullValue: unknown },
+  {
+    streamKey,
+    aggregator,
+    fullValue,
+  }: {
+    streamKey?: string;
+    aggregator: (chunks: unknown[]) => unknown;
+    fullValue: unknown;
+  },
 ) {
   const chunks: unknown[] = [];
 

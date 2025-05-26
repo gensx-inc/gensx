@@ -99,7 +99,9 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
   const DecoratedComponent = gensx.createComponent(componentFn, options);
 
   // Execute with context
-  const result = withContext(contextWithWorkflow, () => DecoratedComponent(props));
+  const result = withContext(contextWithWorkflow, () =>
+    DecoratedComponent(props),
+  );
 
   // Wait for any pending checkpoints
   await checkpointManager.waitForPendingUpdates();

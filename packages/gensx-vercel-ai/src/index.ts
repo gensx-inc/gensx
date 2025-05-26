@@ -3,8 +3,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-
-
 import type { Tool, ToolExecutionOptions } from "ai";
 
 import { ComponentOpts, createComponent, wrap } from "@gensx/core";
@@ -53,68 +51,81 @@ function wrapTools<T extends Record<string, Tool>>(
   ) as unknown as T;
 }
 
-export const streamText = createComponent(new Proxy(ai.streamText, {
-  apply: (target, thisArg, args) => {
-    const [first, ...rest] = args;
+export const streamText = createComponent(
+  new Proxy(ai.streamText, {
+    apply: (target, thisArg, args) => {
+      const [first, ...rest] = args;
 
-    const wrappedTools = wrapTools(first.tools);
+      const wrappedTools = wrapTools(first.tools);
 
-    return Reflect.apply(target, thisArg, [
-      {
-        ...first,
-        model: wrapVercelAIModel(first.model),
-        tools: wrappedTools,
-      },
-      ...rest,
-    ]);
+      return Reflect.apply(target, thisArg, [
+        {
+          ...first,
+          model: wrapVercelAIModel(first.model),
+          tools: wrappedTools,
+        },
+        ...rest,
+      ]);
+    },
+  }),
+  { name: "StreamText" },
+) as typeof ai.streamText;
+
+export const streamObject = createComponent(
+  new Proxy(ai.streamObject, {
+    apply: (target, thisArg, args) => {
+      const [first, ...rest] = args;
+
+      return Reflect.apply(target, thisArg, [
+        {
+          ...first,
+          model: wrapVercelAIModel(first.model),
+        },
+        ...rest,
+      ]);
+    },
+  }),
+  {
+    name: "StreamObject",
   },
-}), { name: "StreamText" }) as typeof ai.streamText;
+) as typeof ai.streamObject;
 
-export const streamObject = createComponent(new Proxy(ai.streamObject, {
-  apply: (target, thisArg, args) => {
-    const [first, ...rest] = args;
+export const generateObject = createComponent(
+  new Proxy(ai.generateObject, {
+    apply: (target, thisArg, args) => {
+      const [first, ...rest] = args;
 
-    return Reflect.apply(target, thisArg, [
-      {
-        ...first,
-        model: wrapVercelAIModel(first.model),
-      },
-      ...rest,
-    ]);
-  },
-}), {
-  name: "StreamObject"
-}) as typeof ai.streamObject;
+      return Reflect.apply(target, thisArg, [
+        {
+          ...first,
+          model: wrapVercelAIModel(first.model),
+        },
+        ...rest,
+      ]);
+    },
+  }),
+  { name: "GenerateObject" },
+) as typeof ai.generateObject;
 
-export const generateObject = createComponent(new Proxy(ai.generateObject, {
-  apply: (target, thisArg, args) => {
-    const [first, ...rest] = args;
+export const generateText = createComponent(
+  new Proxy(ai.generateText, {
+    apply: (target, thisArg, args) => {
+      const [first, ...rest] = args;
 
-    return Reflect.apply(target, thisArg, [
-      {
-        ...first,
-        model: wrapVercelAIModel(first.model),
-      },
-      ...rest,
-    ]);
-  },
-}), { name: "GenerateObject" }) as typeof ai.generateObject;
+      const wrappedTools = wrapTools(first.tools);
 
-export const generateText = createComponent(new Proxy(ai.generateText, {
-  apply: (target, thisArg, args) => {
-    const [first, ...rest] = args;
-
-    const wrappedTools = wrapTools(first.tools);
-
-    return Reflect.apply(target, thisArg, [
-      {
-        ...first,
-        model: wrapVercelAIModel(first.model),
-        tools: wrappedTools,
-      }, ...rest,
-    ]);
-  },
-}), { name: "GenerateText" }) as typeof ai.generateText;
+      return Reflect.apply(target, thisArg, [
+        {
+          ...first,
+          model: wrapVercelAIModel(first.model),
+          tools: wrappedTools,
+        },
+        ...rest,
+      ]);
+    },
+  }),
+  { name: "GenerateText" },
+) as typeof ai.generateText;
 
 export const embed = createComponent(ai.embed, {
   name: "embed",
@@ -143,41 +154,53 @@ export const wrapVercelAIModel = <T extends object>(
         let __streamingResultKey: string | undefined;
         if (propKey === "doStream") {
           __streamingResultKey = "stream";
-          aggregator = componentOpts?.aggregator ?? ((chunks: { type: 'text-delta' | 'tool-call' | 'finish' | 'something-else', textDelta: string, usage: unknown, finishReason: unknown }[]) => {
-            return chunks.reduce(
-              (aggregated, chunk) => {
-                if (chunk.type === "text-delta") {
-                  return {
-                    ...aggregated,
-                    text: aggregated.text + chunk.textDelta,
-                  };
-                } else if (chunk.type === "tool-call") {
-                  return {
-                    ...aggregated,
-                    ...chunk,
-                  };
-                } else if (chunk.type === "finish") {
-                  return {
-                    ...aggregated,
-                    usage: chunk.usage,
-                    finishReason: chunk.finishReason,
-                  };
-                } else {
-                  return aggregated;
-                }
-              },
-              {
-                text: "",
-              },
-            );
-          });
+          aggregator =
+            componentOpts?.aggregator ??
+            ((
+              chunks: {
+                type: "text-delta" | "tool-call" | "finish" | "something-else";
+                textDelta: string;
+                usage: unknown;
+                finishReason: unknown;
+              }[],
+            ) => {
+              return chunks.reduce(
+                (aggregated, chunk) => {
+                  if (chunk.type === "text-delta") {
+                    return {
+                      ...aggregated,
+                      text: aggregated.text + chunk.textDelta,
+                    };
+                  } else if (chunk.type === "tool-call") {
+                    return {
+                      ...aggregated,
+                      ...chunk,
+                    };
+                  } else if (chunk.type === "finish") {
+                    return {
+                      ...aggregated,
+                      usage: chunk.usage,
+                      finishReason: chunk.finishReason,
+                    };
+                  } else {
+                    return aggregated;
+                  }
+                },
+                {
+                  text: "",
+                },
+              );
+            });
         }
-        return createComponent(originalValue.bind(target) as (input: object) => unknown, {
-          name: componentName,
-          ...componentOpts,
-          aggregator,
-          __streamingResultKey,
-        });
+        return createComponent(
+          originalValue.bind(target) as (input: object) => unknown,
+          {
+            name: componentName,
+            ...componentOpts,
+            aggregator,
+            __streamingResultKey,
+          },
+        );
       } else if (
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         originalValue != null &&
@@ -185,12 +208,9 @@ export const wrapVercelAIModel = <T extends object>(
         !(originalValue instanceof Date) &&
         typeof originalValue === "object"
       ) {
-        return wrap(
-          originalValue,
-          {
-            prefix: [componentName, propKey.toString()].join(".")
-          }
-        );
+        return wrap(originalValue, {
+          prefix: [componentName, propKey.toString()].join("."),
+        });
       } else {
         return originalValue;
       }
@@ -198,15 +218,15 @@ export const wrapVercelAIModel = <T extends object>(
   });
 };
 
-function assertIsLanguageModel(languageModel: object): asserts languageModel is ai.LanguageModelV1 {
+function assertIsLanguageModel(
+  languageModel: object,
+): asserts languageModel is ai.LanguageModelV1 {
   if (
     !("doStream" in languageModel) ||
     typeof languageModel.doStream !== "function" ||
     !("doGenerate" in languageModel) ||
     typeof languageModel.doGenerate !== "function"
   ) {
-    throw new Error(
-      `Invalid model. Is this a LanguageModelV1 instance?`
-    );
+    throw new Error(`Invalid model. Is this a LanguageModelV1 instance?`);
   }
 }

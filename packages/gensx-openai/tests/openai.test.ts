@@ -10,7 +10,7 @@ suite("OpenAI Wrapper (smoke)", () => {
     const result = await wrappedClient.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: "Hello" }],
-    })
+    });
     expect(result).toBeDefined();
   });
 
@@ -21,7 +21,7 @@ suite("OpenAI Wrapper (smoke)", () => {
       model: "gpt-4",
       temperature: 0.7,
       messages: [{ role: "user", content: "Hello" }],
-    })
+    });
     expect(result).toBeDefined();
   });
 
@@ -34,7 +34,7 @@ suite("OpenAI Wrapper (smoke)", () => {
     const result = await wrappedClient.chat.completions.create({
       model: "claude-3-opus-20240229",
       messages: [{ role: "user", content: "Hello" }],
-    })
+    });
     expect(result).toBeDefined();
   });
 });

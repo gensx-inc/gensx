@@ -350,7 +350,9 @@ describe("type preservation", () => {
 
     // TypeScript should know these return types
     const config: Config = wrappedService.getConfig({ version: "1.0" });
-    const asyncConfig: Promise<Config> = wrappedService.getAsyncConfig({ version: "1.0" });
+    const asyncConfig: Promise<Config> = wrappedService.getAsyncConfig({
+      version: "1.0",
+    });
 
     expect(config).toEqual({
       api: {
@@ -385,7 +387,9 @@ describe("type preservation", () => {
 
     // TypeScript should know these return types
     wrappedLogger.log({ message: "test" });
-    const asyncResult: Promise<void> = wrappedLogger.logAsync({ message: "test" });
+    const asyncResult: Promise<void> = wrappedLogger.logAsync({
+      message: "test",
+    });
     await asyncResult;
   });
 });
