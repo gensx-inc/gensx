@@ -8,17 +8,11 @@ import { ExecutionNode } from "../../src/checkpoint.js";
 import { withContext } from "../../src/context.js";
 import { ExecutionContext } from "../../src/context.js";
 import * as gensx from "../../src/index.js";
-import { MaybePromise } from "../../src/types.js";
 import { createWorkflowContext } from "../../src/workflow-context.js";
 
 // Add types for fetch API
 export type FetchInput = Parameters<typeof fetch>[0];
 export type FetchInit = Parameters<typeof fetch>[1];
-
-// Type for component functions
-export type ComponentFunction<P extends object, R> = (
-  props: P,
-) => MaybePromise<R>;
 
 const originalFetch = global.fetch;
 afterEach(() => {
@@ -32,7 +26,7 @@ afterEach(() => {
  */
 
 export async function executeWithCheckpoints<T, P extends object = {}>(
-  componentFn: ComponentFunction<P, T>,
+  componentFn: (props: P) => T,
   props: P = {} as P,
   options?: { name?: string },
 ): Promise<{
@@ -102,12 +96,10 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
   });
 
   // Create a decorated component with optional name
-  const DecoratedComponent = gensx.Component(options)(componentFn);
+  const DecoratedComponent = gensx.createComponent(componentFn, options);
 
   // Execute with context
-  const result = await withContext(contextWithWorkflow, async () =>
-    DecoratedComponent(props),
-  );
+  const result = withContext(contextWithWorkflow, () => DecoratedComponent(props));
 
   // Wait for any pending checkpoints
   await checkpointManager.waitForPendingUpdates();
@@ -116,7 +108,7 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
 }
 
 export async function executeWorkflowWithCheckpoints<T, P extends object = {}>(
-  componentFn: ComponentFunction<P, T>,
+  componentFn: (props: P) => T,
   props: P = {} as P,
   metadata?: Record<string, unknown>,
 ): Promise<{
@@ -180,12 +172,12 @@ export async function executeWorkflowWithCheckpoints<T, P extends object = {}>(
   });
 
   // Create a workflow to wrap the component
-  const WorkflowComponent = gensx.Workflow({
+  const WorkflowComponent = gensx.createWorkflow(componentFn, {
     name:
       "executeWorkflowWithCheckpoints" +
       Math.round(Math.random() * 1000).toFixed(0),
     metadata,
-  })(componentFn);
+  });
 
   // Execute with context
   let result: T | undefined;
