@@ -63,14 +63,14 @@ export function Component(decoratorOpts?: DecoratorComponentOpts) {
       | ClassAccessorDecoratorContext
       | ClassFieldDecoratorContext
       | ClassDecoratorContext,
-  ): (props: P) => R extends Promise<infer U> ? U : R {
+  ): (props: P) => R {
     // Only wrap class methods
     if (context && context.kind !== "method") {
       console.warn("Component decorator can only be applied to class methods.");
-      return target as (props: P) => R extends Promise<infer U> ? U : R;
+      return target as (props: P) => R;
     }
 
-    return createComponent(target, decoratorOpts) as (props: P) => R extends Promise<infer U> ? U : R;
+    return createComponent(target, decoratorOpts) as (props: P) => R;
   };
 }
 
@@ -82,14 +82,14 @@ export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
       | ClassAccessorDecoratorContext
       | ClassDecoratorContext
       | ClassFieldDecoratorContext,
-  ): (props: P) => R extends Promise<infer U> ? U : R {
+  ): (props: P) => Promise<Awaited<R>> {
     // Only wrap class methods
     if (context && context.kind !== "method") {
       console.warn("Workflow decorator can only be applied to class methods.");
-      return target as (props: P) => R extends Promise<infer U> ? U : R;
+      return (async (props: P) => await target(props)) as (props: P) => Promise<Awaited<R>>;
     }
 
-    return createWorkflow(target, decoratorOpts) as (props: P) => R extends Promise<infer U> ? U : R;
+    return createWorkflow(target, decoratorOpts);
   };
 }
 
@@ -151,11 +151,6 @@ export function createComponent<P extends object, R>(
     }
 
     function handleResultValue(value: unknown, runInContext: RunInContext) {
-      console.log(resolvedComponentOpts.__streamingResultKey, isAsyncIterable(
-        (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey ?? ""]
-      ), isReadableStream(
-        (value as Record<string, unknown>)[resolvedComponentOpts.__streamingResultKey ?? ""]
-      ));
       if (!Array.isArray(value) &&
         typeof value === "object" &&
         value != null &&
