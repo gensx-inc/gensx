@@ -127,7 +127,7 @@ export const wrapOpenAI = (
                   Object.defineProperty(newTool, "$callback", {
                     value: Component(
                       `Tool.${tool.function.name}`,
-                      boundCallback,
+                      boundCallback as (input?: object) => unknown,
                     ),
                   });
                   Object.defineProperty(newTool, "$parseRaw", {
