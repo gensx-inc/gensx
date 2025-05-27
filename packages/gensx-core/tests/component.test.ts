@@ -913,6 +913,23 @@ suite("component", () => {
       await expect(ErrorComponent({})).rejects.toThrow("Test error");
     });
 
+    test("createComponent can handle components with no arguments (undefined props)", async () => {
+      // Define a component that doesn't need any props
+      async function noPropsComponent(): Promise<string> {
+        await setTimeout(0);
+        return "no props needed";
+      }
+
+      // Create component using helper
+      const NoPropsComponent = gensx.createComponent(noPropsComponent, {
+        name: "NoPropsComponent",
+      });
+
+      // Execute without any arguments - this should not throw
+      const result = await NoPropsComponent();
+      expect(result).toBe("no props needed");
+    });
+
     test("createWorkflow creates a complete workflow", async () => {
       // Define a workflow function
       async function testWorkflow({
