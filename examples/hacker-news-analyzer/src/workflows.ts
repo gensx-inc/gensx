@@ -20,12 +20,12 @@ interface WriteTweetProps {
 @Component()
 async function ChatCompletion(...args: Parameters<typeof openai.chat.completions.create>) {
   const [base, ...rest] = args;
-  return openai.chat.completions.create({...base, stream: false, ...rest});
+  return openai.chat.completions.create({ ...base, stream: false, ...rest });
 }
 
 @Component()
 async function WriteTweet({ context, prompt }: WriteTweetProps): Promise<string> {
-    const PROMPT = `
+  const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
 1. Captures the most interesting insight
 2. Uses your characteristic direct style
@@ -35,18 +35,18 @@ You are Paul Graham composing a tweet. Given a longer analysis, distill it into 
 Focus on the most surprising or counterintuitive point rather than trying to summarize everything.
     `.trim();
 
-    const response = await ChatCompletion({
-        messages: [
-          { role: "system", content: PROMPT },
-          {
-            role: "user",
-            content: `Context:\n${context}\n\nPrompt: ${prompt}`,
-          },
-        ],
-        model: "gpt-4o",
-        temperature: 0.7,
-    });
-    return response.choices[0].message.content ?? "";
+  const response = await ChatCompletion({
+    messages: [
+      { role: "system", content: PROMPT },
+      {
+        role: "user",
+        content: `Context:\n${context}\n\nPrompt: ${prompt}`,
+      },
+    ],
+    model: "gpt-4o",
+    temperature: 0.7,
+  });
+  return response.choices[0].message.content ?? "";
 }
 
 interface EditReportProps {
@@ -56,7 +56,7 @@ interface EditReportProps {
 
 @Component()
 async function EditReport({ content }: EditReportProps): Promise<string> {
-    const PROMPT = `
+  const PROMPT = `
 You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
 1. Clear, direct language
 2. Concrete examples and analogies
@@ -71,15 +71,15 @@ you must include this exact link when discussing that project.
 Maintain your voice while preserving the key insights and all links from the analysis.
   `.trim();
 
-    const response = await ChatCompletion({
-        messages: [
-          { role: "system", content: PROMPT },
-          { role: "user", content: content },
-        ],
-        model: "gpt-4o",
-        temperature: 0.7,
-    });
-    return response.choices[0].message.content ?? "";
+  const response = await ChatCompletion({
+    messages: [
+      { role: "system", content: PROMPT },
+      { role: "user", content: content },
+    ],
+    model: "gpt-4o",
+    temperature: 0.7,
+  });
+  return response.choices[0].message.content ?? "";
 }
 
 interface AnalyzeCommentsProps {
@@ -120,15 +120,15 @@ Focus on substance rather than surface-level reactions. When referencing comment
     .join("\n\n");
 
   const response = await ChatCompletion({
-      messages: [
-        { role: "system", content: PROMPT },
-        {
-          role: "user",
-          content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
-        },
-      ],
-      model: "gpt-4o",
-      temperature: 0.7,
+    messages: [
+      { role: "system", content: PROMPT },
+      {
+        role: "user",
+        content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
+      },
+    ],
+    model: "gpt-4o",
+    temperature: 0.7,
   });
   return response.choices[0].message.content ?? "";
 }
@@ -140,7 +140,7 @@ interface SummarizePostProps {
 
 @Component()
 async function SummarizePost({ story }: SummarizePostProps): Promise<string> {
-    const PROMPT = `
+  const PROMPT = `
 You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
 1. The main point or key insight
 2. Notable discussion points from comments (include comment scores to show community agreement)
@@ -159,33 +159,33 @@ When referencing comments, include their scores to show weight of opinion, e.g.:
 Keep the summary clear and objective. Focus on facts and insights rather than opinions.
     `.trim();
 
-    const context = `
+  const context = `
 Title: ${story.title}
 URL: ${getHNPostUrl(story.id)}
 Text: ${story.text ?? ""}
 Score: ${story.score} points
 Comments (sorted by score):
 ${story.comments
-  .sort((a, b) => b.score - a.score)
-  .map((c) => `[Score: ${c.score}] ${c.text}`)
-  .join("\n\n")}
+      .sort((a, b) => b.score - a.score)
+      .map((c) => `[Score: ${c.score}] ${c.text}`)
+      .join("\n\n")}
     `.trim();
 
-    const response = await ChatCompletion({
-        messages: [
-          { role: "system", content: PROMPT },
-          { role: "user", content: context },
-        ],
-        model: "gpt-4o",
-        temperature: 0.7,
-    });
+  const response = await ChatCompletion({
+    messages: [
+      { role: "system", content: PROMPT },
+      { role: "user", content: context },
+    ],
+    model: "gpt-4o",
+    temperature: 0.7,
+  });
 
-    const ensuredResponse = response.choices[0].message.content ?? "";
+  const ensuredResponse = response.choices[0].message.content ?? "";
 
-    if (!ensuredResponse.includes(getHNPostUrl(story.id))) {
-        return `[${story.title}](${getHNPostUrl(story.id)})\n\n${ensuredResponse}`;
-    }
-    return ensuredResponse;
+  if (!ensuredResponse.includes(getHNPostUrl(story.id))) {
+    return `[${story.title}](${getHNPostUrl(story.id)})\n\n${ensuredResponse}`;
+  }
+  return ensuredResponse;
 }
 
 interface GenerateReportProps {
@@ -236,12 +236,12 @@ ${commentAnalysis}
     .join("\n\n");
 
   const response = await ChatCompletion({
-      messages: [
-        { role: "system", content: PROMPT },
-        { role: "user", content: context },
-      ],
-      model: "gpt-4o",
-      temperature: 0.7,
+    messages: [
+      { role: "system", content: PROMPT },
+      { role: "user", content: context },
+    ],
+    model: "gpt-4o",
+    temperature: 0.7,
   });
   return response.choices[0].message.content ?? "";
 }
@@ -253,21 +253,21 @@ interface FetchHNPostsProps {
 
 @Component()
 async function FetchHNPosts({ limit }: FetchHNPostsProps): Promise<HNStory[]> {
-    const MAX_HN_STORIES = 500;
-    const requestLimit = Math.min(limit, MAX_HN_STORIES);
+  const MAX_HN_STORIES = 500;
+  const requestLimit = Math.min(limit, MAX_HN_STORIES);
 
-    console.log(
-      `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
-    );
-    const stories = await getTopStoryDetails(requestLimit);
-    console.log(
-      `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
-      stories.length < limit
-        ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
-        : "",
-    );
+  console.log(
+    `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
+  );
+  const stories = await getTopStoryDetails(requestLimit);
+  console.log(
+    `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
+    stories.length < limit
+      ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
+      : "",
+  );
 
-    return stories;
+  return stories;
 }
 
 interface AnalyzeHNPostsProps {

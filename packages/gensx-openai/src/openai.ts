@@ -144,7 +144,7 @@ export const wrapOpenAI = (
                       ...runnableTool.function,
                       function: createComponent(
                         runnableTool.function.function as (
-                          input: object,
+                          input?: object,
                         ) => unknown,
                         {
                           name: `Tool.${runnableTool.function.name}`,
