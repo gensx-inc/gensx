@@ -350,18 +350,15 @@ importers:
   examples/hacker-news-analyzer:
     dependencies:
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.4
-      openai:
-        specifier: ^4.87.4
-        version: 4.91.1(ws@8.18.0)(zod@3.25.29)
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
+      '@gensx/openai':
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
     devDependencies:
       '@types/node':
         specifier: ^20
         version: 20.17.30
-      nodemon:
-        specifier: ^3.1.9
-        version: 3.1.9
       ts-function-decorator:
         specifier: ^0.0.1
         version: 0.0.1(ts-patch@3.3.0)(typescript@5.8.2)

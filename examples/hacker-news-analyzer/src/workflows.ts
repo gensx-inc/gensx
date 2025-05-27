@@ -1,4 +1,4 @@
-import { OpenAI } from "openai";
+import { OpenAI } from "@gensx/openai";
 
 import { Component, Workflow, ComponentOpts } from "@gensx/core";
 import { getTopStoryDetails, type HNStory } from "./hn.js";
@@ -18,12 +18,6 @@ interface WriteTweetProps {
 }
 
 @Component()
-async function ChatCompletion(...args: Parameters<typeof openai.chat.completions.create>) {
-  const [base, ...rest] = args;
-  return openai.chat.completions.create({ ...base, stream: false, ...rest });
-}
-
-@Component()
 async function WriteTweet({ context, prompt }: WriteTweetProps): Promise<string> {
   const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
@@ -35,7 +29,7 @@ You are Paul Graham composing a tweet. Given a longer analysis, distill it into 
 Focus on the most surprising or counterintuitive point rather than trying to summarize everything.
     `.trim();
 
-  const response = await ChatCompletion({
+  const response = await openai.chat.completions.create({
     messages: [
       { role: "system", content: PROMPT },
       {
@@ -71,7 +65,7 @@ you must include this exact link when discussing that project.
 Maintain your voice while preserving the key insights and all links from the analysis.
   `.trim();
 
-  const response = await ChatCompletion({
+  const response = await openai.chat.completions.create({
     messages: [
       { role: "system", content: PROMPT },
       { role: "user", content: content },
@@ -119,7 +113,7 @@ Focus on substance rather than surface-level reactions. When referencing comment
     .map((c) => `[Score: ${c.score}] ${c.text}`)
     .join("\n\n");
 
-  const response = await ChatCompletion({
+  const response = await openai.chat.completions.create({
     messages: [
       { role: "system", content: PROMPT },
       {
@@ -171,7 +165,7 @@ ${story.comments
       .join("\n\n")}
     `.trim();
 
-  const response = await ChatCompletion({
+  const response = await openai.chat.completions.create({
     messages: [
       { role: "system", content: PROMPT },
       { role: "user", content: context },
@@ -235,7 +229,7 @@ ${commentAnalysis}
     )
     .join("\n\n");
 
-  const response = await ChatCompletion({
+  const response = await openai.chat.completions.create({
     messages: [
       { role: "system", content: PROMPT },
       { role: "user", content: context },
