@@ -11,7 +11,7 @@ if (!question) {
 
 // First, initialize the database
 console.log("Initializing database...");
-const initMessage = await InitializeDatabase({});
+const initMessage = await InitializeDatabase();
 console.log(initMessage);
 
 // Then run the query

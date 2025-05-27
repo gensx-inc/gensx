@@ -392,4 +392,59 @@ describe("type preservation", () => {
     });
     await asyncResult;
   });
+
+  it("handles methods with no parameters", async () => {
+    class DataProvider {
+      private data = "test data";
+
+      getData() {
+        return Promise.resolve(this.data);
+      }
+
+      getTimestamp() {
+        return Promise.resolve(Date.now());
+      }
+
+      syncMethod() {
+        return "sync result";
+      }
+    }
+
+    const provider = new DataProvider();
+    const wrappedProvider = wrap(provider);
+
+    const data = await wrappedProvider.getData();
+    expect(data).toBe("test data");
+
+    const timestamp = await wrappedProvider.getTimestamp();
+    expect(typeof timestamp).toBe("number");
+
+    const syncResult = wrappedProvider.syncMethod();
+    expect(syncResult).toBe("sync result");
+  });
+
+  it("handles objects with no-parameter functions", async () => {
+    const utils = {
+      getRandom: () => Math.random(),
+      getConstant: () => Promise.resolve(42),
+      helpers: {
+        getVersion: () => "1.0.0",
+        getEnv: () => Promise.resolve("development"),
+      },
+    };
+
+    const wrappedUtils = wrap(utils);
+
+    const random = wrappedUtils.getRandom();
+    expect(typeof random).toBe("number");
+
+    const constant = await wrappedUtils.getConstant();
+    expect(constant).toBe(42);
+
+    const version = wrappedUtils.helpers.getVersion();
+    expect(version).toBe("1.0.0");
+
+    const env = await wrappedUtils.helpers.getEnv();
+    expect(env).toBe("development");
+  });
 });
