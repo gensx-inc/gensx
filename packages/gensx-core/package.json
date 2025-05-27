@@ -1,6 +1,6 @@
 {
   "name": "@gensx/core",
-  "version": "0.4.0-alpha.3",
+  "version": "0.4.0-alpha.4",
   "description": "Build AI workflows using JSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
@@ -24,24 +24,6 @@
       },
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.cjs"
-    },
-    "./jsx-runtime": {
-      "types": {
-        "import": "./dist/esm/jsx-runtime.d.ts",
-        "require": "./dist/cjs/jsx-runtime.d.ts",
-        "default": "./dist/cjs/jsx-runtime.d.ts"
-      },
-      "import": "./dist/esm/jsx-runtime.js",
-      "require": "./dist/cjs/jsx-runtime.cjs"
-    },
-    "./jsx-dev-runtime": {
-      "types": {
-        "import": "./dist/esm/jsx-dev-runtime.d.ts",
-        "require": "./dist/cjs/jsx-dev-runtime.d.ts",
-        "default": "./dist/cjs/jsx-dev-runtime.d.ts"
-      },
-      "import": "./dist/esm/jsx-dev-runtime.js",
-      "require": "./dist/cjs/jsx-dev-runtime.cjs"
     }
   },
   "files": [
