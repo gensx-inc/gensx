@@ -10,10 +10,7 @@ const languageModel = openai("gpt-4o-mini");
 const embeddingModel = openai.embedding("text-embedding-3-small");
 
 test("StreamText streams text response", async () => {
-  const workflow = gensx.Workflow(
-    "StreamText",
-    AI.streamText,
-  );
+  const workflow = gensx.Workflow("StreamText", AI.streamText);
 
   // Test streaming mode
   const streamTextResult = await workflow({
@@ -36,10 +33,7 @@ test("StreamText streams text response", async () => {
 });
 
 test("StreamObject streams JSON objects", async () => {
-  const workflow = gensx.Workflow(
-    "StreamObject",
-    AI.streamObject,
-  );
+  const workflow = gensx.Workflow("StreamObject", AI.streamObject);
 
   const response = await workflow({
     prompt: "Generate a recipe",
@@ -57,10 +51,7 @@ test("StreamObject streams JSON objects", async () => {
 });
 
 test("GenerateText generates text", async () => {
-  const workflow = gensx.Workflow(
-    "GenerateText",
-    AI.generateText,
-  );
+  const workflow = gensx.Workflow("GenerateText", AI.generateText);
   const result = await workflow({
     prompt: "Tell me a joke",
     model: languageModel,
@@ -69,10 +60,7 @@ test("GenerateText generates text", async () => {
 });
 
 test("GenerateObject generates JSON object", async () => {
-  const workflow = gensx.Workflow(
-    "GenerateObject",
-    AI.generateObject,
-  );
+  const workflow = gensx.Workflow("GenerateObject", AI.generateObject);
   const response = await workflow({
     prompt: "Generate a recipe",
     model: languageModel,
