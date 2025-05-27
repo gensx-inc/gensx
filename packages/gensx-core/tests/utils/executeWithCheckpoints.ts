@@ -96,7 +96,11 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
   });
 
   // Create a decorated component with optional name
-  const DecoratedComponent = gensx.Component("DecoratedComponent", componentFn, options);
+  const DecoratedComponent = gensx.Component(
+    "DecoratedComponent",
+    componentFn,
+    options,
+  );
 
   // Execute with context
   const result = withContext(contextWithWorkflow, () =>

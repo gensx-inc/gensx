@@ -54,7 +54,7 @@ function wrapTools<T extends Record<string, Tool>>(
 
 // Type helper for workflows
 export type WorkflowType<T extends (...args: any[]) => any> = (
-  props?: Parameters<T>[0]
+  props?: Parameters<T>[0],
 ) => Promise<Awaited<ReturnType<T>>>;
 
 // Wrapper for Workflow that preserves types
@@ -84,7 +84,7 @@ export const streamText = Component(
         ...rest,
       ]);
     },
-  })
+  }),
 ) as typeof ai.streamText;
 
 export const streamObject = Component(
@@ -143,9 +143,15 @@ export const generateText = Component(
 
 export const embed = Component("embed", ai.embed) as typeof ai.embed;
 
-export const embedMany = Component("embedMany", ai.embedMany) as typeof ai.embedMany;
+export const embedMany = Component(
+  "embedMany",
+  ai.embedMany,
+) as typeof ai.embedMany;
 
-export const generateImage = Component("generateImage", ai.experimental_generateImage) as typeof ai.experimental_generateImage;
+export const generateImage = Component(
+  "generateImage",
+  ai.experimental_generateImage,
+) as typeof ai.experimental_generateImage;
 
 export const wrapVercelAIModel = <T extends object>(
   languageModel: T,

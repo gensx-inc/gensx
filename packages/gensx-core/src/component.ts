@@ -7,7 +7,8 @@ import { setTimeout } from "timers/promises";
 import type {
   ComponentOpts,
   ComponentOpts as OriginalComponentOpts,
-  DecoratorComponentOpts, WorkflowOpts
+  DecoratorComponentOpts,
+  WorkflowOpts,
 } from "./types.js";
 
 import serializeErrorPkg from "@common.js/serialize-error";
@@ -60,13 +61,11 @@ function getResolvedOpts(
   return merged;
 }
 
-
 export function Component<P extends object = {}, R = unknown>(
   name: string,
   target: (props: P) => R,
   componentOpts?: ComponentOpts,
 ): (props?: P, runtimeOpts?: ComponentOpts) => R {
-
   const ComponentFn = (props?: P, runtimeOpts?: ComponentOpts): R => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
@@ -92,10 +91,10 @@ export function Component<P extends object = {}, R = unknown>(
         componentName: checkpointName,
         props: props
           ? Object.fromEntries(
-            Object.entries(props).filter(
-              ([key]) => key !== "children" && key !== "componentOpts",
-            ),
-          )
+              Object.entries(props).filter(
+                ([key]) => key !== "children" && key !== "componentOpts",
+              ),
+            )
           : {},
         componentOpts: resolvedComponentOpts,
       },
@@ -114,18 +113,18 @@ export function Component<P extends object = {}, R = unknown>(
         resolvedComponentOpts.__streamingResultKey !== undefined &&
         (isAsyncIterable(
           (value as Record<string, unknown>)[
-          resolvedComponentOpts.__streamingResultKey
+            resolvedComponentOpts.__streamingResultKey
           ],
         ) ||
           isReadableStream(
             (value as Record<string, unknown>)[
-            resolvedComponentOpts.__streamingResultKey
+              resolvedComponentOpts.__streamingResultKey
             ],
           ))
       ) {
         const streamingResult = captureAsyncGenerator(
           (value as Record<string, unknown>)[
-          resolvedComponentOpts.__streamingResultKey
+            resolvedComponentOpts.__streamingResultKey
           ] as AsyncIterable<unknown>,
           runInContext,
           {
@@ -201,7 +200,6 @@ export function Workflow<P extends object = {}, R = unknown>(
   target: (props: P) => R,
   workflowOpts?: WorkflowOpts,
 ): (props?: P) => Promise<Awaited<R>> {
-
   const WorkflowFn = async (
     props?: P,
     runtimeOpts?: WorkflowOpts,

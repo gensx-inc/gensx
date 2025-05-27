@@ -14,7 +14,10 @@ suite("component", () => {
     };
 
     // Apply the decorator
-    const AnonymousComponent = gensx.Component("AnonymousComponent", anonymousComponentFn);
+    const AnonymousComponent = gensx.Component(
+      "AnonymousComponent",
+      anonymousComponentFn,
+    );
 
     // Execute the component
     const result = await AnonymousComponent();
@@ -36,7 +39,6 @@ suite("component", () => {
     expect(result).toBe("hello");
   });
 
-
   test("can handle components called with empty object", async () => {
     // Define a component that doesn't use its props
     async function emptyPropsComponent(): Promise<string> {
@@ -45,7 +47,10 @@ suite("component", () => {
     }
 
     // Apply decorator
-    const EmptyPropsComponent = gensx.Component("EmptyPropsComponent", emptyPropsComponent);
+    const EmptyPropsComponent = gensx.Component(
+      "EmptyPropsComponent",
+      emptyPropsComponent,
+    );
 
     // Execute with empty object
     const result = await EmptyPropsComponent({});
@@ -62,7 +67,10 @@ suite("component", () => {
     }
 
     // Apply decorator
-    const StreamingComponent = gensx.Component("StreamingComponent", streamGenerator);
+    const StreamingComponent = gensx.Component(
+      "StreamingComponent",
+      streamGenerator,
+    );
 
     // Execute directly
     const result = StreamingComponent();
@@ -128,7 +136,10 @@ suite("component", () => {
     }
 
     // Apply decorator
-    const AsyncIterableComponent = gensx.Component("AsyncIterableComponent", asyncIterableComponent);
+    const AsyncIterableComponent = gensx.Component(
+      "AsyncIterableComponent",
+      asyncIterableComponent,
+    );
 
     // Execute the component
     const result = await AsyncIterableComponent();
@@ -193,7 +204,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const ComplexComponent = gensx.Component("ComplexComponent", complexComponent);
+      const ComplexComponent = gensx.Component(
+        "ComplexComponent",
+        complexComponent,
+      );
 
       // Execute with correct types
       const result = await ComplexComponent({ name: "World", age: 25 });
@@ -220,7 +234,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const StreamingComponent = gensx.Component("StreamingComponent", streamingComponent);
+      const StreamingComponent = gensx.Component(
+        "StreamingComponent",
+        streamingComponent,
+      );
 
       // Execute with correct props
       const result = StreamingComponent({ input: "World" });
@@ -282,7 +299,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const ComplexComponent = gensx.Component("ComplexComponent", complexComponent);
+      const ComplexComponent = gensx.Component(
+        "ComplexComponent",
+        complexComponent,
+      );
 
       // Execute with complex props
       const result = await ComplexComponent({
@@ -318,7 +338,10 @@ suite("component", () => {
       }
 
       // Apply decorator and run directly
-      const WrapperComponent = gensx.Component("WrapperComponent", wrapperComponent);
+      const WrapperComponent = gensx.Component(
+        "WrapperComponent",
+        wrapperComponent,
+      );
 
       // Run directly to avoid checkpoint issues in testing
       const result = await WrapperComponent({ input: "test" });
@@ -339,7 +362,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const ProcessingComponent = gensx.Component("ProcessingComponent", processingComponent);
+      const ProcessingComponent = gensx.Component(
+        "ProcessingComponent",
+        processingComponent,
+      );
 
       // Define a component that uses the processing component
       async function outerComponent({
@@ -352,7 +378,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const WrapperComponent = gensx.Component("WrapperComponent", outerComponent);
+      const WrapperComponent = gensx.Component(
+        "WrapperComponent",
+        outerComponent,
+      );
 
       // Execute with workflow
       const { result } = await executeWorkflowWithCheckpoints(
@@ -379,7 +408,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const StreamingComponent = gensx.Component("StreamingComponent", streamingComponent);
+      const StreamingComponent = gensx.Component(
+        "StreamingComponent",
+        streamingComponent,
+      );
 
       // Execute the component
       const result = StreamingComponent({ input: "World" });
@@ -412,7 +444,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const StreamProducerComponent = gensx.Component("StreamProducer", streamProducerComponent);
+      const StreamProducerComponent = gensx.Component(
+        "StreamProducer",
+        streamProducerComponent,
+      );
 
       // Define a wrapper component that works with streams - two variants
       // 1. A component that consumes the stream and returns a string
@@ -444,9 +479,15 @@ suite("component", () => {
       }
 
       // Apply decorators to both components
-      const CollectorComponent = gensx.Component("CollectorComponent", streamCollectorComponent);
+      const CollectorComponent = gensx.Component(
+        "CollectorComponent",
+        streamCollectorComponent,
+      );
 
-      const PassThroughComponent = gensx.Component("PassThroughComponent", streamPassThroughComponent);
+      const PassThroughComponent = gensx.Component(
+        "PassThroughComponent",
+        streamPassThroughComponent,
+      );
 
       // Test the collector component
       const collectedResult = await CollectorComponent({
@@ -486,7 +527,10 @@ suite("component", () => {
       // Define a component that transforms streams
       async function* upperCaseStreamComponent(): AsyncGenerator<string> {
         // Get the source stream
-        const sourceStream = gensx.Component("TextStreamComponent", textStreamComponent)();
+        const sourceStream = gensx.Component(
+          "TextStreamComponent",
+          textStreamComponent,
+        )();
 
         // Transform each chunk
         for await (const chunk of sourceStream) {
@@ -495,7 +539,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const UpperCaseStreamComponent = gensx.Component("UpperCaseStreamComponent", upperCaseStreamComponent);
+      const UpperCaseStreamComponent = gensx.Component(
+        "UpperCaseStreamComponent",
+        upperCaseStreamComponent,
+      );
 
       // Execute the transformer
       const result = UpperCaseStreamComponent({});
@@ -539,7 +586,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const StreamClassComponent = gensx.Component("StreamClassComponent", streamClassComponent);
+      const StreamClassComponent = gensx.Component(
+        "StreamClassComponent",
+        streamClassComponent,
+      );
 
       // Execute the component
       const result = await StreamClassComponent({});
@@ -576,7 +626,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const AsyncGeneratorComponent = gensx.Component("AsyncGeneratorComponent", asyncGeneratorComponent);
+      const AsyncGeneratorComponent = gensx.Component(
+        "AsyncGeneratorComponent",
+        asyncGeneratorComponent,
+      );
 
       // Execute the component
       const result = await AsyncGeneratorComponent({});
@@ -612,7 +665,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const SymbolAsyncIteratorComponent = gensx.Component("SymbolAsyncIteratorComponent", symbolAsyncIteratorComponent);
+      const SymbolAsyncIteratorComponent = gensx.Component(
+        "SymbolAsyncIteratorComponent",
+        symbolAsyncIteratorComponent,
+      );
 
       // Execute the component
       const result = await SymbolAsyncIteratorComponent({});
@@ -645,7 +701,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const MixedContentComponent = gensx.Component("MixedContentComponent", mixedContentComponent);
+      const MixedContentComponent = gensx.Component(
+        "MixedContentComponent",
+        mixedContentComponent,
+      );
 
       // Execute the component
       const result = MixedContentComponent();
@@ -670,7 +729,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const StringStreamComponent = gensx.Component("StringStreamComponent", stringStreamComponent);
+      const StringStreamComponent = gensx.Component(
+        "StringStreamComponent",
+        stringStreamComponent,
+      );
 
       // Execute the component
       const result = StringStreamComponent();
@@ -696,7 +758,8 @@ suite("component", () => {
       }
 
       // Create component with custom aggregator that sums numbers
-      const NumberStreamComponent = gensx.Component("NumberStream",
+      const NumberStreamComponent = gensx.Component(
+        "NumberStream",
         numberStreamComponent,
         {
           aggregator: (chunks: unknown[]) => {
@@ -734,7 +797,10 @@ suite("component", () => {
       }
 
       // Apply decorator
-      const ReadableStreamComponent = gensx.Component("ReadableStreamComponent", readableStreamComponent);
+      const ReadableStreamComponent = gensx.Component(
+        "ReadableStreamComponent",
+        readableStreamComponent,
+      );
 
       // Execute the component
       const result = ReadableStreamComponent({});
@@ -768,9 +834,12 @@ suite("component", () => {
       }
 
       // Create component with streamKey
-      const ObjectStreamComponent = gensx.Component("ObjectStream", objectStreamComponent, {
-        __streamingResultKey: "text",
-      },
+      const ObjectStreamComponent = gensx.Component(
+        "ObjectStream",
+        objectStreamComponent,
+        {
+          __streamingResultKey: "text",
+        },
       );
 
       // Execute the component
@@ -828,7 +897,10 @@ suite("component", () => {
       }
 
       // Create component using helper
-      const NoPropsComponent = gensx.Component("NoPropsComponent", noPropsComponent);
+      const NoPropsComponent = gensx.Component(
+        "NoPropsComponent",
+        noPropsComponent,
+      );
 
       // Execute without any arguments - this should not throw
       const result = await NoPropsComponent();
@@ -896,9 +968,13 @@ suite("component", () => {
       }
 
       // Create component with metadata
-      const MetadataComponent = gensx.Component("MetadataComponent", metadataComponent, {
-        metadata: { test: "value" },
-      });
+      const MetadataComponent = gensx.Component(
+        "MetadataComponent",
+        metadataComponent,
+        {
+          metadata: { test: "value" },
+        },
+      );
 
       // Define workflow that uses the component
       async function metadataWorkflow(): Promise<string> {
@@ -906,10 +982,14 @@ suite("component", () => {
       }
 
       // Create workflow with its own metadata
-      const MetadataWorkflow = gensx.Workflow("MetadataWorkflow", metadataWorkflow, {
-        name: "MetadataWorkflow",
-        metadata: { workflow: "test" },
-      });
+      const MetadataWorkflow = gensx.Workflow(
+        "MetadataWorkflow",
+        metadataWorkflow,
+        {
+          name: "MetadataWorkflow",
+          metadata: { workflow: "test" },
+        },
+      );
 
       // Execute the workflow
       const result = await MetadataWorkflow({});
@@ -924,7 +1004,10 @@ suite("component", () => {
       }
 
       // Create workflow
-      const NoPropsWorkflow = gensx.Workflow("NoPropsWorkflow", noPropsWorkflow);
+      const NoPropsWorkflow = gensx.Workflow(
+        "NoPropsWorkflow",
+        noPropsWorkflow,
+      );
 
       // Execute without any arguments - this should not throw
       const result = await NoPropsWorkflow();
@@ -939,7 +1022,10 @@ suite("component", () => {
       }
 
       // Create workflow
-      const EmptyPropsWorkflow = gensx.Workflow("EmptyPropsWorkflow", emptyPropsWorkflow);
+      const EmptyPropsWorkflow = gensx.Workflow(
+        "EmptyPropsWorkflow",
+        emptyPropsWorkflow,
+      );
 
       // Execute with empty object
       const result = await EmptyPropsWorkflow({});

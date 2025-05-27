@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
@@ -126,7 +125,10 @@ export const wrapOpenAI = (
 
                   // Now we can safely define the $callback property
                   Object.defineProperty(newTool, "$callback", {
-                    value: Component(`Tool.${tool.function.name}`, boundCallback),
+                    value: Component(
+                      `Tool.${tool.function.name}`,
+                      boundCallback,
+                    ),
                   });
                   Object.defineProperty(newTool, "$parseRaw", {
                     value: (tool as any).$parseRaw,

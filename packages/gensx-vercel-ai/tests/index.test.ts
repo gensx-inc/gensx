@@ -10,7 +10,10 @@ const languageModel = openai("gpt-4o-mini");
 const embeddingModel = openai.embedding("text-embedding-3-small");
 
 test("StreamText streams text response", async () => {
-  const workflow = gensx.Workflow("StreamText", AI.streamText) as AI.WorkflowType<typeof AI.streamText>;
+  const workflow = gensx.Workflow(
+    "StreamText",
+    AI.streamText,
+  ) as AI.WorkflowType<typeof AI.streamText>;
 
   // Test streaming mode
   const streamTextResult = await workflow({
@@ -33,7 +36,10 @@ test("StreamText streams text response", async () => {
 });
 
 test("StreamObject streams JSON objects", async () => {
-  const workflow = gensx.Workflow("StreamObject", AI.streamObject) as AI.WorkflowType<typeof AI.streamObject>;
+  const workflow = gensx.Workflow(
+    "StreamObject",
+    AI.streamObject,
+  ) as AI.WorkflowType<typeof AI.streamObject>;
 
   const response = await workflow({
     prompt: "Generate a recipe",
@@ -51,7 +57,10 @@ test("StreamObject streams JSON objects", async () => {
 });
 
 test("GenerateText generates text", async () => {
-  const workflow = gensx.Workflow("GenerateText", AI.generateText) as AI.WorkflowType<typeof AI.generateText>;
+  const workflow = gensx.Workflow(
+    "GenerateText",
+    AI.generateText,
+  ) as AI.WorkflowType<typeof AI.generateText>;
   const result = await workflow({
     prompt: "Tell me a joke",
     model: languageModel,
@@ -60,7 +69,10 @@ test("GenerateText generates text", async () => {
 });
 
 test("GenerateObject generates JSON object", async () => {
-  const workflow = gensx.Workflow("GenerateObject", AI.generateObject) as AI.WorkflowType<typeof AI.generateObject>;
+  const workflow = gensx.Workflow(
+    "GenerateObject",
+    AI.generateObject,
+  ) as AI.WorkflowType<typeof AI.generateObject>;
   const response = await workflow({
     prompt: "Generate a recipe",
     model: languageModel,
@@ -112,7 +124,9 @@ test("GenerateObject generates JSON object", async () => {
 });
 
 test("Embed generates embeddings", async () => {
-  const workflow = gensx.Workflow("Embed", AI.embed) as AI.WorkflowType<typeof AI.embed>;
+  const workflow = gensx.Workflow("Embed", AI.embed) as AI.WorkflowType<
+    typeof AI.embed
+  >;
   const result = await workflow({
     value: "Sample text to embed",
     model: embeddingModel,
@@ -128,7 +142,9 @@ test("Embed generates embeddings", async () => {
 });
 
 test("EmbedMany generates multiple embeddings", async () => {
-  const workflow = gensx.Workflow("EmbedMany", AI.embedMany) as AI.WorkflowType<typeof AI.embedMany>;
+  const workflow = gensx.Workflow("EmbedMany", AI.embedMany) as AI.WorkflowType<
+    typeof AI.embedMany
+  >;
   const result = await workflow({
     values: ["Text 1", "Text 2"],
     model: embeddingModel,
