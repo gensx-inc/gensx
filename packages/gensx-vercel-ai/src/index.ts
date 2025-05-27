@@ -5,7 +5,8 @@
 
 import type { Tool, ToolExecutionOptions } from "ai";
 
-import { ComponentOpts, createComponent, wrap } from "@gensx/core";
+import { Component, ComponentOpts, wrap } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import * as ai from "ai";
 
 export type AsyncIterableStream<T> = AsyncIterable<T> & ReadableStream<T>;
@@ -25,20 +26,20 @@ function wrapTools<T extends Record<string, Tool>>(
 
       const wrappedTool = {
         ...tool,
-        execute: async (
+        execute: (
           args: ToolParams,
           options: ToolExecutionOptions,
         ): Promise<ToolResult> => {
-          const ToolComponent = createComponent(
-            async (toolArgs) => {
+          const ToolComponent = Component(
+            `Tool_${name}`,
+            async (toolArgs: ToolParams) => {
               if (!tool.execute)
                 throw new Error(`Tool ${name} has no execute function`);
 
               return await tool.execute(toolArgs, options);
             },
-            { name: `Tool_${name}` },
           );
-          return await ToolComponent(args as unknown as object);
+          return ToolComponent(args as unknown as object);
         },
       } as unknown as T[string];
 
@@ -51,7 +52,23 @@ function wrapTools<T extends Record<string, Tool>>(
   ) as unknown as T;
 }
 
-export const streamText = createComponent(
+// Type helper for workflows
+export type WorkflowType<T extends (...args: any[]) => any> = (
+  props?: Parameters<T>[0]
+) => Promise<Awaited<ReturnType<T>>>;
+
+// Wrapper for Workflow that preserves types
+export function createWorkflow<T extends (...args: any[]) => any>(
+  name: string,
+  target: T,
+  workflowOpts?: gensx.WorkflowOpts,
+): WorkflowType<T> {
+  return gensx.Workflow(name, target, workflowOpts) as WorkflowType<T>;
+}
+
+// Export the original functions with proper typing
+export const streamText = Component(
+  "StreamText",
   new Proxy(ai.streamText, {
     apply: (target, thisArg, args) => {
       const [first, ...rest] = args;
@@ -67,11 +84,11 @@ export const streamText = createComponent(
         ...rest,
       ]);
     },
-  }),
-  { name: "StreamText" },
+  })
 ) as typeof ai.streamText;
 
-export const streamObject = createComponent(
+export const streamObject = Component(
+  "StreamObject",
   new Proxy(ai.streamObject, {
     apply: (target, thisArg, args) => {
       const [first, ...rest] = args;
@@ -85,12 +102,10 @@ export const streamObject = createComponent(
       ]);
     },
   }),
-  {
-    name: "StreamObject",
-  },
 ) as typeof ai.streamObject;
 
-export const generateObject = createComponent(
+export const generateObject = Component(
+  "GenerateObject",
   new Proxy(ai.generateObject, {
     apply: (target, thisArg, args) => {
       const [first, ...rest] = args;
@@ -104,10 +119,10 @@ export const generateObject = createComponent(
       ]);
     },
   }),
-  { name: "GenerateObject" },
 ) as typeof ai.generateObject;
 
-export const generateText = createComponent(
+export const generateText = Component(
+  "GenerateText",
   new Proxy(ai.generateText, {
     apply: (target, thisArg, args) => {
       const [first, ...rest] = args;
@@ -124,20 +139,13 @@ export const generateText = createComponent(
       ]);
     },
   }),
-  { name: "GenerateText" },
 ) as typeof ai.generateText;
 
-export const embed = createComponent(ai.embed, {
-  name: "embed",
-}) as unknown as typeof ai.embed;
+export const embed = Component("embed", ai.embed) as typeof ai.embed;
 
-export const embedMany = createComponent(ai.embedMany, {
-  name: "embedMany",
-}) as unknown as typeof ai.embedMany;
+export const embedMany = Component("embedMany", ai.embedMany) as typeof ai.embedMany;
 
-export const generateImage = createComponent(ai.experimental_generateImage, {
-  name: "generateImage",
-}) as unknown as typeof ai.experimental_generateImage;
+export const generateImage = Component("generateImage", ai.experimental_generateImage) as typeof ai.experimental_generateImage;
 
 export const wrapVercelAIModel = <T extends object>(
   languageModel: T,
@@ -192,10 +200,10 @@ export const wrapVercelAIModel = <T extends object>(
               );
             });
         }
-        return createComponent(
+        return Component(
+          componentName,
           originalValue.bind(target) as (input: object) => unknown,
           {
-            name: componentName,
             ...componentOpts,
             aggregator,
             __streamingResultKey,

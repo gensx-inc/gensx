@@ -14,8 +14,7 @@ interface OpenAIExampleProps {
   prompt: string;
 }
 
-@gensx.Workflow()
-export async function BasicCompletion({ prompt }: OpenAIExampleProps) {
+export const BasicCompletion = gensx.Component("BasicCompletion", async ({ prompt }: OpenAIExampleProps) => {
   const result = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     temperature: 0.7,
@@ -32,10 +31,9 @@ export async function BasicCompletion({ prompt }: OpenAIExampleProps) {
     ],
   });
   return result.choices[0].message.content;
-}
+});
 
-@gensx.Workflow()
-export async function StreamingCompletion({ prompt }: OpenAIExampleProps) {
+export const StreamingCompletion = gensx.Component("StreamingCompletion", async ({ prompt }: OpenAIExampleProps) => {
   const result = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     temperature: 0.7,
@@ -53,7 +51,7 @@ export async function StreamingCompletion({ prompt }: OpenAIExampleProps) {
     stream: true,
   });
   return result;
-}
+});
 
 const tools = [
   {
@@ -83,8 +81,7 @@ const tools = [
   }
 ]
 
-@gensx.Workflow()
-export async function Tools({ prompt }: OpenAIExampleProps) {
+export const Tools = gensx.Component("Tools", async ({ prompt }: OpenAIExampleProps) => {
   const result = await openai.beta.chat.completions.runTools({
     model: "gpt-4.1-mini",
     temperature: 0.7,
@@ -102,10 +99,9 @@ export async function Tools({ prompt }: OpenAIExampleProps) {
     tools,
   });
   return await result.finalContent();
-}
+});
 
-@gensx.Workflow()
-export async function StreamingTools({ prompt }: OpenAIExampleProps) {
+export const StreamingTools = gensx.Component("StreamingTools", async ({ prompt }: OpenAIExampleProps) => {
   const result = await openai.beta.chat.completions.runTools({
     model: "gpt-4.1-mini",
     temperature: 0.7,
@@ -124,7 +120,7 @@ export async function StreamingTools({ prompt }: OpenAIExampleProps) {
     stream: true,
   });
   return result;
-}
+});
 
 const trashRatingSchema = z.object({
   bins: z.array(
@@ -144,8 +140,7 @@ const trashRatingSchema = z.object({
 
 type TrashRating = z.infer<typeof trashRatingSchema>;
 
-@gensx.Workflow()
-export async function StructuredOutput({ prompt }: OpenAIExampleProps) {
+export const StructuredOutput = gensx.Component("StructuredOutput", async ({ prompt }: OpenAIExampleProps) => {
   const result = await openai.beta.chat.completions.parse({
     model: "gpt-4.1-mini",
     temperature: 0.7,
@@ -163,4 +158,4 @@ export async function StructuredOutput({ prompt }: OpenAIExampleProps) {
     response_format: zodResponseFormat(trashRatingSchema, "trashRating"),
   });
   return result.choices[0]!.message.parsed as TrashRating;
-}
+});

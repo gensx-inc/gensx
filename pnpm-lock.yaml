@@ -469,10 +469,10 @@ importers:
         version: link:../../packages/gensx-openai
       openai:
         specifier: ^4.0.0
-        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.29)
       zod:
-        specifier: ^3.25.20
-        version: 3.25.20
+        specifier: ^3.24.2
+        version: 3.25.29
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -739,19 +739,19 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: ^1.3.22
-        version: 1.3.22(zod@3.25.28)
+        version: 1.3.22(zod@3.25.29)
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.4
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/vercel-ai':
-        specifier: alpha
-        version: 0.2.0-alpha.4(react@19.1.0)
+        specifier: workspace:*
+        version: link:../../packages/gensx-vercel-ai
       ai:
         specifier: ^4.3.16
-        version: 4.3.16(react@19.1.0)(zod@3.25.28)
+        version: 4.3.16(react@19.1.0)(zod@3.25.29)
       zod:
-        specifier: ^3.25.28
-        version: 3.25.28
+        specifier: ^3.24.2
+        version: 3.25.29
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -1101,14 +1101,14 @@ importers:
         version: link:../gensx-core
       ai:
         specifier: ^4.3.16
-        version: 4.3.16(react@19.1.0)(zod@3.25.28)
+        version: 4.3.16(react@19.1.0)(zod@3.25.29)
       zod:
-        specifier: ^3.25.28
-        version: 3.25.28
+        specifier: 'catalog:'
+        version: 3.25.29
     devDependencies:
       '@ai-sdk/openai':
         specifier: ^1.3.6
-        version: 1.3.22(zod@3.25.28)
+        version: 1.3.22(zod@3.25.29)
       '@types/node':
         specifier: catalog:packages
         version: 18.19.86
@@ -1120,7 +1120,7 @@ importers:
         version: 3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
       zod-to-json-schema:
         specifier: 'catalog:'
-        version: 3.24.5(zod@3.25.28)
+        version: 3.24.5(zod@3.25.29)
 
   packages/gensx-windsurf-rules:
     devDependencies:
@@ -7809,9 +7809,6 @@ packages:
   zod@3.25.20:
     resolution: {integrity: sha512-z03fqpTMDF1G02VLKUMt6vyACE7rNWkh3gpXVHgPTw28NPtDFRGvcpTtPwn2kMKtQ0idtYJUTxchytmnqYswcw==}
 
-  zod@3.25.28:
-    resolution: {integrity: sha512-/nt/67WYKnr5by3YS7LroZJbtcCBurDKKPBPWWzaxvVCGuG/NOsiKkrjoOhI8mJ+SQUXEbUzeB3S+6XDUEEj7Q==}
-
   zod@3.25.29:
     resolution: {integrity: sha512-xetH/muIYuAyN7YJGKh99jkBQq/XbGEyTkv7JC4YYsWppHmfoU1MDoQa441WD1QMDaeCaEBO0e0hl1iSmluNQQ==}
 
@@ -7843,12 +7840,6 @@ snapshots:
       '@ai-sdk/provider': 1.1.3
       '@ai-sdk/provider-utils': 2.2.8(zod@3.24.2)
       zod: 3.24.2
-
-  '@ai-sdk/openai@1.3.22(zod@3.25.28)':
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.28)
-      zod: 3.25.28
 
   '@ai-sdk/openai@1.3.22(zod@3.25.29)':
     dependencies:
@@ -7883,13 +7874,6 @@ snapshots:
       secure-json-parse: 2.7.0
       zod: 3.24.2
 
-  '@ai-sdk/provider-utils@2.2.8(zod@3.25.28)':
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      nanoid: 3.3.11
-      secure-json-parse: 2.7.0
-      zod: 3.25.28
-
   '@ai-sdk/provider-utils@2.2.8(zod@3.25.29)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
@@ -7908,16 +7892,6 @@ snapshots:
   '@ai-sdk/provider@1.1.3':
     dependencies:
       json-schema: 0.4.0
-
-  '@ai-sdk/react@1.2.12(react@19.1.0)(zod@3.25.28)':
-    dependencies:
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.28)
-      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.28)
-      react: 19.1.0
-      swr: 2.3.3(react@19.1.0)
-      throttleit: 2.1.0
-    optionalDependencies:
-      zod: 3.25.28
 
   '@ai-sdk/react@1.2.12(react@19.1.0)(zod@3.25.29)':
     dependencies:
@@ -7938,13 +7912,6 @@ snapshots:
       throttleit: 2.1.0
     optionalDependencies:
       zod: 3.24.2
-
-  '@ai-sdk/ui-utils@1.2.11(zod@3.25.28)':
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.28)
-      zod: 3.25.28
-      zod-to-json-schema: 3.24.5(zod@3.25.28)
 
   '@ai-sdk/ui-utils@1.2.11(zod@3.25.29)':
     dependencies:
@@ -10195,18 +10162,6 @@ snapshots:
   agentkeepalive@4.6.0:
     dependencies:
       humanize-ms: 1.2.1
-
-  ai@4.3.16(react@19.1.0)(zod@3.25.28):
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.28)
-      '@ai-sdk/react': 1.2.12(react@19.1.0)(zod@3.25.28)
-      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.28)
-      '@opentelemetry/api': 1.9.0
-      jsondiffpatch: 0.6.0
-      zod: 3.25.28
-    optionalDependencies:
-      react: 19.1.0
 
   ai@4.3.16(react@19.1.0)(zod@3.25.29):
     dependencies:
@@ -15516,10 +15471,6 @@ snapshots:
     dependencies:
       zod: 3.24.2
 
-  zod-to-json-schema@3.24.5(zod@3.25.28):
-    dependencies:
-      zod: 3.25.28
-
   zod-to-json-schema@3.24.5(zod@3.25.29):
     dependencies:
       zod: 3.25.29
@@ -15531,8 +15482,6 @@ snapshots:
   zod@3.24.2: {}
 
   zod@3.25.20: {}
-
-  zod@3.25.28: {}
 
   zod@3.25.29: {}
 

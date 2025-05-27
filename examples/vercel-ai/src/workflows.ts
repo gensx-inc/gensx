@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Workflow } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import {
   generateText, streamText, streamObject, generateObject
 } from "@gensx/vercel-ai";
@@ -23,8 +23,7 @@ const tools = {
   }),
 } as const;
 
-@Workflow()
-export async function BasicChat({ prompt }: { prompt: string }): Promise<string> {
+export const BasicChat = gensx.Workflow("BasicChat", async ({ prompt }: { prompt: string }): Promise<string> => {
   const result = await generateText({
     messages: [
       {
@@ -39,10 +38,9 @@ export async function BasicChat({ prompt }: { prompt: string }): Promise<string>
     model: openai("gpt-4o-mini"),
   });
   return result.text;
-}
+});
 
-@Workflow()
-export async function BasicChatWithTools({ prompt }: { prompt: string }): Promise<string> {
+export const BasicChatWithTools = gensx.Workflow("BasicChatWithTools", async ({ prompt }: { prompt: string }): Promise<string> => {
   const result = await generateText({
     messages: [
       {
@@ -59,10 +57,9 @@ export async function BasicChatWithTools({ prompt }: { prompt: string }): Promis
     tools: tools,
   });
   return result.text;
-}
+});
 
-@Workflow()
-export async function StreamingChat({ prompt }: { prompt: string }) {
+export const StreamingChat = gensx.Workflow("StreamingChat", async ({ prompt }: { prompt: string }) => {
   const result = streamText({
     messages: [
       {
@@ -84,10 +81,9 @@ export async function StreamingChat({ prompt }: { prompt: string }) {
   }
 
   return generator();
-}
+});
 
-@Workflow()
-export async function StreamingChatWithTools({ prompt }: { prompt: string }) {
+export const StreamingChatWithTools = gensx.Workflow("StreamingChatWithTools", async ({ prompt }: { prompt: string }) => {
   const result = streamText({
     messages: [
       {
@@ -111,7 +107,7 @@ export async function StreamingChatWithTools({ prompt }: { prompt: string }) {
   }
 
   return generator();
-}
+});
 
 const trashBinSchema = z.object({
   bins: z.array(
@@ -129,8 +125,7 @@ const trashBinSchema = z.object({
     .describe("Overall verdict on the neighborhood's trash quality"),
 });
 
-@Workflow()
-export async function StructuredOutput({ prompt }: { prompt: string }) {
+export const StructuredOutput = gensx.Workflow("StructuredOutput", async ({ prompt }: { prompt: string }) => {
   const result = await generateObject({
     messages: [
       {
@@ -146,10 +141,9 @@ export async function StructuredOutput({ prompt }: { prompt: string }) {
     model: openai("gpt-4o-mini"),
   });
   return result.object;
-}
+});
 
-@Workflow()
-export async function StreamingStructuredOutput({ prompt }: { prompt: string }) {
+export const StreamingStructuredOutput = gensx.Workflow("StreamingStructuredOutput", async ({ prompt }: { prompt: string }) => {
   const result = streamObject({
     messages: [
       {
@@ -172,4 +166,4 @@ export async function StreamingStructuredOutput({ prompt }: { prompt: string }) 
   }
 
   return generator();
-}
+});

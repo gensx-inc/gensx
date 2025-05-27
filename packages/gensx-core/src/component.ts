@@ -7,9 +7,7 @@ import { setTimeout } from "timers/promises";
 import type {
   ComponentOpts,
   ComponentOpts as OriginalComponentOpts,
-  DecoratorComponentOpts,
-  DecoratorWorkflowOpts,
-  WorkflowOpts,
+  DecoratorComponentOpts, WorkflowOpts
 } from "./types.js";
 
 import serializeErrorPkg from "@common.js/serialize-error";
@@ -62,61 +60,12 @@ function getResolvedOpts(
   return merged;
 }
 
-export function Component(decoratorOpts?: DecoratorComponentOpts) {
-  return function <P extends object = {}, R = unknown>(
-    target: (props: P) => R,
-    context?:
-      | ClassMethodDecoratorContext
-      | ClassAccessorDecoratorContext
-      | ClassFieldDecoratorContext
-      | ClassDecoratorContext,
-  ): (props?: P) => R {
-    // Only wrap class methods
-    if (context && context.kind !== "method") {
-      console.warn("Component decorator can only be applied to class methods.");
-      return target as (props?: P) => R;
-    }
 
-    return createComponent<P, R>(target, decoratorOpts) as (props?: P) => R;
-  };
-}
-
-export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
-  return function <P extends object = {}, R = unknown>(
-    target: (props: P) => R,
-    context?:
-      | ClassMethodDecoratorContext
-      | ClassAccessorDecoratorContext
-      | ClassDecoratorContext
-      | ClassFieldDecoratorContext,
-  ): (props?: P) => Promise<Awaited<R>> {
-    // Only wrap class methods
-    if (context && context.kind !== "method") {
-      console.warn("Workflow decorator can only be applied to class methods.");
-      return (async (props?: P) => await target((props ?? {}) as P)) as (
-        props?: P,
-      ) => Promise<Awaited<R>>;
-    }
-
-    return createWorkflow<P, R>(target, decoratorOpts);
-  };
-}
-
-export function createComponent<P extends object = {}, R = unknown>(
+export function Component<P extends object = {}, R = unknown>(
+  name: string,
   target: (props: P) => R,
-  componentOpts?: ComponentOpts | string,
-) {
-  // Name for the function object itself (e.g., for display, stack traces)
-  // Priority: decorator explicit name > target function's actual name.
-  const componentFunctionObjectName =
-    typeof componentOpts === "string"
-      ? componentOpts
-      : (componentOpts?.name ?? target.name);
-  if (!componentFunctionObjectName) {
-    throw new Error(
-      "Component name must be provided either via options or by naming the function.",
-    );
-  }
+  componentOpts?: ComponentOpts,
+): (props?: P, runtimeOpts?: ComponentOpts) => R {
 
   const ComponentFn = (props?: P, runtimeOpts?: ComponentOpts): R => {
     const context = getCurrentContext();
@@ -128,7 +77,7 @@ export function createComponent<P extends object = {}, R = unknown>(
     const resolvedComponentOpts = getResolvedOpts(
       componentOpts,
       runtimeOpts,
-      target.name,
+      name,
     );
     const checkpointName = resolvedComponentOpts.name;
 
@@ -143,10 +92,10 @@ export function createComponent<P extends object = {}, R = unknown>(
         componentName: checkpointName,
         props: props
           ? Object.fromEntries(
-              Object.entries(props).filter(
-                ([key]) => key !== "children" && key !== "componentOpts",
-              ),
-            )
+            Object.entries(props).filter(
+              ([key]) => key !== "children" && key !== "componentOpts",
+            ),
+          )
           : {},
         componentOpts: resolvedComponentOpts,
       },
@@ -165,18 +114,18 @@ export function createComponent<P extends object = {}, R = unknown>(
         resolvedComponentOpts.__streamingResultKey !== undefined &&
         (isAsyncIterable(
           (value as Record<string, unknown>)[
-            resolvedComponentOpts.__streamingResultKey
+          resolvedComponentOpts.__streamingResultKey
           ],
         ) ||
           isReadableStream(
             (value as Record<string, unknown>)[
-              resolvedComponentOpts.__streamingResultKey
+            resolvedComponentOpts.__streamingResultKey
             ],
           ))
       ) {
         const streamingResult = captureAsyncGenerator(
           (value as Record<string, unknown>)[
-            resolvedComponentOpts.__streamingResultKey
+          resolvedComponentOpts.__streamingResultKey
           ] as AsyncIterable<unknown>,
           runInContext,
           {
@@ -237,7 +186,7 @@ export function createComponent<P extends object = {}, R = unknown>(
   };
 
   Object.defineProperty(ComponentFn, "name", {
-    value: componentFunctionObjectName,
+    value: name,
     configurable: true,
   });
   Object.defineProperty(ComponentFn, "__gensxComponent", {
@@ -247,15 +196,11 @@ export function createComponent<P extends object = {}, R = unknown>(
   return ComponentFn;
 }
 
-export function createWorkflow<P extends object = {}, R = unknown>(
+export function Workflow<P extends object = {}, R = unknown>(
+  name: string,
   target: (props: P) => R,
-  workflowOpts?: WorkflowOpts | string,
+  workflowOpts?: WorkflowOpts,
 ): (props?: P) => Promise<Awaited<R>> {
-  // Use the overridden name from componentOpts if provided
-  const configuredWorkflowName =
-    typeof workflowOpts === "string"
-      ? workflowOpts
-      : (workflowOpts?.name ?? target.name);
 
   const WorkflowFn = async (
     props?: P,
@@ -273,7 +218,7 @@ export function createWorkflow<P extends object = {}, R = unknown>(
         : (workflowOpts?.printUrl ?? defaultPrintUrl),
     );
 
-    const workflowName = runtimeOpts?.name ?? configuredWorkflowName;
+    const workflowName = name;
     if (!workflowName) {
       throw new Error(
         "Workflow name must be provided either via options or by naming the function.",
@@ -282,7 +227,7 @@ export function createWorkflow<P extends object = {}, R = unknown>(
 
     workflowContext.checkpointManager.setWorkflowName(workflowName);
 
-    const component = createComponent<P, R>(target);
+    const component = Component<P, R>(name, target);
 
     try {
       const result = await withContext(context, () =>
@@ -291,7 +236,7 @@ export function createWorkflow<P extends object = {}, R = unknown>(
 
       const rootId = workflowContext.checkpointManager.root?.id;
       if (rootId) {
-        if (typeof workflowOpts !== "string" && workflowOpts?.metadata) {
+        if (workflowOpts?.metadata) {
           workflowContext.checkpointManager.addMetadata(
             rootId,
             workflowOpts.metadata,
@@ -311,7 +256,7 @@ export function createWorkflow<P extends object = {}, R = unknown>(
   };
 
   Object.defineProperty(WorkflowFn, "name", {
-    value: configuredWorkflowName,
+    value: name,
     configurable: true,
   });
   Object.defineProperty(WorkflowFn, "__gensxWorkflow", {

@@ -14,12 +14,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "rootDir": "./src",
-    "outDir": "./dist",
-    "plugins": [
-      {
-        "name": "ts-function-decorator-ls"
-      }
-    ]
+    "outDir": "./dist"
   },
   "include": [
     "./*.ts",
