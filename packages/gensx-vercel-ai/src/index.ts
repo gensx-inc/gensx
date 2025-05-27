@@ -6,7 +6,6 @@
 import type { Tool, ToolExecutionOptions } from "ai";
 
 import { Component, ComponentOpts, wrap } from "@gensx/core";
-import * as gensx from "@gensx/core";
 import * as ai from "ai";
 
 export type AsyncIterableStream<T> = AsyncIterable<T> & ReadableStream<T>;
@@ -50,20 +49,6 @@ function wrapTools<T extends Record<string, Tool>>(
     },
     {},
   ) as unknown as T;
-}
-
-// Type helper for workflows
-export type WorkflowType<T extends (...args: any[]) => any> = (
-  props?: Parameters<T>[0],
-) => Promise<Awaited<ReturnType<T>>>;
-
-// Wrapper for Workflow that preserves types
-export function createWorkflow<T extends (...args: any[]) => any>(
-  name: string,
-  target: T,
-  workflowOpts?: gensx.WorkflowOpts,
-): WorkflowType<T> {
-  return gensx.Workflow(name, target, workflowOpts) as WorkflowType<T>;
 }
 
 // Export the original functions with proper typing
