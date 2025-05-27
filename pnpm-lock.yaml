@@ -499,15 +499,9 @@ importers:
       '@types/node':
         specifier: ^22
         version: 22.15.21
-      ts-function-decorator:
-        specifier: ^0.0.1
-        version: 0.0.1(ts-patch@3.3.0)(typescript@5.8.2)
-      ts-function-decorator-ls:
-        specifier: ^0.0.1
-        version: 0.0.1(typescript@5.8.2)
-      ts-patch:
-        specifier: ^3.3.0
-        version: 3.3.0
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.4
       typescript:
         specifier: ^5.7.2
         version: 5.8.2
@@ -778,15 +772,9 @@ importers:
       '@types/node':
         specifier: ^22
         version: 22.13.10
-      ts-function-decorator:
-        specifier: ^0.0.1
-        version: 0.0.1(ts-patch@3.3.0)(typescript@5.8.2)
-      ts-function-decorator-ls:
-        specifier: ^0.0.1
-        version: 0.0.1(typescript@5.8.2)
-      ts-patch:
-        specifier: ^3.3.0
-        version: 3.3.0
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.4
       typescript:
         specifier: ^5.7.2
         version: 5.8.2

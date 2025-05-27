@@ -8,11 +8,10 @@
   },
   "description": "Use GenSX to create a chat completion",
   "scripts": {
-    "dev": "pnpm build && node --enable-source-maps dist/index.js",
+    "dev": "tsx ./src/index.ts",
     "start": "npx gensx start ./src/workflows.ts",
     "build": "tsc",
-    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts",
-    "prepare": "ts-patch install -s"
+    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts"
   },
   "dependencies": {
     "@gensx/openai": "workspace:*",
@@ -22,9 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "^22",
-    "ts-function-decorator": "^0.0.1",
-    "ts-function-decorator-ls": "^0.0.1",
-    "ts-patch": "^3.3.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
 }

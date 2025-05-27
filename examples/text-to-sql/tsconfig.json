@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",
-    "lib": ["ESNext", "DOM"],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -12,12 +15,13 @@
     "isolatedModules": true,
     "rootDir": "./src",
     "outDir": "./dist",
-    "plugins": [
-      {
-        "name": "ts-function-decorator-ls"
-      }
-    ]
   },
-  "include": ["./*.ts", "./**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "./*.ts",
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

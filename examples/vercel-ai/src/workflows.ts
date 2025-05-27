@@ -23,91 +23,99 @@ const tools = {
   }),
 } as const;
 
-export const BasicChat = gensx.Workflow("BasicChat", async ({ prompt }: { prompt: string }): Promise<string> => {
-  const result = await generateText({
-    messages: [
-      {
-        role: "system",
-        content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    model: openai("gpt-4o-mini"),
-  });
-  return result.text;
-});
-
-export const BasicChatWithTools = gensx.Workflow("BasicChatWithTools", async ({ prompt }: { prompt: string }): Promise<string> => {
-  const result = await generateText({
-    messages: [
-      {
-        role: "system",
-        content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    maxSteps: 10,
-    model: openai("gpt-4o-mini"),
-    tools: tools,
-  });
-  return result.text;
-});
-
-export const StreamingChat = gensx.Workflow("StreamingChat", async ({ prompt }: { prompt: string }) => {
-  const result = streamText({
-    messages: [
-      {
-        role: "system",
-        content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    model: openai("gpt-4o-mini"),
+export const BasicChat = gensx.Workflow(
+  "BasicChat",
+  async ({ prompt }: { prompt: string }): Promise<string> => {
+    const result = await generateText({
+      messages: [
+        {
+          role: "system",
+          content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: openai("gpt-4o-mini"),
+    });
+    return result.text;
   });
 
-  const generator = async function* () {
-    for await (const chunk of result.textStream) {
-      yield chunk;
+export const BasicChatWithTools = gensx.Workflow(
+  "BasicChatWithTools",
+  async ({ prompt }: { prompt: string }): Promise<string> => {
+    const result = await generateText({
+      messages: [
+        {
+          role: "system",
+          content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      maxSteps: 10,
+      model: openai("gpt-4o-mini"),
+      tools: tools,
+    });
+    return result.text;
+  });
+
+export const StreamingChat = gensx.Workflow(
+  "StreamingChat",
+  async ({ prompt }: { prompt: string }) => {
+    const result = streamText({
+      messages: [
+        {
+          role: "system",
+          content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: openai("gpt-4o-mini"),
+    });
+
+    const generator = async function* () {
+      for await (const chunk of result.textStream) {
+        yield chunk;
+      }
     }
-  }
 
-  return generator();
-});
-
-export const StreamingChatWithTools = gensx.Workflow("StreamingChatWithTools", async ({ prompt }: { prompt: string }) => {
-  const result = streamText({
-    messages: [
-      {
-        role: "system",
-        content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    maxSteps: 10,
-    model: openai("gpt-4o-mini"),
-    tools: tools,
+    return generator();
   });
 
-  const generator = async function* () {
-    for await (const chunk of result.textStream) {
-      yield chunk;
-    }
-  }
+export const StreamingChatWithTools = gensx.Workflow(
+  "StreamingChatWithTools",
+  async ({ prompt }: { prompt: string }) => {
+    const result = streamText({
+      messages: [
+        {
+          role: "system",
+          content: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      maxSteps: 10,
+      model: openai("gpt-4o-mini"),
+      tools: tools,
+    });
 
-  return generator();
-});
+    const generator = async function* () {
+      for await (const chunk of result.textStream) {
+        yield chunk;
+      }
+    }
+
+    return generator();
+  });
 
 const trashBinSchema = z.object({
   bins: z.array(
@@ -125,45 +133,49 @@ const trashBinSchema = z.object({
     .describe("Overall verdict on the neighborhood's trash quality"),
 });
 
-export const StructuredOutput = gensx.Workflow("StructuredOutput", async ({ prompt }: { prompt: string }) => {
-  const result = await generateObject({
-    messages: [
-      {
-        role: "system",
-        content: "you are a trash eating infrastructure engineer embodied as a racoon. Users will send you some prompt but you should just respond with JSON representing some trash bins in the neighborhood Be sassy and fun and try to make the bins relevant to the user's prompt.",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    schema: trashBinSchema,
-    model: openai("gpt-4o-mini"),
-  });
-  return result.object;
-});
-
-export const StreamingStructuredOutput = gensx.Workflow("StreamingStructuredOutput", async ({ prompt }: { prompt: string }) => {
-  const result = streamObject({
-    messages: [
-      {
-        role: "system",
-        content: "you are a trash eating infrastructure engineer embodied as a racoon. Users will send you some prompt but you should just respond with JSON representing some trash bins in the neighborhood Be sassy and fun and try to make the bins relevant to the user's prompt.",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    schema: trashBinSchema,
-    model: openai("gpt-4o-mini"),
+export const StructuredOutput = gensx.Workflow(
+  "StructuredOutput",
+  async ({ prompt }: { prompt: string }) => {
+    const result = await generateObject({
+      messages: [
+        {
+          role: "system",
+          content: "you are a trash eating infrastructure engineer embodied as a racoon. Users will send you some prompt but you should just respond with JSON representing some trash bins in the neighborhood Be sassy and fun and try to make the bins relevant to the user's prompt.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      schema: trashBinSchema,
+      model: openai("gpt-4o-mini"),
+    });
+    return result.object;
   });
 
-  const generator = async function* () {
-    for await (const chunk of result.partialObjectStream) {
-      yield chunk;
+export const StreamingStructuredOutput = gensx.Workflow(
+  "StreamingStructuredOutput",
+  async ({ prompt }: { prompt: string }) => {
+    const result = streamObject({
+      messages: [
+        {
+          role: "system",
+          content: "you are a trash eating infrastructure engineer embodied as a racoon. Users will send you some prompt but you should just respond with JSON representing some trash bins in the neighborhood Be sassy and fun and try to make the bins relevant to the user's prompt.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      schema: trashBinSchema,
+      model: openai("gpt-4o-mini"),
+    });
+
+    const generator = async function* () {
+      for await (const chunk of result.partialObjectStream) {
+        yield chunk;
+      }
     }
-  }
 
-  return generator();
-});
+    return generator();
+  });

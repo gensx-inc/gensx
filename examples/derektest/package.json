@@ -1,12 +1,11 @@
 {
-  "name": "@examples/vercel-ai",
+  "name": "my-gensx-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
-  "description": "Example of using GenSX with the Vercel AI SDK",
   "scripts": {
     "dev": "tsx ./src/index.ts",
     "start": "npx gensx start ./src/workflows.ts",
@@ -16,13 +15,11 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",
     "@gensx/core": "workspace:*",
-    "@gensx/vercel-ai": "workspace:*",
-    "ai": "^4.3.16",
-    "zod": "^3.24.2"
+    "@gensx/vercel-ai": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22",
-    "tsx": "^4.19.2",
+    "@types/node": "^22.15.23",
+    "tsx": "^4.19.4",
     "typescript": "^5.7.2"
   }
 }
