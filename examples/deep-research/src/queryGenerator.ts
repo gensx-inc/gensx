@@ -11,11 +11,10 @@ export interface GenerateQueriesOutput {
   queries: string[];
 }
 
-@gensx.Component()
-export async function GenerateQueries({
-  prompt,
-}: GenerateQueriesProps): Promise<string[]> {
-  const systemMessage = `You are a helpful research assistant.
+export const GenerateQueries = gensx.Component(
+  "GenerateQueries",
+  async ({ prompt }: GenerateQueriesProps): Promise<GenerateQueriesOutput> => {
+    const systemMessage = `You are a helpful research assistant.
 
 Instructions:
 - You will be given a prompt and your job is to return a list of arxiv search queries
@@ -27,19 +26,19 @@ Please return json with the following format:
   "queries": ["query1", "query2", "query3"]
 }`;
 
-  const response = await generateObject({
-    model: openai("gpt-4o-mini"),
-    messages: [
-      {
-        role: "system",
-        content: systemMessage,
-      },
-      { role: "user", content: prompt },
-    ],
-    schema: z.object({
-      queries: z.array(z.string()),
-    }),
-  });
+    const response = await generateObject({
+      model: openai("gpt-4o-mini"),
+      messages: [
+        {
+          role: "system",
+          content: systemMessage,
+        },
+        { role: "user", content: prompt },
+      ],
+      schema: z.object({
+        queries: z.array(z.string()),
+      }),
+    });
 
-  return response.object.queries;
-}
+    return { queries: response.object.queries };
+  });

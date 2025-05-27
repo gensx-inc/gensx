@@ -1,5 +1,0 @@
-{
-  "watch": [".", ".env", "../../packages/**/dist/**"],
-  "exec": "pnpm build && node --enable-source-maps dist/index.js",
-  "ext": "ts, tsx, js, json"
-}
