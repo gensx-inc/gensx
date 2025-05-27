@@ -52,7 +52,7 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
             [...path, String(propKey)].join(".");
 
           // Bind the original `this` so SDK internals keep working
-          const boundFn = value.bind(origTarget) as (input: object) => unknown;
+          const boundFn = value.bind(origTarget) as (input?: object) => unknown;
           const componentOpts = opts.getComponentOpts?.(path, boundFn);
           return createComponent(boundFn, {
             name: componentName,

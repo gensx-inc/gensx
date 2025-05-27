@@ -63,46 +63,46 @@ function getResolvedOpts(
 }
 
 export function Component(decoratorOpts?: DecoratorComponentOpts) {
-  return function <P extends object, R>(
+  return function <P extends object = {}, R = unknown>(
     target: (props: P) => R,
     context?:
       | ClassMethodDecoratorContext
       | ClassAccessorDecoratorContext
       | ClassFieldDecoratorContext
       | ClassDecoratorContext,
-  ): (props: P) => R {
+  ): (props?: P) => R {
     // Only wrap class methods
     if (context && context.kind !== "method") {
       console.warn("Component decorator can only be applied to class methods.");
-      return target as (props: P) => R;
+      return target as (props?: P) => R;
     }
 
-    return createComponent(target, decoratorOpts) as (props: P) => R;
+    return createComponent<P, R>(target, decoratorOpts) as (props?: P) => R;
   };
 }
 
 export function Workflow(decoratorOpts?: DecoratorWorkflowOpts) {
-  return function <P extends object, R>(
+  return function <P extends object = {}, R = unknown>(
     target: (props: P) => R,
     context?:
       | ClassMethodDecoratorContext
       | ClassAccessorDecoratorContext
       | ClassDecoratorContext
       | ClassFieldDecoratorContext,
-  ): (props: P) => Promise<Awaited<R>> {
+  ): (props?: P) => Promise<Awaited<R>> {
     // Only wrap class methods
     if (context && context.kind !== "method") {
       console.warn("Workflow decorator can only be applied to class methods.");
-      return (async (props: P) => await target(props)) as (
-        props: P,
+      return (async (props?: P) => await target((props ?? {}) as P)) as (
+        props?: P,
       ) => Promise<Awaited<R>>;
     }
 
-    return createWorkflow(target, decoratorOpts);
+    return createWorkflow<P, R>(target, decoratorOpts);
   };
 }
 
-export function createComponent<P extends object, R>(
+export function createComponent<P extends object = {}, R = unknown>(
   target: (props: P) => R,
   componentOpts?: ComponentOpts | string,
 ) {
@@ -118,7 +118,7 @@ export function createComponent<P extends object, R>(
     );
   }
 
-  const ComponentFn = (props: P, runtimeOpts?: ComponentOpts): R => {
+  const ComponentFn = (props?: P, runtimeOpts?: ComponentOpts): R => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -130,10 +130,9 @@ export function createComponent<P extends object, R>(
       runtimeOpts,
       target.name,
     );
-    const checkpointName = resolvedComponentOpts.name; // This should now be definitively set by getResolvedOpts
+    const checkpointName = resolvedComponentOpts.name;
 
     if (!checkpointName) {
-      // Should not happen if getResolvedOpts guarantees a name
       throw new Error(
         "Internal error: Component checkpoint name could not be determined.",
       );
@@ -142,11 +141,11 @@ export function createComponent<P extends object, R>(
     const nodeId = checkpointManager.addNode(
       {
         componentName: checkpointName,
-        props: Object.fromEntries(
+        props: props ? Object.fromEntries(
           Object.entries(props).filter(
             ([key]) => key !== "children" && key !== "componentOpts",
           ),
-        ),
+        ) : {},
         componentOpts: resolvedComponentOpts,
       },
       currentNodeId,
@@ -214,7 +213,7 @@ export function createComponent<P extends object, R>(
       let runInContext: RunInContext;
       const result = context.withCurrentNode(nodeId, () => {
         runInContext = getContextSnapshot();
-        return target(props);
+        return target((props ?? {}) as P);
       });
 
       if (result instanceof Promise) {
@@ -246,10 +245,10 @@ export function createComponent<P extends object, R>(
   return ComponentFn;
 }
 
-export function createWorkflow<P extends object, R>(
+export function createWorkflow<P extends object = {}, R = unknown>(
   target: (props: P) => R,
   workflowOpts?: WorkflowOpts | string,
-): (props: P) => Promise<Awaited<R>> {
+): (props?: P) => Promise<Awaited<R>> {
   // Use the overridden name from componentOpts if provided
   const configuredWorkflowName =
     typeof workflowOpts === "string"
@@ -257,7 +256,7 @@ export function createWorkflow<P extends object, R>(
       : (workflowOpts?.name ?? target.name);
 
   const WorkflowFn = async (
-    props: P,
+    props?: P,
     runtimeOpts?: WorkflowOpts,
   ): Promise<Awaited<R>> => {
     const context = new ExecutionContext({});
@@ -281,7 +280,7 @@ export function createWorkflow<P extends object, R>(
 
     workflowContext.checkpointManager.setWorkflowName(workflowName);
 
-    const component = createComponent(target);
+    const component = createComponent<P, R>(target);
 
     try {
       const result = await withContext(context, () =>

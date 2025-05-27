@@ -53,7 +53,7 @@ interface ListModelsOutput {
 
 // Example component to list available models
 @gensx.Component()
-async function ListModels({ }) {
+async function ListModels() {
   const models = await openai.models.list();
   return models;
 }
@@ -76,7 +76,7 @@ async function GetModelPricing(model: OpenRouterModel): Promise<GetModelPricingO
 
 @gensx.Workflow()
 export async function GetAllOpenRouterModelPricing({ }) {
-  const models = await ListModels({});
+  const models = await ListModels();
   // Cast to any to work with the actual structure returned by OpenRouter
   const modelsData = (models as any).data as OpenRouterModel[];
   return Promise.all(modelsData.map((model) => GetModelPricing(model)));
