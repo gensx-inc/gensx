@@ -541,9 +541,6 @@ importers:
       ai:
         specifier: ^4.2.10
         version: 4.3.16(react@19.1.0)(zod@3.25.29)
-      openai:
-        specifier: ^4.87.4
-        version: 4.91.1(ws@8.18.0)(zod@3.25.29)
       zod:
         specifier: ^3.24.2
         version: 3.25.29
