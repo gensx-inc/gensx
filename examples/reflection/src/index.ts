@@ -1,12 +1,18 @@
 import * as gensx from "@gensx/core";
-import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+import { OpenAI } from "@gensx/openai";
 
-import { createReflectionLoop, ReflectionOutput } from "./reflection.js";
+import { Reflection, ReflectionOutput } from "./workflows.js";
 
-const ImproveText = gensx.Component<
-  { input: string; feedback: string },
-  string
->("ImproveText", ({ input, feedback }) => {
+const openai = new OpenAI();
+
+@gensx.Component()
+async function ImproveText({
+  input,
+  feedback,
+}: {
+  input: string;
+  feedback: string;
+}): Promise<string> {
   console.log("\n📝 Current draft:\n", input);
   console.log("\n🔍 Feedback:\n", feedback);
   console.log("=".repeat(50));
@@ -20,21 +26,23 @@ const ImproveText = gensx.Component<
     <text>
     ${input}
     </text>`;
-  return (
-    <ChatCompletion
-      model="gpt-4o-mini"
-      messages={[
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt },
-      ]}
-    />
-  );
-});
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: prompt },
+    ],
+  });
+  return completion.choices[0].message.content || "";
+}
 
-const EvaluateText = gensx.Component<{ input: string }, ReflectionOutput>(
-  "EvaluateText",
-  ({ input }) => {
-    const systemPrompt = `You're a helpful assistant that evaluates text and suggests improvements if needed.
+@gensx.Component()
+async function EvaluateText({
+  input,
+}: {
+  input: string;
+}): Promise<ReflectionOutput> {
+  const systemPrompt = `You're a helpful assistant that evaluates text and suggests improvements if needed.
 
     ## Evaluation Criteria
 
@@ -58,42 +66,37 @@ const EvaluateText = gensx.Component<{ input: string }, ReflectionOutput>(
       "continueProcessing": "boolean"
     }
     `;
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: input },
-        ]}
-        response_format={{ type: "json_object" }}
-      >
-        {(response: string) => {
-          return JSON.parse(response) as ReflectionOutput;
-        }}
-      </ChatCompletion>
-    );
-  },
-);
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: input },
+    ],
+    response_format: { type: "json_object" },
+  });
+  return JSON.parse(completion.choices[0].message.content || "{}") as ReflectionOutput;
+}
 
-export const ImproveTextWithReflection = gensx.Component<
-  {
-    text: string;
-    maxIterations?: number;
-  },
-  string
->("ImproveTextWithReflection", ({ text, maxIterations = 3 }) => {
-  const Reflection = createReflectionLoop<string>("ImproveTextWithReflection");
-  return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <Reflection
-        input={text}
-        ImproveFn={ImproveText}
-        EvaluateFn={EvaluateText}
-        maxIterations={maxIterations}
-      />
-    </OpenAIProvider>
-  );
-});
+@gensx.Component()
+async function ImproveTextWithReflection({
+  text,
+  maxIterations = 3,
+}: {
+  text: string;
+  maxIterations?: number;
+}): Promise<string> {
+  return Reflection({
+    input: text,
+    ImproveFn: ImproveText,
+    EvaluateFn: EvaluateText,
+    maxIterations,
+  });
+}
+
+@gensx.Workflow()
+async function ReflectionWorkflow({ text }: { text: string }): Promise<string> {
+  return ImproveTextWithReflection({ text });
+}
 
 async function main() {
   const text = `We are a cutting-edge technology company leveraging bleeding-edge AI solutions to deliver best-in-class products to our customers. Our agile development methodology ensures we stay ahead of the curve with paradigm-shifting innovations.
@@ -102,12 +105,7 @@ Our mission-critical systems utilize cloud-native architectures and next-generat
 
 Through our holistic approach to disruptive innovation, we create game-changing solutions that move the needle and generate impactful results. Our best-of-breed technology stack combined with our customer-centric focus allows us to ideate and iterate rapidly in this fast-paced market.`;
 
-  const workflow = gensx.Workflow(
-    "ReflectionWorkflow",
-    ImproveTextWithReflection,
-  );
-  const improvedText = await workflow.run({ text });
-
+  const improvedText = await ReflectionWorkflow({ text });
   console.log("🎯 Final text:\n", improvedText);
 }
 
