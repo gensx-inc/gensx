@@ -141,11 +141,13 @@ export function createComponent<P extends object = {}, R = unknown>(
     const nodeId = checkpointManager.addNode(
       {
         componentName: checkpointName,
-        props: props ? Object.fromEntries(
-          Object.entries(props).filter(
-            ([key]) => key !== "children" && key !== "componentOpts",
-          ),
-        ) : {},
+        props: props
+          ? Object.fromEntries(
+              Object.entries(props).filter(
+                ([key]) => key !== "children" && key !== "componentOpts",
+              ),
+            )
+          : {},
         componentOpts: resolvedComponentOpts,
       },
       currentNodeId,
@@ -163,18 +165,18 @@ export function createComponent<P extends object = {}, R = unknown>(
         resolvedComponentOpts.__streamingResultKey !== undefined &&
         (isAsyncIterable(
           (value as Record<string, unknown>)[
-          resolvedComponentOpts.__streamingResultKey
+            resolvedComponentOpts.__streamingResultKey
           ],
         ) ||
           isReadableStream(
             (value as Record<string, unknown>)[
-            resolvedComponentOpts.__streamingResultKey
+              resolvedComponentOpts.__streamingResultKey
             ],
           ))
       ) {
         const streamingResult = captureAsyncGenerator(
           (value as Record<string, unknown>)[
-          resolvedComponentOpts.__streamingResultKey
+            resolvedComponentOpts.__streamingResultKey
           ] as AsyncIterable<unknown>,
           runInContext,
           {
