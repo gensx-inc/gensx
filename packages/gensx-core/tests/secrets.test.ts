@@ -55,7 +55,7 @@ suite("secrets", () => {
     expect(result.message).toBe("Not a secret");
   });
 
-  test("components can have secret outputs", async () => {
+  test("components can have secret outputs", () => {
     // Define a component that produces secret outputs
     function sensitiveOutputComponent(): string {
       // Return raw values - masking would happen at checkpoint level
@@ -76,7 +76,7 @@ suite("secrets", () => {
     })(sensitiveOutputComponent);
 
     // Execute the component
-    const result = await SecretOutputComponent({});
+    const result = SecretOutputComponent({});
 
     // Component should still return the original values
     expect(result).toContain("12345678");

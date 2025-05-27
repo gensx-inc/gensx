@@ -1,73 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { Wrap, wrap, wrapFunction } from "../src/wrap.js";
-
-describe("wrapFunction", () => {
-  it("wraps a simple function", async () => {
-    const add = (input: { a: number; b: number }) => input.a + input.b;
-    const wrappedAdd = wrapFunction(add, { name: "Add" });
-
-    const result = await wrappedAdd({ a: 1, b: 2 });
-    expect(result).toBe(3);
-  });
-
-  it("uses function name when no name provided", async () => {
-    function multiply(input: { a: number; b: number }) {
-      return input.a * input.b;
-    }
-    const wrappedMultiply = wrapFunction(multiply);
-
-    const result = await wrappedMultiply({ a: 3, b: 4 });
-    expect(result).toBe(12);
-  });
-
-  it("handles async functions", async () => {
-    const asyncAdd = async (input: { a: number; b: number }) => {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      return input.a + input.b;
-    };
-    const wrappedAsyncAdd = wrapFunction(asyncAdd, { name: "AsyncAdd" });
-
-    const result = await wrappedAsyncAdd({ a: 5, b: 6 });
-    expect(result).toBe(11);
-  });
-
-  it("wraps functions with no parameters", async () => {
-    const getValue = () => 42;
-    const wrappedGetValue = wrapFunction(getValue, { name: "GetValue" });
-
-    const result = await wrappedGetValue();
-    expect(result).toBe(42);
-  });
-
-  it("wraps async functions with no parameters", async () => {
-    const getAsyncValue = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1));
-      return "async result";
-    };
-    const wrappedGetAsyncValue = wrapFunction(getAsyncValue, { name: "GetAsyncValue" });
-
-    const asyncResult: Promise<string> = wrappedGetAsyncValue();
-    expect(await asyncResult).toBe("async result");
-  });
-
-  it("has clean return types for no-parameter functions", async () => {
-    const getValue = () => 42;
-    const wrappedGetValue = wrapFunction(getValue, { name: "GetValue" });
-
-    const result: Promise<number> = wrappedGetValue();
-    expect(await result).toBe(42);
-
-    const getAsyncValue = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1));
-      return "async result";
-    };
-    const wrappedGetAsyncValue = wrapFunction(getAsyncValue, { name: "GetAsyncValue" });
-
-    const asyncResult: Promise<string> = wrappedGetAsyncValue();
-    expect(await asyncResult).toBe("async result");
-  });
-});
+import { Wrap, wrap } from "../src/wrap.js";
 
 describe("wrap", () => {
   it("wraps a class instance", async () => {
@@ -163,61 +96,6 @@ describe("wrap", () => {
     const finalCount = await wrappedCounter.getCount({});
     expect(finalCount).toBe(2);
   });
-
-  it("handles methods with no parameters", async () => {
-    class DataProvider {
-      private data = "test data";
-
-      getData() {
-        return Promise.resolve(this.data);
-      }
-
-      getTimestamp() {
-        return Promise.resolve(Date.now());
-      }
-
-      syncMethod() {
-        return "sync result";
-      }
-    }
-
-    const provider = new DataProvider();
-    const wrappedProvider = wrap(provider);
-
-    const data = await wrappedProvider.getData();
-    expect(data).toBe("test data");
-
-    const timestamp = await wrappedProvider.getTimestamp();
-    expect(typeof timestamp).toBe("number");
-
-    const syncResult = await wrappedProvider.syncMethod();
-    expect(syncResult).toBe("sync result");
-  });
-
-  it("handles objects with no-parameter functions", async () => {
-    const utils = {
-      getRandom: () => Math.random(),
-      getConstant: () => Promise.resolve(42),
-      helpers: {
-        getVersion: () => "1.0.0",
-        getEnv: () => Promise.resolve("development"),
-      },
-    };
-
-    const wrappedUtils = wrap(utils);
-
-    const random = await wrappedUtils.getRandom();
-    expect(typeof random).toBe("number");
-
-    const constant = await wrappedUtils.getConstant();
-    expect(constant).toBe(42);
-
-    const version = await wrappedUtils.helpers.getVersion();
-    expect(version).toBe("1.0.0");
-
-    const env = await wrappedUtils.helpers.getEnv();
-    expect(env).toBe("development");
-  });
 });
 
 describe("Wrap decorator", () => {
@@ -300,39 +178,6 @@ describe("Wrap decorator", () => {
     const derivedResult = await derived.derivedMethod({ value: "test" });
     expect(derivedResult).toBe("Derived: test");
   });
-
-  it("handles methods with no parameters in decorator", async () => {
-    @Wrap()
-    class Service {
-      private value = "service data";
-
-      getValue() {
-        return Promise.resolve(this.value);
-      }
-
-      getRandomNumber() {
-        return Math.random();
-      }
-
-      async getAsyncValue() {
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        return "async service data";
-      }
-    }
-
-    const service = new Service();
-
-    const value = await service.getValue();
-    expect(value).toBe("service data");
-
-    // TODO: figure out how to make linting work properly here
-    // eslint-disable-next-line @typescript-eslint/await-thenable
-    const randomNumber = await service.getRandomNumber();
-    expect(typeof randomNumber).toBe("number");
-
-    const asyncValue = await service.getAsyncValue();
-    expect(asyncValue).toBe("async service data");
-  });
 });
 
 describe("getComponentOpts", () => {
@@ -407,5 +252,144 @@ describe("getComponentOpts", () => {
       ["Calculator"],
       expect.any(Function),
     );
+  });
+});
+
+describe("type preservation", () => {
+  it("preserves non-promise return types", () => {
+    class Calculator {
+      add(input: { a: number; b: number }): number {
+        return input.a + input.b;
+      }
+    }
+
+    const calc = new Calculator();
+    const wrappedCalc = wrap(calc);
+
+    // TypeScript should know this returns a number
+    const result: number = wrappedCalc.add({ a: 1, b: 2 });
+    expect(result).toBe(3);
+  });
+
+  it("preserves promise return types", async () => {
+    class AsyncCalculator {
+      async add(input: { a: number; b: number }): Promise<number> {
+        return Promise.resolve(input.a + input.b);
+      }
+    }
+
+    const calc = new AsyncCalculator();
+    const wrappedCalc = wrap(calc);
+
+    // TypeScript should know this returns a Promise<number>
+    const result: Promise<number> = wrappedCalc.add({ a: 1, b: 2 });
+    expect(await result).toBe(3);
+  });
+
+  it("preserves complex return types", async () => {
+    interface User {
+      id: string;
+      name: string;
+    }
+
+    class UserService {
+      async getUser(input: { id: string }): Promise<User> {
+        return Promise.resolve({ id: input.id, name: "Test User" });
+      }
+
+      getUsers(input: { limit: number }): User[] {
+        const users: User[] = [];
+        for (let i = 0; i < input.limit; i++) {
+          users.push({ id: "1", name: "Test User" });
+        }
+        return users;
+      }
+    }
+
+    const service = new UserService();
+    const wrappedService = wrap(service);
+
+    // TypeScript should know these return types
+    const user: Promise<User> = wrappedService.getUser({ id: "1" });
+    const users: User[] = wrappedService.getUsers({ limit: 2 });
+
+    expect(await user).toEqual({ id: "1", name: "Test User" });
+    expect(users).toHaveLength(2);
+  });
+
+  it("preserves nested object types", async () => {
+    interface Config {
+      api: {
+        baseUrl: string;
+        timeout: number;
+      };
+    }
+
+    class ConfigService {
+      getConfig(_input: { version: string }): Config {
+        return {
+          api: {
+            baseUrl: "https://api.example.com",
+            timeout: 5000,
+          },
+        };
+      }
+
+      async getAsyncConfig(_input: { version: string }): Promise<Config> {
+        return Promise.resolve({
+          api: {
+            baseUrl: "https://api.example.com",
+            timeout: 5000,
+          },
+        });
+      }
+    }
+
+    const service = new ConfigService();
+    const wrappedService = wrap(service);
+
+    // TypeScript should know these return types
+    const config: Config = wrappedService.getConfig({ version: "1.0" });
+    const asyncConfig: Promise<Config> = wrappedService.getAsyncConfig({
+      version: "1.0",
+    });
+
+    expect(config).toEqual({
+      api: {
+        baseUrl: "https://api.example.com",
+        timeout: 5000,
+      },
+    });
+    expect(await asyncConfig).toEqual({
+      api: {
+        baseUrl: "https://api.example.com",
+        timeout: 5000,
+      },
+    });
+  });
+
+  it("preserves void return types", async () => {
+    class Logger {
+      log(input: { message: string }): void {
+        // Using console.info instead of console.log
+        console.info(input.message);
+      }
+
+      async logAsync(input: { message: string }): Promise<void> {
+        await Promise.resolve();
+        // Using console.info instead of console.log
+        console.info(input.message);
+      }
+    }
+
+    const logger = new Logger();
+    const wrappedLogger = wrap(logger);
+
+    // TypeScript should know these return types
+    wrappedLogger.log({ message: "test" });
+    const asyncResult: Promise<void> = wrappedLogger.logAsync({
+      message: "test",
+    });
+    await asyncResult;
   });
 });

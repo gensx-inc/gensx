@@ -19,19 +19,10 @@ export interface WrapOptions {
 }
 
 /**
- * Type that transforms all functions in an object to return Promises
- */
-type WrappedType<T> = T extends (...args: infer A) => infer R
-  ? (...args: A) => Promise<Awaited<R>>
-  : T extends object
-  ? { [K in keyof T]: WrappedType<T[K]> }
-  : T;
-
-/**
  * Recursively walks an SDK instance and returns a proxy whose *functions*
  * are GenSX components and whose *objects* are wrapped proxies.
  */
-export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): WrappedType<T> {
+export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
   /**
    * Internal helper that builds a proxy for `target` and keeps track of the
    * path so we can generate sensible component names like:
@@ -61,15 +52,9 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): WrappedT
             [...path, String(propKey)].join(".");
 
           // Bind the original `this` so SDK internals keep working
-          const boundFn = (value as (...args: unknown[]) => unknown).bind(origTarget);
-
-          // Handle functions with no parameters vs functions with optional parameters
-          const wrappedFn = boundFn.length === 0
-            ? (boundFn as () => unknown)
-            : (boundFn as (input?: object) => unknown);
-
-          const componentOpts = opts.getComponentOpts?.(path, wrappedFn);
-          return wrapFunction(wrappedFn, {
+          const boundFn = value.bind(origTarget) as (input: object) => unknown;
+          const componentOpts = opts.getComponentOpts?.(path, boundFn);
+          return createComponent(boundFn, {
             name: componentName,
             ...componentOpts,
           });
@@ -97,50 +82,7 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): WrappedT
     "constructor" in sdk && sdk.constructor !== Object;
   const rootName = hasCustomConstructor ? sdk.constructor.name : "sdk";
 
-  return makeProxy(sdk, [rootName]) as WrappedType<T>;
-}
-
-/**
- * Wraps a single function into a Gensx component.
- * This allows you to use any function as a Gensx component, making it compatible
- * with the Gensx workflow system.
- *
- * @param fn The function to wrap
- * @param name Optional name for the component. If not provided, the function name will be used.
- * @param componentOpts Optional component options to apply to the wrapped function.
- * @returns A Gensx component that wraps the provided function
- *
- * @example
- * ```tsx
- * const MyFunction = (input: string) => {
- *   return `Hello ${input}!`;
- * };
- *
- * // Using function name
- * const MyComponent = wrapFunction(MyFunction);
- *
- * // Or with custom name
- * const MyComponent = wrapFunction(MyFunction, "CustomName");
- *
- * // Use it in a workflow
- * const result = await MyComponent({ input: "World" });
- * // result = "Hello World!"
- * ```
- */
-export function wrapFunction<TInput extends object = object, TOutput = unknown>(
-  fn: ((input: TInput) => Promise<TOutput> | TOutput) | ((input?: TInput) => Promise<TOutput> | TOutput),
-  componentOpts?: Partial<ComponentOpts>,
-): (props?: TInput, componentOpts?: ComponentOpts) => Promise<Awaited<TOutput>> {
-  const componentName =
-    componentOpts?.name ?? (fn.name || "AnonymousComponent");
-
-  // Create a wrapper that properly handles Promise unwrapping
-  const wrappedFn = async (input?: TInput): Promise<Awaited<TOutput>> => {
-    const result = await fn(input!);
-    return result;
-  };
-
-  return createComponent(wrappedFn, { ...componentOpts, name: componentName }) as (props?: TInput, componentOpts?: ComponentOpts) => Promise<Awaited<TOutput>>;
+  return makeProxy(sdk, [rootName]);
 }
 
 /**
