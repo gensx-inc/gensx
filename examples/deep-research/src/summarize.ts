@@ -3,7 +3,7 @@ import { generateText } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 import { ArxivEntry } from "./arxiv.js";
-import { ScrapePage } from "./firecrawlProvider.js";
+import { ScrapePage } from "./firecrawl.js";
 
 export interface SummarizePaperProps {
   markdown: string;
