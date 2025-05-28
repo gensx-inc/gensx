@@ -18,13 +18,6 @@ done
 
 cd /tmp/project
 
-npm install -D ts-function-decorator ts-patch
-
-npx ts-patch install -s
-
-jq '.compilerOptions.plugins = [{"transform": "ts-function-decorator", "transformProgram": true}]' tsconfig.json > tsconfig.patched.json
-mv tsconfig.patched.json tsconfig.json
-
 # Install required dependencies
 npm install
 
