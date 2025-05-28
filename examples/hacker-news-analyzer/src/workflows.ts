@@ -276,17 +276,14 @@ const AnalyzeHNPosts = gensx.Component(
   async ({ stories }: AnalyzeHNPostsProps) => {
     const analyses = await Promise.all(
       stories.map(async (story) => {
-        const [summaryResult, commentAnalysisResult] = await Promise.all([
+        const [summary, commentAnalysis] = await Promise.all([
           SummarizePost({ story }),
           AnalyzeComments({
             postId: story.id,
             comments: story.comments,
           }),
         ]);
-        return {
-          summary: summaryResult,
-          commentAnalysis: commentAnalysisResult,
-        };
+        return { summary, commentAnalysis };
       }),
     );
     return { analyses };
