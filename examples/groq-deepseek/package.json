@@ -11,7 +11,9 @@
     "dev": "tsx ./src/index.ts",
     "start": "npx gensx start ./src/workflows.ts",
     "build": "tsc",
-    "deploy": "npx gensx deploy -e GROQ_API_KEY ./src/workflows.ts"
+    "deploy": "npx gensx deploy -e GROQ_API_KEY ./src/workflows.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@gensx/core": "alpha",

@@ -10,7 +10,9 @@
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./index.tsx",
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@gensx/openai": "0.1.28",
