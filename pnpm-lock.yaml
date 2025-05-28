@@ -127,11 +127,11 @@ importers:
   examples/all-models-metadata:
     dependencies:
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/openai':
-        specifier: alpha
-        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
+        specifier: ^0.2.0
+        version: 0.2.0(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -146,11 +146,11 @@ importers:
   examples/anthropic-examples:
     dependencies:
       '@gensx/anthropic':
-        specifier: alpha
-        version: 0.2.0-alpha.2(@anthropic-ai/sdk@0.39.0)
+        specifier: ^0.2.0
+        version: 0.2.0(@anthropic-ai/sdk@0.39.0)
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       zod:
         specifier: ^3.24.2
         version: 3.25.20
@@ -168,11 +168,11 @@ importers:
   examples/blog-writer:
     dependencies:
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/openai':
-        specifier: alpha
-        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
+        specifier: ^0.2.0
+        version: 0.2.0(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
       openai:
         specifier: ^4.0.0
         version: 4.91.1(ws@8.18.0)(zod@3.25.29)
@@ -196,14 +196,14 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.24.2)
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/storage':
-        specifier: alpha
-        version: 0.1.0-alpha.1
+        specifier: ^0.1.1
+        version: 0.1.1
       '@gensx/vercel-ai':
-        specifier: alpha
-        version: 0.2.0-alpha.5(react@19.1.0)
+        specifier: ^0.2.0
+        version: 0.2.0(react@19.1.0)
       ai:
         specifier: ^4.2.10
         version: 4.3.4(react@19.1.0)(zod@3.24.2)
@@ -252,14 +252,11 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.25.29)
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
-      '@gensx/storage':
-        specifier: alpha
-        version: 0.1.0-alpha.1
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/vercel-ai':
-        specifier: alpha
-        version: 0.2.0-alpha.5(react@19.1.0)
+        specifier: ^0.2.0
+        version: 0.2.0(react@19.1.0)
       '@mendable/firecrawl-js':
         specifier: ^1.21.0
         version: 1.21.0(ws@8.18.0)
@@ -295,11 +292,11 @@ importers:
   examples/groq-deepseek:
     dependencies:
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/openai':
-        specifier: alpha
-        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
+        specifier: ^0.2.0
+        version: 0.2.0(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -314,11 +311,11 @@ importers:
   examples/hacker-news-analyzer:
     dependencies:
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/openai':
-        specifier: alpha
-        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
+        specifier: ^0.2.0
+        version: 0.2.0(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -361,11 +358,11 @@ importers:
   examples/open-router:
     dependencies:
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/openai':
-        specifier: alpha
-        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
+        specifier: ^0.2.0
+        version: 0.2.0(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -411,11 +408,11 @@ importers:
   examples/openai-examples:
     dependencies:
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/openai':
-        specifier: alpha
-        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
+        specifier: ^0.2.0
+        version: 0.2.0(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
       openai:
         specifier: ^4.0.0
         version: 4.91.1(ws@8.18.0)(zod@3.25.29)
@@ -439,14 +436,14 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.24.2)
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/storage':
-        specifier: alpha
-        version: 0.1.0-alpha.1
+        specifier: ^0.1.1
+        version: 0.1.1
       '@gensx/vercel-ai':
-        specifier: alpha
-        version: 0.2.0-alpha.5(react@19.1.0)
+        specifier: ^0.2.0
+        version: 0.2.0(react@19.1.0)
       ai:
         specifier: ^4.2.10
         version: 4.3.4(react@19.1.0)(zod@3.24.2)
@@ -473,11 +470,11 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.25.29)
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/vercel-ai':
-        specifier: alpha
-        version: 0.2.0-alpha.5(react@19.1.0)
+        specifier: ^0.2.0
+        version: 0.2.0(react@19.1.0)
       ai:
         specifier: ^4.2.10
         version: 4.3.16(react@19.1.0)(zod@3.25.29)
@@ -619,14 +616,14 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.24.2)
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/storage':
-        specifier: alpha
-        version: 0.1.0-alpha.1
+        specifier: ^0.1.1
+        version: 0.1.1
       '@gensx/vercel-ai':
-        specifier: alpha
-        version: 0.2.0-alpha.5(react@19.1.0)
+        specifier: ^0.2.0
+        version: 0.2.0(react@19.1.0)
       ai:
         specifier: ^4.2.10
         version: 4.3.4(react@19.1.0)(zod@3.24.2)
@@ -675,11 +672,11 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.25.29)
       '@gensx/core':
-        specifier: alpha
-        version: 0.4.0-alpha.5
+        specifier: ^0.4.0
+        version: 0.4.0
       '@gensx/vercel-ai':
-        specifier: alpha
-        version: 0.2.0-alpha.5(react@19.1.0)
+        specifier: ^0.2.0
+        version: 0.2.0(react@19.1.0)
       ai:
         specifier: ^4.3.16
         version: 4.3.16(react@19.1.0)(zod@3.25.29)
@@ -1727,8 +1724,8 @@ packages:
     peerDependencies:
       '@anthropic-ai/sdk': ^0.39.0
 
-  '@gensx/anthropic@0.2.0-alpha.2':
-    resolution: {integrity: sha512-mI3F5zQWjkhnKp8bee9d7lTQXgEzXi0LTtfA+OhU9DewA+8RT7BXAmx8dwkhPRhbZVX6UmsbTbu6VKi/8k8CKA==}
+  '@gensx/anthropic@0.2.0':
+    resolution: {integrity: sha512-VyRHpaX4eZBP1nkHVT1OAXA9ut38AaFboPclvkRf91jrc7T4fl9gv362XHe469+6NnMxsHn4ptDuvHgrdOEn7A==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
     peerDependencies:
       '@anthropic-ai/sdk': ^0.39.0
@@ -1737,8 +1734,8 @@ packages:
     resolution: {integrity: sha512-NK0pZWroT39tK8LQTuS3D5a1O9qhGcKr9LZRoFREe0IKntgj6yCmLJA5uzvsztUcSbtITFrDW4HviuIpUadNXg==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
-  '@gensx/core@0.4.0-alpha.5':
-    resolution: {integrity: sha512-iAk0mTGh3VEPVpYn0acCPkFRVGEABVL4/QXrZyWx/5k0zs28wIQJlPRwGjAef8d5EW+xNduSz2WWUVo/ryNBwQ==}
+  '@gensx/core@0.4.0':
+    resolution: {integrity: sha512-s1yANdhFLxWC3Am0kBMPtncZNBhgkRqnIMrqIWl+ra88QpbtxPiT+BeA2cRe8s2+BWGge971okajc7i/xFFp/A==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@gensx/openai@0.1.28':
@@ -1746,21 +1743,21 @@ packages:
     peerDependencies:
       openai: ^4.87.4
 
-  '@gensx/openai@0.2.0-alpha.3':
-    resolution: {integrity: sha512-t8FPvxTNcmd6O/m2LMKFTls1IiBB7CgGtnOIq0fN++1Pi4BkRDs8Cmkp4qLs5MSvOB1FRntSaKqig13EBbumxA==}
+  '@gensx/openai@0.2.0':
+    resolution: {integrity: sha512-fuDQAxdth1fVSyobBpt6jZv9REztI7OCtnFoaq8mOoOiwoat4Q3le5oo2tlCJ/78XcPyKo5ktJLOdvC4Uc6aRg==}
     peerDependencies:
       openai: '>=4.0.0'
 
-  '@gensx/storage@0.1.0-alpha.1':
-    resolution: {integrity: sha512-2KHb5upk6eha0VarePc/ODfDoryXFA1MqK5pfkDW15Brl3mFfoVNru38njxSoPxLM6NKilEPDkZamag1JWmZ3Q==}
+  '@gensx/storage@0.1.1':
+    resolution: {integrity: sha512-y+OrkJC2NtYSikhwDdD2WZuQymaxhl6MP6MzPj0DUK9/jNL4LF7+dJ6EEHtIkl8U9oyl9kuCkLvNoqkGg1CtYw==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@gensx/vercel-ai-sdk@0.1.17':
     resolution: {integrity: sha512-LasIxzHf0b2+FE8nXvFHFLUTaZOqVwsoH83dsbGJY1ZMEMlA10pghGWArvF9LNGY9HmahjK858EeiHPDFXFivA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
-  '@gensx/vercel-ai@0.2.0-alpha.5':
-    resolution: {integrity: sha512-i112uhXZiyQhUsPxVebh3C9L1QDMaas29Lx7GvUUB51O2c8HO0a2DC1vwtGl5ti6iBbY0MDMPWiNhpnv6V3IHQ==}
+  '@gensx/vercel-ai@0.2.0':
+    resolution: {integrity: sha512-8VUmVFaBED3PS5npUFUDhsI0iVEgICqlsztSiT9HvteNA1YgFlV1VccHHkeg+NqUSQFfoPomIvT0BL/crmd8/w==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@headlessui/react@2.2.0':
@@ -8212,10 +8209,10 @@ snapshots:
       zod: 3.25.29
       zod-to-json-schema: 3.24.5(zod@3.25.29)
 
-  '@gensx/anthropic@0.2.0-alpha.2(@anthropic-ai/sdk@0.39.0)':
+  '@gensx/anthropic@0.2.0(@anthropic-ai/sdk@0.39.0)':
     dependencies:
       '@anthropic-ai/sdk': 0.39.0
-      '@gensx/core': 0.4.0-alpha.5
+      '@gensx/core': 0.4.0
       zod: 3.25.29
       zod-to-json-schema: 3.24.5(zod@3.25.29)
 
@@ -8225,7 +8222,7 @@ snapshots:
       ini: 5.0.0
       zod: 3.25.29
 
-  '@gensx/core@0.4.0-alpha.5':
+  '@gensx/core@0.4.0':
     dependencies:
       '@common.js/serialize-error': 11.0.3
       ini: 5.0.0
@@ -8238,14 +8235,14 @@ snapshots:
       zod: 3.25.29
       zod-to-json-schema: 3.24.5(zod@3.25.29)
 
-  '@gensx/openai@0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))':
+  '@gensx/openai@0.2.0(openai@4.91.1(ws@8.18.0)(zod@3.25.29))':
     dependencies:
-      '@gensx/core': 0.4.0-alpha.5
+      '@gensx/core': 0.4.0
       openai: 4.91.1(ws@8.18.0)(zod@3.25.29)
 
-  '@gensx/storage@0.1.0-alpha.1':
+  '@gensx/storage@0.1.1':
     dependencies:
-      '@gensx/core': 0.4.0-alpha.5
+      '@gensx/core': 0.4.0
       '@libsql/client': 0.15.2
       '@turbopuffer/turbopuffer': 0.7.0
     transitivePeerDependencies:
@@ -8260,10 +8257,10 @@ snapshots:
       - react
       - zod
 
-  '@gensx/vercel-ai@0.2.0-alpha.5(react@19.1.0)':
+  '@gensx/vercel-ai@0.2.0(react@19.1.0)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@gensx/core': 0.4.0-alpha.5
+      '@gensx/core': 0.4.0
       ai: 4.3.16(react@19.1.0)(zod@3.25.29)
       zod: 3.25.29
     transitivePeerDependencies:

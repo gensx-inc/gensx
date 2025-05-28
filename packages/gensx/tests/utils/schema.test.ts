@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 import { readdirSync, rmdirSync, unlinkSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -47,11 +51,6 @@ describe("schema generator", () => {
           resolveJsonModule: true,
           isolatedModules: true,
           outDir: "./dist",
-          plugins: [
-            {
-              name: "ts-function-decorator-ls",
-            },
-          ],
         },
       }),
     );
@@ -69,7 +68,7 @@ describe("schema generator", () => {
 
   it("should extract schema from a workflow with decorator", async () => {
     const content = `
-      import { Workflow } from "@gensx/core";
+      import * as gensx from "@gensx/core";
 
       interface TestProps {
         input: string;
@@ -81,13 +80,12 @@ describe("schema generator", () => {
         processed: boolean;
       }
 
-      @Workflow()
-      export async function TestWorkflow(props: TestProps): Promise<TestOutput> {
+      export const TestWorkflow = gensx.Workflow("TestWorkflow", async (props: TestProps) => {
         return {
           result: props.input,
           processed: true
         };
-      }
+      });
     `;
 
     const expectedSchemas = {
@@ -118,16 +116,15 @@ describe("schema generator", () => {
 
   it("should handle Promise return types", async () => {
     const content = `
-      import { Workflow } from "@gensx/core";
+      import * as gensx from "@gensx/core";
 
       interface PromiseProps {
         value: number;
       }
 
-      @Workflow()
-      export async function PromiseWorkflow(props: PromiseProps): Promise<number> {
+      export const PromiseWorkflow = gensx.Workflow("PromiseWorkflow", async (props: PromiseProps) => {
         return props.value;
-      }
+      });
     `;
 
     const expectedSchemas = {
@@ -152,7 +149,7 @@ describe("schema generator", () => {
 
   it("should handle nested object types", async () => {
     const content = `
-      import { Workflow } from "@gensx/core";
+      import * as gensx from "@gensx/core";
 
       interface NestedProps {
         data: {
@@ -166,10 +163,9 @@ describe("schema generator", () => {
         };
       }
 
-      @Workflow()
-      export async function NestedWorkflow(props: NestedProps): Promise<{ processed: boolean }> {
+      export const NestedWorkflow = gensx.Workflow("NestedWorkflow", async (props: NestedProps) => {
         return { processed: true };
-      }
+      });
     `;
 
     const expectedSchemas = {
@@ -221,21 +217,21 @@ describe("schema generator", () => {
 
   it("should handle exported workflows only", async () => {
     const content = `
-      import { Workflow } from "@gensx/core";
+      import * as gensx from "@gensx/core";
 
       interface Props {
         value: string;
       }
 
-      @Workflow()
-      async function InternalWorkflow(props: Props): Promise<string> {
+      const InternalWorkflow = gensx.Workflow("InternalWorkflow", async (props: Props) => {
         return props.value;
-      }
+      });
 
-      @Workflow()
-      export async function ExportedWorkflow(props: Props): Promise<string> {
+      const ExportedWorkflow = gensx.Workflow("ExportedWorkflow", async (props: Props) => {
         return props.value;
-      }
+      });
+
+      export { ExportedWorkflow };
     `;
 
     await verifySchemas(content, (schemas) => {
@@ -246,21 +242,21 @@ describe("schema generator", () => {
 
   it("should handle multiple workflows in the same file", async () => {
     const content = `
-      import { Workflow } from "@gensx/core";
+      import * as gensx from "@gensx/core";
 
       interface Props {
         value: string;
       }
 
-      @Workflow()
-      export async function Workflow1(props: Props): Promise<string> {
+      const Workflow1 = gensx.Workflow("Workflow1", async (props: Props) => {
         return props.value;
-      }
+      });
 
-      @Workflow()
-      export async function Workflow2(props: Props): Promise<string> {
+      const Workflow2 = gensx.Workflow("Workflow2", async (props: Props) => {
         return props.value;
-      }
+      });
+
+      export { Workflow1, Workflow2 };
     `;
 
     await verifySchemas(content, (schemas) => {
@@ -272,12 +268,11 @@ describe("schema generator", () => {
 
   it("should handle inferred types", async () => {
     const content = `
-      import { Workflow } from "@gensx/core";
+      import * as gensx from "@gensx/core";
 
-      @Workflow()
-      export async function InferredWorkflow(props: { value: string }) {
+      export const InferredWorkflow = gensx.Workflow("InferredWorkflow", async (props: { value: string }) => {
         return props.value;
-      }
+      });
     `;
 
     await verifySchemas(content, (schemas) => {
@@ -299,12 +294,11 @@ describe("schema generator", () => {
 
   it("should handle export objects", async () => {
     const content = `
-      import { Workflow } from "@gensx/core";
+      import * as gensx from "@gensx/core";
 
-      @Workflow()
-      async function ExportedWorkflow(props: { value: string }) {
+      const ExportedWorkflow = gensx.Workflow("ExportedWorkflow", async (props: { value: string }) => {
         return props.value;
-      }
+      });
 
       export { ExportedWorkflow };
     `;
@@ -328,7 +322,7 @@ describe("schema generator", () => {
 
   it("should handle streaming workflows", async () => {
     const content = `
-      import { Workflow } from "@gensx/core";
+      import * as gensx from "@gensx/core";
 
       interface StreamProps {
         query: string;
@@ -339,41 +333,37 @@ describe("schema generator", () => {
         role: string;
       }
 
-      @Workflow()
-      export async function StringStreamWorkflow(props: StreamProps): Promise<AsyncIterable<string>> {
+      export const StringStreamWorkflow = gensx.Workflow("StringStreamWorkflow", async (props: StreamProps) => {
         return {
           [Symbol.asyncIterator]: async function* () {
             yield "chunk1";
             yield "chunk2";
           }
         };
-      }
+      });
 
-      @Workflow()
-      export async function ObjectStreamWorkflow(props: StreamProps): Promise<AsyncIterable<StreamChunk>> {
+      export const ObjectStreamWorkflow = gensx.Workflow("ObjectStreamWorkflow", async (props: StreamProps) => {
         return {
           [Symbol.asyncIterator]: async function* () {
             yield { content: "chunk1", role: "assistant" };
             yield { content: "chunk2", role: "assistant" };
           }
         };
-      }
+      });
 
-      @Workflow()
-      export async function GeneratorWorkflow(props: StreamProps): Promise<AsyncGenerator<string, void, unknown>> {
+      export const GeneratorWorkflow = gensx.Workflow("GeneratorWorkflow", async (props: StreamProps) => {
         return (async function* () {
           yield "chunk1";
           yield "chunk2";
         })();
-      }
+      });
 
-      @Workflow()
-      export async function ObjectGeneratorWorkflow(props: StreamProps): Promise<AsyncGenerator<StreamChunk, void, unknown>> {
+      export const ObjectGeneratorWorkflow = gensx.Workflow("ObjectGeneratorWorkflow", async (props: StreamProps) => {
         return (async function* () {
           yield { content: "chunk1", role: "assistant" };
           yield { content: "chunk2", role: "assistant" };
         })();
-      }
+      });
     `;
 
     await verifySchemas(content, (schemas) => {
@@ -470,6 +460,279 @@ describe("schema generator", () => {
           required: ["type", "value"],
         },
       });
+    });
+  });
+
+  it("should handle workflows with no parameters", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      export const NoParamsWorkflow = gensx.Workflow("NoParamsWorkflow", async () => {
+        return { message: "Hello, World!" };
+      });
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      expect(schemas).toHaveProperty("NoParamsWorkflow");
+      expect(schemas.NoParamsWorkflow).toEqual({
+        input: {
+          type: "object",
+          additionalProperties: true,
+        },
+        output: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+          },
+          required: ["message"],
+        },
+      });
+    });
+  });
+
+  it("should handle workflows with only optional parameters", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      interface OptionalProps {
+        name?: string;
+        age?: number;
+        isActive?: boolean;
+      }
+
+      export const OptionalPropsWorkflow = gensx.Workflow("OptionalPropsWorkflow", async (props: OptionalProps) => {
+        return { processed: true };
+      });
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      expect(schemas).toHaveProperty("OptionalPropsWorkflow");
+      const workflow = (schemas as any).OptionalPropsWorkflow;
+      expect(workflow.input.type).toBe("object");
+      expect(workflow.input.properties).toHaveProperty("name");
+      expect(workflow.input.properties).toHaveProperty("age");
+      expect(workflow.input.properties).toHaveProperty("isActive");
+      // For optional parameters, required should be undefined or empty
+      expect(workflow.input.required).toBeUndefined();
+    });
+  });
+
+  it("should handle workflows with void return type", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      export const VoidWorkflow = gensx.Workflow("VoidWorkflow", async (props: { input: string }) => {
+        console.log(props.input);
+      });
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      expect(schemas).toHaveProperty("VoidWorkflow");
+      const workflow = (schemas as any).VoidWorkflow;
+      expect(workflow.input).toEqual({
+        type: "object",
+        properties: {
+          input: { type: "string" },
+        },
+        required: ["input"],
+      });
+      // Void type should be handled gracefully
+      expect(workflow.output.type).toBe("object");
+      expect(workflow.output.additionalProperties).toBe(true);
+    });
+  });
+
+  it("should handle workflows with array inputs and outputs", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      interface ArrayProps {
+        items: string[];
+        numbers: Array<number>;
+        objects: Array<{ id: string; value: number }>;
+      }
+
+      export const ArrayWorkflow = gensx.Workflow("ArrayWorkflow", async (props: ArrayProps) => {
+        return {
+          processedItems: props.items.map(item => item.toUpperCase()),
+          sum: props.numbers.reduce((a, b) => a + b, 0),
+          objectIds: props.objects.map(obj => obj.id)
+        };
+      });
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      expect(schemas).toHaveProperty("ArrayWorkflow");
+      expect(schemas.ArrayWorkflow).toEqual({
+        input: {
+          type: "object",
+          properties: {
+            items: {
+              type: "array",
+              items: { type: "string" },
+            },
+            numbers: {
+              type: "array",
+              items: { type: "number" },
+            },
+            objects: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  value: { type: "number" },
+                },
+                required: ["id", "value"],
+              },
+            },
+          },
+          required: ["items", "numbers", "objects"],
+        },
+        output: {
+          type: "object",
+          properties: {
+            processedItems: {
+              type: "array",
+              items: { type: "string" },
+            },
+            sum: { type: "number" },
+            objectIds: {
+              type: "array",
+              items: { type: "string" },
+            },
+          },
+          required: ["objectIds", "processedItems", "sum"],
+        },
+      });
+    });
+  });
+
+  it("should handle workflows with union types", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      interface UnionProps {
+        value: string | number;
+        status: "pending" | "completed" | "failed";
+        optional?: string | null;
+      }
+
+      export const UnionWorkflow = gensx.Workflow("UnionWorkflow", async (props: UnionProps) => {
+        return {
+          result: typeof props.value === "string" ? props.value : props.value.toString(),
+          isComplete: props.status === "completed"
+        };
+      });
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      expect(schemas).toHaveProperty("UnionWorkflow");
+      const workflow = (schemas as any).UnionWorkflow;
+      expect(workflow.input.type).toBe("object");
+      expect(workflow.input.properties).toHaveProperty("value");
+      expect(workflow.input.properties).toHaveProperty("status");
+      expect(workflow.input.properties).toHaveProperty("optional");
+
+      // Check that union types are handled (exact structure may vary)
+      expect(workflow.input.properties.value).toHaveProperty("oneOf");
+      expect(workflow.input.required).toContain("value");
+      expect(workflow.input.required).toContain("status");
+      expect(workflow.input.required).not.toContain("optional");
+    });
+  });
+
+  it("should handle deeply nested object structures", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      interface DeepProps {
+        user: {
+          profile: {
+            personal: {
+              name: string;
+              contacts: {
+                email: string;
+                phones: Array<{
+                  type: "mobile" | "home" | "work";
+                  number: string;
+                  isPrimary?: boolean;
+                }>;
+              };
+            };
+            preferences: {
+              theme: "light" | "dark";
+              notifications: {
+                email: boolean;
+                push: boolean;
+                sms?: boolean;
+              };
+            };
+          };
+        };
+      }
+
+      export const DeepNestedWorkflow = gensx.Workflow("DeepNestedWorkflow", async (props: DeepProps) => {
+        return {
+          userName: props.user.profile.personal.name,
+          primaryPhone: props.user.profile.personal.contacts.phones.find(p => p.isPrimary)?.number,
+          isEmailEnabled: props.user.profile.preferences.notifications.email
+        };
+      });
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      expect(schemas).toHaveProperty("DeepNestedWorkflow");
+      // Just verify the structure exists and has the right nested properties
+      const workflowSchema = (schemas as any).DeepNestedWorkflow;
+      expect(workflowSchema.input.type).toBe("object");
+      expect(workflowSchema.input.properties).toHaveProperty("user");
+      expect(workflowSchema.input.properties.user.properties).toHaveProperty(
+        "profile",
+      );
+      expect(
+        workflowSchema.input.properties.user.properties.profile.properties,
+      ).toHaveProperty("personal");
+      expect(
+        workflowSchema.input.properties.user.properties.profile.properties,
+      ).toHaveProperty("preferences");
+    });
+  });
+
+  it("should handle workflows with mixed export patterns", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      // Not exported - should not appear in schemas
+      const InternalWorkflow1 = gensx.Workflow("InternalWorkflow1", async (props: { value: string }) => {
+        return props.value;
+      });
+
+      // Exported directly - should appear
+      export const DirectExportWorkflow = gensx.Workflow("DirectExportWorkflow", async (props: { value: number }) => {
+        return props.value * 2;
+      });
+
+      // Exported via export statement - should appear
+      const NamedExportWorkflow = gensx.Workflow("NamedExportWorkflow", async (props: { value: boolean }) => {
+        return !props.value;
+      });
+
+      // Another internal workflow - should not appear
+      const InternalWorkflow2 = gensx.Workflow("InternalWorkflow2", async (props: { data: any }) => {
+        return { processed: true };
+      });
+
+      export { NamedExportWorkflow };
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      // Should only have the two exported workflows
+      expect(Object.keys(schemas)).toHaveLength(2);
+      expect(schemas).toHaveProperty("DirectExportWorkflow");
+      expect(schemas).toHaveProperty("NamedExportWorkflow");
+      expect(schemas).not.toHaveProperty("InternalWorkflow1");
+      expect(schemas).not.toHaveProperty("InternalWorkflow2");
     });
   });
 });

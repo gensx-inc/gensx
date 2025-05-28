@@ -2,12 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import * as ts from "typescript";
-import {
-  Definition,
-  generateSchema as generateSchemaTJS,
-  getProgramFromFiles,
-  PartialArgs,
-} from "typescript-json-schema";
+import { Definition } from "typescript-json-schema";
 
 /**
  * Generates JSON Schema for all workflows in a TypeScript file
@@ -27,30 +22,13 @@ export function generateSchema(
   // Create TypeScript program with all source files
   const program = ts.createProgram([tsFile], {
     ...tsconfig.options,
-    experimentalDecorators: true,
+    //experimentalDecorators: true,
   });
   const sourceFile = program.getSourceFile(tsFile);
   const typeChecker = program.getTypeChecker();
 
   if (!sourceFile) {
     throw new Error(`Could not find source file: ${tsFile}`);
-  }
-
-  // Generate schema for all types using typescript-json-schema
-  const tjsProgram = getProgramFromFiles([tsFile], tsconfig.options);
-  const tjsSettings: PartialArgs = {
-    include: [tsFile],
-    ignoreErrors: true,
-    ref: false,
-    required: true,
-    strictNullChecks: true,
-    topRef: false,
-    noExtraProps: true,
-  };
-
-  const baseSchema = generateSchemaTJS(tjsProgram, "*", tjsSettings);
-  if (!baseSchema?.definitions) {
-    return {};
   }
 
   // Extract workflow information using TypeScript compiler
@@ -71,43 +49,17 @@ export function generateSchema(
       continue;
     }
 
-    // Get input/output types using the type checker
-    let inputType: ts.Type | undefined = undefined;
-    let outputType: ts.Type | undefined = undefined;
-    // Find the function declaration in the source file
-    const fnNode = sourceFile.statements.find(
-      (s) =>
-        ts.isFunctionDeclaration(s) && s.name && s.name.text === workflowName,
-    ) as ts.FunctionDeclaration | undefined;
-    if (fnNode) {
-      if (fnNode.parameters.length > 0) {
-        inputType = typeChecker.getTypeAtLocation(fnNode.parameters[0]);
-      }
-      if (fnNode.type) {
-        outputType = typeChecker.getTypeFromTypeNode(fnNode.type);
-      } else {
-        outputType = typeChecker.getReturnTypeOfSignature(
-          typeChecker.getSignatureFromDeclaration(fnNode)!,
-        );
-      }
-    }
-    // Fallback to any
-    inputType ??= typeChecker.getAnyType();
-    outputType ??= typeChecker.getAnyType();
-
-    // Use typeToSchema for input/output
-    let inputSchema = typeToSchema(inputType, typeChecker, sourceFile);
-    // Unwrap Promise<T> for output
-    let outputSchemaType = outputType;
-    const typeArgs = (outputType as ts.TypeReference).typeArguments;
-    if (
-      outputType.symbol.name === "Promise" &&
-      typeArgs?.length &&
-      typeArgs[0]
-    ) {
-      outputSchemaType = typeArgs[0];
-    }
-    let outputSchema = typeToSchema(outputSchemaType, typeChecker, sourceFile);
+    // Use the types directly from the workflow function
+    const inputSchema = typeToSchema(
+      workflow.inputType,
+      typeChecker,
+      sourceFile,
+    );
+    const outputSchema = typeToSchema(
+      workflow.outputType,
+      typeChecker,
+      sourceFile,
+    );
 
     workflowSchemas[workflowName] = {
       input: inputSchema,
@@ -124,8 +76,8 @@ export function generateSchema(
 interface WorkflowInfo {
   name: string;
   componentName: string;
-  inputType: string;
-  outputType: string;
+  inputType: ts.Type;
+  outputType: ts.Type;
   isStreamComponent: boolean;
 }
 
@@ -139,8 +91,9 @@ function extractWorkflowInfo(
   const workflowInfos: WorkflowInfo[] = [];
   const exportedNames = new Set<string>();
 
-  // First pass: collect all exported names from export statements
+  // First pass: collect all exported names from export statements and export declarations
   function collectExportedNames(node: ts.Node) {
+    // Handle export { ... } statements
     if (ts.isExportDeclaration(node) && node.exportClause) {
       if (ts.isNamedExports(node.exportClause)) {
         for (const element of node.exportClause.elements) {
@@ -148,60 +101,87 @@ function extractWorkflowInfo(
         }
       }
     }
+    // Handle export const declarations
+    if (ts.isVariableStatement(node) && node.modifiers) {
+      const hasExport = node.modifiers.some(
+        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+      );
+      if (hasExport) {
+        for (const declaration of node.declarationList.declarations) {
+          exportedNames.add(declaration.name.getText(sourceFile));
+        }
+      }
+    }
     ts.forEachChild(node, collectExportedNames);
   }
   collectExportedNames(sourceFile);
 
-  function getTypeParametersFromFunction(
-    node: ts.FunctionDeclaration | ts.MethodDeclaration | ts.FunctionExpression,
-  ): { inputType: string; outputType: string } {
-    let inputType = "any";
-    let outputType = "string";
-    if (node.parameters.length > 0) {
-      const param = node.parameters[0];
-      if (param.type) {
-        inputType = param.type.getText(sourceFile);
-      } else {
-        const paramType = typeChecker.getTypeAtLocation(param);
-        inputType = typeChecker.typeToString(paramType);
-      }
-    }
-    if (
-      (ts.isFunctionDeclaration(node) ||
-        ts.isMethodDeclaration(node) ||
-        ts.isFunctionExpression(node)) &&
-      node.type
-    ) {
-      outputType = node.type.getText(sourceFile);
-    } else {
-      const returnType = typeChecker.getTypeAtLocation(node);
-      outputType = typeChecker.typeToString(returnType);
-    }
-    if (outputType.startsWith("Promise<")) {
-      outputType = outputType.slice(8, -1);
-    }
-    return { inputType, outputType };
-  }
-
   function visit(node: ts.Node) {
-    // Only process functions that are defined in this file and are either:
-    // 1. Directly exported with export keyword
-    // 2. Named in an export statement
-    if (
-      ts.isFunctionDeclaration(node) &&
-      node.name &&
-      node.getSourceFile() === sourceFile && // Only process functions defined in this file
-      (node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) ||
-        exportedNames.has(node.name.text))
-    ) {
-      const { inputType, outputType } = getTypeParametersFromFunction(node);
-      workflowInfos.push({
-        name: node.name.text,
-        componentName: node.name.text,
-        inputType,
-        outputType,
-        isStreamComponent: false,
-      });
+    // Look for variable declarations that are initialized with gensx.Workflow()
+    if (ts.isVariableDeclaration(node) && node.initializer) {
+      const initializer = node.initializer;
+      if (
+        ts.isCallExpression(initializer) &&
+        ts.isPropertyAccessExpression(initializer.expression) &&
+        initializer.expression.expression.getText(sourceFile) === "gensx" &&
+        initializer.expression.name.text === "Workflow"
+      ) {
+        // Get the workflow name from the first argument
+        const workflowNameArg = initializer.arguments[0];
+        if (!workflowNameArg) return;
+
+        const workflowName = workflowNameArg
+          .getText(sourceFile)
+          .replace(/['"]/g, "");
+        if (!workflowName) return;
+
+        // Get the function from the second argument
+        const workflowFn = initializer.arguments[1];
+        if (!workflowFn) return;
+
+        // Check if it's a function-like node
+        if (
+          !ts.isArrowFunction(workflowFn) &&
+          !ts.isFunctionExpression(workflowFn)
+        )
+          return;
+
+        // Get input and output types
+        let inputType: ts.Type = typeChecker.getAnyType();
+        let outputType: ts.Type = typeChecker.getAnyType();
+
+        if (workflowFn.parameters.length > 0) {
+          inputType = typeChecker.getTypeAtLocation(workflowFn.parameters[0]);
+        }
+
+        // Get the return type of the function
+        const signature = typeChecker.getSignatureFromDeclaration(workflowFn);
+        if (signature) {
+          outputType = typeChecker.getReturnTypeOfSignature(signature);
+
+          // Unwrap Promise<T> for output
+          if (outputType.symbol.name === "Promise") {
+            const typeArgs = (outputType as ts.TypeReference).typeArguments;
+            if (typeArgs && typeArgs.length > 0) {
+              outputType = typeArgs[0];
+            }
+          }
+        }
+
+        // Check if this workflow should be included - only exported workflows
+        const variableName = node.name.getText(sourceFile);
+        const shouldInclude = exportedNames.has(variableName);
+
+        if (shouldInclude) {
+          workflowInfos.push({
+            name: workflowName,
+            componentName: workflowName,
+            inputType,
+            outputType,
+            isStreamComponent: false,
+          });
+        }
+      }
     }
     ts.forEachChild(node, visit);
   }
@@ -252,29 +232,67 @@ function typeToSchema(
     typeStr.includes("AsyncGenerator") ||
     typeStr.includes("Generator")
   ) {
-    // Get the type arguments using the compiler API
-    const typeRef = tsType as ts.TypeReference;
-    const typeArgs = typeRef.typeArguments;
-    if (!typeArgs || typeArgs.length === 0) {
-      return {
-        type: "object",
-        properties: {
-          type: { const: "stream" },
-          value: { type: "string" },
-        },
-        required: ["type", "value"],
-      };
+    // Handle direct AsyncGenerator/Generator types
+    if (typeStr.includes("AsyncGenerator") || typeStr.includes("Generator")) {
+      const typeRef = tsType as ts.TypeReference;
+      const typeArgs = typeRef.typeArguments;
+      if (typeArgs && typeArgs.length > 0) {
+        const innerType = typeArgs[0];
+        const valueSchema = typeToSchema(innerType, checker, sourceFile);
+
+        return {
+          type: "object",
+          properties: {
+            type: { const: "stream" },
+            value: valueSchema,
+          },
+          required: ["type", "value"],
+        };
+      }
     }
 
-    // The first type argument is the yielded type
-    const innerType = typeArgs[0];
-    const valueSchema = typeToSchema(innerType, checker, sourceFile);
+    // Handle object types with Symbol.asyncIterator that return AsyncGenerator
+    if (
+      typeStr.includes("[Symbol.asyncIterator]") &&
+      typeStr.includes("AsyncGenerator")
+    ) {
+      // Extract the AsyncGenerator type from the string
+      const asyncGenMatch = /AsyncGenerator<([^,>]+)/.exec(typeStr);
+      if (asyncGenMatch) {
+        const innerTypeStr = asyncGenMatch[1];
 
+        // For inline object types like { content: string; role: string; }
+        if (innerTypeStr.startsWith("{") && innerTypeStr.includes(":")) {
+          const valueSchema = parseInlineObjectType(innerTypeStr);
+          return {
+            type: "object",
+            properties: {
+              type: { const: "stream" },
+              value: valueSchema,
+            },
+            required: ["type", "value"],
+          };
+        }
+
+        // For simple types like string
+        const valueSchema = convertTypeToSchema(innerTypeStr);
+        return {
+          type: "object",
+          properties: {
+            type: { const: "stream" },
+            value: valueSchema,
+          },
+          required: ["type", "value"],
+        };
+      }
+    }
+
+    // Fallback: default stream schema
     return {
       type: "object",
       properties: {
         type: { const: "stream" },
-        value: valueSchema,
+        value: { type: "string" },
       },
       required: ["type", "value"],
     };
@@ -294,6 +312,12 @@ function typeToSchema(
     const nonUndefinedTypes = types.filter(
       (t) => !(t.flags & ts.TypeFlags.Undefined),
     );
+
+    // Special case: if this is a union of only string literals, just return string type
+    if (nonUndefinedTypes.every((t) => t.isStringLiteral())) {
+      return { type: "string" };
+    }
+
     // If this is an optional property and the only difference is undefined, just use the non-undefined type
     if (isOptionalProp && nonUndefinedTypes.length === 1) {
       return typeToSchema(nonUndefinedTypes[0], checker, sourceFile);
@@ -448,6 +472,15 @@ function parseInlineObjectType(typeStr: string): Definition {
  * Converts a TypeScript type string to a JSON Schema Definition
  */
 function convertTypeToSchema(typeStr: string): Definition {
+  // Handle string literal unions like "chunk1" | "chunk2" -> convert to string
+  if (typeStr.includes("|") && typeStr.includes('"')) {
+    const parts = typeStr.split("|").map((s) => s.trim());
+    // If all parts are string literals, convert to string type
+    if (parts.every((part) => part.startsWith('"') && part.endsWith('"'))) {
+      return { type: "string" };
+    }
+  }
+
   // Handle primitive types
   if (typeStr === "string") {
     return { type: "string" };
