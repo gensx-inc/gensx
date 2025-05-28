@@ -34,8 +34,7 @@ const tools = {
   }),
 } as const;
 
-@gensx.Component()
-async function RagAgent({ question }: { question: string }) {
+const RagAgent = gensx.Component("RagAgent", async ({ question }: { question: string }) => {
   const result = await generateText({
     messages: [
       {
@@ -52,11 +51,10 @@ async function RagAgent({ question }: { question: string }) {
     maxSteps: 10,
   });
   return result.text;
-}
+});
 
-@gensx.Workflow()
-export async function RagWorkflow({ question }: { question: string }) {
+export const RagWorkflow = gensx.Workflow("RagWorkflow", async ({ question }: { question: string }) => {
   return await RagAgent({ question });
-}
+});
 
 export { InitializeSearch };

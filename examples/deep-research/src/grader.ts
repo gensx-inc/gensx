@@ -14,12 +14,10 @@ export interface GradeDocumentOutput {
   useful: boolean;
 }
 
-@gensx.Component()
-export async function GradeDocument({
-  prompt,
-  document,
-}: GradeDocumentProps): Promise<boolean> {
-  const systemMessage = `You are a helpful research assistant.
+export const GradeDocument = gensx.Component(
+  "GradeDocument",
+  async ({ prompt, document }: GradeDocumentProps): Promise<boolean> => {
+    const systemMessage = `You are a helpful research assistant.
 
 Instructions:
 - You will be given user prompt and a document
@@ -32,7 +30,7 @@ Output Format:
 "useful": boolean
 }`;
 
-  const userMessage = `Here is the prompt:
+    const userMessage = `Here is the prompt:
 <prompt>
 ${prompt}
 </prompt>
@@ -47,19 +45,19 @@ Here is the document:
 </summary>
 </document>`;
 
-  const response = await generateObject({
-    model: openai("gpt-4o-mini"),
-    messages: [
-      {
-        role: "system",
-        content: systemMessage,
-      },
-      { role: "user", content: userMessage },
-    ],
-    schema: z.object({
-      useful: z.boolean(),
-    }),
-  });
+    const response = await generateObject({
+      model: openai("gpt-4o-mini"),
+      messages: [
+        {
+          role: "system",
+          content: systemMessage,
+        },
+        { role: "user", content: userMessage },
+      ],
+      schema: z.object({
+        useful: z.boolean(),
+      }),
+    });
 
-  return response.object.useful;
-}
+    return response.object.useful;
+  });

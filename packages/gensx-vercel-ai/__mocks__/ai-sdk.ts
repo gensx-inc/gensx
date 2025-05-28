@@ -11,8 +11,6 @@ const createMockOpenAI = (modelId: string) => ({
     .mockImplementation(async (params: { mode?: { type: string } }) => {
       await Promise.resolve();
 
-      console.info("doGenerate called with params:", params);
-
       // Check if this is an object generation request
       if (params.mode?.type === "object-json") {
         const response = {
@@ -33,7 +31,6 @@ const createMockOpenAI = (modelId: string) => ({
             totalTokens: 12,
           },
         };
-        console.info("Returning JSON response:", response);
         return response;
       }
 
@@ -50,7 +47,6 @@ const createMockOpenAI = (modelId: string) => ({
           totalTokens: 12,
         },
       };
-      console.info("Returning text response:", response);
       return response;
     }),
   doStream: vi.fn().mockImplementation(async () => {

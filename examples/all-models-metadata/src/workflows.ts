@@ -52,11 +52,13 @@ interface ListModelsOutput {
 }
 
 // Example component to list available models
-@gensx.Component()
-async function ListModels() {
-  const models = await openai.models.list();
-  return models;
-}
+const ListModels = gensx.Component(
+  "ListModels",
+  async () => {
+    const models = await openai.models.list();
+    return models;
+  },
+);
 
 interface GetModelPricingOutput {
   model: string;
@@ -65,19 +67,23 @@ interface GetModelPricingOutput {
 }
 
 // Regular function instead of Component for simpler usage
-@gensx.Component()
-async function GetModelPricing(model: OpenRouterModel): Promise<GetModelPricingOutput> {
-  return {
-    model: model.name,
-    prompt: `$${parseFloat(model.pricing.prompt) * 1000000} per million tokens`,
-    completion: `$${parseFloat(model.pricing.completion) * 1000000} per million tokens`,
-  };
-}
+const GetModelPricing = gensx.Component(
+  "GetModelPricing",
+  async (model: OpenRouterModel): Promise<GetModelPricingOutput> => {
+    return {
+      model: model.name,
+      prompt: `$${parseFloat(model.pricing.prompt) * 1000000} per million tokens`,
+      completion: `$${parseFloat(model.pricing.completion) * 1000000} per million tokens`,
+    };
+  },
+);
 
-@gensx.Workflow()
-export async function GetAllOpenRouterModelPricing({ }) {
-  const models = await ListModels();
-  // Cast to any to work with the actual structure returned by OpenRouter
-  const modelsData = (models as any).data as OpenRouterModel[];
-  return Promise.all(modelsData.map((model) => GetModelPricing(model)));
-}
+export const GetAllOpenRouterModelPricing = gensx.Workflow(
+  "GetAllOpenRouterModelPricing",
+  async () => {
+    const models = await ListModels();
+    // Cast to any to work with the actual structure returned by OpenRouter
+    const modelsData = (models as any).data as OpenRouterModel[];
+    return Promise.all(modelsData.map((model) => GetModelPricing(model)));
+  },
+);

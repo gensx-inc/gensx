@@ -14,46 +14,48 @@ interface OpenAIExampleProps {
   prompt: string;
 }
 
-@gensx.Workflow()
-export async function BasicCompletion({ prompt }: OpenAIExampleProps) {
-  const result = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
-    temperature: 0.7,
-    messages: [
-      {
-        role: "system",
-        content:
-          "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
+export const BasicCompletion = gensx.Component(
+  "BasicCompletion",
+  async ({ prompt }: OpenAIExampleProps) => {
+    const result = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content:
+            "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+    return result.choices[0].message.content;
   });
-  return result.choices[0].message.content;
-}
 
-@gensx.Workflow()
-export async function StreamingCompletion({ prompt }: OpenAIExampleProps) {
-  const result = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
-    temperature: 0.7,
-    messages: [
-      {
-        role: "system",
-        content:
-          "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    stream: true,
+export const StreamingCompletion = gensx.Component(
+  "StreamingCompletion",
+  async ({ prompt }: OpenAIExampleProps) => {
+    const result = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content:
+            "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      stream: true,
+    });
+    return result;
   });
-  return result;
-}
 
 const tools = [
   {
@@ -83,48 +85,50 @@ const tools = [
   }
 ]
 
-@gensx.Workflow()
-export async function Tools({ prompt }: OpenAIExampleProps) {
-  const result = await openai.beta.chat.completions.runTools({
-    model: "gpt-4.1-mini",
-    temperature: 0.7,
-    messages: [
-      {
-        role: "system",
-        content:
-          "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    tools,
+export const Tools = gensx.Component(
+  "Tools",
+  async ({ prompt }: OpenAIExampleProps) => {
+    const result = await openai.beta.chat.completions.runTools({
+      model: "gpt-4.1-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content:
+            "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      tools,
+    });
+    return await result.finalContent();
   });
-  return await result.finalContent();
-}
 
-@gensx.Workflow()
-export async function StreamingTools({ prompt }: OpenAIExampleProps) {
-  const result = await openai.beta.chat.completions.runTools({
-    model: "gpt-4.1-mini",
-    temperature: 0.7,
-    messages: [
-      {
-        role: "system",
-        content:
-          "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    tools,
-    stream: true,
+export const StreamingTools = gensx.Component(
+  "StreamingTools",
+  async ({ prompt }: OpenAIExampleProps) => {
+    const result = await openai.beta.chat.completions.runTools({
+      model: "gpt-4.1-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content:
+            "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      tools,
+      stream: true,
+    });
+    return result;
   });
-  return result;
-}
 
 const trashRatingSchema = z.object({
   bins: z.array(
@@ -144,23 +148,24 @@ const trashRatingSchema = z.object({
 
 type TrashRating = z.infer<typeof trashRatingSchema>;
 
-@gensx.Workflow()
-export async function StructuredOutput({ prompt }: OpenAIExampleProps) {
-  const result = await openai.beta.chat.completions.parse({
-    model: "gpt-4.1-mini",
-    temperature: 0.7,
-    messages: [
-      {
-        role: "system",
-        content:
-          "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    response_format: zodResponseFormat(trashRatingSchema, "trashRating"),
+export const StructuredOutput = gensx.Component(
+  "StructuredOutput",
+  async ({ prompt }: OpenAIExampleProps) => {
+    const result = await openai.beta.chat.completions.parse({
+      model: "gpt-4.1-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content:
+            "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: zodResponseFormat(trashRatingSchema, "trashRating"),
+    });
+    return result.choices[0]!.message.parsed as TrashRating;
   });
-  return result.choices[0]!.message.parsed as TrashRating;
-}

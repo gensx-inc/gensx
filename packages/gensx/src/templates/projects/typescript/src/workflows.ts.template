@@ -8,24 +8,28 @@ interface ChatProps {
 
 const openaiModel = openai("gpt-4.1-mini");
 
-@gensx.Component()
-async function Chat({ userMessage }: ChatProps) {
-  const result = await generateText({
-    model: openaiModel,
-    messages: [
-      {
-        role: "system",
-        content: "You are a helpful assistant.",
-      },
-      { role: "user", content: userMessage },
-    ],
-  });
-  return result.text;
-}
 
-@gensx.Workflow({ printUrl: true })
-async function ChatWorkflow({ userMessage }: ChatProps) {
-  return await Chat({ userMessage });
-}
+const Chat = gensx.Component(
+  "Chat",
+  async ({ userMessage }: ChatProps) => {
+    const result = await generateText({
+      model: openaiModel,
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant.",
+        },
+        { role: "user", content: userMessage },
+      ],
+    });
+    return result.text;
+  });
+
+const ChatWorkflow = gensx.Workflow(
+  "ChatWorkflow",
+  async ({ userMessage }: ChatProps) => {
+    return await Chat({ userMessage });
+  },
+);
 
 export { ChatWorkflow };

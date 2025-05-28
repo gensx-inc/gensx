@@ -1,6 +1,6 @@
 import { OpenAI } from "@gensx/openai";
 
-import { Component, Workflow, ComponentOpts } from "@gensx/core";
+import * as gensx from "@gensx/core";
 import { getTopStoryDetails, type HNStory } from "./hn.js";
 
 const getHNPostUrl = (id: number | string) =>
@@ -14,12 +14,14 @@ const openai = new OpenAI({
 interface WriteTweetProps {
   context: string;
   prompt: string;
-  componentOpts?: ComponentOpts;
+  componentOpts?: gensx.ComponentOpts;
 }
 
-@Component()
-async function WriteTweet({ context, prompt }: WriteTweetProps): Promise<string> {
-  const PROMPT = `
+
+const WriteTweet = gensx.Component(
+  "WriteTweet",
+  async ({ context, prompt }: WriteTweetProps): Promise<string> => {
+    const PROMPT = `
 You are Paul Graham composing a tweet. Given a longer analysis, distill it into a single tweet that:
 1. Captures the most interesting insight
 2. Uses your characteristic direct style
@@ -29,28 +31,29 @@ You are Paul Graham composing a tweet. Given a longer analysis, distill it into 
 Focus on the most surprising or counterintuitive point rather than trying to summarize everything.
     `.trim();
 
-  const response = await openai.chat.completions.create({
-    messages: [
-      { role: "system", content: PROMPT },
-      {
-        role: "user",
-        content: `Context:\n${context}\n\nPrompt: ${prompt}`,
-      },
-    ],
-    model: "gpt-4o",
-    temperature: 0.7,
+    const response = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: PROMPT },
+        {
+          role: "user",
+          content: `Context:\n${context}\n\nPrompt: ${prompt}`,
+        },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+    return response.choices[0].message.content ?? "";
   });
-  return response.choices[0].message.content ?? "";
-}
 
 interface EditReportProps {
   content: string;
-  componentOpts?: ComponentOpts;
+  componentOpts?: gensx.ComponentOpts;
 }
 
-@Component()
-async function EditReport({ content }: EditReportProps): Promise<string> {
-  const PROMPT = `
+const EditReport = gensx.Component(
+  "EditReport",
+  async ({ content }: EditReportProps): Promise<string> => {
+    const PROMPT = `
 You are Paul Graham, founder of Y Combinator and long-time essayist. Given a technical analysis, rewrite it in your distinctive style:
 1. Clear, direct language
 2. Concrete examples and analogies
@@ -65,27 +68,28 @@ you must include this exact link when discussing that project.
 Maintain your voice while preserving the key insights and all links from the analysis.
   `.trim();
 
-  const response = await openai.chat.completions.create({
-    messages: [
-      { role: "system", content: PROMPT },
-      { role: "user", content: content },
-    ],
-    model: "gpt-4o",
-    temperature: 0.7,
+    const response = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: PROMPT },
+        { role: "user", content: content },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+    return response.choices[0].message.content ?? "";
   });
-  return response.choices[0].message.content ?? "";
-}
 
 interface AnalyzeCommentsProps {
   postId: number;
   comments: { text: string; score: number }[];
-  componentOpts?: ComponentOpts;
+  componentOpts?: gensx.ComponentOpts;
 }
 
 
-@Component()
-async function AnalyzeComments({ postId, comments }: AnalyzeCommentsProps): Promise<string> {
-  const PROMPT = `
+const AnalyzeComments = gensx.Component(
+  "AnalyzeComments",
+  async ({ postId, comments }: AnalyzeCommentsProps): Promise<string> => {
+    const PROMPT = `
 You are an expert at analyzing Hacker News discussions. Analyze the provided comments and output in this exact format:
 
 SENTIMENT: [Write a single sentence describing the overall sentiment in 10 words or less]
@@ -108,33 +112,34 @@ Include a link to the discussion in your analysis section using this format: [Di
 Focus on substance rather than surface-level reactions. When referencing comments, include their scores to show the weight of different opinions.
     `.trim();
 
-  const sortedComments = [...comments].sort((a, b) => b.score - a.score);
-  const commentsText = sortedComments
-    .map((c) => `[Score: ${c.score}] ${c.text}`)
-    .join("\n\n");
+    const sortedComments = [...comments].sort((a, b) => b.score - a.score);
+    const commentsText = sortedComments
+      .map((c) => `[Score: ${c.score}] ${c.text}`)
+      .join("\n\n");
 
-  const response = await openai.chat.completions.create({
-    messages: [
-      { role: "system", content: PROMPT },
-      {
-        role: "user",
-        content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
-      },
-    ],
-    model: "gpt-4o",
-    temperature: 0.7,
+    const response = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: PROMPT },
+        {
+          role: "user",
+          content: `Discussion URL: ${getHNPostUrl(postId)}\n\n${commentsText}`,
+        },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+    return response.choices[0].message.content ?? "";
   });
-  return response.choices[0].message.content ?? "";
-}
 
 interface SummarizePostProps {
   story: HNStory;
-  componentOpts?: ComponentOpts;
+  componentOpts?: gensx.ComponentOpts;
 }
 
-@Component()
-async function SummarizePost({ story }: SummarizePostProps): Promise<string> {
-  const PROMPT = `
+const SummarizePost = gensx.Component(
+  "SummarizePost",
+  async ({ story }: SummarizePostProps): Promise<string> => {
+    const PROMPT = `
 You are an expert at summarizing Hacker News posts. Given a post's title, text, and comments, create a concise summary that captures:
 1. The main point or key insight
 2. Notable discussion points from comments (include comment scores to show community agreement)
@@ -153,47 +158,48 @@ When referencing comments, include their scores to show weight of opinion, e.g.:
 Keep the summary clear and objective. Focus on facts and insights rather than opinions.
     `.trim();
 
-  const context = `
+    const context = `
 Title: ${story.title}
 URL: ${getHNPostUrl(story.id)}
 Text: ${story.text ?? ""}
 Score: ${story.score} points
 Comments (sorted by score):
 ${story.comments
-      .sort((a, b) => b.score - a.score)
-      .map((c) => `[Score: ${c.score}] ${c.text}`)
-      .join("\n\n")}
+        .sort((a, b) => b.score - a.score)
+        .map((c) => `[Score: ${c.score}] ${c.text}`)
+        .join("\n\n")}
     `.trim();
 
-  const response = await openai.chat.completions.create({
-    messages: [
-      { role: "system", content: PROMPT },
-      { role: "user", content: context },
-    ],
-    model: "gpt-4o",
-    temperature: 0.7,
+    const response = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: PROMPT },
+        { role: "user", content: context },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+
+    const ensuredResponse = response.choices[0].message.content ?? "";
+
+    if (!ensuredResponse.includes(getHNPostUrl(story.id))) {
+      return `[${story.title}](${getHNPostUrl(story.id)})\n\n${ensuredResponse}`;
+    }
+    return ensuredResponse;
   });
-
-  const ensuredResponse = response.choices[0].message.content ?? "";
-
-  if (!ensuredResponse.includes(getHNPostUrl(story.id))) {
-    return `[${story.title}](${getHNPostUrl(story.id)})\n\n${ensuredResponse}`;
-  }
-  return ensuredResponse;
-}
 
 interface GenerateReportProps {
   analyses: {
     summary: string;
     commentAnalysis: string;
   }[];
-  componentOpts?: ComponentOpts;
+  componentOpts?: gensx.ComponentOpts;
 }
 
 
-@Component()
-async function GenerateReport({ analyses }: GenerateReportProps): Promise<string> {
-  const PROMPT = `
+const GenerateReport = gensx.Component(
+  "GenerateReport",
+  async ({ analyses }: GenerateReportProps): Promise<string> => {
+    const PROMPT = `
 You are writing a blog post for software engineers who work at startups and spend lots of time on twitter and hacker news.
 You will be given input summarizing the top posts from hacker news, and an analysis of the comments on each post.
 
@@ -217,56 +223,57 @@ Where appropriate, interleave demonstrative comments to help support your points
 Shoot for 1000 words.
     `.trim();
 
-  const context = analyses
-    .map(({ summary, commentAnalysis }) =>
-      `
+    const context = analyses
+      .map(({ summary, commentAnalysis }) =>
+        `
 ### Post Summary
 ${summary}
 
 ### Comment Analysis
 ${commentAnalysis}
     `.trim(),
-    )
-    .join("\n\n");
+      )
+      .join("\n\n");
 
-  const response = await openai.chat.completions.create({
-    messages: [
-      { role: "system", content: PROMPT },
-      { role: "user", content: context },
-    ],
-    model: "gpt-4o",
-    temperature: 0.7,
+    const response = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: PROMPT },
+        { role: "user", content: context },
+      ],
+      model: "gpt-4o",
+      temperature: 0.7,
+    });
+    return response.choices[0].message.content ?? "";
   });
-  return response.choices[0].message.content ?? "";
-}
 
 interface FetchHNPostsProps {
   limit: number;
-  componentOpts?: ComponentOpts;
+  componentOpts?: gensx.ComponentOpts;
 }
 
-@Component()
-async function FetchHNPosts({ limit }: FetchHNPostsProps): Promise<HNStory[]> {
-  const MAX_HN_STORIES = 500;
-  const requestLimit = Math.min(limit, MAX_HN_STORIES);
+const FetchHNPosts = gensx.Component(
+  "FetchHNPosts",
+  async ({ limit }: FetchHNPostsProps): Promise<HNStory[]> => {
+    const MAX_HN_STORIES = 500;
+    const requestLimit = Math.min(limit, MAX_HN_STORIES);
 
-  console.log(
-    `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
-  );
-  const stories = await getTopStoryDetails(requestLimit);
-  console.log(
-    `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
-    stories.length < limit
-      ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
-      : "",
-  );
+    console.log(
+      `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
+    );
+    const stories = await getTopStoryDetails(requestLimit);
+    console.log(
+      `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
+      stories.length < limit
+        ? `\n⚠️  Note: Requested ${limit} posts but only found ${stories.length} text posts in the top ${requestLimit} stories`
+        : "",
+    );
 
-  return stories;
-}
+    return stories;
+  });
 
 interface AnalyzeHNPostsProps {
   stories: HNStory[];
-  componentOpts?: ComponentOpts;
+  componentOpts?: gensx.ComponentOpts;
 }
 
 interface AnalyzeHNPostsOutput {
@@ -276,24 +283,25 @@ interface AnalyzeHNPostsOutput {
   }[];
 }
 
-@Component()
-async function AnalyzeHNPosts({ stories }: AnalyzeHNPostsProps): Promise<AnalyzeHNPostsOutput> {
-  const analyses = await Promise.all(stories.map(async (story) => {
-    // Pass componentOpts down if needed? Or rely on context?
-    // For now, not passing them down explicitly.
-    const summaryResult = await SummarizePost({ story });
-    const commentAnalysisResult = await AnalyzeComments({ postId: story.id, comments: story.comments });
-    return {
-      summary: summaryResult,
-      commentAnalysis: commentAnalysisResult,
-    };
-  }));
-  return { analyses };
-}
+const AnalyzeHNPosts = gensx.Component(
+  "AnalyzeHNPosts",
+  async ({ stories }: AnalyzeHNPostsProps): Promise<AnalyzeHNPostsOutput> => {
+    const analyses = await Promise.all(stories.map(async (story) => {
+      // Pass componentOpts down if needed? Or rely on context?
+      // For now, not passing them down explicitly.
+      const summaryResult = await SummarizePost({ story });
+      const commentAnalysisResult = await AnalyzeComments({ postId: story.id, comments: story.comments });
+      return {
+        summary: summaryResult,
+        commentAnalysis: commentAnalysisResult,
+      };
+    }));
+    return { analyses };
+  });
 
 interface AnalyzeHackerNewsTrendsProps {
   postCount: number;
-  componentOpts?: ComponentOpts; // Added here
+  componentOpts?: gensx.ComponentOpts; // Added here
 }
 
 export interface AnalyzeHackerNewsTrendsOutput {
@@ -301,8 +309,7 @@ export interface AnalyzeHackerNewsTrendsOutput {
   tweet: string;
 }
 
-@Workflow()
-export async function AnalyzeHackerNewsTrends({ postCount, componentOpts }: AnalyzeHackerNewsTrendsProps): Promise<AnalyzeHackerNewsTrendsOutput> {
+export const AnalyzeHackerNewsTrends = gensx.Workflow("AnalyzeHackerNewsTrends", async ({ postCount, componentOpts }: AnalyzeHackerNewsTrendsProps): Promise<AnalyzeHackerNewsTrendsOutput> => {
   // Note: componentOpts from the initial call needs to be passed down if sub-components need it.
   // The current implementation doesn't pass it down explicitly.
   // Context might be a better way to manage workflow-level options.
@@ -318,4 +325,4 @@ export async function AnalyzeHackerNewsTrends({ postCount, componentOpts }: Anal
   });
 
   return { report: editedReport, tweet };
-}
+});

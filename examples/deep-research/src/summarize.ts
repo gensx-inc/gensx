@@ -10,11 +10,12 @@ export interface SummarizePaperProps {
   prompt: string;
 }
 
-@gensx.Component()
-export async function SummarizePaper({ markdown, prompt }: SummarizePaperProps): Promise<string> {
-  const systemMessage = `Your job is to provide a contextual research summary of a research summary based on the prompt provided.`;
+export const SummarizePaper = gensx.Component(
+  "SummarizePaper",
+  async ({ markdown, prompt }: SummarizePaperProps): Promise<string> => {
+    const systemMessage = `Your job is to provide a contextual research summary of a research summary based on the prompt provided.`;
 
-  const userMessage = `Here is the prompt:
+    const userMessage = `Here is the prompt:
 <prompt>
 ${prompt}
 </prompt>
@@ -26,19 +27,19 @@ ${markdown}
 
 Please return a detailed yet concise summary of the paper that is relevant to the user's prompt.`;
 
-  const response = await generateText({
-    model: openai("gpt-4o-mini"),
-    messages: [
-      {
-        role: "system",
-        content: systemMessage,
-      },
-      { role: "user", content: userMessage },
-    ],
-  });
+    const response = await generateText({
+      model: openai("gpt-4o-mini"),
+      messages: [
+        {
+          role: "system",
+          content: systemMessage,
+        },
+        { role: "user", content: userMessage },
+      ],
+    });
 
-  return response.text;
-}
+    return response.text;
+  });
 
 export interface FetchAndSummarizeProps {
   document: ArxivEntry;
@@ -51,11 +52,10 @@ export interface ArxivSummary {
   summary: string;
 }
 
-@gensx.Component()
-export async function FetchAndSummarize({
+export const FetchAndSummarize = gensx.Component("FetchAndSummarize", async ({
   document,
   prompt,
-}: FetchAndSummarizeProps): Promise<ArxivSummary> {
+}: FetchAndSummarizeProps): Promise<ArxivSummary> => {
   const url = document.url.replace("abs", "html"); // getting the url to the html version of the paper
 
   const markdown = await ScrapePage({ url });
@@ -64,6 +64,7 @@ export async function FetchAndSummarize({
   return {
     title: document.title,
     url: url,
-    summary
+    summary,
   };
-}
+},
+);

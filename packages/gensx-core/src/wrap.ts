@@ -2,7 +2,7 @@ import { isProxy } from "util/types";
 
 import type { ComponentOpts } from "./types.js";
 
-import { createComponent } from "./component.js";
+import { Component } from "./component.js";
 
 /**
  * Options for wrapping SDKs and functions.
@@ -54,8 +54,7 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
           // Bind the original `this` so SDK internals keep working
           const boundFn = value.bind(origTarget) as (input?: object) => unknown;
           const componentOpts = opts.getComponentOpts?.(path, boundFn);
-          return createComponent(boundFn, {
-            name: componentName,
+          return Component(componentName, boundFn, {
             ...componentOpts,
           });
         }

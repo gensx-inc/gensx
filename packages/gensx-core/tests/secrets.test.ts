@@ -32,14 +32,17 @@ suite("secrets", () => {
     }
 
     // Create decorated component with secret props
-    const SecretComponent = gensx.Component({
-      name: "SecretComponent",
-      secretProps: [
-        "config.apiKey",
-        "config.credentials.apiKey",
-        "config.credentials.metadata.token",
-      ],
-    })(secretComponent);
+    const SecretComponent = gensx.Component(
+      "SecretComponent",
+      secretComponent,
+      {
+        secretProps: [
+          "config.apiKey",
+          "config.credentials.apiKey",
+          "config.credentials.metadata.token",
+        ],
+      },
+    );
 
     // Execute with some secret values
     const secretValue = "secret-api-key-12345";
@@ -70,10 +73,13 @@ suite("secrets", () => {
     }
 
     // Create decorated component with secret outputs
-    const SecretOutputComponent = gensx.Component({
-      name: "SecretOutputComponent",
-      secretOutputs: true, // Mark the entire output as containing secrets
-    })(sensitiveOutputComponent);
+    const SecretOutputComponent = gensx.Component(
+      "SecretOutputComponent",
+      sensitiveOutputComponent,
+      {
+        secretOutputs: true, // Mark the entire output as containing secrets
+      },
+    );
 
     // Execute the component
     const result = SecretOutputComponent({});
