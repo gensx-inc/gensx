@@ -1,26 +1,21 @@
 {
-  "name": "@examples/text-to-sql",
+  "name": "@examples/groq-deepseek",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
-  "description": "Text to SQL with GenSX and the useDatabase hook",
+  "description": "Use Groq DeepSeek R1 Distilled to write a blog post",
   "scripts": {
     "dev": "tsx ./src/index.ts",
     "start": "npx gensx start ./src/workflows.ts",
     "build": "tsc",
-    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts"
+    "deploy": "npx gensx deploy -e GROQ_API_KEY ./src/workflows.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^1.3.22",
     "@gensx/core": "alpha",
-    "@gensx/storage": "alpha",
-    "@gensx/vercel-ai": "alpha",
-    "ai": "^4.2.10",
-    "openai": "^4.87.4",
-    "zod": "^3.24.2"
+    "@gensx/openai": "alpha"
   },
   "devDependencies": {
     "@types/node": "^22",

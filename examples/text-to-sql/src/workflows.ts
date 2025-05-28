@@ -1,18 +1,9 @@
 import { tool } from "ai";
 import * as gensx from "@gensx/core";
-import { Database, DatabaseClient } from "@gensx/storage";
+import { useDatabase } from "@gensx/storage";
 import { z } from "zod";
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "@gensx/vercel-ai";
-
-// TODO: remove this once the storage package is updated
-async function useDatabase(
-  name: string,
-): Promise<Database> {
-  const client = new DatabaseClient();
-  const db = await client.getDatabase(name);
-  return db;
-}
 
 // Define the query tool schema
 const querySchema = z.object({

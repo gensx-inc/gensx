@@ -13,12 +13,7 @@
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "outDir": "./dist"
-  },
-  "include": [
-    "./src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "jsx": "react-jsx",
+    "jsxImportSource": "@gensx/core"
+  }
 }

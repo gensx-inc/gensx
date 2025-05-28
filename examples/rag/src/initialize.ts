@@ -1,18 +1,10 @@
 import * as gensx from "@gensx/core";
-import { Namespace, SearchClient } from "@gensx/storage";
+import { useSearch } from "@gensx/storage";
 import { embedMany } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const embeddingModel = openai.embedding("text-embedding-3-small");
 
-// TODO: remove this once the storage package is updated
-export async function useSearch(
-  name: string,
-): Promise<Namespace> {
-  const client = new SearchClient();
-  const namespace = await client.getNamespace(name);
-  return namespace;
-}
 
 export const InitializeSearch = gensx.Workflow("InitializeSearch", async ({ }) => {
   // UseSearch will create the namespace automatically if it doesn't exist.

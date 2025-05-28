@@ -13,8 +13,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@gensx/openai": "workspace:*",
-    "@gensx/core": "workspace:*",
+    "@gensx/openai": "0.1.28",
+    "@gensx/core": "0.3.13",
     "openai": "catalog:"
   },
   "devDependencies": {

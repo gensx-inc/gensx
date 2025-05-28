@@ -13,9 +13,9 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@gensx/anthropic": "workspace:*",
-    "@gensx/openai": "workspace:*",
-    "@gensx/core": "workspace:*",
+    "@gensx/anthropic": "0.1.17",
+    "@gensx/openai": "0.1.28",
+    "@gensx/core": "0.3.13",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -35,7 +35,7 @@ catalogs:
       version: 4.39.0
     tsx:
       specifier: ^4.19.2
-      version: 4.19.3
+      version: 4.19.4
     typescript:
       specifier: ^5.7.2
       version: 5.8.2
@@ -54,7 +54,7 @@ catalogs:
   examples:
     '@types/node':
       specifier: ^22
-      version: 22.15.21
+      version: 22.15.23
   packages:
 
     '@types/node':
@@ -70,10 +70,10 @@ importers:
         version: 20.1.5
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       vitest:
         specifier: 'catalog:'
-        version: 3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
+        version: 3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: 'catalog:'
@@ -107,7 +107,7 @@ importers:
         version: 10.0.0(eslint@9.23.0(jiti@2.4.2))
       eslint-plugin-vitest:
         specifier: ^0.5.4
-        version: 0.5.4(@typescript-eslint/eslint-plugin@8.29.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2)(vitest@3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))
+        version: 0.5.4(@typescript-eslint/eslint-plugin@8.29.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2)(vitest@3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1))
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
@@ -122,16 +122,16 @@ importers:
         version: 5.8.2
       vite:
         specifier: 'catalog:'
-        version: 6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
+        version: 6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)
 
   examples/all-models-metadata:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        specifier: alpha
+        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -146,11 +146,11 @@ importers:
   examples/anthropic-examples:
     dependencies:
       '@gensx/anthropic':
-        specifier: workspace:*
-        version: link:../../packages/gensx-anthropic
+        specifier: alpha
+        version: 0.2.0-alpha.2(@anthropic-ai/sdk@0.39.0)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       zod:
         specifier: ^3.24.2
         version: 3.25.20
@@ -168,17 +168,17 @@ importers:
   examples/blog-writer:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        specifier: alpha
+        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
       openai:
         specifier: ^4.0.0
-        version: 4.91.1(ws@8.18.0)(zod@3.25.20)
+        version: 4.91.1(ws@8.18.0)(zod@3.25.29)
       zod:
-        specifier: ^3.25.20
-        version: 3.25.20
+        specifier: ^3.24.2
+        version: 3.25.29
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -196,14 +196,14 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.24.2)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/storage':
-        specifier: workspace:*
-        version: link:../../packages/gensx-storage
+        specifier: alpha
+        version: 0.1.0-alpha.1
       '@gensx/vercel-ai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-vercel-ai
+        specifier: alpha
+        version: 0.2.0-alpha.5(react@19.1.0)
       ai:
         specifier: ^4.2.10
         version: 4.3.4(react@19.1.0)(zod@3.24.2)
@@ -227,21 +227,21 @@ importers:
   examples/commonjs-compatibility:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: 0.3.13
+        version: 0.3.13
       zod:
         specifier: 'catalog:'
         version: 3.25.29
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 22.15.21
+        version: 22.15.23
       nodemon:
         specifier: 'catalog:'
         version: 3.1.9
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       typescript:
         specifier: 'catalog:'
         version: 5.8.2
@@ -252,14 +252,14 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.25.29)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/storage':
-        specifier: workspace:*
-        version: link:../../packages/gensx-storage
+        specifier: alpha
+        version: 0.1.0-alpha.1
       '@gensx/vercel-ai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-vercel-ai
+        specifier: alpha
+        version: 0.2.0-alpha.5(react@19.1.0)
       '@mendable/firecrawl-js':
         specifier: ^1.21.0
         version: 1.21.0(ws@8.18.0)
@@ -292,39 +292,33 @@ importers:
         specifier: ^5.7.2
         version: 5.8.2
 
-  examples/groq-deepseek-r1-distilled:
+  examples/groq-deepseek:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      openai:
-        specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.25.29)
+        specifier: alpha
+        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
-        specifier: catalog:examples
+        specifier: ^22
         version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
       tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
+        specifier: ^4.19.2
+        version: 4.19.4
       typescript:
-        specifier: 'catalog:'
+        specifier: ^5.7.2
         version: 5.8.2
 
   examples/hacker-news-analyzer:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        specifier: alpha
+        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -339,27 +333,27 @@ importers:
   examples/llm-games:
     dependencies:
       '@gensx/anthropic':
-        specifier: workspace:*
-        version: link:../../packages/gensx-anthropic
+        specifier: 0.1.17
+        version: 0.1.17(@anthropic-ai/sdk@0.39.0)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: 0.3.13
+        version: 0.3.13
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        specifier: 0.1.28
+        version: 0.1.28(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
       zod:
         specifier: 'catalog:'
         version: 3.25.29
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 22.15.21
+        version: 22.15.23
       nodemon:
         specifier: 'catalog:'
         version: 3.1.9
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       typescript:
         specifier: 'catalog:'
         version: 5.8.2
@@ -367,36 +361,30 @@ importers:
   examples/open-router:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      openai:
-        specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.25.29)
+        specifier: alpha
+        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
-        specifier: catalog:examples
+        specifier: ^22
         version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
       tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
+        specifier: ^4.19.2
+        version: 4.19.4
       typescript:
-        specifier: 'catalog:'
+        specifier: ^5.7.2
         version: 5.8.2
 
   examples/openai-computer-use:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: 0.3.13
+        version: 0.3.13
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        specifier: 0.1.28
+        version: 0.1.28(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
       openai:
         specifier: 'catalog:'
         version: 4.91.1(ws@8.18.0)(zod@3.25.29)
@@ -409,13 +397,13 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 22.15.21
+        version: 22.15.23
       nodemon:
         specifier: 'catalog:'
         version: 3.1.9
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       typescript:
         specifier: 'catalog:'
         version: 5.8.2
@@ -423,11 +411,11 @@ importers:
   examples/openai-examples:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        specifier: alpha
+        version: 0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
       openai:
         specifier: ^4.0.0
         version: 4.91.1(ws@8.18.0)(zod@3.25.29)
@@ -451,14 +439,14 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.24.2)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/storage':
-        specifier: workspace:*
-        version: link:../../packages/gensx-storage
+        specifier: alpha
+        version: 0.1.0-alpha.1
       '@gensx/vercel-ai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-vercel-ai
+        specifier: alpha
+        version: 0.2.0-alpha.5(react@19.1.0)
       ai:
         specifier: ^4.2.10
         version: 4.3.4(react@19.1.0)(zod@3.24.2)
@@ -481,27 +469,30 @@ importers:
 
   examples/reflection:
     dependencies:
+      '@ai-sdk/openai':
+        specifier: ^1.3.22
+        version: 1.3.22(zod@3.25.29)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
-      '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      openai:
-        specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.25.29)
+        specifier: alpha
+        version: 0.4.0-alpha.5
+      '@gensx/vercel-ai':
+        specifier: alpha
+        version: 0.2.0-alpha.5(react@19.1.0)
+      ai:
+        specifier: ^4.2.10
+        version: 4.3.16(react@19.1.0)(zod@3.25.29)
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.29
     devDependencies:
       '@types/node':
-        specifier: catalog:examples
+        specifier: ^22
         version: 22.15.21
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
       tsx:
-        specifier: 'catalog:'
-        version: 4.19.3
+        specifier: ^4.19.2
+        version: 4.19.4
       typescript:
-        specifier: 'catalog:'
+        specifier: ^5.7.2
         version: 5.8.2
 
   examples/salty-ocean-model-comparison:
@@ -510,27 +501,27 @@ importers:
         specifier: ^1.3.6
         version: 1.3.6(zod@3.25.29)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: 0.3.13
+        version: 0.3.13
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
-      '@gensx/vercel-ai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-vercel-ai
+        specifier: 0.1.28
+        version: 0.1.28(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
+      '@gensx/vercel-ai-sdk':
+        specifier: 0.1.17
+        version: 0.1.17(react@19.1.0)(zod@3.25.29)
       openai:
         specifier: 'catalog:'
         version: 4.91.1(ws@8.18.0)(zod@3.25.29)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 22.15.21
+        version: 22.15.23
       nodemon:
         specifier: 'catalog:'
         version: 3.1.9
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       typescript:
         specifier: 'catalog:'
         version: 5.8.2
@@ -541,11 +532,11 @@ importers:
         specifier: ^0.39.0
         version: 0.39.0
       '@gensx/anthropic':
-        specifier: workspace:*
-        version: link:../../packages/gensx-anthropic
+        specifier: 0.1.17
+        version: 0.1.17(@anthropic-ai/sdk@0.39.0)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: 0.3.13
+        version: 0.3.13
       '@mendable/firecrawl-js':
         specifier: ^1.21.0
         version: 1.21.0(ws@8.18.0)
@@ -558,13 +549,13 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 22.15.21
+        version: 22.15.23
       nodemon:
         specifier: 'catalog:'
         version: 3.1.9
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       typescript:
         specifier: 'catalog:'
         version: 5.8.2
@@ -572,24 +563,24 @@ importers:
   examples/streaming:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: 0.3.13
+        version: 0.3.13
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        specifier: 0.1.28
+        version: 0.1.28(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
       openai:
         specifier: 'catalog:'
         version: 4.91.1(ws@8.18.0)(zod@3.25.29)
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 22.15.21
+        version: 22.15.23
       nodemon:
         specifier: 'catalog:'
         version: 3.1.9
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       typescript:
         specifier: 'catalog:'
         version: 5.8.2
@@ -597,11 +588,11 @@ importers:
   examples/structured-outputs:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: 0.3.13
+        version: 0.3.13
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        specifier: 0.1.28
+        version: 0.1.28(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
       openai:
         specifier: 'catalog:'
         version: 4.91.1(ws@8.18.0)(zod@3.25.29)
@@ -611,13 +602,13 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 22.15.21
+        version: 22.15.23
       nodemon:
         specifier: 'catalog:'
         version: 3.1.9
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       typescript:
         specifier: 'catalog:'
         version: 5.8.2
@@ -628,14 +619,14 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.24.2)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/storage':
-        specifier: workspace:*
-        version: link:../../packages/gensx-storage
+        specifier: alpha
+        version: 0.1.0-alpha.1
       '@gensx/vercel-ai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-vercel-ai
+        specifier: alpha
+        version: 0.2.0-alpha.5(react@19.1.0)
       ai:
         specifier: ^4.2.10
         version: 4.3.4(react@19.1.0)(zod@3.24.2)
@@ -659,21 +650,21 @@ importers:
   examples/typescript-compatibility:
     dependencies:
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: 0.3.13
+        version: 0.3.13
       '@gensx/openai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-openai
+        specifier: 0.1.28
+        version: 0.1.28(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 22.15.21
+        version: 22.15.23
       nodemon:
         specifier: 'catalog:'
         version: 3.1.9
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       typescript:
         specifier: '5.1'
         version: 5.1.6
@@ -684,11 +675,11 @@ importers:
         specifier: ^1.3.22
         version: 1.3.22(zod@3.25.29)
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: alpha
+        version: 0.4.0-alpha.5
       '@gensx/vercel-ai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-vercel-ai
+        specifier: alpha
+        version: 0.2.0-alpha.5(react@19.1.0)
       ai:
         specifier: ^4.3.16
         version: 4.3.16(react@19.1.0)(zod@3.25.29)
@@ -735,19 +726,19 @@ importers:
         version: 19.1.3
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.1.3(vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))
+        version: 3.1.3(vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1))
       fs-extra:
         specifier: ^11.3.0
         version: 11.3.0
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       typescript:
         specifier: 'catalog:'
         version: 5.8.2
       vitest:
         specifier: 'catalog:'
-        version: 3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
+        version: 3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)
 
   packages/gensx:
     dependencies:
@@ -932,7 +923,7 @@ importers:
         version: 1.8.0
       tsx:
         specifier: 'catalog:'
-        version: 4.19.3
+        version: 4.19.4
       zod:
         specifier: 'catalog:'
         version: 3.25.29
@@ -942,10 +933,10 @@ importers:
         version: 18.19.86
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.1.3(vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))
+        version: 3.1.3(vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1))
       vitest:
         specifier: 'catalog:'
-        version: 3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
+        version: 3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)
 
   packages/gensx-core:
     dependencies:
@@ -1729,6 +1720,48 @@ packages:
 
   '@formatjs/intl-localematcher@0.6.1':
     resolution: {integrity: sha512-ePEgLgVCqi2BBFnTMWPfIghu6FkbZnnBVhO2sSxvLfrdFw7wCHAHiDoM2h4NRgjbaY7+B7HgOLZGkK187pZTZg==}
+
+  '@gensx/anthropic@0.1.17':
+    resolution: {integrity: sha512-HN/ojkVa4LWDY14cC61Dx2yWpJt95HkkP/6Vryi7k9O3Jd9oDSvT2u3mr71J3WAiijTCdCynlkq6cVfcAQSk2g==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+    peerDependencies:
+      '@anthropic-ai/sdk': ^0.39.0
+
+  '@gensx/anthropic@0.2.0-alpha.2':
+    resolution: {integrity: sha512-mI3F5zQWjkhnKp8bee9d7lTQXgEzXi0LTtfA+OhU9DewA+8RT7BXAmx8dwkhPRhbZVX6UmsbTbu6VKi/8k8CKA==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+    peerDependencies:
+      '@anthropic-ai/sdk': ^0.39.0
+
+  '@gensx/core@0.3.13':
+    resolution: {integrity: sha512-NK0pZWroT39tK8LQTuS3D5a1O9qhGcKr9LZRoFREe0IKntgj6yCmLJA5uzvsztUcSbtITFrDW4HviuIpUadNXg==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
+  '@gensx/core@0.4.0-alpha.5':
+    resolution: {integrity: sha512-iAk0mTGh3VEPVpYn0acCPkFRVGEABVL4/QXrZyWx/5k0zs28wIQJlPRwGjAef8d5EW+xNduSz2WWUVo/ryNBwQ==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
+  '@gensx/openai@0.1.28':
+    resolution: {integrity: sha512-iSZ+4vGNp3IyALW7ONopvUU4U4rfkk8T0IzjnfTyaPUrP6AazxSzyRrUmBLm8Mk1Kxq0YCYZIq5YhfguEVNOlQ==}
+    peerDependencies:
+      openai: ^4.87.4
+
+  '@gensx/openai@0.2.0-alpha.3':
+    resolution: {integrity: sha512-t8FPvxTNcmd6O/m2LMKFTls1IiBB7CgGtnOIq0fN++1Pi4BkRDs8Cmkp4qLs5MSvOB1FRntSaKqig13EBbumxA==}
+    peerDependencies:
+      openai: '>=4.0.0'
+
+  '@gensx/storage@0.1.0-alpha.1':
+    resolution: {integrity: sha512-2KHb5upk6eha0VarePc/ODfDoryXFA1MqK5pfkDW15Brl3mFfoVNru38njxSoPxLM6NKilEPDkZamag1JWmZ3Q==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
+  '@gensx/vercel-ai-sdk@0.1.17':
+    resolution: {integrity: sha512-LasIxzHf0b2+FE8nXvFHFLUTaZOqVwsoH83dsbGJY1ZMEMlA10pghGWArvF9LNGY9HmahjK858EeiHPDFXFivA==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
+  '@gensx/vercel-ai@0.2.0-alpha.5':
+    resolution: {integrity: sha512-i112uhXZiyQhUsPxVebh3C9L1QDMaas29Lx7GvUUB51O2c8HO0a2DC1vwtGl5ti6iBbY0MDMPWiNhpnv6V3IHQ==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@headlessui/react@2.2.0':
     resolution: {integrity: sha512-RzCEg+LXsuI7mHiSomsu/gBJSjpupm6A1qIZ5sWjd7JhARNlMiSA4kKfJpCKwU9tE+zMRterhhrP74PvfJrpXQ==}
@@ -7192,11 +7225,6 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
-  tsx@4.19.3:
-    resolution: {integrity: sha512-4H8vUNGNjQ4V2EOoGw005+c+dGuPSnhpPBPHBtsZdGZBk/iJb4kguGlPWaZTZ3q5nMtFOEsY0nRDlh9PJyd6SQ==}
-    engines: {node: '>=18.0.0'}
-    hasBin: true
-
   tsx@4.19.4:
     resolution: {integrity: sha512-gK5GVzDkJK1SI1zwHf32Mqxf2tSJkNx+eYcNly5+nHvWqXUJYUkWBQtKauoESz3ymezAI++ZwT855x5p5eop+Q==}
     engines: {node: '>=18.0.0'}
@@ -8176,6 +8204,70 @@ snapshots:
   '@formatjs/intl-localematcher@0.6.1':
     dependencies:
       tslib: 2.8.1
+
+  '@gensx/anthropic@0.1.17(@anthropic-ai/sdk@0.39.0)':
+    dependencies:
+      '@anthropic-ai/sdk': 0.39.0
+      '@gensx/core': 0.3.13
+      zod: 3.25.29
+      zod-to-json-schema: 3.24.5(zod@3.25.29)
+
+  '@gensx/anthropic@0.2.0-alpha.2(@anthropic-ai/sdk@0.39.0)':
+    dependencies:
+      '@anthropic-ai/sdk': 0.39.0
+      '@gensx/core': 0.4.0-alpha.5
+      zod: 3.25.29
+      zod-to-json-schema: 3.24.5(zod@3.25.29)
+
+  '@gensx/core@0.3.13':
+    dependencies:
+      '@common.js/serialize-error': 11.0.3
+      ini: 5.0.0
+      zod: 3.25.29
+
+  '@gensx/core@0.4.0-alpha.5':
+    dependencies:
+      '@common.js/serialize-error': 11.0.3
+      ini: 5.0.0
+      zod: 3.25.29
+
+  '@gensx/openai@0.1.28(openai@4.91.1(ws@8.18.0)(zod@3.25.29))':
+    dependencies:
+      '@gensx/core': 0.3.13
+      openai: 4.91.1(ws@8.18.0)(zod@3.25.29)
+      zod: 3.25.29
+      zod-to-json-schema: 3.24.5(zod@3.25.29)
+
+  '@gensx/openai@0.2.0-alpha.3(openai@4.91.1(ws@8.18.0)(zod@3.25.29))':
+    dependencies:
+      '@gensx/core': 0.4.0-alpha.5
+      openai: 4.91.1(ws@8.18.0)(zod@3.25.29)
+
+  '@gensx/storage@0.1.0-alpha.1':
+    dependencies:
+      '@gensx/core': 0.4.0-alpha.5
+      '@libsql/client': 0.15.2
+      '@turbopuffer/turbopuffer': 0.7.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@gensx/vercel-ai-sdk@0.1.17(react@19.1.0)(zod@3.25.29)':
+    dependencies:
+      '@gensx/core': 0.3.13
+      ai: 4.3.16(react@19.1.0)(zod@3.25.29)
+    transitivePeerDependencies:
+      - react
+      - zod
+
+  '@gensx/vercel-ai@0.2.0-alpha.5(react@19.1.0)':
+    dependencies:
+      '@ai-sdk/provider': 1.1.3
+      '@gensx/core': 0.4.0-alpha.5
+      ai: 4.3.16(react@19.1.0)(zod@3.25.29)
+      zod: 3.25.29
+    transitivePeerDependencies:
+      - react
 
   '@headlessui/react@2.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -9586,7 +9678,6 @@ snapshots:
   '@types/node@22.15.23':
     dependencies:
       undici-types: 6.21.0
-    optional: true
 
   '@types/prismjs@1.26.5': {}
 
@@ -9882,22 +9973,6 @@ snapshots:
       svelte: 4.2.19
       vue: 3.5.13(typescript@5.7.2)
 
-  '@vitest/coverage-istanbul@3.1.3(vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))':
-    dependencies:
-      '@istanbuljs/schema': 0.1.3
-      debug: 4.4.0(supports-color@5.5.0)
-      istanbul-lib-coverage: 3.2.2
-      istanbul-lib-instrument: 6.0.3
-      istanbul-lib-report: 3.0.1
-      istanbul-lib-source-maps: 5.0.6
-      istanbul-reports: 3.1.7
-      magicast: 0.3.5
-      test-exclude: 7.0.1
-      tinyrainbow: 2.0.0
-      vitest: 3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
-    transitivePeerDependencies:
-      - supports-color
-
   '@vitest/coverage-istanbul@3.1.3(vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1))':
     dependencies:
       '@istanbuljs/schema': 0.1.3
@@ -9921,13 +9996,13 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.1.3(vite@6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))':
+  '@vitest/mocker@3.1.3(vite@6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1))':
     dependencies:
       '@vitest/spy': 3.1.3
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
-      vite: 6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
+      vite: 6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)
 
   '@vitest/pretty-format@3.1.3':
     dependencies:
@@ -11175,13 +11250,13 @@ snapshots:
     dependencies:
       eslint: 9.23.0(jiti@2.4.2)
 
-  eslint-plugin-vitest@0.5.4(@typescript-eslint/eslint-plugin@8.29.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2)(vitest@3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)):
+  eslint-plugin-vitest@0.5.4(@typescript-eslint/eslint-plugin@8.29.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2)(vitest@3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)):
     dependencies:
       '@typescript-eslint/utils': 7.18.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2)
       eslint: 9.23.0(jiti@2.4.2)
     optionalDependencies:
       '@typescript-eslint/eslint-plugin': 8.29.0(@typescript-eslint/parser@8.29.0(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2)
-      vitest: 3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
+      vitest: 3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -13387,21 +13462,6 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  openai@4.91.1(ws@8.18.0)(zod@3.25.20):
-    dependencies:
-      '@types/node': 18.19.86
-      '@types/node-fetch': 2.6.12
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-    optionalDependencies:
-      ws: 8.18.0
-      zod: 3.25.20
-    transitivePeerDependencies:
-      - encoding
-
   openai@4.91.1(ws@8.18.0)(zod@3.25.29):
     dependencies:
       '@types/node': 18.19.86
@@ -14697,13 +14757,6 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsx@4.19.3:
-    dependencies:
-      esbuild: 0.25.0
-      get-tsconfig: 4.10.0
-    optionalDependencies:
-      fsevents: 2.3.3
-
   tsx@4.19.4:
     dependencies:
       esbuild: 0.25.0
@@ -15008,27 +15061,6 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
-  vite-node@3.1.3(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1):
-    dependencies:
-      cac: 6.7.14
-      debug: 4.4.0(supports-color@5.5.0)
-      es-module-lexer: 1.7.0
-      pathe: 2.0.3
-      vite: 6.2.4(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
-    transitivePeerDependencies:
-      - '@types/node'
-      - jiti
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - yaml
-
   vite-node@3.1.3(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1):
     dependencies:
       cac: 6.7.14
@@ -15050,13 +15082,13 @@ snapshots:
       - tsx
       - yaml
 
-  vite-node@3.1.3(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1):
+  vite-node@3.1.3(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1):
     dependencies:
       cac: 6.7.14
       debug: 4.4.0(supports-color@5.5.0)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
+      vite: 6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -15071,19 +15103,6 @@ snapshots:
       - tsx
       - yaml
 
-  vite@6.2.4(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1):
-    dependencies:
-      esbuild: 0.25.0
-      postcss: 8.5.3
-      rollup: 4.39.0
-    optionalDependencies:
-      '@types/node': 18.19.86
-      fsevents: 2.3.3
-      jiti: 2.4.2
-      lightningcss: 1.29.3
-      tsx: 4.19.3
-      yaml: 2.7.1
-
   vite@6.2.4(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1):
     dependencies:
       esbuild: 0.25.0
@@ -15097,7 +15116,7 @@ snapshots:
       tsx: 4.19.4
       yaml: 2.7.1
 
-  vite@6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1):
+  vite@6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1):
     dependencies:
       esbuild: 0.25.0
       postcss: 8.5.3
@@ -15107,53 +15126,13 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.4.2
       lightningcss: 1.29.3
-      tsx: 4.19.3
+      tsx: 4.19.4
       yaml: 2.7.1
-
-  vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1):
-    dependencies:
-      '@vitest/expect': 3.1.3
-      '@vitest/mocker': 3.1.3(vite@6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))
-      '@vitest/pretty-format': 3.1.3
-      '@vitest/runner': 3.1.3
-      '@vitest/snapshot': 3.1.3
-      '@vitest/spy': 3.1.3
-      '@vitest/utils': 3.1.3
-      chai: 5.2.0
-      debug: 4.4.0(supports-color@5.5.0)
-      expect-type: 1.2.1
-      magic-string: 0.30.17
-      pathe: 2.0.3
-      std-env: 3.9.0
-      tinybench: 2.9.0
-      tinyexec: 0.3.2
-      tinyglobby: 0.2.13
-      tinypool: 1.0.2
-      tinyrainbow: 2.0.0
-      vite: 6.2.4(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
-      vite-node: 3.1.3(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@types/debug': 4.1.12
-      '@types/node': 18.19.86
-    transitivePeerDependencies:
-      - jiti
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - yaml
 
   vitest@3.1.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1):
     dependencies:
       '@vitest/expect': 3.1.3
-      '@vitest/mocker': 3.1.3(vite@6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))
+      '@vitest/mocker': 3.1.3(vite@6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1))
       '@vitest/pretty-format': 3.1.3
       '@vitest/runner': 3.1.3
       '@vitest/snapshot': 3.1.3
@@ -15190,10 +15169,10 @@ snapshots:
       - tsx
       - yaml
 
-  vitest@3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1):
+  vitest@3.1.3(@types/debug@4.1.12)(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1):
     dependencies:
       '@vitest/expect': 3.1.3
-      '@vitest/mocker': 3.1.3(vite@6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1))
+      '@vitest/mocker': 3.1.3(vite@6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1))
       '@vitest/pretty-format': 3.1.3
       '@vitest/runner': 3.1.3
       '@vitest/snapshot': 3.1.3
@@ -15210,8 +15189,8 @@ snapshots:
       tinyglobby: 0.2.13
       tinypool: 1.0.2
       tinyrainbow: 2.0.0
-      vite: 6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
-      vite-node: 3.1.3(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.3)(yaml@2.7.1)
+      vite: 6.2.4(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)
+      vite-node: 3.1.3(@types/node@22.15.23)(jiti@2.4.2)(lightningcss@1.29.3)(tsx@4.19.4)(yaml@2.7.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/debug': 4.1.12

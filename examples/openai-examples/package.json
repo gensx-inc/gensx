@@ -14,8 +14,8 @@
     "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts"
   },
   "dependencies": {
-    "@gensx/openai": "workspace:*",
-    "@gensx/core": "workspace:*",
+    "@gensx/openai": "alpha",
+    "@gensx/core": "alpha",
     "openai": "^4.0.0",
     "zod": "^3.24.2"
   },
