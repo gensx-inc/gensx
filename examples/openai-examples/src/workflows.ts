@@ -89,6 +89,7 @@ const tools = [
 export const Tools = gensx.Component(
   "Tools",
   async ({ prompt }: OpenAIExampleProps) => {
+    // eslint-disable-next-line
     const result = await openai.beta.chat.completions.runTools({
       model: "gpt-4.1-mini",
       temperature: 0.7,
@@ -112,6 +113,7 @@ export const Tools = gensx.Component(
 export const StreamingTools = gensx.Component(
   "StreamingTools",
   async ({ prompt }: OpenAIExampleProps) => {
+    // eslint-disable-next-line
     const result = await openai.beta.chat.completions.runTools({
       model: "gpt-4.1-mini",
       temperature: 0.7,
@@ -149,8 +151,6 @@ const trashRatingSchema = z.object({
     .describe("Overall verdict on the neighborhood's trash quality"),
 });
 
-type TrashRating = z.infer<typeof trashRatingSchema>;
-
 export const StructuredOutput = gensx.Component(
   "StructuredOutput",
   async ({ prompt }: OpenAIExampleProps) => {
@@ -170,6 +170,6 @@ export const StructuredOutput = gensx.Component(
       ],
       response_format: zodResponseFormat(trashRatingSchema, "trashRating"),
     });
-    return result.choices[0]!.message.parsed as TrashRating;
+    return result.choices[0].message.parsed!;
   },
 );

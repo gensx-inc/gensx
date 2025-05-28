@@ -31,7 +31,7 @@ export const GroqDeepSeekR1Completion = gensx.Workflow(
       stream: false,
     });
 
-    const content = response.choices[0].message.content || "";
+    const content = response.choices[0].message.content ?? "";
     const thinkRegex = /<think>(.*?)<\/think>/s;
     const thinkExec = thinkRegex.exec(content);
     const thinking = thinkExec ? thinkExec[1].trim() : "";

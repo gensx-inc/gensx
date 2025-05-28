@@ -37,7 +37,7 @@ export const OpenRouterCompletion = gensx.Workflow(
     });
 
     return {
-      response: response.choices[0].message.content || "",
+      response: response.choices[0].message.content ?? "",
     };
   },
 );

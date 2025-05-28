@@ -1,5 +1,5 @@
 {
-  "name": "@examples/chat-completion",
+  "name": "@examples/openai-examples",
   "private": true,
   "version": "0.0.0",
   "type": "module",

@@ -72,7 +72,7 @@ export const BasicChatWithTools = gensx.Workflow(
 
 export const StreamingChat = gensx.Workflow(
   "StreamingChat",
-  async ({ prompt }: { prompt: string }) => {
+  ({ prompt }: { prompt: string }) => {
     const result = streamText({
       messages: [
         {
@@ -100,7 +100,7 @@ export const StreamingChat = gensx.Workflow(
 
 export const StreamingChatWithTools = gensx.Workflow(
   "StreamingChatWithTools",
-  async ({ prompt }: { prompt: string }) => {
+  ({ prompt }: { prompt: string }) => {
     const result = streamText({
       messages: [
         {
@@ -168,7 +168,7 @@ export const StructuredOutput = gensx.Workflow(
 
 export const StreamingStructuredOutput = gensx.Workflow(
   "StreamingStructuredOutput",
-  async ({ prompt }: { prompt: string }) => {
+  ({ prompt }: { prompt: string }) => {
     const result = streamObject({
       messages: [
         {

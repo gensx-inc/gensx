@@ -35,13 +35,13 @@ Here is an example of the JSON output: { "topics": ["topic 1", "topic 2", "topic
 interface ResearchTopicProps {
   topic: string;
 }
-type ResearchTopicOutput = string;
 
 const ResearchTopic = gensx.Component(
   "ResearchTopic",
   async ({ topic }: ResearchTopicProps) => {
     console.log("📚 Researching topic:", topic);
     const systemPrompt = `You are a helpful assistant that researches topics. The user will provide a topic and you will call the research tool to get the research. And then return a summary of the research, summarizing the most important points in a few sentences at most.`;
+    // eslint-disable-next-line
     const runner = await openai.beta.chat.completions.runTools({
       model: "gpt-4o-mini",
       temperature: 0,
@@ -144,22 +144,22 @@ const EditDraft = gensx.Component(
   },
 );
 
-interface SearchWebProps {
-  prompt: string;
-}
+// interface SearchWebProps {
+//   prompt: string;
+// }
 
-const SearchWeb = gensx.Component(
-  "SearchWeb",
-  async ({ prompt }: SearchWebProps): Promise<string[]> => {
-    console.log("🌐 Researching web for:", prompt);
-    const results = await Promise.resolve([
-      "web result 1",
-      "web result 2",
-      "web result 3",
-    ]);
-    return results;
-  },
-);
+// const SearchWeb = gensx.Component(
+//   "SearchWeb",
+//   async ({ prompt }: SearchWebProps): Promise<string[]> => {
+//     console.log("🌐 Researching web for:", prompt);
+//     const results = await Promise.resolve([
+//       "web result 1",
+//       "web result 2",
+//       "web result 3",
+//     ]);
+//     return results;
+//   },
+// );
 
 type ResearchOutput = [string[], string[]];
 interface ResearchProps {

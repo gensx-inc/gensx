@@ -1,9 +1,9 @@
-import { tool } from "ai";
+import { openai } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { useDatabase } from "@gensx/storage";
-import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 import { generateText } from "@gensx/vercel-ai";
+import { tool } from "ai";
+import { z } from "zod";
 
 // Define the query tool schema
 const querySchema = z.object({

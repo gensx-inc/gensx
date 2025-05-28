@@ -58,6 +58,7 @@ async function main() {
 
     case "stream-tools":
       console.log("Running streaming chat with tools workflow...");
+      // eslint-disable-next-line
       const streamToolsResult = await StreamingTools({
         prompt,
       });
