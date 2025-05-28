@@ -13,7 +13,7 @@ interface OpenAIExampleProps {
   prompt: string;
 }
 
-export const BasicCompletion = gensx.Component(
+export const BasicCompletion = gensx.Workflow(
   "BasicCompletion",
   async ({ prompt }: OpenAIExampleProps) => {
     const result = await openai.chat.completions.create({
@@ -35,7 +35,7 @@ export const BasicCompletion = gensx.Component(
   },
 );
 
-export const StreamingCompletion = gensx.Component(
+export const StreamingCompletion = gensx.Workflow(
   "StreamingCompletion",
   async ({ prompt }: OpenAIExampleProps) => {
     const result = await openai.chat.completions.create({
@@ -86,7 +86,7 @@ const tools = [
   },
 ];
 
-export const Tools = gensx.Component(
+export const Tools = gensx.Workflow(
   "Tools",
   async ({ prompt }: OpenAIExampleProps) => {
     // eslint-disable-next-line
@@ -110,7 +110,7 @@ export const Tools = gensx.Component(
   },
 );
 
-export const StreamingTools = gensx.Component(
+export const StreamingTools = gensx.Workflow(
   "StreamingTools",
   async ({ prompt }: OpenAIExampleProps) => {
     // eslint-disable-next-line
@@ -151,7 +151,7 @@ const trashRatingSchema = z.object({
     .describe("Overall verdict on the neighborhood's trash quality"),
 });
 
-export const StructuredOutput = gensx.Component(
+export const StructuredOutput = gensx.Workflow(
   "StructuredOutput",
   async ({ prompt }: OpenAIExampleProps) => {
     const result = await openai.beta.chat.completions.parse({

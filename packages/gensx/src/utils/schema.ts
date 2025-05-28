@@ -128,7 +128,6 @@ function extractWorkflowInfo(
       ) {
         // Get the workflow name from the first argument
         const workflowNameArg = initializer.arguments[0];
-        if (!workflowNameArg) return;
 
         const workflowName = workflowNameArg
           .getText(sourceFile)
@@ -137,7 +136,6 @@ function extractWorkflowInfo(
 
         // Get the function from the second argument
         const workflowFn = initializer.arguments[1];
-        if (!workflowFn) return;
 
         // Check if it's a function-like node
         if (
