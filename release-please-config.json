@@ -129,6 +129,7 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "initial-version": "0.0.1",
+      "release-as": "0.1.1",
       "draft": false,
       "prerelease": false,
       "include-component-in-tag": true,
