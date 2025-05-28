@@ -22,7 +22,6 @@ export function generateSchema(
   // Create TypeScript program with all source files
   const program = ts.createProgram([tsFile], {
     ...tsconfig.options,
-    //experimentalDecorators: true,
   });
   const sourceFile = program.getSourceFile(tsFile);
   const typeChecker = program.getTypeChecker();
@@ -84,44 +83,65 @@ interface WorkflowInfo {
 /**
  * Extracts workflow information from a TypeScript source file using the compiler API
  */
-
 function extractWorkflowInfo(
   sourceFile: ts.SourceFile,
   typeChecker: ts.TypeChecker,
 ): WorkflowInfo[] {
   const workflowInfos: WorkflowInfo[] = [];
   const exportedNames = new Set<string>();
-  const workflowIdentifiers = new Set<string>(); // Track all possible Workflow identifiers
+  const workflowIdentifiers = new Set<string>();
+  const reExportedWorkflows = new Map<string, WorkflowInfo>();
 
-  // First pass: collect import information and exported names
+  // First pass: collect imports and exports
   function collectImportsAndExports(node: ts.Node) {
-    // Handle import statements to track Workflow identifiers
+    // Handle import statements
     if (ts.isImportDeclaration(node)) {
       const moduleSpecifier = node.moduleSpecifier
         .getText(sourceFile)
         .replace(/['"]/g, "");
+
       if (moduleSpecifier === "@gensx/core") {
-        if (node.importClause) {
-          // Handle namespace imports: import * as gensx from "@gensx/core"
-          if (
-            node.importClause.namedBindings &&
-            ts.isNamespaceImport(node.importClause.namedBindings)
-          ) {
+        // Collect Workflow identifiers from @gensx/core imports
+        if (node.importClause?.namedBindings) {
+          if (ts.isNamespaceImport(node.importClause.namedBindings)) {
             const namespaceName = node.importClause.namedBindings.name.text;
             workflowIdentifiers.add(`${namespaceName}.Workflow`);
-          }
-          // Handle named imports: import { Workflow, Workflow as W } from "@gensx/core"
-          else if (
-            node.importClause.namedBindings &&
-            ts.isNamedImports(node.importClause.namedBindings)
-          ) {
+          } else if (ts.isNamedImports(node.importClause.namedBindings)) {
             for (const element of node.importClause.namedBindings.elements) {
               if (
                 (element.propertyName?.text ?? element.name.text) === "Workflow"
               ) {
-                // Use the local name (after 'as' if aliased, otherwise the original name)
+                workflowIdentifiers.add(element.name.text);
+              }
+            }
+          }
+        }
+      } else {
+        // Handle re-exported workflows from other files
+        if (
+          node.importClause?.namedBindings &&
+          ts.isNamedImports(node.importClause.namedBindings)
+        ) {
+          const symbol = typeChecker.getSymbolAtLocation(node.moduleSpecifier);
+          if (symbol?.valueDeclaration) {
+            const importedSourceFile = symbol.valueDeclaration.getSourceFile();
+            if (importedSourceFile !== sourceFile) {
+              const importedWorkflows = findWorkflowsInFile(
+                importedSourceFile,
+                typeChecker,
+              );
+
+              for (const element of node.importClause.namedBindings.elements) {
+                const importedName =
+                  element.propertyName?.text ?? element.name.text;
                 const localName = element.name.text;
-                workflowIdentifiers.add(localName);
+
+                const workflow = importedWorkflows.find(
+                  (w) => w.componentName === importedName,
+                );
+                if (workflow) {
+                  reExportedWorkflows.set(localName, workflow);
+                }
               }
             }
           }
@@ -129,71 +149,60 @@ function extractWorkflowInfo(
       }
     }
 
-    // Handle export { ... } statements
-    if (ts.isExportDeclaration(node) && node.exportClause) {
-      if (ts.isNamedExports(node.exportClause)) {
-        for (const element of node.exportClause.elements) {
-          exportedNames.add(element.name.text);
-        }
+    // Handle export statements
+    if (
+      ts.isExportDeclaration(node) &&
+      node.exportClause &&
+      ts.isNamedExports(node.exportClause)
+    ) {
+      for (const element of node.exportClause.elements) {
+        exportedNames.add(element.name.text);
       }
     }
+
     // Handle export const declarations
-    if (ts.isVariableStatement(node) && node.modifiers) {
-      const hasExport = node.modifiers.some(
-        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
-      );
-      if (hasExport) {
-        for (const declaration of node.declarationList.declarations) {
-          exportedNames.add(declaration.name.getText(sourceFile));
-        }
+    if (
+      ts.isVariableStatement(node) &&
+      node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
+    ) {
+      for (const declaration of node.declarationList.declarations) {
+        exportedNames.add(declaration.name.getText(sourceFile));
       }
     }
+
     ts.forEachChild(node, collectImportsAndExports);
   }
-  collectImportsAndExports(sourceFile);
 
-  function visit(node: ts.Node) {
-    // Look for variable declarations that are initialized with Workflow calls
-    if (ts.isVariableDeclaration(node) && node.initializer) {
+  // Second pass: find workflow definitions
+  function findWorkflowDefinitions(node: ts.Node) {
+    // Look for workflow definitions
+    if (
+      ts.isVariableDeclaration(node) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
       const initializer = node.initializer;
-      if (ts.isCallExpression(initializer)) {
-        // Check if this is a Workflow call (handle different import patterns)
-        let isWorkflowCall = false;
+      let isWorkflowCall = false;
 
-        if (ts.isPropertyAccessExpression(initializer.expression)) {
-          // Handle: gensx.Workflow()
-          const fullExpression = initializer.expression.getText(sourceFile);
-          isWorkflowCall = workflowIdentifiers.has(fullExpression);
-        } else if (ts.isIdentifier(initializer.expression)) {
-          // Handle: Workflow() or W() (direct imports or aliases)
-          const identifier = initializer.expression.text;
-          isWorkflowCall = workflowIdentifiers.has(identifier);
-        }
+      if (ts.isPropertyAccessExpression(initializer.expression)) {
+        const fullExpression = initializer.expression.getText(sourceFile);
+        isWorkflowCall = workflowIdentifiers.has(fullExpression);
+      } else if (ts.isIdentifier(initializer.expression)) {
+        isWorkflowCall = workflowIdentifiers.has(initializer.expression.text);
+      }
 
-        if (isWorkflowCall) {
-          // Get the workflow name from the first argument
-          const workflowNameArg = initializer.arguments[0];
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          if (!workflowNameArg) return;
+      if (isWorkflowCall) {
+        const workflowNameArg = initializer.arguments[0];
+        const workflowName = workflowNameArg
+          .getText(sourceFile)
+          .replace(/['"]/g, "");
+        const workflowFn = initializer.arguments[1];
 
-          const workflowName = workflowNameArg
-            .getText(sourceFile)
-            .replace(/['"]/g, "");
-          if (!workflowName) return;
-
-          // Get the function from the second argument
-          const workflowFn = initializer.arguments[1];
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          if (!workflowFn) return;
-
-          // Check if it's a function-like node
-          if (
-            !ts.isArrowFunction(workflowFn) &&
-            !ts.isFunctionExpression(workflowFn)
-          )
-            return;
-
-          // Get input and output types
+        if (
+          workflowName &&
+          (ts.isArrowFunction(workflowFn) ||
+            ts.isFunctionExpression(workflowFn))
+        ) {
           let inputType: ts.Type = typeChecker.getAnyType();
           let outputType: ts.Type = typeChecker.getAnyType();
 
@@ -201,7 +210,6 @@ function extractWorkflowInfo(
             inputType = typeChecker.getTypeAtLocation(workflowFn.parameters[0]);
           }
 
-          // Get the return type of the function
           const signature = typeChecker.getSignatureFromDeclaration(workflowFn);
           if (signature) {
             outputType = typeChecker.getReturnTypeOfSignature(signature);
@@ -215,14 +223,11 @@ function extractWorkflowInfo(
             }
           }
 
-          // Check if this workflow should be included - only exported workflows
           const variableName = node.name.getText(sourceFile);
-          const shouldInclude = exportedNames.has(variableName);
-
-          if (shouldInclude) {
+          if (exportedNames.has(variableName)) {
             workflowInfos.push({
               name: workflowName,
-              componentName: workflowName,
+              componentName: variableName,
               inputType,
               outputType,
               isStreamComponent: false,
@@ -231,10 +236,125 @@ function extractWorkflowInfo(
         }
       }
     }
-    ts.forEachChild(node, visit);
+
+    ts.forEachChild(node, findWorkflowDefinitions);
   }
-  visit(sourceFile);
+
+  // Execute in order
+  collectImportsAndExports(sourceFile);
+  findWorkflowDefinitions(sourceFile);
+
+  // Add re-exported workflows
+  for (const [localName, workflow] of reExportedWorkflows) {
+    if (exportedNames.has(localName)) {
+      workflowInfos.push(workflow);
+    }
+  }
+
   return workflowInfos;
+}
+
+/**
+ * Helper function to find workflows in a file (for re-exports)
+ */
+function findWorkflowsInFile(
+  sourceFile: ts.SourceFile,
+  typeChecker: ts.TypeChecker,
+): WorkflowInfo[] {
+  const workflows: WorkflowInfo[] = [];
+  const workflowIdentifiers = new Set<string>();
+
+  // First pass: collect workflow identifiers
+  function collectIdentifiers(node: ts.Node) {
+    if (ts.isImportDeclaration(node)) {
+      const moduleSpecifier = node.moduleSpecifier
+        .getText(sourceFile)
+        .replace(/['"]/g, "");
+      if (
+        moduleSpecifier === "@gensx/core" &&
+        node.importClause?.namedBindings
+      ) {
+        if (ts.isNamespaceImport(node.importClause.namedBindings)) {
+          const namespaceName = node.importClause.namedBindings.name.text;
+          workflowIdentifiers.add(`${namespaceName}.Workflow`);
+        } else if (ts.isNamedImports(node.importClause.namedBindings)) {
+          for (const element of node.importClause.namedBindings.elements) {
+            if (
+              (element.propertyName?.text ?? element.name.text) === "Workflow"
+            ) {
+              workflowIdentifiers.add(element.name.text);
+            }
+          }
+        }
+      }
+    }
+    ts.forEachChild(node, collectIdentifiers);
+  }
+
+  // Second pass: find workflows
+  function findWorkflows(node: ts.Node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
+      const initializer = node.initializer;
+      let isWorkflowCall = false;
+
+      if (ts.isPropertyAccessExpression(initializer.expression)) {
+        const fullExpression = initializer.expression.getText(sourceFile);
+        isWorkflowCall = workflowIdentifiers.has(fullExpression);
+      } else if (ts.isIdentifier(initializer.expression)) {
+        isWorkflowCall = workflowIdentifiers.has(initializer.expression.text);
+      }
+
+      if (isWorkflowCall) {
+        const workflowNameArg = initializer.arguments[0];
+        const workflowName = workflowNameArg
+          .getText(sourceFile)
+          .replace(/['"]/g, "");
+        const workflowFn = initializer.arguments[1];
+
+        if (
+          workflowName &&
+          (ts.isArrowFunction(workflowFn) ||
+            ts.isFunctionExpression(workflowFn))
+        ) {
+          let inputType: ts.Type = typeChecker.getAnyType();
+          let outputType: ts.Type = typeChecker.getAnyType();
+
+          if (workflowFn.parameters.length > 0) {
+            inputType = typeChecker.getTypeAtLocation(workflowFn.parameters[0]);
+          }
+
+          const signature = typeChecker.getSignatureFromDeclaration(workflowFn);
+          if (signature) {
+            outputType = typeChecker.getReturnTypeOfSignature(signature);
+
+            if (outputType.symbol.name === "Promise") {
+              const typeArgs = (outputType as ts.TypeReference).typeArguments;
+              if (typeArgs && typeArgs.length > 0) {
+                outputType = typeArgs[0];
+              }
+            }
+          }
+
+          workflows.push({
+            name: workflowName,
+            componentName: node.name.getText(sourceFile),
+            inputType,
+            outputType,
+            isStreamComponent: false,
+          });
+        }
+      }
+    }
+    ts.forEachChild(node, findWorkflows);
+  }
+
+  collectIdentifiers(sourceFile);
+  findWorkflows(sourceFile);
+  return workflows;
 }
 
 /**

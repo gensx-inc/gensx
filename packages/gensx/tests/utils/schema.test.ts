@@ -777,4 +777,77 @@ describe("schema generator", () => {
       ).toHaveProperty("value");
     });
   });
+
+  it("should handle re-exported workflows from other files", async () => {
+    // First, create a separate file with a workflow
+    const helperContent = `
+      import * as gensx from "@gensx/core";
+
+      export const HelperWorkflow = gensx.Workflow("HelperWorkflow", async (props: { data: string }) => {
+        return { processed: props.data.toUpperCase() };
+      });
+    `;
+
+    // Create the main workflows file that re-exports from the helper
+    const mainContent = `
+      import * as gensx from "@gensx/core";
+      import { HelperWorkflow } from "./helper";
+
+      // Direct workflow in this file
+      export const MainWorkflow = gensx.Workflow("MainWorkflow", async (props: { input: number }) => {
+        return props.input * 2;
+      });
+
+      // Re-export from another file
+      export { HelperWorkflow };
+    `;
+
+    const [tempFile, tempDir] = await createTempFile(mainContent);
+
+    // Create the helper file in the same directory
+    const helperFile = resolve(tempDir, "helper.ts");
+    await fs.writeFile(helperFile, helperContent);
+
+    // Create a tsconfig.json file in the temp directory
+    await fs.writeFile(
+      resolve(tempDir, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          target: "ESNext",
+          module: "NodeNext",
+          lib: ["ESNext", "DOM"],
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          forceConsistentCasingInFileNames: true,
+          moduleResolution: "NodeNext",
+          resolveJsonModule: true,
+          isolatedModules: true,
+          outDir: "./dist",
+        },
+      }),
+    );
+
+    try {
+      const schemas = generateSchema(
+        tempFile,
+        resolve(tempDir, "tsconfig.json"),
+      );
+
+      // Should detect both workflows - the local one and the re-exported one
+      expect(Object.keys(schemas)).toHaveLength(2);
+      expect(schemas).toHaveProperty("MainWorkflow");
+      expect(schemas).toHaveProperty("HelperWorkflow");
+
+      // Verify schemas are correct
+      expect((schemas as any).MainWorkflow.input.properties).toHaveProperty(
+        "input",
+      );
+      expect((schemas as any).HelperWorkflow.input.properties).toHaveProperty(
+        "data",
+      );
+    } finally {
+      cleanupTempFiles(tempDir);
+    }
+  });
 });
