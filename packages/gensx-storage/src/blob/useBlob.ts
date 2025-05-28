@@ -3,8 +3,8 @@ import { BlobStorageOptions } from "./types.js";
 
 /**
  * Hook to access a blob
- * @param key The key of the blob to access
- * @param options Optional configuration properties for the blob storage
+ * @param key The name of the blob to access
+ * @param options Optional configuration properties for the blob
  * @returns A blob object for the given key
  */
 export function useBlob<T = unknown>(

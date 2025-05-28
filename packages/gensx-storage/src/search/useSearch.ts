@@ -4,7 +4,7 @@ import { Namespace, SearchStorageOptions } from "./types.js";
 /**
  * Hook to access a search namespace
  * @param name The name of the namespace to access
- * @param options Optional configuration properties for the search storage
+ * @param options Optional configuration properties for the search namespace
  * @returns A promise that resolves to a namespace object for the given name
  */
 export async function useSearch(
