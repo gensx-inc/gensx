@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.13...gensx-storage-v0.1.1) (2025-05-28)
+
+
+### ✨ New Features
+
+* making jsdoc comments clearer ([#714](https://github.com/gensx-inc/gensx/issues/714)) ([fab6283](https://github.com/gensx-inc/gensx/commit/fab6283dd9e4ef4995eb7cde8f96b3adef37b926))
+
 ## [0.0.13](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.12...gensx-storage-v0.0.13) (2025-05-28)
 
 
