@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.44](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.43...create-gensx-v0.1.44) (2025-05-28)
+
+
+### ✨ New Features
+
+* upgrading to programming model v2 ([#708](https://github.com/gensx-inc/gensx/issues/708)) ([2b5bbd1](https://github.com/gensx-inc/gensx/commit/2b5bbd142a0c0184921302e7b6babe17d84c2dff))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.3.32
+
 ## [0.1.43](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.42...create-gensx-v0.1.43) (2025-05-20)
 
 

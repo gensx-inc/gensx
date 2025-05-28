@@ -1,6 +1,6 @@
 {
   "name": "@gensx/windsurf-rules",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Windsurf rules for GenSX projects",
   "bin": {
     "gensx-windsurf-rules": "./dist/cli.js"

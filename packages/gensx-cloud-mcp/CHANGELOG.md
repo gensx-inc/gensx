@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.9](https://github.com/gensx-inc/gensx/compare/gensx-cloud-mcp-v0.0.8...gensx-cloud-mcp-v0.0.9) (2025-05-28)
+
+
+### ✨ New Features
+
+* upgrading to programming model v2 ([#708](https://github.com/gensx-inc/gensx/issues/708)) ([2b5bbd1](https://github.com/gensx-inc/gensx/commit/2b5bbd142a0c0184921302e7b6babe17d84c2dff))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.4.0
+
 ## [0.0.8](https://github.com/gensx-inc/gensx/compare/gensx-cloud-mcp-v0.0.7...gensx-cloud-mcp-v0.0.8) (2025-05-14)
 
 

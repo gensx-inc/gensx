@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/gensx-inc/gensx/compare/gensx-windsurf-rules-v0.1.6...gensx-windsurf-rules-v0.1.7) (2025-05-28)
+
+
+### ✨ New Features
+
+* upgrading to programming model v2 ([#708](https://github.com/gensx-inc/gensx/issues/708)) ([2b5bbd1](https://github.com/gensx-inc/gensx/commit/2b5bbd142a0c0184921302e7b6babe17d84c2dff))
+
 ## [0.1.6](https://github.com/gensx-inc/gensx/compare/gensx-windsurf-rules-v0.1.5...gensx-windsurf-rules-v0.1.6) (2025-05-14)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.13...gensx-core-v0.4.0) (2025-05-28)
+
+
+### ✨ New Features
+
+* upgrading to programming model v2 ([#708](https://github.com/gensx-inc/gensx/issues/708)) ([2b5bbd1](https://github.com/gensx-inc/gensx/commit/2b5bbd142a0c0184921302e7b6babe17d84c2dff))
+
 ## [0.3.13](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.12...gensx-core-v0.3.13) (2025-05-14)
 
 
