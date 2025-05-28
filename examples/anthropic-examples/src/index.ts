@@ -37,7 +37,7 @@ async function main() {
       });
       for await (const chunk of streamResult) {
         if (chunk.type === "content_block_delta" && "text" in chunk.delta) {
-          process.stdout.write(chunk.delta.text ?? "");
+          process.stdout.write(chunk.delta.text);
         }
       }
       process.stdout.write("\n");

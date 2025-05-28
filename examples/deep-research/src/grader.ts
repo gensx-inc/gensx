@@ -1,9 +1,9 @@
+import { openai } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { generateObject } from "@gensx/vercel-ai";
-import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 
 import { ArxivEntry } from "./arxiv.js";
-import { z } from "zod";
 
 export interface GradeDocumentProps {
   prompt: string;

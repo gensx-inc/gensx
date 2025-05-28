@@ -1,9 +1,9 @@
 import {
   BasicCompletion,
   StreamingCompletion,
-  Tools,
   StreamingTools,
   StructuredOutput,
+  Tools,
 } from "./workflows.js";
 
 // Get the workflow type and prompt from command line arguments

@@ -1,6 +1,6 @@
+import { openai } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { generateText } from "@gensx/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 
 import { ArxivEntry } from "./arxiv.js";
 import { ScrapePage } from "./firecrawl.js";

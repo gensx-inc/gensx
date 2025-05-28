@@ -1,18 +1,12 @@
-import * as gensx from "@gensx/core";
-import { generateText } from "@gensx/vercel-ai";
-import { BlobClient } from "@gensx/storage";
 import { openai } from "@ai-sdk/openai";
+import * as gensx from "@gensx/core";
+import { useBlob } from "@gensx/storage";
+import { generateText } from "@gensx/vercel-ai";
 
 // Define our own chat message type structure that is compatible with OpenAI's API
 interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
-}
-
-// TODO: remove this once the storage package is updated
-async function useBlob<T>(path: string) {
-  const client = new BlobClient();
-  return client.getBlob<T>(path);
 }
 
 export const ChatWithMemory = gensx.Component(
@@ -26,18 +20,14 @@ export const ChatWithMemory = gensx.Component(
   }): Promise<string> => {
     // Function to load chat history
     const loadChatHistory = async (): Promise<ChatMessage[]> => {
-      const blob = await useBlob<ChatMessage[]>(
-        `chat-history/${threadId}.json`,
-      );
+      const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
       const history = await blob.getJSON();
       return history ?? [];
     };
 
     // Function to save chat history
     const saveChatHistory = async (messages: ChatMessage[]): Promise<void> => {
-      const blob = await useBlob<ChatMessage[]>(
-        `chat-history/${threadId}.json`,
-      );
+      const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
       await blob.putJSON(messages);
     };
 

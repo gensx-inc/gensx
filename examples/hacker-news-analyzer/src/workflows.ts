@@ -1,6 +1,6 @@
+import * as gensx from "@gensx/core";
 import { OpenAI } from "@gensx/openai";
 
-import * as gensx from "@gensx/core";
 import { getTopStoryDetails, type HNStory } from "./hn.js";
 
 const getHNPostUrl = (id: number | string) =>
@@ -161,7 +161,7 @@ Keep the summary clear and objective. Focus on facts and insights rather than op
     const context = `
 Title: ${story.title}
 URL: ${getHNPostUrl(story.id)}
-Text: ${story.text ?? ""}
+Text: ${story.text}
 Score: ${story.score} points
 Comments (sorted by score):
 ${story.comments

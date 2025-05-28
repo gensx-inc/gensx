@@ -1,5 +1,5 @@
-import * as gensx from "@gensx/core";
 import { Anthropic } from "@gensx/anthropic";
+import * as gensx from "@gensx/core";
 
 // importing the anthropic client from the @gensx/anthropic package
 const anthropic = new Anthropic({

@@ -1,7 +1,7 @@
+import { openai } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { useSearch } from "@gensx/storage";
 import { embedMany } from "@gensx/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 
 const embeddingModel = openai.embedding("text-embedding-3-small");
 
