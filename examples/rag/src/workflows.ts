@@ -1,10 +1,11 @@
 import * as gensx from "@gensx/core";
 import { z } from "zod";
 import { generateText, embed } from "@gensx/vercel-ai";
+import { useSearch } from "@gensx/storage";
 import { tool } from "ai";
 import { openai } from "@ai-sdk/openai";
 
-import { InitializeSearch, useSearch } from "./initialize.js";
+import { InitializeSearch } from "./initialize.js";
 
 // Define the query tool schema
 const querySchema = z.object({
