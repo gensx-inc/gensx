@@ -11,7 +11,9 @@
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./index.tsx",
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

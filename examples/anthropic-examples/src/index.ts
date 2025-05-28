@@ -1,7 +1,4 @@
-import {
-  BasicCompletion,
-  StreamingCompletion
-} from "./workflows.js";
+import { BasicCompletion, StreamingCompletion } from "./workflows.js";
 
 // Get the workflow type and prompt from command line arguments
 const [workflowType, prompt] = process.argv.slice(2);
@@ -39,8 +36,8 @@ async function main() {
         prompt,
       });
       for await (const chunk of streamResult) {
-        if (chunk.type === 'content_block_delta' && 'text' in chunk.delta) {
-          process.stdout.write(chunk.delta.text ?? "");
+        if (chunk.type === "content_block_delta" && "text" in chunk.delta) {
+          process.stdout.write(chunk.delta.text);
         }
       }
       process.stdout.write("\n");
@@ -48,9 +45,7 @@ async function main() {
 
     default:
       console.error(`Unknown workflow type: ${workflowType}`);
-      console.error(
-        "Available workflow types: basic, stream",
-      );
+      console.error("Available workflow types: basic, stream");
       process.exit(1);
   }
 }

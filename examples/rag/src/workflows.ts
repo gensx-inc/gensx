@@ -1,9 +1,9 @@
-import * as gensx from "@gensx/core";
-import { z } from "zod";
-import { generateText, embed } from "@gensx/vercel-ai";
-import { useSearch } from "@gensx/storage";
-import { tool } from "ai";
 import { openai } from "@ai-sdk/openai";
+import * as gensx from "@gensx/core";
+import { useSearch } from "@gensx/storage";
+import { embed, generateText } from "@gensx/vercel-ai";
+import { tool } from "ai";
+import { z } from "zod";
 
 import { InitializeSearch } from "./initialize.js";
 
@@ -35,27 +35,33 @@ const tools = {
   }),
 } as const;
 
-const RagAgent = gensx.Component("RagAgent", async ({ question }: { question: string }) => {
-  const result = await generateText({
-    messages: [
-      {
-        role: "system",
-        content: `You are a helpful assistant.`,
-      },
-      {
-        role: "user",
-        content: question,
-      },
-    ],
-    model: openai("gpt-4.1-mini"),
-    tools: tools,
-    maxSteps: 10,
-  });
-  return result.text;
-});
+const RagAgent = gensx.Component(
+  "RagAgent",
+  async ({ question }: { question: string }) => {
+    const result = await generateText({
+      messages: [
+        {
+          role: "system",
+          content: `You are a helpful assistant.`,
+        },
+        {
+          role: "user",
+          content: question,
+        },
+      ],
+      model: openai("gpt-4.1-mini"),
+      tools: tools,
+      maxSteps: 10,
+    });
+    return result.text;
+  },
+);
 
-export const RagWorkflow = gensx.Workflow("RagWorkflow", async ({ question }: { question: string }) => {
-  return await RagAgent({ question });
-});
+export const RagWorkflow = gensx.Workflow(
+  "RagWorkflow",
+  async ({ question }: { question: string }) => {
+    return await RagAgent({ question });
+  },
+);
 
 export { InitializeSearch };

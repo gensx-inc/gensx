@@ -20,23 +20,26 @@ export interface GroqDeepSeekR1CompletionOutput {
   completion: string;
 }
 
-export const GroqDeepSeekR1Completion = gensx.Workflow("GroqDeepSeekR1Completion", async (
-  { prompt }: GroqDeepSeekR1CompletionProps
-): Promise<GroqDeepSeekR1CompletionOutput> => {
-  const response = await openai.chat.completions.create({
-    model: "deepseek-r1-distill-llama-70b",
-    messages: [{ role: "user", content: prompt }],
-    stream: false,
-  });
+export const GroqDeepSeekR1Completion = gensx.Workflow(
+  "GroqDeepSeekR1Completion",
+  async ({
+    prompt,
+  }: GroqDeepSeekR1CompletionProps): Promise<GroqDeepSeekR1CompletionOutput> => {
+    const response = await openai.chat.completions.create({
+      model: "deepseek-r1-distill-llama-70b",
+      messages: [{ role: "user", content: prompt }],
+      stream: false,
+    });
 
-  const content = response.choices[0].message.content || "";
-  const thinkRegex = /<think>(.*?)<\/think>/s;
-  const thinkExec = thinkRegex.exec(content);
-  const thinking = thinkExec ? thinkExec[1].trim() : "";
-  const completion = content.replace(thinkRegex, "").trim();
+    const content = response.choices[0].message.content ?? "";
+    const thinkRegex = /<think>(.*?)<\/think>/s;
+    const thinkExec = thinkRegex.exec(content);
+    const thinking = thinkExec ? thinkExec[1].trim() : "";
+    const completion = content.replace(thinkRegex, "").trim();
 
-  return {
-    thinking,
-    completion,
-  };
-});
+    return {
+      thinking,
+      completion,
+    };
+  },
+);

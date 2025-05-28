@@ -1,48 +1,49 @@
-import * as gensx from "@gensx/core";
-import { generateText, generateObject } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
+import * as gensx from "@gensx/core";
+import { generateObject, generateText } from "@gensx/vercel-ai";
 import { z } from "zod";
 
 import { Reflection, ReflectionOutput } from "./reflection.js";
 
 const openaiModel = openai("gpt-4o-mini");
 
-const ImproveText = gensx.Component("ImproveText", async ({
-  input,
-  feedback,
-}: {
-  input: string;
-  feedback: string;
-}): Promise<string> => {
-  console.log("\n📝 Current draft:\n", input);
-  console.log("\n🔍 Feedback:\n", feedback);
-  console.log("=".repeat(50));
-  const systemPrompt = `You're a helpful assistant that improves text by fixing typos, removing buzzwords, jargon, and making the writing sound more authentic.
+const ImproveText = gensx.Component(
+  "ImproveText",
+  async ({
+    input,
+    feedback,
+  }: {
+    input: string;
+    feedback: string;
+  }): Promise<string> => {
+    console.log("\n📝 Current draft:\n", input);
+    console.log("\n🔍 Feedback:\n", feedback);
+    console.log("=".repeat(50));
+    const systemPrompt = `You're a helpful assistant that improves text by fixing typos, removing buzzwords, jargon, and making the writing sound more authentic.
 
     You will be given a piece of text and feedback on the text. Your job is to improve the text based on the feedback. You should return the improved text and nothing else.`;
-  const prompt = `<feedback>
+    const prompt = `<feedback>
     ${feedback}
     </feedback>
 
     <text>
     ${input}
     </text>`;
-  const result = await generateText({
-    model: openaiModel,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: prompt },
-    ],
-  });
-  return result.text;
-});
+    const result = await generateText({
+      model: openaiModel,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ],
+    });
+    return result.text;
+  },
+);
 
-const EvaluateText = gensx.Component("EvaluateText", async ({
-  input,
-}: {
-  input: string;
-}): Promise<ReflectionOutput> => {
-  const systemPrompt = `You're a helpful assistant that evaluates text and suggests improvements if needed.
+const EvaluateText = gensx.Component(
+  "EvaluateText",
+  async ({ input }: { input: string }): Promise<ReflectionOutput> => {
+    const systemPrompt = `You're a helpful assistant that evaluates text and suggests improvements if needed.
 
     ## Evaluation Criteria
 
@@ -66,29 +67,29 @@ const EvaluateText = gensx.Component("EvaluateText", async ({
       "continueProcessing": "boolean"
     }
     `;
-  const result = await generateObject({
-    model: openaiModel,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: input },
-    ],
-    schema: z.object({
-      feedback: z.string(),
-      continueProcessing: z.boolean(),
-    }),
-  });
-  return result.object;
-});
+    const result = await generateObject({
+      model: openaiModel,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: input },
+      ],
+      schema: z.object({
+        feedback: z.string(),
+        continueProcessing: z.boolean(),
+      }),
+    });
+    return result.object;
+  },
+);
 
-export const ReflectionWorkflow = gensx.Workflow("ReflectionWorkflow", async ({
-  text,
-}: {
-  text: string;
-}): Promise<string> => {
-  return Reflection({
-    input: text,
-    ImproveFn: ImproveText,
-    EvaluateFn: EvaluateText,
-    maxIterations: 3,
-  });
-});
+export const ReflectionWorkflow = gensx.Workflow(
+  "ReflectionWorkflow",
+  async ({ text }: { text: string }): Promise<string> => {
+    return Reflection({
+      input: text,
+      ImproveFn: ImproveText,
+      EvaluateFn: EvaluateText,
+      maxIterations: 3,
+    });
+  },
+);

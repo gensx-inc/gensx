@@ -54,4 +54,5 @@ export const SearchArxiv = gensx.Component(
     );
 
     return entries;
-  });
+  },
+);

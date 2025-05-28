@@ -1,6 +1,6 @@
+import { openai } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { generateText } from "@gensx/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 
 import { ArxivEntry } from "./arxiv.js";
 import { ScrapePage } from "./firecrawl.js";
@@ -39,7 +39,8 @@ Please return a detailed yet concise summary of the paper that is relevant to th
     });
 
     return response.text;
-  });
+  },
+);
 
 export interface FetchAndSummarizeProps {
   document: ArxivEntry;
@@ -52,19 +53,21 @@ export interface ArxivSummary {
   summary: string;
 }
 
-export const FetchAndSummarize = gensx.Component("FetchAndSummarize", async ({
-  document,
-  prompt,
-}: FetchAndSummarizeProps): Promise<ArxivSummary> => {
-  const url = document.url.replace("abs", "html"); // getting the url to the html version of the paper
+export const FetchAndSummarize = gensx.Component(
+  "FetchAndSummarize",
+  async ({
+    document,
+    prompt,
+  }: FetchAndSummarizeProps): Promise<ArxivSummary> => {
+    const url = document.url.replace("abs", "html"); // getting the url to the html version of the paper
 
-  const markdown = await ScrapePage({ url });
-  const summary = await SummarizePaper({ markdown, prompt });
+    const markdown = await ScrapePage({ url });
+    const summary = await SummarizePaper({ markdown, prompt });
 
-  return {
-    title: document.title,
-    url: url,
-    summary,
-  };
-},
+    return {
+      title: document.title,
+      url: url,
+      summary,
+    };
+  },
 );

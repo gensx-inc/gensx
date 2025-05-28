@@ -43,33 +43,16 @@ interface OpenRouterModelsResponse {
   data: OpenRouterModel[];
 }
 
-// This interface is more generic to accommodate both OpenAI and OpenRouter responses
-interface ListModelsOutput {
-  models: {
-    data: unknown[];
-    // Add other properties if needed
-  };
-}
-
 // Example component to list available models
-const ListModels = gensx.Component(
-  "ListModels",
-  async () => {
-    const models = await openai.models.list();
-    return models;
-  },
-);
-
-interface GetModelPricingOutput {
-  model: string;
-  prompt: string;
-  completion: string;
-}
+const ListModels = gensx.Component("ListModels", async () => {
+  const models = await openai.models.list();
+  return models;
+});
 
 // Regular function instead of Component for simpler usage
 const GetModelPricing = gensx.Component(
   "GetModelPricing",
-  async (model: OpenRouterModel): Promise<GetModelPricingOutput> => {
+  (model: OpenRouterModel) => {
     return {
       model: model.name,
       prompt: `$${parseFloat(model.pricing.prompt) * 1000000} per million tokens`,
@@ -82,8 +65,7 @@ export const GetAllOpenRouterModelPricing = gensx.Workflow(
   "GetAllOpenRouterModelPricing",
   async () => {
     const models = await ListModels();
-    // Cast to any to work with the actual structure returned by OpenRouter
-    const modelsData = (models as any).data as OpenRouterModel[];
+    const modelsData = (models as unknown as OpenRouterModelsResponse).data;
     return Promise.all(modelsData.map((model) => GetModelPricing(model)));
   },
 );

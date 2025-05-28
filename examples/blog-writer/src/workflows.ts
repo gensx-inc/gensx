@@ -26,19 +26,22 @@ Here is an example of the JSON output: { "topics": ["topic 1", "topic 2", "topic
       ],
       response_format: { type: "json_object" },
     });
-    return JSON.parse(result.choices[0].message.content ?? "{}") as BrainstormTopicsOutput;
-  });
+    return JSON.parse(
+      result.choices[0].message.content ?? "{}",
+    ) as BrainstormTopicsOutput;
+  },
+);
 
 interface ResearchTopicProps {
   topic: string;
 }
-type ResearchTopicOutput = string;
 
 const ResearchTopic = gensx.Component(
   "ResearchTopic",
   async ({ topic }: ResearchTopicProps) => {
     console.log("📚 Researching topic:", topic);
     const systemPrompt = `You are a helpful assistant that researches topics. The user will provide a topic and you will call the research tool to get the research. And then return a summary of the research, summarizing the most important points in a few sentences at most.`;
+    // eslint-disable-next-line
     const runner = await openai.beta.chat.completions.runTools({
       model: "gpt-4o-mini",
       temperature: 0,
@@ -84,7 +87,8 @@ const ResearchTopic = gensx.Component(
     console.log("🔍 Researching topic:", topic);
 
     return (await runner.finalContent()) ?? "";
-  });
+  },
+);
 
 interface WriteDraftProps {
   research: string[];
@@ -108,7 +112,8 @@ Here is the research for the blog post: ${research.join("\n")}`;
       ],
     });
     return result.choices[0].message.content ?? "";
-  });
+  },
+);
 
 interface EditDraftProps {
   draft: string;
@@ -136,47 +141,55 @@ const EditDraft = gensx.Component(
       }
     };
     return generator();
-  });
+  },
+);
 
-interface SearchWebProps {
-  prompt: string;
-}
+// interface SearchWebProps {
+//   prompt: string;
+// }
 
-const SearchWeb = gensx.Component(
-  "SearchWeb",
-  async ({ prompt }: SearchWebProps): Promise<string[]> => {
-    console.log("🌐 Researching web for:", prompt);
-    const results = await Promise.resolve([
-      "web result 1",
-      "web result 2",
-      "web result 3",
-    ]);
-    return results;
-  });
+// const SearchWeb = gensx.Component(
+//   "SearchWeb",
+//   async ({ prompt }: SearchWebProps): Promise<string[]> => {
+//     console.log("🌐 Researching web for:", prompt);
+//     const results = await Promise.resolve([
+//       "web result 1",
+//       "web result 2",
+//       "web result 3",
+//     ]);
+//     return results;
+//   },
+// );
 
 type ResearchOutput = [string[], string[]];
 interface ResearchProps {
   prompt: string;
 }
 
-const Research = gensx.Component("Research", async ({ prompt }: ResearchProps): Promise<ResearchOutput> => {
-  const brainstorm = await BrainstormTopics({ prompt });
+const Research = gensx.Component(
+  "Research",
+  async ({ prompt }: ResearchProps): Promise<ResearchOutput> => {
+    const brainstorm = await BrainstormTopics({ prompt });
 
-  const research = await Promise.all(
-    brainstorm.topics.map((topic) => ResearchTopic({ topic })),
-  );
-  return [research, brainstorm.topics];
-});
+    const research = await Promise.all(
+      brainstorm.topics.map((topic) => ResearchTopic({ topic })),
+    );
+    return [research, brainstorm.topics];
+  },
+);
 
 interface BlogWriterProps {
   prompt: string;
 }
 
-const WriteBlogWorkflow = gensx.Workflow("WriteBlogWorkflow", async ({ prompt }: BlogWriterProps) => {
-  const research = await Research({ prompt });
-  const draft = await WriteDraft({ prompt, research: research.flat() });
-  const editedDraft = await EditDraft({ draft });
-  return editedDraft;
-});
+const WriteBlogWorkflow = gensx.Workflow(
+  "WriteBlogWorkflow",
+  async ({ prompt }: BlogWriterProps) => {
+    const research = await Research({ prompt });
+    const draft = await WriteDraft({ prompt, research: research.flat() });
+    const editedDraft = await EditDraft({ draft });
+    return editedDraft;
+  },
+);
 
 export { WriteBlogWorkflow };

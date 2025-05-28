@@ -22,7 +22,7 @@
     "turbopuffer"
   ],
   "[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "files.associations": {
     "*.tsx.template": "typescriptreact",
@@ -30,9 +30,5 @@
     "*.js.template": "javascript",
     "*.json.template": "json",
     "*.md.template": "markdown"
-  },
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "[typescript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features"
   }
 }

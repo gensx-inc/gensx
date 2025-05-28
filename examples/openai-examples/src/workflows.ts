@@ -9,7 +9,6 @@ const openai = new OpenAI();
 // alternatively you can import `wrapOpenAI` from @gensx/openai to wrap the client from the "openai" package
 // const openai = wrapOpenAI(new OpenAI());
 
-
 interface OpenAIExampleProps {
   prompt: string;
 }
@@ -33,7 +32,8 @@ export const BasicCompletion = gensx.Component(
       ],
     });
     return result.choices[0].message.content;
-  });
+  },
+);
 
 export const StreamingCompletion = gensx.Component(
   "StreamingCompletion",
@@ -55,7 +55,8 @@ export const StreamingCompletion = gensx.Component(
       stream: true,
     });
     return result;
-  });
+  },
+);
 
 const tools = [
   {
@@ -68,26 +69,27 @@ const tools = [
         properties: {
           location: {
             type: "string",
-            description: "The location to get the weather for"
-          }
+            description: "The location to get the weather for",
+          },
         },
-        required: ["location"]
+        required: ["location"],
       },
       parse: JSON.parse,
       function: (args: { location: string }) => {
         console.log("getting weather for", args.location);
         const weather = ["sunny", "cloudy", "rainy", "snowy"];
         return {
-          weather: weather[Math.floor(Math.random() * weather.length)]
+          weather: weather[Math.floor(Math.random() * weather.length)],
         };
-      }
-    }
-  }
-]
+      },
+    },
+  },
+];
 
 export const Tools = gensx.Component(
   "Tools",
   async ({ prompt }: OpenAIExampleProps) => {
+    // eslint-disable-next-line
     const result = await openai.beta.chat.completions.runTools({
       model: "gpt-4.1-mini",
       temperature: 0.7,
@@ -105,11 +107,13 @@ export const Tools = gensx.Component(
       tools,
     });
     return await result.finalContent();
-  });
+  },
+);
 
 export const StreamingTools = gensx.Component(
   "StreamingTools",
   async ({ prompt }: OpenAIExampleProps) => {
+    // eslint-disable-next-line
     const result = await openai.beta.chat.completions.runTools({
       model: "gpt-4.1-mini",
       temperature: 0.7,
@@ -128,7 +132,8 @@ export const StreamingTools = gensx.Component(
       stream: true,
     });
     return result;
-  });
+  },
+);
 
 const trashRatingSchema = z.object({
   bins: z.array(
@@ -145,8 +150,6 @@ const trashRatingSchema = z.object({
     .string()
     .describe("Overall verdict on the neighborhood's trash quality"),
 });
-
-type TrashRating = z.infer<typeof trashRatingSchema>;
 
 export const StructuredOutput = gensx.Component(
   "StructuredOutput",
@@ -167,5 +170,6 @@ export const StructuredOutput = gensx.Component(
       ],
       response_format: zodResponseFormat(trashRatingSchema, "trashRating"),
     });
-    return result.choices[0]!.message.parsed as TrashRating;
-  });
+    return result.choices[0].message.parsed!;
+  },
+);
