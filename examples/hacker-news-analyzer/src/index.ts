@@ -8,12 +8,6 @@ async function main() {
   // Directly await the decorated workflow function
   const { report, tweet } = await AnalyzeHackerNewsTrends({
     postCount: 500,
-    componentOpts: {
-      name: "AnalyzeHackerNewsWorkflow",
-      metadata: {
-        // Example: custom_run_id: 'xyz'
-      },
-    },
   });
 
   // Write outputs to files

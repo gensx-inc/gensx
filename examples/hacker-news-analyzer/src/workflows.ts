@@ -13,7 +13,6 @@ const openai = new OpenAI({
 interface WriteTweetProps {
   context: string;
   prompt: string;
-  componentOpts?: gensx.ComponentOpts;
 }
 
 const WriteTweet = gensx.Component(
@@ -46,7 +45,6 @@ Focus on the most surprising or counterintuitive point rather than trying to sum
 
 interface EditReportProps {
   content: string;
-  componentOpts?: gensx.ComponentOpts;
 }
 
 const EditReport = gensx.Component(
@@ -82,7 +80,6 @@ Maintain your voice while preserving the key insights and all links from the ana
 interface AnalyzeCommentsProps {
   postId: number;
   comments: { text: string; score: number }[];
-  componentOpts?: gensx.ComponentOpts;
 }
 
 const AnalyzeComments = gensx.Component(
@@ -133,7 +130,6 @@ Focus on substance rather than surface-level reactions. When referencing comment
 
 interface SummarizePostProps {
   story: HNStory;
-  componentOpts?: gensx.ComponentOpts;
 }
 
 const SummarizePost = gensx.Component(
@@ -193,7 +189,6 @@ interface GenerateReportProps {
     summary: string;
     commentAnalysis: string;
   }[];
-  componentOpts?: gensx.ComponentOpts;
 }
 
 const GenerateReport = gensx.Component(
@@ -249,7 +244,6 @@ ${commentAnalysis}
 
 interface FetchHNPostsProps {
   limit: number;
-  componentOpts?: gensx.ComponentOpts;
 }
 
 const FetchHNPosts = gensx.Component(
@@ -275,32 +269,21 @@ const FetchHNPosts = gensx.Component(
 
 interface AnalyzeHNPostsProps {
   stories: HNStory[];
-  componentOpts?: gensx.ComponentOpts;
-}
-
-interface AnalyzeHNPostsOutput {
-  analyses: {
-    summary: string;
-    commentAnalysis: string;
-  }[];
 }
 
 const AnalyzeHNPosts = gensx.Component(
   "AnalyzeHNPosts",
-  async ({ stories }: AnalyzeHNPostsProps): Promise<AnalyzeHNPostsOutput> => {
+  async ({ stories }: AnalyzeHNPostsProps) => {
     const analyses = await Promise.all(
       stories.map(async (story) => {
-        // Pass componentOpts down if needed? Or rely on context?
-        // For now, not passing them down explicitly.
-        const summaryResult = await SummarizePost({ story });
-        const commentAnalysisResult = await AnalyzeComments({
-          postId: story.id,
-          comments: story.comments,
-        });
-        return {
-          summary: summaryResult,
-          commentAnalysis: commentAnalysisResult,
-        };
+        const [summary, commentAnalysis] = await Promise.all([
+          SummarizePost({ story }),
+          AnalyzeComments({
+            postId: story.id,
+            comments: story.comments,
+          }),
+        ]);
+        return { summary, commentAnalysis };
       }),
     );
     return { analyses };
@@ -309,32 +292,18 @@ const AnalyzeHNPosts = gensx.Component(
 
 interface AnalyzeHackerNewsTrendsProps {
   postCount: number;
-  componentOpts?: gensx.ComponentOpts; // Added here
-}
-
-export interface AnalyzeHackerNewsTrendsOutput {
-  report: string;
-  tweet: string;
 }
 
 export const AnalyzeHackerNewsTrends = gensx.Workflow(
   "AnalyzeHackerNewsTrends",
-  async ({
-    postCount,
-    componentOpts,
-  }: AnalyzeHackerNewsTrendsProps): Promise<AnalyzeHackerNewsTrendsOutput> => {
-    // Note: componentOpts from the initial call needs to be passed down if sub-components need it.
-    // The current implementation doesn't pass it down explicitly.
-    // Context might be a better way to manage workflow-level options.
-
-    const stories = await FetchHNPosts({ limit: postCount, componentOpts }); // Example passing down
-    const { analyses } = await AnalyzeHNPosts({ stories, componentOpts }); // Example passing down
-    const report = await GenerateReport({ analyses, componentOpts }); // Example passing down
-    const editedReport = await EditReport({ content: report, componentOpts }); // Example passing down
+  async ({ postCount }: AnalyzeHackerNewsTrendsProps) => {
+    const stories = await FetchHNPosts({ limit: postCount });
+    const { analyses } = await AnalyzeHNPosts({ stories });
+    const report = await GenerateReport({ analyses });
+    const editedReport = await EditReport({ content: report });
     const tweet = await WriteTweet({
       context: editedReport,
       prompt: "Summarize the HN trends in a tweet",
-      componentOpts, // Example passing down
     });
 
     return { report: editedReport, tweet };
