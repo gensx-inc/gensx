@@ -735,4 +735,46 @@ describe("schema generator", () => {
       expect(schemas).not.toHaveProperty("InternalWorkflow2");
     });
   });
+
+  it("should handle different import patterns for Workflow", async () => {
+    const content = `
+      import { Workflow } from "@gensx/core";
+      import { Workflow as W } from "@gensx/core";
+      import * as gensx from "@gensx/core";
+
+      // Using direct import
+      export const DirectImportWorkflow = Workflow("DirectImportWorkflow", async (props: { value: string }) => {
+        return props.value;
+      });
+
+      // Using aliased import
+      export const AliasedImportWorkflow = W("AliasedImportWorkflow", async (props: { value: number }) => {
+        return props.value * 2;
+      });
+
+      // Using namespace import
+      export const NamespaceImportWorkflow = gensx.Workflow("NamespaceImportWorkflow", async (props: { value: boolean }) => {
+        return !props.value;
+      });
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      // Should have all three workflows
+      expect(Object.keys(schemas)).toHaveLength(3);
+      expect(schemas).toHaveProperty("DirectImportWorkflow");
+      expect(schemas).toHaveProperty("AliasedImportWorkflow");
+      expect(schemas).toHaveProperty("NamespaceImportWorkflow");
+
+      // Verify they all have correct schemas
+      expect(
+        (schemas as any).DirectImportWorkflow.input.properties,
+      ).toHaveProperty("value");
+      expect(
+        (schemas as any).AliasedImportWorkflow.input.properties,
+      ).toHaveProperty("value");
+      expect(
+        (schemas as any).NamespaceImportWorkflow.input.properties,
+      ).toHaveProperty("value");
+    });
+  });
 });
