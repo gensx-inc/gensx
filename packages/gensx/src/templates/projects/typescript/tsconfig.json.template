@@ -13,16 +13,10 @@
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "outDir": "./dist",
-    "plugins": [
-      {
-        "name": "ts-function-decorator-ls"
-      }
-    ]
+    "outDir": "./dist"
   },
   "include": [
-    "./src/**/*.ts",
-    "./src/**/*.tsx"
+    "./src/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -6,12 +6,6 @@
     "@gensx/vercel-ai@alpha",
     "@ai-sdk/openai"
   ],
-  "devDependencies": [
-    "@types/node",
-    "ts-function-decorator",
-    "ts-function-decorator-ls",
-    "ts-patch",
-    "typescript@5.7.2"
-  ],
+  "devDependencies": ["@types/node", "typescript@5.7.2", "tsx"],
   "runCommand": "OPENAI_API_KEY=<your_api_key> npm run dev"
 }

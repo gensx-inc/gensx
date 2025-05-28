@@ -14,8 +14,7 @@ export async function useSearch(
   return namespace;
 }
 
-@gensx.Workflow()
-export async function InitializeSearch({}) {
+export const InitializeSearch = gensx.Workflow("InitializeSearch", async ({ }) => {
   // UseSearch will create the namespace automatically if it doesn't exist.
   const namespace = await useSearch("baseball");
 
@@ -49,4 +48,4 @@ export async function InitializeSearch({}) {
   });
 
   return "Search namespace initialized";
-}
+});

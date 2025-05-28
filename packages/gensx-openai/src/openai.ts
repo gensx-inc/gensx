@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 import type { ComponentOpts, WrapOptions } from "@gensx/core";
 
-import { createComponent, wrap } from "@gensx/core";
+import { Component, wrap } from "@gensx/core";
 import { OpenAI as OriginalOpenAI } from "openai";
 import { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.mjs";
 
@@ -100,7 +99,8 @@ export const wrapOpenAI = (
             boundRunTools,
           );
 
-          const fn = createComponent(
+          const fn = Component(
+            "openai.beta.chat.completions.runTools",
             (
               ...params: Parameters<
                 typeof openAiInstance.beta.chat.completions.runTools
@@ -125,9 +125,10 @@ export const wrapOpenAI = (
 
                   // Now we can safely define the $callback property
                   Object.defineProperty(newTool, "$callback", {
-                    value: createComponent(boundCallback, {
-                      name: `Tool.${tool.function.name}`,
-                    }),
+                    value: Component(
+                      `Tool.${tool.function.name}`,
+                      boundCallback as (input?: object) => unknown,
+                    ),
                   });
                   Object.defineProperty(newTool, "$parseRaw", {
                     value: (tool as any).$parseRaw,
@@ -142,7 +143,8 @@ export const wrapOpenAI = (
                     ...runnableTool,
                     function: {
                       ...runnableTool.function,
-                      function: createComponent(
+                      function: Component(
+                        `Tool.${runnableTool.function.name}`,
                         runnableTool.function.function as (
                           input?: object,
                         ) => unknown,

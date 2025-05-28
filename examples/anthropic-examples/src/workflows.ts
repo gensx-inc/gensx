@@ -13,37 +13,41 @@ interface AnthropicExampleProps {
   prompt: string;
 }
 
-@gensx.Workflow()
-export async function BasicCompletion({ prompt }: AnthropicExampleProps): Promise<string> {
-  const result = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    temperature: 0.7,
-    max_tokens: 1024,
-    system: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-    messages: [
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-  });
-  return result.content[0].type === 'text' ? result.content[0].text : '';
-}
+export const BasicCompletion = gensx.Workflow(
+  "BasicCompletion",
+  async ({ prompt }: AnthropicExampleProps): Promise<string> => {
+    const result = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      temperature: 0.7,
+      max_tokens: 1024,
+      system: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+    return result.content[0].type === 'text' ? result.content[0].text : '';
+  },
+);
 
-@gensx.Workflow()
-export async function StreamingCompletion({ prompt }: AnthropicExampleProps) {
-  const result = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    temperature: 0.7,
-    max_tokens: 1024,
-    system: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
-    messages: [
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    stream: true,
-  });
-  return result;
-}
+export const StreamingCompletion = gensx.Workflow(
+  "StreamingCompletion",
+  async ({ prompt }: AnthropicExampleProps) => {
+    const result = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      temperature: 0.7,
+      max_tokens: 1024,
+      system: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      stream: true,
+    });
+    return result;
+  },
+);

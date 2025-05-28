@@ -22,9 +22,7 @@ suite("checkpoint", () => {
     }
 
     // Create decorated component
-    const SimpleComponent = gensx.Component({
-      name: "SimpleComponent",
-    })(simpleComponent);
+    const SimpleComponent = gensx.Component("SimpleComponent", simpleComponent);
 
     // Execute component directly
     const result = await SimpleComponent({ message: "world" });
@@ -45,9 +43,7 @@ suite("checkpoint", () => {
     }
 
     // Create decorated child component
-    const ChildComponent = gensx.Component({
-      name: "ChildComponent",
-    })(childComponent);
+    const ChildComponent = gensx.Component("ChildComponent", childComponent);
 
     // Define parent component that uses the child
     async function parentComponent({
@@ -60,9 +56,7 @@ suite("checkpoint", () => {
     }
 
     // Create decorated parent component
-    const ParentComponent = gensx.Component({
-      name: "ParentComponent",
-    })(parentComponent);
+    const ParentComponent = gensx.Component("ParentComponent", parentComponent);
 
     // Execute parent
     const result = await ParentComponent({ input: "test-value" });

@@ -7,22 +7,18 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "pnpm build && node --enable-source-maps dist/index.js",
+    "dev": "tsx ./src/index.ts",
     "start": "npx gensx start ./src/workflows.ts",
-    "build": "tsc -p tsconfig.build.json",
-    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts",
-    "prepare": "ts-patch install -s"
+    "build": "tsc",
+    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts"
   },
   "dependencies": {
-    "@gensx/core": "alpha",
-    "openai": "^4.87.4"
+    "@gensx/core": "workspace:*",
+    "@gensx/openai": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "nodemon": "^3.1.9",
-    "ts-function-decorator": "^0.0.1",
-    "ts-function-decorator-ls": "^0.0.1",
-    "ts-patch": "^3.3.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.8"
   }
 }

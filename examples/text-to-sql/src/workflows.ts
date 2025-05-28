@@ -33,8 +33,7 @@ const tools = {
   }),
 } as const;
 
-@gensx.Component()
-async function SQLCopilot({ question }: { question: string }) {
+const SQLCopilot = gensx.Component("SQLCopilot", async ({ question }: { question: string }) => {
   const result = await generateText({
     messages: [
       {
@@ -69,17 +68,15 @@ async function SQLCopilot({ question }: { question: string }) {
     maxSteps: 10,
   });
   return result.text;
-}
+});
 
 // Create the workflow
-@gensx.Workflow()
-export async function TextToSqlWorkflow({ question }: { question: string }) {
+export const TextToSqlWorkflow = gensx.Workflow("TextToSqlWorkflow", async ({ question }: { question: string }) => {
   return await SQLCopilot({ question });
-}
+});
 
 // Database initialization workflow
-@gensx.Workflow()
-export async function InitializeDatabase() {
+export const InitializeDatabase = gensx.Workflow("InitializeDatabase", async () => {
   // UseDatabase will create the database automatically if it doesn't exist.
   const db = await useDatabase("baseball");
 
@@ -128,7 +125,6 @@ export async function InitializeDatabase() {
   `);
 
   return "Database initialized";
-}
-
+});
 
 
