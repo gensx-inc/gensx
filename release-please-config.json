@@ -88,7 +88,6 @@
       "release-type": "node",
       "package-name": "@gensx/core",
       "changelog-path": "CHANGELOG.md",
-      "release-as": "0.4.0",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "draft": false,
@@ -106,7 +105,6 @@
     "packages/gensx-openai": {
       "component": "gensx-openai",
       "release-type": "node",
-      "release-as": "0.2.0",
       "package-name": "@gensx/openai",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
@@ -147,7 +145,6 @@
       "component": "gensx-vercel-ai",
       "release-type": "node",
       "package-name": "@gensx/vercel-ai",
-      "release-as": "0.2.0",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
@@ -205,7 +202,6 @@
     "packages/gensx-anthropic": {
       "component": "gensx-anthropic",
       "release-type": "node",
-      "release-as": "0.2.0",
       "package-name": "@gensx/anthropic",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
