@@ -17,17 +17,27 @@ async function useBlob<T>(path: string) {
 
 export const ChatWithMemory = gensx.Component(
   "ChatWithMemory",
-  async ({ userInput, threadId }: { userInput: string; threadId: string }): Promise<string> => {
+  async ({
+    userInput,
+    threadId,
+  }: {
+    userInput: string;
+    threadId: string;
+  }): Promise<string> => {
     // Function to load chat history
     const loadChatHistory = async (): Promise<ChatMessage[]> => {
-      const blob = await useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+      const blob = await useBlob<ChatMessage[]>(
+        `chat-history/${threadId}.json`,
+      );
       const history = await blob.getJSON();
       return history ?? [];
     };
 
     // Function to save chat history
     const saveChatHistory = async (messages: ChatMessage[]): Promise<void> => {
-      const blob = await useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+      const blob = await useBlob<ChatMessage[]>(
+        `chat-history/${threadId}.json`,
+      );
       await blob.putJSON(messages);
     };
 
@@ -56,14 +66,17 @@ export const ChatWithMemory = gensx.Component(
       // Save the updated chat history
       await saveChatHistory(finalMessages);
 
-      console.log(`[Thread ${threadId}] Chat history updated with new messages`);
+      console.log(
+        `[Thread ${threadId}] Chat history updated with new messages`,
+      );
 
       return result.text;
     } catch (error) {
       console.error("Error in chat processing:", error);
       return `Error processing your request in thread ${threadId}. Please try again.`;
     }
-  });
+  },
+);
 
 export const ChatMemoryWorkflow = gensx.Workflow(
   "ChatMemoryWorkflow",

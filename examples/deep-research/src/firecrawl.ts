@@ -22,4 +22,5 @@ export const ScrapePage = gensx.Component(
     }
 
     return result.markdown;
-  });
+  },
+);

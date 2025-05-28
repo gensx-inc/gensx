@@ -41,4 +41,5 @@ Please return json with the following format:
     });
 
     return { queries: response.object.queries };
-  });
+  },
+);

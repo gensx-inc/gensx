@@ -60,4 +60,5 @@ Here is the document:
     });
 
     return response.object.useful;
-  });
+  },
+);

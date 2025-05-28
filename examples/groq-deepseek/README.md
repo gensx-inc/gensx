@@ -10,7 +10,6 @@ The `GroqDeepSeekR1Completion` workflow takes a `prompt` as input and returns bo
 2. Extracts any thinking content (text between `<think>` tags)
 3. Returns both the thinking process and final completion
 
-
 ## Getting Started
 
 1. Log in to GenSX (if you haven't already):

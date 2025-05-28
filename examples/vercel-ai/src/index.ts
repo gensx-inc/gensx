@@ -4,7 +4,7 @@ import {
   StreamingChat,
   StreamingChatWithTools,
   StreamingStructuredOutput,
-  StructuredOutput
+  StructuredOutput,
 } from "./workflows.js";
 
 // Get the workflow type and prompt from command line arguments

@@ -24,8 +24,8 @@ ${prompt}
 
 Here are the relevant research papers:
 ${results
-        .map(
-          (paper) => `
+  .map(
+    (paper) => `
 <paper>
   <title>
     ${paper.title}
@@ -37,8 +37,8 @@ ${results
     ${paper.summary}
   </summary>
 </paper>`,
-        )
-        .join("\n")}
+  )
+  .join("\n")}
 
 Please write a report answering the user's prompt using the papers provided.`;
 
@@ -54,7 +54,8 @@ Please write a report answering the user's prompt using the papers provided.`;
     });
 
     return response.text;
-  });
+  },
+);
 
 interface ResearchProps {
   prompt: string;
@@ -71,7 +72,7 @@ export const Research = gensx.Component(
 
     // Process all queries in parallel
     const allSearchResults = await Promise.all(
-      queries.map(query => SearchArxiv({ query, maxResults: 3 }))
+      queries.map((query) => SearchArxiv({ query, maxResults: 3 })),
     );
 
     // Flatten results and deduplicate by URL
@@ -95,11 +96,13 @@ export const Research = gensx.Component(
 
         // Fetch and summarize
         return await FetchAndSummarize({ document, prompt });
-      })
+      }),
     );
 
     // Filter out null results and add to documents array
-    documents.push(...processedDocuments.filter((doc): doc is ArxivSummary => doc !== null));
+    documents.push(
+      ...processedDocuments.filter((doc): doc is ArxivSummary => doc !== null),
+    );
 
     console.log("\n=== Documents ===");
     documents.forEach((doc, i) => {
@@ -107,7 +110,8 @@ export const Research = gensx.Component(
     });
 
     return documents;
-  });
+  },
+);
 
 interface DeepResearchProps {
   prompt: string;

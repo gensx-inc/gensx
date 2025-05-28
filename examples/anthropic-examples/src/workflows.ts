@@ -20,7 +20,8 @@ export const BasicCompletion = gensx.Workflow(
       model: "claude-sonnet-4-20250514",
       temperature: 0.7,
       max_tokens: 1024,
-      system: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+      system:
+        "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
       messages: [
         {
           role: "user",
@@ -28,7 +29,7 @@ export const BasicCompletion = gensx.Workflow(
         },
       ],
     });
-    return result.content[0].type === 'text' ? result.content[0].text : '';
+    return result.content[0].type === "text" ? result.content[0].text : "";
   },
 );
 
@@ -39,7 +40,8 @@ export const StreamingCompletion = gensx.Workflow(
       model: "claude-sonnet-4-20250514",
       temperature: 0.7,
       max_tokens: 1024,
-      system: "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+      system:
+        "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
       messages: [
         {
           role: "user",

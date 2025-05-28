@@ -52,13 +52,10 @@ interface ListModelsOutput {
 }
 
 // Example component to list available models
-const ListModels = gensx.Component(
-  "ListModels",
-  async () => {
-    const models = await openai.models.list();
-    return models;
-  },
-);
+const ListModels = gensx.Component("ListModels", async () => {
+  const models = await openai.models.list();
+  return models;
+});
 
 interface GetModelPricingOutput {
   model: string;

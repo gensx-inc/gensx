@@ -24,12 +24,14 @@ const tools = {
   }),
 } as const;
 
-const SQLCopilot = gensx.Component("SQLCopilot", async ({ question }: { question: string }) => {
-  const result = await generateText({
-    messages: [
-      {
-        role: "system",
-        content: `You are a helpful SQL assistant. You have access to a baseball statistics database with the following schema:
+const SQLCopilot = gensx.Component(
+  "SQLCopilot",
+  async ({ question }: { question: string }) => {
+    const result = await generateText({
+      messages: [
+        {
+          role: "system",
+          content: `You are a helpful SQL assistant. You have access to a baseball statistics database with the following schema:
           TABLE baseball_stats (
             player TEXT,
             team TEXT,
@@ -48,31 +50,37 @@ const SQLCopilot = gensx.Component("SQLCopilot", async ({ question }: { question
           The table contains statistics for various baseball players. You can use the execute_query tool to run SQL queries against this database.
           When asked a question, first think about what SQL query would answer it, then use the tool to execute that query.
           After getting the results, explain them in a clear and concise way.`,
-      },
-      {
-        role: "user",
-        content: question,
-      },
-    ],
-    model: openai("gpt-4o-mini"),
-    tools: tools,
-    maxSteps: 10,
-  });
-  return result.text;
-});
+        },
+        {
+          role: "user",
+          content: question,
+        },
+      ],
+      model: openai("gpt-4o-mini"),
+      tools: tools,
+      maxSteps: 10,
+    });
+    return result.text;
+  },
+);
 
 // Create the workflow
-export const TextToSqlWorkflow = gensx.Workflow("TextToSqlWorkflow", async ({ question }: { question: string }) => {
-  return await SQLCopilot({ question });
-});
+export const TextToSqlWorkflow = gensx.Workflow(
+  "TextToSqlWorkflow",
+  async ({ question }: { question: string }) => {
+    return await SQLCopilot({ question });
+  },
+);
 
 // Database initialization workflow
-export const InitializeDatabase = gensx.Workflow("InitializeDatabase", async () => {
-  // UseDatabase will create the database automatically if it doesn't exist.
-  const db = await useDatabase("baseball");
+export const InitializeDatabase = gensx.Workflow(
+  "InitializeDatabase",
+  async () => {
+    // UseDatabase will create the database automatically if it doesn't exist.
+    const db = await useDatabase("baseball");
 
-  // Create the baseball_stats table
-  await db.execute(`
+    // Create the baseball_stats table
+    await db.execute(`
     CREATE TABLE IF NOT EXISTS baseball_stats (
       player TEXT,
       team TEXT,
@@ -89,18 +97,18 @@ export const InitializeDatabase = gensx.Workflow("InitializeDatabase", async () 
     )
   `);
 
-  // query to check if the table is already populated
-  const dbResult = await db.execute(`
+    // query to check if the table is already populated
+    const dbResult = await db.execute(`
       SELECT COUNT(*) FROM baseball_stats
     `);
-  const numRows = dbResult.rows[0][0] as number;
+    const numRows = dbResult.rows[0][0] as number;
 
-  if (numRows > 0) {
-    return "Database already exists";
-  }
+    if (numRows > 0) {
+      return "Database already exists";
+    }
 
-  // Insert the baseball statistics data
-  await db.execute(`
+    // Insert the baseball statistics data
+    await db.execute(`
     INSERT INTO baseball_stats (player, team, position, at_bats, hits, runs, home_runs, rbi, batting_avg, obp, slg, ops)
     VALUES
       ('Marcus Bennett', 'Portland Pioneers', '1B', 550, 85, 25, 32, 98, 0.312, 0.385, 0.545, 0.930),
@@ -115,7 +123,6 @@ export const InitializeDatabase = gensx.Workflow("InitializeDatabase", async () 
       ('Brandon Reed', 'Las Vegas Legends', '3B', 510, 74, 19, 25, 78, 0.289, 0.358, 0.502, 0.860)
   `);
 
-  return "Database initialized";
-});
-
-
+    return "Database initialized";
+  },
+);

@@ -13,7 +13,6 @@ export default [
       "**/node_modules/**",
       "**/.turbo/**",
       "**/vite.config.ts.timestamp*",
-      "**/examples/**",
     ],
   },
   {
@@ -72,7 +71,7 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        projectService: true,
+        project: "./tsconfig.json",
       },
     },
     rules: {

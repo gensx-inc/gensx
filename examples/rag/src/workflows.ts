@@ -35,27 +35,33 @@ const tools = {
   }),
 } as const;
 
-const RagAgent = gensx.Component("RagAgent", async ({ question }: { question: string }) => {
-  const result = await generateText({
-    messages: [
-      {
-        role: "system",
-        content: `You are a helpful assistant.`,
-      },
-      {
-        role: "user",
-        content: question,
-      },
-    ],
-    model: openai("gpt-4.1-mini"),
-    tools: tools,
-    maxSteps: 10,
-  });
-  return result.text;
-});
+const RagAgent = gensx.Component(
+  "RagAgent",
+  async ({ question }: { question: string }) => {
+    const result = await generateText({
+      messages: [
+        {
+          role: "system",
+          content: `You are a helpful assistant.`,
+        },
+        {
+          role: "user",
+          content: question,
+        },
+      ],
+      model: openai("gpt-4.1-mini"),
+      tools: tools,
+      maxSteps: 10,
+    });
+    return result.text;
+  },
+);
 
-export const RagWorkflow = gensx.Workflow("RagWorkflow", async ({ question }: { question: string }) => {
-  return await RagAgent({ question });
-});
+export const RagWorkflow = gensx.Workflow(
+  "RagWorkflow",
+  async ({ question }: { question: string }) => {
+    return await RagAgent({ question });
+  },
+);
 
 export { InitializeSearch };

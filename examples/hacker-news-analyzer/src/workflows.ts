@@ -6,7 +6,6 @@ import { getTopStoryDetails, type HNStory } from "./hn.js";
 const getHNPostUrl = (id: number | string) =>
   `https://news.ycombinator.com/item?id=${id}`;
 
-
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -16,7 +15,6 @@ interface WriteTweetProps {
   prompt: string;
   componentOpts?: gensx.ComponentOpts;
 }
-
 
 const WriteTweet = gensx.Component(
   "WriteTweet",
@@ -43,7 +41,8 @@ Focus on the most surprising or counterintuitive point rather than trying to sum
       temperature: 0.7,
     });
     return response.choices[0].message.content ?? "";
-  });
+  },
+);
 
 interface EditReportProps {
   content: string;
@@ -77,14 +76,14 @@ Maintain your voice while preserving the key insights and all links from the ana
       temperature: 0.7,
     });
     return response.choices[0].message.content ?? "";
-  });
+  },
+);
 
 interface AnalyzeCommentsProps {
   postId: number;
   comments: { text: string; score: number }[];
   componentOpts?: gensx.ComponentOpts;
 }
-
 
 const AnalyzeComments = gensx.Component(
   "AnalyzeComments",
@@ -97,8 +96,8 @@ SENTIMENT: [Write a single sentence describing the overall sentiment in 10 words
 STATISTICS:
 - Total comments analyzed: ${comments.length}
 - Average comment score: ${(comments.reduce((sum, c) => sum + c.score, 0) / (comments.length || 1)).toFixed(1)}
-- Highest scored comment: ${Math.max(...comments.map((c) => c.score).filter(s => typeof s === 'number'), 0)} points
-- Lowest scored comment: ${Math.min(...comments.map((c) => c.score).filter(s => typeof s === 'number'), 0)} points
+- Highest scored comment: ${Math.max(...comments.map((c) => c.score).filter((s) => typeof s === "number"), 0)} points
+- Lowest scored comment: ${Math.min(...comments.map((c) => c.score).filter((s) => typeof s === "number"), 0)} points
 
 DEMONSTRATIVE_COMMENTS:
 1. Most upvoted: [Quote the highest-scored comment]
@@ -129,7 +128,8 @@ Focus on substance rather than surface-level reactions. When referencing comment
       temperature: 0.7,
     });
     return response.choices[0].message.content ?? "";
-  });
+  },
+);
 
 interface SummarizePostProps {
   story: HNStory;
@@ -165,9 +165,9 @@ Text: ${story.text ?? ""}
 Score: ${story.score} points
 Comments (sorted by score):
 ${story.comments
-        .sort((a, b) => b.score - a.score)
-        .map((c) => `[Score: ${c.score}] ${c.text}`)
-        .join("\n\n")}
+  .sort((a, b) => b.score - a.score)
+  .map((c) => `[Score: ${c.score}] ${c.text}`)
+  .join("\n\n")}
     `.trim();
 
     const response = await openai.chat.completions.create({
@@ -185,7 +185,8 @@ ${story.comments
       return `[${story.title}](${getHNPostUrl(story.id)})\n\n${ensuredResponse}`;
     }
     return ensuredResponse;
-  });
+  },
+);
 
 interface GenerateReportProps {
   analyses: {
@@ -194,7 +195,6 @@ interface GenerateReportProps {
   }[];
   componentOpts?: gensx.ComponentOpts;
 }
-
 
 const GenerateReport = gensx.Component(
   "GenerateReport",
@@ -244,7 +244,8 @@ ${commentAnalysis}
       temperature: 0.7,
     });
     return response.choices[0].message.content ?? "";
-  });
+  },
+);
 
 interface FetchHNPostsProps {
   limit: number;
@@ -269,7 +270,8 @@ const FetchHNPosts = gensx.Component(
     );
 
     return stories;
-  });
+  },
+);
 
 interface AnalyzeHNPostsProps {
   stories: HNStory[];
@@ -286,18 +288,24 @@ interface AnalyzeHNPostsOutput {
 const AnalyzeHNPosts = gensx.Component(
   "AnalyzeHNPosts",
   async ({ stories }: AnalyzeHNPostsProps): Promise<AnalyzeHNPostsOutput> => {
-    const analyses = await Promise.all(stories.map(async (story) => {
-      // Pass componentOpts down if needed? Or rely on context?
-      // For now, not passing them down explicitly.
-      const summaryResult = await SummarizePost({ story });
-      const commentAnalysisResult = await AnalyzeComments({ postId: story.id, comments: story.comments });
-      return {
-        summary: summaryResult,
-        commentAnalysis: commentAnalysisResult,
-      };
-    }));
+    const analyses = await Promise.all(
+      stories.map(async (story) => {
+        // Pass componentOpts down if needed? Or rely on context?
+        // For now, not passing them down explicitly.
+        const summaryResult = await SummarizePost({ story });
+        const commentAnalysisResult = await AnalyzeComments({
+          postId: story.id,
+          comments: story.comments,
+        });
+        return {
+          summary: summaryResult,
+          commentAnalysis: commentAnalysisResult,
+        };
+      }),
+    );
     return { analyses };
-  });
+  },
+);
 
 interface AnalyzeHackerNewsTrendsProps {
   postCount: number;
@@ -309,20 +317,26 @@ export interface AnalyzeHackerNewsTrendsOutput {
   tweet: string;
 }
 
-export const AnalyzeHackerNewsTrends = gensx.Workflow("AnalyzeHackerNewsTrends", async ({ postCount, componentOpts }: AnalyzeHackerNewsTrendsProps): Promise<AnalyzeHackerNewsTrendsOutput> => {
-  // Note: componentOpts from the initial call needs to be passed down if sub-components need it.
-  // The current implementation doesn't pass it down explicitly.
-  // Context might be a better way to manage workflow-level options.
+export const AnalyzeHackerNewsTrends = gensx.Workflow(
+  "AnalyzeHackerNewsTrends",
+  async ({
+    postCount,
+    componentOpts,
+  }: AnalyzeHackerNewsTrendsProps): Promise<AnalyzeHackerNewsTrendsOutput> => {
+    // Note: componentOpts from the initial call needs to be passed down if sub-components need it.
+    // The current implementation doesn't pass it down explicitly.
+    // Context might be a better way to manage workflow-level options.
 
-  const stories = await FetchHNPosts({ limit: postCount, componentOpts }); // Example passing down
-  const { analyses } = await AnalyzeHNPosts({ stories, componentOpts }); // Example passing down
-  const report = await GenerateReport({ analyses, componentOpts }); // Example passing down
-  const editedReport = await EditReport({ content: report, componentOpts }); // Example passing down
-  const tweet = await WriteTweet({
-    context: editedReport,
-    prompt: "Summarize the HN trends in a tweet",
-    componentOpts // Example passing down
-  });
+    const stories = await FetchHNPosts({ limit: postCount, componentOpts }); // Example passing down
+    const { analyses } = await AnalyzeHNPosts({ stories, componentOpts }); // Example passing down
+    const report = await GenerateReport({ analyses, componentOpts }); // Example passing down
+    const editedReport = await EditReport({ content: report, componentOpts }); // Example passing down
+    const tweet = await WriteTweet({
+      context: editedReport,
+      prompt: "Summarize the HN trends in a tweet",
+      componentOpts, // Example passing down
+    });
 
-  return { report: editedReport, tweet };
-});
+    return { report: editedReport, tweet };
+  },
+);
