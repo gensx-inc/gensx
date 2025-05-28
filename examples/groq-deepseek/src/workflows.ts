@@ -20,10 +20,9 @@ export interface GroqDeepSeekR1CompletionOutput {
   completion: string;
 }
 
-@gensx.Workflow()
-export async function GroqDeepSeekR1Completion(
+export const GroqDeepSeekR1Completion = gensx.Workflow("GroqDeepSeekR1Completion", async (
   { prompt }: GroqDeepSeekR1CompletionProps
-): Promise<GroqDeepSeekR1CompletionOutput> {
+): Promise<GroqDeepSeekR1CompletionOutput> => {
   const response = await openai.chat.completions.create({
     model: "deepseek-r1-distill-llama-70b",
     messages: [{ role: "user", content: prompt }],
@@ -40,4 +39,4 @@ export async function GroqDeepSeekR1Completion(
     thinking,
     completion,
   };
-}
+});

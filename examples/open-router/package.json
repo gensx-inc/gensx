@@ -8,21 +8,18 @@
   },
   "description": "Example project leveraging OpenRouter for LLM inference.",
   "scripts": {
-    "dev": "pnpm build && node dist/index.js",
+    "dev": "tsx ./src/index.ts",
     "start": "npx gensx start ./src/workflows.ts",
-    "build": "tsc -p tsconfig.build.json",
-    "deploy": "npx gensx deploy -e OPENROUTER_API_KEY ./src/workflows.ts",
-    "prepare": "ts-patch install -s"
+    "build": "tsc",
+    "deploy": "npx gensx deploy -e OPENROUTER_API_KEY ./src/workflows.ts"
   },
   "dependencies": {
-    "@gensx/openai": "workspace:*",
-    "@gensx/core": "workspace:*"
+    "@gensx/openai": "alpha",
+    "@gensx/core": "alpha"
   },
   "devDependencies": {
     "@types/node": "^22",
-    "ts-function-decorator": "^0.0.1",
-    "ts-function-decorator-ls": "^0.0.1",
-    "ts-patch": "^3.3.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
 }

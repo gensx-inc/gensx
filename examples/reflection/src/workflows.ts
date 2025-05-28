@@ -3,18 +3,17 @@ import { generateText, generateObject } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-import { Reflection, ReflectionOutput } from "./reflections.js";
+import { Reflection, ReflectionOutput } from "./reflection.js";
 
 const openaiModel = openai("gpt-4o-mini");
 
-@gensx.Component()
-async function ImproveText({
+const ImproveText = gensx.Component("ImproveText", async ({
   input,
   feedback,
 }: {
   input: string;
   feedback: string;
-}): Promise<string> {
+}): Promise<string> => {
   console.log("\n📝 Current draft:\n", input);
   console.log("\n🔍 Feedback:\n", feedback);
   console.log("=".repeat(50));
@@ -36,14 +35,13 @@ async function ImproveText({
     ],
   });
   return result.text;
-}
+});
 
-@gensx.Component()
-async function EvaluateText({
+const EvaluateText = gensx.Component("EvaluateText", async ({
   input,
 }: {
   input: string;
-}): Promise<ReflectionOutput> {
+}): Promise<ReflectionOutput> => {
   const systemPrompt = `You're a helpful assistant that evaluates text and suggests improvements if needed.
 
     ## Evaluation Criteria
@@ -80,18 +78,17 @@ async function EvaluateText({
     }),
   });
   return result.object;
-}
+});
 
-@gensx.Workflow()
-export async function ReflectionWorkflow({
+export const ReflectionWorkflow = gensx.Workflow("ReflectionWorkflow", async ({
   text,
 }: {
   text: string;
-}): Promise<string> {
+}): Promise<string> => {
   return Reflection({
     input: text,
     ImproveFn: ImproveText,
     EvaluateFn: EvaluateText,
     maxIterations: 3,
   });
-}
+});

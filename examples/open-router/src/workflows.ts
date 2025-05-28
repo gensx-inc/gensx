@@ -19,10 +19,9 @@ export interface OpenRouterCompletionOutput {
   response: string;
 }
 
-@gensx.Workflow()
-export async function OpenRouterCompletion(
-  { userInput }: OpenRouterCompletionProps
-): Promise<OpenRouterCompletionOutput> {
+export const OpenRouterCompletion = gensx.Workflow("OpenRouterCompletion", async ({
+  userInput,
+}: OpenRouterCompletionProps): Promise<OpenRouterCompletionOutput> => {
   const response = await openai.chat.completions.create({
     model: "anthropic/claude-3.7-sonnet",
     messages: [
@@ -38,4 +37,4 @@ export async function OpenRouterCompletion(
   return {
     response: response.choices[0].message.content || "",
   };
-}
+});

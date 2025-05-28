@@ -13,8 +13,8 @@
     "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts"
   },
   "dependencies": {
-    "@gensx/core": "workspace:*",
-    "@gensx/anthropic": "workspace:*",
+    "@gensx/core": "alpha",
+    "@gensx/anthropic": "alpha",
     "zod": "^3.24.2"
   },
   "devDependencies": {

@@ -22,13 +22,12 @@ interface ReflectionProps<TInput> {
  * 1. the evaluate function returns false
  * 2. maxIterations is reached
  */
-@gensx.Component()
-async function Reflection<TInput>({
+const Reflection = gensx.Component("Reflection", async <TInput>({
   input,
   ImproveFn,
   EvaluateFn,
   maxIterations = 3,
-}: ReflectionProps<TInput>): Promise<TInput> {
+}: ReflectionProps<TInput>): Promise<TInput> => {
   let currentInput = input;
   let iteration = 0;
 
@@ -47,6 +46,6 @@ async function Reflection<TInput>({
 
   // Return the final input when we're done processing
   return currentInput;
-}
+});
 
 export { Reflection };

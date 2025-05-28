@@ -18,8 +18,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@gensx/core": "workspace:*",
-    "@gensx/openai": "workspace:*"
+    "@gensx/core": "alpha",
+    "@gensx/openai": "alpha"
   },
   "devDependencies": {
     "@types/node": "^22",
