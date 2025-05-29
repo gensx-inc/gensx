@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.33](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.32...gensx-v0.3.33) (2025-05-29)
+
+
+### 🐛 Bug Fixes
+
+* updating schema detection for v2 programming model ([#716](https://github.com/gensx-inc/gensx/issues/716)) ([fed18cf](https://github.com/gensx-inc/gensx/commit/fed18cf54ef79cea779c726ff7e4783d1a2c0782))
+
 ## [0.3.32](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.31...gensx-v0.3.32) (2025-05-28)
 
 
