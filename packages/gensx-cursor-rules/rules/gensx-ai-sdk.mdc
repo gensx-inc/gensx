@@ -5,20 +5,20 @@ alwaysApply: false
 ---
 ## GenSX Vercel AI SDK Package Syntax
 
-The [@gensx/vercel-ai-sdk](mdc:https://www.npmjs.com/package/@gensx/vercel-ai-sdk) package provides [Vercel AI SDK](mdc:https://sdk.vercel.ai/docs/introduction) compatible components for GenSX, allowing you to use Vercel's AI SDK with GenSX's component model.
+The [@gensx/vercel-ai](mdc:https://www.npmjs.com/package/@gensx/vercel-ai) package provides [Vercel AI SDK](mdc:https://sdk.vercel.ai/docs/introduction) compatible functions for GenSX, allowing you to use Vercel's AI SDK with GenSX's workflow model.
 
 ### Installation
 
 To install the package, run the following command:
 
 ```bash
-npm install @gensx/vercel-ai-sdk
+npm install @gensx/vercel-ai
 ```
 
-You'll also need to install the Vercel AI SDK:
+You'll also need to install the relevant providers from the Vercel AI SDK:
 
 ```bash
-npm install ai
+npm install @ai-sdk/openai
 ```
 
 ### Supported Components
@@ -27,18 +27,36 @@ npm install ai
 
 Stream text responses from language models, ideal for chat interfaces and other applications where you want to show responses as they're generated.
 
-```tsx
-import { StreamText } from "@gensx/vercel-ai-sdk";
+```ts
+import { streamText } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
+import * as gensx from "@gensx/core";
 
-const languageModel = openai("gpt-4o");
+const StreamingChat = gensx.Workflow(
+  "StreamingChat",
+  ({ prompt }: { prompt: string }) => {
+    const result = streamText({
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: openai("gpt-4o-mini"),
+    });
 
-// Streaming text response
-const stream = await gsx.execute(
-  <StreamText
-    prompt="Explain quantum computing in simple terms"
-    model={languageModel}
-  />,
+    const generator = async function* () {
+      for await (const chunk of result.textStream) {
+        yield chunk;
+      }
+    };
+
+    return generator();
+  },
 );
 ```
 
@@ -46,12 +64,12 @@ const stream = await gsx.execute(
 
 Stream structured JSON objects from language models, allowing you to get structured data with type safety.
 
-```tsx
-import { StreamObject } from "@gensx/vercel-ai-sdk";
+```ts
+import { streamObject } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
+import * as gensx from "@gensx/core";
 
-const languageModel = openai("gpt-4o");
 
 // Define a schema for the response
 const recipeSchema = z.object({
@@ -62,53 +80,65 @@ const recipeSchema = z.object({
   }),
 });
 
-// Stream a structured object
-const response = await gsx.execute(
-  <StreamObject
-    prompt="Generate a recipe for chocolate chip cookies"
-    model={languageModel}
-    schema={recipeSchema}
-  />,
+const StreamingRecipe = gensx.Workflow(
+  "StreamingRecipe",
+  ({ prompt }: { prompt: string }) => {
+    const result = streamObject({
+      prompt,
+      schema: recipeSchema,
+      model: openai("gpt-4o-mini"),
+    });
+
+    const generator = async function* () {
+      for await (const chunk of result.partialObjectStream) {
+        yield chunk;
+      }
+    };
+
+    return generator();
+  },
 );
 
-// Access the structured data
-console.log(response.recipe.name);
-console.log(response.recipe.ingredients);
+// Usage
+const result = StreamingRecipe({prompt: "Generate a recipe for chocolate chip cookies"})
+for await (const chunk of result) {
+  console.log(chunk);
+}
 ```
 
 #### GenerateText
 
 Generate complete text responses from language models, waiting for the entire response before returning.
 
-```tsx
-import { GenerateText } from "@gensx/vercel-ai-sdk";
+```ts
+import { generateText } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
+import * as gensx from "@gensx/core";
 
-const languageModel = openai("gpt-4o");
-
-// Generate a complete text response
-const response = await gsx.execute(
-  <GenerateText
-    prompt="Write a short poem about programming"
-    model={languageModel}
-  />,
+const BasicChat = gensx.Workflow(
+  "BasicChat",
+  async ({ prompt }: { prompt: string }): Promise<string> => {
+    const result = await generateText({
+      prompt
+      model: openai("gpt-4o-mini"),
+    });
+    return result.text;
+  },
 );
 
-console.log(response);
+console.log(await BasicChat("Write a poem about cats"));
 ```
 
 #### GenerateObject
 
 Generate complete structured JSON objects from language models, with type safety through Zod schemas.
 
-```tsx
-import { GenerateObject } from "@gensx/vercel-ai-sdk";
+```ts
+import { generateObject } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
+import * as gensx from "@gensx/core";
 
-const languageModel = openai("gpt-4o");
-
-// Define a schema for the response
 const userSchema = z.object({
   user: z.object({
     name: z.string(),
@@ -121,16 +151,20 @@ const userSchema = z.object({
   }),
 });
 
-// Generate a structured object
-const userData = await gsx.execute(
-  <GenerateObject
-    prompt="Generate a fictional user profile"
-    model={languageModel}
-    schema={userSchema}
-  />,
+const GetUserProfile = gensx.Workflow(
+  "GetUserProfile",
+  async ({ prompt }: { prompt: string }) => {
+    const result = await generateObject({
+      prompt,
+      schema: userSchema,
+      model: openai("gpt-4o-mini"),
+    });
+    return result.object;
+  },
 );
 
-// Access the structured data
+// Usage
+const userData = await GetUserProfile({prompt: "Generate a fictional user profile"});
 console.log(userData.user.name);
 console.log(userData.user.interests);
 ```
@@ -139,74 +173,75 @@ console.log(userData.user.interests);
 
 Generate embeddings for a single text input, which can be used for semantic search, clustering, and other NLP tasks.
 
-```tsx
-import { Embed } from "@gensx/vercel-ai-sdk";
+```ts
+import { embed } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
+import * as gensx from "@gensx/core";
 
-const embeddingModel = openai.embedding("text-embedding-3-small");
+const text = "the cat jumped over the dog."
 
-// Generate an embedding for a single text
-const embedding = await gsx.execute(
-  <Embed value="This is a sample text to embed" model={embeddingModel} />,
-);
+const result = await embed({
+  value: text,
+  model: openai.embedding("text-embedding-3-small");,
+});
 
-console.log(embedding); // Vector representation of the text
+console.log(result.embedding)
+
 ```
 
 #### EmbedMany
 
 Generate embeddings for multiple text inputs in a single call, which is more efficient than making separate calls for each text.
 
-```tsx
-import { EmbedMany } from "@gensx/vercel-ai-sdk";
+```ts
+import { embedMany } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
-const embeddingModel = openai.embedding("text-embedding-3-small");
+const texts = [
+  "the cat jumped over the dog",
+  "the dog chased the cat",
+  "the cat ran away"
+];
 
-// Generate embeddings for multiple texts
-const embeddings = await gsx.execute(
-  <EmbedMany
-    values={[
-      "First text to embed",
-      "Second text to embed",
-      "Third text to embed",
-    ]}
-    model={embeddingModel}
-  />,
-);
+const result = await embedMany({
+  values: texts,
+  model: openai.embedding("text-embedding-3-small"),
+});
 
-console.log(embeddings);
+console.log(result.embeddings);
 ```
 
 #### GenerateImage
 
 Generate images from text prompts using image generation models.
 
-```tsx
-import { GenerateImage } from "@gensx/vercel-ai-sdk";
+```ts
+import { generateImage } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
+import * as gensx from "@gensx/core";
 
-const imageModel = openai.image("dall-e-3");
-
-// Generate an image
-const result = await gsx.execute(
-  <GenerateImage
-    prompt="A futuristic city with flying cars and neon lights"
-    model={imageModel}
-  />,
+const ImageGenerationWorkflow = gensx.Workflow(
+  "ImageGenerationWorkflow",
+  async ({ prompt }: { prompt: string }) => {
+    const result = await generateImage({
+      prompt,
+      model: openai.image("dall-e-3");,
+    });
+    return result.url;
+  },
 );
-
-console.log(result.url); // URL to the generated image
+const result = ImageGenerationWorkflow({prompt: "a bear walking through a lush forest"})
+console.log(result);
 ```
 
 ### Usage with Different Models
 
-The Vercel AI SDK supports multiple model providers. Here's how to use different providers with GenSX components:
+The Vercel AI SDK supports multiple model providers. Here are some examples:
 
-```tsx
+```ts
 // OpenAI
 import { openai } from "@ai-sdk/openai";
-const openaiModel = openai("gpt-4o");
+const openaiModel = openai("gpt-4.1-mini");
 
 // Anthropic
 import { anthropic } from "@ai-sdk/anthropic";
@@ -215,17 +250,6 @@ const anthropicModel = anthropic("claude-3-opus-20240229");
 // Cohere
 import { cohere } from "@ai-sdk/cohere";
 const cohereModel = cohere("command-r-plus");
-
-// Use with GenSX components
-import { GenerateText } from "@gensx/vercel-ai-sdk";
-
-const openaiResponse = await gsx.execute(
-  <GenerateText prompt="Explain quantum computing" model={openaiModel} />,
-);
-
-const anthropicResponse = await gsx.execute(
-  <GenerateText prompt="Explain quantum computing" model={anthropicModel} />,
-);
 ```
 
 For more information on the Vercel AI SDK, visit the [official documentation](mdc:https://sdk.vercel.ai/docs).
