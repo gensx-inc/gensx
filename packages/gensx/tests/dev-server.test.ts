@@ -24,11 +24,18 @@ vi.mock("@hono/node-server", () => ({
   }),
 }));
 
+// Add type for workflow function
+type WorkflowFunction = {
+  (input: unknown): Promise<unknown> | AsyncIterable<unknown>;
+  __gensxWorkflow?: boolean;
+} & ReturnType<typeof vi.fn>;
+
 // Simple mock workflow definition
-const mockWorkflow = {
-  name: "testWorkflow",
-  run: vi.fn().mockResolvedValue({ result: "test result" }),
-};
+const mockWorkflow = vi.fn(function testWorkflow(_input: unknown) {
+  return Promise.resolve({ result: "test result" });
+}) as WorkflowFunction;
+mockWorkflow.__gensxWorkflow = true;
+Object.defineProperty(mockWorkflow, "name", { value: "testWorkflow" });
 
 // Mock schemas
 const mockSchemas: Record<string, { input: Definition; output: Definition }> = {
@@ -69,6 +76,7 @@ interface PrivateServer {
     onError: (err: Error, c: Context) => Promise<Response | undefined>;
     fetch: (request: Request) => Promise<Response>;
   };
+  workflowMap: Map<string, WorkflowFunction>;
 }
 
 suite("GenSX Dev Server", () => {
@@ -226,9 +234,21 @@ suite("GenSX Dev Server", () => {
   });
 
   it("should support async iteration of workflows", async () => {
+    const workflow1 = vi.fn(function workflow1(_input: unknown) {
+      return Promise.resolve();
+    }) as WorkflowFunction;
+    workflow1.__gensxWorkflow = true;
+    Object.defineProperty(workflow1, "name", { value: "workflow1" });
+
+    const workflow2 = vi.fn(function workflow2(_input: unknown) {
+      return Promise.resolve();
+    }) as WorkflowFunction;
+    workflow2.__gensxWorkflow = true;
+    Object.defineProperty(workflow2, "name", { value: "workflow2" });
+
     const workflows = {
-      workflow1: { name: "workflow1", run: vi.fn() },
-      workflow2: { name: "workflow2", run: vi.fn() },
+      workflow1,
+      workflow2,
     };
 
     server = createServer(workflows);
@@ -295,7 +315,7 @@ suite("GenSX Dev Server", () => {
 
   it("should execute workflow and handle success", async () => {
     // Update mockWorkflow to properly return a result
-    mockWorkflow.run.mockImplementation(() => {
+    mockWorkflow.mockImplementation(function (this: unknown, _input: unknown) {
       return Promise.resolve({ result: "test result" });
     });
 
@@ -317,16 +337,20 @@ suite("GenSX Dev Server", () => {
     };
     privateServer.executionsMap.set(executionId, execution);
 
+    // Get the wrapped workflow from the server
+    const wrappedWorkflow = privateServer.workflowMap.get("testWorkflow");
+    expect(wrappedWorkflow).toBeDefined();
+
     // Execute the workflow
     await privateServer.executeWorkflowAsync(
       "testWorkflow",
-      mockWorkflow,
+      wrappedWorkflow,
       executionId,
       input,
     );
 
-    // Verify the mock was called
-    expect(mockWorkflow.run).toHaveBeenCalledWith(input);
+    // Verify the mock was called through the run method
+    expect(mockWorkflow).toHaveBeenCalledWith(input);
 
     const updatedExecution = privateServer.executionsMap.get(executionId);
     expect(updatedExecution).toBeDefined();
@@ -336,12 +360,16 @@ suite("GenSX Dev Server", () => {
   });
 
   it("should handle workflow execution failure", async () => {
-    const failingWorkflow = {
-      name: "failingWorkflow",
-      run: vi.fn().mockImplementation(() => {
-        return Promise.reject(new Error("Workflow failed"));
-      }),
-    };
+    const failingWorkflow = vi.fn(function failingWorkflow(
+      this: unknown,
+      _input: unknown,
+    ) {
+      return Promise.reject(new Error("Workflow failed"));
+    }) as WorkflowFunction;
+    failingWorkflow.__gensxWorkflow = true;
+    Object.defineProperty(failingWorkflow, "name", {
+      value: "failingWorkflow",
+    });
 
     const workflows = { failingWorkflow };
     server = createServer(workflows);
@@ -361,16 +389,20 @@ suite("GenSX Dev Server", () => {
     };
     privateServer.executionsMap.set(executionId, execution);
 
+    // Get the wrapped workflow from the server
+    const wrappedWorkflow = privateServer.workflowMap.get("failingWorkflow");
+    expect(wrappedWorkflow).toBeDefined();
+
     // Execute the workflow
     await privateServer.executeWorkflowAsync(
       "failingWorkflow",
-      failingWorkflow,
+      wrappedWorkflow,
       executionId,
       input,
     );
 
-    // Verify the mock was called
-    expect(failingWorkflow.run).toHaveBeenCalledWith(input);
+    // Verify the mock was called through the run method
+    expect(failingWorkflow).toHaveBeenCalledWith(input);
 
     const updatedExecution = privateServer.executionsMap.get(executionId);
     expect(updatedExecution).toBeDefined();
@@ -387,17 +419,23 @@ suite("GenSX Dev Server", () => {
       yield { data: "chunk2" };
     };
 
-    const streamingWorkflow = {
-      name: "streamingWorkflow",
-      run: vi.fn().mockReturnValue(generator()),
-    };
+    const streamingWorkflow = vi.fn(function streamingWorkflow(
+      _input: unknown,
+    ) {
+      return generator();
+    }) as WorkflowFunction;
+    streamingWorkflow.__gensxWorkflow = true;
+    Object.defineProperty(streamingWorkflow, "name", {
+      value: "streamingWorkflow",
+    });
 
     const workflows = { streamingWorkflow };
     server = createServer(workflows);
 
     const mockContext = {} as Context;
-    const runResult =
-      (await streamingWorkflow.run()) as AsyncGenerator<StreamResult>;
+    const runResult = (await streamingWorkflow(
+      {},
+    )) as AsyncGenerator<StreamResult>;
     const asyncIterable: AsyncIterable<StreamResult> = {
       [Symbol.asyncIterator]: () => runResult,
     };
@@ -474,12 +512,16 @@ suite("GenSX Dev Server", () => {
   });
 
   it("should return 422 when workflow execution fails", async () => {
-    const failingWorkflow = {
-      name: "failingWorkflow",
-      run: vi.fn().mockImplementation(() => {
-        return Promise.reject(new Error("Workflow failed"));
-      }),
-    };
+    const failingWorkflow = vi.fn(function failingWorkflow(
+      this: unknown,
+      _input: unknown,
+    ) {
+      return Promise.reject(new Error("Workflow failed"));
+    }) as WorkflowFunction;
+    failingWorkflow.__gensxWorkflow = true;
+    Object.defineProperty(failingWorkflow, "name", {
+      value: "failingWorkflow",
+    });
 
     const workflows = { failingWorkflow };
     server = createServer(workflows);
@@ -499,13 +541,20 @@ suite("GenSX Dev Server", () => {
     };
     privateServer.executionsMap.set(executionId, execution);
 
+    // Get the wrapped workflow from the server
+    const wrappedWorkflow = privateServer.workflowMap.get("failingWorkflow");
+    expect(wrappedWorkflow).toBeDefined();
+
     // Execute the workflow
     await privateServer.executeWorkflowAsync(
       "failingWorkflow",
-      failingWorkflow,
+      wrappedWorkflow,
       executionId,
       { test: "data" },
     );
+
+    // Verify the mock was called through the run method
+    expect(failingWorkflow).toHaveBeenCalledWith({ test: "data" });
 
     // Verify the execution was updated with the error
     const updatedExecution = privateServer.executionsMap.get(executionId);

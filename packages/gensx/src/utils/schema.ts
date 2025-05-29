@@ -459,6 +459,10 @@ function createSchemaFromType(
     return { type: "null" };
   }
   if (tsType.flags & ts.TypeFlags.Any) {
+    // Special case: if the type is 'any' and has no properties, treat as no input (empty schema)
+    if (tsType.getProperties().length === 0) {
+      return { type: "object", properties: {}, required: [] };
+    }
     return { type: "object", additionalProperties: true };
   }
   if (tsType.flags & ts.TypeFlags.Undefined) {

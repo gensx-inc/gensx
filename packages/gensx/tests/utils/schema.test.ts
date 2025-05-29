@@ -477,7 +477,8 @@ describe("schema generator", () => {
       expect(schemas.NoParamsWorkflow).toEqual({
         input: {
           type: "object",
-          additionalProperties: true,
+          properties: {},
+          required: [],
         },
         output: {
           type: "object",

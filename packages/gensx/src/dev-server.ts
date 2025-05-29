@@ -166,19 +166,24 @@ export class GensxServer {
    */
   private registerWorkflows(workflows: Record<string, unknown>): void {
     for (const [exportName, workflow] of Object.entries(workflows)) {
-      // GenSX Workflows expose name and run function
-      if (workflow && typeof workflow === "object") {
-        // Try to access workflow.name first
-        let workflowName: string;
+      // GenSX Workflows are functions with a __gensxWorkflow property (created by gensx.Workflow())
 
-        if ("name" in workflow && typeof workflow.name === "string") {
-          workflowName = workflow.name;
-        } else {
-          // Fallback to export name if name not found
-          workflowName = exportName;
+      if (typeof workflow === "function") {
+        // Handle GenSX workflow functions
+        const workflowFn = workflow as any;
+
+        // Check if this is a GenSX workflow function
+        if (workflowFn.__gensxWorkflow === true || workflowFn.name) {
+          const workflowName = workflowFn.name ?? exportName;
+
+          // Wrap the function to match the expected interface
+          const wrappedWorkflow = {
+            name: workflowName as string,
+            run: workflowFn,
+          };
+
+          this.workflowMap.set(workflowName as string, wrappedWorkflow);
         }
-
-        this.workflowMap.set(workflowName, workflow);
       }
     }
 
