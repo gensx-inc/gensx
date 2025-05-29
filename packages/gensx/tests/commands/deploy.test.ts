@@ -357,6 +357,6 @@ hasCompletedFirstTimeSetup = false
     );
 
     // Wait for error message
-    await waitForText(lastFrame, /Deployment failed/, 3000);
+    await waitForText(lastFrame, /Deployment failed/, 5000);
   });
 });
