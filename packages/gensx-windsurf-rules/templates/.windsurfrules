@@ -76,7 +76,7 @@ const greeting = await Greeting({ name: "John", formal: true });
 
 ### Workflow Definition
 
-In GenSX, workflows are the entry points to your application. Here's a basic example of a GenSX workflow:
+Workflows are a special type of component in GenSX. While components are the re-usable building blocks of your application, workflows are the top-level components that handle the orchestration and serve as the entry point for your application.
 
 ```typescript
 // Main workflow that combines components

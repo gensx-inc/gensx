@@ -16,7 +16,7 @@ GenSX is a TypeScript framework used to build and orchestrate LLM workflows. Thi
 
 ### Defining a Basic Component
 
-Use `gensx.Component` to create a reusable component. The component accepts typed props and returns an output (synchronously or asynchronously).
+Use `gensx.Component` to create a reusable component. The component accepts a typed input and returns an output (synchronously or asynchronously).
 
 ```tsx
 import * as gensx from "@gensx/core";
@@ -94,7 +94,7 @@ Similar to components, workflows are run just like a function. All workflows nee
 
 ## 3. LLM Providers
 
-In addition to the Vercel AI SDK, GenSX has build in support for the OpenAI SDK, and the Anthropic SDK.
+In addition to the Vercel AI SDK, GenSX has built in support for the OpenAI SDK, and the Anthropic SDK.
 
 ### OpenAI
 

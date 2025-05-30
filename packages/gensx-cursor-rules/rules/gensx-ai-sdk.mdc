@@ -46,7 +46,7 @@ const StreamingChat = gensx.Workflow(
           content: prompt,
         },
       ],
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-4.1-mini"),
     });
 
     const generator = async function* () {
@@ -86,7 +86,7 @@ const StreamingRecipe = gensx.Workflow(
     const result = streamObject({
       prompt,
       schema: recipeSchema,
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-4.1-mini"),
     });
 
     const generator = async function* () {
@@ -120,7 +120,7 @@ const BasicChat = gensx.Workflow(
   async ({ prompt }: { prompt: string }): Promise<string> => {
     const result = await generateText({
       prompt
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-4.1-mini"),
     });
     return result.text;
   },
@@ -157,7 +157,7 @@ const GetUserProfile = gensx.Workflow(
     const result = await generateObject({
       prompt,
       schema: userSchema,
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-4.1-mini"),
     });
     return result.object;
   },
@@ -241,15 +241,15 @@ The Vercel AI SDK supports multiple model providers. Here are some examples:
 ```ts
 // OpenAI
 import { openai } from "@ai-sdk/openai";
-const openaiModel = openai("gpt-4.1-mini");
+const openaiModel = openai("gpt-4.1");
 
 // Anthropic
 import { anthropic } from "@ai-sdk/anthropic";
-const anthropicModel = anthropic("claude-3-opus-20240229");
+const anthropicModel = anthropic("claude-sonnet-4-20250514");
 
-// Cohere
-import { cohere } from "@ai-sdk/cohere";
-const cohereModel = cohere("command-r-plus");
+// Google
+import { google } from "@ai-sdk/google";
+const googleModel = google("gemini-2.5-flash-preview-05-20");
 ```
 
 For more information on the Vercel AI SDK, visit the [official documentation](mdc:https://sdk.vercel.ai/docs).
