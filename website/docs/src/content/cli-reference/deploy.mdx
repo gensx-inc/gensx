@@ -44,16 +44,16 @@ After successful deployment, your workflow will be available for remote executio
 
 ```bash
 # Deploy a workflow
-gensx deploy src/workflows.tsx
+gensx deploy src/workflows.ts
 
 # Deploy to a specific project and environment
-gensx deploy src/workflows.tsx --project my-production-project --env dev
+gensx deploy src/workflows.ts --project my-production-project --env dev
 
 # Deploy with environment variables
-gensx deploy src/workflows.tsx -e API_KEY=abc123 -e DEBUG=true
+gensx deploy src/workflows.ts -e API_KEY=abc123 -e DEBUG=true
 
 # Deploy with an environment variable taken from your local environment
-gensx deploy src/workflows.tsx -e OPENAI_API_KEY
+gensx deploy src/workflows.ts -e OPENAI_API_KEY
 ```
 
 ## Notes

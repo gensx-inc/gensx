@@ -17,21 +17,9 @@ To use blob storage in your GenSX application:
    npm install @gensx/storage
    ```
 
-2. Add the `BlobProvider` to your workflow:
+2. Access blobs within your components using the `useBlob` hook:
 
-   ```tsx
-   import { BlobProvider } from "@gensx/storage";
-
-   const Workflow = ({ input }) => (
-     <BlobProvider>
-       <YourComponent input={input} />
-     </BlobProvider>
-   );
-   ```
-
-3. Access blobs within your components using the `useBlob` hook:
-
-   ```tsx
+   ```ts
    import { useBlob } from "@gensx/storage";
 
    const blob = useBlob("your-key.json");
@@ -41,7 +29,7 @@ To use blob storage in your GenSX application:
 
 The `useBlob` hook provides simple methods to read different types of data:
 
-```tsx
+```ts
 import { useBlob } from "@gensx/storage";
 
 // Read JSON data
@@ -63,7 +51,7 @@ console.log(image?.contentType); // "image/jpeg"
 
 You can write data in various formats:
 
-```tsx
+```ts
 import { useBlob } from "@gensx/storage";
 
 // Write JSON data
@@ -72,13 +60,15 @@ await profileBlob.putJSON({ name: "Alice", preferences: { theme: "dark" } });
 
 // Write text data
 const notesBlob = useBlob("notes/meeting.txt");
-await notesBlob.putString("Meeting agenda:\n1. Project updates\n2. Action items");
+await notesBlob.putString(
+  "Meeting agenda:\n1. Project updates\n2. Action items",
+);
 
 // Write binary data
 const imageBlob = useBlob("images/photo.jpg");
 await imageBlob.putRaw(imageBuffer, {
   contentType: "image/jpeg",
-  metadata: { originalName: "vacation.jpg" }
+  metadata: { originalName: "vacation.jpg" },
 });
 ```
 
@@ -88,10 +78,11 @@ await imageBlob.putRaw(imageBuffer, {
 
 One of the most common use cases for blob storage is maintaining conversation history across multiple interactions:
 
-```tsx
+```ts
 import * as gensx from "@gensx/core";
-import { ChatCompletion } from "@gensx/openai";
+import { openai } from "@ai-sdk/openai";
 import { useBlob } from "@gensx/storage";
+import { generateText } from "@gensx/vercel-ai";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -100,7 +91,7 @@ interface ChatMessage {
 
 const ChatWithMemory = gensx.Component(
   "ChatWithMemory",
-  async ({ userInput, threadId }) => {
+  async ({ userInput, threadId }: ChatInput) => {
     // Get a reference to the thread's storage
     const blob = useBlob<ChatMessage[]>(`chats/${threadId}.json`);
 
@@ -116,16 +107,16 @@ const ChatWithMemory = gensx.Component(
     messages.push({ role: "user", content: userInput });
 
     // Generate a response using the full conversation history
-    const response = await ChatCompletion.run({
-      model: "gpt-4o-mini",
+    const result = await generateText({
       messages,
+      model: openai("gpt-4.1-mini"),
     });
 
     // Save the assistant's response to the history
-    messages.push({ role: "assistant", content: response });
+    messages.push({ role: "assistant", content: result.text });
     await blob.putJSON(messages);
 
-    return response;
+    return result.text;
   },
 );
 ```
@@ -134,7 +125,7 @@ const ChatWithMemory = gensx.Component(
 
 For more complex agents, you can store structured memory:
 
-```tsx
+```ts
 interface AgentMemory {
   facts: string[];
   tasks: { description: string; completed: boolean }[];
@@ -143,7 +134,7 @@ interface AgentMemory {
 
 const AgentWithMemory = gensx.Component(
   "AgentWithMemory",
-  async ({ input, agentId }) => {
+  async ({ input, agentId }: AgentInput) => {
     // Load agent memory
     const memoryBlob = useBlob<AgentMemory>(`agents/${agentId}/memory.json`);
     const memory = (await memoryBlob.getJSON()) ?? {
@@ -171,10 +162,10 @@ const AgentWithMemory = gensx.Component(
 
 You can use blob storage to save and retrieve binary files like images:
 
-```tsx
+```ts
 const StoreImage = gensx.Component(
   "StoreImage",
-  async ({ imageBuffer, filename }) => {
+  async ({ imageBuffer, filename }: StoreImageInput) => {
     const imageBlob = useBlob(`images/${filename}`);
 
     // Save image with metadata
@@ -190,35 +181,38 @@ const StoreImage = gensx.Component(
   },
 );
 
-const GetImage = gensx.Component("GetImage", async ({ filename }) => {
-  const imageBlob = useBlob(`images/${filename}`);
+const GetImage = gensx.Component(
+  "GetImage",
+  async ({ filename }: GetImageInput) => {
+    const imageBlob = useBlob(`images/${filename}`);
 
-  // Check if image exists
-  const exists = await imageBlob.exists();
-  if (!exists) {
-    return { found: false };
-  }
+    // Check if image exists
+    const exists = await imageBlob.exists();
+    if (!exists) {
+      return { found: false };
+    }
 
-  // Get the image with metadata
-  const image = await imageBlob.getRaw();
+    // Get the image with metadata
+    const image = await imageBlob.getRaw();
 
-  return {
-    found: true,
-    data: image?.content,
-    contentType: image?.contentType,
-    metadata: image?.metadata,
-  };
-});
+    return {
+      found: true,
+      data: image?.content,
+      contentType: image?.contentType,
+      metadata: image?.metadata,
+    };
+  },
+);
 ```
 
 ### Optimistic concurrency control
 
 For scenarios where multiple processes might update the same data, you can use ETags to prevent conflicts:
 
-```tsx
+```ts
 const UpdateCounter = gensx.Component(
   "UpdateCounter",
-  async ({ counterName }) => {
+  async ({ counterName }: UpdateCounterInput) => {
     const blob = useBlob(`counters/${counterName}.json`);
 
     // Get current value and metadata

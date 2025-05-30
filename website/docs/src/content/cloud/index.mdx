@@ -29,7 +29,7 @@ Serverless deployments are billed per-second, with 50,000 seconds included per m
 Projects are deployed with a single CLI command:
 
 ```bash
-$ npx gensx deploy ./src/workflows.tsx
+$ npx gensx deploy ./src/workflows.ts
 ```
 
 ```bash
@@ -77,7 +77,7 @@ State can be long-lived and shared across workflows and agents, or it can be pro
 
 ### Blob storage
 
-GenSX Cloud provides blob storage for persisting unstructured data like JSON, text, and binary files. With the `BlobProvider` component and `useBlob` hook, you can easily store and retrieve data across workflow executions.
+GenSX Cloud provides blob storage for persisting unstructured data like JSON, text, and binary files. With the `useBlob` hook, you can easily store and retrieve data across workflow executions.
 
 Common scenarios enabled by blob storage include:
 
@@ -85,13 +85,13 @@ Common scenarios enabled by blob storage include:
 - Simple memory implementations.
 - Storing generated audio, video, and photo files.
 
-```tsx
-import { BlobProvider, useBlob } from "@gensx/storage";
+```ts
+import { useBlob } from "@gensx/storage";
 
 // Store and retrieve data with the useBlob hook
-const ChatWithMemory = gensx.Component(
-  "ChatWithMemory",
-  async ({ userInput, threadId }) => {
+const UpdateConversation = gensx.Component(
+  "UpdateConversation",
+  async ({ userInput, threadId }: UpdateConversationInput) => {
     // Get access to a blob at a specific path
     const blob = useBlob(`chats/${threadId}.json`);
 
@@ -107,13 +107,6 @@ const ChatWithMemory = gensx.Component(
     return "Data stored successfully";
   },
 );
-
-// Just wrap your workflow with BlobProvider
-const Workflow = gensx.Component("MyWorkflow", ({ userInput, threadId }) => (
-  <BlobProvider>
-    <ChatWithMemory userInput={userInput} threadId={threadId} />
-  </BlobProvider>
-));
 ```
 
 Blob storage automatically adapts between local development (using filesystem) and cloud deployment with zero configuration changes.
@@ -129,27 +122,23 @@ GenSX Cloud provides SQLite-compatible databases powered by [Turso](https://turs
 - **Zero configuration**: Like all GenSX storage components, databases work identically in both development and production.
 - **Local development**: Uses libsql locally to enable a fast, isolated development loop without external dependencies.
 
-```tsx
-import { DatabaseProvider, useDatabase } from "@gensx/storage";
+```ts
+import { useDatabase } from "@gensx/storage";
 
 // Access a database with the useDatabase hook
-const QueryTeamStats = gensx.Component("QueryTeamStats", async ({ team }) => {
-  // Get access to a database (created on first use)
-  const db = await useDatabase("baseball");
+const QueryTeamStats = gensx.Component(
+  "QueryTeamStats",
+  async ({ team }: QueryTeamStatsInput) => {
+    // Get access to a database (created on first use)
+    const db = await useDatabase("baseball");
 
-  // Execute SQL queries directly
-  const result = await db.execute("SELECT * FROM players WHERE team = ?", [
-    team,
-  ]);
+    // Execute SQL queries directly
+    const result = await db.execute("SELECT * FROM players WHERE team = ?", [
+      team,
+    ]);
 
-  return result.rows; // Returns the query results
-});
-
-// Just wrap your workflow with DatabaseProvider
-const Workflow = ({ team }) => (
-  <DatabaseProvider>
-    <QueryTeamStats team={team} />
-  </DatabaseProvider>
+    return result.rows; // Returns the query results
+  },
 );
 ```
 
@@ -164,9 +153,10 @@ GenSX Cloud provides vector and full-text search capabilities powered by [turbop
 - **Hybrid search**: Combine vector similarity with full-text BM25 search to get both semantically relevant results and exact keyword matches in a single query.
 - **Rich filtering**: Apply metadata filters to narrow down search results based on categories, timestamps, or any custom attributes, enhancing precision and relevance.
 
-```tsx
-import { SearchProvider, useNamespace } from "@gensx/storage";
-import { OpenAIEmbedding } from "@gensx/openai";
+```ts
+import { useNamespace } from "@gensx/storage";
+import { embed } from "@gensx/vercel-ai";
+import { openai } from "@ai-sdk/openai";
 
 // Perform semantic search with the useNamespace hook
 const SearchDocuments = gensx.Component(
@@ -176,30 +166,23 @@ const SearchDocuments = gensx.Component(
     const namespace = await useNamespace("documents");
 
     // Generate an embedding for the query
-    const embedding = await OpenAIEmbedding.run({
-      model: "text-embedding-3-small",
-      input: query,
+    const { embedding } = await embed({
+      model: openai.embedding("text-embedding-3-small"),
+      value: query,
     });
 
     // Search for similar documents
     const results = await namespace.query({
-      vector: embedding.data[0].embedding,
+      vector: embedding,
       topK: 5,
     });
 
     return results.map((r) => r.attributes?.title);
   },
 );
-
-// Just wrap your workflow with SearchProvider
-const Workflow = ({ query }) => (
-  <SearchProvider>
-    <SearchDocuments query={query} />
-  </SearchProvider>
-);
 ```
 
-> **Note**: Unlike blob storage and SQL databases, vector search doesn't have a local development implementation. When using `SearchProvider` locally, you'll connect to the cloud service.
+> **Note**: Unlike blob storage and SQL databases, vector search doesn't have a local development implementation. When using `useSearch` locally, you'll connect to the cloud service.
 
 For more details see the full [storage components reference](docs/component-reference/storage-components/search-reference).
 
@@ -223,13 +206,10 @@ GenSX Cloud provides comprehensive tracing and observability for all your workfl
 
 - **Project and environment organization**: Traces are automatically organized by project (a collection of related workflows in a codebase) and environment (such as development, staging, or production), making it easy to find relevant executions.
 
-```tsx
+```ts
 // Traces are automatically captured when workflows are executed
 // No additional instrumentation required
-const result = await MyWorkflow.run(
-  { input: "User query" },
-  { printUrl: true }, // log the tracing URL
-);
+const result = await MyWorkflow({ input: "some query" });
 ```
 
 The trace viewer provides multiple ways to analyze workflow execution:
@@ -259,7 +239,7 @@ The `gensx start` command launches a local development server that:
 
 ```bash
 # Start the development server with a TypeScript file
-npx gensx start ./src/workflows.tsx
+npx gensx start ./src/workflows.ts
 ```
 
 When you start the development server, you'll see something like this:
@@ -289,11 +269,11 @@ GenSX provides local implementations for most storage providers, enabling develo
 
 The local APIs mirror the cloud APIs exactly, so code that works locally will work identically when deployed:
 
-```tsx
+```ts
 // This component works the same locally and in the cloud
-const SaveData = gensx.Component<{ key: string; data: any }, null>(
+const SaveData = gensx.Component(
   "SaveData",
-  async ({ key, data }) => {
+  async ({ key, data }: { key: string; data: any }) => {
     // Blob storage works the same locally (filesystem) and in cloud
     const blob = useBlob(`data/${key}.json`);
     await blob.putJSON(data);
@@ -321,10 +301,10 @@ projectName: my-chatbot-app
 
 ```bash
 # Deploy to the default environment
-npx gensx deploy ./src/workflows.tsx
+npx gensx deploy ./src/workflows.ts
 
 # Deploy to a specific environment
-npx gensx deploy ./src/workflows.tsx --env production
+npx gensx deploy ./src/workflows.ts --env production
 ```
 
 Each environment can have its own configuration and environment variables to match the rest of your deployed infrastructure.
@@ -361,5 +341,5 @@ Ready to build AI agents and workflows with GenSX Cloud? Follow our step-by-step
 
 1. Install the GenSX CLI: `npm install -g gensx`
 2. Create a new project: `gensx new my-project`
-3. Run it locally: `gensx start src/workflows.tsx`
-4. Deploy to the cloud: `gensx deploy src/workflows.tsx`
+3. Run it locally: `gensx start src/workflows.ts`
+4. Deploy to the cloud: `gensx deploy src/workflows.ts`

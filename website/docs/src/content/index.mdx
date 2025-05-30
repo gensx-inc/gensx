@@ -6,28 +6,27 @@ sidebarTitle: Overview
 
 # GenSX Overview
 
-GenSX is a simple TypeScript framework for building complex LLM applications. It’s a workflow engine designed for building agents, chatbot APIs, and more using common patterns like RAG and reflection. In addition, GenSX Cloud offers serverless hosting, cloud storage, and tracing and observability to build production-ready agents and workflows.
+GenSX is a simple TypeScript framework for building complex LLM applications. It's a workflow engine designed for building agents, chatbot, and long-running workflows. In addition, GenSX Cloud offers serverless hosting, cloud storage, and tracing and observability to build production-ready agents and workflows.
 
-It uses `jsx` to define and orchestrate workflows with functional, reusable components:
+Workflows in GenSX are built by composing functional, reusable components that are composed together in plain old typescript:
 
 {/* prettier-ignore-start */}
 
-```tsx
-const WriteBlog = gensx.Component<WriteBlogProps, string>(
+```ts
+const WriteBlog = gensx.Workflow(
   "WriteBlog",
-  async ({ prompt }) => {
-    return (
-      <WriteDraft prompt={prompt}>
-        {(blog) => (
-          <EditDraft draft={blog}>
-        {(draft) => console.log(draft)}
-      </WriteDraft>
-    )}
-  </WriteBlog>,
+  async ({ prompt }: WriteBlogInput) => {
+
+    const draft = await WriteDraft({ prompt });
+    const editedVersion = await EditDraft({ draft });
+
+    return editedVersion;
+  }
 );
 
-const workflow = gensx.Workflow("WriteBlogWorkflow", WriteBlog);
-const result = await workflow.run({ prompt: "Write a blog post about AI developer tools" });
+const result = await WriteBlog({ prompt: "Write a blog post about AI developer tools" });
+
+console.log(result);
 ```
 
 {/* prettier-ignore-end */}
@@ -38,13 +37,11 @@ Most LLM frameworks are graph oriented, inspired by popular python tools like Ai
 - Global state makes refactoring difficult.
 - All of this leads to low velocity when experimenting with and evolving your LLM workflows.
 
-LLM workflows are fundamentally about function composition and data flow - exactly what JSX was designed to express. There is no need for a graph DSL. GenSX expresses control flow, loops, and recursion using plain old typescript language primitives. To learn more about why GenSX uses JSX, read [Why JSX?](docs/why-jsx).
-
-While GenSX uses JSX, it does not share the same execution model as React, and has zero dependencies.
+With GenSX, building LLM workflows is as simple as just writing TypeScript functions — no need for a graph DSL or special abstractions. You use regular language features like function composition, control flow, and recursion to express your logic. Your functions are just wrapped in the `gensx.Workflow()` and `gensx.Component()` higher order functions to let you take advantage of all the GenSX features. To learn more about why GenSX uses components, read [Why Components?](docs/why-components).
 
 ## GenSX Cloud
 
-[GenSX Cloud](/docs/cloud) provides everything you need to ship production grade agents and workflow including a serverless runtime designed for long-running workloads, cloud storage to build stateful workflows and agents, and tracing and observability.
+[GenSX Cloud](/docs/cloud) provides everything you need to ship production grade agents and workflows including a serverless runtime designed for long-running workloads, cloud storage to build stateful workflows and agents, and tracing and observability.
 
 ### Serverless deployments
 
@@ -94,12 +91,15 @@ Inputs and outputs are recorded for every component that executes in your workfl
 
 Build stateful AI applications with zero configuration using built-in storage primitives that provide managed blob storage, SQL databases, and full-text + vector search:
 
-```tsx
-const ChatWithMemory = gensx.Component<ChatWithMemoryProps, string>(
-  "ChatWithMemory",
-  async (props) => {
-    const { userInput, threadId } = props;
+```ts
+interface ChatWithMemoryInput {
+  userInput: string;
+  threadId: string;
+}
 
+const ChatWithMemory = gensx.Component(
+  "ChatWithMemory",
+  async ({ userInput, threadId }: ChatWithMemoryInput) => {
     // Load chat history from blob storage
     const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
     const history = await blob.getJSON();
@@ -119,92 +119,79 @@ For more details about GenSX Cloud see the [complete cloud reference](/docs/clou
 
 ## Reusable by default
 
-GenSX components are pure functions, depend on zero global state, and are _reusable_ by default. Components accept `props` and return an output.
+GenSX components are pure functions, depend on zero global state, and are _reusable_ by default. Components accept inputs and return an output just like any other function.
 
-```tsx
-interface ResearchTopicProps {
+```ts
+interface ResearchTopicInput {
   topic: string;
 }
-type ResearchTopicOutput = string;
-const ResearchTopic = gensx.Component<ResearchTopicProps, ResearchTopicOutput>(
+
+const ResearchTopic = gensx.Component(
   "ResearchTopic",
-  async ({ topic }) => {
+  async ({ topic }: ResearchTopicInput) => {
     console.log("📚 Researching topic:", topic);
     const systemPrompt = `You are a helpful assistant that researches topics...`;
 
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: topic },
-        ]}
-      />
-    );
+    const result = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: topic },
+      ],
+    });
+
+    return result.text;
   },
 );
 ```
 
-Because components are pure functions, they are easy to test and eval in isolation. This enables you to move quickly and experiment with the structure of your workflow.
+Because components are pure functions, they are easy to test and evaluate in isolation. This enables you to move quickly and experiment with the structure of your workflow.
 
 A second order benefit of reusability is that components can be _shared_ and published to package managers like `npm`. If you build a functional component, you can make it available to the community - something that frameworks that depend on global state preclude by default.
 
 ## Composition
 
-All GenSX components support nesting, a pattern to access component outputs via a child function. This creates a natural way to pass data between steps:
+All GenSX components support composition through standard programming patterns. This creates a natural way to pass data between steps and organize workflows:
 
-```tsx
-export const WriteBlog = gensx.StreamComponent<WriteBlogProps>(
+```ts
+const WriteBlog = gensx.Workflow(
   "WriteBlog",
-  async ({ prompt }) => {
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <Research prompt={prompt}>
-          {(research) => (
-            <WriteDraft prompt={prompt} research={research.flat()}>
-              {(draft) => <EditDraft draft={draft} stream={true} />}
-            </WriteDraft>
-          )}
-        </Research>
-      </OpenAIProvider>
-    );
+  async ({ prompt }: WriteBlogInput) => {
+    const research = await Research({ prompt });
+    const draft = await WriteDraft({ prompt, research: research.flat() });
+    const editedDraft = await EditDraft({ draft });
+    return editedDraft;
   },
 );
 ```
 
-There is no need for a DSL or graph API to define the structure of your workflow. More complex patterns like cycles and agents can be encapsulated in components that use standard loops and conditionals. Typescript and JSX unifies workflow definition and execution in plain old typescript, with the ability to express all of the same patterns.
+There is no need for a DSL or graph API to define the structure of your workflow. Nest components within components, run components in parallel, and use loops and conditionals to create complex workflows just like you would with any other typescript program.
 
 ## Visual clarity
 
-Workflow composition with JSX reads naturally from top to bottom like a standard programming language.
+Workflow composition reads naturally from top to bottom like a standard programming language:
 
-```tsx
-<FetchHNPosts limit={postCount}>
-  {(stories) => (
-    <AnalyzeHNPosts stories={stories}>
-      {({ analyses }) => (
-        <GenerateReport analyses={analyses}>
-          {(report) => (
-            <EditReport content={report}>
-              {(editedReport) => (
-                <WriteTweet
-                  context={editedReport}
-                  prompt="Summarize the HN trends in a tweet"
-                />
-              )}
-            </EditReport>
-          )}
-        </GenerateReport>
-      )}
-    </AnalyzeHNPosts>
-  )}
-</FetchHNPosts>
+```ts
+const AnalyzeHackerNewsTrends = gensx.Workflow(
+  "AnalyzeHackerNewsTrends",
+  async ({ postCount }: { postCount: number }) => {
+    const stories = await FetchHNPosts({ limit: postCount });
+    const { analyses } = await AnalyzeHNPosts({ stories });
+    const report = await GenerateReport({ analyses });
+    const editedReport = await EditReport({ content: report });
+    const tweet = await WriteTweet({
+      context: editedReport,
+      prompt: "Summarize the HN trends in a tweet",
+    });
+
+    return { report: editedReport, tweet };
+  },
+);
 ```
 
 Contrast this with graph APIs, where you need to build a mental model of the workflow from a node/edge builder:
 
-```tsx
+```ts
 const graph = new Graph()
   .addNode("fetchHNPosts", fetchHNPosts)
   .addNode("analyzeHNPosts", analyzePosts)
@@ -221,59 +208,7 @@ graph
   .addEdge("writeTweet", END);
 ```
 
-Nesting makes dependencies explicit, and it is easy to see the data flow between steps. No graph DSL required.
-
-## Streaming baked in
-
-LLMs are unique in that any given call can return a stream or a prompt response, but streaming is typically applied to just the last step. You shouldn't have to touch the innards of your components to experiment with the shape of your workflow.
-
-GenSX makes this easy to handle with `StreamComponent`.
-
-A single component implementation can be used in both streaming and non-streaming contexts by setting the `stream` prop:
-
-```tsx
-const EditDraft = gensx.StreamComponent<EditDraftProps>(
-  "EditDraft",
-  async ({ draft }) => {
-    console.log("🔍 Editing draft");
-    const systemPrompt = `You are a helpful assistant that edits blog posts...`;
-
-    return (
-      <ChatCompletion
-        stream={true}
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: draft },
-        ]}
-      />
-    );
-  },
-);
-```
-
-From there you can use the component in a streaming context:
-
-```tsx
-const stream = await gensx
-  .Workflow("EditDraftWorkflow", EditDraft)
-  .run({ draft, stream: true });
-
-for await (const chunk of stream) {
-  process.stdout.write(chunk);
-}
-```
-
-And you can use the component in a non-streaming context:
-
-```tsx
-const result = await gensx
-  .Workflow("EditDraftWorkflow", EditDraft)
-  .run({ draft, stream: false });
-
-console.log(result);
-```
+Using components to compose workflows makes dependencies explicit, and it is easy to see the data flow between steps. No graph DSL required.
 
 ## Designed for velocity
 
@@ -285,7 +220,7 @@ The typical journey building an LLM application looks like:
 2. Add in evals to measure progress.
 3. Add in external context via RAG.
 4. Break tasks down into smaller discrete LLM calls chained together to improve quality.
-5. Add advanced patterns like reflection, and agents.
+5. Add advanced patterns like memory and self-reflection.
 
 Experimentation speed depends on the ability to refactor, rearrange, and inject new steps. In our experience, this is something that frameworks that revolve around global state and a graph model slow down.
 

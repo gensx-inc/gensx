@@ -32,24 +32,24 @@ import { OpenAI } from "@gensx/openai";
 
 // Create a client as usual
 const client = new OpenAI({
-  apiKey: "your-api-key",
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // All methods are automatically wrapped with GenSX functionality
 const completion = await client.chat.completions.create({
-  model: "gpt-4",
+  model: "gpt-4.1-mini",
   messages: [{ role: "user", content: "Hello!" }],
 });
 
 // Use embeddings
 const embedding = await client.embeddings.create({
-  model: "text-embedding-ada-002",
+  model: "text-embedding-3-small",
   input: "Hello world!",
 });
 
 // Use responses
 const response = await client.responses.create({
-  model: "gpt-4",
+  model: "gpt-4.1-mini",
   messages: [{ role: "user", content: "Hello!" }],
 });
 ```
@@ -65,13 +65,13 @@ import { wrapOpenAI } from "@gensx/openai";
 // Create your OpenAI instance as usual
 const client = wrapOpenAI(
   new OpenAI({
-    apiKey: "your-api-key",
+    apiKey: process.env.OPENAI_API_KEY,
   }),
 );
 
 // Now all methods are wrapped with GenSX functionality
 const completion = await client.chat.completions.create({
-  model: "gpt-4",
+  model: "gpt-4.1-mini",
   messages: [{ role: "user", content: "Hello!" }],
 });
 ```

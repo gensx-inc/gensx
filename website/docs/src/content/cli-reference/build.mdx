@@ -15,9 +15,9 @@ gensx build <file> [options]
 
 ## Arguments
 
-| Argument | Description                                                                                                    |
-| -------- | -------------------------------------------------------------------------------------------------------------- |
-| `<file>` | Workflow file to build (e.g., `src/workflows.tsx`). This should export an object with one or more GenSX workflows |
+| Argument | Description                                                                                                      |
+| -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `<file>` | Workflow file to build (e.g., `src/workflows.ts`). This should export an object with one or more GenSX workflows |
 
 ## Options
 
@@ -42,13 +42,13 @@ After building, the command outputs the path to the bundled file, which can be u
 
 ```bash
 # Build a workflow with default options
-gensx build src/workflows.tsx
+gensx build src/workflows.ts
 
 # Build a workflow with a custom output directory
-gensx build src/workflows.tsx --out-dir ./dist
+gensx build src/workflows.ts --out-dir ./dist
 
 # Build a workflow with a custom TypeScript configuration
-gensx build src/workflows.tsx --tsconfig ./custom-tsconfig.json
+gensx build src/workflows.ts --tsconfig ./custom-tsconfig.json
 ```
 
 ## Notes

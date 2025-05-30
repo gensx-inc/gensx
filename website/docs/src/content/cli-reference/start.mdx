@@ -21,11 +21,11 @@ gensx start <file> [options]
 
 ## Options
 
-| Option                 | Description                        |
-| ---------------------- | ---------------------------------- |
-| `--port <port>`        | Port to run the server on.         |
-| `-q, --quiet`          | Suppress output.                   |
-| `-h, --help`           | Display help for the command.      |
+| Option          | Description                   |
+| --------------- | ----------------------------- |
+| `--port <port>` | Port to run the server on.    |
+| `-q, --quiet`   | Suppress output.              |
+| `-h, --help`    | Display help for the command. |
 
 ## Description
 
@@ -46,18 +46,13 @@ The development server includes:
 
 ```bash
 # Start server with a specific workflow file
-gensx start src/workflows.tsx
+gensx start src/workflows.ts
 
-<<<<<<< HEAD
 # Start server with minimal output
-gensx start src/workflows.tsx --quiet
-=======
-# Start server with a custom project name
-gensx start src/workflows.tsx --project my-custom-name
+gensx start src/workflows.ts --quiet
 
 # Start server on port 3000
-gensx start src/workflows.tsx --port 3000
->>>>>>> 4c75b171c6cd6b0bd9779d07cc1ca5b9e1679e0b
+gensx start src/workflows.ts --port 3000
 ```
 
 ## Notes

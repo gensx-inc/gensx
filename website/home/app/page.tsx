@@ -24,38 +24,37 @@ export default function Home() {
 
   const examples: Record<ExampleType, string | React.ReactNode> = {
     components: `import * as gensx from '@gensx/core';
-import { ChatCompletion } from '@gensx/openai';
+import { generateText } from '@gensx/vercel-ai';
+import { openai } from '@ai-sdk/openai';
 
 interface WriteDraftProps {
   research: string[];
   prompt: string;
 }
 
-const WriteDraft = gensx.Component<WriteDraftProps, string>(
+const WriteDraft = gensx.Component(
   "WriteDraft",
-  ({ prompt, research }) => {
+  async ({ research, prompt }: WriteDraftProps) => {
     const systemMessage = \`You're an expert technical writer.
     Use the information when responding to users: \${research}\`;
 
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          {
-            role: "system",
-            content: systemMessage
-          },
-          {
-            role: "user",
-            content: \`Write a blog post about \${prompt}\`
-          },
-        ]}
-      />
-    );
-  },
-);
-`,
+    const result = await generateText({
+      messages: [
+        {
+          role: "system",
+          content: systemMessage
+        },
+        {
+          role: "user",
+          content: \`Write a blog post about \${prompt}\`
+        },
+      ],
+      model: openai("gpt-4.1-mini"),
+    });
+
+    return result.text;
+  }
+);`,
     observability: (
       <div className="relative">
         <Image
@@ -69,40 +68,49 @@ const WriteDraft = gensx.Component<WriteDraftProps, string>(
       </div>
     ),
     stateful: `import * as gensx from '@gensx/core';
-import { GSXTool, OpenAIEmbedding } from '@gensx/openai';
+import { embed } from '@gensx/vercel-ai';
 import { useBlob, useDatabase, useSearch } from '@gensx/storage';
+import { tool } from 'ai';
 
-// RAG Tool - Vector search for knowledge retrieval
-const RAGTool = new GSXTool({
-  name: "search_knowledge",
-  run: async ({ query }) => {
-    const docsIndex = useSearch("documentation");
-    const embeddings = await OpenAIEmbedding.run({
-      model: "text-embedding-3-small",
+// Retrieve relevant information with vector search
+const RAGTool = tool({
+  description: "Search through documentation using vector similarity",
+  parameters: z.object({
+    query: z.string().describe("The search query to find relevant documentation")
+  }),
+  execute: async ({ query }) => {
+    const docs = await useSearch("documentation");
+    const { embeddings } = await embed({
+      model: openai.embedding("text-embedding-3-small"),
       input: query,
     });
-    return await docsIndex.query({ vector: embeddings.data[0].embedding, topK: 3 });
+    return await docs.query({ vector: embedding, topK: 3 });
   }
 });
 
-// SQL Tool - Analyze structured data
-const SQLTool = new GSXTool({
-  name: "query_database",
-  run: async ({ sql }) => {
+// Analyze structured data with SQL
+const SQLTool = tool({
+  description: "Execute SQL queries on the analytics database",
+  parameters: z.object({
+    sql: z.string().describe("The SQL query to execute")
+  }),
+  execute: async ({ sql }) => {
     const db = await useDatabase("analytics");
     return await db.execute(sql);
   }
 });
 
-// Memory Tool - Persist conversation history
-const MemoryTool = new GSXTool({
-  name: "manage_memory",
-  run: async ({ userId, save, retrieve }) => {
-    const blob = useBlob(\`users/\${userId}/memory.json\`);
-    if (save) return await blob.putJSON(save);
-    return await blob.getJSON() || [];
-  }
-});`,
+// Save and load chat history
+const loadChatHistory = async (): Promise<ChatMessage[]> => {
+  const blob = useBlob<ChatMessage[]>(\`chat-history/\${threadId}.json\`);
+  const history = await blob.getJSON();
+  return history ?? [];
+};
+const saveChatHistory = async (messages: ChatMessage[]) => {
+  const blob = useBlob<ChatMessage[]>(\`chat-history/\${threadId}.json\`);
+  await blob.putJSON(messages);
+};
+`,
     serverless: (
       <div className="relative">
         <Image

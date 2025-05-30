@@ -1,0 +1,108 @@
+---
+title: Why Components?
+description: Why GenSX uses components for workflow composition
+---
+
+# Why Components?
+
+GenSX uses components for building workflows and focuses on composition over abstraction. Many LLM and agent frameworks add abstractions to make it easier to get up and running but this approach takes you farther away from the underlying models and can make it harder to understand, debug, and improve your workflows.
+
+Components in GenSX take inspiration from React's programming model, but are designed to be used for building the backend of your LLM applications. Components offer many benefits: they're re-usable, idempotent, and can be tested in isolation. They also provide good boundaries for tracing, retries, and error handling.
+
+This page explains why JSX is a perfect fit for anyone building LLM applications, whether it be simple linear workflows or complex cyclical agents. At the end of the day, building agents and workflows is all about constructing a dataflow graph. And agents in particular need to dynamically branch and execute conditionally at runtime. This is exactly what GenSX excels at.
+
+## Why not graphs?
+
+Graph APIs are the standard for LLM frameworks. They provide APIs to define nodes, edges between those nodes, and a global state object that is passe around the workflow.
+
+A workflow for writing a blog post might look like this:
+
+```ts
+const graph = new Graph()
+  .addNode("fetchHNPosts", FetchHNPosts)
+  .addNode("analyzeHNPosts", AnalyzeHNPosts)
+  .addNode("generateReport", GenerateReport)
+  .addNode("editReport", EditReport)
+  .addNode("writeTweet", WriteTweet);
+
+graph
+  .addEdge(START, "fetchHNPosts")
+  .addEdge("fetchHNPosts", "analyzeHNPosts")
+  .addEdge("analyzeHNPosts", "generateReport")
+  .addEdge("generateReport", "editReport")
+  .addEdge("editReport", "writeTweet")
+  .addEdge("writeTweet", END);
+```
+
+Can you easily read this code and visualize the workflow?
+
+On the other hand, the same workflow with GenSX reads top to bottom like normal code:
+
+```ts
+const AnalyzeHackerNewsTrends = gensx.Workflow(
+  "AnalyzeHackerNewsTrends",
+  async ({ postCount }) => {
+    const stories = await FetchHNPosts({ limit: postCount });
+    const { analyses } = await AnalyzeHNPosts({ stories });
+    const report = await GenerateReport({ analyses });
+    const editedReport = await EditReport({ content: report });
+    const tweet = await WriteTweet({
+      context: editedReport,
+      prompt: "Summarize the HN trends in a tweet",
+    });
+
+    return { report: editedReport, tweet };
+  },
+);
+```
+
+As you'll see in the next section, trees are just another kind of graph and you can express all of the same things.
+
+## Graphs, DAGs, and trees
+
+Most workflow frameworks use explicit graph construction with nodes and edges. This makes sense - workflows are fundamentally about connecting steps together, and graphs are a natural way to represent these connections.
+
+However, using components lets you express trees and trees are just a special kind of graph - one where each node has a single parent. At first glance, this might seem more restrictive than a general graph. But JSX gives us something powerful: the ability to express _programmatic_ trees.
+
+Consider a cycle in a workflow:
+
+```ts
+const Reflection = gensx.Component("Reflection", async () => {
+  let { needsWork, feedback } = await EvaluateFn({ input });
+  let improvedInput = input;
+
+  while (needsWork) {
+    improvedInput = await ImproveFn({ input: improvedInput, feedback });
+    ({ needsWork, feedback } = await EvaluateFn({ input: improvedInput }));
+  }
+  return improvedInput;
+});
+```
+
+Typescript and components allow you to express cycles through normal programming constructs. This gives you the best of both worlds:
+
+- Visual clarity of a tree structure
+- Full expressiveness of a graph API
+- Natural control flow through standard TypeScript
+- No explicit edge definitions needed
+
+## Pure functional components
+
+GenSX uses a functional component model, enabling you to compose your workflows from discrete, reusable steps.
+
+Functional and reusable components can be published and shared on `npm`, and it's easy to test and evaluate them in isolation.
+
+Writing robust evals is the difference between a prototype and a high quality AI app. Usually you start with end to end evals, but as workflows grow these become expensive, take a long time to run, and it can be difficult to isolate and understand the impact of changes in your workflow.
+
+By breaking down your workflow into discrete components, you can write more focused evals that are easier to run, faster to complete, and test the impact of specific changes in your workflow.
+
+## Programming language native
+
+TypeScript and components give you everything you need to build complex workflows:
+
+- Conditionals via `if`, `??`, and other standard primitives
+- Looping via `for` and `while`
+- Vanilla function calling
+- Type safety
+
+No DSL required, just standard TypeScript.

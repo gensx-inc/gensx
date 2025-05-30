@@ -11,12 +11,11 @@ Breaking down complex tasks into smaller, discrete steps is one of the best ways
 
 The Blog Writer workflow consists of the following steps:
 
-1. Parallel research phase:
-   - Brainstorm topics using LLM (`<BrainstormTopics>`)
-   - Research each topic in detail (`<ResearchTopic>`)
-   - Gather web research (`<SearchWeb>`)
-2. Write initial draft based on research (`<WriteDraft>`)
-3. Edit and polish the content (`<EditDraft>`)
+1. Research phase:
+   - Brainstorm topics using LLM (`BrainstormTopics`)
+   - Research each topic in detail (`ResearchTopic`)
+2. Write initial draft based on research (`WriteDraft`)
+3. Edit and polish the content (`EditDraft`)
 
 ## Running the example
 
@@ -38,53 +37,64 @@ pnpm run start
 
 ### Running components in parallel
 
-The `<Research>` component runs both the `BrainstormTopics` and `SearchWeb` components in parallel. Both sub-workflows return an array of strings which are automatically combined into a single array.
+The `Research` component processes multiple topics in parallel using `Promise.all`. It first gets a list of topics from `BrainstormTopics` and then researches each topic concurrently:
 
-```tsx
-const Research = gensx.Component<ResearchComponentProps, ResearchOutput>(
+```ts
+const Research = gensx.Component(
   "Research",
-  ({ prompt }) => {
-    return (
-      <>
-        <BrainstormTopics prompt={prompt}>
-          {({ topics }) => {
-            return topics.map((topic) => <ResearchTopic topic={topic} />);
-          }}
-        </BrainstormTopics>
-        <SearchWeb prompt={prompt} />
-      </>
+  async ({ prompt }: ResearchProps): Promise<ResearchOutput> => {
+    const brainstorm = await BrainstormTopics({ prompt });
+
+    const research = await Promise.all(
+      brainstorm.topics.map((topic) => ResearchTopic({ topic })),
     );
+    return [research, brainstorm.topics];
   },
 );
 ```
 
-### Streaming Output
+### Tool usage in components
 
-The workflow streams back the final output to reduce the time that it takes for the user to receive the first token. The `<EditDraft>` component is a [`StreamComponent`](/docs/basic-concepts#component-types) and the `<ChatCompletion>` component has `stream={true}`.
+The `ResearchTopic` component shows how you can automatically process tools using `@gensx/openai` and OpenAI's `runTools` helper.
 
-```tsx
-const EditDraft = gensx.StreamComponent<EditDraftProps>(
-  "EditDraft",
-  ({ draft }) => {
-    return (
-      <ChatCompletion
-        stream={true}
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          { role: "system", content: systemPrompt },
-          { role: "user", content: draft },
-        ]}
-      />
-    );
+```ts
+const ResearchTopic = gensx.Component(
+  "ResearchTopic",
+  async ({ topic }: ResearchTopicProps) => {
+    const runner = await openai.beta.chat.completions.runTools({
+      model: "gpt-4o-mini",
+      temperature: 0,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: topic },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "research",
+            description: "Research a topic",
+            parameters: {
+              type: "object",
+              properties: {
+                topic: {
+                  type: "string",
+                },
+              },
+            },
+            parse: JSON.parse,
+            function: (args: { topic: string }) => {
+              console.log("🔍 Research tool:", args.topic);
+              return `You researched the topic ${args.topic} and found the following: ${args.topic}`;
+            },
+          },
+        },
+      ],
+    });
+
+    return (await runner.finalContent()) ?? "";
   },
 );
-```
-
-Then when the component is invoked, `stream={true}` is passed to the component so that the output is streamed back and can be surfaced to the user:
-
-```tsx
-<EditDraft draft={draft} stream={true} />
 ```
 
 ## Additional resources

@@ -5,11 +5,11 @@ description: Using GenSX with OpenRouter
 
 # OpenRouter
 
-[OpenRouter](https://openrouter.ai) provides a unified API to access various AI models from different providers. You can use GenSX with OpenRouter by configuring the OpenAIProvider component with OpenRouter's API endpoint.
+[OpenRouter](https://openrouter.ai) provides a unified API to access various AI models from different providers. You can use GenSX with OpenRouter by configuring the OpenAI client with OpenRouter's API endpoint.
 
 ## Installation
 
-To use OpenRouter with GenSX, you need to install the OpenAI package:
+To use OpenRouter with GenSX, you need to install the [`@gensx/openai`](/docs/component-reference/openai) package:
 
 ```bash
 npm install @gensx/openai
@@ -17,26 +17,23 @@ npm install @gensx/openai
 
 ## Configuration
 
-Configure the `OpenAIProvider` with your OpenRouter API key and the OpenRouter base URL:
+Configure the OpenAI client with your OpenRouter API key and the OpenRouter base URL:
 
-```tsx
-import { OpenAIProvider } from "@gensx/openai";
+```ts
+import { OpenAI } from "@gensx/openai";
 
-<OpenAIProvider
-  apiKey={process.env.OPENROUTER_API_KEY}
-  baseURL="https://openrouter.ai/api/v1"
->
-  {/* Your components here */}
-</OpenAIProvider>;
+const client = new OpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: "https://openrouter.ai/api/v1",
+});
 ```
 
 ## Example Usage
 
 Here's a complete example of using OpenRouter with GenSX:
 
-```tsx
-import * as gensx from "@gensx/core";
-import { ChatCompletion, OpenAIProvider } from "@gensx/openai";
+```ts
+import { OpenAI } from "@gensx/openai";
 
 interface RespondProps {
   userInput: string;
@@ -45,41 +42,33 @@ type RespondOutput = string;
 
 const GenerateText = gensx.Component<RespondProps, RespondOutput>(
   "GenerateText",
-  ({ userInput }) => (
-    <ChatCompletion
-      model="anthropic/claude-3.7-sonnet"
-      messages={[
+  async ({ userInput }) => {
+    const result = await client.chat.completions.create({
+      model: "anthropic/claude-sonnet-4",
+      messages: [
         {
           role: "system",
           content: "You are a helpful assistant. Respond to the user's input.",
         },
         { role: "user", content: userInput },
-      ]}
-      provider={{
+      ],
+      provider: {
         ignore: ["Anthropic"],
-      }}
-    />
-  ),
+      },
+    });
+    return result.choices[0].message.content ?? "";
+  },
 );
 
-const OpenRouterExampleComponent = gensx.Component<
-  { userInput: string },
-  string
->("OpenRouter", ({ userInput }) => (
-  <OpenAIProvider
-    apiKey={process.env.OPENROUTER_API_KEY}
-    baseURL="https://openrouter.ai/api/v1"
-  >
-    <GenerateText userInput={userInput} />
-  </OpenAIProvider>
-));
-
-const workflow = gensx.Workflow(
-  "OpenRouterWorkflow",
-  OpenRouterExampleComponent,
+const OpenRouterWorkflow = gensx.Component<{ userInput: string }, string>(
+  "OpenRouter",
+  async ({ userInput }: { userInput: string }) => {
+    const result = await GenerateText({ userInput });
+    return result;
+  },
 );
 
-const result = await workflow.run({
+const result = await OpenRouterWorkflow.run({
   userInput: "Hi there! Write me a short story about a cat that can fly.",
 });
 ```
@@ -88,30 +77,28 @@ const result = await workflow.run({
 
 When using OpenRouter, you can specify models using their full identifiers:
 
-- `anthropic/claude-3.7-sonnet`
-- `openai/gpt-4o`
-- `google/gemini-1.5-pro`
-- `mistral/mistral-large-latest`
+- `anthropic/claude-sonnet-4`
+- `openai/gpt-4.1`
+- `google/gemini-2.5-pro-preview`
+- `meta-llama/llama-3.3-70b-instruct`
 
 Check the [OpenRouter documentation](https://openrouter.ai/docs) for a complete list of available models.
 
 ## Provider Options
 
-You can use the `provider` property in the `ChatCompletion` component to specify OpenRouter-specific options:
+You can use the `provider` property in the `openai.chat.completions.create` method to specify OpenRouter-specific options:
 
 ```tsx
-<ChatCompletion
-  model="anthropic/claude-3.7-sonnet"
-  messages={
-    [
-      /* your messages */
-    ]
-  }
-  provider={{
+openai.chat.completions.create({
+  model: "anthropic/claude-sonnet-4",
+  messages: [
+    /* your messages */
+  ],
+  provider: {
     ignore: ["Anthropic"], // Ignore specific providers
     route: "fallback", // Use fallback routing strategy
-  }}
-/>
+  },
+});
 ```
 
 ## Learn More
