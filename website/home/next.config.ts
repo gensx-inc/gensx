@@ -31,6 +31,11 @@ const nextConfig = {
         destination: `/docs`,
         permanent: false,
       },
+      {
+        source: "/docs/why-jsx",
+        destination: "/docs/why-components",
+        permanent: false,
+      },
     ];
   },
 };

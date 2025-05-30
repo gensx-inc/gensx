@@ -2,7 +2,7 @@ const meta = {
   index: "Overview",
   "basic-concepts": "Basic concepts",
   quickstart: "Quickstart",
-  "why-jsx": "Why JSX?",
+  "why-components": "Why Components?",
   "how-gensx-works": "How GenSX works",
   cloud: "GenSX Cloud ",
   "component-reference": "Components reference",
