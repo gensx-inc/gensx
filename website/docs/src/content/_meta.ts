@@ -3,7 +3,6 @@ const meta = {
   "basic-concepts": "Basic concepts",
   quickstart: "Quickstart",
   "why-components": "Why Components?",
-  "how-gensx-works": "How GenSX works",
   cloud: "GenSX Cloud ",
   "component-reference": "Components reference",
   patterns: "Patterns",
