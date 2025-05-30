@@ -1,15 +1,14 @@
 ---
 description: How to use the gensx package
-globs: 
+globs:
 alwaysApply: true
 ---
 # GenSX Syntax Quick Reference
 
-GenSX is a TypeScript framework that uses JSX to build and orchestrate LLM workflows. This reference focuses on syntax for:
+GenSX is a TypeScript framework used to build and orchestrate LLM workflows. This reference focuses on syntax for:
 
-- **Components & Workflows**  
-- **Providers & Contexts**  
-- **Integrations with OpenAI, Anthropic, and MCP packages**
+- **Components & Workflows**
+- **Integrations with OpenAI, Anthropic, Vercel AI SDK**
 
 ---
 
@@ -17,157 +16,130 @@ GenSX is a TypeScript framework that uses JSX to build and orchestrate LLM workf
 
 ### Defining a Basic Component
 
-Use `gensx.Component` to create a reusable, pure function component. The component accepts typed props and returns an output (synchronously or asynchronously).
+Use `gensx.Component` to create a reusable component. The component accepts a typed input and returns an output (synchronously or asynchronously).
 
 ```tsx
 import * as gensx from "@gensx/core";
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "@gensx/vercel-ai";
 
-interface GreetUserProps {
+interface GreetingInput {
   name: string;
+  formal?: boolean;
 }
-type GreetUserOutput = string;
 
-const GreetUser = gensx.Component<GreetUserProps, GreetUserOutput>(
-  "GreetUser",
-   async ({ name }) => {
-      return `Hello, ${name}!`;
+const Greeting = gensx.Component(
+  "Greeting",
+  async ({ name, formatOutput = false, formal = false }: GreetingInput) => {
+    const result = await generateText({
+      model: openai("gpt-4.1-mini"),
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a friendly assistant that creates personalized greetings. You can adjust your tone based on whether the greeting should be formal or informal.",
+        },
+        {
+          role: "user",
+          content: `Create a ${formal ? "formal" : "casual"} greeting for ${name}. Keep it concise and ${formal ? "professional" : "warm"}.`,
+        },
+      ],
+    });
+    return result.text;
   },
 );
 ```
 
-### Nested Components & Child Functions
 
-Components can be nested to pass outputs using a child function. This pattern creates a clear, top-to-bottom dataflow.
+To run a component, you just call it like a function:
 
-```tsx
-const Parent = gensx.Component<{ input: string }, string>(
-  "Parent",
-  ({ input }) => (
-    <Child input={input}>
-      {(childOutput) => {
-        return `Result: ${childOutput}`;
-      }}
-    </Child>
-  )
-);
-
-const Child = gensx.Component<{ input: string }, string>(
-  "Child",
-  async ({ input }) => {
-    return input.toUpperCase();
-  }
-);
-```
-
-### Streaming Components
-
-For LLM calls that return streams, use `gensx.StreamComponent`.
-
-```tsx
-interface StreamProps {
-  prompt: string;
-}
-const StreamChat = gensx.StreamComponent<StreamProps>(
-  "StreamChat",
-  async ({ prompt }) => (
-    <ChatCompletion
-      model="gpt-4o-mini"
-      stream={true}
-      messages={[{ role: "user", content: prompt }]}
-    />
-  )
-);
+```typescript
+const greeting = await Greeting({ name: "John", formal: true });
 ```
 
 ---
 
 ## 2. Workflows
 
-A workflow is a runnable component tree. Define a workflow with `gensx.Workflow` and run it with `.run(props)`.
+A workflow is a runnable component tree. Define a workflow with `gensx.Workflow` and run it just like you'd run any function.
 
-```tsx
-const WorkflowComponent = gensx.Component<{ userInput: string }, string>(
-  "WorkflowComponent",
-  ({ userInput }) => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          { role: "system", content: "You are helpful." },
-          { role: "user", content: userInput },
-        ]}
-      />
-    </OpenAIProvider>
-  )
+```typescript
+// Main workflow that combines components
+const WelcomeWorkflow = gensx.Workflow(
+  "WelcomeWorkflow",
+  async ({ name }: GreetingInput) => {
+    // Determine if we should use formal greeting based on time of day
+    const hour = new Date().getHours();
+    const isFormal = hour >= 9 && hour <= 17;
+
+    const greeting = await Greeting({
+      name,
+      formal: isFormal,
+    });
+
+    return {
+      greeting,
+      isFormal,
+      timestamp: new Date().toISOString(),
+    };
+  },
 );
 
-const workflow = gensx.Workflow("MyWorkflow", WorkflowComponent);
-const result = await workflow.run({ userInput: "Tell me a joke." });
-console.log(result);
+export { WelcomeWorkflow };
 ```
+
+Similar to components, workflows are run just like a function. All workflows need to be exported from the workflows.ts file so that they can be deployed.
 
 ---
 
-## 3. Providers & Contexts
+## 3. LLM Providers
 
-Providers supply configuration (like API keys) to components without prop drilling.
+In addition to the Vercel AI SDK, GenSX has built in support for the OpenAI SDK, and the Anthropic SDK.
 
-### OpenAIProvider
+### OpenAI
 
-The `OpenAIProvider` component initializes and provides an OpenAI client instance to all child components. 
+By default, you should import `OpenAI` from `@gensx/openai` and use it like this:
 
-By configuring the baseURL, you can also use the OpenAIProvider with other OpenAI compatible APIs like Groq and x.AI:
+```typescript
+import { OpenAI } from "@gensx/openai";
 
-```tsx
-<OpenAIProvider
-  apiKey="your-api-key" // Your Groq API key
-  baseURL="https://api.groq.com/openai/v1"
-/>
+const openai = new OpenAI();
 ```
 
-### Custom Provider Example
+However, you can also import the `openai` library directly and import `wrapOpenAI` from `@gensx/openai` to wrap it in a GenSX provider.
 
-Creating a custom provider (e.g., Firecrawl):
+```typescript
+import { OpenAI } from "openai";
+import { wrapOpenAI } from "@gensx/openai";
 
-```tsx
-const FirecrawlProvider = gensx.Component<FirecrawlAppConfig, never>(
-  "FirecrawlProvider",
-  (config) => {
-    const client = new FirecrawlApp({ apiKey: config.apiKey });
-    return <FirecrawlContext.Provider value={{ client }} />;
-  },
-  { secretProps: ["apiKey"] }
-);
+const openai = wrapOpenAI(new OpenAI());
 ```
 
-### Context Usage
+### Anthropic
 
-Access a context using `gensx.useContext`.
+Both options are also available for Anthropic.
 
-```tsx
-const UserContext = gensx.createContext({ name: "" });
+```typescript
+import { Anthropic } from "@gensx/anthropic";
 
-const GreetUser = gensx.Component<{}, string>("GreetUser", () => {
-  const user = gensx.useContext(UserContext);
-  return `Hello, ${user.name}!`;
-});
-
-const ContextExample = gensx.Component<{}, string>("ContextExample", () => (
-  <UserContext.Provider value={{ name: "Alice" }}>
-    <GreetUser />
-  </UserContext.Provider>
-));
+const anthropic = new Anthropic();
 ```
 
-# Summary
+```typescript
+import { Anthropic } from "anthropic";
+import { wrapAnthropic } from "@gensx/anthropic";
 
-- **Components:** Define workflows using `gensx.Component` and nest outputs via child functions.
-- **Workflows:** Create with `gensx.Workflow("Name", Component)` and execute with `.run()`.
-- **Providers & Contexts:** Inject configuration (e.g., API keys) via providers like `OpenAIProvider` or custom providers.
-- **Integrations:**  
+const anthropic = wrapAnthropic(new Anthropic());
+```
+
+## Summary
+
+- **Components:** Define components using `gensx.Component("Name", fn)`
+- **Workflows:** Create with `gensx.Workflow("Name", fn )` and execute like you would any function
+- **Integrations:**
 @file ./gensx-openai.mdc
--  Use `GSXChatCompletion`, `ChatCompletion`, or `OpenAIChatCompletion` within `OpenAIProvider`.  
-@file ./gensx-anthropic.mdc 
-- Similar patterns with `AnthropicProvider` and respective chat components.  
-@file ./gensx-mcp.mdc 
-- Leverage `createMCPServerContext` to access MCP resources and tools.
+- Use the OpenAI SDK with GenSX
+@file ./gensx-anthropic.mdc
+- Use the Anthropic SDK with GenSX
+@file ./gensx-ai-sdk.mdc
+- Use the Vercel AI SDK with GenSX

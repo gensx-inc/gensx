@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.34](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.33...gensx-v0.3.34) (2025-05-30)
+
+
+### ✨ New Features
+
+* upgrading template from alpha to stable package versions ([#718](https://github.com/gensx-inc/gensx/issues/718)) ([5f5890a](https://github.com/gensx-inc/gensx/commit/5f5890a9e437f51b5b23110b7487bb5c11ce4bce))
+
 ## [0.3.33](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.32...gensx-v0.3.33) (2025-05-29)
 
 

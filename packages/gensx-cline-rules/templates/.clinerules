@@ -11,14 +11,12 @@ This file serves as guidance for Cline when working with GenSX projects.
 ### Development
 
 ```bash
-# Run the workflow after changes
-npm run dev
 
 # Build the project
 npm run build
 
-# Run the workflow once
-npm run start
+# Run the workflow
+npm run dev
 ```
 
 ## Code Style Preferences
@@ -27,7 +25,7 @@ npm run start
 - Prefer async/await over promise chains
 - Add proper JSDoc comments for all exported functions and types
 - Use consistent naming conventions:
-  - Components: PascalCase
+  - Components and workflows: PascalCase
   - Functions: camelCase
   - Constants: UPPER_SNAKE_CASE
   - Types/Interfaces: PascalCase
@@ -36,80 +34,115 @@ npm run start
 
 ### Component Definition
 
+Components are the building blocks of GenSX applications. Here's a basic example of a GenSX component:
+
 ```typescript
-interface GreetingProps {
+import * as gensx from "@gensx/core";
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "@gensx/vercel-ai";
+
+interface GreetingInput {
   name: string;
-  formatOutput?: boolean;
+  formal?: boolean;
 }
 
-const Greeting = gensx.Component<GreetingProps, string>(
+const Greeting = gensx.Component(
   "Greeting",
-  async ({ name, formatOutput = false }) => {
-    const greeting = `Hello, ${name}!`;
-    return formatOutput ? `## ${greeting}` : greeting;
+  async ({ name, formatOutput = false, formal = false }: GreetingInput) => {
+    const result = await generateText({
+      model: openai("gpt-4.1-mini"),
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a friendly assistant that creates personalized greetings. You can adjust your tone based on whether the greeting should be formal or informal.",
+        },
+        {
+          role: "user",
+          content: `Create a ${formal ? "formal" : "casual"} greeting for ${name}. Keep it concise and ${formal ? "professional" : "warm"}.`,
+        },
+      ],
+    });
+    return result.text;
   },
 );
 ```
 
-### Provider Usage
+To run a component, you just call it like a function.
 
 ```typescript
-const MyWorkflow = gensx.Component(
-  "MyWorkflow",
-  () => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          { role: "system", content: "You are a helpful assistant." },
-          { role: "user", content: "Tell me about GenSX." }
-        ]}
-      />
-    </OpenAIProvider>
-  )
-);
+const greeting = await Greeting({ name: "John", formal: true });
 ```
 
-### Component Nesting with Child Functions
+### Workflow Definition
+
+Workflows are a special type of component in GenSX. While components are the re-usable building blocks of your application, workflows are the top-level components that handle the orchestration and serve as the entry point for your application.
 
 ```typescript
-const ParentComponent = gensx.Component(
-  "ParentComponent",
-  () => (
-    <ChildComponent input="data">
-      {(childOutput) => `Result: ${childOutput}`}
-    </ChildComponent>
-  )
+// Main workflow that combines components
+const WelcomeWorkflow = gensx.Workflow(
+  "WelcomeWorkflow",
+  async ({ name }: GreetingInput) => {
+    // Determine if we should use formal greeting based on time of day
+    const hour = new Date().getHours();
+    const isFormal = hour >= 9 && hour <= 17;
+
+    const greeting = await Greeting({
+      name,
+      formal: isFormal,
+    });
+
+    return {
+      greeting,
+      isFormal,
+      timestamp: new Date().toISOString(),
+    };
+  },
 );
+
+export { WelcomeWorkflow };
 ```
 
-## LLM Provider Configuration
+Similar to components, workflows are run just like a function. All workflows need to be exported from the workflows.ts file so that they can be deployed.
+
+## LLM Providers
+
+In addition to the Vercel AI SDK, GenSX has build in support for the OpenAI SDK, and the Anthropic SDK.
 
 ### OpenAI
 
+By default, you should import `OpenAI` from `@gensx/openai` and use it like this:
+
 ```typescript
-<OpenAIProvider
-  apiKey={process.env.OPENAI_API_KEY}
-  defaultOptions={{ temperature: 0.7 }}
-/>
+import { OpenAI } from "@gensx/openai";
+
+const openai = new OpenAI();
+```
+
+However, you can also import the `openai` library directly and import `wrapOpenAI` from `@gensx/openai` to wrap it in a GenSX provider.
+
+```typescript
+import { OpenAI } from "openai";
+import { wrapOpenAI } from "@gensx/openai";
+
+const openai = wrapOpenAI(new OpenAI());
 ```
 
 ### Anthropic
 
+Both options are also available for Anthropic.
+
 ```typescript
-<AnthropicProvider
-  apiKey={process.env.ANTHROPIC_API_KEY}
-  defaultOptions={{ temperature: 0.7 }}
-/>
+import { Anthropic } from "@gensx/anthropic";
+
+const anthropic = new Anthropic();
 ```
 
-### Model Control Protocol (MCP)
-
 ```typescript
-const { Provider: MCPProvider } = createMCPServerContext({
-  serverCommand: "npx",
-  serverArgs: ["-y", "@mcp-server/package"],
-});
+import { Anthropic } from "anthropic";
+import { wrapAnthropic } from "@gensx/anthropic";
+
+const anthropic = wrapAnthropic(new Anthropic());
 ```
 
 <!-- END_MANAGED_SECTION -->
