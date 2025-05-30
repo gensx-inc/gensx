@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.7...gensx-claude-md-v0.1.8) (2025-05-30)
+
+
+### ✨ New Features
+
+* updating ai rules to programming model v2 ([#721](https://github.com/gensx-inc/gensx/issues/721)) ([20fbfe3](https://github.com/gensx-inc/gensx/commit/20fbfe3b1311fd20231739ef2e7b8be359e7ff5e))
+
 ## [0.1.7](https://github.com/gensx-inc/gensx/compare/gensx-claude-md-v0.1.6...gensx-claude-md-v0.1.7) (2025-05-28)
 
 
