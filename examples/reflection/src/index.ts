@@ -1,4 +1,4 @@
-import { ReflectionWorkflow } from "./workflows.js";
+import { ImproveTextWithReflection } from "./workflows.js";
 
 async function main() {
   // Get text from command line arguments or use default text
@@ -13,7 +13,7 @@ Through our holistic approach to disruptive innovation, we create game-changing 
   console.log("📝 Input text:\n", text);
   console.log("=".repeat(50));
 
-  const improvedText = await ReflectionWorkflow({ text });
+  const improvedText = await ImproveTextWithReflection({ text });
   console.log("🎯 Final text:\n", improvedText);
 }
 

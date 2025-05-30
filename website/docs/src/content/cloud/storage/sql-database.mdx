@@ -24,21 +24,9 @@ To use SQL databases in your GenSX application:
    npm install @gensx/storage
    ```
 
-2. Add the `DatabaseProvider` to your workflow:
+2. Access databases within your components using the `useDatabase` hook:
 
-   ```tsx
-   import { DatabaseProvider } from "@gensx/storage";
-
-   const Workflow = ({ input }) => (
-     <DatabaseProvider>
-       <YourComponent input={input} />
-     </DatabaseProvider>
-   );
-   ```
-
-3. Access databases within your components using the `useDatabase` hook:
-
-   ```tsx
+   ```ts
    import { useDatabase } from "@gensx/storage";
 
    const db = await useDatabase("my-database");
@@ -48,7 +36,7 @@ To use SQL databases in your GenSX application:
 
 The simplest way to interact with a database is by executing SQL queries:
 
-```tsx
+```ts
 import * as gensx from "@gensx/core";
 import { useDatabase } from "@gensx/storage";
 
@@ -74,7 +62,7 @@ const QueryTeamStats = gensx.Component("QueryTeamStats", async ({ team }) => {
 
 You can create database schema and populate it with data:
 
-```tsx
+```ts
 const InitializeDatabase = gensx.Component("InitializeDatabase", async () => {
   const db = await useDatabase("baseball");
 
@@ -117,20 +105,21 @@ const InitializeDatabase = gensx.Component("InitializeDatabase", async () => {
 
 One of the most powerful applications is building a natural language to SQL interface:
 
-```tsx
+```ts
 import * as gensx from "@gensx/core";
-import { GSXChatCompletion, GSXTool } from "@gensx/openai";
 import { useDatabase } from "@gensx/storage";
+import { generateText } from "@gensx/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import { tool } from "ai";
 import { z } from "zod";
 
 // Create a tool that executes SQL queries
-const queryTool = new GSXTool({
-  name: "execute_query",
+const queryTool = tool({
   description: "Execute a SQL query against the baseball database",
-  schema: z.object({
+  parameters: z.object({
     query: z.string().describe("The SQL query to execute"),
   }),
-  run: async ({ query }) => {
+  execute: async ({ query }) => {
     const db = await useDatabase("baseball");
     const result = await db.execute(query);
     return JSON.stringify(result, null, 2);
@@ -138,9 +127,9 @@ const queryTool = new GSXTool({
 });
 
 // SQL Copilot component that answers questions using SQL
-const SqlCopilot = gensx.Component("SqlCopilot", ({ question }) => (
-  <GSXChatCompletion
-    messages={[
+const SqlCopilot = gensx.Component("SqlCopilot", ({ question }) => {
+  return generateText({
+    messages: [
       {
         role: "system",
         content: `You are a SQL assistant. The database has a baseball_stats table with
@@ -148,23 +137,22 @@ const SqlCopilot = gensx.Component("SqlCopilot", ({ question }) => (
           Use the execute_query tool to run SQL queries.`,
       },
       { role: "user", content: question },
-    ]}
-    model="gpt-4o-mini"
-    tools={[queryTool]}
-  >
-    {(result) => result.choices[0].message.content}
-  </GSXChatCompletion>
-));
+    ],
+    model: openai("gpt-4o-mini"),
+    tools: { execute_query: queryTool },
+    maxSteps: 10,
+  });
+});
 ```
 
 ### Transactions with batch operations
 
 For operations that need to be performed atomically, you can use batch operations:
 
-```tsx
+```ts
 const TransferFunds = gensx.Component(
   "TransferFunds",
-  async ({ fromAccount, toAccount, amount }) => {
+  async ({ fromAccount, toAccount, amount }: TransferFundsInput) => {
     const db = await useDatabase("banking");
 
     try {
@@ -192,7 +180,7 @@ const TransferFunds = gensx.Component(
 
 For complex database changes, you can execute multiple statements at once:
 
-```tsx
+```ts
 const SetupUserSystem = gensx.Component("SetupUserSystem", async () => {
   const db = await useDatabase("users");
 
@@ -222,7 +210,7 @@ const SetupUserSystem = gensx.Component("SetupUserSystem", async () => {
 
 When you need to update your database schema, use migrations:
 
-```tsx
+```ts
 const MigrateDatabase = gensx.Component(
   "MigrateDatabase",
   async ({ version }) => {
@@ -264,24 +252,27 @@ No code changes are needed when moving from development to production.
 
 Create agents that can query and update structured data, using the components defined above:
 
-```tsx
-const DataAnalyst = gensx.Component("DataAnalyst", async ({ query }) => {
-  // Initialize the database with the baseball stats
-  await InitializeDatabase();
+```ts
+const DataAnalyst = gensx.Component(
+  "DataAnalyst",
+  async ({ query }: DataAnalystInput) => {
+    // Initialize the database with the baseball stats
+    await InitializeDatabase();
 
-  // Use the SQL Copilot to answer the question
-  return <SqlCopilot question={query} />;
-});
+    // Use the SQL Copilot to answer the question
+    return await SqlCopilot({ question: query });
+  },
+);
 ```
 
 ### User data storage
 
 Store user data and preferences in a structured format:
 
-```tsx
+```ts
 const UserPreferences = gensx.Component(
   "UserPreferences",
-  async ({ userId, action, data }) => {
+  async ({ userId, action, data }: UserPreferencesInput) => {
     const db = await useDatabase("user_data");
 
     if (action === "get") {
@@ -305,20 +296,26 @@ const UserPreferences = gensx.Component(
 
 Build workflows that share structured data between steps:
 
-```tsx
-const DataCollector = gensx.Component("DataCollector", async ({ source }) => {
-  const db = await useDatabase("workflow_data");
-  // Collect data from source and store in database
-  // ...
-  return { success: true };
-});
+```ts
+const DataCollector = gensx.Component(
+  "DataCollector",
+  async ({ source }: DataCollectorInput) => {
+    const db = await useDatabase("workflow_data");
+    // Collect data from source and store in database
+    // ...
+    return { success: true };
+  },
+);
 
-const DataAnalyzer = gensx.Component("DataAnalyzer", async () => {
-  const db = await useDatabase("workflow_data");
-  // Analyze data from database
-  // ...
-  return { results: "..." };
-});
+const DataAnalyzer = gensx.Component(
+  "DataAnalyzer",
+  async ({ query }: DataAnalyzerInput) => {
+    const db = await useDatabase("workflow_data");
+    // Analyze data from database
+    // ...
+    return { results: "..." };
+  },
+);
 ```
 
 ## Reference

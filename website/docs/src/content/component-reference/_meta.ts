@@ -3,7 +3,6 @@ const meta = {
   anthropic: "Anthropic",
   "vercel-ai": "Vercel AI SDK",
   "storage-components": "Cloud storage",
-  mcp: "MCP",
   openrouter: "OpenRouter",
 };
 

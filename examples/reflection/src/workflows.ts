@@ -82,8 +82,8 @@ const EvaluateText = gensx.Component(
   },
 );
 
-export const ReflectionWorkflow = gensx.Workflow(
-  "ReflectionWorkflow",
+export const ImproveTextWithReflection = gensx.Workflow(
+  "ImproveTextWithReflection",
   async ({ text }: { text: string }): Promise<string> => {
     return Reflection({
       input: text,

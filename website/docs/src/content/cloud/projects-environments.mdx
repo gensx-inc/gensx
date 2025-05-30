@@ -56,13 +56,13 @@ Deploy your workflows to specific environments using the CLI:
 
 ```bash
 # Deploy to the default environment
-gensx deploy src/workflows.tsx
+gensx deploy src/workflows.ts
 
 # Deploy to a staging environment
-gensx deploy src/workflows.tsx --env staging
+gensx deploy src/workflows.ts --env staging
 
 # Deploy to production
-gensx deploy src/workflows.tsx --env production
+gensx deploy src/workflows.ts --env production
 ```
 
 ### Environment-specific configuration
@@ -71,12 +71,12 @@ Set environment-specific variables during deployment:
 
 ```bash
 # Development-specific settings
-gensx deploy src/workflows.tsx --env development \
+gensx deploy src/workflows.ts --env development \
   -e LOG_LEVEL=debug \
   -e OPENAI_API_KEY
 
 # Production-specific settings
-gensx deploy src/workflows.tsx --env production \
+gensx deploy src/workflows.ts --env production \
   -e LOG_LEVEL=error \
   -e OPENAI_API_KEY
 ```

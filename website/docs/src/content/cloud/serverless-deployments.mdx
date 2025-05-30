@@ -11,16 +11,16 @@ Deploy your GenSX workflows as serverless APIs with support for both synchronous
 
 Projects are a collection of workflows and environment variables that deploy together into an `environment` that you configure.
 
-Each project has a `gensx.yaml` file at the root and a `workflows.tsx` file that exports all of your deployable workflows.
+Each project has a `gensx.yaml` file at the root and a `workflows.ts` file that exports all of your deployable workflows.
 
 Run `gensx deploy` from the root of your project to deploy it:
 
 ```bash
 # Deploy the workflow file with default settings
-npx gensx deploy src/workflows.tsx
+npx gensx deploy src/workflows.ts
 
 # Deploy with environment variables
-npx gensx deploy src/workflows.tsx -e OPENAI_API_KEY
+npx gensx deploy src/workflows.ts -e OPENAI_API_KEY
 ```
 
 Environment variables are encrypted with per-project encryption keys.
@@ -31,10 +31,10 @@ GenSX supports multiple environments within a project (such as development, stag
 
 ```bash
 # Deploy to a specific environment
-npx gensx deploy src/workflows.tsx --env production
+npx gensx deploy src/workflows.ts --env production
 
 # Deploy to staging with environment-specific variables
-npx gensx deploy src/workflows.tsx --env staging -e OPENAI_API_KEY -e LOG_LEVEL=debug
+npx gensx deploy src/workflows.ts --env staging -e OPENAI_API_KEY -e LOG_LEVEL=debug
 ```
 
 Each environment can have its own configuration and environment variables, allowing you to test in isolation before promoting changes to production.
@@ -139,12 +139,7 @@ curl -X POST https://api.gensx.com/org/your-org/projects/your-project/environmen
   -d '{"prompt": "Tell me about GenSX"}'
 
 # Response includes an execution ID
-# {
-#   "status": "ok",
-#   "data": {
-#     "executionId": "exec_123abc"
-#   }
-# }
+# { "executionId": "exec_123abc" }
 
 # Check status later
 curl -X GET https://api.gensx.com/executions/exec_123abc \

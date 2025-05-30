@@ -12,7 +12,7 @@ GenSX provides local development experience that mirrors the cloud environment, 
 The `gensx start` command launches a local development server with hot-reloading:
 
 ```bash
-gensx start ./src/workflows.tsx
+gensx start ./src/workflows.ts
 ```
 
 ```bash
@@ -112,54 +112,63 @@ GenSX provides local implementations for cloud storage services, enabling you to
 
 ### Blob storage
 
-When using `BlobProvider` in local development, data is stored in your local filesystem:
+When using `useBlob` in local development, data is stored in your local filesystem:
 
-```tsx
-import { BlobProvider, useBlob } from "@gensx/storage";
+```ts
+import { useBlob } from "@gensx/storage";
 
-const StoreData = gensx.Component("StoreData", async ({ key, data }) => {
-  // Locally, this will write to .gensx/blobs directory
-  const blob = useBlob(`data/${key}.json`);
-  await blob.putJSON(data);
-  return { success: true };
-});
+const StoreData = gensx.Component(
+  "StoreData",
+  async ({ key, data }: StoreDataInput) => {
+    // Locally, this will write to .gensx/blobs directory
+    const blob = useBlob(`data/${key}.json`);
+    await blob.putJSON(data);
+    return { success: true };
+  },
+);
 ```
 
 Files are stored in the `.gensx/blobs` directory in your project, making it easy to inspect the stored data.
 
 ### SQL databases
 
-When using `DatabaseProvider` locally, GenSX uses [libSQL](https://github.com/libsql/libsql) to provide a SQLite-compatible database:
+When using `useDatabase` locally, GenSX uses [libSQL](https://github.com/libsql/libsql) to provide a SQLite-compatible database:
 
-```tsx
-import { DatabaseProvider, useDatabase } from "@gensx/storage";
+```ts
+import { useDatabase } from "@gensx/storage";
 
-const QueryData = gensx.Component("QueryData", async ({ query }) => {
-  // Locally, this creates a SQLite database in .gensx/databases
-  const db = await useDatabase("my-database");
-  const result = await db.execute(query);
-  return result.rows;
-});
+const QueryData = gensx.Component(
+  "QueryData",
+  async ({ query }: QueryDataInput) => {
+    // Locally, this creates a SQLite database in .gensx/databases
+    const db = await useDatabase("my-database");
+    const result = await db.execute(query);
+    return result.rows;
+  },
+);
 ```
 
 Database files are stored in the `.gensx/databases` directory as SQLite files that you can inspect with any SQLite client.
 
 ### Vector search
 
-For vector search operations with `SearchProvider`, your local environment connects to the cloud service:
+For vector search operations with `useSearch`, your local environment connects to the cloud service:
 
-```tsx
-import { SearchProvider, useSearch } from "@gensx/storage";
+```ts
+import { useSearch } from "@gensx/storage";
 
-const SearchDocs = gensx.Component("SearchDocs", async ({ query }) => {
-  // Uses cloud vector search even in local development
-  const namespace = await useSearch("documents");
-  const results = await namespace.query({
-    text: query,
-    topK: 5,
-  });
-  return results;
-});
+const SearchDocs = gensx.Component(
+  "SearchDocs",
+  async ({ query }: SearchDocsInput) => {
+    // Uses cloud vector search even in local development
+    const namespace = await useSearch("documents");
+    const results = await namespace.query({
+      text: query,
+      topK: 5,
+    });
+    return results;
+  },
+);
 ```
 
 ## Next steps

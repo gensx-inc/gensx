@@ -1,9 +1,9 @@
 ---
-title: Why JSX?
-description: Why GenSX uses JSX for workflow composition
+title: Why Components?
+description: Why GenSX uses components for workflow composition
 ---
 
-# Why JSX?
+# Why Components?
 
 GenSX uses JSX for workflow composition because it's a natural fit for the programming model. Most people think of React and frontend when JSX is mentioned, so choosing it for a backend workflow orchestration framework may seem surprising.
 
@@ -17,7 +17,7 @@ Graph APIs are the standard for LLM frameworks. They provide APIs to define node
 
 A workflow for writing a blog post might look like this:
 
-```tsx
+```ts
 const graph = new Graph()
   .addNode("hnCollector", collectHNStories)
   .addNode("analyzeHNPosts", analyzePosts)
@@ -38,27 +38,22 @@ Can you easily read this code and visualize the workflow?
 
 On the other hand, the same workflow with GenSX and JSX reads top to bottom like a normal programming language:
 
-```tsx
-<HNCollector limit={postCount}>
-  {(stories) => (
-    <AnalyzeHNPosts stories={stories}>
-      {({ analyses }) => (
-        <TrendAnalyzer analyses={analyses}>
-          {(report) => (
-            <Editor content={report}>
-              {(editedReport) => (
-                <TweetWriter
-                  context={editedReport}
-                  prompt="Summarize the HN trends in a tweet"
-                />
-              )}
-            </Editor>
-          )}
-        </TrendAnalyzer>
-      )}
-    </AnalyzeHNPosts>
-  )}
-</HNCollector>
+```ts
+const AnalyzeHackerNewsTrends = gensx.Workflow(
+  "AnalyzeHackerNewsTrends",
+  async ({ postCount }) => {
+    const stories = await FetchHNPosts({ limit: postCount });
+    const { analyses } = await AnalyzeHNPosts({ stories });
+    const report = await GenerateReport({ analyses });
+    const editedReport = await EditReport({ content: report });
+    const tweet = await WriteTweet({
+      context: editedReport,
+      prompt: "Summarize the HN trends in a tweet",
+    });
+
+    return { report: editedReport, tweet };
+  },
+);
 ```
 
 As you'll see in the next section, trees are just another kind of graph and you can express all of the same things.
@@ -71,7 +66,7 @@ Trees are just a special kind of graph - one where each node has a single parent
 
 Consider a cycle in a workflow:
 
-```tsx
+```ts
 const AgentWorkflow = gensx.Component<{}, AgentWorkflowOutput>(
   "AgentWorkflow",
   <AgentStep>

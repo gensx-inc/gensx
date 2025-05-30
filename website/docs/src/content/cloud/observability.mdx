@@ -19,12 +19,9 @@ The GenSX cloud console includes a trace viewer. You can access traces in severa
 2. **Trace URL**: When running a workflow with `printUrl: true`, a direct link to the trace is printed to the console
 3. **API Response**: When running a workflow in the cloud, the execution ID from API responses can be used to view traces in the console
 
-```tsx
+```ts
 // Executing a workflow with trace URL printing
-const result = await MyWorkflow.run(
-  { input: "What is GenSX?" },
-  { printUrl: true },
-);
+const result = await MyWorkflow({ input: "What is GenSX?" });
 
 // Console output includes:
 // [GenSX] View execution at: https://app.gensx.com/your_org/executions/your_execution_id
@@ -113,7 +110,7 @@ GenSX allows you to organize traces by environment (such as development, staging
 
 ```bash
 # Deploy to a specific environment with its own traces
-gensx deploy src/workflows.tsx --env production
+gensx deploy src/workflows.ts --env production
 ```
 
 In the GenSX Console, you can filter traces by environment to focus on relevant executions. This separation also helps when:
@@ -124,33 +121,39 @@ In the GenSX Console, you can filter traces by environment to focus on relevant 
 
 ## Instrumenting additional code
 
-Every GenSX component is automatically traced. If want to trace additional sub-steps of a workflow, wrap that code in a `gensx.Component` and execute it via `myComponent.Run(props)`.
+Every GenSX component is automatically traced. If want to trace additional sub-steps of a workflow, wrap that code in a `gensx.Component` and execute it via `myComponent(props)`.
 
-```tsx
+```ts
 import * as gensx from "@gensx/core";
 
-const MyWorkflow = gensx.Component("MyWorkflow", async ({ input }) => {
-  // Step 1: Process input
-  const processedData = await ProcessData.run({ data: input });
+const MyWorkflow = gensx.Component(
+  "MyWorkflow",
+  async ({ input }: MyWorkflowInput) => {
+    // Step 1: Process input
+    const processedData = await ProcessData({ data: input });
 
-  // Step 2: Generate response
-  const response = await GenerateResponse.run({ data: processedData });
+    // Step 2: Generate response
+    const response = await GenerateResponse({ data: processedData });
 
-  return response;
-});
+    return response;
+  },
+);
 
 // Create a component to trace a specific processing step
-const ProcessData = gensx.Component("ProcessData", async ({ data }) => {
-  // This entire function execution will be captured in traces
-  const parsedData = JSON.parse(data);
-  const enrichedData = await fetchAdditionalInfo(parsedData);
-  return enrichedData;
-});
+const ProcessData = gensx.Component(
+  "ProcessData",
+  async ({ data }: ProcessDataInput) => {
+    // This entire function execution will be captured in traces
+    const parsedData = JSON.parse(data);
+    const enrichedData = await fetchAdditionalInfo(parsedData);
+    return enrichedData;
+  },
+);
 
 // Create a component to trace response generation
 const GenerateResponse = gensx.Component(
   "GenerateResponse",
-  async ({ data }) => {
+  async ({ data }: GenerateResponseInput) => {
     // This will appear as a separate node in the trace
     return `Processed result: ${JSON.stringify(data)}`;
   },
@@ -175,12 +178,12 @@ Even if a secret is passed down through multiple components, it remains scrubbed
 
 To mark specific props as containing secrets:
 
-```tsx
+```ts
 import * as gensx from "@gensx/core";
 
 const AuthenticatedClient = gensx.Component(
   "AuthenticatedClient",
-  ({ apiKey, endpoint, query, credentials }) => {
+  ({ apiKey, endpoint, query, credentials }: AuthenticatedClientInput) => {
     // Use apiKey securely, knowing it won't appear in traces
     return fetchData(endpoint, query, apiKey, credentials);
   },
@@ -197,10 +200,10 @@ The `secretProps` option can specify both top-level props and nested paths using
 
 For components that might return sensitive information, you can mark the entire output as sensitive:
 
-```tsx
+```ts
 const GenerateCredentials = gensx.Component(
   "GenerateCredentials",
-  async ({ userId }) => {
+  async ({ userId }: { userId: string }) => {
     // This entire output will be marked as secret
     return {
       accessToken: "sk-1234567890abcdef",

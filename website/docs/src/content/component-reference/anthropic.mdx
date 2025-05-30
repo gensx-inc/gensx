@@ -1,205 +1,84 @@
 ---
 title: Anthropic
-description: Anthropic API compatible component reference
+description: Anthropic API compatible SDK reference
 ---
 
 # Anthropic
 
-The [@gensx/anthropic](https://www.npmjs.com/package/@gensx/anthropic) package provides [Anthropic API](https://docs.anthropic.com/en/api/getting-started) compatible components for GenSX.
+The [@gensx/anthropic](https://www.npmjs.com/package/@gensx/anthropic) package provides a pre-wrapped version of the Anthropic SDK for GenSX, making it easy to use Anthropic's API with GenSX functionality.
 
 ## Installation
 
 To install the package, run the following command:
 
 ```bash
-npm install @gensx/anthropic
+npm install @gensx/anthropic @anthropic-ai/sdk
 ```
 
-Then import the components you need from the package:
+## Usage
 
-```tsx
-import { AnthropicProvider, GSXChatCompletion } from "@gensx/anthropic";
-```
+You can use this package in two ways:
 
-## Supported components
+### 1. Drop-in Replacement (Recommended)
 
-| <div style={{width: "150px"}}>Component</div>         | Description                                                                           |
-| :---------------------------------------------------- | :------------------------------------------------------------------------------------ |
-| [`AnthropicProvider`](#anthropicprovider)             | Anthropic Provider that handles configuration and authentication for child components |
-| [`GSXChatCompletion`](#gsxchatcompletion)             | Enhanced component with advanced features for Anthropic chat completions              |
-| [`ChatCompletion`](#chatcompletion)                   | Simplified component for chat completions with streamlined output interface           |
-| [`AnthropicChatCompletion`](#anthropicchatcompletion) | Low-level component that directly matches the Anthropic SDK interface                 |
+Simply replace your Anthropic import with the GenSX version:
 
-## Component Comparison
+```ts
+// Instead of:
+// import { Anthropic } from '@anthropic-ai/sdk';
 
-The package provides three different chat completion components to suit different use cases:
+// Use:
+import { Anthropic } from "@gensx/anthropic";
 
-- **AnthropicChatCompletion**: Direct mapping to the Anthropic API with identical inputs and outputs
-- **GSXChatCompletion**: Enhanced component with additional features like structured output and automated tool calling
-- **ChatCompletion**: Simplified interface that returns string responses or simple streams while maintaining identical inputs to the Anthropic API
+// Create a client as usual
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
-## Reference
+// All methods are automatically wrapped with GenSX functionality
+const completion = await client.messages.create({
+  model: "claude-sonnet-4-20250514",
+  messages: [{ role: "user", content: "Hello!" }],
+  max_tokens: 1000,
+});
 
-#### `<AnthropicProvider/>`
-
-The `AnthropicProvider` component initializes and provides an Anthropic client instance to all child components. Any components that use Anthropic's API need to be wrapped in an `AnthropicProvider`.
-
-```tsx
-<AnthropicProvider
-  apiKey="your-api-key" // Your Anthropic API key
-/>
-```
-
-##### Props
-
-The `AnthropicProvider` accepts all configuration options from the [Anthropic Node.js client library](https://github.com/anthropics/anthropic-sdk-typescript) including:
-
-- `apiKey` (required): Your Anthropic API key
-- Plus all other Anthropic client configuration options
-
-#### `<GSXChatCompletion/>`
-
-The `GSXChatCompletion` component is an advanced chat completion component that provides enhanced features beyond the standard Anthropic API. It supports structured output, tool calling, and streaming, with automatic handling of tool execution.
-
-To get a structured output, pass a [Zod schema](https://www.npmjs.com/package/zod) to the `outputSchema` prop.
-
-```tsx
-// Returns an object matching the outputSchema when executed
-<GSXChatCompletion
-  model="claude-3-7-sonnet-latest"
-  system="You are a helpful assistant."
-  messages={[
-    {
-      role: "user",
-      content: "Extract the name and age from: John Doe, 32 years old",
-    },
-  ]}
-  outputSchema={z.object({
-    name: z.string(),
-    age: z.number(),
-  })}
-  max_tokens={1000}
-/>
-```
-
-To use tools, create a `GSXTool` object:
-
-```tsx
-const weatherTool = GSXTool.create({
-  name: "get_weather",
-  description: "Get the weather for a given location",
-  schema: z.object({
-    location: z.string(),
-  }),
-  run: async ({ location }) => {
-    return { weather: "sunny" };
-  },
+// Use streaming
+const stream = await client.messages.create({
+  model: "claude-sonnet-4-20250514",
+  messages: [{ role: "user", content: "Hello!" }],
+  max_tokens: 1000,
+  stream: true,
 });
 ```
 
-Then pass the tool to the `tools` prop.
+### 2. Wrap an Existing Instance
 
-```tsx
-<GSXChatCompletion
-  model="claude-3-7-sonnet-latest"
-  system="You are a helpful assistant."
-  messages={[{ role: "user", content: "What's the weather in Seattle?" }]}
-  tools={[weatherTool]}
-  max_tokens={1000}
-/>
+If you already have an Anthropic instance, you can wrap it with GenSX functionality:
+
+```ts
+import { Anthropic } from "@anthropic-ai/sdk";
+import { wrapAnthropic } from "@gensx/anthropic";
+
+// Create your Anthropic instance as usual
+const client = wrapAnthropic(
+  new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  }),
+);
+
+// Now all methods are wrapped with GenSX functionality
+const completion = await client.messages.create({
+  model: "claude-sonnet-4-20250514",
+  messages: [{ role: "user", content: "Hello!" }],
+  max_tokens: 1000,
+});
 ```
 
-##### Props
+## API Reference
 
-The `GSXChatCompletion` component accepts all parameters from Anthropic's messages API plus additional options:
+The package exports:
 
-- `model` (required): ID of the model to use (e.g., `"claude-3-7-sonnet-latest"`, `"claude-3-5-haiku-latest"`)
-- `messages` (required): Array of messages in the conversation
-- `max_tokens` (required): Maximum number of tokens to generate
-- `system`: System prompt to set the behavior of the assistant
-- `stream`: Whether to stream the response (when `true`, returns a `Stream<RawMessageStreamEvent>`)
-- `tools`: Array of `GSXTool` instances for function calling
-- `outputSchema`: Zod schema for structured output (when provided, returns data matching the schema)
-- `temperature`: Sampling temperature
-- Plus all standard Anthropic message parameters
+1. `Anthropic` - A drop-in replacement for the Anthropic client that automatically wraps all methods with GenSX functionality
+2. `wrapAnthropic` - A function to manually wrap an Anthropic instance with GenSX functionality
 
-##### Return Types
-
-The return type of `GSXChatCompletion` depends on the props:
-
-- With `stream: true`: Returns `Stream<RawMessageStreamEvent>` from Anthropic SDK
-- With `outputSchema`: Returns data matching the provided Zod schema
-- Default: Returns `GSXChatCompletionResult` (Anthropic response with message history)
-
-#### `<ChatCompletion/>`
-
-The `ChatCompletion` component provides a simplified interface for chat completions. It returns either a string or a simple stream of string tokens while having identical inputs to the Anthropic API.
-
-```tsx
-// Returns a string when executed
-<ChatCompletion
-  model="claude-3-7-sonnet-latest"
-  system="You are a helpful assistant."
-  messages={[{ role: "user", content: "What's a programmable tree?" }]}
-  temperature={0.7}
-  max_tokens={1000}
-/>
-
-// Returns an AsyncIterableIterator<string> when executed
-<ChatCompletion
-  model="claude-3-7-sonnet-latest"
-  system="You are a helpful assistant."
-  messages={[{ role: "user", content: "What's a programmable tree?" }]}
-  temperature={0.7}
-  max_tokens={1000}
-  stream={true}
-/>
-```
-
-##### Props
-
-The `ChatCompletion` component accepts all parameters from Anthropic's messages API:
-
-- `model` (required): ID of the model to use (e.g., `"claude-3-5-sonnet-latest"`, `"claude-3-haiku-latest"`)
-- `messages` (required): Array of messages in the conversation
-- `max_tokens` (required): Maximum number of tokens to generate
-- `system`: System prompt to set the behavior of the assistant
-- `temperature`: Sampling temperature
-- `stream`: Whether to stream the response
-- `tools`: Array of `GSXTool` instances for function calling (not compatible with streaming)
-
-##### Return Types
-
-- With `stream: false` (default): Returns a string containing the model's response
-- With `stream: true`: Returns an `AsyncIterableIterator<string>` that yields tokens as they're generated
-
-#### `<AnthropicChatCompletion/>`
-
-The `AnthropicChatCompletion` component is a low-level component that directly maps to the Anthropic SDK. It has identical inputs and outputs to the Anthropic API, making it suitable for advanced use cases where you need full control.
-
-```tsx
-<AnthropicChatCompletion
-  model="claude-3-7-sonnet-latest"
-  system="You are a helpful assistant."
-  messages={[{ role: "user", content: "What's a programmable tree?" }]}
-  max_tokens={1000}
-/>
-```
-
-##### Props
-
-The `AnthropicChatCompletion` component accepts all parameters from the Anthropic SDK's `messages.create` method:
-
-- `model` (required): ID of the model to use
-- `messages` (required): Array of messages in the conversation
-- `max_tokens` (required): Maximum number of tokens to generate
-- `system`: System prompt to set the behavior of the assistant
-- `temperature`: Sampling temperature
-- `stream`: Whether to stream the response
-- `tools`: Array of Anthropic tool definitions for function calling
-- Plus all other Anthropic message parameters
-
-##### Return Types
-
-- With `stream: false` (default): Returns the full `Message` object from Anthropic SDK
-- With `stream: true`: Returns a `Stream<RawMessageStreamEvent>` from Anthropic SDK
+All methods from the Anthropic SDK are supported and automatically wrapped with GenSX functionality.
