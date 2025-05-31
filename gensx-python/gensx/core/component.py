@@ -5,6 +5,7 @@ import inspect
 import traceback
 from functools import wraps
 from typing import Any, Awaitable, Callable, Dict, Optional, TypeVar, Union
+from types import GeneratorType, AsyncGeneratorType
 
 from .context import get_current_context
 from .checkpoint import STREAMING_PLACEHOLDER
@@ -30,18 +31,32 @@ def is_async_iterable(obj: Any) -> bool:
     return hasattr(obj, "__aiter__")
 
 
-def is_iterable(obj: Any) -> bool:
-    """Check if object is iterable (but not string)."""
-    return hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes))
+def is_streaming_type(obj: Any) -> bool:
+    """
+    Check if object is a type that should be treated as streaming.
+    Only considers actual streaming types like generators and async generators.
+    """
+    # Check for generator types
+    if isinstance(obj, (GeneratorType, AsyncGeneratorType)):
+        return True
+
+    # Check for async iterables (but not regular objects that happen to have __aiter__)
+    if hasattr(obj, "__aiter__") and not hasattr(obj, "__len__"):
+        return True
+
+    # Check for specific streaming types (lists, tuples when used as streams)
+    # Only if they are explicitly intended as streams (not regular data structures)
+    if isinstance(obj, (list, tuple)) and hasattr(obj, "_is_stream"):
+        return True
+
+    return False
 
 
 async def handle_streaming_result(
     result: Any, aggregator: Optional[Callable[[list], Any]] = None
 ) -> Any:
     """Handle streaming results by wrapping them in StreamingResult."""
-    if is_async_iterable(result):
-        return StreamingResult(result)
-    elif is_iterable(result) and not isinstance(result, (dict, str, bytes)):
+    if is_streaming_type(result):
         return StreamingResult(result)
     return result
 
@@ -128,10 +143,9 @@ def Component(
                 # Execute within node context and await
                 result = await context.with_current_node_async(node_id, execute_func)
 
-                # Handle streaming results
+                # Handle streaming results - only if explicitly requested or actual streaming type
                 if (component_opts.streaming_result_key or
-                    is_async_iterable(result) or
-                    (is_iterable(result) and not isinstance(result, (dict, str, bytes)))):
+                    is_streaming_type(result)):
                     result = await handle_streaming_result(result, component_opts.aggregator)
 
                 # Complete the checkpoint

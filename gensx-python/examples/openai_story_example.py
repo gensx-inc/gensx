@@ -19,30 +19,12 @@ import os
 from typing import Dict, Any
 
 from gensx import Component, Workflow, wrap
-
-# Check if openai is available
-try:
-    from openai import AsyncOpenAI
-    HAS_OPENAI = True
-except ImportError:
-    HAS_OPENAI = False
-    print("⚠️  OpenAI package not found. Install with: pip install openai")
+from openai import AsyncOpenAI
 
 
 @Component("PoemGenerator")
 async def generate_poem(props: Dict[str, Any]) -> str:
     """Generate a poem about a dog who loves trucks using OpenAI."""
-    if not HAS_OPENAI:
-        return """Buster is a happy pup,
-Who loves trucks big and small,
-When he hears them rumbling up,
-He runs to see them all!
-
-Big wheels turning round and round,
-Engines making vrooming sounds,
-Buster barks with pure delight,
-At trucks from morning until night!"""
-
     subject = props.get("subject", "a dog who loves trucks")
     style = props.get("style", "playful and rhyming")
 
@@ -66,42 +48,23 @@ At trucks from morning until night!"""
                 }
             ],
             max_tokens=300,
-            temperature=0.8
+            temperature=0.8,
+            stream=False
         )
 
+        print(response)
         poem = response.choices[0].message.content.strip()
         print(f"📝 Generated poem ({len(poem)} characters)")
         return poem
 
     except Exception as e:
         print(f"❌ Error generating poem: {e}")
-        # Return a fallback poem
-        return """Buster is a happy pup,
-Who loves trucks big and small,
-When he hears them rumbling up,
-He runs to see them all!
-
-Big wheels turning round and round,
-Engines making vrooming sounds,
-Buster barks with pure delight,
-At trucks from morning until night!"""
+        raise
 
 
 @Component("StoryTransformer")
 async def transform_to_story(props: Dict[str, Any]) -> str:
     """Transform a poem into a Dr. Seuss-style children's book."""
-    if not HAS_OPENAI:
-        poem = props.get("poem", "")
-        return f"""Once upon a time, in a town not too far,
-Lived a dog who loved trucks, both near and afar!
-
-{poem}
-
-And that's how our friend learned to dream and to play,
-With trucks and with joy, every single day!
-
-The End! 🚛🐕"""
-
     poem = props.get("poem")
     if not poem:
         raise ValueError("Poem is required to transform into a story.")
@@ -142,25 +105,18 @@ Create a complete story with:
                 }
             ],
             max_tokens=600,
-            temperature=0.9
+            temperature=0.9,
+            stream=False
         )
 
+        print(response)
         story = response.choices[0].message.content.strip()
         print(f"📚 Generated story ({len(story)} characters)")
         return story
 
     except Exception as e:
         print(f"❌ Error generating story: {e}")
-        # Return a fallback story
-        return f"""Once upon a time, in a town not too far,
-Lived a dog who loved trucks, both near and afar!
-
-{poem}
-
-And that's how our friend learned to dream and to play,
-With trucks and with joy, every single day!
-
-The End! 🚛🐕"""
+        raise
 
 
 @Component("ContentFormatter")
@@ -220,9 +176,6 @@ async def main():
         print(result["story"])
 
         print("\n" + "=" * 50)
-        print("📊 SUMMARY:")
-        print("=" * 50)
-        print(result["summary"])
 
         print("\n✅ Story generation completed successfully! 🎉")
 
