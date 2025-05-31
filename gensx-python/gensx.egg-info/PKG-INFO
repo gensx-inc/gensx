@@ -1,0 +1,94 @@
+Metadata-Version: 2.4
+Name: gensx
+Version: 0.1.0
+Summary: Build AI workflows using Python components - Python port of GenSX
+Author-email: GenSX Team <team@gensx.com>
+License: Apache-2.0
+Project-URL: Homepage, https://gensx.com
+Project-URL: Documentation, https://gensx.com/docs
+Project-URL: Repository, https://github.com/gensx-inc/gensx
+Project-URL: Bug Tracker, https://github.com/gensx-inc/gensx/issues
+Keywords: ai,workflow,llm,components
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: typing-extensions>=4.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: black>=22.0.0; extra == "dev"
+Requires-Dist: isort>=5.0.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+
+# GenSX Python
+
+Build AI workflows using Python components.
+
+GenSX Python is a port of the popular [GenSX TypeScript framework](https://gensx.com) that allows you to create LLM workflows and AI agents using a component-based approach in Python.
+
+## Installation
+
+```bash
+pip install gensx
+```
+
+## Quick Start
+
+```python
+import asyncio
+from gensx import Component, Workflow
+
+# Define a component
+@Component("GreetUser")
+async def greet_user(props: dict) -> str:
+    name = props.get("name", "World")
+    return f"Hello, {name}!"
+
+# Create a workflow
+@Workflow("GreetingWorkflow")
+async def greeting_workflow(props: dict) -> str:
+    greeting = await greet_user({"name": props["name"]})
+    return greeting
+
+# Run the workflow
+async def main():
+    result = await greeting_workflow.run({"name": "GenSX"})
+    print(result)  # Output: Hello, GenSX!
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Key Features
+
+- **Component-Based**: Build workflows from reusable, composable components
+- **Async by Default**: Native support for async/await and concurrent execution
+- **Type Safe**: Full type hints and runtime validation with Pydantic
+- **Streaming Support**: Handle streaming responses from LLMs naturally
+- **SDK Wrapping**: Automatically convert any Python SDK into GenSX components
+- **Execution Tracking**: Built-in checkpointing for debugging and replay
+
+## Documentation
+
+For full documentation, examples, and API reference, visit [gensx.com/docs](https://gensx.com/docs).
+
+## Development Status
+
+This is an alpha release. The API is still evolving and may change in future versions.
+
+## License
+
+Apache 2.0 - see [LICENSE](LICENSE) for details.

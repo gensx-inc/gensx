@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gensx"
+version = "0.1.0"
+description = "Build AI workflows using Python components - Python port of GenSX"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "GenSX Team", email = "team@gensx.com"}
+]
+keywords = ["ai", "workflow", "llm", "components"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "pydantic>=2.0.0",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
+    "flake8>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://gensx.com"
+Documentation = "https://gensx.com/docs"
+Repository = "https://github.com/gensx-inc/gensx"
+"Bug Tracker" = "https://github.com/gensx-inc/gensx/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["gensx*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
