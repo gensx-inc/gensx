@@ -20,8 +20,8 @@
     "@gensx/openai": "^0.2.0"
   },
   "devDependencies": {
-    "@types/node": "^22",
+    "@types/node": "^20",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.8.3"
   }
 }
