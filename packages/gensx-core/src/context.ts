@@ -1,6 +1,8 @@
 import { ExecutionNode } from "./checkpoint.js";
 import {
   createWorkflowContext,
+  JsonValue,
+  ProgressListener,
   WORKFLOW_CONTEXT_SYMBOL,
   WorkflowExecutionContext,
 } from "./workflow-context.js";
@@ -17,12 +19,16 @@ interface AsyncLocalStorageType<T> {
 
 export const CURRENT_NODE_SYMBOL = Symbol.for("gensx.currentNode");
 
+// TODO(jeremy): I think this is due for a refactor now that we have simplified the context and provider stuff.
 export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
+    progressListener?: ProgressListener,
   ) {
-    this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext();
+    this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext(
+      progressListener ?? this.parent?.getWorkflowContext().progressListener,
+    );
   }
 
   init() {
@@ -187,6 +193,14 @@ export function getCurrentContext(): ExecutionContext {
 
 export function getContextSnapshot(): RunInContext {
   return contextManager.getContextSnapshot();
+}
+
+export function emitProgress(message: JsonValue) {
+  const context = getCurrentContext();
+  context.getWorkflowContext().progressListener({
+    type: "progress",
+    message,
+  });
 }
 
 export function getCurrentNodeCheckpointManager() {

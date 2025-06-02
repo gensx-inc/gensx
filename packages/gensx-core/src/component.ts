@@ -22,6 +22,7 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
+import { ProgressListener } from "./workflow-context.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
@@ -161,9 +162,19 @@ export function Component<P extends object = {}, R = unknown>(
 
     try {
       let runInContext: RunInContext;
+      workflowContext.progressListener({
+        type: "component-start",
+        componentName: checkpointName,
+        componentId: nodeId,
+      });
       const result = context.withCurrentNode(nodeId, () => {
         runInContext = getContextSnapshot();
         return target((props ?? {}) as P);
+      });
+      workflowContext.progressListener({
+        type: "component-end",
+        componentName: checkpointName,
+        componentId: nodeId,
       });
 
       if (result instanceof Promise) {
@@ -195,33 +206,6 @@ export function Component<P extends object = {}, R = unknown>(
   return ComponentFn;
 }
 
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
-export type ProgressEvent = { id: string; timestamp: number } & (
-  | { type: "start"; workflowExecutionId: string; workflowName: string }
-  | {
-      type: "component-start";
-      componentName: string;
-      label?: string;
-      componentId: string;
-    }
-  | {
-      type: "component-end";
-      componentName: string;
-      label?: string;
-      componentId: string;
-    }
-  | { type: "progress"; message: JsonValue }
-  | { type: "error"; payload: Error }
-  | { type: "end" }
-);
-
 export function Workflow<P extends object = {}, R = unknown>(
   name: string,
   target: (props: P) => R,
@@ -231,10 +215,14 @@ export function Workflow<P extends object = {}, R = unknown>(
     props?: P,
     runtimeOpts?: WorkflowOpts & {
       workflowExecutionId?: string;
-      progressListener?: (progressEvent: ProgressEvent) => void;
+      progressListener?: ProgressListener;
     },
   ): Promise<Awaited<R>> => {
-    const context = new ExecutionContext({});
+    const context = new ExecutionContext(
+      {},
+      undefined,
+      runtimeOpts?.progressListener,
+    );
     await context.init();
 
     const defaultPrintUrl = !Boolean(process.env.CI);
@@ -259,9 +247,7 @@ export function Workflow<P extends object = {}, R = unknown>(
 
     try {
       if (runtimeOpts?.workflowExecutionId) {
-        runtimeOpts.progressListener?.({
-          id: runtimeOpts.workflowExecutionId,
-          timestamp: Date.now(),
+        workflowContext.progressListener({
           type: "start",
           workflowExecutionId: runtimeOpts.workflowExecutionId,
           workflowName,
@@ -286,6 +272,10 @@ export function Workflow<P extends object = {}, R = unknown>(
           workflowName,
         );
       }
+
+      workflowContext.progressListener({
+        type: "end",
+      });
 
       return result;
     } finally {
