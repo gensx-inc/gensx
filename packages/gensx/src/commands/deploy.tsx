@@ -1,10 +1,12 @@
-import fs from "node:fs";
+import fs, { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 import axios from "axios";
 import FormData from "form-data";
 import { Box, Text, useApp } from "ink";
 import Spinner from "ink-spinner";
 import React, { useCallback, useState } from "react";
+import { Definition } from "typescript-json-schema";
 
 import { EnvironmentResolver } from "../components/EnvironmentResolver.js";
 import { ErrorMessage } from "../components/ErrorMessage.js";
@@ -12,6 +14,7 @@ import { FirstTimeSetup } from "../components/FirstTimeSetup.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { useProjectName } from "../hooks/useProjectName.js";
 import { getAuth } from "../utils/config.js";
+import { generateSchema } from "../utils/schema.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import { build } from "./build.js";
 
@@ -20,6 +23,7 @@ export interface DeployOptions {
   envVar?: Record<string, string>;
   env?: string;
   yes?: boolean;
+  archive?: string;
 }
 
 interface DeploymentResponse {
@@ -64,8 +68,27 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
       try {
         setPhase("building");
 
-        // 1. Build the workflow
-        const { bundleFile, schemas } = await build(file);
+        let schemas: Record<
+          string,
+          {
+            input: Definition;
+            output: Definition;
+          }
+        >;
+        let bundleFile: string;
+
+        if (options.archive) {
+          bundleFile = options.archive;
+          const absolutePath = resolve(process.cwd(), file);
+          if (!existsSync(absolutePath)) {
+            throw new Error(`File ${file} does not exist`);
+          }
+          schemas = generateSchema(absolutePath);
+        } else {
+          const buildResult = await build(file);
+          bundleFile = buildResult.bundleFile;
+          schemas = buildResult.schemas;
+        }
 
         // 2. Get auth config
         const authConfig = await getAuth();
