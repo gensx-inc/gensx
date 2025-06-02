@@ -20,69 +20,39 @@ npm install @gensx/storage
 
 ```tsx
 import { Component } from "@gensx/core";
-import { BlobProvider, useBlob } from "@gensx/storage";
+import { useBlob } from "@gensx/storage";
 
 // Component that uses blob storage
-const SaveData = Component<{ data: string }, string>(
-  "SaveData",
-  async ({ data }) => {
-    // Get a blob object for a specific key
-    const blob = useBlob("my-data");
+const SaveData = Component("SaveData", async ({ data }: { data: string }) => {
+  // Get a blob object for a specific key
+  const blob = useBlob("my-data");
 
-    // Save data to the blob
-    await blob.putString(data);
+  // Save data to the blob
+  await blob.putString(data);
 
-    // Read the data back
-    const result = await blob.getString();
+  // Read the data back
+  const result = await blob.getString();
 
-    return `Data saved and retrieved: ${JSON.stringify(result?.data)}`;
-  },
-);
-
-// Main workflow component
-export const MyWorkflow = Component<{ input: string }, string>(
-  "MyWorkflow",
-  ({ input }) => (
-    // Use local filesystem storage
-    <BlobProvider kind="filesystem" rootDir="/tmp/storage">
-      <SaveData data={input} />
-    </BlobProvider>
-
-    // Alternatively, use cloud storage (requires GENSX_API_KEY and GENSX_ORG)
-    // <BlobProvider kind="cloud">
-    //   <SaveData data={input} />
-    // </BlobProvider>
-  ),
-);
+  return `Data saved and retrieved: ${JSON.stringify(result?.data)}`;
+});
 ```
 
-### BlobProvider
+### useBlob Configuration
 
-Provides blob storage to its children. Can be configured for local filesystem or cloud storage.
+The `useBlob` hook accepts configuration options to customize storage behavior:
 
 ```tsx
-// Local filesystem storage
-<BlobProvider
-  kind="filesystem"
-  rootDir="/path/to/storage"
-  defaultPrefix="optional-prefix"
->
-  {children}
-</BlobProvider>
+const blob = useBlob<MyDataType>("path/to/my-data", {
+  // Storage type (defaults to "filesystem" in local runtime, "cloud" in cloud runtime)
+  kind: "filesystem" | "cloud",
 
-// Cloud storage (using GenSX APIs)
-<BlobProvider
-  kind="cloud"
-  defaultPrefix="optional-prefix"
-  organizationId="optional-override"
->
-  {children}
-</BlobProvider>
+  // For filesystem storage
+  rootDir: "/path/to/storage", // Root directory for storing blobs
+  defaultPrefix: "optional-prefix", // Optional prefix for all blob keys
+});
 ```
 
-### useBlob
-
-Hook to access a blob by key.
+### Common Operations
 
 ```tsx
 const blob = useBlob<MyDataType>("path/to/my-data");
@@ -126,7 +96,7 @@ const value = await blob.getString();
 
 ```tsx
 import { Component } from "@gensx/core";
-import { DatabaseProvider, useDatabase } from "@gensx/storage";
+import { useDatabase } from "@gensx/storage";
 
 // Component that uses a database
 const SaveToDatabase = Component<
@@ -150,46 +120,23 @@ const SaveToDatabase = Component<
 
   return `Users: ${JSON.stringify(result.rows)}`;
 });
-
-// Main workflow component
-export const MyDatabaseWorkflow = Component<
-  { input: { name: string; age: number } },
-  string
->("MyDatabaseWorkflow", ({ input }) => (
-  // Use local filesystem storage
-  <DatabaseProvider kind="filesystem" rootDir="/tmp/database-storage">
-    <SaveToDatabase input={input} />
-  </DatabaseProvider>
-
-  // Alternatively, use cloud storage (requires GENSX_API_KEY and GENSX_ORG)
-  // <DatabaseProvider kind="cloud">
-  //   <SaveToDatabase input={input} />
-  // </DatabaseProvider>
-));
 ```
 
-### DatabaseProvider
+### useDatabase Configuration
 
-Provides SQL database storage to its children. Can be configured for local filesystem or cloud storage.
+The `useDatabase` hook accepts configuration options to customize storage behavior:
 
 ```tsx
-// Local filesystem storage
-<DatabaseProvider
-  kind="filesystem"
-  rootDir="/path/to/database-storage"
->
-  {children}
-</DatabaseProvider>
+const db = await useDatabase("my-database", {
+  // Storage type (defaults to "filesystem" in local runtime, "cloud" in cloud runtime)
+  kind: "filesystem" | "cloud",
 
-// Cloud storage (using GenSX APIs)
-<DatabaseProvider kind="cloud">
-  {children}
-</DatabaseProvider>
+  // For filesystem storage
+  rootDir: "/path/to/database-storage", // Root directory for storing databases
+});
 ```
 
-### useDatabase
-
-Hook to access a database by name.
+### Common Operations
 
 ```tsx
 const db = await useDatabase("my-database");
@@ -226,7 +173,7 @@ await db.execute("CREATE TABLE IF NOT EXISTS users (name TEXT, age INTEGER)");
 
 ```tsx
 import { Component } from "@gensx/core";
-import { SearchProvider, useSearch } from "@gensx/storage";
+import { useSearch } from "@gensx/storage";
 
 // Component that uses vector search
 const SearchVectors = Component<{ queryVector: number[] }, string>(
@@ -245,30 +192,9 @@ const SearchVectors = Component<{ queryVector: number[] }, string>(
     return `Top results: ${JSON.stringify(results)}`;
   },
 );
-
-// Main workflow component
-export const MySearchWorkflow = Component<{ queryVector: number[] }, string>(
-  "MySearchWorkflow",
-  ({ queryVector }) => (
-    // Use cloud search (requires GENSX_API_KEY and GENSX_ORG)
-    <SearchProvider>
-      <SearchVectors queryVector={queryVector} />
-    </SearchProvider>
-  ),
-);
 ```
 
-### SearchProvider
-
-Provides vector search storage to its children. Unlike blob and database storage, search storage is cloud-only.
-
-```tsx
-<SearchProvider>{children}</SearchProvider>
-```
-
-### useSearch
-
-Hook to access a vector search namespace by name.
+### Common Operations
 
 ```tsx
 const namespace = await useSearch("my-namespace");
