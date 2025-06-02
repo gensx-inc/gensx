@@ -208,6 +208,10 @@ export function Component<P extends object = {}, R = unknown>(
           error: serializeError(error),
         });
         checkpointManager.completeNode(nodeId, undefined);
+        workflowContext.progressListener({
+          type: "error",
+          error: JSON.stringify(serializeError(error)),
+        });
       }
       throw error;
     }

@@ -4,14 +4,6 @@ import { getCurrentContext } from "./context.js";
 // Static symbol for workflow context
 export const WORKFLOW_CONTEXT_SYMBOL = Symbol.for("gensx.workflow");
 
-export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
 export type ProgressEvent =
   | { type: "start"; workflowExecutionId?: string; workflowName: string }
   | {
@@ -26,8 +18,8 @@ export type ProgressEvent =
       label?: string;
       componentId: string;
     }
-  | { type: "progress"; message: JsonValue }
-  | { type: "error"; payload: Error }
+  | { type: "progress"; [key: string]: string }
+  | { type: "error"; error: string }
   | { type: "end" };
 
 export type ProgressListener = (progressEvent: ProgressEvent) => void;
