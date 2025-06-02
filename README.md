@@ -2,24 +2,21 @@
 
 [![npm version](https://badge.fury.io/js/gensx.svg)](https://badge.fury.io/js/gensx)
 [![Website](https://img.shields.io/badge/Visit-gensx.com-orange)](https://gensx.com)
-[![Discord](https://img.shields.io/badge/Join-Discord-blue)](https://discord.gg/wRmwfz5tCy)
-[![X](https://img.shields.io/badge/Follow-X-blue)](https://x.com/gensx_inc)
+[![Discord](https://img.shields.io/badge/Join-Discord-5865F2)](https://discord.gg/wRmwfz5tCy)
+[![X](https://img.shields.io/badge/Follow-X-black)](https://x.com/gensx_inc)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-[GenSX](https://gensx.com/) is a simple typescript framework for building agents and workflows with reusable React-like components.
-
-GenSX takes a lot of inspiration from React, but the programming model is very different - it's a Node.js framework designed for data flow.
-
-But if you know how to write a react component, then building an agent will feel easy and familiar.
+[GenSX](https://gensx.com/) is a simple TypeScript framework for building complex LLM applications. It's a workflow engine designed for building agents, chatbots, and long-running workflows.
 
 ## Why GenSX?
 
 - 🎯 **Pure Functions**: Components are pure TypeScript functions that are easily testable, reusable, and sharable
-- 🌴 **Natural Composition**: Chain LLM calls using JSX - a familiar, visual syntax that reads top-to-bottom like normal code
-- ⚡️ **Parallel by Default**: Components execute in parallel when possible while maintaining dependencies
+- 🌴 **Natural Composition**: Building workflows is as simple as composing functions together
 - 🔒 **Type-safe**: Full TypeScript support with no DSLs or special syntax - just standard language features
-- 🌊 **Streaming Built-in**: Stream responses with a single prop change, no refactoring needed
 - 🚀 **Built for Scale**: Start simple and evolve to complex patterns like agents and reflection without changing your programming model
+- 📊 **Automatic Tracing**: Real-time tracing of all component inputs/outputs, tool calls, and LLM calls making debugging and observability easy
+- ☁️ **One-Click Deployment**: Deploy workflows as REST APIs with a single command, optimized for long-running LLM workloads up to 60 minutes
+- 💾 **Built-in Storage**: Zero-config blob storage, SQL databases, and vector search for building stateful agents and workflows
 
 Check out the [documentation](https://gensx.com/docs) to learn more about building LLM applications with GenSX.
 
@@ -27,44 +24,41 @@ Check out the [documentation](https://gensx.com/docs) to learn more about buildi
 
 Most LLM frameworks are graph oriented--you express your workflow with nodes, edges, and a global state object. GenSX takes a different approach--you compose your workflow with components, and GenSX handles the execution for you.
 
-Components in GenSX look a lot like a React components:
+Components in GenSX look a lot like functions. You create them by passing in a function and a name to `gensx.Component()`, a higher order function::
 
 ```tsx
 import * as gensx from "@gensx/core";
-import { ChatCompletion } from "gensx/openai";
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "@gensx/vercel-ai";
 
-// props interface
-interface WriteDraftProps {
+// input interface
+interface WriteDraftInput {
   research: string[];
   prompt: string;
 }
 
-// return type
-type WriteDraftOutput = string;
-
 // components are pure functions that are reusable by default
-const WriteDraft = gensx.Component<WriteDraftProps, WriteDraftOutput>(
+const WriteDraft = gensx.Component(
   "WriteDraft",
-  ({ prompt, research }) => {
+  async ({ prompt, research }: WriteDraftInput) => {
     const systemMessage = `You're an expert technical writer.
     Use the information when responding to users: ${research}`;
 
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        temperature={0}
-        messages={[
-          {
-            role: "system",
-            content: systemMessage,
-          },
-          {
-            role: "user",
-            content: `Write a blog post about ${prompt}`,
-          },
-        ]}
-      />
-    );
+    const result = await generateText({
+      messages: [
+        {
+          role: "system",
+          content: systemMessage,
+        },
+        {
+          role: "user",
+          content: `Write a blog post about ${prompt}`,
+        },
+      ],
+      model: openai("gpt-4o-mini"),
+    });
+
+    return result.text;
   },
 );
 ```
@@ -76,30 +70,28 @@ import * as gensx from "@gensx/core";
 import { OpenAIProvider } from "gensx/openai";
 import { Research, WriteDraft, EditDraft } from "./writeBlog";
 
-interface BlogWriterProps {
-  prompt: string;
+interface WriteBlogInput {
+  title: string;
+  description: string;
 }
 
-export const WriteBlog = gensx.StreamComponent<BlogWriterProps>(
+const WriteBlog = gensx.Workflow(
   "WriteBlog",
-  ({ prompt }) => {
-    return (
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <Research prompt={prompt}>
-          {(research) => (
-            <WriteDraft prompt={prompt} research={research.flat()}>
-              {(draft) => <EditDraft draft={draft} stream={true} />}
-            </WriteDraft>
-          )}
-        </Research>
-      </OpenAIProvider>
-    );
+  async ({ title, description }: WriteBlogInput) => {
+    const queries = await GenerateQueries({
+      title,
+      description,
+    });
+    const research = await ResearchBlog({ queries });
+    const draft = await WriteDraft({ title, context: research });
+    const final = await EditDraft({ title, content: draft });
+    return final;
   },
 );
 
-const workflow = gensx.Workflow("WriteBlogWorkflow", WriteBlog);
-const result = await workflow.run({
-  prompt: "Write a blog post about AI developer tools",
+const result = await WriteBlog({
+  title: "How AI broke modern infra",
+  description: "Long-running workflows require a new approach to infra",
 });
 ```
 
@@ -111,21 +103,13 @@ Check out the [Quickstart Guide](https://gensx.com/docs/quickstart) to build you
 
 This repo contains a number of [examples](./examples) to help you get up and running with GenSX.
 
-Running an example:
+To run an example:
 
 ```bash
-# From the root of the repo
+cd examples/<example-name>
 
-# Install dependencies
 pnpm install
 
-# Run the example
-pnpm start:example <example-name>
-
-# or to run from the example directory
-pnpm build
-
-cd examples/<example-name>
 pnpm start
 ```
 
