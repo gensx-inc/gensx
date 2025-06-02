@@ -1,8 +1,8 @@
 const meta = {
   index: "Overview",
-  "basic-concepts": "Basic concepts",
   quickstart: "Quickstart",
-  "why-components": "Why Components?",
+  "basic-concepts": "Basic concepts",
+  "why-components": "Why components?",
   cloud: "GenSX Cloud ",
   "component-reference": "Components reference",
   patterns: "Patterns",

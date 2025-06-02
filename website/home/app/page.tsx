@@ -76,13 +76,13 @@ import { tool } from 'ai';
 const RAGTool = tool({
   description: "Search through documentation using vector similarity",
   parameters: z.object({
-    query: z.string().describe("The search query to find relevant documentation")
+    query: z.string().describe("the search query")
   }),
   execute: async ({ query }) => {
     const docs = await useSearch("documentation");
     const { embeddings } = await embed({
       model: openai.embedding("text-embedding-3-small"),
-      input: query,
+      value: query,
     });
     return await docs.query({ vector: embedding, topK: 3 });
   }

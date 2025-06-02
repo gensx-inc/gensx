@@ -6,7 +6,7 @@ import { embedMany } from "@gensx/vercel-ai";
 const embeddingModel = openai.embedding("text-embedding-3-small");
 
 export const InitializeSearch = gensx.Workflow("InitializeSearch", async () => {
-  // UseSearch will create the namespace automatically if it doesn't exist.
+  // useSearch will create the namespace automatically if it doesn't exist.
   const namespace = await useSearch("baseball");
 
   const documents = [

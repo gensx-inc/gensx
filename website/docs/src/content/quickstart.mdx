@@ -5,14 +5,14 @@ description: Getting started with GenSX
 
 # Quickstart
 
-In this quickstart, you'll learn how to get up and running with GenSX. GenSX is a simple typescript framework for building complex LLM applications using JSX. If you haven't already, check out the [basic concepts](/docs/basic-concepts) to learn more about how GenSX works.
+In this quickstart, you'll learn how to get up and running with GenSX, a simple typescript framework for building complex LLM applications.
 
 ## Prerequisites
 
 Before getting started, make sure you have the following:
 
 - [Node.js](https://nodejs.org/) version 20 or higher installed
-- An [OpenAI API key](https://platform.openai.com/api-keys) with access to the required models
+- An [OpenAI API key](https://platform.openai.com/api-keys)
 - A package manager of your choice ([npm](https://www.npmjs.com/), [yarn](https://yarnpkg.com/), or [pnpm](https://pnpm.io/))
 
 ## Install the `gensx` CLI
@@ -20,146 +20,94 @@ Before getting started, make sure you have the following:
 You can install the `gensx` CLI using your package manager of choice:
 
 ```bash
-# For a global installation
 npm i -g gensx
-
-# or prefix every command with npx
-npx gensx
 ```
 
-## Login to GenSX Cloud (optional)
+Alternatively, if you prefer not to install the CLI globally, you can prefix every command in this guide with `npx`.
 
-If you want to be able to visualize your workflows and view traces, you'll need to login to GenSX Cloud:
+## Log in to GenSX Cloud (optional)
 
-![blog writing trace](/quickstart/blog-trace.png)
+If you want to be able to visualize your workflows and view traces, you'll need to log in to GenSX Cloud. This is optional, but recommended.
 
-Run the following command to log into GenSX Cloud:
+![example trace](/quickstart/trace-rag.png)
+
+To log in into GenSX Cloud, run the following command:
 
 ```bash
-# If you installed the CLI globally
 gensx login
-
-# Using npx
-npx gensx login
 ```
 
-Now traces will automatically be saved to the cloud so you can visualize and debug workflow executions, but this step is optional and you can skip it for now if you prefer.
+You'll be redirected to the GenSX website and will need to create an account if you don't have one already.
 
-![gensx login](/quickstart/gensx-login.png)
+Once you're logged in, you're ready to create a workflow! Workflow traces will automatically be saved to the cloud so you can visualize and debug workflow executions.
 
-Hit enter and your browser will open the login page.
+## Create a new project
 
-![console login](/quickstart/login.png)
-
-Once you've logged in, you'll see the following success message:
-
-![login success](/quickstart/login-success.png)
-
-Now you're ready to create a new workflow! Return to your terminal for the next steps.
-
-## Create a new workflow
-
-To get started, run the following command with your package manager of choice in an empty directory. This will create a new GenSX workflow to get you started.
+To get started, run the `new` command with a project name of your choice. This will create a new GenSX project with a simple workflow to get you started.
 
 ```bash
-# If you installed the CLI globally
-gensx new .
-
-# Using npx
-npx gensx new .
+gensx new <project-name>
 ```
 
 When creating a new project, you'll be prompted to select IDE rules to add to your project. These rules help AI assistants like Claude, Cursor, Cline, and Windsurf understand your GenSX project better, providing more accurate code suggestions and help.
 
-You can also specify IDE rules directly using the `--ide-rules` flag:
+In `src/workflows.ts`, you'll find a simple `Chat` component and workflow:
 
-```bash
-# Install Cline and Windsurf rules
-gensx new . --ide-rules cline,windsurf
-
-# Skip IDE rule selection
-gensx new . --skip-ide-rules
-```
-
-You can also install or update these rules later using npx:
-
-```bash
-# Install Claude.md template
-npx @gensx/claude-md
-
-# Install Cursor rules
-npx @gensx/cursor-rules
-
-# Install Cline rules
-npx @gensx/cline-rules
-
-# Install Windsurf rules
-npx @gensx/windsurf-rules
-```
-
-This will create a new started project, ready for you to run your first workflow:
-
-![create project](/quickstart/gensx-new.png)
-
-In `index.tsx`, you'll find a simple OpenAI chat completion component:
-
-```tsx
+```ts
 import * as gensx from "@gensx/core";
-import { OpenAIProvider, ChatCompletion } from "@gensx/openai";
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "@gensx/vercel-ai";
 
-interface RespondProps {
-  userInput: string;
+interface ChatProps {
+  userMessage: string;
 }
-type RespondOutput = string;
 
-const Respond = gensx.Component<RespondProps, RespondOutput>(
-  "Respond",
-  async ({ userInput }) => {
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          {
-            role: "system",
-            content:
-              "You are a helpful assistant. Respond to the user's input.",
-          },
-          { role: "user", content: userInput },
-        ]}
-      />
-    );
+const Chat = gensx.Component("Chat", async ({ userMessage }: ChatProps) => {
+  const result = await generateText({
+    model: openai("gpt-4.1-mini"),
+    messages: [
+      {
+        role: "system",
+        content: "You are a helpful assistant.",
+      },
+      { role: "user", content: userMessage },
+    ],
+  });
+  return result.text;
+});
+
+const ChatWorkflow = gensx.Workflow(
+  "ChatWorkflow",
+  async ({ userMessage }: ChatProps) => {
+    return await Chat({ userMessage });
   },
 );
 
-const WorkflowComponent = gensx.Component<{ userInput: string }, string>(
-  "Workflow",
-  ({ userInput }) => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <Respond userInput={userInput} />
-    </OpenAIProvider>
-  ),
-);
+export { ChatWorkflow };
+```
 
-const workflow = gensx.Workflow("MyGSXWorkflow", WorkflowComponent);
+This template shows the basics of building a GenSX workflow:
 
-const result = await workflow.run({
-  userInput: "Hi there! Say 'Hello, World!' and nothing else.",
+- Components and workflows are just pure functions that take inputs and return outputs
+- You create components and workflows by calling `gensx.Component()` and `gensx.Workflow()` along with a name and a function.
+- Components are the building blocks of workflows. Workflows are the entry point to your application and are what we'll deploy as an API in a few steps.
+- You can use the LLM package of your choice. GenSX provides `@gensx/vercel-ai`, `@gensx/openai`, and `@gensx/anthropic` out of the box. These packages are simply wrappers around the original packages optimized for GenSX.
+
+### Running the workflow
+
+The project template includes a `src/index.ts` file that you can use to run the workflow:
+
+```ts
+import { ChatWorkflow } from "./workflows.js";
+
+const result = await ChatWorkflow({
+  userMessage: "Hi there! Say 'Hello, World!' and nothing else.",
 });
 
 console.log(result);
 ```
 
-The component is executed through `gensx.Workflow.run()`, which processes the JSX tree from top to bottom. In this example:
-
-1. First, the `OpenAIProvider` component is initialized with your API key
-2. Then, the `Respond` component receives the `userInput` prop
-3. Inside `Respond`, a `ChatCompletion` component is created with the specified model and messages
-4. The result flows back up through the tree, ultimately returning the response from gpt-4o-mini.
-
-Components in GenSX are pure functions that take props and return outputs, making them easy to test and compose. The JSX structure makes the data flow clear and explicit - each component's output can be used by its children through standard TypeScript/JavaScript.
-
-### Running the workflow
-
+There's nothing special here--workflows are just invoked like any other function.
 To run the workflow, you'll need to set the `OPENAI_API_KEY` environment variable.
 
 ```bash
@@ -170,186 +118,33 @@ export OPENAI_API_KEY=<your-api-key>
 pnpm dev
 ```
 
-![run project](/quickstart/gensx-run.png)
+This will run the workflow and print the workflow's output to the console along with a URL to the trace (if you're logged in).
 
-If you chose to log in, you can now view the trace for this run in GenSX Cloud by clicking the link:
+```bash
+[GenSX] View execution at: https://app.gensx.com/<org>/<project>/executions/<run-id>?workflowName=ChatWorkflow
+
+Hello, World!
+```
+
+You can now view the trace for this run in GenSX Cloud by clicking the link:
 
 ![trace](/quickstart/trace.png)
 
 The trace shows a flame graph of your workflow, including every component that executed with inputs and outputs.
 
-Some components will be hidden by default, but you can click the carat to expand them. Clicking on a component will show you details about it's input props and outputs.
+Some components will be hidden by default, but you can click the carat to expand them. Clicking on a component will show you details about it's inputs and outputs.
 
 For longer running workflows, this view will update in real time as the workflow executes.
 
-## Combining components
-
-The example above is a simple workflow with a single component. In practice, you'll often want to combine multiple components to create more complex workflows.
-
-Components can be nested to create multi-step workflows with each component's output being passed through a child function. For example, let's define two components: a `Research` component that gathers information about a topic, and a `Writer` component that uses that information to write a blog post.
-
-```tsx
-// Research component that gathers information
-const Research = gensx.Component<{ topic: string }, string>(
-  "Research",
-  async ({ topic }) => {
-    return (
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          {
-            role: "system",
-            content:
-              "You are a research assistant. Provide key facts about the topic.",
-          },
-          { role: "user", content: topic },
-        ]}
-      />
-    );
-  },
-);
-
-// Writer component that uses research to write content
-const WriteArticle = gensx.Component<
-  { topic: string; research: string },
-  string
->("WriteArticle", async ({ topic, research }) => {
-  return (
-    <ChatCompletion
-      model="gpt-4o-mini"
-      messages={[
-        {
-          role: "system",
-          content:
-            "You are a content writer. Use the research provided to write a blog post about the topic.",
-        },
-        { role: "user", content: `Topic: ${topic}\nResearch: ${research}` },
-      ]}
-    />
-  );
-});
-```
-
-Now you can combine these components using a child function:
-
-```tsx
-// Combine components using child functions
-const ResearchAndWrite = gensx.Component<{ topic: string }, string>(
-  "ResearchAndWrite",
-  ({ topic }) => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <Research topic={topic}>
-        {(research) => <WriteArticle topic={topic} research={research} />}
-      </Research>
-    </OpenAIProvider>
-  ),
-);
-
-const workflow = gensx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite, {
-  printUrl: true,
-});
-```
-
-In this example, the `Research` component gathers information about the topic which then passes the information to the `WriteArticle` component. The `WriteArticle` component uses that information to write an article about the topic which is then returned as the `result`.
-
-### Streaming
-
-One common challenge with LLM workflows is handling streaming responses. Any given LLM call can return a response as a string or as a stream of tokens. Typically you'll want the last component of your workflow to stream the response.
-
-To take advantage of streaming, all you need to do is update the `WriteArticle` component to use `StreamComponent` and set the `stream` prop to `true` in the `ChatCompletion` component.
-
-```tsx
-interface WriterProps {
-  topic: string;
-  research: string;
-  stream?: boolean;
-}
-
-const Writer = gensx.StreamComponent<WriterProps>(
-  "Writer",
-  async ({ topic, research, stream }) => {
-    return (
-      <ChatCompletion
-        stream={stream ?? false}
-        model="gpt-4o-mini"
-        messages={[
-          {
-            role: "system",
-            content:
-              "You are a content writer. Use the research provided to write a blog post about the topic.",
-          },
-          { role: "user", content: `Topic: ${topic}\nResearch: ${research}` },
-        ]}
-      />
-    );
-  },
-);
-
-const ResearchAndWrite = gensx.Component<{ topic: string }, string>(
-  "ResearchAndWrite",
-  ({ topic }) => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <Research topic={topic}>
-        {(research) => (
-          <Writer
-            topic="latest quantum computing chips"
-            research={research}
-            stream={true}
-          />
-        )}
-      </Research>
-    </OpenAIProvider>
-  ),
-);
-
-const workflow = gensx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite);
-const stream = await workflow.run(
-  { topic: "latest quantum computing chips" },
-  { printUrl: true },
-);
-
-// Print the streaming response
-for await (const chunk of stream) {
-  process.stdout.write(chunk);
-}
-```
-
-Now we can see our research step running before the write step:
-
-![streaming](/quickstart/writer-trace.png)
-
-While this is nice, the real power of streaming components comes when you expand or refactor your workflow. Now you could easily add an `<EditArticle>` component to the workflow that streams the response to the user with minimal changes. There's no extra plumbing needed besides removing the `stream={true}` prop on the `WriteArticle` component.
-
-```tsx
-const ResearchAndWrite = gensx.Component<{ topic: string }, string>(
-  "ResearchAndWrite",
-  ({ topic }) => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <Research topic={topic}>
-        {(research) => (
-        <WriteArticle topic={topic} research={research}>
-          {(content) => <EditArticle content={content} stream={true}/>}
-        </WriteArticle>
-      )}
-    </Research>
-  </OpenAIProvider>,
-);
-
-const workflow = gensx.Workflow("ResearchAndWriteWorkflow", ResearchAndWrite, { printUrl: true });
-const stream = await workflow.run({ topic: "latest quantum computing chips" });
-```
-
-![blog writing trace](/quickstart/blog-trace.png)
-
 ## Running the dev server
 
-Now that you've built your workflows, you can easily turn them into REST APIs.
+Now that you've built your first workflow, you can easily turn it into a REST API.
 
 GenSX provides a local development server with local REST APIs that match the shape of workflows deployed to GenSX Cloud. You can run the dev server from the CLI:
 
 ```bash
 # Start the development server
-gensx start src/workflows.tsx
+gensx start src/workflows.ts
 ```
 
 The development server provides several key features:
@@ -362,15 +157,13 @@ The development server provides several key features:
 You'll see something like this when you start the server:
 
 ```bash
-🔍 Starting GenSX Dev Server...
-ℹ Starting development server...
-✔ Compilation completed
-✔ Generating schema
+🚀 GenSX Dev Server running at http://localhost:1337
+🧪 Swagger UI available at http://localhost:1337/swagger-ui
 
-📋 Available workflows:
-- ResearchAndWriteWorkflow: http://localhost:1337/workflows/ResearchAndWriteWorkflow
+Available workflows:
+- ChatWorkflow: http://localhost:1337/workflows/ChatWorkflow
 
-✅ Server is running. Press Ctrl+C to stop.
+Listening for changes... 10:58:55 AM
 ```
 
 You can now test your workflow by sending requests to the provided URL using any HTTP client, or using the built-in Swagger UI at `http://localhost:1337/swagger-ui`.
@@ -381,7 +174,7 @@ Now that you've tested your APIs locally, you can deploy them to the cloud. GenS
 
 ```bash
 # Deploy your project to GenSX Cloud
-gensx deploy src/workflows.tsx -e OPENAI_API_KEY
+gensx deploy src/workflows.ts -e OPENAI_API_KEY
 ```
 
 This command:
@@ -396,7 +189,7 @@ For production deployments, you can target a specific environment:
 
 ```bash
 # Deploy to production environment
-gensx deploy src/index.ts --env production
+gensx deploy src/workflows.ts -e OPENAI_API_KEY --env production
 ```
 
 ### Running a workflow from the CLI
@@ -405,10 +198,10 @@ Once deployed, you can execute your workflows directly from the command line:
 
 ```bash
 # Run a workflow synchronously
-gensx run ResearchAndWriteWorkflow --input '{"topic":"quantum computing"}'
+gensx run ChatWorkflow --input '{"userMessage":"Write a poem about an AI loving raccoon"}'
 
 # Save the output to a file
-gensx run ResearchAndWriteWorkflow --input '{"topic":"quantum computing"}' --output result.json
+gensx run ChatWorkflow --input '{"userMessage":"Write a haiku"}' --output result.json
 ```
 
 The CLI makes it easy to test your workflows and integrate them into scripts or automation.
@@ -423,138 +216,232 @@ The GenSX Cloud console provides a visual interface for managing and executing y
 4. Click the "Run" button and enter your input
 5. View the results directly in the console
 
-![Running a workflow in the console](/cloud/console-playground.png)
+![Running a workflow in the console](/quickstart/run-console.png)
 
 The console also provides API documentation and code snippets for your workflows as well as execution history and tracing for all previous workflow runs.
 
-## Adding persistence with storage
+![api docs in the console](/quickstart/api-docs.png)
 
-Now that you've deployed your first workflow, you can add in storage so you can build more sophisticated workflows. GenSX offers three types of builtin storage: blob storage, sql database storage and, full text and vector search storage.
+## Improving your workflow with storage
 
-### Blob storage
+Now that you've deployed your first workflow, you can use GenSX's cloud storage to build more sophisticated workflows. GenSX offers three types of builtin storage: blob storage, sql database storage and, full text and vector search storage.
 
-Use the `useBlob` hook to store and retrieve unstructured data:
+In this section, we'll add chat history using blob storage and then add in RAG using vector search.
 
-```tsx
-import { BlobProvider, useBlob } from "@gensx/storage";
+### Chat history with blob storage
 
-const ChatWithMemory = gensx.Component<
-  { userInput: string; threadId: string },
-  string
->("ChatWithMemory", async ({ userInput, threadId }) => {
-  // Load chat history from cloud storage
-  const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
-  const history = (await blob.getJSON()) ?? [];
+To start, we'll add chat history to our workflow. First, we need to install the `@gensx/storage` package then import the `useBlob` hook.
 
-  // Add user message and get AI response
-  // ...
-
-  // Save updated history
-  await blob.putJSON(updatedHistory);
-
-  return response;
-});
-
-// Wrap your workflow with BlobProvider
-const WorkflowComponent = gensx.Component<
-  { userInput: string; threadId: string },
-  string
->("Workflow", ({ userInput, threadId }) => (
-  <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-    <BlobProvider>
-      <ChatWithMemory userInput={userInput} threadId={threadId} />
-    </BlobProvider>
-  </OpenAIProvider>
-));
+```bash
+npm install @gensx/storage
 ```
 
-### SQL database
+```ts
+import { useBlob } from "@gensx/storage";
+```
 
-Use the `useDatabase` hook for structured data:
+Next, we need to update the interfaces for our workflow.
 
-```tsx
-import { DatabaseProvider, useDatabase } from "@gensx/storage";
+```ts
+interface ChatProps {
+  userMessage: string;
+  threadId: string; // add thread id for tracking the history
+}
 
-const SqlCopilot = gensx.Component<{ question: string }, string>(
-  "SqlCopilot",
-  async ({ question }) => {
-    const db = await useDatabase("baseball");
+// Add this interface for storing chat history
+interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+```
 
-    // Set up schema if needed
-    await db.executeMultiple(`
-      CREATE TABLE IF NOT EXISTS baseball_stats (
-        player TEXT PRIMARY KEY,
-        team TEXT,
-        batting_avg REAL
-      )
-    `);
+Now, we're ready to update the `Chat` component to use blob storage to store chat history.
 
-    // Execute query
-    const result = await db.execute("SELECT * FROM baseball_stats LIMIT 5");
+```ts
+const Chat = gensx.Component(
+  "Chat",
+  async ({ userMessage, threadId }: ChatProps) => {
+    // Function to load chat history
+    const loadChatHistory = async (): Promise<ChatMessage[]> => {
+      const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+      const history = await blob.getJSON();
+      return history ?? [];
+    };
 
-    // Use the result to inform your LLM response
-    // ...
+    // Function to save chat history
+    const saveChatHistory = async (messages: ChatMessage[]): Promise<void> => {
+      const blob = useBlob<ChatMessage[]>(`chat-history/${threadId}.json`);
+      await blob.putJSON(messages);
+    };
 
-    return response;
+    try {
+      // Load existing chat history
+      const existingMessages = await loadChatHistory();
+
+      // Add the new user message
+      const updatedMessages = [
+        ...existingMessages,
+        { role: "user", content: userMessage } as ChatMessage,
+      ];
+
+      // Generate response using the model
+      const result = await generateText({
+        messages: updatedMessages,
+        model: openai("gpt-4.1-mini"),
+      });
+
+      // Add the assistant's response to the history
+      const finalMessages = [
+        ...updatedMessages,
+        { role: "assistant", content: result.text } as ChatMessage,
+      ];
+
+      // Save the updated chat history
+      await saveChatHistory(finalMessages);
+
+      console.log(
+        `[Thread ${threadId}] Chat history updated with new messages`,
+      );
+
+      return result.text;
+    } catch (error) {
+      console.error("Error in chat processing:", error);
+      return `Error processing your request in thread ${threadId}. Please try again.`;
+    }
   },
 );
 
-// Wrap your workflow with DatabaseProvider
-const WorkflowComponent = gensx.Component<{ question: string }, string>(
-  "DatabaseWorkflowComponent",
-  ({ question }) => (
-    <DatabaseProvider>
-      <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-        <SqlCopilot question={question} />
-      </OpenAIProvider>
-    </DatabaseProvider>
-  ),
+const ChatWorkflow = gensx.Workflow(
+  "ChatWorkflow",
+  async ({ userMessage, threadId }: ChatProps) => {
+    return await Chat({ userMessage, threadId });
+  }
 );
 ```
 
-### Full-text and vector search
+When run locally, GenSX blob storage will just write to the local filesystem and when you deploy the workflow it will automatically start using cloud storage.
 
-Use the `useSearch` hook for semantic search and RAG applications:
+After you've made these updates, deploy and run the workflow again to see chat history in action.
 
-```tsx
-import { SearchProvider, useSearch } from "@gensx/storage";
-import { OpenAIEmbedding } from "@gensx/openai";
+```bash
+gensx deploy src/workflows.ts -e OPENAI_API_KEY
 
-const SemanticSearch = gensx.Component<{ query: string }, any[]>(
-  "SemanticSearch",
-  async ({ query }) => {
-    // Access a vector search namespace
-    const namespace = await useSearch("documents");
+# send an initial message to the thead
+gensx run ChatWorkflow --input '{"userMessage":"Name the capital of France", "threadId":"123"}'
 
-    // Generate an vector embedding for the query
-    const embedding = await OpenAIEmbedding.run({
-      model: "text-embedding-3-small",
-      input: query,
+# use the same thread
+gensx run ChatWorkflow --input '{"userMessage":"What was my previous message?", "threadId":"123"}'
+
+```
+
+You should see that the model remembers the previous message. You can also go to the *Blob Storage* tab in the [GenSX Cloud console](https://app.gensx.com) and see the blob that was created.
+
+### Add RAG with vector search
+
+Next, let's add RAG to our workflow. We'll use GenSX's [llms-full.txt](https://www.gensx.com/llms-full.txt) file and store it in GenSX's vector search.
+
+First, we need to build a workflow that will populate the vector search namespace. Add this to your workflows.ts file.
+
+```ts
+import { useSearch } from "@gensx/storage";
+import { embedMany } from "@gensx/vercel-ai";
+
+export const InitializeSearch = gensx.Workflow("InitializeSearch", async () => {
+  // useSearch will create the namespace automatically if it doesn't exist.
+  const namespace = await useSearch("gensx-docs");
+
+  // Fetch content from the URL
+  const content = await (
+    await fetch("https://www.gensx.com/llms-full.txt")
+  ).text();
+
+  // Split content on H1 headings and filter out empty sections
+  const documents = content
+    .split(/\n# /)
+    .map((text, i) => ({ id: `section-${i + 1}`, text: text.trim() }))
+    .filter((doc) => doc.text.length > 0);
+
+  // Create embeddings for the documents
+  const embeddings = await embedMany({
+    model: openai.embedding("text-embedding-3-small"),
+    values: documents.map((doc) => doc.text),
+  });
+
+  // Write the documents to the vector search namespace
+  await namespace.write({
+    upsertRows: documents.map((doc, index) => ({
+      id: doc.id,
+      vector: embeddings.embeddings[index],
+      text: doc.text,
+    })),
+    distanceMetric: "cosine_distance",
+  });
+
+  return `Search namespace initialized`;
+});
+```
+
+Next, let's add a tool that will use the vector search namespace to answer questions.
+
+```ts
+import { useSearch } from "@gensx/storage";
+import { tool } from "ai";
+import { z } from "zod";
+import { embed } from "@gensx/vercel-ai";
+
+const tools = {
+  search: tool({
+  description: "Search the GenSX documentation",
+  parameters: z.object({
+    query: z.string().describe("the search query"),
+  }),
+  execute: async ({ query }: { query: string }) => {
+    const namespace = await useSearch("gensx-docs");
+
+    const { embedding } = await embed({
+      model: openai.embedding("text-embedding-3-small"),
+      value: query,
     });
 
     // Search for similar documents
     const results = await namespace.query({
-      vector: embedding.data[0].embedding,
+      vector: embedding,
       topK: 5,
       includeAttributes: true,
     });
 
     return results;
   },
-);
-
-// Wrap your workflow with SearchProvider
-const WorkflowComponent = gensx.Component<{ query: string }, any[]>(
-  "SearchWorkflow",
-  ({ query }) => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <SearchProvider>
-        <SemanticSearch query={query} />
-      </SearchProvider>
-    </OpenAIProvider>
-  ),
-);
+  }),
+};
 ```
+
+Finally, update the `Chat` component to use the new tool. You also need to set `maxSteps` to allow the sdk to process the tool calls.
+
+```ts
+const result = await generateText({
+  messages: updatedMessages,
+  model: openai("gpt-4.1-mini"),
+  tools,
+  maxSteps: 5,
+});
+```
+
+Great! Now you're ready to deploy the workflows and test them:
+
+```bash
+gensx deploy src/workflows.ts -e OPENAI_API_KEY
+
+# initialize the search namespace
+gensx run InitializeSearch
+
+# run the workflow
+gensx run ChatWorkflow --input '{"userMessage":"Succinctly describe GenSX", "threadId":"789"}'
+```
+
+Now when you go look at the trace, you'll see that the model used the tool call to search the GenSX documentation. The trace allows you to see all the inputs and outputs of each component including the inputs and outputs of the tool call.
+
+![trace with rag](/quickstart/trace-rag.png)
 
 ## Learning more
 
