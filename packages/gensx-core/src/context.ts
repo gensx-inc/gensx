@@ -1,5 +1,4 @@
 import { ExecutionNode } from "./checkpoint.js";
-import { MaybePromise } from "./types.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
@@ -22,7 +21,6 @@ export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
-    public onComplete?: () => MaybePromise<void>,
   ) {
     this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext();
   }
@@ -31,10 +29,7 @@ export class ExecutionContext {
     return contextManager.init();
   }
 
-  withContext(
-    newContext: Partial<WorkflowContext>,
-    onComplete?: () => MaybePromise<void>,
-  ): ExecutionContext {
+  withContext(newContext: Partial<WorkflowContext>): ExecutionContext {
     if (Object.getOwnPropertySymbols(newContext).length === 0) {
       return this;
     }
@@ -48,7 +43,7 @@ export class ExecutionContext {
     for (const key of Object.getOwnPropertySymbols(newContext)) {
       mergedContext[key] = newContext[key];
     }
-    return new ExecutionContext(mergedContext, this, onComplete);
+    return new ExecutionContext(mergedContext, this);
   }
 
   get<K extends keyof WorkflowContext>(key: K): WorkflowContext[K] | undefined {

@@ -195,6 +195,33 @@ export function Component<P extends object = {}, R = unknown>(
   return ComponentFn;
 }
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+export type ProgressEvent = { id: string; timestamp: number } & (
+  | { type: "start"; workflowExecutionId: string; workflowName: string }
+  | {
+      type: "component-start";
+      componentName: string;
+      label?: string;
+      componentId: string;
+    }
+  | {
+      type: "component-end";
+      componentName: string;
+      label?: string;
+      componentId: string;
+    }
+  | { type: "progress"; message: JsonValue }
+  | { type: "error"; payload: Error }
+  | { type: "end" }
+);
+
 export function Workflow<P extends object = {}, R = unknown>(
   name: string,
   target: (props: P) => R,
@@ -202,7 +229,10 @@ export function Workflow<P extends object = {}, R = unknown>(
 ): (props?: P) => Promise<Awaited<R>> {
   const WorkflowFn = async (
     props?: P,
-    runtimeOpts?: WorkflowOpts,
+    runtimeOpts?: WorkflowOpts & {
+      workflowExecutionId?: string;
+      progressListener?: (progressEvent: ProgressEvent) => void;
+    },
   ): Promise<Awaited<R>> => {
     const context = new ExecutionContext({});
     await context.init();
@@ -228,6 +258,16 @@ export function Workflow<P extends object = {}, R = unknown>(
     const component = Component<P, R>(name, target);
 
     try {
+      if (runtimeOpts?.workflowExecutionId) {
+        runtimeOpts.progressListener?.({
+          id: runtimeOpts.workflowExecutionId,
+          timestamp: Date.now(),
+          type: "start",
+          workflowExecutionId: runtimeOpts.workflowExecutionId,
+          workflowName,
+        });
+      }
+
       const result = await withContext(context, () =>
         component(props, runtimeOpts),
       );

@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { ExecutionContext } from "./context.js";
-
 export type MaybePromise<T> = T | Promise<T>;
 
 export type Primitive = string | number | boolean | null | undefined;
@@ -29,16 +27,6 @@ export interface DecoratorWorkflowOpts extends WorkflowOpts {
 export interface WorkflowOpts extends ComponentOpts {
   printUrl?: boolean;
   metadata?: Record<string, unknown>;
-}
-
-export interface Context<T> {
-  readonly __type: "Context";
-  readonly defaultValue: T;
-  readonly symbol: symbol;
-  Provider: (props: {
-    value: T;
-    onComplete?: () => Promise<void> | void;
-  }) => ExecutionContext;
 }
 
 export type GSXToolAnySchema = z.ZodObject<z.ZodRawShape>;
