@@ -5,109 +5,206 @@ description: Using tools with GenSX
 
 # Using tools with GenSX
 
-Using tools provides a powerful and flexible way to extend the capabilities of an LLM. GenSX offers several different ways for you to work with tools:
+Workflows often require LLMs to interact with external systems or perform specific actions and using tools with LLMs is a powerful way to accomplish that.
 
-- Using the `GSXChatCompletion` component from [@gensx/openai](../component-reference/openai.mdx) or [@gensx/anthropic](../component-reference/anthropic.mdx) for fully automated tool calling
-- Using the `OpenAIChatCompletion` or `AnthropicChatCompletion` components from [@gensx/openai](../component-reference/openai.mdx) or [@gensx/anthropic](../component-reference/anthropic.mdx) and following the same pattern as described in the [OpenAI](https://platform.openai.com/docs/guides/function-calling?api-mode=responses) and [Anthropic](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview) docs
-- Using tools with the [Vercel AI SDK](https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling) via the [@gensx/vercel-ai-sdk](../component-reference/vercel-ai.mdx) package
+This guide will show examples of using tools with both [@gensx/openai](../component-reference/openai.mdx) and [@gensx/vercel-ai](../component-reference/vercel-ai.mdx). You can also find similar examples in [OpenAI examples](https://github.com/gensx-inc/gensx/tree/main/examples/openai-examples) and [Vercel AI examples](https://github.com/gensx-inc/gensx/tree/main/examples/vercel-ai) in the GitHub repo.
 
-This guide will focus on the first option: using `GSXTool` and the `GSXChatCompletion` component for automated tool calling. The examples below show how to work with the [@gensx/openai](../component-reference/openai.mdx) package but you can follow a similar pattern with the [@gensx/anthropic](../component-reference/anthropic.mdx) package.
+## Tools with the Vercel AI SDK
 
-## Defining a tool
+The [`@gensx/vercel-ai`](../component-reference/vercel-ai.mdx) package provides a simple way to define and use tools with LLMs.
 
-Start by defining the tool. A `GSXTool` contains four main pieces:
+### Defining a tool
 
-- `name`: The name of the tool
-- `description`: A description of the tool
-- `schema`: The schema of the tool, defined as a Zod object
-- `run`: The function that will be called when the tool is invoked by an LLM
+Start by defining your tool using the `tool` helper from the Vercel AI SDK:
 
-Here's an example of a basic weather tool with mocked functionality:
-
-```tsx
-import { GSXTool } from "@gensx/openai";
+```ts
+import { tool } from "ai";
 import { z } from "zod";
 
-// Define the schema as a Zod object
-const weatherSchema = z.object({
-  location: z.string(),
-});
-
-// Use z.infer to get the type for our parameters
-type WeatherParams = z.infer<typeof weatherSchema>;
-
-// Create the tool with the correct type - using the schema type, not the inferred type
-const weatherTool = new GSXTool({
-  name: "get_weather",
-  description: "get the weather for a given location",
-  schema: weatherSchema,
-  run: async ({ location }: WeatherParams) => {
-    console.log("getting weather for", location);
-    const weather = ["sunny", "cloudy", "rainy", "snowy"];
-    return Promise.resolve({
-      weather: weather[Math.floor(Math.random() * weather.length)],
-    });
+const weatherTool = tool({
+  description: "Get the weather in a location",
+  parameters: z.object({
+    location: z.string().describe("The location to get the weather for"),
+  }),
+  execute: async ({ location }: { location: string }) => {
+    console.log("Executing weather tool with location:", location);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return {
+      location,
+      temperature: 72 + Math.floor(Math.random() * 21) - 10,
+    };
   },
 });
 ```
 
-You can also define tools using `gensx.GSXToolProps` which allows you to create a tool independent of the @gensx/openai and @gensx/anthropic packages:
+### Using tools with `generateText`
 
-```tsx
-import * as gensx from "@gensx/core";
+You can use tools with the `generateText` function by passing them in the `tools` prop:
 
-const weatherToolProps: gensx.GSXToolProps = {
-  name: "get_weather",
-  // rest of the tool definition
+```ts
+const WeatherAssistant = gensx.Component(
+  "WeatherAssistant",
+  async ({ prompt }: { prompt: string }) => {
+    const result = await generateText({
+      messages: [
+        {
+          role: "system",
+          content: "You're a helpful, friendly weather assistant.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: openai("gpt-4o-mini"),
+      tools: { weather: weatherTool },
+      maxSteps: 5,
+    });
+    return result.text;
+  },
+);
+```
+
+### Using tools with streaming
+
+You can also use tools with streaming responses using `streamText`:
+
+```ts
+const StreamingWeatherAssistant = gensx.Component(
+  "StreamingWeatherAssistant",
+  ({ prompt }: { prompt: string }) => {
+    const result = streamText({
+      messages: [
+        {
+          role: "system",
+          content: "You're a helpful, friendly weather assistant.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: openai("gpt-4o-mini"),
+      tools: { weather: weatherTool },
+      maxSteps: 5,
+    });
+
+    const generator = async function* () {
+      for await (const chunk of result.textStream) {
+        yield chunk;
+      }
+    };
+
+    return generator();
+  },
+);
+```
+
+## Tools with the OpenAI SDK
+
+You can also use the [`@gensx/openai`](../component-reference/openai.mdx) package to work with tools using OpenAI's native function calling capabilities.
+
+### Defining a tool
+
+Define your tool as a function object:
+
+```ts
+const weatherTool = {
+  type: "function" as const,
+  function: {
+    name: "get_weather",
+    description: "get the weather for a given location",
+    parameters: {
+      type: "object",
+      properties: {
+        location: {
+          type: "string",
+          description: "The location to get the weather for",
+        },
+      },
+      required: ["location"],
+    },
+    parse: JSON.parse,
+    function: (args: { location: string }) => {
+      console.log("getting weather for", args.location);
+      const weather = ["sunny", "cloudy", "rainy", "snowy"];
+      return {
+        weather: weather[Math.floor(Math.random() * weather.length)],
+      };
+    },
+  },
 };
 ```
 
-## Using a tool
+### Using tools with `runTools`
 
-Now that the tool is defined, you can pass it to the `GSXChatCompletion` component in the `tools` prop.
+The OpenAI SDK provides a `runTools` method that handles the tool calling process:
 
-If the model chooses to call the tool, GenSX will execute the tool on your behalf and return the response to the LLM to continue the conversation.
-
-```tsx
-const WeatherAssistant = gensx.Component<{}, ChatCompletionOutput>(
+```ts
+const WeatherAssistant = gensx.Component(
   "WeatherAssistant",
-  () => (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
-        messages={[
-          {
-            role: "system",
-            content: "You're a helpful, friendly weather assistant.",
-          },
-          {
-            role: "user",
-            content: `Will it be sunny in San Diego today?`,
-          },
-        ]}
-        model="gpt-4o-mini"
-        temperature={0.7}
-        tools={[weatherTool]}
-      />
-    </OpenAIProvider>
-  ),
+  async ({ prompt }: { prompt: string }) => {
+    const result = await openai.beta.chat.completions.runTools({
+      model: "gpt-4.1-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You're a helpful, friendly weather assistant.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      tools: [weatherTool],
+    });
+    return await result.finalContent();
+  },
 );
-
-const workflow = gensx.Workflow("WeatherAssistantWorkflow", WeatherAssistant);
-
-const result = await workflow.run({});
-
-console.log(result.choices[0].message.content);
 ```
 
-`GSXChatCompletion` also returns the full message history, including the tool calls, so you can see the sequence of events leading up to the response.
+### Using tools with streaming
 
-```tsx
-console.log(JSON.stringify(result.messages, null, 2));
+You can also use tools with streaming responses:
+
+```ts
+const StreamingWeatherAssistant = gensx.Component(
+  "StreamingWeatherAssistant",
+  async ({ prompt }: { prompt: string }) => {
+    const result = await openai.beta.chat.completions.runTools({
+      model: "gpt-4.1-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You're a helpful, friendly weather assistant.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      tools: [weatherTool],
+      stream: true,
+    });
+    return result;
+  },
+);
+```
+
+Then to consume the output of the component, you would do the following:
+
+```ts
+const streamToolsResult = await StreamingTools({
+  prompt,
+});
+for await (const chunk of streamToolsResult) {
+  process.stdout.write(chunk.choices[0].delta.content ?? "");
+}
 ```
 
 ## Resources
 
 For more examples of using tools with GenSX, see the following examples:
 
-- [Anthropic tools example](https://github.com/gensx-inc/gensx/blob/main/examples/anthropic)
-- [OpenAI tools example](https://github.com/gensx-inc/gensx/blob/main/examples/gsxChatCompletion)
+- [Vercel AI SDK tools example](https://github.com/gensx-inc/gensx/blob/main/examples/vercel-ai)
+- [OpenAI tools example](https://github.com/gensx-inc/gensx/blob/main/examples/openai-examples)
