@@ -12,11 +12,7 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-export type FullProgressEvent = {
-  id: string;
-  timestamp: number;
-} & ProgressEvents;
-export type ProgressEvents =
+export type ProgressEvent =
   | { type: "start"; workflowExecutionId?: string; workflowName: string }
   | {
       type: "component-start";
@@ -34,45 +30,23 @@ export type ProgressEvents =
   | { type: "error"; payload: Error }
   | { type: "end" };
 
-export type ProgressListener = (progressEvent: FullProgressEvent) => void;
-export type ProgressListenerSansId = (progressEvent: ProgressEvents) => void;
+export type ProgressListener = (progressEvent: ProgressEvent) => void;
 
 export interface WorkflowExecutionContext {
   checkpointManager: CheckpointManager;
-  progressListener: ProgressListenerSansId;
+  progressListener: ProgressListener;
   // Future: Add more workflow-level utilities here
 }
 
 export function createWorkflowContext(
   progressListener?: ProgressListener,
 ): WorkflowExecutionContext {
-  const progressManager = new ProgressManager(progressListener);
   return {
     checkpointManager: new CheckpointManager(),
-    progressListener: progressManager._emitProgressRaw.bind(progressManager),
+    progressListener: (progressEvent: ProgressEvent) => {
+      progressListener?.(progressEvent);
+    },
   };
-}
-
-// We use a class here to track state for the ids, to ensure they are unique.
-class ProgressManager {
-  private id = 0;
-  constructor(private progressListener?: ProgressListener) {}
-
-  _emitProgressRaw(progressEvent: ProgressEvents) {
-    this.id++;
-    this.progressListener?.({
-      id: this.id.toString(),
-      timestamp: Date.now(),
-      ...progressEvent,
-    });
-  }
-
-  emitProgress(message: JsonValue) {
-    this._emitProgressRaw({
-      type: "progress",
-      message,
-    });
-  }
 }
 
 export function getWorkflowContext(): WorkflowExecutionContext | undefined {

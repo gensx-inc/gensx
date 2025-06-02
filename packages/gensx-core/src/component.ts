@@ -249,13 +249,11 @@ export function Workflow<P extends object = {}, R = unknown>(
     );
     await context.init();
 
-    const defaultPrintUrl = !Boolean(process.env.CI);
-
     const workflowContext = context.getWorkflowContext();
     workflowContext.checkpointManager.setPrintUrl(
       (runtimeOpts?.printUrl ?? typeof workflowOpts === "string")
-        ? defaultPrintUrl
-        : (workflowOpts?.printUrl ?? defaultPrintUrl),
+        ? false
+        : (workflowOpts?.printUrl ?? false),
     );
 
     const workflowName = name;
