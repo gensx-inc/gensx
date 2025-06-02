@@ -10,6 +10,7 @@ import { FirstTimeSetup } from "../components/FirstTimeSetup.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { useProjectName } from "../hooks/useProjectName.js";
 import { getAuth } from "../utils/config.js";
+import { validateAndSelectEnvironment } from "../utils/env-config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 
 export interface CliOptions {
@@ -100,6 +101,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
             ...ls,
             `Workflow execution started with id: ${body.executionId}`,
           ]);
+          await validateAndSelectEnvironment(projectName!, environment);
           setPhase("done");
           exit();
           return;
@@ -113,6 +115,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
         if (isStream) {
           setPhase("streaming");
           await handleStream(response.body, options.output, setStreamContent);
+          await validateAndSelectEnvironment(projectName!, environment);
           exit();
         } else {
           const body = (await response.json()) as {
@@ -137,6 +140,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
           } else {
             setWorkflowOutput(body.output);
           }
+          await validateAndSelectEnvironment(projectName!, environment);
 
           setPhase("done");
           setTimeout(() => {

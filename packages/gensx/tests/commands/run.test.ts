@@ -17,6 +17,7 @@ import { waitForText } from "../test-helpers.js";
 vi.mock("../../src/utils/env-config.js", () => ({
   getSelectedEnvironment: vi.fn(),
   getEnvironmentForOperation: vi.fn(),
+  validateAndSelectEnvironment: vi.fn(),
 }));
 
 vi.mock("../../src/utils/project-config.js", () => ({
@@ -140,6 +141,11 @@ suite("run command", () => {
     );
 
     await waitForText(lastFrame, /Workflow execution completed/);
+
+    expect(envConfig.validateAndSelectEnvironment).toHaveBeenCalledWith(
+      "test-project",
+      "development",
+    );
   });
 
   it("should handle failed workflow execution", async () => {
@@ -213,6 +219,31 @@ suite("run command", () => {
     );
 
     await waitForText(lastFrame, /Failed to start workflow/);
+  });
+
+  it("should persist selected environment when wait is false", async () => {
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      json: () => Promise.resolve({ executionId: "123" }),
+      headers: new Headers({ "Content-Type": "application/json" }),
+    });
+
+    const { lastFrame } = render(
+      React.createElement(RunWorkflowUI, {
+        workflowName: "test-workflow",
+        options: {
+          input: "{}",
+          wait: false,
+        },
+      }),
+    );
+
+    await waitForText(lastFrame, /Workflow execution started/);
+
+    expect(envConfig.validateAndSelectEnvironment).toHaveBeenCalledWith(
+      "test-project",
+      "development",
+    );
   });
 
   it("should show first-time setup when user hasn't completed setup", async () => {

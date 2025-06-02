@@ -11,6 +11,7 @@ import * as buildCommand from "../../src/commands/build.js";
 import { DeployUI } from "../../src/commands/deploy.js";
 import * as projectModel from "../../src/models/projects.js";
 import * as projectConfig from "../../src/utils/project-config.js";
+import * as envConfig from "../../src/utils/env-config.js";
 import { waitForText } from "../test-helpers.js";
 
 // Mock dependencies
@@ -42,6 +43,7 @@ vi.mock("../../src/commands/build.js", () => ({
 vi.mock("../../src/utils/env-config.js", () => ({
   getSelectedEnvironment: vi.fn(),
   getEnvironmentForOperation: vi.fn(),
+  validateAndSelectEnvironment: vi.fn(),
 }));
 
 vi.mock("../../src/utils/project-config.js", () => ({
@@ -286,6 +288,11 @@ hasCompletedFirstTimeSetup = false
       expect.stringContaining("/environments/production/deploy"),
       expect.any(Object),
       expect.any(Object),
+    );
+
+    expect(envConfig.validateAndSelectEnvironment).toHaveBeenCalledWith(
+      "test-project",
+      "production",
     );
   });
 
