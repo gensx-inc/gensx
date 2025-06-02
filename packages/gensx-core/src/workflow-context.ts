@@ -17,7 +17,7 @@ export type FullProgressEvent = {
   timestamp: number;
 } & ProgressEvents;
 export type ProgressEvents =
-  | { type: "start"; workflowExecutionId: string; workflowName: string }
+  | { type: "start"; workflowExecutionId?: string; workflowName: string }
   | {
       type: "component-start";
       componentName: string;

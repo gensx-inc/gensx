@@ -11,6 +11,7 @@ export interface ComponentOpts {
   metadata?: Record<string, unknown>; // Metadata to attach to the component
   aggregator?: (chunks: unknown[]) => unknown; // Aggregator function to use for streaming results, default is to accumulate all chunks into an array, and concatenate strings.
   __streamingResultKey?: string; // Key to use for the looking up streaming iterator, default is to use the component name.
+  onComplete?: () => void; // Callback to call when the component completes
 }
 
 // omit name from ComponentOpts
