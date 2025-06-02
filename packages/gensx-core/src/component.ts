@@ -249,11 +249,18 @@ export function Workflow<P extends object = {}, R = unknown>(
     );
     await context.init();
 
+    const resolvedOpts = {
+      ...(typeof workflowOpts === "string" ? {} : workflowOpts),
+      ...runtimeOpts,
+      metadata: {
+        ...workflowOpts?.metadata,
+        ...runtimeOpts?.metadata,
+      },
+    };
+
     const workflowContext = context.getWorkflowContext();
     workflowContext.checkpointManager.setPrintUrl(
-      (runtimeOpts?.printUrl ?? typeof workflowOpts === "string")
-        ? false
-        : (workflowOpts?.printUrl ?? false),
+      resolvedOpts.printUrl ?? false,
     );
 
     const workflowName = name;
