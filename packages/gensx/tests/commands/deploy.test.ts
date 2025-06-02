@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
 import axios from "axios";
@@ -126,11 +127,19 @@ suite("deploy command", () => {
   });
 
   it("should show first-time setup when user hasn't completed setup", async () => {
-    // Update config file to show first-time setup not completed
-    const configPath = path.join(process.env.GENSX_CONFIG_DIR!, "config");
-    await fs.writeFile(
-      configPath,
-      `; GenSX Configuration File
+    // Save original config dir and set a temporary one for this test
+    const originalConfigDir = process.env.GENSX_CONFIG_DIR;
+    const tempConfigDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "gensx-test-config-"),
+    );
+    process.env.GENSX_CONFIG_DIR = tempConfigDir;
+
+    try {
+      // Create the config file in the temporary directory
+      const configPath = path.join(tempConfigDir, "config");
+      await fs.writeFile(
+        configPath,
+        `; GenSX Configuration File
 ; Generated on: ${new Date().toISOString()}
 
 [api]
@@ -144,24 +153,29 @@ baseUrl = https://console.test.com
 [state]
 hasCompletedFirstTimeSetup = false
 `,
-      "utf-8",
-    );
+        "utf-8",
+      );
 
-    const { lastFrame } = render(
-      React.createElement(DeployUI, {
-        file: "workflow.ts",
-        options: {
-          project: "test-project",
-          env: "production",
-        },
-      }),
-    );
+      const { lastFrame } = render(
+        React.createElement(DeployUI, {
+          file: "workflow.ts",
+          options: {
+            project: "test-project",
+            env: "production",
+          },
+        }),
+      );
 
-    // Wait for the welcome message
-    await waitForText(
-      lastFrame,
-      /Welcome to GenSX! Let's get you set up first./,
-    );
+      // Wait for the welcome message
+      await waitForText(
+        lastFrame,
+        /Welcome to GenSX! Let's get you set up first./,
+      );
+    } finally {
+      // Restore original config dir and cleanup
+      process.env.GENSX_CONFIG_DIR = originalConfigDir;
+      await fs.rm(tempConfigDir, { recursive: true, force: true });
+    }
   });
 
   it("should skip first-time setup when user has already completed it", async () => {
@@ -186,11 +200,19 @@ hasCompletedFirstTimeSetup = false
   });
 
   it("should handle errors during first-time setup", async () => {
-    // Update config file to show first-time setup not completed
-    const configPath = path.join(process.env.GENSX_CONFIG_DIR!, "config");
-    await fs.writeFile(
-      configPath,
-      `; GenSX Configuration File
+    // Save original config dir and set a temporary one for this test
+    const originalConfigDir = process.env.GENSX_CONFIG_DIR;
+    const tempConfigDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "gensx-test-config-error-"),
+    );
+    process.env.GENSX_CONFIG_DIR = tempConfigDir;
+
+    try {
+      // Create the config file in the temporary directory
+      const configPath = path.join(tempConfigDir, "config");
+      await fs.writeFile(
+        configPath,
+        `; GenSX Configuration File
 ; Generated on: ${new Date().toISOString()}
 
 [api]
@@ -204,30 +226,45 @@ baseUrl = https://console.test.com
 [state]
 hasCompletedFirstTimeSetup = false
 `,
-      "utf-8",
-    );
+        "utf-8",
+      );
 
-    // Make the config file read-only to simulate an error
-    await fs.chmod(configPath, 0o444);
+      // Make the config file read-only to simulate an error
+      await fs.chmod(configPath, 0o444);
 
-    const { lastFrame } = render(
-      React.createElement(DeployUI, {
-        file: "workflow.ts",
-        options: {
-          project: "test-project",
-          env: "production",
-        },
-      }),
-    );
+      const { lastFrame } = render(
+        React.createElement(DeployUI, {
+          file: "workflow.ts",
+          options: {
+            project: "test-project",
+            env: "production",
+          },
+        }),
+      );
 
-    // Wait for the welcome message
-    await waitForText(
-      lastFrame,
-      /Welcome to GenSX! Let's get you set up first./,
-    );
+      // Wait for the welcome message
+      await waitForText(
+        lastFrame,
+        /Welcome to GenSX! Let's get you set up first./,
+      );
 
-    // Restore write permissions
-    await fs.chmod(configPath, 0o644);
+      // Restore write permissions before cleanup
+      await fs.chmod(configPath, 0o644);
+    } finally {
+      // Restore original config dir and cleanup temp directory
+      process.env.GENSX_CONFIG_DIR = originalConfigDir;
+      try {
+        await fs.rm(tempConfigDir, { recursive: true, force: true });
+      } catch (_error) {
+        // If cleanup fails due to permissions, try to fix and retry
+        try {
+          await fs.chmod(path.join(tempConfigDir, "config"), 0o644);
+          await fs.rm(tempConfigDir, { recursive: true, force: true });
+        } catch (_retryError) {
+          console.warn(`Failed to cleanup temp config dir: ${tempConfigDir}`);
+        }
+      }
+    }
   });
 
   it("should use specified environment from options", async () => {
