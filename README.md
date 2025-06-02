@@ -55,7 +55,7 @@ const WriteDraft = gensx.Component(
           content: `Write a blog post about ${prompt}`,
         },
       ],
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-4.1-mini"),
     });
 
     return result.text;
@@ -117,23 +117,22 @@ pnpm start
 
 | Example                                                | Description                                                                                              |
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| 📊 [Structured Outputs](./examples/structuredOutputs)  | Shows how to use structured outputs with GenSX                                                           |
 | 🔄 [Reflection](./examples/reflection)                 | Shows how to use a self-reflection pattern with GenSX                                                    |
-| 🌊 [Streaming](./examples/streaming)                   | Shows how to handle streaming responses with GenSX                                                       |
 | 🦾 [Anthropic Examples](./examples/anthropic-examples) | Examples showing how to use [@gensx/anthropic](https://www.gensx.com/docs/component-reference/anthropic) |
 | 🧠 [OpenAI Examples](./examples/openai-examples)       | Examples showing how to use [@gensx/openai](https://www.gensx.com/docs/component-reference/openai)       |
+| 🌊 [Vercel AI SDK Examples](./examples/vercel-ai)      | Examples showing how to use [@gensx/vercel-ai](https://www.gensx.com/docs/component-reference/vercel-ai) |
 
 ### Full Examples
 
-| Example                                                  | Description                                                                                  |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 🔍 [Hacker News Analyzer](./examples/hackerNewsAnalyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
-| ✍️ [Blog Writer](./examples/blogWriter)                  | Generates blogs through an end-to-end workflow including topic research and content creation |
-| 🔬 [Deep Research](./examples/deepResearch)              | Generates a report from a prompt after researching and summarizing a list of research papers |
-| 💻 [Computer Use](./examples/openai-computer-use)        | Demonstrates how to use the OpenAI computer use tool with GenSX                              |
-| 🗄️ [Text to SQL](./examples/text-to-sql)                 | Shows how to use database storage to translate natural language to SQL queries               |
-| 🔎 [RAG](./examples/rag)                                 | Demonstrates retrieval augmented generation using vector search storage                      |
-| 💬 [Chat Memory](./examples/chat-memory)                 | Shows how to build a chat application with persistent chat history using blob storage        |
+| Example                                                    | Description                                                                                  |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 🔍 [Hacker News Analyzer](./examples/hacker-news-analyzer) | Analyzes HN posts and generates summaries and trends using Paul Graham's writing style       |
+| ✍️ [Blog Writer](./examples/blog-writer)                   | Generates blogs through an end-to-end workflow including topic research and content creation |
+| 🔬 [Deep Research](./examples/deep-research)               | Generates a report from a prompt after researching and summarizing a list of research papers |
+| 💻 [Computer Use](./examples/openai-computer-use)          | Demonstrates how to use the OpenAI computer use tool with GenSX                              |
+| 🗄️ [Text to SQL](./examples/text-to-sql)                   | Shows how to use database storage to translate natural language to SQL queries               |
+| 🔎 [RAG](./examples/rag)                                   | Demonstrates retrieval augmented generation using vector search storage                      |
+| 💬 [Chat Memory](./examples/chat-memory)                   | Shows how to build a chat application with persistent chat history using blob storage        |
 
 ## Working with this repo
 

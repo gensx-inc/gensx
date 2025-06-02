@@ -83,7 +83,7 @@ const main = async (): Promise<void> => {
     const docsLinks = generateList(docsMetadata);
     const blogLinks = generateList(blogMetadata);
 
-    const prelude = `# GenSX\n\nGenSX is a simple typescript framework for building complex LLM applications. It's built around functional, reusable components that are composed using JSX to create and orchestrate workflows.`;
+    const prelude = `# GenSX\n\nGenSX is a TypeScript framework for building complex LLM applications. It's a workflow engine designed for building agents, chatbots, and long-running workflows. Workflows are built by composing functional, reusable components in plain TypeScript, making it easy to build and iterate on LLM applications.`;
 
     const content = `${prelude}\n\n## Docs\n\n${docsLinks}\n\n## Blog\n\n${blogLinks}`;
 
