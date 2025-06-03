@@ -1,406 +1,230 @@
 "use client";
 
-import { CodeBlock } from "@/components/ui/code-block";
-import { ArrowUpRight } from "lucide-react";
-import { useState } from "react";
-import { HyperText } from "@/components/ui/hyper-text";
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  type ExampleType = "components" | "observability" | "stateful" | "serverless";
-
-  // State that remains when you click an example
-  const [committedExample, setCommittedExample] =
-    useState<ExampleType>("components");
-  // Temporary state that updates on hover (overriding the committed one temporarily).
-  const [hoveredExample, setHoveredExample] = useState<ExampleType | null>(
-    null,
-  );
-  // The active example is the hovered one (if one exists) or the committed one.
-  const activeExample = hoveredExample ?? committedExample;
-
-  const examples: Record<ExampleType, string | React.ReactNode> = {
-    components: `import * as gensx from '@gensx/core';
-import { generateText } from '@gensx/vercel-ai';
-import { openai } from '@ai-sdk/openai';
-
-interface WriteDraftProps {
-  research: string[];
-  prompt: string;
-}
-
-const WriteDraft = gensx.Component(
-  "WriteDraft",
-  async ({ research, prompt }: WriteDraftProps) => {
-    const systemMessage = \`You're an expert technical writer.
-    Use the information when responding to users: \${research}\`;
-
-    const result = await generateText({
-      messages: [
-        {
-          role: "system",
-          content: systemMessage
-        },
-        {
-          role: "user",
-          content: \`Write a blog post about \${prompt}\`
-        },
-      ],
-      model: openai("gpt-4.1-mini"),
-    });
-
-    return result.text;
-  }
-);`,
-    observability: (
-      <div className="relative">
-        <Image
-          src="/assets/home/trace.png"
-          alt="GenSX Workflow Tracing Dashboard"
-          width={1000}
-          height={600}
-          className="rounded-lg shadow-lg w-full border border-gray-200 dark:border-gray-800"
-        />
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
-      </div>
-    ),
-    stateful: `import * as gensx from '@gensx/core';
-import { embed } from '@gensx/vercel-ai';
-import { useBlob, useDatabase, useSearch } from '@gensx/storage';
-import { tool } from 'ai';
-
-// Retrieve relevant information with vector search
-const RAGTool = tool({
-  description: "Search through documentation using vector similarity",
-  parameters: z.object({
-    query: z.string().describe("the search query")
-  }),
-  execute: async ({ query }) => {
-    const docs = await useSearch("documentation");
-    const { embeddings } = await embed({
-      model: openai.embedding("text-embedding-3-small"),
-      value: query,
-    });
-    return await docs.query({ vector: embedding, topK: 3 });
-  }
-});
-
-// Analyze structured data with SQL
-const SQLTool = tool({
-  description: "Execute SQL queries on the analytics database",
-  parameters: z.object({
-    sql: z.string().describe("The SQL query to execute")
-  }),
-  execute: async ({ sql }) => {
-    const db = await useDatabase("analytics");
-    return await db.execute(sql);
-  }
-});
-
-// Save and load chat history
-const loadChatHistory = async (): Promise<ChatMessage[]> => {
-  const blob = useBlob<ChatMessage[]>(\`chat-history/\${threadId}.json\`);
-  const history = await blob.getJSON();
-  return history ?? [];
-};
-const saveChatHistory = async (messages: ChatMessage[]) => {
-  const blob = useBlob<ChatMessage[]>(\`chat-history/\${threadId}.json\`);
-  await blob.putJSON(messages);
-};
-`,
-    serverless: (
-      <div className="relative">
-        <Image
-          src="/assets/home/deploy.png"
-          alt="GenSX Cloud Deployment Terminal Output"
-          width={1000}
-          height={600}
-          className="rounded-lg shadow-lg w-full border border-gray-200 dark:border-gray-800"
-        />
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
-      </div>
-    ),
-  };
-
-  // Define an array of button/tab details so we can map over them.
-  const examplesData: {
-    type: ExampleType;
-    title: string;
-    description: string;
-    mobileTitle: string;
-  }[] = [
-    {
-      type: "components",
-      title: "Create Components",
-      mobileTitle: "Components",
-      description:
-        "Create reusable building blocks for your AI backend with components.",
-    },
-    {
-      type: "observability",
-      title: "Observe & Debug",
-      mobileTitle: "Observe",
-      description: "Visualize and trace your workflows in real-time.",
-    },
-    {
-      type: "stateful",
-      title: "Stateful Agents",
-      mobileTitle: "Stateful",
-      description:
-        "Runtime hooks for fully managed blob storage, SQL databases, and vector search.",
-    },
-    {
-      type: "serverless",
-      title: "Serverless Deployments",
-      mobileTitle: "Serverless",
-      description:
-        "Deploy projects as REST APIs with sync, async, and streaming out of the box.",
-    },
-  ];
-
   return (
-    <div className="min-h-screen">
-      <motion.main
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex flex-col gap-4 items-center w-full max-w-7xl mx-auto pt-24 px-4 md:px-8 pb-20 mt-0 md:mt-8"
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.0, ease: "easeOut" }}
-          className="max-w-4xl mx-auto flex flex-col items-center text-center"
-        >
-          <h1 className="text-2xl md:text-6xl font-bold text-center">
-            The anti-framework for agents and workflows
-          </h1>
-          <p className="max-w-2xl text-md md:text-xl text-gray-600 mt-6 leading-relaxed text-center">
-            No magic. Write plain TypeScript functions.
-            <br />
-            <br />
-            GenSX takes care of infra, built-in observability, and all of the
-            APIs you need to build long running agents that stream from start to
-            end.
-          </p>
-          <div className="flex gap-4 mt-8 justify-center">
-            <Link href="/docs/quickstart">
-              <Button variant="primary">
-                <div className="flex items-center">
-                  <span>
-                    <HyperText delay={650} startOnView={false}>
-                      Start Building
-                    </HyperText>
-                  </span>
-                  <ArrowUpRight className="ml-2 w-4 h-4" />
-                </div>
+    <div className="flex flex-col space-y-24">
+      {/* Hero Section */}
+      <section className="pt-24 pb-32 bg-white">
+        <div className="container mx-auto px-6 flex flex-col md:flex-row items-center gap-8">
+          <div className="flex-1 text-center md:text-left space-y-6">
+            <h1 className="text-4xl md:text-5xl font-bold">
+              Build Better Workflows
+            </h1>
+            <p className="text-lg text-gray-600">
+              Streamline your AI agents and deploy with confidence.
+            </p>
+            <div>
+              <Button asChild>
+                <Link href="/signup">Get Started</Link>
               </Button>
-            </Link>
-            <Link href="/docs">
-              <Button variant="secondary">
-                <div className="flex items-center">
-                  <span>
-                    <HyperText delay={650} startOnView={false}>
-                      View Docs
-                    </HyperText>
-                  </span>
-                  <ArrowUpRight className="ml-2 w-4 h-4" />
-                </div>
-              </Button>
-            </Link>
-          </div>
-          {/* <ScriptCopyBtnDemo /> */}
-        </motion.div>
-
-        {/* Example Picker Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-          className="w-full max-w-5xl mx-auto mt-12"
-        >
-          {/* <div className="text-xl font-bold text-center mx-auto mb-4 w-[500px]">
-            If you can build a React component, you should be able to build an
-            AI agent or workflow...
-          </div> */}
-          {/* Mobile Picker */}
-          <div className="block md:hidden">
-            <div className="flex gap-0 relative">
-              {examplesData.map(({ type, mobileTitle }) => (
-                <button
-                  key={type}
-                  onClick={() => setCommittedExample(type)}
-                  onMouseEnter={() => setHoveredExample(type)}
-                  onMouseLeave={() => {
-                    setCommittedExample(type);
-                    setHoveredExample(null);
-                  }}
-                  className={`flex-1 px-4 py-2 text-sm font-medium text-center border transition-colors relative group ${
-                    activeExample === type
-                      ? "bg-transparent border-transparent"
-                      : "bg-white hover:bg-[#ffe066]/10"
-                  }`}
-                >
-                  {/* Decorative corner elements */}
-                  <span className="absolute inset-0 pointer-events-none">
-                    <span className="absolute top-[-4px] left-[-4px] h-2 w-2 border-t border-l border-current opacity-0 transform translate-x-[2px] translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                    <span className="absolute top-[-4px] right-[-4px] h-2 w-2 border-t border-r border-current opacity-0 transform -translate-x-[2px] translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                    <span className="absolute bottom-[-4px] left-[-4px] h-2 w-2 border-b border-l border-current opacity-0 transform translate-x-[2px] -translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                    <span className="absolute bottom-[-4px] right-[-4px] h-2 w-2 border-b border-r border-current opacity-0 transform -translate-x-[2px] -translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                  </span>
-
-                  {/* Highlight overlay when active */}
-                  {activeExample === type && (
-                    <>
-                      <motion.div
-                        layoutId="mobile-highlight"
-                        className="absolute inset-0 bg-[#ffe066]/20 border border-[#ffe066]/80"
-                        transition={{
-                          type: "spring",
-                          bounce: 0.15,
-                          duration: 0.5,
-                        }}
-                      />
-                      <motion.div
-                        layoutId="mobile-connector"
-                        className="absolute bottom-0 left-1/2 w-[2px] h-[0px] bg-[#ffe066]/80 transform -translate-x-1/2 translate-y-full"
-                      />
-                    </>
-                  )}
-
-                  <span className="relative z-10">
-                    <HyperText
-                      delay={650}
-                      className="text-xs ml-0 pl-0 font-semibold"
-                      startOnView={false}
-                    >
-                      {mobileTitle}
-                    </HyperText>
-                  </span>
-                </button>
-              ))}
             </div>
-            <div className="mt-2 px-4 py-2  bg-[#ffe066]/20 border border-[#ffe066]/80 relative">
-              {/* Description box connector line */}
-              <motion.div
-                layoutId="mobile-connector-box"
-                className="absolute -top-[10px] left-1/2 w-[2px] h-[10px] bg-[#ffe066]/80 transform -translate-x-1/2 "
-                style={{
-                  left: `${(100 / examplesData.length) * (examplesData.findIndex((ex) => ex.type === activeExample) + 0.5)}%`,
-                }}
-              />
-              <p className="text-sm text-gray-600">
-                {
-                  examplesData.find((ex) => ex.type === activeExample)
-                    ?.description
-                }
+          </div>
+          <div className="flex-1">
+            <Image
+              src="/assets/home/trace.png"
+              alt="Product screenshot"
+              width={600}
+              height={400}
+              className="rounded-lg shadow-lg border"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Partners Section */}
+      <section className="py-12 bg-gray-50">
+        <div className="container mx-auto px-6 text-center space-y-6">
+          <p className="text-sm font-semibold text-gray-500">
+            Trusted by leading teams
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-8 grayscale">
+            <Image src="/vercel.svg" alt="Vercel" width={100} height={40} />
+            <Image src="/next.svg" alt="Next.js" width={80} height={40} />
+            <Image src="/logo-dark.svg" alt="Logo" width={90} height={40} />
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-6 text-center space-y-12">
+          <h2 className="text-3xl font-bold">Why teams love GenSX</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-6 border rounded-lg space-y-2">
+              <h3 className="font-semibold">Fast setup</h3>
+              <p className="text-gray-600">
+                Go from idea to production in minutes.
               </p>
             </div>
-            <div className="mt-4">
-              {typeof examples[activeExample] === "string" ? (
-                <CodeBlock code={examples[activeExample] as string} />
-              ) : (
-                examples[activeExample]
-              )}
+            <div className="p-6 border rounded-lg space-y-2">
+              <h3 className="font-semibold">Scalable workflows</h3>
+              <p className="text-gray-600">
+                Handle complex agents without breaking a sweat.
+              </p>
+            </div>
+            <div className="p-6 border rounded-lg space-y-2">
+              <h3 className="font-semibold">Built-in observability</h3>
+              <p className="text-gray-600">
+                Understand every step with real-time tracing.
+              </p>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Desktop Picker (Sidebar on the left) */}
-          <div className="hidden md:grid grid-cols-3 gap-6">
-            <div className="space-y-2 relative">
-              {examplesData.map(({ type, title, description }) => (
-                <button
-                  key={type}
-                  onClick={() => setCommittedExample(type)}
-                  onMouseEnter={() => setHoveredExample(type)}
-                  onMouseLeave={() => {
-                    setCommittedExample(type);
-                    setHoveredExample(null);
-                  }}
-                  className={`w-full h-[84px] px-4 py-3 rounded-[0px] border transition-colors relative group ${
-                    activeExample === type
-                      ? "bg-transparent border-transparent"
-                      : "bg-white hover:bg-[#ffe066]/10"
-                  }`}
-                >
-                  {/* Decorative corner elements */}
-                  <span className="absolute inset-0 pointer-events-none">
-                    <span className="absolute top-[-4px] left-[-4px] h-2 w-2 border-t border-l border-current opacity-0 transform translate-x-[2px] translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                    <span className="absolute top-[-4px] right-[-4px] h-2 w-2 border-t border-r border-current opacity-0 transform -translate-x-[2px] translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                    <span className="absolute bottom-[-4px] left-[-4px] h-2 w-2 border-b border-l border-current opacity-0 transform translate-x-[2px] -translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                    <span className="absolute bottom-[-4px] right-[-4px] h-2 w-2 border-b border-r border-current opacity-0 transform -translate-x-[2px] -translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                  </span>
-
-                  {/* Highlight overlay when active */}
-                  {activeExample === type && (
-                    <motion.div
-                      layoutId="highlight"
-                      className="absolute inset-0 bg-[#ffe066]/20 border border-[#ffe066]/80 rounded-[0px]"
-                    />
-                  )}
-
-                  <div className="flex flex-col justify-center h-full text-left">
-                    <h3 className="font-semibold text-sm">
-                      <HyperText delay={650} startOnView={false}>
-                        {title}
-                      </HyperText>
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">{description}</p>
-                  </div>
-                </button>
-              ))}
+      {/* How It Works Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-6 text-center space-y-12">
+          <h2 className="text-3xl font-bold">Get started in three steps</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="space-y-2">
+              <h3 className="font-semibold">1. Sign up</h3>
+              <p className="text-gray-600">
+                Create your free account to begin.
+              </p>
             </div>
-            <div className="col-span-2 h-full">
-              {typeof examples[activeExample] === "string" ? (
-                <CodeBlock code={examples[activeExample] as string} />
-              ) : (
-                examples[activeExample]
-              )}
+            <div className="space-y-2">
+              <h3 className="font-semibold">2. Build workflow</h3>
+              <p className="text-gray-600">
+                Use our visual builder or code directly.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold">3. Deploy</h3>
+              <p className="text-gray-600">
+                Launch to the cloud with one click.
+              </p>
             </div>
           </div>
-        </motion.div>
+        </div>
+      </section>
 
-        {/* Uncomment or add new sections as needed */}
-        {/*
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-          className="w-full max-w-5xl mx-auto mt-12"
-        >
-          <h2 className="text-3xl font-bold text-center mb-4">Fine-grained visibility</h2>
-        </motion.section>
-        */}
-      </motion.main>
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
-        className="flex gap-6 flex-wrap items-center justify-center pb-8"
-      ></motion.footer>
-      {/* Bottom spacer bar */}
-      <div className="w-full h-[600px] bg-gradient-to-b from-transparent to-black/5" />
+      {/* Pricing Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-6 text-center space-y-12">
+          <h2 className="text-3xl font-bold">Pricing: Why it&#39;s worth it</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="border rounded-lg p-6 flex flex-col items-center space-y-4">
+              <h3 className="text-xl font-semibold">Basic</h3>
+              <p className="text-4xl font-bold">$19</p>
+              <ul className="text-gray-600 space-y-1">
+                <li>Starter workflows</li>
+                <li>Email support</li>
+              </ul>
+              <Button className="mt-auto">Choose</Button>
+            </div>
+            <div className="border-2 border-primary rounded-lg p-6 flex flex-col items-center space-y-4 bg-[#ffe066]/10">
+              <h3 className="text-xl font-semibold">Pro</h3>
+              <p className="text-4xl font-bold">$49</p>
+              <ul className="text-gray-600 space-y-1">
+                <li>All Basic features</li>
+                <li>Advanced analytics</li>
+                <li>Priority support</li>
+              </ul>
+              <Button className="mt-auto">Choose</Button>
+            </div>
+            <div className="border rounded-lg p-6 flex flex-col items-center space-y-4">
+              <h3 className="text-xl font-semibold">Enterprise</h3>
+              <p className="text-4xl font-bold">Contact</p>
+              <ul className="text-gray-600 space-y-1">
+                <li>Custom workflows</li>
+                <li>Dedicated support</li>
+              </ul>
+              <Button className="mt-auto">Contact Us</Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-6 text-center space-y-12">
+          <h2 className="text-3xl font-bold">Loved by our users</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <blockquote className="p-6 border rounded-lg">
+              <p className="text-gray-700">
+                “GenSX transformed how we build AI workflows.”
+              </p>
+              <footer className="mt-2 text-sm text-gray-500">
+                Alex, Product Lead
+              </footer>
+            </blockquote>
+            <blockquote className="p-6 border rounded-lg">
+              <p className="text-gray-700">
+                “The observability tools are a game changer.”
+              </p>
+              <footer className="mt-2 text-sm text-gray-500">
+                Jamie, Engineer
+              </footer>
+            </blockquote>
+            <blockquote className="p-6 border rounded-lg">
+              <p className="text-gray-700">
+                “Amazing support and easy deployment.”
+              </p>
+              <footer className="mt-2 text-sm text-gray-500">
+                Taylor, Founder
+              </footer>
+            </blockquote>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-6 space-y-8">
+          <h2 className="text-3xl font-bold text-center">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-4 max-w-3xl mx-auto">
+            <details className="border rounded-lg p-4">
+              <summary className="font-medium cursor-pointer">
+                How do I start a free trial?
+              </summary>
+              <p className="mt-2 text-gray-600">
+                Sign up and your 14-day trial begins immediately.
+              </p>
+            </details>
+            <details className="border rounded-lg p-4">
+              <summary className="font-medium cursor-pointer">
+                Can I cancel anytime?
+              </summary>
+              <p className="mt-2 text-gray-600">
+                Yes, cancel or change plans whenever you need.
+              </p>
+            </details>
+            <details className="border rounded-lg p-4">
+              <summary className="font-medium cursor-pointer">
+                Do you offer support?
+              </summary>
+              <p className="mt-2 text-gray-600">
+                Email and chat support are included in all plans.
+              </p>
+            </details>
+            <details className="border rounded-lg p-4">
+              <summary className="font-medium cursor-pointer">
+                Is there an API?
+              </summary>
+              <p className="mt-2 text-gray-600">
+                Yes, integrate via our secure REST API.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="py-24 bg-primary text-center text-gray-900">
+        <div className="container mx-auto px-6 space-y-6">
+          <h2 className="text-4xl font-bold">Ready to build?</h2>
+          <Button asChild variant="secondary">
+            <Link href="/signup">Try Free</Link>
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }
-
-// function ScriptCopyBtnDemo() {
-//   const customCommandMap = {
-//     npm: "npm create gensx@latest my-app",
-//     npx: "npx create gensx my-app",
-//     yarn: "yarn create gensx my-app",
-//     pnpm: "pnpm create gensx my-app",
-//   };
-//   return (
-//     <ScriptCopyBtn
-//       showMultiplePackageOptions={true}
-//       codeLanguage="shell"
-//       lightTheme="nord"
-//       darkTheme="vitesse-dark"
-//       commandMap={customCommandMap}
-//     />
-//   );
-// }
