@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.1...gensx-core-v0.4.2) (2025-06-03)
+
+
+### 🐛 Bug Fixes
+
+* Remove sleep during streaming progress ([#740](https://github.com/gensx-inc/gensx/issues/740)) ([5c007a4](https://github.com/gensx-inc/gensx/commit/5c007a492cdb6a754a7f4a33101cc8ce589a68f8))
+
 ## [0.4.1](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.0...gensx-core-v0.4.1) (2025-06-03)
 
 
