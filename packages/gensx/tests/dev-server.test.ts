@@ -1,15 +1,19 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { Context } from "hono";
 import { Definition } from "typescript-json-schema";
-import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { vi } from "vitest";
 
 import {
   BadRequestError,
   createServer,
   GensxServer,
   NotFoundError,
+  ProgressEvent,
   ServerError,
 } from "../src/dev-server.js";
 
@@ -69,6 +73,7 @@ interface WorkflowExecution {
   input: unknown;
   output?: unknown;
   error?: string;
+  progressEvents: ProgressEvent[];
 }
 
 // Type for accessing private members in tests
@@ -93,7 +98,7 @@ interface PrivateServer {
   workflowMap: Map<string, WorkflowFunction>;
 }
 
-suite("GenSX Dev Server", () => {
+describe("GenSX Dev Server", () => {
   // Original console methods
   const originalConsoleInfo = console.info;
   const originalConsoleWarn = console.warn;
@@ -348,6 +353,7 @@ suite("GenSX Dev Server", () => {
       executionStatus: "queued",
       createdAt: now,
       input,
+      progressEvents: [],
     };
     privateServer.executionsMap.set(executionId, execution);
 
@@ -364,7 +370,12 @@ suite("GenSX Dev Server", () => {
     );
 
     // Verify the mock was called through the run method
-    expect(mockWorkflow).toHaveBeenCalledWith(input);
+    expect(mockWorkflow).toHaveBeenCalledWith(
+      input,
+      expect.objectContaining({
+        progressListener: expect.any(Function),
+      }),
+    );
 
     const updatedExecution = privateServer.executionsMap.get(executionId);
     expect(updatedExecution).toBeDefined();
@@ -400,6 +411,7 @@ suite("GenSX Dev Server", () => {
       executionStatus: "queued",
       createdAt: now,
       input,
+      progressEvents: [],
     };
     privateServer.executionsMap.set(executionId, execution);
 
@@ -416,7 +428,12 @@ suite("GenSX Dev Server", () => {
     );
 
     // Verify the mock was called through the run method
-    expect(failingWorkflow).toHaveBeenCalledWith(input);
+    expect(failingWorkflow).toHaveBeenCalledWith(
+      input,
+      expect.objectContaining({
+        progressListener: expect.any(Function),
+      }),
+    );
 
     const updatedExecution = privateServer.executionsMap.get(executionId);
     expect(updatedExecution).toBeDefined();
@@ -770,6 +787,7 @@ suite("GenSX Dev Server", () => {
       executionStatus: "queued",
       createdAt: now,
       input: { test: "data" },
+      progressEvents: [],
     };
     privateServer.executionsMap.set(executionId, execution);
 
@@ -786,7 +804,12 @@ suite("GenSX Dev Server", () => {
     );
 
     // Verify the mock was called through the run method
-    expect(failingWorkflow).toHaveBeenCalledWith({ test: "data" });
+    expect(failingWorkflow).toHaveBeenCalledWith(
+      { test: "data" },
+      expect.objectContaining({
+        progressListener: expect.any(Function),
+      }),
+    );
 
     // Verify the execution was updated with the error
     const updatedExecution = privateServer.executionsMap.get(executionId);
@@ -818,5 +841,219 @@ suite("GenSX Dev Server", () => {
 
     // Cleanup
     await noValidWorkflowsServer.stop();
+  });
+
+  describe("Progress Events", () => {
+    it("should return progress events in SSE format", async () => {
+      // Create a workflow execution with some progress events
+      const executionId = "test-execution";
+      const execution: WorkflowExecution = {
+        id: executionId,
+        workflowName: "testWorkflow",
+        executionStatus: "completed",
+        createdAt: new Date().toISOString(),
+        input: {},
+        progressEvents: [
+          {
+            id: "1",
+            type: "start",
+            workflowName: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "2",
+            type: "progress",
+            workflowName: "testWorkflow",
+            data: "Processing...",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "3",
+            type: "end",
+            workflowName: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      };
+      const privateServer = server as unknown as PrivateServer;
+      privateServer.executionsMap.set(executionId, execution);
+
+      const response = await privateServer.app.fetch(
+        new Request(
+          `http://localhost/workflowExecutions/${executionId}/progress`,
+          {
+            headers: {
+              Accept: "text/event-stream",
+            },
+          },
+        ),
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toBe("text/event-stream");
+      expect(response.headers.get("Cache-Control")).toBe("no-cache");
+      expect(response.headers.get("Connection")).toBe("keep-alive");
+
+      const sseContent = await response.text();
+      expect(sseContent).toContain(
+        'id: 1\ndata: {"id":"1","type":"start","workflowName":"testWorkflow"',
+      );
+      expect(sseContent).toContain(
+        'id: 2\ndata: {"id":"2","type":"progress","workflowName":"testWorkflow","data":"Processing..."',
+      );
+      expect(sseContent).toContain(
+        'id: 3\ndata: {"id":"3","type":"end","workflowName":"testWorkflow"',
+      );
+    });
+
+    it("should return progress events in NDJSON format", async () => {
+      // Create a workflow execution with some progress events
+      const executionId = "test-execution-ndjson";
+      const execution: WorkflowExecution = {
+        id: executionId,
+        workflowName: "testWorkflow",
+        executionStatus: "completed",
+        createdAt: new Date().toISOString(),
+        input: {},
+        progressEvents: [
+          {
+            id: "1",
+            type: "start",
+            workflowName: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "2",
+            type: "progress",
+            workflowName: "testWorkflow",
+            data: "Processing...",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "3",
+            type: "end",
+            workflowName: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      };
+      const privateServer = server as unknown as PrivateServer;
+      privateServer.executionsMap.set(executionId, execution);
+
+      const response = await privateServer.app.fetch(
+        new Request(
+          `http://localhost/workflowExecutions/${executionId}/progress`,
+        ),
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toBe("application/x-ndjson");
+      expect(response.headers.get("Cache-Control")).toBe("no-cache");
+      expect(response.headers.get("Connection")).toBe("keep-alive");
+
+      const ndjsonContent = await response.text();
+      const events = ndjsonContent
+        .trim()
+        .split("\n")
+        .map((line: string) => JSON.parse(line) as ProgressEvent);
+      expect(events).toHaveLength(3);
+      expect(events[0]).toMatchObject({
+        id: "1",
+        type: "start",
+        workflowName: "testWorkflow",
+      });
+      expect(events[1]).toMatchObject({
+        id: "2",
+        type: "progress",
+        workflowName: "testWorkflow",
+        data: "Processing...",
+      });
+      expect(events[2]).toMatchObject({
+        id: "3",
+        type: "end",
+        workflowName: "testWorkflow",
+      });
+    });
+
+    it("should filter events based on lastEventId", async () => {
+      // Create a workflow execution with some progress events
+      const executionId = "test-execution-filter";
+      const execution: WorkflowExecution = {
+        id: executionId,
+        workflowName: "testWorkflow",
+        executionStatus: "completed",
+        createdAt: new Date().toISOString(),
+        input: {},
+        progressEvents: [
+          {
+            id: "1",
+            type: "start",
+            workflowName: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "2",
+            type: "progress",
+            workflowName: "testWorkflow",
+            data: "Processing...",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "3",
+            type: "end",
+            workflowName: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      };
+      const privateServer = server as unknown as PrivateServer;
+      privateServer.executionsMap.set(executionId, execution);
+
+      // Test with query parameter
+      const response1 = await privateServer.app.fetch(
+        new Request(
+          `http://localhost/workflowExecutions/${executionId}/progress?lastEventId=1`,
+          {
+            headers: {
+              Accept: "text/event-stream",
+            },
+          },
+        ),
+      );
+
+      const sseContent1 = await response1.text();
+      expect(sseContent1).not.toContain("id: 1\n");
+      expect(sseContent1).toContain("id: 2\n");
+      expect(sseContent1).toContain("id: 3\n");
+
+      // Test with header
+      const response2 = await privateServer.app.fetch(
+        new Request(
+          `http://localhost/workflowExecutions/${executionId}/progress`,
+          {
+            headers: {
+              Accept: "text/event-stream",
+              "Last-Event-Id": "2",
+            },
+          },
+        ),
+      );
+
+      const sseContent2 = await response2.text();
+      expect(sseContent2).not.toContain("id: 1\n");
+      expect(sseContent2).not.toContain("id: 2\n");
+      expect(sseContent2).toContain("id: 3\n");
+    });
+
+    it("should return 404 for non-existent execution", async () => {
+      const privateServer = server as unknown as PrivateServer;
+      const response = await privateServer.app.fetch(
+        new Request(
+          "http://localhost/workflowExecutions/non-existent/progress",
+        ),
+      );
+
+      expect(response.status).toBe(404);
+    });
   });
 });
