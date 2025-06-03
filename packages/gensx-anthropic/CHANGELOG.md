@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.1](https://github.com/gensx-inc/gensx/compare/gensx-anthropic-v0.2.0...gensx-anthropic-v0.2.1) (2025-06-03)
+
+
+### 📚 Documentation
+
+* updating documentation to programming model v2 ([#722](https://github.com/gensx-inc/gensx/issues/722)) ([9b6c710](https://github.com/gensx-inc/gensx/commit/9b6c7101c691b255e6ff0ca09e0485abd69262c8))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.4.1
+
 ## [0.2.0](https://github.com/gensx-inc/gensx/compare/gensx-anthropic-v0.1.17...gensx-anthropic-v0.2.0) (2025-05-28)
 
 

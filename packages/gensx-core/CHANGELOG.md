@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.1](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.0...gensx-core-v0.4.1) (2025-06-03)
+
+
+### ✨ New Features
+
+* Support stream progress ([#731](https://github.com/gensx-inc/gensx/issues/731)) ([4a1bf59](https://github.com/gensx-inc/gensx/commit/4a1bf59675948bf545118c6dc66e53896b903e57))
+
+
+### 📚 Documentation
+
+* removing mentions of jsx and other updates ([#730](https://github.com/gensx-inc/gensx/issues/730)) ([17c1a40](https://github.com/gensx-inc/gensx/commit/17c1a402bd885bdbb9e2dcdafe02ed5270e858e5))
+
 ## [0.4.0](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.3.13...gensx-core-v0.4.0) (2025-05-28)
 
 
