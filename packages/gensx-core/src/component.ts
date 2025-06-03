@@ -196,9 +196,23 @@ export function Component<P extends object = {}, R = unknown>(
       });
 
       if (result instanceof Promise) {
-        return result.then((value) => {
-          return handleResultValue(value, runInContext);
-        }) as R;
+        return result
+          .then((value) => {
+            return handleResultValue(value, runInContext);
+          })
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              checkpointManager.addMetadata(nodeId, {
+                error: serializeError(error),
+              });
+              checkpointManager.completeNode(nodeId, undefined);
+              workflowContext.progressListener({
+                type: "error",
+                error: JSON.stringify(serializeError(error)),
+              });
+            }
+            throw error;
+          }) as R;
       }
 
       return handleResultValue(result, runInContext!) as R;

@@ -198,7 +198,7 @@ export function emitProgress(message: Record<string, string> | string) {
   const context = getCurrentContext();
   context.getWorkflowContext().progressListener({
     type: "progress",
-    ...(typeof message === "string" ? { detail: message } : message),
+    ...(typeof message === "string" ? { data: message } : message),
   });
 }
 
