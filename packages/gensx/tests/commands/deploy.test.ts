@@ -10,8 +10,8 @@ import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 import * as buildCommand from "../../src/commands/build.js";
 import { DeployUI } from "../../src/commands/deploy.js";
 import * as projectModel from "../../src/models/projects.js";
-import * as projectConfig from "../../src/utils/project-config.js";
 import * as envConfig from "../../src/utils/env-config.js";
+import * as projectConfig from "../../src/utils/project-config.js";
 import { waitForText } from "../test-helpers.js";
 
 // Mock dependencies
