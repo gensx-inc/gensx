@@ -10,7 +10,12 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function Home() {
-  type ExampleType = "components" | "observability" | "stateful" | "serverless";
+  type ExampleType =
+    | "components"
+    | "observability"
+    | "stateful"
+    | "serverless"
+    | "status";
 
   // State that remains when you click an example
   const [committedExample, setCommittedExample] =
@@ -123,6 +128,18 @@ const saveChatHistory = async (messages: ChatMessage[]) => {
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
       </div>
     ),
+    status: (
+      <div className="relative">
+        <Image
+          src="/assets/home/status.gif"
+          alt="Workflow status updates streaming"
+          width={1000}
+          height={600}
+          className="rounded-lg shadow-lg w-full border border-gray-200 dark:border-gray-800"
+        />
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
+      </div>
+    ),
   };
 
   // Define an array of button/tab details so we can map over them.
@@ -158,6 +175,13 @@ const saveChatHistory = async (messages: ChatMessage[]) => {
       mobileTitle: "Serverless",
       description:
         "Deploy projects as REST APIs with sync, async, and streaming out of the box.",
+    },
+    {
+      type: "status",
+      title: "Stream Status Updates",
+      mobileTitle: "Status",
+      description:
+        "Get a live stream of what's happening inside your workflow.",
     },
   ];
 
