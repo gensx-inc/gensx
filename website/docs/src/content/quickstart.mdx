@@ -326,7 +326,7 @@ After you've made these updates, deploy and run the workflow again to see chat h
 ```bash
 gensx deploy src/workflows.ts -e OPENAI_API_KEY
 
-# send an initial message to the thead
+# send an initial message to the thread
 gensx run ChatWorkflow --input '{"userMessage":"Name the capital of France", "threadId":"123"}'
 
 # use the same thread
