@@ -8,7 +8,7 @@ description: Overview of the GenSX Cloud Platform
 GenSX Cloud provides everything you need to ship production-grade agents and workflows:
 
 - **Serverless runtime**: One command to deploy all of your workflows and agents as REST APIs running on serverless infrastructure optimized for long-running agents and workflows. Support for synchronous and background invocation, streaming, and intermediate status included.
-- **Cloud storage**: build stateful agents and workflows with builtin blob storage, SQL databases, and full-text + vector search indices -- all provisioned at runtime.
+- **Cloud storage**: build stateful agents and workflows with built-in blob storage, SQL databases, and full-text + vector search namespaces -- all provisioned at runtime.
 - **Tracing and observability**: Real-time tracing of all component inputs and outputs, tool calls, and LLM calls within your agents and workflows. Tools to visualize and debug all historic executions.
 - **Collaboration**: Organize agents, workflows, and traces into projects and environments. Search and view traces and to debug historical executions.
 
@@ -21,7 +21,7 @@ All of this is available on a free tier for individuals and with $20/developer p
 Serverless deployments allow you to turn your GenSX workflows and agents into APIs with a single command:
 
 - **Generated REST APIs**: `gensx deploy` generates a REST API complete with schema and validation for every workflow in your project.
-- **Long-running**: GenSX Cloud is optimized for long running LLM workloads. Workflows can run up to 5 minutes on the free tier and 60 minutes on the Pro tier.
+- **Long-running**: GenSX Cloud is optimized for long-running LLM workloads. Workflows can run up to 5 minutes on the free tier and 60 minutes on the Pro tier.
 - **Millisecond-level cold starts**: initial cold starts are on the order of 10s of milliseconds -- an order of magnitude faster than other serverless providers.
 
 Serverless deployments are billed per-second, with 50,000 seconds included per month in the free tier for individuals.
