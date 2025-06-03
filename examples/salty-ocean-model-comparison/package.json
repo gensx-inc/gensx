@@ -7,9 +7,10 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "nodemon",
-    "start": "tsx ./src/index.tsx",
+    "dev": "tsx ./src/index.ts",
+    "start": "npx gensx start ./src/workflows.ts",
     "build": "tsc",
+    "deploy": "npx gensx deploy -e OPENAI_API_KEY -e GROQ_API_KEY ./src/workflows.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -19,16 +20,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ai-sdk/openai": "^1.3.6",
-    "@gensx/openai": "0.1.28",
-    "@gensx/vercel-ai-sdk": "0.1.17",
-    "@gensx/core": "0.3.13",
-    "openai": "catalog:"
+    "@ai-sdk/openai": "^1.3.22",
+    "@gensx/core": "^0.4.0",
+    "@gensx/openai": "^0.2.0",
+    "@gensx/vercel-ai": "^0.1.0",
+    "openai": "^4.0.0"
   },
   "devDependencies": {
-    "@types/node": "catalog:examples",
-    "nodemon": "catalog:",
-    "tsx": "catalog:",
-    "typescript": "catalog:"
+    "@types/node": "^22",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }
