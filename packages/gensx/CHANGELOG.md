@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.35](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.34...gensx-v0.3.35) (2025-06-03)
+
+
+### ✨ New Features
+
+* Support stream progress ([#731](https://github.com/gensx-inc/gensx/issues/731)) ([4a1bf59](https://github.com/gensx-inc/gensx/commit/4a1bf59675948bf545118c6dc66e53896b903e57))
+
+
+### 🐛 Bug Fixes
+
+* persist environment selection in CLI after deployments ([#727](https://github.com/gensx-inc/gensx/issues/727)) ([26259dd](https://github.com/gensx-inc/gensx/commit/26259dda43cf9b5619b7545ddb1f47ef66d25ee9))
+
 ## [0.3.34](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.33...gensx-v0.3.34) (2025-05-30)
 
 

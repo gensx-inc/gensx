@@ -10,7 +10,12 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function Home() {
-  type ExampleType = "components" | "observability" | "stateful" | "serverless";
+  type ExampleType =
+    | "components"
+    | "observability"
+    | "stateful"
+    | "serverless"
+    | "status";
 
   // State that remains when you click an example
   const [committedExample, setCommittedExample] =
@@ -123,6 +128,18 @@ const saveChatHistory = async (messages: ChatMessage[]) => {
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
       </div>
     ),
+    status: (
+      <div className="relative">
+        <Image
+          src="/assets/home/status.gif"
+          alt="Workflow status updates streaming"
+          width={1000}
+          height={600}
+          className="rounded-lg shadow-lg w-full border border-gray-200 dark:border-gray-800"
+        />
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/10 dark:to-black/10 rounded-lg pointer-events-none"></div>
+      </div>
+    ),
   };
 
   // Define an array of button/tab details so we can map over them.
@@ -144,6 +161,13 @@ const saveChatHistory = async (messages: ChatMessage[]) => {
       title: "Observe & Debug",
       mobileTitle: "Observe",
       description: "Visualize and trace your workflows in real-time.",
+    },
+    {
+      type: "status",
+      title: "Stream Status Updates",
+      mobileTitle: "Status",
+      description:
+        "Get a live stream of what's happening inside your workflow.",
     },
     {
       type: "stateful",
@@ -176,11 +200,15 @@ const saveChatHistory = async (messages: ChatMessage[]) => {
           className="max-w-4xl mx-auto flex flex-col items-center text-center"
         >
           <h1 className="text-2xl md:text-6xl font-bold text-center">
-            The TypeScript framework for agents and workflows
+            The anti-framework for agents and workflows
           </h1>
           <p className="max-w-2xl text-md md:text-xl text-gray-600 mt-6 leading-relaxed text-center">
-            GenSX provides simple developer tools and cloud infrastructure to
-            build, deploy, scale, and debug complex AI backends with TypeScript.
+            No magic. Write plain TypeScript functions.
+            <br />
+            <br />
+            GenSX takes care of infra, built-in observability, and all of the
+            APIs you need to build long running agents that stream from start to
+            end.
           </p>
           <div className="flex gap-4 mt-8 justify-center">
             <Link href="/docs/quickstart">
@@ -224,83 +252,26 @@ const saveChatHistory = async (messages: ChatMessage[]) => {
           </div> */}
           {/* Mobile Picker */}
           <div className="block md:hidden">
-            <div className="flex gap-0 relative">
-              {examplesData.map(({ type, mobileTitle }) => (
-                <button
-                  key={type}
-                  onClick={() => setCommittedExample(type)}
-                  onMouseEnter={() => setHoveredExample(type)}
-                  onMouseLeave={() => {
-                    setCommittedExample(type);
-                    setHoveredExample(null);
-                  }}
-                  className={`flex-1 px-4 py-2 text-sm font-medium text-center border transition-colors relative group ${
-                    activeExample === type
-                      ? "bg-transparent border-transparent"
-                      : "bg-white hover:bg-[#ffe066]/10"
-                  }`}
-                >
-                  {/* Decorative corner elements */}
-                  <span className="absolute inset-0 pointer-events-none">
-                    <span className="absolute top-[-4px] left-[-4px] h-2 w-2 border-t border-l border-current opacity-0 transform translate-x-[2px] translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                    <span className="absolute top-[-4px] right-[-4px] h-2 w-2 border-t border-r border-current opacity-0 transform -translate-x-[2px] translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                    <span className="absolute bottom-[-4px] left-[-4px] h-2 w-2 border-b border-l border-current opacity-0 transform translate-x-[2px] -translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                    <span className="absolute bottom-[-4px] right-[-4px] h-2 w-2 border-b border-r border-current opacity-0 transform -translate-x-[2px] -translate-y-[2px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0" />
-                  </span>
-
-                  {/* Highlight overlay when active */}
-                  {activeExample === type && (
-                    <>
-                      <motion.div
-                        layoutId="mobile-highlight"
-                        className="absolute inset-0 bg-[#ffe066]/20 border border-[#ffe066]/80"
-                        transition={{
-                          type: "spring",
-                          bounce: 0.15,
-                          duration: 0.5,
-                        }}
-                      />
-                      <motion.div
-                        layoutId="mobile-connector"
-                        className="absolute bottom-0 left-1/2 w-[2px] h-[0px] bg-[#ffe066]/80 transform -translate-x-1/2 translate-y-full"
-                      />
-                    </>
-                  )}
-
-                  <span className="relative z-10">
-                    <HyperText
-                      delay={650}
-                      className="text-xs ml-0 pl-0 font-semibold"
-                      startOnView={false}
-                    >
-                      {mobileTitle}
-                    </HyperText>
-                  </span>
-                </button>
+            <div className="space-y-8">
+              {examplesData.map(({ type, title, description }) => (
+                <div key={type} className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold">
+                      <HyperText delay={650} startOnView={false}>
+                        {title}
+                      </HyperText>
+                    </h3>
+                    <p className="text-sm text-gray-600">{description}</p>
+                  </div>
+                  <div>
+                    {typeof examples[type] === "string" ? (
+                      <CodeBlock code={examples[type] as string} />
+                    ) : (
+                      examples[type]
+                    )}
+                  </div>
+                </div>
               ))}
-            </div>
-            <div className="mt-2 px-4 py-2  bg-[#ffe066]/20 border border-[#ffe066]/80 relative">
-              {/* Description box connector line */}
-              <motion.div
-                layoutId="mobile-connector-box"
-                className="absolute -top-[10px] left-1/2 w-[2px] h-[10px] bg-[#ffe066]/80 transform -translate-x-1/2 "
-                style={{
-                  left: `${(100 / examplesData.length) * (examplesData.findIndex((ex) => ex.type === activeExample) + 0.5)}%`,
-                }}
-              />
-              <p className="text-sm text-gray-600">
-                {
-                  examplesData.find((ex) => ex.type === activeExample)
-                    ?.description
-                }
-              </p>
-            </div>
-            <div className="mt-4">
-              {typeof examples[activeExample] === "string" ? (
-                <CodeBlock code={examples[activeExample] as string} />
-              ) : (
-                examples[activeExample]
-              )}
             </div>
           </div>
 

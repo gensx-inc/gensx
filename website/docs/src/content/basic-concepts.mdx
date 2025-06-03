@@ -42,7 +42,7 @@ function greetUser({ name }: GreetUserInput) {
 const GreetUser = gensx.Component("GreetUser", greetUser);
 ```
 
-Components can be used like any other functions in typescript. They can can consume other components, return other components, and return any type of data. Here's an example of a component that uses `generateText` from the Vercel AI SDK to call an LLM:
+Components can be used like any other functions in typescript. They can consume other components, return other components, and return any type of data. Here's an example of a component that uses `generateText` from the Vercel AI SDK to call an LLM:
 
 ```ts
 import { generateText } from "@gensx/vercel-ai";

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.2](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.1.1...gensx-storage-v0.1.2) (2025-06-03)
+
+
+### 📚 Documentation
+
+* removing mentions of jsx and other updates ([#730](https://github.com/gensx-inc/gensx/issues/730)) ([17c1a40](https://github.com/gensx-inc/gensx/commit/17c1a402bd885bdbb9e2dcdafe02ed5270e858e5))
+* updating documentation to programming model v2 ([#722](https://github.com/gensx-inc/gensx/issues/722)) ([9b6c710](https://github.com/gensx-inc/gensx/commit/9b6c7101c691b255e6ff0ca09e0485abd69262c8))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.4.1
+
 ## [0.1.1](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.0.13...gensx-storage-v0.1.1) (2025-05-28)
 
 

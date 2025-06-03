@@ -5,9 +5,7 @@ description: Getting structured output from LLMs with GenSX
 
 # Structured outputs
 
-Workflows regularly require getting structured outputs (JSON) from LLMs. GenSX supports an easy way to get structured outputs from an LLM by using the `GSXChatCompletion` component and Zod. However, you can also use the `response_format` prop to get a structured output from OpenAI models without using GenSX helpers, just like you would when using the OpenAI SDK or API.
-
-This guide shows how to use structured outputs with both [@gensx/openai](docs/components/openai) and [@gensx/vercel-ai](docs/components/vercel-ai). You can also find similar examples in [OpenAI examples](https://github.com/gensx-inc/gensx/tree/main/examples/openai-examples) and [Vercel AI examples](https://github.com/gensx-inc/gensx/tree/main/examples/vercel-ai) in the GitHub repo.
+Workflows regularly require getting structured outputs (JSON) from LLMs. This guide shows how to use structured outputs with both [@gensx/openai](docs/components/openai) and [@gensx/vercel-ai](docs/components/vercel-ai). You can also find similar examples in [OpenAI examples](https://github.com/gensx-inc/gensx/tree/main/examples/openai-examples) and [Vercel AI examples](https://github.com/gensx-inc/gensx/tree/main/examples/vercel-ai) in the GitHub repo.
 
 ## Structured outputs with the Vercel AI SDK
 
@@ -43,7 +41,7 @@ const ExtractEntities = gensx.Component(
   ${text}
   </text>
 
-  Please return json with the following format:
+  Please return JSON with the following format:
   {
     "people": ["person1", "person2", "person3"],
     "places": ["place1", "place2", "place3"],
@@ -76,7 +74,7 @@ const ExtractEntitiesStreaming = gensx.Component(
   ${text}
   </text>
 
-  Please return json with the following format:
+  Please return JSON with the following format:
   {
     "people": ["person1", "person2", "person3"],
     "places": ["place1", "place2", "place3"],

@@ -360,6 +360,7 @@ export class CheckpointManager implements CheckpointWriter {
           status: response.status,
           message: await response.text(),
         });
+        return;
       }
 
       const responseBody = (await response.json()) as {
@@ -370,7 +371,7 @@ export class CheckpointManager implements CheckpointWriter {
 
       this.traceId = responseBody.traceId;
 
-      if (this.printUrl && !this.havePrintedUrl && response.ok) {
+      if (this.printUrl && !this.havePrintedUrl) {
         const executionUrl = new URL(
           `/${this.org}/default/executions/${responseBody.executionId}?workflowName=${responseBody.workflowName}`,
           this.consoleBaseUrl,
@@ -382,10 +383,11 @@ export class CheckpointManager implements CheckpointWriter {
       }
     } catch (error) {
       console.error(`[Checkpoint] Failed to save checkpoint:`, { error });
+    } finally {
+      // Always increment, just in case the write was received by the server. The version value does not need to be
+      // perfectly monotonic, just simply the next value needs to be greater than the previous value.
+      this.version++;
     }
-    // Always increment, just in case the write was received by the server. The version value does not need to be
-    // perfectly monotonic, just simply the next value needs to be greater than the previous value.
-    this.version++;
   }
 
   private countSteps(node: ExecutionNode): number {
