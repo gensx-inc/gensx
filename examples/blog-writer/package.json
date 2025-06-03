@@ -10,14 +10,15 @@
     "dev": "tsx ./src/index.ts",
     "start": "npx gensx start ./src/workflows.ts",
     "build": "tsc",
-    "deploy": "npx gensx deploy -e OPENAI_API_KEY ./src/workflows.ts",
+    "deploy": "npx gensx deploy -e ANTHROPIC_API_KEY -e PERPLEXITY_API_KEY ./src/workflows.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.12",
     "@gensx/core": "^0.4.0",
-    "@gensx/openai": "^0.2.0",
-    "openai": "^4.0.0",
+    "@gensx/storage": "^0.1.1",
+    "@gensx/vercel-ai": "^0.2.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

@@ -1,195 +1,57 @@
 import * as gensx from "@gensx/core";
-import { OpenAI } from "@gensx/openai";
 
-const openai = new OpenAI();
+import { WriteDraft } from "./components/draft.js";
+import { Editorial } from "./components/editorial.js";
+import { WriteOutline } from "./components/outline.js";
+import { Research } from "./components/research.js";
 
-interface BrainstormTopicsProps {
-  prompt: string;
-}
-interface BrainstormTopicsOutput {
-  topics: string[];
-}
-
-const BrainstormTopics = gensx.Component(
-  "BrainstormTopics",
-  async ({ prompt }: BrainstormTopicsProps) => {
-    console.log("🔍 Starting research for:", prompt);
-    const systemPrompt = `You are a helpful assistant that brainstorms topics for a researching a blog post. The user will provide a prompt and you will brainstorm topics based on the prompt. You should return 3 - 5 topics, as a JSON array.
-
-Here is an example of the JSON output: { "topics": ["topic 1", "topic 2", "topic 3"] }`;
-    const result = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.5,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt },
-      ],
-      response_format: { type: "json_object" },
-    });
-    return JSON.parse(
-      result.choices[0].message.content ?? "{}",
-    ) as BrainstormTopicsOutput;
-  },
-);
-
-interface ResearchTopicProps {
-  topic: string;
-}
-
-const ResearchTopic = gensx.Component(
-  "ResearchTopic",
-  async ({ topic }: ResearchTopicProps) => {
-    console.log("📚 Researching topic:", topic);
-    const systemPrompt = `You are a helpful assistant that researches topics. The user will provide a topic and you will call the research tool to get the research. And then return a summary of the research, summarizing the most important points in a few sentences at most.`;
-    // eslint-disable-next-line
-    const runner = await openai.beta.chat.completions.runTools({
-      model: "gpt-4o-mini",
-      temperature: 0,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: topic },
-      ],
-      tools: [
-        // zodFunction({
-        //   name: "research",
-        //   description: "Research a topic",
-        //   parameters: z.object({
-        //     topic: z.string(),
-        //   }),
-        //   function: (args: { topic: string }) => {
-        //     console.log("🔍 Research tool:", args.topic);
-        //     return `You researched the topic ${args.topic} and found the following: ${args.topic}`;
-        //   },
-        // }),
-        {
-          type: "function",
-          function: {
-            name: "research",
-            description: "Research a topic",
-            parameters: {
-              type: "object",
-              properties: {
-                topic: {
-                  type: "string",
-                },
-              },
-            },
-            parse: JSON.parse,
-            function: (args: { topic: string }) => {
-              console.log("🔍 Research tool:", args.topic);
-              return `You researched the topic ${args.topic} and found the following: ${args.topic}`;
-            },
-          },
-        },
-      ],
-    });
-
-    console.log("🔍 Researching topic:", topic);
-
-    return (await runner.finalContent()) ?? "";
-  },
-);
-
-interface WriteDraftProps {
-  research: string[];
+interface WriteBlogProps {
+  title: string;
   prompt: string;
 }
 
-const WriteDraft = gensx.Component(
-  "WriteDraft",
-  async ({ prompt, research }: WriteDraftProps): Promise<string> => {
-    const systemPrompt = `You are a helpful assistant that writes blog posts. The user will provide a prompt and you will write a blog post based on the prompt. Unless specified by the user, the blog post should be 200 words.
+const WriteBlog = gensx.Workflow("WriteBlog", async (props: WriteBlogProps) => {
+  // Step 1: Conduct research
+  const research = await Research({
+    title: props.title,
+    prompt: props.prompt,
+  });
 
-Here is the research for the blog post: ${research.join("\n")}`;
+  // Step 2: Create outline based on research
+  const outline = await WriteOutline({
+    title: props.title,
+    prompt: props.prompt,
+    research: research,
+  });
 
-    console.log("🚀 Writing blog post for:", { prompt, research });
-    const result = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt },
-      ],
-    });
-    return result.choices[0].message.content ?? "";
-  },
-);
+  // Step 3: Write draft based on outline and research
+  const draft = await WriteDraft({
+    title: props.title,
+    prompt: props.prompt,
+    outline: outline.object,
+    research: research,
+  });
 
-interface EditDraftProps {
-  draft: string;
-}
+  // Step 4: Editorial pass to make it more engaging
+  const finalContent = await Editorial({
+    title: props.title,
+    prompt: props.prompt,
+    draft: draft,
+  });
 
-const EditDraft = gensx.Component(
-  "EditDraft",
-  async ({ draft }: EditDraftProps) => {
-    console.log("🔍 Editing draft");
-    const systemPrompt = `You are a helpful assistant that edits blog posts. The user will provide a draft and you will edit it to make it more engaging and interesting.`;
+  return {
+    title: props.title,
+    content: finalContent,
+    metadata: {
+      researchTopics: research.topics,
+      sectionsCount: outline.object.sections.length,
+      hasWebResearch: research.webResearch.length > 0,
+      hasCatalogResearch: research.catalogResearch.some(
+        (item) => item.content.length > 0,
+      ),
+      wordCount: finalContent.split(" ").length,
+    },
+  };
+});
 
-    const result = await openai.chat.completions.create({
-      stream: true,
-      model: "gpt-4o-mini",
-      temperature: 0,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: draft },
-      ],
-    });
-
-    const generator = async function* () {
-      for await (const chunk of result) {
-        yield chunk.choices[0].delta.content ?? "";
-      }
-    };
-    return generator();
-  },
-);
-
-// interface SearchWebProps {
-//   prompt: string;
-// }
-
-// const SearchWeb = gensx.Component(
-//   "SearchWeb",
-//   async ({ prompt }: SearchWebProps): Promise<string[]> => {
-//     console.log("🌐 Researching web for:", prompt);
-//     const results = await Promise.resolve([
-//       "web result 1",
-//       "web result 2",
-//       "web result 3",
-//     ]);
-//     return results;
-//   },
-// );
-
-type ResearchOutput = [string[], string[]];
-interface ResearchProps {
-  prompt: string;
-}
-
-const Research = gensx.Component(
-  "Research",
-  async ({ prompt }: ResearchProps): Promise<ResearchOutput> => {
-    const brainstorm = await BrainstormTopics({ prompt });
-
-    const research = await Promise.all(
-      brainstorm.topics.map((topic) => ResearchTopic({ topic })),
-    );
-    return [research, brainstorm.topics];
-  },
-);
-
-interface BlogWriterProps {
-  prompt: string;
-}
-
-const WriteBlogWorkflow = gensx.Workflow(
-  "WriteBlogWorkflow",
-  async ({ prompt }: BlogWriterProps) => {
-    const research = await Research({ prompt });
-    const draft = await WriteDraft({ prompt, research: research.flat() });
-    const editedDraft = await EditDraft({ draft });
-    return editedDraft;
-  },
-);
-
-export { WriteBlogWorkflow };
+export { WriteBlog };

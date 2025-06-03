@@ -1,86 +1,215 @@
-# GenSX Blog Writer Example
+# Blog Writer Workflow
 
-This example demonstrates how to use GenSX to create an AI-powered blog writing workflow.
+A comprehensive GenSX workflow for automated blog writing that combines AI research, structured outlining, draft writing, and editorial enhancement using Anthropic's Claude 4 Sonnet.
 
-## Overview
+## Features
 
-The `WriteBlog` workflow takes a `prompt` as input and generates a complete blog post using OpenAI's GPT-4o-mini model. The workflow includes researching, drafting, and editing the blog post to produce engaging long-form content.
+- **AI-Powered Research**: Uses Perplexity API for real-time web research
+- **Catalog Search**: Integrates with GenSX storage for internal documentation search
+- **Structured Outlining**: Creates comprehensive blog post outlines with key points and supporting evidence
+- **Section-by-Section Writing**: Generates detailed blog sections in parallel
+- **Editorial Enhancement**: Two-pass editorial review to make content more engaging
+- **Metadata Tracking**: Provides insights into the content generation process
+- **Claude 4 Sonnet**: Powered exclusively by Anthropic's most advanced model
 
-The workflow follows these steps:
+## Workflow Steps
 
-1. The model brainstorms 3-5 topics to research based on the prompt
-2. Online research is conducted in parallel for each topic.
-3. A draft blog post is written using the research
-4. The draft is edited to improve engagement and clarity
-5. The final blog post is output
+1. **Research Phase**:
 
-## Getting Started
+   - Generates 5-7 specific research topics based on the blog title and prompt
+   - Conducts web research using Perplexity's Sonar API for real-time information
+   - Searches internal documentation catalog (when configured)
 
-1. Log in to GenSX (if you haven't already):
+2. **Outline Creation**:
 
-   ```bash
-   npx gensx login
-   ```
+   - Creates structured outline with introduction, sections, and conclusion
+   - Incorporates research findings into outline structure
+   - Defines key points and supporting evidence for each section
 
-2. Install the required dependencies:
+3. **Draft Writing**:
 
-   ```bash
-   pnpm install
-   ```
+   - Writes engaging introduction with hook, context, and thesis
+   - Generates each section in parallel for efficiency
+   - Creates compelling conclusion with call-to-action
+   - Performs initial polish pass for coherence
 
-3. Set up your environment variables:
+4. **Editorial Enhancement**:
+   - First pass: Improves engagement, style, and structure
+   - Second pass: Final optimization for readability and memorability
 
-   ```bash
-   export OPENAI_API_KEY=your_api_key_here
-   export PERPLEXITY_API_KEY=your_api_key_here
-   ```
+## Setup
 
-## Running in GenSX Cloud
+### Prerequisites
 
-To run the workflow in GenSX Cloud:
+- Node.js 18+
+- GenSX CLI installed
+- API keys for Anthropic Claude and Perplexity
 
-1. Deploy your workflow:
+### Environment Variables
 
-   ```bash
-   pnpm dev
-   ```
-
-2. Generate a blog post by calling the workflow:
-
-   ```bash
-   gensx run WriteBlog --input '{"prompt": "Write a blog post about the future of AI"}'
-   ```
-
-Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see your workflow, test it, analyze traces, and get code snippets.
-
-## Running locally
-
-### Test the workflow directly
-
-You can run the workflow directly using the `index.ts` file:
+Create a `.env` file with the following variables:
 
 ```bash
-pnpm run dev
+# Anthropic Claude API Key
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# Perplexity API for web research
+PERPLEXITY_API_KEY=your_perplexity_api_key_here
+
+# GenSX Cloud Configuration (for vector search)
+GENSX_API_KEY=your_gensx_api_key_here
+GENSX_PROJECT=your_project_name
+GENSX_ENV=development
 ```
 
-This will generate a blog post based on the prompt in the code. You can modify the prompt in `index.ts` to generate different content.
-
-### Run the API locally
-
-You can also test the workflow through a local API server:
+### Installation
 
 ```bash
-pnpm start
+npm install
 ```
 
-This will start a local API server and you can call the workflow APIs via curl or any HTTP client:
+## Usage
+
+### Local Development
 
 ```bash
-curl -X POST http://localhost:1337/workflows/WriteBlog \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "Write a blog post about the future of AI"
-  }'
+npm run dev
 ```
 
-A swagger UI will also be available at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.
+### Deploy to GenSX Cloud
+
+```bash
+npm run deploy
+```
+
+### Example Usage
+
+```typescript
+import { WriteBlog } from "./src/workflows.js";
+
+const result = await WriteBlog({
+  title: "The Future of AI in Content Creation",
+  prompt:
+    "Write a comprehensive blog post about how AI is transforming content creation, including current tools, future trends, and implications for creators.",
+});
+
+console.log(result.content);
+console.log(result.metadata);
+```
+
+## Configuration
+
+### Perplexity Integration
+
+This workflow uses Perplexity's Sonar API for real-time web research. The `WebResearch` component:
+
+- Uses the `sonar-pro` model for advanced reasoning
+- Provides comprehensive research with citations
+- Handles up to 2000 tokens per research topic
+
+### Catalog Search (Optional)
+
+The `CatalogResearch` component is designed to search your internal documentation using GenSX storage:
+
+- Searches the "documentation" namespace
+- Performs vector similarity search
+- Falls back gracefully if no documentation is indexed
+
+To use catalog search:
+
+1. Index your documentation using GenSX storage
+2. Ensure the namespace is named "documentation"
+3. Uncomment the useSearch import in `components/research.ts`
+
+### Customization
+
+#### Modifying Research Topics
+
+Edit the `GenerateTopics` component prompt to change how research topics are generated.
+
+#### Adjusting Writing Style
+
+Modify the prompts in `WriteDraft` and `Editorial` components to change tone, length, or style.
+
+#### Adding Custom Research Sources
+
+Extend the `Research` component to include additional research methods or APIs.
+
+## Architecture
+
+### Components
+
+- **`Research`**: Orchestrates topic generation and research gathering
+- **`GenerateTopics`**: Creates focused research topics from blog title and prompt
+- **`WebResearch`**: Conducts real-time web research via Perplexity
+- **`CatalogResearch`**: Searches internal documentation (when configured)
+- **`WriteOutline`**: Creates structured blog post outline
+- **`WriteDraft`**: Generates complete blog post draft
+- **`WriteSection`**: Writes individual blog sections
+- **`Editorial`**: Enhances content for engagement and polish
+
+### Data Flow
+
+```
+Input (title, prompt)
+    ↓
+Research (topics, web data, catalog data)
+    ↓
+Outline (structured plan with key points)
+    ↓
+Draft (complete blog post)
+    ↓
+Editorial (polished final content)
+    ↓
+Output (content + metadata)
+```
+
+## Output Format
+
+The workflow returns:
+
+```typescript
+{
+  title: string;
+  content: string; // Final blog post in markdown
+  metadata: {
+    researchTopics: string[];
+    sectionsCount: number;
+    hasWebResearch: boolean;
+    hasCatalogResearch: boolean;
+    wordCount: number;
+  };
+}
+```
+
+## Tips for Best Results
+
+1. **Provide Detailed Prompts**: Include target audience, key themes, and desired outcomes
+2. **Use Specific Titles**: Clear, focused titles lead to better research and content
+3. **Configure Catalog Search**: Index relevant documentation for domain-specific insights
+4. **Monitor API Usage**: Perplexity and Anthropic usage can add up with comprehensive research
+5. **Customize Prompts**: Adjust component prompts for your specific content style and needs
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Perplexity API Errors**: Ensure your API key is valid and you have sufficient credits
+2. **Missing Research**: Check that PERPLEXITY_API_KEY is set correctly
+3. **Catalog Search Fails**: This is expected if no documentation is indexed - the workflow continues without it
+4. **Long Generation Times**: Complex topics may take 2-5 minutes to complete all steps
+
+### Performance Optimization
+
+- Research and section writing happen in parallel where possible
+- Consider using smaller models for development/testing
+- Monitor token usage across all API calls
+
+## Contributing
+
+This workflow is designed to be extensible. Consider adding:
+
+- Additional research sources (news APIs, academic databases)
+- Different content formats (newsletters, social posts)
+- Custom editorial passes for specific industries
+- Integration with CMS platforms for publishing
