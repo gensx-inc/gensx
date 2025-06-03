@@ -8,24 +8,24 @@
   "type": "commonjs",
   "scripts": {
     "dev": "nodemon",
-    "start:ts": "tsx index.tsx",
+    "start:ts": "tsx index.ts",
     "start": "node ./dist/index.js",
     "start:pure": "node ./pure-commonjs.js",
     "build": "tsc",
-    "build:jsx": "tsc cjs-jsx.tsx --outDir dist --module commonjs --jsx react-jsx --jsxImportSource @gensx/core --moduleResolution node --target es2022",
+    "build:jsx": "tsc cjs-jsx.tsx --outDir dist --module commonjs --target es2022",
     "start:jsx": "node dist/cjs-jsx.js",
     "test": "pnpm run build:jsx && node test/verify-commonjs.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@gensx/core": "0.3.13",
-    "zod": "catalog:"
+    "@gensx/core": "^0.4.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "catalog:examples",
-    "nodemon": "catalog:",
-    "tsx": "catalog:",
-    "typescript": "catalog:"
+    "@types/node": "^22",
+    "nodemon": "^3.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }

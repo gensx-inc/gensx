@@ -1,12 +1,10 @@
 # Typescript Compatibility Example
 
-This example demonstrates how to use GenSX packages with an older configuration of Typescript that uses `moduleResolution: "Node"` and `target: "es5"`.
+This example shows that GenSX works even with older TypeScript settings like `moduleResolution: "node"` and `target: "es5"`.
 
-## The Example
+`index.ts` defines a simple workflow using the new programming model. It compiles to CommonJS so it can run in environments that don't support ESM.
 
-This example has typescript configured with `moduleResolution: "Node"` and `target: "es5"`.
-
-## Running the typescript example
+## Running the example
 
 ```bash
 pnpm start

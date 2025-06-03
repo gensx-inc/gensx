@@ -4,19 +4,12 @@
     "module": "commonjs",
     "rootDir": ".",
     "outDir": "dist",
-    "jsx": "react-jsx",
-    "jsxImportSource": "@gensx/core",
     "strict": true,
     "skipLibCheck": true,
     "downlevelIteration": true,
-    "types": ["@gensx/core", "node"],
-    "baseUrl": ".",
-    "paths": {
-      "@gensx/core/jsx-runtime": [
-        "./node_modules/@gensx/core/dist/cjs/jsx-runtime"
-      ]
-    }
+    "types": ["node"],
+    "baseUrl": "."
   },
-  "include": ["*.ts", "*.tsx"],
+  "include": ["*.ts"],
   "exclude": ["node_modules", "dist"]
 }

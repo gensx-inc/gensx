@@ -1,20 +1,18 @@
 # CommonJS Compatibility Example
 
-This example demonstrates how to use GenSX packages with CommonJS modules. It shows that GenSX packages support both ESM (the default) and CommonJS format.
+This example demonstrates how to use GenSX with projects that compile to the CommonJS module format. It also provides a "pure" CommonJS script that uses `require`.
 
 ## The Example
 
-This example has typescript configured with `moduleResolution: "Node"` and `module: "esnext"`. It also has a `js` file that uses the `require` syntax to import the GenSX packages.
+TypeScript is configured to emit CommonJS modules. `index.ts` defines a simple workflow using the new programming model, while `pure-commonjs.js` shows how to use GenSX directly from a CommonJS script.
 
-This demonstrates usage of the GenSX packages in a CommonJS environment.
-
-## Running the typescript example
+## Running the TypeScript version
 
 ```bash
 pnpm start:ts
 ```
 
-## Running the pure CommonJS example
+## Running the pure CommonJS version
 
 ```bash
 pnpm start:pure
