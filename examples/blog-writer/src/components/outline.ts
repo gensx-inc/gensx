@@ -13,20 +13,7 @@ interface OutlineProps {
     webResearch: {
       topic: string;
       content: string;
-      citations: {
-        url: string;
-        title?: string;
-      }[];
-      source: string;
-    }[];
-    catalogResearch: {
-      topic: string;
-      content: {
-        id: string;
-        content: string;
-        title: string;
-        score: number;
-      }[];
+      citations: string[];
       source: string;
     }[];
   };
@@ -65,12 +52,6 @@ const WriteOutline = gensx.Component(
             (item) => `${item.topic}: ${item.content.substring(0, 300)}...`,
           ),
           "",
-          "Internal Documentation:",
-          ...props.research.catalogResearch.flatMap((item) =>
-            item.content.map(
-              (doc) => `${doc.title}: ${doc.content.substring(0, 200)}...`,
-            ),
-          ),
         ].join("\n")
       : "";
 

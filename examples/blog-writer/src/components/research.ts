@@ -1,8 +1,6 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import * as gensx from "@gensx/core";
 import { generateObject } from "@gensx/vercel-ai";
-// Conditional import for storage - will be available when package is installed
-// import { useSearch } from "@gensx/storage";
 import { z } from "zod";
 
 interface TopicProps {
@@ -36,10 +34,7 @@ interface PerplexityResponse {
       content: string;
     };
   }[];
-  citations?: {
-    url: string;
-    title?: string;
-  }[];
+  citations?: string[];
 }
 
 const WebResearch = gensx.Component(
@@ -84,68 +79,6 @@ const WebResearch = gensx.Component(
   },
 );
 
-interface CatalogResearchProps {
-  topic: string;
-}
-
-interface SearchResult {
-  id: string;
-  score?: number;
-  attributes?: {
-    content?: string;
-    title?: string;
-  };
-}
-
-interface CatalogContentItem {
-  id: string;
-  content: string;
-  title: string;
-  score: number;
-}
-
-const CatalogResearch = gensx.Component(
-  "CatalogResearch",
-  (props: CatalogResearchProps) => {
-    try {
-      // TODO: Implement when @gensx/storage is available
-      // For now, we'll use text-based search when the storage package is available
-      // const search = await useSearch("documentation");
-
-      // const results = await search.query({
-      //   // Use text-based search instead of embeddings to avoid OpenAI dependency
-      //   topK: 5,
-      //   includeAttributes: true,
-      //   filters: [
-      //     ["content", "Contains", props.topic]
-      //   ]
-      // });
-
-      // For now, return empty results as placeholder
-      const results: SearchResult[] = [];
-
-      return {
-        topic: props.topic,
-        content: results.map((result: SearchResult) => ({
-          id: result.id,
-          content: result.attributes?.content ?? "",
-          title: result.attributes?.title ?? "",
-          score: result.score ?? 0,
-        })),
-        source: "catalog_research",
-      };
-    } catch (error) {
-      // If search fails (e.g., no documentation indexed), return empty results
-      console.warn("Catalog search failed:", error);
-      return {
-        topic: props.topic,
-        content: [],
-        source: "catalog_research",
-      };
-    }
-  },
-);
-
 interface ResearchProps {
   title: string;
   prompt: string;
@@ -156,15 +89,7 @@ interface ResearchResult {
   webResearch: {
     topic: string;
     content: string;
-    citations: {
-      url: string;
-      title?: string;
-    }[];
-    source: string;
-  }[];
-  catalogResearch: {
-    topic: string;
-    content: CatalogContentItem[];
+    citations: string[];
     source: string;
   }[];
 }
@@ -178,26 +103,18 @@ const Research = gensx.Component(
       prompt: props.prompt,
     });
 
-    // Conduct research for each topic in parallel
+    // Conduct web research for each topic
     const webResearchPromises = topicsResult.object.topics.map(
       (topic: string) => WebResearch({ topic }),
     );
 
-    const catalogResearchPromises = topicsResult.object.topics.map(
-      (topic: string) => CatalogResearch({ topic }),
-    );
-
-    const [webResearch, catalogResearch] = await Promise.all([
-      Promise.all(webResearchPromises),
-      Promise.all(catalogResearchPromises),
-    ]);
+    const webResearch = await Promise.all(webResearchPromises);
 
     return {
       topics: topicsResult.object.topics,
       webResearch,
-      catalogResearch,
     };
   },
 );
 
-export { Research };
+export { Research, WebResearch };

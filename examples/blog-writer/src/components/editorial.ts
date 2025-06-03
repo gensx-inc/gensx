@@ -9,7 +9,73 @@ interface EditorialProps {
   title: string;
   prompt: string;
   draft?: string;
+  targetWordCount?: number;
 }
+
+interface MatchToneProps {
+  title: string;
+  content: string;
+  referenceURL: string;
+}
+
+const MatchTone = gensx.Component(
+  "MatchTone",
+  async (props: MatchToneProps) => {
+    // Fetch the reference content from the URL
+    let referenceContent = "";
+    try {
+      const response = await fetch(props.referenceURL);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch reference content: ${response.statusText}`,
+        );
+      }
+      referenceContent = await response.text();
+    } catch (error) {
+      console.warn("Failed to fetch reference content:", error);
+      // If we can't fetch the reference, return the original content
+      return props.content;
+    }
+
+    const result = await generateText({
+      model: anthropic("claude-sonnet-4-20250514"),
+      maxTokens: 8000,
+      prompt: `You are an expert editor specializing in style and tone matching. Your task is to revise a blog post to match the writing style and tone of a reference piece while preserving all the technical content and key information.
+
+## Reference Content (for style and tone analysis):
+${referenceContent}
+
+## Blog Post to Revise:
+${props.content}
+
+## Instructions:
+
+Analyze the reference content to understand:
+1. **Writing Style**: Sentence structure, paragraph length, use of technical terms, formality level
+2. **Tone**: Conversational vs. formal, enthusiastic vs. measured, authoritative vs. accessible
+3. **Voice**: First person vs. third person, active vs. passive voice preferences
+4. **Structure**: How sections flow, use of transitions, introduction and conclusion patterns
+5. **Technical Communication**: How complex concepts are explained, use of examples and analogies
+
+Then revise the blog post to match these stylistic elements while:
+- Preserving all technical accuracy and key information
+- Maintaining the logical flow and structure of the original content
+- Keeping all code examples, links, and citations intact
+- Ensuring the revised content feels natural and cohesive
+
+Focus on:
+- Adjusting sentence length and complexity to match the reference
+- Matching the level of formality/informality
+- Adopting similar transition phrases and connecting words
+- Aligning the overall tone and personality
+- Maintaining consistency throughout the entire piece
+
+Return only the revised blog post content with the matched style and tone.`,
+    });
+
+    return result.text;
+  },
+);
 
 const Editorial = gensx.Component(
   "Editorial",
@@ -22,6 +88,8 @@ const Editorial = gensx.Component(
       model: anthropic("claude-sonnet-4-20250514"),
       maxTokens: 8000,
       prompt: `Consider how you can improve the article. Your goal is to improve the writing and flow of the article. The draft was written by several different people so you might need to tweak things to make sure it flows well. Try to keep all of the core information from the first draft in the article. Review all of the instructions below and then help us rewrite the article.
+
+🎯 CRITICAL WORD COUNT REQUIREMENT: The final article must be approximately ${props.targetWordCount ?? 1500} words total. This is a strict requirement - you must aggressively cut content to meet this limit while preserving quality and key information.
 
 ## High level instructions
 - Keep all of the links in the article. Links are very important to the quality of the article.
@@ -58,11 +126,13 @@ Do not write anything before the article. Just write the article.
 Original Draft:
 ${props.draft}
 
-Original Context: ${props.prompt}`,
+Original Context: ${props.prompt}
+
+⚠️ FINAL CRITICAL REMINDER: The output must be approximately ${props.targetWordCount ?? 1500} words total. This is non-negotiable. Cut ruthlessly to meet this word count while preserving the most important information. Every word must earn its place.`,
     });
 
     return editorialReview.text;
   },
 );
 
-export { Editorial };
+export { Editorial, MatchTone };

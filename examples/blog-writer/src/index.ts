@@ -8,6 +8,9 @@ async function main() {
     prompt: `Write a blog post about building high performance LLM web apps with Vercel and Next.js.
     Focus on streaming across the client server boundary and using the vercel AI SDK.
     `,
+    referenceURL:
+      "https://raw.githubusercontent.com/gensx-inc/gensx/refs/heads/main/website/home/_posts/why-react-is-the-best-backend-workflow-engine.md",
+    wordCount: 1500,
   });
 
   console.log("✅ Blog post generated successfully!\n");
@@ -18,7 +21,7 @@ async function main() {
     `- Web research: ${result.metadata.hasWebResearch ? "✅" : "❌"}`,
   );
   console.log(
-    `- Catalog research: ${result.metadata.hasCatalogResearch ? "✅" : "❌"}`,
+    `- Tone matching: ${result.metadata.hasToneMatching ? "✅" : "❌"}`,
   );
   console.log(`- Word count: ${result.metadata.wordCount}`);
   console.log("\n" + "=".repeat(50));
