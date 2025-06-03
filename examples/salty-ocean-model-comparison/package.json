@@ -13,6 +13,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
+  "description": "Compare the performance of different models by asking them why the ocean is salty",
+  "main": "index.js",
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
