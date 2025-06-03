@@ -840,6 +840,70 @@ export class GensxServer {
             },
           },
         },
+        "/workflowExecutions/{executionId}/progress": {
+          get: {
+            tags: ["Workflows"],
+            summary: "Get progress events for a workflow execution",
+            parameters: [
+              {
+                name: "executionId",
+                in: "path",
+                required: true,
+                schema: { type: "string" },
+                description: "ID of the workflow execution",
+              },
+              {
+                name: "lastEventId",
+                in: "query",
+                required: false,
+                schema: { type: "string" },
+                description: "Filter events after this ID",
+              },
+            ],
+            responses: {
+              "200": {
+                description: "Progress events in SSE or NDJSON format",
+                content: {
+                  "text/event-stream": {
+                    schema: {
+                      type: "string",
+                      example:
+                        'id: 1\ndata: {"type":"start","workflowName":"testWorkflow"}\n\n',
+                    },
+                  },
+                  "application/x-ndjson": {
+                    schema: {
+                      type: "string",
+                      example:
+                        '{"id":"1","type":"start","workflowName":"testWorkflow"}\n',
+                    },
+                  },
+                },
+                headers: {
+                  "Last-Event-Id": {
+                    schema: {
+                      type: "string",
+                    },
+                    description: "ID of the last event sent",
+                  },
+                },
+              },
+              "404": {
+                description: "Execution not found",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        error: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
         ...Object.fromEntries(
           workflows.map((workflow) => [
             `/workflows/${workflow.name}`,
@@ -913,6 +977,52 @@ export class GensxServer {
                             },
                           },
                         },
+                      },
+                      "text/event-stream": {
+                        schema: {
+                          type: "string",
+                          description:
+                            "Server-Sent Events (SSE) stream of progress events",
+                          example:
+                            'id: 1\ndata: {"type":"start","workflowName":"testWorkflow"}\n\nid: 2\ndata: {"type":"progress","data":"Processing..."}\n\n',
+                        },
+                      },
+                      "application/x-ndjson": {
+                        schema: {
+                          type: "string",
+                          description:
+                            "Newline-delimited JSON stream of progress events",
+                          example:
+                            '{"id":"1","type":"start","workflowName":"testWorkflow"}\n{"id":"2","type":"progress","data":"Processing..."}\n',
+                        },
+                      },
+                      "application/stream": {
+                        schema: {
+                          type: "string",
+                          description:
+                            "Streaming response for workflows that returns streaming output",
+                        },
+                      },
+                    },
+                    headers: {
+                      "Content-Type": {
+                        schema: {
+                          type: "string",
+                          enum: [
+                            "application/json",
+                            "text/event-stream",
+                            "application/x-ndjson",
+                            "application/stream",
+                          ],
+                        },
+                        description: "Response format based on Accept header",
+                      },
+                      "Transfer-Encoding": {
+                        schema: {
+                          type: "string",
+                          enum: ["chunked"],
+                        },
+                        description: "Present for streaming responses",
                       },
                     },
                   },
