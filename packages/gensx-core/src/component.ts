@@ -2,7 +2,6 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
-import { setTimeout } from "timers/promises";
 
 import type {
   ComponentOpts,
@@ -429,7 +428,6 @@ function captureReadableStream(
             chunks.push(result.value);
             // Only update the node every 200ms to avoid hammering the server
             if (performance.now() - lastUpdateNodeCall > 200) {
-              await setTimeout(1000);
               const { updateNode } = getCurrentNodeCheckpointManager();
               const aggregatedValue = aggregator(chunks);
               if (streamKey) {
