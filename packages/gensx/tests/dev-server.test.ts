@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { Context } from "hono";
@@ -31,7 +32,20 @@ type WorkflowFunction = {
 } & ReturnType<typeof vi.fn>;
 
 // Simple mock workflow definition
-const mockWorkflow = vi.fn(function testWorkflow(_input: unknown) {
+const mockWorkflow = vi.fn(function testWorkflow(
+  _input: unknown,
+  opts?: { progressListener?: (event: any) => void },
+) {
+  if (opts?.progressListener) {
+    opts.progressListener({
+      type: "start",
+      workflowExecutionId: "test-execution-id",
+      workflowName: "testWorkflow",
+    });
+    opts.progressListener({
+      type: "end",
+    });
+  }
   return Promise.resolve({ result: "test result" });
 }) as WorkflowFunction;
 mockWorkflow.__gensxWorkflow = true;
@@ -467,6 +481,224 @@ suite("GenSX Dev Server", () => {
     }
     expect(chunks).toContain("chunk1");
     expect(chunks).toContain('{"data":"chunk2"}\n');
+  });
+
+  it("should stream progress events in SSE format", async () => {
+    interface ProgressEvent {
+      type: "start" | "progress" | "end";
+      workflowName?: string;
+      data?: string;
+    }
+
+    const progressWorkflow = vi.fn(function progressWorkflow(
+      _input: unknown,
+      opts?: { progressListener?: (event: ProgressEvent) => void },
+    ) {
+      if (opts?.progressListener) {
+        opts.progressListener({
+          type: "start",
+          workflowName: "progressWorkflow",
+        });
+        opts.progressListener({ type: "progress", data: "Processing..." });
+        opts.progressListener({ type: "end" });
+      }
+      return Promise.resolve({ result: "done" });
+    }) as WorkflowFunction;
+    progressWorkflow.__gensxWorkflow = true;
+    Object.defineProperty(progressWorkflow, "name", {
+      value: "progressWorkflow",
+    });
+
+    const workflows = { progressWorkflow };
+    server = createServer(workflows);
+
+    const privateServer = server as unknown as PrivateServer;
+    const response = await privateServer.app.fetch(
+      new Request("http://localhost/workflows/progressWorkflow", {
+        method: "POST",
+        headers: {
+          Accept: "text/event-stream",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ test: "data" }),
+      }),
+    );
+
+    expect(response).toBeInstanceOf(Response);
+    expect(response.headers.get("Content-Type")).toBe("text/event-stream");
+    expect(response.headers.get("Cache-Control")).toBe("no-cache");
+    expect(response.headers.get("Connection")).toBe("keep-alive");
+
+    // Test SSE content
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Response body reader is undefined");
+    }
+
+    const chunks: string[] = [];
+    let done = false;
+    while (!done) {
+      const result = await reader.read();
+      done = result.done;
+      if (result.value instanceof Uint8Array) {
+        chunks.push(new TextDecoder().decode(result.value));
+      }
+    }
+
+    // Verify SSE format
+    const sseContent = chunks.join("");
+    expect(sseContent).toContain(
+      'data: {"type":"start","workflowName":"progressWorkflow"}\n\n',
+    );
+    expect(sseContent).toContain(
+      'data: {"type":"progress","data":"Processing..."}\n\n',
+    );
+    expect(sseContent).toContain('data: {"type":"end"}\n\n');
+  });
+
+  it("should stream progress events in NDJSON format", async () => {
+    interface ProgressEvent {
+      type: "start" | "progress" | "end";
+      workflowName?: string;
+      data?: string;
+    }
+
+    const progressWorkflow = vi.fn(function progressWorkflow(
+      _input: unknown,
+      opts?: { progressListener?: (event: ProgressEvent) => void },
+    ) {
+      if (opts?.progressListener) {
+        opts.progressListener({
+          type: "start",
+          workflowName: "progressWorkflow",
+        });
+        opts.progressListener({ type: "progress", data: "Processing..." });
+        opts.progressListener({ type: "end" });
+      }
+      return Promise.resolve({ result: "done" });
+    }) as WorkflowFunction;
+    progressWorkflow.__gensxWorkflow = true;
+    Object.defineProperty(progressWorkflow, "name", {
+      value: "progressWorkflow",
+    });
+
+    const workflows = { progressWorkflow };
+    server = createServer(workflows);
+
+    const privateServer = server as unknown as PrivateServer;
+    const response = await privateServer.app.fetch(
+      new Request("http://localhost/workflows/progressWorkflow", {
+        method: "POST",
+        headers: {
+          Accept: "application/x-ndjson",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ test: "data" }),
+      }),
+    );
+
+    expect(response).toBeInstanceOf(Response);
+    expect(response.headers.get("Content-Type")).toBe("application/x-ndjson");
+    expect(response.headers.get("Cache-Control")).toBe("no-cache");
+    expect(response.headers.get("Connection")).toBe("keep-alive");
+
+    // Test NDJSON content
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Response body reader is undefined");
+    }
+
+    const chunks: string[] = [];
+    let done = false;
+    while (!done) {
+      const result = await reader.read();
+      done = result.done;
+      if (result.value instanceof Uint8Array) {
+        chunks.push(new TextDecoder().decode(result.value));
+      }
+    }
+
+    // Verify NDJSON format
+    const ndjsonContent = chunks.join("");
+    const lines = ndjsonContent.split("\n").filter(Boolean);
+    expect(lines).toHaveLength(3);
+    expect(JSON.parse(lines[0])).toEqual({
+      type: "start",
+      workflowName: "progressWorkflow",
+    });
+    expect(JSON.parse(lines[1])).toEqual({
+      type: "progress",
+      data: "Processing...",
+    });
+    expect(JSON.parse(lines[2])).toEqual({
+      type: "end",
+    });
+  });
+
+  it("should handle errors in streaming progress", async () => {
+    interface ProgressEvent {
+      type: "start" | "error";
+      workflowName?: string;
+      error?: string;
+    }
+
+    const errorWorkflow = vi.fn(function errorWorkflow(
+      _input: unknown,
+      opts?: { progressListener?: (event: ProgressEvent) => void },
+    ) {
+      if (opts?.progressListener) {
+        opts.progressListener({ type: "start", workflowName: "errorWorkflow" });
+        throw new Error("Workflow failed");
+      }
+      return Promise.resolve({ result: "done" });
+    }) as WorkflowFunction;
+    errorWorkflow.__gensxWorkflow = true;
+    Object.defineProperty(errorWorkflow, "name", {
+      value: "errorWorkflow",
+    });
+
+    const workflows = { errorWorkflow };
+    server = createServer(workflows);
+
+    const privateServer = server as unknown as PrivateServer;
+    const response = await privateServer.app.fetch(
+      new Request("http://localhost/workflows/errorWorkflow", {
+        method: "POST",
+        headers: {
+          Accept: "text/event-stream",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ test: "data" }),
+      }),
+    );
+
+    expect(response).toBeInstanceOf(Response);
+    expect(response.headers.get("Content-Type")).toBe("text/event-stream");
+
+    // Test SSE content
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Response body reader is undefined");
+    }
+
+    const chunks: string[] = [];
+    let done = false;
+    while (!done) {
+      const result = await reader.read();
+      done = result.done;
+      if (result.value instanceof Uint8Array) {
+        chunks.push(new TextDecoder().decode(result.value));
+      }
+    }
+
+    // Verify error event
+    const sseContent = chunks.join("");
+    expect(sseContent).toContain(
+      'data: {"type":"start","workflowName":"errorWorkflow"}\n\n',
+    );
+    expect(sseContent).toContain(
+      'data: {"type":"error","executionStatus":"failed","error":"Workflow failed"}\n\n',
+    );
   });
 
   it("should handle different types of errors appropriately", () => {

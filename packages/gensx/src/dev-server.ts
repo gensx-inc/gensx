@@ -505,6 +505,90 @@ export class GensxServer {
         }
 
         try {
+          // Check if we should stream progress events
+          const acceptHeader = c.req.header("Accept");
+          const shouldStreamProgress =
+            acceptHeader === "text/event-stream" ||
+            acceptHeader === "application/x-ndjson";
+
+          if (shouldStreamProgress) {
+            // Create a stream for progress events
+            const stream = new ReadableStream({
+              start: async (controller) => {
+                try {
+                  // Set up progress listener
+                  const progressListener = (event: any) => {
+                    const eventData = JSON.stringify(event);
+                    if (acceptHeader === "text/event-stream") {
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          `id: ${event.id}\ndata: ${eventData}\n\n`,
+                        ),
+                      );
+                    } else {
+                      controller.enqueue(
+                        new TextEncoder().encode(eventData + "\n"),
+                      );
+                    }
+                  };
+
+                  // Execute workflow with progress listener
+                  const result = await runMethod.call(workflow, body, {
+                    progressListener,
+                  });
+
+                  // Update execution with result
+                  execution.executionStatus = "completed";
+                  execution.output = result;
+                  execution.finishedAt = new Date().toISOString();
+                  this.executionsMap.set(executionId, execution);
+
+                  controller.close();
+                } catch (error) {
+                  // Update execution with error
+                  execution.executionStatus = "failed";
+                  execution.error =
+                    error instanceof Error ? error.message : String(error);
+                  execution.finishedAt = new Date().toISOString();
+                  this.executionsMap.set(executionId, execution);
+
+                  // Send error event
+                  const errorEvent = {
+                    type: "error",
+                    executionId,
+                    executionStatus: "failed",
+                    error:
+                      error instanceof Error ? error.message : String(error),
+                  };
+                  const errorEventData = JSON.stringify(errorEvent);
+                  if (acceptHeader === "text/event-stream") {
+                    controller.enqueue(
+                      new TextEncoder().encode(`data: ${errorEventData}\n\n`),
+                    );
+                  } else {
+                    controller.enqueue(
+                      new TextEncoder().encode(errorEventData + "\n"),
+                    );
+                  }
+
+                  controller.close();
+                }
+              },
+            });
+
+            return new Response(stream, {
+              headers: {
+                "Content-Type":
+                  acceptHeader === "text/event-stream"
+                    ? "text/event-stream"
+                    : "application/x-ndjson",
+                "Cache-Control": "no-cache",
+                Connection: "keep-alive",
+              },
+            });
+          }
+
+          // Handle regular non-streaming execution
           const result = await runMethod.call(workflow, body);
 
           // Update execution with result
