@@ -79,7 +79,7 @@ await blob.updateMetadata({ key: "value" }); // Update metadata
 
 ### BlobClient
 
-The `BlobClient` can be used in native TypeScript/JavaScript code (outside of JSX) to manage blob storage programmatically. This is useful for scripts, migrations, or any non-component logic.
+The `BlobClient` can be used in native TypeScript/JavaScript code to manage blob storage programmatically. This is useful for scripts, migrations, or any non-component logic.
 
 ```ts
 import { BlobClient } from "@gensx/storage";
@@ -154,7 +154,7 @@ await db.close(); // Close connection
 
 ### DatabaseClient
 
-The `DatabaseClient` can be used in native TypeScript/JavaScript code (outside of JSX) to manage SQL databases programmatically. This is useful for scripts, migrations, or any non-component logic.
+The `DatabaseClient` can be used in native TypeScript/JavaScript code to manage SQL databases programmatically. This is useful for scripts, migrations, or any non-component logic.
 
 ```ts
 import { DatabaseClient } from "@gensx/storage";
@@ -209,7 +209,7 @@ await namespace.updateSchema({ schema: { ... } }); // Update schema
 
 ### SearchClient
 
-The `SearchClient` can be used in native TypeScript/JavaScript code (outside of JSX) to manage vector search namespaces programmatically. This is useful for scripts, migrations, or any non-component logic.
+The `SearchClient` can be used in native TypeScript/JavaScript code to manage vector search namespaces programmatically. This is useful for scripts, migrations, or any non-component logic.
 
 ```ts
 import { SearchClient } from "@gensx/storage";

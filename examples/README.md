@@ -23,11 +23,10 @@ Make sure to check what environment variables are required for each example.
 
 | Example                                       | Description                                                                                              |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 📊 [Structured Outputs](./structured-outputs) | Demonstrates using structured outputs with GenSX                                                         |
 | 🔄 [Reflection](./reflection)                 | Shows how to use a self-reflection pattern with GenSX                                                    |
-| 🌊 [Streaming](./streaming)                   | Demonstrates how to handle streaming responses with GenSX                                                |
 | 🦾 [Anthropic Examples](./anthropic-examples) | Examples showing how to use [@gensx/anthropic](https://www.gensx.com/docs/component-reference/anthropic) |
 | 🧠 [OpenAI Examples](./openai-examples)       | Examples showing how to use [@gensx/openai](https://www.gensx.com/docs/component-reference/openai)       |
+| 🌊 [Vercel AI SDK Examples](./vercel-ai)      | Examples showing how to use [@gensx/vercel-ai](https://www.gensx.com/docs/component-reference/vercel-ai) |
 
 ## Full Examples
 

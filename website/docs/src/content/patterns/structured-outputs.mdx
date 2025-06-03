@@ -5,13 +5,13 @@ description: Getting structured output from LLMs with GenSX
 
 # Structured outputs
 
-Workflows regularly require getting structured outputs (JSON) from LLMs. GenSX supports an easy way to get structured outputs from an LLM by using the `GSXChatCompletion` component and Zod. However, you can also use the `response_format` prop to get a structured output from OpenAI models without using GenSX helpers, just like you would when using the OpenAI SDK or API.
+Workflows regularly require getting structured outputs (JSON) from LLMs. This guide shows how to use structured outputs with both [@gensx/openai](docs/components/openai) and [@gensx/vercel-ai](docs/components/vercel-ai). You can also find similar examples in [OpenAI examples](https://github.com/gensx-inc/gensx/tree/main/examples/openai-examples) and [Vercel AI examples](https://github.com/gensx-inc/gensx/tree/main/examples/vercel-ai) in the GitHub repo.
 
-This guide shows how to use structured outputs both with and without the helpers that GenSX provides. You can find the complete example code in the [structured outputs example](https://github.com/gensx-inc/gensx/tree/main/examples/structured-outputs).
+## Structured outputs with the Vercel AI SDK
 
-## Structured outputs with GSXChatCompletion
+The [`@gensx/vercel-ai`](docs/components/vercel-ai) package provides two ways to get structured outputs from LLMs: `generateObject` and `streamObject`. Two key benefits of using the [Vercel AI SDK](https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data) are that you can stream the output as it's generated, and you can use it with models that don't natively support structured outputs.
 
-When using the `GSXChatCompletion` component, you can define the Zod schema for the output format you want and GenSX will handle the rest.
+### Using `generateObject`
 
 Start by defining the Zod schema for the output format you want:
 
@@ -25,152 +25,156 @@ const ExtractEntitiesSchema = z.object({
 });
 ```
 
-Then define the input and output types for the component that will be used to get the structured output:
+Then define the component and set the `schema` param on the `generateObject` function:
 
-```tsx
-interface ExtractEntitiesProps {
+```ts
+interface ExtractEntitiesInput {
   text: string;
 }
 
-type ExtractEntitiesOutput = z.infer<typeof ExtractEntitiesSchema>;
-```
-
-Finally, define the component and set the `outputSchema` prop on the `GSXChatCompletion` component to get the output matching that schema:
-
-```tsx
-const ExtractEntities = gensx.Component<
-  ExtractEntitiesProps,
-  ExtractEntitiesOutput
->("ExtractEntities", ({ text }) => {
-  const prompt = `Please review the following text and extract all the people, places, and organizations mentioned.
+const ExtractEntities = gensx.Component(
+  "ExtractEntities",
+  ({ text }: ExtractEntitiesInput) => {
+    const prompt = `Please review the following text and extract all the people, places, and organizations mentioned.
 
   <text>
   ${text}
   </text>
 
-  Please return json with the following format:
+  Please return JSON with the following format:
   {
     "people": ["person1", "person2", "person3"],
     "places": ["place1", "place2", "place3"],
     "organizations": ["org1", "org2", "org3"]
   }`;
-  return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <GSXChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          {
-            role: "user",
-            content: prompt,
-          },
-        ]}
-        outputSchema={ExtractEntitiesSchema}
-      ></GSXChatCompletion>
-    </OpenAIProvider>
-  );
-});
+    const result = generateObject({
+      model: openai("gpt-4o-mini"),
+      schema: ExtractEntitiesSchema,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    return result.object;
+  },
+);
 ```
 
-The `GSXChatCompletion` component will return the structured output directly matching the type of the `ExtractEntitiesSchema` with no extra parsing required.
+When you run this component, it will return the structured output directly matching the type of the `ExtractEntitiesSchema` with no extra parsing required.
 
-### Structured output strategies
+### Using `streamObject`
 
-When using structured outputs with OpenAI models, GenSX uses the `response_format` parameter to return a structured output. However, not all models support structured outputs out of the box. For non-OpenAI models, structured outputs are handled by converting the schema into a tool and forcing the model to call that tool.
+The `streamObject` function is similar to `generateObject` but it streams the output as it's generated.
 
-GenSX looks at the `baseURL` of the OpenAIProvider to determine which approach to use but you can manually control this behavior by setting the `structuredOutputStrategy` prop. There are three available options:
-
-- `default`: Picks the best strategy based on the `baseURL` of the OpenAIProvider.
-- `tools`: Converts the schema into a tool to return a structured output.
-- `response_format`: Uses the `response_format` parameter to return a structured output.
-
-### Retries
-
-In the case that the model doesn't return valid JSON matching the schema, the task will be retried up to 3 times by default. You can change this behavior by setting the `retry` prop.
-
-```tsx
-<GSXChatCompletion
-  model="gpt-4o-mini"
-  messages={[
-    {
-      role: "user",
-      content: prompt,
-    },
-  ]}
-  outputSchema={ExtractEntitiesSchema}
-  retry={{
-    maxAttempts: 1,
-  }}
-></GSXChatCompletion>
-```
-
-## Structured outputs without GenSX helpers
-
-You can also use the `response_format` prop to get a structured output from OpenAI models without using GenSX helpers, just like you would when using the OpenAI SDK or API. The main difference is that you will need to parse the response yourself.
-
-Using the same `ExtractEntitiesSchema` from the previous example, you can define the component and set the `response_format` prop to the `ExtractEntitiesSchema` using the `zodResponseFormat` helper.
-
-```tsx
-import { zodResponseFormat } from "openai/helpers/zod";
-
-const ExtractEntitiesWithoutHelpers = gensx.Component<
-  ExtractEntitiesProps,
-  ExtractEntitiesOutput
->("ExtractEntitiesWithoutHelpers", ({ text }) => {
-  const prompt = `Please review the following text and extract all the people, places, and organizations mentioned.
+```ts
+const ExtractEntitiesStreaming = gensx.Component(
+  "ExtractEntitiesStreaming",
+  ({ text }: ExtractEntitiesInput) => {
+    const prompt = `Please review the following text and extract all the people, places, and organizations mentioned.
 
   <text>
   ${text}
   </text>
 
-  Please return json with the following format:
+  Please return JSON with the following format:
   {
     "people": ["person1", "person2", "person3"],
     "places": ["place1", "place2", "place3"],
     "organizations": ["org1", "org2", "org3"]
   }`;
-  return (
-    <OpenAIProvider apiKey={process.env.OPENAI_API_KEY}>
-      <ChatCompletion
-        model="gpt-4o-mini"
-        messages={[
-          {
-            role: "user",
-            content: prompt,
-          },
-        ]}
-        response_format={zodResponseFormat(ExtractEntitiesSchema, "entities")}
-      >
-        {(response: string) => {
-          return ExtractEntitiesSchema.parse(JSON.parse(response));
-        }}
-      </ChatCompletion>
-    </OpenAIProvider>
-  );
-});
+    const result = streamObject({
+      model: openai("gpt-4o-mini"),
+      schema: ExtractEntitiesSchema,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const generator = async function* () {
+      for await (const chunk of result.partialObjectStream) {
+        yield chunk;
+      }
+    };
+
+    return generator();
+  },
+);
 ```
 
-This example uses the `ChatCompletion` component which always returns a string but you could also use the `GSXChatCompletion` component or `OpenAIChatCompletion` component which returns the full response object from OpenAI.
+Then you can consume the output of the component like this:
 
-## Running the example
-
-You can run the examples above using the following code:
-
-```tsx
-const workflow = gensx.Workflow("ExtractEntitiesWorkflow", ExtractEntities);
-
-const result = await workflow.run({
+```ts
+const structuredStreamResult = await ExtractEntitiesStreaming({
   text: "John Doe is a software engineer at Google.",
+});
+console.log("Response:");
+for await (const chunk of structuredStreamResult) {
+  console.clear();
+  console.log(chunk);
+}
+```
+
+## Structured outputs with the OpenAI SDK
+
+You can also use the [`@gensx/openai`](docs/components/openai) package to get structured outputs from OpenAI models and compatible APIs.
+
+The OpenAI SDK provides a `parse` method that you can use to automatically parse the response of the structured output.
+
+Here's an example of how to extract entities using the OpenAI SDK:
+
+```ts
+import { OpenAI } from "@gensx/openai";
+import { zodResponseFormat } from "openai/helpers/zod.mjs";
+import { z } from "zod";
+
+const openai = new OpenAI();
+
+const EntityExtractionSchema = z.object({
+  people: z.array(z.string()).describe("List of people mentioned in the text"),
+  places: z.array(z.string()).describe("List of places mentioned in the text"),
+  organizations: z
+    .array(z.string())
+    .describe("List of organizations mentioned in the text"),
+});
+
+const ExtractEntities = gensx.Component(
+  "ExtractEntities",
+  async ({ text }: { text: string }) => {
+    const result = await openai.beta.chat.completions.parse({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "user",
+          content: `Please extract all people, places, and organizations from this text:\n\n${text}`,
+        },
+      ],
+      response_format: zodResponseFormat(
+        EntityExtractionSchema,
+        "entityExtraction",
+      ),
+    });
+
+    return result.choices[0].message.parsed!;
+  },
+);
+```
+
+When you run this component, it will return a typed object matching the `EntityExtractionSchema` structure. The `parse` method ensures that the response is properly validated against your schema before returning it.
+
+You can use it like this:
+
+```ts
+const result = await ExtractEntities({
+  text: "John works at Google in New York City.",
 });
 
 console.log(result);
+// Output:
+// {
+//   people: ["John"],
+//   places: ["New York City"],
+//   organizations: ["Google"]
+// }
 ```
 
-This will output the following:
+Alternatively, you can just call `openai.chat.completions.create` and then parse the response yourself with Zod:
 
-```json
-{
-  "people": ["John Doe"],
-  "places": [],
-  "organizations": ["Google"]
-}
+```ts
+const parsed = EntityExtractionSchema.parse(result.choices[0].message.content);
 ```

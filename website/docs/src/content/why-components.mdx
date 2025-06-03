@@ -9,11 +9,11 @@ GenSX uses components for building workflows and focuses on composition over abs
 
 Components in GenSX take inspiration from React's programming model, but are designed to be used for building the backend of your LLM applications. Components offer many benefits: they're re-usable, idempotent, and can be tested in isolation. They also provide good boundaries for tracing, retries, and error handling.
 
-This page explains why JSX is a perfect fit for anyone building LLM applications, whether it be simple linear workflows or complex cyclical agents. At the end of the day, building agents and workflows is all about constructing a dataflow graph. And agents in particular need to dynamically branch and execute conditionally at runtime. This is exactly what GenSX excels at.
+This page explains why components are a perfect fit for anyone building LLM applications, whether it be simple linear workflows or complex cyclical agents. At the end of the day, building agents and workflows is all about constructing a dataflow graph. And agents in particular need to dynamically branch and execute conditionally at runtime. This is exactly what GenSX excels at.
 
 ## Why not graphs?
 
-Graph APIs are the standard for LLM frameworks. They provide APIs to define nodes, edges between those nodes, and a global state object that is passe around the workflow.
+Graph APIs are the standard for LLM frameworks. They provide APIs to define nodes, edges between those nodes, and a global state object that is passed around the workflow.
 
 A workflow for writing a blog post might look like this:
 
@@ -62,7 +62,7 @@ As you'll see in the next section, trees are just another kind of graph and you 
 
 Most workflow frameworks use explicit graph construction with nodes and edges. This makes sense - workflows are fundamentally about connecting steps together, and graphs are a natural way to represent these connections.
 
-However, using components lets you express trees and trees are just a special kind of graph - one where each node has a single parent. At first glance, this might seem more restrictive than a general graph. But JSX gives us something powerful: the ability to express _programmatic_ trees.
+However, using components lets you express trees and trees are just a special kind of graph - one where each node has a single parent. At first glance, this might seem more restrictive than a general graph. But components gives us something powerful: the ability to express _programmatic_ trees.
 
 Consider a cycle in a workflow:
 

@@ -22,6 +22,7 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
+import { ProgressListener } from "./workflow-context.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
@@ -42,17 +43,17 @@ function getResolvedOpts(
     typeof decoratorOpts === "string" ? {} : (decoratorOpts ?? {});
 
   const merged: OriginalComponentOpts = {
-    ...callTimeOpts,
     ...baseOpts,
+    ...callTimeOpts,
     name,
     metadata: {
-      ...callTimeOpts?.metadata,
       ...baseOpts.metadata,
+      ...callTimeOpts?.metadata,
     },
     secretProps: Array.from(
       new Set([
-        ...(callTimeOpts?.secretProps ?? []),
         ...(baseOpts.secretProps ?? []),
+        ...(callTimeOpts?.secretProps ?? []),
       ]),
     ),
     secretOutputs: baseOpts.secretOutputs ?? callTimeOpts?.secretOutputs,
@@ -66,7 +67,10 @@ export function Component<P extends object = {}, R = unknown>(
   target: (props: P) => R,
   componentOpts?: ComponentOpts,
 ): (props?: P, runtimeOpts?: ComponentOpts) => R {
-  const ComponentFn = (props?: P, runtimeOpts?: ComponentOpts): R => {
+  const ComponentFn = (
+    props?: P,
+    runtimeOpts?: ComponentOpts & { onComplete?: () => void },
+  ): R => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
@@ -84,6 +88,15 @@ export function Component<P extends object = {}, R = unknown>(
       throw new Error(
         "Internal error: Component checkpoint name could not be determined.",
       );
+    }
+
+    function onComplete() {
+      workflowContext.progressListener({
+        type: "component-end",
+        componentName: checkpointName ?? "",
+        componentId: nodeId,
+      });
+      resolvedComponentOpts.onComplete?.();
     }
 
     const nodeId = checkpointManager.addNode(
@@ -131,6 +144,7 @@ export function Component<P extends object = {}, R = unknown>(
             streamKey: resolvedComponentOpts.__streamingResultKey,
             aggregator: resolvedComponentOpts.aggregator,
             fullValue: value,
+            onComplete,
           },
         );
 
@@ -149,27 +163,56 @@ export function Component<P extends object = {}, R = unknown>(
         const streamingResult = captureAsyncGenerator(
           value as AsyncIterable<unknown>,
           runInContext,
-          { aggregator: resolvedComponentOpts.aggregator, fullValue: value },
+          {
+            aggregator: resolvedComponentOpts.aggregator,
+            fullValue: value,
+            onComplete,
+          },
         );
 
         return streamingResult;
       }
 
+      workflowContext.progressListener({
+        type: "component-end",
+        componentName: checkpointName ?? "",
+        componentId: nodeId,
+      });
+      resolvedComponentOpts.onComplete?.();
       checkpointManager.completeNode(nodeId, value);
       return value;
     }
 
     try {
       let runInContext: RunInContext;
+      workflowContext.progressListener({
+        type: "component-start",
+        componentName: checkpointName,
+        componentId: nodeId,
+      });
       const result = context.withCurrentNode(nodeId, () => {
         runInContext = getContextSnapshot();
         return target((props ?? {}) as P);
       });
 
       if (result instanceof Promise) {
-        return result.then((value) => {
-          return handleResultValue(value, runInContext);
-        }) as R;
+        return result
+          .then((value) => {
+            return handleResultValue(value, runInContext);
+          })
+          .catch((error: unknown) => {
+            if (error instanceof Error) {
+              checkpointManager.addMetadata(nodeId, {
+                error: serializeError(error),
+              });
+              checkpointManager.completeNode(nodeId, undefined);
+              workflowContext.progressListener({
+                type: "error",
+                error: JSON.stringify(serializeError(error)),
+              });
+            }
+            throw error;
+          }) as R;
       }
 
       return handleResultValue(result, runInContext!) as R;
@@ -179,6 +222,10 @@ export function Component<P extends object = {}, R = unknown>(
           error: serializeError(error),
         });
         checkpointManager.completeNode(nodeId, undefined);
+        workflowContext.progressListener({
+          type: "error",
+          error: JSON.stringify(serializeError(error)),
+        });
       }
       throw error;
     }
@@ -199,21 +246,39 @@ export function Workflow<P extends object = {}, R = unknown>(
   name: string,
   target: (props: P) => R,
   workflowOpts?: WorkflowOpts,
-): (props?: P) => Promise<Awaited<R>> {
+): (
+  props?: P,
+  runtimeOpts?: WorkflowOpts & {
+    workflowExecutionId?: string;
+    progressListener?: ProgressListener;
+  },
+) => Promise<Awaited<R>> {
   const WorkflowFn = async (
     props?: P,
-    runtimeOpts?: WorkflowOpts,
+    runtimeOpts?: WorkflowOpts & {
+      workflowExecutionId?: string;
+      progressListener?: ProgressListener;
+    },
   ): Promise<Awaited<R>> => {
-    const context = new ExecutionContext({});
+    const context = new ExecutionContext(
+      {},
+      undefined,
+      runtimeOpts?.progressListener,
+    );
     await context.init();
 
-    const defaultPrintUrl = !Boolean(process.env.CI);
+    const resolvedOpts = {
+      ...(typeof workflowOpts === "string" ? {} : workflowOpts),
+      ...runtimeOpts,
+      metadata: {
+        ...workflowOpts?.metadata,
+        ...runtimeOpts?.metadata,
+      },
+    };
 
     const workflowContext = context.getWorkflowContext();
     workflowContext.checkpointManager.setPrintUrl(
-      (runtimeOpts?.printUrl ?? typeof workflowOpts === "string")
-        ? defaultPrintUrl
-        : (workflowOpts?.printUrl ?? defaultPrintUrl),
+      resolvedOpts.printUrl ?? false,
     );
 
     const workflowName = name;
@@ -228,8 +293,21 @@ export function Workflow<P extends object = {}, R = unknown>(
     const component = Component<P, R>(name, target);
 
     try {
+      workflowContext.progressListener({
+        type: "start",
+        workflowExecutionId: runtimeOpts?.workflowExecutionId,
+        workflowName,
+      });
+
       const result = await withContext(context, () =>
-        component(props, runtimeOpts),
+        component(props, {
+          ...runtimeOpts,
+          onComplete: () => {
+            workflowContext.progressListener({
+              type: "end",
+            });
+          },
+        }),
       );
 
       const rootId = workflowContext.checkpointManager.root?.id;
@@ -271,10 +349,12 @@ function captureAsyncGenerator(
     streamKey,
     aggregator,
     fullValue,
+    onComplete,
   }: {
     streamKey?: string;
     aggregator?: (chunks: unknown[]) => unknown;
     fullValue: unknown;
+    onComplete: () => void;
   },
 ) {
   aggregator ??= (chunks: unknown[]) => {
@@ -290,6 +370,7 @@ function captureAsyncGenerator(
       streamKey,
       aggregator,
       fullValue,
+      onComplete,
     });
   }
   const iterator = iterable[Symbol.asyncIterator]();
@@ -297,6 +378,7 @@ function captureAsyncGenerator(
     streamKey,
     aggregator,
     fullValue,
+    onComplete,
   });
   iterable[Symbol.asyncIterator] = () => wrappedIterator;
   return iterable;
@@ -309,10 +391,12 @@ function captureReadableStream(
     streamKey,
     aggregator,
     fullValue,
+    onComplete,
   }: {
     streamKey?: string;
     aggregator: (chunks: unknown[]) => unknown;
     fullValue: unknown;
+    onComplete: () => void;
   },
 ) {
   const reader = stream.getReader();
@@ -338,6 +422,7 @@ function captureReadableStream(
               } else {
                 completeNode(aggregatedValue);
               }
+              onComplete();
               controller.close();
               return;
             }
@@ -400,10 +485,12 @@ async function* captureAsyncIterator(
     streamKey,
     aggregator,
     fullValue,
+    onComplete,
   }: {
     streamKey?: string;
     aggregator: (chunks: unknown[]) => unknown;
     fullValue: unknown;
+    onComplete: () => void;
   },
 ) {
   const chunks: unknown[] = [];
@@ -427,6 +514,7 @@ async function* captureAsyncIterator(
             completeNode(aggregatedValue);
           }
           isDone = true;
+          onComplete();
           return;
         }
         chunks.push(value);

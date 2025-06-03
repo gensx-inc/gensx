@@ -176,11 +176,15 @@ const saveChatHistory = async (messages: ChatMessage[]) => {
           className="max-w-4xl mx-auto flex flex-col items-center text-center"
         >
           <h1 className="text-2xl md:text-6xl font-bold text-center">
-            The TypeScript framework for agents and workflows
+            The anti-framework for agents and workflows
           </h1>
           <p className="max-w-2xl text-md md:text-xl text-gray-600 mt-6 leading-relaxed text-center">
-            GenSX provides simple developer tools and cloud infrastructure to
-            build, deploy, scale, and debug complex AI backends with TypeScript.
+            No magic. Write plain TypeScript functions.
+            <br />
+            <br />
+            GenSX takes care of infra, built-in observability, and all of the
+            APIs you need to build long running agents that stream from start to
+            end.
           </p>
           <div className="flex gap-4 mt-8 justify-center">
             <Link href="/docs/quickstart">

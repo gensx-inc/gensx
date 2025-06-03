@@ -122,6 +122,10 @@ export async function runCLI() {
       },
       {},
     )
+    .option(
+      "-a, --archive <file>",
+      "Use the specified archive file instead of building the workflow. Must still specify the workflow file to properly infer the schemas.",
+    )
     .option("-p, --project <name>", "Project name to deploy to")
     .option("--env <name>", "Environment name to deploy to")
     .option("-y, --yes", "Automatically answer yes to all prompts", false)

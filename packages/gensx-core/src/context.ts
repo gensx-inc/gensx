@@ -1,7 +1,7 @@
 import { ExecutionNode } from "./checkpoint.js";
-import { MaybePromise } from "./types.js";
 import {
   createWorkflowContext,
+  ProgressListener,
   WORKFLOW_CONTEXT_SYMBOL,
   WorkflowExecutionContext,
 } from "./workflow-context.js";
@@ -18,23 +18,23 @@ interface AsyncLocalStorageType<T> {
 
 export const CURRENT_NODE_SYMBOL = Symbol.for("gensx.currentNode");
 
+// TODO(jeremy): I think this is due for a refactor now that we have simplified the context and provider stuff.
 export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
-    public onComplete?: () => MaybePromise<void>,
+    progressListener?: ProgressListener,
   ) {
-    this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext();
+    this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext(
+      progressListener ?? this.parent?.getWorkflowContext().progressListener,
+    );
   }
 
   init() {
     return contextManager.init();
   }
 
-  withContext(
-    newContext: Partial<WorkflowContext>,
-    onComplete?: () => MaybePromise<void>,
-  ): ExecutionContext {
+  withContext(newContext: Partial<WorkflowContext>): ExecutionContext {
     if (Object.getOwnPropertySymbols(newContext).length === 0) {
       return this;
     }
@@ -48,7 +48,7 @@ export class ExecutionContext {
     for (const key of Object.getOwnPropertySymbols(newContext)) {
       mergedContext[key] = newContext[key];
     }
-    return new ExecutionContext(mergedContext, this, onComplete);
+    return new ExecutionContext(mergedContext, this);
   }
 
   get<K extends keyof WorkflowContext>(key: K): WorkflowContext[K] | undefined {
@@ -192,6 +192,14 @@ export function getCurrentContext(): ExecutionContext {
 
 export function getContextSnapshot(): RunInContext {
   return contextManager.getContextSnapshot();
+}
+
+export function emitProgress(message: Record<string, string> | string) {
+  const context = getCurrentContext();
+  context.getWorkflowContext().progressListener({
+    type: "progress",
+    ...(typeof message === "string" ? { data: message } : message),
+  });
 }
 
 export function getCurrentNodeCheckpointManager() {

@@ -86,6 +86,17 @@ export interface WorkflowExecution {
   input: unknown;
   output?: unknown;
   error?: string;
+  progressEvents?: ProgressEvent[];
+}
+
+export interface ProgressEvent {
+  id: string;
+  type: "start" | "progress" | "end" | "error";
+  workflowName?: string;
+  data?: string;
+  error?: string;
+  executionStatus?: ExecutionStatus;
+  timestamp: string;
 }
 
 /**
@@ -400,7 +411,6 @@ export class GensxServer {
         finishedAt?: string;
         output?: unknown;
         logs?: {
-          //stdout: string;
           stderr: string;
         };
       } = {
@@ -420,12 +430,79 @@ export class GensxServer {
 
       if (execution.error) {
         responseData.logs = {
-          //stdout: "", // TODO: ideally this should be the stdout of the workflow
           stderr: execution.error,
         };
       }
 
       return c.json(responseData);
+    });
+
+    // Get execution progress events
+    this.app.get(`/workflowExecutions/:executionId/progress`, (c) => {
+      const executionId = c.req.param("executionId");
+      const execution = this.executionsMap.get(executionId);
+      if (!execution) {
+        throw new NotFoundError(`Execution '${executionId}' not found`);
+      }
+
+      // Get the last event ID from query param or header
+      const lastEventId =
+        c.req.query("lastEventId") ?? c.req.header("Last-Event-Id");
+
+      // Filter events based on lastEventId if provided
+      const events = execution.progressEvents ?? [];
+      const filteredEvents = lastEventId
+        ? events.filter((event) => event.id > lastEventId)
+        : events;
+
+      // Check if we should use SSE format
+      const acceptHeader = c.req.header("Accept");
+      const useSSE = acceptHeader === "text/event-stream";
+
+      if (useSSE) {
+        // Create a stream for SSE events
+        const stream = new ReadableStream({
+          start: (controller) => {
+            for (const event of filteredEvents) {
+              const eventData = JSON.stringify(event);
+              controller.enqueue(
+                new TextEncoder().encode(
+                  `id: ${event.id}\ndata: ${eventData}\n\n`,
+                ),
+              );
+            }
+            controller.close();
+          },
+        });
+
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          },
+        });
+      } else {
+        // Return NDJSON format
+        const stream = new ReadableStream({
+          start: (controller) => {
+            for (const event of filteredEvents) {
+              controller.enqueue(
+                new TextEncoder().encode(JSON.stringify(event) + "\n"),
+              );
+            }
+            controller.close();
+          },
+        });
+
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "application/x-ndjson",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          },
+        });
+      }
     });
 
     // List executions for a workflow
@@ -505,6 +582,90 @@ export class GensxServer {
         }
 
         try {
+          // Check if we should stream progress events
+          const acceptHeader = c.req.header("Accept");
+          const shouldStreamProgress =
+            acceptHeader === "text/event-stream" ||
+            acceptHeader === "application/x-ndjson";
+
+          if (shouldStreamProgress) {
+            // Create a stream for progress events
+            const stream = new ReadableStream({
+              start: async (controller) => {
+                try {
+                  // Set up progress listener
+                  const progressListener = (event: any) => {
+                    const eventData = JSON.stringify(event);
+                    if (acceptHeader === "text/event-stream") {
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          `id: ${event.id}\ndata: ${eventData}\n\n`,
+                        ),
+                      );
+                    } else {
+                      controller.enqueue(
+                        new TextEncoder().encode(eventData + "\n"),
+                      );
+                    }
+                  };
+
+                  // Execute workflow with progress listener
+                  const result = await runMethod.call(workflow, body, {
+                    progressListener,
+                  });
+
+                  // Update execution with result
+                  execution.executionStatus = "completed";
+                  execution.output = result;
+                  execution.finishedAt = new Date().toISOString();
+                  this.executionsMap.set(executionId, execution);
+
+                  controller.close();
+                } catch (error) {
+                  // Update execution with error
+                  execution.executionStatus = "failed";
+                  execution.error =
+                    error instanceof Error ? error.message : String(error);
+                  execution.finishedAt = new Date().toISOString();
+                  this.executionsMap.set(executionId, execution);
+
+                  // Send error event
+                  const errorEvent = {
+                    type: "error",
+                    executionId,
+                    executionStatus: "failed",
+                    error:
+                      error instanceof Error ? error.message : String(error),
+                  };
+                  const errorEventData = JSON.stringify(errorEvent);
+                  if (acceptHeader === "text/event-stream") {
+                    controller.enqueue(
+                      new TextEncoder().encode(`data: ${errorEventData}\n\n`),
+                    );
+                  } else {
+                    controller.enqueue(
+                      new TextEncoder().encode(errorEventData + "\n"),
+                    );
+                  }
+
+                  controller.close();
+                }
+              },
+            });
+
+            return new Response(stream, {
+              headers: {
+                "Content-Type":
+                  acceptHeader === "text/event-stream"
+                    ? "text/event-stream"
+                    : "application/x-ndjson",
+                "Cache-Control": "no-cache",
+                Connection: "keep-alive",
+              },
+            });
+          }
+
+          // Handle regular non-streaming execution
           const result = await runMethod.call(workflow, body);
 
           // Update execution with result
@@ -679,6 +840,70 @@ export class GensxServer {
             },
           },
         },
+        "/workflowExecutions/{executionId}/progress": {
+          get: {
+            tags: ["Workflows"],
+            summary: "Get progress events for a workflow execution",
+            parameters: [
+              {
+                name: "executionId",
+                in: "path",
+                required: true,
+                schema: { type: "string" },
+                description: "ID of the workflow execution",
+              },
+              {
+                name: "lastEventId",
+                in: "query",
+                required: false,
+                schema: { type: "string" },
+                description: "Filter events after this ID",
+              },
+            ],
+            responses: {
+              "200": {
+                description: "Progress events in SSE or NDJSON format",
+                content: {
+                  "text/event-stream": {
+                    schema: {
+                      type: "string",
+                      example:
+                        'id: 1\ndata: {"type":"start","workflowName":"testWorkflow"}\n\n',
+                    },
+                  },
+                  "application/x-ndjson": {
+                    schema: {
+                      type: "string",
+                      example:
+                        '{"id":"1","type":"start","workflowName":"testWorkflow"}\n',
+                    },
+                  },
+                },
+                headers: {
+                  "Last-Event-Id": {
+                    schema: {
+                      type: "string",
+                    },
+                    description: "ID of the last event sent",
+                  },
+                },
+              },
+              "404": {
+                description: "Execution not found",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        error: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
         ...Object.fromEntries(
           workflows.map((workflow) => [
             `/workflows/${workflow.name}`,
@@ -752,6 +977,52 @@ export class GensxServer {
                             },
                           },
                         },
+                      },
+                      "text/event-stream": {
+                        schema: {
+                          type: "string",
+                          description:
+                            "Server-Sent Events (SSE) stream of progress events",
+                          example:
+                            'id: 1\ndata: {"type":"start","workflowName":"testWorkflow"}\n\nid: 2\ndata: {"type":"progress","data":"Processing..."}\n\n',
+                        },
+                      },
+                      "application/x-ndjson": {
+                        schema: {
+                          type: "string",
+                          description:
+                            "Newline-delimited JSON stream of progress events",
+                          example:
+                            '{"id":"1","type":"start","workflowName":"testWorkflow"}\n{"id":"2","type":"progress","data":"Processing..."}\n',
+                        },
+                      },
+                      "application/stream": {
+                        schema: {
+                          type: "string",
+                          description:
+                            "Streaming response for workflows that returns streaming output",
+                        },
+                      },
+                    },
+                    headers: {
+                      "Content-Type": {
+                        schema: {
+                          type: "string",
+                          enum: [
+                            "application/json",
+                            "text/event-stream",
+                            "application/x-ndjson",
+                            "application/stream",
+                          ],
+                        },
+                        description: "Response format based on Accept header",
+                      },
+                      "Transfer-Encoding": {
+                        schema: {
+                          type: "string",
+                          enum: ["chunked"],
+                        },
+                        description: "Present for streaming responses",
                       },
                     },
                   },
@@ -1121,6 +1392,9 @@ export class GensxServer {
     }
 
     try {
+      // Initialize progress events array
+      execution.progressEvents = [];
+
       // Update status to starting
       execution.executionStatus = "starting";
       this.executionsMap.set(executionId, execution);
@@ -1139,7 +1413,25 @@ export class GensxServer {
       this.logger.info(
         `⚡️ Executing async workflow '${workflowName}' with execution ID ${executionId}`,
       );
-      const result = await runMethod.call(workflow, input);
+
+      // Set up progress listener
+      const progressListener = (event: any) => {
+        const progressEvent: ProgressEvent = {
+          id: ulid(),
+          type: event.type,
+          workflowName: event.workflowName,
+          data: event.data,
+          error: event.error,
+          executionStatus: event.executionStatus,
+          timestamp: new Date().toISOString(),
+        };
+        execution.progressEvents?.push(progressEvent);
+        this.executionsMap.set(executionId, execution);
+      };
+
+      const result = await runMethod.call(workflow, input, {
+        progressListener,
+      });
 
       // Update execution with result
       execution.executionStatus = "completed";
@@ -1155,6 +1447,18 @@ export class GensxServer {
       execution.executionStatus = "failed";
       execution.error = error instanceof Error ? error.message : String(error);
       execution.finishedAt = new Date().toISOString();
+
+      // Add error event
+      const errorEvent: ProgressEvent = {
+        id: ulid(),
+        type: "error",
+        workflowName,
+        error: error instanceof Error ? error.message : String(error),
+        executionStatus: "failed",
+        timestamp: new Date().toISOString(),
+      };
+      execution.progressEvents?.push(errorEvent);
+
       this.executionsMap.set(executionId, execution);
 
       this.logger.error(

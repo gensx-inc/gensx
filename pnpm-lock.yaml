@@ -557,59 +557,6 @@ importers:
         specifier: 'catalog:'
         version: 5.8.2
 
-  examples/streaming:
-    dependencies:
-      '@gensx/core':
-        specifier: 0.3.13
-        version: 0.3.13
-      '@gensx/openai':
-        specifier: 0.1.28
-        version: 0.1.28(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
-      openai:
-        specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.25.29)
-    devDependencies:
-      '@types/node':
-        specifier: catalog:examples
-        version: 22.15.23
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.4
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.2
-
-  examples/structured-outputs:
-    dependencies:
-      '@gensx/core':
-        specifier: 0.3.13
-        version: 0.3.13
-      '@gensx/openai':
-        specifier: 0.1.28
-        version: 0.1.28(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
-      openai:
-        specifier: 'catalog:'
-        version: 4.91.1(ws@8.18.0)(zod@3.25.29)
-      zod:
-        specifier: 'catalog:'
-        version: 3.25.29
-    devDependencies:
-      '@types/node':
-        specifier: catalog:examples
-        version: 22.15.23
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.9
-      tsx:
-        specifier: 'catalog:'
-        version: 4.19.4
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.2
-
   examples/text-to-sql:
     dependencies:
       '@ai-sdk/openai':

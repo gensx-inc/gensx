@@ -31,7 +31,7 @@ If you want to be able to visualize your workflows and view traces, you'll need 
 
 ![example trace](/quickstart/trace-rag.png)
 
-To log in into GenSX Cloud, run the following command:
+To log in to GenSX Cloud, run the following command:
 
 ```bash
 gensx login
@@ -134,7 +134,7 @@ The trace shows a flame graph of your workflow, including every component that e
 
 Some components will be hidden by default, but you can click the carat to expand them. Clicking on a component will show you details about it's inputs and outputs.
 
-For longer running workflows, this view will update in real time as the workflow executes.
+For longer running workflows, this view will update in real-time as the workflow executes.
 
 ## Running the dev server
 
@@ -224,7 +224,7 @@ The console also provides API documentation and code snippets for your workflows
 
 ## Improving your workflow with storage
 
-Now that you've deployed your first workflow, you can use GenSX's cloud storage to build more sophisticated workflows. GenSX offers three types of builtin storage: blob storage, sql database storage and, full text and vector search storage.
+Now that you've deployed your first workflow, you can use GenSX's cloud storage to build more sophisticated workflows. GenSX offers three types of built-in storage: blob storage, sql database storage and full text and vector search storage.
 
 In this section, we'll add chat history using blob storage and then add in RAG using vector search.
 
@@ -315,7 +315,7 @@ const ChatWorkflow = gensx.Workflow(
   "ChatWorkflow",
   async ({ userMessage, threadId }: ChatProps) => {
     return await Chat({ userMessage, threadId });
-  }
+  },
 );
 ```
 
@@ -334,7 +334,7 @@ gensx run ChatWorkflow --input '{"userMessage":"What was my previous message?", 
 
 ```
 
-You should see that the model remembers the previous message. You can also go to the *Blob Storage* tab in the [GenSX Cloud console](https://app.gensx.com) and see the blob that was created.
+You should see that the model remembers the previous message. You can also go to the _Blob Storage_ tab in the [GenSX Cloud console](https://app.gensx.com) and see the blob that was created.
 
 ### Add RAG with vector search
 
@@ -391,27 +391,27 @@ import { embed } from "@gensx/vercel-ai";
 
 const tools = {
   search: tool({
-  description: "Search the GenSX documentation",
-  parameters: z.object({
-    query: z.string().describe("the search query"),
-  }),
-  execute: async ({ query }: { query: string }) => {
-    const namespace = await useSearch("gensx-docs");
+    description: "Search the GenSX documentation",
+    parameters: z.object({
+      query: z.string().describe("the search query"),
+    }),
+    execute: async ({ query }: { query: string }) => {
+      const namespace = await useSearch("gensx-docs");
 
-    const { embedding } = await embed({
-      model: openai.embedding("text-embedding-3-small"),
-      value: query,
-    });
+      const { embedding } = await embed({
+        model: openai.embedding("text-embedding-3-small"),
+        value: query,
+      });
 
-    // Search for similar documents
-    const results = await namespace.query({
-      vector: embedding,
-      topK: 5,
-      includeAttributes: true,
-    });
+      // Search for similar documents
+      const results = await namespace.query({
+        vector: embedding,
+        topK: 5,
+        includeAttributes: true,
+      });
 
-    return results;
-  },
+      return results;
+    },
   }),
 };
 ```
