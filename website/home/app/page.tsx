@@ -179,11 +179,12 @@ const saveChatHistory = async (messages: ChatMessage[]) => {
             The anti-framework for agents and workflows
           </h1>
           <p className="max-w-2xl text-md md:text-xl text-gray-600 mt-6 leading-relaxed text-center">
-            Ship production ready agents, fast. <br />
+            No magic. Write plain TypeScript functions.
             <br />
-            No magic, just TypeScript. Write agents and workflows the same way
-            you write any other code. Built-in observability, streaming, and
-            serverless deployments.
+            <br />
+            GenSX takes care of infra, built-in observability, and all of the
+            APIs you need to build long running agents that stream from start to
+            end.
           </p>
           <div className="flex gap-4 mt-8 justify-center">
             <Link href="/docs/quickstart">
