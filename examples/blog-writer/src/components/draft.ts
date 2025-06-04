@@ -46,6 +46,8 @@ const WriteSection = gensx.Component(
     fullOutline?: OutlineData;
     targetWordCount?: number;
   }) => {
+    gensx.emitProgress(`Writing section: ${props.section.heading}`);
+
     // Simplify research data for the prompt
     const relevantResearch = props.research
       ? `Available Research Data:
@@ -183,6 +185,7 @@ Remember: Only use links that are explicitly provided in the research citations 
     });
 
     // Return the raw text output from the LLM
+    gensx.emitProgress(`Completed section: ${props.section.heading}`);
     return sectionContent.text;
   },
 );
@@ -191,6 +194,8 @@ const WriteDraft = gensx.Component("WriteDraft", async (props: DraftProps) => {
   if (!props.outline) {
     return "No outline provided - cannot generate draft.";
   }
+
+  gensx.emitProgress("Starting article draft...");
 
   // Write all sections in parallel
   const sectionPromises = props.outline.sections.map((section) =>
@@ -212,6 +217,7 @@ const WriteDraft = gensx.Component("WriteDraft", async (props: DraftProps) => {
     ...sections.flatMap((section) => [section, ""]),
   ].join("\n");
 
+  gensx.emitProgress("Article draft complete");
   return fullDraft;
 });
 

@@ -21,6 +21,8 @@ interface MatchToneProps {
 const MatchTone = gensx.Component(
   "MatchTone",
   async (props: MatchToneProps) => {
+    gensx.emitProgress("Matching tone to reference content...");
+
     // Fetch the reference content from the URL
     let referenceContent = "";
     try {
@@ -34,6 +36,7 @@ const MatchTone = gensx.Component(
     } catch (error) {
       console.warn("Failed to fetch reference content:", error);
       // If we can't fetch the reference, return the original content
+      gensx.emitProgress("Reference content unavailable, returning original");
       return props.content;
     }
 
@@ -73,6 +76,7 @@ Focus on:
 Return only the revised blog post content with the matched style and tone.`,
     });
 
+    gensx.emitProgress("Tone matching complete");
     return result.text;
   },
 );
@@ -83,6 +87,8 @@ const Editorial = gensx.Component(
     if (!props.draft) {
       return "No draft provided - cannot perform editorial review.";
     }
+
+    gensx.emitProgress("Editing your blog post...");
 
     const editorialReview = await generateText({
       model: anthropic("claude-opus-4-20250514"),
@@ -131,6 +137,7 @@ Original Context: ${props.prompt}
 ⚠️ FINAL CRITICAL REMINDER: The output must be approximately ${props.targetWordCount ?? 1500} words total. This is non-negotiable. Cut ruthlessly to meet this word count while preserving the most important information. Every word must earn its place.`,
     });
 
+    gensx.emitProgress("Editorial review complete");
     return editorialReview.text;
   },
 );

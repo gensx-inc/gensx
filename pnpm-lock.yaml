@@ -171,8 +171,8 @@ importers:
         specifier: ^1.2.12
         version: 1.2.12(zod@3.25.29)
       '@gensx/core':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.4.2
+        version: 0.4.2
       '@gensx/storage':
         specifier: ^0.1.1
         version: 0.1.1
@@ -1695,6 +1695,10 @@ packages:
 
   '@gensx/core@0.4.0':
     resolution: {integrity: sha512-s1yANdhFLxWC3Am0kBMPtncZNBhgkRqnIMrqIWl+ra88QpbtxPiT+BeA2cRe8s2+BWGge971okajc7i/xFFp/A==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
+  '@gensx/core@0.4.2':
+    resolution: {integrity: sha512-EuYYd5sbaXDJY0wv2KorjG95AmIzOyvyrP1xG/9plKDUwzbcTGqkdZpEaqDKgMGcL4Vn+/1snF+D+mf1FoHlAA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@gensx/openai@0.1.28':
@@ -8188,6 +8192,12 @@ snapshots:
       zod: 3.25.29
 
   '@gensx/core@0.4.0':
+    dependencies:
+      '@common.js/serialize-error': 11.0.3
+      ini: 5.0.0
+      zod: 3.25.29
+
+  '@gensx/core@0.4.2':
     dependencies:
       '@common.js/serialize-error': 11.0.3
       ini: 5.0.0
