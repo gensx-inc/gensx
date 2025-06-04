@@ -38,7 +38,7 @@ const MatchTone = gensx.Component(
     }
 
     const result = await generateText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: anthropic("claude-opus-4-20250514"),
       maxTokens: 8000,
       prompt: `You are an expert editor specializing in style and tone matching. Your task is to revise a blog post to match the writing style and tone of a reference piece while preserving all the technical content and key information.
 
@@ -85,7 +85,7 @@ const Editorial = gensx.Component(
     }
 
     const editorialReview = await generateText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: anthropic("claude-opus-4-20250514"),
       maxTokens: 8000,
       prompt: `Consider how you can improve the article. Your goal is to improve the writing and flow of the article. The draft was written by several different people so you might need to tweak things to make sure it flows well. Try to keep all of the core information from the first draft in the article. Review all of the instructions below and then help us rewrite the article.
 

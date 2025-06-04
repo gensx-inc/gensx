@@ -4,12 +4,13 @@ async function main() {
   console.log("🚀 Starting blog writing workflow...\n");
 
   const result = await WriteBlog({
-    title: "High Performance LLM Web Apps with Vercel",
+    title: "Building High Performance LLM Web Apps with Vercel",
     prompt: `Write a blog post about building high performance LLM web apps with Vercel and Next.js.
     Focus on streaming across the client server boundary and using the vercel AI SDK.
+    The audience for this post is software developers, so make sure to break up sections with code examples where appropriate and avoid large blocks of text.
     `,
-    referenceURL:
-      "https://raw.githubusercontent.com/gensx-inc/gensx/refs/heads/main/website/home/_posts/why-react-is-the-best-backend-workflow-engine.md",
+    // optionally, add a link to a raw github markdown gist that can be downloaded and used as a reference
+    // referenceUrl: "https://gist.githubusercontent.com/..."
     wordCount: 1500,
   });
 

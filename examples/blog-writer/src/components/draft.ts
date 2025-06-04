@@ -68,16 +68,6 @@ ${JSON.stringify(props.research, null, 2)}`
         }
       : {};
 
-    // Calculate target word count per section
-    const sectionCount = props.fullOutline?.sections.length ?? 1;
-    const targetSectionWordCount = props.targetWordCount
-      ? Math.round(props.targetWordCount / sectionCount)
-      : 250; // Default fallback
-
-    console.log(
-      `Word count calculation: Total=${props.targetWordCount}, Sections=${sectionCount}, Per Section=${targetSectionWordCount}`,
-    );
-
     // Create web research tool
     const webResearchTool = tool({
       description:
@@ -97,15 +87,13 @@ ${JSON.stringify(props.research, null, 2)}`
     });
 
     const sectionContent = await generateText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: anthropic("claude-opus-4-20250514"),
       maxSteps: 6,
       maxTokens: 3000,
       tools: {
         webResearch: webResearchTool,
       },
       prompt: `You are an expert content writer at a SaaS company like MongoDB, Datadog, or Microsoft. You are helping write an article. Your task is to write a single section of the article.
-
-🎯 CRITICAL WORD COUNT REQUIREMENT: This section must be approximately ${targetSectionWordCount} words. This is a strict requirement - do NOT exceed this limit. Be concise and focused.
 
 You have access to a web research tool that you can use to get additional current information for this section. You may call this tool at most twice if you need more specific or recent information beyond what's provided in the research below.
 
@@ -115,12 +103,18 @@ Here are the steps to follow to write a high quality and informative section:
 2. Think through the section planning:
   a. Consider any code examples or other resources that would be relevant to this section.
   b. Identify the research that is applicable to this section based on the provided research results.
-  c. Consider useful links that would be relevant to this section (though you cannot create new links, focus on the content structure).
-  d. Figure out the 'why' behind the key statements and claims in this section. Follow Simon Sinek's 'Start with Why' and the 'why -> what -> how' framework; avoid generic or unsubstantiated claims by providing clear explanations and substantiated reasoning.
-  e. Plan a concise and clear heading for this section and each subsection.
+  c. Figure out the 'why' behind the key statements and claims in this section. Follow Simon Sinek's 'Start with Why' and the 'why -> what -> how' framework; avoid generic or unsubstantiated claims by providing clear explanations and substantiated reasoning.
+  d. Plan a concise and clear heading for this section and each subsection.
 3. Write the section at a college reading level. It should be dense with information and include sufficient depth and detail.
 4. Ensure that the language is clear and concise, and avoid flowery or buzzword filled language.
-5. Reduce the number of words in the section to the minimum necessary to convey the information.
+
+🔗 CRITICAL LINK POLICY:
+- You MAY include links in your writing, but ONLY use links that are explicitly provided in the research citations below
+- NEVER create, invent, or hallucinate any URLs or links
+- If you reference information from the research, you can and should include the corresponding citation link
+- When using research citations, format them as proper markdown links: [descriptive text](URL)
+- If you want to reference a concept or company but don't have a citation link for it, mention it by name only without creating a link
+- All links must come directly from the "citations" arrays in the research data provided
 
 Important rules to follow:
 - Include the heading of the section with the appropriate markdown formatting. It should have a single ## before it, and each subsection heading and nested subsection heading should have the right number of #s before it to match the heading level.
@@ -185,7 +179,7 @@ Overall Context: ${props.overallContext}
 
 Write the section content with proper markdown formatting including the section heading with ## and any subsection headings with the appropriate number of # characters.
 
-⚠️ FINAL REMINDER: Your response must be approximately ${targetSectionWordCount} words. Count your words carefully and stay within this limit. Quality over quantity - be concise and impactful.`,
+Remember: Only use links that are explicitly provided in the research citations above. Do not create any new links or URLs.`,
     });
 
     // Return the raw text output from the LLM
