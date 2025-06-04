@@ -317,11 +317,11 @@ importers:
   examples/hacker-news-analyzer:
     dependencies:
       '@gensx/core':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.4.2
+        version: 0.4.2
       '@gensx/openai':
-        specifier: ^0.2.0
-        version: 0.2.0(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
+        specifier: ^0.2.2
+        version: 0.2.2(openai@4.91.1(ws@8.18.0)(zod@3.25.29))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -1708,6 +1708,11 @@ packages:
 
   '@gensx/openai@0.2.0':
     resolution: {integrity: sha512-fuDQAxdth1fVSyobBpt6jZv9REztI7OCtnFoaq8mOoOiwoat4Q3le5oo2tlCJ/78XcPyKo5ktJLOdvC4Uc6aRg==}
+    peerDependencies:
+      openai: '>=4.0.0'
+
+  '@gensx/openai@0.2.2':
+    resolution: {integrity: sha512-0gq2H5dpEDG9KUkpOO0GVqoAb6lNL+1/6jctQjMXv70gdKXH4QLDx4+zBNdPxOdLNFjfSaMYsAXudix+o8LiLQ==}
     peerDependencies:
       openai: '>=4.0.0'
 
@@ -8213,6 +8218,11 @@ snapshots:
   '@gensx/openai@0.2.0(openai@4.91.1(ws@8.18.0)(zod@3.25.29))':
     dependencies:
       '@gensx/core': 0.4.0
+      openai: 4.91.1(ws@8.18.0)(zod@3.25.29)
+
+  '@gensx/openai@0.2.2(openai@4.91.1(ws@8.18.0)(zod@3.25.29))':
+    dependencies:
+      '@gensx/core': 0.4.2
       openai: 4.91.1(ws@8.18.0)(zod@3.25.29)
 
   '@gensx/storage@0.1.1':
