@@ -5,17 +5,20 @@ description: Blog writing agent with Perplexity and GenSX
 
 # Blog writer
 
-Breaking down complex tasks into smaller, discrete steps is one of the best ways to improve the quality of LLM outputs. The [blog writer workflow example](https://github.com/gensx-inc/gensx/tree/main/examples/blog-writer) does this by following the same approach a human would take to write a blog post: first conducting research, then generating a first draft, and finally editing that draft.
+Breaking down complex tasks into smaller, discrete steps is one of the best ways to improve the quality of LLM outputs. The [blog writer workflow example](https://github.com/gensx-inc/gensx/tree/main/examples/blog-writer) does this by following the same approach a human would take to write a blog post: conducting research, creating an outline, writing a structured draft, and finally editing that draft.
 
 ## Workflow
 
 The Blog Writer workflow consists of the following steps:
 
-1. Research phase:
-   - Brainstorm topics using LLM (`BrainstormTopics`)
-   - Research each topic in detail (`ResearchTopic`)
-2. Write initial draft based on research (`WriteDraft`)
-3. Edit and polish the content (`EditDraft`)
+1. **Research phase**:
+   - Generate focused research topics using Claude (`GenerateTopics`)
+   - Conduct web research with citations via Perplexity API (`WebResearch`)
+   - Search internal documentation catalog using GenSX storage (`CatalogResearch`)
+2. **Outline creation**: Structure the blog post with sections, key points, and research integration (`WriteOutline`)
+3. **Draft writing**: Generate content section-by-section with expert SaaS company writer prompts (`WriteDraft`)
+4. **Editorial enhancement**: Polish content for engagement, style, and readability (`Editorial`)
+5. **Tone matching** (optional): Adapt writing style to match a reference URL (`MatchTone`)
 
 ## Running the example
 
@@ -26,8 +29,14 @@ cd examples/blog-writer
 # Install dependencies
 pnpm install
 
-# Set your OpenAI API key
-export OPENAI_API_KEY=<your_api_key>
+# Set your API keys
+export ANTHROPIC_API_KEY=<your_anthropic_api_key>
+export PERPLEXITY_API_KEY=<your_perplexity_api_key>
+
+# Optional: For catalog search
+export GENSX_API_KEY=<your_gensx_api_key>
+export GENSX_PROJECT=<your_project_name>
+export GENSX_ENV=development
 
 # Run the example
 pnpm run start
@@ -35,66 +44,117 @@ pnpm run start
 
 ## Key patterns
 
-### Running components in parallel
+### Multi-step content generation
 
-The `Research` component processes multiple topics in parallel using `Promise.all`. It first gets a list of topics from `BrainstormTopics` and then researches each topic concurrently:
+The workflow demonstrates how to break complex content generation into discrete, manageable steps. Each component has a specific role and produces structured output for the next step:
 
 ```ts
-const Research = gensx.Component(
-  "Research",
-  async ({ prompt }: ResearchProps): Promise<ResearchOutput> => {
-    const brainstorm = await BrainstormTopics({ prompt });
+const WriteBlog = gensx.Workflow("WriteBlog", async (props: WriteBlogProps) => {
+  // Step 1: Conduct research
+  const research = await Research({
+    title: props.title,
+    prompt: props.prompt,
+  });
 
-    const research = await Promise.all(
-      brainstorm.topics.map((topic) => ResearchTopic({ topic })),
-    );
-    return [research, brainstorm.topics];
+  // Step 2: Create outline based on research
+  const outline = await WriteOutline({
+    title: props.title,
+    prompt: props.prompt,
+    research: research,
+  });
+
+  // Step 3: Write draft based on outline and research
+  const draft = await WriteDraft({
+    title: props.title,
+    prompt: props.prompt,
+    outline: outline.object,
+    research: research,
+    targetWordCount: props.wordCount ?? 1500,
+  });
+
+  // Step 4: Editorial pass to make it more engaging
+  const finalContent = await Editorial({
+    title: props.title,
+    prompt: props.prompt,
+    draft: draft,
+    targetWordCount: props.wordCount ?? 1500,
+  });
+
+  return { title: props.title, content: finalContent, metadata: {...} };
+});
+```
+
+### Parallel research processing
+
+The `Research` component processes multiple research topics in parallel using `Promise.all`, combining web research with optional catalog search:
+
+```ts
+const Research = gensx.Component("Research", async (props: ResearchProps) => {
+  // Generate research topics
+  const topicsResult = await GenerateTopics({
+    title: props.title,
+    prompt: props.prompt,
+  });
+
+  // Conduct web research in parallel
+  const webResearchPromises = topicsResult.topics.map((topic) =>
+    WebResearch({ topic }),
+  );
+
+  const webResearch = await Promise.all(webResearchPromises);
+
+  return {
+    topics: topicsResult.topics,
+    webResearch: webResearch,
+  };
+});
+```
+
+### Real-time web research with citations
+
+The `WebResearch` component uses Perplexity's Sonar API to get current information with proper citations:
+
+```ts
+const WebResearch = gensx.Component(
+  "WebResearch",
+  async (props: { topic: string }) => {
+    const result = await generateText({
+      model: perplexity("sonar-pro"),
+      prompt: `Research the following topic comprehensively: ${props.topic}
+
+      Provide detailed, current information with proper citations.`,
+    });
+
+    return {
+      topic: props.topic,
+      content: result.text,
+      citations: result.response.citations || [],
+      source: "perplexity",
+    };
   },
 );
 ```
 
-### Tool usage in components
+### Tool integration for dynamic research
 
-The `ResearchTopic` component shows how you can automatically process tools using `@gensx/openai` and OpenAI's `runTools` helper.
+Components can use tools to gather additional information during generation. The `WriteSection` component includes a web research tool for section-specific information:
 
 ```ts
-const ResearchTopic = gensx.Component(
-  "ResearchTopic",
-  async ({ topic }: ResearchTopicProps) => {
-    const runner = await openai.beta.chat.completions.runTools({
-      model: "gpt-4o-mini",
-      temperature: 0,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: topic },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "research",
-            description: "Research a topic",
-            parameters: {
-              type: "object",
-              properties: {
-                topic: {
-                  type: "string",
-                },
-              },
-            },
-            parse: JSON.parse,
-            function: (args: { topic: string }) => {
-              console.log("🔍 Research tool:", args.topic);
-              return `You researched the topic ${args.topic} and found the following: ${args.topic}`;
-            },
-          },
-        },
-      ],
-    });
-
-    return (await runner.finalContent()) ?? "";
+const webResearchTool = tool({
+  description: "Conduct additional web research on a specific topic",
+  parameters: z.object({
+    topic: z.string().describe("The specific topic to research"),
+  }),
+  execute: async ({ topic }: { topic: string }) => {
+    const result = await WebResearch({ topic });
+    return {
+      topic: result.topic,
+      content: result.content,
+      citations: result.citations,
+      source: result.source,
+    };
   },
-);
+});
 ```
 
 ## Additional resources
