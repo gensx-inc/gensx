@@ -55,7 +55,7 @@ A comprehensive GenSX workflow for automated blog writing that combines AI resea
 
 ### Environment Variables
 
-Create a `.env` file with the following variables:
+Export the following environment variables:
 
 ```bash
 # Anthropic Claude API Key (Required)
@@ -63,11 +63,6 @@ ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
 # Perplexity API for web research (Required)
 PERPLEXITY_API_KEY=your_perplexity_api_key_here
-
-# GenSX Cloud Configuration (Optional - for catalog search)
-GENSX_API_KEY=your_gensx_api_key_here
-GENSX_PROJECT=your_project_name
-GENSX_ENV=development
 ```
 
 ### Installation
