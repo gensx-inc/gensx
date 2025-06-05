@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.36](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.35...gensx-v0.3.36) (2025-06-05)
+
+
+### 🐛 Bug Fixes
+
+* small updates to verbiage ([#746](https://github.com/gensx-inc/gensx/issues/746)) ([48ff3b4](https://github.com/gensx-inc/gensx/commit/48ff3b474f091aebaada2c03eedfed8f66a3b8a9))
+
 ## [0.3.35](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.34...gensx-v0.3.35) (2025-06-03)
 
 

@@ -1,10 +1,10 @@
 {
-  "packages/create-gensx": "0.1.47",
+  "packages/create-gensx": "0.1.48",
   "packages/gensx-anthropic": "0.2.2",
   "packages/gensx-cloud-mcp": "0.0.11",
   "packages/gensx-openai": "0.2.2",
   "packages/gensx-vercel-ai-sdk": "0.1.17",
-  "packages/gensx": "0.3.35",
+  "packages/gensx": "0.3.36",
   "packages/gensx-core": "0.4.2",
   "packages/gensx-claude-md": "0.1.8",
   "packages/gensx-cline-rules": "0.1.8",
