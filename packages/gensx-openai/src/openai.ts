@@ -87,7 +87,7 @@ export const wrapOpenAI = (
       };
     },
     replacementImplementations: {
-      "OpenAI.beta.chat.completions.runTools": (target, value) => {
+      "OpenAI.beta.chat.completions.runTools": (_target, value) => {
         if (typeof value === "function") {
           const componentOpts = opts.getComponentOpts?.(
             ["OpenAI", "beta", "chat", "completions", "runTools"],
@@ -157,20 +157,6 @@ export const wrapOpenAI = (
                   ...rest,
                 ],
               )) as Record<string, unknown>;
-
-              if (result && typeof result === "object") {
-                const maybeFinalContent = (result as any).finalContent;
-                if (typeof maybeFinalContent === "function") {
-                  const originalFinalContent = maybeFinalContent.bind(result);
-                  (result as any).finalContent = Component(
-                    "openai.beta.chat.completions.runTools.finalContent",
-                    (...fcArgs: unknown[]) => originalFinalContent(...fcArgs),
-                    {
-                      name: "beta.chat.completions.runTools.finalContent",
-                    },
-                  );
-                }
-              }
 
               return result;
             },
