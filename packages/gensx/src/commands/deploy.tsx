@@ -185,7 +185,7 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
       )}
 
       {phase === "building" && (
-        <LoadingSpinner message="Building workflow using docker..." />
+        <LoadingSpinner message="Building workflows using docker..." />
       )}
 
       {phase === "deploying" && (
@@ -207,7 +207,7 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
               <Spinner type="dots" />{" "}
               <Text dimColor>
                 Deploying project <Text color="cyan">{projectName}</Text> to
-                GenSX Cloud <Text dimColor>(Environment:</Text>{" "}
+                GenSX Cloud <Text dimColor>(environment:</Text>{" "}
                 <Text color="cyan" dimColor>
                   {resolvedEnv}
                 </Text>

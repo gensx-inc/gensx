@@ -117,7 +117,7 @@ export function BuildWorkflowUI({ file, options }: Props) {
       )}
 
       {phase === "bundling" && (
-        <LoadingSpinner message="Building workflows using Docker..." />
+        <LoadingSpinner message="Building workflows using docker..." />
       )}
 
       {phase === "generatingSchema" && (
