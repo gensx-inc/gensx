@@ -365,7 +365,7 @@ hasCompletedFirstTimeSetup = false
     // Check for spinner indicator
     const frame = lastFrame();
     expect(frame).toBeTruthy();
-    expect(frame?.includes("Building workflow using docker...")).toBe(true);
+    expect(frame?.includes("Building workflows using docker...")).toBe(true);
   });
 
   it("should show error when build fails", async () => {
