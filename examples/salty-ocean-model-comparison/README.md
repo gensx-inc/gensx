@@ -1,53 +1,68 @@
 # Model Comparison - Why is the Ocean Salty?
 
-This example demonstrates how to use [GenSX](https://gensx.com) to compare responses from different AI models and providers to the same prompt.
+This example shows how to compare responses from different AI models using GenSX with the Vercel AI SDK.
 
-## What This Example Does
+## Overview
 
-This application:
-
-1. Takes the prompt "Why is the ocean salty?"
-2. Sends it to multiple AI providers (OpenAI and Groq)
-3. For each provider, gets responses from all available text generation models
-4. Displays the results for comparison
-
-## Prerequisites
-
-- Node.js 18 or higher
-- API keys for the providers you want to use:
-  - OpenAI API key
-  - Groq API key
+The workflow sends the same prompt to every available model from each provider (OpenAI and Groq by default) and prints the results.
 
 ## Getting Started
 
-1. Install dependencies:
+1. Log in to GenSX:
 
    ```bash
-   npm install
+   npx gensx login
    ```
 
-2. Set up your environment variables:
-
-   Create a `.env` file with your API keys:
-
-   ```
-   OPENAI_API_KEY=your_openai_api_key
-   GROQ_API_KEY=your_groq_api_key
-   ```
-
-3. Start the development server:
+2. Install dependencies:
 
    ```bash
-   npm run dev
+   pnpm install
    ```
 
-4. The application will run the workflow and display the model comparison results in the console.
+3. Set up your environment variables:
 
-## Customization
+   ```bash
+   export OPENAI_API_KEY=your_openai_api_key
+   export GROQ_API_KEY=your_groq_api_key
+   ```
 
-You can modify `src/index.tsx` to:
+### Running in GenSX Cloud
 
-- Change the prompt
-- Add or remove providers
-- Adjust model filtering criteria
-- Change the output format
+1. Deploy the workflow:
+
+   ```bash
+   pnpm run deploy
+   ```
+
+2. Run the workflow:
+
+   ```bash
+   gensx run GetModelHistoryAcrossProviders
+   ```
+
+### Running locally
+
+Run the workflow directly:
+
+```bash
+pnpm dev "Why is the ocean salty?"
+```
+
+Or start a local API server:
+
+```bash
+pnpm start
+```
+
+Then call the workflow via HTTP:
+
+```bash
+curl -X POST http://localhost:1337/workflows/GetModelHistoryAcrossProviders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Why is the ocean salty?"
+  }'
+```
+
+A swagger UI will be available at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui).
