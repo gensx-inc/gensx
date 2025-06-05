@@ -360,7 +360,7 @@ hasCompletedFirstTimeSetup = false
     );
 
     // Wait for the build phase to start
-    await waitForText(lastFrame, /Building workflow using docker\.\.\./);
+    await waitForText(lastFrame, /Building workflows using docker\.\.\./);
 
     // Check for spinner indicator
     const frame = lastFrame();
