@@ -6,11 +6,7 @@
 
 import type { ComponentOpts, WrapOptions } from "@gensx/core";
 
-import {
-  Component,
-  wrap,
-  getCurrentNodeCheckpointManager,
-} from "@gensx/core";
+import { Component, wrap } from "@gensx/core";
 import { OpenAI as OriginalOpenAI } from "openai";
 import { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.mjs";
 
@@ -108,8 +104,6 @@ export const wrapOpenAI = (
               const [first, ...rest] = params;
               const { tools } = first;
 
-              const { completeNode } = getCurrentNodeCheckpointManager();
-
               // Wrap each tool with GenSX functionality
               const wrappedTools = tools.map((tool) => {
                 if ((tool as any).$brand === "auto-parseable-tool") {
@@ -170,11 +164,7 @@ export const wrapOpenAI = (
                   const originalFinalContent = maybeFinalContent.bind(result);
                   (result as any).finalContent = Component(
                     "openai.beta.chat.completions.runTools.finalContent",
-                    async (...fcArgs: unknown[]) => {
-                      const output = await originalFinalContent(...fcArgs);
-                      completeNode(output);
-                      return output;
-                    },
+                    (...fcArgs: unknown[]) => originalFinalContent(...fcArgs),
                     {
                       name: "beta.chat.completions.runTools.finalContent",
                     },
