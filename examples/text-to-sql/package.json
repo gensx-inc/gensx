@@ -21,12 +21,12 @@
     "@gensx/storage": "^0.1.1",
     "@gensx/vercel-ai": "^0.2.0",
     "ai": "^4.2.10",
-    "openai": "^4.87.4",
-    "zod": "^3.24.2"
+    "openai": "^4.104.0",
+    "zod": "^3.25.51"
   },
   "devDependencies": {
-    "@types/node": "^22",
+    "@types/node": "^20",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.8.3"
   }
 }
