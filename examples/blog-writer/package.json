@@ -12,11 +12,13 @@
     "build": "tsc",
     "deploy": "npx gensx deploy -e ANTHROPIC_API_KEY -e PERPLEXITY_API_KEY ./src/workflows.ts",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
-    "@gensx/core": "^0.4.2",
+    "@gensx/core": "workspace:*",
     "@gensx/storage": "^0.1.1",
     "@gensx/vercel-ai": "^0.2.0",
     "ai": "^4.3.16",
@@ -25,6 +27,7 @@
   "devDependencies": {
     "@types/node": "^22",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.2"
   }
 }
