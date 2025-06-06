@@ -8,4 +8,4 @@ const external = [
     : []),
 ];
 
-export default createConfigs(["src/index.ts"], "@gensx/core", external);
+export default createConfigs(["src/index.ts"], "@gensx/test", external);
