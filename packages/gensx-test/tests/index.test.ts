@@ -24,7 +24,7 @@ suite("index", () => {
         input: "hello",
       },
     );
-    g;
+
     expect(output).toBe("HELLO");
     expect(progressEvents).toHaveLength(8);
   });

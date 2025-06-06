@@ -186,6 +186,9 @@ importers:
         specifier: ^3.24.2
         version: 3.25.29
     devDependencies:
+      '@gensx/test':
+        specifier: workspace:*
+        version: link:../../packages/gensx-test
       '@types/node':
         specifier: ^22
         version: 22.13.10

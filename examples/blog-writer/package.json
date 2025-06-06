@@ -25,6 +25,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@gensx/test": "workspace:*",
     "@types/node": "^22",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
