@@ -20,7 +20,18 @@ export type ProgressEvent =
     }
   | { type: "progress"; [key: string]: string }
   | { type: "error"; error: string }
-  | { type: "end" };
+  | { type: "end" }
+  | {
+      type: "state-update";
+      stateName: string;
+      patch: {
+        op: "add" | "remove" | "replace" | "move" | "copy" | "test";
+        path: string;
+        value?: unknown;
+        from?: string;
+      }[];
+      fullState?: unknown;
+    };
 
 export type ProgressListener = (progressEvent: ProgressEvent) => void;
 

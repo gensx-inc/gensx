@@ -1,6 +1,7 @@
 export * from "./component.js";
 export * from "./types.js";
 export { emitProgress, withContext, getCurrentContext } from "./context.js";
+export { state, type StateManager, type StateUpdateEvent } from "./state.js";
 export * from "./wrap.js";
 
 export { Component, Workflow } from "./component.js";
