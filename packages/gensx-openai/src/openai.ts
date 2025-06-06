@@ -19,13 +19,13 @@ import { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.mjs";
  *
  * // Use chat completions
  * const completion = await openai.chat.completions.create({
- *   model: "gpt-4",
+ *   model: "gpt-4.1-mini",
  *   messages: [{ role: "user", content: "Hello!" }]
  * });
  *
  * // Use embeddings
  * const embedding = await openai.embeddings.create({
- *   model: "text-embedding-ada-002",
+ *   model: "text-embedding-3-small",
  *   input: "Hello world!"
  * });
  * ```
@@ -95,7 +95,7 @@ export const wrapOpenAI = (
           );
 
           const fn = Component(
-            "openai.beta.chat.completions.runTools",
+            "OpenAI.beta.chat.completions.runTools",
             async (
               ...params: Parameters<
                 typeof openAiInstance.beta.chat.completions.runTools
@@ -138,9 +138,6 @@ export const wrapOpenAI = (
                         runnableTool.function.function as (
                           input?: object,
                         ) => unknown,
-                        {
-                          name: `Tool.${runnableTool.function.name}`,
-                        },
                       ),
                     },
                   };
@@ -161,7 +158,6 @@ export const wrapOpenAI = (
               return result;
             },
             {
-              name: "beta.chat.completions.runTools",
               ...componentOpts,
             },
           );
