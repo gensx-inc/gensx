@@ -102,6 +102,26 @@
         }
       ]
     },
+    "packages/gensx-test": {
+      "component": "gensx-test",
+      "release-type": "node",
+      "package-name": "@gensx/test",
+      "changelog-path": "CHANGELOG.md",
+      "initial-version": "0.0.1",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
     "packages/gensx-openai": {
       "component": "gensx-openai",
       "release-type": "node",
