@@ -19,13 +19,13 @@ import { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.mjs";
  *
  * // Use chat completions
  * const completion = await openai.chat.completions.create({
- *   model: "gpt-4",
+ *   model: "gpt-4.1-mini",
  *   messages: [{ role: "user", content: "Hello!" }]
  * });
  *
  * // Use embeddings
  * const embedding = await openai.embeddings.create({
- *   model: "text-embedding-ada-002",
+ *   model: "text-embedding-3-small",
  *   input: "Hello world!"
  * });
  * ```
@@ -42,8 +42,9 @@ export const wrapOpenAI = (
   openAiInstance: OriginalOpenAI,
   opts: WrapOptions = {},
 ) => {
+  let wrapped: OriginalOpenAI;
   // Create a wrapped instance
-  const wrapped = wrap(openAiInstance, {
+  wrapped = wrap(openAiInstance, {
     ...opts,
     // Add metadata to component options
     getComponentOpts: (
@@ -86,22 +87,16 @@ export const wrapOpenAI = (
       };
     },
     replacementImplementations: {
-      "OpenAI.beta.chat.completions.runTools": (target, value) => {
+      "OpenAI.beta.chat.completions.runTools": (_target, value) => {
         if (typeof value === "function") {
-          // Bind the original `this` so SDK internals keep working
-          const boundRunTools = value.bind(target) as (
-            ...args: Parameters<
-              typeof openAiInstance.beta.chat.completions.runTools
-            >
-          ) => unknown;
           const componentOpts = opts.getComponentOpts?.(
             ["OpenAI", "beta", "chat", "completions", "runTools"],
-            boundRunTools,
+            value,
           );
 
           const fn = Component(
-            "openai.beta.chat.completions.runTools",
-            (
+            "OpenAI.beta.chat.completions.runTools",
+            async (
               ...params: Parameters<
                 typeof openAiInstance.beta.chat.completions.runTools
               >
@@ -111,10 +106,7 @@ export const wrapOpenAI = (
 
               // Wrap each tool with GenSX functionality
               const wrappedTools = tools.map((tool) => {
-                // These are tools like are returned from the zodFunction helper
                 if ((tool as any).$brand === "auto-parseable-tool") {
-                  // The `tool` under the hood is an object with read-only, non-configurable, hidden properties, $parseRaw, $callback, and $brand.
-                  // We need to recreate this object and wrap the $callback property. This will probably break regularly with new OpenAI SDK versions....
                   const newTool = { ...tool };
 
                   Object.defineProperty(newTool, "$brand", {
@@ -123,7 +115,6 @@ export const wrapOpenAI = (
 
                   const boundCallback = (tool as any).$callback.bind(newTool);
 
-                  // Now we can safely define the $callback property
                   Object.defineProperty(newTool, "$callback", {
                     value: Component(
                       `Tool.${tool.function.name}`,
@@ -136,9 +127,8 @@ export const wrapOpenAI = (
 
                   return newTool;
                 } else {
-                  let runnableTool =
+                  const runnableTool =
                     tool as RunnableToolFunctionWithParse<object>;
-                  // Old style tool
                   return {
                     ...runnableTool,
                     function: {
@@ -148,26 +138,26 @@ export const wrapOpenAI = (
                         runnableTool.function.function as (
                           input?: object,
                         ) => unknown,
-                        {
-                          name: `Tool.${runnableTool.function.name}`,
-                        },
                       ),
                     },
                   };
                 }
               });
 
-              // Call the original runTools with wrapped tools
-              return boundRunTools(
-                {
-                  ...first,
-                  tools: wrappedTools as (typeof params)[0]["tools"],
-                },
-                ...rest,
-              );
+              const result = (await value.apply(
+                (wrapped as any).beta.chat.completions,
+                [
+                  {
+                    ...first,
+                    tools: wrappedTools as (typeof params)[0]["tools"],
+                  },
+                  ...rest,
+                ],
+              )) as Record<string, unknown>;
+
+              return result;
             },
             {
-              name: "beta.chat.completions.runTools",
               ...componentOpts,
             },
           );

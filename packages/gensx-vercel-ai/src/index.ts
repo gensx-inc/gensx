@@ -30,7 +30,7 @@ function wrapTools<T extends Record<string, Tool>>(
           options: ToolExecutionOptions,
         ): Promise<ToolResult> => {
           const ToolComponent = Component(
-            `Tool_${name}`,
+            `tool.${name}`,
             async (toolArgs: ToolParams) => {
               if (!tool.execute)
                 throw new Error(`Tool ${name} has no execute function`);
@@ -144,7 +144,7 @@ export const wrapVercelAIModel = <T extends object>(
 ): T => {
   assertIsLanguageModel(languageModel);
 
-  const componentName = componentOpts?.name ?? languageModel.constructor.name;
+  const componentName = componentOpts?.name ?? languageModel.provider;
   return new Proxy(languageModel, {
     get(target, propKey, receiver) {
       const originalValue = Reflect.get(target, propKey, receiver);
