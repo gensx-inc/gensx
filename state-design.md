@@ -38,6 +38,12 @@ interface BroadcastingStateManager<T> extends StateManager<T> {
 - **✅ Event emission verification**: Only workflow states broadcast, component states remain silent
 - **✅ Integration test**: Realistic blog workflow with hierarchical composition
 
+#### Clean API Names
+
+- **✅ `workflowState()`**: Clear naming for workflow-scoped broadcasting state
+- **✅ `componentState()`**: Clear naming for component-scoped non-broadcasting state
+- **✅ Removed unnecessary name parameter**: `componentState(initialState)` instead of `componentState(name, initialState)`
+
 ### 🔄 **In Progress**
 
 #### StatefulComponent API Alignment
@@ -243,7 +249,7 @@ const Research = gensx.StatefulComponent<ResearchState>(
   "Research",
   (props: ResearchProps) => {
     // Component manages its own state
-    const researchState = gensx.createStateManager("research", {
+    const researchState = gensx.componentState({
       topics: [],
       completedTopics: [],
       phase: "generating",
@@ -293,7 +299,7 @@ interface BlogWorkflowState {
 
 const WriteBlog = gensx.Workflow("WriteBlog", async (props: WriteBlogProps) => {
   // ✅ WORKING: Workflow defines complete state shape
-  const workflowState = gensx.state<BlogWorkflowState>("blog", {
+  const workflowState = gensx.workflowState<BlogWorkflowState>("blog", {
     overall: {
       phase: "research",
       startTime: new Date().toISOString(),
@@ -344,7 +350,7 @@ interface DraftState {
 }
 
 const WriteDraft = gensx.Component("WriteDraft", async (props: DraftProps) => {
-  const draftState = gensx.state<DraftState>("draft", {
+  const draftState = gensx.workflowState<DraftState>("draft", {
     sections: props.outline.sections.map(section => ({
       heading: section.heading,
       status: "pending",
@@ -398,8 +404,11 @@ interface BroadcastingStateManager<T> extends StateManager<T> {
 }
 
 // ✅ IMPLEMENTED: State creation functions
-function createStateManager<T>(name: string, initialState: T): StateManager<T>;
-function state<T>(name: string, initialState?: T): BroadcastingStateManager<T>;
+function workflowState<T>(
+  name: string,
+  initialState?: T,
+): BroadcastingStateManager<T>;
+function componentState<T>(initialState: T): StateManager<T>;
 
 // ✅ IMPLEMENTED: Component APIs
 type SimpleComponent<TProps, TOutput> = (props: TProps) => Promise<TOutput>;
@@ -519,11 +528,11 @@ State updates only emit progress events when created as workflow state:
 
 ```typescript
 // ❌ Component state updates do NOT emit events (by design)
-const componentState = gensx.createStateManager("component", initialState);
+const componentState = gensx.componentState(initialState);
 componentState.update(s => ({ ...s, phase: "complete" })); // No event emitted
 
 // ✅ Workflow state updates DO emit events
-const workflowState = gensx.state("workflow", initialState);
+const workflowState = gensx.workflowState("workflow", initialState);
 workflowState.update(s => ({ ...s, phase: "complete" })); // Event emitted → Redis stream
 
 // ✅ Attached component updates flow through workflow state
@@ -588,10 +597,10 @@ workflowState.research.attach(researchState);
 - Rich visibility into concurrent workflows
 - Structured progress data for sophisticated UIs
 
-### ✅ **Backwards Compatibility**
+### ✅ **Clean API Design**
 
-- Existing simple components continue to work unchanged
-- StatefulComponent is purely additive - no breaking changes
+- Simple components remain unchanged and lightweight
+- StatefulComponent is purely additive - clear separation of concerns
 - Gradual adoption path - convert components only when needed
 - Existing progress events still function
 

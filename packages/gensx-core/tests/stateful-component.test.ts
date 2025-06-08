@@ -111,10 +111,13 @@ suite("stateful components", () => {
 
     const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
       // Create workflow state with same structure
-      const workflowState = gensx.state<TestComponentState>("workflow", {
-        progress: 0,
-        status: "starting",
-      });
+      const workflowState = gensx.workflowState<TestComponentState>(
+        "workflow",
+        {
+          progress: 0,
+          status: "starting",
+        },
+      );
 
       // Update workflow state
       workflowState.update((s) => ({ ...s, status: "processing" }));

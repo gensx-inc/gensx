@@ -20,7 +20,7 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
-import { createStateManager, StateManager } from "./state.js";
+import { componentState, StateManager } from "./state.js";
 import { ProgressListener } from "./workflow-context.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
@@ -129,10 +129,7 @@ export function executeComponentBase<P extends object, R, S = never>(
   // Create state if requested
   let state: StateManager<S> | undefined = undefined;
   if (config?.createState && config.initialState !== undefined) {
-    state = createStateManager(
-      `${name}-${Date.now()}-${Math.random()}`,
-      config.initialState,
-    );
+    state = componentState(config.initialState);
   }
 
   function onComplete() {

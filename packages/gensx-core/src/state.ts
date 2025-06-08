@@ -68,13 +68,11 @@ const attachmentRegistry = new Map<
 
 /**
  * Creates a basic state manager (no broadcasting) for component use
+ * Component states don't emit events and are meant to be attached to workflow states
  */
-export function createStateManager<T>(
-  name: string,
-  initialState: T,
-): StateManager<T> {
-  // Create a unique key to avoid conflicts
-  const key = `${name}-${Date.now()}-${Math.random()}`;
+export function componentState<T>(initialState: T): StateManager<T> {
+  // Create a unique key (name not needed since no retrieval by name)
+  const key = `component-${Date.now()}-${Math.random()}`;
 
   const currentState = deepClone(initialState);
   const stateEntry = {
@@ -115,9 +113,9 @@ export function createStateManager<T>(
 
 /**
  * Creates or retrieves a named broadcasting state manager for workflow use
- * This is the original state function that emits progress events
+ * Workflow states emit progress events and support state attachment
  */
-export function state<T>(
+export function workflowState<T>(
   name: string,
   initialState?: T,
 ): BroadcastingStateManager<T> {
@@ -418,6 +416,5 @@ export function getAllStates(): Record<string, unknown> {
 export function clearAllStates(): void {
   stateRegistry.clear();
   broadcastingStateRegistry.clear();
+  attachmentRegistry.clear();
 }
-
-// BroadcastingStateManager is already exported above in the interface declaration

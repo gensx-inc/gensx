@@ -1,7 +1,7 @@
 import type { ComponentOpts } from "./types.js";
 
 import { executeComponentBase } from "./component.js";
-import { createStateManager, StateManager } from "./state.js";
+import { componentState, StateManager } from "./state.js";
 
 /**
  * Result type for stateful components
@@ -26,10 +26,7 @@ export function StatefulComponent<S, P extends object = {}, R = unknown>(
   ): StatefulComponentResult<Awaited<R>, S> => {
     // We need to get the state manager created in executeComponentBase
     // Since we can't modify executeComponentBase easily, let's create our own state
-    const state = createStateManager(
-      `${name}-${Date.now()}-${Math.random()}`,
-      initialState,
-    );
+    const state = componentState(initialState);
 
     const result = executeComponentBase(
       name,
@@ -81,16 +78,4 @@ export function isStatefulComponent(
     "__gensxStatefulComponent" in fn &&
     fn.__gensxStatefulComponent === true
   );
-}
-
-/**
- * Creates a StateManager for component-level state management.
- * This is a convenience function that provides proper typing.
- */
-export function componentState<T>(
-  _name: string,
-  initialState: T,
-): StateManager<T> {
-  const uniqueName = `component-${Date.now()}-${Math.random()}`;
-  return createStateManager(uniqueName, initialState);
 }

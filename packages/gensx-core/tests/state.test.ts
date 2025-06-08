@@ -2,7 +2,6 @@
 import { beforeEach, expect, suite, test } from "vitest";
 
 import * as gensx from "../src/index.js";
-import { clearAllStates } from "../src/state.js";
 import { ProgressEvent, ProgressListener } from "../src/workflow-context.js";
 
 interface ChatMessage {
@@ -21,13 +20,13 @@ interface ChatApp {
 
 suite("state management", () => {
   beforeEach(() => {
-    clearAllStates();
+    gensx.clearAllStates();
   });
   test("can create and update state with delta events", async () => {
     const events: ProgressEvent[] = [];
 
     const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
-      const chatState = gensx.state<ChatApp>("chatState", {
+      const chatState = gensx.workflowState<ChatApp>("chatState", {
         messages: [],
         isThinking: false,
         currentUser: "test-user",
@@ -103,7 +102,9 @@ suite("state management", () => {
     const events: ProgressEvent[] = [];
 
     const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
-      const counter = gensx.state<{ count: number }>("counter", { count: 0 });
+      const counter = gensx.workflowState<{ count: number }>("counter", {
+        count: 0,
+      });
 
       // Make sequential updates
       counter.update((state) => {
@@ -140,15 +141,21 @@ suite("state management", () => {
     const events: ProgressEvent[] = [];
 
     const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
-      const userState = gensx.state<{ name: string; email: string }>("user", {
-        name: "John",
-        email: "john@example.com",
-      });
+      const userState = gensx.workflowState<{ name: string; email: string }>(
+        "user",
+        {
+          name: "John",
+          email: "john@example.com",
+        },
+      );
 
-      const appState = gensx.state<{ theme: string; language: string }>("app", {
-        theme: "dark",
-        language: "en",
-      });
+      const appState = gensx.workflowState<{ theme: string; language: string }>(
+        "app",
+        {
+          theme: "dark",
+          language: "en",
+        },
+      );
 
       userState.update((state) => {
         state.name = "Jane";
@@ -185,7 +192,7 @@ suite("state management", () => {
     const events: ProgressEvent[] = [];
 
     const StateComponent = gensx.Component("StateComponent", async () => {
-      const sharedState = gensx.state<{ value: number }>("shared", {
+      const sharedState = gensx.workflowState<{ value: number }>("shared", {
         value: 0,
       });
 
@@ -229,7 +236,7 @@ suite("state management", () => {
     const events: ProgressEvent[] = [];
 
     const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
-      const testState = gensx.state<{ items: string[] }>("test", {
+      const testState = gensx.workflowState<{ items: string[] }>("test", {
         items: ["a"],
       });
 
@@ -262,7 +269,7 @@ suite("state management", () => {
     const events: ProgressEvent[] = [];
 
     const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
-      const testState = gensx.state<{ message: string }>("test", {
+      const testState = gensx.workflowState<{ message: string }>("test", {
         message: "initial",
       });
 
@@ -288,7 +295,7 @@ suite("state management", () => {
     const events: ProgressEvent[] = [];
 
     await gensx.Workflow("TestWorkflow", async () => {
-      const workflowState = gensx.state("test", {
+      const workflowState = gensx.workflowState("test", {
         value: 10,
         status: "initial",
       });
@@ -334,13 +341,13 @@ suite("state management", () => {
 
     await gensx.Workflow("AttachmentTest", async () => {
       // Create workflow state
-      const workflowState = gensx.state<WorkflowState>("workflow", {
+      const workflowState = gensx.workflowState<WorkflowState>("workflow", {
         overall: { phase: "component" },
         component: { progress: 0, phase: "starting" },
       });
 
       // Create component state
-      const componentState = gensx.createStateManager("component", {
+      const componentState = gensx.componentState({
         progress: 0,
         phase: "starting" as "starting" | "working" | "complete",
       });
@@ -408,19 +415,19 @@ suite("state management", () => {
 
     await gensx.Workflow("MultiAttachmentTest", async () => {
       // Create workflow state
-      const workflowState = gensx.state<BlogWorkflowState>("blog", {
+      const workflowState = gensx.workflowState<BlogWorkflowState>("blog", {
         phase: "research",
         research: { topics: [], completed: 0 },
         draft: { sections: [], wordCount: 0 },
       });
 
       // Create component states
-      const researchState = gensx.createStateManager("research", {
+      const researchState = gensx.componentState({
         topics: ["AI", "ML"],
         completed: 0,
       });
 
-      const draftState = gensx.createStateManager("draft", {
+      const draftState = gensx.componentState({
         sections: ["intro"],
         wordCount: 0,
       });
@@ -472,12 +479,12 @@ suite("state management", () => {
     const ignoredEvents: ProgressEvent[] = [];
 
     await gensx.Workflow("PropagationTest", async () => {
-      const parentState = gensx.state<ParentState>("parent", {
+      const parentState = gensx.workflowState<ParentState>("parent", {
         child: { value: 0 },
         total: 0,
       });
 
-      const childState = gensx.createStateManager("child", { value: 0 });
+      const childState = gensx.componentState({ value: 0 });
 
       // Attach child state
       parentState.attachments.child.attach(childState);
@@ -536,22 +543,25 @@ suite("state management", () => {
 
     const result = await gensx.Workflow("BlogCreationWorkflow", async () => {
       // Create main workflow state
-      const workflowState = gensx.state<BlogWorkflowState>("blog-workflow", {
-        phase: "research",
-        title: "",
-        research: { query: "", results: [], completed: false },
-        writing: { sections: [], wordCount: 0, status: "draft" },
-        metadata: { created: "2024-01-01", updated: "2024-01-01" },
-      });
+      const workflowState = gensx.workflowState<BlogWorkflowState>(
+        "blog-workflow",
+        {
+          phase: "research",
+          title: "",
+          research: { query: "", results: [], completed: false },
+          writing: { sections: [], wordCount: 0, status: "draft" },
+          metadata: { created: "2024-01-01", updated: "2024-01-01" },
+        },
+      );
 
       // Create component states that will be managed independently
-      const researchState = gensx.createStateManager("research-component", {
+      const researchState = gensx.componentState({
         query: "",
         results: [] as string[],
         completed: false,
       });
 
-      const writingState = gensx.createStateManager("writing-component", {
+      const writingState = gensx.componentState({
         sections: [] as { title: string; content: string }[],
         wordCount: 0,
         status: "draft" as "draft" | "review" | "final",
