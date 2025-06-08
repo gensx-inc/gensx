@@ -21,10 +21,17 @@ export interface StateManager<T> {
   reset(): void;
 }
 
+// Property attachment interface
+export interface PropertyAttachment<T> {
+  attach(childState: StateManager<T>): void;
+}
+
 // Extended state manager with attachment capabilities for workflow state
 export interface BroadcastingStateManager<T> extends StateManager<T> {
-  // State attachment for composition - will be implemented with proper attachment methods
-  attach?<K extends keyof T>(property: K, childState: StateManager<T[K]>): void;
+  // Property-based attachment API - dynamically created for each property
+  attachments: {
+    [K in keyof T]: PropertyAttachment<T[K]>;
+  };
 }
 
 // Global state registry to manage multiple named states
@@ -45,6 +52,18 @@ const broadcastingStateRegistry = new Map<
     initialState: unknown;
     manager: BroadcastingStateManager<unknown>;
   }
+>();
+
+// Track attached child states for each parent state
+const attachmentRegistry = new Map<
+  string,
+  Map<
+    string,
+    {
+      childState: StateManager<unknown>;
+      unsubscribe: () => void;
+    }
+  >
 >();
 
 /**
@@ -116,6 +135,30 @@ export function state<T>(
     manager: undefined as unknown as BroadcastingStateManager<T>,
   };
 
+  // Create property-based attachment system first
+  let attachmentObj: Record<string, PropertyAttachment<unknown>> = {};
+  const attachments = new Map<
+    string,
+    {
+      childState: StateManager<unknown>;
+      unsubscribe: () => void;
+    }
+  >();
+
+  if (typeof currentState === "object" && currentState !== null) {
+    // Store attachments for this state manager
+    attachmentRegistry.set(name, attachments);
+
+    // Create attachment accessors for each property
+    Object.keys(currentState).forEach((key) => {
+      attachmentObj[key] = {
+        attach<K>(childState: StateManager<K>): void {
+          attachChildState(name, key, childState, stateEntry, attachments);
+        },
+      };
+    });
+  }
+
   const manager: BroadcastingStateManager<T> = {
     get(): T {
       return deepClone(stateEntry.currentState);
@@ -138,10 +181,9 @@ export function state<T>(
       updateStateWithDelta(name, stateEntry.currentState, resetState);
       stateEntry.currentState = resetState;
     },
-  } as BroadcastingStateManager<T>;
 
-  // Add attachment capabilities (stub for now - will implement later)
-  // This would be populated with actual attachment methods for each property
+    attachments: attachmentObj as { [K in keyof T]: PropertyAttachment<T[K]> },
+  };
 
   stateEntry.manager = manager;
   broadcastingStateRegistry.set(name, stateEntry);
@@ -150,6 +192,120 @@ export function state<T>(
   emitStateUpdate(name, [], stateEntry.currentState);
 
   return manager;
+}
+
+/**
+ * Attaches a child state to a parent state property
+ */
+function attachChildState<T, K>(
+  parentStateName: string,
+  propertyKey: string,
+  childState: StateManager<K>,
+  parentStateEntry: { currentState: T; initialState: T },
+  attachments: Map<
+    string,
+    { childState: StateManager<unknown>; unsubscribe: () => void }
+  >,
+): void {
+  // Detach any existing child state for this property
+  const existing = attachments.get(propertyKey);
+  if (existing) {
+    existing.unsubscribe();
+    attachments.delete(propertyKey);
+  }
+
+  // Get the initial child state and update parent
+  const childCurrentState = childState.get();
+  const parentState = parentStateEntry.currentState as Record<string, unknown>;
+  const oldParentState = deepClone(parentStateEntry.currentState);
+
+  parentState[propertyKey] = childCurrentState;
+
+  // Emit update for the attachment
+  updateStateWithDelta(
+    parentStateName,
+    oldParentState,
+    parentStateEntry.currentState,
+  );
+
+  // Create subscription to child state changes
+  const originalUpdate = childState.update.bind(childState);
+  const originalSet = childState.set.bind(childState);
+  const originalReset = childState.reset.bind(childState);
+
+  // Override child state methods to propagate changes to parent
+  childState.update = (updater: (state: K) => K) => {
+    // Call original update
+    originalUpdate(updater);
+
+    // Propagate to parent
+    propagateChildStateToParent(
+      parentStateName,
+      propertyKey,
+      childState,
+      parentStateEntry,
+    );
+  };
+
+  childState.set = (newState: K) => {
+    // Call original set
+    originalSet(newState);
+
+    // Propagate to parent
+    propagateChildStateToParent(
+      parentStateName,
+      propertyKey,
+      childState,
+      parentStateEntry,
+    );
+  };
+
+  childState.reset = () => {
+    // Call original reset
+    originalReset();
+
+    // Propagate to parent
+    propagateChildStateToParent(
+      parentStateName,
+      propertyKey,
+      childState,
+      parentStateEntry,
+    );
+  };
+
+  // Store attachment info with cleanup function
+  attachments.set(propertyKey, {
+    childState,
+    unsubscribe: () => {
+      // Restore original methods
+      childState.update = originalUpdate;
+      childState.set = originalSet;
+      childState.reset = originalReset;
+    },
+  });
+}
+
+/**
+ * Propagates child state changes to parent state
+ */
+function propagateChildStateToParent<T, K>(
+  parentStateName: string,
+  propertyKey: string,
+  childState: StateManager<K>,
+  parentStateEntry: { currentState: T; initialState: T },
+): void {
+  const oldParentState = deepClone(parentStateEntry.currentState);
+  const parentState = parentStateEntry.currentState as Record<string, unknown>;
+
+  // Update the parent state with the new child state
+  parentState[propertyKey] = childState.get();
+
+  // Emit delta for the parent state
+  updateStateWithDelta(
+    parentStateName,
+    oldParentState,
+    parentStateEntry.currentState,
+  );
 }
 
 /**
