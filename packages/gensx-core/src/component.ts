@@ -20,6 +20,7 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
+import { createStateManager, StateManager } from "./state.js";
 import { ProgressListener } from "./workflow-context.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
@@ -69,164 +70,17 @@ export function Component<P extends object = {}, R = unknown>(
     props?: P,
     runtimeOpts?: ComponentOpts & { onComplete?: () => void },
   ): R => {
-    const context = getCurrentContext();
-    const workflowContext = context.getWorkflowContext();
-    const { checkpointManager } = workflowContext;
-    const currentNodeId = context.getCurrentNodeId();
-
-    // Get resolved options for checkpointing, including name (runtime props > decorator > function name)
-    const resolvedComponentOpts = getResolvedOpts(
-      componentOpts,
-      runtimeOpts,
+    return executeComponentBase(
       name,
-    );
-    const checkpointName = resolvedComponentOpts.name;
-
-    if (!checkpointName) {
-      throw new Error(
-        "Internal error: Component checkpoint name could not be determined.",
-      );
-    }
-
-    function onComplete() {
-      workflowContext.progressListener({
-        type: "component-end",
-        componentName: checkpointName ?? "",
-        componentId: nodeId,
-      });
-      resolvedComponentOpts.onComplete?.();
-    }
-
-    const nodeId = checkpointManager.addNode(
+      target,
+      componentOpts,
+      props,
+      runtimeOpts,
       {
-        componentName: checkpointName,
-        props: props
-          ? Object.fromEntries(
-              Object.entries(props).filter(
-                ([key]) => key !== "children" && key !== "componentOpts",
-              ),
-            )
-          : {},
-        componentOpts: resolvedComponentOpts,
+        createState: false,
+        handleResult: (value) => value,
       },
-      currentNodeId,
-    );
-
-    if (resolvedComponentOpts.metadata) {
-      checkpointManager.addMetadata(nodeId, resolvedComponentOpts.metadata);
-    }
-
-    function handleResultValue(value: unknown, runInContext: RunInContext) {
-      if (
-        !Array.isArray(value) &&
-        typeof value === "object" &&
-        value != null &&
-        resolvedComponentOpts.__streamingResultKey !== undefined &&
-        (isAsyncIterable(
-          (value as Record<string, unknown>)[
-            resolvedComponentOpts.__streamingResultKey
-          ],
-        ) ||
-          isReadableStream(
-            (value as Record<string, unknown>)[
-              resolvedComponentOpts.__streamingResultKey
-            ],
-          ))
-      ) {
-        const streamingResult = captureAsyncGenerator(
-          (value as Record<string, unknown>)[
-            resolvedComponentOpts.__streamingResultKey
-          ] as AsyncIterable<unknown>,
-          runInContext,
-          {
-            streamKey: resolvedComponentOpts.__streamingResultKey,
-            aggregator: resolvedComponentOpts.aggregator,
-            fullValue: value,
-            onComplete,
-          },
-        );
-
-        try {
-          (value as Record<string, unknown>)[
-            resolvedComponentOpts.__streamingResultKey
-          ] = streamingResult;
-        } catch {
-          // Can't always set the streaming result key, so carry on.
-        }
-
-        return value;
-      }
-
-      if (isAsyncIterable(value) || isReadableStream(value)) {
-        const streamingResult = captureAsyncGenerator(
-          value as AsyncIterable<unknown>,
-          runInContext,
-          {
-            aggregator: resolvedComponentOpts.aggregator,
-            fullValue: value,
-            onComplete,
-          },
-        );
-
-        return streamingResult;
-      }
-
-      workflowContext.progressListener({
-        type: "component-end",
-        componentName: checkpointName ?? "",
-        componentId: nodeId,
-      });
-      resolvedComponentOpts.onComplete?.();
-      checkpointManager.completeNode(nodeId, value);
-      return value;
-    }
-
-    try {
-      let runInContext: RunInContext;
-      workflowContext.progressListener({
-        type: "component-start",
-        componentName: checkpointName,
-        componentId: nodeId,
-      });
-      const result = context.withCurrentNode(nodeId, () => {
-        runInContext = getContextSnapshot();
-        return target((props ?? {}) as P);
-      });
-
-      if (result instanceof Promise) {
-        return result
-          .then((value) => {
-            return handleResultValue(value, runInContext);
-          })
-          .catch((error: unknown) => {
-            if (error instanceof Error) {
-              checkpointManager.addMetadata(nodeId, {
-                error: serializeError(error),
-              });
-              checkpointManager.completeNode(nodeId, undefined);
-              workflowContext.progressListener({
-                type: "error",
-                error: JSON.stringify(serializeError(error)),
-              });
-            }
-            throw error;
-          }) as R;
-      }
-
-      return handleResultValue(result, runInContext!) as R;
-    } catch (error) {
-      if (error instanceof Error) {
-        checkpointManager.addMetadata(nodeId, {
-          error: serializeError(error),
-        });
-        checkpointManager.completeNode(nodeId, undefined);
-        workflowContext.progressListener({
-          type: "error",
-          error: JSON.stringify(serializeError(error)),
-        });
-      }
-      throw error;
-    }
+    ) as R;
   };
 
   Object.defineProperty(ComponentFn, "name", {
@@ -238,6 +92,196 @@ export function Component<P extends object = {}, R = unknown>(
   });
 
   return ComponentFn;
+}
+
+// Shared component execution logic
+export function executeComponentBase<P extends object, R, S = never>(
+  name: string,
+  target: ((props: P) => R) | ((props: P, state: StateManager<S>) => R),
+  componentOpts?: ComponentOpts,
+  props?: P,
+  runtimeOpts?: ComponentOpts & { onComplete?: () => void },
+  config?: {
+    createState?: boolean;
+    initialState?: S;
+    handleResult?: (value: unknown, state?: StateManager<S>) => unknown;
+  },
+): unknown {
+  const context = getCurrentContext();
+  const workflowContext = context.getWorkflowContext();
+  const { checkpointManager } = workflowContext;
+  const currentNodeId = context.getCurrentNodeId();
+
+  // Get resolved options for checkpointing, including name (runtime props > decorator > function name)
+  const resolvedComponentOpts = getResolvedOpts(
+    componentOpts,
+    runtimeOpts,
+    name,
+  );
+  const checkpointName = resolvedComponentOpts.name;
+
+  if (!checkpointName) {
+    throw new Error(
+      "Internal error: Component checkpoint name could not be determined.",
+    );
+  }
+
+  // Create state if requested
+  let state: StateManager<S> | undefined = undefined;
+  if (config?.createState && config.initialState !== undefined) {
+    state = createStateManager(
+      `${name}-${Date.now()}-${Math.random()}`,
+      config.initialState,
+    );
+  }
+
+  function onComplete() {
+    workflowContext.progressListener({
+      type: "component-end",
+      componentName: checkpointName ?? "",
+      componentId: nodeId,
+    });
+    resolvedComponentOpts.onComplete?.();
+  }
+
+  const nodeId = checkpointManager.addNode(
+    {
+      componentName: checkpointName,
+      props: props
+        ? Object.fromEntries(
+            Object.entries(props).filter(
+              ([key]) => key !== "children" && key !== "componentOpts",
+            ),
+          )
+        : {},
+      componentOpts: resolvedComponentOpts,
+    },
+    currentNodeId,
+  );
+
+  if (resolvedComponentOpts.metadata) {
+    checkpointManager.addMetadata(nodeId, resolvedComponentOpts.metadata);
+  }
+
+  function handleResultValue(value: unknown, runInContext: RunInContext) {
+    if (
+      !Array.isArray(value) &&
+      typeof value === "object" &&
+      value != null &&
+      resolvedComponentOpts.__streamingResultKey !== undefined &&
+      (isAsyncIterable(
+        (value as Record<string, unknown>)[
+          resolvedComponentOpts.__streamingResultKey
+        ],
+      ) ||
+        isReadableStream(
+          (value as Record<string, unknown>)[
+            resolvedComponentOpts.__streamingResultKey
+          ],
+        ))
+    ) {
+      const streamingResult = captureAsyncGenerator(
+        (value as Record<string, unknown>)[
+          resolvedComponentOpts.__streamingResultKey
+        ] as AsyncIterable<unknown>,
+        runInContext,
+        {
+          streamKey: resolvedComponentOpts.__streamingResultKey,
+          aggregator: resolvedComponentOpts.aggregator,
+          fullValue: value,
+          onComplete,
+        },
+      );
+
+      try {
+        (value as Record<string, unknown>)[
+          resolvedComponentOpts.__streamingResultKey
+        ] = streamingResult;
+      } catch {
+        // Can't always set the streaming result key, so carry on.
+      }
+
+      return config?.handleResult ? config.handleResult(value, state) : value;
+    }
+
+    if (isAsyncIterable(value) || isReadableStream(value)) {
+      const streamingResult = captureAsyncGenerator(
+        value as AsyncIterable<unknown>,
+        runInContext,
+        {
+          aggregator: resolvedComponentOpts.aggregator,
+          fullValue: value,
+          onComplete,
+        },
+      );
+
+      return config?.handleResult
+        ? config.handleResult(streamingResult, state)
+        : streamingResult;
+    }
+
+    workflowContext.progressListener({
+      type: "component-end",
+      componentName: checkpointName ?? "",
+      componentId: nodeId,
+    });
+    resolvedComponentOpts.onComplete?.();
+    checkpointManager.completeNode(nodeId, value);
+    return config?.handleResult ? config.handleResult(value, state) : value;
+  }
+
+  try {
+    let runInContext: RunInContext;
+    workflowContext.progressListener({
+      type: "component-start",
+      componentName: checkpointName,
+      componentId: nodeId,
+    });
+    const result = context.withCurrentNode(nodeId, () => {
+      runInContext = getContextSnapshot();
+      // Call target with or without state based on config
+      return config?.createState && state
+        ? (target as (props: P, state: StateManager<S>) => R)(
+            (props ?? {}) as P,
+            state,
+          )
+        : (target as (props: P) => R)((props ?? {}) as P);
+    });
+
+    if (result instanceof Promise) {
+      return result
+        .then((value) => {
+          return handleResultValue(value, runInContext);
+        })
+        .catch((error: unknown) => {
+          if (error instanceof Error) {
+            checkpointManager.addMetadata(nodeId, {
+              error: serializeError(error),
+            });
+            checkpointManager.completeNode(nodeId, undefined);
+            workflowContext.progressListener({
+              type: "error",
+              error: JSON.stringify(serializeError(error)),
+            });
+          }
+          throw error;
+        });
+    }
+
+    return handleResultValue(result, runInContext!);
+  } catch (error) {
+    if (error instanceof Error) {
+      checkpointManager.addMetadata(nodeId, {
+        error: serializeError(error),
+      });
+      checkpointManager.completeNode(nodeId, undefined);
+      workflowContext.progressListener({
+        type: "error",
+        error: JSON.stringify(serializeError(error)),
+      });
+    }
+    throw error;
+  }
 }
 
 export function Workflow<P extends object = {}, R = unknown>(

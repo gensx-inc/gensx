@@ -13,12 +13,18 @@ export interface JSONPatchOperation {
 // Extract the state update event type from ProgressEvent
 export type StateUpdateEvent = Extract<ProgressEvent, { type: "state-update" }>;
 
-// State manager instance
+// Base state manager interface (no broadcasting)
 export interface StateManager<T> {
   get(): T;
   update(updater: (state: T) => T): void;
   set(newState: T): void;
   reset(): void;
+}
+
+// Extended state manager with attachment capabilities for workflow state
+export interface BroadcastingStateManager<T> extends StateManager<T> {
+  // State attachment for composition - will be implemented with proper attachment methods
+  attach?<K extends keyof T>(property: K, childState: StateManager<T[K]>): void;
 }
 
 // Global state registry to manage multiple named states
@@ -31,18 +37,75 @@ const stateRegistry = new Map<
   }
 >();
 
-// Mutex for serializing state updates
-const updateMutex = new Map<string, Promise<void>>();
+// Global broadcasting state registry (for workflow states)
+const broadcastingStateRegistry = new Map<
+  string,
+  {
+    currentState: unknown;
+    initialState: unknown;
+    manager: BroadcastingStateManager<unknown>;
+  }
+>();
 
 /**
- * Creates or retrieves a named state manager with delta-based updates
- * Usage: const state = gensx.state<ChatApp>("chatState");
+ * Creates a basic state manager (no broadcasting) for component use
  */
-export function state<T>(name: string, initialState?: T): StateManager<T> {
+export function createStateManager<T>(
+  name: string,
+  initialState: T,
+): StateManager<T> {
+  // Create a unique key to avoid conflicts
+  const key = `${name}-${Date.now()}-${Math.random()}`;
+
+  const currentState = deepClone(initialState);
+  const stateEntry = {
+    currentState,
+    initialState: deepClone(initialState),
+    manager: undefined as unknown as StateManager<T>,
+  };
+
+  const manager: StateManager<T> = {
+    get(): T {
+      return deepClone(stateEntry.currentState);
+    },
+
+    update(updater: (state: T) => T): void {
+      const currentClone = deepClone(stateEntry.currentState);
+      const newState = updater(currentClone);
+      stateEntry.currentState = newState;
+      // No broadcasting for component state
+    },
+
+    set(newState: T): void {
+      stateEntry.currentState = newState;
+      // No broadcasting for component state
+    },
+
+    reset(): void {
+      const resetState = deepClone(stateEntry.initialState);
+      stateEntry.currentState = resetState;
+      // No broadcasting for component state
+    },
+  };
+
+  stateEntry.manager = manager;
+  stateRegistry.set(key, stateEntry);
+
+  return manager;
+}
+
+/**
+ * Creates or retrieves a named broadcasting state manager for workflow use
+ * This is the original state function that emits progress events
+ */
+export function state<T>(
+  name: string,
+  initialState?: T,
+): BroadcastingStateManager<T> {
   // If manager already exists, return it
-  const existing = stateRegistry.get(name);
+  const existing = broadcastingStateRegistry.get(name);
   if (existing) {
-    return existing.manager as StateManager<T>;
+    return existing.manager as BroadcastingStateManager<T>;
   }
 
   // Initialize state
@@ -50,10 +113,10 @@ export function state<T>(name: string, initialState?: T): StateManager<T> {
   const stateEntry = {
     currentState: deepClone(currentState),
     initialState: deepClone(currentState),
-    manager: undefined as unknown as StateManager<T>,
+    manager: undefined as unknown as BroadcastingStateManager<T>,
   };
 
-  const manager: StateManager<T> = {
+  const manager: BroadcastingStateManager<T> = {
     get(): T {
       return deepClone(stateEntry.currentState);
     },
@@ -75,12 +138,15 @@ export function state<T>(name: string, initialState?: T): StateManager<T> {
       updateStateWithDelta(name, stateEntry.currentState, resetState);
       stateEntry.currentState = resetState;
     },
-  };
+  } as BroadcastingStateManager<T>;
+
+  // Add attachment capabilities (stub for now - will implement later)
+  // This would be populated with actual attachment methods for each property
 
   stateEntry.manager = manager;
-  stateRegistry.set(name, stateEntry);
+  broadcastingStateRegistry.set(name, stateEntry);
 
-  // Emit initial state
+  // Emit initial state for broadcasting state managers
   emitStateUpdate(name, [], stateEntry.currentState);
 
   return manager;
@@ -184,6 +250,9 @@ export function getAllStates(): Record<string, unknown> {
   for (const [name, entry] of stateRegistry.entries()) {
     states[name] = entry.currentState;
   }
+  for (const [name, entry] of broadcastingStateRegistry.entries()) {
+    states[name] = entry.currentState;
+  }
   return states;
 }
 
@@ -192,5 +261,7 @@ export function getAllStates(): Record<string, unknown> {
  */
 export function clearAllStates(): void {
   stateRegistry.clear();
-  updateMutex.clear();
+  broadcastingStateRegistry.clear();
 }
+
+// BroadcastingStateManager is already exported above in the interface declaration
