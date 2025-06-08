@@ -21,15 +21,14 @@ suite("stateful components", () => {
 
     const TestStatefulComponent = gensx.StatefulComponent(
       "TestStatefulComponent",
-      {
-        progress: 0,
-        status: "starting" as const,
-        data: undefined,
-      } as TestComponentState,
-      (
-        props: { input: string },
-        state: gensx.StateManager<TestComponentState>,
-      ) => {
+      (props: { input: string }) => {
+        // Component creates its own state
+        const state = gensx.componentState<TestComponentState>({
+          progress: 0,
+          status: "starting",
+          data: undefined,
+        });
+
         const outputPromise = (async () => {
           // Add a small delay so initial state can be checked
           await new Promise((resolve) => setTimeout(resolve, 1));
@@ -49,7 +48,7 @@ suite("stateful components", () => {
           return `Result: ${props.input}`;
         })();
 
-        return outputPromise;
+        return { output: outputPromise, state };
       },
     );
 
@@ -60,6 +59,7 @@ suite("stateful components", () => {
       expect(state.get()).toEqual({
         progress: 0,
         status: "starting",
+        data: undefined,
       });
 
       const result = await output;
@@ -91,21 +91,20 @@ suite("stateful components", () => {
 
     const TestStatefulComponent = gensx.StatefulComponent(
       "TestStatefulComponent",
-      {
-        progress: 0,
-        status: "starting" as const,
-        data: undefined,
-      } as TestComponentState,
-      (
-        props: { input: string },
-        state: gensx.StateManager<TestComponentState>,
-      ) => {
+      (props: { input: string }) => {
+        // Component creates its own state
+        const state = gensx.componentState<TestComponentState>({
+          progress: 0,
+          status: "starting",
+          data: undefined,
+        });
+
         const outputPromise = (async () => {
           state.update((s) => ({ ...s, progress: 100, status: "complete" }));
           return props.input;
         })();
 
-        return outputPromise;
+        return { output: outputPromise, state };
       },
     );
 
@@ -150,19 +149,12 @@ suite("stateful components", () => {
   test("multiple instances of same stateful component have separate state", async () => {
     const TestStatefulComponent = gensx.StatefulComponent(
       "TestStatefulComponent",
-      {
-        progress: 0,
-        status: "starting" as const,
-        data: undefined,
-      } as TestComponentState,
-      (
-        props: { value: number },
-        state: gensx.StateManager<TestComponentState>,
-      ) => {
-        // Initialize with the prop value
-        state.set({
+      (props: { value: number }) => {
+        // Component creates its own state, can initialize based on props
+        const state = gensx.componentState<TestComponentState>({
           progress: props.value,
           status: "starting",
+          data: undefined,
         });
 
         const outputPromise = (async () => {
@@ -174,7 +166,7 @@ suite("stateful components", () => {
           return state.get().progress;
         })();
 
-        return outputPromise;
+        return { output: outputPromise, state };
       },
     );
 
@@ -202,45 +194,45 @@ suite("stateful components", () => {
   test("stateful component supports streaming outputs alongside state updates", async () => {
     const events: ProgressEvent[] = [];
 
+    interface StreamingState {
+      status: "starting" | "streaming" | "complete";
+      progress: number;
+      chunks: number;
+    }
+
     const StreamingStatefulComponent = gensx.StatefulComponent(
       "StreamingStatefulComponent",
-      {
-        progress: 0,
-        status: "starting" as const,
-        chunks: 0,
-      },
-      (
-        props: { count: number },
-        state: gensx.StateManager<{
-          progress: number;
-          status: "starting" | "streaming" | "complete";
-          chunks: number;
-        }>,
-      ) => {
-        // Return an async generator for streaming
-        const streamingOutput = async function* () {
-          state.update((s) => ({ ...s, status: "streaming" }));
+      (props: { count: number }) => {
+        // Component creates its own state
+        const state = gensx.componentState<StreamingState>({
+          status: "starting",
+          progress: 0,
+          chunks: 0,
+        });
 
-          for (let i = 0; i < props.count; i++) {
-            const chunk = `chunk-${i}`;
+        const outputPromise = Promise.resolve(
+          (async function* () {
+            state.update((s) => ({ ...s, status: "streaming" }));
 
-            // Update state with progress
-            state.update((s) => ({
-              ...s,
-              progress: ((i + 1) / props.count) * 100,
-              chunks: i + 1,
-            }));
+            for (let i = 0; i < props.count; i++) {
+              const chunk = `chunk-${i}`;
+              yield chunk;
 
-            yield chunk;
+              state.update((s) => ({
+                ...s,
+                progress: ((i + 1) / props.count) * 100,
+                chunks: i + 1,
+              }));
 
-            // Small delay to simulate work
-            await new Promise((resolve) => setTimeout(resolve, 10));
-          }
+              // Small delay between chunks
+              await new Promise((resolve) => setTimeout(resolve, 5));
+            }
 
-          state.update((s) => ({ ...s, status: "complete" }));
-        };
+            state.update((s) => ({ ...s, status: "complete" }));
+          })(),
+        );
 
-        return streamingOutput();
+        return { output: outputPromise, state };
       },
     );
 
@@ -254,7 +246,7 @@ suite("stateful components", () => {
       // Collect streamed chunks
       const chunks: string[] = [];
       const stream = await output; // Get the async generator
-      for await (const chunk of stream) {
+      for await (const chunk of stream as AsyncGenerator<string>) {
         chunks.push(chunk);
       }
 

@@ -1,7 +1,7 @@
 import type { ComponentOpts } from "./types.js";
 
 import { executeComponentBase } from "./component.js";
-import { componentState, StateManager } from "./state.js";
+import { StateManager } from "./state.js";
 
 /**
  * Result type for stateful components
@@ -13,8 +13,7 @@ export interface StatefulComponentResult<Output, State> {
 
 export function StatefulComponent<S, P extends object = {}, R = unknown>(
   name: string,
-  initialState: S,
-  target: (props: P, state: StateManager<S>) => R,
+  target: (props: P) => StatefulComponentResult<R, S>,
   componentOpts?: ComponentOpts,
 ): (
   props?: P,
@@ -24,36 +23,35 @@ export function StatefulComponent<S, P extends object = {}, R = unknown>(
     props?: P,
     runtimeOpts?: ComponentOpts & { onComplete?: () => void },
   ): StatefulComponentResult<Awaited<R>, S> => {
-    // We need to get the state manager created in executeComponentBase
-    // Since we can't modify executeComponentBase easily, let's create our own state
-    const state = componentState(initialState);
+    // Call the target function to get the result
+    const result = target((props ?? {}) as P);
 
-    const result = executeComponentBase(
+    // Execute the component using the existing infrastructure
+    const componentResult = executeComponentBase(
       name,
-      // Wrap the target to use our pre-created state
-      (props: P, _: StateManager<S>) => target(props, state),
+      // Create a wrapper function that returns the output
+      (_props: P) => result.output,
       componentOpts,
       props,
       runtimeOpts,
       {
-        createState: true,
-        initialState,
-        handleResult: (value: unknown) => value, // No need to capture state here
+        createState: false, // Component manages its own state
+        handleResult: (value: unknown) => value,
       },
     );
 
-    // Handle both sync and async results
-    if (result instanceof Promise) {
-      return {
-        output: result as Promise<Awaited<R>>,
-        state,
-      };
+    // Handle both sync and async results for the output
+    let outputPromise: Promise<Awaited<R>>;
+    if (componentResult instanceof Promise) {
+      outputPromise = componentResult as Promise<Awaited<R>>;
     } else {
-      return {
-        output: Promise.resolve(result as Awaited<R>),
-        state,
-      };
+      outputPromise = Promise.resolve(componentResult as Awaited<R>);
     }
+
+    return {
+      output: outputPromise,
+      state: result.state,
+    };
   };
 
   Object.defineProperty(StatefulComponentFn, "name", {
