@@ -60,11 +60,16 @@ function getResolvedOpts(
   return merged;
 }
 
+export type ComponentFn<P extends object = {}, R = unknown> = (
+  props?: P,
+  runtimeOpts?: ComponentOpts,
+) => R;
+
 export function Component<P extends object = {}, R = unknown>(
   name: string,
   target: (props: P) => R,
   componentOpts?: ComponentOpts,
-): (props?: P, runtimeOpts?: ComponentOpts) => R {
+): ComponentFn<P, R> {
   const ComponentFn = (
     props?: P,
     runtimeOpts?: ComponentOpts & { onComplete?: () => void },
