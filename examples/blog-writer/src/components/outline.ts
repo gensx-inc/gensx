@@ -3,7 +3,12 @@ import * as gensx from "@gensx/core";
 import { generateObject } from "@gensx/vercel-ai";
 import { z } from "zod";
 
-// TODO: take research and write an outline (structured output) for the blog post
+// State interface for Outline component
+interface OutlineState {
+  sections: { heading: string; keyPoints: string[] }[];
+  phase: "planning" | "structuring" | "complete";
+  totalSections: number;
+}
 
 interface OutlineProps {
   title: string;
@@ -38,30 +43,45 @@ const OutlineSchema = z.object({
   sections: z.array(SectionSchema),
 });
 
-const WriteOutline = gensx.Component(
+// Convert to StatefulComponent with new API
+const WriteOutline = gensx.StatefulComponent(
   "WriteOutline",
-  async (props: OutlineProps) => {
-    gensx.emitProgress("Creating article outline...");
+  (props: OutlineProps) => {
+    // Component creates its own state
+    const state = gensx.componentState<OutlineState>({
+      sections: [],
+      phase: "planning",
+      totalSections: 0,
+    });
 
-    // Prepare research context
-    const researchContext = props.research
-      ? [
-          "Research Topics:",
-          ...props.research.topics.map((topic) => `- ${topic}`),
-          "",
-          "Web Research Findings:",
-          ...props.research.webResearch.map(
-            (item) => `${item.topic}: ${item.content.substring(0, 300)}...`,
-          ),
-          "",
-        ].join("\n")
-      : "";
+    const outputPromise = (async () => {
+      gensx.emitProgress("Creating article outline...");
 
-    const result = await generateObject({
-      model: anthropic("claude-sonnet-4-20250514"),
-      schema: OutlineSchema,
-      maxTokens: 4000,
-      prompt: `You are an expert content writer, and you are assisting me in writing an article titled "${props.title}". Your task is to write an outline for the article, taking into account the research you have done.
+      // Update state to planning phase
+      state.update((s) => ({ ...s, phase: "planning" }));
+
+      // Prepare research context
+      const researchContext = props.research
+        ? [
+            "Research Topics:",
+            ...props.research.topics.map((topic) => `- ${topic}`),
+            "",
+            "Web Research Findings:",
+            ...props.research.webResearch.map(
+              (item) => `${item.topic}: ${item.content.substring(0, 300)}...`,
+            ),
+            "",
+          ].join("\n")
+        : "";
+
+      // Update state to structuring phase
+      state.update((s) => ({ ...s, phase: "structuring" }));
+
+      const result = await generateObject({
+        model: anthropic("claude-sonnet-4-20250514"),
+        schema: OutlineSchema,
+        maxTokens: 4000,
+        prompt: `You are an expert content writer, and you are assisting me in writing an article titled "${props.title}". Your task is to write an outline for the article, taking into account the research you have done.
 
 Here are some notes about how I would like this article to be written:
 ${props.prompt}
@@ -162,13 +182,29 @@ The outline that you produce should be detailed and comprehensive, reflecting th
 }
 
 Based on the research provided and the guidelines above, create a detailed, comprehensive outline for the article "${props.title}". Make sure to include specific keyPoints for each section that will guide the writing process, and include researchTopics that indicate what additional information should be considered when writing each section.`,
-    });
+      });
 
-    gensx.emitProgress(
-      `Outline complete with ${result.object.sections.length} sections`,
-    );
-    return result;
+      // Update state with completed outline
+      state.update((s) => ({
+        ...s,
+        sections: result.object.sections.map((section) => ({
+          heading: section.heading,
+          keyPoints: section.keyPoints,
+        })),
+        totalSections: result.object.sections.length,
+        phase: "complete",
+      }));
+
+      gensx.emitProgress(
+        `Outline complete with ${result.object.sections.length} sections`,
+      );
+
+      return result;
+    })();
+
+    return { output: outputPromise, state };
   },
 );
 
 export { WriteOutline };
+export type { OutlineState };

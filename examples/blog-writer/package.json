@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
-    "@gensx/core": "^0.4.2",
+    "@gensx/core": "workspace:*",
     "@gensx/storage": "^0.1.1",
     "@gensx/vercel-ai": "^0.2.0",
     "ai": "^4.3.16",

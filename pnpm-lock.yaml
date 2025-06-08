@@ -171,8 +171,8 @@ importers:
         specifier: ^1.2.12
         version: 1.2.12(zod@3.25.29)
       '@gensx/core':
-        specifier: ^0.4.2
-        version: 0.4.2
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/storage':
         specifier: ^0.1.1
         version: 0.1.1

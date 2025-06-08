@@ -2,6 +2,20 @@ import { anthropic } from "@ai-sdk/anthropic";
 import * as gensx from "@gensx/core";
 import { generateText } from "@gensx/vercel-ai";
 
+// State interface for Editorial component
+interface EditorialState {
+  reviews: { section: string; improvements: string[] }[];
+  phase: "analyzing" | "rewriting" | "complete";
+  improvementsCount: number;
+}
+
+// State interface for MatchTone component
+interface ToneMatchingState {
+  referenceURL: string;
+  phase: "analyzing" | "matching" | "complete";
+  similarityScore?: number;
+}
+
 // Editorial agent that takes the blog post and makes it more interesting
 // Citations from research are preserved throughout the workflow
 
@@ -18,32 +32,47 @@ interface MatchToneProps {
   referenceURL: string;
 }
 
-const MatchTone = gensx.Component(
+const MatchTone = gensx.StatefulComponent(
   "MatchTone",
-  async (props: MatchToneProps) => {
-    gensx.emitProgress("Matching tone to reference content...");
+  (props: MatchToneProps) => {
+    // Component creates its own state
+    const state = gensx.componentState<ToneMatchingState>({
+      referenceURL: props.referenceURL,
+      phase: "analyzing",
+      similarityScore: undefined,
+    });
 
-    // Fetch the reference content from the URL
-    let referenceContent = "";
-    try {
-      const response = await fetch(props.referenceURL);
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch reference content: ${response.statusText}`,
-        );
+    const outputPromise = (async () => {
+      gensx.emitProgress("Matching tone to reference content...");
+
+      // Update state to analyzing phase
+      state.update((s) => ({ ...s, phase: "analyzing" }));
+
+      // Fetch the reference content from the URL
+      let referenceContent = "";
+      try {
+        const response = await fetch(props.referenceURL);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch reference content: ${response.statusText}`,
+          );
+        }
+        referenceContent = await response.text();
+      } catch (error) {
+        console.warn("Failed to fetch reference content:", error);
+        // If we can't fetch the reference, return the original content
+        gensx.emitProgress("Reference content unavailable, returning original");
+        state.update((s) => ({ ...s, phase: "complete" }));
+        return props.content;
       }
-      referenceContent = await response.text();
-    } catch (error) {
-      console.warn("Failed to fetch reference content:", error);
-      // If we can't fetch the reference, return the original content
-      gensx.emitProgress("Reference content unavailable, returning original");
-      return props.content;
-    }
 
-    const result = await generateText({
-      model: anthropic("claude-opus-4-20250514"),
-      maxTokens: 8000,
-      prompt: `You are an expert editor specializing in style and tone matching. Your task is to revise a blog post to match the writing style and tone of a reference piece while preserving all the technical content and key information.
+      // Update state to matching phase
+      state.update((s) => ({ ...s, phase: "matching" }));
+
+      const result = await generateText({
+        model: anthropic("claude-opus-4-20250514"),
+        maxTokens: 8000,
+        prompt: `You are an expert editor specializing in style and tone matching. Your task is to revise a blog post to match the writing style and tone of a reference piece while preserving all the technical content and key information.
 
 ## Reference Content (for style and tone analysis):
 ${referenceContent}
@@ -74,26 +103,78 @@ Focus on:
 - Maintaining consistency throughout the entire piece
 
 Return only the revised blog post content with the matched style and tone.`,
-    });
+      });
 
-    gensx.emitProgress("Tone matching complete");
-    return result.text;
+      // Update state to complete with similarity score
+      state.update((s) => ({
+        ...s,
+        phase: "complete",
+        similarityScore: 0.85, // Mock score - in real implementation would calculate this
+      }));
+
+      gensx.emitProgress("Tone matching complete");
+      return result.text;
+    })();
+
+    return { output: outputPromise, state };
   },
 );
 
-const Editorial = gensx.Component(
+const Editorial = gensx.StatefulComponent(
   "Editorial",
-  async (props: EditorialProps) => {
+  (props: EditorialProps) => {
     if (!props.draft) {
-      return "No draft provided - cannot perform editorial review.";
+      // Component creates its own state even when returning early
+      const state = gensx.componentState<EditorialState>({
+        reviews: [],
+        phase: "analyzing",
+        improvementsCount: 0,
+      });
+
+      const outputPromise = Promise.resolve(
+        "No draft provided - cannot perform editorial review.",
+      );
+
+      return { output: outputPromise, state };
     }
 
-    gensx.emitProgress("Editing your blog post...");
+    // Component creates its own state
+    const state = gensx.componentState<EditorialState>({
+      reviews: [],
+      phase: "analyzing",
+      improvementsCount: 0,
+    });
 
-    const editorialReview = await generateText({
-      model: anthropic("claude-opus-4-20250514"),
-      maxTokens: 8000,
-      prompt: `Consider how you can improve the article. Your goal is to improve the writing and flow of the article. The draft was written by several different people so you might need to tweak things to make sure it flows well. Try to keep all of the core information from the first draft in the article. Review all of the instructions below and then help us rewrite the article.
+    const outputPromise = (async () => {
+      gensx.emitProgress("Editing your blog post...");
+
+      // Update state to analyzing phase
+      state.update((s) => ({ ...s, phase: "analyzing" }));
+
+      // Mock some review data for state tracking
+      state.update((s) => ({
+        ...s,
+        reviews: [
+          {
+            section: "Introduction",
+            improvements: ["Strengthen opening hook", "Add context"],
+          },
+          {
+            section: "Body",
+            improvements: ["Reduce word count", "Improve flow"],
+          },
+          { section: "Conclusion", improvements: ["Add call to action"] },
+        ],
+        improvementsCount: 5,
+      }));
+
+      // Update state to rewriting phase
+      state.update((s) => ({ ...s, phase: "rewriting" }));
+
+      const editorialReview = await generateText({
+        model: anthropic("claude-opus-4-20250514"),
+        maxTokens: 8000,
+        prompt: `Consider how you can improve the article. Your goal is to improve the writing and flow of the article. The draft was written by several different people so you might need to tweak things to make sure it flows well. Try to keep all of the core information from the first draft in the article. Review all of the instructions below and then help us rewrite the article.
 
 🎯 CRITICAL WORD COUNT REQUIREMENT: The final article must be approximately ${props.targetWordCount ?? 1500} words total. This is a strict requirement - you must aggressively cut content to meet this limit while preserving quality and key information.
 
@@ -135,11 +216,18 @@ ${props.draft}
 Original Context: ${props.prompt}
 
 ⚠️ FINAL CRITICAL REMINDER: The output must be approximately ${props.targetWordCount ?? 1500} words total. This is non-negotiable. Cut ruthlessly to meet this word count while preserving the most important information. Every word must earn its place.`,
-    });
+      });
 
-    gensx.emitProgress("Editorial review complete");
-    return editorialReview.text;
+      // Update state to complete
+      state.update((s) => ({ ...s, phase: "complete" }));
+
+      gensx.emitProgress("Editorial review complete");
+      return editorialReview.text;
+    })();
+
+    return { output: outputPromise, state };
   },
 );
 
 export { Editorial, MatchTone };
+export type { EditorialState, ToneMatchingState };

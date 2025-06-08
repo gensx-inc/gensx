@@ -3,6 +3,16 @@ import * as gensx from "@gensx/core";
 import { generateObject } from "@gensx/vercel-ai";
 import { z } from "zod";
 
+// State interface for Research component
+interface ResearchState {
+  topics: string[];
+  completedTopics: string[];
+  currentTopic?: string;
+  phase: "generating" | "researching" | "complete";
+  webResearchCount: number;
+  totalTopics: number;
+}
+
 interface TopicProps {
   title: string;
   prompt: string;
@@ -104,10 +114,23 @@ interface ResearchResult {
   }[];
 }
 
-const Research = gensx.Component(
-  "Research",
-  async (props: ResearchProps): Promise<ResearchResult> => {
+// Convert to StatefulComponent with proper state management
+const Research = gensx.StatefulComponent("Research", (props: ResearchProps) => {
+  // Component creates its own state
+  const state = gensx.componentState<ResearchState>({
+    topics: [],
+    completedTopics: [],
+    currentTopic: undefined,
+    phase: "generating",
+    webResearchCount: 0,
+    totalTopics: 0,
+  });
+
+  const outputPromise = (async (): Promise<ResearchResult> => {
     gensx.emitProgress("Starting research phase...");
+
+    // Update state to generating phase
+    state.update((s) => ({ ...s, phase: "generating" }));
 
     // Generate research topics
     const topicsResult = await GenerateTopics({
@@ -115,12 +138,41 @@ const Research = gensx.Component(
       prompt: props.prompt,
     });
 
+    // Update state with topics
+    state.update((s) => ({
+      ...s,
+      topics: topicsResult.object.topics,
+      totalTopics: topicsResult.object.topics.length,
+      phase: "researching",
+    }));
+
     // Conduct web research for each topic
     const webResearchPromises = topicsResult.object.topics.map(
-      (topic: string) => WebResearch({ topic }),
+      async (topic: string) => {
+        // Update current topic being researched
+        state.update((s) => ({ ...s, currentTopic: topic }));
+
+        const result = await WebResearch({ topic });
+
+        // Update completed topics and count
+        state.update((s) => ({
+          ...s,
+          completedTopics: [...s.completedTopics, topic],
+          webResearchCount: s.webResearchCount + 1,
+        }));
+
+        return result;
+      },
     );
 
     const webResearch = await Promise.all(webResearchPromises);
+
+    // Update state to complete
+    state.update((s) => ({
+      ...s,
+      phase: "complete",
+      currentTopic: undefined,
+    }));
 
     gensx.emitProgress("Research phase complete");
 
@@ -128,7 +180,10 @@ const Research = gensx.Component(
       topics: topicsResult.object.topics,
       webResearch,
     };
-  },
-);
+  })();
+
+  return { output: outputPromise, state };
+});
 
 export { Research, WebResearch };
+export type { ResearchState };

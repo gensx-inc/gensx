@@ -6,6 +6,19 @@ import { z } from "zod";
 
 import { WebResearch } from "./research.js";
 
+// State interface for Draft component
+interface DraftState {
+  sections: {
+    heading: string;
+    content: string;
+    wordCount: number;
+    status: "pending" | "writing" | "complete";
+  }[];
+  totalWordCount: number;
+  targetWordCount: number;
+  phase: "initializing" | "writing" | "complete";
+}
+
 interface OutlineData {
   title: string;
   sections: {
@@ -190,35 +203,110 @@ Remember: Only use links that are explicitly provided in the research citations 
   },
 );
 
-const WriteDraft = gensx.Component("WriteDraft", async (props: DraftProps) => {
-  if (!props.outline) {
-    return "No outline provided - cannot generate draft.";
-  }
+const WriteDraft = gensx.StatefulComponent(
+  "WriteDraft",
+  (props: DraftProps) => {
+    if (!props.outline) {
+      // Component creates its own state even when returning early
+      const state = gensx.componentState<DraftState>({
+        sections: [],
+        totalWordCount: 0,
+        targetWordCount: props.targetWordCount ?? 1500,
+        phase: "initializing",
+      });
 
-  gensx.emitProgress("Starting article draft...");
+      const outputPromise = Promise.resolve(
+        "No outline provided - cannot generate draft.",
+      );
 
-  // Write all sections in parallel
-  const sectionPromises = props.outline.sections.map((section) =>
-    WriteSection({
-      section,
-      research: props.research,
-      overallContext: props.prompt,
-      fullOutline: props.outline,
-      targetWordCount: props.targetWordCount,
-    }),
-  );
+      return { output: outputPromise, state };
+    }
 
-  const sections = await Promise.all(sectionPromises);
+    // Component creates its own state
+    const state = gensx.componentState<DraftState>({
+      sections: props.outline.sections.map((section) => ({
+        heading: section.heading,
+        content: "",
+        wordCount: 0,
+        status: "pending",
+      })),
+      totalWordCount: 0,
+      targetWordCount: props.targetWordCount ?? 1500,
+      phase: "initializing",
+    });
 
-  // Combine all sections with proper headings
-  const fullDraft = [
-    `# ${props.title}`,
-    "",
-    ...sections.flatMap((section) => [section, ""]),
-  ].join("\n");
+    const outputPromise = (async () => {
+      gensx.emitProgress("Starting article draft...");
 
-  gensx.emitProgress("Article draft complete");
-  return fullDraft;
-});
+      // Update state to writing phase
+      state.update((s) => ({ ...s, phase: "writing" }));
+
+      // Write all sections in parallel
+      const sectionPromises = props.outline!.sections.map(
+        async (section, index) => {
+          // Update section status to writing
+          state.update((s) => ({
+            ...s,
+            sections: s.sections.map((sec, i) =>
+              i === index ? { ...sec, status: "writing" } : sec,
+            ),
+          }));
+
+          const sectionContent = await WriteSection({
+            section,
+            research: props.research,
+            overallContext: props.prompt,
+            fullOutline: props.outline,
+            targetWordCount: props.targetWordCount,
+          });
+
+          // Update section with completed content
+          const wordCount = sectionContent.split(" ").length;
+          state.update((s) => {
+            const newSections = s.sections.map((sec, i) =>
+              i === index
+                ? {
+                    ...sec,
+                    content: sectionContent,
+                    wordCount,
+                    status: "complete" as const,
+                  }
+                : sec,
+            );
+
+            return {
+              ...s,
+              sections: newSections,
+              totalWordCount: newSections.reduce(
+                (total, sec) => total + sec.wordCount,
+                0,
+              ),
+            };
+          });
+
+          return sectionContent;
+        },
+      );
+
+      const sections = await Promise.all(sectionPromises);
+
+      // Update state to complete
+      state.update((s) => ({ ...s, phase: "complete" }));
+
+      // Combine all sections with proper headings
+      const fullDraft = [
+        `# ${props.title}`,
+        "",
+        ...sections.flatMap((section) => [section, ""]),
+      ].join("\n");
+
+      gensx.emitProgress("Article draft complete");
+      return fullDraft;
+    })();
+
+    return { output: outputPromise, state };
+  },
+);
 
 export { WriteDraft };
+export type { DraftState };
