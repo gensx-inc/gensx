@@ -306,6 +306,8 @@ export function useWorkflowState<T = unknown>(
   const config = resolveConfig(options);
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastEventIdRef = useRef<string | null>(null);
+  const isInitialRequest = useRef<boolean>(true);
+  const hasConnectedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!executionId) {
@@ -313,6 +315,9 @@ export function useWorkflowState<T = unknown>(
       setIsLoading(false);
       setError(null);
       setIsComplete(false);
+      lastEventIdRef.current = null;
+      isInitialRequest.current = true;
+      hasConnectedRef.current = false;
       return;
     }
 
@@ -344,7 +349,8 @@ export function useWorkflowState<T = unknown>(
         } else {
           // Development: Use the progress endpoint with query params
           const progressUrl = new URL(config.buildProgressUrl(executionId));
-          if (lastEventIdRef.current) {
+          // Only add lastEventId for subsequent requests, not the initial one
+          if (lastEventIdRef.current && !isInitialRequest.current) {
             progressUrl.searchParams.set("lastEventId", lastEventIdRef.current);
           }
           url = progressUrl.toString();
@@ -373,11 +379,17 @@ export function useWorkflowState<T = unknown>(
         const decoder = new TextDecoder();
 
         try {
+          // Mark as no longer initial request after first connection
+          if (isInitialRequest.current) {
+            isInitialRequest.current = false;
+          }
+
           while (mounted) {
             const { done, value } = await reader.read();
 
             if (done) {
-              setIsComplete(true);
+              // Stream ended naturally - this is expected when the workflow completes
+              // Don't mark as complete here, let the workflow-complete event do that
               break;
             }
 
@@ -465,7 +477,11 @@ export function useWorkflowState<T = unknown>(
       }
     };
 
-    void connectToStream();
+    // Start the initial connection, but only once per execution ID
+    if (!hasConnectedRef.current) {
+      hasConnectedRef.current = true;
+      void connectToStream();
+    }
 
     return () => {
       mounted = false;

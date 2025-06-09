@@ -85,7 +85,7 @@ export default function BlogWriterPage() {
     isComplete,
     executionId,
   } = useWorkflowWithState<BlogInput, BlogWorkflowState>(
-    "/blog-writer", // Development endpoint - automatically connects to localhost:1337
+    "/WriteBlog", // Development endpoint - automatically connects to localhost:1337
     "blog-workflow", // State name that matches our workflow
   );
 
