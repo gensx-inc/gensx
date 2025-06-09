@@ -301,4 +301,4 @@ const WriteBlog = gensx.Workflow("WriteBlog", async (props: WriteBlogProps) => {
 });
 
 export { WriteBlog };
-export type { BlogWorkflowState };
+export type { BlogWorkflowState, WriteBlogProps };

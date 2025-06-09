@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Types for workflow execution
 export interface WorkflowExecutionOptions {
@@ -303,13 +303,22 @@ export function useWorkflowState<T = unknown>(
   const [error, setError] = useState<Error | null>(null);
   const [isComplete, setIsComplete] = useState<boolean>(false);
 
-  const config = resolveConfig(options);
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastEventIdRef = useRef<string | null>(null);
   const isInitialRequest = useRef<boolean>(true);
   const hasConnectedRef = useRef<boolean>(false);
 
+  // Memoize config to prevent effect from running on every render
+  const config = useMemo(() => resolveConfig(options), [options]);
+
   useEffect(() => {
+    console.info(
+      "🔄 useWorkflowState effect triggered, executionId:",
+      executionId,
+      "hasConnected:",
+      hasConnectedRef.current,
+    );
+
     if (!executionId) {
       setData(null);
       setIsLoading(false);
@@ -321,11 +330,19 @@ export function useWorkflowState<T = unknown>(
       return;
     }
 
+    // If we've already connected for this execution ID, don't connect again
+    if (hasConnectedRef.current) {
+      console.info(
+        "⏭️ Skipping connection - already connected for this execution ID",
+      );
+      return;
+    }
+
     let mounted = true;
     setIsLoading(true);
     setError(null);
 
-    const connectToStream = async (): Promise<void> => {
+    const connectToStream = async (retryCount = 0): Promise<void> => {
       try {
         // Cancel any existing connection
         if (abortControllerRef.current) {
@@ -360,10 +377,19 @@ export function useWorkflowState<T = unknown>(
           };
         }
 
+        console.info("🌊 Attempting SSE connection to:", url);
+        console.info("🔗 Headers:", headers);
+
         const response = await fetch(url, {
           headers,
           signal: abortControllerRef.current.signal,
         });
+
+        console.info(
+          "📡 SSE response status:",
+          response.status,
+          response.statusText,
+        );
 
         if (!response.ok) {
           throw new Error(
@@ -384,12 +410,33 @@ export function useWorkflowState<T = unknown>(
             isInitialRequest.current = false;
           }
 
+          // SSE event accumulation state
+          let currentEventId = "";
+          let currentEventData = "";
+
           while (mounted) {
             const { done, value } = await reader.read();
 
             if (done) {
-              // Stream ended naturally - this is expected when the workflow completes
-              // Don't mark as complete here, let the workflow-complete event do that
+              console.info("📡 SSE stream ended naturally");
+              // Stream ended naturally - reconnect quickly if still mounted, not aborted, and not completed
+              if (
+                mounted &&
+                !abortControllerRef.current?.signal.aborted &&
+                !isComplete
+              ) {
+                const delay = 100; // Quick reconnect for natural stream end
+                console.info(`🔄 Stream ended, reconnecting in ${delay}ms...`);
+                setTimeout(() => {
+                  if (
+                    mounted &&
+                    !abortControllerRef.current?.signal.aborted &&
+                    !isComplete
+                  ) {
+                    void connectToStream(0); // Reset retry count for natural stream end
+                  }
+                }, delay);
+              }
               break;
             }
 
@@ -397,21 +444,46 @@ export function useWorkflowState<T = unknown>(
             const lines = chunk.split("\n");
 
             for (const line of lines) {
-              if (!line.trim()) continue;
-
               if (line.startsWith("id: ")) {
-                lastEventIdRef.current = line.substring(4).trim();
+                currentEventId = line.substring(4).trim();
                 continue;
               }
 
               if (line.startsWith("data: ")) {
+                // Accumulate data lines (JSON can be split across multiple data lines)
+                const dataContent = line.substring(6);
+                currentEventData += dataContent;
+                if (currentEventData !== dataContent) {
+                  console.info("🔗 Accumulating multi-line SSE data...");
+                }
+                continue;
+              }
+
+              // Empty line signals end of SSE event - process accumulated data
+              if (!line.trim() && currentEventData) {
                 try {
-                  const eventData = JSON.parse(line.substring(6)) as unknown;
+                  const eventData = JSON.parse(currentEventData) as unknown;
                   const event = eventData as ProgressEvent;
+
+                  console.info("📨 Received event:", event);
+
+                  // Update lastEventId if we have one
+                  if (currentEventId) {
+                    lastEventIdRef.current = currentEventId;
+                  }
 
                   // Handle state update events
                   if (event.type === "state-update" && mounted) {
                     const stateEvent = event as StateUpdateEvent;
+
+                    // Check if the event has the required data property
+                    if (!stateEvent.data) {
+                      console.warn(
+                        "⚠️ State update event missing data property:",
+                        stateEvent,
+                      );
+                      continue;
+                    }
 
                     // If stateName is specified, only process events for that state
                     if (!stateName || stateEvent.data.stateName === stateName) {
@@ -429,10 +501,20 @@ export function useWorkflowState<T = unknown>(
 
                           for (const patch of stateEvent.data.patch!) {
                             try {
-                              applyJsonPatch(
-                                newData as Record<string, unknown>,
-                                patch,
-                              );
+                              console.info("🔧 Applying JSON patch:", {
+                                op: patch.op,
+                                path: patch.path,
+                              });
+                              // Handle root-level replacement (path: "")
+                              if (patch.path === "" && patch.op === "replace") {
+                                console.info("🔄 Root-level state replacement");
+                                newData = patch.value as T;
+                              } else {
+                                applyJsonPatch(
+                                  newData as Record<string, unknown>,
+                                  patch,
+                                );
+                              }
                             } catch (patchError) {
                               console.warn(
                                 "Failed to apply JSON patch:",
@@ -451,13 +533,24 @@ export function useWorkflowState<T = unknown>(
                   // Handle workflow completion
                   if (
                     event.type === "workflow-complete" ||
-                    event.type === "workflow-error"
+                    event.type === "workflow-error" ||
+                    event.type === "end"
                   ) {
                     setIsComplete(true);
+                    // Don't reconnect if workflow has completed
+                    return;
                   }
                 } catch (parseError) {
-                  console.warn("Failed to parse event data:", line, parseError);
+                  console.warn(
+                    "Failed to parse event data:",
+                    currentEventData,
+                    parseError,
+                  );
                 }
+
+                // Reset for next event
+                currentEventId = "";
+                currentEventData = "";
               }
             }
           }
@@ -465,10 +558,33 @@ export function useWorkflowState<T = unknown>(
           reader.releaseLock();
         }
       } catch (err) {
-        if (mounted && !abortControllerRef.current?.signal.aborted) {
-          const error =
-            err instanceof Error ? err : new Error("Stream connection failed");
-          setError(error);
+        console.error("❌ SSE connection failed:", err);
+        if (
+          mounted &&
+          !abortControllerRef.current?.signal.aborted &&
+          !isComplete
+        ) {
+          if (retryCount < 5) {
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 10000); // Exponential backoff, max 10s
+            console.info(
+              `🔄 Retrying SSE connection in ${delay}ms (attempt ${retryCount + 1}/5)...`,
+            );
+            setTimeout(() => {
+              if (
+                mounted &&
+                !abortControllerRef.current?.signal.aborted &&
+                !isComplete
+              ) {
+                void connectToStream(retryCount + 1);
+              }
+            }, delay);
+          } else {
+            const error =
+              err instanceof Error
+                ? err
+                : new Error("Stream connection failed after 5 retries");
+            setError(error);
+          }
         }
       } finally {
         if (mounted) {
@@ -480,6 +596,7 @@ export function useWorkflowState<T = unknown>(
     // Start the initial connection, but only once per execution ID
     if (!hasConnectedRef.current) {
       hasConnectedRef.current = true;
+      console.info("🔗 Starting SSE connection for execution ID:", executionId);
       void connectToStream();
     }
 
@@ -489,7 +606,7 @@ export function useWorkflowState<T = unknown>(
         abortControllerRef.current.abort();
       }
     };
-  }, [executionId, stateName, config]);
+  }, [executionId]);
 
   return {
     data,

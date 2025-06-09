@@ -91,12 +91,28 @@ export interface WorkflowExecution {
 
 export interface ProgressEvent {
   id: string;
-  type: "start" | "progress" | "end" | "error";
+  type:
+    | "start"
+    | "progress"
+    | "end"
+    | "error"
+    | "state-update"
+    | "component-start"
+    | "component-end";
   workflowName?: string;
-  data?: string;
+  data?: unknown;
   error?: string;
   executionStatus?: ExecutionStatus;
   timestamp: string;
+  // For state-update events
+  stateName?: string;
+  patch?: {
+    op: "add" | "remove" | "replace" | "move" | "copy" | "test";
+    path: string;
+    value?: unknown;
+    from?: string;
+  }[];
+  fullState?: unknown;
 }
 
 /**
@@ -595,11 +611,38 @@ export class GensxServer {
                 try {
                   // Set up progress listener
                   const progressListener = (event: any) => {
-                    const eventData = JSON.stringify(event);
+                    let progressEvent: any;
+
+                    if (event.type === "state-update") {
+                      // Handle state-update events specially - convert to frontend format
+                      progressEvent = {
+                        id: ulid(),
+                        type: "state-update",
+                        timestamp: new Date().toISOString(),
+                        data: {
+                          stateName: event.stateName,
+                          patch: event.patch,
+                          fullState: event.fullState,
+                        },
+                      };
+                    } else {
+                      // Handle other event types
+                      progressEvent = {
+                        id: ulid(),
+                        type: event.type,
+                        workflowName: event.workflowName,
+                        data: event.data,
+                        error: event.error,
+                        executionStatus: event.executionStatus,
+                        timestamp: new Date().toISOString(),
+                      };
+                    }
+
+                    const eventData = JSON.stringify(progressEvent);
                     if (acceptHeader === "text/event-stream") {
                       controller.enqueue(
                         new TextEncoder().encode(
-                          `id: ${event.id}\ndata: ${eventData}\n\n`,
+                          `id: ${progressEvent.id}\ndata: ${eventData}\n\n`,
                         ),
                       );
                     } else {
@@ -1416,15 +1459,37 @@ export class GensxServer {
 
       // Set up progress listener
       const progressListener = (event: any) => {
-        const progressEvent: ProgressEvent = {
-          id: ulid(),
-          type: event.type,
-          workflowName: event.workflowName,
-          data: event.data,
-          error: event.error,
-          executionStatus: event.executionStatus,
-          timestamp: new Date().toISOString(),
-        };
+        let progressEvent: ProgressEvent;
+
+        if (event.type === "state-update") {
+          // Handle state-update events specially
+          progressEvent = {
+            id: ulid(),
+            type: "state-update",
+            timestamp: new Date().toISOString(),
+            data: {
+              stateName: event.stateName,
+              patch: event.patch,
+              fullState: event.fullState,
+            },
+            // Also include the properties directly for backward compatibility
+            stateName: event.stateName,
+            patch: event.patch,
+            fullState: event.fullState,
+          };
+        } else {
+          // Handle other event types
+          progressEvent = {
+            id: ulid(),
+            type: event.type,
+            workflowName: event.workflowName,
+            data: event.data,
+            error: event.error,
+            executionStatus: event.executionStatus,
+            timestamp: new Date().toISOString(),
+          };
+        }
+
         execution.progressEvents?.push(progressEvent);
         this.executionsMap.set(executionId, execution);
       };
