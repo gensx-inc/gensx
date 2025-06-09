@@ -89,16 +89,25 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       );
     }
 
+    // Get the output directory from tsconfig or use default
+    const configOutDir = tsconfig.options.outDir ?? ".gensx/dist";
+
     // Create TypeScript program
-    const program = ts.createProgram([tsFile], tsconfig.options);
+    // Override noEmit and incremental to ensure files are actually written for gensx workflows
+    // and avoid TS5074 error with incremental compilation in programmatic usage
+    const compilerOptions = {
+      ...tsconfig.options,
+      noEmit: false,
+      incremental: false,
+      outDir: configOutDir,
+    };
+    const program = ts.createProgram([tsFile], compilerOptions);
     const sourceFile = program.getSourceFile(tsFile);
 
     if (!sourceFile) {
       throw new Error(`Could not find source file: ${tsFile}`);
     }
 
-    // Get the output directory from tsconfig or use default
-    const configOutDir = tsconfig.options.outDir ?? ".gensx/dist";
     const absoluteOutDir = resolve(process.cwd(), configOutDir);
 
     // Ensure output directory exists
