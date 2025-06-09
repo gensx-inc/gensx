@@ -38,6 +38,20 @@ interface BroadcastingStateManager<T> extends StateManager<T> {
 - **✅ Event emission verification**: Only workflow states broadcast, component states remain silent
 - **✅ Integration test**: Realistic blog workflow with hierarchical composition
 
+#### React Hooks Package (January 2025)
+
+- **✅ Complete `@gensx/react` package**: Four React hooks for comprehensive workflow integration
+- **✅ `useWorkflow<TInput, TOutput>`**: Synchronous workflow execution with type safety
+- **✅ `useAsyncWorkflow<TInput>`**: Asynchronous workflow starting with execution ID tracking
+- **✅ `useWorkflowState<T>`**: Real-time state streaming from workflow executions via SSE
+- **✅ `useWorkflowWithState<TInput, TState>`**: Combined async execution + state streaming
+- **✅ Dual environment support**: Automatic dev/production detection and configuration
+- **✅ Production API integration**: Full GenSX API support with org/project/environment structure
+- **✅ JSON patch processing**: Efficient state updates via automatic patch application
+- **✅ Connection management**: Automatic reconnection and proper cleanup
+- **✅ TypeScript integration**: Full type safety with generic parameters
+- **✅ Comprehensive documentation**: Complete README with usage examples and patterns
+
 #### Clean API Names
 
 - **✅ `workflowState()`**: Clear naming for workflow-scoped broadcasting state
@@ -56,8 +70,13 @@ interface BroadcastingStateManager<T> extends StateManager<T> {
 
 #### React Integration Package
 
-- **❌ `packages/gensx-react`**: React hooks package for frontend state consumption
-- **❌ `useGensxState<T>()`**: Hook for consuming typed workflow state in React components
+- **✅ `packages/gensx-react`**: React hooks package for frontend state consumption
+- **✅ React hooks for workflow execution**: `useWorkflow`, `useAsyncWorkflow`, `useWorkflowState`, `useWorkflowWithState`
+- **✅ Dual environment support**: Automatic detection between development (localhost:1337) and production (GenSX API)
+- **✅ Real-time state streaming**: Server-Sent Events with JSON patch processing for efficient state updates
+- **✅ TypeScript integration**: Full type safety with generics for input/output/state types
+- **✅ Production API integration**: Complete support for GenSX API with org/project/environment structure
+- **✅ Comprehensive documentation**: Complete README with usage examples for both environments
 - **✅ Real-time state transport**: State events flow through existing emitProgress → Redis stream infrastructure
 
 #### Advanced State Composition
@@ -82,29 +101,47 @@ interface BroadcastingStateManager<T> extends StateManager<T> {
 
 ## 🎯 Next Steps & Prioritized Roadmap
 
-### **Phase 1: React Integration** (High Priority)
+### ✅ **Phase 1: React Integration** (COMPLETED - January 2025)
 
-**Goal**: Enable frontend consumption of hierarchical state
+**Goal**: Enable frontend consumption of hierarchical state ✅
 
-1. **Create `packages/gensx-react` package**
+1. **✅ Created `packages/gensx-react` package**
 
-   - React hooks for state consumption
-   - TypeScript integration for workflow state types
-   - Integration with existing Redis stream transport (no new streaming needed)
+   - ✅ React hooks for workflow execution and state consumption
+   - ✅ Full TypeScript integration with generics for type safety
+   - ✅ Integration with existing Redis stream transport (no new streaming needed)
+   - ✅ Dual environment support (development + production)
 
-2. **Implement `useGensxState<T>()` hook**
+2. **✅ Implemented comprehensive hook suite**
 
    ```typescript
-   const { state, isLoading, error } = useGensxState<BlogWorkflowState>(
-     "/workflows/blog",
-     "blog-workflow",
+   // Synchronous workflow execution
+   const { execute, isLoading, error, result } = useWorkflow<Input, Output>(
+     "/my-workflow",
    );
+
+   // Asynchronous workflow execution
+   const { start, isLoading, error, executionId } =
+     useAsyncWorkflow<Input>("/my-workflow");
+
+   // Real-time state streaming
+   const { data, isLoading, error, isComplete } = useWorkflowState<State>(
+     executionId,
+     "stateName",
+   );
+
+   // Combined async execution + state streaming
+   const { start, state, isLoading, error, isComplete } = useWorkflowWithState<
+     Input,
+     State
+   >("/my-workflow", "stateName");
    ```
 
-3. **Example React components**
-   - Reference implementations showing state consumption
-   - Real-time progress indicators
-   - Hierarchical state visualization
+3. **✅ Complete documentation and examples**
+   - ✅ Reference implementations for both development and production
+   - ✅ Real-time progress indicators with hierarchical state
+   - ✅ Environment-aware configuration patterns
+   - ✅ TypeScript integration examples
 
 ### **Phase 2: API Alignment** (Medium Priority)
 
@@ -143,8 +180,8 @@ interface BroadcastingStateManager<T> extends StateManager<T> {
 ### **Success Criteria**
 
 - ✅ **Phase 1 Complete**: React frontend can consume typed hierarchical state in real-time
-- ✅ **Phase 2 Complete**: StatefulComponent API matches design document exactly
-- ✅ **Phase 3 Complete**: Production-ready state management with advanced features
+- ❌ **Phase 2 Complete**: StatefulComponent API matches design document exactly
+- ❌ **Phase 3 Complete**: Production-ready state management with advanced features
 
 ---
 
@@ -446,45 +483,137 @@ function StatefulComponent<TState>(name: string) {
 
 ## Frontend Integration
 
-Frontend code gets perfectly typed hierarchical state:
+### ✅ **Implemented React Hooks** (January 2025)
+
+Frontend code gets perfectly typed hierarchical state through the `@gensx/react` package:
 
 ```typescript
+import { useWorkflowWithState } from '@gensx/react';
 import type { BlogWorkflowState } from './workflows/blog';
 
-function useBlogState(workflowUrl: string) {
-  const { state, isLoading } = useGensxState<BlogWorkflowState>(workflowUrl, 'blog');
-  return { blogState: state, isLoading };
-}
+function BlogWorkflow() {
+  // ✅ WORKING: Combined execution + state streaming
+  const { start, state, isLoading, error, isComplete } = useWorkflowWithState<
+    { title: string; prompt: string },
+    BlogWorkflowState
+  >('/blog-writer', 'blog');
 
-function BlogProgress() {
-  const { blogState, isLoading } = useBlogState('/workflows/blog');
+  const handleStart = () => {
+    start({
+      title: "The Future of AI",
+      prompt: "Write about emerging trends"
+    });
+  };
 
-  if (isLoading || !blogState) return <div>Loading...</div>;
+  if (isLoading && !state) return <div>Starting workflow...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
     <div>
-      {/* Workflow-level state */}
-      <div className="overall">
-        <h2>Phase: {blogState.overall.phase}</h2>
-        <ProgressBar
-          current={blogState.overall.progress.current}
-          total={blogState.overall.progress.total}
-        />
-      </div>
+      <button onClick={handleStart} disabled={isLoading}>
+        {isLoading ? 'Processing...' : 'Start Blog Workflow'}
+      </button>
 
-      {/* Research component state - fully typed */}
-      <ResearchProgress
-        topics={blogState.research.topics}
-        completed={blogState.research.completedTopics}
-        current={blogState.research.currentTopic}
-        phase={blogState.research.phase}
-      />
+      {state && (
+        <div>
+          {/* Workflow-level state - fully typed */}
+          <div className="overall">
+            <h2>Phase: {state.overall.phase}</h2>
+            <ProgressBar
+              current={state.overall.progress.current}
+              total={state.overall.progress.total}
+            />
+          </div>
 
-      {/* Draft component state - including nested sections */}
-      <DraftProgress
-        sections={blogState.draft.sections}
-        phase={blogState.draft.phase}
-      />
+          {/* Research component state - fully typed */}
+          <ResearchProgress
+            topics={state.research.topics}
+            completed={state.research.completedTopics}
+            current={state.research.currentTopic}
+            phase={state.research.phase}
+          />
+
+          {/* Draft component state - including nested sections */}
+          <DraftProgress
+            sections={state.draft.sections}
+            phase={state.draft.phase}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### ✅ **Individual Hook Usage**
+
+For more granular control, use hooks individually:
+
+```typescript
+import { useAsyncWorkflow, useWorkflowState } from '@gensx/react';
+
+function SeparateHooksExample() {
+  // Start workflow asynchronously
+  const { start, executionId, isLoading: startingWorkflow } = useAsyncWorkflow<{
+    title: string;
+    prompt: string;
+  }>('/blog-writer');
+
+  // Stream state from execution
+  const { data: blogState, isLoading: streamingState } = useWorkflowState<BlogWorkflowState>(
+    executionId,
+    'blog'
+  );
+
+  const handleStart = () => {
+    start({
+      title: "Machine Learning Trends",
+      prompt: "Write a comprehensive analysis"
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={handleStart} disabled={startingWorkflow}>
+        Start Workflow
+      </button>
+
+      {executionId && <div>Execution ID: {executionId}</div>}
+
+      {blogState && (
+        <BlogProgress state={blogState} />
+      )}
+    </div>
+  );
+}
+```
+
+### ✅ **Production Environment Support**
+
+```typescript
+import { useWorkflowWithState } from '@gensx/react';
+
+function ProductionBlogWorkflow() {
+  const { start, state, isLoading } = useWorkflowWithState(
+    'WriteBlog', // Production workflow name
+    'blog',
+    {
+      production: {
+        org: 'your-org',
+        project: 'content-generator',
+        environment: 'production',
+        apiKey: process.env.REACT_APP_GENSX_API_KEY!,
+      }
+    }
+  );
+
+  return (
+    <div>
+      {/* Same component code works for both dev and production */}
+      <button onClick={() => start({ title: "Test", prompt: "Test" })}>
+        Start Production Workflow
+      </button>
+      {state && <BlogProgress state={state} />}
     </div>
   );
 }
