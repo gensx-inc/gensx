@@ -47,6 +47,7 @@ export async function runCLI() {
       "Comma-separated list of IDE rules to install (cline,windsurf,claude,cursor)",
     )
     .option("-d, --description <desc>", "Optional project description")
+    .option("--public", "Create project as public", false)
     .action((projectPath: string, options: NewCommandOptions) => {
       return new Promise<void>((resolve, reject) => {
         const { waitUntilExit } = render(

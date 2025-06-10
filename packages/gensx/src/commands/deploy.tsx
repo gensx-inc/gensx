@@ -13,8 +13,10 @@ import { ErrorMessage } from "../components/ErrorMessage.js";
 import { FirstTimeSetup } from "../components/FirstTimeSetup.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { useProjectName } from "../hooks/useProjectName.js";
+import { updateProject } from "../models/projects.js";
 import { getAuth } from "../utils/config.js";
 import { validateAndSelectEnvironment } from "../utils/env-config.js";
+import { readProjectConfig } from "../utils/project-config.js";
 import { generateSchema } from "../utils/schema.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import { build } from "./build.js";
@@ -97,6 +99,11 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
           throw new Error("Not authenticated. Please run 'gensx login' first.");
         }
         setAuth(authConfig);
+
+        const cfg = await readProjectConfig(process.cwd());
+        if (cfg?.public !== undefined) {
+          await updateProject(projectName!, { public: cfg.public });
+        }
 
         setPhase("deploying");
 

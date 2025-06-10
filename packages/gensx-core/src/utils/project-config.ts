@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
+import { load } from "js-yaml";
 import { z } from "zod";
 
 // Define schema for gensx.yaml
@@ -8,6 +9,7 @@ const ProjectConfigSchema = z.object({
   projectName: z.string(),
   environmentName: z.string().optional(),
   description: z.string().optional(),
+  public: z.boolean().optional(),
 });
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
@@ -27,24 +29,9 @@ export function readProjectConfig(dir: string): ProjectConfig | null {
     const configPath = getProjectConfigPath(dir);
     const content = readFileSync(configPath, "utf-8");
 
-    // Simple YAML parser for our specific needs
-    // We'll keep it basic since our format is simple
-    const lines = content.split("\n");
-    const config: Record<string, string> = {};
+    const parsed = (load(content) ?? {}) as unknown;
 
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (!trimmedLine || trimmedLine.startsWith("#")) continue;
-
-      const [key, ...valueParts] = trimmedLine.split(":");
-      if (key && valueParts.length > 0) {
-        const value = valueParts.join(":").trim();
-        // Remove quotes if they exist
-        config[key.trim()] = value.replace(/^['"](.*)['"]$/, "$1");
-      }
-    }
-
-    return ProjectConfigSchema.parse(config);
+    return ProjectConfigSchema.parse(parsed);
   } catch {
     return null;
   }
