@@ -968,7 +968,7 @@ importers:
         specifier: ^0.15.9
         version: 0.15.9
       '@turbopuffer/turbopuffer':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
     devDependencies:
       '@types/node':
