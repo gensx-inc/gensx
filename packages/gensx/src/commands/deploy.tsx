@@ -102,7 +102,10 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
 
         const cfg = await readProjectConfig(process.cwd());
         if (cfg?.public !== undefined) {
-          await updateProject(projectName!, { public: cfg.public });
+          await updateProject(projectName!, {
+            public: cfg.public,
+            description: cfg.description,
+          });
         }
 
         setPhase("deploying");
