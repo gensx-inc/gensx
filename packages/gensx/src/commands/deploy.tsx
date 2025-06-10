@@ -101,9 +101,9 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
         setAuth(authConfig);
 
         const cfg = await readProjectConfig(process.cwd());
-        if (cfg?.public !== undefined) {
+        if (cfg?.publicWorkflows !== undefined) {
           await updateProject(projectName!, {
-            public: cfg.public,
+            public: cfg.publicWorkflows,
             description: cfg.description,
           });
         }

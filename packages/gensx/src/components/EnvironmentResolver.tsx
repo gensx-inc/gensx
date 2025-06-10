@@ -56,7 +56,7 @@ export const EnvironmentResolver: React.FC<Props> = ({
   const [newEnvName, setNewEnvName] = useState<string>("");
   const [projectExists, setProjectExists] = useState(false);
   const [projectConfig, setProjectConfig] = useState<{
-    public?: boolean;
+    publicWorkflows?: boolean;
   } | null>(null);
 
   //-----------------------------------------------------------
@@ -105,7 +105,7 @@ export const EnvironmentResolver: React.FC<Props> = ({
               projectName,
               envName,
               undefined,
-              projectConfig?.public,
+              projectConfig?.publicWorkflows,
             );
             await validateAndSelectEnvironment(projectName, envName);
           } else {
@@ -216,7 +216,7 @@ export const EnvironmentResolver: React.FC<Props> = ({
                       projectName,
                       trimmed,
                       undefined,
-                      projectConfig?.public,
+                      projectConfig?.publicWorkflows,
                     );
                     await validateAndSelectEnvironment(projectName, trimmed);
                   } else {

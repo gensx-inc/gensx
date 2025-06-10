@@ -238,7 +238,7 @@ suite("new command UI", () => {
     const { lastFrame } = render(
       React.createElement(NewProjectUI, {
         projectPath: projectDir,
-        options: { force: true, public: true },
+        options: { force: true, publicWorkflows: true },
       }),
     );
 
@@ -262,6 +262,6 @@ suite("new command UI", () => {
     await waitForText(lastFrame, /Successfully created GenSX project/);
 
     const yaml = await readFile(path.join(projectDir, "gensx.yaml"), "utf8");
-    expect(yaml).toMatch(/public: true/);
+    expect(yaml).toMatch(/publicWorkflows: true/);
   });
 });

@@ -9,7 +9,7 @@ const ProjectConfigSchema = z.object({
   projectName: z.string(),
   environmentName: z.string().optional(),
   description: z.string().optional(),
-  public: z.boolean().optional(),
+  publicWorkflows: z.boolean().optional(),
 });
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;

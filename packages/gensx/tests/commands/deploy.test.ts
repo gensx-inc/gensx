@@ -326,7 +326,7 @@ hasCompletedFirstTimeSetup = false
   it("should update project visibility when public flag is set", async () => {
     vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
       projectName: "config-project",
-      public: true,
+      publicWorkflows: true,
     });
 
     const { lastFrame } = render(

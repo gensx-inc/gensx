@@ -52,7 +52,7 @@ function useCreateEnvironment(
     let projectConfig: {
       projectName?: string;
       description?: string;
-      public?: boolean;
+      publicWorkflows?: boolean;
     } | null = null;
 
     async function initializeEnvironment() {
@@ -148,7 +148,7 @@ function useCreateEnvironment(
             projectName,
             environmentName,
             projectConfig?.description,
-            projectConfig?.public,
+            projectConfig?.publicWorkflows,
           );
 
           setProjectCreated(true);
