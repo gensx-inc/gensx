@@ -413,6 +413,7 @@ export function useWorkflowState<T = unknown>(
           // SSE event accumulation state
           let currentEventId = "";
           let currentEventData = "";
+          let buffer = ""; // Buffer for handling split lines across chunks
 
           while (mounted) {
             const { done, value } = await reader.read();
@@ -441,7 +442,12 @@ export function useWorkflowState<T = unknown>(
             }
 
             const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split("\n");
+            // Add chunk to buffer and split into lines
+            buffer += chunk;
+            const lines = buffer.split("\n");
+
+            // Keep the last line in buffer (might be incomplete)
+            buffer = lines.pop() || "";
 
             for (const line of lines) {
               if (line.startsWith("id: ")) {
@@ -482,6 +488,9 @@ export function useWorkflowState<T = unknown>(
                         "⚠️ State update event missing data property:",
                         stateEvent,
                       );
+                      // Reset for next event
+                      currentEventId = "";
+                      currentEventData = "";
                       continue;
                     }
 
@@ -540,17 +549,24 @@ export function useWorkflowState<T = unknown>(
                     // Don't reconnect if workflow has completed
                     return;
                   }
+
+                  // Reset for next event - moved here to only reset on successful parse
+                  currentEventId = "";
+                  currentEventData = "";
                 } catch (parseError) {
                   console.warn(
                     "Failed to parse event data:",
-                    currentEventData,
+                    currentEventData.length > 100
+                      ? currentEventData.substring(0, 100) + "..."
+                      : currentEventData,
                     parseError,
                   );
-                }
 
-                // Reset for next event
-                currentEventId = "";
-                currentEventData = "";
+                  // For JSON parse errors, always reset and move on
+                  // The buffering system should handle incomplete data at chunk level
+                  currentEventId = "";
+                  currentEventData = "";
+                }
               }
             }
           }
