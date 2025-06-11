@@ -199,4 +199,157 @@ suite("progress tracking", () => {
       workflowExecutionId: "test-execution-123",
     });
   });
+
+  test("can emit progress events with custom types", async () => {
+    const events: ProgressEvent[] = [];
+
+    const TestComponent = gensx.Component("TestComponent", async () => {
+      await Promise.resolve();
+      gensx.emitProgress({
+        type: "custom-step",
+        stepName: "data-processing",
+        progress: 75,
+        details: "Processing user data",
+      });
+      gensx.emitProgress({
+        type: "user-action",
+        action: "click",
+        element: "submit-button",
+        timestamp: Date.now(),
+      });
+      return "done";
+    });
+
+    const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+      return await TestComponent();
+    });
+
+    const progressListener: ProgressListener = (event) => {
+      events.push(event);
+    };
+
+    await TestWorkflow(undefined, {
+      progressListener,
+    });
+
+    expect(events).toHaveLength(8);
+    expect(events[3]).toEqual({
+      type: "custom-step",
+      stepName: "data-processing",
+      progress: 75,
+      details: "Processing user data",
+    });
+    expect(events[4]).toEqual({
+      type: "user-action",
+      action: "click",
+      element: "submit-button",
+      timestamp: expect.any(Number),
+    });
+  });
+
+  test("can emit progress events with complex nested JSON objects", async () => {
+    const events: ProgressEvent[] = [];
+
+    const TestComponent = gensx.Component("TestComponent", async () => {
+      await Promise.resolve();
+      gensx.emitProgress({
+        type: "data-analysis",
+        user: {
+          id: 123,
+          name: "John Doe",
+          preferences: {
+            theme: "dark",
+            notifications: true,
+            features: ["feature1", "feature2"],
+          },
+        },
+        metadata: {
+          timestamp: Date.now(),
+          version: "1.0.0",
+          config: {
+            debug: true,
+            maxRetries: 3,
+            supportedFormats: ["json", "xml"],
+          },
+        },
+      });
+      return "done";
+    });
+
+    const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+      return await TestComponent();
+    });
+
+    const progressListener: ProgressListener = (event) => {
+      events.push(event);
+    };
+
+    await TestWorkflow(undefined, {
+      progressListener,
+    });
+
+    expect(events).toHaveLength(7);
+    expect(events[3]).toEqual({
+      type: "data-analysis",
+      user: {
+        id: 123,
+        name: "John Doe",
+        preferences: {
+          theme: "dark",
+          notifications: true,
+          features: ["feature1", "feature2"],
+        },
+      },
+      metadata: {
+        timestamp: expect.any(Number),
+        version: "1.0.0",
+        config: {
+          debug: true,
+          maxRetries: 3,
+          supportedFormats: ["json", "xml"],
+        },
+      },
+    });
+  });
+
+  test("defaults to 'progress' type when no type is provided", async () => {
+    const events: ProgressEvent[] = [];
+
+    const TestComponent = gensx.Component("TestComponent", async () => {
+      await Promise.resolve();
+      // String message - should default to type "progress"
+      gensx.emitProgress("Simple message");
+      // Object without type - should default to type "progress"
+      gensx.emitProgress({
+        data: "Complex data",
+        status: "active",
+      });
+      return "done";
+    });
+
+    const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+      return await TestComponent();
+    });
+
+    const progressListener: ProgressListener = (event) => {
+      events.push(event);
+    };
+
+    await TestWorkflow(undefined, {
+      progressListener,
+    });
+
+    expect(events).toHaveLength(8);
+    // String message should default to type "progress"
+    expect(events[3]).toEqual({
+      type: "progress",
+      data: "Simple message",
+    });
+    // Object without type should default to type "progress"
+    expect(events[4]).toEqual({
+      type: "progress",
+      data: "Complex data",
+      status: "active",
+    });
+  });
 });
