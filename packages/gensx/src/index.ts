@@ -87,7 +87,7 @@ export async function runCLI() {
     .option("-o, --out-dir <dir>", "Output directory")
     .option("-t, --tsconfig <file>", "TypeScript config file")
     .option("-w, --watch", "Watch for changes", false)
-    .option("-q, --quiet", "Suppress output", false)
+    .option("-v, --verbose", "Verbose output", false)
     .action((file: string, options: BuildOptions) => {
       return new Promise<void>((resolve, reject) => {
         const { waitUntilExit } = render(
