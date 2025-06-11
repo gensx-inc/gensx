@@ -129,6 +129,7 @@ export async function runCLI() {
     .option("-p, --project <name>", "Project name to deploy to")
     .option("--env <name>", "Environment name to deploy to")
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
+    .option("-v, --verbose", "Verbose output", false)
     .action((file: string, options: DeployOptions) => {
       return new Promise<void>((resolve, reject) => {
         const { waitUntilExit } = render(
