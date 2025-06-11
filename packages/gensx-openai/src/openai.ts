@@ -49,16 +49,14 @@ function aggregateChatCompletionChunks(chunks: unknown[]): unknown {
     for (const choice of typedChunk.choices) {
       const index = parseInt(String(choice.index), 10);
 
-      if (!aggregated.choices[index]) {
-        aggregated.choices[index] = {
-          index,
-          message: {
-            role: "assistant",
-            content: "",
-          },
-          finish_reason: null,
-        };
-      }
+      aggregated.choices[index] ??= {
+        index,
+        message: {
+          role: "assistant",
+          content: "",
+        },
+        finish_reason: null,
+      };
 
       // Accumulate content from delta
       if (choice.delta?.content) {
@@ -82,9 +80,7 @@ function aggregateChatCompletionChunks(chunks: unknown[]): unknown {
 
       // Handle tool calls if present
       if (choice.delta?.tool_calls) {
-        if (!aggregated.choices[index].message.tool_calls) {
-          aggregated.choices[index].message.tool_calls = [];
-        }
+        aggregated.choices[index].message.tool_calls ??= [];
 
         for (const toolCallDelta of choice.delta.tool_calls) {
           const toolCallIndex = toolCallDelta.index;
