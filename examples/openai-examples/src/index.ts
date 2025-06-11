@@ -42,7 +42,7 @@ async function main() {
         prompt,
       });
       for await (const chunk of streamResult) {
-        process.stdout.write(chunk.choices[0].delta.content ?? "");
+        process.stdout.write(chunk);
       }
       process.stdout.write("\n");
       break;
@@ -62,7 +62,7 @@ async function main() {
         prompt,
       });
       for await (const chunk of streamToolsResult) {
-        process.stdout.write(chunk.choices[0].delta.content ?? "");
+        process.stdout.write(chunk);
       }
       process.stdout.write("\n");
       break;

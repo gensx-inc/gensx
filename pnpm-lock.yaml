@@ -414,11 +414,11 @@ importers:
   examples/openai-examples:
     dependencies:
       '@gensx/core':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/openai':
-        specifier: ^0.2.0
-        version: 0.2.0(openai@4.104.0(ws@8.18.2)(zod@3.25.56))
+        specifier: workspace:*
+        version: link:../../packages/gensx-openai
       openai:
         specifier: ^4.104.0
         version: 4.104.0(ws@8.18.2)(zod@3.25.56)

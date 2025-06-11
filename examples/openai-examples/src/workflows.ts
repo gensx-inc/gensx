@@ -54,7 +54,13 @@ export const StreamingCompletion = gensx.Workflow(
       ],
       stream: true,
     });
-    return result;
+
+    const generator = async function* () {
+      for await (const chunk of result) {
+        yield chunk.choices[0].delta.content ?? "";
+      }
+    };
+    return generator();
   },
 );
 
@@ -131,7 +137,12 @@ export const StreamingTools = gensx.Workflow(
       tools,
       stream: true,
     });
-    return result;
+    const generator = async function* () {
+      for await (const chunk of result) {
+        yield chunk.choices[0].delta.content ?? "";
+      }
+    };
+    return generator();
   },
 );
 
