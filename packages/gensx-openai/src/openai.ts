@@ -189,7 +189,7 @@ export const wrapOpenAI = (
         stream,
       } = args as Record<string, unknown>;
 
-      const result: Partial<ComponentOpts> = {
+      return {
         metadata: {
           llm: {
             provider: inferProvider(openAiInstance.baseURL),
@@ -203,14 +203,6 @@ export const wrapOpenAI = (
           },
         },
       };
-
-      if (stream) {
-        result.aggregator = aggregateChatCompletionChunks;
-        // Try both approaches - streaming key and direct detection
-        result.__streamingResultKey = "stream";
-      }
-
-      return result;
     },
     replacementImplementations: {
       "OpenAI.beta.chat.completions.runTools": (_target, value) => {
