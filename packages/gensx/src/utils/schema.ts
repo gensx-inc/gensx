@@ -1,3 +1,5 @@
+// eslint-disable @typescript-eslint/no-unnecessary-condition
+
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -22,6 +24,7 @@ interface ExtractionContext {
   exportedNames: Set<string>;
   workflowIdentifiers: Set<string>;
   reExportedWorkflows: Map<string, WorkflowInfo>;
+  visitedFiles: Set<string>;
 }
 
 /**
@@ -109,12 +112,13 @@ function extractWorkflowInfo(
     exportedNames: new Set<string>(),
     workflowIdentifiers: new Set<string>(),
     reExportedWorkflows: new Map<string, WorkflowInfo>(),
+    visitedFiles: new Set<string>(),
   };
 
-  // Collect all necessary metadata in one pass
+  // First pass: collect all exports and re-exports
   collectMetadata(sourceFile, typeChecker, context);
 
-  // Find workflow definitions
+  // Second pass: find workflow definitions
   const workflowInfos = findWorkflowDefinitions(
     sourceFile,
     typeChecker,
@@ -139,7 +143,29 @@ function collectMetadata(
   typeChecker: ts.TypeChecker,
   context: ExtractionContext,
 ): void {
-  function visitNode(node: ts.Node) {
+  // First collect all exports
+  function collectExports(node: ts.Node) {
+    if (ts.isExportDeclaration(node)) {
+      if (node.exportClause && ts.isNamedExports(node.exportClause)) {
+        for (const element of node.exportClause.elements) {
+          context.exportedNames.add(element.name.text);
+        }
+      }
+    } else if (ts.isVariableStatement(node)) {
+      const hasExportModifier = node.modifiers?.some(
+        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+      );
+      if (hasExportModifier) {
+        for (const declaration of node.declarationList.declarations) {
+          context.exportedNames.add(declaration.name.getText(sourceFile));
+        }
+      }
+    }
+    ts.forEachChild(node, collectExports);
+  }
+
+  // Then collect imports and re-exports
+  function collectImportsAndReExports(node: ts.Node) {
     if (ts.isImportDeclaration(node)) {
       const moduleSpecifier = node.moduleSpecifier
         .getText(sourceFile)
@@ -173,6 +199,7 @@ function collectMetadata(
             const importedWorkflows = findWorkflowsInFile(
               importedSourceFile,
               typeChecker,
+              context.visitedFiles,
             );
 
             for (const element of namedBindings.elements) {
@@ -184,35 +211,62 @@ function collectMetadata(
                 (w) => w.componentName === importedName,
               );
               if (workflow) {
-                context.reExportedWorkflows.set(localName, workflow);
+                // Create a new workflow info with the local name
+                const reExportedWorkflow = {
+                  ...workflow,
+                  componentName: localName,
+                };
+                context.reExportedWorkflows.set(localName, reExportedWorkflow);
               }
             }
           }
         }
       }
     } else if (ts.isExportDeclaration(node)) {
-      // Handle export statements
-      if (node.exportClause && ts.isNamedExports(node.exportClause)) {
-        for (const element of node.exportClause.elements) {
-          context.exportedNames.add(element.name.text);
-        }
-      }
-    } else if (ts.isVariableStatement(node)) {
-      // Handle export const declarations
-      const hasExportModifier = node.modifiers?.some(
-        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
-      );
-      if (hasExportModifier) {
-        for (const declaration of node.declarationList.declarations) {
-          context.exportedNames.add(declaration.name.getText(sourceFile));
+      // Handle export { ... } from "file.ts" statements
+      if (
+        node.exportClause &&
+        ts.isNamedExports(node.exportClause) &&
+        node.moduleSpecifier
+      ) {
+        const symbol = typeChecker.getSymbolAtLocation(node.moduleSpecifier);
+        const importedSourceFile = symbol?.valueDeclaration?.getSourceFile();
+
+        if (importedSourceFile && importedSourceFile !== sourceFile) {
+          const importedWorkflows = findWorkflowsInFile(
+            importedSourceFile,
+            typeChecker,
+            context.visitedFiles,
+          );
+
+          for (const element of node.exportClause.elements) {
+            const importedName =
+              element.propertyName?.text ?? element.name.text;
+            const localName = element.name.text;
+
+            const workflow = importedWorkflows.find(
+              (w) => w.componentName === importedName,
+            );
+            if (workflow) {
+              // Create a new workflow info with the local name
+              const reExportedWorkflow = {
+                ...workflow,
+                componentName: localName,
+              };
+              context.reExportedWorkflows.set(localName, reExportedWorkflow);
+            }
+          }
         }
       }
     }
 
-    ts.forEachChild(node, visitNode);
+    ts.forEachChild(node, collectImportsAndReExports);
   }
 
-  visitNode(sourceFile);
+  // First collect all exports
+  collectExports(sourceFile);
+  // Then collect imports and re-exports
+  collectImportsAndReExports(sourceFile);
 }
 
 /**
@@ -257,7 +311,12 @@ function findWorkflowDefinitions(
             ts.isFunctionExpression(workflowFunction))
         ) {
           const variableName = node.name.getText(sourceFile);
-          if (context.exportedNames.has(variableName)) {
+          // Check if this is exported (either directly or through re-export)
+          const isExported =
+            context.exportedNames.has(variableName) ||
+            context.reExportedWorkflows.has(variableName);
+
+          if (isExported) {
             const { inputType, outputType } = extractWorkflowTypes(
               workflowFunction,
               typeChecker,
@@ -321,7 +380,16 @@ function extractWorkflowTypes(
 function findWorkflowsInFile(
   sourceFile: ts.SourceFile,
   typeChecker: ts.TypeChecker,
+  visitedFiles: Set<string> = new Set<string>(),
 ): WorkflowInfo[] {
+  // Check if we've already visited this file
+  const filePath = sourceFile.fileName;
+
+  if (visitedFiles.has(filePath)) {
+    return [];
+  }
+  visitedFiles.add(filePath);
+
   const workflows: WorkflowInfo[] = [];
   const workflowIdentifiers = new Set<string>();
 
@@ -428,7 +496,42 @@ function createSchemaFromType(
   typeChecker: ts.TypeChecker,
   sourceFile: ts.SourceFile,
   isOptionalProp = false,
+  depth = 0,
+  visitedTypes = new Set<number>(),
+  typeDefinitions: Record<string, Definition> = {},
+  propertyName?: string,
 ): Definition {
+  // Get the type name if it's a named type
+  // eslint-disable-next-line
+  const typeName = tsType.symbol?.escapedName?.toString();
+  // TypeScript's internal type ID is a number
+  const typeId = (tsType as unknown as { id: number }).id;
+
+  // If we've seen this type before and it's a named type, use $ref
+  if (visitedTypes.has(typeId) && typeName) {
+    // Create the type definition if it doesn't exist
+    typeDefinitions[typeName] ??= createTypeDefinition(
+      tsType,
+      typeChecker,
+      sourceFile,
+      depth,
+      visitedTypes,
+      typeDefinitions,
+    );
+    return { $ref: `#/definitions/${typeName}` };
+  }
+
+  visitedTypes.add(typeId);
+
+  // Prevent excessive depth
+  if (depth > 10) {
+    return {
+      type: "object" as const,
+      description: "Complex type exceeded maximum depth",
+      additionalProperties: true,
+    };
+  }
+
   // Handle streaming types first
   const streamSchema = detectAndHandleStreamingType(
     tsType,
@@ -441,32 +544,35 @@ function createSchemaFromType(
 
   // Handle basic primitive types
   if (tsType.isStringLiteral()) {
-    return { type: "string", enum: [tsType.value] };
+    return { type: "string" as const, enum: [tsType.value] };
   }
   if (tsType.isNumberLiteral()) {
-    return { type: "number", enum: [tsType.value] };
+    return { type: "number" as const, enum: [tsType.value] };
   }
   if (tsType.flags & ts.TypeFlags.String) {
-    return { type: "string" };
+    return { type: "string" as const };
   }
   if (tsType.flags & ts.TypeFlags.Number) {
-    return { type: "number" };
+    return { type: "number" as const };
   }
   if (tsType.flags & ts.TypeFlags.Boolean) {
-    return { type: "boolean" };
+    return { type: "boolean" as const };
   }
   if (tsType.flags & ts.TypeFlags.Null) {
-    return { type: "null" };
+    return { type: "null" as const };
   }
   if (tsType.flags & ts.TypeFlags.Any) {
     // Special case: if the type is 'any' and has no properties, treat as no input (empty schema)
     if (tsType.getProperties().length === 0) {
-      return { type: "object", properties: {}, required: [] };
+      console.warn(
+        `Warning: Found 'any' or 'unknown' type '${propertyName ?? "unknown"}'.`,
+      );
+      return {};
     }
-    return { type: "object", additionalProperties: true };
+    return { type: "object" as const, additionalProperties: true };
   }
   if (tsType.flags & ts.TypeFlags.Undefined) {
-    return isOptionalProp ? {} : { type: "null" };
+    return isOptionalProp ? {} : { type: "null" as const };
   }
 
   // Handle arrays
@@ -475,8 +581,17 @@ function createSchemaFromType(
       (tsType as ts.TypeReference).typeArguments?.[0] ??
       typeChecker.getAnyType();
     return {
-      type: "array",
-      items: createSchemaFromType(elementType, typeChecker, sourceFile),
+      type: "array" as const,
+      items: createSchemaFromType(
+        elementType,
+        typeChecker,
+        sourceFile,
+        false,
+        depth + 1,
+        visitedTypes,
+        typeDefinitions,
+        propertyName,
+      ),
     };
   }
 
@@ -489,7 +604,7 @@ function createSchemaFromType(
 
     // Special case: if this is a union of only string literals, just return string type
     if (nonUndefinedTypes.every((t) => t.isStringLiteral())) {
-      return { type: "string" };
+      return { type: "string" as const };
     }
 
     // If this is an optional property and the only difference is undefined, just use the non-undefined type
@@ -498,6 +613,11 @@ function createSchemaFromType(
         nonUndefinedTypes[0],
         typeChecker,
         sourceFile,
+        false,
+        depth + 1,
+        visitedTypes,
+        typeDefinitions,
+        propertyName,
       );
     }
 
@@ -507,8 +627,17 @@ function createSchemaFromType(
       if (nonNullTypes.length === 1) {
         return {
           oneOf: [
-            createSchemaFromType(nonNullTypes[0], typeChecker, sourceFile),
-            { type: "null" },
+            createSchemaFromType(
+              nonNullTypes[0],
+              typeChecker,
+              sourceFile,
+              false,
+              depth + 1,
+              visitedTypes,
+              typeDefinitions,
+              propertyName,
+            ),
+            { type: "null" as const },
           ],
         };
       }
@@ -516,7 +645,16 @@ function createSchemaFromType(
 
     return {
       oneOf: nonUndefinedTypes.map((t) =>
-        createSchemaFromType(t, typeChecker, sourceFile),
+        createSchemaFromType(
+          t,
+          typeChecker,
+          sourceFile,
+          false,
+          depth + 1,
+          visitedTypes,
+          typeDefinitions,
+          propertyName,
+        ),
       ),
     };
   }
@@ -525,7 +663,16 @@ function createSchemaFromType(
   if (tsType.isIntersection()) {
     return {
       allOf: tsType.types.map((t) =>
-        createSchemaFromType(t, typeChecker, sourceFile),
+        createSchemaFromType(
+          t,
+          typeChecker,
+          sourceFile,
+          false,
+          depth + 1,
+          visitedTypes,
+          typeDefinitions,
+          propertyName,
+        ),
       ),
     };
   }
@@ -545,6 +692,10 @@ function createSchemaFromType(
           typeChecker,
           sourceFile,
           isOptional,
+          depth + 1,
+          visitedTypes,
+          typeDefinitions,
+          prop.name,
         );
         if (!isOptional) {
           required.push(prop.name);
@@ -552,19 +703,53 @@ function createSchemaFromType(
       }
     }
 
-    return {
-      type: "object",
+    const schema: Definition = {
+      type: "object" as const,
       properties,
       required: required.length > 0 ? required.sort() : undefined,
     };
+
+    // If this is a named type, store its definition
+    if (typeName) {
+      typeDefinitions[typeName] = schema;
+    }
+
+    return schema;
   }
 
   // Fallback for unknown types
   return {
-    type: "object",
+    type: "object" as const,
     description: `Unrecognized or complex type: ${typeChecker.typeToString(tsType)}`,
     additionalProperties: true,
   };
+}
+
+/**
+ * Creates a type definition for a named type
+ */
+function createTypeDefinition(
+  tsType: ts.Type,
+  typeChecker: ts.TypeChecker,
+  sourceFile: ts.SourceFile,
+  depth: number,
+  visitedTypes: Set<number>,
+  typeDefinitions: Record<string, Definition>,
+): Definition {
+  // Create a temporary set without the current type to avoid immediate recursion
+  const tempVisitedTypes = new Set(visitedTypes);
+  tempVisitedTypes.delete((tsType as unknown as { id: number }).id);
+
+  // Create the type definition
+  return createSchemaFromType(
+    tsType,
+    typeChecker,
+    sourceFile,
+    false,
+    depth,
+    tempVisitedTypes,
+    typeDefinitions,
+  );
 }
 
 /**
