@@ -88,6 +88,7 @@ export async function runCLI() {
     .option("-t, --tsconfig <file>", "TypeScript config file")
     .option("-w, --watch", "Watch for changes", false)
     .option("-v, --verbose", "Verbose output", false)
+    .option("--schema-only", "Only generate the schema", false)
     .action((file: string, options: BuildOptions) => {
       return new Promise<void>((resolve, reject) => {
         const { waitUntilExit } = render(

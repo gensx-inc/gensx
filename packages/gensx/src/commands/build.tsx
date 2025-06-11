@@ -14,6 +14,7 @@ export interface BuildOptions {
   tsconfig?: string;
   watch?: boolean;
   verbose?: boolean;
+  schemaOnly?: boolean;
 }
 
 interface BuildResult {
@@ -52,19 +53,23 @@ function useBuild(file: string, options: BuildOptions): UseBuildResult {
         }
 
         if (!mounted) return;
-        setPhase("bundling");
 
         const outDir = options.outDir ?? resolve(process.cwd(), ".gensx");
         const schemaFilePath = resolve(outDir, "schema.json");
+        let bundlePath: string | undefined;
 
-        const bundlePath = await bundleWorkflow(
-          absolutePath,
-          outDir,
-          (data) => {
-            setBuildProgress((prev) => [...prev, data]);
-          },
-          options.watch ?? false,
-        );
+        if (!options.schemaOnly) {
+          setPhase("bundling");
+
+          bundlePath = await bundleWorkflow(
+            absolutePath,
+            outDir,
+            (data) => {
+              setBuildProgress((prev) => [...prev, data]);
+            },
+            options.watch ?? false,
+          );
+        }
 
         setPhase("generatingSchema");
 
@@ -73,7 +78,7 @@ function useBuild(file: string, options: BuildOptions): UseBuildResult {
         writeFileSync(schemaFilePath, JSON.stringify(workflowSchemas, null, 2));
 
         setResult({
-          bundleFile: bundlePath,
+          bundleFile: bundlePath ?? "",
           schemaFile: schemaFilePath,
           schemas: workflowSchemas,
         });
