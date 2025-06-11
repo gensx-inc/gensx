@@ -501,6 +501,40 @@ function createSchemaFromType(
   typeDefinitions: Record<string, Definition> = {},
   propertyName?: string,
 ): Definition {
+  // Handle empty object type
+  if (
+    tsType.flags & ts.TypeFlags.Object &&
+    Object.keys(tsType.getProperties()).length === 0
+  ) {
+    return {
+      type: "object",
+      properties: {},
+      required: [],
+    };
+  }
+
+  // Handle array types
+  if (tsType.flags & ts.TypeFlags.Object) {
+    const symbol = tsType.getSymbol();
+    if (symbol?.name === "Array" || symbol?.name === "ReadonlyArray") {
+      const typeArgs = (tsType as ts.TypeReference).typeArguments;
+      if (typeArgs && typeArgs.length > 0) {
+        return {
+          type: "array",
+          items: createSchemaFromType(
+            typeArgs[0],
+            typeChecker,
+            sourceFile,
+            false,
+            depth + 1,
+            visitedTypes,
+            typeDefinitions,
+          ),
+        };
+      }
+    }
+  }
+
   // Get the type name if it's a named type
   // eslint-disable-next-line
   const typeName = tsType.symbol?.escapedName?.toString();
@@ -573,26 +607,6 @@ function createSchemaFromType(
   }
   if (tsType.flags & ts.TypeFlags.Undefined) {
     return isOptionalProp ? {} : { type: "null" as const };
-  }
-
-  // Handle arrays
-  if (typeChecker.isArrayType(tsType)) {
-    const elementType =
-      (tsType as ts.TypeReference).typeArguments?.[0] ??
-      typeChecker.getAnyType();
-    return {
-      type: "array" as const,
-      items: createSchemaFromType(
-        elementType,
-        typeChecker,
-        sourceFile,
-        false,
-        depth + 1,
-        visitedTypes,
-        typeDefinitions,
-        propertyName,
-      ),
-    };
   }
 
   // Handle unions

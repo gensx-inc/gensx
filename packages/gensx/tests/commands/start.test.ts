@@ -132,7 +132,7 @@ export const testWorkflow = () => {
 
       try {
         // Wait for the server to start and schema to be generated
-        await waitForText(lastFrame, "GenSX Dev Server running at", 5000);
+        await waitForText(lastFrame, "GenSX Dev Server running at", 3000);
 
         // Add a small delay to ensure schema file is written
         await new Promise((resolve) => setTimeout(resolve, 100));

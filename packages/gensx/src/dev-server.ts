@@ -670,9 +670,6 @@ export class GensxServer {
 
                   // Update execution with result
                   execution.executionStatus = "completed";
-
-                  // Update execution with result
-                  execution.executionStatus = "completed";
                   execution.output = result;
                   execution.finishedAt = new Date().toISOString();
                   this.executionsMap.set(executionId, execution);

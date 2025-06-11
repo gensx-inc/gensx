@@ -89,11 +89,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       );
       tsconfig.options.incremental = false;
       tsconfig.options.noEmit = false;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      tsconfig.raw.compilerOptions.incremental = false;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      tsconfig.raw.compilerOptions.noEmit = false;
-      tsconfig.options.outDir = ".gensx/dist";
+      tsconfig.options.outDir ??= ".gensx/dist";
       tsconfig.options.target = ts.ScriptTarget.ES2015;
       tsconfig.options.module = ts.ModuleKind.NodeNext;
       tsconfig.options.moduleResolution = ts.ModuleResolutionKind.NodeNext;
