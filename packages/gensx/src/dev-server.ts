@@ -614,6 +614,63 @@ export class GensxServer {
                     progressListener,
                   });
 
+                  if (
+                    result &&
+                    typeof result === "object" &&
+                    Symbol.asyncIterator in result
+                  ) {
+                    for await (const chunk of result) {
+                      const outputEvent = {
+                        id: Date.now().toString(),
+                        timestamp: new Date().toISOString(),
+                        type: "output",
+                        content:
+                          typeof chunk === "string"
+                            ? chunk
+                            : JSON.stringify(chunk),
+                      };
+                      if (acceptHeader === "text/event-stream") {
+                        controller.enqueue(
+                          new TextEncoder().encode(
+                            `id: ${outputEvent.id}\ndata: ${JSON.stringify(outputEvent)}\n\n`,
+                          ),
+                        );
+                      } else {
+                        controller.enqueue(
+                          new TextEncoder().encode(
+                            JSON.stringify(outputEvent) + "\n",
+                          ),
+                        );
+                      }
+                    }
+                  } else {
+                    const outputEvent = {
+                      id: Date.now().toString(),
+                      timestamp: new Date().toISOString(),
+                      type: "output",
+                      content:
+                        typeof result === "string"
+                          ? result
+                          : JSON.stringify(result),
+                    };
+                    if (acceptHeader === "text/event-stream") {
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          `id: ${outputEvent.id}\ndata: ${JSON.stringify(outputEvent)}\n\n`,
+                        ),
+                      );
+                    } else {
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          JSON.stringify(outputEvent) + "\n",
+                        ),
+                      );
+                    }
+                  }
+
+                  // Update execution with result
+                  execution.executionStatus = "completed";
+
                   // Update execution with result
                   execution.executionStatus = "completed";
                   execution.output = result;
