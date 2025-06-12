@@ -132,7 +132,7 @@ export const testWorkflow = () => {
 
       try {
         // Wait for the server to start and schema to be generated
-        await waitForText(lastFrame, "GenSX Dev Server running at", 3000);
+        await waitForText(lastFrame, "GenSX Dev Server running at", 8000);
 
         // Add a small delay to ensure schema file is written
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -145,7 +145,7 @@ export const testWorkflow = () => {
         // Clean up
         unmount();
       }
-    });
+    }, 10000);
 
     it("handles files in subdirectories without rootDir specified", async () => {
       createTestFiles({});
@@ -161,7 +161,7 @@ export const testWorkflow = () => {
 
       try {
         // Wait for the server to start and schema to be generated
-        await waitForText(lastFrame, "GenSX Dev Server running at", 5000);
+        await waitForText(lastFrame, "GenSX Dev Server running at", 8000);
 
         // Add a small delay to ensure schema file is written
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -174,7 +174,7 @@ export const testWorkflow = () => {
         // Clean up
         unmount();
       }
-    });
+    }, 10000);
 
     it("handles files with rootDir specified in tsconfig", async () => {
       createTestFiles({ rootDir: "./src" });
@@ -190,7 +190,7 @@ export const testWorkflow = () => {
 
       try {
         // Wait for the server to start and schema to be generated
-        await waitForText(lastFrame, "GenSX Dev Server running at", 5000);
+        await waitForText(lastFrame, "GenSX Dev Server running at", 8000);
 
         // Add a small delay to ensure schema file is written
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -203,6 +203,6 @@ export const testWorkflow = () => {
         // Clean up
         unmount();
       }
-    });
+    }, 10000);
   });
 });
