@@ -494,7 +494,7 @@ suite("workflow state", () => {
 
     const TestComponent = gensx.Component("TestComponent", async () => {
       await Promise.resolve();
-      gensx.publishState("test-state", {
+      gensx.publishObject("test-state", {
         bag: "of",
         things: ["a", "b", "c"],
       });
@@ -515,7 +515,7 @@ suite("workflow state", () => {
 
     expect(events).toHaveLength(7);
     expect(events[3]).toEqual({
-      type: "state",
+      type: "object",
       label: "test-state",
       data: {
         bag: "of",
@@ -524,7 +524,7 @@ suite("workflow state", () => {
     });
   });
 
-  suite("useEventStream", () => {
+  suite("createEventStream", () => {
     test("can use event stream in components", async () => {
       const events: WorkflowMessage[] = [];
 
@@ -562,11 +562,11 @@ suite("workflow state", () => {
     });
   });
 
-  suite("useWorkflowState", () => {
-    test("can use workflow state in components", async () => {
+  suite("createObjectStream", () => {
+    test("can use object stream in components", async () => {
       const events: WorkflowMessage[] = [];
 
-      const testWorkflowState = gensx.createWorkflowState("test-state");
+      const testWorkflowState = gensx.createObjectStream("test-state");
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
         testWorkflowState({
@@ -589,7 +589,7 @@ suite("workflow state", () => {
 
       expect(events).toHaveLength(7);
       expect(events[3]).toEqual({
-        type: "state",
+        type: "object",
         label: "test-state",
         data: {
           bag: "of",

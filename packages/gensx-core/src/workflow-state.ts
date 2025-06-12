@@ -25,7 +25,7 @@ export type WorkflowMessage =
       componentId: string;
     }
   | { type: "data"; data: JsonValue }
-  | { type: "state" | "event"; data: Record<string, JsonValue>; label: string }
+  | { type: "object" | "event"; data: Record<string, JsonValue>; label: string }
   | { type: "error"; error: string }
   | { type: "end" };
 
@@ -67,12 +67,12 @@ export function publishEvent<
  * @param label - The label of the state.
  * @param data - The data to publish.
  */
-export function publishState<
+export function publishObject<
   T extends Record<string, JsonValue> = Record<string, JsonValue>,
 >(label: string, data: T) {
   const context = getCurrentContext();
   context.getWorkflowContext().sendWorkflowMessage({
-    type: "state",
+    type: "object",
     label,
     data,
   });
@@ -98,10 +98,10 @@ export function createEventStream<
  * @param label - The label of the state.
  * @returns A function that publishes a state to the workflow message stream.
  */
-export function createWorkflowState<
+export function createObjectStream<
   T extends Record<string, JsonValue> = Record<string, JsonValue>,
 >(label: string) {
   return (data: T) => {
-    publishState(label, data);
+    publishObject(label, data);
   };
 }

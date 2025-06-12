@@ -4,9 +4,9 @@ export { withContext, getCurrentContext } from "./context.js";
 export {
   publishData,
   publishEvent,
-  publishState,
+  publishObject,
   createEventStream,
-  createWorkflowState,
+  createObjectStream,
 } from "./workflow-state.js";
 export * from "./wrap.js";
 
