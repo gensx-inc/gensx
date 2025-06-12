@@ -47,8 +47,8 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "dependencies": {
-    "ini": "^5.0.0",
     "@common.js/serialize-error": "^11.0.3",
+    "ini": "^5.0.0",
     "zod": "catalog:"
   },
   "devDependencies": {

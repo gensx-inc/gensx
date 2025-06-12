@@ -1,11 +1,10 @@
 import { ExecutionNode } from "./checkpoint.js";
 import {
   createWorkflowContext,
-  JsonValue,
-  ProgressListener,
   WORKFLOW_CONTEXT_SYMBOL,
   WorkflowExecutionContext,
 } from "./workflow-context.js";
+import { WorkflowMessageListener } from "./workflow-state.js";
 
 type WorkflowContext = Record<symbol, unknown>;
 
@@ -24,10 +23,10 @@ export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
-    progressListener?: ProgressListener,
+    messageListener?: WorkflowMessageListener,
   ) {
     this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext(
-      progressListener ?? this.parent?.getWorkflowContext().progressListener,
+      messageListener ?? this.parent?.getWorkflowContext().sendWorkflowMessage,
     );
   }
 
@@ -193,14 +192,6 @@ export function getCurrentContext(): ExecutionContext {
 
 export function getContextSnapshot(): RunInContext {
   return contextManager.getContextSnapshot();
-}
-
-export function emitProgress(message: JsonValue) {
-  const context = getCurrentContext();
-  context.getWorkflowContext().progressListener({
-    type: "progress",
-    data: message,
-  });
 }
 
 export function getCurrentNodeCheckpointManager() {
