@@ -2,11 +2,11 @@ export * from "./component.js";
 export * from "./types.js";
 export { withContext, getCurrentContext } from "./context.js";
 export {
-  sendMessage,
-  sendEvent,
-  sendState,
-  useEventStream,
-  useWorkflowState,
+  publishData,
+  publishEvent,
+  publishState,
+  createEventStream,
+  createWorkflowState,
 } from "./workflow-state.js";
 export * from "./wrap.js";
 

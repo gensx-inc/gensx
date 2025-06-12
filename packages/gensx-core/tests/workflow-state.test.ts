@@ -13,7 +13,7 @@ suite("workflow state", () => {
 
     const TestComponent = gensx.Component("TestComponent", async () => {
       await Promise.resolve();
-      gensx.sendMessage("Test progress message");
+      gensx.publishData("Test progress message");
       return "done";
     });
 
@@ -45,7 +45,7 @@ suite("workflow state", () => {
       componentId: expect.any(String),
     });
     expect(events[3]).toEqual({
-      type: "message",
+      type: "data",
       data: "Test progress message",
     });
     expect(events[4]).toEqual({
@@ -68,7 +68,7 @@ suite("workflow state", () => {
 
     const TestComponent = gensx.Component("TestComponent", async () => {
       await Promise.resolve();
-      gensx.sendMessage({
+      gensx.publishData({
         doing: "Custom progress",
         status: "in-progress",
       });
@@ -89,7 +89,7 @@ suite("workflow state", () => {
 
     expect(events).toHaveLength(7);
     expect(events[3]).toEqual({
-      type: "message",
+      type: "data",
       data: {
         doing: "Custom progress",
         status: "in-progress",
@@ -102,7 +102,7 @@ suite("workflow state", () => {
 
     const TestComponent = gensx.Component("TestComponent", async () => {
       await Promise.resolve();
-      gensx.sendMessage({
+      gensx.publishData({
         task: "Processing data",
         details: {
           stage: "validation",
@@ -135,7 +135,7 @@ suite("workflow state", () => {
 
     expect(events).toHaveLength(7);
     expect(events[3]).toEqual({
-      type: "message",
+      type: "data",
       data: {
         task: "Processing data",
         details: {
@@ -162,19 +162,19 @@ suite("workflow state", () => {
       await Promise.resolve();
 
       // Test string
-      gensx.sendMessage("Simple string message");
+      gensx.publishData("Simple string message");
 
       // Test number
-      gensx.sendMessage(42);
+      gensx.publishData(42);
 
       // Test boolean
-      gensx.sendMessage(true);
+      gensx.publishData(true);
 
       // Test null
-      gensx.sendMessage(null);
+      gensx.publishData(null);
 
       // Test array
-      gensx.sendMessage([1, "two", { three: 3 }, [4, 5]]);
+      gensx.publishData([1, "two", { three: 3 }, [4, 5]]);
 
       return "done";
     });
@@ -195,27 +195,27 @@ suite("workflow state", () => {
 
     // Check each progress event
     expect(events[3]).toEqual({
-      type: "message",
+      type: "data",
       data: "Simple string message",
     });
 
     expect(events[4]).toEqual({
-      type: "message",
+      type: "data",
       data: 42,
     });
 
     expect(events[5]).toEqual({
-      type: "message",
+      type: "data",
       data: true,
     });
 
     expect(events[6]).toEqual({
-      type: "message",
+      type: "data",
       data: null,
     });
 
     expect(events[7]).toEqual({
-      type: "message",
+      type: "data",
       data: [1, "two", { three: 3 }, [4, 5]],
     });
   });
@@ -225,7 +225,7 @@ suite("workflow state", () => {
 
     const TestComponent = gensx.Component("TestComponent", async () => {
       await Promise.resolve();
-      gensx.sendMessage({
+      gensx.publishData({
         level1: {
           level2: {
             level3: {
@@ -263,7 +263,7 @@ suite("workflow state", () => {
 
     expect(events).toHaveLength(7);
     expect(events[3]).toEqual({
-      type: "message",
+      type: "data",
       data: {
         level1: {
           level2: {
@@ -312,7 +312,7 @@ suite("workflow state", () => {
 
     const TestComponent = gensx.Component("TestComponent", async () => {
       await Promise.resolve();
-      gensx.sendMessage(complexData);
+      gensx.publishData(complexData);
       return "done";
     });
 
@@ -326,7 +326,7 @@ suite("workflow state", () => {
       // Simulate what happens in the Redis backend:
       // 1. Serialize the data to a JSON string
       // 2. Deserialize it back to verify integrity
-      if (event.type === "message") {
+      if (event.type === "data") {
         const serialized = JSON.stringify(event.data);
         const deserialized = JSON.parse(serialized);
 
@@ -341,7 +341,7 @@ suite("workflow state", () => {
 
     expect(events).toHaveLength(7);
     expect(events[3]).toEqual({
-      type: "message",
+      type: "data",
       data: complexData,
     });
   });
@@ -387,13 +387,13 @@ suite("workflow state", () => {
       "StreamingComponent",
       async function* () {
         await Promise.resolve();
-        gensx.sendMessage("Starting stream");
+        gensx.publishData("Starting stream");
         yield "chunk1";
         await Promise.resolve();
-        gensx.sendMessage("Middle of stream");
+        gensx.publishData("Middle of stream");
         yield "chunk2";
         await Promise.resolve();
-        gensx.sendMessage("End of stream");
+        gensx.publishData("End of stream");
       },
     );
 
@@ -417,15 +417,15 @@ suite("workflow state", () => {
     expect(content).toBe("chunk1chunk2");
     expect(events).toHaveLength(9);
     expect(events[3]).toEqual({
-      type: "message",
+      type: "data",
       data: "Starting stream",
     });
     expect(events[4]).toEqual({
-      type: "message",
+      type: "data",
       data: "Middle of stream",
     });
     expect(events[5]).toEqual({
-      type: "message",
+      type: "data",
       data: "End of stream",
     });
   });
@@ -454,11 +454,81 @@ suite("workflow state", () => {
     });
   });
 
+  test("can publish an event to the workflow message stream", async () => {
+    const events: WorkflowMessage[] = [];
+
+    const TestComponent = gensx.Component("TestComponent", async () => {
+      await Promise.resolve();
+      gensx.publishEvent("test-event", {
+        bag: "of",
+        things: ["a", "b", "c"],
+      });
+      return "done";
+    });
+
+    const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+      return await TestComponent();
+    });
+
+    const messageListener: WorkflowMessageListener = (event) => {
+      events.push(event);
+    };
+
+    await TestWorkflow(undefined, {
+      messageListener,
+    });
+
+    expect(events).toHaveLength(7);
+    expect(events[3]).toEqual({
+      type: "event",
+      label: "test-event",
+      data: {
+        bag: "of",
+        things: ["a", "b", "c"],
+      },
+    });
+  });
+
+  test("can publish state to the workflow message stream", async () => {
+    const events: WorkflowMessage[] = [];
+
+    const TestComponent = gensx.Component("TestComponent", async () => {
+      await Promise.resolve();
+      gensx.publishState("test-state", {
+        bag: "of",
+        things: ["a", "b", "c"],
+      });
+      return "done";
+    });
+
+    const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+      return await TestComponent();
+    });
+
+    const messageListener: WorkflowMessageListener = (event) => {
+      events.push(event);
+    };
+
+    await TestWorkflow(undefined, {
+      messageListener,
+    });
+
+    expect(events).toHaveLength(7);
+    expect(events[3]).toEqual({
+      type: "state",
+      label: "test-state",
+      data: {
+        bag: "of",
+        things: ["a", "b", "c"],
+      },
+    });
+  });
+
   suite("useEventStream", () => {
     test("can use event stream in components", async () => {
       const events: WorkflowMessage[] = [];
 
-      const testEventStream = gensx.useEventStream("test-event");
+      const testEventStream = gensx.createEventStream("test-event");
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
         testEventStream({
@@ -496,7 +566,7 @@ suite("workflow state", () => {
     test("can use workflow state in components", async () => {
       const events: WorkflowMessage[] = [];
 
-      const testWorkflowState = gensx.useWorkflowState("test-state");
+      const testWorkflowState = gensx.createWorkflowState("test-state");
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
         testWorkflowState({

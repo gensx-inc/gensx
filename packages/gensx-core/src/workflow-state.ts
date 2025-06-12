@@ -24,23 +24,33 @@ export type WorkflowMessage =
       label?: string;
       componentId: string;
     }
-  | { type: "message"; data: JsonValue }
-  | { type: "state"; data: Record<string, JsonValue>; label: string }
-  | { type: "event"; data: Record<string, JsonValue>; label: string }
+  | { type: "data"; data: JsonValue }
+  | { type: "state" | "event"; data: Record<string, JsonValue>; label: string }
   | { type: "error"; error: string }
   | { type: "end" };
 
 export type WorkflowMessageListener = (message: WorkflowMessage) => void;
 
-export function sendMessage(data: JsonValue) {
+/**
+ * Publish data to the workflow message stream. This is a low-level utility for putting arbitrary data on the stream.
+ *
+ * @param data - The data to publish.
+ */
+export function publishData(data: JsonValue) {
   const context = getCurrentContext();
   context.getWorkflowContext().sendWorkflowMessage({
-    type: "message",
+    type: "data",
     data,
   });
 }
 
-export function sendEvent<
+/**
+ * Publish an event to the workflow message stream. Labels group events together, and generally all events within the same label should be related with the same type.
+ *
+ * @param label - The label of the event.
+ * @param data - The data to publish.
+ */
+export function publishEvent<
   T extends Record<string, JsonValue> = Record<string, JsonValue>,
 >(label: string, data: T) {
   const context = getCurrentContext();
@@ -51,7 +61,13 @@ export function sendEvent<
   });
 }
 
-export function sendState<
+/**
+ * Publish a state to the workflow message stream. A State represents a snapshot of an object that is updated over time.
+ *
+ * @param label - The label of the state.
+ * @param data - The data to publish.
+ */
+export function publishState<
   T extends Record<string, JsonValue> = Record<string, JsonValue>,
 >(label: string, data: T) {
   const context = getCurrentContext();
@@ -62,18 +78,30 @@ export function sendState<
   });
 }
 
-export function useEventStream<
+/**
+ * Create a function that publishes an event to the workflow message stream with the given label.
+ *
+ * @param label - The label of the event.
+ * @returns A function that publishes an event to the workflow message stream.
+ */
+export function createEventStream<
   T extends Record<string, JsonValue> = Record<string, JsonValue>,
 >(label: string) {
   return (data: T) => {
-    sendEvent(label, data);
+    publishEvent(label, data);
   };
 }
 
-export function useWorkflowState<
+/**
+ * Create a function that publishes a state to the workflow message stream with the given label.
+ *
+ * @param label - The label of the state.
+ * @returns A function that publishes a state to the workflow message stream.
+ */
+export function createWorkflowState<
   T extends Record<string, JsonValue> = Record<string, JsonValue>,
 >(label: string) {
   return (data: T) => {
-    sendState(label, data);
+    publishState(label, data);
   };
 }
