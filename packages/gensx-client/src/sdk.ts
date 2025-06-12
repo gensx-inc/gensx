@@ -79,6 +79,7 @@ export interface GenSXConfig {
   org?: string;
   project?: string;
   environment?: string;
+  overrideLocalMode?: boolean; // override for devs to use locally deployed API as opposed to dev server
 }
 
 export interface RunOptions {
@@ -174,7 +175,8 @@ export class GenSX {
 
   constructor(config: GenSXConfig) {
     this.baseUrl = config.baseUrl || "https://api.gensx.com";
-    this.isLocal = this.baseUrl.includes("localhost");
+    this.isLocal =
+      this.baseUrl.includes("localhost") && !config.overrideLocalMode;
 
     if (!this.isLocal) {
       // For non-local mode, require apiKey
