@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@gensx/core": "workspace:*",
+    "@gensx/client": "workspace:*",
     "@gensx/openai": "workspace:*",
     "@mendable/firecrawl-js": "^1.25.5",
     "@radix-ui/react-slot": "^1.2.3",
