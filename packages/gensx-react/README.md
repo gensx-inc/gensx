@@ -7,10 +7,10 @@ React hooks and components for interacting with GenSX workflows.
 This package is part of the monorepo and is available to all apps in the workspace.
 
 ```typescript
-import { useGenSX } from '@gensx/react';
+import { useWorkflow } from '@gensx/react';
 ```
 
-## useGenSX Hook
+## useWorkflow Hook
 
 A React hook that mirrors the GenSX Client interface, making it easy to create passthrough APIs.
 
@@ -27,10 +27,10 @@ A React hook that mirrors the GenSX Client interface, making it easy to create p
 ### Basic Usage
 
 ```tsx
-import { useGenSX } from '@gensx/react';
+import { useWorkflow } from '@gensx/react';
 
 function MyComponent() {
-  const gensx = useGenSX({
+  const gensx = useWorkflow({
     endpoint: '/api/gensx',
     defaultConfig: {
       org: 'my-org',
@@ -208,7 +208,7 @@ const response = await gensx.runRaw('ChatWorkflow', {
 });
 
 // After - Using the hook
-const gensx = useGenSX({
+const gensx = useWorkflow({
   endpoint: '/api/gensx',
   defaultConfig: { org: 'my-org', project: 'my-project' }
 });
@@ -223,7 +223,7 @@ See `src/examples/gensx-example.tsx` for a complete example component.
 
 ## Legacy Hook
 
-The original `useWorkflow` hook is still available for backwards compatibility but we recommend using `useGenSX` for new projects.
+The original `useWorkflow` hook is still available for backwards compatibility but we recommend using `useWorkflow` for new projects.
 
 ## UI Package
 
@@ -231,7 +231,7 @@ React components and hooks for the monorepo.
 
 ## Hooks
 
-### useGenSX
+### useWorkflow
 
 A React hook for interacting with GenSX workflows via your API endpoint. Supports TypeScript generics for type-safe outputs.
 
@@ -243,10 +243,10 @@ A React hook for interacting with GenSX workflows via your API endpoint. Support
 - 🚀 Automatic output accumulation
 
 ```typescript
-import { useGenSX } from '@gensx/react';
+import { useWorkflow } from '@gensx/react';
 
 // Basic usage
-const gensx = useGenSX({
+const gensx = useWorkflow({
   endpoint: '/api/gensx',
   defaultConfig: {
     org: 'my-org',
@@ -261,7 +261,7 @@ interface ChatResponse {
   confidence: number;
 }
 
-const gensx = useGenSX<ChatResponse>({
+const gensx = useWorkflow<ChatResponse>({
   endpoint: '/api/gensx',
   onComplete: (output) => {
     // output is typed as ChatResponse
@@ -271,7 +271,7 @@ const gensx = useGenSX<ChatResponse>({
 });
 
 // Real-time streaming with automatic output accumulation
-const gensx = useGenSX<string>({
+const gensx = useWorkflow<string>({
   endpoint: '/api/gensx',
   onOutput: (chunk) => {
     // Called for each chunk
@@ -328,7 +328,7 @@ interface DraftResponse {
   wordCount: number;
 }
 
-const gensx = useGenSX<DraftResponse>({
+const gensx = useWorkflow<DraftResponse>({
   endpoint: '/api/gensx',
   onComplete: (output) => {
     setDraft(output.content);
@@ -347,7 +347,7 @@ if (result) {
 
 **Streaming Mode with Progress Updates:**
 ```typescript
-const gensx = useGenSX<string>({
+const gensx = useWorkflow<string>({
   endpoint: '/api/gensx',
   onOutput: (chunk) => {
     // Append each chunk to the output
@@ -371,7 +371,7 @@ await gensx.stream('GenerateStory', {
 
 **With Default Configuration:**
 ```typescript
-const gensx = useGenSX({
+const gensx = useWorkflow({
   endpoint: '/api/gensx',
   defaultConfig: {
     org: 'my-org',

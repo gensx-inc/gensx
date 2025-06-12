@@ -72,13 +72,13 @@ npm run dev
 
 ### Workflow Integration
 
-The app uses the `useGenSXWorkflow` hook from `@gensx/react` package for real-time workflow streaming:
+The app uses the `useWorkflow` hook from `@gensx/react` package for real-time workflow streaming:
 
 ```typescript
-import { useGenSXWorkflow } from '@gensx/react';
+import { useWorkflow } from '@gensx/react';
 
 // Real-time workflow connection
-const workflow = useGenSXWorkflow({
+const workflow = useWorkflow({
   endpoint: '/api/gensx',
   workflowName: 'update-draft',
   onComplete: (result) => console.log('Workflow completed'),
@@ -107,7 +107,7 @@ await workflow.stream({
 1. User types message → Frontend calls `/api/gensx`
 2. Backend calls GenSX workflow with real credentials
 3. GenSX streams progress events back
-4. Frontend processes events in real-time via `useGenSXWorkflow` hook
+4. Frontend processes events in real-time via `useWorkflow` hook
 5. UI updates live as content streams in
 
 ## Development

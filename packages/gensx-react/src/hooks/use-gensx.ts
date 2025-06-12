@@ -232,7 +232,7 @@ export interface UseGenSXResult<TInputs = any, TOutput = any, TEvent extends Gen
  * });
  * ```
  */
-export function useGenSXWorkflow<
+export function useWorkflow<
   TInputs = any,
   TOutput = any,
   // This should actually be BaseProgressEvent

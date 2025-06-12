@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useGenSXWorkflow, GenSXWorkflowEvent } from '@gensx/react';
+import { useWorkflow, GenSXWorkflowEvent } from '@gensx/react';
 import { DraftEditorCard } from "@/components/ui/draft-editor-card";
 import { EventColumn } from "@/components/ui/event-column";
 import { GenSXOutputEvent, GenSXProgressEvent } from '@gensx/client';
@@ -36,7 +36,7 @@ export default function Home() {
     useProgressEvents,
     useWorkflowEvents,
     // need to update the events to be baseprogressevent instead of genSXProgressEvent
-  } = useGenSXWorkflow<UpdateDraftInput, UpdateDraftOutput, GenSXProgressEvent>({
+  } = useWorkflow<UpdateDraftInput, UpdateDraftOutput, GenSXProgressEvent>({
     endpoint: '/api/gensx',
     workflowName: 'updateDraft',
     defaultConfig: {
@@ -199,7 +199,6 @@ export default function Home() {
         </div>
       </div>
       </div>
-
     </div>
   );
 }
