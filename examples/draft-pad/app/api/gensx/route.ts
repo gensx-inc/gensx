@@ -1,6 +1,15 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
+interface RequestBody {
+  workflowName: string;
+  org?: string;
+  project?: string;
+  environment?: string;
+  format?: "sse" | "ndjson" | "json";
+  [key: string]: unknown; // For additional inputs
+}
+
 /**
  * API route that acts as a pure passthrough to GenSX
  * Accepts the same parameters as the GenSX SDK
@@ -9,7 +18,7 @@ import { NextRequest } from "next/server";
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as RequestBody;
     const { workflowName, org, project, environment, format, ...inputs } = body;
 
     // Validate required fields
@@ -28,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     // Get API key from environment (or could accept from Authorization header)
     const apiKey =
-      process.env.GENSX_API_KEY ||
+      process.env.GENSX_API_KEY ??
       request.headers.get("Authorization")?.replace("Bearer ", "");
 
     if (!apiKey) {
@@ -49,12 +58,12 @@ export async function POST(request: NextRequest) {
     const finalProject = project ?? process.env.GENSX_PROJECT;
     const finalEnvironment = environment ?? process.env.GENSX_ENVIRONMENT;
 
-    if (!finalOrg || !finalProject) {
+    if (!finalOrg || !finalProject || !finalEnvironment) {
       return new Response(
         JSON.stringify({
           type: "error",
           error:
-            "org and project are required (either in request or environment)",
+            "org, project, and environment are required (either in request or environment)",
         }) + "\n",
         {
           status: 400,
@@ -64,20 +73,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize GenSX SDK
-    const baseUrl = process.env.GENSX_BASE_URL || "https://api.gensx.com";
-    const gensx = new GenSX({ apiKey, baseUrl });
-
-    // Use runRaw to get the direct response
-    const response = await gensx.runRaw(workflowName, {
+    const baseUrl = process.env.GENSX_BASE_URL ?? "https://api.gensx.com";
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const gensx = new GenSX({
+      apiKey,
+      baseUrl,
       org: finalOrg,
       project: finalProject,
       environment: finalEnvironment,
+    });
+
+    // Use runRaw to get the direct response
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    const response = await gensx.runRaw(workflowName, {
       inputs,
-      format: format || "ndjson", // Default to ndjson if not specified
+      format: format ?? "ndjson", // Default to ndjson if not specified
     });
 
     // Determine content type based on format
-    const responseFormat = (format || "ndjson") as "sse" | "ndjson" | "json";
+    const responseFormat = format ?? "ndjson";
     const contentType = {
       sse: "text/event-stream",
       ndjson: "application/x-ndjson",
@@ -86,7 +100,9 @@ export async function POST(request: NextRequest) {
 
     // Return the response directly to the client
     // This preserves the response format
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
     return new Response(response.body, {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       status: response.status,
       headers: {
         "Content-Type": contentType,
@@ -110,7 +126,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export function GET() {
   return new Response(
     JSON.stringify(
       {
