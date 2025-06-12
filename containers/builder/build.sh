@@ -18,11 +18,13 @@ done
 
 cd /tmp/project
 
-# Use yarn or pnpm if there is a yarn.lock or pnpm-lock.yaml
-if [ -f "yarn.lock" ]; then
-  yarn install
+# Use the right tool depending on the lockfile
+if [ -f "package-lock.json" ]; then
+  npm install
 elif [ -f "pnpm-lock.yaml" ]; then
   pnpm install
+elif [ -f "yarn.lock" ]; then
+  yarn install
 else
   npm install
 fi
