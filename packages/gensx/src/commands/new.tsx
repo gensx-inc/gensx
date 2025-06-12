@@ -58,6 +58,7 @@ export interface NewCommandOptions {
   skipIdeRules?: boolean;
   ideRules?: string;
   description?: string;
+  publicWorkflows?: boolean;
 }
 
 interface Props {
@@ -164,6 +165,7 @@ export function NewProjectUI({ projectPath, options }: Props) {
             {
               projectName,
               description: description || "My GenSX Project",
+              publicWorkflows: options.publicWorkflows ?? false,
             },
             projectPath,
           );

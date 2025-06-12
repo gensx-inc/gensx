@@ -49,11 +49,13 @@
   "dependencies": {
     "ini": "^5.0.0",
     "@common.js/serialize-error": "^11.0.3",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@types/ini": "^4.1.1",
     "@types/node": "catalog:packages",
+    "@types/js-yaml": "^4.0.9",
     "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:"
   },

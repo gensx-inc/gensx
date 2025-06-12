@@ -52,6 +52,7 @@ export async function createProject(
   projectName: string,
   environmentName?: string,
   description?: string,
+  isPublic?: boolean,
 ): Promise<CreateProjectResponse> {
   const auth = await getAuth();
   if (!auth) {
@@ -66,7 +67,12 @@ export async function createProject(
 
   const url = new URL(`/org/${auth.org}/projects`, auth.apiBaseUrl);
 
-  let body: { name: string; environmentName?: string; description?: string } = {
+  let body: {
+    name: string;
+    environmentName?: string;
+    description?: string;
+    public?: boolean;
+  } = {
     name: projectName,
   };
 
@@ -76,6 +82,10 @@ export async function createProject(
 
   if (description) {
     body.description = description;
+  }
+
+  if (typeof isPublic === "boolean") {
+    body.public = isPublic;
   }
 
   const response = await fetch(url.toString(), {
@@ -132,4 +142,38 @@ export async function checkProjectExists(
   }
 
   return true;
+}
+
+/**
+ * Update project settings
+ */
+export async function updateProject(
+  projectName: string,
+  updates: { public?: boolean; description?: string },
+): Promise<void> {
+  const auth = await getAuth();
+  if (!auth) {
+    throw new Error("Not authenticated. Please run 'gensx login' first.");
+  }
+
+  const url = new URL(
+    `/org/${auth.org}/projects/${encodeURIComponent(projectName)}`,
+    auth.apiBaseUrl,
+  );
+
+  const response = await fetch(url.toString(), {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+      "User-Agent": USER_AGENT,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(updates),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to update project: ${response.status} ${response.statusText}`,
+    );
+  }
 }

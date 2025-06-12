@@ -1,4 +1,4 @@
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -231,5 +231,37 @@ suite("new command UI", () => {
     expect(exec).not.toHaveBeenCalledWith(
       expect.stringMatching(/npx @gensx\/.+/),
     );
+  });
+
+  it("should respect the --public flag", async () => {
+    const projectDir = path.join(tempDir, "public-project");
+    const { lastFrame } = render(
+      React.createElement(NewProjectUI, {
+        projectPath: projectDir,
+        options: { force: true, publicWorkflows: true },
+      }),
+    );
+
+    await waitForText(lastFrame, /Enter a project description/);
+    if (!global.__textInputOnChange || !global.__textInputOnSubmit)
+      throw new Error("TextInput handlers not found");
+    global.__textInputOnChange("");
+    global.__textInputOnSubmit("");
+
+    await waitForText(lastFrame, /Installing dependencies/);
+    await waitForText(lastFrame, /Select AI assistants to integrate/);
+
+    if (!global.__selectInputOnSelect || !global.__selectInputOptions)
+      throw new Error("SelectInput handler/options not found");
+    const noneOption = global.__selectInputOptions.find(
+      (opt) => opt.value === "none",
+    );
+    if (!noneOption) throw new Error("None option not found");
+    global.__selectInputOnSelect(noneOption);
+
+    await waitForText(lastFrame, /Successfully created GenSX project/);
+
+    const yaml = await readFile(path.join(projectDir, "gensx.yaml"), "utf8");
+    expect(yaml).toMatch(/publicWorkflows: true/);
   });
 });

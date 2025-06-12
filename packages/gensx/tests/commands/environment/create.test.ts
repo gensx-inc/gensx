@@ -224,6 +224,7 @@ suite("environment create Ink UI", () => {
       "new-project",
       "development",
       undefined,
+      undefined,
     );
 
     // Verify environment was not created separately (it's created with the project)

@@ -1,6 +1,6 @@
-import { isProxy } from "util/types";
-
 import type { ComponentOpts } from "./types.js";
+
+import { isProxy } from "node:util/types";
 
 import { Component } from "./component.js";
 

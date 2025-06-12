@@ -49,8 +49,11 @@ function useCreateEnvironment(
 
   useEffect(() => {
     let mounted = true;
-    let projectConfig: { projectName?: string; description?: string } | null =
-      null;
+    let projectConfig: {
+      projectName?: string;
+      description?: string;
+      publicWorkflows?: boolean;
+    } | null = null;
 
     async function initializeEnvironment() {
       try {
@@ -145,6 +148,7 @@ function useCreateEnvironment(
             projectName,
             environmentName,
             projectConfig?.description,
+            projectConfig?.publicWorkflows,
           );
 
           setProjectCreated(true);

@@ -203,6 +203,8 @@ suite("EnvironmentResolver component", () => {
     expect(projectModel.createProject).toHaveBeenCalledWith(
       "new-project",
       "staging",
+      undefined,
+      undefined,
     );
     expect(onResolved).toHaveBeenCalledWith("staging");
   });
@@ -228,6 +230,8 @@ suite("EnvironmentResolver component", () => {
     expect(projectModel.createProject).toHaveBeenCalledWith(
       "test-project",
       "default",
+      undefined,
+      undefined,
     );
     expect(onResolved).toHaveBeenCalledWith("default");
   });

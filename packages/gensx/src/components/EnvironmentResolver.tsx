@@ -16,6 +16,7 @@ import {
   getSelectedEnvironment,
   validateAndSelectEnvironment,
 } from "../utils/env-config.js";
+import { readProjectConfig } from "../utils/project-config.js";
 import { ErrorMessage } from "./ErrorMessage.js";
 import { LoadingSpinner } from "./LoadingSpinner.js";
 
@@ -54,6 +55,9 @@ export const EnvironmentResolver: React.FC<Props> = ({
   const [selected, setSelected] = useState<string | null>(null);
   const [newEnvName, setNewEnvName] = useState<string>("");
   const [projectExists, setProjectExists] = useState(false);
+  const [projectConfig, setProjectConfig] = useState<{
+    publicWorkflows?: boolean;
+  } | null>(null);
 
   //-----------------------------------------------------------
   // Helpers
@@ -73,6 +77,9 @@ export const EnvironmentResolver: React.FC<Props> = ({
         finish(specifiedEnvironment);
         return;
       }
+
+      const cfg = await readProjectConfig(process.cwd());
+      setProjectConfig(cfg);
 
       // 2. Fetch project state
       const [exists, envs, preselected] = await Promise.all([
@@ -94,7 +101,12 @@ export const EnvironmentResolver: React.FC<Props> = ({
         // Auto‑create if necessary (but no persistence beyond that)
         if (!envs.some((env) => env.name === envName)) {
           if (!exists) {
-            await createProject(projectName, envName);
+            await createProject(
+              projectName,
+              envName,
+              undefined,
+              projectConfig?.publicWorkflows,
+            );
             await validateAndSelectEnvironment(projectName, envName);
           } else {
             await createEnvironment(projectName, envName);
@@ -200,7 +212,12 @@ export const EnvironmentResolver: React.FC<Props> = ({
               void (async () => {
                 try {
                   if (!projectExists) {
-                    await createProject(projectName, trimmed);
+                    await createProject(
+                      projectName,
+                      trimmed,
+                      undefined,
+                      projectConfig?.publicWorkflows,
+                    );
                     await validateAndSelectEnvironment(projectName, trimmed);
                   } else {
                     await createEnvironment(projectName, trimmed);

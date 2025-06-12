@@ -53,6 +53,7 @@ vi.mock("../../src/utils/project-config.js", () => ({
 vi.mock("../../src/models/projects.js", () => ({
   checkProjectExists: vi.fn(),
   createProject: vi.fn(),
+  updateProject: vi.fn(),
 }));
 
 // Mock EnvironmentResolver component
@@ -320,6 +321,26 @@ hasCompletedFirstTimeSetup = false
       expect.any(Object),
       expect.any(Object),
     );
+  });
+
+  it("should update project visibility when public flag is set", async () => {
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
+      projectName: "config-project",
+      publicWorkflows: true,
+    });
+
+    const { lastFrame } = render(
+      React.createElement(DeployUI, {
+        file: "workflow.ts",
+        options: { env: "production" },
+      }),
+    );
+
+    await waitForText(lastFrame, /Deployed to GenSX Cloud/);
+
+    expect(projectModel.updateProject).toHaveBeenCalledWith("config-project", {
+      public: true,
+    });
   });
 
   it("should show error when no project is specified and none in config", async () => {
