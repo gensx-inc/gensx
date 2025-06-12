@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+:root {
+  --background: #1B1B1D;
+  --foreground: #ededed;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1B1B1D;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-figtree), Arial, Helvetica, sans-serif;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111827;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #374151 #111827;
+}
+
+/* Focus outline removed */
+*:focus-visible {
+  outline: none;
+}
+
+/* Custom font utilities */
+.font-meow {
+  font-family: var(--font-meow-script), cursive;
+}
+
+.font-atma {
+  font-family: var(--font-atma), sans-serif;
+}
