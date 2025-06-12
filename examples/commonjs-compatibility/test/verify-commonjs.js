@@ -1,19 +1,16 @@
 // Test script to verify CommonJS compatibility
-const assert = require("assert");
+const assert = require("node:assert");
 
 // Import the main function from our CommonJS example
-const main = require("../dist/cjs-jsx.js");
+const main = require("../dist/workflow.js");
 
 async function runTest() {
   try {
     // Expected results from our workflow
-    const expectedResults = [
-      "Hello, World! This message was generated using CommonJS + JSX.",
-      "Hello, CommonJS! This message was generated using CommonJS + JSX.",
-    ];
+    const expectedResults = ">>>>>>>HELLO, WORLD!";
 
     // Run the workflow and get results directly
-    const actualResults = await main();
+    const actualResults = await main({ input: "Hello, world!" });
 
     // Verify the results match exactly
     assert.deepStrictEqual(

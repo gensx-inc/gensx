@@ -38,7 +38,7 @@ catalogs:
       version: 4.19.4
     typescript:
       specifier: ^5.7.2
-      version: 5.8.2
+      version: 5.8.3
     vite:
       specifier: ^6.3.5
       version: 6.3.5
@@ -54,12 +54,12 @@ catalogs:
   examples:
     '@types/node':
       specifier: ^20
-      version: 20.17.30
+      version: 20.19.0
   packages:
 
     '@types/node':
       specifier: ^18
-      version: 18.19.86
+      version: 18.19.111
 
 importers:
 
@@ -303,15 +303,18 @@ importers:
   examples/commonjs-compatibility:
     dependencies:
       '@gensx/core':
-        specifier: 0.3.13
-        version: 0.3.13
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
+      left-pad:
+        specifier: ^1.3.0
+        version: 1.3.0
       zod:
         specifier: 'catalog:'
         version: 3.25.56
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 20.17.30
+        version: 20.19.0
       nodemon:
         specifier: 'catalog:'
         version: 3.1.10
@@ -320,7 +323,7 @@ importers:
         version: 4.19.4
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
 
   examples/deep-research:
     dependencies:
@@ -420,7 +423,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 20.17.30
+        version: 20.19.0
       nodemon:
         specifier: 'catalog:'
         version: 3.1.10
@@ -429,7 +432,7 @@ importers:
         version: 4.19.4
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
 
   examples/open-router:
     dependencies:
@@ -470,7 +473,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 20.17.30
+        version: 20.19.0
       nodemon:
         specifier: 'catalog:'
         version: 3.1.10
@@ -479,7 +482,7 @@ importers:
         version: 4.19.4
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
 
   examples/openai-examples:
     dependencies:
@@ -588,7 +591,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 20.17.30
+        version: 20.19.0
       nodemon:
         specifier: 'catalog:'
         version: 3.1.10
@@ -597,7 +600,7 @@ importers:
         version: 4.19.4
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
 
   examples/self-modifying-code:
     dependencies:
@@ -622,7 +625,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 20.17.30
+        version: 20.19.0
       nodemon:
         specifier: 'catalog:'
         version: 3.1.10
@@ -631,7 +634,7 @@ importers:
         version: 4.19.4
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
 
   examples/text-to-sql:
     dependencies:
@@ -678,7 +681,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:examples
-        version: 20.17.30
+        version: 20.19.0
       nodemon:
         specifier: 'catalog:'
         version: 3.1.10
@@ -740,13 +743,13 @@ importers:
         version: 11.0.4
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       '@types/react':
         specifier: ^19
         version: 19.1.3
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
+        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
       fs-extra:
         specifier: ^11.3.0
         version: 11.3.0
@@ -755,10 +758,10 @@ importers:
         version: 4.19.4
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx:
     dependencies:
@@ -855,13 +858,13 @@ importers:
         version: 4.1.1
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       '@types/react':
         specifier: ^19
         version: 19.1.3
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
+        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
       eslint-plugin-n:
         specifier: 'catalog:'
         version: 17.19.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)
@@ -870,7 +873,7 @@ importers:
         version: 4.0.0(@types/react@19.1.3)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx-anthropic:
     dependencies:
@@ -889,28 +892,28 @@ importers:
         version: 0.53.0
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
+        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx-claude-md:
     devDependencies:
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 6.3.5(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 6.3.5(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx-cli:
     dependencies:
@@ -922,16 +925,16 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 6.3.5(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 6.3.5(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx-cloud-mcp:
     dependencies:
@@ -950,13 +953,13 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
+        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx-core:
     dependencies:
@@ -975,28 +978,28 @@ importers:
         version: 4.1.1
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
+        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx-cursor-rules:
     devDependencies:
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 6.3.5(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 6.3.5(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx-openai:
     dependencies:
@@ -1006,16 +1009,16 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
+        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
       openai:
         specifier: 'catalog:'
         version: 4.104.0(ws@8.18.2)(zod@3.25.56)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx-storage:
     dependencies:
@@ -1031,13 +1034,13 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
+        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   packages/gensx-vercel-ai:
     dependencies:
@@ -1059,13 +1062,13 @@ importers:
         version: 1.3.22(zod@3.25.56)
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
-        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
+        version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
       zod-to-json-schema:
         specifier: 'catalog:'
         version: 3.24.5(zod@3.25.56)
@@ -1074,16 +1077,16 @@ importers:
     devDependencies:
       '@types/node':
         specifier: catalog:packages
-        version: 18.19.86
+        version: 18.19.111
       typescript:
         specifier: 'catalog:'
-        version: 5.8.2
+        version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 6.3.5(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 6.3.5(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
   website/docs:
     dependencies:
@@ -3394,9 +3397,6 @@ packages:
 
   '@types/node@18.19.111':
     resolution: {integrity: sha512-90sGdgA+QLJr1F9X79tQuEut0gEYIfkX9pydI4XGRgvFo9g2JWswefI+WUSUHPYVBHYSEfTEqBxA5hQvAZB3Mw==}
-
-  '@types/node@18.19.86':
-    resolution: {integrity: sha512-fifKayi175wLyKyc5qUfyENhQ1dCNI1UNjp653d8kuYcPQN5JhX3dGuP/XmvPTg/xRBn1VTLpbmi+H/Mr7tLfQ==}
 
   '@types/node@20.17.11':
     resolution: {integrity: sha512-Ept5glCK35R8yeyIeYlRIZtX6SLRyqMhOFTgj5SOkMpLTdw3SEHI9fHx60xaUZ+V1aJxQJODE+7/j5ocZydYTg==}
@@ -5737,18 +5737,20 @@ packages:
   layout-base@2.0.1:
     resolution: {integrity: sha512-dp3s92+uNI1hWIpPGH3jK2kxE2lMjdXdr+DH8ynZHpd6PUlH6x6cbuXnoMmiNumznqaNO31xu9e79F0uuZ0JFg==}
 
+  left-pad@1.3.0:
+    resolution: {integrity: sha512-XI5MPzVNApjAyhQzphX8BkmKsKUxD4LdyK24iZeQGinBN9yTQT3bFlCBy/aVx2HrNcqQGsdot8ghrjyrvMCoEA==}
+    deprecated: use String.prototype.padStart()
+
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
   libsql@0.5.13:
     resolution: {integrity: sha512-5Bwoa/CqzgkTwySgqHA5TsaUDRrdLIbdM4egdPcaAnqO3aC+qAgS6BwdzuZwARA5digXwiskogZ8H7Yy4XfdOg==}
-    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   libsql@0.5.4:
     resolution: {integrity: sha512-GEFeWca4SDAQFxjHWJBE6GK52LEtSskiujbG3rqmmeTO9t4sfSBKIURNLLpKDDF7fb7jmTuuRkDAn9BZGITQNw==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lightningcss-darwin-arm64@1.30.1:
@@ -7816,18 +7818,6 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
-  ws@8.18.0:
-    resolution: {integrity: sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
   ws@8.18.2:
     resolution: {integrity: sha512-DMricUmwGZUVr++AEAe2uiVM7UoO9MAVZMDu05UQOaUII0lp+zOzLLU4Xqh/JvTqklB1T4uELaaPBKyjE1r4fQ==}
     engines: {node: '>=10.0.0'}
@@ -9892,10 +9882,6 @@ snapshots:
     dependencies:
       undici-types: 5.26.5
 
-  '@types/node@18.19.86':
-    dependencies:
-      undici-types: 5.26.5
-
   '@types/node@20.17.11':
     dependencies:
       undici-types: 6.19.8
@@ -10244,7 +10230,7 @@ snapshots:
       svelte: 4.2.19
       vue: 3.5.13(typescript@5.7.2)
 
-  '@vitest/coverage-istanbul@3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))':
+  '@vitest/coverage-istanbul@3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))':
     dependencies:
       '@istanbuljs/schema': 0.1.3
       debug: 4.4.1(supports-color@5.5.0)
@@ -10256,7 +10242,7 @@ snapshots:
       magicast: 0.3.5
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+      vitest: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -11478,7 +11464,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.33.1(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.33.1(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.33.1(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.28.0(jiti@2.4.2)))(eslint@9.28.0(jiti@2.4.2)))(eslint@9.28.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -11507,7 +11493,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.28.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.33.1(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.28.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.33.1(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.33.1(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.28.0(jiti@2.4.2)))(eslint@9.28.0(jiti@2.4.2)))(eslint@9.28.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -12400,7 +12386,7 @@ snapshots:
       type-fest: 4.35.0
       widest-line: 5.0.0
       wrap-ansi: 9.0.0
-      ws: 8.18.0
+      ws: 8.18.2
       yoga-layout: 3.2.1
     optionalDependencies:
       '@types/react': 19.1.3
@@ -12764,6 +12750,8 @@ snapshots:
   layout-base@1.0.2: {}
 
   layout-base@2.0.1: {}
+
+  left-pad@1.3.0: {}
 
   levn@0.4.1:
     dependencies:
@@ -15390,13 +15378,13 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
-  vite-node@3.2.3(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0):
+  vite-node@3.2.3(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0):
     dependencies:
       cac: 6.7.14
       debug: 4.4.1(supports-color@5.5.0)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 6.3.5(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+      vite: 6.3.5(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -15432,7 +15420,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite@6.3.5(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0):
+  vite@6.3.5(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0):
     dependencies:
       esbuild: 0.25.5
       fdir: 6.4.5(picomatch@4.0.2)
@@ -15441,7 +15429,7 @@ snapshots:
       rollup: 4.42.0
       tinyglobby: 0.2.14
     optionalDependencies:
-      '@types/node': 18.19.86
+      '@types/node': 18.19.111
       fsevents: 2.3.3
       jiti: 2.4.2
       lightningcss: 1.30.1
@@ -15464,7 +15452,7 @@ snapshots:
       tsx: 4.19.4
       yaml: 2.8.0
 
-  vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0):
+  vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.3
@@ -15486,12 +15474,12 @@ snapshots:
       tinyglobby: 0.2.14
       tinypool: 1.1.0
       tinyrainbow: 2.0.0
-      vite: 6.3.5(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
-      vite-node: 3.2.3(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+      vite: 6.3.5(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+      vite-node: 3.2.3(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/debug': 4.1.12
-      '@types/node': 18.19.86
+      '@types/node': 18.19.111
     transitivePeerDependencies:
       - jiti
       - less
@@ -15682,8 +15670,6 @@ snapshots:
       strip-ansi: 7.1.0
 
   wrappy@1.0.2: {}
-
-  ws@8.18.0: {}
 
   ws@8.18.2: {}
 

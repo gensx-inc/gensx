@@ -3,16 +3,9 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "module": "commonjs",
-    "jsx": "react-jsx",
-    "jsxImportSource": "@gensx/core",
     "outDir": "./dist",
-    "baseUrl": ".",
-    "paths": {
-      "@gensx/core/jsx-runtime": [
-        "./node_modules/@gensx/core/dist/cjs/jsx-runtime"
-      ]
-    }
+    "baseUrl": "."
   },
-  "include": ["*.tsx", "*.ts"],
+  "include": ["*.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -75,14 +75,24 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       throw new Error("Could not find tsconfig.json");
     }
 
-    let tsconfig;
+    let tsconfig: ts.ParsedCommandLine;
     try {
       const tsconfigContent = readFileSync(tsconfigPath, "utf-8");
       tsconfig = ts.parseJsonConfigFileContent(
         JSON.parse(tsconfigContent),
         ts.sys,
         process.cwd(),
+        {
+          incremental: false,
+          noEmit: false,
+        },
       );
+      tsconfig.options.incremental = false;
+      tsconfig.options.noEmit = false;
+      tsconfig.options.outDir ??= ".gensx/dist";
+      tsconfig.options.target = ts.ScriptTarget.ESNext;
+      tsconfig.options.module = ts.ModuleKind.NodeNext;
+      tsconfig.options.moduleResolution = ts.ModuleResolutionKind.NodeNext;
     } catch (error) {
       throw new Error(
         `Failed to parse tsconfig.json: ${error instanceof Error ? error.message : String(error)}`,

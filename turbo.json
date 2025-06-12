@@ -45,6 +45,7 @@
       "dependsOn": ["^build"],
       "inputs": [
         "src/**/*.ts",
+        "src/**/*.tsx",
         "*.ts",
         "src/**/*.template",
         "src/**/template.json",
