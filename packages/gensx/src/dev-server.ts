@@ -614,6 +614,60 @@ export class GensxServer {
                     progressListener,
                   });
 
+                  if (
+                    result &&
+                    typeof result === "object" &&
+                    Symbol.asyncIterator in result
+                  ) {
+                    for await (const chunk of result) {
+                      const outputEvent = {
+                        id: Date.now().toString(),
+                        timestamp: new Date().toISOString(),
+                        type: "output",
+                        content:
+                          typeof chunk === "string"
+                            ? chunk
+                            : JSON.stringify(chunk),
+                      };
+                      if (acceptHeader === "text/event-stream") {
+                        controller.enqueue(
+                          new TextEncoder().encode(
+                            `id: ${outputEvent.id}\ndata: ${JSON.stringify(outputEvent)}\n\n`,
+                          ),
+                        );
+                      } else {
+                        controller.enqueue(
+                          new TextEncoder().encode(
+                            JSON.stringify(outputEvent) + "\n",
+                          ),
+                        );
+                      }
+                    }
+                  } else {
+                    const outputEvent = {
+                      id: Date.now().toString(),
+                      timestamp: new Date().toISOString(),
+                      type: "output",
+                      content:
+                        typeof result === "string"
+                          ? result
+                          : JSON.stringify(result),
+                    };
+                    if (acceptHeader === "text/event-stream") {
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          `id: ${outputEvent.id}\ndata: ${JSON.stringify(outputEvent)}\n\n`,
+                        ),
+                      );
+                    } else {
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          JSON.stringify(outputEvent) + "\n",
+                        ),
+                      );
+                    }
+                  }
+
                   // Update execution with result
                   execution.executionStatus = "completed";
                   execution.output = result;
@@ -1417,13 +1471,9 @@ export class GensxServer {
       // Set up progress listener
       const progressListener = (event: any) => {
         const progressEvent: ProgressEvent = {
-          id: ulid(),
-          type: event.type,
-          workflowName: event.workflowName,
-          data: event.data,
-          error: event.error,
-          executionStatus: event.executionStatus,
+          id: Date.now().toString(),
           timestamp: new Date().toISOString(),
+          ...event,
         };
         execution.progressEvents?.push(progressEvent);
         this.executionsMap.set(executionId, execution);
@@ -1450,7 +1500,7 @@ export class GensxServer {
 
       // Add error event
       const errorEvent: ProgressEvent = {
-        id: ulid(),
+        id: Date.now().toString(),
         type: "error",
         workflowName,
         error: error instanceof Error ? error.message : String(error),

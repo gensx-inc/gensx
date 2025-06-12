@@ -13,7 +13,8 @@ export interface BuildOptions {
   outDir?: string;
   tsconfig?: string;
   watch?: boolean;
-  quiet?: boolean;
+  verbose?: boolean;
+  schemaOnly?: boolean;
 }
 
 interface BuildResult {
@@ -26,6 +27,7 @@ interface UseBuildResult {
   phase: "validating" | "bundling" | "generatingSchema" | "done" | "error";
   error: string | null;
   result: BuildResult | null;
+  buildProgress: string[];
 }
 
 function useBuild(file: string, options: BuildOptions): UseBuildResult {
@@ -33,6 +35,7 @@ function useBuild(file: string, options: BuildOptions): UseBuildResult {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BuildResult | null>(null);
   const { exit } = useApp();
+  const [buildProgress, setBuildProgress] = useState<string[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -50,16 +53,23 @@ function useBuild(file: string, options: BuildOptions): UseBuildResult {
         }
 
         if (!mounted) return;
-        setPhase("bundling");
 
         const outDir = options.outDir ?? resolve(process.cwd(), ".gensx");
         const schemaFilePath = resolve(outDir, "schema.json");
+        let bundlePath: string | undefined;
 
-        const bundlePath = await bundleWorkflow(
-          absolutePath,
-          outDir,
-          options.watch ?? false,
-        );
+        if (!options.schemaOnly) {
+          setPhase("bundling");
+
+          bundlePath = await bundleWorkflow(
+            absolutePath,
+            outDir,
+            (data) => {
+              setBuildProgress((prev) => [...prev, data]);
+            },
+            options.watch ?? false,
+          );
+        }
 
         setPhase("generatingSchema");
 
@@ -68,13 +78,13 @@ function useBuild(file: string, options: BuildOptions): UseBuildResult {
         writeFileSync(schemaFilePath, JSON.stringify(workflowSchemas, null, 2));
 
         setResult({
-          bundleFile: bundlePath,
+          bundleFile: bundlePath ?? "",
           schemaFile: schemaFilePath,
           schemas: workflowSchemas,
         });
         setPhase("done");
 
-        if (!options.quiet) {
+        if (options.verbose) {
           setTimeout(() => {
             exit();
           }, 100);
@@ -95,7 +105,7 @@ function useBuild(file: string, options: BuildOptions): UseBuildResult {
     };
   }, [file, options, exit]);
 
-  return { phase, error, result };
+  return { phase, error, result, buildProgress };
 }
 
 interface Props {
@@ -104,7 +114,7 @@ interface Props {
 }
 
 export function BuildWorkflowUI({ file, options }: Props) {
-  const { phase, error, result } = useBuild(file, options);
+  const { phase, error, result, buildProgress } = useBuild(file, options);
 
   if (error) {
     return <ErrorMessage message={error} />;
@@ -117,7 +127,15 @@ export function BuildWorkflowUI({ file, options }: Props) {
       )}
 
       {phase === "bundling" && (
-        <LoadingSpinner message="Building workflows using docker..." />
+        <Box flexDirection="column">
+          <LoadingSpinner message="Building workflows using docker..." />
+          <Box flexDirection="column">
+            {options.verbose &&
+              buildProgress.map((line, index) => (
+                <Text key={index}>{line}</Text>
+              ))}
+          </Box>
+        </Box>
       )}
 
       {phase === "generatingSchema" && (
@@ -147,7 +165,7 @@ export function BuildWorkflowUI({ file, options }: Props) {
               </Text>
               <Text> Generated schemas</Text>
             </Box>
-            {!options.quiet && (
+            {options.verbose && (
               <Box flexDirection="column" marginTop={1}>
                 <Text>
                   Bundle: <Text color="cyan">{result.bundleFile}</Text>
@@ -165,7 +183,11 @@ export function BuildWorkflowUI({ file, options }: Props) {
 }
 
 // Keep the original build function for programmatic usage
-export async function build(file: string, options: BuildOptions = {}) {
+export async function build(
+  file: string,
+  options: BuildOptions = {},
+  onProgress?: (data: string) => void,
+) {
   const outDir = options.outDir ?? resolve(process.cwd(), ".gensx");
   const schemaFile = resolve(outDir, "schema.json");
 
@@ -182,6 +204,10 @@ export async function build(file: string, options: BuildOptions = {}) {
   const bundleFilePath = await bundleWorkflow(
     absolutePath,
     outDir,
+    onProgress ??
+      (() => {
+        // Do nothing
+      }),
     options.watch ?? false,
   );
 

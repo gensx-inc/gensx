@@ -8,6 +8,7 @@ import { findUp } from "find-up";
 export async function bundleWorkflow(
   workflowPath: string,
   outDir: string,
+  onProgress: (data: string) => void,
   _watch = false,
 ) {
   // remove anything in the outDir
@@ -38,11 +39,10 @@ export async function bundleWorkflow(
   let stderr = "";
   try {
     await new Promise<void>((resolve, reject) => {
-      const process = spawn("docker", [
+      const builderProcess = spawn("docker", [
         "run",
         "--rm",
-        "--pull",
-        "always",
+        process.env.BUILD_CONTAINER_TAG ? "--pull=missing" : "--pull=always", // Don't force a pull if we're using a custom tag
         "--platform",
         "linux/x86_64",
         "-v",
@@ -53,15 +53,17 @@ export async function bundleWorkflow(
         `WORKFLOW_PATH=${relativeWorkflowPath}`,
         `gensx/builder:${buildContainerTag}`,
       ]);
-      process.stdout.on("data", (data: Buffer) => {
+      builderProcess.stdout.on("data", (data: Buffer) => {
         stdout += data.toString();
+        onProgress(`[stdout] ${data.toString()}`);
       });
 
-      process.stderr.on("data", (data: Buffer) => {
+      builderProcess.stderr.on("data", (data: Buffer) => {
         stderr += data.toString();
+        onProgress(`[stderr] ${data.toString()}`);
       });
 
-      process.on("close", (code) => {
+      builderProcess.on("close", (code) => {
         if (code !== 0) {
           reject(new Error(`Bundler exited with code ${code}`));
         }
