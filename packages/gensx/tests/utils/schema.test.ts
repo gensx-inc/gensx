@@ -9,7 +9,7 @@ import path, { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { generateSchema } from "../../src/utils/schema.js";
+import { staticallyGenerateWorkflowInfo } from "../../src/utils/workflow-info.js";
 
 describe("schema generator", () => {
   // Helper to create a temporary TypeScript file for testing
@@ -56,7 +56,7 @@ describe("schema generator", () => {
     );
 
     try {
-      const schemas = generateSchema(
+      const schemas = staticallyGenerateWorkflowInfo(
         tempFile,
         resolve(tempDir, "tsconfig.json"),
       );
@@ -856,7 +856,7 @@ describe("schema generator", () => {
     );
 
     try {
-      const schemas = generateSchema(
+      const schemas = staticallyGenerateWorkflowInfo(
         tempFile,
         resolve(tempDir, "tsconfig.json"),
       );
@@ -953,8 +953,13 @@ describe("schema generator", () => {
 
     try {
       expect(() => {
-        generateSchema(tempFile, resolve(tempDir, "tsconfig.json"));
-      }).toThrow("The 'public' option must be a boolean literal (true or false), but got: \"true\"");
+        staticallyGenerateWorkflowInfo(
+          tempFile,
+          resolve(tempDir, "tsconfig.json"),
+        );
+      }).toThrow(
+        "The 'public' option must be a boolean literal (true or false), but got: \"true\"",
+      );
     } finally {
       cleanupTempFiles(tempDir);
     }
@@ -993,8 +998,13 @@ describe("schema generator", () => {
 
     try {
       expect(() => {
-        generateSchema(tempFile, resolve(tempDir, "tsconfig.json"));
-      }).toThrow("Workflow options must be an object literal to extract the 'public' option, but got: workflowOpts");
+        staticallyGenerateWorkflowInfo(
+          tempFile,
+          resolve(tempDir, "tsconfig.json"),
+        );
+      }).toThrow(
+        "Workflow options must be an object literal to extract the 'public' option, but got: workflowOpts",
+      );
     } finally {
       cleanupTempFiles(tempDir);
     }

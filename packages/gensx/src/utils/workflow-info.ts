@@ -42,10 +42,17 @@ const SchemaLogger = {
 /**
  * Generates JSON Schema for all workflows in a TypeScript file
  */
-export function generateSchema(
+export function staticallyGenerateWorkflowInfo(
   tsFile: string,
   tsConfigFile?: string,
-): Record<string, { input: Definition; output: Definition; config: { requireAuthToTrigger: boolean } }> {
+): Record<
+  string,
+  {
+    input: Definition;
+    output: Definition;
+    config: { requireAuthToTrigger: boolean };
+  }
+> {
   // Create program from the source file
   const tsconfigPath = tsConfigFile ?? resolve(process.cwd(), "tsconfig.json");
   const tsconfig = ts.parseJsonConfigFileContent(
@@ -71,7 +78,11 @@ export function generateSchema(
   // Build schemas for each workflow
   const workflowSchemas: Record<
     string,
-    { input: Definition; output: Definition; config: { requireAuthToTrigger: boolean } }
+    {
+      input: Definition;
+      output: Definition;
+      config: { requireAuthToTrigger: boolean };
+    }
   > = {};
 
   for (const workflow of workflowInfo) {
@@ -403,7 +414,7 @@ function extractPublicOption(
         property.name.text === "public"
       ) {
         const value = property.initializer;
-        
+
         // Handle boolean literals
         if (value.kind === ts.SyntaxKind.TrueKeyword) {
           return true;
@@ -413,7 +424,7 @@ function extractPublicOption(
           // If it's not a plain boolean literal, throw an error
           const valueText = value.getText(sourceFile);
           throw new Error(
-            `The 'public' option must be a boolean literal (true or false), but got: ${valueText}`
+            `The 'public' option must be a boolean literal (true or false), but got: ${valueText}`,
           );
         }
       }
@@ -423,7 +434,7 @@ function extractPublicOption(
     // In this case, we can't statically analyze it, so throw an error
     const optsText = workflowOpts.getText(sourceFile);
     throw new Error(
-      `Workflow options must be an object literal to extract the 'public' option, but got: ${optsText}`
+      `Workflow options must be an object literal to extract the 'public' option, but got: ${optsText}`,
     );
   }
 

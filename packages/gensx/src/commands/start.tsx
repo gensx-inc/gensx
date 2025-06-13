@@ -9,7 +9,7 @@ import { Definition } from "typescript-json-schema";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { createServer } from "../dev-server.js";
-import { generateSchema } from "../utils/schema.js";
+import { staticallyGenerateWorkflowInfo } from "../utils/workflow-info.js";
 
 export interface StartOptions {
   project?: string;
@@ -173,15 +173,19 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       const jsPath = compileTypeScript(file);
 
       setPhase("generatingSchema");
-      const newSchemas = generateSchema(file);
-      setSchemas(newSchemas);
-      const schemaFile = resolve(process.cwd(), ".gensx", "schema.json");
+      const workflowInfo = staticallyGenerateWorkflowInfo(file);
+      setSchemas(workflowInfo);
+      const workflowInfoFile = resolve(
+        process.cwd(),
+        ".gensx",
+        "workflow-info.json",
+      );
       // Ensure .gensx directory exists
-      const schemaDir = path.dirname(schemaFile);
-      if (!existsSync(schemaDir)) {
-        mkdirSync(schemaDir, { recursive: true });
+      const workflowInfoDir = path.dirname(workflowInfoFile);
+      if (!existsSync(workflowInfoDir)) {
+        mkdirSync(workflowInfoDir, { recursive: true });
       }
-      writeFileSync(schemaFile, JSON.stringify(newSchemas, null, 2));
+      writeFileSync(workflowInfoFile, JSON.stringify(workflowInfo, null, 2));
 
       setPhase("starting");
       const fileUrl = `file://${jsPath}?update=${Date.now().toString()}`;
@@ -209,7 +213,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
             },
           },
         },
-        newSchemas,
+        workflowInfo,
       );
 
       try {
