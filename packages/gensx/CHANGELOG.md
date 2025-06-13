@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.36](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.35...gensx-v0.3.36) (2025-06-13)
+
+
+### 🐛 Bug Fixes
+
+* Fix dev server to use messageListener. ([#771](https://github.com/gensx-inc/gensx/issues/771)) ([17c0f71](https://github.com/gensx-inc/gensx/commit/17c0f71aad680e499ec992c3d6dbc2ed8f831c99))
+* Improve local dev experience ([#759](https://github.com/gensx-inc/gensx/issues/759)) ([9563b7e](https://github.com/gensx-inc/gensx/commit/9563b7e6fc1bf32550a2ca1d4384fee1c1762a23))
+* prevent components from showing up as APIs in the dev server ([#766](https://github.com/gensx-inc/gensx/issues/766)) ([6a2ad7a](https://github.com/gensx-inc/gensx/commit/6a2ad7aed910a5bf134a56b8476992ef417acb4b)), closes [#763](https://github.com/gensx-inc/gensx/issues/763)
+* small updates to verbiage ([#746](https://github.com/gensx-inc/gensx/issues/746)) ([48ff3b4](https://github.com/gensx-inc/gensx/commit/48ff3b474f091aebaada2c03eedfed8f66a3b8a9))
+
 ## [0.3.35](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.34...gensx-v0.3.35) (2025-06-03)
 
 
