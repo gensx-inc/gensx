@@ -1,18 +1,16 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "NodeNext",
-    "target": "es2017",
-    "jsx": "react-jsx"
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "outDir": "./dist",
+    "baseUrl": "."
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "vitest.config.ts",
+    "tests/**/*",
+    "__mocks__/**/*",
+    "rollup.config.js"
   ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "exclude": ["node_modules", "dist"]
 }
