@@ -184,7 +184,7 @@ export class GensxServer {
         const workflowFn = workflow as any;
 
         // Check if this is a GenSX workflow function
-        if (workflowFn.__gensxWorkflow === true || workflowFn.name) {
+        if (workflowFn.__gensxWorkflow === true) {
           const workflowName = workflowFn.name ?? exportName;
 
           // Wrap the function to match the expected interface
