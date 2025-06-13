@@ -20,7 +20,7 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
-import { ProgressListener } from "./workflow-context.js";
+import { WorkflowMessageListener } from "./workflow-state.js";
 
 export const STREAMING_PLACEHOLDER = "[streaming in progress]";
 
@@ -89,7 +89,7 @@ export function Component<P extends object = {}, R = unknown>(
     }
 
     function onComplete() {
-      workflowContext.progressListener({
+      workflowContext.sendWorkflowMessage({
         type: "component-end",
         componentName: checkpointName ?? "",
         componentId: nodeId,
@@ -171,7 +171,7 @@ export function Component<P extends object = {}, R = unknown>(
         return streamingResult;
       }
 
-      workflowContext.progressListener({
+      workflowContext.sendWorkflowMessage({
         type: "component-end",
         componentName: checkpointName ?? "",
         componentId: nodeId,
@@ -183,7 +183,7 @@ export function Component<P extends object = {}, R = unknown>(
 
     try {
       let runInContext: RunInContext;
-      workflowContext.progressListener({
+      workflowContext.sendWorkflowMessage({
         type: "component-start",
         componentName: checkpointName,
         componentId: nodeId,
@@ -204,7 +204,7 @@ export function Component<P extends object = {}, R = unknown>(
                 error: serializeError(error),
               });
               checkpointManager.completeNode(nodeId, undefined);
-              workflowContext.progressListener({
+              workflowContext.sendWorkflowMessage({
                 type: "error",
                 error: JSON.stringify(serializeError(error)),
               });
@@ -220,7 +220,7 @@ export function Component<P extends object = {}, R = unknown>(
           error: serializeError(error),
         });
         checkpointManager.completeNode(nodeId, undefined);
-        workflowContext.progressListener({
+        workflowContext.sendWorkflowMessage({
           type: "error",
           error: JSON.stringify(serializeError(error)),
         });
@@ -248,20 +248,20 @@ export function Workflow<P extends object = {}, R = unknown>(
   props?: P,
   runtimeOpts?: WorkflowOpts & {
     workflowExecutionId?: string;
-    progressListener?: ProgressListener;
+    messageListener?: WorkflowMessageListener;
   },
 ) => Promise<Awaited<R>> {
   const WorkflowFn = async (
     props?: P,
     runtimeOpts?: WorkflowOpts & {
       workflowExecutionId?: string;
-      progressListener?: ProgressListener;
+      messageListener?: WorkflowMessageListener;
     },
   ): Promise<Awaited<R>> => {
     const context = new ExecutionContext(
       {},
       undefined,
-      runtimeOpts?.progressListener,
+      runtimeOpts?.messageListener,
     );
     await context.init();
 
@@ -291,7 +291,7 @@ export function Workflow<P extends object = {}, R = unknown>(
     const component = Component<P, R>(name, target);
 
     try {
-      workflowContext.progressListener({
+      workflowContext.sendWorkflowMessage({
         type: "start",
         workflowExecutionId: runtimeOpts?.workflowExecutionId,
         workflowName,
@@ -301,7 +301,7 @@ export function Workflow<P extends object = {}, R = unknown>(
         component(props, {
           ...runtimeOpts,
           onComplete: () => {
-            workflowContext.progressListener({
+            workflowContext.sendWorkflowMessage({
               type: "end",
             });
           },
