@@ -13,8 +13,9 @@ import {
   createServer,
   GensxServer,
   NotFoundError,
-  ProgressEvent,
   ServerError,
+  WorkflowExecution,
+  WorkflowMessage,
 } from "../src/dev-server.js";
 
 // Mock ulid module
@@ -38,15 +39,15 @@ type WorkflowFunction = {
 // Simple mock workflow definition
 const mockWorkflow = vi.fn(function testWorkflow(
   _input: unknown,
-  opts?: { progressListener?: (event: any) => void },
+  opts?: { messageListener?: (event: any) => void },
 ) {
-  if (opts?.progressListener) {
-    opts.progressListener({
+  if (opts?.messageListener) {
+    opts.messageListener({
       type: "start",
       workflowExecutionId: "test-execution-id",
       workflowName: "testWorkflow",
     });
-    opts.progressListener({
+    opts.messageListener({
       type: "end",
     });
   }
@@ -62,19 +63,6 @@ const mockSchemas: Record<string, { input: Definition; output: Definition }> = {
     output: { type: "object", properties: { result: { type: "string" } } },
   },
 };
-
-// Type for workflow execution in tests
-interface WorkflowExecution {
-  id: string;
-  workflowName: string;
-  executionStatus: "queued" | "starting" | "running" | "completed" | "failed";
-  createdAt: string;
-  finishedAt?: string;
-  input: unknown;
-  output?: unknown;
-  error?: string;
-  progressEvents: ProgressEvent[];
-}
 
 // Type for accessing private members in tests
 interface PrivateServer {
@@ -353,7 +341,7 @@ describe("GenSX Dev Server", () => {
       executionStatus: "queued",
       createdAt: now,
       input,
-      progressEvents: [],
+      workflowMessages: [],
     };
     privateServer.executionsMap.set(executionId, execution);
 
@@ -373,7 +361,7 @@ describe("GenSX Dev Server", () => {
     expect(mockWorkflow).toHaveBeenCalledWith(
       input,
       expect.objectContaining({
-        progressListener: expect.any(Function),
+        messageListener: expect.any(Function),
       }),
     );
 
@@ -411,7 +399,7 @@ describe("GenSX Dev Server", () => {
       executionStatus: "queued",
       createdAt: now,
       input,
-      progressEvents: [],
+      workflowMessages: [],
     };
     privateServer.executionsMap.set(executionId, execution);
 
@@ -431,7 +419,7 @@ describe("GenSX Dev Server", () => {
     expect(failingWorkflow).toHaveBeenCalledWith(
       input,
       expect.objectContaining({
-        progressListener: expect.any(Function),
+        messageListener: expect.any(Function),
       }),
     );
 
@@ -509,15 +497,15 @@ describe("GenSX Dev Server", () => {
 
     const progressWorkflow = vi.fn(function progressWorkflow(
       _input: unknown,
-      opts?: { progressListener?: (event: ProgressEvent) => void },
+      opts?: { messageListener?: (event: ProgressEvent) => void },
     ) {
-      if (opts?.progressListener) {
-        opts.progressListener({
+      if (opts?.messageListener) {
+        opts.messageListener({
           type: "start",
           workflowName: "progressWorkflow",
         });
-        opts.progressListener({ type: "progress", data: "Processing..." });
-        opts.progressListener({ type: "end" });
+        opts.messageListener({ type: "progress", data: "Processing..." });
+        opts.messageListener({ type: "end" });
       }
       return Promise.resolve({ result: "done" });
     }) as WorkflowFunction;
@@ -582,15 +570,15 @@ describe("GenSX Dev Server", () => {
 
     const progressWorkflow = vi.fn(function progressWorkflow(
       _input: unknown,
-      opts?: { progressListener?: (event: ProgressEvent) => void },
+      opts?: { messageListener?: (event: ProgressEvent) => void },
     ) {
-      if (opts?.progressListener) {
-        opts.progressListener({
+      if (opts?.messageListener) {
+        opts.messageListener({
           type: "start",
           workflowName: "progressWorkflow",
         });
-        opts.progressListener({ type: "progress", data: "Processing..." });
-        opts.progressListener({ type: "end" });
+        opts.messageListener({ type: "progress", data: "Processing..." });
+        opts.messageListener({ type: "end" });
       }
       return Promise.resolve({ result: "done" });
     }) as WorkflowFunction;
@@ -665,10 +653,10 @@ describe("GenSX Dev Server", () => {
 
     const errorWorkflow = vi.fn(function errorWorkflow(
       _input: unknown,
-      opts?: { progressListener?: (event: ProgressEvent) => void },
+      opts?: { messageListener?: (event: ProgressEvent) => void },
     ) {
-      if (opts?.progressListener) {
-        opts.progressListener({ type: "start", workflowName: "errorWorkflow" });
+      if (opts?.messageListener) {
+        opts.messageListener({ type: "start", workflowName: "errorWorkflow" });
         throw new Error("Workflow failed");
       }
       return Promise.resolve({ result: "done" });
@@ -791,7 +779,7 @@ describe("GenSX Dev Server", () => {
       executionStatus: "queued",
       createdAt: now,
       input: { test: "data" },
-      progressEvents: [],
+      workflowMessages: [],
     };
     privateServer.executionsMap.set(executionId, execution);
 
@@ -811,7 +799,7 @@ describe("GenSX Dev Server", () => {
     expect(failingWorkflow).toHaveBeenCalledWith(
       { test: "data" },
       expect.objectContaining({
-        progressListener: expect.any(Function),
+        messageListener: expect.any(Function),
       }),
     );
 
@@ -848,8 +836,7 @@ describe("GenSX Dev Server", () => {
   });
 
   describe("Progress Events", () => {
-    it("should return progress events in SSE format", async () => {
-      // Create a workflow execution with some progress events
+    it("should return workflow messages in SSE format", async () => {
       const executionId = "test-execution";
       const execution: WorkflowExecution = {
         id: executionId,
@@ -857,7 +844,7 @@ describe("GenSX Dev Server", () => {
         executionStatus: "completed",
         createdAt: new Date().toISOString(),
         input: {},
-        progressEvents: [
+        workflowMessages: [
           {
             id: "1",
             type: "start",
@@ -866,15 +853,31 @@ describe("GenSX Dev Server", () => {
           },
           {
             id: "2",
-            type: "progress",
-            workflowName: "testWorkflow",
+            type: "data",
             data: "Processing...",
             timestamp: new Date().toISOString(),
           },
           {
             id: "3",
+            type: "object",
+            data: {
+              result: "done",
+            },
+            label: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "4",
+            type: "event",
+            data: {
+              result: "done",
+            },
+            label: "testWorkflow2",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "5",
             type: "end",
-            workflowName: "testWorkflow",
             timestamp: new Date().toISOString(),
           },
         ],
@@ -903,15 +906,19 @@ describe("GenSX Dev Server", () => {
         'id: 1\ndata: {"id":"1","type":"start","workflowName":"testWorkflow"',
       );
       expect(sseContent).toContain(
-        'id: 2\ndata: {"id":"2","type":"progress","workflowName":"testWorkflow","data":"Processing..."',
+        'id: 2\ndata: {"id":"2","type":"data","data":"Processing..."',
       );
       expect(sseContent).toContain(
-        'id: 3\ndata: {"id":"3","type":"end","workflowName":"testWorkflow"',
+        'id: 3\ndata: {"id":"3","type":"object","data":{"result":"done"},"label":"testWorkflow"',
       );
+      expect(sseContent).toContain(
+        'id: 4\ndata: {"id":"4","type":"event","data":{"result":"done"},"label":"testWorkflow2"',
+      );
+      expect(sseContent).toContain('id: 5\ndata: {"id":"5","type":"end"');
     });
 
-    it("should return progress events in NDJSON format", async () => {
-      // Create a workflow execution with some progress events
+    it("should return workflow messages in NDJSON format", async () => {
+      // Create a workflow execution with some workflow messages
       const executionId = "test-execution-ndjson";
       const execution: WorkflowExecution = {
         id: executionId,
@@ -919,7 +926,7 @@ describe("GenSX Dev Server", () => {
         executionStatus: "completed",
         createdAt: new Date().toISOString(),
         input: {},
-        progressEvents: [
+        workflowMessages: [
           {
             id: "1",
             type: "start",
@@ -928,15 +935,17 @@ describe("GenSX Dev Server", () => {
           },
           {
             id: "2",
-            type: "progress",
-            workflowName: "testWorkflow",
+            type: "data",
             data: "Processing...",
             timestamp: new Date().toISOString(),
           },
           {
             id: "3",
-            type: "end",
-            workflowName: "testWorkflow",
+            type: "object",
+            data: {
+              result: "done",
+            },
+            label: "testWorkflow",
             timestamp: new Date().toISOString(),
           },
         ],
@@ -959,7 +968,7 @@ describe("GenSX Dev Server", () => {
       const events = ndjsonContent
         .trim()
         .split("\n")
-        .map((line: string) => JSON.parse(line) as ProgressEvent);
+        .map((line: string) => JSON.parse(line) as WorkflowMessage);
       expect(events).toHaveLength(3);
       expect(events[0]).toMatchObject({
         id: "1",
@@ -968,14 +977,16 @@ describe("GenSX Dev Server", () => {
       });
       expect(events[1]).toMatchObject({
         id: "2",
-        type: "progress",
-        workflowName: "testWorkflow",
+        type: "data",
         data: "Processing...",
       });
       expect(events[2]).toMatchObject({
         id: "3",
-        type: "end",
-        workflowName: "testWorkflow",
+        type: "object",
+        data: {
+          result: "done",
+        },
+        label: "testWorkflow",
       });
     });
 
@@ -988,7 +999,7 @@ describe("GenSX Dev Server", () => {
         executionStatus: "completed",
         createdAt: new Date().toISOString(),
         input: {},
-        progressEvents: [
+        workflowMessages: [
           {
             id: "1",
             type: "start",
@@ -997,15 +1008,22 @@ describe("GenSX Dev Server", () => {
           },
           {
             id: "2",
-            type: "progress",
-            workflowName: "testWorkflow",
+            type: "data",
             data: "Processing...",
             timestamp: new Date().toISOString(),
           },
           {
             id: "3",
+            type: "object",
+            data: {
+              result: "done",
+            },
+            label: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "4",
             type: "end",
-            workflowName: "testWorkflow",
             timestamp: new Date().toISOString(),
           },
         ],
@@ -1029,6 +1047,7 @@ describe("GenSX Dev Server", () => {
       expect(sseContent1).not.toContain("id: 1\n");
       expect(sseContent1).toContain("id: 2\n");
       expect(sseContent1).toContain("id: 3\n");
+      expect(sseContent1).toContain("id: 4\n");
 
       // Test with header
       const response2 = await privateServer.app.fetch(
