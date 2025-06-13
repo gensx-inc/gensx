@@ -87,7 +87,8 @@ export async function runCLI() {
     .option("-o, --out-dir <dir>", "Output directory")
     .option("-t, --tsconfig <file>", "TypeScript config file")
     .option("-w, --watch", "Watch for changes", false)
-    .option("-q, --quiet", "Suppress output", false)
+    .option("-v, --verbose", "Verbose output", false)
+    .option("--schema-only", "Only generate the schema", false)
     .action((file: string, options: BuildOptions) => {
       return new Promise<void>((resolve, reject) => {
         const { waitUntilExit } = render(
@@ -129,6 +130,7 @@ export async function runCLI() {
     .option("-p, --project <name>", "Project name to deploy to")
     .option("--env <name>", "Environment name to deploy to")
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
+    .option("-v, --verbose", "Verbose output", false)
     .action((file: string, options: DeployOptions) => {
       return new Promise<void>((resolve, reject) => {
         const { waitUntilExit } = render(

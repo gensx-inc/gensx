@@ -1,6 +1,7 @@
 import { ExecutionNode } from "./checkpoint.js";
 import {
   createWorkflowContext,
+  JsonValue,
   ProgressListener,
   WORKFLOW_CONTEXT_SYMBOL,
   WorkflowExecutionContext,
@@ -194,11 +195,11 @@ export function getContextSnapshot(): RunInContext {
   return contextManager.getContextSnapshot();
 }
 
-export function emitProgress(message: Record<string, string> | string) {
+export function emitProgress(message: JsonValue) {
   const context = getCurrentContext();
   context.getWorkflowContext().progressListener({
     type: "progress",
-    ...(typeof message === "string" ? { data: message } : message),
+    data: message,
   });
 }
 

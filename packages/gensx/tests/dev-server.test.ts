@@ -638,7 +638,7 @@ describe("GenSX Dev Server", () => {
     // Verify NDJSON format
     const ndjsonContent = chunks.join("");
     const lines = ndjsonContent.split("\n").filter(Boolean);
-    expect(lines).toHaveLength(3);
+    expect(lines).toHaveLength(4);
     expect(JSON.parse(lines[0])).toEqual({
       type: "start",
       workflowName: "progressWorkflow",
@@ -649,6 +649,10 @@ describe("GenSX Dev Server", () => {
     });
     expect(JSON.parse(lines[2])).toEqual({
       type: "end",
+    });
+    expect(JSON.parse(lines[3])).toMatchObject({
+      type: "output",
+      content: '{"result":"done"}',
     });
   });
 
