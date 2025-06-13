@@ -256,7 +256,7 @@ const FetchHNPosts = gensx.Component(
       `📚 Collecting up to ${requestLimit} HN posts (text posts only)...`,
     );
     const stories = await getTopStoryDetails(requestLimit);
-    gensx.emitProgress(`Found ${stories.length} posts to analyze.`);
+    gensx.publishData(`Found ${stories.length} posts to analyze.`);
     console.log(
       `📝 Found ${stories.length} text posts out of ${requestLimit} total posts`,
       stories.length < limit
