@@ -10,6 +10,35 @@ import {
 } from "@gensx/client";
 import { useCallback, useMemo, useRef, useState } from "react";
 
+// JSON-serializable value type for progress data
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+// WorkflowMessage type (from gensx-core)
+export type WorkflowMessage =
+  | { type: "start"; workflowExecutionId?: string; workflowName: string }
+  | {
+      type: "component-start";
+      componentName: string;
+      label?: string;
+      componentId: string;
+    }
+  | {
+      type: "component-end";
+      componentName: string;
+      label?: string;
+      componentId: string;
+    }
+  | { type: "data"; data: JsonValue }
+  | { type: "object" | "event"; data: Record<string, JsonValue>; label: string }
+  | { type: "error"; error: string }
+  | { type: "end" };
+
 // Match the Client's RunOptions interface
 export interface GenSXRunOptions {
   org: string;
@@ -114,6 +143,9 @@ export interface UseGenSXResult<
   /** Output events */
   outputEvents: GenSXOutputEvent[];
 
+  /** WorkflowMessage events (for useObject and useEvent hooks) */
+  workflowMessages: WorkflowMessage[];
+
   /** Run workflow in collection mode (returns final output) */
   run: (inputs: TInputs) => Promise<TOutput | null>;
 
@@ -162,6 +194,10 @@ export interface UseGenSXResult<
  *   project: 'different-project',
  *   inputs: { userMessage: 'Hello from different org' }
  * });
+ *
+ * // Use the new useObject and useEvent hooks with WorkflowMessage events
+ * const currentProgress = useObject(gensx.workflowMessages, 'progress');
+ * const allSteps = useEvent(gensx.workflowMessages, 'step-completed');
  * ```
  */
 export function useWorkflow<
@@ -194,6 +230,7 @@ export function useWorkflow<
   const [workflowEvents, setWorkflowEvents] = useState<GenSXEvent[]>([]);
   const [progressEvents, setProgressEvents] = useState<TEvent[]>([]);
   const [outputEvents, setOutputEvents] = useState<GenSXOutputEvent[]>([]);
+  const [workflowMessages, setWorkflowMessages] = useState<WorkflowMessage[]>([]);
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -208,6 +245,63 @@ export function useWorkflow<
       // Add to workflowEvents if it's a workflow control event (not progress or output)
       if (event.type !== "progress" && event.type !== "output") {
         setWorkflowEvents((prev) => [...prev, event]);
+      }
+
+      // Convert GenSXEvent to WorkflowMessage and add to workflowMessages
+      const convertToWorkflowMessage = (e: GenSXEvent): WorkflowMessage | null => {
+        switch (e.type) {
+          case "start":
+            return {
+              type: "start",
+              workflowExecutionId: e.workflowExecutionId,
+              workflowName: e.workflowName,
+            };
+          case "component-start":
+            return {
+              type: "component-start",
+              componentName: e.componentName,
+              componentId: e.componentId,
+            };
+          case "component-end":
+            return {
+              type: "component-end",
+              componentName: e.componentName,
+              componentId: e.componentId,
+            };
+          case "progress":
+            // Convert progress event data to WorkflowMessage data format
+            if ("data" in e && typeof (e as any).data === "string") {
+              try {
+                const parsedData = JSON.parse((e as any).data);
+                return {
+                  type: "data",
+                  data: parsedData,
+                };
+              } catch {
+                return {
+                  type: "data",
+                  data: (e as any).data,
+                };
+              }
+            }
+            return null;
+          case "error":
+            return {
+              type: "error",
+              error: e.error || e.message || "Unknown error",
+            };
+          case "end":
+            return {
+              type: "end",
+            };
+          default:
+            return null;
+        }
+      };
+
+      const workflowMessage = convertToWorkflowMessage(event);
+      if (workflowMessage) {
+        setWorkflowMessages((prev) => [...prev, workflowMessage]);
       }
 
       // Fire generic callback
@@ -330,6 +424,7 @@ export function useWorkflow<
     setWorkflowEvents([]);
     setProgressEvents([]);
     setOutputEvents([]);
+    setWorkflowMessages([]);
     outputRef.current = null;
   }, []);
 
@@ -454,6 +549,7 @@ export function useWorkflow<
     },
     [endpoint, headers, clear, parseStream, buildPayload],
   );
+
   return {
     isLoading,
     isStreaming,
@@ -463,6 +559,7 @@ export function useWorkflow<
     workflowEvents,
     progressEvents,
     outputEvents,
+    workflowMessages,
     run,
     stream,
     stop,
@@ -495,4 +592,41 @@ export function useProgressObject<T extends { type: string }>(
     // Return the most recent matching object
     return matched.pop();
   }, [events, typeKey]);
+}
+
+// New hook to get the most recent object by label from WorkflowMessage events
+export function useObject<T extends Record<string, JsonValue>>(
+  events: WorkflowMessage[],
+  label: string
+): T | undefined {
+  return useMemo(() => {
+    const objectEvents: T[] = [];
+
+    for (const event of events) {
+      if (event.type === 'object' && event.label === label) {
+        objectEvents.push(event.data as T);
+      }
+    }
+
+    // Return the most recent object for this label
+    return objectEvents[objectEvents.length - 1];
+  }, [events, label]);
+}
+
+// New hook to get all events by label from WorkflowMessage events
+export function useEvent<T extends Record<string, JsonValue>>(
+  events: WorkflowMessage[],
+  label: string
+): T[] {
+  return useMemo(() => {
+    const eventList: T[] = [];
+
+    for (const event of events) {
+      if (event.type === 'event' && event.label === label) {
+        eventList.push(event.data as T);
+      }
+    }
+
+    return eventList;
+  }, [events, label]);
 }

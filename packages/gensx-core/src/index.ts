@@ -8,6 +8,11 @@ export {
   createEventStream,
   createObjectStream,
 } from "./workflow-state.js";
+export type {
+  WorkflowMessage,
+  WorkflowMessageListener,
+  JsonValue,
+} from "./workflow-state.js";
 export * from "./wrap.js";
 
 export { Component, Workflow } from "./component.js";
