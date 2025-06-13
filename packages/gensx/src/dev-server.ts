@@ -616,7 +616,11 @@ export class GensxServer {
                   // Set up progress listener
                   const messageListener = (event: WorkflowMessage) => {
                     const eventData = JSON.stringify(event);
-                    execution.workflowMessages.push(event);
+                    execution.workflowMessages.push({
+                      ...event,
+                      id: Date.now().toString(),
+                      timestamp: new Date().toISOString(),
+                    });
                     if (acceptHeader === "text/event-stream") {
                       controller.enqueue(
                         new TextEncoder().encode(
