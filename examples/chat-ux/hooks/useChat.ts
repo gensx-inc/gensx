@@ -14,9 +14,9 @@ export type WorkflowProgressEvent = { id: string; timestamp: string } & (
       label?: string;
       componentId: string;
     }
-  | { type: "progress"; action: string; content: string; messageId: string }
+  | { type: "data"; action: string; content: string; messageId: string }
   | {
-      type: "progress";
+      type: "data";
       role: "assistant" | "tool";
       delta: string;
       messageId?: string;
@@ -95,13 +95,19 @@ export function useChat(): UseChatReturn {
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/gensx", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/x-ndjson",
         },
-        body: JSON.stringify({ userInput: prompt, threadId }),
+        body: JSON.stringify({
+          workflowName: "OpenAIAgentWorkflow",
+          inputs: {
+            userInput: prompt,
+            threadId: threadId,
+          },
+        }),
       });
 
       if (!response.ok) {
@@ -134,10 +140,11 @@ export function useChat(): UseChatReturn {
           if (line.trim()) {
             try {
               const event = JSON.parse(line) as WorkflowProgressEvent;
+              console.log("📝 Received event:", event, "🚀");
 
               // Handle regular progress events (old format)
               if (
-                event.type === "progress" &&
+                event.type === "data" &&
                 "content" in event &&
                 event.content
               ) {
@@ -177,11 +184,7 @@ export function useChat(): UseChatReturn {
               }
 
               // Handle new progress events with delta
-              if (
-                event.type === "progress" &&
-                "delta" in event &&
-                event.delta
-              ) {
+              if (event.type === "data" && "delta" in event && event.delta) {
                 if (!hasReceivedFirstChunk) {
                   hasReceivedFirstChunk = true;
                   setIsLoading(false);

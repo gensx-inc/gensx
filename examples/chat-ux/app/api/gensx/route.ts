@@ -32,7 +32,8 @@ const shouldUseLocalDevServer = () => {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as RequestBody;
-    const { workflowName, org, project, environment, format, ...inputs } = body;
+    const { workflowName, org, project, environment, format, inputs } = body;
+    //const { workflowName, org, project, environment, format, ...inputs } = body;
 
     const useLocalDevServer = shouldUseLocalDevServer();
 
@@ -107,8 +108,11 @@ export async function POST(request: NextRequest) {
 
     // Use runRaw to get the direct response
 
+    console.log("📝 Received inputs:", inputs, "🚀");
+
     const response = await gensx.runRaw(workflowName, {
-      inputs,
+      //inputs,
+      inputs: (inputs as Record<string, unknown>) || {},
       format: format ?? "ndjson", // Default to ndjson if not specified
     });
 

@@ -175,7 +175,7 @@ async function processMessagesWithTools(
     // Handle content streaming
     if (delta.content) {
       text += delta.content as string;
-      gensx.publishData({
+      gensx.publishEvent("message-stream", {
         id: messageId,
         role: "assistant",
         delta: delta.content,
@@ -220,7 +220,7 @@ async function processMessagesWithTools(
   if (toolCalls.length > 0) {
     // Emit each tool call
     for (const toolCall of toolCalls) {
-      gensx.publishData({
+      gensx.publishEvent("tool_call", {
         id: `${messageId}_tool_call_${toolCall.id}`,
         role: "assistant",
         delta: `\n\n🔧 **Tool Call**: ${toolCall.function.name}\n**Arguments**: ${toolCall.function.arguments}`,
@@ -259,10 +259,10 @@ async function processMessagesWithTools(
           const result = await toolFunctions[functionName](args);
 
           // Emit the tool result
-          gensx.publishData({
+          gensx.publishEvent("tool_result", {
             id: `${messageId}_tool_result_${toolCall.id}`,
             role: "tool",
-            delta: `\n\n📋 **Tool Result** (${toolCall.function.name}): ${result}`,
+            content: `\n\n📋 **Tool Result** (${toolCall.function.name}): ${result}`,
             type: "tool_result",
             tool_call_id: toolCall.id,
             function_name: toolCall.function.name,
@@ -282,7 +282,7 @@ async function processMessagesWithTools(
           const errorMessage = `Error executing ${toolCall.function.name}: ${String(error)}`;
 
           // Emit the tool error
-          gensx.publishData({
+          gensx.publishEvent("tool_result", {
             id: `${messageId}_tool_result_${toolCall.id}`,
             role: "tool",
             delta: `\n\n❌ **Tool Error** (${toolCall.function.name}): ${errorMessage}`,
