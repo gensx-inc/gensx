@@ -15,6 +15,7 @@ interface WorkflowInfo {
   inputType: ts.Type;
   outputType: ts.Type;
   isStreamComponent: boolean;
+  isPublic: boolean;
 }
 
 /**
@@ -44,7 +45,7 @@ const SchemaLogger = {
 export function generateSchema(
   tsFile: string,
   tsConfigFile?: string,
-): Record<string, { input: Definition; output: Definition }> {
+): Record<string, { input: Definition; output: Definition; config: { requireAuthToTrigger: boolean } }> {
   // Create program from the source file
   const tsconfigPath = tsConfigFile ?? resolve(process.cwd(), "tsconfig.json");
   const tsconfig = ts.parseJsonConfigFileContent(
@@ -70,7 +71,7 @@ export function generateSchema(
   // Build schemas for each workflow
   const workflowSchemas: Record<
     string,
-    { input: Definition; output: Definition }
+    { input: Definition; output: Definition; config: { requireAuthToTrigger: boolean } }
   > = {};
 
   for (const workflow of workflowInfo) {
@@ -95,6 +96,9 @@ export function generateSchema(
     workflowSchemas[workflowName] = {
       input: inputSchema,
       output: outputSchema,
+      config: {
+        requireAuthToTrigger: !workflow.isPublic,
+      },
     };
   }
 
@@ -303,6 +307,7 @@ function findWorkflowDefinitions(
           .getText(sourceFile)
           .replace(/['"]/g, "");
         const workflowFunction = callExpression.arguments[1];
+        const workflowOpts = callExpression.arguments[2]; // Optional third parameter
 
         // Validate workflow function
         if (
@@ -322,12 +327,16 @@ function findWorkflowDefinitions(
               typeChecker,
             );
 
+            // Extract public option from workflowOpts
+            const isPublic = extractPublicOption(workflowOpts, sourceFile);
+
             workflowInfos.push({
               name: workflowName,
               componentName: variableName,
               inputType,
               outputType,
               isStreamComponent: false,
+              isPublic,
             });
           }
         }
@@ -372,6 +381,53 @@ function extractWorkflowTypes(
   }
 
   return { inputType, outputType };
+}
+
+/**
+ * Extracts the public option from workflow options
+ */
+function extractPublicOption(
+  workflowOpts: ts.Expression | undefined,
+  sourceFile: ts.SourceFile,
+): boolean {
+  if (!workflowOpts) {
+    return false; // Default to private if no options provided
+  }
+
+  // Handle object literal expressions
+  if (ts.isObjectLiteralExpression(workflowOpts)) {
+    for (const property of workflowOpts.properties) {
+      if (
+        ts.isPropertyAssignment(property) &&
+        ts.isIdentifier(property.name) &&
+        property.name.text === "public"
+      ) {
+        const value = property.initializer;
+        
+        // Handle boolean literals
+        if (value.kind === ts.SyntaxKind.TrueKeyword) {
+          return true;
+        } else if (value.kind === ts.SyntaxKind.FalseKeyword) {
+          return false;
+        } else {
+          // If it's not a plain boolean literal, throw an error
+          const valueText = value.getText(sourceFile);
+          throw new Error(
+            `The 'public' option must be a boolean literal (true or false), but got: ${valueText}`
+          );
+        }
+      }
+    }
+  } else {
+    // If workflowOpts is not an object literal, it could be a variable reference
+    // In this case, we can't statically analyze it, so throw an error
+    const optsText = workflowOpts.getText(sourceFile);
+    throw new Error(
+      `Workflow options must be an object literal to extract the 'public' option, but got: ${optsText}`
+    );
+  }
+
+  return false; // Default to private if public property not found
 }
 
 /**
@@ -443,6 +499,7 @@ function findWorkflowsInFile(
           .getText(sourceFile)
           .replace(/['"]/g, "");
         const workflowFn = initializer.arguments[1];
+        const workflowOpts = initializer.arguments[2]; // Optional third parameter
 
         if (
           workflowName &&
@@ -470,12 +527,16 @@ function findWorkflowsInFile(
             }
           }
 
+          // Extract public option from workflowOpts
+          const isPublic = extractPublicOption(workflowOpts, sourceFile);
+
           workflows.push({
             name: workflowName,
             componentName: node.name.getText(sourceFile),
             inputType,
             outputType,
             isStreamComponent: false,
+            isPublic,
           });
         }
       }

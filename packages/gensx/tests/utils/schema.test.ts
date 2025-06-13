@@ -106,6 +106,9 @@ describe("schema generator", () => {
           },
           required: ["result", "processed"].sort(),
         },
+        config: {
+          requireAuthToTrigger: true,
+        },
       },
     };
 
@@ -138,6 +141,9 @@ describe("schema generator", () => {
         },
         output: {
           type: "number",
+        },
+        config: {
+          requireAuthToTrigger: true,
         },
       },
     };
@@ -288,6 +294,9 @@ describe("schema generator", () => {
         output: {
           type: "string",
         },
+        config: {
+          requireAuthToTrigger: true,
+        },
       });
     });
   });
@@ -315,6 +324,9 @@ describe("schema generator", () => {
         },
         output: {
           type: "string",
+        },
+        config: {
+          requireAuthToTrigger: true,
         },
       });
     });
@@ -385,6 +397,9 @@ describe("schema generator", () => {
           },
           required: ["type", "value"],
         },
+        config: {
+          requireAuthToTrigger: true,
+        },
       });
 
       // Test object stream
@@ -412,6 +427,9 @@ describe("schema generator", () => {
           },
           required: ["type", "value"],
         },
+        config: {
+          requireAuthToTrigger: true,
+        },
       });
 
       // Test string generator
@@ -431,6 +449,9 @@ describe("schema generator", () => {
             value: { type: "string" },
           },
           required: ["type", "value"],
+        },
+        config: {
+          requireAuthToTrigger: true,
         },
       });
 
@@ -459,6 +480,9 @@ describe("schema generator", () => {
           },
           required: ["type", "value"],
         },
+        config: {
+          requireAuthToTrigger: true,
+        },
       });
     });
   });
@@ -482,6 +506,9 @@ describe("schema generator", () => {
             message: { type: "string" },
           },
           required: ["message"],
+        },
+        config: {
+          requireAuthToTrigger: true,
         },
       });
     });
@@ -600,6 +627,9 @@ describe("schema generator", () => {
             },
           },
           required: ["objectIds", "processedItems", "sum"],
+        },
+        config: {
+          requireAuthToTrigger: true,
         },
       });
     });
@@ -843,6 +873,128 @@ describe("schema generator", () => {
       expect((schemas as any).HelperWorkflow.input.properties).toHaveProperty(
         "data",
       );
+    } finally {
+      cleanupTempFiles(tempDir);
+    }
+  });
+
+  it("should handle public workflow option", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      interface TestProps {
+        input: string;
+      }
+
+      export const PublicWorkflow = gensx.Workflow("PublicWorkflow", async (props: TestProps) => {
+        return { result: props.input };
+      }, { public: true });
+
+      export const PrivateWorkflow = gensx.Workflow("PrivateWorkflow", async (props: TestProps) => {
+        return { result: props.input };
+      }, { public: false });
+
+      export const DefaultWorkflow = gensx.Workflow("DefaultWorkflow", async (props: TestProps) => {
+        return { result: props.input };
+      });
+    `;
+
+    await verifySchemas(content, (schemas) => {
+      // Check that all workflows are present
+      expect(schemas).toHaveProperty("PublicWorkflow");
+      expect(schemas).toHaveProperty("PrivateWorkflow");
+      expect(schemas).toHaveProperty("DefaultWorkflow");
+
+      // Check config for public workflow
+      expect((schemas as any).PublicWorkflow.config).toEqual({
+        requireAuthToTrigger: false,
+      });
+
+      // Check config for private workflow
+      expect((schemas as any).PrivateWorkflow.config).toEqual({
+        requireAuthToTrigger: true,
+      });
+
+      // Check config for default workflow (should default to private)
+      expect((schemas as any).DefaultWorkflow.config).toEqual({
+        requireAuthToTrigger: true,
+      });
+    });
+  });
+
+  it("should throw error for non-boolean public option", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      export const InvalidWorkflow = gensx.Workflow("InvalidWorkflow", async (props: { input: string }) => {
+        return { result: props.input };
+      }, { public: "true" });
+    `;
+
+    const [tempFile, tempDir] = await createTempFile(content);
+    await fs.writeFile(
+      resolve(tempDir, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          target: "ESNext",
+          module: "NodeNext",
+          lib: ["ESNext", "DOM"],
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          forceConsistentCasingInFileNames: true,
+          moduleResolution: "NodeNext",
+          resolveJsonModule: true,
+          isolatedModules: true,
+          outDir: "./dist",
+        },
+      }),
+    );
+
+    try {
+      expect(() => {
+        generateSchema(tempFile, resolve(tempDir, "tsconfig.json"));
+      }).toThrow("The 'public' option must be a boolean literal (true or false), but got: \"true\"");
+    } finally {
+      cleanupTempFiles(tempDir);
+    }
+  });
+
+  it("should throw error for non-object-literal workflow options", async () => {
+    const content = `
+      import * as gensx from "@gensx/core";
+
+      const workflowOpts = { public: true };
+
+      export const InvalidWorkflow = gensx.Workflow("InvalidWorkflow", async (props: { input: string }) => {
+        return { result: props.input };
+      }, workflowOpts);
+    `;
+
+    const [tempFile, tempDir] = await createTempFile(content);
+    await fs.writeFile(
+      resolve(tempDir, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          target: "ESNext",
+          module: "NodeNext",
+          lib: ["ESNext", "DOM"],
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          forceConsistentCasingInFileNames: true,
+          moduleResolution: "NodeNext",
+          resolveJsonModule: true,
+          isolatedModules: true,
+          outDir: "./dist",
+        },
+      }),
+    );
+
+    try {
+      expect(() => {
+        generateSchema(tempFile, resolve(tempDir, "tsconfig.json"));
+      }).toThrow("Workflow options must be an object literal to extract the 'public' option, but got: workflowOpts");
     } finally {
       cleanupTempFiles(tempDir);
     }
