@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/dereklegenzoff/Source/gensx-mono/gensx/examples/draft-pad/app/not-found.tsx"],"sourcesContent":["export default function NotFound() {\n  return (\n    <div className=\"min-h-screen flex items-center justify-center\">\n      <div className=\"text-center\">\n        <h1 className=\"text-2xl font-bold mb-4\">404 - Page Not Found</h1>\n        <p className=\"text-gray-500\">The page you're looking for doesn't exist.</p>\n      </div>\n    </div>\n  )\n} "],"names":[],"mappings":";;;;;AAAe,SAAS;IACtB,qBACE,qZAAC;QAAI,WAAU;kBACb,cAAA,qZAAC;YAAI,WAAU;;8BACb,qZAAC;oBAAG,WAAU;8BAA0B;;;;;;8BACxC,qZAAC;oBAAE,WAAU;8BAAgB;;;;;;;;;;;;;;;;;AAIrC","debugId":null}}]
+}

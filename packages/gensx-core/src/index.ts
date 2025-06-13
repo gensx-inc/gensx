@@ -1,6 +1,13 @@
 export * from "./component.js";
 export * from "./types.js";
-export { emitProgress, withContext, getCurrentContext } from "./context.js";
+export { withContext, getCurrentContext } from "./context.js";
+export {
+  publishData,
+  publishEvent,
+  publishObject,
+  createEventStream,
+  createObjectStream,
+} from "./workflow-state.js";
 export * from "./wrap.js";
 
 export { Component, Workflow } from "./component.js";
