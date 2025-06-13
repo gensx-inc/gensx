@@ -14,32 +14,24 @@ export type WorkflowProgressEvent = { id: string; timestamp: string } & (
       label?: string;
       componentId: string;
     }
-  | { type: "data"; action: string; content: string; messageId: string }
   | {
-      type: "data";
-      role: "assistant" | "tool";
-      delta: string;
-      messageId?: string;
-      id: string;
-    }
-  | {
-      type: "tool_call";
-      role: "assistant";
-      delta: string;
-      id: string;
-      tool_call_id: string;
-      function_name: string;
-      arguments: string;
-    }
-  | {
-      type: "tool_result";
-      role: "tool";
-      delta: string;
-      id: string;
-      tool_call_id: string;
-      function_name: string;
-      result: string;
-      error?: string;
+      type: "object";
+      label: string;
+      data: {
+        messages: Array<{
+          role: "assistant" | "tool" | "user";
+          content: string | null;
+          tool_calls?: Array<{
+            id: string;
+            type: "function";
+            function: {
+              name: string;
+              arguments: string;
+            };
+          }>;
+          tool_call_id?: string;
+        }>;
+      };
     }
   | { type: "error"; error: string }
   | { type: "end" }
@@ -47,15 +39,18 @@ export type WorkflowProgressEvent = { id: string; timestamp: string } & (
 
 export interface Message {
   id: string;
-  content: string;
+  content: string | null;
   role: "user" | "assistant" | "tool";
   timestamp: Date;
+  tool_calls?: Array<{
+    id: string;
+    type: "function";
+    function: {
+      name: string;
+      arguments: string;
+    };
+  }>;
   tool_call_id?: string;
-  function_name?: string;
-  arguments?: string;
-  result?: string;
-  isError?: boolean;
-  messageType?: "regular" | "tool_call" | "tool_result" | "tool_complete";
 }
 
 interface UseChatReturn {
@@ -142,148 +137,40 @@ export function useChat(): UseChatReturn {
               const event = JSON.parse(line) as WorkflowProgressEvent;
               console.log("📝 Received event:", event, "🚀");
 
-              // Handle regular progress events (old format)
-              if (
-                event.type === "data" &&
-                "content" in event &&
-                event.content
-              ) {
+              // Handle new object-based message events
+              if (event.type === "object" && event.label === "messages") {
                 if (!hasReceivedFirstChunk) {
                   hasReceivedFirstChunk = true;
                   setIsLoading(false);
                 }
 
-                setMessages((prev) => {
-                  const existingMessageIndex = prev.findIndex(
-                    (msg) => msg.id === event.messageId,
-                  );
+                // Convert OpenAI message format to our Message interface
+                const convertedMessages: Message[] = event.data.messages.map(
+                  (msg, index) => {
+                    // Generate unique ID for each message
+                    const messageId = `${event.id}-${index}`;
 
-                  if (existingMessageIndex === -1) {
-                    return [
-                      ...prev,
-                      {
-                        id: event.messageId,
-                        content: event.content,
-                        role: "assistant" as const,
-                        timestamp: new Date(event.timestamp || Date.now()),
-                        messageType: "regular" as const,
-                      },
-                    ];
-                  }
-
-                  return prev.map((msg, index) => {
-                    if (index === existingMessageIndex) {
-                      return {
-                        ...msg,
-                        content: msg.content + event.content,
-                      };
-                    }
-                    return msg;
-                  });
-                });
-              }
-
-              // Handle new progress events with delta
-              if (event.type === "data" && "delta" in event && event.delta) {
-                if (!hasReceivedFirstChunk) {
-                  hasReceivedFirstChunk = true;
-                  setIsLoading(false);
-                }
-
-                setMessages((prev) => {
-                  const existingMessageIndex = prev.findIndex(
-                    (msg) => msg.id === event.id,
-                  );
-
-                  if (existingMessageIndex === -1) {
-                    return [
-                      ...prev,
-                      {
-                        id: event.id,
-                        content: event.delta,
-                        role: event.role,
-                        timestamp: new Date(event.timestamp || Date.now()),
-                        messageType: "regular" as const,
-                      },
-                    ];
-                  }
-
-                  return prev.map((msg, index) => {
-                    if (index === existingMessageIndex) {
-                      return {
-                        ...msg,
-                        content: msg.content + event.delta,
-                      };
-                    }
-                    return msg;
-                  });
-                });
-              }
-
-              // Handle tool call events
-              if (event.type === "tool_call") {
-                if (!hasReceivedFirstChunk) {
-                  hasReceivedFirstChunk = true;
-                  setIsLoading(false);
-                }
-
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: event.tool_call_id,
-                    content: event.delta,
-                    role: "assistant" as const,
-                    timestamp: new Date(event.timestamp || Date.now()),
-                    tool_call_id: event.tool_call_id,
-                    function_name: event.function_name,
-                    arguments: event.arguments,
-                    messageType: "tool_call" as const,
-                  },
-                ]);
-              }
-
-              // Handle tool result events
-              if (event.type === "tool_result") {
-                if (!hasReceivedFirstChunk) {
-                  hasReceivedFirstChunk = true;
-                  setIsLoading(false);
-                }
-
-                setMessages((prev) => {
-                  const existingCallIndex = prev.findIndex(
-                    (msg) =>
-                      msg.tool_call_id === event.tool_call_id &&
-                      msg.messageType === "tool_call",
-                  );
-
-                  if (existingCallIndex !== -1) {
-                    return prev.map((msg, index) => {
-                      if (index === existingCallIndex) {
-                        return {
-                          ...msg,
-                          result: event.result,
-                          isError: event.error === "true",
-                          messageType: "tool_complete" as const,
-                        };
-                      }
-                      return msg;
-                    });
-                  }
-
-                  return [
-                    ...prev,
-                    {
-                      id: event.id,
-                      content: event.delta,
-                      role: "tool" as const,
+                    return {
+                      id: messageId,
+                      content: msg.content,
+                      role: msg.role as "assistant" | "tool" | "user",
                       timestamp: new Date(event.timestamp || Date.now()),
-                      tool_call_id: event.tool_call_id,
-                      function_name: event.function_name,
-                      result: event.result,
-                      isError: event.error === "true",
-                      messageType: "tool_result" as const,
-                    },
-                  ];
+                      tool_calls: msg.tool_calls,
+                      tool_call_id: msg.tool_call_id,
+                    };
+                  },
+                );
+
+                // Replace messages entirely with the new set from the workflow
+                setMessages((prev) => {
+                  // Keep user messages and only replace assistant/tool messages
+                  const userMessages = prev.filter(
+                    (msg) => msg.role === "user",
+                  );
+                  const newMessages = convertedMessages.filter(
+                    (msg) => msg.role !== "user",
+                  );
+                  return [...userMessages, ...newMessages];
                 });
               }
             } catch (e) {

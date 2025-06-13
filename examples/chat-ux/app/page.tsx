@@ -99,7 +99,11 @@ export default function ChatPage() {
           ) : (
             <>
               {messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  messages={messages}
+                />
               ))}
             </>
           )}
