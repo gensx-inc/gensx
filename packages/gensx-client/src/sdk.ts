@@ -10,59 +10,59 @@ declare const process:
   | undefined;
 
 // GenSX Event Types
-export type GenSXStartEvent = {
+export interface GenSXStartEvent {
   type: "start";
   workflowExecutionId: string;
   workflowName: string;
   id: string;
   timestamp: string;
-};
+}
 
-export type GenSXComponentStartEvent = {
+export interface GenSXComponentStartEvent {
   type: "component-start";
   componentName: string;
   componentId: string;
   id: string;
   timestamp: string;
-};
+}
 
-export type GenSXComponentEndEvent = {
+export interface GenSXComponentEndEvent {
   type: "component-end";
   componentName: string;
   componentId: string;
   id: string;
   timestamp: string;
-};
+}
 
-export type GenSXProgressEvent = {
+export interface GenSXProgressEvent {
   type: "progress";
   data: {
     type: string;
   };
   id: string;
   timestamp: string;
-};
+}
 
-export type GenSXOutputEvent = {
+export interface GenSXOutputEvent {
   type: "output";
   content: string;
   id: string;
   timestamp: string;
-};
+}
 
-export type GenSXEndEvent = {
+export interface GenSXEndEvent {
   type: "end";
   id: string;
   timestamp: string;
-};
+}
 
-export type GenSXErrorEvent = {
+export interface GenSXErrorEvent {
   type: "error";
   error?: string;
   message?: string;
   id: string;
   timestamp: string;
-};
+}
 
 export type GenSXEvent =
   | GenSXStartEvent
@@ -83,7 +83,7 @@ export interface GenSXConfig {
 }
 
 export interface RunOptions {
-  inputs?: Record<string, any>;
+  inputs?: Record<string, unknown>;
   stream?: boolean;
   // Allow overriding client-level config
   org?: string;
@@ -92,7 +92,7 @@ export interface RunOptions {
 }
 
 export interface RunRawOptions {
-  inputs?: Record<string, any>;
+  inputs?: Record<string, unknown>;
   format?: "sse" | "ndjson" | "json";
   // Allow overriding client-level config
   org?: string;
@@ -101,7 +101,7 @@ export interface RunRawOptions {
 }
 
 export interface StartOptions {
-  inputs?: Record<string, any>;
+  inputs?: Record<string, unknown>;
   // Allow overriding client-level config
   org?: string;
   project?: string;
@@ -111,7 +111,7 @@ export interface StartOptions {
 export interface StartResponse {
   executionId: string;
   executionStatus: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface GetProgressOptions {
@@ -122,9 +122,9 @@ export interface GetProgressOptions {
 export interface WorkflowExecution {
   executionId: string;
   status: string;
-  progress?: any[];
-  result?: any;
-  error?: any;
+  progress?: unknown[];
+  result?: unknown;
+  error?: unknown;
 }
 
 type RunReturn<
@@ -174,7 +174,7 @@ export class GenSX {
   private isLocal: boolean;
 
   constructor(config: GenSXConfig) {
-    this.baseUrl = config.baseUrl || "https://api.gensx.com";
+    this.baseUrl = config.baseUrl ?? "https://api.gensx.com";
     this.isLocal =
       this.baseUrl.includes("localhost") && !config.overrideLocalMode;
 
@@ -204,16 +204,16 @@ export class GenSX {
    * Run a workflow with optional streaming
    * @returns Either { output, progressStream } or { outputStream, progressStream } based on stream flag
    */
-  async run<TOutput = any>(
+  async run<TOutput = unknown>(
     workflowName: string,
     options: RunOptions = {},
   ): Promise<RunReturn<TOutput, typeof options.stream>> {
     const { inputs = {}, stream = false } = options;
 
     // Use provided values or fall back to client defaults
-    const org = options.org || this.org;
-    const project = options.project || this.project;
-    const environment = options.environment || this.environment;
+    const org = options.org ?? this.org;
+    const project = options.project ?? this.project;
+    const environment = options.environment ?? this.environment;
 
     const response = await this.runRaw(workflowName, {
       inputs,
@@ -233,28 +233,32 @@ export class GenSX {
       // Convert ReadableStream to AsyncIterable
       const outputIterable = this.createAsyncIterable(outputStream);
 
-      return { outputStream: outputIterable, progressStream } as any;
+      return {
+        outputStream: outputIterable as AsyncIterable<TOutput>,
+        progressStream,
+      };
     } else {
       // Parse all events
       const events: GenSXEvent[] = [];
-      const reader = response.body!.getReader();
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+          buffer = lines.pop() ?? "";
 
           for (const line of lines) {
             if (!line.trim()) continue;
             try {
-              events.push(JSON.parse(line));
-            } catch (e) {
+              events.push(JSON.parse(line) as GenSXEvent);
+            } catch {
               console.warn("Failed to parse event:", line);
             }
           }
@@ -281,11 +285,11 @@ export class GenSX {
         .map((e) => e.content);
 
       if (outputContents.length === 0) {
-        output = null as any;
+        output = null as TOutput;
       } else if (typeof outputContents[0] === "string") {
-        output = outputContents.join("") as any;
+        output = outputContents.join("") as TOutput;
       } else {
-        output = outputContents as any;
+        output = outputContents as TOutput;
       }
 
       // Create progress stream from events
@@ -300,7 +304,7 @@ export class GenSX {
         },
       });
 
-      return { output, progressStream } as any;
+      return { output, progressStream };
     }
   }
 
@@ -319,9 +323,9 @@ export class GenSX {
     const { inputs = {}, format = "ndjson" } = options;
 
     // Use provided values or fall back to client defaults
-    const org = options.org || this.org;
-    const project = options.project || this.project;
-    const environment = options.environment || this.environment;
+    const org = options.org ?? this.org;
+    const project = options.project ?? this.project;
+    const environment = options.environment ?? this.environment;
 
     const url = this.buildWorkflowUrl(workflowName, org, project, environment);
 
@@ -361,9 +365,9 @@ export class GenSX {
     const { inputs = {} } = options;
 
     // Use provided values or fall back to client defaults
-    const org = options.org || this.org;
-    const project = options.project || this.project;
-    const environment = options.environment || this.environment;
+    const org = options.org ?? this.org;
+    const project = options.project ?? this.project;
+    const environment = options.environment ?? this.environment;
 
     const url = this.buildStartUrl(workflowName, org, project, environment);
 
@@ -382,13 +386,17 @@ export class GenSX {
       );
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      executionId: string;
+      executionStatus?: string;
+      status?: string;
+    };
     const executionId =
-      response.headers.get("X-Execution-Id") || data.executionId;
+      response.headers.get("X-Execution-Id") ?? data.executionId;
 
     return {
       executionId,
-      executionStatus: data.executionStatus || data.status || "started",
+      executionStatus: data.executionStatus ?? data.status ?? "started",
       data,
     };
   }
@@ -471,13 +479,14 @@ export class GenSX {
     let buffer = "";
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+        buffer = lines.pop() ?? "";
 
         for (const line of lines) {
           if (!line.trim()) continue;
@@ -563,6 +572,7 @@ export class GenSX {
     const reader = stream.getReader();
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
