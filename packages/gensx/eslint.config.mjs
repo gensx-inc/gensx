@@ -1,5 +1,3 @@
-import eslintPluginN from "eslint-plugin-n";
-
 import rootConfig from "../../eslint.config.mjs";
 
 export default [
@@ -17,9 +15,6 @@ export default [
     },
   },
   {
-    plugins: {
-      n: eslintPluginN,
-    },
     rules: {
       "n/prefer-node-protocol": "error",
     },
