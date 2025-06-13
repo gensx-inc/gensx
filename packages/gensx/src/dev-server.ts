@@ -86,7 +86,7 @@ export interface WorkflowExecution {
   input: unknown;
   output?: unknown;
   error?: string;
-  workflowMessages?: WorkflowMessage[];
+  workflowMessages: WorkflowMessage[];
 }
 
 export type JsonValue =
@@ -365,6 +365,7 @@ export class GensxServer {
           executionStatus: "queued",
           createdAt: now,
           input: body,
+          workflowMessages: [],
         };
 
         // Store the execution
@@ -468,7 +469,7 @@ export class GensxServer {
         c.req.query("lastEventId") ?? c.req.header("Last-Event-Id");
 
       // Filter events based on lastEventId if provided
-      const events = execution.workflowMessages ?? [];
+      const events = execution.workflowMessages;
       const filteredEvents = lastEventId
         ? events.filter((event) => event.id > lastEventId)
         : events;
@@ -580,6 +581,7 @@ export class GensxServer {
           executionStatus: "running", // Start directly in running state since this is synchronous
           createdAt: now,
           input: body,
+          workflowMessages: [],
         };
 
         // Store the execution
@@ -614,7 +616,7 @@ export class GensxServer {
                   // Set up progress listener
                   const messageListener = (event: WorkflowMessage) => {
                     const eventData = JSON.stringify(event);
-                    execution.workflowMessages?.push(event);
+                    execution.workflowMessages.push(event);
                     if (acceptHeader === "text/event-stream") {
                       controller.enqueue(
                         new TextEncoder().encode(
@@ -1494,7 +1496,7 @@ export class GensxServer {
           timestamp: new Date().toISOString(),
           ...event,
         };
-        execution.workflowMessages?.push(workflowMessage);
+        execution.workflowMessages.push(workflowMessage);
         this.executionsMap.set(executionId, execution);
       };
 
@@ -1524,7 +1526,7 @@ export class GensxServer {
         error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString(),
       };
-      execution.workflowMessages?.push(errorEvent);
+      execution.workflowMessages.push(errorEvent);
 
       this.executionsMap.set(executionId, execution);
 
