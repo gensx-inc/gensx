@@ -552,13 +552,15 @@ describe("GenSX Dev Server", () => {
 
     // Verify SSE format
     const sseContent = chunks.join("");
-    expect(sseContent).toContain(
-      'data: {"type":"start","workflowName":"progressWorkflow"}\n\n',
+    expect(sseContent).toMatch(
+      /id: \d+\ndata: {"type":"start","workflowName":"progressWorkflow","id":"\d+","timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z"}\n\n/,
     );
-    expect(sseContent).toContain(
-      'data: {"type":"progress","data":"Processing..."}\n\n',
+    expect(sseContent).toMatch(
+      /id: \d+\ndata: {"type":"progress","data":"Processing...","id":"\d+","timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z"}\n\n/,
     );
-    expect(sseContent).toContain('data: {"type":"end"}\n\n');
+    expect(sseContent).toMatch(
+      /id: \d+\ndata: {"type":"end","id":"\d+","timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z"}\n\n/,
+    );
   });
 
   it("should stream progress events in NDJSON format", async () => {
@@ -628,17 +630,25 @@ describe("GenSX Dev Server", () => {
     const lines = ndjsonContent.split("\n").filter(Boolean);
     expect(lines).toHaveLength(4);
     expect(JSON.parse(lines[0])).toEqual({
+      id: expect.any(String),
+      timestamp: expect.any(String),
       type: "start",
       workflowName: "progressWorkflow",
     });
     expect(JSON.parse(lines[1])).toEqual({
+      id: expect.any(String),
+      timestamp: expect.any(String),
       type: "progress",
       data: "Processing...",
     });
     expect(JSON.parse(lines[2])).toEqual({
+      id: expect.any(String),
+      timestamp: expect.any(String),
       type: "end",
     });
     expect(JSON.parse(lines[3])).toMatchObject({
+      id: expect.any(String),
+      timestamp: expect.any(String),
       type: "output",
       content: '{"result":"done"}',
     });
@@ -702,11 +712,11 @@ describe("GenSX Dev Server", () => {
 
     // Verify error event
     const sseContent = chunks.join("");
-    expect(sseContent).toContain(
-      'data: {"type":"start","workflowName":"errorWorkflow"}\n\n',
+    expect(sseContent).toMatch(
+      /id: \d+\ndata: {"type":"start","workflowName":"errorWorkflow","id":"\d+","timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z"}\n\n/,
     );
-    expect(sseContent).toContain(
-      'data: {"type":"error","executionStatus":"failed","error":"Workflow failed"}\n\n',
+    expect(sseContent).toMatch(
+      /id: \d+\ndata: {"id":"\d+","timestamp":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z","type":"error","executionStatus":"failed","error":"Workflow failed"}\n\n/,
     );
   });
 

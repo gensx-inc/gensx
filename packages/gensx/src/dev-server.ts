@@ -711,6 +711,8 @@ export class GensxServer {
 
                   // Send error event
                   const errorEvent = {
+                    id: Date.now().toString(),
+                    timestamp: new Date().toISOString(),
                     type: "error",
                     executionId,
                     executionStatus: "failed",
@@ -720,7 +722,9 @@ export class GensxServer {
                   const errorEventData = JSON.stringify(errorEvent);
                   if (acceptHeader === "text/event-stream") {
                     controller.enqueue(
-                      new TextEncoder().encode(`data: ${errorEventData}\n\n`),
+                      new TextEncoder().encode(
+                        `id: ${errorEvent.id}\ndata: ${errorEventData}\n\n`,
+                      ),
                     );
                   } else {
                     controller.enqueue(
