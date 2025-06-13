@@ -1,23 +1,25 @@
-'use client';
+"use client";
 
 import { useState, useMemo } from 'react';
 import { useWorkflow, GenSXWorkflowEvent } from '@gensx/react';
 import { DraftEditorCard } from "@/components/ui/draft-editor-card";
 import { EventColumn } from "@/components/ui/event-column";
-import { GenSXOutputEvent, GenSXProgressEvent } from '@gensx/client';
+import { GenSXOutputEvent, GenSXProgressEvent } from "@gensx/client";
+
 import {
-  StartContentEvent,
+  CustomWorkflowEvent,
   EndContentEvent,
   ProgressEventTypes,
+  ProgressStats,
   UpdateDraftInput,
   UpdateDraftOutput,
+  WorkflowEventCounts,
   WorkflowEventData,
-  ProgressStats
-} from './types';
+} from "./types";
 
 export default function Home() {
-  const [userMessage, setUserMessage] = useState('');
-  const [previousDraft, setPreviousDraft] = useState('');
+  const [userMessage, setUserMessage] = useState("");
+  const [previousDraft, setPreviousDraft] = useState("");
   const {
     isStreaming,
     error,
@@ -31,9 +33,9 @@ export default function Home() {
     endpoint: '/api/gensx',
     workflowName: 'updateDraft',
     defaultConfig: {
-      org: 'gensx',
-      project: 'draft-pad',
-      environment: 'default',
+      org: "gensx",
+      project: "draft-pad",
+      environment: "default",
     },
   });
 
@@ -105,56 +107,57 @@ export default function Home() {
     clear();
 
     const message = userMessage.trim();
-    setUserMessage(''); // Clear the input immediately after submission
+    setUserMessage(""); // Clear the input immediately after submission
 
     await stream({
       userMessage: message,
-      currentDraft: output || previousDraft || '',
+      currentDraft: output || previousDraft || "",
     });
   };
 
   return (
     <div className="min-h-screen">
       <div className="min-h-screen p-4">
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1 space-y-4">
-            <h1 className="text-3xl font-bold text-[#333333] font-atma text-center">Draft Pad</h1>
-            <DraftEditorCard
-              output={output}
-              isStreaming={isStreaming}
-              error={error}
-              userMessage={userMessage}
-              onUserMessageChange={setUserMessage}
-              onSubmit={handleSubmit}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-1 space-y-4">
+              <h1 className="text-3xl font-bold text-[#333333] font-atma text-center">
+                Draft Pad
+              </h1>
+              <DraftEditorCard
+                output={output}
+                isStreaming={isStreaming}
+                error={error}
+                userMessage={userMessage}
+                onUserMessageChange={setUserMessage}
+                onSubmit={handleSubmit}
+              />
+            </div>
+
+            <EventColumn<GenSXWorkflowEvent, WorkflowEventData>
+              title="Workflow Events"
+              value={workflowEventData}
+              events={workflowControlEvents}
+              stateEvents={stateWorkflowEvents}
+            />
+
+            <EventColumn<ProgressEventTypes, ProgressStats>
+              title="Progress Events"
+              value={progressStats}
+              events={parsedProgressEvents}
+              stateEvents={stateProgressEvents}
+              emptyMessage="No start/end events yet"
+            />
+
+            <EventColumn<GenSXOutputEvent, string>
+              title="Output Events"
+              value={contentEventsValue}
+              events={stateOutputEvents}
+              stateEvents={stateOutputEvents}
+              emptyMessage="No output events yet"
             />
           </div>
-
-          <EventColumn<GenSXWorkflowEvent, WorkflowEventData>
-            title="Workflow Events"
-            value={workflowEventData}
-            events={workflowControlEvents}
-            stateEvents={stateWorkflowEvents}
-            emptyMessage="No workflow events yet"
-          />
-
-          <EventColumn<ProgressEventTypes, ProgressStats>
-            title="Progress Stats"
-            value={progressStats}
-            events={parsedProgressEvents}
-            stateEvents={stateProgressEvents}
-            emptyMessage="No start/end events yet"
-          />
-
-          <EventColumn<GenSXOutputEvent, string>
-            title="Output Events"
-            value={contentEventsValue}
-            events={stateOutputEvents}
-            stateEvents={stateOutputEvents}
-            emptyMessage="No output events yet"
-          />
         </div>
-      </div>
       </div>
     </div>
   );

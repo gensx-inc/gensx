@@ -25,6 +25,7 @@ export interface DeployOptions {
   env?: string;
   yes?: boolean;
   archive?: string;
+  verbose?: boolean;
 }
 
 interface DeploymentResponse {
@@ -57,6 +58,7 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
   const [deployment, setDeployment] = useState<DeploymentResponse | null>(null);
   const [auth, setAuth] = useState<Awaited<ReturnType<typeof getAuth>>>(null);
   const [resolvedEnv, setResolvedEnv] = useState<string | null>(null);
+  const [buildProgress, setBuildProgress] = useState<string[]>([]);
   const {
     loading,
     error: projectError,
@@ -86,7 +88,9 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
           }
           schemas = generateSchema(absolutePath);
         } else {
-          const buildResult = await build(file);
+          const buildResult = await build(file, {}, (data) => {
+            setBuildProgress((prev) => [...prev, data]);
+          });
           bundleFile = buildResult.bundleFile;
           schemas = buildResult.schemas;
         }
@@ -185,7 +189,15 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
       )}
 
       {phase === "building" && (
-        <LoadingSpinner message="Building workflows using docker..." />
+        <Box flexDirection="column">
+          <Box flexDirection="column">
+            {options.verbose &&
+              buildProgress.map((line, index) => (
+                <Text key={index}>{line}</Text>
+              ))}
+          </Box>
+          <LoadingSpinner message="Building workflows using docker..." />
+        </Box>
       )}
 
       {phase === "deploying" && (

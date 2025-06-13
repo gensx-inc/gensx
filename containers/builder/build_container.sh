@@ -2,16 +2,20 @@
 
 set -e
 
-echo "Publishing..."
+TAG=${1:-$GIT_SHA}
 
-docker login -u $DOCKER_USERNAME -p $DOCKER_ACCESS_TOKEN
+echo "Building..."
 
-docker build -t gensx/builder:$GIT_SHA .
-
-docker push gensx/builder:$GIT_SHA
+docker build --platform linux/x86_64 -t gensx/builder:$TAG .
 
 if [ "$PUBLISH_LATEST" = "true" ]; then
-  docker image tag gensx/builder:$GIT_SHA gensx/builder:latest
+  echo "Publishing..."
+
+  docker login -u $DOCKER_USERNAME -p $DOCKER_ACCESS_TOKEN
+
+  docker push gensx/builder:$TAG
+
+  docker image tag gensx/builder:$TAG gensx/builder:latest
   docker push gensx/builder:latest
 fi
 

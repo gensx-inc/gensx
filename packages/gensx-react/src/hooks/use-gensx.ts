@@ -1,25 +1,29 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
 import {
-  GenSXEvent,
-  GenSXProgressEvent,
-  GenSXOutputEvent,
-  GenSXStartEvent,
+  GenSXComponentEndEvent,
+  GenSXComponentStartEvent,
   GenSXEndEvent,
   GenSXErrorEvent,
-  GenSXComponentStartEvent,
-  GenSXComponentEndEvent
-} from '@gensx/client';
+  GenSXEvent,
+  GenSXOutputEvent,
+  GenSXProgressEvent,
+  GenSXStartEvent,
+} from "@gensx/client";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 // Match the Client's RunOptions interface
 export interface GenSXRunOptions {
   org: string;
   project: string;
   environment?: string;
-  inputs?: Record<string, any>;
-  format?: 'sse' | 'ndjson' | 'json';
+  inputs?: Record<string, unknown>;
+  format?: "sse" | "ndjson" | "json";
 }
 
-export interface UseGenSXOptions<TInputs = any, TOutput = any, TEvent extends GenSXProgressEvent = GenSXProgressEvent> {
+export interface UseGenSXOptions<
+  TInputs = unknown,
+  TOutput = unknown,
+  TEvent extends GenSXProgressEvent = GenSXProgressEvent,
+> {
   /**
    * API endpoint URL (your server endpoint that proxies to GenSX)
    */
@@ -34,7 +38,7 @@ export interface UseGenSXOptions<TInputs = any, TOutput = any, TEvent extends Ge
    * Default configuration applied to every run/stream (org, project, env, etc.)
    * Does NOT include inputs – those are passed per invocation.
    */
-  defaultConfig?: Omit<Partial<GenSXRunOptions>, 'inputs'>;
+  defaultConfig?: Omit<Partial<GenSXRunOptions>, "inputs">;
 
   /**
    * Optional headers to include in the request
@@ -81,7 +85,11 @@ export type GenSXWorkflowEvent =
   | GenSXEndEvent
   | GenSXErrorEvent;
 
-export interface UseGenSXResult<TInputs = any, TOutput = any, TEvent extends GenSXProgressEvent = GenSXProgressEvent> {
+export interface UseGenSXResult<
+  TInputs = any,
+  TOutput = any,
+  TEvent extends GenSXProgressEvent = GenSXProgressEvent,
+> {
   /** Whether the workflow is currently running */
   isLoading: boolean;
 
@@ -160,8 +168,10 @@ export function useWorkflow<
   TInputs = any,
   TOutput = any,
   // This should actually be BaseProgressEvent
-  TEvent extends GenSXProgressEvent = GenSXProgressEvent
->(options: UseGenSXOptions<TInputs, TOutput, TEvent>): UseGenSXResult<TInputs, TOutput, TEvent> {
+  TEvent extends GenSXProgressEvent = GenSXProgressEvent,
+>(
+  options: UseGenSXOptions<TInputs, TOutput, TEvent>,
+): UseGenSXResult<TInputs, TOutput, TEvent> {
   const {
     endpoint,
     workflowName,
@@ -172,7 +182,7 @@ export function useWorkflow<
     onOutput,
     onComplete,
     onError,
-    onEvent
+    onEvent,
   } = options;
 
   // State
@@ -190,118 +200,125 @@ export function useWorkflow<
   const outputRef = useRef<TOutput | null>(null);
 
   // Process a single event
-  const processEvent = useCallback((event: GenSXEvent) => {
-    // Add to events list
-    setEvents(prev => [...prev, event]);
+  const processEvent = useCallback(
+    (event: GenSXEvent) => {
+      // Add to events list
+      setEvents((prev) => [...prev, event]);
 
-    // Add to workflowEvents if it's a workflow control event (not progress or output)
-    if (event.type !== 'progress' && event.type !== 'output') {
-      setWorkflowEvents(prev => [...prev, event]);
-    }
+      // Add to workflowEvents if it's a workflow control event (not progress or output)
+      if (event.type !== "progress" && event.type !== "output") {
+        setWorkflowEvents((prev) => [...prev, event]);
+      }
 
-    // Fire generic callback
-    if (event.type === 'progress') {
-      onEvent?.(event as unknown as TEvent);
-    }
+      // Fire generic callback
+      if (event.type === "progress") {
+        onEvent?.(event as unknown as TEvent);
+      }
 
-    // Handle specific event types
-    switch (event.type) {
-      case 'start':
-        onStart?.(event.workflowName);
-        break;
+      // Handle specific event types
+      switch (event.type) {
+        case "start":
+          onStart?.(event.workflowName);
+          break;
 
-      case 'progress':
-        if ('data' in event && typeof (event as any).data === 'string') {
-          const dataStr = (event as any).data;
-          setProgressEvents(prev => [...prev, event as TEvent]);
+        case "progress":
+          if ("data" in event && typeof (event as any).data === "string") {
+            const dataStr = (event as any).data;
+            setProgressEvents((prev) => [...prev, event as TEvent]);
 
-          // Try to parse progress message as JSON for structured progress events
-          try {
-            const parsedProgress = JSON.parse(dataStr);
-            onProgress?.(parsedProgress);
-          } catch {
-            // If not JSON, pass as-is
-            onProgress?.(dataStr);
+            // Try to parse progress message as JSON for structured progress events
+            try {
+              const parsedProgress = JSON.parse(dataStr);
+              onProgress?.(parsedProgress);
+            } catch {
+              // If not JSON, pass as-is
+              onProgress?.(dataStr);
+            }
           }
-        }
-        break;
+          break;
 
-      case 'output':
-        setOutputEvents(prev => [...prev, event as GenSXOutputEvent]);
-        setOutput(prev => {
-          if (typeof prev === 'string' || prev === null) {
-            const newOutput = (prev || '') + event.content as TOutput;
-            outputRef.current = newOutput; // Keep ref in sync
-            return newOutput;
-          }
-          // For non-string outputs, just return the previous value
-          return prev;
-        });
-        onOutput?.(event.content);
-        break;
+        case "output":
+          setOutputEvents((prev) => [...prev, event]);
+          setOutput((prev) => {
+            if (typeof prev === "string" || prev === null) {
+              const newOutput = ((prev || "") + event.content) as TOutput;
+              outputRef.current = newOutput; // Keep ref in sync
+              return newOutput;
+            }
+            // For non-string outputs, just return the previous value
+            return prev;
+          });
+          onOutput?.(event.content);
+          break;
 
-      case 'end':
-        // Don't set output here - it's already accumulated in real-time
-        setIsLoading(false);
-        setIsStreaming(false);
-        // Call onComplete with the accumulated output
-        onComplete?.(outputRef.current || null as any);
-        break;
+        case "end":
+          // Don't set output here - it's already accumulated in real-time
+          setIsLoading(false);
+          setIsStreaming(false);
+          // Call onComplete with the accumulated output
+          onComplete?.(outputRef.current || (null as any));
+          break;
 
-      case 'error':
-        const errorMessage = event.error || event.message || 'Unknown error';
-        setError(errorMessage);
-        setIsLoading(false);
-        setIsStreaming(false);
-        onError?.(errorMessage);
-        break;
-    }
-  }, [onEvent, onStart, onProgress, onOutput, onComplete, onError]);
+        case "error":
+          const errorMessage = event.error || event.message || "Unknown error";
+          setError(errorMessage);
+          setIsLoading(false);
+          setIsStreaming(false);
+          onError?.(errorMessage);
+          break;
+      }
+    },
+    [onEvent, onStart, onProgress, onOutput, onComplete, onError],
+  );
 
   // Parse streaming response
-  const parseStream = useCallback(async (response: Response): Promise<void> => {
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error('No response body');
-    }
+  const parseStream = useCallback(
+    async (response: Response): Promise<void> => {
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body");
+      }
 
-    const decoder = new TextDecoder();
-    let buffer = '';
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || ""; // Keep incomplete line in buffer
 
-        for (const line of lines) {
-          if (!line.trim()) continue;
+          for (const line of lines) {
+            if (!line.trim()) continue;
 
-          try {
-            const event = JSON.parse(line) as GenSXEvent;
-            processEvent(event);
-          } catch (e) {
-            console.warn('Failed to parse event:', line);
+            try {
+              const event = JSON.parse(line) as GenSXEvent;
+              processEvent(event);
+            } catch (e) {
+              console.warn("Failed to parse event:", line);
+            }
           }
         }
-      }
 
-      // Process any remaining buffer
-      if (buffer.trim()) {
-        try {
-          const event = JSON.parse(buffer) as GenSXEvent;
-          processEvent(event);
-        } catch (e) {
-          console.warn('Failed to parse final event:', buffer);
+        // Process any remaining buffer
+        if (buffer.trim()) {
+          try {
+            const event = JSON.parse(buffer) as GenSXEvent;
+            processEvent(event);
+          } catch (e) {
+            console.warn("Failed to parse final event:", buffer);
+          }
         }
+      } finally {
+        reader.releaseLock();
       }
-    } finally {
-      reader.releaseLock();
-    }
-  }, [processEvent]);
+    },
+    [processEvent],
+  );
 
   // Clear state
   const clear = useCallback(() => {
@@ -327,102 +344,116 @@ export function useWorkflow<
   }, []);
 
   // Build request payload matching Client format
-  const buildPayload = useCallback((inputs: TInputs) => {
-    // Merge with defaults (no inputs here)
-    const config = {
-      ...defaultConfig,
-      inputs
-    } as GenSXRunOptions;
+  const buildPayload = useCallback(
+    (inputs: TInputs) => {
+      // Merge with defaults (no inputs here)
+      const config = {
+        ...defaultConfig,
+        inputs,
+      } as GenSXRunOptions;
 
-    return {
-      workflowName,
-      org: config.org,
-      project: config.project,
-      environment: config.environment,
-      format: config.format,
-      ...config.inputs
-    };
-  }, [defaultConfig, workflowName]);
+      return {
+        workflowName,
+        org: config.org,
+        project: config.project,
+        environment: config.environment,
+        format: config.format,
+        ...config.inputs,
+      };
+    },
+    [defaultConfig, workflowName],
+  );
 
   // Run workflow in collection mode
-  const run = useCallback(async (inputs: TInputs) => {
-    // Reset state
-    clear();
-    setIsLoading(true);
+  const run = useCallback(
+    async (inputs: TInputs) => {
+      // Reset state
+      clear();
+      setIsLoading(true);
 
-    // Create abort controller
-    abortControllerRef.current = new AbortController();
+      // Create abort controller
+      abortControllerRef.current = new AbortController();
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers
-        },
-        body: JSON.stringify(buildPayload(inputs)),
-        signal: abortControllerRef.current.signal
-      });
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...headers,
+          },
+          body: JSON.stringify(buildPayload(inputs)),
+          signal: abortControllerRef.current.signal,
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to run workflow: ${response.status} ${response.statusText}`);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to run workflow: ${response.status} ${response.statusText}`,
+          );
+        }
+
+        // Parse the stream
+        await parseStream(response);
+
+        // Return the final output
+        return outputRef.current;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+        abortControllerRef.current = null;
       }
-
-      // Parse the stream
-      await parseStream(response);
-
-      // Return the final output
-      return outputRef.current;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-      abortControllerRef.current = null;
-    }
-  }, [endpoint, headers, clear, parseStream, buildPayload]);
+    },
+    [endpoint, headers, clear, parseStream, buildPayload],
+  );
 
   // Run workflow in streaming mode
-  const stream = useCallback(async (inputs: TInputs) => {
-    // Reset state
-    clear();
-    setIsLoading(true);
-    setIsStreaming(true);
+  const stream = useCallback(
+    async (inputs: TInputs) => {
+      // Reset state
+      clear();
+      setIsLoading(true);
+      setIsStreaming(true);
 
-    // Create abort controller
-    abortControllerRef.current = new AbortController();
+      // Create abort controller
+      abortControllerRef.current = new AbortController();
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers
-        },
-        body: JSON.stringify(buildPayload(inputs)),
-        signal: abortControllerRef.current.signal
-      });
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...headers,
+          },
+          body: JSON.stringify(buildPayload(inputs)),
+          signal: abortControllerRef.current.signal,
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to stream workflow: ${response.status} ${response.statusText}`);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to stream workflow: ${response.status} ${response.statusText}`,
+          );
+        }
+
+        // Parse the stream
+        await parseStream(response);
+
+        // onComplete is already called in processEvent when 'end' event is received
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+        setIsStreaming(false);
+        abortControllerRef.current = null;
       }
-
-      // Parse the stream
-      await parseStream(response);
-
-      // onComplete is already called in processEvent when 'end' event is received
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-      setIsStreaming(false);
-      abortControllerRef.current = null;
-    }
-  }, [endpoint, headers, clear, parseStream, buildPayload]);
-
+    },
+    [endpoint, headers, clear, parseStream, buildPayload],
+  );
   return {
     isLoading,
     isStreaming,

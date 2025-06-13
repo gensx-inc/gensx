@@ -18,10 +18,18 @@ done
 
 cd /tmp/project
 
-# Install required dependencies
-npm install
+# Use the right tool depending on the lockfile
+if [ -f "package-lock.json" ]; then
+  npm install
+elif [ -f "pnpm-lock.yaml" ]; then
+  pnpm install
+elif [ -f "yarn.lock" ]; then
+  yarn install
+else
+  npm install
+fi
 
-WORKFLOW_PATH=${WORKFLOW_PATH:-"workflows.tsx"}
+WORKFLOW_PATH=${WORKFLOW_PATH:-"workflows.ts"}
 
 # Build with ncc - this should bundle all dependencies
 ncc build ./${WORKFLOW_PATH} -o /out/dist --target es2022 -e "@libsql/client"
