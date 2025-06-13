@@ -614,22 +614,23 @@ export class GensxServer {
               start: async (controller) => {
                 try {
                   // Set up progress listener
-                  const messageListener = (event: WorkflowMessage) => {
-                    const eventData = JSON.stringify(event);
-                    execution.workflowMessages.push({
+                  const messageListener = (event: any) => {
+                    const message = {
                       ...event,
                       id: Date.now().toString(),
                       timestamp: new Date().toISOString(),
-                    });
+                    } as WorkflowMessage;
+                    const messageData = JSON.stringify(message);
+                    execution.workflowMessages.push(message);
                     if (acceptHeader === "text/event-stream") {
                       controller.enqueue(
                         new TextEncoder().encode(
-                          `id: ${event.id}\ndata: ${eventData}\n\n`,
+                          `id: ${message.id}\ndata: ${messageData}\n\n`,
                         ),
                       );
                     } else {
                       controller.enqueue(
-                        new TextEncoder().encode(eventData + "\n"),
+                        new TextEncoder().encode(messageData + "\n"),
                       );
                     }
                   };
@@ -745,7 +746,16 @@ export class GensxServer {
           }
 
           // Handle regular non-streaming execution
-          const result = await runMethod.call(workflow, body);
+          const result = await runMethod.call(workflow, body, {
+            messageListener: (event: any) => {
+              const message = {
+                ...event,
+                id: Date.now().toString(),
+                timestamp: new Date().toISOString(),
+              } as WorkflowMessage;
+              execution.workflowMessages.push(message);
+            },
+          });
 
           // Update execution with result
           execution.executionStatus = "completed";
