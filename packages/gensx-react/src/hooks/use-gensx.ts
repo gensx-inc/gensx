@@ -117,82 +117,6 @@ export interface UseGenSXResult<TInputs = any, TOutput = any, TEvent extends Gen
 
   /** Clear all state */
   clear: () => void;
-
-  /**
-   * Hook to retrieve (and optionally transform) structured progress events.
-   * Always returns both events array and reduced value.
-   *
-   * Basic usage:
-   *   const { events, value } = useProgressEvents("myType");
-   *
-   * With reducer:
-   *   const { events, value } = useProgressEvents("myType", {
-   *     reducer: {
-   *       reduce: (acc, e) => acc + 1,
-   *       initial: 0
-   *     }
-   *   });
-   */
-  useProgressEvents: <T extends { type: string }, R = T[]>(
-    filter: T["type"] | T["type"][] | ((e: any) => e is T),
-    options?: {
-      reducer?: {
-        reduce: (acc: R, item: T) => R;
-        initial: R;
-      };
-    }
-  ) => { events: T[]; value: R };
-
-  /**
-   * Hook to retrieve workflow control events.
-   * Returns events for 'start', 'end', 'component-start', 'component-end', 'error'.
-   * Excludes 'progress' and 'output' events.
-   * Always returns both events array and reduced value.
-   *
-   * Basic usage:
-   *   const { events, value } = useWorkflowEvents();
-   *
-   * With reducer:
-   *   const { events, value } = useWorkflowEvents({
-   *     reducer: {
-   *       reduce: (acc, e) => acc + 1,
-   *       initial: 0
-   *     }
-   *   });
-   */
-  useWorkflowEvents: <T = GenSXWorkflowEvent, R = T[]>(
-    options?: {
-      reducer?: {
-        reduce: (acc: R, item: T) => R;
-        initial: R;
-      };
-    }
-  ) => { events: T[]; value: R };
-
-  /**
-   * Hook to retrieve output events.
-   * Returns GenSXOutputEvent objects for 'output' events only.
-   * Always returns both events array and reduced value.
-   *
-   * Basic usage:
-   *   const { events, value } = useOutputEvents();
-   *
-   * With reducer:
-   *   const { events, value } = useOutputEvents({
-   *     reducer: {
-   *       reduce: (acc, e) => acc + e.content,
-   *       initial: ''
-   *     }
-   *   });
-   */
-  useOutputEvents: <T = GenSXOutputEvent, R = T[]>(
-    options?: {
-      reducer?: {
-        reduce: (acc: R, item: T) => R;
-        initial: R;
-      };
-    }
-  ) => { events: T[]; value: R };
 }
 
 /**
@@ -499,100 +423,6 @@ export function useWorkflow<
     }
   }, [endpoint, headers, clear, parseStream, buildPayload]);
 
-  // Hook to filter (and optionally map) structured progress events with strong typing
-  const useProgressEvents = useCallback(<T extends { type: string }, R = T[]>(
-    filter: T["type"] | T["type"][] | ((e: any) => e is T),
-    options?: {
-      reducer?: {
-        reduce: (acc: R, item: T) => R;
-        initial: R;
-      };
-    }
-  ): { events: T[]; value: R } => {
-    return useMemo(() => {
-      // 1. Parse all progress events into objects (best-effort)
-      const parsed: unknown[] = progressEvents
-        .filter(e => e.type === 'progress')
-        .map(e => {
-          const raw = (e as any).data as string | undefined;
-          if (!raw) return null;
-          try {
-            return JSON.parse(raw);
-          } catch {
-            return null;
-          }
-        })
-        .filter(Boolean);
-
-      // 2. Narrow to the desired subset
-      let matched: T[] = [];
-
-      if (typeof filter === 'function') {
-        matched = (parsed as T[]).filter(filter);
-      } else {
-        const keys = Array.isArray(filter) ? filter : [filter];
-        matched = (parsed as T[]).filter(ev => (keys as string[]).includes((ev as any).type));
-      }
-
-      // 3. Apply reducer if provided, otherwise use the events as the value
-      if (options?.reducer && options.reducer.initial !== undefined) {
-        const value = matched.reduce(options.reducer.reduce as any, options.reducer.initial);
-        return { events: matched, value };
-      }
-
-      // Default: value is the events array itself
-      return { events: matched, value: matched as unknown as R };
-    }, [events, filter, options]);
-  }, [events]);
-
-  // Hook to get all workflow events except progress and output events
-  const useWorkflowEvents = useCallback(<T = GenSXWorkflowEvent, R = T[]>(
-    options?: {
-      reducer?: {
-        reduce: (acc: R, item: T) => R;
-        initial: R;
-      };
-    }
-  ): { events: T[]; value: R } => {
-    return useMemo(() => {
-      // Filter out progress and output events
-      const workflowControlEvents = events.filter(e => e.type !== 'progress' && e.type !== 'output') as T[];
-
-      // Apply reducer if provided, otherwise use the events as the value
-      if (options?.reducer && options.reducer.initial !== undefined) {
-        const value = workflowControlEvents.reduce(options.reducer.reduce as any, options.reducer.initial);
-        return { events: workflowControlEvents, value };
-      }
-
-      // Default: value is the events array itself
-      return { events: workflowControlEvents, value: workflowControlEvents as unknown as R };
-    }, [events, options]);
-  }, [events]);
-
-  // Hook to get output events
-  const useOutputEvents = useCallback(<T = GenSXOutputEvent, R = T[]>(
-    options?: {
-      reducer?: {
-        reduce: (acc: R, item: T) => R;
-        initial: R;
-      };
-    }
-  ): { events: T[]; value: R } => {
-    return useMemo(() => {
-      // Filter only output events
-      const outputEvents = events.filter(e => e.type === 'output') as T[];
-
-      // Apply reducer if provided, otherwise use the events as the value
-      if (options?.reducer && options.reducer.initial !== undefined) {
-        const value = outputEvents.reduce(options.reducer.reduce as any, options.reducer.initial);
-        return { events: outputEvents, value };
-      }
-
-      // Default: value is the events array itself
-      return { events: outputEvents, value: outputEvents as unknown as R };
-    }, [events, options]);
-  }, [events, options]);
-
   return {
     isLoading,
     isStreaming,
@@ -605,9 +435,33 @@ export function useWorkflow<
     run,
     stream,
     stop,
-    clear,
-    useOutputEvents,
-    useProgressEvents,
-    useWorkflowEvents
+    clear
   };
+}
+
+// Standalone hook to retrieve the most recent structured progress event object for a given type
+export function useProgressObject<T extends { type: string }>(
+  events: T[] | Array<GenSXProgressEvent | GenSXWorkflowEvent | GenSXOutputEvent>,
+  typeKey: T['type']
+): T | undefined {
+  return useMemo(() => {
+    const matched: T[] = [];
+    for (const e of events) {
+      let obj: any = e;
+      // If this event has a data field (progress event), try to parse JSON
+      if ('data' in e && typeof (e as any).data === 'string') {
+        try {
+          obj = JSON.parse((e as any).data as string);
+        } catch {
+          // Fallback to using the raw event object
+          obj = e;
+        }
+      }
+      if (obj && obj.type === typeKey) {
+        matched.push(obj as T);
+      }
+    }
+    // Return the most recent matching object
+    return matched.pop();
+  }, [events, typeKey]);
 }

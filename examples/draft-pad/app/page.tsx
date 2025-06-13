@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useWorkflow, GenSXWorkflowEvent } from '@gensx/react';
 import { DraftEditorCard } from "@/components/ui/draft-editor-card";
 import { EventColumn } from "@/components/ui/event-column";
@@ -9,8 +9,6 @@ import {
   StartContentEvent,
   EndContentEvent,
   ProgressEventTypes,
-  CustomWorkflowEvent,
-  WorkflowEventCounts,
   UpdateDraftInput,
   UpdateDraftOutput,
   WorkflowEventData,
@@ -24,18 +22,11 @@ export default function Home() {
     isStreaming,
     error,
     output,
-    //events: stateEvents,
     workflowEvents: stateWorkflowEvents,
     progressEvents: stateProgressEvents,
     outputEvents: stateOutputEvents,
-    run,
     stream,
-    stop,
     clear,
-    useOutputEvents,
-    useProgressEvents,
-    useWorkflowEvents,
-    // need to update the events to be baseprogressevent instead of genSXProgressEvent
   } = useWorkflow<UpdateDraftInput, UpdateDraftOutput, GenSXProgressEvent>({
     endpoint: '/api/gensx',
     workflowName: 'updateDraft',
@@ -46,100 +37,65 @@ export default function Home() {
     },
   });
 
-  const {events: workflowEvents, value: workflowEventData} = useWorkflowEvents<GenSXWorkflowEvent, WorkflowEventData>({
-    reducer: {
-      reduce: (acc: WorkflowEventData, event: GenSXWorkflowEvent): WorkflowEventData => {
-        const newEvent: CustomWorkflowEvent = (() => {
-          if (event.type === 'start') {
-            return {
-              id: event.id,
-              type: event.type,
-              content: event.workflowName + ' ' + event.workflowExecutionId,
-              timestamp: new Date(event.timestamp),
-            };
-          } else if (event.type === 'end') {
-            return {
-              id: event.id,
-              type: event.type,
-              content: "",
-              timestamp: new Date(event.timestamp),
-            };
-          } else if (event.type === 'component-start') {
-            return {
-              id: event.id,
-              type: event.type,
-              content: event.componentName + ' ' + event.componentId,
-              timestamp: new Date(event.timestamp),
-            };
-          } else if (event.type === 'component-end') {
-            return {
-              id: event.id,
-              type: event.type,
-              content: event.componentName + ' ' + event.componentId,
-              timestamp: new Date(event.timestamp),
-            };
-          } else if (event.type === 'error') {
-            return {
-              id: event.id,
-              type: event.type,
-              content: event.error || 'Unknown error',
-              timestamp: new Date(event.timestamp),
-            };
-          }
-          return {
-            id: (event as any).id,
-            type: 'error' as const,
-            content: 'Unknown event type',
-            timestamp: new Date((event as any).timestamp),
-          };
-        })();
+  // Compute workflow control events (exclude progress/output)
+  const workflowControlEvents = useMemo<GenSXWorkflowEvent[]>(() =>
+    stateWorkflowEvents.filter(
+      (e): e is GenSXWorkflowEvent => e.type !== 'progress' && e.type !== 'output'
+    ) as GenSXWorkflowEvent[]
+  , [stateWorkflowEvents]);
 
-        const newCounts = { ...acc.counts };
-        newCounts[event.type] = (newCounts[event.type] || 0) + 1;
-        newCounts.total = newCounts.total + 1;
-
-        return {
-          counts: newCounts,
-          customEvents: [...acc.customEvents, newEvent]
-        };
-      },
-      initial: {
-        counts: {
-          start: 0,
-          end: 0,
-          'component-start': 0,
-          'component-end': 0,
-          error: 0,
-          total: 0
-        } as WorkflowEventCounts,
-        customEvents: [] as CustomWorkflowEvent[]
+  // Aggregate workflow events into counts and customEvents
+  const workflowEventData = useMemo<WorkflowEventData>(() => {
+    const counts = {
+      start: 0,
+      end: 0,
+      'component-start': 0,
+      'component-end': 0,
+      error: 0,
+      total: 0
+    };
+    const customEvents = workflowControlEvents.map(event => {
+      counts[event.type] = (counts[event.type] || 0) + 1;
+      counts.total++;
+      let content = '';
+      if (event.type === 'start') {
+        content = `${event.workflowName} ${event.workflowExecutionId}`;
+      } else if (event.type === 'component-start' || event.type === 'component-end') {
+        content = `${event.componentName} ${event.componentId}`;
+      } else if (event.type === 'error') {
+        content = event.error || 'Unknown error';
       }
-    }
-  });
+      return { id: event.id, type: event.type, content, timestamp: new Date(event.timestamp) };
+    });
+    return { counts, customEvents };
+  }, [workflowControlEvents]);
 
-  const {events: progressEvents, value: progressStats} = useProgressEvents<ProgressEventTypes, ProgressStats>(
-    ['startContent', 'endContent'],
-    {
-      reducer: {
-        reduce: (acc: ProgressStats, event: StartContentEvent | EndContentEvent) => ({
-          starts: acc.starts + (event.type === 'startContent' ? 1 : 0),
-          ends: acc.ends + (event.type === 'endContent' ? 1 : 0),
-          isActive: (acc.starts + (event.type === 'startContent' ? 1 : 0)) >
-                    (acc.ends + (event.type === 'endContent' ? 1 : 0))
-        }),
-        initial: { starts: 0, ends: 0, isActive: false }
-      }
-    }
-  );
+  // Parse structured progress events
+  const parsedProgressEvents = useMemo<ProgressEventTypes[]>(() =>
+    stateProgressEvents
+      .map(e => {
+        try {
+          return JSON.parse((e as any).data) as ProgressEventTypes;
+        } catch {
+          return null;
+        }
+      })
+      .filter((ev): ev is ProgressEventTypes => ev !== null)
+  , [stateProgressEvents]);
 
-  // in the future, we could make this actually reduce it from a partial json object to actually fill the type put in the generic
-  // (i.e. if we have a partial json object, we can fill the type with the partial json object which is very useful for the output events)
-  const {events: contentEvents, value: contentEventsValue} = useOutputEvents<GenSXOutputEvent, string>({
-    reducer: {
-       reduce: (acc: string, event: GenSXOutputEvent) => acc + event.content,
-       initial: '' as string
-     }
-  });
+  // Compute progress stats
+  const progressStats = useMemo<ProgressStats>(() => {
+    const stats: ProgressStats = { starts: 0, ends: 0, isActive: false };
+    parsedProgressEvents.forEach(ev => {
+      if (ev.type === 'startContent') stats.starts++;
+      else if (ev.type === 'endContent') stats.ends++;
+    });
+    stats.isActive = stats.starts > stats.ends;
+    return stats;
+  }, [parsedProgressEvents]);
+
+  // Compute output string
+  const contentEventsValue = output || '';
 
   const handleSubmit = async () => {
     if (!userMessage.trim() || isStreaming) return;
@@ -177,14 +133,15 @@ export default function Home() {
           <EventColumn<GenSXWorkflowEvent, WorkflowEventData>
             title="Workflow Events"
             value={workflowEventData}
-            events={workflowEvents}
+            events={workflowControlEvents}
             stateEvents={stateWorkflowEvents}
+            emptyMessage="No workflow events yet"
           />
 
           <EventColumn<ProgressEventTypes, ProgressStats>
-            title="Progress Events"
+            title="Progress Stats"
             value={progressStats}
-            events={progressEvents}
+            events={parsedProgressEvents}
             stateEvents={stateProgressEvents}
             emptyMessage="No start/end events yet"
           />
@@ -192,7 +149,7 @@ export default function Home() {
           <EventColumn<GenSXOutputEvent, string>
             title="Output Events"
             value={contentEventsValue}
-            events={contentEvents}
+            events={stateOutputEvents}
             stateEvents={stateOutputEvents}
             emptyMessage="No output events yet"
           />
