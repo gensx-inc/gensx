@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { gzip } from "node:zlib";
@@ -11,20 +12,20 @@ import { USER_AGENT } from "./utils/user-agent.js";
 
 const gzipAsync = promisify(gzip);
 
-// Cross-platform UUID generation
-function generateUUID(): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    const crypto = (globalThis as any).crypto as { randomUUID: () => string };
-    return crypto.randomUUID();
-  } catch {
-    // Simple fallback for environments without crypto
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === "x" ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
-  }
+// Deterministic ID generation for checkpoint replay
+export function generateDeterministicId(
+  name: string,
+  props: Record<string, unknown>,
+  parentId?: string,
+): string {
+  // Simple but effective serialization for MVP
+  const propsStr = JSON.stringify(props, Object.keys(props).sort());
+  const propsHash = createHash("sha256")
+    .update(propsStr)
+    .digest("hex")
+    .slice(0, 16);
+
+  return `${parentId ?? "root"}:${name}:${propsHash}`;
 }
 
 export interface ExecutionNode {
@@ -80,6 +81,9 @@ export class CheckpointManager implements CheckpointWriter {
 
   private traceId?: string;
   private executionRunId?: string;
+
+  // Replay functionality
+  private replayLookup = new Map<string, unknown>();
 
   // Provide unified view of all secrets
   get secretValues(): Set<unknown> {
@@ -680,7 +684,11 @@ export class CheckpointManager implements CheckpointWriter {
    * of the execution.
    */
   addNode(partialNode: Partial<ExecutionNode>, parentId?: string): string {
-    const nodeId = generateUUID();
+    const nodeId = generateDeterministicId(
+      partialNode.componentName ?? "Unknown",
+      partialNode.props ?? {},
+      parentId,
+    );
     const clonedPartial = this.cloneValue(
       partialNode,
     ) as Partial<ExecutionNode>;
@@ -825,5 +833,23 @@ export class CheckpointManager implements CheckpointWriter {
     if (this.pendingUpdate || this.activeCheckpoint) {
       await this.waitForPendingUpdates();
     }
+  }
+
+  // Replay functionality
+  setReplayCheckpoint(checkpoint: ExecutionNode) {
+    this.buildReplayLookup(checkpoint);
+  }
+
+  private buildReplayLookup(node: ExecutionNode) {
+    if (node.endTime && node.output !== undefined) {
+      this.replayLookup.set(node.id, node.output);
+    }
+    node.children.forEach((child) => {
+      this.buildReplayLookup(child);
+    });
+  }
+
+  getCompletedResult(nodeId: string): unknown {
+    return this.replayLookup.get(nodeId);
   }
 }
