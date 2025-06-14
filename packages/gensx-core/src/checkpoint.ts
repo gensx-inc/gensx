@@ -4,11 +4,16 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { gzip } from "node:zlib";
 
-import { STREAMING_PLACEHOLDER } from "./component.js";
-import { ExecutionContext } from "./context.js";
-import { ComponentOpts } from "./types.js";
+import {
+  CheckpointWriter,
+  ExecutionNode,
+  STREAMING_PLACEHOLDER,
+} from "./checkpoint-types.js";
 import { readConfig } from "./utils/config.js";
 import { USER_AGENT } from "./utils/user-agent.js";
+
+export type { CheckpointWriter, ExecutionNode };
+export { STREAMING_PLACEHOLDER };
 
 const gzipAsync = promisify(gzip);
 
@@ -26,37 +31,6 @@ export function generateDeterministicId(
     .slice(0, 16);
 
   return `${parentId ?? "root"}:${name}:${propsHash}`;
-}
-
-export interface ExecutionNode {
-  id: string;
-  componentName: string;
-  parentId?: string;
-  startTime: number;
-  endTime?: number;
-  props: Record<string, unknown>;
-  output?: unknown;
-  children: ExecutionNode[];
-  metadata?: {
-    logs?: string[];
-    tokenCounts?: {
-      input: number;
-      output: number;
-    };
-    [key: string]: unknown;
-  };
-  componentOpts?: ComponentOpts;
-}
-
-export interface CheckpointWriter {
-  root?: ExecutionNode;
-  addNode: (node: Partial<ExecutionNode>, parentId?: string) => string;
-  completeNode: (id: string, output: unknown) => void;
-  addMetadata: (id: string, metadata: Record<string, unknown>) => void;
-  updateNode: (id: string, updates: Partial<ExecutionNode>) => void;
-  write: () => void;
-  waitForPendingUpdates: () => Promise<void>;
-  checkpointsEnabled: boolean;
 }
 
 export class CheckpointManager implements CheckpointWriter {
@@ -585,6 +559,9 @@ export class CheckpointManager implements CheckpointWriter {
         );
       }
 
+      // Handle objects that shouldn't be cloned
+      if (ArrayBuffer.isView(data)) return data;
+
       return data;
     });
   }
@@ -640,8 +617,6 @@ export class CheckpointManager implements CheckpointWriter {
     }
 
     // Handle objects that shouldn't be cloned
-    if (value instanceof ExecutionContext) return value;
-    if (Symbol.asyncIterator in value) return value;
     if (ArrayBuffer.isView(value)) return value;
 
     // Check for toJSON method before doing regular object cloning

@@ -2,6 +2,7 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
+import { generateDeterministicId } from "../src/checkpoint.js";
 import * as gensx from "../src/index.js";
 
 // Helper function to generate test IDs
@@ -10,6 +11,115 @@ export function generateTestId(): string {
 }
 
 suite("checkpoint", () => {
+  suite("deterministic ID generation", () => {
+    test("generates same ID for same inputs", () => {
+      const props = { name: "test", value: 42 };
+      const id1 = generateDeterministicId("TestComponent", props, "parent123");
+      const id2 = generateDeterministicId("TestComponent", props, "parent123");
+
+      expect(id1).toBe(id2);
+    });
+
+    test("generates different IDs for different component names", () => {
+      const props = { name: "test" };
+      const id1 = generateDeterministicId("ComponentA", props, "parent123");
+      const id2 = generateDeterministicId("ComponentB", props, "parent123");
+
+      expect(id1).not.toBe(id2);
+    });
+
+    test("generates different IDs for different props", () => {
+      const props1 = { name: "test", value: 42 };
+      const props2 = { name: "test", value: 43 };
+      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
+      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
+
+      expect(id1).not.toBe(id2);
+    });
+
+    test("generates different IDs for different parent IDs", () => {
+      const props = { name: "test" };
+      const id1 = generateDeterministicId("TestComponent", props, "parent1");
+      const id2 = generateDeterministicId("TestComponent", props, "parent2");
+
+      expect(id1).not.toBe(id2);
+    });
+
+    test("handles undefined parent ID consistently", () => {
+      const props = { name: "test" };
+      const id1 = generateDeterministicId("TestComponent", props);
+      const id2 = generateDeterministicId("TestComponent", props, undefined);
+
+      expect(id1).toBe(id2);
+      expect(id1).toContain("root:");
+    });
+
+    test("handles empty props", () => {
+      const id1 = generateDeterministicId("TestComponent", {}, "parent123");
+      const id2 = generateDeterministicId("TestComponent", {}, "parent123");
+
+      expect(id1).toBe(id2);
+    });
+
+    test("prop order doesn't matter", () => {
+      const props1 = { a: 1, b: 2, c: 3 };
+      const props2 = { c: 3, a: 1, b: 2 };
+      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
+      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
+
+      expect(id1).toBe(id2);
+    });
+
+    test("handles complex nested objects", () => {
+      const props1 = {
+        user: { name: "John", age: 30 },
+        settings: { theme: "dark", notifications: true },
+      };
+      const props2 = {
+        user: { name: "John", age: 30 },
+        settings: { theme: "dark", notifications: true },
+      };
+      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
+      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
+
+      expect(id1).toBe(id2);
+    });
+
+    test("handles arrays consistently", () => {
+      const props1 = { items: [1, 2, 3], tags: ["a", "b"] };
+      const props2 = { items: [1, 2, 3], tags: ["a", "b"] };
+      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
+      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
+
+      expect(id1).toBe(id2);
+    });
+
+    test("different array order produces different IDs", () => {
+      const props1 = { items: [1, 2, 3] };
+      const props2 = { items: [3, 2, 1] };
+      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
+      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
+
+      expect(id1).not.toBe(id2);
+    });
+
+    test("ID format is consistent", () => {
+      const props = { name: "test" };
+      const id = generateDeterministicId("TestComponent", props, "parent123");
+
+      // Should be in format: parentId:componentName:propsHash
+      expect(id).toMatch(/^parent123:TestComponent:[a-f0-9]{16}$/);
+    });
+
+    test("root format when no parent", () => {
+      const props = { name: "test" };
+      const id = generateDeterministicId("TestComponent", props);
+
+      // Should be in format: root:componentName:propsHash
+      expect(id).toMatch(/^root:TestComponent:[a-f0-9]{16}$/);
+    });
+  });
+
   test("component returns expected results", async () => {
     // Define a simple component that returns a string
     async function simpleComponent({

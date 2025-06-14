@@ -12,7 +12,8 @@ import type {
 import serializeErrorPkg from "@common.js/serialize-error";
 const { serializeError } = serializeErrorPkg;
 
-import { ExecutionNode, generateDeterministicId } from "./checkpoint.js";
+import { generateDeterministicId } from "./checkpoint.js";
+import { ExecutionNode, STREAMING_PLACEHOLDER } from "./checkpoint-types.js";
 import {
   ExecutionContext,
   getContextSnapshot,
@@ -23,7 +24,7 @@ import {
 } from "./context.js";
 import { WorkflowMessageListener } from "./workflow-state.js";
 
-export const STREAMING_PLACEHOLDER = "[streaming in progress]";
+export { STREAMING_PLACEHOLDER };
 
 // Decorator-based Component Model
 
