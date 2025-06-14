@@ -7,13 +7,16 @@ import * as gensx from "../src/index.js";
 
 suite("checkpoint replay", () => {
   test("skips completed component and returns cached result", async () => {
+    let expensiveComponentExecutionCount = 0;
+
     // Define a component that we'll simulate as already completed
     async function expensiveComponent({
       input,
     }: {
       input: string;
     }): Promise<string> {
-      await setTimeout(10);
+      expensiveComponentExecutionCount++;
+      await setTimeout(1);
       return `processed: ${input}`;
     }
 
@@ -24,17 +27,15 @@ suite("checkpoint replay", () => {
 
     // Create a mock checkpoint with a completed component
     const mockCheckpoint: ExecutionNode = {
-      id: "root:TestWorkflow:e3b0c44298fc1c14",
+      id: "root:TestWorkflow:156403d8f795a18e",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
-      endTime: Date.now() - 500,
       props: { input: "test" },
-      output: "workflow result",
       children: [
         {
-          id: "root:TestWorkflow:e3b0c44298fc1c14:ExpensiveComponent:7d865e959b2466918c9863afca942d0f",
+          id: "root:TestWorkflow:156403d8f795a18e:ExpensiveComponent:156403d8f795a18e",
           componentName: "ExpensiveComponent",
-          parentId: "root:TestWorkflow:e3b0c44298fc1c14",
+          parentId: "root:TestWorkflow:156403d8f795a18e",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },
@@ -52,18 +53,14 @@ suite("checkpoint replay", () => {
     const TestWorkflow = gensx.Workflow("TestWorkflow", testWorkflow);
 
     // Execute with checkpoint - should skip the expensive component
-    const startTime = Date.now();
     const result = await TestWorkflow(
       { input: "test" },
       { checkpoint: mockCheckpoint },
     );
-    const endTime = Date.now();
 
-    // Verify result is from cache
+    // Verify result is from cache and component didn't execute
     expect(result).toBe("processed: test");
-
-    // Verify it was fast (should be much less than the 10ms delay)
-    expect(endTime - startTime).toBeLessThan(50);
+    expect(expensiveComponentExecutionCount).toBe(0);
   });
 
   test("executes new components not in checkpoint", async () => {
@@ -80,7 +77,7 @@ suite("checkpoint replay", () => {
 
     // Create a checkpoint without this component
     const mockCheckpoint: ExecutionNode = {
-      id: "root:TestWorkflow:e3b0c44298fc1c14",
+      id: "root:TestWorkflow:156403d8f795a18e",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
@@ -106,6 +103,7 @@ suite("checkpoint replay", () => {
   });
 
   test("handles mixed scenario with some cached and some new components", async () => {
+    let cachedComponentExecutionCount = 0;
     let newComponentExecuted = false;
 
     // Define components
@@ -114,14 +112,14 @@ suite("checkpoint replay", () => {
     }: {
       input: string;
     }): Promise<string> {
-      // This should not execute
-      await setTimeout(0);
+      cachedComponentExecutionCount++;
+      await setTimeout(1);
       throw new Error("Cached component should not execute");
     }
 
     async function newComponent({ input }: { input: string }): Promise<string> {
       newComponentExecuted = true;
-      await setTimeout(0);
+      await setTimeout(1);
       return `new: ${input}`;
     }
 
@@ -163,19 +161,24 @@ suite("checkpoint replay", () => {
       { checkpoint: mockCheckpoint },
     );
 
-    // Verify mixed behavior
+    // Verify mixed behavior: cached component didn't execute, new component did
+    expect(cachedComponentExecutionCount).toBe(0);
     expect(newComponentExecuted).toBe(true);
     expect(result).toBe("cached: test + new: test");
   });
 
   test("handles nested component hierarchy in replay", async () => {
+    let leafComponentExecutionCount = 0;
+    let middleComponentExecutionCount = 0;
+
     // Define nested components
     async function leafComponent({
       value,
     }: {
       value: string;
     }): Promise<string> {
-      await setTimeout(0);
+      leafComponentExecutionCount++;
+      await setTimeout(1);
       return `leaf: ${value}`;
     }
 
@@ -184,6 +187,7 @@ suite("checkpoint replay", () => {
     }: {
       input: string;
     }): Promise<string> {
+      middleComponentExecutionCount++;
       const LeafComponent = gensx.Component("LeafComponent", leafComponent);
       const result = await LeafComponent({ value: input });
       return `middle: ${result}`;
@@ -238,7 +242,9 @@ suite("checkpoint replay", () => {
       { checkpoint: mockCheckpoint },
     );
 
-    // Verify nested replay works
+    // Verify nested replay works - neither component should execute
+    expect(middleComponentExecutionCount).toBe(0);
+    expect(leafComponentExecutionCount).toBe(0);
     expect(result).toBe("middle: leaf: test");
   });
 
@@ -251,7 +257,7 @@ suite("checkpoint replay", () => {
       input: string;
     }): Promise<string> {
       componentExecuted = true;
-      await setTimeout(0);
+      await setTimeout(1);
       return `executed: ${input}`;
     }
 
@@ -292,7 +298,7 @@ suite("checkpoint replay", () => {
       input: string;
     }): Promise<string> {
       componentExecuted = true;
-      await setTimeout(0);
+      await setTimeout(1);
       return `executed: ${input}`;
     }
 
