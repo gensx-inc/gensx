@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { bundleWorkflow } from "../utils/bundler.js";
-import { generateSchema } from "../utils/schema.js";
+import { staticallyGenerateWorkflowInfo } from "../utils/workflow-info.js";
 
 export interface BuildOptions {
   outDir?: string;
@@ -55,7 +55,7 @@ function useBuild(file: string, options: BuildOptions): UseBuildResult {
         if (!mounted) return;
 
         const outDir = options.outDir ?? resolve(process.cwd(), ".gensx");
-        const schemaFilePath = resolve(outDir, "schema.json");
+        const workflowInfoFilePath = resolve(outDir, "workflow-info.json");
         let bundlePath: string | undefined;
 
         if (!options.schemaOnly) {
@@ -74,12 +74,18 @@ function useBuild(file: string, options: BuildOptions): UseBuildResult {
         setPhase("generatingSchema");
 
         // Generate schema locally
-        const workflowSchemas = generateSchema(absolutePath, options.tsconfig);
-        writeFileSync(schemaFilePath, JSON.stringify(workflowSchemas, null, 2));
+        const workflowSchemas = staticallyGenerateWorkflowInfo(
+          absolutePath,
+          options.tsconfig,
+        );
+        writeFileSync(
+          workflowInfoFilePath,
+          JSON.stringify(workflowSchemas, null, 2),
+        );
 
         setResult({
           bundleFile: bundlePath ?? "",
-          schemaFile: schemaFilePath,
+          schemaFile: workflowInfoFilePath,
           schemas: workflowSchemas,
         });
         setPhase("done");
@@ -189,7 +195,7 @@ export async function build(
   onProgress?: (data: string) => void,
 ) {
   const outDir = options.outDir ?? resolve(process.cwd(), ".gensx");
-  const schemaFile = resolve(outDir, "schema.json");
+  const workflowInfoFile = resolve(outDir, "workflow-info.json");
 
   // 1. Validate file exists and is a TypeScript file
   const absolutePath = resolve(process.cwd(), file);
@@ -212,12 +218,15 @@ export async function build(
   );
 
   // Generate schema locally
-  const workflowSchemas = generateSchema(absolutePath, options.tsconfig);
-  writeFileSync(schemaFile, JSON.stringify(workflowSchemas, null, 2));
+  const workflowSchemas = staticallyGenerateWorkflowInfo(
+    absolutePath,
+    options.tsconfig,
+  );
+  writeFileSync(workflowInfoFile, JSON.stringify(workflowSchemas, null, 2));
 
   return {
     bundleFile: bundleFilePath,
-    schemaFile: schemaFile,
-    schemas: workflowSchemas,
+    workflowInfoFile,
+    workflowInfo: workflowSchemas,
   };
 }

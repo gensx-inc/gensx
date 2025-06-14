@@ -139,7 +139,9 @@ export const testWorkflow = () => {
 
         // Check that schema file was written
         expect(
-          existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
+          existsSync(
+            path.join(tempDir, "project", ".gensx", "workflow-info.json"),
+          ),
         ).toBe(true);
       } finally {
         // Clean up
@@ -168,7 +170,9 @@ export const testWorkflow = () => {
 
         // Check that schema file was written
         expect(
-          existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
+          existsSync(
+            path.join(tempDir, "project", ".gensx", "workflow-info.json"),
+          ),
         ).toBe(true);
       } finally {
         // Clean up
@@ -197,7 +201,9 @@ export const testWorkflow = () => {
 
         // Check that schema file was written
         expect(
-          existsSync(path.join(tempDir, "project", ".gensx", "schema.json")),
+          existsSync(
+            path.join(tempDir, "project", ".gensx", "workflow-info.json"),
+          ),
         ).toBe(true);
       } finally {
         // Clean up

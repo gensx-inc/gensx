@@ -243,7 +243,9 @@ export function Component<P extends object = {}, R = unknown>(
 export function Workflow<P extends object = {}, R = unknown>(
   name: string,
   target: (props: P) => R,
-  workflowOpts?: WorkflowOpts,
+  workflowOpts?: WorkflowOpts & {
+    public?: boolean;
+  },
 ): (
   props?: P,
   runtimeOpts?: WorkflowOpts & {

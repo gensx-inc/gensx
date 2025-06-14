@@ -15,8 +15,8 @@ import { LoadingSpinner } from "../components/LoadingSpinner.js";
 import { useProjectName } from "../hooks/useProjectName.js";
 import { getAuth } from "../utils/config.js";
 import { validateAndSelectEnvironment } from "../utils/env-config.js";
-import { generateSchema } from "../utils/schema.js";
 import { USER_AGENT } from "../utils/user-agent.js";
+import { staticallyGenerateWorkflowInfo } from "../utils/workflow-info.js";
 import { build } from "./build.js";
 
 export interface DeployOptions {
@@ -71,11 +71,12 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
       try {
         setPhase("building");
 
-        let schemas: Record<
+        let workflowInfo: Record<
           string,
           {
             input: Definition;
             output: Definition;
+            config?: { requireAuthToTrigger: boolean };
           }
         >;
         let bundleFile: string;
@@ -86,13 +87,13 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
           if (!existsSync(absolutePath)) {
             throw new Error(`File ${file} does not exist`);
           }
-          schemas = generateSchema(absolutePath);
+          workflowInfo = staticallyGenerateWorkflowInfo(absolutePath);
         } else {
           const buildResult = await build(file, {}, (data) => {
             setBuildProgress((prev) => [...prev, data]);
           });
           bundleFile = buildResult.bundleFile;
-          schemas = buildResult.schemas;
+          workflowInfo = buildResult.workflowInfo;
         }
 
         // 2. Get auth config
@@ -110,7 +111,7 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
         if (options.envVar) {
           form.append("environmentVariables", JSON.stringify(options.envVar));
         }
-        form.append("schemas", JSON.stringify(schemas));
+        form.append("workflows", JSON.stringify(workflowInfo));
 
         // Use the project-specific deploy endpoint
         const url = new URL(

@@ -150,13 +150,20 @@ export class GensxServer {
         },
       },
     },
-    schemas: Record<string, { input: Definition; output: Definition }> = {},
+    workflowInfo: Record<
+      string,
+      {
+        input: Definition;
+        output: Definition;
+        config: { requireAuthToTrigger: boolean };
+      }
+    > = {},
   ) {
     this.port = options.port ?? 1337;
     this.hostname = options.hostname ?? "localhost";
     this.app = new Hono();
     this.workflowMap = new Map();
-    this.schemaMap = new Map(Object.entries(schemas));
+    this.schemaMap = new Map(Object.entries(workflowInfo));
     this.executionsMap = new Map();
     this.ajv = new Ajv();
     this.logger = options.logger;
@@ -1574,9 +1581,16 @@ export function createServer(
       },
     },
   },
-  schemas: Record<string, { input: Definition; output: Definition }> = {},
+  workflowInfo: Record<
+    string,
+    {
+      input: Definition;
+      output: Definition;
+      config: { requireAuthToTrigger: boolean };
+    }
+  > = {},
 ): GensxServer {
-  return new GensxServer(workflows, options, schemas);
+  return new GensxServer(workflows, options, workflowInfo);
 }
 
 /**
