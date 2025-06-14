@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:gensx\"",
     "dev:next": "next dev --turbopack",
-    "dev:gensx": "gensx start ./gensx/workflows.ts",
+    "dev:gensx": "npx gensx@latest start ./gensx/workflows.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

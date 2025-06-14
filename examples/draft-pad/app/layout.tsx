@@ -37,14 +37,16 @@ export default function RootLayout({
         className={`${figtree.variable} ${atma.variable} ${meow.variable} antialiased`}
       >
         <div className="fixed inset-0 z-0">
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: 'url(/background-nature.png)' }}
           />
           <div className="absolute inset-0" />
         </div>
-        <div className="relative z-10 min-h-screen">
-          {children}
+        <div className="relative z-10 h-screen flex flex-col overflow-hidden">
+          <div className="flex-1 p-4 flex overflow-hidden">
+            {children}
+          </div>
         </div>
       </body>
     </html>

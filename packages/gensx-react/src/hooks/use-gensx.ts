@@ -1,14 +1,4 @@
-import {
-  GenSXComponentEndEvent,
-  GenSXComponentStartEvent,
-  GenSXEndEvent,
-  GenSXErrorEvent,
-  GenSXEvent,
-  GenSXOutputEvent,
-  GenSXProgressEvent,
-  GenSXStartEvent,
-} from "@gensx/client";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // JSON-serializable value type for progress data
 export type JsonValue =
@@ -19,28 +9,41 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
+// Chat statistics type
+export type ChatStats = {
+  wordCount: number;
+  characterCount: number;
+  estimatedReadingTime: number; // in minutes
+  lastUpdated: string;
+  isComplete: boolean;
+};
+
 // WorkflowMessage type (from gensx-core)
 export type WorkflowMessage =
-  | { type: "start"; workflowExecutionId?: string; workflowName: string }
+  | { type: "start"; workflowExecutionId?: string; workflowName: string; id?: string; timestamp?: string }
   | {
       type: "component-start";
       componentName: string;
       label?: string;
       componentId: string;
+      id?: string;
+      timestamp?: string;
     }
   | {
       type: "component-end";
       componentName: string;
       label?: string;
       componentId: string;
+      id?: string;
+      timestamp?: string;
     }
-  | { type: "data"; data: JsonValue }
-  | { type: "object" | "event"; data: Record<string, JsonValue>; label: string }
-  | { type: "error"; error: string }
-  | { type: "end" };
+  | { type: "data"; data: JsonValue; id?: string; timestamp?: string }
+  | { type: "object" | "event"; data: Record<string, JsonValue>; label: string; id?: string; timestamp?: string }
+  | { type: "output"; content: string; id?: string; timestamp?: string }
+  | { type: "error"; error: string; id?: string; timestamp?: string }
+  | { type: "end"; id?: string; timestamp?: string };
 
-// Match the Client's RunOptions interface
-export interface GenSXRunOptions {
+export interface WorkflowRunOptions {
   org: string;
   project: string;
   environment?: string;
@@ -48,47 +51,31 @@ export interface GenSXRunOptions {
   format?: "sse" | "ndjson" | "json";
 }
 
-export interface UseGenSXOptions<
+export interface WorkflowRunConfig<TInputs = unknown> {
+  inputs: TInputs;
+  org?: string;
+  project?: string;
+  environment?: string;
+}
+
+export interface WorkflowConfig {
+  baseUrl: string;
+  headers?: Record<string, string>;
+}
+
+export interface UseWorkflowConfig<
   TInputs = unknown,
   TOutput = unknown,
-  TEvent extends GenSXProgressEvent = GenSXProgressEvent,
 > {
   /**
-   * API endpoint URL (your server endpoint that proxies to GenSX)
+   * All workflow configuration in one place
    */
-  endpoint: string;
-
-  /**
-   * Workflow name to execute (required now)
-   */
-  workflowName: string;
-
-  /**
-   * Default configuration applied to every run/stream (org, project, env, etc.)
-   * Does NOT include inputs – those are passed per invocation.
-   */
-  defaultConfig?: Omit<Partial<GenSXRunOptions>, "inputs">;
-
-  /**
-   * Optional headers to include in the request
-   */
-  headers?: Record<string, string>;
+  config: WorkflowConfig;
 
   /**
    * Callback fired when workflow starts
    */
   onStart?: (message: string) => void;
-
-  /**
-   * Callback fired for progress updates
-   * Can receive either a string message or a parsed JSON object for structured progress events
-   */
-  onProgress?: (message: string | any) => void;
-
-  /**
-   * Callback fired for each output chunk (streaming mode only)
-   */
-  onOutput?: (chunk: string) => void;
 
   /**
    * Callback fired when workflow completes
@@ -103,266 +90,233 @@ export interface UseGenSXOptions<
   /**
    * Callback fired for any event
    */
-  onEvent?: (event: TEvent) => void;
+  onEvent?: (event: WorkflowMessage) => void;
 }
 
-// Union type for workflow control events (excludes progress and output)
-export type GenSXWorkflowEvent =
-  | GenSXStartEvent
-  | GenSXComponentStartEvent
-  | GenSXComponentEndEvent
-  | GenSXEndEvent
-  | GenSXErrorEvent;
-
-export interface UseGenSXResult<
+export interface UseWorkflowResult<
   TInputs = any,
   TOutput = any,
-  TEvent extends GenSXProgressEvent = GenSXProgressEvent,
 > {
-  /** Whether the workflow is currently running */
-  isLoading: boolean;
-
-  /** Whether the workflow is streaming */
-  isStreaming: boolean;
+  /** Whether the workflow is currently in progress */
+  inProgress: boolean;
 
   /** Any error that occurred */
   error: string | null;
 
-  /** The final output (collection mode) */
+  /** The final output (accumulated from stream) */
   output: TOutput | null;
 
-  /** All events received */
-  events: GenSXEvent[];
-
-  /** All events received */
-  workflowEvents: GenSXEvent[];
-
-  /** Progress events */
-  progressEvents: TEvent[];
-
-  /** Output events */
-  outputEvents: GenSXOutputEvent[];
-
-  /** WorkflowMessage events (for useObject and useEvent hooks) */
-  workflowMessages: WorkflowMessage[];
-
-  /** Run workflow in collection mode (returns final output) */
-  run: (inputs: TInputs) => Promise<TOutput | null>;
+  /** All workflow message events received */
+  execution: WorkflowMessage[];
 
   /** Run workflow in streaming mode */
-  stream: (inputs: TInputs) => Promise<void>;
+  run: (config: WorkflowRunConfig<TInputs>) => Promise<void>;
 
   /** Stop the current workflow */
   stop: () => void;
-
-  /** Clear all state */
-  clear: () => void;
 }
 
 /**
  * Hook for interacting with GenSX workflows via your API endpoint
  *
- * Matches the GenSX Client interface for easy passthrough implementations
- *
  * @example
  * ```tsx
- * // Configure defaults
- * const gensx = useGenSX({
- *   endpoint: '/api/gensx',
- *   defaultConfig: {
+ * const workflow = useWorkflow({
+ *   config: {
+ *     baseUrl: '/api/gensx',
+ *     workflowName: 'updateDraft',
  *     org: 'my-org',
  *     project: 'my-project',
- *     environment: 'production'
+ *     environment: 'production',
  *   },
- *   onOutput: (chunk) => console.log(chunk),
  *   onComplete: (output) => console.log('Done:', output)
  * });
  *
- * // Collection mode - wait for final output
- * const result = await gensx.run('ChatWorkflow', {
- *   inputs: { userMessage: 'Hello' }
- * });
+ * // Run workflow (always streams)
+ * await workflow.run({ inputs: { userMessage: 'Hello' } });
  *
- * // Streaming mode - get chunks as they arrive
- * await gensx.stream('ChatWorkflow', {
- *   inputs: { userMessage: 'Tell me a story' }
- * });
- *
- * // Override defaults for specific call
- * await gensx.run('ChatWorkflow', {
- *   org: 'different-org',
- *   project: 'different-project',
- *   inputs: { userMessage: 'Hello from different org' }
- * });
- *
- * // Use the new useObject and useEvent hooks with WorkflowMessage events
- * const currentProgress = useObject(gensx.workflowMessages, 'progress');
- * const allSteps = useEvent(gensx.workflowMessages, 'step-completed');
+ * // Use structured data hooks with WorkflowMessage events
+ * const currentProgress = useObject(workflow.events, 'progress');
+ * const allSteps = useEvents(workflow.events, 'step-completed');
  * ```
  */
 export function useWorkflow<
   TInputs = any,
   TOutput = any,
-  // This should actually be BaseProgressEvent
-  TEvent extends GenSXProgressEvent = GenSXProgressEvent,
 >(
-  options: UseGenSXOptions<TInputs, TOutput, TEvent>,
-): UseGenSXResult<TInputs, TOutput, TEvent> {
+  options: UseWorkflowConfig<TInputs, TOutput>,
+): UseWorkflowResult<TInputs, TOutput> {
   const {
-    endpoint,
-    workflowName,
-    defaultConfig = {},
-    headers = {},
+    config,
     onStart,
-    onProgress,
-    onOutput,
     onComplete,
     onError,
     onEvent,
   } = options;
 
+  const {
+    baseUrl,
+    headers = {},
+  } = config;
+
   // State
-  const [isLoading, setIsLoading] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [inProgress, setInProgress] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<TOutput | null>(null);
-  const [events, setEvents] = useState<GenSXEvent[]>([]);
-  const [workflowEvents, setWorkflowEvents] = useState<GenSXEvent[]>([]);
-  const [progressEvents, setProgressEvents] = useState<TEvent[]>([]);
-  const [outputEvents, setOutputEvents] = useState<GenSXOutputEvent[]>([]);
-  const [workflowMessages, setWorkflowMessages] = useState<WorkflowMessage[]>([]);
+  const [events, setEvents] = useState<WorkflowMessage[]>([]);
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
   const outputRef = useRef<TOutput | null>(null);
 
-  // Process a single event
+        // Process a single WorkflowMessage event
   const processEvent = useCallback(
-    (event: GenSXEvent) => {
-      // Add to events list
+    (event: WorkflowMessage) => {
+      // Add event to events array
       setEvents((prev) => [...prev, event]);
 
-      // Add to workflowEvents if it's a workflow control event (not progress or output)
-      if (event.type !== "progress" && event.type !== "output") {
-        setWorkflowEvents((prev) => [...prev, event]);
-      }
+      // Fire the onEvent callback for all events
+      onEvent?.(event);
 
-      // Convert GenSXEvent to WorkflowMessage and add to workflowMessages
-      const convertToWorkflowMessage = (e: GenSXEvent): WorkflowMessage | null => {
-        switch (e.type) {
-          case "start":
-            return {
-              type: "start",
-              workflowExecutionId: e.workflowExecutionId,
-              workflowName: e.workflowName,
-            };
-          case "component-start":
-            return {
-              type: "component-start",
-              componentName: e.componentName,
-              componentId: e.componentId,
-            };
-          case "component-end":
-            return {
-              type: "component-end",
-              componentName: e.componentName,
-              componentId: e.componentId,
-            };
-          case "progress":
-            // Convert progress event data to WorkflowMessage data format
-            if ("data" in e && typeof (e as any).data === "string") {
-              try {
-                const parsedData = JSON.parse((e as any).data);
-                return {
-                  type: "data",
-                  data: parsedData,
-                };
-              } catch {
-                return {
-                  type: "data",
-                  data: (e as any).data,
-                };
-              }
-            }
-            return null;
-          case "error":
-            return {
-              type: "error",
-              error: e.error || e.message || "Unknown error",
-            };
-          case "end":
-            return {
-              type: "end",
-            };
-          default:
-            return null;
-        }
-      };
-
-      const workflowMessage = convertToWorkflowMessage(event);
-      if (workflowMessage) {
-        setWorkflowMessages((prev) => [...prev, workflowMessage]);
-      }
-
-      // Fire generic callback
-      if (event.type === "progress") {
-        onEvent?.(event as unknown as TEvent);
-      }
-
-      // Handle specific event types
+      // Handle specific event types and fire callbacks
       switch (event.type) {
         case "start":
+          setInProgress(true);
           onStart?.(event.workflowName);
           break;
 
-        case "progress":
-          if ("data" in event && typeof (event as any).data === "string") {
-            const dataStr = (event as any).data;
-            setProgressEvents((prev) => [...prev, event as TEvent]);
+                case "output":
+          // Handle streaming content from "output" events
+          const content = event.content || "";
 
-            // Try to parse progress message as JSON for structured progress events
-            try {
-              const parsedProgress = JSON.parse(dataStr);
-              onProgress?.(parsedProgress);
-            } catch {
-              // If not JSON, pass as-is
-              onProgress?.(dataStr);
-            }
+          // Accumulate content to output
+          setOutput((prev) => {
+            const newOutput = ((prev || "") + content) as TOutput;
+            outputRef.current = newOutput;
+
+            // Calculate and publish chat stats
+            const text = newOutput as string;
+            const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+            const characterCount = text.length;
+            const estimatedReadingTime = Math.ceil(wordCount / 200); // Average reading speed
+
+            const chatStats: ChatStats = {
+              wordCount,
+              characterCount,
+              estimatedReadingTime,
+              lastUpdated: new Date().toISOString(),
+              isComplete: false
+            };
+
+            // Add chat stats as a separate event
+            const statsEvent: WorkflowMessage = {
+              type: "object",
+              label: "chat-stats",
+              data: chatStats
+            };
+            setEvents((prev) => [...prev, statsEvent]);
+
+            // Publish the accumulated content as an object
+            const contentEvent: WorkflowMessage = {
+              type: "object",
+              label: "draft-content",
+              data: { content: text }
+            };
+            setEvents((prev) => [...prev, contentEvent]);
+
+            return newOutput;
+          });
+          break;
+
+        case "object":
+          // Handle content updates
+          if (event.label === "content" || event.label === "draft-content") {
+            // Extract content from the object
+            const contentData = event.data as { content: string };
+            const content = contentData.content || "";
+
+            // Accumulate content to output
+            setOutput((prev) => {
+              const newOutput = ((prev || "") + content) as TOutput;
+              outputRef.current = newOutput;
+
+              // Calculate and publish chat stats
+              const text = newOutput as string;
+              const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+              const characterCount = text.length;
+              const estimatedReadingTime = Math.ceil(wordCount / 200); // Average reading speed
+
+              const chatStats: ChatStats = {
+                wordCount,
+                characterCount,
+                estimatedReadingTime,
+                lastUpdated: new Date().toISOString(),
+                isComplete: false
+              };
+
+              // Add chat stats as a separate event
+              const statsEvent: WorkflowMessage = {
+                type: "object",
+                label: "chat-stats",
+                data: chatStats
+              };
+              setEvents((prev) => [...prev, statsEvent]);
+
+              // Publish the accumulated content with the same label
+              const contentEvent: WorkflowMessage = {
+                type: "object",
+                label: event.label, // Use the original label ("draft-content" or "content")
+                data: { content: text }
+              };
+              setEvents((prev) => [...prev, contentEvent]);
+
+              return newOutput;
+            });
           }
           break;
 
-        case "output":
-          setOutputEvents((prev) => [...prev, event]);
-          setOutput((prev) => {
-            if (typeof prev === "string" || prev === null) {
-              const newOutput = ((prev || "") + event.content) as TOutput;
-              outputRef.current = newOutput; // Keep ref in sync
-              return newOutput;
-            }
-            // For non-string outputs, just return the previous value
-            return prev;
-          });
-          onOutput?.(event.content);
+        case "event":
+          // Handle simple workflow events
+          if (event.label === "workflow-start") {
+            setInProgress(true);
+          } else if (event.label === "workflow-end") {
+            setInProgress(false);
+            // Mark final stats as complete
+            const finalText = outputRef.current as string || "";
+            const wordCount = finalText.split(/\s+/).filter(word => word.length > 0).length;
+            const characterCount = finalText.length;
+            const estimatedReadingTime = Math.ceil(wordCount / 200);
+
+            const finalStats: ChatStats = {
+              wordCount,
+              characterCount,
+              estimatedReadingTime,
+              lastUpdated: new Date().toISOString(),
+              isComplete: true
+            };
+
+            const finalStatsEvent: WorkflowMessage = {
+              type: "object",
+              label: "chat-stats",
+              data: finalStats
+            };
+            setEvents((prev) => [...prev, finalStatsEvent]);
+          }
           break;
 
         case "end":
-          // Don't set output here - it's already accumulated in real-time
-          setIsLoading(false);
-          setIsStreaming(false);
-          // Call onComplete with the accumulated output
+          setInProgress(false);
           onComplete?.(outputRef.current || (null as any));
           break;
 
         case "error":
-          const errorMessage = event.error || event.message || "Unknown error";
-          setError(errorMessage);
-          setIsLoading(false);
-          setIsStreaming(false);
-          onError?.(errorMessage);
+          setError(event.error);
+          setInProgress(false);
+          onError?.(event.error);
           break;
       }
     },
-    [onEvent, onStart, onProgress, onOutput, onComplete, onError],
+    [onStart, onComplete, onError, onEvent],
   );
 
   // Parse streaming response
@@ -390,7 +344,7 @@ export function useWorkflow<
             if (!line.trim()) continue;
 
             try {
-              const event = JSON.parse(line) as GenSXEvent;
+              const event = JSON.parse(line) as WorkflowMessage;
               processEvent(event);
             } catch (e) {
               console.warn("Failed to parse event:", line);
@@ -401,7 +355,7 @@ export function useWorkflow<
         // Process any remaining buffer
         if (buffer.trim()) {
           try {
-            const event = JSON.parse(buffer) as GenSXEvent;
+            const event = JSON.parse(buffer) as WorkflowMessage;
             processEvent(event);
           } catch (e) {
             console.warn("Failed to parse final event:", buffer);
@@ -416,15 +370,10 @@ export function useWorkflow<
 
   // Clear state
   const clear = useCallback(() => {
-    setIsLoading(false);
-    setIsStreaming(false);
+    setInProgress(false);
     setError(null);
     setOutput(null);
     setEvents([]);
-    setWorkflowEvents([]);
-    setProgressEvents([]);
-    setOutputEvents([]);
-    setWorkflowMessages([]);
     outputRef.current = null;
   }, []);
 
@@ -434,101 +383,43 @@ export function useWorkflow<
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    setIsLoading(false);
-    setIsStreaming(false);
+    setInProgress(false);
   }, []);
 
-  // Build request payload matching Client format
+  // Build request payload - just pass inputs since API route handles workflow config
   const buildPayload = useCallback(
-    (inputs: TInputs) => {
-      // Merge with defaults (no inputs here)
-      const config = {
-        ...defaultConfig,
-        inputs,
-      } as GenSXRunOptions;
-
+    (runConfig: WorkflowRunConfig<TInputs>) => {
       return {
-        workflowName,
-        org: config.org,
-        project: config.project,
-        environment: config.environment,
-        format: config.format,
-        ...config.inputs,
+        ...runConfig.inputs,
       };
     },
-    [defaultConfig, workflowName],
+    [],
   );
 
-  // Run workflow in collection mode
+  // Run workflow in streaming mode
   const run = useCallback(
-    async (inputs: TInputs) => {
+    async (runConfig: WorkflowRunConfig<TInputs>) => {
       // Reset state
       clear();
-      setIsLoading(true);
+      setInProgress(true);
 
       // Create abort controller
       abortControllerRef.current = new AbortController();
 
       try {
-        const response = await fetch(endpoint, {
+        const response = await fetch(baseUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             ...headers,
           },
-          body: JSON.stringify(buildPayload(inputs)),
+          body: JSON.stringify(buildPayload(runConfig)),
           signal: abortControllerRef.current.signal,
         });
 
         if (!response.ok) {
           throw new Error(
             `Failed to run workflow: ${response.status} ${response.statusText}`,
-          );
-        }
-
-        // Parse the stream
-        await parseStream(response);
-
-        // Return the final output
-        return outputRef.current;
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Unknown error";
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
-        abortControllerRef.current = null;
-      }
-    },
-    [endpoint, headers, clear, parseStream, buildPayload],
-  );
-
-  // Run workflow in streaming mode
-  const stream = useCallback(
-    async (inputs: TInputs) => {
-      // Reset state
-      clear();
-      setIsLoading(true);
-      setIsStreaming(true);
-
-      // Create abort controller
-      abortControllerRef.current = new AbortController();
-
-      try {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...headers,
-          },
-          body: JSON.stringify(buildPayload(inputs)),
-          signal: abortControllerRef.current.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to stream workflow: ${response.status} ${response.statusText}`,
           );
         }
 
@@ -542,57 +433,23 @@ export function useWorkflow<
         setError(errorMessage);
         throw err;
       } finally {
-        setIsLoading(false);
-        setIsStreaming(false);
+        setInProgress(false);
         abortControllerRef.current = null;
       }
     },
-    [endpoint, headers, clear, parseStream, buildPayload],
+    [baseUrl, headers, clear, parseStream, buildPayload],
   );
 
   return {
-    isLoading,
-    isStreaming,
+    inProgress,
     error,
     output,
-    events,
-    workflowEvents,
-    progressEvents,
-    outputEvents,
-    workflowMessages,
+    execution: events,
     run,
-    stream,
     stop,
-    clear
   };
 }
 
-// Standalone hook to retrieve the most recent structured progress event object for a given type
-export function useProgressObject<T extends { type: string }>(
-  events: T[] | Array<GenSXProgressEvent | GenSXWorkflowEvent | GenSXOutputEvent>,
-  typeKey: T['type']
-): T | undefined {
-  return useMemo(() => {
-    const matched: T[] = [];
-    for (const e of events) {
-      let obj: any = e;
-      // If this event has a data field (progress event), try to parse JSON
-      if ('data' in e && typeof (e as any).data === 'string') {
-        try {
-          obj = JSON.parse((e as any).data as string);
-        } catch {
-          // Fallback to using the raw event object
-          obj = e;
-        }
-      }
-      if (obj && obj.type === typeKey) {
-        matched.push(obj as T);
-      }
-    }
-    // Return the most recent matching object
-    return matched.pop();
-  }, [events, typeKey]);
-}
 
 // New hook to get the most recent object by label from WorkflowMessage events
 export function useObject<T extends Record<string, JsonValue>>(
@@ -614,19 +471,32 @@ export function useObject<T extends Record<string, JsonValue>>(
 }
 
 // New hook to get all events by label from WorkflowMessage events
-export function useEvent<T extends Record<string, JsonValue>>(
+export function useEvents<T extends Record<string, JsonValue>>(
   events: WorkflowMessage[],
-  label: string
+  label: string,
+  onEvent?: (event: T) => void
 ): T[] {
-  return useMemo(() => {
-    const eventList: T[] = [];
+  const eventList = useMemo(() => {
+    const list: T[] = [];
 
     for (const event of events) {
       if (event.type === 'event' && event.label === label) {
-        eventList.push(event.data as T);
+        list.push(event.data as T);
       }
     }
 
-    return eventList;
+    return list;
   }, [events, label]);
+
+  // Call onEvent callback for new events
+  useEffect(() => {
+    if (onEvent && eventList.length > 0) {
+      // Call callback for the most recent event
+      const latestEvent = eventList[eventList.length - 1];
+      onEvent(latestEvent);
+    }
+  }, [eventList, onEvent]);
+
+  return eventList;
 }
+

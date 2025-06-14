@@ -31,35 +31,27 @@ import { useWorkflow } from '@gensx/react';
 
 function MyComponent() {
   const gensx = useWorkflow({
-    endpoint: '/api/gensx',
-    defaultConfig: {
+    config: {
+      baseUrl: '/api/gensx',
+      workflowName: 'ChatWorkflow',
       org: 'my-org',
       project: 'my-project',
-      environment: 'production'
+      environment: 'production',
     },
-    onOutput: (chunk) => console.log('Received:', chunk),
     onComplete: (output) => console.log('Done:', output)
   });
 
-  // Collection mode - wait for complete output
+  // Run workflow - streams in real-time
   const handleRun = async () => {
-    const result = await gensx.run('ChatWorkflow', {
+    await gensx.run({
       inputs: { userMessage: 'Hello!' }
     });
-    console.log('Final result:', result);
+    // Output is available in gensx.output as it streams
   };
 
-  // Streaming mode - get chunks as they arrive
-  const handleStream = async () => {
-    await gensx.stream('ChatWorkflow', {
-      inputs: { userMessage: 'Tell me a story' }
-    });
-    // Output chunks are available in gensx.outputChunks
-  };
-
-  // Override defaults for specific calls
+  // Override org/project for specific calls
   const handleCustom = async () => {
-    await gensx.run('DifferentWorkflow', {
+    await gensx.run({
       org: 'different-org',
       project: 'different-project',
       inputs: { data: 'custom data' }
@@ -69,9 +61,9 @@ function MyComponent() {
   return (
     <div>
       <button onClick={handleRun}>Run</button>
-      <button onClick={handleStream}>Stream</button>
-      {gensx.isLoading && <p>Loading...</p>}
+      {gensx.inProgress && <p>Loading...</p>}
       {gensx.error && <p>Error: {gensx.error}</p>}
+      <div>{gensx.output}</div>
     </div>
   );
 }
@@ -80,42 +72,41 @@ function MyComponent() {
 ### Hook Options
 
 ```typescript
-interface UseGenSXOptions {
-  endpoint: string;                         // Your API endpoint URL
-  defaultConfig?: Partial<GenSXRunOptions>; // Default org/project/env
-  headers?: Record<string, string>;         // Optional request headers
-  onStart?: (message: string) => void;
-  onProgress?: (message: string) => void;
-  onOutput?: (chunk: string) => void;
-  onComplete?: (output: any) => void;
-  onError?: (error: string) => void;
-  onEvent?: (event: GenSXEvent) => void;
+interface WorkflowConfig {
+  baseUrl: string;               // Your API base URL
+  workflowName: string;          // Workflow name to execute
+  org: string;                   // GenSX organization
+  project: string;               // GenSX project
+  environment?: string;          // Optional environment
+  headers?: Record<string, string>; // Optional request headers
 }
 
-interface GenSXRunOptions {
-  org: string;           // GenSX organization
-  project: string;       // GenSX project
-  environment?: string;  // Optional environment
-  inputs?: Record<string, any>;  // Workflow inputs
+interface UseWorkflowConfig<TInputs = unknown, TOutput = unknown> {
+  config: WorkflowConfig;        // All workflow configuration
+  onStart?: (message: string) => void;
+  onComplete?: (output: TOutput) => void;
+  onError?: (error: string) => void;
+  onEvent?: (event: WorkflowMessage) => void;
+}
+
+interface WorkflowRunConfig<TInputs = unknown> {
+  inputs: TInputs;
+  org?: string;           // Override org for this run
+  project?: string;       // Override project for this run
+  environment?: string;   // Override environment for this run
 }
 ```
 
 ### Return Values
 
 ```typescript
-interface UseGenSXResult {
-  isLoading: boolean;           // Workflow is running
-  isStreaming: boolean;         // In streaming mode
-  error: string | null;         // Error message if any
-  output: any;                  // Final output (collection mode)
-  outputChunks: string[];       // Output chunks (streaming mode)
-  events: GenSXEvent[];         // All events received
-  progressMessages: string[];   // Progress messages
-
-  run: (workflowName: string, options?: Partial<GenSXRunOptions>) => Promise<any>;
-  stream: (workflowName: string, options?: Partial<GenSXRunOptions>) => Promise<void>;
+interface UseWorkflowResult<TInputs = any, TOutput = any> {
+  inProgress: boolean;           // Workflow is running
+  error: string | null;          // Error message if any
+  output: TOutput | null;        // Final output (accumulated from stream)
+  events: WorkflowMessage[];     // All events received
+  run: (config: WorkflowRunConfig<TInputs>) => Promise<void>;
   stop: () => void;
-  clear: () => void;
 }
 ```
 
@@ -135,15 +126,15 @@ export async function POST(request: Request) {
     apiKey: process.env.GENSX_API_KEY!
   });
 
-  // Use runRaw for direct passthrough
+  // Stream the response
   const response = await gensx.runRaw(workflowName, {
-    org,       // From request body
-    project,   // From request body
+    org,
+    project,
     environment,
     inputs
   });
 
-  // Return the raw GenSX response
+  // Return the streaming response
   return new Response(response.body, {
     headers: {
       'Content-Type': 'application/x-ndjson',
@@ -209,10 +200,14 @@ const response = await gensx.runRaw('ChatWorkflow', {
 
 // After - Using the hook
 const gensx = useWorkflow({
-  endpoint: '/api/gensx',
-  defaultConfig: { org: 'my-org', project: 'my-project' }
+  config: {
+    baseUrl: '/api/gensx',
+    workflowName: 'ChatWorkflow',
+    org: 'my-org',
+    project: 'my-project'
+  }
 });
-const result = await gensx.run('ChatWorkflow', {
+await gensx.run({
   inputs: { userMessage: 'Hello' }
 });
 ```
@@ -247,11 +242,12 @@ import { useWorkflow } from '@gensx/react';
 
 // Basic usage
 const gensx = useWorkflow({
-  endpoint: '/api/gensx',
-  defaultConfig: {
+  config: {
+    baseUrl: '/api/gensx',
+    workflowName: 'MyWorkflow',
     org: 'my-org',
     project: 'my-project',
-    environment: 'production'
+    environment: 'production',
   }
 });
 
@@ -261,8 +257,13 @@ interface ChatResponse {
   confidence: number;
 }
 
-const gensx = useWorkflow<ChatResponse>({
-  endpoint: '/api/gensx',
+const gensx = useWorkflow<UpdateDraftInput, ChatResponse>({
+  config: {
+    baseUrl: '/api/gensx',
+    workflowName: 'ChatWorkflow',
+    org: 'my-org',
+    project: 'my-project',
+  },
   onComplete: (output) => {
     // output is typed as ChatResponse
     console.log(output.message);
@@ -271,125 +272,128 @@ const gensx = useWorkflow<ChatResponse>({
 });
 
 // Real-time streaming with automatic output accumulation
-const gensx = useWorkflow<string>({
-  endpoint: '/api/gensx',
-  onOutput: (chunk) => {
-    // Called for each chunk
-    console.log('New chunk:', chunk);
+const gensx = useWorkflow<UpdateDraftInput, string>({
+  config: {
+    baseUrl: '/api/gensx',
+    workflowName: 'MyWorkflow',
+    org: 'my-org',
+    project: 'my-project',
+  },
+  onEvent: (event) => {
+    // Called for each event
+    if (event.type === 'output') {
+      console.log('New chunk:', event.content);
+    }
   }
 });
 
 // During streaming, gensx.output is updated in real-time
-// No need to manually concatenate chunks!
-await gensx.stream('MyWorkflow', { inputs: { message: 'Hello' } });
+await gensx.run({ inputs: { message: 'Hello' } });
 // gensx.output contains the accumulated text as it streams
 ```
 
 #### Hook Options
 
 ```typescript
-interface UseGenSXOptions<TOutput = any> {
-  endpoint: string;
-  defaultConfig?: Partial<GenSXRunOptions>;
-  headers?: Record<string, string>;
+interface UseWorkflowConfig<TInputs = unknown, TOutput = unknown> {
+  config: WorkflowConfig;
   onStart?: (message: string) => void;
-  onProgress?: (message: string | any) => void;
-  onOutput?: (chunk: string) => void;
   onComplete?: (output: TOutput) => void;
   onError?: (error: string) => void;
-  onEvent?: (event: GenSXEvent) => void;
+  onEvent?: (event: WorkflowMessage) => void;
 }
 ```
 
 #### Hook Return Value
 
 ```typescript
-interface UseGenSXResult<TOutput = any> {
-  isLoading: boolean;
-  isStreaming: boolean;
+interface UseWorkflowResult<TInputs = any, TOutput = any> {
+  inProgress: boolean;
   error: string | null;
   output: TOutput | null;
-  outputChunks: string[];
-  events: GenSXEvent[];
-  progressMessages: string[];
-  run: (workflowName: string, options?: Partial<GenSXRunOptions>) => Promise<TOutput | null>;
-  stream: (workflowName: string, options?: Partial<GenSXRunOptions>) => Promise<void>;
+  events: WorkflowMessage[];
+  run: (config: WorkflowRunConfig<TInputs>) => Promise<void>;
   stop: () => void;
-  clear: () => void;
 }
 ```
 
 #### Examples
 
-**Collection Mode with Typed Output:**
+**Streaming with Typed Output:**
 ```typescript
 interface DraftResponse {
   content: string;
   wordCount: number;
 }
 
-const gensx = useWorkflow<DraftResponse>({
-  endpoint: '/api/gensx',
+const gensx = useWorkflow<UpdateDraftInput, DraftResponse>({
+  config: {
+    baseUrl: '/api/gensx',
+    workflowName: 'UpdateDraft',
+    org: 'my-org',
+    project: 'my-project',
+  },
   onComplete: (output) => {
     setDraft(output.content);
     setWordCount(output.wordCount);
   }
 });
 
-const result = await gensx.run('UpdateDraft', {
+await gensx.run({
   inputs: { userMessage: 'Make it shorter' }
 });
 
-if (result) {
-  console.log(`Updated draft: ${result.content} (${result.wordCount} words)`);
-}
+// Access the output as it streams
+console.log('Current output:', gensx.output);
 ```
 
-**Streaming Mode with Progress Updates:**
+**With Progress Updates:**
 ```typescript
-const gensx = useWorkflow<string>({
-  endpoint: '/api/gensx',
-  onOutput: (chunk) => {
-    // Append each chunk to the output
-    setContent(prev => prev + chunk);
+const gensx = useWorkflow<StoryInput, string>({
+  config: {
+    baseUrl: '/api/gensx',
+    workflowName: 'GenerateStory',
+    org: 'my-org',
+    project: 'my-project',
   },
-  onProgress: (progress) => {
-    // Handle structured progress events
-    if (typeof progress === 'object' && progress.type) {
-      console.log(`Progress: ${progress.type} - ${progress.content}`);
+  onEvent: (event) => {
+    if (event.type === 'output') {
+      console.log('New chunk:', event.content);
     }
   },
+
   onComplete: (finalOutput) => {
-    console.log('Streaming complete:', finalOutput);
+    console.log('Complete:', finalOutput);
   }
 });
 
-await gensx.stream('GenerateStory', {
+await gensx.run({
   inputs: { prompt: 'Tell me a story' }
 });
 ```
 
-**With Default Configuration:**
+**With Configuration Overrides:**
 ```typescript
 const gensx = useWorkflow({
-  endpoint: '/api/gensx',
-  defaultConfig: {
+  config: {
+    baseUrl: '/api/gensx',
+    workflowName: 'MyWorkflow',
     org: 'my-org',
     project: 'my-project',
-    environment: 'production'
-  },
-  headers: {
-    'X-Custom-Header': 'value'
+    environment: 'production',
+    headers: {
+      'X-Custom-Header': 'value'
+    }
   }
 });
 
-// Uses defaults
-await gensx.run('MyWorkflow', {
+// Uses config values
+await gensx.run({
   inputs: { data: 'test' }
 });
 
-// Override defaults
-await gensx.run('MyWorkflow', {
+// Override org/project/environment for specific run
+await gensx.run({
   org: 'different-org',
   project: 'different-project',
   inputs: { data: 'test' }

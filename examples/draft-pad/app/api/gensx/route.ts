@@ -2,12 +2,7 @@ import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
 interface RequestBody {
-  workflowName: string;
-  org?: string;
-  project?: string;
-  environment?: string;
-  format?: "sse" | "ndjson" | "json";
-  [key: string]: unknown; // For additional inputs
+  [key: string]: unknown; // For workflow inputs
 }
 
 const shouldUseLocalDevServer = () => {
@@ -31,24 +26,16 @@ const shouldUseLocalDevServer = () => {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as RequestBody;
-    const { workflowName, org, project, environment, format, ...inputs } = body;
+    const inputs = (await request.json()) as RequestBody;
 
     const useLocalDevServer = shouldUseLocalDevServer();
 
-    // Validate required fields
-    if (!workflowName) {
-      return new Response(
-        JSON.stringify({
-          type: "error",
-          error: "workflowName is required",
-        }) + "\n",
-        {
-          status: 400,
-          headers: { "Content-Type": "application/x-ndjson" },
-        },
-      );
-    }
+    // Hardcode workflow configuration for draft-pad
+    const workflowName = "updateDraft";
+    const org = "gensx";
+    const project = "draft-pad";
+    const environment = "default";
+    const format = "ndjson";
 
     // Get API key from environment (or could accept from Authorization header)
     let gensx: GenSX;
@@ -70,34 +57,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Use defaults from environment if not provided in request
-      const finalOrg = org ?? process.env.GENSX_ORG;
-      const finalProject = project ?? process.env.GENSX_PROJECT;
-      const finalEnvironment = environment ?? process.env.GENSX_ENVIRONMENT;
-
-      if (!finalOrg || !finalProject || !finalEnvironment) {
-        return new Response(
-          JSON.stringify({
-            type: "error",
-            error:
-              "org, project, and environment are required (either in request or environment)",
-          }) + "\n",
-          {
-            status: 400,
-            headers: { "Content-Type": "application/x-ndjson" },
-          },
-        );
-      }
-
       // Initialize GenSX SDK
       const baseUrl = process.env.GENSX_BASE_URL ?? "https://api.gensx.com";
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       gensx = new GenSX({
         apiKey,
         baseUrl,
-        org: finalOrg,
-        project: finalProject,
-        environment: finalEnvironment,
+        org,
+        project,
+        environment,
       });
     } else {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
@@ -153,38 +121,32 @@ export function GET() {
   return new Response(
     JSON.stringify(
       {
-        message: "GenSX Passthrough API",
+        message: "GenSX Draft-Pad API",
         description:
-          "This endpoint accepts the same parameters as the GenSX SDK and passes them through",
+          "This endpoint runs the updateDraft workflow with hardcoded configuration",
+        workflow: {
+          workflowName: "updateDraft",
+          org: "gensx",
+          project: "draft-pad",
+          environment: "default",
+        },
         usage: {
           method: "POST",
           body: {
-            workflowName: "Name of the GenSX workflow to run (required)",
-            org: "Organization name (optional if set in environment)",
-            project: "Project name (optional if set in environment)",
-            environment: "Environment name (optional)",
-            format:
-              'Response format: "sse" | "ndjson" | "json" (optional, defaults to "ndjson")',
-            "...inputs": "Any other fields are passed as workflow inputs",
+            userMessage: "The user's message for updating the draft",
+            currentDraft: "The current draft content (optional)",
           },
           example: {
-            workflowName: "ChatWorkflow",
-            org: "my-org",
-            project: "my-project",
-            environment: "production",
-            format: "ndjson",
-            userMessage: "Hello, how can you help me?",
+            userMessage: "Make this more concise",
+            currentDraft: "This is the current draft content...",
           },
         },
         authentication: {
           option1: "Set GENSX_API_KEY environment variable",
           option2: "Pass Authorization header with Bearer token",
         },
-        defaults: {
-          GENSX_ORG: "Default organization if not provided in request",
-          GENSX_PROJECT: "Default project if not provided in request",
-          GENSX_ENVIRONMENT: "Default environment if not provided in request",
-          GENSX_BASE_URL: "GenSX base URL (defaults to https://api.gensx.com)",
+        environment: {
+          GENSX_BASE_URL: "GenSX base URL (defaults to https://api.gensx.com for production, http://localhost:1337 for development)",
         },
       },
       null,

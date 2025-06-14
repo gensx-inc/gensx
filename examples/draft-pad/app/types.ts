@@ -1,20 +1,13 @@
-import { BaseProgressEvent, GenSXWorkflowEvent } from '@gensx/react';
-import { GenSXOutputEvent, GenSXProgressEvent } from '@gensx/client';
+// Re-export all workflow types from the single source of truth
+export {
+  type StartContentEvent,
+  type EndContentEvent,
+  type DraftProgress,
+  type UpdateDraftInput,
+  type UpdateDraftOutput
+} from '@/gensx/workflows';
 
-export type StartContentEvent = BaseProgressEvent & {
-  type: "startContent";
-  content: string;
-  timestamp: string;
-};
-
-export type EndContentEvent = BaseProgressEvent & {
-  type: "endContent";
-  content: string;
-  timestamp: string;
-};
-
-export type ProgressEventTypes = EndContentEvent | StartContentEvent;
-
+// Additional types specific to the UI/app layer
 export type CustomWorkflowEvent = {
   id: string;
   type: 'start' | 'end' | 'output' | 'component-start' | 'component-end' | 'error';
@@ -30,13 +23,6 @@ export type WorkflowEventCounts = {
   error: number;
   total: number;
 };
-
-export type UpdateDraftInput = {
-  userMessage: string;
-  currentDraft: string;
-};
-
-export type UpdateDraftOutput = string;
 
 export type WorkflowEventData = {
   counts: WorkflowEventCounts;
