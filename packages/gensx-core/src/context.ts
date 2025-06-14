@@ -1,4 +1,4 @@
-import { ExecutionNode } from "./checkpoint.js";
+import { ExecutionNode } from "./checkpoint-types.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,

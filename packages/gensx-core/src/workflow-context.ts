@@ -15,7 +15,11 @@ export function createWorkflowContext(
   onMessage?: WorkflowMessageListener,
 ): WorkflowExecutionContext {
   return {
-    checkpointManager: new CheckpointManager(),
+    checkpointManager: new CheckpointManager({
+      apiKey: "test",
+      org: "test",
+      disabled: true,
+    }),
     sendWorkflowMessage: (message: WorkflowMessage) => {
       onMessage?.(message);
     },

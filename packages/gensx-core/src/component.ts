@@ -12,6 +12,8 @@ import type {
 import serializeErrorPkg from "@common.js/serialize-error";
 const { serializeError } = serializeErrorPkg;
 
+import { generateDeterministicId } from "./checkpoint.js";
+import { ExecutionNode, STREAMING_PLACEHOLDER } from "./checkpoint-types.js";
 import {
   ExecutionContext,
   getContextSnapshot,
@@ -22,7 +24,7 @@ import {
 } from "./context.js";
 import { WorkflowMessageListener } from "./workflow-state.js";
 
-export const STREAMING_PLACEHOLDER = "[streaming in progress]";
+export { STREAMING_PLACEHOLDER };
 
 // Decorator-based Component Model
 
@@ -88,6 +90,26 @@ export function Component<P extends object = {}, R = unknown>(
       );
     }
 
+    // Generate deterministic ID for replay
+    const props_for_id = props
+      ? Object.fromEntries(
+          Object.entries(props).filter(
+            ([key]) => key !== "children" && key !== "componentOpts",
+          ),
+        )
+      : {};
+
+    // Check checkpoint for existing result
+    const existingResult = checkpointManager.getCompletedResult(
+      // We need to generate the same ID that will be created in addNode
+      generateDeterministicId(checkpointName, props_for_id, currentNodeId),
+    );
+
+    if (existingResult !== undefined) {
+      console.info(`[Replay] Skipping ${checkpointName}`);
+      return existingResult as R;
+    }
+
     function onComplete() {
       workflowContext.sendWorkflowMessage({
         type: "component-end",
@@ -100,13 +122,7 @@ export function Component<P extends object = {}, R = unknown>(
     const nodeId = checkpointManager.addNode(
       {
         componentName: checkpointName,
-        props: props
-          ? Object.fromEntries(
-              Object.entries(props).filter(
-                ([key]) => key !== "children" && key !== "componentOpts",
-              ),
-            )
-          : {},
+        props: props_for_id,
         componentOpts: resolvedComponentOpts,
       },
       currentNodeId,
@@ -249,6 +265,7 @@ export function Workflow<P extends object = {}, R = unknown>(
   runtimeOpts?: WorkflowOpts & {
     workflowExecutionId?: string;
     messageListener?: WorkflowMessageListener;
+    checkpoint?: ExecutionNode;
   },
 ) => Promise<Awaited<R>> {
   const WorkflowFn = async (
@@ -256,6 +273,7 @@ export function Workflow<P extends object = {}, R = unknown>(
     runtimeOpts?: WorkflowOpts & {
       workflowExecutionId?: string;
       messageListener?: WorkflowMessageListener;
+      checkpoint?: ExecutionNode;
     },
   ): Promise<Awaited<R>> => {
     const context = new ExecutionContext(
@@ -275,6 +293,14 @@ export function Workflow<P extends object = {}, R = unknown>(
     };
 
     const workflowContext = context.getWorkflowContext();
+
+    // Initialize checkpoint manager with checkpoint if provided
+    if (runtimeOpts?.checkpoint) {
+      workflowContext.checkpointManager.setReplayCheckpoint(
+        runtimeOpts.checkpoint,
+      );
+    }
+
     workflowContext.checkpointManager.setPrintUrl(
       resolvedOpts.printUrl ?? false,
     );
