@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { startTransition,useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // JSON-serializable value type for progress data
 export type JsonValue =
@@ -92,8 +92,8 @@ export interface UseWorkflowConfig<
 }
 
 export interface UseWorkflowResult<
-  TInputs = any,
-  TOutput = any,
+  TInputs = unknown,
+  TOutput = unknown,
 > {
   /** Whether the workflow is currently in progress */
   inProgress: boolean;
@@ -141,8 +141,8 @@ export interface UseWorkflowResult<
  * ```
  */
 export function useWorkflow<
-  TInputs = any,
-  TOutput = any,
+  TInputs = unknown,
+  TOutput = unknown,
 >(
   options: UseWorkflowConfig<TOutput>,
 ): UseWorkflowResult<TInputs, TOutput> {
@@ -271,7 +271,7 @@ export function useWorkflow<
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
-          buffer = lines.pop() || ""; // Keep incomplete line in buffer
+          buffer = lines.pop() ?? ""; // Keep incomplete line in buffer
 
           for (const line of lines) {
             if (!line.trim()) continue;
@@ -279,7 +279,7 @@ export function useWorkflow<
             try {
               const event = JSON.parse(line) as WorkflowMessage;
               processEvent(event);
-            } catch (e) {
+            } catch (_e) {
               console.warn("Failed to parse event:", line);
             }
           }
@@ -290,7 +290,7 @@ export function useWorkflow<
           try {
             const event = JSON.parse(buffer) as WorkflowMessage;
             processEvent(event);
-          } catch (e) {
+          } catch (_e) {
             console.warn("Failed to parse final event:", buffer);
           }
         }
@@ -386,16 +386,16 @@ export function useWorkflow<
 
 
 // New hook to get the most recent object by label from WorkflowMessage events
-export function useObject<T extends Record<string, JsonValue>>(
+export function useObject(
   events: WorkflowMessage[],
   label: string
-): T | undefined {
+): Record<string, JsonValue> | undefined {
   return useMemo(() => {
-    const objectEvents: T[] = [];
+    const objectEvents: Record<string, JsonValue>[] = [];
 
     for (const event of events) {
       if (event.type === 'object' && event.label === label) {
-        objectEvents.push(event.data as T);
+        objectEvents.push(event.data);
       }
     }
 

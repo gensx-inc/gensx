@@ -5,11 +5,11 @@
 // Note: These types are imported from @gensx/core which needs to be built first
 // The types extend the core WorkflowMessage types with additional fields for SDK usage
 import type {
-  WorkflowStartMessage,
-  WorkflowComponentStartMessage,
   WorkflowComponentEndMessage,
-  WorkflowErrorMessage,
+  WorkflowComponentStartMessage,
   WorkflowEndMessage,
+  WorkflowErrorMessage,
+  WorkflowStartMessage,
 } from "@gensx/core";
 
 // Type declarations for environment variables
