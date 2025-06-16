@@ -11,7 +11,7 @@ interface TopicProps {
 const GenerateTopics = gensx.Component(
   "GenerateTopics",
   async (props: TopicProps) => {
-    gensx.emitProgress("Generating research topics...");
+    gensx.publishData("Generating research topics...");
 
     const result = await generateObject({
       model: anthropic("claude-sonnet-4-20250514"),
@@ -24,7 +24,7 @@ const GenerateTopics = gensx.Component(
       Focus on topics that would benefit from current, real-time information and detailed analysis.`,
     });
 
-    gensx.emitProgress(`Found ${result.object.topics.length} research topics`);
+    gensx.publishData(`Found ${result.object.topics.length} research topics`);
     return result;
   },
 );
@@ -45,7 +45,7 @@ interface PerplexityResponse {
 const WebResearch = gensx.Component(
   "WebResearch",
   async (props: WebResearchProps) => {
-    gensx.emitProgress(`Researching: ${props.topic}`);
+    gensx.publishData(`Researching: ${props.topic}`);
 
     // Use Perplexity API for real-time web research
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -84,7 +84,7 @@ const WebResearch = gensx.Component(
       source: "web_research",
     };
 
-    gensx.emitProgress(`Completed research: ${props.topic}`);
+    gensx.publishData(`Completed research: ${props.topic}`);
     return result;
   },
 );
@@ -107,7 +107,7 @@ interface ResearchResult {
 const Research = gensx.Component(
   "Research",
   async (props: ResearchProps): Promise<ResearchResult> => {
-    gensx.emitProgress("Starting research phase...");
+    gensx.publishData("Starting research phase...");
 
     // Generate research topics
     const topicsResult = await GenerateTopics({
@@ -122,7 +122,7 @@ const Research = gensx.Component(
 
     const webResearch = await Promise.all(webResearchPromises);
 
-    gensx.emitProgress("Research phase complete");
+    gensx.publishData("Research phase complete");
 
     return {
       topics: topicsResult.object.topics,

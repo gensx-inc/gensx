@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.3](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.2...gensx-core-v0.4.3) (2025-06-13)
+
+
+### ✨ New Features
+
+* Add helpers for event stream and state. ([#764](https://github.com/gensx-inc/gensx/issues/764)) ([a3ee114](https://github.com/gensx-inc/gensx/commit/a3ee114e0af449cafce8a0bbcf8b2cba98469bfd))
+* updating emitProgress to support nested objects ([#762](https://github.com/gensx-inc/gensx/issues/762)) ([8198e4a](https://github.com/gensx-inc/gensx/commit/8198e4a20908ba5f0b0ea0aa58775524c5d2595d))
+
 ## [0.4.2](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.1...gensx-core-v0.4.2) (2025-06-03)
 
 

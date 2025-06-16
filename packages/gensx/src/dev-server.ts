@@ -86,18 +86,36 @@ export interface WorkflowExecution {
   input: unknown;
   output?: unknown;
   error?: string;
-  progressEvents?: ProgressEvent[];
+  workflowMessages: WorkflowMessage[];
 }
 
-export interface ProgressEvent {
-  id: string;
-  type: "start" | "progress" | "end" | "error";
-  workflowName?: string;
-  data?: string;
-  error?: string;
-  executionStatus?: ExecutionStatus;
-  timestamp: string;
-}
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+export type WorkflowMessage = { id: string; timestamp: string } & (
+  | { type: "start"; workflowExecutionId?: string; workflowName: string }
+  | {
+      type: "component-start";
+      componentName: string;
+      label?: string;
+      componentId: string;
+    }
+  | {
+      type: "component-end";
+      componentName: string;
+      label?: string;
+      componentId: string;
+    }
+  | { type: "data"; data: JsonValue }
+  | { type: "object" | "event"; data: Record<string, JsonValue>; label: string }
+  | { type: "error"; error: string }
+  | { type: "end" }
+);
 
 /**
  * GenSX Server - A development server for GenSX workflows
@@ -347,6 +365,7 @@ export class GensxServer {
           executionStatus: "queued",
           createdAt: now,
           input: body,
+          workflowMessages: [],
         };
 
         // Store the execution
@@ -450,7 +469,7 @@ export class GensxServer {
         c.req.query("lastEventId") ?? c.req.header("Last-Event-Id");
 
       // Filter events based on lastEventId if provided
-      const events = execution.progressEvents ?? [];
+      const events = execution.workflowMessages;
       const filteredEvents = lastEventId
         ? events.filter((event) => event.id > lastEventId)
         : events;
@@ -562,6 +581,7 @@ export class GensxServer {
           executionStatus: "running", // Start directly in running state since this is synchronous
           createdAt: now,
           input: body,
+          workflowMessages: [],
         };
 
         // Store the execution
@@ -594,24 +614,30 @@ export class GensxServer {
               start: async (controller) => {
                 try {
                   // Set up progress listener
-                  const progressListener = (event: any) => {
-                    const eventData = JSON.stringify(event);
+                  const messageListener = (event: any) => {
+                    const message = {
+                      ...event,
+                      id: Date.now().toString(),
+                      timestamp: new Date().toISOString(),
+                    } as WorkflowMessage;
+                    const messageData = JSON.stringify(message);
+                    execution.workflowMessages.push(message);
                     if (acceptHeader === "text/event-stream") {
                       controller.enqueue(
                         new TextEncoder().encode(
-                          `id: ${event.id}\ndata: ${eventData}\n\n`,
+                          `id: ${message.id}\ndata: ${messageData}\n\n`,
                         ),
                       );
                     } else {
                       controller.enqueue(
-                        new TextEncoder().encode(eventData + "\n"),
+                        new TextEncoder().encode(messageData + "\n"),
                       );
                     }
                   };
 
                   // Execute workflow with progress listener
                   const result = await runMethod.call(workflow, body, {
-                    progressListener,
+                    messageListener,
                   });
 
                   if (
@@ -685,6 +711,8 @@ export class GensxServer {
 
                   // Send error event
                   const errorEvent = {
+                    id: Date.now().toString(),
+                    timestamp: new Date().toISOString(),
                     type: "error",
                     executionId,
                     executionStatus: "failed",
@@ -694,7 +722,9 @@ export class GensxServer {
                   const errorEventData = JSON.stringify(errorEvent);
                   if (acceptHeader === "text/event-stream") {
                     controller.enqueue(
-                      new TextEncoder().encode(`data: ${errorEventData}\n\n`),
+                      new TextEncoder().encode(
+                        `id: ${errorEvent.id}\ndata: ${errorEventData}\n\n`,
+                      ),
                     );
                   } else {
                     controller.enqueue(
@@ -720,7 +750,16 @@ export class GensxServer {
           }
 
           // Handle regular non-streaming execution
-          const result = await runMethod.call(workflow, body);
+          const result = await runMethod.call(workflow, body, {
+            messageListener: (event: any) => {
+              const message = {
+                ...event,
+                id: Date.now().toString(),
+                timestamp: new Date().toISOString(),
+              } as WorkflowMessage;
+              execution.workflowMessages.push(message);
+            },
+          });
 
           // Update execution with result
           execution.executionStatus = "completed";
@@ -1447,7 +1486,7 @@ export class GensxServer {
 
     try {
       // Initialize progress events array
-      execution.progressEvents = [];
+      execution.workflowMessages = [];
 
       // Update status to starting
       execution.executionStatus = "starting";
@@ -1469,18 +1508,18 @@ export class GensxServer {
       );
 
       // Set up progress listener
-      const progressListener = (event: any) => {
-        const progressEvent: ProgressEvent = {
+      const messageListener = (event: any) => {
+        const workflowMessage: WorkflowMessage = {
           id: Date.now().toString(),
           timestamp: new Date().toISOString(),
           ...event,
         };
-        execution.progressEvents?.push(progressEvent);
+        execution.workflowMessages.push(workflowMessage);
         this.executionsMap.set(executionId, execution);
       };
 
       const result = await runMethod.call(workflow, input, {
-        progressListener,
+        messageListener,
       });
 
       // Update execution with result
@@ -1499,15 +1538,13 @@ export class GensxServer {
       execution.finishedAt = new Date().toISOString();
 
       // Add error event
-      const errorEvent: ProgressEvent = {
+      const errorEvent: WorkflowMessage = {
         id: Date.now().toString(),
         type: "error",
-        workflowName,
         error: error instanceof Error ? error.message : String(error),
-        executionStatus: "failed",
         timestamp: new Date().toISOString(),
       };
-      execution.progressEvents?.push(errorEvent);
+      execution.workflowMessages.push(errorEvent);
 
       this.executionsMap.set(executionId, execution);
 
