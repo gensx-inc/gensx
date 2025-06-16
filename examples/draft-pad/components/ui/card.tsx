@@ -81,13 +81,13 @@ function Card({ className, children, liquidGlass = true, ...props }: React.Compo
         >
           {/* Glass Effect Layer */}
           <div className="absolute inset-0 z-0 backdrop-blur-[3px] overflow-hidden rounded-3xl" style={{ filter: 'url(#glass-distortion)' }} />
-          
+
           {/* Tint Layer - reducing opacity for more transparency */}
           <div className="absolute inset-0 z-[1] bg-white/10 overflow-hidden rounded-3xl" />
-          
+
           {/* Shine Layer - matching the example's box-shadow */}
           <div className="absolute inset-0 z-[2] overflow-hidden rounded-3xl shadow-[inset_2px_2px_1px_0_rgba(255,255,255,0.5),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.5)]" />
-          
+
           {/* Content Layer */}
           <div className="relative z-[3]">
             {children}

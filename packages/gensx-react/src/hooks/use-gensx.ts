@@ -430,12 +430,18 @@ export function useEvents<T extends Record<string, JsonValue>>(
     return list;
   }, [events, label]);
 
-  // Call onEvent callback for new events
+  // Track the last processed event index to prevent duplicate notifications
+  const lastProcessedIndexRef = useRef(-1);
+
+  // Call onEvent callback for new events only
   useEffect(() => {
     if (onEvent && eventList.length > 0) {
-      // Call callback for the most recent event
-      const latestEvent = eventList[eventList.length - 1];
-      onEvent(latestEvent);
+      // Only process events that haven't been processed yet
+      for (let i = lastProcessedIndexRef.current + 1; i < eventList.length; i++) {
+        onEvent(eventList[i]);
+      }
+      // Update the last processed index
+      lastProcessedIndexRef.current = eventList.length - 1;
     }
   }, [eventList, onEvent]);
 
