@@ -2,12 +2,15 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+// Counter for generating unique filter IDs
+let filterIdCounter = 0;
+
 // SVG Filter Component for Glass Distortion
-function GlassDistortionFilter() {
+function GlassDistortionFilter({ filterId }: { filterId: string }) {
   return (
     <svg className="absolute w-0 h-0" aria-hidden="true">
       <filter
-        id="glass-distortion"
+        id={filterId}
         x="0%"
         y="0%"
         width="100%"
@@ -58,19 +61,17 @@ function GlassDistortionFilter() {
   )
 }
 
-// Global filter instance
-let filterRendered = false;
-
 function Card({ className, children, liquidGlass = true, ...props }: React.ComponentProps<"div"> & { liquidGlass?: boolean }) {
-  const shouldRenderFilter = liquidGlass && !filterRendered;
-  if (shouldRenderFilter) {
-    filterRendered = true;
-  }
+  // Each Card instance gets its own unique filter ID
+  const filterId = React.useMemo(() => {
+    if (!liquidGlass) return '';
+    return `glass-distortion-${filterIdCounter++}`;
+  }, [liquidGlass]);
 
   if (liquidGlass) {
     return (
       <>
-        {shouldRenderFilter && <GlassDistortionFilter />}
+        <GlassDistortionFilter filterId={filterId} />
         <div
           data-slot="card"
           className={cn(
@@ -80,7 +81,7 @@ function Card({ className, children, liquidGlass = true, ...props }: React.Compo
           {...props}
         >
           {/* Glass Effect Layer */}
-          <div className="absolute inset-0 z-0 backdrop-blur-[3px] overflow-hidden rounded-3xl" style={{ filter: 'url(#glass-distortion)' }} />
+          <div className="absolute inset-0 z-0 backdrop-blur-[3px] overflow-hidden rounded-3xl" style={{ filter: `url(#${filterId})` }} />
 
           {/* Tint Layer - reducing opacity for more transparency */}
           <div className="absolute inset-0 z-[1] bg-white/10 overflow-hidden rounded-3xl" />
