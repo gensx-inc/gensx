@@ -9,14 +9,7 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-// Chat statistics type
-export type ChatStats = {
-  wordCount: number;
-  characterCount: number;
-  estimatedReadingTime: number; // in minutes
-  lastUpdated: string;
-  isComplete: boolean;
-};
+
 
 // WorkflowMessage type (from gensx-core)
 export type WorkflowMessage =
@@ -185,7 +178,7 @@ export function useWorkflow<
           onStart?.(event.workflowName);
           break;
 
-                case "output":
+        case "output":
           // Handle streaming content from "output" events
           const content = event.content || "";
 
@@ -193,37 +186,6 @@ export function useWorkflow<
           setOutput((prev) => {
             const newOutput = ((prev || "") + content) as TOutput;
             outputRef.current = newOutput;
-
-            // Calculate and publish chat stats
-            const text = newOutput as string;
-            const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
-            const characterCount = text.length;
-            const estimatedReadingTime = Math.ceil(wordCount / 200); // Average reading speed
-
-            const chatStats: ChatStats = {
-              wordCount,
-              characterCount,
-              estimatedReadingTime,
-              lastUpdated: new Date().toISOString(),
-              isComplete: false
-            };
-
-            // Add chat stats as a separate event
-            const statsEvent: WorkflowMessage = {
-              type: "object",
-              label: "chat-stats",
-              data: chatStats
-            };
-            setEvents((prev) => [...prev, statsEvent]);
-
-            // Publish the accumulated content as an object
-            const contentEvent: WorkflowMessage = {
-              type: "object",
-              label: "draft-content",
-              data: { content: text }
-            };
-            setEvents((prev) => [...prev, contentEvent]);
-
             return newOutput;
           });
           break;
@@ -239,37 +201,6 @@ export function useWorkflow<
             setOutput((prev) => {
               const newOutput = ((prev || "") + content) as TOutput;
               outputRef.current = newOutput;
-
-              // Calculate and publish chat stats
-              const text = newOutput as string;
-              const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
-              const characterCount = text.length;
-              const estimatedReadingTime = Math.ceil(wordCount / 200); // Average reading speed
-
-              const chatStats: ChatStats = {
-                wordCount,
-                characterCount,
-                estimatedReadingTime,
-                lastUpdated: new Date().toISOString(),
-                isComplete: false
-              };
-
-              // Add chat stats as a separate event
-              const statsEvent: WorkflowMessage = {
-                type: "object",
-                label: "chat-stats",
-                data: chatStats
-              };
-              setEvents((prev) => [...prev, statsEvent]);
-
-              // Publish the accumulated content with the same label
-              const contentEvent: WorkflowMessage = {
-                type: "object",
-                label: event.label, // Use the original label ("draft-content" or "content")
-                data: { content: text }
-              };
-              setEvents((prev) => [...prev, contentEvent]);
-
               return newOutput;
             });
           }
@@ -281,26 +212,6 @@ export function useWorkflow<
             setInProgress(true);
           } else if (event.label === "workflow-end") {
             setInProgress(false);
-            // Mark final stats as complete
-            const finalText = outputRef.current as string || "";
-            const wordCount = finalText.split(/\s+/).filter(word => word.length > 0).length;
-            const characterCount = finalText.length;
-            const estimatedReadingTime = Math.ceil(wordCount / 200);
-
-            const finalStats: ChatStats = {
-              wordCount,
-              characterCount,
-              estimatedReadingTime,
-              lastUpdated: new Date().toISOString(),
-              isComplete: true
-            };
-
-            const finalStatsEvent: WorkflowMessage = {
-              type: "object",
-              label: "chat-stats",
-              data: finalStats
-            };
-            setEvents((prev) => [...prev, finalStatsEvent]);
           }
           break;
 
