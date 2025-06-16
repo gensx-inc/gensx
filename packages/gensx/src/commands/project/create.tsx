@@ -143,11 +143,13 @@ function useCreateProject(
 
           // If yes flag is set, skip environment name prompt and go straight to creation
           if (yes) {
-            // Set default environment name when using --yes
-            setProjectConfig((prev) => ({
-              ...prev,
-              environmentName: "default",
-            }));
+            // Set default environment name only if none provided via CLI
+            if (!resolvedConfig.environmentName) {
+              setProjectConfig((prev) => ({
+                ...prev,
+                environmentName: "default",
+              }));
+            }
             setStep("confirming_creation");
             setShouldCreate(true);
           } else if (resolvedConfig.environmentName) {
