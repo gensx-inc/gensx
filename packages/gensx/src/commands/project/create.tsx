@@ -145,8 +145,11 @@ function useCreateProject(
           if (yes) {
             setStep("confirming_creation");
             setShouldCreate(true);
+          } else if (initialEnvironmentName) {
+            // If environment name provided via CLI, skip the prompt but still show confirmation
+            setStep("confirming_creation");
           } else {
-            // Always prompt for environment name, prefilled
+            // Only prompt for environment name if not provided via CLI
             setStep("prompting_environment_name");
           }
           setLoading(false);

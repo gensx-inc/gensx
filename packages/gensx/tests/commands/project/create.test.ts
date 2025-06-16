@@ -77,15 +77,7 @@ suite("project create Ink UI", () => {
       }),
     );
 
-    // Wait for environment name prompt
-    await waitForText(lastFrame, /Enter initial environment name:/);
-
-    // Simulate entering environment name
-    if (global.__textInputCallback) {
-      global.__textInputCallback("development");
-    }
-
-    // Wait for confirmation prompt
+    // Wait for confirmation prompt (environment name prompt is skipped)
     await waitForText(lastFrame, /Project Details/);
     await waitForText(lastFrame, /Create this project\?/);
 
@@ -133,15 +125,7 @@ suite("project create Ink UI", () => {
       }),
     );
 
-    // Wait for environment name prompt
-    await waitForText(lastFrame, /Enter initial environment name:/);
-
-    // Simulate entering environment name
-    if (global.__textInputCallback) {
-      global.__textInputCallback("staging");
-    }
-
-    // Wait for confirmation prompt
+    // Wait for confirmation prompt (environment name prompt is skipped)
     await waitForText(lastFrame, /Project Details/);
     await waitForText(lastFrame, /Create this project\?/);
 
@@ -235,15 +219,7 @@ suite("project create Ink UI", () => {
       }),
     );
 
-    // Wait for environment name prompt
-    await waitForText(lastFrame, /Enter initial environment name:/);
-
-    // Simulate entering environment name
-    if (global.__textInputCallback) {
-      global.__textInputCallback("development");
-    }
-
-    // Wait for confirmation prompt
+    // Wait for confirmation prompt (environment name prompt is skipped)
     await waitForText(lastFrame, /Project Details/);
     await waitForText(lastFrame, /Create this project\?/);
 
@@ -293,6 +269,54 @@ suite("project create Ink UI", () => {
     expect(envConfig.validateAndSelectEnvironment).toHaveBeenCalledWith(
       "test-project",
       "default",
+    );
+  });
+
+  it("should prompt for environment name when not provided", async () => {
+    // Mock project doesn't exist
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
+
+    // Mock create project
+    vi.mocked(projectModel.createProject).mockResolvedValue({
+      id: "project-1",
+      name: "test-project",
+    });
+
+    // Mock environment selection
+    vi.mocked(envConfig.validateAndSelectEnvironment).mockResolvedValue(true);
+
+    const { lastFrame } = render(
+      React.createElement(CreateProjectUI, {
+        projectName: "test-project",
+      }),
+    );
+
+    // Wait for environment name prompt
+    await waitForText(lastFrame, /Enter initial environment name:/);
+
+    // Simulate entering environment name
+    if (global.__textInputCallback) {
+      global.__textInputCallback("custom-env");
+    }
+
+    // Wait for confirmation prompt
+    await waitForText(lastFrame, /Project Details/);
+    await waitForText(lastFrame, /Create this project\?/);
+
+    // Simulate selecting "Yes" from SelectInput
+    if (global.__selectInputCallback) {
+      global.__selectInputCallback({ label: "Yes", value: "yes" });
+    }
+
+    // Wait for success message
+    await waitForText(lastFrame, /Project test-project created successfully/);
+    await waitForText(lastFrame, /Environment custom-env created and selected/);
+
+    // Verify project was created with custom environment name
+    expect(projectModel.createProject).toHaveBeenCalledWith(
+      "test-project",
+      "custom-env",
+      undefined,
     );
   });
 });
