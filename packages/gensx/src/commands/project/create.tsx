@@ -14,6 +14,7 @@ interface Props {
   projectName?: string;
   description?: string;
   environmentName?: string;
+  yes?: boolean;
 }
 
 type Step =
@@ -48,6 +49,7 @@ function useCreateProject(
   initialProjectName?: string,
   initialDescription?: string,
   initialEnvironmentName?: string,
+  yes?: boolean,
 ): UseCreateProjectResult {
   const { exit } = useApp();
   const [step, setStep] = useState<Step>("initial");
@@ -139,8 +141,14 @@ function useCreateProject(
             );
           }
 
-          // Always prompt for environment name, prefilled
-          setStep("prompting_environment_name");
+          // If yes flag is set, skip environment name prompt and go straight to creation
+          if (yes) {
+            setStep("confirming_creation");
+            setShouldCreate(true);
+          } else {
+            // Always prompt for environment name, prefilled
+            setStep("prompting_environment_name");
+          }
           setLoading(false);
         }
       } catch (err) {
@@ -168,6 +176,7 @@ function useCreateProject(
     initialProjectName,
     initialDescription,
     initialEnvironmentName,
+    yes,
     exit,
   ]);
 
@@ -253,6 +262,7 @@ export function CreateProjectUI({
   projectName: initialProjectName,
   description: initialDescription,
   environmentName: initialEnvironmentName,
+  yes,
 }: Props) {
   const {
     loading,
@@ -268,6 +278,7 @@ export function CreateProjectUI({
     initialProjectName,
     initialDescription,
     initialEnvironmentName,
+    yes,
   );
 
   if (error) {

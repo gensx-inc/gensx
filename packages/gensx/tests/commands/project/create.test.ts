@@ -258,4 +258,41 @@ suite("project create Ink UI", () => {
     // Verify project was not created
     expect(projectModel.createProject).not.toHaveBeenCalled();
   });
+
+  it("should automatically proceed with default environment when --yes is specified", async () => {
+    // Mock project exists check
+    vi.mocked(projectModel.checkProjectExists).mockResolvedValue(false);
+
+    // Mock project creation
+    vi.mocked(projectModel.createProject).mockResolvedValue({
+      id: "project-1",
+      name: "test-project",
+    });
+
+    // Mock environment validation
+    vi.mocked(envConfig.validateAndSelectEnvironment).mockResolvedValue(true);
+
+    const { lastFrame } = render(
+      React.createElement(CreateProjectUI, {
+        projectName: "test-project",
+        yes: true,
+      }),
+    );
+
+    // Wait for success messages to appear
+    await waitForText(lastFrame, /Project test-project created successfully/);
+    await waitForText(lastFrame, /Environment default created and selected/);
+
+    // Now verify the API calls
+    expect(projectModel.createProject).toHaveBeenCalledWith(
+      "test-project",
+      "default",
+      undefined,
+    );
+
+    expect(envConfig.validateAndSelectEnvironment).toHaveBeenCalledWith(
+      "test-project",
+      "default",
+    );
+  });
 });

@@ -286,10 +286,11 @@ export async function runCLI() {
     )
     .option("-d, --description <desc>", "Optional project description")
     .option("--env <name>", "Initial environment name", "default")
+    .option("-y, --yes", "Automatically answer yes to all prompts", false)
     .action(
       async (
         name?: string,
-        options?: { description?: string; env?: string },
+        options?: { description?: string; env?: string; yes?: boolean },
       ) => {
         return new Promise<void>((resolve, reject) => {
           const { waitUntilExit } = render(
@@ -297,6 +298,7 @@ export async function runCLI() {
               projectName: name,
               description: options?.description,
               environmentName: options?.env,
+              yes: options?.yes,
             }),
           );
           waitUntilExit().then(resolve).catch(reject);

@@ -228,9 +228,7 @@ export function ShowProjectUI({ projectName: initialProjectName }: Props) {
               {workflows.map((workflow) => (
                 <Box key={workflow.id} paddingLeft={1}>
                   <Text>
-                    <Text color="green">
-                      {(workflow.name ?? "Unknown").padEnd(32)}
-                    </Text>
+                    <Text color="green">{workflow.name.padEnd(32)}</Text>
                     <Text dimColor>
                       {new Date(workflow.updatedAt)
                         .toLocaleString(undefined, {
