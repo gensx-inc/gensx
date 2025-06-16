@@ -72,7 +72,7 @@ export interface UseWorkflowConfig<
   /**
    * Callback fired when workflow completes
    */
-  onComplete?: (output: TOutput) => void;
+  onComplete?: (output: TOutput | null) => void;
 
   /**
    * Callback fired on error
@@ -238,7 +238,7 @@ export function useWorkflow<
 
           case "end":
             setInProgress(false);
-            onComplete?.(outputRef.current || (null as any));
+            onComplete?.(outputRef.current);
             break;
 
           case "error":
