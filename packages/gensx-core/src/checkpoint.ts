@@ -58,6 +58,7 @@ export class CheckpointManager implements CheckpointWriter {
 
   // Replay functionality
   private replayLookup = new Map<string, unknown>();
+  private sourceCheckpoint?: ExecutionNode;
 
   // Provide unified view of all secrets
   get secretValues(): Set<unknown> {
@@ -812,6 +813,7 @@ export class CheckpointManager implements CheckpointWriter {
 
   // Replay functionality
   setReplayCheckpoint(checkpoint: ExecutionNode) {
+    this.sourceCheckpoint = checkpoint;
     this.buildReplayLookup(checkpoint);
   }
 
@@ -826,5 +828,86 @@ export class CheckpointManager implements CheckpointWriter {
 
   getCompletedResult(nodeId: string): unknown {
     return this.replayLookup.get(nodeId);
+  }
+
+  // Checkpoint reconstruction methods
+  addCachedSubtreeToCheckpoint(nodeId: string) {
+    if (!this.sourceCheckpoint) {
+      console.warn(
+        `[Checkpoint] No source checkpoint available for node ${nodeId}`,
+      );
+      return;
+    }
+
+    const cachedNode = this.findNodeInCheckpoint(nodeId, this.sourceCheckpoint);
+    if (cachedNode) {
+      console.info(
+        `[Checkpoint] Adding cached subtree for ${cachedNode.componentName} (${nodeId})`,
+      );
+      this.addCachedNodeRecursively(cachedNode);
+    } else {
+      console.warn(
+        `[Checkpoint] Node ${nodeId} not found in source checkpoint`,
+      );
+    }
+  }
+
+  private findNodeInCheckpoint(
+    nodeId: string,
+    checkpoint: ExecutionNode,
+  ): ExecutionNode | null {
+    if (checkpoint.id === nodeId) return checkpoint;
+
+    for (const child of checkpoint.children) {
+      const found = this.findNodeInCheckpoint(nodeId, child);
+      if (found) return found;
+    }
+
+    return null;
+  }
+
+  private addCachedNodeRecursively(node: ExecutionNode) {
+    // Check if this node already exists in the current checkpoint
+    if (this.nodes.has(node.id)) {
+      console.info(`[Checkpoint] Node ${node.id} already exists, skipping`);
+      return;
+    }
+
+    // Create a copy of the node to avoid modifying the original
+    const nodeCopy: ExecutionNode = {
+      ...node,
+      children: [], // We'll add children recursively
+    };
+
+    // Add this node to the current checkpoint
+    this.nodes.set(nodeCopy.id, nodeCopy);
+
+    // Handle parent-child relationships
+    if (nodeCopy.parentId) {
+      const parent = this.nodes.get(nodeCopy.parentId);
+      if (parent) {
+        this.attachToParent(nodeCopy, parent);
+      } else {
+        // Parent doesn't exist yet - track as orphaned
+        this.handleOrphanedNode(nodeCopy, nodeCopy.parentId);
+      }
+    } else {
+      // This is a root node
+      this.root ??= nodeCopy;
+    }
+
+    // Check if this node resolves any orphaned children
+    const waitingChildren = this.orphanedNodes.get(nodeCopy.id);
+    if (waitingChildren) {
+      for (const orphan of waitingChildren) {
+        this.attachToParent(orphan, nodeCopy);
+      }
+      this.orphanedNodes.delete(nodeCopy.id);
+    }
+
+    // Recursively add all children
+    node.children.forEach((child) => {
+      this.addCachedNodeRecursively(child);
+    });
   }
 }

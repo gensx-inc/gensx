@@ -99,22 +99,31 @@ export function Component<P extends object = {}, R = unknown>(
         )
       : {};
 
-    // Check checkpoint for existing result
-    const existingResult = checkpointManager.getCompletedResult(
-      // We need to generate the same ID that will be created in addNode
-      generateDeterministicId(checkpointName, props_for_id, currentNodeId),
+    // Generate the deterministic ID for this component
+    const deterministicId = generateDeterministicId(
+      checkpointName,
+      props_for_id,
+      currentNodeId,
     );
 
-    if (existingResult !== undefined) {
-      console.info(`[Replay] Skipping ${checkpointName}`);
-      return existingResult as R;
+    // Check checkpoint for existing result
+    const cachedResult = checkpointManager.getCompletedResult(deterministicId);
+    if (cachedResult !== undefined) {
+      console.info(
+        `[Replay] Using cached result for ${name} (${deterministicId})`,
+      );
+
+      // Add the cached subtree to the new checkpoint being built
+      checkpointManager.addCachedSubtreeToCheckpoint(deterministicId);
+
+      return cachedResult as R;
     }
 
     function onComplete() {
       workflowContext.sendWorkflowMessage({
         type: "component-end",
         componentName: checkpointName ?? "",
-        componentId: nodeId,
+        componentId: deterministicId,
       });
       resolvedComponentOpts.onComplete?.();
     }
