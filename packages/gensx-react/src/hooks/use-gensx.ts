@@ -234,38 +234,7 @@ export function useWorkflow<
             });
             break;
 
-          case "object":
-            // Handle content updates
-            if (event.label === "content" || event.label === "draft-content") {
-              // Extract content from the object
-              const contentData = event.data as { content: string };
-              const content = contentData.content || "";
 
-              // Type-safe output accumulation
-              setOutput((prev) => {
-                try {
-                  // Always accumulate as string first
-                  const accumulatedString = (prev === null ? "" : String(prev)) + content;
-
-                  // Use custom transformer if provided
-                  if (outputTransformer) {
-                    return outputTransformer(accumulatedString);
-                  }
-
-                  // Auto-detect and transform output type
-                  const transformedOutput = transformToOutputType<TOutput>(accumulatedString);
-                  outputRef.current = transformedOutput;
-                  return transformedOutput;
-                } catch (error) {
-                  console.warn("Output transformation failed:", error);
-                  // Fallback to string conversion
-                  const fallback = (prev === null ? "" : String(prev)) + content;
-                  outputRef.current = fallback as TOutput;
-                  return fallback as TOutput;
-                }
-              });
-            }
-            break;
 
           case "event":
             // Handle simple workflow events
