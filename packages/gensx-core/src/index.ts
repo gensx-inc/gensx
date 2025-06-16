@@ -12,6 +12,14 @@ export type {
   WorkflowMessage,
   WorkflowMessageListener,
   JsonValue,
+  WorkflowStartMessage,
+  WorkflowComponentStartMessage,
+  WorkflowComponentEndMessage,
+  WorkflowDataMessage,
+  WorkflowEventMessage,
+  WorkflowObjectMessage,
+  WorkflowErrorMessage,
+  WorkflowEndMessage,
 } from "./workflow-state.js";
 export * from "./wrap.js";
 

@@ -2,6 +2,16 @@
  * GenSX SDK - Core SDK class for interacting with GenSX workflows
  */
 
+// Note: These types are imported from @gensx/core which needs to be built first
+// The types extend the core WorkflowMessage types with additional fields for SDK usage
+import type {
+  WorkflowStartMessage,
+  WorkflowComponentStartMessage,
+  WorkflowComponentEndMessage,
+  WorkflowErrorMessage,
+  WorkflowEndMessage,
+} from "@gensx/core";
+
 // Type declarations for environment variables
 declare const process:
   | {
@@ -9,36 +19,26 @@ declare const process:
     }
   | undefined;
 
-// GenSX Event Types
-export interface GenSXStartEvent {
-  type: "start";
-  workflowExecutionId: string;
-  workflowName: string;
+// GenSX Event Types - These extend the core WorkflowMessage types with additional fields
+export interface GenSXStartEvent extends WorkflowStartMessage {
+  id: string;
+  timestamp: string;
+  workflowExecutionId: string; // Make this required for SDK events
+}
+
+export interface GenSXComponentStartEvent extends WorkflowComponentStartMessage {
   id: string;
   timestamp: string;
 }
 
-export interface GenSXComponentStartEvent {
-  type: "component-start";
-  componentName: string;
-  componentId: string;
-  id: string;
-  timestamp: string;
-}
-
-export interface GenSXComponentEndEvent {
-  type: "component-end";
-  componentName: string;
-  componentId: string;
+export interface GenSXComponentEndEvent extends WorkflowComponentEndMessage {
   id: string;
   timestamp: string;
 }
 
 export interface GenSXProgressEvent {
   type: "progress";
-  data: {
-    type: string;
-  };
+  data: string; // JSON string that can be parsed
   id: string;
   timestamp: string;
 }
@@ -50,18 +50,15 @@ export interface GenSXOutputEvent {
   timestamp: string;
 }
 
-export interface GenSXEndEvent {
-  type: "end";
+export interface GenSXEndEvent extends WorkflowEndMessage {
   id: string;
   timestamp: string;
 }
 
-export interface GenSXErrorEvent {
-  type: "error";
-  error?: string;
-  message?: string;
+export interface GenSXErrorEvent extends WorkflowErrorMessage {
   id: string;
   timestamp: string;
+  message?: string; // Additional field for compatibility
 }
 
 export type GenSXEvent =

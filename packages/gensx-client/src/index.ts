@@ -1,6 +1,6 @@
 /**
  * GenSX SDK - TypeScript SDK for GenSX workflow interactions
- * 
+ *
  * This SDK provides a clean interface for interacting with GenSX workflows,
  * including both streaming and async execution patterns.
  */
@@ -9,9 +9,8 @@
 export { GenSX } from './sdk';
 
 // Type exports
-export type { 
+export type {
   GenSXConfig,
-  RunOptions,
   RunRawOptions,
   StartOptions,
   StartResponse,
@@ -27,4 +26,4 @@ export type {
 } from './sdk';
 
 // Default export
-export { GenSX as default } from './sdk'; 
+export { GenSX as default } from './sdk';
