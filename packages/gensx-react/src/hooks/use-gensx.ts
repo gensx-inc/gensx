@@ -84,6 +84,12 @@ export interface UseWorkflowConfig<
    * Callback fired for any event
    */
   onEvent?: (event: WorkflowMessage) => void;
+
+  /**
+   * Optional transformer to convert accumulated string content to TOutput
+   * If not provided, attempts automatic string/JSON parsing
+   */
+  outputTransformer?: (accumulatedContent: string) => TOutput;
 }
 
 export interface UseWorkflowResult<
@@ -107,6 +113,24 @@ export interface UseWorkflowResult<
 
   /** Stop the current workflow */
   stop: () => void;
+}
+
+// Type-safe output transformation helper
+function transformToOutputType<TOutput>(content: string): TOutput {
+  // If content is empty, return null
+  if (!content.trim()) {
+    return null as TOutput;
+  }
+
+  // Try to parse as JSON first (for objects, arrays, etc.)
+  try {
+    const parsed = JSON.parse(content);
+    return parsed as TOutput;
+  } catch {
+    // If JSON parsing fails, check if TOutput is expected to be a string
+    // This is a best-effort approach since we can't do runtime type checking
+    return content as TOutput;
+  }
 }
 
 /**
@@ -145,6 +169,7 @@ export function useWorkflow<
     onComplete,
     onError,
     onEvent,
+    outputTransformer,
   } = options;
 
   const {
@@ -184,11 +209,28 @@ export function useWorkflow<
             // Handle streaming content from "output" events
             const content = event.content || "";
 
-            // Accumulate content to output
+            // Type-safe output accumulation
             setOutput((prev) => {
-              const newOutput = ((prev || "") + content) as TOutput;
-              outputRef.current = newOutput;
-              return newOutput;
+              try {
+                // Always accumulate as string first (since streaming content comes as strings)
+                const accumulatedString = (prev === null ? "" : String(prev)) + content;
+
+                // Use custom transformer if provided
+                if (outputTransformer) {
+                  return outputTransformer(accumulatedString);
+                }
+
+                // Auto-detect and transform output type
+                const transformedOutput = transformToOutputType<TOutput>(accumulatedString);
+                outputRef.current = transformedOutput;
+                return transformedOutput;
+              } catch (error) {
+                console.warn("Output transformation failed:", error);
+                // Fallback to string conversion
+                const fallback = (prev === null ? "" : String(prev)) + content;
+                outputRef.current = fallback as TOutput;
+                return fallback as TOutput;
+              }
             });
             break;
 
@@ -199,11 +241,28 @@ export function useWorkflow<
               const contentData = event.data as { content: string };
               const content = contentData.content || "";
 
-              // Accumulate content to output
+              // Type-safe output accumulation
               setOutput((prev) => {
-                const newOutput = ((prev || "") + content) as TOutput;
-                outputRef.current = newOutput;
-                return newOutput;
+                try {
+                  // Always accumulate as string first
+                  const accumulatedString = (prev === null ? "" : String(prev)) + content;
+
+                  // Use custom transformer if provided
+                  if (outputTransformer) {
+                    return outputTransformer(accumulatedString);
+                  }
+
+                  // Auto-detect and transform output type
+                  const transformedOutput = transformToOutputType<TOutput>(accumulatedString);
+                  outputRef.current = transformedOutput;
+                  return transformedOutput;
+                } catch (error) {
+                  console.warn("Output transformation failed:", error);
+                  // Fallback to string conversion
+                  const fallback = (prev === null ? "" : String(prev)) + content;
+                  outputRef.current = fallback as TOutput;
+                  return fallback as TOutput;
+                }
               });
             }
             break;
@@ -230,7 +289,7 @@ export function useWorkflow<
         }
       });
     },
-    [onStart, onComplete, onError, onEvent],
+    [onStart, onComplete, onError, onEvent, outputTransformer],
   );
 
   // Parse streaming response
