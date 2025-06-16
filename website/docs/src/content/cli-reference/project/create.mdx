@@ -1,0 +1,55 @@
+---
+title: gensx project create
+description: Create a new GenSX project
+---
+
+# gensx project create
+
+The `gensx project create` command creates a new project in your GenSX organization. Projects are containers for environments, workflows, and deployments.
+
+## Usage
+
+```bash
+gensx project create [name] [options]
+```
+
+## Arguments
+
+| Argument | Description                                               |
+| -------- | --------------------------------------------------------- |
+| `[name]` | Name of the project (optional if specified in gensx.yaml) |
+
+## Options
+
+| Option                     | Description                             |
+| -------------------------- | --------------------------------------- |
+| `-d, --description <desc>` | Optional project description            |
+| `--env <name>`             | Initial environment name                |
+| `-y, --yes`                | Automatically answer yes to all prompts |
+| `-h, --help`               | Display help for the command            |
+
+## Examples
+
+```bash
+# Create from gensx.yaml configuration
+gensx project create
+
+# Create a project with prompts
+gensx project create my-project
+
+# Create a project with specific environment
+gensx project create my-project --env staging
+
+# Create a project with description
+gensx project create my-project --description "My data processing pipeline"
+
+# Create a project automatically (skip prompts)
+gensx project create my-project --yes
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to create projects (`gensx login`)
+- Project names must be unique within your organization
+- If no project is specified, the command uses the project from `gensx.yaml` in the current directory
+- Each project is created with an initial environment that becomes active
