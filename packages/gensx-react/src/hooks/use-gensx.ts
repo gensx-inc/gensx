@@ -115,23 +115,7 @@ export interface UseWorkflowResult<
   stop: () => void;
 }
 
-// Type-safe output transformation helper
-function transformToOutputType<TOutput>(content: string): TOutput {
-  // If content is empty, return null
-  if (!content.trim()) {
-    return null as TOutput;
-  }
 
-  // Try to parse as JSON first (for objects, arrays, etc.)
-  try {
-    const parsed = JSON.parse(content);
-    return parsed as TOutput;
-  } catch {
-    // If JSON parsing fails, check if TOutput is expected to be a string
-    // This is a best-effort approach since we can't do runtime type checking
-    return content as TOutput;
-  }
-}
 
 /**
  * Hook for interacting with GenSX workflows via your API endpoint
@@ -186,6 +170,7 @@ export function useWorkflow<
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
   const outputRef = useRef<TOutput | null>(null);
+  const accumulatedStringRef = useRef<string>("");
 
         // Process a single WorkflowMessage event
   const processEvent = useCallback(
@@ -212,22 +197,36 @@ export function useWorkflow<
             // Type-safe output accumulation
             setOutput((prev) => {
               try {
-                // Always accumulate as string first (since streaming content comes as strings)
-                const accumulatedString = (prev === null ? "" : String(prev)) + content;
+                // Accumulate raw string content (streaming always comes as strings)
+                accumulatedStringRef.current += content;
+                const accumulatedString = accumulatedStringRef.current;
 
                 // Use custom transformer if provided
                 if (outputTransformer) {
-                  return outputTransformer(accumulatedString);
+                  const transformedOutput = outputTransformer(accumulatedString);
+                  outputRef.current = transformedOutput;
+                  return transformedOutput;
                 }
 
-                // Auto-detect and transform output type
-                const transformedOutput = transformToOutputType<TOutput>(accumulatedString);
-                outputRef.current = transformedOutput;
-                return transformedOutput;
+                // For string output types, return the accumulated string directly
+                if (accumulatedString === "") {
+                  return null as TOutput;
+                }
+
+                // Try to parse as JSON for complex types
+                try {
+                  const parsed = JSON.parse(accumulatedString);
+                  outputRef.current = parsed as TOutput;
+                  return parsed as TOutput;
+                } catch {
+                  // If JSON parsing fails, return as string (for string output types)
+                  outputRef.current = accumulatedString as TOutput;
+                  return accumulatedString as TOutput;
+                }
               } catch (error) {
                 console.warn("Output transformation failed:", error);
-                // Fallback to string conversion
-                const fallback = (prev === null ? "" : String(prev)) + content;
+                // Fallback to accumulated string
+                const fallback = accumulatedStringRef.current;
                 outputRef.current = fallback as TOutput;
                 return fallback as TOutput;
               }
@@ -317,6 +316,7 @@ export function useWorkflow<
     setOutput(null);
     setEvents([]);
     outputRef.current = null;
+    accumulatedStringRef.current = "";
   }, []);
 
   // Stop current workflow
