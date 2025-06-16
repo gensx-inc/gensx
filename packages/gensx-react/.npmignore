@@ -1,0 +1,8 @@
+*.tsbuildinfo
+.turbo
+node_modules
+tests
+vitest.config.ts
+rollup.config.js
+tsconfig.json
+tsconfig.build.json

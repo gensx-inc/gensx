@@ -1,18 +1,52 @@
 {
   "name": "@gensx/react",
   "version": "0.1.0",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "description": "React hooks and components for GenSX AI workflows.",
+  "type": "module",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/gensx-react"
+  },
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/esm/index.d.ts",
+        "require": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.d.ts"
+      },
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
+    }
+  },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "rollup -c",
+    "dev": "rollup -c --watch",
     "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
+  "keywords": [
+    "gensx",
+    "react",
+    "hooks",
+    "ai",
+    "jsx"
+  ],
+  "author": "GenSX Team",
+  "license": "Apache-2.0",
   "dependencies": {
     "@gensx/client": "workspace:*"
   },
@@ -24,10 +58,7 @@
   "peerDependencies": {
     "react": "^19.0.0"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
+  "publishConfig": {
+    "access": "public"
   }
 }
