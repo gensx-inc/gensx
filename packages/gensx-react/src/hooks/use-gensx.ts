@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 
 // JSON-serializable value type for progress data
 export type JsonValue =
@@ -165,37 +165,24 @@ export function useWorkflow<
         // Process a single WorkflowMessage event
   const processEvent = useCallback(
     (event: WorkflowMessage) => {
-      // Add event to events array
-      setEvents((prev) => [...prev, event]);
+      // Batch all state updates for this event to prevent race conditions
+      startTransition(() => {
+        // Add event to events array
+        setEvents((prev) => [...prev, event]);
 
-      // Fire the onEvent callback for all events
-      onEvent?.(event);
+        // Fire the onEvent callback for all events
+        onEvent?.(event);
 
-      // Handle specific event types and fire callbacks
-      switch (event.type) {
-        case "start":
-          setInProgress(true);
-          onStart?.(event.workflowName);
-          break;
+        // Handle specific event types and fire callbacks
+        switch (event.type) {
+          case "start":
+            setInProgress(true);
+            onStart?.(event.workflowName);
+            break;
 
-        case "output":
-          // Handle streaming content from "output" events
-          const content = event.content || "";
-
-          // Accumulate content to output
-          setOutput((prev) => {
-            const newOutput = ((prev || "") + content) as TOutput;
-            outputRef.current = newOutput;
-            return newOutput;
-          });
-          break;
-
-        case "object":
-          // Handle content updates
-          if (event.label === "content" || event.label === "draft-content") {
-            // Extract content from the object
-            const contentData = event.data as { content: string };
-            const content = contentData.content || "";
+          case "output":
+            // Handle streaming content from "output" events
+            const content = event.content || "";
 
             // Accumulate content to output
             setOutput((prev) => {
@@ -203,29 +190,45 @@ export function useWorkflow<
               outputRef.current = newOutput;
               return newOutput;
             });
-          }
-          break;
+            break;
 
-        case "event":
-          // Handle simple workflow events
-          if (event.label === "workflow-start") {
-            setInProgress(true);
-          } else if (event.label === "workflow-end") {
+          case "object":
+            // Handle content updates
+            if (event.label === "content" || event.label === "draft-content") {
+              // Extract content from the object
+              const contentData = event.data as { content: string };
+              const content = contentData.content || "";
+
+              // Accumulate content to output
+              setOutput((prev) => {
+                const newOutput = ((prev || "") + content) as TOutput;
+                outputRef.current = newOutput;
+                return newOutput;
+              });
+            }
+            break;
+
+          case "event":
+            // Handle simple workflow events
+            if (event.label === "workflow-start") {
+              setInProgress(true);
+            } else if (event.label === "workflow-end") {
+              setInProgress(false);
+            }
+            break;
+
+          case "end":
             setInProgress(false);
-          }
-          break;
+            onComplete?.(outputRef.current || (null as any));
+            break;
 
-        case "end":
-          setInProgress(false);
-          onComplete?.(outputRef.current || (null as any));
-          break;
-
-        case "error":
-          setError(event.error);
-          setInProgress(false);
-          onError?.(event.error);
-          break;
-      }
+          case "error":
+            setError(event.error);
+            setInProgress(false);
+            onError?.(event.error);
+            break;
+        }
+      });
     },
     [onStart, onComplete, onError, onEvent],
   );
