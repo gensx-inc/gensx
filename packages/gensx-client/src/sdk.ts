@@ -203,13 +203,19 @@ export class GenSX {
       json: "application/json",
     }[format];
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: acceptHeader,
+    };
+
+    // Only include Authorization header if apiKey is defined
+    if (this.apiKey) {
+      headers.Authorization = `Bearer ${this.apiKey}`;
+    }
+
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-        Accept: acceptHeader,
-      },
+      headers,
       body: JSON.stringify(inputs),
     });
 
@@ -238,12 +244,18 @@ export class GenSX {
 
     const url = this.buildStartUrl(workflowName, org, project, environment);
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    // Only include Authorization header if apiKey is defined
+    if (this.apiKey) {
+      headers.Authorization = `Bearer ${this.apiKey}`;
+    }
+
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(inputs),
     });
 
@@ -281,11 +293,17 @@ export class GenSX {
     const accept =
       format === "sse" ? "text/event-stream" : "application/x-ndjson";
 
+    const headers: Record<string, string> = {
+      Accept: accept,
+    };
+
+    // Only include Authorization header if apiKey is defined
+    if (this.apiKey) {
+      headers.Authorization = `Bearer ${this.apiKey}`;
+    }
+
     const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        Accept: accept,
-      },
+      headers,
     });
 
     if (!response.ok) {
