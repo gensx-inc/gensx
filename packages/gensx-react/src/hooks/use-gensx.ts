@@ -194,43 +194,36 @@ export function useWorkflow<
             // Handle streaming content from "output" events
             const content = event.content || "";
 
-            // Type-safe output accumulation
-            setOutput((prev) => {
-              try {
-                // Accumulate raw string content (streaming always comes as strings)
-                accumulatedStringRef.current += content;
-                const accumulatedString = accumulatedStringRef.current;
+            // Accumulate content outside of state setter to avoid race conditions
+            accumulatedStringRef.current += content;
+            const currentAccumulatedString = accumulatedStringRef.current;
 
-                // Use custom transformer if provided
-                if (outputTransformer) {
-                  const transformedOutput = outputTransformer(accumulatedString);
-                  outputRef.current = transformedOutput;
-                  return transformedOutput;
-                }
-
-                // For string output types, return the accumulated string directly
-                if (accumulatedString === "") {
-                  return null as TOutput;
-                }
-
+            // Process output transformation outside of state setter
+            let newOutput: TOutput | null = null;
+            try {
+              // Use custom transformer if provided
+              if (outputTransformer) {
+                newOutput = outputTransformer(currentAccumulatedString);
+              } else if (currentAccumulatedString === "") {
+                newOutput = null as TOutput;
+              } else {
                 // Try to parse as JSON for complex types
                 try {
-                  const parsed = JSON.parse(accumulatedString);
-                  outputRef.current = parsed as TOutput;
-                  return parsed as TOutput;
+                  newOutput = JSON.parse(currentAccumulatedString) as TOutput;
                 } catch {
                   // If JSON parsing fails, return as string (for string output types)
-                  outputRef.current = accumulatedString as TOutput;
-                  return accumulatedString as TOutput;
+                  newOutput = currentAccumulatedString as TOutput;
                 }
-              } catch (error) {
-                console.warn("Output transformation failed:", error);
-                // Fallback to accumulated string
-                const fallback = accumulatedStringRef.current;
-                outputRef.current = fallback as TOutput;
-                return fallback as TOutput;
               }
-            });
+            } catch (error) {
+              console.warn("Output transformation failed:", error);
+              // Fallback to accumulated string
+              newOutput = currentAccumulatedString as TOutput;
+            }
+
+            // Update refs and state with the processed output
+            outputRef.current = newOutput;
+            setOutput(newOutput);
             break;
 
 
