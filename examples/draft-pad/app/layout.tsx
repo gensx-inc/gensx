@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { Atma, Figtree, Funnel_Sans, Meow_Script } from "next/font/google";
+
 import "./globals.css";
+
+import { Atma, Figtree, Meow_Script } from "next/font/google";
 
 const figtree = Figtree({
   variable: "--font-figtree",

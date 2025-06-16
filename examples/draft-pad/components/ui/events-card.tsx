@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 
-type EventsCardProps<T> = {
+interface EventsCardProps<T> {
   title: string;
   events: T[];
   emptyMessage?: string;

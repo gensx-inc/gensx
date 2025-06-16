@@ -1,8 +1,8 @@
 import { Card } from "@/components/ui/card";
 
-type ValueCardProps = {
+interface ValueCardProps {
   title: string;
-  value: any;
+  value: unknown;
   className?: string;
 }
 

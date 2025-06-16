@@ -386,16 +386,16 @@ export function useWorkflow<
 
 
 // New hook to get the most recent object by label from WorkflowMessage events
-export function useObject(
+export function useObject<T extends Record<string, JsonValue> = Record<string, JsonValue>>(
   events: WorkflowMessage[],
   label: string
-): Record<string, JsonValue> | undefined {
+): T | undefined {
   return useMemo(() => {
-    const objectEvents: Record<string, JsonValue>[] = [];
+    const objectEvents: T[] = [];
 
     for (const event of events) {
       if (event.type === 'object' && event.label === label) {
-        objectEvents.push(event.data);
+        objectEvents.push(event.data as T);
       }
     }
 

@@ -1,9 +1,7 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
-type RequestBody = {
-  [key: string]: unknown;
-}
+type RequestBody = Record<string, unknown>;
 
 const shouldUseLocalDevServer = () => {
   if (
@@ -59,7 +57,7 @@ export async function POST(request: NextRequest) {
 
       // Initialize GenSX SDK
       const baseUrl = process.env.GENSX_BASE_URL ?? "https://api.gensx.com";
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+
       gensx = new GenSX({
         apiKey,
         baseUrl,
@@ -68,32 +66,31 @@ export async function POST(request: NextRequest) {
         environment,
       });
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+
       gensx = new GenSX({
         baseUrl: process.env.GENSX_BASE_URL ?? "http://localhost:1337",
       });
     }
 
     // Use runRaw to get the direct response
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
     const response = await gensx.runRaw(workflowName, {
       inputs,
-      format: format ?? "ndjson", // Default to ndjson if not specified
+      format,
     });
 
     // Determine content type based on format
-    const responseFormat = format ?? "ndjson";
     const contentType = {
       sse: "text/event-stream",
       ndjson: "application/x-ndjson",
       json: "application/json",
-    }[responseFormat];
+    }[format];
 
     // Return the response directly to the client
     // This preserves the response format
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+
     return new Response(response.body, {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+
       status: response.status,
       headers: {
         "Content-Type": contentType,

@@ -1,12 +1,12 @@
-import { ValueCard } from "./value-card";
 import { EventsCard } from "./events-card";
 import { StateEventsCard } from "./state-events-card";
+import { ValueCard } from "./value-card";
 
-type EventColumnProps<TEvent, TValue> = {
+interface EventColumnProps<TEvent, TValue> {
   title: string;
   value: TValue;
   events: TEvent[];
-  stateEvents: any;
+  stateEvents: unknown;
   emptyMessage?: string;
   className?: string;
 }

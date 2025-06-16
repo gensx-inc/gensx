@@ -8,29 +8,29 @@ export {
 } from '@/gensx/workflows';
 
 // Additional types specific to the UI/app layer
-export type CustomWorkflowEvent = {
+export interface CustomWorkflowEvent {
   id: string;
   type: 'start' | 'end' | 'output' | 'component-start' | 'component-end' | 'error';
   content: string;
   timestamp: Date;
 }
 
-export type WorkflowEventCounts = {
+export interface WorkflowEventCounts {
   start: number;
   end: number;
   'component-start': number;
   'component-end': number;
   error: number;
   total: number;
-};
+}
 
-export type WorkflowEventData = {
+export interface WorkflowEventData {
   counts: WorkflowEventCounts;
   customEvents: CustomWorkflowEvent[];
-};
+}
 
-export type ProgressStats = {
+export interface ProgressStats {
   starts: number;
   ends: number;
   isActive: boolean;
-};
+}

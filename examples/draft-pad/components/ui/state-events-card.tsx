@@ -1,8 +1,8 @@
 import { Card } from "@/components/ui/card";
 
-type StateEventsCardProps = {
+interface StateEventsCardProps {
   title: string;
-  stateEvents: any;
+  stateEvents: unknown;
   className?: string;
 }
 
