@@ -57,7 +57,6 @@ export interface WorkflowConfig {
 }
 
 export interface UseWorkflowConfig<
-  TInputs = unknown,
   TOutput = unknown,
 > {
   /**
@@ -145,7 +144,7 @@ export function useWorkflow<
   TInputs = any,
   TOutput = any,
 >(
-  options: UseWorkflowConfig<TInputs, TOutput>,
+  options: UseWorkflowConfig<TOutput>,
 ): UseWorkflowResult<TInputs, TOutput> {
   const {
     config,

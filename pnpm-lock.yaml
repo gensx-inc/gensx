@@ -1050,13 +1050,13 @@ importers:
 
   packages/gensx-react:
     dependencies:
+      '@gensx/client':
+        specifier: workspace:*
+        version: link:../gensx-client
       react:
         specifier: ^19.0.0
         version: 19.1.0
     devDependencies:
-      '@gensx/client':
-        specifier: workspace:*
-        version: link:../gensx-client
       '@types/react':
         specifier: ^19
         version: 19.1.3

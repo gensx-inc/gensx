@@ -11,5 +11,7 @@
   "packages/gensx-cursor-rules": "0.1.8",
   "packages/gensx-windsurf-rules": "0.1.8",
   "packages/gensx-storage": "0.1.3",
-  "packages/gensx-vercel-ai": "0.2.2"
+  "packages/gensx-vercel-ai": "0.2.2",
+  "packages/gensx-client": "0.1.0",
+  "packages/gensx-react": "0.1.0"
 }

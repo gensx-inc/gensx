@@ -236,6 +236,46 @@
           "jsonpath": "$.version"
         }
       ]
+    },
+    "packages/gensx-client": {
+      "component": "gensx-client",
+      "release-type": "node",
+      "package-name": "@gensx/client",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "initial-version": "0.1.0",
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/gensx-react": {
+      "component": "gensx-react",
+      "release-type": "node",
+      "package-name": "@gensx/react",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "initial-version": "0.1.0",
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.version"
+        }
+      ]
     }
   },
   "changelog-sections": [

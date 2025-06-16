@@ -1,20 +1,33 @@
 {
   "name": "@gensx/react",
-  "version": "0.0.0",
-  "private": true,
-  "main": "./index.tsx",
-  "types": "./index.tsx",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
     "lint": "eslint . --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@gensx/client": "workspace:*"
   },
   "devDependencies": {
-    "@gensx/client": "workspace:*",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "typescript": "^5"
   },
   "peerDependencies": {
     "react": "^19.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   }
 }
