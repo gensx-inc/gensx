@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
         environment,
       });
     } else {
-
       gensx = new GenSX({
         baseUrl: process.env.GENSX_BASE_URL ?? "http://localhost:1337",
       });
@@ -90,7 +89,6 @@ export async function POST(request: NextRequest) {
     // This preserves the response format
 
     return new Response(response.body, {
-
       status: response.status,
       headers: {
         "Content-Type": contentType,
@@ -143,7 +141,8 @@ export function GET() {
           option2: "Pass Authorization header with Bearer token",
         },
         environment: {
-          GENSX_BASE_URL: "GenSX base URL (defaults to https://api.gensx.com for production, http://localhost:1337 for development)",
+          GENSX_BASE_URL:
+            "GenSX base URL (defaults to https://api.gensx.com for production, http://localhost:1337 for development)",
         },
       },
       null,

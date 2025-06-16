@@ -17,23 +17,17 @@ export function EventColumn<TEvent, TValue>({
   events,
   stateEvents,
   emptyMessage,
-  className = ""
+  className = "",
 }: EventColumnProps<TEvent, TValue>) {
   return (
     <div className={`lg:col-span-1 space-y-4 ${className}`}>
-      <ValueCard
-        title={`${title} Value`}
-        value={value}
-      />
+      <ValueCard title={`${title} Value`} value={value} />
       <EventsCard<TEvent>
         title={title}
         events={events}
         emptyMessage={emptyMessage}
       />
-      <StateEventsCard
-        title={`State ${title}`}
-        stateEvents={stateEvents}
-      />
+      <StateEventsCard title={`State ${title}`} stateEvents={stateEvents} />
     </div>
   );
 }

@@ -1,4 +1,11 @@
-import { startTransition,useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 // JSON-serializable value type for progress data
 export type JsonValue =
@@ -9,11 +16,15 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-
-
 // WorkflowMessage type (from gensx-core)
 export type WorkflowMessage =
-  | { type: "start"; workflowExecutionId?: string; workflowName: string; id?: string; timestamp?: string }
+  | {
+      type: "start";
+      workflowExecutionId?: string;
+      workflowName: string;
+      id?: string;
+      timestamp?: string;
+    }
   | {
       type: "component-start";
       componentName: string;
@@ -31,7 +42,13 @@ export type WorkflowMessage =
       timestamp?: string;
     }
   | { type: "data"; data: JsonValue; id?: string; timestamp?: string }
-  | { type: "object" | "event"; data: Record<string, JsonValue>; label: string; id?: string; timestamp?: string }
+  | {
+      type: "object" | "event";
+      data: Record<string, JsonValue>;
+      label: string;
+      id?: string;
+      timestamp?: string;
+    }
   | { type: "output"; content: string; id?: string; timestamp?: string }
   | { type: "error"; error: string; id?: string; timestamp?: string }
   | { type: "end"; id?: string; timestamp?: string };
@@ -56,9 +73,7 @@ export interface WorkflowConfig {
   headers?: Record<string, string>;
 }
 
-export interface UseWorkflowConfig<
-  TOutput = unknown,
-> {
+export interface UseWorkflowConfig<TOutput = unknown> {
   /**
    * All workflow configuration in one place
    */
@@ -91,10 +106,7 @@ export interface UseWorkflowConfig<
   outputTransformer?: (accumulatedContent: string) => TOutput;
 }
 
-export interface UseWorkflowResult<
-  TInputs = unknown,
-  TOutput = unknown,
-> {
+export interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
   /** Whether the workflow is currently in progress */
   inProgress: boolean;
 
@@ -113,8 +125,6 @@ export interface UseWorkflowResult<
   /** Stop the current workflow */
   stop: () => void;
 }
-
-
 
 /**
  * Hook for interacting with GenSX workflows via your API endpoint
@@ -140,25 +150,13 @@ export interface UseWorkflowResult<
  * const allSteps = useEvents(workflow.events, 'step-completed');
  * ```
  */
-export function useWorkflow<
-  TInputs = unknown,
-  TOutput = unknown,
->(
+export function useWorkflow<TInputs = unknown, TOutput = unknown>(
   options: UseWorkflowConfig<TOutput>,
 ): UseWorkflowResult<TInputs, TOutput> {
-  const {
-    config,
-    onStart,
-    onComplete,
-    onError,
-    onEvent,
-    outputTransformer,
-  } = options;
+  const { config, onStart, onComplete, onError, onEvent, outputTransformer } =
+    options;
 
-  const {
-    baseUrl,
-    headers = {},
-  } = config;
+  const { baseUrl, headers = {} } = config;
 
   // State
   const [inProgress, setInProgress] = useState(false);
@@ -171,7 +169,7 @@ export function useWorkflow<
   const outputRef = useRef<TOutput | null>(null);
   const accumulatedStringRef = useRef<string>("");
 
-        // Process a single WorkflowMessage event
+  // Process a single WorkflowMessage event
   const processEvent = useCallback(
     (event: WorkflowMessage) => {
       // Batch all state updates for this event to prevent race conditions
@@ -224,8 +222,6 @@ export function useWorkflow<
             outputRef.current = newOutput;
             setOutput(newOutput);
             break;
-
-
 
           case "event":
             // Handle simple workflow events
@@ -321,14 +317,11 @@ export function useWorkflow<
   }, []);
 
   // Build request payload - just pass inputs since API route handles workflow config
-  const buildPayload = useCallback(
-    (runConfig: WorkflowRunConfig<TInputs>) => {
-      return {
-        ...runConfig.inputs,
-      };
-    },
-    [],
-  );
+  const buildPayload = useCallback((runConfig: WorkflowRunConfig<TInputs>) => {
+    return {
+      ...runConfig.inputs,
+    };
+  }, []);
 
   // Run workflow in streaming mode
   const run = useCallback(
@@ -384,18 +377,16 @@ export function useWorkflow<
   };
 }
 
-
 // New hook to get the most recent object by label from WorkflowMessage events
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-export function useObject<T extends Record<string, JsonValue> = Record<string, JsonValue>>(
-  events: WorkflowMessage[],
-  label: string
-): T | undefined {
+export function useObject<
+  T extends Record<string, JsonValue> = Record<string, JsonValue>,
+>(events: WorkflowMessage[], label: string): T | undefined {
   return useMemo(() => {
     const objectEvents: T[] = [];
 
     for (const event of events) {
-      if (event.type === 'object' && event.label === label) {
+      if (event.type === "object" && event.label === label) {
         objectEvents.push(event.data as T);
       }
     }
@@ -409,13 +400,13 @@ export function useObject<T extends Record<string, JsonValue> = Record<string, J
 export function useEvents<T extends Record<string, JsonValue>>(
   events: WorkflowMessage[],
   label: string,
-  onEvent?: (event: T) => void
+  onEvent?: (event: T) => void,
 ): T[] {
   const eventList = useMemo(() => {
     const list: T[] = [];
 
     for (const event of events) {
-      if (event.type === 'event' && event.label === label) {
+      if (event.type === "event" && event.label === label) {
         list.push(event.data as T);
       }
     }
@@ -430,7 +421,11 @@ export function useEvents<T extends Record<string, JsonValue>>(
   useEffect(() => {
     if (onEvent && eventList.length > 0) {
       // Only process events that haven't been processed yet
-      for (let i = lastProcessedIndexRef.current + 1; i < eventList.length; i++) {
+      for (
+        let i = lastProcessedIndexRef.current + 1;
+        i < eventList.length;
+        i++
+      ) {
         onEvent(eventList[i]);
       }
       // Update the last processed index
@@ -440,4 +435,3 @@ export function useEvents<T extends Record<string, JsonValue>>(
 
   return eventList;
 }
-

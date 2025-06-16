@@ -10,4 +10,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial release of @gensx/client
-- Basic client functionality for GenSX workflows 
+- Basic client functionality for GenSX workflows

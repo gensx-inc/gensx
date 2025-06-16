@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Check, Copy, Send } from "lucide-react";
-import { useEffect,useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface DraftEditorCardProps {
   output: string | null;
@@ -21,7 +21,7 @@ export function DraftEditorCard({
   userMessage,
   onUserMessageChange,
   onSubmit,
-  className = ""
+  className = "",
 }: DraftEditorCardProps) {
   const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,7 +40,8 @@ export function DraftEditorCard({
   // Auto-scroll to bottom when content is being generated
   useEffect(() => {
     if (isStreaming && scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
     }
   }, [output, isStreaming]);
 
@@ -53,7 +54,9 @@ export function DraftEditorCard({
     if (output) {
       await navigator.clipboard.writeText(output);
       setCopied(true);
-      setTimeout(() => { setCopied(false); }, 2000);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     }
   };
 
@@ -76,15 +79,22 @@ export function DraftEditorCard({
               </Button>
             </div>
           )}
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0 p-4 pt-2 pb-10 px-6 custom-scrollbar">
+          <div
+            ref={scrollContainerRef}
+            className="flex-1 overflow-y-auto min-h-0 p-4 pt-2 pb-10 px-6 custom-scrollbar"
+          >
             {output ? (
               <div className="whitespace-pre-wrap text-[#333333]">
                 {output}
-                {isStreaming && <span className="inline-block w-2 h-5 bg-blue-400 ml-1 animate-pulse rounded-full" />}
+                {isStreaming && (
+                  <span className="inline-block w-2 h-5 bg-blue-400 ml-1 animate-pulse rounded-full" />
+                )}
               </div>
             ) : (
               <div className="text-[#333333]/60 flex items-center justify-center h-full">
-                {isStreaming ? 'Generating...' : 'Create a draft. Update it. Repeat.'}
+                {isStreaming
+                  ? "Generating..."
+                  : "Create a draft. Update it. Repeat."}
               </div>
             )}
           </div>
@@ -98,9 +108,11 @@ export function DraftEditorCard({
           <Input
             ref={inputRef}
             value={userMessage}
-            onChange={(e) => { onUserMessageChange(e.target.value); }}
+            onChange={(e) => {
+              onUserMessageChange(e.target.value);
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === "Enter") {
                 onSubmit();
               }
             }}
@@ -114,7 +126,9 @@ export function DraftEditorCard({
         <div className="relative rounded-2xl overflow-hidden shadow-[0_4px_4px_rgba(0,0,0,0.15),0_0_15px_rgba(0,0,0,0.08)] transition-all duration-400 ease-out hover:shadow-[0_5px_5px_rgba(0,0,0,0.2),0_0_18px_rgba(0,0,0,0.1)] backdrop-blur-[3px] bg-white/10 hover:bg-white/15">
           <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.4)]" />
           <Button
-            onClick={() => { onSubmit(); }}
+            onClick={() => {
+              onSubmit();
+            }}
             disabled={!userMessage.trim() || isStreaming}
             className="relative z-[2] bg-transparent hover:bg-transparent border-0 text-[#333333] p-3 disabled:opacity-50 cursor-pointer"
             size="icon"
@@ -124,11 +138,7 @@ export function DraftEditorCard({
         </div>
       </div>
 
-      {error && (
-        <div className="text-red-400 text-sm">
-          Error: {error}
-        </div>
-      )}
+      {error && <div className="text-red-400 text-sm">Error: {error}</div>}
     </div>
   );
 }

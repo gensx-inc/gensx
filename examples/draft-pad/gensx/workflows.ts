@@ -19,7 +19,12 @@ type DraftProgress = {
   type: "draft-progress";
   // Status information
   status: "idle" | "generating" | "complete";
-  stage: "initializing" | "generating" | "streaming" | "finalizing" | "complete";
+  stage:
+    | "initializing"
+    | "generating"
+    | "streaming"
+    | "finalizing"
+    | "complete";
   percentage: number;
   message: string;
   // Content information
@@ -39,7 +44,6 @@ type UpdateDraftOutput = string;
 const UpdateDraftWorkflow = gensx.Workflow(
   "updateDraft",
   ({ userMessage, currentDraft }: UpdateDraftInput) => {
-
     const draftProgress: DraftProgress = {
       type: "draft-progress",
       status: "generating",
@@ -47,10 +51,11 @@ const UpdateDraftWorkflow = gensx.Workflow(
       percentage: 0,
       message: "Starting content generation...",
       content: currentDraft,
-      wordCount: currentDraft.split(/\s+/).filter(word => word.length > 0).length,
+      wordCount: currentDraft.split(/\s+/).filter((word) => word.length > 0)
+        .length,
       charCount: currentDraft.length,
       lastUpdated: new Date().toISOString(),
-    }
+    };
     // Publish initial state
     gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
 
@@ -75,7 +80,9 @@ const UpdateDraftWorkflow = gensx.Workflow(
     draftProgress.percentage = 25;
     draftProgress.message = "Generating content with AI...";
     draftProgress.content = currentDraft;
-    draftProgress.wordCount = currentDraft.split(/\s+/).filter(word => word.length > 0).length;
+    draftProgress.wordCount = currentDraft
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
     draftProgress.charCount = currentDraft.length;
     draftProgress.lastUpdated = new Date().toISOString();
     // Update progress to generating stage
@@ -104,9 +111,11 @@ const UpdateDraftWorkflow = gensx.Workflow(
 
         // Update progress every 10 chunks
         if (chunkCount % 10 === 0) {
-          const words = generatedContent.split(/\s+/).filter(word => word.length > 0);
+          const words = generatedContent
+            .split(/\s+/)
+            .filter((word) => word.length > 0);
           draftProgress.stage = "streaming";
-          draftProgress.percentage = Math.min(50 + (chunkCount * 2), 90);
+          draftProgress.percentage = Math.min(50 + chunkCount * 2, 90);
           draftProgress.message = `Generated ${generatedContent.length} characters...`;
           draftProgress.wordCount = words.length;
           draftProgress.charCount = generatedContent.length;
@@ -117,7 +126,9 @@ const UpdateDraftWorkflow = gensx.Workflow(
       }
 
       // Final progress update - finalizing
-      const finalWords = generatedContent.split(/\s+/).filter(word => word.length > 0);
+      const finalWords = generatedContent
+        .split(/\s+/)
+        .filter((word) => word.length > 0);
       draftProgress.stage = "finalizing";
       draftProgress.percentage = 95;
       draftProgress.message = "Finalizing content...";
@@ -154,5 +165,5 @@ export {
   type EndContentEvent,
   type DraftProgress,
   type UpdateDraftInput,
-  type UpdateDraftOutput
+  type UpdateDraftOutput,
 };

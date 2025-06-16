@@ -26,7 +26,8 @@ export interface GenSXStartEvent extends WorkflowStartMessage {
   workflowExecutionId: string; // Make this required for SDK events
 }
 
-export interface GenSXComponentStartEvent extends WorkflowComponentStartMessage {
+export interface GenSXComponentStartEvent
+  extends WorkflowComponentStartMessage {
   id: string;
   timestamp: string;
 }

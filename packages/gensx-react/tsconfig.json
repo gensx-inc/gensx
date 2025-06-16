@@ -6,12 +6,6 @@
     "jsxImportSource": "react",
     "outDir": "dist"
   },
-  "include": [
-    "."
-  ],
-  "exclude": [
-    "dist",
-    "build",
-    "node_modules"
-  ]
+  "include": ["."],
+  "exclude": ["dist", "build", "node_modules"]
 }

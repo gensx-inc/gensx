@@ -21,7 +21,9 @@ export function DraftStatsCard({ draftProgress }: DraftStatsCardProps) {
           <CardContent className="p-0 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-[#333333]/70">Stage:</span>
-              <span className="text-sm font-medium capitalize text-[#333333]">{draftProgress.stage}</span>
+              <span className="text-sm font-medium capitalize text-[#333333]">
+                {draftProgress.stage}
+              </span>
             </div>
             <div className="w-full bg-[#333333]/10 rounded-full h-2">
               <div
@@ -29,7 +31,9 @@ export function DraftStatsCard({ draftProgress }: DraftStatsCardProps) {
                 style={{ width: `${draftProgress.percentage}%` }}
               />
             </div>
-            <div className="text-sm text-[#333333]/70">{draftProgress.message}</div>
+            <div className="text-sm text-[#333333]/70">
+              {draftProgress.message}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -38,17 +42,23 @@ export function DraftStatsCard({ draftProgress }: DraftStatsCardProps) {
       {draftProgress ? (
         <div className="grid grid-cols-2 gap-4">
           <Card className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{draftProgress.wordCount}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {draftProgress.wordCount}
+            </div>
             <div className="text-sm text-[#333333]/70">Words</div>
           </Card>
 
           <Card className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{draftProgress.charCount}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {draftProgress.charCount}
+            </div>
             <div className="text-sm text-[#333333]/70">Characters</div>
           </Card>
 
           <Card className="p-4 text-center col-span-2">
-            <div className="text-xl font-bold text-purple-600 capitalize">{draftProgress.status}</div>
+            <div className="text-xl font-bold text-purple-600 capitalize">
+              {draftProgress.status}
+            </div>
             <div className="text-sm text-[#333333]/70">Status</div>
           </Card>
 

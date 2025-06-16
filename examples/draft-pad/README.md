@@ -45,14 +45,15 @@ Your GenSX workflow should accept the following inputs:
 
 ```json
 {
-  "userMessage": "string",      // User's instruction/message
-  "currentDraft": "string",     // Current draft content
-  "previousMessages": "array",  // Chat history
-  "model": "string"            // AI model to use
+  "userMessage": "string", // User's instruction/message
+  "currentDraft": "string", // Current draft content
+  "previousMessages": "array", // Chat history
+  "model": "string" // AI model to use
 }
 ```
 
 And emit progress events with these types:
+
 - `assistantMessage` - For AI response content
 - `draftContent` - For updated draft content
 - `start` - When sections begin
@@ -75,23 +76,23 @@ npm run dev
 The app uses the `useWorkflow` hook from `@gensx/react` package for real-time workflow streaming:
 
 ```typescript
-import { useWorkflow } from '@gensx/react';
+import { useWorkflow } from "@gensx/react";
 
 // Real-time workflow connection
 const workflow = useWorkflow({
-  endpoint: '/api/gensx',
-  workflowName: 'update-draft',
-  onComplete: (result) => console.log('Workflow completed'),
-  onError: (error) => console.error('Workflow error:', error),
+  endpoint: "/api/gensx",
+  workflowName: "update-draft",
+  onComplete: (result) => console.log("Workflow completed"),
+  onError: (error) => console.error("Workflow error:", error),
 });
 
 // Track specific event types with real-time callbacks
-const assistantEvents = workflow.useProgressEvents('assistantMessage');
+const assistantEvents = workflow.useProgressEvents("assistantMessage");
 
 // Stream workflow with inputs
 await workflow.stream({
-  userMessage: 'Update the draft',
-  currentDraft: 'Current content...'
+  userMessage: "Update the draft",
+  currentDraft: "Current content...",
 });
 ```
 
@@ -123,6 +124,7 @@ For local development without a deployed GenSX workflow, you can:
 ### Debug Mode
 
 Set `NODE_ENV=development` to see debug information including:
+
 - Workflow status
 - Event counts
 - Real-time progress metrics

@@ -11,11 +11,11 @@ npm install @gensx/client
 ## Usage
 
 ```typescript
-import { GenSX } from '@gensx/client';
+import { GenSX } from "@gensx/client";
 
 const gensx = new GenSX({
-  apiKey: 'your-api-key',
-  baseUrl: 'https://api.gensx.com' // optional
+  apiKey: "your-api-key",
+  baseUrl: "https://api.gensx.com", // optional
 });
 ```
 
@@ -27,25 +27,25 @@ Execute a workflow and get the output.
 
 ```typescript
 // Collection mode (default) - get the final output
-const { output, progressStream } = await gensx.run<string>('MyWorkflow', {
-  org: 'my-org',
-  project: 'my-project',
-  environment: 'production', // optional
+const { output, progressStream } = await gensx.run<string>("MyWorkflow", {
+  org: "my-org",
+  project: "my-project",
+  environment: "production", // optional
   inputs: {
-    userMessage: 'Hello'
-  }
+    userMessage: "Hello",
+  },
 });
 
 console.log(output); // Final aggregated output
 
 // Streaming mode - get output as it's generated
-const { outputStream, progressStream } = await gensx.run<string>('MyWorkflow', {
-  org: 'my-org',
-  project: 'my-project',
+const { outputStream, progressStream } = await gensx.run<string>("MyWorkflow", {
+  org: "my-org",
+  project: "my-project",
   stream: true,
   inputs: {
-    userMessage: 'Hello'
-  }
+    userMessage: "Hello",
+  },
 });
 
 for await (const chunk of outputStream) {
@@ -59,40 +59,40 @@ Execute a workflow and get the raw Response object for custom handling.
 
 ```typescript
 // NDJSON format (default) - newline-delimited JSON
-const response = await gensx.runRaw('MyWorkflow', {
-  org: 'my-org',
-  project: 'my-project',
-  environment: 'production', // optional
+const response = await gensx.runRaw("MyWorkflow", {
+  org: "my-org",
+  project: "my-project",
+  environment: "production", // optional
   inputs: {
-    userMessage: 'Hello'
+    userMessage: "Hello",
   },
-  format: 'ndjson' // default
+  format: "ndjson", // default
 });
 
 // Server-Sent Events format
-const sseResponse = await gensx.runRaw('MyWorkflow', {
-  org: 'my-org',
-  project: 'my-project',
+const sseResponse = await gensx.runRaw("MyWorkflow", {
+  org: "my-org",
+  project: "my-project",
   inputs: {
-    userMessage: 'Hello'
+    userMessage: "Hello",
   },
-  format: 'sse'
+  format: "sse",
 });
 
 // Standard JSON format (no streaming)
-const jsonResponse = await gensx.runRaw('MyWorkflow', {
-  org: 'my-org',
-  project: 'my-project',
+const jsonResponse = await gensx.runRaw("MyWorkflow", {
+  org: "my-org",
+  project: "my-project",
   inputs: {
-    userMessage: 'Hello'
+    userMessage: "Hello",
   },
-  format: 'json'
+  format: "json",
 });
 
 // Handle the response based on format
-if (options.format === 'json') {
+if (options.format === "json") {
   const data = await response.json();
-  console.log('Result:', data);
+  console.log("Result:", data);
 } else {
   // Handle streaming formats (sse or ndjson)
   const reader = response.body.getReader();
@@ -105,13 +105,13 @@ if (options.format === 'json') {
 Start a workflow asynchronously and get an execution ID.
 
 ```typescript
-const { executionId, executionStatus } = await gensx.start('MyWorkflow', {
-  org: 'my-org',
-  project: 'my-project',
-  environment: 'production', // optional
+const { executionId, executionStatus } = await gensx.start("MyWorkflow", {
+  org: "my-org",
+  project: "my-project",
+  environment: "production", // optional
   inputs: {
-    userMessage: 'Process this in background'
-  }
+    userMessage: "Process this in background",
+  },
 });
 
 console.log(`Started workflow: ${executionId}`);
@@ -123,8 +123,8 @@ Get progress updates for an async workflow execution.
 
 ```typescript
 const progressStream = await gensx.getProgress({
-  executionId: 'abc123',
-  format: 'ndjson' // or 'sse'
+  executionId: "abc123",
+  format: "ndjson", // or 'sse'
 });
 
 // Process progress events
@@ -135,7 +135,7 @@ while (true) {
   const { done, value } = await reader.read();
   if (done) break;
 
-  const events = decoder.decode(value).split('\n').filter(Boolean);
+  const events = decoder.decode(value).split("\n").filter(Boolean);
   for (const event of events) {
     console.log(JSON.parse(event));
   }
@@ -148,16 +148,41 @@ GenSX workflows emit the following event types:
 
 ```typescript
 type GenSXEvent =
-  | { type: 'start'; workflowExecutionId: string; workflowName: string; id: string; timestamp: string }
-  | { type: 'component-start'; componentName: string; componentId: string; id: string; timestamp: string }
-  | { type: 'component-end'; componentName: string; componentId: string; id: string; timestamp: string }
-  | { type: 'progress'; data: string; id: string; timestamp: string }
-  | { type: 'output'; content: string; id: string; timestamp: string }
-  | { type: 'end'; id: string; timestamp: string }
-  | { type: 'error'; error?: string; message?: string; id: string; timestamp: string };
+  | {
+      type: "start";
+      workflowExecutionId: string;
+      workflowName: string;
+      id: string;
+      timestamp: string;
+    }
+  | {
+      type: "component-start";
+      componentName: string;
+      componentId: string;
+      id: string;
+      timestamp: string;
+    }
+  | {
+      type: "component-end";
+      componentName: string;
+      componentId: string;
+      id: string;
+      timestamp: string;
+    }
+  | { type: "progress"; data: string; id: string; timestamp: string }
+  | { type: "output"; content: string; id: string; timestamp: string }
+  | { type: "end"; id: string; timestamp: string }
+  | {
+      type: "error";
+      error?: string;
+      message?: string;
+      id: string;
+      timestamp: string;
+    };
 ```
 
 ### Event Descriptions:
+
 - **`start`**: Workflow has started, includes workflow name and execution ID
 - **`component-start`**: A component within the workflow has started
 - **`component-end`**: A component within the workflow has ended
@@ -169,10 +194,10 @@ type GenSXEvent =
 ### Processing Progress Events:
 
 ```typescript
-import { GenSXEvent } from '@gensx/client';
+import { GenSXEvent } from "@gensx/client";
 
 // From run() method
-const { output, progressStream } = await gensx.run('MyWorkflow', options);
+const { output, progressStream } = await gensx.run("MyWorkflow", options);
 
 const reader = progressStream.getReader();
 const decoder = new TextDecoder();
@@ -181,23 +206,23 @@ while (true) {
   const { done, value } = await reader.read();
   if (done) break;
 
-  const lines = decoder.decode(value).split('\n').filter(Boolean);
+  const lines = decoder.decode(value).split("\n").filter(Boolean);
   for (const line of lines) {
     const event = JSON.parse(line) as GenSXEvent;
 
     switch (event.type) {
-      case 'start':
-        console.log('Started:', event.workflowName);
+      case "start":
+        console.log("Started:", event.workflowName);
         break;
-      case 'progress':
+      case "progress":
         const progressData = JSON.parse(event.data);
-        console.log('Progress:', progressData);
+        console.log("Progress:", progressData);
         break;
-      case 'end':
-        console.log('Workflow ended');
+      case "end":
+        console.log("Workflow ended");
         break;
-      case 'error':
-        console.error('Error:', event.error || event.message);
+      case "error":
+        console.error("Error:", event.error || event.message);
         break;
     }
   }

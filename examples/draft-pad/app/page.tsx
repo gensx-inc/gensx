@@ -7,16 +7,20 @@ import {
   type EndContentEvent,
   type StartContentEvent,
   type UpdateDraftInput,
-  type UpdateDraftOutput} from "@/gensx/workflows";
-import { useEvents,useObject, useWorkflow } from '@gensx/react';
-import { useState } from 'react';
+  type UpdateDraftOutput,
+} from "@/gensx/workflows";
+import { useEvents, useObject, useWorkflow } from "@gensx/react";
+import { useState } from "react";
 
 export default function Home() {
   const [userMessage, setUserMessage] = useState("");
 
-  const {inProgress, error, output, execution, run} = useWorkflow<UpdateDraftInput, UpdateDraftOutput>({
+  const { inProgress, error, output, execution, run } = useWorkflow<
+    UpdateDraftInput,
+    UpdateDraftOutput
+  >({
     config: {
-      baseUrl: '/api/gensx',
+      baseUrl: "/api/gensx",
     },
   });
 
@@ -27,15 +31,15 @@ export default function Home() {
     "content-events",
     (event) => {
       console.log(`Content event: ${event.type} - ${event.content}`);
-    }
+    },
   );
 
   const handleSubmit = async () => {
     await run({
       inputs: {
         userMessage: userMessage.trim(),
-        currentDraft: output ?? ""
-      }
+        currentDraft: output ?? "",
+      },
     });
     setUserMessage("");
   };
@@ -47,7 +51,7 @@ export default function Home() {
           Draft Pad
         </h1>
         <DraftEditorCard
-          output={draftProgress?.content ?? output ?? 'No content yet'}
+          output={draftProgress?.content ?? output ?? "No content yet"}
           isStreaming={inProgress}
           error={error}
           userMessage={userMessage}
