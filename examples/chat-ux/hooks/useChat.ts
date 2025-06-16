@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 export type WorkflowProgressEvent = { id: string; timestamp: string } & (
   | { type: "start"; workflowExecutionId?: string; workflowName: string }
@@ -62,129 +62,126 @@ interface UseChatReturn {
 }
 
 export function useChat(): UseChatReturn {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageHistory, setMessageHistory] = useState<Message[]>([]);
+  const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const clear = useCallback(() => {
-    setMessages([]);
+    setMessageHistory([]);
+    setCurrentMessages([]);
     setError(null);
   }, []);
 
-  const sendMessage = useCallback(async (prompt: string, threadId: string) => {
-    if (!prompt || !threadId) {
-      setError("Missing prompt or threadId");
-      return;
-    }
+  const messages = useMemo(
+    () => [...messageHistory, ...currentMessages],
+    [messageHistory, currentMessages],
+  );
 
-    setIsLoading(true);
-    setError(null);
+  const sendMessage = useCallback(
+    async (prompt: string, threadId: string) => {
+      if (!prompt || !threadId) {
+        setError("Missing prompt or threadId");
+        return;
+      }
 
-    // Add user message immediately
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: prompt,
-      role: "user",
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch("/api/gensx", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/x-ndjson",
-        },
-        body: JSON.stringify({
-          workflowName: "OpenAIAgentWorkflow",
-          inputs: {
-            userInput: prompt,
-            threadId: threadId,
+      // Move any existing current turn messages to confirmed, then add user message
+      setMessageHistory((prev) => [...prev, ...currentMessages]);
+      setCurrentMessages([]);
+
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        content: prompt,
+        role: "user",
+        timestamp: new Date(),
+      };
+      setMessageHistory((prev) => [...prev, userMessage]);
+
+      try {
+        const response = await fetch("/api/gensx", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/x-ndjson",
           },
-        }),
-      });
+          body: JSON.stringify({
+            workflowName: "OpenAIAgentWorkflow",
+            inputs: {
+              userInput: prompt,
+              threadId: threadId,
+            },
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-
-      if (!response.body) {
-        throw new Error("No response body");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let hasReceivedFirstChunk = false;
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          break;
+        if (!response.ok) {
+          throw new Error("Failed to send message");
         }
 
-        const chunk = decoder.decode(value);
-        buffer += chunk;
+        if (!response.body) {
+          throw new Error("No response body");
+        }
 
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let hasReceivedFirstChunk = false;
 
-        for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const event = JSON.parse(line) as WorkflowProgressEvent;
-              console.log("📝 Received event:", event, "🚀");
+        while (true) {
+          const { done, value } = await reader.read();
 
-              // Handle new object-based message events
-              if (event.type === "object" && event.label === "messages") {
-                if (!hasReceivedFirstChunk) {
-                  hasReceivedFirstChunk = true;
-                  setIsLoading(false);
-                }
+          if (done) {
+            break;
+          }
 
-                // Convert OpenAI message format to our Message interface
-                const convertedMessages: Message[] = event.data.messages.map(
-                  (msg, index) => {
-                    // Generate unique ID for each message
-                    const messageId = `${event.id}-${index}`;
+          const chunk = decoder.decode(value);
+          buffer += chunk;
 
-                    return {
-                      id: messageId,
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (line.trim()) {
+              try {
+                const event = JSON.parse(line) as WorkflowProgressEvent;
+                // Handle new object-based message events
+                if (event.type === "object" && event.label === "messages") {
+                  if (!hasReceivedFirstChunk) {
+                    hasReceivedFirstChunk = true;
+                    setIsLoading(false);
+                  }
+
+                  // Backend sends only new messages for this turn
+                  const newMessages: Message[] = event.data.messages
+                    .filter((msg) => msg.role !== "user") // Skip user messages since we already added them
+                    .map((msg, index) => ({
+                      id: `${event.id}-${index}`,
                       content: msg.content,
-                      role: msg.role as "assistant" | "tool" | "user",
+                      role: msg.role as "assistant" | "tool",
                       timestamp: new Date(event.timestamp || Date.now()),
                       tool_calls: msg.tool_calls,
                       tool_call_id: msg.tool_call_id,
-                    };
-                  },
-                );
+                    }));
 
-                // Replace messages entirely with the new set from the workflow
-                setMessages((prev) => {
-                  // Keep user messages and only replace assistant/tool messages
-                  const userMessages = prev.filter(
-                    (msg) => msg.role === "user",
-                  );
-                  const newMessages = convertedMessages.filter(
-                    (msg) => msg.role !== "user",
-                  );
-                  return [...userMessages, ...newMessages];
-                });
+                  // Simply replace current turn messages
+                  setCurrentMessages(newMessages);
+                }
+              } catch (e) {
+                console.error("Error parsing event:", e);
               }
-            } catch (e) {
-              console.error("Error parsing event:", e);
             }
           }
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [currentMessages],
+  );
 
   return {
     sendMessage,

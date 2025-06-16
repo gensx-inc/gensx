@@ -6,6 +6,7 @@
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:gensx\"",
     "dev:next": "next dev",
     "dev:gensx": "gensx start ./gensx/workflows.ts",
+    "deploy": "gensx deploy -e OPENAI_API_KEY ./gensx/workflows.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -14,6 +15,7 @@
     "@gensx/core": "workspace:*",
     "@gensx/client": "workspace:*",
     "@gensx/openai": "workspace:*",
+    "@gensx/storage": "workspace:*",
     "@mendable/firecrawl-js": "^1.25.5",
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",

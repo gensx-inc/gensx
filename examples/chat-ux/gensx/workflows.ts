@@ -1,5 +1,6 @@
 import * as gensx from "@gensx/core";
 import { OpenAI } from "@gensx/openai";
+import { useBlob } from "@gensx/storage";
 import FirecrawlApp from "@mendable/firecrawl-js";
 import {
   ChatCompletionMessageParam,
@@ -114,12 +115,54 @@ const toolFunctions = {
 
 export const OpenAIAgent = gensx.Component(
   "OpenAIAgent",
-  async ({ userInput }: { userInput: string }) => {
-    const messages: ChatCompletionMessageParam[] = [
-      { role: "user", content: userInput },
-    ];
+  async ({ userInput, threadId }: { userInput: string; threadId: string }) => {
+    // Get blob instance at component level
+    const chatHistoryBlob = useBlob<ChatCompletionMessageParam[]>(
+      `chat-history/${threadId}.json`,
+    );
 
-    return await processMessagesWithTools(messages);
+    // Function to load chat history
+    const loadChatHistory = async (): Promise<ChatCompletionMessageParam[]> => {
+      const history = await chatHistoryBlob.getJSON();
+      return history ?? [];
+    };
+
+    // Function to save chat history
+    const saveChatHistory = async (
+      messages: ChatCompletionMessageParam[],
+    ): Promise<void> => {
+      await chatHistoryBlob.putJSON(messages);
+    };
+
+    try {
+      // Load existing chat history
+      const existingMessages = await loadChatHistory();
+
+      // Add the new user message
+      const messages: ChatCompletionMessageParam[] = [
+        ...existingMessages,
+        { role: "user", content: userInput },
+      ];
+
+      const responseMessages = await processMessagesWithTools(messages);
+
+      // Save the complete conversation history
+      await saveChatHistory([...messages, ...responseMessages]);
+
+      console.log(
+        `[Thread ${threadId}] Chat history updated with new messages`,
+      );
+
+      return responseMessages;
+    } catch (error) {
+      console.error("Error in chat processing:", error);
+      return [
+        {
+          role: "assistant",
+          content: `Error processing your request in thread ${threadId}. Please try again.`,
+        },
+      ];
+    }
   },
 );
 
@@ -250,7 +293,7 @@ async function processMessagesWithTools(
 
 export const OpenAIAgentWorkflow = gensx.Workflow(
   "OpenAIAgentWorkflow",
-  async ({ userInput }: { userInput: string }) => {
-    return await OpenAIAgent({ userInput });
+  async ({ userInput, threadId }: { userInput: string; threadId: string }) => {
+    return await OpenAIAgent({ userInput, threadId });
   },
 );
