@@ -59,7 +59,7 @@ function useCreateProject(
   const [projectConfig, setProjectConfig] = useState<ProjectConfig>({
     projectName: initialProjectName,
     description: initialDescription,
-    environmentName: initialEnvironmentName ?? "default",
+    environmentName: initialEnvironmentName,
   });
 
   const setProjectName = (name: string) => {
@@ -120,7 +120,7 @@ function useCreateProject(
         const resolvedConfig = {
           projectName: initialProjectName ?? configFromFile?.projectName,
           description: initialDescription ?? configFromFile?.description,
-          environmentName: initialEnvironmentName ?? "default",
+          environmentName: initialEnvironmentName,
         };
 
         setProjectConfig(resolvedConfig);
@@ -143,9 +143,14 @@ function useCreateProject(
 
           // If yes flag is set, skip environment name prompt and go straight to creation
           if (yes) {
+            // Set default environment name when using --yes
+            setProjectConfig((prev) => ({
+              ...prev,
+              environmentName: "default",
+            }));
             setStep("confirming_creation");
             setShouldCreate(true);
-          } else if (initialEnvironmentName) {
+          } else if (resolvedConfig.environmentName) {
             // If environment name provided via CLI, skip the prompt but still show confirmation
             setStep("confirming_creation");
           } else {

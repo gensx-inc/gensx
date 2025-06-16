@@ -285,7 +285,7 @@ export async function runCLI() {
       "Name of the project (optional if specified in gensx.yaml)",
     )
     .option("-d, --description <desc>", "Optional project description")
-    .option("--env <name>", "Initial environment name", "default")
+    .option("--env <name>", "Initial environment name")
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
     .action(
       async (
