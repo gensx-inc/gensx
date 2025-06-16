@@ -386,6 +386,7 @@ export function useWorkflow<
 
 
 // New hook to get the most recent object by label from WorkflowMessage events
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function useObject<T extends Record<string, JsonValue> = Record<string, JsonValue>>(
   events: WorkflowMessage[],
   label: string
