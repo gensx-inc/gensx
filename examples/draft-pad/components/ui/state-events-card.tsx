@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 
-interface StateEventsCardProps {
+type StateEventsCardProps = {
   title: string;
   stateEvents: any;
   className?: string;
@@ -15,4 +15,4 @@ export function StateEventsCard({ title, stateEvents, className = "" }: StateEve
       </div>
     </Card>
   );
-} 
+}

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Copy, Check, Send } from "lucide-react";
 
-interface DraftEditorCardProps {
+type DraftEditorCardProps = {
   output: string | null;
   isStreaming: boolean;
   error: string | null;

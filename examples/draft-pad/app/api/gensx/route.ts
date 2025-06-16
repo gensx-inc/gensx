@@ -1,8 +1,8 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
-interface RequestBody {
-  [key: string]: unknown; // For workflow inputs
+type RequestBody = {
+  [key: string]: unknown;
 }
 
 const shouldUseLocalDevServer = () => {

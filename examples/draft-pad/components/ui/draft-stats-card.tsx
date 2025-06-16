@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type DraftProgress } from "@/gensx/workflows";
 
-interface DraftStatsCardProps {
+type DraftStatsCardProps = {
   draftProgress: DraftProgress | null;
 }
 

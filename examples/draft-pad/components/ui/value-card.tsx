@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 
-interface ValueCardProps {
+type ValueCardProps = {
   title: string;
   value: any;
   className?: string;
@@ -15,4 +15,4 @@ export function ValueCard({ title, value, className = "" }: ValueCardProps) {
       </div>
     </Card>
   );
-} 
+}

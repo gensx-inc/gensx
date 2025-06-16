@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 
-interface EventsCardProps<T> {
+type EventsCardProps<T> = {
   title: string;
   events: T[];
   emptyMessage?: string;
@@ -8,9 +8,9 @@ interface EventsCardProps<T> {
   maxHeight?: string;
 }
 
-export function EventsCard<T>({ 
-  title, 
-  events, 
+export function EventsCard<T>({
+  title,
+  events,
   emptyMessage = "No events yet",
   className = "",
   maxHeight = "300px"
@@ -33,4 +33,4 @@ export function EventsCard<T>({
       </div>
     </Card>
   );
-} 
+}
