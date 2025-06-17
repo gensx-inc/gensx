@@ -9,6 +9,7 @@ export {
   createObjectStream,
 } from "./workflow-state.js";
 export * from "./wrap.js";
+export * from "./wait-for-input.js";
 
 export { Component, Workflow } from "./component.js";
 

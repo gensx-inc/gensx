@@ -207,6 +207,7 @@ export function Component<P extends object = {}, R = unknown>(
     }
 
     try {
+      // TODO: Don't emit this when rerunning the workflow with a partial checkpoint.
       let runInContext: RunInContext;
       workflowContext.sendWorkflowMessage({
         type: "component-start",
@@ -265,30 +266,28 @@ export function Component<P extends object = {}, R = unknown>(
   return ComponentFn;
 }
 
+type WorkflowRuntimeOpts = WorkflowOpts & {
+  workflowExecutionId?: string;
+  messageListener?: WorkflowMessageListener;
+  checkpoint?: ExecutionNode;
+  printUrl?: boolean;
+  onWaitForInput?: () => Promise<void>;
+};
+
 export function Workflow<P extends object = {}, R = unknown>(
   name: string,
   target: (props: P) => R,
   workflowOpts?: WorkflowOpts,
-): (
-  props?: P,
-  runtimeOpts?: WorkflowOpts & {
-    workflowExecutionId?: string;
-    messageListener?: WorkflowMessageListener;
-    checkpoint?: ExecutionNode;
-  },
-) => Promise<Awaited<R>> {
+): (props?: P, runtimeOpts?: WorkflowRuntimeOpts) => Promise<Awaited<R>> {
   const WorkflowFn = async (
     props?: P,
-    runtimeOpts?: WorkflowOpts & {
-      workflowExecutionId?: string;
-      messageListener?: WorkflowMessageListener;
-      checkpoint?: ExecutionNode;
-    },
+    runtimeOpts?: WorkflowRuntimeOpts,
   ): Promise<Awaited<R>> => {
     const context = new ExecutionContext(
       {},
       undefined,
       runtimeOpts?.messageListener,
+      runtimeOpts?.onWaitForInput,
     );
     await context.init();
 
@@ -326,6 +325,7 @@ export function Workflow<P extends object = {}, R = unknown>(
     const component = Component<P, R>(name, target);
 
     try {
+      // TODO: Don't emit this when rerunning the workflow
       workflowContext.sendWorkflowMessage({
         type: "start",
         workflowExecutionId: runtimeOpts?.workflowExecutionId,

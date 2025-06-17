@@ -26,11 +26,11 @@ export function generateDeterministicId(
   // Simple but effective serialization for MVP
   const propsStr = JSON.stringify(props, Object.keys(props).sort());
   const propsHash = createHash("sha256")
-    .update(propsStr)
+    .update(`${propsStr}:${parentId ?? "root"}`)
     .digest("hex")
     .slice(0, 16);
 
-  return `${parentId ?? "root"}:${name}:${propsHash}`;
+  return `${name}:${propsHash}`;
 }
 
 export class CheckpointManager implements CheckpointWriter {
@@ -827,7 +827,8 @@ export class CheckpointManager implements CheckpointWriter {
   }
 
   getCompletedResult(nodeId: string): unknown {
-    return this.replayLookup.get(nodeId);
+    const result = this.replayLookup.get(nodeId);
+    return result;
   }
 
   // Checkpoint reconstruction methods

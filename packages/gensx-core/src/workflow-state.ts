@@ -27,6 +27,7 @@ export type WorkflowMessage =
   | { type: "data"; data: JsonValue }
   | { type: "object" | "event"; data: Record<string, JsonValue>; label: string }
   | { type: "error"; error: string }
+  // | { type: "wait-for-input"; nodeId: string }
   | { type: "end" };
 
 export type WorkflowMessageListener = (message: WorkflowMessage) => void;

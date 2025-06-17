@@ -24,10 +24,15 @@ export class ExecutionContext {
     public context: WorkflowContext,
     private parent?: ExecutionContext,
     messageListener?: WorkflowMessageListener,
+    onWaitForInput?: (nodeId: string) => Promise<void>,
   ) {
-    this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext(
-      messageListener ?? this.parent?.getWorkflowContext().sendWorkflowMessage,
-    );
+    this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext({
+      onMessage:
+        messageListener ??
+        this.parent?.getWorkflowContext().sendWorkflowMessage,
+      onWaitForInput:
+        onWaitForInput ?? this.parent?.getWorkflowContext().onWaitForInput,
+    });
   }
 
   init() {
