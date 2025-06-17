@@ -26,44 +26,62 @@ export function ToolMessage({ message, messages }: ToolMessageProps) {
   const isComplete = !!toolResult;
 
   return (
-    <div className="border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 bg-white">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-3 text-left flex items-center gap-2 hover:bg-slate-50 rounded-2xl transition-colors"
-      >
-        {isExpanded ? (
-          <ChevronDown size={16} className="text-slate-600 flex-shrink-0" />
-        ) : (
-          <ChevronRight size={16} className="text-slate-600 flex-shrink-0" />
-        )}
-        {isComplete ? (
-          <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
-        ) : (
-          <Loader2
-            size={16}
-            className="text-slate-600 flex-shrink-0 animate-spin"
-          />
-        )}
-        <span
+    <div className="flex justify-center">
+      <div className="max-w-[85%] sm:max-w-2xl lg:max-w-3xl w-full">
+        <div
           className={cn(
-            "text-sm font-medium",
-            isComplete ? "text-green-800" : "text-slate-800",
+            "border rounded-lg transition-all duration-200",
+            isExpanded
+              ? "border-slate-200 bg-slate-50/50"
+              : "border-transparent",
           )}
         >
-          {isComplete
-            ? `Completed ${functionName} tool`
-            : `Calling ${functionName} tool`}
-        </span>
-      </button>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={cn(
+              "w-full flex items-center gap-3 py-2 px-3 hover:bg-slate-100/50 transition-colors duration-200",
+              isExpanded
+                ? "rounded-t-lg border-b border-slate-200"
+                : "rounded-lg",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  "flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center bg-slate-100",
+                )}
+              >
+                {isComplete ? (
+                  <CheckCircle size={12} className="text-slate-600" />
+                ) : (
+                  <Loader2 size={12} className="text-slate-600 animate-spin" />
+                )}
+              </div>
+              <span className="text-xs font-medium text-slate-700">
+                {isComplete ? "Called" : "Calling"} the {functionName} tool
+              </span>
+            </div>
 
-      {isExpanded && (
-        <div className="px-4 pb-3 border-t border-slate-200">
-          <JsonDisplay data={toolCall.function.arguments} label="Arguments" />
-          {toolResult && toolResult.content && (
-            <JsonDisplay data={toolResult.content} label="Result" />
+            {isExpanded ? (
+              <ChevronDown size={14} className="text-slate-400 ml-auto" />
+            ) : (
+              <ChevronRight size={14} className="text-slate-400 ml-auto" />
+            )}
+          </button>
+
+          {isExpanded && (
+            <div className="p-3 space-y-3 bg-slate-50/30">
+              <JsonDisplay
+                data={toolCall.function.arguments}
+                label="Arguments"
+              />
+              {toolResult && toolResult.content && (
+                <JsonDisplay data={toolResult.content} label="Result" />
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -75,6 +93,7 @@ interface JsonDisplayProps {
 
 export function JsonDisplay({ data, label }: JsonDisplayProps) {
   let formattedData;
+
   try {
     const parsed = JSON.parse(data);
     formattedData = JSON.stringify(parsed, null, 2);
@@ -83,11 +102,17 @@ export function JsonDisplay({ data, label }: JsonDisplayProps) {
   }
 
   return (
-    <div className="mt-2">
-      <div className="text-xs font-medium text-slate-600 mb-1">{label}:</div>
-      <pre className="text-xs bg-slate-100 rounded p-2 overflow-x-auto font-mono text-slate-700">
-        {formattedData}
-      </pre>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+          {label}
+        </div>
+      </div>
+      <div className="relative">
+        <pre className="text-xs bg-slate-900 text-slate-300 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed border">
+          <code>{formattedData}</code>
+        </pre>
+      </div>
     </div>
   );
 }

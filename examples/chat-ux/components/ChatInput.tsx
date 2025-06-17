@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Paperclip } from "lucide-react";
+import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -73,7 +73,7 @@ export function ChatInput({
             )}
           >
             {/* Attachment Button */}
-            <Button
+            {/* <Button
               type="button"
               variant="ghost"
               size="sm"
@@ -81,7 +81,7 @@ export function ChatInput({
               disabled={disabled}
             >
               <Paperclip size={18} className="text-slate-500" />
-            </Button>
+            </Button> */}
 
             {/* Text Input */}
             <Textarea
@@ -157,7 +157,7 @@ export function ChatInput({
         )}
       >
         {/* Attachment Button */}
-        <Button
+        {/* <Button
           type="button"
           variant="ghost"
           size="sm"
@@ -165,7 +165,7 @@ export function ChatInput({
           disabled={disabled}
         >
           <Paperclip size={16} className="text-slate-500" />
-        </Button>
+        </Button> */}
 
         {/* Text Input */}
         <Textarea

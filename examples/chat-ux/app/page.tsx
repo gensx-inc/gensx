@@ -80,7 +80,7 @@ export default function ChatPage() {
         className={`flex flex-col flex-1 ${collapsed ? "" : sidebarWidth} transition-all duration-300 ease-in-out`}
       >
         {/* Header - Now contains New Chat button and sidebar open button if collapsed */}
-        <div className="border-b border-slate-200/60 px-4 py-4 flex items-center gap-2">
+        <div className="border-b border-slate-200/60 px-2 py-2 flex items-center gap-2">
           {collapsed && (
             <button
               onClick={() => setCollapsed(false)}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { PanelLeftOpen, PanelLeftClose } from "lucide-react";
+import { PanelLeftOpen, PanelLeftClose, Trash } from "lucide-react";
 
 interface ChatHistoryProps {
   isOpen: boolean;
@@ -100,7 +100,7 @@ export function ChatHistory({
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="border-b border-slate-200/60 px-4 py-4 flex items-center">
+          <div className="border-b border-slate-200/60 px-2 py-2 flex items-center">
             {collapsed ? (
               <div className="flex flex-col items-center gap-2">
                 <button
@@ -134,25 +134,22 @@ export function ChatHistory({
             ) : collapsed ? (
               <></>
             ) : (
-              <div className="space-y-1 px-2">
-                {threads.map((thread) => (
+              <div className="px-2">
+                {threads.map((thread, index) => (
                   <div key={thread.id} className="group">
                     <div
                       onClick={() => router.push(`?thread=${thread.id}`)}
-                      className={`w-full p-3 text-left rounded-md transition-colors relative cursor-pointer ${
+                      className={`w-full p-3 text-left transition-colors relative cursor-pointer ${
                         activeThreadId === thread.id
                           ? "bg-slate-100"
-                          : "hover:bg-slate-50"
+                          : "hover:bg-slate-100"
+                      } ${
+                        index < threads.length - 1
+                          ? "border-b border-slate-200/40"
+                          : ""
                       }`}
                     >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${
-                            activeThreadId === thread.id
-                              ? "bg-slate-400"
-                              : "bg-slate-300"
-                          }`}
-                        />
+                      <div className="flex items-start">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-sm text-slate-900 truncate">
                             {thread.title}
@@ -170,19 +167,7 @@ export function ChatHistory({
                         className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded transition-all"
                         title="Delete chat"
                       >
-                        <svg
-                          className="w-3 h-3 text-slate-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
+                        <Trash className="w-3 h-3 text-slate-500" />
                       </button>
                     </div>
                   </div>
