@@ -11,7 +11,8 @@ export default function ChatPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const { sendMessage, messages, isLoading, error, clear } = useChat();
+  const { sendMessage, messages, isLoading, error, clear, loadHistory } =
+    useChat();
 
   // Get or create thread ID
   const getThreadId = () => {
@@ -23,6 +24,16 @@ export default function ChatPage() {
     router.push(`?thread=${newThreadId}`);
     return newThreadId;
   };
+
+  // Load chat history when thread ID changes
+  useEffect(() => {
+    const threadId = searchParams.get("thread");
+    if (threadId) {
+      loadHistory(threadId);
+    } else {
+      clear(); // Clear messages if no thread ID
+    }
+  }, [searchParams, loadHistory, clear]);
 
   const handleNewChat = () => {
     const newThreadId = Date.now().toString();

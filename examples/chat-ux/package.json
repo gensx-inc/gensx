@@ -12,8 +12,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@gensx/core": "workspace:*",
     "@gensx/client": "workspace:*",
+    "@gensx/core": "workspace:*",
     "@gensx/openai": "workspace:*",
     "@gensx/storage": "workspace:*",
     "@mendable/firecrawl-js": "^1.25.5",
@@ -33,6 +33,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/webpack": "^5.28.5",
     "concurrently": "^9.1.2",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",

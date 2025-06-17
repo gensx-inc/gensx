@@ -144,7 +144,7 @@ export const OpenAIAgent = gensx.Component(
         { role: "user", content: userInput },
       ];
 
-      const responseMessages = await processMessagesWithTools(messages);
+      const responseMessages = await processMessagesWithTools([...messages]);
 
       // Save the complete conversation history
       await saveChatHistory([...messages, ...responseMessages]);

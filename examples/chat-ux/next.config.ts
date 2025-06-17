@@ -1,7 +1,18 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  images: { unoptimized: true },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  webpack: (config: any) => {
+    // Ignore @libsql/client package
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@libsql/client": false,
+    };
+    return config;
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

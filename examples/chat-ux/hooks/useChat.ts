@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 export type WorkflowProgressEvent = { id: string; timestamp: string } & (
   | { type: "start"; workflowExecutionId?: string; workflowName: string }
@@ -59,6 +60,7 @@ interface UseChatReturn {
   isLoading: boolean;
   error: string | null;
   clear: () => void;
+  loadHistory: (threadId: string) => Promise<void>;
 }
 
 export function useChat(): UseChatReturn {
@@ -71,6 +73,43 @@ export function useChat(): UseChatReturn {
     setMessageHistory([]);
     setCurrentMessages([]);
     setError(null);
+  }, []);
+
+  const loadHistory = useCallback(async (threadId: string) => {
+    if (!threadId) return;
+
+    try {
+      setError(null);
+      const response = await fetch(`/api/conversation/${threadId}`);
+
+      if (!response.ok) {
+        throw new Error("Failed to load conversation history");
+      }
+
+      const history = await response.json();
+
+      // Convert the OpenAI message format to our Message format
+      const convertedMessages: Message[] = history.map(
+        (msg: ChatCompletionMessageParam, index: number) => ({
+          id: `${threadId}-${index}`,
+          content: typeof msg.content === "string" ? msg.content : null,
+          role: msg.role as "user" | "assistant" | "tool",
+          timestamp: new Date(), // We don't have timestamps in stored history
+          tool_calls: "tool_calls" in msg ? msg.tool_calls : undefined,
+          tool_call_id: "tool_call_id" in msg ? msg.tool_call_id : undefined,
+        }),
+      );
+
+      setMessageHistory(convertedMessages);
+      setCurrentMessages([]);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load conversation history",
+      );
+      console.error("Error loading conversation history:", err);
+    }
   }, []);
 
   const messages = useMemo(
@@ -189,5 +228,6 @@ export function useChat(): UseChatReturn {
     isLoading,
     error,
     clear,
+    loadHistory,
   };
 }
