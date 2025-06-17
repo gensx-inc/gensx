@@ -1,3 +1,5 @@
+import type { JsonValue, WorkflowMessage } from "@gensx/core";
+
 import {
   startTransition,
   useCallback,
@@ -6,7 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-import type { JsonValue, WorkflowMessage } from "@gensx/core";
 export interface WorkflowRunOptions {
   org: string;
   project: string;
@@ -331,7 +332,6 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
   };
 }
 
-// New hook to get the most recent object by label from WorkflowMessage events
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function useObject<
   T extends Record<string, JsonValue> = Record<string, JsonValue>,
