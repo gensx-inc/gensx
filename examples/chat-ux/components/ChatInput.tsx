@@ -50,11 +50,11 @@ export function ChatInput({
 
   if (isCentered) {
     return (
-      <div className="w-full flex flex-col items-center -mt-32">
+      <div className="w-full flex flex-col items-center -mt-36">
         {/* Caption */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-4">
           <h1 className="text-4xl font-semibold text-slate-900 mb-2">
-            How can I help you today?
+            Let&apos;s make things happen.
           </h1>
           <p className="text-slate-500 text-lg">
             I&apos;m here to assist you with any questions or tasks you might
@@ -66,7 +66,7 @@ export function ChatInput({
         <form onSubmit={handleSubmit} className="relative w-full max-w-2xl">
           <div
             className={cn(
-              "relative flex items-end gap-3 p-4 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm shadow-lg",
+              "relative flex items-end gap-3 p-2 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm shadow-lg",
               isFocused
                 ? "shadow-xl shadow-slate-500/20"
                 : "border-slate-200 hover:border-slate-300 hover:shadow-xl",
@@ -108,6 +108,17 @@ export function ChatInput({
             </Button>
           </div>
         </form>
+        <p className="text-slate-400 text-xs mt-4 text-center">
+          Powered by{" "}
+          <a
+            href="https://gensx.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-slate-600 transition-colors"
+          >
+            GenSX
+          </a>
+        </p>
       </div>
     );
   }
