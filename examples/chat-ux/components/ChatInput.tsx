@@ -47,10 +47,10 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
     <form onSubmit={handleSubmit} className="relative">
       <div
         className={cn(
-          "relative flex items-end gap-2 p-2 rounded-2xl border transition-all duration-200 bg-white",
+          "relative flex items-end gap-2 p-2 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm",
           isFocused
-            ? "border-blue-300 shadow-md shadow-blue-500/10 ring-1 ring-blue-500/20"
-            : "border-slate-200 shadow-sm hover:border-slate-300",
+            ? "border-blue-300 shadow-lg shadow-blue-500/20 ring-2 ring-blue-500/30"
+            : "border-slate-200 shadow-lg hover:border-slate-300 hover:shadow-xl",
         )}
       >
         {/* Attachment Button */}
@@ -72,7 +72,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
+          placeholder="Type your message..."
           disabled={disabled}
           className="flex-1 min-h-[2.5rem] max-h-[7.5rem] resize-none border-0 bg-transparent p-2 text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm leading-relaxed placeholder:text-slate-400"
           rows={1}
