@@ -10,7 +10,7 @@ import {
   type UpdateDraftOutput,
 } from "@/gensx/workflows";
 import { useEvents, useObject, useWorkflow } from "@gensx/react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export default function Home() {
   const [userMessage, setUserMessage] = useState("");
@@ -34,15 +34,29 @@ export default function Home() {
     },
   );
 
-  const handleSubmit = async () => {
+  // Memoize the current content to avoid recalculation
+  const currentContent = useMemo(() => {
+    return draftProgress?.content ?? output ?? "";
+  }, [draftProgress?.content, output]);
+
+  // Memoize the displayed content
+  const displayContent = useMemo(() => {
+    return currentContent || "No content yet";
+  }, [currentContent]);
+
+  const handleSubmit = useCallback(async () => {
     await run({
       inputs: {
         userMessage: userMessage.trim(),
-        currentDraft: output ?? "",
+        currentDraft: currentContent,
       },
     });
     setUserMessage("");
-  };
+  }, [run, userMessage, currentContent]);
+
+  const onSubmit = useCallback(() => {
+    void handleSubmit();
+  }, [handleSubmit]);
 
   return (
     <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -51,12 +65,12 @@ export default function Home() {
           Draft Pad
         </h1>
         <DraftEditorCard
-          output={draftProgress?.content ?? output ?? "No content yet"}
+          output={displayContent}
           isStreaming={inProgress}
           error={error}
           userMessage={userMessage}
           onUserMessageChange={setUserMessage}
-          onSubmit={() => void handleSubmit()}
+          onSubmit={onSubmit}
           className="min-h-0"
         />
       </div>
