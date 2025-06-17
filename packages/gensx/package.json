@@ -58,7 +58,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
     "ajv": "^8.17.1",
-    "axios": "^1.9.0",
+    "axios": "^1.10.0",
     "chokidar": "^4.0.3",
     "commander": "^11.0.0",
     "consola": "^3.4.2",
@@ -79,7 +79,7 @@
     "typescript-json-schema": "^0.65.1",
     "ulidx": "^2.4.1",
     "undici": "^6.21.3",
-    "zod": "^3.25.56"
+    "zod": "^3.25.67"
   },
   "type": "module",
   "publishConfig": {

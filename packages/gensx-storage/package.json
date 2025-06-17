@@ -58,7 +58,7 @@
   },
   "dependencies": {
     "@gensx/core": "workspace:*",
-    "@turbopuffer/turbopuffer": "^0.7.0",
+    "@turbopuffer/turbopuffer": "^0.10.2",
     "@libsql/client": "^0.15.9"
   }
 }
