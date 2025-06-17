@@ -144,7 +144,10 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
 
           case "data":
             // Handle streaming content from "data" events
-            const content = typeof event.data === 'string' ? event.data : JSON.stringify(event.data);
+            const content =
+              typeof event.data === "string"
+                ? event.data
+                : JSON.stringify(event.data);
 
             // Accumulate content outside of state setter to avoid race conditions
             accumulatedStringRef.current += content;
