@@ -12,65 +12,55 @@ export function DraftStatsCard({ draftProgress }: DraftStatsCardProps) {
         Draft Stats
       </h2>
 
-      {/* Progress and Status */}
-      {draftProgress && (
+      {draftProgress ? (
         <Card className="p-6">
           <CardHeader className="p-0 pb-4">
-            <CardTitle className="text-lg text-[#333333]">Progress</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[#333333]/70">Stage:</span>
-              <span className="text-sm font-medium capitalize text-[#333333]">
-                {draftProgress.stage}
-              </span>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-lg text-[#333333]">
+                  {draftProgress.stage.charAt(0).toUpperCase() +
+                    draftProgress.stage.slice(1)}
+                </CardTitle>
+                {/* Last updated right under the status */}
+                <div className="text-xs text-[#333333]/60 mt-1">
+                  Last Updated:{" "}
+                  {new Date(draftProgress.lastUpdated).toLocaleTimeString()}
+                </div>
+              </div>
+
+              {/* Words and Characters on top right */}
+              <div className="flex gap-4 text-right">
+                <div>
+                  <div className="text-xl font-bold text-blue-600">
+                    {draftProgress.wordCount}
+                  </div>
+                  <div className="text-xs text-[#333333]/70">Words</div>
+                </div>
+                <div>
+                  <div className="text-xl font-bold text-green-600">
+                    {draftProgress.charCount}
+                  </div>
+                  <div className="text-xs text-[#333333]/70">Characters</div>
+                </div>
+              </div>
             </div>
-            <div className="w-full bg-[#333333]/10 rounded-full h-2">
+          </CardHeader>
+
+          <CardContent className="p-0 space-y-3">
+            {/* Progress bar where the progress label used to be */}
+            <div className="w-full bg-[#333333]/10 rounded-full h-3">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-blue-600 h-3 rounded-full transition-all duration-300"
                 style={{ width: `${draftProgress.percentage}%` }}
               />
             </div>
+
+            {/* Current progress message */}
             <div className="text-sm text-[#333333]/70">
               {draftProgress.message}
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {/* Draft Statistics */}
-      {draftProgress ? (
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {draftProgress.wordCount}
-            </div>
-            <div className="text-sm text-[#333333]/70">Words</div>
-          </Card>
-
-          <Card className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {draftProgress.charCount}
-            </div>
-            <div className="text-sm text-[#333333]/70">Characters</div>
-          </Card>
-
-          <Card className="p-4 text-center col-span-2">
-            <div className="text-xl font-bold text-purple-600 capitalize">
-              {draftProgress.status}
-            </div>
-            <div className="text-sm text-[#333333]/70">Status</div>
-          </Card>
-
-          <Card className="p-4 text-center col-span-2">
-            <div className="text-sm font-medium text-[#333333]">
-              Last Updated
-            </div>
-            <div className="text-xs text-[#333333]/70">
-              {new Date(draftProgress.lastUpdated).toLocaleTimeString()}
-            </div>
-          </Card>
-        </div>
       ) : (
         <Card className="p-8">
           <div className="text-center text-[#333333]/60">
