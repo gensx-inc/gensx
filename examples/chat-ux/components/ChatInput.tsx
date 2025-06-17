@@ -68,21 +68,10 @@ export function ChatInput({
             className={cn(
               "relative flex items-end gap-3 p-4 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm shadow-lg",
               isFocused
-                ? "border-blue-300 shadow-xl shadow-blue-500/20 ring-2 ring-blue-500/30"
+                ? "shadow-xl shadow-slate-500/20"
                 : "border-slate-200 hover:border-slate-300 hover:shadow-xl",
             )}
           >
-            {/* Attachment Button */}
-            {/* <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="flex-shrink-0 h-10 w-10 p-0 rounded-lg hover:bg-slate-100 transition-colors duration-200"
-              disabled={disabled}
-            >
-              <Paperclip size={18} className="text-slate-500" />
-            </Button> */}
-
             {/* Text Input */}
             <Textarea
               ref={textareaRef}
@@ -93,8 +82,8 @@ export function ChatInput({
               onBlur={() => setIsFocused(false)}
               placeholder="Type your message..."
               disabled={disabled}
-              className="flex-1 min-h-[3rem] max-h-[8rem] resize-none border-0 bg-transparent p-2 text-gray-700 focus-visible:ring-0 focus-visible:ring-offset-0 text-base leading-relaxed placeholder:text-slate-400"
-              rows={1}
+              className="flex-1 min-h-[3rem] max-h-[12rem] resize-none border-0 bg-transparent p-2 text-gray-700 focus-visible:ring-0 focus-visible:ring-offset-0 text-base leading-relaxed placeholder:text-slate-400"
+              rows={2}
             />
 
             {/* Send Button */}
@@ -103,10 +92,10 @@ export function ChatInput({
               size="sm"
               disabled={!message.trim() || disabled}
               className={cn(
-                "flex-shrink-0 h-10 w-10 p-0 rounded-lg transition-all duration-200",
+                "flex-shrink-0 h-10 w-10 p-0 rounded-lg transition-all duration-200 bg-gradient-to-br from-slate-800 to-slate-700",
                 !message.trim() || disabled
                   ? "bg-slate-100 hover:bg-slate-200 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95",
+                  : "hover:shadow-md transform hover:scale-105 active:scale-95",
               )}
             >
               <Send
@@ -118,29 +107,6 @@ export function ChatInput({
               />
             </Button>
           </div>
-
-          {/* Helper Text */}
-          <div className="flex justify-between items-center mt-3 px-2">
-            <p className="text-sm text-slate-400">
-              Press{" "}
-              <kbd className="px-2 py-1 bg-slate-100 border border-slate-300 rounded text-sm">
-                Enter
-              </kbd>{" "}
-              to send,{" "}
-              <kbd className="px-2 py-1 bg-slate-100 border border-slate-300 rounded text-sm">
-                Shift+Enter
-              </kbd>{" "}
-              for new line
-            </p>
-            <p
-              className={cn(
-                "text-sm transition-colors duration-200",
-                message.length > 1000 ? "text-orange-500" : "text-slate-400",
-              )}
-            >
-              {message.length}/2000
-            </p>
-          </div>
         </form>
       </div>
     );
@@ -150,23 +116,12 @@ export function ChatInput({
     <form onSubmit={handleSubmit} className="relative">
       <div
         className={cn(
-          "relative flex items-end gap-2 p-2 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm",
+          "relative flex items-end gap-2 p-1 mb-2 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm",
           isFocused
-            ? "border-blue-300 shadow-lg shadow-blue-500/20 ring-2 ring-blue-500/30"
+            ? " shadow-lg shadow-slate-500/20"
             : "border-slate-200 shadow-lg hover:border-slate-300 hover:shadow-xl",
         )}
       >
-        {/* Attachment Button */}
-        {/* <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="flex-shrink-0 h-8 w-8 p-0 rounded-lg hover:bg-slate-100 transition-colors duration-200"
-          disabled={disabled}
-        >
-          <Paperclip size={16} className="text-slate-500" />
-        </Button> */}
-
         {/* Text Input */}
         <Textarea
           ref={textareaRef}
@@ -177,7 +132,7 @@ export function ChatInput({
           onBlur={() => setIsFocused(false)}
           placeholder="Type your message..."
           disabled={disabled}
-          className="flex-1 min-h-[2.5rem] max-h-[7.5rem] resize-none border-0 bg-transparent p-2 text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm leading-relaxed placeholder:text-slate-400"
+          className="flex-1 min-h-[1.5rem] max-h-[7.5rem] resize-none border-0 bg-transparent text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm leading-relaxed placeholder:text-slate-400"
           rows={1}
         />
 
@@ -187,10 +142,10 @@ export function ChatInput({
           size="sm"
           disabled={!message.trim() || disabled}
           className={cn(
-            "flex-shrink-0 h-8 w-8 p-0 rounded-lg transition-all duration-200",
+            "flex-shrink-0 h-8 w-8 p-0 rounded-lg transition-all duration-200 bg-gradient-to-br from-slate-800 to-slate-700 mr-1 mb-1",
             !message.trim() || disabled
               ? "bg-slate-100 hover:bg-slate-200 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-600 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95",
+              : "hover:shadow-md transform hover:scale-105 active:scale-95",
           )}
         >
           <Send
@@ -201,29 +156,6 @@ export function ChatInput({
             )}
           />
         </Button>
-      </div>
-
-      {/* Helper Text */}
-      <div className="flex justify-between items-center mt-2 px-2">
-        <p className="text-xs text-slate-400">
-          Press{" "}
-          <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs">
-            Enter
-          </kbd>{" "}
-          to send,{" "}
-          <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs">
-            Shift+Enter
-          </kbd>{" "}
-          for new line
-        </p>
-        <p
-          className={cn(
-            "text-xs transition-colors duration-200",
-            message.length > 1000 ? "text-orange-500" : "text-slate-400",
-          )}
-        >
-          {message.length}/2000
-        </p>
       </div>
     </form>
   );

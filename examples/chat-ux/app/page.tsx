@@ -128,13 +128,9 @@ export default function ChatPage() {
                 ))}
 
                 {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm max-w-xs">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                      </div>
+                  <div className="flex justify-start px-4 py-3">
+                    <div className="text-slate-500 text-md font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]">
+                      Thinking...
                     </div>
                   </div>
                 )}

@@ -16,7 +16,7 @@ export function ChatMessage({ message, messages }: ChatMessageProps) {
       <div className="flex justify-end mb-4 animate-in slide-in-from-bottom-2 duration-300">
         <div className="max-w-[80%] sm:max-w-lg lg:max-w-xl">
           <div className="px-4 py-2 rounded-xl bg-gradient-to-br from-slate-800 to-slate-700 text-white shadow-lg">
-            <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words font-medium">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap break-words font-medium">
               {message.content}
             </div>
           </div>
@@ -38,7 +38,7 @@ export function ChatMessage({ message, messages }: ChatMessageProps) {
             <div className="px-4 py-2 rounded-xl bg-white border border-slate-200 shadow-sm">
               <MarkdownContent
                 content={message.content || ""}
-                className="text-[15px] leading-relaxed text-slate-700"
+                className="text-sm leading-relaxed text-slate-700"
               />
             </div>
           )}

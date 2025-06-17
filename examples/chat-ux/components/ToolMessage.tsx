@@ -57,7 +57,7 @@ export function ToolMessage({ message, messages }: ToolMessageProps) {
                   <Loader2 size={12} className="text-slate-600 animate-spin" />
                 )}
               </div>
-              <span className="text-xs font-medium text-slate-700">
+              <span className="text-sm font-medium text-slate-700">
                 {isComplete ? "Called" : "Calling"} the {functionName} tool
               </span>
             </div>
@@ -109,7 +109,10 @@ export function JsonDisplay({ data, label }: JsonDisplayProps) {
         </div>
       </div>
       <div className="relative">
-        <pre className="text-xs bg-slate-900 text-slate-300 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed border">
+        <pre
+          className="text-xs text-slate-300 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed border"
+          style={{ backgroundColor: "#282c34" }}
+        >
           <code>{formattedData}</code>
         </pre>
       </div>

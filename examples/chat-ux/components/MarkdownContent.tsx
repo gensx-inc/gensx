@@ -33,10 +33,10 @@ function CodeBlock({ language, children }: CodeBlockProps) {
     <div className="relative group">
       {/* Header with language and copy button */}
       <div
-        className="flex justify-between items-center text-slate-300 px-4 py-2 text-xs font-medium rounded-t-md border-b border-slate-900"
+        className="flex justify-between items-center text-slate-300 px-4 py-1 text-xs font-medium rounded-t-md border-b border-slate-900"
         style={{ backgroundColor: "#282c34" }}
       >
-        <span className="uppercase tracking-wide">{language}</span>
+        <span className="lowercase tracking-wide">{language}</span>
         <button
           onClick={copyToClipboard}
           className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity duration-200 hover:bg-slate-700 px-2 py-1 rounded"
@@ -61,9 +61,8 @@ function CodeBlock({ language, children }: CodeBlockProps) {
         style={oneDark}
         language={language}
         PreTag="div"
-        className="!mt-0 !rounded-t-none rounded-b-md text-sm"
+        className="!mt-0 !rounded-t-none rounded-b-md text-xs"
         customStyle={{
-          fontSize: "0.875rem",
           margin: 0,
           borderTopLeftRadius: 0,
           borderTopRightRadius: 0,
@@ -118,9 +117,7 @@ export function MarkdownContent({
           },
           ol({ children }) {
             return (
-              <ol className="list-decimal list-inside mb-2 space-y-1">
-                {children}
-              </ol>
+              <ol className="list-decimal mb-2 pl-4 space-y-1">{children}</ol>
             );
           },
           li({ children }) {
@@ -208,6 +205,9 @@ export function MarkdownContent({
                 {children}
               </td>
             );
+          },
+          hr() {
+            return <hr className="border-t border-slate-200 my-4" />;
           },
         }}
       >
