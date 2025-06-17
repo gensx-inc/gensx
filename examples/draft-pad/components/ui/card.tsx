@@ -1,9 +1,6 @@
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
-// Counter for generating unique filter IDs
-let filterIdCounter = 0;
-
 // SVG Filter Component for Glass Distortion
 function GlassDistortionFilter({ filterId }: { filterId: string }) {
   return (
@@ -66,11 +63,9 @@ function Card({
   liquidGlass = true,
   ...props
 }: React.ComponentProps<"div"> & { liquidGlass?: boolean }) {
-  // Each Card instance gets its own unique filter ID
-  const filterId = React.useMemo(() => {
-    if (!liquidGlass) return "";
-    return `glass-distortion-${filterIdCounter++}`;
-  }, [liquidGlass]);
+  // Generate a stable unique filter ID for each Card instance using React's useId
+  const reactId = React.useId();
+  const filterId = liquidGlass ? `glass-distortion-${reactId}` : "";
 
   if (liquidGlass) {
     return (
