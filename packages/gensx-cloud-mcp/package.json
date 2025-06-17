@@ -1,6 +1,6 @@
 {
   "name": "@gensx/gensx-cloud-mcp",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Model Context Protocol server for GenSX Cloud.",
   "type": "module",
   "main": "./dist/index.js",

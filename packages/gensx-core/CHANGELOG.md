@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.3...gensx-core-v0.4.4) (2025-06-17)
+
+
+### ✨ New Features
+
+* Added sdk, custom hook, and example app (draft pad) ([#761](https://github.com/gensx-inc/gensx/issues/761)) ([527808a](https://github.com/gensx-inc/gensx/commit/527808aebc9dc9e5fea37f021a15f81c8ad454d1))
+
 ## [0.4.3](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.2...gensx-core-v0.4.3) (2025-06-13)
 
 
