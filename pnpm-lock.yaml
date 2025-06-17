@@ -241,6 +241,9 @@ importers:
       '@gensx/openai':
         specifier: workspace:*
         version: link:../../packages/gensx-openai
+      '@gensx/react':
+        specifier: workspace:*
+        version: link:../../packages/gensx-react
       '@gensx/storage':
         specifier: workspace:*
         version: link:../../packages/gensx-storage

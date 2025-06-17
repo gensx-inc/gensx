@@ -15,6 +15,7 @@
     "@gensx/client": "workspace:*",
     "@gensx/core": "workspace:*",
     "@gensx/openai": "workspace:*",
+    "@gensx/react": "workspace:*",
     "@gensx/storage": "workspace:*",
     "@mendable/firecrawl-js": "^1.25.5",
     "@radix-ui/react-slot": "^1.2.3",

@@ -32,7 +32,7 @@ export function ChatHistory({
   const fetchHistory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/conversations");
+      const response = await fetch("/api/chats");
       if (response.ok) {
         const data = await response.json();
         setThreads(data);
@@ -59,7 +59,7 @@ export function ChatHistory({
     );
 
     try {
-      const response = await fetch(`/api/conversation/${threadIdToDelete}`, {
+      const response = await fetch(`/api/chats/${threadIdToDelete}`, {
         method: "DELETE",
       });
 

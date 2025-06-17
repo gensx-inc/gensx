@@ -1,5 +1,34 @@
 import { useState, useCallback, useMemo } from "react";
+import { useWorkflow, useObject } from "@gensx/react";
+import { JsonValue } from "@gensx/core";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+
+// Workflow input/output types
+export interface ChatWorkflowInput {
+  userInput: string;
+  threadId: string;
+}
+
+export interface ChatWorkflowOutput {
+  messages: ChatCompletionMessageParam[];
+}
+
+// Message progress object type
+export interface MessagesProgress extends Record<string, JsonValue> {
+  messages: Array<{
+    role: "assistant" | "tool" | "user";
+    content: string | null;
+    tool_calls?: Array<{
+      id: string;
+      type: "function";
+      function: {
+        name: string;
+        arguments: string;
+      };
+    }>;
+    tool_call_id?: string;
+  }>;
+}
 
 export type WorkflowProgressEvent = { id: string; timestamp: string } & (
   | { type: "start"; workflowExecutionId?: string; workflowName: string }
@@ -66,21 +95,33 @@ interface UseChatReturn {
 export function useChat(): UseChatReturn {
   const [messageHistory, setMessageHistory] = useState<Message[]>([]);
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [workflowRunId, setWorkflowRunId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Use the workflow hook
+  const {
+    error: workflowError,
+    execution,
+    run,
+  } = useWorkflow<ChatWorkflowInput, ChatWorkflowOutput>({
+    config: {
+      baseUrl: "/api/gensx",
+    },
+  });
+
+  // Get real-time message updates from the workflow
+  const messagesProgress = useObject<MessagesProgress>(execution, "messages");
 
   const clear = useCallback(() => {
     setMessageHistory([]);
     setCurrentMessages([]);
-    setError(null);
   }, []);
 
   const loadHistory = useCallback(async (threadId: string) => {
     if (!threadId) return;
 
     try {
-      setError(null);
-      const response = await fetch(`/api/conversation/${threadId}`);
+      const response = await fetch(`/api/chats/${threadId}`);
 
       if (!response.ok) {
         throw new Error("Failed to load conversation history");
@@ -103,14 +144,34 @@ export function useChat(): UseChatReturn {
       setMessageHistory(convertedMessages);
       setCurrentMessages([]);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load conversation history",
-      );
       console.error("Error loading conversation history:", err);
     }
   }, []);
+
+  // Convert workflow messages to our Message format
+  const currentMessagesFromWorkflow = useMemo(() => {
+    if (!messagesProgress?.messages || !workflowRunId) return [];
+
+    return messagesProgress.messages
+      .filter((msg: MessagesProgress["messages"][0]) => msg.role !== "user") // Skip user messages since we add them locally
+      .map((msg: MessagesProgress["messages"][0], index: number) => ({
+        id: `${workflowRunId}-${msg.role}-${index}-${Date.now()}`, // More unique key
+        content: msg.content,
+        role: msg.role as "assistant" | "tool",
+        timestamp: new Date(),
+        tool_calls: msg.tool_calls,
+        tool_call_id: msg.tool_call_id,
+      }));
+  }, [messagesProgress, workflowRunId]);
+
+  // Update current messages when workflow publishes new messages
+  useMemo(() => {
+    setCurrentMessages(currentMessagesFromWorkflow);
+    // Turn off loading as soon as we receive the first message
+    if (currentMessagesFromWorkflow.length > 0 && isLoading) {
+      setIsLoading(false);
+    }
+  }, [currentMessagesFromWorkflow, isLoading]);
 
   const messages = useMemo(
     () => [...messageHistory, ...currentMessages],
@@ -120,113 +181,42 @@ export function useChat(): UseChatReturn {
   const sendMessage = useCallback(
     async (prompt: string, threadId: string) => {
       if (!prompt || !threadId) {
-        setError("Missing prompt or threadId");
         return;
       }
 
+      // Create a unique run ID for this workflow execution
+      const runId = `${threadId}-${Date.now()}`;
+      setWorkflowRunId(runId);
       setIsLoading(true);
-      setError(null);
 
       // Move any existing current turn messages to confirmed, then add user message
       setMessageHistory((prev) => [...prev, ...currentMessages]);
       setCurrentMessages([]);
 
       const userMessage: Message = {
-        id: Date.now().toString(),
+        id: `${runId}-user`,
         content: prompt,
         role: "user",
         timestamp: new Date(),
       };
       setMessageHistory((prev) => [...prev, userMessage]);
 
-      try {
-        const response = await fetch("/api/gensx", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/x-ndjson",
-          },
-          body: JSON.stringify({
-            workflowName: "OpenAIAgentWorkflow",
-            inputs: {
-              userInput: prompt,
-              threadId: threadId,
-            },
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to send message");
-        }
-
-        if (!response.body) {
-          throw new Error("No response body");
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let hasReceivedFirstChunk = false;
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            break;
-          }
-
-          const chunk = decoder.decode(value);
-          buffer += chunk;
-
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          for (const line of lines) {
-            if (line.trim()) {
-              try {
-                const event = JSON.parse(line) as WorkflowProgressEvent;
-                // Handle new object-based message events
-                if (event.type === "object" && event.label === "messages") {
-                  if (!hasReceivedFirstChunk) {
-                    hasReceivedFirstChunk = true;
-                    setIsLoading(false);
-                  }
-
-                  // Backend sends only new messages for this turn
-                  const newMessages: Message[] = event.data.messages
-                    .filter((msg) => msg.role !== "user") // Skip user messages since we already added them
-                    .map((msg, index) => ({
-                      id: `${event.id}-${index}`,
-                      content: msg.content,
-                      role: msg.role as "assistant" | "tool",
-                      timestamp: new Date(event.timestamp || Date.now()),
-                      tool_calls: msg.tool_calls,
-                      tool_call_id: msg.tool_call_id,
-                    }));
-
-                  // Simply replace current turn messages
-                  setCurrentMessages(newMessages);
-                }
-              } catch (e) {
-                console.error("Error parsing event:", e);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setIsLoading(false);
-      }
+      // Run the workflow
+      await run({
+        inputs: {
+          userInput: prompt,
+          threadId: threadId,
+        },
+      });
     },
-    [currentMessages],
+    [currentMessages, run],
   );
 
   return {
     sendMessage,
     messages,
     isLoading,
-    error,
+    error: workflowError,
     clear,
     loadHistory,
   };
