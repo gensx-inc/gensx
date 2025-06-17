@@ -9,9 +9,14 @@ import { cn } from "@/lib/utils";
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
+  isCentered?: boolean;
 }
 
-export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
+export function ChatInput({
+  onSendMessage,
+  disabled,
+  isCentered,
+}: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -42,6 +47,104 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
       handleSubmit(e);
     }
   };
+
+  if (isCentered) {
+    return (
+      <div className="w-full flex flex-col items-center -mt-32">
+        {/* Caption */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-semibold text-slate-900 mb-2">
+            How can I help you today?
+          </h1>
+          <p className="text-slate-500 text-lg">
+            I&apos;m here to assist you with any questions or tasks you might
+            have.
+          </p>
+        </div>
+
+        {/* Centered Chat Input */}
+        <form onSubmit={handleSubmit} className="relative w-full max-w-2xl">
+          <div
+            className={cn(
+              "relative flex items-end gap-3 p-4 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm shadow-lg",
+              isFocused
+                ? "border-blue-300 shadow-xl shadow-blue-500/20 ring-2 ring-blue-500/30"
+                : "border-slate-200 hover:border-slate-300 hover:shadow-xl",
+            )}
+          >
+            {/* Attachment Button */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="flex-shrink-0 h-10 w-10 p-0 rounded-lg hover:bg-slate-100 transition-colors duration-200"
+              disabled={disabled}
+            >
+              <Paperclip size={18} className="text-slate-500" />
+            </Button>
+
+            {/* Text Input */}
+            <Textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder="Type your message..."
+              disabled={disabled}
+              className="flex-1 min-h-[3rem] max-h-[8rem] resize-none border-0 bg-transparent p-2 text-gray-700 focus-visible:ring-0 focus-visible:ring-offset-0 text-base leading-relaxed placeholder:text-slate-400"
+              rows={1}
+            />
+
+            {/* Send Button */}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!message.trim() || disabled}
+              className={cn(
+                "flex-shrink-0 h-10 w-10 p-0 rounded-lg transition-all duration-200",
+                !message.trim() || disabled
+                  ? "bg-slate-100 hover:bg-slate-200 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-600 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95",
+              )}
+            >
+              <Send
+                size={18}
+                className={cn(
+                  "transition-colors duration-200",
+                  !message.trim() || disabled ? "text-slate-400" : "text-white",
+                )}
+              />
+            </Button>
+          </div>
+
+          {/* Helper Text */}
+          <div className="flex justify-between items-center mt-3 px-2">
+            <p className="text-sm text-slate-400">
+              Press{" "}
+              <kbd className="px-2 py-1 bg-slate-100 border border-slate-300 rounded text-sm">
+                Enter
+              </kbd>{" "}
+              to send,{" "}
+              <kbd className="px-2 py-1 bg-slate-100 border border-slate-300 rounded text-sm">
+                Shift+Enter
+              </kbd>{" "}
+              for new line
+            </p>
+            <p
+              className={cn(
+                "text-sm transition-colors duration-200",
+                message.length > 1000 ? "text-orange-500" : "text-slate-400",
+              )}
+            >
+              {message.length}/2000
+            </p>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="relative">
