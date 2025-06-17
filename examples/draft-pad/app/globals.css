@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --background: #1b1b1d;
+  --foreground: #ededed;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1b1b1d;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-figtree), Arial, Helvetica, sans-serif;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111827;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #374151 #111827;
+}
+
+/* Focus outline removed */
+*:focus-visible {
+  outline: none;
+}
+
+/* Custom font utilities */
+.font-meow {
+  font-family: var(--font-meow-script), cursive;
+}
+
+.font-atma {
+  font-family: var(--font-atma), sans-serif;
+}
+
+/* Custom scrollbar for draft editor */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(51, 51, 51, 0.1);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(51, 51, 51, 0.3);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(51, 51, 51, 0.5);
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(51, 51, 51, 0.3) rgba(51, 51, 51, 0.1);
+}

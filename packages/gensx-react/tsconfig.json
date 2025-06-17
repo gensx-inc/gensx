@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["dom", "ES2018", "ES6"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "outDir": "dist"
+  },
+  "include": ["."],
+  "exclude": ["dist", "build", "node_modules"]
+}

@@ -10,24 +10,63 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
+// Individual message types
+export interface WorkflowStartMessage {
+  type: "start";
+  workflowExecutionId?: string;
+  workflowName: string;
+}
+
+export interface WorkflowComponentStartMessage {
+  type: "component-start";
+  componentName: string;
+  label?: string;
+  componentId: string;
+}
+
+export interface WorkflowComponentEndMessage {
+  type: "component-end";
+  componentName: string;
+  label?: string;
+  componentId: string;
+}
+
+export interface WorkflowDataMessage {
+  type: "data";
+  data: JsonValue;
+}
+
+export interface WorkflowEventMessage {
+  type: "event";
+  data: Record<string, JsonValue>;
+  label: string;
+}
+
+export interface WorkflowObjectMessage {
+  type: "object";
+  data: Record<string, JsonValue>;
+  label: string;
+}
+
+export interface WorkflowErrorMessage {
+  type: "error";
+  error: string;
+}
+
+export interface WorkflowEndMessage {
+  type: "end";
+}
+
+// Union of all message types
 export type WorkflowMessage =
-  | { type: "start"; workflowExecutionId?: string; workflowName: string }
-  | {
-      type: "component-start";
-      componentName: string;
-      label?: string;
-      componentId: string;
-    }
-  | {
-      type: "component-end";
-      componentName: string;
-      label?: string;
-      componentId: string;
-    }
-  | { type: "data"; data: JsonValue }
-  | { type: "object" | "event"; data: Record<string, JsonValue>; label: string }
-  | { type: "error"; error: string }
-  | { type: "end" };
+  | WorkflowStartMessage
+  | WorkflowComponentStartMessage
+  | WorkflowComponentEndMessage
+  | WorkflowDataMessage
+  | WorkflowEventMessage
+  | WorkflowObjectMessage
+  | WorkflowErrorMessage
+  | WorkflowEndMessage;
 
 export type WorkflowMessageListener = (message: WorkflowMessage) => void;
 

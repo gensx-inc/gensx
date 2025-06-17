@@ -6,12 +6,11 @@
  */
 
 // Main SDK export
-export { GenSX } from "./sdk";
+export { GenSX } from "./sdk.js";
 
 // Type exports
 export type {
   GenSXConfig,
-  RunOptions,
   RunRawOptions,
   StartOptions,
   StartResponse,
@@ -24,7 +23,7 @@ export type {
   GenSXOutputEvent,
   GenSXEndEvent,
   GenSXErrorEvent,
-} from "./sdk";
+} from "./sdk.js";
 
 // Default export
-export { GenSX as default } from "./sdk";
+export { GenSX as default } from "./sdk.js";

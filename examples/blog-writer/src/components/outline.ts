@@ -41,7 +41,7 @@ const OutlineSchema = z.object({
 const WriteOutline = gensx.Component(
   "WriteOutline",
   async (props: OutlineProps) => {
-    gensx.emitProgress("Creating article outline...");
+    gensx.publishData("Creating article outline...");
 
     // Prepare research context
     const researchContext = props.research
@@ -164,7 +164,7 @@ The outline that you produce should be detailed and comprehensive, reflecting th
 Based on the research provided and the guidelines above, create a detailed, comprehensive outline for the article "${props.title}". Make sure to include specific keyPoints for each section that will guide the writing process, and include researchTopics that indicate what additional information should be considered when writing each section.`,
     });
 
-    gensx.emitProgress(
+    gensx.publishData(
       `Outline complete with ${result.object.sections.length} sections`,
     );
     return result;
