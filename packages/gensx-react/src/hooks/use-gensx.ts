@@ -6,53 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-
-// JSON-serializable value type for progress data
-export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
-// WorkflowMessage type (from gensx-core)
-export type WorkflowMessage =
-  | {
-      type: "start";
-      workflowExecutionId?: string;
-      workflowName: string;
-      id?: string;
-      timestamp?: string;
-    }
-  | {
-      type: "component-start";
-      componentName: string;
-      label?: string;
-      componentId: string;
-      id?: string;
-      timestamp?: string;
-    }
-  | {
-      type: "component-end";
-      componentName: string;
-      label?: string;
-      componentId: string;
-      id?: string;
-      timestamp?: string;
-    }
-  | { type: "data"; data: JsonValue; id?: string; timestamp?: string }
-  | {
-      type: "object" | "event";
-      data: Record<string, JsonValue>;
-      label: string;
-      id?: string;
-      timestamp?: string;
-    }
-  | { type: "output"; content: string; id?: string; timestamp?: string }
-  | { type: "error"; error: string; id?: string; timestamp?: string }
-  | { type: "end"; id?: string; timestamp?: string };
-
+import type { JsonValue, WorkflowMessage } from "@gensx/core";
 export interface WorkflowRunOptions {
   org: string;
   project: string;

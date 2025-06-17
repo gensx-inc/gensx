@@ -48,7 +48,8 @@
   "author": "GenSX Team",
   "license": "Apache-2.0",
   "dependencies": {
-    "@gensx/client": "workspace:*"
+    "@gensx/client": "workspace:*",
+    "@gensx/core": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19",
@@ -56,7 +57,7 @@
     "typescript": "^5"
   },
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": "^18.0.0"
   },
   "publishConfig": {
     "access": "public"
