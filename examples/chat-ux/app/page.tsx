@@ -12,37 +12,27 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   const { sendMessage, messages, isLoading, error, clear, loadHistory } =
     useChat();
 
+  // Get thread ID from URL
   const threadId = searchParams.get("thread");
 
-  // Get or create thread ID
-  const getThreadId = () => {
-    if (threadId) return threadId;
-
-    // Generate new thread ID and update URL
-    const newThreadId = Date.now().toString();
-    router.push(`?thread=${newThreadId}`);
-    return newThreadId;
-  };
-
-  // Load chat history when thread ID changes
+  // Load chat history when we have a threadId but no messages.
+  // This prevents fetching history for newly created chats.
   useEffect(() => {
-    if (threadId) {
+    if (threadId && messages.length === 0) {
       loadHistory(threadId);
-    } else {
-      clear(); // Clear messages if no thread ID
     }
-  }, [searchParams, loadHistory, clear, threadId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadId, loadHistory]);
 
+  // New Chat: clear messages and remove thread ID from URL
   const handleNewChat = () => {
-    const newThreadId = Date.now().toString();
-    router.push(`?thread=${newThreadId}`);
     clear();
+    router.push("?", { scroll: false });
   };
 
   const scrollToBottom = () => {
@@ -53,13 +43,17 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  // Send message: create thread ID if needed, update URL, then send
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
-    await sendMessage(content.trim(), getThreadId());
-  };
 
-  // Sidebar width: Expanded: 320px (w-80), Collapsed: 80px (w-20)
-  const sidebarWidth = collapsed ? "lg:ml-20" : "lg:ml-80";
+    let currentThreadId = threadId;
+    if (!currentThreadId) {
+      currentThreadId = Date.now().toString();
+      router.push(`?thread=${currentThreadId}`);
+    }
+    await sendMessage(content.trim(), currentThreadId);
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-white">
@@ -77,7 +71,7 @@ export default function ChatPage() {
 
       {/* Main Chat Area */}
       <div
-        className={`flex flex-col flex-1 ${collapsed ? "" : sidebarWidth} transition-all duration-300 ease-in-out`}
+        className={`flex flex-col flex-1 ${collapsed ? "" : "lg:ml-80"} transition-all duration-300 ease-in-out`}
       >
         {/* Header - Now contains New Chat button and sidebar open button if collapsed */}
         <div className="border-b border-slate-200/60 px-2 py-2 flex items-center gap-2">
@@ -99,7 +93,7 @@ export default function ChatPage() {
           </button>
         </div>
 
-        {messages.length === 0 ? (
+        {messages.length === 0 && !threadId ? (
           /* Empty state - Center the input in the entire remaining area */
           <div className="flex-1 flex items-center justify-center px-4">
             <div className="max-w-4xl mx-auto w-full">
@@ -114,14 +108,11 @@ export default function ChatPage() {
           /* Messages exist - Use normal layout with messages and bottom input */
           <>
             {/* Messages Container */}
-            <div
-              ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-4 py-6"
-            >
+            <div className="flex-1 overflow-y-auto px-4 py-6">
               <div className="max-w-4xl mx-auto space-y-0">
                 {messages.map((message, index) => (
                   <ChatMessage
-                    key={`${threadId}-${index}`}
+                    key={`${threadId || "new"}-${index}`}
                     message={message}
                     messages={messages}
                   />

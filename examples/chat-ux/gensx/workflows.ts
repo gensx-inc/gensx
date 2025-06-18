@@ -73,10 +73,6 @@ export const ChatAgent = gensx.Workflow(
       // Save the complete conversation history
       await saveChatHistory([...messages, ...result.messages]);
 
-      console.log(
-        `[Thread ${threadId}] Chat history updated with new messages`,
-      );
-
       return result;
     } catch (error) {
       console.error("Error in chat processing:", error);

@@ -29,9 +29,10 @@ export function ChatInput({
   }, [message]);
 
   useEffect(() => {
-    // Auto-focus on mount
-    textareaRef.current?.focus();
-  }, []);
+    if (!disabled) {
+      textareaRef.current?.focus();
+    }
+  }, [disabled]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
