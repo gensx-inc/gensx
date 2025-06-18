@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const useLocalDevServer = shouldUseLocalDevServer();
 
     // Hardcode workflow configuration for draft-pad
-    const workflowName = "OpenAIAgentWorkflow";
+    const workflowName = "ChatAgent";
     const org = "gensx";
     const project = "chat-tools";
     const environment = "default";

@@ -11,17 +11,55 @@ interface ToolMessageProps {
 export function ToolMessage({ message, messages }: ToolMessageProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  if (!message.tool_calls || message.tool_calls.length === 0) {
+  // Extract tool calls from the message content
+  if (!Array.isArray(message.content)) {
     return null;
   }
 
-  const toolCall = message.tool_calls[0];
-  const functionName = toolCall.function.name;
+  const toolCalls = message.content.filter(
+    (
+      item,
+    ): item is {
+      type: "tool-call";
+      toolCallId: string;
+      toolName: string;
+      args: unknown;
+    } => item.type === "tool-call",
+  );
+
+  if (toolCalls.length === 0) {
+    return null;
+  }
+
+  const toolCall = toolCalls[0];
+  const functionName = toolCall.toolName;
 
   // Find the corresponding tool result message
-  const toolResult = messages.find(
-    (msg) => msg.role === "tool" && msg.tool_call_id === toolCall.id,
-  );
+  const toolResult = messages.find((msg) => {
+    if (msg.role !== "tool" || !Array.isArray(msg.content)) return false;
+
+    return msg.content.some(
+      (item) =>
+        item.type === "tool-result" && item.toolCallId === toolCall.toolCallId,
+    );
+  });
+
+  // Extract the actual result content from the tool message
+  let toolResultContent: string | null = null;
+  if (toolResult && Array.isArray(toolResult.content)) {
+    const resultItem = toolResult.content.find(
+      (
+        item,
+      ): item is {
+        type: "tool-result";
+        toolCallId: string;
+        toolName: string;
+        result: string;
+      } =>
+        item.type === "tool-result" && item.toolCallId === toolCall.toolCallId,
+    );
+    toolResultContent = resultItem?.result || null;
+  }
 
   const isComplete = !!toolResult;
 
@@ -72,11 +110,15 @@ export function ToolMessage({ message, messages }: ToolMessageProps) {
           {isExpanded && (
             <div className="p-3 space-y-3 bg-slate-50/30">
               <JsonDisplay
-                data={toolCall.function.arguments}
+                data={
+                  typeof toolCall.args === "string"
+                    ? toolCall.args
+                    : JSON.stringify(toolCall.args)
+                }
                 label="Arguments"
               />
-              {toolResult && toolResult.content && (
-                <JsonDisplay data={toolResult.content} label="Result" />
+              {toolResultContent && (
+                <JsonDisplay data={toolResultContent} label="Result" />
               )}
             </div>
           )}

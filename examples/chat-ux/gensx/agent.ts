@@ -1,0 +1,151 @@
+import * as gensx from "@gensx/core";
+import { streamText } from "@gensx/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+import {
+  CoreMessage,
+  ToolSet,
+  wrapLanguageModel,
+  TextPart,
+  ToolCallPart,
+} from "ai";
+
+interface AgentProps {
+  messages: CoreMessage[];
+  tools: ToolSet;
+  // TODO: add model and other options
+}
+
+export const Agent = gensx.Component(
+  "Agent",
+  async ({ messages, tools }: AgentProps) => {
+    const model = openai("gpt-4.1-mini");
+
+    // Track all messages including responses
+    const allMessages: CoreMessage[] = [];
+
+    const publishMessages = () => {
+      gensx.publishObject("messages", {
+        messages: JSON.parse(JSON.stringify(allMessages)),
+      });
+    };
+
+    const wrappedLanguageModel = wrapLanguageModel({
+      model: model,
+      middleware: [
+        {
+          wrapGenerate: async ({ doGenerate }) => {
+            const result = await doGenerate();
+
+            // Add assistant response to messages
+            allMessages.push({
+              role: "assistant",
+              content: result.text ?? "",
+            });
+
+            publishMessages();
+
+            return result;
+          },
+          wrapStream: async ({ doStream, params }) => {
+            console.log("wrapStream params:", JSON.stringify(params, null, 2));
+
+            // Find the last assistant message and pull in any tool responses after it
+            const lastAssistantIndex = params.prompt.findLastIndex(
+              (msg: CoreMessage) => msg.role === "assistant",
+            );
+            if (lastAssistantIndex !== -1) {
+              const toolMessagesAfterLastAssistant = params.prompt
+                .slice(lastAssistantIndex + 1)
+                .filter((msg: CoreMessage) => msg.role === "tool");
+              allMessages.push(...toolMessagesAfterLastAssistant);
+            }
+
+            publishMessages();
+
+            const { stream, ...rest } = await doStream();
+
+            // Add initial assistant message
+            const assistantMessageIndex = allMessages.length;
+            allMessages.push({
+              role: "assistant",
+              content: [],
+            });
+
+            let accumulatedText = "";
+            const contentParts: Array<TextPart | ToolCallPart> = [];
+
+            const transformStream = new TransformStream({
+              transform(chunk, controller) {
+                console.log("Stream chunk:", chunk.type);
+
+                if (chunk.type === "text-delta") {
+                  accumulatedText += chunk.textDelta;
+
+                  // Update or add text part
+                  const existingTextPartIndex = contentParts.findIndex(
+                    (part) => part.type === "text",
+                  );
+                  if (existingTextPartIndex >= 0) {
+                    const textPart = contentParts[existingTextPartIndex];
+                    if (textPart.type === "text") {
+                      textPart.text = accumulatedText;
+                    }
+                  } else {
+                    contentParts.push({
+                      type: "text",
+                      text: accumulatedText,
+                    });
+                  }
+
+                  allMessages[assistantMessageIndex].content = [
+                    ...contentParts,
+                  ];
+                  publishMessages();
+                } else if (chunk.type === "tool-call") {
+                  // Add tool call part
+                  contentParts.push({
+                    type: "tool-call",
+                    toolCallId: chunk.toolCallId,
+                    toolName: chunk.toolName,
+                    args: chunk.args,
+                  });
+
+                  allMessages[assistantMessageIndex].content = [
+                    ...contentParts,
+                  ];
+                  publishMessages();
+                }
+
+                controller.enqueue(chunk);
+              },
+              flush() {
+                console.log("Stream finished");
+                // Final publish when stream is complete
+                publishMessages();
+              },
+            });
+
+            return {
+              stream: stream.pipeThrough(transformStream),
+              ...rest,
+            };
+          },
+        },
+      ],
+    });
+
+    const result = streamText({
+      messages,
+      maxSteps: 10,
+      model: wrappedLanguageModel,
+      tools,
+    });
+
+    let response = "";
+    for await (const chunk of result.textStream) {
+      response += chunk;
+    }
+
+    return { response, messages: allMessages };
+  },
+);

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BlobClient } from "@gensx/storage";
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import { CoreMessage } from "ai";
 
 export async function GET(
   request: NextRequest,
@@ -18,8 +18,7 @@ export async function GET(
     const blobPath = `chat-history/${threadId}.json`;
     //console.log("API: Looking for blob at path:", blobPath);
 
-    const blob =
-      await blobClient.getBlob<ChatCompletionMessageParam[]>(blobPath);
+    const blob = await blobClient.getBlob<CoreMessage[]>(blobPath);
 
     //console.log("API: Blob object:", blob);
 
