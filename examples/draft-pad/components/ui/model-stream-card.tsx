@@ -325,13 +325,17 @@ export function ModelStreamCard({
       {/* Content Card */}
       <Card
         className={`flex-1 min-h-0 cursor-pointer transition-all duration-200 backdrop-blur-md bg-white/20 border border-white/30 ${
-          isSelected
-            ? "ring-2 ring-blue-500 border-blue-300"
-            : "hover:border-gray-400"
-        } ${modelStream.status === "generating" ? "animate-pulse" : ""}`}
+          isSelected ? "" : "hover:border-gray-400"
+        } ${modelStream.status === "generating" ? "animate-pulse" : ""} relative`}
         onClick={onSelect}
         liquidGlass={false} // Disable glass effect to simplify scrolling
       >
+        {/* Selection indicator */}
+        {isSelected && (
+          <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+            <Check className="w-4 h-4 text-white" />
+          </div>
+        )}
         <CardContent className="h-full p-0 overflow-hidden rounded-2xl">
           <div
             ref={scrollContainerRef}

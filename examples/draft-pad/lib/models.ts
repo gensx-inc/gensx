@@ -21,6 +21,7 @@ interface ModelsDotDevModel {
 interface ModelsDotDevProvider {
   id: string;
   name: string;
+  env?: string[];
   models: Record<string, ModelsDotDevModel>;
 }
 
@@ -29,21 +30,31 @@ interface ModelsDotDevResponse {
   providerStatus: Record<string, boolean>;
 }
 
-// Map models.dev providers to our supported providers
-const PROVIDER_MAPPING: Record<string, string> = {
-  openai: "openai",
-  anthropic: "anthropic",
-  google: "google",
-  mistral: "mistral",
-  cohere: "cohere",
-  "amazon-bedrock": "amazon-bedrock",
-  azure: "azure",
-  deepseek: "deepseek",
-  groq: "groq",
-  xai: "xai",
+// Map models.dev providers to our supported providers and their env vars
+const PROVIDER_MAPPING: Record<
+  string,
+  { provider: string; envVars?: string[] }
+> = {
+  openai: { provider: "openai", envVars: ["OPENAI_API_KEY"] },
+  anthropic: { provider: "anthropic", envVars: ["ANTHROPIC_API_KEY"] },
+  google: { provider: "google", envVars: ["GOOGLE_GENERATIVE_AI_API_KEY"] },
+  mistral: { provider: "mistral", envVars: ["MISTRAL_API_KEY"] },
+  cohere: { provider: "cohere", envVars: ["COHERE_API_KEY"] },
+  "amazon-bedrock": {
+    provider: "amazon-bedrock",
+    envVars: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION"],
+  },
+  azure: {
+    provider: "azure",
+    envVars: ["AZURE_RESOURCE_NAME", "AZURE_API_KEY"],
+  },
+  deepseek: { provider: "deepseek", envVars: ["DEEPSEEK_API_KEY"] },
+  groq: { provider: "groq", envVars: ["GROQ_API_KEY"] },
+  xai: { provider: "xai", envVars: ["XAI_API_KEY"] },
   // Providers we don't support yet
-  vercel: "", // Skip - requires special configuration
-  morph: "", // Skip - not available in AI SDK
+  vercel: { provider: "", envVars: [] }, // Skip - requires special configuration
+  morph: { provider: "", envVars: [] }, // Skip - not available in AI SDK
+  llama: { provider: "", envVars: [] }, // Skip - not in our supported list
 };
 
 export async function fetchAvailableModels(): Promise<ModelConfig[]> {
@@ -64,8 +75,11 @@ export async function fetchAvailableModels(): Promise<ModelConfig[]> {
     // Process each provider
     for (const [providerKey, provider] of Object.entries(data.providers)) {
       // Skip if we don't support this provider
-      const mappedProvider = PROVIDER_MAPPING[providerKey];
-      if (!mappedProvider) continue;
+      const mappingInfo = PROVIDER_MAPPING[providerKey];
+      if (!mappingInfo?.provider) continue;
+
+      const mappedProvider = mappingInfo.provider;
+      const envVars = provider.env ?? mappingInfo.envVars ?? [];
 
       // Check if the provider has required API keys
       const isAvailable = data.providerStatus[mappedProvider] ?? false;
@@ -91,6 +105,8 @@ export async function fetchAvailableModels(): Promise<ModelConfig[]> {
             | "custom",
           model: model.id,
           displayName: `${model.name} (${provider.name})`,
+          providerName: provider.name,
+          envVars,
           available: isAvailable,
           cost: model.cost,
           limit: model.limit,

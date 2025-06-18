@@ -40,6 +40,8 @@ interface ModelConfig {
     | "custom";
   model: string;
   displayName?: string; // Optional display name
+  providerName?: string; // Human-readable provider name
+  envVars?: string[]; // Environment variables required for this provider
   available?: boolean; // Whether the provider has required API keys configured
   // Cost information (per million tokens)
   cost?: {
