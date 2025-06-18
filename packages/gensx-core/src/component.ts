@@ -130,6 +130,7 @@ export function Component<P extends object = {}, R = unknown>(
 
     const nodeId = checkpointManager.addNode(
       {
+        id: deterministicId,
         componentName: checkpointName,
         props: props_for_id,
         componentOpts: resolvedComponentOpts,

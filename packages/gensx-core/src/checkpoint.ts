@@ -661,11 +661,13 @@ export class CheckpointManager implements CheckpointWriter {
    * of the execution.
    */
   addNode(partialNode: Partial<ExecutionNode>, parentId?: string): string {
-    const nodeId = generateDeterministicId(
-      partialNode.componentName ?? "Unknown",
-      partialNode.props ?? {},
-      parentId,
-    );
+    const nodeId =
+      partialNode.id ??
+      generateDeterministicId(
+        partialNode.componentName ?? "Unknown",
+        partialNode.props ?? {},
+        parentId,
+      );
     const clonedPartial = this.cloneValue(
       partialNode,
     ) as Partial<ExecutionNode>;
