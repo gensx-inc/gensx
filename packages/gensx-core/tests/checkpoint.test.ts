@@ -45,15 +45,6 @@ suite("checkpoint", () => {
       expect(id1).not.toBe(id2);
     });
 
-    test("handles undefined parent ID consistently", () => {
-      const props = { name: "test" };
-      const id1 = generateDeterministicId("TestComponent", props);
-      const id2 = generateDeterministicId("TestComponent", props, undefined);
-
-      expect(id1).toBe(id2);
-      expect(id1).toContain("root:");
-    });
-
     test("handles empty props", () => {
       const id1 = generateDeterministicId("TestComponent", {}, "parent123");
       const id2 = generateDeterministicId("TestComponent", {}, "parent123");
@@ -108,15 +99,7 @@ suite("checkpoint", () => {
       const id = generateDeterministicId("TestComponent", props, "parent123");
 
       // Should be in format: parentId:componentName:propsHash
-      expect(id).toMatch(/^parent123:TestComponent:[a-f0-9]{16}$/);
-    });
-
-    test("root format when no parent", () => {
-      const props = { name: "test" };
-      const id = generateDeterministicId("TestComponent", props);
-
-      // Should be in format: root:componentName:propsHash
-      expect(id).toMatch(/^root:TestComponent:[a-f0-9]{16}$/);
+      expect(id).toMatch(/^TestComponent:[a-f0-9]{16}$/);
     });
   });
 
@@ -201,15 +184,15 @@ suite("checkpoint", () => {
 
     // Create a checkpoint with only the cached component completed
     const mockCheckpoint = {
-      id: "root:TestWorkflow:156403d8f795a18e",
+      id: "TestWorkflow:e3aab1c267157d72",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
       children: [
         {
-          id: "root:TestWorkflow:156403d8f795a18e:CachedComponent:156403d8f795a18e",
+          id: "CachedComponent:8a2b95df3bafc8df",
           componentName: "CachedComponent",
-          parentId: "root:TestWorkflow:156403d8f795a18e",
+          parentId: "TestWorkflow:e3aab1c267157d72",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },

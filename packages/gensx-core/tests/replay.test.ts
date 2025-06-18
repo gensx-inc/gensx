@@ -27,15 +27,15 @@ suite("checkpoint replay", () => {
 
     // Create a mock checkpoint with a completed component
     const mockCheckpoint: ExecutionNode = {
-      id: "root:TestWorkflow:156403d8f795a18e",
+      id: "TestWorkflow:156403d8f795a18e",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
       children: [
         {
-          id: "root:TestWorkflow:156403d8f795a18e:ExpensiveComponent:156403d8f795a18e",
+          id: "ExpensiveComponent:8a2b95df3bafc8df",
           componentName: "ExpensiveComponent",
-          parentId: "root:TestWorkflow:156403d8f795a18e",
+          parentId: "TestWorkflow:156403d8f795a18e",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },
@@ -128,15 +128,15 @@ suite("checkpoint replay", () => {
 
     // Create checkpoint with only the cached component
     const mockCheckpoint: ExecutionNode = {
-      id: "root:TestWorkflow:156403d8f795a18e",
+      id: "TestWorkflow:-",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
       children: [
         {
-          id: "root:TestWorkflow:156403d8f795a18e:CachedComponent:156403d8f795a18e",
+          id: "CachedComponent:8a2b95df3bafc8df",
           componentName: "CachedComponent",
-          parentId: "root:TestWorkflow:156403d8f795a18e",
+          parentId: "TestWorkflow:-",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },
@@ -197,7 +197,7 @@ suite("checkpoint replay", () => {
 
     // Create checkpoint with nested completed components
     const mockCheckpoint: ExecutionNode = {
-      id: "root:TestWorkflow:156403d8f795a18e",
+      id: "TestWorkflow:e3aab1c267157d72",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       endTime: Date.now() - 100,
@@ -205,19 +205,18 @@ suite("checkpoint replay", () => {
       output: "middle: leaf: test",
       children: [
         {
-          id: "root:TestWorkflow:156403d8f795a18e:MiddleComponent:156403d8f795a18e",
+          id: "MiddleComponent:156403d8f795a18e",
           componentName: "MiddleComponent",
-          parentId: "root:TestWorkflow:156403d8f795a18e",
+          parentId: "TestWorkflow:e3aab1c267157d72",
           startTime: Date.now() - 900,
           endTime: Date.now() - 200,
           props: { input: "test" },
           output: "middle: leaf: test",
           children: [
             {
-              id: "root:TestWorkflow:156403d8f795a18e:MiddleComponent:156403d8f795a18e:LeafComponent:93268aced3bf3c80",
+              id: "LeafComponent:93268aced3bf3c80",
               componentName: "LeafComponent",
-              parentId:
-                "root:TestWorkflow:156403d8f795a18e:MiddleComponent:156403d8f795a18e",
+              parentId: "MiddleComponent:156403d8f795a18e",
               startTime: Date.now() - 800,
               endTime: Date.now() - 700,
               props: { value: "test" },
@@ -344,15 +343,15 @@ suite("checkpoint replay", () => {
 
     // Create checkpoint with only the cached component
     const mockCheckpoint: ExecutionNode = {
-      id: "root:TestWorkflow:156403d8f795a18e",
+      id: "TestWorkflow:156403d8f795a18e",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
       children: [
         {
-          id: "root:TestWorkflow:156403d8f795a18e:CachedComponent:156403d8f795a18e",
+          id: "CachedComponent:8a2b95df3bafc8df",
           componentName: "CachedComponent",
-          parentId: "root:TestWorkflow:156403d8f795a18e",
+          parentId: "TestWorkflow:156403d8f795a18e",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },

@@ -30,7 +30,8 @@ export function generateDeterministicId(
     .digest("hex")
     .slice(0, 16);
 
-  return `${name}:${propsHash}`;
+  const id = `${name}:${propsHash}`;
+  return id;
 }
 
 export class CheckpointManager implements CheckpointWriter {
