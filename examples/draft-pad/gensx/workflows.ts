@@ -1,4 +1,13 @@
+import { bedrock } from "@ai-sdk/amazon-bedrock";
+import { anthropic } from "@ai-sdk/anthropic";
+import { azure } from "@ai-sdk/azure";
+import { cohere } from "@ai-sdk/cohere";
+import { deepseek } from "@ai-sdk/deepseek";
+import { google } from "@ai-sdk/google";
+import { groq } from "@ai-sdk/groq";
+import { mistral } from "@ai-sdk/mistral";
 import { openai } from "@ai-sdk/openai";
+import { xai } from "@ai-sdk/xai";
 import * as gensx from "@gensx/core";
 import { streamText } from "@gensx/vercel-ai";
 
@@ -17,12 +26,31 @@ interface EndContentEvent {
 // Model configuration
 interface ModelConfig {
   id: string; // Unique identifier for this model instance
-  provider: "openai" | "custom";
+  provider:
+    | "openai"
+    | "anthropic"
+    | "google"
+    | "mistral"
+    | "cohere"
+    | "amazon-bedrock"
+    | "azure"
+    | "deepseek"
+    | "groq"
+    | "xai"
+    | "custom";
   model: string;
   displayName?: string; // Optional display name
+  available?: boolean; // Whether the provider has required API keys configured
   // For custom providers, allow passing the model instance directly
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   modelInstance?: any;
+  // Additional configuration for providers that need it
+  providerConfig?: {
+    // For Azure, we need resource name
+    resourceName?: string;
+    // For Bedrock, we might need region
+    region?: string;
+  };
 }
 
 // Individual model stream state
@@ -34,6 +62,9 @@ interface ModelStreamState {
   wordCount: number;
   charCount: number;
   error?: string;
+  startTime?: number;
+  endTime?: number;
+  generationTime?: number; // Time in seconds
 }
 
 // Single comprehensive state object for all models
@@ -76,6 +107,26 @@ function getModelInstance(config: ModelConfig): any {
   switch (config.provider) {
     case "openai":
       return openai(config.model);
+    case "anthropic":
+      return anthropic(config.model);
+    case "google":
+      return google(config.model);
+    case "mistral":
+      return mistral(config.model);
+    case "cohere":
+      return cohere(config.model);
+    case "amazon-bedrock":
+      // Bedrock models are accessed directly
+      return bedrock(config.model);
+    case "azure":
+      // Azure models are accessed directly
+      return azure(config.model);
+    case "deepseek":
+      return deepseek(config.model);
+    case "groq":
+      return groq(config.model);
+    case "xai":
+      return xai(config.model);
     case "custom":
       throw new Error(
         `Custom provider requires modelInstance to be provided in the config`,
@@ -137,133 +188,145 @@ const UpdateDraftWorkflow = gensx.Workflow(
     gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
 
     // Create parallel streams for each model
-    const modelPromises = models.map((modelConfig, index) => {
-      try {
-        // Update model stream to generating
-        draftProgress.modelStreams[index].status = "generating";
-        gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+    const modelGenerators = models.map((modelConfig, index) => {
+      const modelStream = draftProgress.modelStreams[index];
 
-        const model = getModelInstance(modelConfig);
-        const result = streamText({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-        });
+      // Create async generator for this model
+      return (async function* () {
+        try {
+          // Update model stream to generating and record start time
+          modelStream.status = "generating";
+          modelStream.startTime = Date.now();
+          gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
 
-        return {
-          modelConfig,
-          index,
-          stream: result.textStream,
-          error: null,
-        };
-      } catch (error) {
-        // Handle model initialization errors
-        draftProgress.modelStreams[index].status = "error";
-        draftProgress.modelStreams[index].error =
-          error instanceof Error ? error.message : "Unknown error";
-        gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+          const model = getModelInstance(modelConfig);
+          const result = streamText({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+          });
 
-        return {
-          modelConfig,
-          index,
-          stream: null,
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
+          // Stream chunks
+          for await (const chunk of result.textStream) {
+            // Update model content
+            modelStream.content += chunk;
+
+            // Update stats
+            const words = modelStream.content
+              .split(/\s+/)
+              .filter((word) => word.length > 0);
+            modelStream.wordCount = words.length;
+            modelStream.charCount = modelStream.content.length;
+
+            // Yield chunk data
+            yield {
+              modelId: modelConfig.id,
+              index,
+              chunk,
+              error: null,
+              done: false,
+            };
+          }
+
+          // Model completed successfully
+          modelStream.status = "complete";
+          modelStream.endTime = Date.now();
+          if (modelStream.startTime) {
+            modelStream.generationTime =
+              (modelStream.endTime - modelStream.startTime) / 1000;
+          }
+          draftProgress.completedModels++;
+
+          yield {
+            modelId: modelConfig.id,
+            index,
+            chunk: null,
+            error: null,
+            done: true,
+          };
+        } catch (error) {
+          // Handle model initialization or streaming errors
+          modelStream.status = "error";
+          modelStream.error =
+            error instanceof Error ? error.message : "Unknown error";
+          modelStream.endTime = Date.now();
+          if (modelStream.startTime) {
+            modelStream.generationTime =
+              (modelStream.endTime - modelStream.startTime) / 1000;
+          }
+          gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+
+          yield {
+            modelId: modelConfig.id,
+            index,
+            chunk: null,
+            error: error instanceof Error ? error.message : "Unknown error",
+            done: true,
+          };
+        }
+      })();
     });
 
     // Return async generator function
     const generator = async function* () {
-      const streams = await Promise.all(modelPromises);
-      const activeStreams = streams.filter((s) => s.stream !== null);
+      // Create iterators for each generator
+      const iterators = modelGenerators.map((gen) =>
+        gen[Symbol.asyncIterator](),
+      );
+      const activeIterators = new Set(iterators.map((_, idx) => idx));
 
-      if (activeStreams.length === 0) {
+      // Check if all models failed to initialize
+      if (activeIterators.size === 0) {
         draftProgress.status = "complete";
         draftProgress.stage = "complete";
-        draftProgress.message = "All models failed to initialize";
+        draftProgress.message = "No models available";
         gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
         return;
       }
 
-      // Track chunks for progress updates
-      const chunkCounts = new Array(models.length).fill(0);
-      const streamIterators = activeStreams.map((s) =>
-        s.stream[Symbol.asyncIterator](),
-      );
-      const activeIndexes = new Set(activeStreams.map((s) => s.index));
-
-      // Stream from all models in parallel
-      while (activeIndexes.size > 0) {
-        // Create promises for the next chunk from each active stream
-        const chunkPromises = Array.from(activeIndexes).map(async (index) => {
-          const streamIndex = activeStreams.findIndex((s) => s.index === index);
+      // Process chunks as they arrive from any model
+      while (activeIterators.size > 0) {
+        // Create promises for next chunk from each active iterator
+        const promises = Array.from(activeIterators).map(async (idx) => {
           try {
-            const result = await streamIterators[streamIndex].next();
-            return { index, result, error: null };
+            const result = await iterators[idx].next();
+            return { idx, result: result.value, done: result.done };
           } catch (error) {
-            return { index, result: { done: true, value: undefined }, error };
+            return {
+              idx,
+              result: {
+                error: error instanceof Error ? error.message : "Unknown error",
+                done: true,
+              },
+              done: true,
+            };
           }
         });
 
-        // Wait for at least one chunk
-        const chunks = await Promise.all(chunkPromises);
+        // Race to get the first available chunk
+        const finishedPromise = await Promise.race(promises);
+        const { idx, result, done } = finishedPromise;
 
-        // Process chunks
-        for (const { index, result, error } of chunks) {
-          if (error || result.done) {
-            // Model completed or errored
-            activeIndexes.delete(index);
-            const modelStream = draftProgress.modelStreams[index];
-
-            if (error) {
-              modelStream.status = "error";
-              modelStream.error =
-                error instanceof Error ? error.message : "Stream error";
-            } else {
-              modelStream.status = "complete";
-              draftProgress.completedModels++;
-            }
-
-            // Update final stats for this model
-            const words = modelStream.content
-              .split(/\s+/)
-              .filter((word) => word.length > 0);
-            modelStream.wordCount = words.length;
-            modelStream.charCount = modelStream.content.length;
-          } else if (result.value) {
-            // Add chunk to model's content
-            const modelStream = draftProgress.modelStreams[index];
-            modelStream.content += result.value;
-            chunkCounts[index]++;
-
-            // Update stats on EVERY chunk
-            const words = modelStream.content
-              .split(/\s+/)
-              .filter((word) => word.length > 0);
-            modelStream.wordCount = words.length;
-            modelStream.charCount = modelStream.content.length;
-
-            // Yield the chunk with model identifier
-            yield JSON.stringify({
-              modelId: models[index].id,
-              chunk: result.value,
-            });
-          }
+        if (done || (result && result.done)) {
+          activeIterators.delete(idx);
         }
 
-        // Update overall progress on EVERY chunk iteration
+        if (result && !result.done && "chunk" in result && result.chunk) {
+          // Yield the chunk
+          yield JSON.stringify({
+            modelId: result.modelId,
+            chunk: result.chunk,
+          });
+        }
+
+        // Update progress
         const totalCompleted = draftProgress.completedModels;
-        const totalActive = activeIndexes.size;
+        const totalActive = activeIterators.size;
         draftProgress.stage = totalActive > 0 ? "streaming" : "finalizing";
         draftProgress.percentage = Math.min(
-          50 +
-            (totalCompleted / models.length) * 40 +
-            Array.from(activeIndexes).reduce(
-              (sum, idx) => sum + Math.min(chunkCounts[idx] * 0.5, 10),
-              0,
-            ),
+          50 + (totalCompleted / models.length) * 40,
           90,
         );
         draftProgress.message = `${totalActive} models generating, ${totalCompleted} completed...`;

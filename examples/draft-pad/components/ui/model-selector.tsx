@@ -24,14 +24,14 @@ export function ModelSelector({
 }: ModelSelectorProps) {
   const handleAddModel = (modelId: string) => {
     const model = availableModels.find((m) => m.id === modelId);
-    if (model && selectedModels.length < maxModels) {
+    if (model && model.available && selectedModels.length < maxModels) {
       onModelsChange([...selectedModels, model]);
     }
   };
 
   const handleModelChange = (index: number, modelId: string) => {
     const model = availableModels.find((m) => m.id === modelId);
-    if (model) {
+    if (model?.available) {
       const newModels = [...selectedModels];
       newModels[index] = model;
       onModelsChange(newModels);
@@ -87,8 +87,13 @@ export function ModelSelector({
                         (m) => m.id !== selectedModel.id,
                       ),
                     ].map((model) => (
-                      <SelectItem key={model.id} value={model.id}>
+                      <SelectItem
+                        key={model.id}
+                        value={model.id}
+                        disabled={!model.available}
+                      >
                         {model.displayName}
+                        {!model.available && " 🔒"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -106,8 +111,13 @@ export function ModelSelector({
                   </SelectTrigger>
                   <SelectContent>
                     {availableForThisSlot.map((model) => (
-                      <SelectItem key={model.id} value={model.id}>
+                      <SelectItem
+                        key={model.id}
+                        value={model.id}
+                        disabled={!model.available}
+                      >
                         {model.displayName}
+                        {!model.available && " 🔒"}
                       </SelectItem>
                     ))}
                   </SelectContent>

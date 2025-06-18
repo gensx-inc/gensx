@@ -10,6 +10,73 @@ A real-time collaborative draft editor powered by GenSX workflows. This example 
 - 🎯 **Live progress**: See workflow progress with detailed event tracking
 - 🚀 **GenSX integration**: Direct connection to deployed GenSX workflows
 
+## Environment Variables
+
+To use different AI providers, you'll need to set up the following environment variables:
+
+### OpenAI
+
+```
+OPENAI_API_KEY=your-openai-api-key
+```
+
+### Anthropic (Claude)
+
+```
+ANTHROPIC_API_KEY=your-anthropic-api-key
+```
+
+### Google (Gemini)
+
+```
+GOOGLE_GENERATIVE_AI_API_KEY=your-google-api-key
+```
+
+### Mistral
+
+```
+MISTRAL_API_KEY=your-mistral-api-key
+```
+
+### Cohere
+
+```
+COHERE_API_KEY=your-cohere-api-key
+```
+
+### Amazon Bedrock (AWS)
+
+```
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+AWS_REGION=us-east-1
+```
+
+### Azure OpenAI
+
+```
+AZURE_OPENAI_API_KEY=your-azure-api-key
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+```
+
+### DeepSeek
+
+```
+DEEPSEEK_API_KEY=your-deepseek-api-key
+```
+
+### Groq
+
+```
+GROQ_API_KEY=your-groq-api-key
+```
+
+### xAI (Grok)
+
+```
+XAI_API_KEY=your-xai-api-key
+```
+
 ## Installation
 
 ```bash

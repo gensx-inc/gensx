@@ -26,6 +26,7 @@ interface SelectContentProps {
 interface SelectItemProps {
   value: string;
   children: React.ReactNode;
+  disabled?: boolean;
 }
 
 const SelectContext = React.createContext<{
@@ -149,7 +150,11 @@ export function SelectContent({ children }: SelectContentProps) {
   );
 }
 
-export function SelectItem({ value, children }: SelectItemProps) {
+export function SelectItem({
+  value,
+  children,
+  disabled = false,
+}: SelectItemProps) {
   const context = React.useContext(SelectContext);
   const isSelected = context.value === value;
 
@@ -164,6 +169,7 @@ export function SelectItem({ value, children }: SelectItemProps) {
   }, [value, children, context.items]);
 
   const handleClick = () => {
+    if (disabled) return;
     context.onValueChange(value);
     context.setOpen(false);
   };
@@ -171,12 +177,15 @@ export function SelectItem({ value, children }: SelectItemProps) {
   return (
     <div
       className={`
-        mx-1 px-3 py-2 text-sm cursor-pointer transition-all duration-150
+        mx-1 px-3 py-2 text-sm transition-all duration-150
         rounded-xl
+        ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
         ${
           isSelected
             ? "bg-white/60 font-medium text-blue-600 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]"
-            : "text-[#333333] hover:bg-white/30 hover:backdrop-blur-[6px]"
+            : disabled
+              ? "text-gray-500"
+              : "text-[#333333] hover:bg-white/30 hover:backdrop-blur-[6px]"
         }
       `}
       onClick={handleClick}
