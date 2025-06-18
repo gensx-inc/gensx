@@ -335,10 +335,11 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
   };
 }
 
-export function useObject<
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  T extends Record<string, JsonValue> = Record<string, JsonValue>,
->(events: WorkflowMessage[], label: string): T | undefined {
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+export function useObject<T = JsonValue>(
+  events: WorkflowMessage[],
+  label: string,
+): T | undefined {
   return useMemo(() => {
     const objectEvents: T[] = [];
 

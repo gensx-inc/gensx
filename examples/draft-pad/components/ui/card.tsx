@@ -92,7 +92,7 @@ function Card({
           <div className="absolute inset-0 z-[2] overflow-hidden rounded-3xl shadow-[inset_2px_2px_1px_0_rgba(255,255,255,0.5),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.5)] pointer-events-none" />
 
           {/* Content Layer - now scrollable */}
-          <div className="relative z-[3] overflow-auto max-h-full p-6">
+          <div className="relative z-[3] overflow-auto max-h-full">
             {children}
           </div>
         </div>
