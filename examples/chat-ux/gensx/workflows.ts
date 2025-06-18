@@ -3,7 +3,7 @@ import { Agent } from "./agent";
 import { CoreMessage } from "ai";
 import { tool } from "ai";
 import { z } from "zod";
-import { WebSearch } from "./tools/WebSearch";
+import { WebSearch } from "./tools/webSearch";
 import { useBlob } from "@gensx/storage";
 
 interface ChatAgentProps {
