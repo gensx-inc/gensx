@@ -52,6 +52,18 @@ export function ChatHistory({
     fetchHistory();
   }, [fetchHistory]);
 
+  // Refresh when we have a new thread that's not in our list
+  useEffect(() => {
+    if (activeThreadId && !threads.find((t) => t.id === activeThreadId)) {
+      // Debounce the refresh to avoid jittering
+      const timeoutId = setTimeout(() => {
+        fetchHistory();
+      }, 2000); // Wait 2 seconds to ensure the thread is saved
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [activeThreadId, threads, fetchHistory]);
+
   const handleDelete = async (threadIdToDelete: string) => {
     // Optimistically remove the thread from the UI
     setThreads((prevThreads) =>
