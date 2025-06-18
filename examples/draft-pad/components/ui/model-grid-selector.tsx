@@ -3,6 +3,9 @@
 import { type ModelConfig } from "@/gensx/workflows";
 import { Check } from "lucide-react";
 
+import { ModelInfo } from "./model-info";
+import { ProviderIcon } from "./provider-icon";
+
 interface ModelGridSelectorProps {
   availableModels: ModelConfig[];
   selectedModels: ModelConfig[];
@@ -34,15 +37,6 @@ export function ModelGridSelector({
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <h3 className="text-lg font-medium text-[#333333]">
-          Select Models to Compare
-        </h3>
-        <span className="text-sm text-[#333333]/60">
-          {selectedModels.length} / {maxModels} models selected
-        </span>
-      </div>
-
       <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-1">
           {availableModels.map((model) => {
@@ -81,16 +75,23 @@ export function ModelGridSelector({
 
                 {/* Model info */}
                 <div
-                  className={`space-y-1 ${!model.available ? "opacity-60" : ""}`}
+                  className={`space-y-2 ${!model.available ? "opacity-60" : ""}`}
                 >
-                  <div className="font-medium text-sm text-[#333333]">
-                    {model.displayName?.split(" (")[0]}
+                  <div className="flex flex-col items-center gap-1">
+                    <ProviderIcon
+                      provider={model.provider}
+                      className="w-6 h-6 flex-shrink-0"
+                    />
+                    <span className="text-[10px] text-[#333333]/50">
+                      {model.provider}
+                    </span>
                   </div>
-                  <div className="text-xs text-[#333333]/60">
-                    {model.displayName?.match(/\(([^)]+)\)/)?.[1]}
+                  <div className="font-medium text-sm text-[#333333] text-center truncate px-1">
+                    {model.model}
                   </div>
+                  <ModelInfo model={model} showIcon={false} className="px-2" />
                   {!model.available && (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 text-center">
                       🔒 API key required
                     </div>
                   )}
@@ -99,12 +100,6 @@ export function ModelGridSelector({
             );
           })}
         </div>
-      </div>
-
-      <div className="text-center mt-4 flex-shrink-0">
-        <p className="text-sm text-[#333333]/60">
-          Select up to {maxModels} models to compare their outputs
-        </p>
       </div>
     </div>
   );

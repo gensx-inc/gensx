@@ -1,31 +1,95 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { type ModelStreamState } from "@/gensx/workflows";
-import { useEffect, useRef, useState } from "react";
+import { type ModelConfig, type ModelStreamState } from "@/gensx/workflows";
+import {
+  Check,
+  Clock,
+  DollarSign,
+  TrendingDown,
+  TrendingUp,
+  WholeWord,
+} from "lucide-react";
+import { motion } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { LiveCostDisplay } from "./live-cost-display";
+import { ProviderIcon } from "./provider-icon";
+
+interface MetricRanges {
+  minWordCount: number;
+  maxWordCount: number;
+  minTime: number;
+  maxTime: number;
+  minCost: number;
+  maxCost: number;
+}
 
 interface ModelStreamCardProps {
   modelStream: ModelStreamState;
+  modelConfig?: ModelConfig;
   isSelected?: boolean;
   onSelect?: () => void;
   scrollPosition: number;
   onScrollUpdate: (scrollTop: number) => void;
-  maxWordCount?: number;
-  maxGenerationTime?: number;
+  metricRanges?: MetricRanges;
 }
 
 export function ModelStreamCard({
   modelStream,
+  modelConfig,
   isSelected = false,
   onSelect,
   scrollPosition,
   onScrollUpdate,
-  maxWordCount,
-  maxGenerationTime,
+  metricRanges,
 }: ModelStreamCardProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const isAutoScrollingRef = useRef(false);
   const isSyncingScrollRef = useRef(false);
   const animationFrameRef = useRef<number | null>(null);
+
+  // Calculate current cost for this model
+  const currentCost = useMemo(() => {
+    if (!modelConfig?.cost) return null;
+
+    const inputTokens = modelStream.inputTokens ?? 500;
+    const outputTokens =
+      modelStream.outputTokens ?? Math.ceil(modelStream.charCount / 4);
+
+    const inputCost = (inputTokens / 1_000_000) * modelConfig.cost.input;
+    const outputCost = (outputTokens / 1_000_000) * modelConfig.cost.output;
+    const totalCost = inputCost + outputCost;
+    // Convert to cost per 1000 requests
+    return totalCost * 1000;
+  }, [modelStream, modelConfig]);
+
+  // Determine if this model has the highest/lowest metrics
+  const isHighestWords =
+    metricRanges &&
+    modelStream.wordCount > 0 &&
+    modelStream.wordCount === metricRanges.maxWordCount;
+  const isLowestWords =
+    metricRanges &&
+    modelStream.wordCount > 0 &&
+    modelStream.wordCount === metricRanges.minWordCount;
+
+  const isHighestTime =
+    metricRanges &&
+    modelStream.generationTime !== undefined &&
+    modelStream.generationTime === metricRanges.maxTime;
+  const isLowestTime =
+    metricRanges &&
+    modelStream.generationTime !== undefined &&
+    modelStream.generationTime === metricRanges.minTime;
+
+  const isHighestCost =
+    metricRanges &&
+    currentCost !== null &&
+    Math.abs(currentCost - metricRanges.maxCost) < 0.0001;
+  const isLowestCost =
+    metricRanges &&
+    currentCost !== null &&
+    Math.abs(currentCost - metricRanges.minCost) < 0.0001;
 
   // Track live elapsed time during generation
   useEffect(() => {
@@ -150,46 +214,111 @@ export function ModelStreamCard({
     };
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "generating":
-        return "text-blue-600";
-      case "complete":
-        return "text-green-600";
-      case "error":
-        return "text-red-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
-  // Calculate progress percentage relative to the max word count
-  const progressPercentage = maxWordCount
-    ? (modelStream.wordCount / maxWordCount) * 100
-    : 0;
-
-  // Calculate time progress percentage relative to the max generation time
   // Use either final generation time or current elapsed time
   const displayTime = modelStream.generationTime ?? elapsedTime;
-  const timeProgressPercentage =
-    maxGenerationTime && displayTime
-      ? (displayTime / maxGenerationTime) * 100
-      : 0;
 
   return (
-    <div className="h-full w-full flex flex-col gap-2">
+    <motion.div className="h-full w-full flex flex-col gap-2">
       {/* Floating header */}
       <div className="flex items-center justify-between px-1 flex-shrink-0">
-        <h3 className="text-sm font-medium text-[#333333]">
-          {modelStream.displayName}
-        </h3>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs ${getStatusColor(modelStream.status)}`}>
-            {modelStream.status.charAt(0).toUpperCase() +
-              modelStream.status.slice(1)}
-            {modelStream.status === "generating" && " ●"}
-          </span>
-          {isSelected && <span className="text-blue-600 text-base">✓</span>}
+        <div className="flex items-center gap-1.5">
+          <ProviderIcon
+            provider={modelConfig?.provider ?? "openai"}
+            className="w-4 h-4"
+          />
+          <h3 className="text-sm font-medium text-[#333333]">
+            {modelStream.displayName.replace(/\s*\([^)]*\)\s*$/, "")}
+          </h3>
+          {modelStream.status === "complete" && (
+            <Check className="w-4 h-4 text-green-600" />
+          )}
+          {modelStream.status === "generating" && (
+            <div className="flex items-center gap-1">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+              <span className="text-xs text-blue-600">Generating</span>
+            </div>
+          )}
+          {modelStream.status === "error" && (
+            <div className="flex items-center gap-1">
+              <span className="text-xs">❌</span>
+              <span className="text-xs text-red-600">Error</span>
+            </div>
+          )}
+          {modelStream.status === "idle" && (
+            <div className="flex items-center gap-1">
+              <span className="text-xs">⏳</span>
+              <span className="text-xs text-[#333333]/60">Waiting</span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {/* Word count badge */}
+          <div
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+              isHighestWords || isLowestWords
+                ? "bg-[#000000]/20 ring-2 ring-[#000000]/20"
+                : "bg-[#000000]/10"
+            }`}
+          >
+            <WholeWord className="w-4 h-4 text-[#000000]/60" />
+            <span className="text-xs text-[#000000]/80">
+              {modelStream.wordCount}
+            </span>
+            {isHighestWords && (
+              <TrendingUp className="w-3 h-3 text-[#000000]/60" />
+            )}
+            {isLowestWords && (
+              <TrendingDown className="w-3 h-3 text-[#000000]/60" />
+            )}
+          </div>
+
+          {/* Time badge */}
+          {(modelStream.generationTime !== undefined ||
+            (modelStream.status === "generating" && elapsedTime > 0)) && (
+            <div
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                isHighestTime || isLowestTime
+                  ? "bg-[#000000]/20 ring-2 ring-[#000000]/20"
+                  : "bg-[#000000]/10"
+              }`}
+            >
+              <Clock className="w-3 h-3 text-[#000000]/60" />
+              <span className="text-xs text-[#000000]/80">
+                {displayTime.toFixed(1)}s
+              </span>
+              {isHighestTime && (
+                <TrendingUp className="w-3 h-3 text-[#000000]/60" />
+              )}
+              {isLowestTime && (
+                <TrendingDown className="w-3 h-3 text-[#000000]/60" />
+              )}
+            </div>
+          )}
+
+          {/* Cost badge */}
+          {modelConfig?.cost && (
+            <div
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                isHighestCost || isLowestCost
+                  ? "bg-[#000000]/20 ring-2 ring-[#000000]/20"
+                  : "bg-[#000000]/10"
+              }`}
+            >
+              <DollarSign className="w-3 h-3 text-[#000000]/60" />
+              <LiveCostDisplay
+                modelStream={modelStream}
+                modelConfig={modelConfig}
+                className="text-xs text-[#000000]"
+                showIcon={false}
+              />
+              {isHighestCost && (
+                <TrendingUp className="w-3 h-3 text-[#000000]/60" />
+              )}
+              {isLowestCost && (
+                <TrendingDown className="w-3 h-3 text-[#000000]/60" />
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -199,14 +328,14 @@ export function ModelStreamCard({
           isSelected
             ? "ring-2 ring-blue-500 border-blue-300"
             : "hover:border-gray-400"
-        }`}
+        } ${modelStream.status === "generating" ? "animate-pulse" : ""}`}
         onClick={onSelect}
         liquidGlass={false} // Disable glass effect to simplify scrolling
       >
         <CardContent className="h-full p-0 overflow-hidden rounded-2xl">
           <div
             ref={scrollContainerRef}
-            className="h-full p-3 overflow-y-auto rounded-2xl"
+            className="h-full p-3 overflow-y-auto rounded-2xl relative"
             onScroll={handleScroll}
           >
             {modelStream.content ? (
@@ -225,36 +354,6 @@ export function ModelStreamCard({
           </div>
         </CardContent>
       </Card>
-
-      {/* Word count and time progress bars */}
-      <div className="px-1 flex-shrink-0">
-        <div className="flex items-center justify-between mb-1">
-          {(modelStream.generationTime !== undefined ||
-            (modelStream.status === "generating" && elapsedTime > 0)) && (
-            <span className="text-xs text-[#333333]/60">
-              {displayTime.toFixed(1)}s
-            </span>
-          )}
-          <span className="text-xs text-[#333333]/60">
-            {modelStream.wordCount} words
-          </span>
-        </div>
-        <div className="relative h-1.5">
-          {/* Time bar - left to right, max 50% */}
-          {(modelStream.generationTime !== undefined ||
-            (modelStream.status === "generating" && elapsedTime > 0)) && (
-            <div
-              className="absolute left-0 h-full bg-gradient-to-r from-[#014071b6] to-[#0359734f] rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${Math.min(timeProgressPercentage / 2, 50)}%` }}
-            />
-          )}
-          {/* Word count bar - right to left, max 50% */}
-          <div
-            className="absolute right-0 h-full bg-gradient-to-l from-[#014071b6] to-[#0359734f] rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${Math.min(progressPercentage / 2, 50)}%` }}
-          />
-        </div>
-      </div>
-    </div>
+    </motion.div>
   );
 }

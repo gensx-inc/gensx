@@ -11,6 +11,8 @@ interface DraftEditorCardProps {
   onUserMessageChange: (value: string) => void;
   onSubmit: () => void;
   className?: string;
+  disabled?: boolean;
+  placeholder?: string;
 }
 
 export function DraftEditorCard({
@@ -20,6 +22,8 @@ export function DraftEditorCard({
   onUserMessageChange,
   onSubmit,
   className = "",
+  disabled = false,
+  placeholder = "Type your message here...",
 }: DraftEditorCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [wasStreaming, setWasStreaming] = useState(false);
@@ -55,8 +59,8 @@ export function DraftEditorCard({
                 onSubmit();
               }
             }}
-            placeholder="Type your message here..."
-            disabled={isStreaming}
+            placeholder={placeholder}
+            disabled={isStreaming || disabled}
             className="relative z-[2] w-full bg-transparent border-0 text-[#333333] placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-white/50 px-4 py-3"
           />
         </div>
@@ -68,7 +72,7 @@ export function DraftEditorCard({
             onClick={() => {
               onSubmit();
             }}
-            disabled={!userMessage.trim() || isStreaming}
+            disabled={!userMessage.trim() || isStreaming || disabled}
             className="relative z-[2] bg-transparent hover:bg-transparent border-0 text-[#333333] p-3 disabled:opacity-50 cursor-pointer"
             size="icon"
           >

@@ -41,6 +41,16 @@ interface ModelConfig {
   model: string;
   displayName?: string; // Optional display name
   available?: boolean; // Whether the provider has required API keys configured
+  // Cost information (per million tokens)
+  cost?: {
+    input: number;
+    output: number;
+  };
+  // Model limits
+  limit?: {
+    context: number; // Max context tokens
+    output: number; // Max output tokens
+  };
   // For custom providers, allow passing the model instance directly
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   modelInstance?: any;
@@ -65,6 +75,8 @@ interface ModelStreamState {
   startTime?: number;
   endTime?: number;
   generationTime?: number; // Time in seconds
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 // Single comprehensive state object for all models
@@ -180,6 +192,10 @@ const UpdateDraftWorkflow = gensx.Workflow(
       ? `Current content:\n${currentDraft}\n\nPlease update it based on: ${userMessage}`
       : `Please create content based on: ${userMessage}`;
 
+    // Estimate input tokens (rough approximation: ~4 characters per token)
+    const fullPrompt = systemPrompt + userPrompt;
+    const estimatedInputTokens = Math.ceil(fullPrompt.length / 4);
+
     // Update to generating stage
     draftProgress.stage = "generating";
     draftProgress.percentage = 25;
@@ -197,6 +213,7 @@ const UpdateDraftWorkflow = gensx.Workflow(
           // Update model stream to generating and record start time
           modelStream.status = "generating";
           modelStream.startTime = Date.now();
+          modelStream.inputTokens = estimatedInputTokens;
           gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
 
           const model = getModelInstance(modelConfig);
@@ -206,6 +223,15 @@ const UpdateDraftWorkflow = gensx.Workflow(
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
             ],
+            onFinish: ({ usage }) => {
+              // Update exact token counts from the response
+              modelStream.inputTokens = usage.promptTokens;
+              modelStream.outputTokens = usage.completionTokens;
+              gensx.publishObject<DraftProgress>(
+                "draft-progress",
+                draftProgress,
+              );
+            },
           });
 
           // Stream chunks

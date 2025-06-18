@@ -92,6 +92,8 @@ export async function fetchAvailableModels(): Promise<ModelConfig[]> {
           model: model.id,
           displayName: `${model.name} (${provider.name})`,
           available: isAvailable,
+          cost: model.cost,
+          limit: model.limit,
         });
 
         if (isAvailable) {

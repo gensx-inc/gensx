@@ -52,9 +52,6 @@ export function ModelSelector({
   return (
     <div className="space-y-4 p-6 rounded-3xl bg-white/10 backdrop-blur-[3px] shadow-[0_6px_6px_rgba(0,0,0,0.1),inset_2px_2px_1px_0_rgba(255,255,255,0.3),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.3)]">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-medium text-[#333333]">
-          Select Models to Compare
-        </h3>
         <span className="text-sm text-[#333333]/60">
           {selectedModels.length} / {maxModels} models selected
         </span>
