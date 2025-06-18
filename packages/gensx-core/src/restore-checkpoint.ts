@@ -29,18 +29,20 @@ export function createCheckpoint<T = unknown>(
     label,
     // schema,
   }: {
-    label: string;
+    label?: string;
     // schema: z.ZodSchema<T> // TODO: Validate the given feedback against the schema
-  },
+  } = {},
   { maxRestores = 3 }: { maxRestores?: number } = {},
 ): {
   feedback: T | null;
   restore: (feedback: T) => Promise<void>;
   label: string;
 } {
+  label ??= `checkpoint-marker-${Date.now()}`;
   if (CheckpointMarkerLabels.has(label)) {
     throw new Error(`[GenSX] Checkpoint ${label} has already been created.`);
   }
+  // Do not pass the label as a prop, as that would affect that ability to deterministically calculate the nodeId.
   const result = CheckpointMarkerComponent(
     { maxRestores },
     {
