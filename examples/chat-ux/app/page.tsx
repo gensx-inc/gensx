@@ -14,20 +14,29 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
+  const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const { sendMessage, messages, isLoading, error, clear, loadHistory } =
     useChat();
 
   // Get thread ID from URL
   const threadId = searchParams.get("thread");
 
-  // Load chat history when we have a threadId but no messages.
-  // This prevents fetching history for newly created chats.
+  // Handle thread switching - clear messages and load new thread's history
   useEffect(() => {
-    if (threadId && messages.length === 0) {
-      loadHistory(threadId);
+    if (threadId !== currentThreadId) {
+      // Thread has changed
+      setCurrentThreadId(threadId);
+
+      if (threadId) {
+        // Load the new thread's history
+        clear(); // Clear current messages first
+        loadHistory(threadId);
+      } else {
+        // No thread selected, clear messages
+        clear();
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [threadId, loadHistory]);
+  }, [threadId, currentThreadId, clear, loadHistory]);
 
   // New Chat: clear messages and remove thread ID from URL
   const handleNewChat = () => {
