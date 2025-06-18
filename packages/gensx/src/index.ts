@@ -14,6 +14,9 @@ import { ShowEnvironmentUI } from "./commands/environment/show.js";
 import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
 import { LoginUI } from "./commands/login.js";
 import { NewCommandOptions, NewProjectUI } from "./commands/new.js";
+import { CreateProjectUI } from "./commands/project/create.js";
+import { ListProjectsUI } from "./commands/project/list.js";
+import { ShowProjectUI } from "./commands/project/show.js";
 import { CliOptions, RunWorkflowUI } from "./commands/run.js";
 import { StartUI } from "./commands/start.js";
 import { VERSION } from "./utils/user-agent.js";
@@ -247,6 +250,61 @@ export async function runCLI() {
         waitUntilExit().then(resolve).catch(reject);
       });
     });
+
+  // Project management commands
+  const projectCommand = program
+    .command("project")
+    .description("Manage GenSX projects")
+    .option("-p, --project <name>", "Project name")
+    .action(async (options: { project?: string }) => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(
+          React.createElement(ShowProjectUI, {
+            projectName: options.project,
+          }),
+        );
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
+
+  projectCommand
+    .command("ls")
+    .description("List all projects")
+    .action(async () => {
+      return new Promise<void>((resolve, reject) => {
+        const { waitUntilExit } = render(React.createElement(ListProjectsUI));
+        waitUntilExit().then(resolve).catch(reject);
+      });
+    });
+
+  projectCommand
+    .command("create")
+    .description("Create a new project")
+    .argument(
+      "[name]",
+      "Name of the project (optional if specified in gensx.yaml)",
+    )
+    .option("-d, --description <desc>", "Optional project description")
+    .option("--env <name>", "Initial environment name")
+    .option("-y, --yes", "Automatically answer yes to all prompts", false)
+    .action(
+      async (
+        name?: string,
+        options?: { description?: string; env?: string; yes?: boolean },
+      ) => {
+        return new Promise<void>((resolve, reject) => {
+          const { waitUntilExit } = render(
+            React.createElement(CreateProjectUI, {
+              projectName: name,
+              description: options?.description,
+              environmentName: options?.env,
+              yes: options?.yes,
+            }),
+          );
+          waitUntilExit().then(resolve).catch(reject);
+        });
+      },
+    );
 
   await program.parseAsync();
 }

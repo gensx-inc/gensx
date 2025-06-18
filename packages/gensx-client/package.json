@@ -1,0 +1,59 @@
+{
+  "name": "@gensx/client",
+  "version": "0.1.0",
+  "description": "GenSX client for building AI workflows.",
+  "type": "module",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx.git",
+    "directory": "packages/gensx-client"
+  },
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/esm/index.d.ts",
+        "require": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.d.ts"
+      },
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c --watch",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "gensx",
+    "ai",
+    "client",
+    "jsx"
+  ],
+  "author": "GenSX Team",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@gensx/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

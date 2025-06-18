@@ -1,0 +1,38 @@
+---
+title: gensx project show
+description: Show project details including environments and workflows
+---
+
+# gensx project
+
+The `gensx project` command displays detailed information about a GenSX project, including its environments and workflows.
+
+## Usage
+
+```bash
+gensx project [options]
+```
+
+## Options
+
+| Option                 | Description                      |
+| ---------------------- | -------------------------------- |
+| `-p, --project <name>` | Project name to show details for |
+| `-h, --help`           | Display help for the command     |
+
+## Examples
+
+```bash
+# Show current project details
+gensx project
+
+# Show specific project details
+gensx project --project my-app
+```
+
+## Notes
+
+- You must be logged in to GenSX Cloud to show project details (`gensx login`)
+- If no project is specified, the command uses the project from `gensx.yaml` in the current directory
+- The command shows all environments and workflows in the currently selected environment
+- Use this command to verify your current project and environment setup

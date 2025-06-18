@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.37](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.36...gensx-v0.3.37) (2025-06-17)
+
+
+### ✨ New Features
+
+* adding project cli commands ([#786](https://github.com/gensx-inc/gensx/issues/786)) ([49bf402](https://github.com/gensx-inc/gensx/commit/49bf402d9e92145d2446ddfcb16ef465310f447a)), closes [#782](https://github.com/gensx-inc/gensx/issues/782)
+
 ## [0.3.36](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.35...gensx-v0.3.36) (2025-06-13)
 
 
