@@ -16,6 +16,7 @@ interface DraftEditorCardProps {
 }
 
 export function DraftEditorCard({
+  output,
   isStreaming,
   error,
   userMessage,
@@ -23,10 +24,15 @@ export function DraftEditorCard({
   onSubmit,
   className = "",
   disabled = false,
-  placeholder = "Type your message here...",
+  placeholder,
 }: DraftEditorCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [wasStreaming, setWasStreaming] = useState(false);
+
+  // Determine the placeholder based on whether a draft exists
+  const effectivePlaceholder =
+    placeholder ??
+    (output ? "Update draft..." : "Create a first draft to iterate on...");
 
   // Track when streaming stops and focus the input
   useEffect(() => {
@@ -59,7 +65,7 @@ export function DraftEditorCard({
                 onSubmit();
               }
             }}
-            placeholder={placeholder}
+            placeholder={effectivePlaceholder}
             disabled={isStreaming || disabled}
             className="relative z-[2] w-full bg-transparent border-0 text-[#333333] placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-white/50 px-4 py-3"
           />

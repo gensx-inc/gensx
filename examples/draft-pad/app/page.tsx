@@ -782,6 +782,7 @@ export default function Home() {
       {/* Input section - always at bottom */}
       <div className="flex-shrink-0 mt-6 flex justify-center">
         <DraftEditorCard
+          output={selectedContent}
           isStreaming={inProgress}
           error={error}
           userMessage={userMessage}

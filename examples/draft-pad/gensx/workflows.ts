@@ -277,20 +277,46 @@ const UpdateDraftWorkflow = gensx.Workflow(
         } catch (error) {
           // Handle model initialization or streaming errors
           modelStream.status = "error";
-          modelStream.error =
-            error instanceof Error ? error.message : "Unknown error";
+
+          // Extract more meaningful error message
+          let errorMessage = "Unknown error";
+          if (error instanceof Error) {
+            // Check for specific API errors
+            if (
+              error.message.includes("model") &&
+              error.message.includes("does not exist")
+            ) {
+              errorMessage = `Model not available: ${modelConfig.model}`;
+            } else if (error.message.includes("API key")) {
+              errorMessage = `Invalid or missing API key for ${modelConfig.provider}`;
+            } else if (error.message.includes("rate limit")) {
+              errorMessage = "Rate limit exceeded. Please try again later.";
+            } else if (error.message.includes("timeout")) {
+              errorMessage = "Request timed out. Please try again.";
+            } else {
+              // For other errors, show a cleaner message
+              errorMessage = error.message.split("\n")[0]; // Take only first line
+              // Limit length for display
+              if (errorMessage.length > 100) {
+                errorMessage = errorMessage.substring(0, 97) + "...";
+              }
+            }
+          }
+
+          modelStream.error = errorMessage;
           modelStream.endTime = Date.now();
           if (modelStream.startTime) {
             modelStream.generationTime =
               (modelStream.endTime - modelStream.startTime) / 1000;
           }
+          draftProgress.completedModels++; // Count as completed even if error
           gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
 
           yield {
             modelId: modelConfig.id,
             index,
             chunk: null,
-            error: error instanceof Error ? error.message : "Unknown error",
+            error: errorMessage,
             done: true,
           };
         }

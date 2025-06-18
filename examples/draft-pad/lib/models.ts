@@ -103,7 +103,7 @@ export async function fetchAvailableModels(): Promise<ModelConfig[]> {
             | "groq"
             | "xai"
             | "custom",
-          model: model.id,
+          model: decodeURIComponent(model.id), // Decode URL-encoded model IDs
           displayName: `${model.name} (${provider.name})`,
           providerName: provider.name,
           envVars,
