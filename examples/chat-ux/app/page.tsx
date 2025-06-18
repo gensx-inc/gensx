@@ -24,13 +24,16 @@ export default function ChatPage() {
   // Handle thread switching - clear messages and load new thread's history
   useEffect(() => {
     if (threadId !== currentThreadId) {
-      // Thread has changed
+      const previousThreadId = currentThreadId;
       setCurrentThreadId(threadId);
 
       if (threadId) {
-        // Load the new thread's history
-        clear(); // Clear current messages first
-        loadHistory(threadId);
+        // Only clear and load history if we're switching FROM an existing thread
+        // If previousThreadId is null, this is a new thread creation, keep current messages
+        if (previousThreadId !== null) {
+          clear(); // Clear current messages first
+          loadHistory(threadId);
+        }
       } else {
         // No thread selected, clear messages
         clear();

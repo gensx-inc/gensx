@@ -1,6 +1,6 @@
 import * as gensx from "@gensx/core";
 import { streamText } from "@gensx/vercel-ai";
-import { openai } from "@ai-sdk/openai";
+import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import {
   CoreMessage,
   ToolSet,
@@ -18,7 +18,7 @@ interface AgentProps {
 export const Agent = gensx.Component(
   "Agent",
   async ({ messages, tools }: AgentProps) => {
-    const model = openai("gpt-4.1-mini");
+    const model = anthropic("claude-sonnet-4-20250514");
 
     // Track all messages including responses
     const allMessages: CoreMessage[] = [];
@@ -139,6 +139,11 @@ export const Agent = gensx.Component(
       maxSteps: 10,
       model: wrappedLanguageModel,
       tools,
+      providerOptions: {
+        anthropic: {
+          thinking: { type: "enabled", budgetTokens: 12000 },
+        } satisfies AnthropicProviderOptions,
+      },
     });
 
     let response = "";

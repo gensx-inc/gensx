@@ -12,6 +12,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.12",
     "@ai-sdk/openai": "^1.3.22",
     "@gensx/client": "workspace:*",
     "@gensx/core": "workspace:*",
