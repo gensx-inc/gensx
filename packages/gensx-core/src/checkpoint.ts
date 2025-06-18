@@ -21,12 +21,13 @@ const gzipAsync = promisify(gzip);
 export function generateDeterministicId(
   name: string,
   props: Record<string, unknown>,
+  sequenceNumber: number,
   parentId?: string,
 ): string {
   // Simple but effective serialization for MVP
   const propsStr = JSON.stringify(props, Object.keys(props).sort());
   const propsHash = createHash("sha256")
-    .update(`${propsStr}:${parentId ?? "root"}`)
+    .update(`${propsStr}:${parentId ?? "root"}:${sequenceNumber}`)
     .digest("hex")
     .slice(0, 16);
 
@@ -53,6 +54,12 @@ export class CheckpointManager implements CheckpointWriter {
   private printUrl = false;
   private runtime?: "cloud" | "sdk";
   private runtimeVersion?: string;
+
+  private sequenceNumber = 0;
+
+  get nodeSequenceNumber() {
+    return this.sequenceNumber++;
+  }
 
   private traceId?: string;
   private executionRunId?: string;
@@ -660,14 +667,14 @@ export class CheckpointManager implements CheckpointWriter {
    * the final checkpoint will always show the correct logical structure
    * of the execution.
    */
-  addNode(partialNode: Partial<ExecutionNode>, parentId?: string): string {
-    const nodeId =
-      partialNode.id ??
-      generateDeterministicId(
-        partialNode.componentName ?? "Unknown",
-        partialNode.props ?? {},
-        parentId,
-      );
+  addNode(
+    partialNode: Partial<ExecutionNode> & { id: string },
+    parentId?: string,
+  ): string {
+    const nodeId = partialNode.id;
+    if (!nodeId) {
+      throw new Error("Node ID is required");
+    }
     const clonedPartial = this.cloneValue(
       partialNode,
     ) as Partial<ExecutionNode>;

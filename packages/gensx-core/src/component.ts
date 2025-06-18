@@ -91,30 +91,24 @@ export function Component<P extends object = {}, R = unknown>(
     }
 
     // Generate deterministic ID for replay
-    const props_for_id = props
-      ? Object.fromEntries(
-          Object.entries(props).filter(
-            ([key]) => key !== "children" && key !== "componentOpts",
-          ),
-        )
-      : {};
+    const props_for_id = props ? Object.fromEntries(Object.entries(props)) : {};
 
     // Generate the deterministic ID for this component
-    const deterministicId = generateDeterministicId(
+    const nodeId = generateDeterministicId(
       checkpointName,
       props_for_id,
+      checkpointManager.nodeSequenceNumber,
       currentNodeId,
     );
 
     // Check checkpoint for existing result
-    const cachedResult = checkpointManager.getCompletedResult(deterministicId);
+    // TODO: Move this into the checkpoint manager so it is entirely responsible for managing the cache and generating node ids.
+    const cachedResult = checkpointManager.getCompletedResult(nodeId);
     if (cachedResult !== undefined) {
-      console.info(
-        `[Replay] Using cached result for ${name} (${deterministicId})`,
-      );
+      console.info(`[Replay] Using cached result for ${name} (${nodeId})`);
 
       // Add the cached subtree to the new checkpoint being built
-      checkpointManager.addCachedSubtreeToCheckpoint(deterministicId);
+      checkpointManager.addCachedSubtreeToCheckpoint(nodeId);
 
       return cachedResult as R;
     }
@@ -123,14 +117,14 @@ export function Component<P extends object = {}, R = unknown>(
       workflowContext.sendWorkflowMessage({
         type: "component-end",
         componentName: checkpointName ?? "",
-        componentId: deterministicId,
+        componentId: nodeId,
       });
       resolvedComponentOpts.onComplete?.();
     }
 
-    const nodeId = checkpointManager.addNode(
+    checkpointManager.addNode(
       {
-        id: deterministicId,
+        id: nodeId,
         componentName: checkpointName,
         props: props_for_id,
         componentOpts: resolvedComponentOpts,
