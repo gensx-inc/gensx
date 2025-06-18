@@ -9,15 +9,18 @@ export interface WorkflowExecutionContext {
   checkpointManager: CheckpointManager;
   sendWorkflowMessage: WorkflowMessageListener;
   onWaitForInput: (nodeId: string) => Promise<void>;
+  onRestoreCheckpoint: (nodeId: string, feedback: unknown) => Promise<void>;
   // Future: Add more workflow-level utilities here
 }
 
 export function createWorkflowContext({
   onMessage,
   onWaitForInput,
+  onRestoreCheckpoint,
 }: {
   onMessage?: WorkflowMessageListener;
   onWaitForInput?: (nodeId: string) => Promise<void>;
+  onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>;
 } = {}): WorkflowExecutionContext {
   return {
     checkpointManager: new CheckpointManager(),
@@ -29,6 +32,14 @@ export function createWorkflowContext({
       // eslint-disable-next-line @typescript-eslint/require-await
       (async () => {
         console.warn("[GenSX] Pause/resume not supported in this environment");
+      }),
+    onRestoreCheckpoint:
+      onRestoreCheckpoint ??
+      // eslint-disable-next-line @typescript-eslint/require-await
+      (async () => {
+        console.warn(
+          "[GenSX] Restore checkpoint not supported in this environment",
+        );
       }),
   };
 }

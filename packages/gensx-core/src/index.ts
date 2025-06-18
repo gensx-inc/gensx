@@ -23,6 +23,7 @@ export type {
 } from "./workflow-state.js";
 export * from "./wrap.js";
 export * from "./wait-for-input.js";
+export * from "./restore-checkpoint.js";
 
 export { Component, Workflow } from "./component.js";
 

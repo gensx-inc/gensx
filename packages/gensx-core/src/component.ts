@@ -267,6 +267,7 @@ type WorkflowRuntimeOpts = WorkflowOpts & {
   checkpoint?: ExecutionNode;
   printUrl?: boolean;
   onWaitForInput?: () => Promise<void>;
+  onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>;
 };
 
 export function Workflow<P extends object = {}, R = unknown>(
@@ -283,6 +284,7 @@ export function Workflow<P extends object = {}, R = unknown>(
       undefined,
       runtimeOpts?.messageListener,
       runtimeOpts?.onWaitForInput,
+      runtimeOpts?.onRestoreCheckpoint,
     );
     await context.init();
 
