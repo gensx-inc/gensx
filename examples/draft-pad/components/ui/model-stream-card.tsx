@@ -22,9 +22,10 @@ export function ModelStreamCard({
   maxGenerationTime,
 }: ModelStreamCardProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const lastContentLengthRef = useRef(0);
-  const userHasScrolledRef = useRef(false);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const isAutoScrollingRef = useRef(false);
+  const isSyncingScrollRef = useRef(false);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Track live elapsed time during generation
   useEffect(() => {
@@ -42,55 +43,112 @@ export function ModelStreamCard({
 
   // Apply scroll position whenever it changes (from other cards)
   useEffect(() => {
-    if (scrollContainerRef.current && !userHasScrolledRef.current) {
-      // Use requestAnimationFrame to ensure DOM is ready
+    if (
+      scrollContainerRef.current &&
+      modelStream.status !== "generating" &&
+      !isSyncingScrollRef.current // Don't sync if we're already syncing
+    ) {
+      // Set flag to prevent feedback loop
+      isSyncingScrollRef.current = true;
+
+      // Immediately update scroll position for smooth sync
+      scrollContainerRef.current.scrollTop = scrollPosition;
+
+      // Reset flag quickly
       requestAnimationFrame(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = scrollPosition;
-        }
+        isSyncingScrollRef.current = false;
       });
     }
-  }, [scrollPosition]);
+  }, [scrollPosition, modelStream.status]);
 
   // Auto-scroll to bottom when new content is generated
   useEffect(() => {
-    if (scrollContainerRef.current && modelStream.content) {
-      const currentLength = modelStream.content.length;
-      const isNewContent = currentLength > lastContentLengthRef.current;
-      const isGenerating = modelStream.status === "generating";
-
-      if (isNewContent && isGenerating && !userHasScrolledRef.current) {
-        // Scroll to bottom for new content
-        scrollContainerRef.current.scrollTop =
-          scrollContainerRef.current.scrollHeight;
-        // Update the shared scroll position
-        onScrollUpdate(scrollContainerRef.current.scrollTop);
-      }
-
-      lastContentLengthRef.current = currentLength;
+    if (!scrollContainerRef.current || modelStream.status !== "generating") {
+      return;
     }
-  }, [modelStream.content, modelStream.status, onScrollUpdate]);
 
-  // Reset user scroll flag when generation completes
+    const scrollElement = scrollContainerRef.current;
+
+    // Function to scroll to bottom
+    const scrollToBottom = () => {
+      isAutoScrollingRef.current = true;
+      scrollElement.scrollTop = scrollElement.scrollHeight;
+      setTimeout(() => {
+        isAutoScrollingRef.current = false;
+      }, 50);
+    };
+
+    // Create MutationObserver to watch for content changes
+    const observer = new MutationObserver((mutations) => {
+      // Check if any mutations actually added content
+      const hasContentChanges = mutations.some(
+        (mutation) =>
+          mutation.type === "childList" || mutation.type === "characterData",
+      );
+
+      if (hasContentChanges) {
+        // Use requestAnimationFrame to ensure DOM is updated
+        requestAnimationFrame(() => {
+          scrollToBottom();
+        });
+      }
+    });
+
+    // Start observing the scroll container for changes
+    observer.observe(scrollElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    // Initial scroll
+    scrollToBottom();
+
+    // Cleanup
+    return () => {
+      observer.disconnect();
+    };
+  }, [modelStream.status, modelStream.modelId]);
+
+  // Reset when generation starts
   useEffect(() => {
-    if (modelStream.status !== "generating") {
-      userHasScrolledRef.current = false;
+    if (modelStream.status === "generating") {
+      // Reset scroll position when starting new generation
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
     }
   }, [modelStream.status]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    // Skip if we're auto-scrolling or syncing
+    if (isAutoScrollingRef.current || isSyncingScrollRef.current) return;
+
     const target = e.currentTarget;
-    const isAtBottom =
-      Math.abs(target.scrollHeight - target.clientHeight - target.scrollTop) <
-      5;
 
-    // If user scrolls up while generating, stop auto-scroll
-    if (modelStream.status === "generating" && !isAtBottom) {
-      userHasScrolledRef.current = true;
+    // Only sync scroll position if not generating
+    if (modelStream.status !== "generating") {
+      // Cancel any pending animation frame
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      // Use requestAnimationFrame for smooth 60fps updates
+      animationFrameRef.current = requestAnimationFrame(() => {
+        onScrollUpdate(target.scrollTop);
+        animationFrameRef.current = null;
+      });
     }
-
-    onScrollUpdate(target.scrollTop);
   };
+
+  // Cleanup animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -111,9 +169,11 @@ export function ModelStreamCard({
     : 0;
 
   // Calculate time progress percentage relative to the max generation time
+  // Use either final generation time or current elapsed time
+  const displayTime = modelStream.generationTime ?? elapsedTime;
   const timeProgressPercentage =
-    maxGenerationTime && modelStream.generationTime
-      ? (modelStream.generationTime / maxGenerationTime) * 100
+    maxGenerationTime && displayTime
+      ? (displayTime / maxGenerationTime) * 100
       : 0;
 
   return (
@@ -135,17 +195,18 @@ export function ModelStreamCard({
 
       {/* Content Card */}
       <Card
-        className={`flex-1 min-h-0 cursor-pointer transition-all duration-200 ${
+        className={`flex-1 min-h-0 cursor-pointer transition-all duration-200 backdrop-blur-md bg-white/20 border border-white/30 ${
           isSelected
             ? "ring-2 ring-blue-500 border-blue-300"
             : "hover:border-gray-400"
         }`}
         onClick={onSelect}
+        liquidGlass={false} // Disable glass effect to simplify scrolling
       >
-        <CardContent className="h-full p-0">
+        <CardContent className="h-full p-0 overflow-hidden rounded-2xl">
           <div
             ref={scrollContainerRef}
-            className="h-full p-3 overflow-y-auto"
+            className="h-full p-3 overflow-y-auto rounded-2xl"
             onScroll={handleScroll}
           >
             {modelStream.content ? (
@@ -168,28 +229,30 @@ export function ModelStreamCard({
       {/* Word count and time progress bars */}
       <div className="px-1 flex-shrink-0">
         <div className="flex items-center justify-between mb-1">
+          {(modelStream.generationTime !== undefined ||
+            (modelStream.status === "generating" && elapsedTime > 0)) && (
+            <span className="text-xs text-[#333333]/60">
+              {displayTime.toFixed(1)}s
+            </span>
+          )}
           <span className="text-xs text-[#333333]/60">
             {modelStream.wordCount} words
           </span>
-          {modelStream.generationTime !== undefined && (
-            <span className="text-xs text-[#333333]/60">
-              {modelStream.generationTime.toFixed(1)}s
-            </span>
-          )}
         </div>
         <div className="relative h-1.5">
-          {/* Word count bar - left to right, max 50% */}
-          <div
-            className="absolute left-0 h-full bg-gradient-to-r from-[#014071b6] to-[#0359734f] rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${Math.min(progressPercentage / 2, 50)}%` }}
-          />
-          {/* Time bar - right to left, max 50% */}
-          {modelStream.generationTime !== undefined && (
+          {/* Time bar - left to right, max 50% */}
+          {(modelStream.generationTime !== undefined ||
+            (modelStream.status === "generating" && elapsedTime > 0)) && (
             <div
-              className="absolute right-0 h-full bg-gradient-to-l from-[#014071b6] to-[#0359734f] rounded-full transition-all duration-300 ease-out"
+              className="absolute left-0 h-full bg-gradient-to-r from-[#014071b6] to-[#0359734f] rounded-full transition-all duration-300 ease-out"
               style={{ width: `${Math.min(timeProgressPercentage / 2, 50)}%` }}
             />
           )}
+          {/* Word count bar - right to left, max 50% */}
+          <div
+            className="absolute right-0 h-full bg-gradient-to-l from-[#014071b6] to-[#0359734f] rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${Math.min(progressPercentage / 2, 50)}%` }}
+          />
         </div>
       </div>
     </div>

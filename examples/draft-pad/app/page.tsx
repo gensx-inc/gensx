@@ -107,6 +107,27 @@ export default function Home() {
   // Show model selector if no streams exist
   const showModelSelector = !draftProgress?.modelStreams.length && !inProgress;
 
+  // Sort model streams by completion status and time
+  const sortedModelStreams = useMemo(() => {
+    if (!draftProgress?.modelStreams) return [];
+
+    return [...draftProgress.modelStreams].sort((a, b) => {
+      // First, sort by completion status (completed first)
+      if (a.status === "complete" && b.status !== "complete") return -1;
+      if (a.status !== "complete" && b.status === "complete") return 1;
+
+      // If both are complete, sort by generation time (fastest first)
+      if (a.status === "complete" && b.status === "complete") {
+        const timeA = a.generationTime ?? Infinity;
+        const timeB = b.generationTime ?? Infinity;
+        return timeA - timeB;
+      }
+
+      // If both are generating or have same status, maintain original order
+      return 0;
+    });
+  }, [draftProgress?.modelStreams]);
+
   // Determine grid layout based on number of models
   const getGridClassName = (modelCount: number) => {
     if (modelCount >= 7) {
@@ -164,28 +185,30 @@ export default function Home() {
       {/* Model streams section - adaptive grid layout */}
       {!showModelSelector && (
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          {draftProgress?.modelStreams &&
-          draftProgress.modelStreams.length > 0 ? (
+          {sortedModelStreams.length > 0 ? (
             <div
-              className={`${getGridClassName(draftProgress.modelStreams.length)} ${getGridRowsClass(draftProgress.modelStreams.length)} flex-1 min-h-0 auto-rows-fr`}
+              className={`${getGridClassName(sortedModelStreams.length)} ${getGridRowsClass(sortedModelStreams.length)} flex-1 min-h-0 auto-rows-fr transition-all duration-500`}
             >
-              {draftProgress.modelStreams.map((modelStream) => {
+              {sortedModelStreams.map((modelStream) => {
                 // Calculate max word count across all models
                 const maxWordCount = Math.max(
-                  ...draftProgress.modelStreams.map((s) => s.wordCount),
+                  ...sortedModelStreams.map((s) => s.wordCount),
                   1,
                 );
 
                 // Calculate max generation time across all completed models
                 const maxGenerationTime = Math.max(
-                  ...draftProgress.modelStreams
+                  ...sortedModelStreams
                     .filter((s) => s.generationTime !== undefined)
                     .map((s) => s.generationTime!),
                   1,
                 );
 
                 return (
-                  <div key={modelStream.modelId} className="min-h-0 flex">
+                  <div
+                    key={modelStream.modelId}
+                    className="min-h-0 flex transition-all duration-500"
+                  >
                     <ModelStreamCard
                       modelStream={modelStream}
                       isSelected={selectedModelId === modelStream.modelId}
