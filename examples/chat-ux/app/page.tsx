@@ -127,13 +127,14 @@ export default function ChatPage() {
                     key={`${threadId || "new"}-${index}`}
                     message={message}
                     messages={messages}
+                    isStreaming={isLoading && index === messages.length - 1}
                   />
                 ))}
 
                 {isLoading && (
-                  <div className="flex justify-start px-4 py-3">
-                    <div className="text-slate-500 text-md font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]">
-                      Thinking...
+                  <div className="flex justify-start px-2 py-2">
+                    <div className="text-slate-500 text-sm font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]">
+                      Working on it...
                     </div>
                   </div>
                 )}

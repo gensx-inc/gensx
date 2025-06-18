@@ -9,6 +9,11 @@ import {
   ToolCallPart,
 } from "ai";
 
+interface ReasoningPart {
+  type: "reasoning";
+  text: string;
+}
+
 interface AgentProps {
   messages: CoreMessage[];
   tools: ToolSet;
@@ -72,7 +77,9 @@ export const Agent = gensx.Component(
             });
 
             let accumulatedText = "";
-            const contentParts: Array<TextPart | ToolCallPart> = [];
+            let accumulatedReasoning = "";
+            const contentParts: Array<TextPart | ToolCallPart | ReasoningPart> =
+              [];
 
             const transformStream = new TransformStream({
               transform(chunk, controller) {
@@ -94,6 +101,31 @@ export const Agent = gensx.Component(
                     contentParts.push({
                       type: "text",
                       text: accumulatedText,
+                    });
+                  }
+
+                  allMessages[assistantMessageIndex].content = [
+                    ...contentParts,
+                  ];
+                  publishMessages();
+                } else if (chunk.type === "reasoning") {
+                  accumulatedReasoning += chunk.textDelta;
+                  console.log(chunk);
+
+                  // Update or add reasoning part
+                  const existingReasoningPartIndex = contentParts.findIndex(
+                    (part) => part.type === "reasoning",
+                  );
+                  if (existingReasoningPartIndex >= 0) {
+                    const reasoningPart =
+                      contentParts[existingReasoningPartIndex];
+                    if (reasoningPart.type === "reasoning") {
+                      reasoningPart.text = accumulatedReasoning;
+                    }
+                  } else {
+                    contentParts.push({
+                      type: "reasoning",
+                      text: accumulatedReasoning,
                     });
                   }
 
