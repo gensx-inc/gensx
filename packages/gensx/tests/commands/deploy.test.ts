@@ -85,8 +85,8 @@ afterEach(() => {
 suite("deploy command", () => {
   const mockBuildResult = {
     bundleFile: "test-bundle.js",
-    schemaFile: "test-schema.json",
-    schemas: {
+    workflowInfoFile: "test-workflow-info.json",
+    workflowInfo: {
       workflow: {
         input: {
           type: "object" as const,
@@ -97,6 +97,9 @@ suite("deploy command", () => {
           type: "object" as const,
           properties: {},
           required: [],
+        },
+        config: {
+          requireAuthToTrigger: true,
         },
       },
     },

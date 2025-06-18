@@ -57,10 +57,18 @@ mockWorkflow.__gensxWorkflow = true;
 Object.defineProperty(mockWorkflow, "name", { value: "testWorkflow" });
 
 // Mock schemas
-const mockSchemas: Record<string, { input: Definition; output: Definition }> = {
+const mockWorkflowInfo: Record<
+  string,
+  {
+    input: Definition;
+    output: Definition;
+    config: { requireAuthToTrigger: boolean };
+  }
+> = {
   testWorkflow: {
     input: { type: "object", properties: { test: { type: "string" } } },
     output: { type: "object", properties: { result: { type: "string" } } },
+    config: { requireAuthToTrigger: true },
   },
 };
 
@@ -184,15 +192,15 @@ describe("GenSX Dev Server", () => {
           warn: vi.fn(),
         },
       },
-      mockSchemas,
+      mockWorkflowInfo,
     );
 
     const registeredWorkflows = server.getWorkflows();
     expect(registeredWorkflows[0].inputSchema).toEqual(
-      mockSchemas.testWorkflow.input,
+      mockWorkflowInfo.testWorkflow.input,
     );
     expect(registeredWorkflows[0].outputSchema).toEqual(
-      mockSchemas.testWorkflow.output,
+      mockWorkflowInfo.testWorkflow.output,
     );
   });
 
@@ -297,7 +305,7 @@ describe("GenSX Dev Server", () => {
           warn: vi.fn(),
         },
       },
-      mockSchemas,
+      mockWorkflowInfo,
     );
 
     const privateServer = server as unknown as PrivateServer;
