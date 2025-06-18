@@ -861,6 +861,7 @@ export class CheckpointManager implements CheckpointWriter {
         `[Checkpoint] Node ${nodeId} not found in source checkpoint`,
       );
     }
+    this.updateCheckpoint();
   }
 
   private findNodeInCheckpoint(
