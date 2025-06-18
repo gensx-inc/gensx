@@ -28,9 +28,10 @@ export default function ChatPage() {
       setCurrentThreadId(threadId);
 
       if (threadId) {
-        // Only clear and load history if we're switching FROM an existing thread
-        // If previousThreadId is null, this is a new thread creation, keep current messages
-        if (previousThreadId !== null) {
+        // Load history if:
+        // 1. We're switching FROM an existing thread (previousThreadId !== null), OR
+        // 2. We're loading a thread on page refresh/initial load and have no messages
+        if (previousThreadId !== null || messages.length === 0) {
           clear(); // Clear current messages first
           loadHistory(threadId);
         }
@@ -39,7 +40,7 @@ export default function ChatPage() {
         clear();
       }
     }
-  }, [threadId, currentThreadId, clear, loadHistory]);
+  }, [threadId, currentThreadId, clear, loadHistory, messages.length]);
 
   // New Chat: clear messages and remove thread ID from URL
   const handleNewChat = () => {
