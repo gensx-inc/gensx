@@ -163,6 +163,13 @@ export async function runCLI() {
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
     .action((workflow: string, options: CliOptions) => {
       return new Promise<void>((resolve, reject) => {
+        if (options.progress && !options.wait) {
+          console.error(
+            "Cannot use --progress when using --no-wait. Progress is only supported when waiting for the workflow to finish.",
+          );
+          process.exit(1);
+        }
+
         const { waitUntilExit } = render(
           React.createElement(RunWorkflowUI, {
             workflowName: workflow,
