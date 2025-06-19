@@ -89,7 +89,7 @@ function ReasoningContent({
             {isExpanded ? (
               <ChevronDown size={14} className="text-slate-400 ml-auto" />
             ) : (
-              <ChevronRight size={14} className="text-slate-400 ml-auto" />
+              <ChevronRight size={14} className="text-slate-400 ml-2" />
             )}
           </button>
           {isExpanded && (

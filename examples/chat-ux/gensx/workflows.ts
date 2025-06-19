@@ -1,9 +1,8 @@
 import * as gensx from "@gensx/core";
 import { Agent } from "./agent";
 import { CoreMessage } from "ai";
-import { tool } from "ai";
-import { z } from "zod";
-import { WebSearch } from "./tools/webSearch";
+import { webSearchTool } from "./tools/webSearch";
+import { scrapePageTool } from "./tools/scrapePage";
 import { useBlob } from "@gensx/storage";
 
 interface ChatAgentProps {
@@ -44,28 +43,8 @@ export const ChatAgent = gensx.Workflow(
       ];
 
       const tools = {
-        "web-search": tool({
-          description: "Search the web for current information on any topic.",
-          parameters: z.object({
-            query: z
-              .string()
-              .describe("The search query to find information about"),
-            limit: z
-              .number()
-              .optional()
-              .describe("Number of search results to return (default: 5)"),
-          }),
-          execute: async ({
-            query,
-            limit,
-          }: {
-            query: string;
-            limit?: number;
-          }) => {
-            const results = await WebSearch({ query, limit });
-            return results;
-          },
-        }),
+        web_search: webSearchTool,
+        scrape_page: scrapePageTool,
       };
 
       const result = await Agent({ messages, tools });

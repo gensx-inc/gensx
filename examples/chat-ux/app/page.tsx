@@ -48,14 +48,6 @@ export default function ChatPage() {
     router.push("?", { scroll: false });
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   // Send message: create thread ID if needed, update URL, then send
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
