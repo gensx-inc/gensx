@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { PanelLeftOpen, PanelLeftClose, Trash } from "lucide-react";
 
@@ -10,6 +10,7 @@ interface ChatHistoryProps {
   activeThreadId: string | null;
   onNewChat: () => void;
   userId: string;
+  isStreaming: boolean;
 }
 
 interface Thread {
@@ -26,45 +27,53 @@ export function ChatHistory({
   activeThreadId,
   onNewChat,
   userId,
+  isStreaming,
 }: ChatHistoryProps) {
   const router = useRouter();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const prevIsStreaming = useRef(isStreaming);
 
-  const fetchHistory = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`/api/chats/${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setThreads(data);
-      } else {
-        console.error("Failed to fetch chat history");
+  const fetchHistory = useCallback(
+    async (setLoading = true) => {
+      try {
+        if (setLoading) {
+          setIsLoading(true);
+        }
+        const response = await fetch(`/api/chats/${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setThreads(data);
+        } else {
+          console.error("Failed to fetch chat history");
+          setThreads([]);
+        }
+      } catch (error) {
+        console.error("Error fetching chat history:", error);
         setThreads([]);
+      } finally {
+        if (setLoading) {
+          setIsLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("Error fetching chat history:", error);
-      setThreads([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId]);
+    },
+    [userId],
+  );
 
   useEffect(() => {
-    fetchHistory();
+    fetchHistory(true); // Set loading on initial mount
   }, [fetchHistory]);
 
-  // Refresh when we have a new thread that's not in our list
-  useEffect(() => {
-    if (activeThreadId && !threads.find((t) => t.id === activeThreadId)) {
-      // Debounce the refresh to avoid jittering
-      const timeoutId = setTimeout(() => {
-        fetchHistory();
-      }, 2000); // Wait 2 seconds to ensure the thread is saved
+  const isNewThread =
+    activeThreadId && !threads.find((t) => t.id === activeThreadId);
 
-      return () => clearTimeout(timeoutId);
+  // Refresh when a stream finishes for a new thread
+  useEffect(() => {
+    if (prevIsStreaming.current && !isStreaming && isNewThread) {
+      fetchHistory(false); // Don't set loading on updates
     }
-  }, [activeThreadId, threads, fetchHistory]);
+    prevIsStreaming.current = isStreaming;
+  }, [isStreaming, isNewThread, fetchHistory]);
 
   const handleDelete = async (threadIdToDelete: string) => {
     // Optimistically remove the thread from the UI
@@ -127,7 +136,7 @@ export function ChatHistory({
               </div>
             ) : (
               <div className="flex items-center justify-between w-full">
-                <h2 className="font-semibold text-slate-900">Chat</h2>
+                <h2 className="font-semibold text-slate-900 pl-2">Chat</h2>
                 <button
                   onClick={onCollapseToggle}
                   className="p-1.5 hover:bg-slate-100 rounded-md transition-colors group"

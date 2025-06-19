@@ -19,7 +19,7 @@ export default function ChatPage() {
   const [collapsed, setCollapsed] = useState(true);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const { sendMessage, messages, isLoading, error, clear, loadHistory } =
+  const { sendMessage, messages, status, error, clear, loadHistory } =
     useChat();
 
   // Get thread ID from URL
@@ -90,6 +90,7 @@ export default function ChatPage() {
               activeThreadId={threadId}
               onNewChat={handleNewChat}
               userId={userId}
+              isStreaming={status !== "completed"}
             />
           )}
 
@@ -151,7 +152,7 @@ export default function ChatPage() {
                 <div className="max-w-4xl mx-auto w-full">
                   <ChatInput
                     onSendMessage={handleSendMessage}
-                    disabled={isLoading}
+                    disabled={status !== "completed"}
                     isCentered={true}
                   />
                 </div>
@@ -167,17 +168,20 @@ export default function ChatPage() {
                         key={`${threadId || "new"}-${index}`}
                         message={message}
                         messages={messages}
-                        isStreaming={isLoading && index === messages.length - 1}
+                        status={
+                          index === messages.length - 1 ? status : "completed"
+                        }
                       />
                     ))}
 
-                    {isLoading && (
-                      <div className="flex justify-start px-2 py-2">
-                        <div className="text-slate-500 text-sm font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]">
-                          Working on it...
+                    {status === "waiting" &&
+                      !messages.some((m) => m.role === "assistant") && (
+                        <div className="flex justify-start px-2 py-2">
+                          <div className="text-slate-500 text-sm font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]">
+                            Working on it...
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {error && (
                       <div className="flex justify-start">
@@ -196,7 +200,7 @@ export default function ChatPage() {
                   <div className="max-w-4xl mx-auto">
                     <ChatInput
                       onSendMessage={handleSendMessage}
-                      disabled={isLoading}
+                      disabled={status !== "completed"}
                       isCentered={false}
                     />
                   </div>

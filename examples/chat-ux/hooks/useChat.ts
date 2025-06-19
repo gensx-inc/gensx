@@ -3,6 +3,13 @@ import { useWorkflow, useObject } from "@gensx/react";
 import { JsonValue } from "@gensx/core";
 import { CoreMessage } from "ai";
 
+// This is a workaround to share the type from ChatMessage.tsx
+// In a real app, this should be in a shared types file.
+type ContentPart = {
+  type: "text" | "tool-call" | "reasoning";
+  [key: string]: unknown;
+};
+
 // Workflow input/output types
 export interface ChatWorkflowInput {
   prompt: string;
@@ -15,6 +22,8 @@ export interface ChatWorkflowOutput {
   messages: CoreMessage[];
 }
 
+export type ChatStatus = "completed" | "waiting" | "reasoning" | "streaming";
+
 // Just use CoreMessage directly
 export type Message = CoreMessage;
 
@@ -25,7 +34,7 @@ interface UseChatReturn {
     userId: string,
   ) => Promise<void>;
   messages: Message[];
-  isLoading: boolean;
+  status: ChatStatus;
   error: string | null;
   clear: () => void;
   loadHistory: (threadId: string, userId: string) => Promise<void>;
@@ -33,7 +42,7 @@ interface UseChatReturn {
 
 export function useChat(): UseChatReturn {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [status, setStatus] = useState<ChatStatus>("completed");
 
   // Use the workflow hook
   const {
@@ -56,6 +65,34 @@ export function useChat(): UseChatReturn {
   useEffect(() => {
     if (messagesProgress?.messages && execution?.length > 0) {
       const workflowMessages = messagesProgress.messages as CoreMessage[];
+      const lastMessage = workflowMessages[workflowMessages.length - 1];
+
+      if (status === "waiting" || status === "reasoning") {
+        if (lastMessage && Array.isArray(lastMessage.content)) {
+          const hasText = lastMessage.content.some(
+            (p: ContentPart) => p.type === "text",
+          );
+          const hasToolCall = lastMessage.content.some(
+            (p: ContentPart) => p.type === "tool-call",
+          );
+          const hasReasoning = lastMessage.content.some(
+            (p: ContentPart) => p.type === "reasoning",
+          );
+
+          if (hasText || hasToolCall) {
+            setStatus("streaming");
+          } else if (hasReasoning) {
+            setStatus("reasoning");
+          }
+        } else if (
+          lastMessage &&
+          typeof lastMessage.content === "string" &&
+          lastMessage.content
+        ) {
+          // If content is a non-empty string, we are streaming
+          setStatus("streaming");
+        }
+      }
 
       setMessages((prev) => {
         // Find the last user message to determine where to insert workflow messages
@@ -66,16 +103,12 @@ export function useChat(): UseChatReturn {
         const messagesBeforeAssistant = prev.slice(0, lastUserIndex + 1);
         return [...messagesBeforeAssistant, ...workflowMessages];
       });
-
-      // Turn off loading when we receive workflow messages
-      if (workflowMessages.length > 0) {
-        setIsLoading(false);
-      }
     }
-  }, [messagesProgress, execution]);
+  }, [messagesProgress, execution, status]);
 
   const clear = useCallback(() => {
     setMessages([]);
+    setStatus("completed");
   }, []);
 
   const loadHistory = useCallback(async (threadId: string, userId: string) => {
@@ -98,7 +131,7 @@ export function useChat(): UseChatReturn {
     async (prompt: string, threadId: string, userId: string) => {
       if (!prompt || !threadId || !userId) return;
 
-      setIsLoading(true);
+      setStatus("waiting");
 
       // Add user message immediately
       const userMessage: Message = {
@@ -115,6 +148,7 @@ export function useChat(): UseChatReturn {
           userId: userId,
         },
       });
+      setStatus("completed");
     },
     [run],
   );
@@ -122,7 +156,7 @@ export function useChat(): UseChatReturn {
   return {
     sendMessage,
     messages,
-    isLoading,
+    status,
     error: workflowError,
     clear,
     loadHistory,

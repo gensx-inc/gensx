@@ -1,4 +1,4 @@
-import { Message } from "@/hooks/useChat";
+import { Message, ChatStatus } from "@/hooks/useChat";
 import { ToolMessage } from "./ToolMessage";
 import { MarkdownContent } from "./MarkdownContent";
 import { useState } from "react";
@@ -7,7 +7,7 @@ import { ChevronRight, ChevronDown, Brain, Loader2 } from "lucide-react";
 interface ChatMessageProps {
   message: Message;
   messages: Message[]; // Pass all messages to find corresponding tool results
-  isStreaming?: boolean; // Add prop to indicate if this message is currently streaming
+  status: ChatStatus;
 }
 
 interface TextPart {
@@ -93,11 +93,7 @@ function ReasoningContent({
   );
 }
 
-export function ChatMessage({
-  message,
-  messages,
-  isStreaming,
-}: ChatMessageProps) {
+export function ChatMessage({ message, messages, status }: ChatMessageProps) {
   // --- Role-based Rendering ---
 
   // 1. User Messages
@@ -132,12 +128,10 @@ export function ChatMessage({
     let textContent = "";
     let reasoningContent = "";
     let hasToolCalls = false;
-    let toolCallAfterReasoning = false;
 
     if (typeof message.content === "string") {
       // Legacy string content
       textContent = message.content || "";
-      hasToolCalls = false;
     } else if (Array.isArray(message.content)) {
       // New array content format
       const contentParts = message.content as ContentPart[];
@@ -154,19 +148,6 @@ export function ChatMessage({
       textContent = textParts.map((part) => part.text).join("");
       reasoningContent = reasoningParts.map((part) => part.text).join("");
       hasToolCalls = toolCallParts.length > 0;
-
-      // Find the last reasoning part and the first tool-call part
-      let lastReasoningIdx = -1;
-      let firstToolCallIdx = -1;
-      contentParts.forEach((part, idx) => {
-        if (part.type === "reasoning") lastReasoningIdx = idx;
-        if (firstToolCallIdx === -1 && part.type === "tool-call")
-          firstToolCallIdx = idx;
-      });
-      toolCallAfterReasoning =
-        lastReasoningIdx !== -1 &&
-        firstToolCallIdx !== -1 &&
-        firstToolCallIdx > lastReasoningIdx;
     }
 
     const hasContent = textContent && textContent.trim().length > 0;
@@ -176,19 +157,7 @@ export function ChatMessage({
     // This happens when we have reasoning content and either:
     // 1. The message is currently streaming, OR
     // 2. The reasoning content exists but there's no text content yet (reasoning is streaming first)
-    let isReasoningActive = false;
-    if (typeof message.content === "string") {
-      isReasoningActive = false;
-    } else if (Array.isArray(message.content)) {
-      // If a tool-call comes after reasoning, stop spinner
-      if (toolCallAfterReasoning) {
-        isReasoningActive = false;
-      } else {
-        isReasoningActive = Boolean(
-          hasReasoning && (isStreaming || (!hasContent && hasReasoning)),
-        );
-      }
-    }
+    const isReasoningActive = status === "reasoning";
 
     return (
       <div className="flex justify-start mb-4 animate-in slide-in-from-bottom-2 duration-300">
