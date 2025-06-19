@@ -166,8 +166,24 @@ export const Agent = gensx.Component(
       ],
     });
 
+    // Filter out reasoning messages before passing to streamText
+    const filteredMessages = messages.map((message) => {
+      if (message.role === "assistant" && Array.isArray(message.content)) {
+        // Filter out reasoning parts from assistant messages
+        const filteredContent = message.content.filter(
+          (part) => !("type" in part && part.type === "reasoning"),
+        );
+        return {
+          ...message,
+          content:
+            filteredContent.length > 0 ? filteredContent : message.content,
+        };
+      }
+      return message;
+    });
+
     const result = streamText({
-      messages,
+      messages: filteredMessages,
       maxSteps: 10,
       model: wrappedLanguageModel,
       tools,

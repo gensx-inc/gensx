@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Message } from "@/hooks/useChat";
-import { CheckCircle, ChevronRight, ChevronDown, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Wrench, ChevronRight, ChevronDown, Loader2 } from "lucide-react";
 
 interface ToolMessageProps {
   message: Message;
@@ -66,60 +65,40 @@ export function ToolMessage({ message, messages }: ToolMessageProps) {
   return (
     <div className="flex justify-center">
       <div className="max-w-[85%] sm:max-w-2xl lg:max-w-3xl w-full">
-        <div
-          className={cn(
-            "border rounded-lg transition-all duration-200",
-            isExpanded
-              ? "border-slate-200 bg-slate-50/50"
-              : "border-transparent",
-          )}
-        >
+        <div>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className={cn(
-              "w-full flex items-center gap-3 py-2 px-3 hover:bg-slate-100/50 transition-colors duration-200",
-              isExpanded
-                ? "rounded-t-lg border-b border-slate-200"
-                : "rounded-lg",
-            )}
+            className="flex items-center gap-2 py-2 hover:opacity-80 transition-opacity duration-200 w-full text-left"
           >
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  "flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center bg-slate-100",
-                )}
-              >
-                {isComplete ? (
-                  <CheckCircle size={12} className="text-slate-600" />
-                ) : (
-                  <Loader2 size={12} className="text-slate-600 animate-spin" />
-                )}
-              </div>
-              <span className="text-sm font-medium text-slate-700">
-                {isComplete ? "Called" : "Calling"} the {functionName} tool
-              </span>
-            </div>
-
-            {isExpanded ? (
-              <ChevronDown size={14} className="text-slate-400 ml-auto" />
+            {isComplete ? (
+              <Wrench size={14} className="text-slate-400" />
             ) : (
-              <ChevronRight size={14} className="text-slate-400 ml-2" />
+              <Loader2 size={14} className="text-slate-400 animate-spin" />
+            )}
+            <span className="text-sm font-medium text-slate-500 italic">
+              {isComplete ? "Called" : "Calling"} the {functionName} tool
+            </span>
+            {isExpanded ? (
+              <ChevronDown size={14} className="text-slate-400" />
+            ) : (
+              <ChevronRight size={14} className="text-slate-400" />
             )}
           </button>
-
           {isExpanded && (
-            <div className="p-3 space-y-3 bg-slate-50/30">
-              <JsonDisplay
-                data={
-                  typeof toolCall.args === "string"
-                    ? toolCall.args
-                    : JSON.stringify(toolCall.args)
-                }
-                label="Arguments"
-              />
-              {toolResultContent && (
-                <JsonDisplay data={toolResultContent} label="Result" />
-              )}
+            <div className="mt-2 mb-4">
+              <div className="border-l-2 border-slate-300 ml-2 pl-3 text-sm text-slate-400 whitespace-pre-wrap break-words leading-relaxed space-y-3">
+                <JsonDisplay
+                  data={
+                    typeof toolCall.args === "string"
+                      ? toolCall.args
+                      : JSON.stringify(toolCall.args)
+                  }
+                  label="Request:"
+                />
+                {toolResultContent && (
+                  <JsonDisplay data={toolResultContent} label="Response:" />
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -146,15 +125,12 @@ export function JsonDisplay({ data, label }: JsonDisplayProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+        <div className="text-xs font-semibold text-slate-500 tracking-wide">
           {label}
         </div>
       </div>
-      <div className="relative">
-        <pre
-          className="text-xs text-slate-300 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed border"
-          style={{ backgroundColor: "#282c34" }}
-        >
+      <div className="relative bg-slate-100 rounded-md p-2 max-h-64 overflow-auto">
+        <pre className="text-xs text-slate-500 rounded-none p-0 overflow-x-auto font-mono leading-relaxed border-0 bg-transparent">
           <code>{formattedData}</code>
         </pre>
       </div>

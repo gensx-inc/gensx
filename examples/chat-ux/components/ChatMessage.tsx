@@ -2,7 +2,7 @@ import { Message } from "@/hooks/useChat";
 import { ToolMessage } from "./ToolMessage";
 import { MarkdownContent } from "./MarkdownContent";
 import { useState } from "react";
-import { ChevronRight, ChevronDown, Brain } from "lucide-react";
+import { ChevronRight, ChevronDown, Brain, Loader2 } from "lucide-react";
 
 interface ChatMessageProps {
   message: Message;
@@ -45,7 +45,7 @@ function ReasoningContent({
   isThinking?: boolean;
 }) {
   // Manual expand/collapse only
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   if (!content || content.trim().length === 0) {
     return null;
@@ -54,47 +54,35 @@ function ReasoningContent({
   return (
     <div className="flex justify-center">
       <div className="max-w-[85%] sm:max-w-2xl lg:max-w-3xl w-full">
-        <div
-          className={`transition-all duration-200 ${
-            isExpanded
-              ? "border border-slate-200 bg-slate-50/50 rounded-lg"
-              : ""
-          }`}
-        >
+        <div>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className={` flex items-center gap-3 py-3 px-4 hover:bg-slate-100/50 transition-colors duration-200 w-full ${
-              isExpanded
-                ? "rounded-t-lg border-b border-slate-200"
-                : "rounded-lg"
-            }`}
+            className="flex items-center gap-2 py-2 hover:opacity-80 transition-opacity duration-200 w-full text-left"
           >
-            <div className="flex items-center gap-2">
-              {!isThinking && (
-                <div className="flex w-5 h-5 bg-slate-100 rounded-full">
-                  <Brain size={14} className="text-slate-500 mt-0.75" />
-                </div>
-              )}
-              <span
-                className={
-                  isThinking
-                    ? "text-slate-500 text-sm font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]"
-                    : "text-sm font-medium text-slate-700"
-                }
-              >
-                {isThinking ? "Thinking..." : "Thought process"}
-              </span>
-            </div>
+            {isThinking ? (
+              <Loader2 size={14} className="text-slate-400 animate-spin" />
+            ) : (
+              <Brain size={14} className="text-slate-400" />
+            )}
+            <span
+              className={
+                isThinking
+                  ? "text-slate-500 text-sm italic font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]"
+                  : "text-sm font-medium text-slate-500 italic"
+              }
+            >
+              {isThinking ? "Thinking..." : "Thought for a few seconds"}
+            </span>
 
             {isExpanded ? (
-              <ChevronDown size={14} className="text-slate-400 ml-auto" />
+              <ChevronDown size={14} className="text-slate-400" />
             ) : (
-              <ChevronRight size={14} className="text-slate-400 ml-2" />
+              <ChevronRight size={14} className="text-slate-400" />
             )}
           </button>
           {isExpanded && (
-            <div className="px-4 pb-3 bg-slate-50/30">
-              <div className="text-xs text-gray-500 font-mono whitespace-pre-wrap break-words leading-relaxed pt-2">
+            <div className="mt-2 mb-4">
+              <div className="border-l-2 border-slate-300 ml-2 pl-3 text-sm text-slate-500 whitespace-pre-wrap break-words leading-relaxed">
                 {content}
               </div>
             </div>
@@ -144,6 +132,7 @@ export function ChatMessage({
     let textContent = "";
     let reasoningContent = "";
     let hasToolCalls = false;
+    let toolCallAfterReasoning = false;
 
     if (typeof message.content === "string") {
       // Legacy string content
@@ -165,6 +154,19 @@ export function ChatMessage({
       textContent = textParts.map((part) => part.text).join("");
       reasoningContent = reasoningParts.map((part) => part.text).join("");
       hasToolCalls = toolCallParts.length > 0;
+
+      // Find the last reasoning part and the first tool-call part
+      let lastReasoningIdx = -1;
+      let firstToolCallIdx = -1;
+      contentParts.forEach((part, idx) => {
+        if (part.type === "reasoning") lastReasoningIdx = idx;
+        if (firstToolCallIdx === -1 && part.type === "tool-call")
+          firstToolCallIdx = idx;
+      });
+      toolCallAfterReasoning =
+        lastReasoningIdx !== -1 &&
+        firstToolCallIdx !== -1 &&
+        firstToolCallIdx > lastReasoningIdx;
     }
 
     const hasContent = textContent && textContent.trim().length > 0;
@@ -174,9 +176,19 @@ export function ChatMessage({
     // This happens when we have reasoning content and either:
     // 1. The message is currently streaming, OR
     // 2. The reasoning content exists but there's no text content yet (reasoning is streaming first)
-    const isReasoningActive = Boolean(
-      hasReasoning && (isStreaming || (!hasContent && hasReasoning)),
-    );
+    let isReasoningActive = false;
+    if (typeof message.content === "string") {
+      isReasoningActive = false;
+    } else if (Array.isArray(message.content)) {
+      // If a tool-call comes after reasoning, stop spinner
+      if (toolCallAfterReasoning) {
+        isReasoningActive = false;
+      } else {
+        isReasoningActive = Boolean(
+          hasReasoning && (isStreaming || (!hasContent && hasReasoning)),
+        );
+      }
+    }
 
     return (
       <div className="flex justify-start mb-4 animate-in slide-in-from-bottom-2 duration-300">
@@ -191,10 +203,10 @@ export function ChatMessage({
 
           {/* B. Render Text Content if it exists */}
           {hasContent && (
-            <div className="px-4 py-2 rounded-xl bg-white border border-slate-200 shadow-sm">
+            <div>
               <MarkdownContent
                 content={textContent}
-                className="text-sm leading-relaxed text-slate-700"
+                className="text-sm leading-relaxed text-slate-800"
               />
             </div>
           )}

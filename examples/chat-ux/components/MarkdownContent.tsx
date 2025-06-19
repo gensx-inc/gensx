@@ -106,7 +106,7 @@ export function MarkdownContent({
             return <div className="my-4">{children}</div>;
           },
           p({ children }) {
-            return <p className="mb-2 last:mb-0">{children}</p>;
+            return <p className="mb-2 last:mb-0 text-slate-800">{children}</p>;
           },
           ul({ children }) {
             return (
