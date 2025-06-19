@@ -57,8 +57,12 @@ export class CheckpointManager implements CheckpointWriter {
 
   private sequenceNumber = 0;
 
-  get nodeSequenceNumber() {
+  get nextNodeSequenceNumber() {
     return this.sequenceNumber++;
+  }
+
+  get nodeSequenceNumber() {
+    return this.sequenceNumber;
   }
 
   private traceId?: string;

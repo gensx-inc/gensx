@@ -94,7 +94,7 @@ export function Component<P extends object = {}, R = unknown>(
     const props_for_id = props ? Object.fromEntries(Object.entries(props)) : {};
 
     // Only call nodeSequenceNumber once per component
-    const sequenceNumber = checkpointManager.nodeSequenceNumber;
+    const sequenceNumber = checkpointManager.nextNodeSequenceNumber;
 
     // Generate the deterministic ID for this component
     const nodeId = generateDeterministicId(

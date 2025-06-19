@@ -36,9 +36,11 @@ export function createCheckpoint<T = unknown>(
   restore: (feedback: T) => Promise<void>;
   label: string;
 } {
-  label ??= `checkpoint-marker-${Date.now()}`;
   const context = getCurrentContext();
   const workflowContext = context.getWorkflowContext();
+
+  label ??= `checkpoint-marker-${workflowContext.checkpointManager.nodeSequenceNumber}`;
+
   if (workflowContext.checkpointLabelMap.has(label)) {
     throw new Error(`[GenSX] Checkpoint ${label} has already been created.`);
   }
