@@ -1,5 +1,5 @@
 {
-  "name": "@showcase/chat-ux",
+  "name": "@examples/chat-ux",
   "version": "0.1.0",
   "private": true,
   "scripts": {
