@@ -13,7 +13,7 @@ catalog:
   "@types/glob": "^8.1.0"
   "@types/react": "^18.3.20"
   "@vitest/coverage-istanbul": "^3.2.3"
-  "eslint-plugin-n": "^17.19.0"
+  "eslint-plugin-n": "17.19.0"
   "glob": "^10.3.10"
   "gray-matter": "^4.0.3"
   "ink": "^5.2.1"
