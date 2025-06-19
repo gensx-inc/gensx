@@ -22,8 +22,6 @@ const CheckpointMarkerComponent = Component(
   },
 );
 
-const CheckpointMarkerLabels = new Map<string, string>();
-
 export function createCheckpoint<T = unknown>(
   {
     label,
@@ -39,7 +37,9 @@ export function createCheckpoint<T = unknown>(
   label: string;
 } {
   label ??= `checkpoint-marker-${Date.now()}`;
-  if (CheckpointMarkerLabels.has(label)) {
+  const context = getCurrentContext();
+  const workflowContext = context.getWorkflowContext();
+  if (workflowContext.checkpointLabelMap.has(label)) {
     throw new Error(`[GenSX] Checkpoint ${label} has already been created.`);
   }
   // Do not pass the label as a prop, as that would affect that ability to deterministically calculate the nodeId.
@@ -49,7 +49,7 @@ export function createCheckpoint<T = unknown>(
       metadata: { label, maxRestores },
     },
   );
-  CheckpointMarkerLabels.set(label, result.nodeId);
+  workflowContext.checkpointLabelMap.set(label, result.nodeId);
 
   if (result.restoreCount >= result.maxRestores) {
     throw new Error(
@@ -84,9 +84,14 @@ export async function restoreCheckpoint<T = unknown>(
   feedback: T,
 ) {
   // TODO: Add some locking mechanism to prevent multiple simultaneous restores, or for other workflow work to happen while we're restoring.
-  if (!CheckpointMarkerLabels.has(label)) {
+  const context = getCurrentContext();
+  const workflowContext = context.getWorkflowContext();
+  if (!workflowContext.checkpointLabelMap.has(label)) {
     throw new Error(`[GenSX] Checkpoint ${label} has not been created.`);
   }
 
-  await restoreCheckpointByNodeId(CheckpointMarkerLabels.get(label)!, feedback);
+  await restoreCheckpointByNodeId(
+    workflowContext.checkpointLabelMap.get(label)!,
+    feedback,
+  );
 }

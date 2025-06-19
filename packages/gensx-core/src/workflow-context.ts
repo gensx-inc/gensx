@@ -10,6 +10,7 @@ export interface WorkflowExecutionContext {
   sendWorkflowMessage: WorkflowMessageListener;
   onWaitForInput: (nodeId: string) => Promise<void>;
   onRestoreCheckpoint: (nodeId: string, feedback: unknown) => Promise<void>;
+  checkpointLabelMap: Map<string, string>;
   // Future: Add more workflow-level utilities here
 }
 
@@ -41,6 +42,7 @@ export function createWorkflowContext({
           "[GenSX] Restore checkpoint not supported in this environment",
         );
       }),
+    checkpointLabelMap: new Map(),
   };
 }
 
