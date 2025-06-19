@@ -253,6 +253,7 @@ suite("checkpoint", () => {
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [
         {
           id: "CachedComponent:c6cc661b5d504e02",
@@ -263,6 +264,7 @@ suite("checkpoint", () => {
           props: { input: "test" },
           output: "cached: test",
           children: [],
+          sequenceNumber: 1,
         },
       ],
     };

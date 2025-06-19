@@ -50,6 +50,7 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
       children: [],
       props: {},
       output: "test-output",
+      sequenceNumber: 0,
     };
 
     try {
@@ -145,6 +146,7 @@ export async function executeWorkflowWithCheckpoints<T, P extends object = {}>(
       children: [],
       props: {},
       output: "test-output",
+      sequenceNumber: 0,
     };
 
     try {
@@ -229,6 +231,7 @@ export function getExecutionFromBody(bodyStr: string): {
         startTime: Date.now(),
         children: [],
         props: {},
+        sequenceNumber: 0,
       },
       workflowName: "test-workflow",
     };

@@ -31,6 +31,7 @@ suite("checkpoint replay", () => {
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [
         {
           id: "ExpensiveComponent:c6cc661b5d504e02",
@@ -41,6 +42,7 @@ suite("checkpoint replay", () => {
           props: { input: "test" },
           output: "processed: test",
           children: [],
+          sequenceNumber: 1,
         },
       ],
     };
@@ -81,6 +83,7 @@ suite("checkpoint replay", () => {
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [], // Empty - no completed components
     };
 
@@ -132,6 +135,7 @@ suite("checkpoint replay", () => {
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [
         {
           id: "CachedComponent:c6cc661b5d504e02",
@@ -142,6 +146,7 @@ suite("checkpoint replay", () => {
           props: { input: "test" },
           output: "cached: test",
           children: [],
+          sequenceNumber: 1,
         },
       ],
     };
@@ -203,6 +208,7 @@ suite("checkpoint replay", () => {
       endTime: Date.now() - 100,
       props: { input: "test" },
       output: "middle: leaf: test",
+      sequenceNumber: 0,
       children: [
         {
           id: "MiddleComponent:156403d8f795a18e",
@@ -212,6 +218,7 @@ suite("checkpoint replay", () => {
           endTime: Date.now() - 200,
           props: { input: "test" },
           output: "middle: leaf: test",
+          sequenceNumber: 1,
           children: [
             {
               id: "LeafComponent:93268aced3bf3c80",
@@ -222,6 +229,7 @@ suite("checkpoint replay", () => {
               props: { value: "test" },
               output: "leaf: test",
               children: [],
+              sequenceNumber: 2,
             },
           ],
         },
@@ -268,6 +276,7 @@ suite("checkpoint replay", () => {
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [], // No completed components
     };
 
@@ -347,6 +356,7 @@ suite("checkpoint replay", () => {
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [
         {
           id: "CachedComponent:c6cc661b5d504e02",
@@ -357,6 +367,7 @@ suite("checkpoint replay", () => {
           props: { input: "test" },
           output: "cached: test",
           children: [],
+          sequenceNumber: 1,
         },
       ],
     };
