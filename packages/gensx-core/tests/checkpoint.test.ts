@@ -249,15 +249,15 @@ suite("checkpoint", () => {
 
     // Create a checkpoint with only the cached component completed
     const mockCheckpoint = {
-      id: "TestWorkflow:e3aab1c267157d72",
+      id: "TestWorkflow:-",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
       children: [
         {
-          id: "CachedComponent:8a2b95df3bafc8df",
+          id: "CachedComponent:c6cc661b5d504e02",
           componentName: "CachedComponent",
-          parentId: "TestWorkflow:e3aab1c267157d72",
+          parentId: "TestWorkflow:-",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },
