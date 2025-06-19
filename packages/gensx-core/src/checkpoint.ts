@@ -689,14 +689,12 @@ export class CheckpointManager implements CheckpointWriter {
     }
     const clonedPartial = this.cloneValue(
       partialNode,
-    ) as Partial<ExecutionNode>;
+    ) as Partial<ExecutionNode> & { sequenceNumber: number; id: string };
     const node: ExecutionNode = {
-      id: nodeId,
       componentName: "Unknown",
       startTime: Date.now(),
       children: [],
       props: {},
-      sequenceNumber: clonedPartial.sequenceNumber,
       ...clonedPartial, // Clone mutable state while preserving functions
     };
 
@@ -915,9 +913,7 @@ export class CheckpointManager implements CheckpointWriter {
     };
 
     // During replay, advance the sequence number to match the original execution
-    if (nodeCopy.sequenceNumber !== undefined) {
-      this.advanceSequenceNumberTo(nodeCopy.sequenceNumber + 1);
-    }
+    this.advanceSequenceNumberTo(nodeCopy.sequenceNumber + 1);
 
     // Add this node to the current checkpoint
     this.nodes.set(nodeCopy.id, nodeCopy);
