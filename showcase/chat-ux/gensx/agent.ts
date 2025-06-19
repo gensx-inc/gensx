@@ -52,8 +52,6 @@ export const Agent = gensx.Component(
             return result;
           },
           wrapStream: async ({ doStream, params }) => {
-            console.log("wrapStream params:", JSON.stringify(params, null, 2));
-
             // Find the last assistant message and pull in any tool responses after it
             const lastAssistantIndex = params.prompt.findLastIndex(
               (msg: CoreMessage) => msg.role === "assistant",
@@ -83,8 +81,6 @@ export const Agent = gensx.Component(
 
             const transformStream = new TransformStream({
               transform(chunk, controller) {
-                console.log("Stream chunk:", chunk.type);
-
                 if (chunk.type === "text-delta") {
                   accumulatedText += chunk.textDelta;
 
@@ -110,7 +106,6 @@ export const Agent = gensx.Component(
                   publishMessages();
                 } else if (chunk.type === "reasoning") {
                   accumulatedReasoning += chunk.textDelta;
-                  console.log(chunk);
 
                   // Update or add reasoning part
                   const existingReasoningPartIndex = contentParts.findIndex(
@@ -151,7 +146,6 @@ export const Agent = gensx.Component(
                 controller.enqueue(chunk);
               },
               flush() {
-                console.log("Stream finished");
                 // Final publish when stream is complete
                 publishMessages();
               },
