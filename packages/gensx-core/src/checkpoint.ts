@@ -79,6 +79,11 @@ export class CheckpointManager implements CheckpointWriter {
     return allSecrets;
   }
 
+  // Public getter for testing purposes
+  get nodesForTesting(): Map<string, ExecutionNode> {
+    return this.nodes;
+  }
+
   constructor(opts?: {
     apiKey: string;
     org: string;
@@ -684,6 +689,7 @@ export class CheckpointManager implements CheckpointWriter {
       startTime: Date.now(),
       children: [],
       props: {},
+      sequenceNumber: clonedPartial.sequenceNumber ?? this.nodeSequenceNumber,
       ...clonedPartial, // Clone mutable state while preserving functions
     };
 
@@ -827,6 +833,16 @@ export class CheckpointManager implements CheckpointWriter {
     this.buildReplayLookup(checkpoint);
   }
 
+  /**
+   * Advances the sequence number to the specified value.
+   * This is used during replay to ensure the sequence number matches the original execution.
+   */
+  private advanceSequenceNumberTo(targetSequence: number) {
+    if (this.sequenceNumber < targetSequence) {
+      this.sequenceNumber = targetSequence;
+    }
+  }
+
   private buildReplayLookup(node: ExecutionNode) {
     if (node.endTime && node.output !== undefined) {
       this.replayLookup.set(node.id, node.output);
@@ -890,6 +906,11 @@ export class CheckpointManager implements CheckpointWriter {
       ...node,
       children: [], // We'll add children recursively
     };
+
+    // During replay, advance the sequence number to match the original execution
+    if (nodeCopy.sequenceNumber !== undefined) {
+      this.advanceSequenceNumberTo(nodeCopy.sequenceNumber + 1);
+    }
 
     // Add this node to the current checkpoint
     this.nodes.set(nodeCopy.id, nodeCopy);

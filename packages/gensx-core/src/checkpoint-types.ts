@@ -20,6 +20,7 @@ export interface ExecutionNode {
     [key: string]: unknown;
   };
   componentOpts?: ComponentOpts;
+  sequenceNumber?: number;
 }
 
 export interface CheckpointWriter {

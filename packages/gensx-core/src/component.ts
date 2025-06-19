@@ -93,11 +93,14 @@ export function Component<P extends object = {}, R = unknown>(
     // Generate deterministic ID for replay
     const props_for_id = props ? Object.fromEntries(Object.entries(props)) : {};
 
+    // Only call nodeSequenceNumber once per component
+    const sequenceNumber = checkpointManager.nodeSequenceNumber;
+
     // Generate the deterministic ID for this component
     const nodeId = generateDeterministicId(
       checkpointName,
       props_for_id,
-      checkpointManager.nodeSequenceNumber,
+      sequenceNumber,
       currentNodeId,
     );
 
@@ -128,6 +131,7 @@ export function Component<P extends object = {}, R = unknown>(
         componentName: checkpointName,
         props: props_for_id,
         componentOpts: resolvedComponentOpts,
+        sequenceNumber, // Pass the sequence number explicitly
       },
       currentNodeId,
     );
