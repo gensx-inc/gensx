@@ -317,15 +317,26 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
         buffer = lines.pop() ?? "";
 
         for (const line of lines) {
-          const json = JSON.parse(line) as WorkflowMessage;
-          if (json.type === "output") {
-            if (fileStream) {
-              fileStream.write(json.content);
+          try {
+            const json = JSON.parse(line) as WorkflowMessage;
+            if (json.type === "output") {
+              if (fileStream) {
+                fileStream.write(json.content);
+              } else {
+                setContent((prev) => [...prev, json]);
+              }
             } else {
               setContent((prev) => [...prev, json]);
             }
-          } else {
-            setContent((prev) => [...prev, json]);
+          } catch {
+            setContent((prev) => [
+              ...prev,
+              {
+                id: Date.now().toString(),
+                type: "error",
+                error: `Error parsing line: ${line}`,
+              },
+            ]);
           }
         }
       }
