@@ -26,7 +26,6 @@ export interface DecoratorWorkflowOpts extends WorkflowOpts {
 }
 
 export interface WorkflowOpts extends ComponentOpts {
-  printUrl?: boolean;
   metadata?: Record<string, unknown>;
 }
 

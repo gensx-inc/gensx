@@ -12,6 +12,8 @@ import type {
 import serializeErrorPkg from "@common.js/serialize-error";
 const { serializeError } = serializeErrorPkg;
 
+import { generateDeterministicId } from "./checkpoint.js";
+import { ExecutionNode, STREAMING_PLACEHOLDER } from "./checkpoint-types.js";
 import {
   ExecutionContext,
   getContextSnapshot,
@@ -22,7 +24,7 @@ import {
 } from "./context.js";
 import { WorkflowMessageListener } from "./workflow-state.js";
 
-export const STREAMING_PLACEHOLDER = "[streaming in progress]";
+export { STREAMING_PLACEHOLDER };
 
 // Decorator-based Component Model
 
@@ -88,25 +90,49 @@ export function Component<P extends object = {}, R = unknown>(
       );
     }
 
+    // Generate deterministic ID for replay
+    const props_for_id = props
+      ? Object.fromEntries(
+          Object.entries(props).filter(
+            ([key]) => key !== "children" && key !== "componentOpts",
+          ),
+        )
+      : {};
+
+    // Generate the deterministic ID for this component
+    const deterministicId = generateDeterministicId(
+      checkpointName,
+      props_for_id,
+      currentNodeId,
+    );
+
+    // Check checkpoint for existing result
+    const cachedResult = checkpointManager.getCompletedResult(deterministicId);
+    if (cachedResult !== undefined) {
+      console.info(
+        `[Replay] Using cached result for ${name} (${deterministicId})`,
+      );
+
+      // Add the cached subtree to the new checkpoint being built
+      checkpointManager.addCachedSubtreeToCheckpoint(deterministicId);
+
+      return cachedResult as R;
+    }
+
     function onComplete() {
       workflowContext.sendWorkflowMessage({
         type: "component-end",
         componentName: checkpointName ?? "",
-        componentId: nodeId,
+        componentId: deterministicId,
       });
       resolvedComponentOpts.onComplete?.();
     }
 
     const nodeId = checkpointManager.addNode(
       {
+        id: deterministicId,
         componentName: checkpointName,
-        props: props
-          ? Object.fromEntries(
-              Object.entries(props).filter(
-                ([key]) => key !== "children" && key !== "componentOpts",
-              ),
-            )
-          : {},
+        props: props_for_id,
         componentOpts: resolvedComponentOpts,
       },
       currentNodeId,
@@ -182,6 +208,7 @@ export function Component<P extends object = {}, R = unknown>(
     }
 
     try {
+      // TODO: Don't emit this when rerunning the workflow with a partial checkpoint.
       let runInContext: RunInContext;
       workflowContext.sendWorkflowMessage({
         type: "component-start",
@@ -240,28 +267,28 @@ export function Component<P extends object = {}, R = unknown>(
   return ComponentFn;
 }
 
+type WorkflowRuntimeOpts = WorkflowOpts & {
+  workflowExecutionId?: string;
+  messageListener?: WorkflowMessageListener;
+  checkpoint?: ExecutionNode;
+  printUrl?: boolean;
+  onWaitForInput?: () => Promise<void>;
+};
+
 export function Workflow<P extends object = {}, R = unknown>(
   name: string,
   target: (props: P) => R,
   workflowOpts?: WorkflowOpts,
-): (
-  props?: P,
-  runtimeOpts?: WorkflowOpts & {
-    workflowExecutionId?: string;
-    messageListener?: WorkflowMessageListener;
-  },
-) => Promise<Awaited<R>> {
+): (props?: P, runtimeOpts?: WorkflowRuntimeOpts) => Promise<Awaited<R>> {
   const WorkflowFn = async (
     props?: P,
-    runtimeOpts?: WorkflowOpts & {
-      workflowExecutionId?: string;
-      messageListener?: WorkflowMessageListener;
-    },
+    runtimeOpts?: WorkflowRuntimeOpts,
   ): Promise<Awaited<R>> => {
     const context = new ExecutionContext(
       {},
       undefined,
       runtimeOpts?.messageListener,
+      runtimeOpts?.onWaitForInput,
     );
     await context.init();
 
@@ -275,6 +302,14 @@ export function Workflow<P extends object = {}, R = unknown>(
     };
 
     const workflowContext = context.getWorkflowContext();
+
+    // Initialize checkpoint manager with checkpoint if provided
+    if (runtimeOpts?.checkpoint) {
+      workflowContext.checkpointManager.setReplayCheckpoint(
+        runtimeOpts.checkpoint,
+      );
+    }
+
     workflowContext.checkpointManager.setPrintUrl(
       resolvedOpts.printUrl ?? false,
     );
@@ -291,6 +326,7 @@ export function Workflow<P extends object = {}, R = unknown>(
     const component = Component<P, R>(name, target);
 
     try {
+      // TODO: Don't emit this when rerunning the workflow
       workflowContext.sendWorkflowMessage({
         type: "start",
         workflowExecutionId: runtimeOpts?.workflowExecutionId,

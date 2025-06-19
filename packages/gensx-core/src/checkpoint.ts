@@ -1,61 +1,37 @@
 import { Buffer } from "node:buffer";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { gzip } from "node:zlib";
 
-import { STREAMING_PLACEHOLDER } from "./component.js";
-import { ExecutionContext } from "./context.js";
-import { ComponentOpts } from "./types.js";
+import {
+  CheckpointWriter,
+  ExecutionNode,
+  STREAMING_PLACEHOLDER,
+} from "./checkpoint-types.js";
 import { readConfig } from "./utils/config.js";
 import { USER_AGENT } from "./utils/user-agent.js";
 
+export type { CheckpointWriter, ExecutionNode };
+export { STREAMING_PLACEHOLDER };
+
 const gzipAsync = promisify(gzip);
 
-// Cross-platform UUID generation
-function generateUUID(): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    const crypto = (globalThis as any).crypto as { randomUUID: () => string };
-    return crypto.randomUUID();
-  } catch {
-    // Simple fallback for environments without crypto
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === "x" ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
-  }
-}
+// Deterministic ID generation for checkpoint replay
+export function generateDeterministicId(
+  name: string,
+  props: Record<string, unknown>,
+  parentId?: string,
+): string {
+  // Simple but effective serialization for MVP
+  const propsStr = JSON.stringify(props, Object.keys(props).sort());
+  const propsHash = createHash("sha256")
+    .update(`${propsStr}:${parentId ?? "root"}`)
+    .digest("hex")
+    .slice(0, 16);
 
-export interface ExecutionNode {
-  id: string;
-  componentName: string;
-  parentId?: string;
-  startTime: number;
-  endTime?: number;
-  props: Record<string, unknown>;
-  output?: unknown;
-  children: ExecutionNode[];
-  metadata?: {
-    logs?: string[];
-    tokenCounts?: {
-      input: number;
-      output: number;
-    };
-    [key: string]: unknown;
-  };
-  componentOpts?: ComponentOpts;
-}
-
-export interface CheckpointWriter {
-  root?: ExecutionNode;
-  addNode: (node: Partial<ExecutionNode>, parentId?: string) => string;
-  completeNode: (id: string, output: unknown) => void;
-  addMetadata: (id: string, metadata: Record<string, unknown>) => void;
-  updateNode: (id: string, updates: Partial<ExecutionNode>) => void;
-  write: () => void;
-  waitForPendingUpdates: () => Promise<void>;
-  checkpointsEnabled: boolean;
+  const id = `${name}:${propsHash}`;
+  return id;
 }
 
 export class CheckpointManager implements CheckpointWriter {
@@ -80,6 +56,10 @@ export class CheckpointManager implements CheckpointWriter {
 
   private traceId?: string;
   private executionRunId?: string;
+
+  // Replay functionality
+  private replayLookup = new Map<string, unknown>();
+  private sourceCheckpoint?: ExecutionNode;
 
   // Provide unified view of all secrets
   get secretValues(): Set<unknown> {
@@ -581,6 +561,9 @@ export class CheckpointManager implements CheckpointWriter {
         );
       }
 
+      // Handle objects that shouldn't be cloned
+      if (ArrayBuffer.isView(data)) return data;
+
       return data;
     });
   }
@@ -636,8 +619,6 @@ export class CheckpointManager implements CheckpointWriter {
     }
 
     // Handle objects that shouldn't be cloned
-    if (value instanceof ExecutionContext) return value;
-    if (Symbol.asyncIterator in value) return value;
     if (ArrayBuffer.isView(value)) return value;
 
     // Check for toJSON method before doing regular object cloning
@@ -680,7 +661,13 @@ export class CheckpointManager implements CheckpointWriter {
    * of the execution.
    */
   addNode(partialNode: Partial<ExecutionNode>, parentId?: string): string {
-    const nodeId = generateUUID();
+    const nodeId =
+      partialNode.id ??
+      generateDeterministicId(
+        partialNode.componentName ?? "Unknown",
+        partialNode.props ?? {},
+        parentId,
+      );
     const clonedPartial = this.cloneValue(
       partialNode,
     ) as Partial<ExecutionNode>;
@@ -825,5 +812,106 @@ export class CheckpointManager implements CheckpointWriter {
     if (this.pendingUpdate || this.activeCheckpoint) {
       await this.waitForPendingUpdates();
     }
+  }
+
+  // Replay functionality
+  setReplayCheckpoint(checkpoint: ExecutionNode) {
+    this.sourceCheckpoint = checkpoint;
+    this.buildReplayLookup(checkpoint);
+  }
+
+  private buildReplayLookup(node: ExecutionNode) {
+    if (node.endTime && node.output !== undefined) {
+      this.replayLookup.set(node.id, node.output);
+    }
+    node.children.forEach((child) => {
+      this.buildReplayLookup(child);
+    });
+  }
+
+  getCompletedResult(nodeId: string): unknown {
+    const result = this.replayLookup.get(nodeId);
+    return result;
+  }
+
+  // Checkpoint reconstruction methods
+  addCachedSubtreeToCheckpoint(nodeId: string) {
+    if (!this.sourceCheckpoint) {
+      console.warn(
+        `[Checkpoint] No source checkpoint available for node ${nodeId}`,
+      );
+      return;
+    }
+
+    const cachedNode = this.findNodeInCheckpoint(nodeId, this.sourceCheckpoint);
+    if (cachedNode) {
+      console.info(
+        `[Checkpoint] Adding cached subtree for ${cachedNode.componentName} (${nodeId})`,
+      );
+      this.addCachedNodeRecursively(cachedNode);
+    } else {
+      console.warn(
+        `[Checkpoint] Node ${nodeId} not found in source checkpoint`,
+      );
+    }
+  }
+
+  private findNodeInCheckpoint(
+    nodeId: string,
+    checkpoint: ExecutionNode,
+  ): ExecutionNode | null {
+    if (checkpoint.id === nodeId) return checkpoint;
+
+    for (const child of checkpoint.children) {
+      const found = this.findNodeInCheckpoint(nodeId, child);
+      if (found) return found;
+    }
+
+    return null;
+  }
+
+  private addCachedNodeRecursively(node: ExecutionNode) {
+    // Check if this node already exists in the current checkpoint
+    if (this.nodes.has(node.id)) {
+      console.info(`[Checkpoint] Node ${node.id} already exists, skipping`);
+      return;
+    }
+
+    // Create a copy of the node to avoid modifying the original
+    const nodeCopy: ExecutionNode = {
+      ...node,
+      children: [], // We'll add children recursively
+    };
+
+    // Add this node to the current checkpoint
+    this.nodes.set(nodeCopy.id, nodeCopy);
+
+    // Handle parent-child relationships
+    if (nodeCopy.parentId) {
+      const parent = this.nodes.get(nodeCopy.parentId);
+      if (parent) {
+        this.attachToParent(nodeCopy, parent);
+      } else {
+        // Parent doesn't exist yet - track as orphaned
+        this.handleOrphanedNode(nodeCopy, nodeCopy.parentId);
+      }
+    } else {
+      // This is a root node
+      this.root ??= nodeCopy;
+    }
+
+    // Check if this node resolves any orphaned children
+    const waitingChildren = this.orphanedNodes.get(nodeCopy.id);
+    if (waitingChildren) {
+      for (const orphan of waitingChildren) {
+        this.attachToParent(orphan, nodeCopy);
+      }
+      this.orphanedNodes.delete(nodeCopy.id);
+    }
+
+    // Recursively add all children
+    node.children.forEach((child) => {
+      this.addCachedNodeRecursively(child);
+    });
   }
 }
