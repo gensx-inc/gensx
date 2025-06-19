@@ -86,12 +86,10 @@ export async function restoreCheckpoint<T = unknown>(
   // TODO: Add some locking mechanism to prevent multiple simultaneous restores, or for other workflow work to happen while we're restoring.
   const context = getCurrentContext();
   const workflowContext = context.getWorkflowContext();
-  if (!workflowContext.checkpointLabelMap.has(label)) {
+  const nodeId = workflowContext.checkpointLabelMap.get(label);
+  if (!nodeId) {
     throw new Error(`[GenSX] Checkpoint ${label} has not been created.`);
   }
 
-  await restoreCheckpointByNodeId(
-    workflowContext.checkpointLabelMap.get(label)!,
-    feedback,
-  );
+  await restoreCheckpointByNodeId(nodeId, feedback);
 }
