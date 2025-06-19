@@ -7,6 +7,8 @@ import { ChatHistory } from "@/components/ChatHistory";
 import { useChat } from "@/hooks/useChat";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Plus, PanelLeftOpen } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -78,24 +80,52 @@ export default function ChatPage() {
       <div
         className={`flex flex-col flex-1 ${collapsed ? "" : "lg:ml-80"} transition-all duration-300 ease-in-out`}
       >
-        {/* Header - Now contains New Chat button and sidebar open button if collapsed */}
-        <div className="border-b border-slate-200/60 px-2 py-2 flex items-center gap-2">
-          {collapsed && (
+        {/* Header - Now contains New Chat button, sidebar open button if collapsed, and right-aligned links */}
+        <div className="border-b border-slate-200/60 px-2 py-2 flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            {collapsed && (
+              <button
+                onClick={() => setCollapsed(false)}
+                className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors mr-2"
+                title="Open sidebar"
+              >
+                <PanelLeftOpen className="w-5 h-5 text-slate-600" />
+              </button>
+            )}
             <button
-              onClick={() => setCollapsed(false)}
-              className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors mr-2"
-              title="Open sidebar"
+              onClick={handleNewChat}
+              className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
+              title="New chat"
             >
-              <PanelLeftOpen className="w-5 h-5 text-slate-600" />
+              <Plus className="w-5 h-5 text-slate-600" />
             </button>
-          )}
-          <button
-            onClick={handleNewChat}
-            className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
-            title="New chat"
-          >
-            <Plus className="w-5 h-5 text-slate-600" />
-          </button>
+          </div>
+          {/* Right-aligned links */}
+          <div className="flex items-center gap-2 ml-auto mr-4">
+            <Link
+              href="https://github.com/gensx-inc/gensx"
+              passHref
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Image
+                src="/github-mark.svg"
+                alt="GitHub"
+                className="w-6 h-6"
+                width={24}
+                height={24}
+              />
+            </Link>
+            <div className="h-6 border-l border-slate-300 mx-2" />
+            <Link
+              href="https://gensx.com/docs"
+              passHref
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Image src="/logo.svg" alt="Docs" width={87} height={35} />
+            </Link>
+          </div>
         </div>
 
         {messages.length === 0 && !threadId ? (

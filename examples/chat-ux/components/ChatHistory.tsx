@@ -125,7 +125,7 @@ export function ChatHistory({
               </div>
             ) : (
               <div className="flex items-center justify-between w-full">
-                <h2 className="font-semibold text-slate-900">Chat History</h2>
+                <h2 className="font-semibold text-slate-900">Chat</h2>
                 <button
                   onClick={onCollapseToggle}
                   className="p-1.5 hover:bg-slate-100 rounded-md transition-colors group"
@@ -157,7 +157,7 @@ export function ChatHistory({
                           : "hover:bg-slate-100"
                       } ${
                         index < threads.length - 1
-                          ? "border-b border-slate-200/40"
+                          ? "border-b border-slate-300/60"
                           : ""
                       }`}
                     >
