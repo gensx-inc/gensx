@@ -26,7 +26,7 @@ export interface ExecutionNode {
 export interface CheckpointWriter {
   root?: ExecutionNode;
   addNode: (
-    node: Partial<ExecutionNode> & { id: string },
+    node: Partial<ExecutionNode> & { id: string; sequenceNumber: number },
     parentId?: string,
   ) => string;
   completeNode: (id: string, output: unknown) => void;

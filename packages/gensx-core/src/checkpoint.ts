@@ -673,7 +673,10 @@ export class CheckpointManager implements CheckpointWriter {
    * of the execution.
    */
   addNode(
-    partialNode: Partial<ExecutionNode> & { id: string },
+    partialNode: Partial<ExecutionNode> & {
+      id: string;
+      sequenceNumber: number;
+    },
     parentId?: string,
   ): string {
     const nodeId = partialNode.id;
@@ -689,7 +692,7 @@ export class CheckpointManager implements CheckpointWriter {
       startTime: Date.now(),
       children: [],
       props: {},
-      sequenceNumber: clonedPartial.sequenceNumber ?? this.nodeSequenceNumber,
+      sequenceNumber: clonedPartial.sequenceNumber,
       ...clonedPartial, // Clone mutable state while preserving functions
     };
 
