@@ -1,14 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useWorkflow, useObject } from "@gensx/react";
 import { JsonValue } from "@gensx/core";
-import { CoreMessage } from "ai";
-
-// This is a workaround to share the type from ChatMessage.tsx
-// In a real app, this should be in a shared types file.
-type ContentPart = {
-  type: "text" | "tool-call" | "reasoning";
-  [key: string]: unknown;
-};
+import { CoreMessage, TextPart, ToolCallPart } from "ai";
 
 // Workflow input/output types
 export interface ChatWorkflowInput {
@@ -70,13 +63,13 @@ export function useChat(): UseChatReturn {
       if (status === "waiting" || status === "reasoning") {
         if (lastMessage && Array.isArray(lastMessage.content)) {
           const hasText = lastMessage.content.some(
-            (p: ContentPart) => p.type === "text",
+            (p): p is TextPart => p.type === "text",
           );
           const hasToolCall = lastMessage.content.some(
-            (p: ContentPart) => p.type === "tool-call",
+            (p): p is ToolCallPart => p.type === "tool-call",
           );
           const hasReasoning = lastMessage.content.some(
-            (p: ContentPart) => p.type === "reasoning",
+            (p) => p.type === "reasoning",
           );
 
           if (hasText || hasToolCall) {
