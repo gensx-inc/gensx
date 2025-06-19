@@ -12,6 +12,80 @@ import { useProjectName } from "../hooks/useProjectName.js";
 import { getAuth } from "../utils/config.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 
+// JSON-serializable value type for progress data
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+// Individual message types
+export interface WorkflowStartMessage {
+  type: "start";
+  workflowExecutionId?: string;
+  workflowName: string;
+}
+
+export interface WorkflowComponentStartMessage {
+  type: "component-start";
+  componentName: string;
+  label?: string;
+  componentId: string;
+}
+
+export interface WorkflowComponentEndMessage {
+  type: "component-end";
+  componentName: string;
+  label?: string;
+  componentId: string;
+}
+
+export interface WorkflowDataMessage {
+  type: "data";
+  data: JsonValue;
+}
+
+export interface WorkflowEventMessage {
+  type: "event";
+  data: Record<string, JsonValue>;
+  label: string;
+}
+
+export interface WorkflowObjectMessage {
+  type: "object";
+  data: Record<string, JsonValue>;
+  label: string;
+}
+
+export interface WorkflowErrorMessage {
+  type: "error";
+  error: string;
+}
+
+export interface WorkflowEndMessage {
+  type: "end";
+}
+
+export interface WorkflowOutputMessage {
+  type: "output";
+  content: string;
+}
+
+// Union of all message types
+export type WorkflowMessage = { id: string } & (
+  | WorkflowStartMessage
+  | WorkflowComponentStartMessage
+  | WorkflowComponentEndMessage
+  | WorkflowDataMessage
+  | WorkflowEventMessage
+  | WorkflowObjectMessage
+  | WorkflowErrorMessage
+  | WorkflowEndMessage
+  | WorkflowOutputMessage
+);
+
 export interface CliOptions {
   input: string;
   wait: boolean;
@@ -19,6 +93,7 @@ export interface CliOptions {
   env?: string;
   output?: string;
   yes?: boolean;
+  progress?: boolean;
 }
 
 interface Props {
@@ -26,7 +101,13 @@ interface Props {
   options: CliOptions;
 }
 
-type Phase = "resolveEnv" | "running" | "streaming" | "done" | "error";
+type Phase =
+  | "resolveEnv"
+  | "running"
+  | "streaming"
+  | "progress"
+  | "done"
+  | "error";
 
 export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
   const { exit } = useApp();
@@ -35,6 +116,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
   const [error, setError] = useState<string | null>(null);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [streamContent, setStreamContent] = useState<string>("");
+  const [progressContent, setProgressContent] = useState<WorkflowMessage[]>([]);
   const [workflowOutput, setWorkflowOutput] = useState<unknown>(null);
   const {
     loading,
@@ -48,6 +130,8 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
       <ErrorMessage message="Output file cannot be specified without --wait." />
     );
   }
+
+  const streamProgress = options.progress ?? false;
 
   const runWorkflow = useCallback(
     async (environment: string) => {
@@ -79,6 +163,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${auth.token}`,
             "User-Agent": USER_AGENT,
+            ...(streamProgress ? { Accept: "application/x-ndjson" } : {}),
           },
           body: JSON.stringify(inputJson),
         });
@@ -105,43 +190,54 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
           return;
         }
 
-        // WAIT=true path – handle streaming vs JSON response
-        const isStream = response.headers
-          .get("Content-Type")
-          ?.includes("stream");
-
-        if (isStream) {
-          setPhase("streaming");
-          await handleStream(response.body, options.output, setStreamContent);
+        // Handle the JSON lines response
+        if (streamProgress) {
+          setPhase("progress");
+          await handleJsonLinesStream(
+            response.body,
+            options.output,
+            setProgressContent,
+          );
           exit();
         } else {
-          const body = (await response.json()) as {
-            output: unknown;
-            executionStatus: "success" | "failed";
-          };
+          // WAIT=true path – handle streaming vs JSON response
+          const isStream = response.headers
+            .get("Content-Type")
+            ?.includes("stream");
 
-          if (body.executionStatus === "failed") {
-            throw new Error("Workflow failed");
-          }
-
-          // Write or display output
-          if (options.output) {
-            await writeFile(
-              options.output,
-              JSON.stringify(body.output, null, 2),
-            );
-            setLogLines((ls) => [
-              ...ls,
-              `Workflow output written to ${options.output}`,
-            ]);
-          } else {
-            setWorkflowOutput(body.output);
-          }
-
-          setPhase("done");
-          setTimeout(() => {
+          if (isStream) {
+            setPhase("streaming");
+            await handleStream(response.body, options.output, setStreamContent);
             exit();
-          }, 100);
+          } else {
+            const body = (await response.json()) as {
+              output: unknown;
+              executionStatus: "success" | "failed";
+            };
+
+            if (body.executionStatus === "failed") {
+              throw new Error("Workflow failed");
+            }
+
+            // Write or display output
+            if (options.output) {
+              await writeFile(
+                options.output,
+                JSON.stringify(body.output, null, 2),
+              );
+              setLogLines((ls) => [
+                ...ls,
+                `Workflow output written to ${options.output}`,
+              ]);
+            } else {
+              setWorkflowOutput(body.output);
+            }
+
+            setPhase("done");
+            setTimeout(() => {
+              exit();
+            }, 100);
+          }
         }
       } catch (err) {
         setError((err as Error).message);
@@ -184,6 +280,53 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
           fileStream.write(chunk);
         } else {
           setContent((prev: string) => prev + chunk);
+        }
+      }
+    }
+    fileStream?.end();
+  };
+
+  // Streaming helper for JSON lines
+  const handleJsonLinesStream = async (
+    stream: ReadableStream<Uint8Array> | null,
+    outputPath: string | undefined,
+    setContent: React.Dispatch<React.SetStateAction<WorkflowMessage[]>>,
+  ) => {
+    if (!stream) {
+      throw new Error("No stream returned by server");
+    }
+
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let fileStream: WriteStream | undefined;
+
+    if (outputPath) {
+      fileStream = createWriteStream(outputPath);
+    }
+
+    let buffer = "";
+    let done = false;
+    while (!done) {
+      const { value, done: readerDone } = await reader.read();
+      if (readerDone) {
+        done = true;
+      } else {
+        const chunk = decoder.decode(value);
+        buffer += chunk;
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          const json = JSON.parse(line) as WorkflowMessage;
+          if (json.type === "output") {
+            if (fileStream) {
+              fileStream.write(json.content);
+            } else {
+              setContent((prev) => [...prev, json]);
+            }
+          } else {
+            setContent((prev) => [...prev, json]);
+          }
         }
       }
     }
@@ -243,6 +386,84 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
                 </Text>
                 <Box>
                   <Text color="cyan">{streamContent}</Text>
+                </Box>
+              </Box>
+            )}
+
+            {phase === "progress" && (
+              <Box flexDirection="column">
+                <Text color="white" bold>
+                  Streaming progress events:
+                </Text>
+                <Box flexDirection="column">
+                  {progressContent.map((json, idx) => {
+                    switch (json.type) {
+                      case "start":
+                        return (
+                          <Box key={idx} flexDirection="row" gap={1}>
+                            <Text color="cyan">Workflow started:</Text>
+                            <Text color="white">{json.workflowName}</Text>
+                          </Box>
+                        );
+                      // case "component-start":
+                      //   setContent(
+                      //     (prev) => prev + `Component started: ${json.componentName}\n`,
+                      //   );
+                      //   break;
+                      // case "component-end":
+                      //   setContent(
+                      //     (prev) => prev + `Component ended: ${json.componentName}\n`,
+                      //   );
+                      //   break;
+                      case "data":
+                        return (
+                          <Box key={idx} flexDirection="row" gap={1}>
+                            <Text color="cyan">Data:</Text>
+                            <Text color="white">
+                              {JSON.stringify(json.data)}
+                            </Text>
+                          </Box>
+                        );
+                      case "event":
+                        return (
+                          <Box key={idx} flexDirection="row" gap={1}>
+                            <Text color="cyan">Event:</Text>
+                            <Text color="white">
+                              {JSON.stringify(json.data)}
+                            </Text>
+                          </Box>
+                        );
+                      case "object":
+                        return (
+                          <Box key={idx} flexDirection="row" gap={1}>
+                            <Text color="cyan">Object Update:</Text>
+                            <Text color="white">
+                              {JSON.stringify(json.data)}
+                            </Text>
+                          </Box>
+                        );
+                      case "error":
+                        return (
+                          <Box key={idx} flexDirection="row" gap={1}>
+                            <Text color="cyan">Error:</Text>
+                            <Text color="red">{json.error}</Text>
+                          </Box>
+                        );
+                      case "end":
+                        return (
+                          <Box key={idx} flexDirection="row" gap={1}>
+                            <Text color="cyan">Workflow ended</Text>
+                          </Box>
+                        );
+                      case "output":
+                        return (
+                          <Box key={idx} flexDirection="row" gap={1}>
+                            <Text color="cyan">Output:</Text>
+                            <Text color="white">{json.content}</Text>
+                          </Box>
+                        );
+                    }
+                  })}
                 </Box>
               </Box>
             )}

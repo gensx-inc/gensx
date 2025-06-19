@@ -154,6 +154,7 @@ export async function runCLI() {
     .option("--no-wait", "Do not wait for the workflow to finish")
     .option("-p, --project <name>", "Project name to run the workflow in")
     .option("--env <name>", "Environment name to run the workflow in")
+    .option("--progress", "Stream progress events", false)
     .option(
       "-o, --output <file>",
       "Output file to write the workflow result to",
