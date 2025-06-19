@@ -79,7 +79,7 @@
     "typescript-json-schema": "^0.65.1",
     "ulidx": "^2.4.1",
     "undici": "^6.21.3",
-    "zod": "^3.25.56"
+    "zod": "3.25.56"
   },
   "type": "module",
   "publishConfig": {
