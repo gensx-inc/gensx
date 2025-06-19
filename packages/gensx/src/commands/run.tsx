@@ -49,13 +49,13 @@ export interface WorkflowDataMessage {
 
 export interface WorkflowEventMessage {
   type: "event";
-  data: Record<string, JsonValue>;
+  data: JsonValue;
   label: string;
 }
 
 export interface WorkflowObjectMessage {
   type: "object";
-  data: Record<string, JsonValue>;
+  data: JsonValue;
   label: string;
 }
 
