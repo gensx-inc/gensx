@@ -8,14 +8,15 @@ import { useBlob } from "@gensx/storage";
 interface ChatAgentProps {
   prompt: string;
   threadId: string;
+  userId: string;
 }
 
 export const ChatAgent = gensx.Workflow(
   "ChatAgent",
-  async ({ prompt, threadId }: ChatAgentProps) => {
+  async ({ prompt, threadId, userId }: ChatAgentProps) => {
     // Get blob instance for chat history storage
     const chatHistoryBlob = useBlob<CoreMessage[]>(
-      `chat-history/${threadId}.json`,
+      `chat-history/${userId}/${threadId}.json`,
     );
 
     // Function to load chat history

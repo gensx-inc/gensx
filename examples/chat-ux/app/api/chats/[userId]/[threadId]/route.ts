@@ -4,16 +4,16 @@ import { CoreMessage } from "ai";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ threadId: string }> },
+  { params }: { params: Promise<{ userId: string; threadId: string }> },
 ) {
   try {
-    const { threadId } = await params;
+    const { userId, threadId } = await params;
 
     const blobClient = new BlobClient({
       kind: process.env.NODE_ENV === "production" ? "cloud" : "filesystem",
     });
 
-    const blobPath = `chat-history/${threadId}.json`;
+    const blobPath = `chat-history/${userId}/${threadId}.json`;
 
     const blob = await blobClient.getBlob<CoreMessage[]>(blobPath);
 
@@ -34,16 +34,16 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ threadId: string }> },
+  { params }: { params: Promise<{ userId: string; threadId: string }> },
 ) {
   try {
-    const { threadId } = await params;
+    const { userId, threadId } = await params;
 
     const blobClient = new BlobClient({
       kind: process.env.NODE_ENV === "production" ? "cloud" : "filesystem",
     });
 
-    const blobPath = `chat-history/${threadId}.json`;
+    const blobPath = `chat-history/${userId}/${threadId}.json`;
     const blob = await blobClient.getBlob(blobPath);
 
     // Check if the blob exists before trying to delete

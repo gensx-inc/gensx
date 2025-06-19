@@ -9,6 +9,7 @@ interface ChatHistoryProps {
   onCollapseToggle: () => void;
   activeThreadId: string | null;
   onNewChat: () => void;
+  userId: string;
 }
 
 interface Thread {
@@ -24,6 +25,7 @@ export function ChatHistory({
   onCollapseToggle,
   activeThreadId,
   onNewChat,
+  userId,
 }: ChatHistoryProps) {
   const router = useRouter();
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -32,7 +34,7 @@ export function ChatHistory({
   const fetchHistory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/chats");
+      const response = await fetch(`/api/chats/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setThreads(data);
@@ -46,7 +48,7 @@ export function ChatHistory({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchHistory();
@@ -71,7 +73,7 @@ export function ChatHistory({
     );
 
     try {
-      const response = await fetch(`/api/chats/${threadIdToDelete}`, {
+      const response = await fetch(`/api/chats/${userId}/${threadIdToDelete}`, {
         method: "DELETE",
       });
 
@@ -112,7 +114,7 @@ export function ChatHistory({
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="border-b border-slate-200/60 px-2 py-2 flex items-center">
+          <div className="border-b border-slate-200/60 px-2 py-2 h-12 flex items-center">
             {collapsed ? (
               <div className="flex flex-col items-center gap-2">
                 <button

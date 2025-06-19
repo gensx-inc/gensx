@@ -7,6 +7,7 @@ import { CoreMessage } from "ai";
 export interface ChatWorkflowInput {
   prompt: string;
   threadId: string;
+  userId: string;
 }
 
 export interface ChatWorkflowOutput {
@@ -18,12 +19,16 @@ export interface ChatWorkflowOutput {
 export type Message = CoreMessage;
 
 interface UseChatReturn {
-  sendMessage: (prompt: string, threadId: string) => Promise<void>;
+  sendMessage: (
+    prompt: string,
+    threadId: string,
+    userId: string,
+  ) => Promise<void>;
   messages: Message[];
   isLoading: boolean;
   error: string | null;
   clear: () => void;
-  loadHistory: (threadId: string) => Promise<void>;
+  loadHistory: (threadId: string, userId: string) => Promise<void>;
 }
 
 export function useChat(): UseChatReturn {
@@ -73,11 +78,11 @@ export function useChat(): UseChatReturn {
     setMessages([]);
   }, []);
 
-  const loadHistory = useCallback(async (threadId: string) => {
-    if (!threadId) return;
+  const loadHistory = useCallback(async (threadId: string, userId: string) => {
+    if (!threadId || !userId) return;
 
     try {
-      const response = await fetch(`/api/chats/${threadId}`);
+      const response = await fetch(`/api/chats/${userId}/${threadId}`);
       if (!response.ok) {
         throw new Error("Failed to load conversation history");
       }
@@ -90,8 +95,8 @@ export function useChat(): UseChatReturn {
   }, []);
 
   const sendMessage = useCallback(
-    async (prompt: string, threadId: string) => {
-      if (!prompt || !threadId) return;
+    async (prompt: string, threadId: string, userId: string) => {
+      if (!prompt || !threadId || !userId) return;
 
       setIsLoading(true);
 
@@ -107,6 +112,7 @@ export function useChat(): UseChatReturn {
         inputs: {
           prompt: prompt,
           threadId: threadId,
+          userId: userId,
         },
       });
     },
