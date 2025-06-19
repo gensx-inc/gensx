@@ -1,6 +1,12 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
+const GENSX_WORKFLOW_NAME = "ChatAgent";
+
+const GENSX_ORG = process.env.GENSX_ORG;
+const GENSX_PROJECT = process.env.GENSX_PROJECT ?? "chat-tools";
+const GENSX_ENV = process.env.GENSX_ENV ?? "default";
+
 type RequestBody = Record<string, unknown>;
 
 const shouldUseLocalDevServer = () => {
@@ -27,12 +33,6 @@ export async function POST(request: NextRequest) {
     const inputs = (await request.json()) as RequestBody;
 
     const useLocalDevServer = shouldUseLocalDevServer();
-
-    // Hardcode workflow configuration for draft-pad
-    const workflowName = "ChatAgent";
-    const org = "gensx";
-    const project = "chat-tools";
-    const environment = "default";
     const format = "ndjson";
 
     // Get API key from environment (or could accept from Authorization header)
@@ -61,9 +61,9 @@ export async function POST(request: NextRequest) {
       gensx = new GenSX({
         apiKey,
         baseUrl,
-        org,
-        project,
-        environment,
+        org: GENSX_ORG,
+        project: GENSX_PROJECT,
+        environment: GENSX_ENV,
       });
     } else {
       gensx = new GenSX({
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     // Use runRaw to get the direct response
 
-    const response = await gensx.runRaw(workflowName, {
+    const response = await gensx.runRaw(GENSX_WORKFLOW_NAME, {
       inputs,
       format,
     });
