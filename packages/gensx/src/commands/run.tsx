@@ -414,7 +414,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
             {phase === "progress" && (
               <Box flexDirection="column">
                 <Text color="white" bold>
-                  Streaming progress events:
+                  Streaming workflow events:
                 </Text>
                 <Box flexDirection="column">
                   {progressContent.map((json, idx) => {
