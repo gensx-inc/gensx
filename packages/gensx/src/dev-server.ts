@@ -112,7 +112,7 @@ export type WorkflowMessage = { id: string; timestamp: string } & (
       componentId: string;
     }
   | { type: "data"; data: JsonValue }
-  | { type: "object" | "event"; data: Record<string, JsonValue>; label: string }
+  | { type: "object" | "event"; data: JsonValue; label: string }
   | { type: "error"; error: string }
   | { type: "end" }
 );

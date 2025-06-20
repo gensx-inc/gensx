@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.38](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.37...gensx-v0.3.38) (2025-06-20)
+
+
+### ✨ New Features
+
+* Add --progress CLI param for run command to stream the progress events after calling start. ([#797](https://github.com/gensx-inc/gensx/issues/797)) ([21b24b8](https://github.com/gensx-inc/gensx/commit/21b24b8a5038154e7765df00f3acca090430cfec))
+
 ## [0.3.37](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.36...gensx-v0.3.37) (2025-06-17)
 
 

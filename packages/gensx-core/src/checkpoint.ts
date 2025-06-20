@@ -21,12 +21,13 @@ const gzipAsync = promisify(gzip);
 export function generateDeterministicId(
   name: string,
   props: Record<string, unknown>,
+  sequenceNumber: number,
   parentId?: string,
 ): string {
   // Simple but effective serialization for MVP
   const propsStr = JSON.stringify(props, Object.keys(props).sort());
   const propsHash = createHash("sha256")
-    .update(`${propsStr}:${parentId ?? "root"}`)
+    .update(`${propsStr}:${parentId ?? "root"}:${sequenceNumber}`)
     .digest("hex")
     .slice(0, 16);
 
@@ -54,6 +55,16 @@ export class CheckpointManager implements CheckpointWriter {
   private runtime?: "cloud" | "sdk";
   private runtimeVersion?: string;
 
+  private sequenceNumber = 0;
+
+  get nextNodeSequenceNumber() {
+    return this.sequenceNumber++;
+  }
+
+  get nodeSequenceNumber() {
+    return this.sequenceNumber;
+  }
+
   private traceId?: string;
   private executionRunId?: string;
 
@@ -70,6 +81,11 @@ export class CheckpointManager implements CheckpointWriter {
       }
     }
     return allSecrets;
+  }
+
+  // Public getter for testing purposes
+  get nodesForTesting(): Map<string, ExecutionNode> {
+    return this.nodes;
   }
 
   constructor(opts?: {
@@ -660,19 +676,21 @@ export class CheckpointManager implements CheckpointWriter {
    * the final checkpoint will always show the correct logical structure
    * of the execution.
    */
-  addNode(partialNode: Partial<ExecutionNode>, parentId?: string): string {
-    const nodeId =
-      partialNode.id ??
-      generateDeterministicId(
-        partialNode.componentName ?? "Unknown",
-        partialNode.props ?? {},
-        parentId,
-      );
+  addNode(
+    partialNode: Partial<ExecutionNode> & {
+      id: string;
+      sequenceNumber: number;
+    },
+    parentId?: string,
+  ): string {
+    const nodeId = partialNode.id;
+    if (!nodeId) {
+      throw new Error("Node ID is required");
+    }
     const clonedPartial = this.cloneValue(
       partialNode,
-    ) as Partial<ExecutionNode>;
+    ) as Partial<ExecutionNode> & { sequenceNumber: number; id: string };
     const node: ExecutionNode = {
-      id: nodeId,
       componentName: "Unknown",
       startTime: Date.now(),
       children: [],
@@ -820,6 +838,16 @@ export class CheckpointManager implements CheckpointWriter {
     this.buildReplayLookup(checkpoint);
   }
 
+  /**
+   * Advances the sequence number to the specified value.
+   * This is used during replay to ensure the sequence number matches the original execution.
+   */
+  private advanceSequenceNumberTo(targetSequence: number) {
+    if (this.sequenceNumber < targetSequence) {
+      this.sequenceNumber = targetSequence;
+    }
+  }
+
   private buildReplayLookup(node: ExecutionNode) {
     if (node.endTime && node.output !== undefined) {
       this.replayLookup.set(node.id, node.output);
@@ -854,6 +882,7 @@ export class CheckpointManager implements CheckpointWriter {
         `[Checkpoint] Node ${nodeId} not found in source checkpoint`,
       );
     }
+    this.updateCheckpoint();
   }
 
   private findNodeInCheckpoint(
@@ -882,6 +911,9 @@ export class CheckpointManager implements CheckpointWriter {
       ...node,
       children: [], // We'll add children recursively
     };
+
+    // During replay, advance the sequence number to match the original execution
+    this.advanceSequenceNumberTo(nodeCopy.sequenceNumber + 1);
 
     // Add this node to the current checkpoint
     this.nodes.set(nodeCopy.id, nodeCopy);

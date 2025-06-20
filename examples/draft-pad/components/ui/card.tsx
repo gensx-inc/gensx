@@ -1,9 +1,6 @@
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
-// Counter for generating unique filter IDs
-let filterIdCounter = 0;
-
 // SVG Filter Component for Glass Distortion
 function GlassDistortionFilter({ filterId }: { filterId: string }) {
   return (
@@ -66,11 +63,9 @@ function Card({
   liquidGlass = true,
   ...props
 }: React.ComponentProps<"div"> & { liquidGlass?: boolean }) {
-  // Each Card instance gets its own unique filter ID
-  const filterId = React.useMemo(() => {
-    if (!liquidGlass) return "";
-    return `glass-distortion-${filterIdCounter++}`;
-  }, [liquidGlass]);
+  // Generate a stable unique filter ID for each Card instance using React's useId
+  const reactId = React.useId();
+  const filterId = liquidGlass ? `glass-distortion-${reactId}` : "";
 
   if (liquidGlass) {
     return (
@@ -86,18 +81,20 @@ function Card({
         >
           {/* Glass Effect Layer */}
           <div
-            className="absolute inset-0 z-0 backdrop-blur-[3px] overflow-hidden rounded-3xl"
+            className="absolute inset-0 z-0 backdrop-blur-[3px] overflow-hidden rounded-3xl pointer-events-none"
             style={{ filter: `url(#${filterId})` }}
           />
 
           {/* Tint Layer - reducing opacity for more transparency */}
-          <div className="absolute inset-0 z-[1] bg-white/10 overflow-hidden rounded-3xl" />
+          <div className="absolute inset-0 z-[1] bg-white/10 overflow-hidden rounded-3xl pointer-events-none" />
 
           {/* Shine Layer - matching the example's box-shadow */}
-          <div className="absolute inset-0 z-[2] overflow-hidden rounded-3xl shadow-[inset_2px_2px_1px_0_rgba(255,255,255,0.5),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.5)]" />
+          <div className="absolute inset-0 z-[2] overflow-hidden rounded-3xl shadow-[inset_2px_2px_1px_0_rgba(255,255,255,0.5),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.5)] pointer-events-none" />
 
-          {/* Content Layer */}
-          <div className="relative z-[3]">{children}</div>
+          {/* Content Layer - now scrollable */}
+          <div className="relative z-[3] overflow-auto max-h-full">
+            {children}
+          </div>
         </div>
       </>
     );

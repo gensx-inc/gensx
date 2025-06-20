@@ -44,7 +44,7 @@ export default function RootLayout({
           <div className="absolute inset-0" />
         </div>
         <div className="relative z-10 h-screen flex flex-col overflow-hidden">
-          <div className="flex-1 p-4 flex overflow-hidden">{children}</div>
+          <div className="flex-1 flex overflow-hidden">{children}</div>
         </div>
       </body>
     </html>

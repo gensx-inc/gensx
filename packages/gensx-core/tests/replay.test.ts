@@ -27,20 +27,22 @@ suite("checkpoint replay", () => {
 
     // Create a mock checkpoint with a completed component
     const mockCheckpoint: ExecutionNode = {
-      id: "TestWorkflow:156403d8f795a18e",
+      id: "TestWorkflow:-",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [
         {
-          id: "ExpensiveComponent:8a2b95df3bafc8df",
+          id: "ExpensiveComponent:c6cc661b5d504e02",
           componentName: "ExpensiveComponent",
-          parentId: "TestWorkflow:156403d8f795a18e",
+          parentId: "TestWorkflow:-",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },
           output: "processed: test",
           children: [],
+          sequenceNumber: 1,
         },
       ],
     };
@@ -81,6 +83,7 @@ suite("checkpoint replay", () => {
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [], // Empty - no completed components
     };
 
@@ -132,9 +135,10 @@ suite("checkpoint replay", () => {
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [
         {
-          id: "CachedComponent:8a2b95df3bafc8df",
+          id: "CachedComponent:c6cc661b5d504e02",
           componentName: "CachedComponent",
           parentId: "TestWorkflow:-",
           startTime: Date.now() - 900,
@@ -142,6 +146,7 @@ suite("checkpoint replay", () => {
           props: { input: "test" },
           output: "cached: test",
           children: [],
+          sequenceNumber: 1,
         },
       ],
     };
@@ -197,21 +202,23 @@ suite("checkpoint replay", () => {
 
     // Create checkpoint with nested completed components
     const mockCheckpoint: ExecutionNode = {
-      id: "TestWorkflow:e3aab1c267157d72",
+      id: "TestWorkflow:7548c5ccf3e1e09c",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       endTime: Date.now() - 100,
       props: { input: "test" },
       output: "middle: leaf: test",
+      sequenceNumber: 0,
       children: [
         {
           id: "MiddleComponent:156403d8f795a18e",
           componentName: "MiddleComponent",
-          parentId: "TestWorkflow:e3aab1c267157d72",
+          parentId: "TestWorkflow:7548c5ccf3e1e09c",
           startTime: Date.now() - 900,
           endTime: Date.now() - 200,
           props: { input: "test" },
           output: "middle: leaf: test",
+          sequenceNumber: 1,
           children: [
             {
               id: "LeafComponent:93268aced3bf3c80",
@@ -222,6 +229,7 @@ suite("checkpoint replay", () => {
               props: { value: "test" },
               output: "leaf: test",
               children: [],
+              sequenceNumber: 2,
             },
           ],
         },
@@ -268,6 +276,7 @@ suite("checkpoint replay", () => {
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [], // No completed components
     };
 
@@ -343,20 +352,22 @@ suite("checkpoint replay", () => {
 
     // Create checkpoint with only the cached component
     const mockCheckpoint: ExecutionNode = {
-      id: "TestWorkflow:156403d8f795a18e",
+      id: "TestWorkflow:-",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
+      sequenceNumber: 0,
       children: [
         {
-          id: "CachedComponent:8a2b95df3bafc8df",
+          id: "CachedComponent:c6cc661b5d504e02",
           componentName: "CachedComponent",
-          parentId: "TestWorkflow:156403d8f795a18e",
+          parentId: "TestWorkflow:-",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },
           output: "cached: test",
           children: [],
+          sequenceNumber: 1,
         },
       ],
     };

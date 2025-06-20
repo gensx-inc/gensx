@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.5](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.4...gensx-core-v0.4.5) (2025-06-20)
+
+
+### ✨ New Features
+
+* Checkpoint restoration ([#793](https://github.com/gensx-inc/gensx/issues/793)) ([42291c6](https://github.com/gensx-inc/gensx/commit/42291c6fbdadab514a276e5170ca428022be7a28))
+* enable checkpoint replay ([#783](https://github.com/gensx-inc/gensx/issues/783)) ([a7313d6](https://github.com/gensx-inc/gensx/commit/a7313d654f2435e99d5d39735d58071b30554e3e))
+* Update name from waitForInput to requestInput. ([#798](https://github.com/gensx-inc/gensx/issues/798)) ([97811d1](https://github.com/gensx-inc/gensx/commit/97811d10b2a61cbfc058ef2b7b33250fae526eb6))
+
 ## [0.4.4](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.3...gensx-core-v0.4.4) (2025-06-17)
 
 

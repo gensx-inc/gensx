@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { render } from "ink";
 import React from "react";
 
@@ -154,6 +154,16 @@ export async function runCLI() {
     .option("--no-wait", "Do not wait for the workflow to finish")
     .option("-p, --project <name>", "Project name to run the workflow in")
     .option("--env <name>", "Environment name to run the workflow in")
+    // Handle the three progress cases:
+    // 1. No --progress flag: options.progress is undefined
+    // 2. --progress (no value): options.progress is true (boolean flag)
+    // 3. --progress=all: options.progress is "all"
+    .addOption(
+      new Option(
+        "--progress [verbosity]",
+        "Stream workflow events instead of just output (pass 'all' to stream all events)",
+      ).choices(["all"]),
+    )
     .option(
       "-o, --output <file>",
       "Output file to write the workflow result to",
@@ -162,6 +172,13 @@ export async function runCLI() {
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
     .action((workflow: string, options: CliOptions) => {
       return new Promise<void>((resolve, reject) => {
+        if (options.progress && !options.wait) {
+          console.error(
+            "Cannot use --progress when using --no-wait. Progress is only supported when waiting for the workflow to finish.",
+          );
+          process.exit(1);
+        }
+
         const { waitUntilExit } = render(
           React.createElement(RunWorkflowUI, {
             workflowName: workflow,

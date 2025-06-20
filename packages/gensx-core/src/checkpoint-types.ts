@@ -20,11 +20,15 @@ export interface ExecutionNode {
     [key: string]: unknown;
   };
   componentOpts?: ComponentOpts;
+  sequenceNumber: number;
 }
 
 export interface CheckpointWriter {
   root?: ExecutionNode;
-  addNode: (node: Partial<ExecutionNode>, parentId?: string) => string;
+  addNode: (
+    node: Partial<ExecutionNode> & { id: string; sequenceNumber: number },
+    parentId?: string,
+  ) => string;
   completeNode: (id: string, output: unknown) => void;
   addMetadata: (id: string, metadata: Record<string, unknown>) => void;
   updateNode: (id: string, updates: Partial<ExecutionNode>) => void;

@@ -38,13 +38,13 @@ export interface WorkflowDataMessage {
 
 export interface WorkflowEventMessage {
   type: "event";
-  data: Record<string, JsonValue>;
+  data: JsonValue;
   label: string;
 }
 
 export interface WorkflowObjectMessage {
   type: "object";
-  data: Record<string, JsonValue>;
+  data: JsonValue;
   label: string;
 }
 
@@ -89,14 +89,12 @@ export function publishData(data: JsonValue) {
  * @param label - The label of the event.
  * @param data - The data to publish.
  */
-export function publishEvent<
-  T extends Record<string, JsonValue> = Record<string, JsonValue>,
->(label: string, data: T) {
+export function publishEvent<T = JsonValue>(label: string, data: T) {
   const context = getCurrentContext();
   context.getWorkflowContext().sendWorkflowMessage({
     type: "event",
     label,
-    data,
+    data: data as JsonValue,
   });
 }
 
@@ -106,14 +104,12 @@ export function publishEvent<
  * @param label - The label of the state.
  * @param data - The data to publish.
  */
-export function publishObject<
-  T extends Record<string, JsonValue> = Record<string, JsonValue>,
->(label: string, data: T) {
+export function publishObject<T = JsonValue>(label: string, data: T) {
   const context = getCurrentContext();
   context.getWorkflowContext().sendWorkflowMessage({
     type: "object",
     label,
-    data,
+    data: data as JsonValue,
   });
 }
 
@@ -123,9 +119,9 @@ export function publishObject<
  * @param label - The label of the event.
  * @returns A function that publishes an event to the workflow message stream.
  */
-export function createEventStream<
-  T extends Record<string, JsonValue> = Record<string, JsonValue>,
->(label: string) {
+export function createEventStream<T extends JsonValue = JsonValue>(
+  label: string,
+) {
   return (data: T) => {
     publishEvent(label, data);
   };
@@ -137,9 +133,9 @@ export function createEventStream<
  * @param label - The label of the state.
  * @returns A function that publishes a state to the workflow message stream.
  */
-export function createObjectStream<
-  T extends Record<string, JsonValue> = Record<string, JsonValue>,
->(label: string) {
+export function createObjectStream<T extends JsonValue = JsonValue>(
+  label: string,
+) {
   return (data: T) => {
     publishObject(label, data);
   };
