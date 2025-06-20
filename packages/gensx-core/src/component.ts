@@ -251,8 +251,7 @@ function handleError(
   error: unknown,
   workflowContext: WorkflowExecutionContext,
 ) {
-  let serializedError: string;
-  serializedError = JSON.stringify(serializeError(error));
+  const serializedError = serializeError(error);
   workflowContext.checkpointManager.addMetadata(nodeId, {
     error: serializedError,
   });
@@ -261,7 +260,7 @@ function handleError(
   if (!(error as any).__gensxErrorEventEmitted) {
     workflowContext.sendWorkflowMessage({
       type: "error",
-      error: serializedError,
+      error: JSON.stringify(serializedError),
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (error as any).__gensxErrorEventEmitted = true;
