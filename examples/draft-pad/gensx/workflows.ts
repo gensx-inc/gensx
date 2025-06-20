@@ -13,18 +13,21 @@ import { streamText } from "@gensx/vercel-ai";
 
 // Workflow with merged draft and progress state
 // Updated: Combined DraftState and ProgressUpdate into single DraftProgress
-interface StartContentEvent {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type StartContentEvent = {
   type: "startContent";
   content: string;
-}
+};
 
-interface EndContentEvent {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type EndContentEvent = {
   type: "endContent";
   content: string;
-}
+};
 
 // Model configuration
-interface ModelConfig {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type ModelConfig = {
   id: string; // Unique identifier for this model instance
   provider:
     | "openai"
@@ -63,10 +66,11 @@ interface ModelConfig {
     // For Bedrock, we might need region
     region?: string;
   };
-}
+};
 
 // Individual model stream state
-interface ModelStreamState {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type ModelStreamState = {
   modelId: string;
   displayName: string;
   status: "idle" | "generating" | "complete" | "error";
@@ -79,10 +83,11 @@ interface ModelStreamState {
   generationTime?: number; // Time in seconds
   inputTokens?: number;
   outputTokens?: number;
-}
+};
 
 // Single comprehensive state object for all models
-interface DraftProgress {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type DraftProgress = {
   type: "draft-progress";
   // Overall status information
   status: "idle" | "generating" | "complete";
@@ -100,13 +105,14 @@ interface DraftProgress {
   totalModels: number;
   completedModels: number;
   lastUpdated: string;
-}
+};
 
-interface UpdateDraftInput {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type UpdateDraftInput = {
   userMessage: string;
   currentDraft: string;
   models: ModelConfig[];
-}
+};
 
 type UpdateDraftOutput = string;
 
