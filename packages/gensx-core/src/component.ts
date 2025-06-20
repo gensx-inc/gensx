@@ -22,6 +22,7 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
+import { WorkflowExecutionContext } from "./workflow-context.js";
 import { WorkflowMessageListener } from "./workflow-state.js";
 
 export { STREAMING_PLACEHOLDER };
@@ -220,36 +221,16 @@ export function Component<P extends object = {}, R = unknown>(
 
       if (result instanceof Promise) {
         return result
-          .then((value) => {
-            return handleResultValue(value, runInContext);
-          })
+          .then((value) => handleResultValue(value, runInContext))
           .catch((error: unknown) => {
-            if (error instanceof Error) {
-              checkpointManager.addMetadata(nodeId, {
-                error: serializeError(error),
-              });
-              checkpointManager.completeNode(nodeId, undefined);
-              workflowContext.sendWorkflowMessage({
-                type: "error",
-                error: JSON.stringify(serializeError(error)),
-              });
-            }
+            handleError(nodeId, error, workflowContext);
             throw error;
           }) as R;
       }
 
       return handleResultValue(result, runInContext!) as R;
     } catch (error) {
-      if (error instanceof Error) {
-        checkpointManager.addMetadata(nodeId, {
-          error: serializeError(error),
-        });
-        checkpointManager.completeNode(nodeId, undefined);
-        workflowContext.sendWorkflowMessage({
-          type: "error",
-          error: JSON.stringify(serializeError(error)),
-        });
-      }
+      handleError(nodeId, error, workflowContext);
       throw error;
     }
   };
@@ -263,6 +244,27 @@ export function Component<P extends object = {}, R = unknown>(
   });
 
   return ComponentFn;
+}
+
+function handleError(
+  nodeId: string,
+  error: unknown,
+  workflowContext: WorkflowExecutionContext,
+) {
+  const serializedError = serializeError(error);
+  workflowContext.checkpointManager.addMetadata(nodeId, {
+    error: serializedError,
+  });
+  workflowContext.checkpointManager.completeNode(nodeId, undefined);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!(error as any).__gensxErrorEventEmitted) {
+    workflowContext.sendWorkflowMessage({
+      type: "error",
+      error: JSON.stringify(serializedError),
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any).__gensxErrorEventEmitted = true;
+  }
 }
 
 type WorkflowRuntimeOpts = WorkflowOpts & {

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.6](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.5...gensx-core-v0.4.6) (2025-06-20)
+
+
+### 🐛 Bug Fixes
+
+* Fix duplicate error events. ([#803](https://github.com/gensx-inc/gensx/issues/803)) ([d4417f0](https://github.com/gensx-inc/gensx/commit/d4417f0de5fd5d8cbdebabefd626d69398e0686b))
+
+
+### 📚 Documentation
+
+* updated draft pad example ([#791](https://github.com/gensx-inc/gensx/issues/791)) ([41d1103](https://github.com/gensx-inc/gensx/commit/41d1103a889e448be34c663e31d6e78570df3f56))
+
 ## [0.4.5](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.4...gensx-core-v0.4.5) (2025-06-20)
 
 
