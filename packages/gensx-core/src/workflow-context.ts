@@ -8,7 +8,7 @@ export const WORKFLOW_CONTEXT_SYMBOL = Symbol.for("gensx.workflow");
 export interface WorkflowExecutionContext {
   checkpointManager: CheckpointManager;
   sendWorkflowMessage: WorkflowMessageListener;
-  onWaitForInput: (nodeId: string) => Promise<void>;
+  onRequestInput: (nodeId: string) => Promise<void>;
   onRestoreCheckpoint: (nodeId: string, feedback: unknown) => Promise<void>;
   checkpointLabelMap: Map<string, string>;
   // Future: Add more workflow-level utilities here
@@ -16,11 +16,11 @@ export interface WorkflowExecutionContext {
 
 export function createWorkflowContext({
   onMessage,
-  onWaitForInput,
+  onRequestInput,
   onRestoreCheckpoint,
 }: {
   onMessage?: WorkflowMessageListener;
-  onWaitForInput?: (nodeId: string) => Promise<void>;
+  onRequestInput?: (nodeId: string) => Promise<void>;
   onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>;
 } = {}): WorkflowExecutionContext {
   return {
@@ -28,11 +28,13 @@ export function createWorkflowContext({
     sendWorkflowMessage: (message: WorkflowMessage) => {
       onMessage?.(message);
     },
-    onWaitForInput:
-      onWaitForInput ??
+    onRequestInput:
+      onRequestInput ??
       // eslint-disable-next-line @typescript-eslint/require-await
       (async () => {
-        console.warn("[GenSX] Pause/resume not supported in this environment");
+        console.warn(
+          "[GenSX] Requesting input not supported in this environment",
+        );
       }),
     onRestoreCheckpoint:
       onRestoreCheckpoint ??

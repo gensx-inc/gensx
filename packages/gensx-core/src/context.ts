@@ -24,15 +24,15 @@ export class ExecutionContext {
     public context: WorkflowContext,
     private parent?: ExecutionContext,
     messageListener?: WorkflowMessageListener,
-    onWaitForInput?: (nodeId: string) => Promise<void>,
+    onRequestInput?: (nodeId: string) => Promise<void>,
     onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>,
   ) {
     this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext({
       onMessage:
         messageListener ??
         this.parent?.getWorkflowContext().sendWorkflowMessage,
-      onWaitForInput:
-        onWaitForInput ?? this.parent?.getWorkflowContext().onWaitForInput,
+      onRequestInput:
+        onRequestInput ?? this.parent?.getWorkflowContext().onRequestInput,
       onRestoreCheckpoint:
         onRestoreCheckpoint ??
         this.parent?.getWorkflowContext().onRestoreCheckpoint,

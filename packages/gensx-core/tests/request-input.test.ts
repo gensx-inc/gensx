@@ -2,7 +2,7 @@ import { expect, suite, test, vi } from "vitest";
 
 import { ExecutionContext, withContext } from "../src/context.js";
 import * as gensx from "../src/index.js";
-import { waitForInput } from "../src/wait-for-input.js";
+import { requestInput } from "../src/request-input.js";
 import {
   createWorkflowContext,
   WORKFLOW_CONTEXT_SYMBOL,
@@ -17,13 +17,13 @@ function createTestContext() {
   return { workflowContext, contextWithWorkflow };
 }
 
-suite("wait for input", () => {
-  test("waitForInput calls trigger with callback URL", async () => {
+suite("request input", () => {
+  test("requestInput calls trigger with callback URL", async () => {
     const mockTrigger = vi.fn().mockResolvedValue(undefined);
     const mockOnWaitForInput = vi.fn().mockResolvedValue(undefined);
 
     const { workflowContext, contextWithWorkflow } = createTestContext();
-    workflowContext.onWaitForInput = mockOnWaitForInput;
+    workflowContext.onRequestInput = mockOnWaitForInput;
 
     // Mock environment variables for URL generation
     const originalEnv = process.env;
@@ -41,20 +41,20 @@ suite("wait for input", () => {
       });
 
     try {
-      // Create a component that uses waitForInput to test in proper context
+      // Create a component that uses requestInput to test in proper context
       const TestComponent = gensx.Component("TestComponent", async () => {
         vi.spyOn(
           workflowContext.checkpointManager,
           "waitForPendingUpdates",
         ).mockResolvedValue();
 
-        return await waitForInput(mockTrigger);
+        return await requestInput(mockTrigger);
       });
 
       await withContext(contextWithWorkflow, async () => {
         const result = await TestComponent();
 
-        // waitForInput returns {} in test environment
+        // requestInput returns {} in test environment
         expect(result).toEqual({});
 
         // Verify trigger was called with a callback URL
@@ -64,12 +64,12 @@ suite("wait for input", () => {
           ),
         );
 
-        // Verify onWaitForInput was called
+        // Verify onRequestInput was called
         expect(mockOnWaitForInput).toHaveBeenCalled();
 
         // Verify error was logged
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "[GenSX] Pause/resume not supported in this environment",
+          "[GenSX] Requesting input not supported in this environment",
         );
       });
     } finally {
@@ -78,13 +78,13 @@ suite("wait for input", () => {
     }
   });
 
-  test("waitForInput waits for pending updates before pausing", async () => {
+  test("requestInput waits for pending updates before pausing", async () => {
     const mockTrigger = vi.fn().mockResolvedValue(undefined);
-    const mockOnWaitForInput = vi.fn().mockResolvedValue(undefined);
+    const mockOnRequestInput = vi.fn().mockResolvedValue(undefined);
     const mockWaitForPendingUpdates = vi.fn().mockResolvedValue(undefined);
 
     const { workflowContext, contextWithWorkflow } = createTestContext();
-    workflowContext.onWaitForInput = mockOnWaitForInput;
+    workflowContext.onRequestInput = mockOnRequestInput;
 
     const TestComponent = gensx.Component("TestComponent", async () => {
       vi.spyOn(
@@ -92,21 +92,21 @@ suite("wait for input", () => {
         "waitForPendingUpdates",
       ).mockImplementation(mockWaitForPendingUpdates);
 
-      return await waitForInput(mockTrigger);
+      return await requestInput(mockTrigger);
     });
 
     await withContext(contextWithWorkflow, async () => {
       const result = await TestComponent();
       expect(result).toEqual({});
 
-      // Verify that waitForPendingUpdates was called before onWaitForInput
+      // Verify that waitForPendingUpdates was called before onRequestInput
       expect(mockWaitForPendingUpdates).toHaveBeenCalledBefore(
-        mockOnWaitForInput,
+        mockOnRequestInput,
       );
     });
   });
 
-  test("waitForInput handles missing current node ID", async () => {
+  test("requestInput handles missing current node ID", async () => {
     const mockTrigger = vi.fn().mockResolvedValue(undefined);
     const { contextWithWorkflow } = createTestContext();
 
@@ -114,7 +114,7 @@ suite("wait for input", () => {
     // The error might be caught and handled differently in the execution flow
     await withContext(contextWithWorkflow, async () => {
       try {
-        const result = await waitForInput(mockTrigger);
+        const result = await requestInput(mockTrigger);
         // If it doesn't throw, it should return empty object
         expect(result).toEqual({});
       } catch (error) {
@@ -128,7 +128,7 @@ suite("wait for input", () => {
     });
   });
 
-  test("waitForInput generates correct callback URL format", async () => {
+  test("requestInput generates correct callback URL format", async () => {
     const mockTrigger = vi.fn().mockResolvedValue(undefined);
     const { workflowContext, contextWithWorkflow } = createTestContext();
 
@@ -147,7 +147,7 @@ suite("wait for input", () => {
           "waitForPendingUpdates",
         ).mockResolvedValue();
 
-        return await waitForInput(mockTrigger);
+        return await requestInput(mockTrigger);
       });
 
       await withContext(contextWithWorkflow, async () => {
@@ -163,7 +163,7 @@ suite("wait for input", () => {
     }
   });
 
-  test("waitForInput returns empty object by default", async () => {
+  test("requestInput returns empty object by default", async () => {
     const mockTrigger = vi.fn().mockResolvedValue(undefined);
     const { workflowContext, contextWithWorkflow } = createTestContext();
 
@@ -173,7 +173,7 @@ suite("wait for input", () => {
         "waitForPendingUpdates",
       ).mockResolvedValue();
 
-      return await waitForInput<{ message: string }>(mockTrigger);
+      return await requestInput<{ message: string }>(mockTrigger);
     });
 
     await withContext(contextWithWorkflow, async () => {

@@ -16,18 +16,18 @@ suite("workflow context", () => {
     expect(context.checkpointLabelMap).toBeInstanceOf(Map);
     expect(context.checkpointLabelMap.size).toBe(0);
     expect(typeof context.sendWorkflowMessage).toBe("function");
-    expect(typeof context.onWaitForInput).toBe("function");
+    expect(typeof context.onRequestInput).toBe("function");
     expect(typeof context.onRestoreCheckpoint).toBe("function");
   });
 
   test("createWorkflowContext uses provided callbacks", () => {
     const mockOnMessage = vi.fn();
-    const mockOnWaitForInput = vi.fn();
+    const mockOnRequestInput = vi.fn();
     const mockOnRestoreCheckpoint = vi.fn();
 
     const context = createWorkflowContext({
       onMessage: mockOnMessage,
-      onWaitForInput: mockOnWaitForInput,
+      onRequestInput: mockOnRequestInput,
       onRestoreCheckpoint: mockOnRestoreCheckpoint,
     });
 
@@ -36,20 +36,20 @@ suite("workflow context", () => {
     context.sendWorkflowMessage(testMessage);
     expect(mockOnMessage).toHaveBeenCalledWith(testMessage);
 
-    expect(context.onWaitForInput).toBe(mockOnWaitForInput);
+    expect(context.onRequestInput).toBe(mockOnRequestInput);
     expect(context.onRestoreCheckpoint).toBe(mockOnRestoreCheckpoint);
   });
 
   test("createWorkflowContext uses default handlers when not provided", async () => {
     const context = createWorkflowContext();
 
-    // Test default onWaitForInput - should log warning
+    // Test default onRequestInput - should log warning
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {
       // Mock implementation
     });
-    await context.onWaitForInput("test-node-id");
+    await context.onRequestInput("test-node-id");
     expect(consoleSpy).toHaveBeenCalledWith(
-      "[GenSX] Pause/resume not supported in this environment",
+      "[GenSX] Requesting input not supported in this environment",
     );
 
     // Test default onRestoreCheckpoint - should log warning
