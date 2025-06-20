@@ -70,11 +70,13 @@ export async function runCLI() {
     .option("-q, --quiet", "Suppress output", false)
     .action((file: string, options: { port: number; quiet: boolean }) => {
       return new Promise<void>((resolve, reject) => {
+        const interactive = !options.quiet && process.stdout.isTTY;
         const { waitUntilExit } = render(
           React.createElement(StartUI, {
             file,
             options,
           }),
+          { patchConsole: interactive },
         );
         waitUntilExit().then(resolve).catch(reject);
       });

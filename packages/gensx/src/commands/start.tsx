@@ -167,7 +167,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
             "",
           ]);
         } else {
-          console.info("\n🔄 Restarting server due to code changes...\n");
+          console.info("🔄 Restarting server due to code changes...");
         }
         await currentServerRef.current.stop();
         // Add a short delay to allow the OS to release the port
@@ -258,10 +258,12 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
             ]);
           }
         } else {
+          console.info("✅ Server restarted successfully!");
           console.info(
-            `✅ Server restarted successfully!\n` +
-              `🚀 Server running at http://localhost:${options.port ?? 1337}\n` +
-              `🧪 Swagger UI available at http://localhost:${options.port ?? 1337}/swagger-ui\n`,
+            `🚀 Server running at http://localhost:${options.port ?? 1337}`,
+          );
+          console.info(
+            `🧪 Swagger UI available at http://localhost:${options.port ?? 1337}/swagger-ui`,
           );
         }
       } catch (err) {
