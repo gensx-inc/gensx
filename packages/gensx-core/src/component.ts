@@ -224,12 +224,14 @@ export function Component<P extends object = {}, R = unknown>(
           .then((value) => handleResultValue(value, runInContext))
           .catch((error: unknown) => {
             handleError(nodeId, error, workflowContext);
+            throw error;
           }) as R;
       }
 
       return handleResultValue(result, runInContext!) as R;
     } catch (error) {
       handleError(nodeId, error, workflowContext);
+      throw error;
     }
   };
 
@@ -264,7 +266,6 @@ function handleError(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (error as any).__gensxErrorEventEmitted = true;
   }
-  throw error;
 }
 
 type WorkflowRuntimeOpts = WorkflowOpts & {
