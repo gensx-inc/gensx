@@ -45,6 +45,9 @@ catalogs:
     vitest:
       specifier: ^3.2.3
       version: 3.2.3
+    zod:
+      specifier: 3.25.56
+      version: 3.25.56
     zod-to-json-schema:
       specifier: ^3.24.1
       version: 3.24.5
@@ -57,9 +60,6 @@ catalogs:
     '@types/node':
       specifier: ^18
       version: 18.19.111
-
-overrides:
-  zod: 3.25.56
 
 importers:
 
@@ -131,7 +131,7 @@ importers:
         version: 0.4.3
       '@gensx/openai':
         specifier: ^0.2.3
-        version: 0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.56))
+        version: 0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.64))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -345,7 +345,7 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
       zod:
-        specifier: 3.25.56
+        specifier: 'catalog:'
         version: 3.25.56
     devDependencies:
       '@types/node':
@@ -529,7 +529,7 @@ importers:
         version: 0.4.3
       '@gensx/openai':
         specifier: ^0.2.3
-        version: 0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.56))
+        version: 0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.64))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -548,7 +548,7 @@ importers:
         version: 0.4.3
       '@gensx/openai':
         specifier: ^0.2.3
-        version: 0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.56))
+        version: 0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.64))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -572,7 +572,7 @@ importers:
         specifier: 0.1.28
         version: 0.1.28(openai@5.3.0(ws@8.18.2)(zod@3.25.56))
       zod:
-        specifier: 3.25.56
+        specifier: 'catalog:'
         version: 3.25.56
     devDependencies:
       '@types/node':
@@ -595,7 +595,7 @@ importers:
         version: 0.4.3
       '@gensx/openai':
         specifier: ^0.2.3
-        version: 0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.56))
+        version: 0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.64))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -622,7 +622,7 @@ importers:
         specifier: ^1.52.0
         version: 1.52.0
       zod:
-        specifier: 3.25.56
+        specifier: 'catalog:'
         version: 3.25.56
     devDependencies:
       '@types/node':
@@ -774,7 +774,7 @@ importers:
         specifier: ^12.0.0
         version: 12.0.0
       zod:
-        specifier: 3.25.56
+        specifier: 'catalog:'
         version: 3.25.56
     devDependencies:
       '@types/node':
@@ -831,7 +831,7 @@ importers:
         version: 0.3.13
       '@gensx/openai':
         specifier: 0.1.28
-        version: 0.1.28(openai@5.3.0(ws@8.18.2)(zod@3.25.56))
+        version: 0.1.28(openai@5.3.0(ws@8.18.2)(zod@3.25.64))
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -1035,7 +1035,7 @@ importers:
         specifier: workspace:*
         version: link:../gensx-core
       zod:
-        specifier: 3.25.56
+        specifier: 'catalog:'
         version: 3.25.56
       zod-to-json-schema:
         specifier: 'catalog:'
@@ -1115,7 +1115,7 @@ importers:
         specifier: 'catalog:'
         version: 4.20.3
       zod:
-        specifier: 3.25.56
+        specifier: 'catalog:'
         version: 3.25.56
     devDependencies:
       '@types/node':
@@ -1137,7 +1137,7 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       zod:
-        specifier: 3.25.56
+        specifier: 'catalog:'
         version: 3.25.56
     devDependencies:
       '@types/ini':
@@ -1182,7 +1182,7 @@ importers:
         version: 3.2.3(vitest@3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.42.0)(tsx@4.20.3)(yaml@2.8.0))
       openai:
         specifier: 'catalog:'
-        version: 4.104.0(ws@8.18.2)(zod@3.25.56)
+        version: 4.104.0(ws@8.18.2)(zod@3.25.64)
       vitest:
         specifier: 'catalog:'
         version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.111)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.42.0)(tsx@4.20.3)(yaml@2.8.0)
@@ -1243,7 +1243,7 @@ importers:
         specifier: ^4.3.16
         version: 4.3.16(react@19.1.0)(zod@3.25.56)
       zod:
-        specifier: 3.25.56
+        specifier: 'catalog:'
         version: 3.25.56
     devDependencies:
       '@ai-sdk/openai':
@@ -1492,85 +1492,85 @@ packages:
     resolution: {integrity: sha512-icLGO7Q0NinnHIPgT+y1QjHVwH4HwV+brWbvM+FfCG2Afpa89PyKa3Ret91kGjZpBgM/xnj1B7K5eM+rRlsXQA==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/anthropic@1.2.12':
     resolution: {integrity: sha512-YSzjlko7JvuiyQFmI9RN1tNZdEiZxc+6xld/0tq/VkJaHpEzGAb1yiNxxvmYVcjvfu/PcvCxAAYXmTYQQ63IHQ==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/azure@1.3.23':
     resolution: {integrity: sha512-vpsaPtU24RBVk/IMM5UylR/N4RtAuL2NZLWc7LJ3tvMTHu6pI46a7w+1qIwR3F6yO9ehWR8qvfLaBefJNFxaVw==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/cohere@1.2.10':
     resolution: {integrity: sha512-OaUwd5xj4bxSO8hdCbX1a5uUlTouU8FcodSuRON6xDSsmjZIvQL4O2G1XzcidxiQVL8JQuA+M0tHZOwGxSL96A==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/deepseek@0.2.14':
     resolution: {integrity: sha512-TISD1FzBWuQkHEHoVustoJILV33ZNgfYxeTkq1xU2vHEZuWTGZV7/IlXixyFsfqDCdVgrbLeIABk5FuCw7niLg==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/google@1.2.19':
     resolution: {integrity: sha512-Xgl6eftIRQ4srUdCzxM112JuewVMij5q4JLcNmHcB68Bxn9dpr3MVUSPlJwmameuiQuISIA8lMB+iRiRbFsaqA==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/groq@1.2.9':
     resolution: {integrity: sha512-7MoDaxm8yWtiRbD1LipYZG0kBl+Xe0sv/EeyxnHnGPZappXdlgtdOgTZVjjXkT3nWP30jjZi9A45zoVrBMb3Xg==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/mistral@1.2.8':
     resolution: {integrity: sha512-lv857D9UJqCVxiq2Fcu7mSPTypEHBUqLl1K+lCaP6X/7QAkcaxI36QDONG+tOhGHJOXTsS114u8lrUTaEiGXbg==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/openai-compatible@0.2.14':
     resolution: {integrity: sha512-icjObfMCHKSIbywijaoLdZ1nSnuRnWgMEMLgwoxPJgxsUHMx0aVORnsLUid4SPtdhHI3X2masrt6iaEQLvOSFw==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/openai@1.3.22':
     resolution: {integrity: sha512-QwA+2EkG0QyjVR+7h6FE7iOu2ivNqAVMm9UJZkVxxTk5OIq5fFJDTEI/zICEMuHImTTXR2JjsL6EirJ28Jc4cw==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/openai@1.3.6':
     resolution: {integrity: sha512-Lyp6W6dg+ERMJru3DI8/pWAjXLB0GbMMlXh4jxA3mVny8CJHlCAjlEJRuAdLg1/CFz4J1UDN2/4qBnIWtLFIqw==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@ai-sdk/provider-utils@2.2.3':
     resolution: {integrity: sha512-o3fWTzkxzI5Af7U7y794MZkYNEsxbjLam2nxyoUZSScqkacb7vZ3EYHLh21+xCcSSzEC161C7pZAGHtC0hTUMw==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.23.8
 
   '@ai-sdk/provider-utils@2.2.6':
     resolution: {integrity: sha512-sUlZ7Gnq84DCGWMQRIK8XVbkzIBnvPR1diV4v6JwPgpn5armnLI/j+rqn62MpLrU5ZCQZlDKl/Lw6ed3ulYqaA==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.23.8
 
   '@ai-sdk/provider-utils@2.2.8':
     resolution: {integrity: sha512-fqhG+4sCVv8x7nFzYnFo19ryhAa3w096Kmc3hWxMQfW/TubPOmt3A6tYZhl4mUfQWWQMsuSkLrtjlWuXBVSGQA==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.23.8
 
   '@ai-sdk/provider@1.1.0':
     resolution: {integrity: sha512-0M+qjp+clUD0R1E5eWQFhxEvWLNaOtGQRUaBn8CUABnSKredagq92hUS9VjOzGsTm37xLfpaxl97AVtbeOsHew==}
@@ -1589,7 +1589,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
-      zod: 3.25.56
+      zod: ^3.23.8
     peerDependenciesMeta:
       zod:
         optional: true
@@ -1599,7 +1599,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
-      zod: 3.25.56
+      zod: ^3.23.8
     peerDependenciesMeta:
       zod:
         optional: true
@@ -1608,19 +1608,19 @@ packages:
     resolution: {integrity: sha512-3zcwCc8ezzFlwp3ZD15wAPjf2Au4s3vAbKsXQVyhxODHcmu0iyPO2Eua6D/vicq/AUm/BAo60r97O6HU+EI0+w==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.23.8
 
   '@ai-sdk/ui-utils@1.2.7':
     resolution: {integrity: sha512-OVRxa4SDj0wVsMZ8tGr/whT89oqNtNoXBKmqWC2BRv5ZG6azL2LYZ5ZK35u3lb4l1IE7cWGsLlmq0py0ttsL7A==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.23.8
 
   '@ai-sdk/xai@1.2.16':
     resolution: {integrity: sha512-UOZT8td9PWwMi2dF9a0U44t/Oltmf6QmIJdSvrOcLG4mvpRc1UJn6YJaR0HtXs3YnW6SvY1zRdIDrW4GFpv4NA==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.0.0
 
   '@alcalzone/ansi-tokenize@0.1.3':
     resolution: {integrity: sha512-3yWxPTq3UQ/FY9p1ErPxIyfT64elWaMvM9lIHnaqpyft63tkxodF5aUElYHrdisWve5cETkh1+KBw1yJuW0aRw==}
@@ -3996,7 +3996,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
-      zod: 3.25.56
+      zod: ^3.23.8
     peerDependenciesMeta:
       react:
         optional: true
@@ -4006,7 +4006,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
-      zod: 3.25.56
+      zod: ^3.23.8
     peerDependenciesMeta:
       react:
         optional: true
@@ -6709,7 +6709,7 @@ packages:
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
-      zod: 3.25.56
+      zod: ^3.23.8
     peerDependenciesMeta:
       ws:
         optional: true
@@ -6721,7 +6721,7 @@ packages:
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
-      zod: 3.25.56
+      zod: ^3.23.8
     peerDependenciesMeta:
       ws:
         optional: true
@@ -8322,13 +8322,13 @@ packages:
   zod-to-json-schema@3.24.5:
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.24.1
 
   zod-validation-error@3.4.0:
     resolution: {integrity: sha512-ZOPR9SVY6Pb2qqO5XHt+MkkTRxGXb4EVtnjc9JpXUOtUB1T9Ru7mZOT361AN3MsetVe7R0a1KZshJDZdgp9miQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      zod: 3.25.56
+      zod: ^3.18.0
 
   zod@3.25.56:
     resolution: {integrity: sha512-rd6eEF3BTNvQnR2e2wwolfTmUTnp70aUTqr0oaGbHifzC3BKJsoV+Gat8vxUMR1hwOKBs6El+qWehrHbCpW6SQ==}
@@ -8982,15 +8982,22 @@ snapshots:
       zod: 3.25.56
       zod-to-json-schema: 3.24.5(zod@3.25.56)
 
+  '@gensx/openai@0.1.28(openai@5.3.0(ws@8.18.2)(zod@3.25.64))':
+    dependencies:
+      '@gensx/core': 0.3.13
+      openai: 5.3.0(ws@8.18.2)(zod@3.25.64)
+      zod: 3.25.56
+      zod-to-json-schema: 3.24.5(zod@3.25.56)
+
   '@gensx/openai@0.2.3(openai@4.104.0(ws@8.18.2)(zod@3.25.56))':
     dependencies:
       '@gensx/core': 0.4.3
       openai: 4.104.0(ws@8.18.2)(zod@3.25.56)
 
-  '@gensx/openai@0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.56))':
+  '@gensx/openai@0.2.3(openai@5.3.0(ws@8.18.2)(zod@3.25.64))':
     dependencies:
       '@gensx/core': 0.4.3
-      openai: 5.3.0(ws@8.18.2)(zod@3.25.56)
+      openai: 5.3.0(ws@8.18.2)(zod@3.25.64)
 
   '@gensx/react@0.1.2(react@19.1.0)':
     dependencies:
@@ -14933,6 +14940,11 @@ snapshots:
     optionalDependencies:
       ws: 8.18.2
       zod: 3.25.56
+
+  openai@5.3.0(ws@8.18.2)(zod@3.25.64):
+    optionalDependencies:
+      ws: 8.18.2
+      zod: 3.25.64
 
   optionator@0.9.4:
     dependencies:
