@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path, { resolve } from "node:path";
 
-import { Box, Text, useApp } from "ink";
+import { Box, Text } from "ink";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as ts from "typescript";
 import { Definition } from "typescript-json-schema";
@@ -37,7 +37,8 @@ interface Props {
 }
 
 export const StartUI: React.FC<Props> = ({ file, options }) => {
-  const { exit } = useApp();
+  const isInteractive =
+    !options.quiet && (process.stdout.isTTY || process.env.VITEST);
   const [phase, setPhase] = useState<Phase>("initial");
   const [error, setError] = useState<string | null>(null);
   const [currentServer, setCurrentServer] = useState<ServerInstance | null>(
@@ -59,13 +60,14 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
   const handleError = useCallback(
     (err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
-      setError(message);
-      setPhase("error");
-      setTimeout(() => {
-        exit();
-      }, 100);
+      if (isInteractive) {
+        setError(message);
+        setPhase("error");
+      } else {
+        console.error(message);
+      }
     },
-    [exit],
+    [isInteractive],
   );
 
   const compileTypeScript = useCallback((tsFile: string): string => {
@@ -152,16 +154,21 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
 
     isRebuildingRef.current = true;
     setIsRebuilding(true);
+    setError(null);
 
     try {
       if (currentServerRef.current) {
-        // Add restart message
-        setServerLogs((logs) => [
-          ...logs,
-          "",
-          "🔄 Restarting server due to code changes...",
-          "",
-        ]);
+        if (isInteractive) {
+          // Add restart message
+          setServerLogs((logs) => [
+            ...logs,
+            "",
+            "🔄 Restarting server due to code changes...",
+            "",
+          ]);
+        } else {
+          console.info("\n🔄 Restarting server due to code changes...\n");
+        }
         await currentServerRef.current.stop();
         // Add a short delay to allow the OS to release the port
         await new Promise((resolve) => setTimeout(resolve, 250));
@@ -193,21 +200,33 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
         workflows,
         {
           port: options.port ?? 1337,
-          logger: {
-            info: (msg) => {
-              setServerLogs((logs) => [...logs, msg]);
-            },
-            error: (msg, err) => {
-              const errorStr = err instanceof Error ? err.message : String(err);
-              setServerLogs((logs) => [
-                ...logs,
-                `${msg}${err ? `: ${errorStr}` : ""}`,
-              ]);
-            },
-            warn: (msg) => {
-              setServerLogs((logs) => [...logs, msg]);
-            },
-          },
+          logger: isInteractive
+            ? {
+                info: (msg) => {
+                  setServerLogs((logs) => [...logs, msg]);
+                },
+                error: (msg, err) => {
+                  const errorStr = err instanceof Error ? err.message : String(err);
+                  setServerLogs((logs) => [
+                    ...logs,
+                    `${msg}${err ? `: ${errorStr}` : ""}`,
+                  ]);
+                },
+                warn: (msg) => {
+                  setServerLogs((logs) => [...logs, msg]);
+                },
+              }
+            : {
+                info: (msg) => {
+                  console.info(msg);
+                },
+                error: (msg, err) => {
+                  console.error(msg, err);
+                },
+                warn: (msg) => {
+                  console.warn(msg);
+                },
+              },
         },
         newSchemas,
       );
@@ -217,27 +236,50 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
         currentServerRef.current = serverInstance;
         setCurrentServer(serverInstance);
         setPhase("running");
+        if (!isInteractive) {
+          console.info(
+            `🚀 GenSX Dev Server running at http://localhost:${options.port ?? 1337}`,
+          );
+          console.info(
+            `🧪 Swagger UI available at http://localhost:${options.port ?? 1337}/swagger-ui`,
+          );
+        }
 
         // Add success message after restart
-        if (serverLogs.length > 0) {
-          // Only show for restarts, not first startup
-          setServerLogs((logs) => [
-            ...logs,
-            "",
-            "✅ Server restarted successfully!",
-            `🚀 Server running at http://localhost:${options.port ?? 1337}`,
-            "",
-          ]);
+        if (isInteractive) {
+          if (serverLogs.length > 0) {
+            // Only show for restarts, not first startup
+            setServerLogs((logs) => [
+              ...logs,
+              "",
+              "✅ Server restarted successfully!",
+              `🚀 Server running at http://localhost:${options.port ?? 1337}`,
+              "",
+            ]);
+          }
+        } else {
+          console.info(
+            `✅ Server restarted successfully!\n` +
+              `🚀 Server running at http://localhost:${options.port ?? 1337}\n` +
+              `🧪 Swagger UI available at http://localhost:${options.port ?? 1337}/swagger-ui\n`,
+          );
         }
       } catch (err) {
         // Add visible error message
-        setServerLogs((logs) => [
-          ...logs,
-          "",
-          "❌ Error restarting server:",
-          err instanceof Error ? err.message : String(err),
-          "",
-        ]);
+        if (isInteractive) {
+          setServerLogs((logs) => [
+            ...logs,
+            "",
+            "❌ Error restarting server:",
+            err instanceof Error ? err.message : String(err),
+            "",
+          ]);
+        } else {
+          console.error(
+            `❌ Error restarting server:`,
+            err instanceof Error ? err.message : String(err),
+          );
+        }
         // If this is an EADDRINUSE error, try to recover by forcibly stopping any server that might be lingering
         if (err instanceof Error && err.message.includes("EADDRINUSE")) {
           // Wait a bit longer to allow for port to potentially be released
@@ -265,7 +307,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
     setCurrentServer,
     setSchemas,
     setServerLogs,
-    exit,
+    isInteractive,
   ]);
 
   useEffect(() => {
@@ -324,6 +366,10 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       }
     };
   }, [file, options.port, buildAndStartServer, handleError]);
+
+  if (!isInteractive) {
+    return null;
+  }
 
   if (error) {
     return <ErrorMessage message={error} />;
