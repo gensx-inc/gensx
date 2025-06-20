@@ -129,12 +129,22 @@ export const Agent = gensx.Component(
                   ];
                   publishMessages();
                 } else if (chunk.type === "tool-call") {
-                  // Add tool call part
+                  // Add tool call part - ensure args is an object, not a string
+                  let parsedArgs = chunk.args;
+                  if (typeof chunk.args === "string") {
+                    try {
+                      parsedArgs = JSON.parse(chunk.args);
+                    } catch {
+                      console.warn("Failed to parse tool args:", chunk.args);
+                      parsedArgs = chunk.args;
+                    }
+                  }
+
                   contentParts.push({
                     type: "tool-call",
                     toolCallId: chunk.toolCallId,
                     toolName: chunk.toolName,
-                    args: chunk.args,
+                    args: parsedArgs,
                   });
 
                   allMessages[assistantMessageIndex].content = [
