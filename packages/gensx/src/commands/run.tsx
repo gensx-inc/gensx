@@ -93,7 +93,7 @@ export interface CliOptions {
   env?: string;
   output?: string;
   yes?: boolean;
-  progress?: boolean;
+  progress?: "all" | boolean;
 }
 
 interface Props {
@@ -197,6 +197,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
             response.body,
             options.output,
             setProgressContent,
+            streamProgress,
           );
           exit();
         } else {
@@ -291,6 +292,7 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
     stream: ReadableStream<Uint8Array> | null,
     outputPath: string | undefined,
     setContent: React.Dispatch<React.SetStateAction<WorkflowMessage[]>>,
+    filter: boolean | "all",
   ) => {
     if (!stream) {
       throw new Error("No stream returned by server");
@@ -322,10 +324,18 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
             if (json.type === "output") {
               if (fileStream) {
                 fileStream.write(json.content);
-              } else {
-                setContent((prev) => [...prev, json]);
               }
-            } else {
+            }
+
+            if (
+              filter &&
+              (json.type === "output" ||
+                json.type === "data" ||
+                json.type === "event" ||
+                json.type === "object")
+            ) {
+              setContent((prev) => [...prev, json]);
+            } else if (filter === "all") {
               setContent((prev) => [...prev, json]);
             }
           } catch {
@@ -416,16 +426,20 @@ export const RunWorkflowUI: React.FC<Props> = ({ workflowName, options }) => {
                             <Text color="white">{json.workflowName}</Text>
                           </Box>
                         );
-                      // case "component-start":
-                      //   setContent(
-                      //     (prev) => prev + `Component started: ${json.componentName}\n`,
-                      //   );
-                      //   break;
-                      // case "component-end":
-                      //   setContent(
-                      //     (prev) => prev + `Component ended: ${json.componentName}\n`,
-                      //   );
-                      //   break;
+                      case "component-start":
+                        return (
+                          <Box key={idx} flexDirection="row" gap={1}>
+                            <Text color="cyan">Component started:</Text>
+                            <Text color="white">{json.componentName}</Text>
+                          </Box>
+                        );
+                      case "component-end":
+                        return (
+                          <Box key={idx} flexDirection="row" gap={1}>
+                            <Text color="cyan">Component ended:</Text>
+                            <Text color="white">{json.componentName}</Text>
+                          </Box>
+                        );
                       case "data":
                         return (
                           <Box key={idx} flexDirection="row" gap={1}>
