@@ -370,6 +370,8 @@ suite("workflow state", () => {
       // Expected error
     }
 
+    console.log("events", events);
+
     expect(
       events.some(
         (e) =>

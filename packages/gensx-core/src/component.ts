@@ -22,6 +22,7 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
+import { WorkflowExecutionContext } from "./workflow-context.js";
 import { WorkflowMessageListener } from "./workflow-state.js";
 
 export { STREAMING_PLACEHOLDER };
@@ -219,28 +220,16 @@ export function Component<P extends object = {}, R = unknown>(
       });
 
       if (result instanceof Promise) {
-        return result.then((value) =>
-          handleResultValue(value, runInContext),
-        ) as R;
+        return result
+          .then((value) => handleResultValue(value, runInContext))
+          .catch((error: unknown) => {
+            handleError(nodeId, error, workflowContext);
+          }) as R;
       }
 
       return handleResultValue(result, runInContext!) as R;
     } catch (error) {
-      if (error instanceof Error) {
-        checkpointManager.addMetadata(nodeId, {
-          error: serializeError(error),
-        });
-      } else {
-        checkpointManager.addMetadata(nodeId, {
-          error: serializeError(
-            new Error(
-              `Unknown error: ${JSON.stringify(serializeError(error))}`,
-            ),
-          ),
-        });
-      }
-      checkpointManager.completeNode(nodeId, undefined);
-      throw error;
+      handleError(nodeId, error, workflowContext);
     }
   };
 
@@ -253,6 +242,29 @@ export function Component<P extends object = {}, R = unknown>(
   });
 
   return ComponentFn;
+}
+
+function handleError(
+  nodeId: string,
+  error: unknown,
+  workflowContext: WorkflowExecutionContext,
+) {
+  let serializedError: string;
+  serializedError = JSON.stringify(serializeError(error));
+  workflowContext.checkpointManager.addMetadata(nodeId, {
+    error: serializedError,
+  });
+  workflowContext.checkpointManager.completeNode(nodeId, undefined);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!(error as any).__gensxErrorEventEmitted) {
+    workflowContext.sendWorkflowMessage({
+      type: "error",
+      error: serializedError,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any).__gensxErrorEventEmitted = true;
+  }
+  throw error;
 }
 
 type WorkflowRuntimeOpts = WorkflowOpts & {
