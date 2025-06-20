@@ -187,7 +187,7 @@ export function ChatHistory({
                           e.stopPropagation();
                           handleDelete(thread.id);
                         }}
-                        className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded transition-all"
+                        className="absolute top-2 right-0 p-1 opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded transition-all"
                         title="Delete chat"
                       >
                         <Trash className="w-3 h-3 text-slate-500" />
