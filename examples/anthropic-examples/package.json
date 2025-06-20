@@ -15,8 +15,8 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@gensx/anthropic": "^0.2.3",
-    "@gensx/core": "^0.4.3",
+    "@gensx/anthropic": "^0.2.5",
+    "@gensx/core": "^0.4.5",
     "zod": "^3.25.56"
   },
   "devDependencies": {

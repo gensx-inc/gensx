@@ -20,8 +20,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@gensx/core": "^0.4.3",
-    "@gensx/openai": "^0.2.3"
+    "@gensx/core": "^0.4.5",
+    "@gensx/openai": "^0.2.5"
   },
   "devDependencies": {
     "@types/node": "^20",
