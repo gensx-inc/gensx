@@ -24,6 +24,3 @@ export type {
   GenSXEndEvent,
   GenSXErrorEvent,
 } from "./sdk.js";
-
-// Default export
-export { GenSX as default } from "./sdk.js";
