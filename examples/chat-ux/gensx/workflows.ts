@@ -4,16 +4,19 @@ import { CoreMessage } from "ai";
 import { webSearchTool } from "./tools/webSearch";
 import { scrapePageTool } from "./tools/scrapePage";
 import { useBlob } from "@gensx/storage";
+import { anthropic } from "@ai-sdk/anthropic";
+import { AnthropicProviderOptions } from "@ai-sdk/anthropic";
 
 interface ChatAgentProps {
   prompt: string;
   threadId: string;
   userId: string;
+  thinking?: boolean;
 }
 
 export const ChatAgent = gensx.Workflow(
   "ChatAgent",
-  async ({ prompt, threadId, userId }: ChatAgentProps) => {
+  async ({ prompt, threadId, userId, thinking = true }: ChatAgentProps) => {
     // Get blob instance for chat history storage
     const chatHistoryBlob = useBlob<CoreMessage[]>(
       `chat-history/${userId}/${threadId}.json`,
@@ -48,7 +51,19 @@ export const ChatAgent = gensx.Workflow(
         scrape_page: scrapePageTool,
       };
 
-      const result = await Agent({ messages, tools });
+      const model = anthropic("claude-sonnet-4-20250514");
+      const result = await Agent({
+        messages,
+        tools,
+        model,
+        providerOptions: thinking
+          ? {
+              anthropic: {
+                thinking: { type: "enabled", budgetTokens: 12000 },
+              } satisfies AnthropicProviderOptions,
+            }
+          : undefined,
+      });
 
       // Save the complete conversation history
       await saveChatHistory([...messages, ...result.messages]);

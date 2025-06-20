@@ -115,7 +115,7 @@ export function ChatHistory({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full  border-r border-slate-200/60 transition-all duration-300 ease-in-out z-50
+        className={`fixed top-0 left-0 h-full bg-slate-100/60 border-r border-slate-200/60 transition-all duration-300 ease-in-out z-50
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0
           ${collapsed ? "w-20" : "w-80"}

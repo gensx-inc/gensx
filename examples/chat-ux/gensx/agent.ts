@@ -1,13 +1,15 @@
 import * as gensx from "@gensx/core";
 import { streamText } from "@gensx/vercel-ai";
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import {
   CoreMessage,
   ToolSet,
   wrapLanguageModel,
   TextPart,
   ToolCallPart,
+  LanguageModelV1,
 } from "ai";
+
+import { type LanguageModelV1ProviderMetadata } from "@ai-sdk/provider";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -17,14 +19,20 @@ interface ReasoningPart {
 interface AgentProps {
   messages: CoreMessage[];
   tools: ToolSet;
-  // TODO: add model and other options
+  model: LanguageModelV1;
+  maxSteps?: number;
+  providerOptions?: LanguageModelV1ProviderMetadata;
 }
 
 export const Agent = gensx.Component(
   "Agent",
-  async ({ messages, tools }: AgentProps) => {
-    const model = anthropic("claude-sonnet-4-20250514");
-
+  async ({
+    messages,
+    tools,
+    model,
+    maxSteps = 50,
+    providerOptions,
+  }: AgentProps) => {
     // Track all messages including responses
     const allMessages: CoreMessage[] = [];
 
@@ -188,14 +196,10 @@ export const Agent = gensx.Component(
 
     const result = streamText({
       messages: filteredMessages,
-      maxSteps: 10,
+      maxSteps,
       model: wrappedLanguageModel,
       tools,
-      providerOptions: {
-        anthropic: {
-          thinking: { type: "enabled", budgetTokens: 12000 },
-        } satisfies AnthropicProviderOptions,
-      },
+      providerOptions,
     });
 
     let response = "";
