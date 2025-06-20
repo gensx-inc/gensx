@@ -119,7 +119,9 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
  * @param label - The label of the event.
  * @returns A function that publishes an event to the workflow message stream.
  */
-export function createEventStream<T extends JsonValue = JsonValue>(label: string) {
+export function createEventStream<T extends JsonValue = JsonValue>(
+  label: string,
+) {
   return (data: T) => {
     publishEvent(label, data);
   };
@@ -131,7 +133,9 @@ export function createEventStream<T extends JsonValue = JsonValue>(label: string
  * @param label - The label of the state.
  * @returns A function that publishes a state to the workflow message stream.
  */
-export function createObjectStream<T extends JsonValue = JsonValue>(label: string) {
+export function createObjectStream<T extends JsonValue = JsonValue>(
+  label: string,
+) {
   return (data: T) => {
     publishObject(label, data);
   };
