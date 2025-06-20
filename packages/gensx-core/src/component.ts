@@ -219,23 +219,9 @@ export function Component<P extends object = {}, R = unknown>(
       });
 
       if (result instanceof Promise) {
-        return result
-          .then((value) => {
-            return handleResultValue(value, runInContext);
-          })
-          .catch((error: unknown) => {
-            if (error instanceof Error) {
-              checkpointManager.addMetadata(nodeId, {
-                error: serializeError(error),
-              });
-              checkpointManager.completeNode(nodeId, undefined);
-              workflowContext.sendWorkflowMessage({
-                type: "error",
-                error: JSON.stringify(serializeError(error)),
-              });
-            }
-            throw error;
-          }) as R;
+        return result.then((value) =>
+          handleResultValue(value, runInContext),
+        ) as R;
       }
 
       return handleResultValue(result, runInContext!) as R;
@@ -244,12 +230,16 @@ export function Component<P extends object = {}, R = unknown>(
         checkpointManager.addMetadata(nodeId, {
           error: serializeError(error),
         });
-        checkpointManager.completeNode(nodeId, undefined);
-        workflowContext.sendWorkflowMessage({
-          type: "error",
-          error: JSON.stringify(serializeError(error)),
+      } else {
+        checkpointManager.addMetadata(nodeId, {
+          error: serializeError(
+            new Error(
+              `Unknown error: ${JSON.stringify(serializeError(error))}`,
+            ),
+          ),
         });
       }
+      checkpointManager.completeNode(nodeId, undefined);
       throw error;
     }
   };
