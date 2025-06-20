@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.2](https://github.com/gensx-inc/gensx/compare/gensx-client-v0.1.1...gensx-client-v0.1.2) (2025-06-20)
+
+
+### 🐛 Bug Fixes
+
+* remove duplicate export from gensx/client ([#802](https://github.com/gensx-inc/gensx/issues/802)) ([31640c5](https://github.com/gensx-inc/gensx/commit/31640c599e11251ef3cd51393bc0c40ddebd4ba2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.4.6
+
 ## [0.1.1](https://github.com/gensx-inc/gensx/compare/gensx-client-v0.1.0...gensx-client-v0.1.1) (2025-06-20)
 
 

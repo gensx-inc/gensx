@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.39](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.38...gensx-v0.3.39) (2025-06-20)
+
+
+### 📚 Documentation
+
+* updated draft pad example ([#791](https://github.com/gensx-inc/gensx/issues/791)) ([41d1103](https://github.com/gensx-inc/gensx/commit/41d1103a889e448be34c663e31d6e78570df3f56))
+
 ## [0.3.38](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.37...gensx-v0.3.38) (2025-06-20)
 
 
