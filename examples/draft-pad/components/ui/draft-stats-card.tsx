@@ -32,13 +32,19 @@ export function DraftStatsCard({ draftProgress }: DraftStatsCardProps) {
               <div className="flex gap-4 text-right">
                 <div>
                   <div className="text-xl font-bold text-blue-600">
-                    {draftProgress.wordCount}
+                    {draftProgress.modelStreams.reduce(
+                      (sum, stream) => sum + stream.wordCount,
+                      0,
+                    )}
                   </div>
                   <div className="text-xs text-[#333333]/70">Words</div>
                 </div>
                 <div>
                   <div className="text-xl font-bold text-green-600">
-                    {draftProgress.charCount}
+                    {draftProgress.modelStreams.reduce(
+                      (sum, stream) => sum + stream.charCount,
+                      0,
+                    )}
                   </div>
                   <div className="text-xs text-[#333333]/70">Characters</div>
                 </div>

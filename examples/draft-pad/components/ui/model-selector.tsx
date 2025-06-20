@@ -67,6 +67,7 @@ export function ModelSelector({
               key={index}
               className="border-2 border-dashed border-[#333333]/20 rounded-2xl p-4 bg-white/5"
             >
+              {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
               {selectedModel ? (
                 <Select
                   value={selectedModel.id}

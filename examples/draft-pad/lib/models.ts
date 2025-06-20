@@ -76,6 +76,7 @@ export async function fetchAvailableModels(): Promise<ModelConfig[]> {
     for (const [providerKey, provider] of Object.entries(data.providers)) {
       // Skip if we don't support this provider
       const mappingInfo = PROVIDER_MAPPING[providerKey];
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (!mappingInfo?.provider) continue;
 
       const mappedProvider = mappingInfo.provider;

@@ -340,11 +340,11 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-react
       '@gensx/vercel-ai':
-        specifier: workspace:*
-        version: link:../../packages/gensx-vercel-ai
+        specifier: ^0.2.4
+        version: 0.2.4(react@18.3.1)
       '@radix-ui/react-slot':
         specifier: ^1.2.3
-        version: 1.2.3(@types/react@19.1.3)(react@19.1.0)
+        version: 1.2.3(@types/react@18.3.23)(react@18.3.1)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -353,22 +353,22 @@ importers:
         version: 2.1.1
       lucide-react:
         specifier: ^0.513.0
-        version: 0.513.0(react@19.1.0)
+        version: 0.513.0(react@18.3.1)
       motion:
         specifier: ^12.16.0
-        version: 12.16.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 12.16.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next:
         specifier: 15.3.3
-        version: 15.3.3(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.3.3(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
-        specifier: ^19.0.0
-        version: 19.1.0
+        specifier: ^18.3.1
+        version: 18.3.1
       react-dom:
-        specifier: ^19.0.0
-        version: 19.1.0(react@19.1.0)
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
       react-markdown:
         specifier: ^10.1.0
-        version: 10.1.0(@types/react@19.1.3)(react@19.1.0)
+        version: 10.1.0(@types/react@18.3.23)(react@18.3.1)
       rehype-highlight:
         specifier: ^7.0.2
         version: 7.0.2
@@ -383,11 +383,11 @@ importers:
         specifier: ^20
         version: 20.19.0
       '@types/react':
-        specifier: ^19
-        version: 19.1.3
+        specifier: ^18
+        version: 18.3.23
       '@types/react-dom':
-        specifier: ^19
-        version: 19.1.3(@types/react@19.1.3)
+        specifier: ^18
+        version: 18.3.7(@types/react@18.3.23)
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.33.1
         version: 8.33.1(@typescript-eslint/parser@8.33.1(eslint@9.29.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.29.0(jiti@2.4.2))(typescript@5.8.3)
@@ -1087,7 +1087,7 @@ importers:
         specifier: workspace:*
         version: link:../gensx-core
       react:
-        specifier: ^18.0.0
+        specifier: '>=18.0.0'
         version: 18.3.1
     devDependencies:
       '@types/react':
@@ -1932,6 +1932,10 @@ packages:
     resolution: {integrity: sha512-OP1c497iEVMjpufxpn7/R2AQ2CIpDDUsP1RlgISGfyLz2GLklAH2jLA62vZlMavWyXSOyVNnFU0oX8axew0XHA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
+  '@gensx/core@0.4.4':
+    resolution: {integrity: sha512-ueu1cRUMXXMoZcdGsNGz9MBZ3yWHPvbLgJWcsi99DW66lBxLwlXR3f29r+e/O8ggqaihOzT9NaQ9exyCggwZGQ==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
   '@gensx/openai@0.1.28':
     resolution: {integrity: sha512-iSZ+4vGNp3IyALW7ONopvUU4U4rfkk8T0IzjnfTyaPUrP6AazxSzyRrUmBLm8Mk1Kxq0YCYZIq5YhfguEVNOlQ==}
     peerDependencies:
@@ -1952,6 +1956,10 @@ packages:
 
   '@gensx/vercel-ai@0.2.3':
     resolution: {integrity: sha512-Og3bOWo/qY9f2cbRHlXu5BAqfGf4eSaZjZCX+q+aQ+srWgqkNa/qjcaGVsTPvXrb9Eep6obi09Cifgm1bN0Csw==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
+  '@gensx/vercel-ai@0.2.4':
+    resolution: {integrity: sha512-exhXtz0Xvsp4YVWgSwXmWyL6Wns1/61t+zo7TinW66GD+yfDm1qQCA6jfvyAi7QBu92O8VlbQL8xF1aUzOs/Cw==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@headlessui/react@2.2.0':
@@ -3405,10 +3413,21 @@ packages:
   '@types/prismjs@1.26.5':
     resolution: {integrity: sha512-AUZTa7hQ2KY5L7AmtSiqxlhWxb4ina0yd8hNbl4TWuqnv/pFP0nDMb3YrfSBf4hJVGLh2YEIBfKaBW/9UEl6IQ==}
 
+  '@types/prop-types@15.7.15':
+    resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
+
+  '@types/react-dom@18.3.7':
+    resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
+    peerDependencies:
+      '@types/react': ^18.0.0
+
   '@types/react-dom@19.1.3':
     resolution: {integrity: sha512-rJXC08OG0h3W6wDMFxQrZF00Kq6qQvw0djHRdzl3U5DnIERz0MRce3WVc7IS6JYBwtaP/DwYtRRjVlvivNveKg==}
     peerDependencies:
       '@types/react': ^19.0.0
+
+  '@types/react@18.3.23':
+    resolution: {integrity: sha512-/LDXMQh55EzZQ0uVAZmKKhfENivEvWz6E+EYzh+/MCjMhNsotd+ZHhBGIjFDTi6+fz0OhQQQLbTgdQIxxCsC0w==}
 
   '@types/react@19.1.3':
     resolution: {integrity: sha512-dLWQ+Z0CkIvK1J8+wrDPwGxEYFA4RAyHoZPxHVGspYmFVnwGSNT24cGIhFJrtfRnWVuW8X7NO52gCXmhkVUWGQ==}
@@ -5799,7 +5818,6 @@ packages:
 
   libsql@0.5.13:
     resolution: {integrity: sha512-5Bwoa/CqzgkTwySgqHA5TsaUDRrdLIbdM4egdPcaAnqO3aC+qAgS6BwdzuZwARA5digXwiskogZ8H7Yy4XfdOg==}
-    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   lightningcss-darwin-arm64@1.30.1:
@@ -8111,6 +8129,16 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
+  '@ai-sdk/react@1.2.12(react@18.3.1)(zod@3.25.64)':
+    dependencies:
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.64)
+      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.64)
+      react: 18.3.1
+      swr: 2.3.3(react@18.3.1)
+      throttleit: 2.1.0
+    optionalDependencies:
+      zod: 3.25.64
+
   '@ai-sdk/react@1.2.12(react@19.1.0)(zod@3.25.56)':
     dependencies:
       '@ai-sdk/provider-utils': 2.2.8(zod@3.25.56)
@@ -8574,6 +8602,12 @@ snapshots:
       ini: 5.0.0
       zod: 3.25.64
 
+  '@gensx/core@0.4.4':
+    dependencies:
+      '@common.js/serialize-error': 11.0.3
+      ini: 5.0.0
+      zod: 3.25.64
+
   '@gensx/openai@0.1.28(openai@4.104.0(ws@8.18.2)(zod@3.25.56))':
     dependencies:
       '@gensx/core': 0.3.13
@@ -8621,6 +8655,15 @@ snapshots:
       '@gensx/core': 0.4.3
       ai: 4.3.16(react@19.1.0)(zod@3.25.56)
       zod: 3.25.56
+    transitivePeerDependencies:
+      - react
+
+  '@gensx/vercel-ai@0.2.4(react@18.3.1)':
+    dependencies:
+      '@ai-sdk/provider': 1.1.3
+      '@gensx/core': 0.4.4
+      ai: 4.3.16(react@18.3.1)(zod@3.25.64)
+      zod: 3.25.64
     transitivePeerDependencies:
       - react
 
@@ -9075,6 +9118,12 @@ snapshots:
       '@types/react': 19.1.3
       '@types/react-dom': 19.1.3(@types/react@19.1.3)
 
+  '@radix-ui/react-compose-refs@1.1.2(@types/react@18.3.23)(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+    optionalDependencies:
+      '@types/react': 18.3.23
+
   '@radix-ui/react-compose-refs@1.1.2(@types/react@19.1.3)(react@19.1.0)':
     dependencies:
       react: 19.1.0
@@ -9278,6 +9327,13 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.3
       '@types/react-dom': 19.1.3(@types/react@19.1.3)
+
+  '@radix-ui/react-slot@1.2.3(@types/react@18.3.23)(react@18.3.1)':
+    dependencies:
+      '@radix-ui/react-compose-refs': 1.1.2(@types/react@18.3.23)(react@18.3.1)
+      react: 18.3.1
+    optionalDependencies:
+      '@types/react': 18.3.23
 
   '@radix-ui/react-slot@1.2.3(@types/react@19.1.3)(react@19.1.0)':
     dependencies:
@@ -10021,9 +10077,20 @@ snapshots:
 
   '@types/prismjs@1.26.5': {}
 
+  '@types/prop-types@15.7.15': {}
+
+  '@types/react-dom@18.3.7(@types/react@18.3.23)':
+    dependencies:
+      '@types/react': 18.3.23
+
   '@types/react-dom@19.1.3(@types/react@19.1.3)':
     dependencies:
       '@types/react': 19.1.3
+
+  '@types/react@18.3.23':
+    dependencies:
+      '@types/prop-types': 15.7.15
+      csstype: 3.1.3
 
   '@types/react@19.1.3':
     dependencies:
@@ -10623,6 +10690,18 @@ snapshots:
   agentkeepalive@4.6.0:
     dependencies:
       humanize-ms: 1.2.1
+
+  ai@4.3.16(react@18.3.1)(zod@3.25.64):
+    dependencies:
+      '@ai-sdk/provider': 1.1.3
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.64)
+      '@ai-sdk/react': 1.2.12(react@18.3.1)(zod@3.25.64)
+      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.64)
+      '@opentelemetry/api': 1.9.0
+      jsondiffpatch: 0.6.0
+      zod: 3.25.64
+    optionalDependencies:
+      react: 18.3.1
 
   ai@4.3.16(react@19.1.0)(zod@3.25.56):
     dependencies:
@@ -12322,6 +12401,15 @@ snapshots:
 
   fraction.js@4.3.7: {}
 
+  framer-motion@12.16.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      motion-dom: 12.16.0
+      motion-utils: 12.12.1
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   framer-motion@12.16.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       motion-dom: 12.16.0
@@ -13274,6 +13362,10 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
+  lucide-react@0.513.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+
   lucide-react@0.513.0(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -13876,6 +13968,14 @@ snapshots:
 
   motion-utils@12.12.1: {}
 
+  motion@12.16.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      framer-motion: 12.16.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   motion@12.16.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       framer-motion: 12.16.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -14473,16 +14573,16 @@ snapshots:
 
   react-is@16.13.1: {}
 
-  react-markdown@10.1.0(@types/react@19.1.3)(react@19.1.0):
+  react-markdown@10.1.0(@types/react@18.3.23)(react@18.3.1):
     dependencies:
       '@types/hast': 3.0.4
       '@types/mdast': 4.0.4
-      '@types/react': 19.1.3
+      '@types/react': 18.3.23
       devlop: 1.1.0
       hast-util-to-jsx-runtime: 2.3.6
       html-url-attributes: 3.0.1
       mdast-util-to-hast: 13.2.0
-      react: 19.1.0
+      react: 18.3.1
       remark-parse: 11.0.0
       remark-rehype: 11.1.2
       unified: 11.0.5
@@ -15296,6 +15396,12 @@ snapshots:
       periscopic: 3.1.0
     optional: true
 
+  swr@2.3.3(react@18.3.1):
+    dependencies:
+      dequal: 2.0.3
+      react: 18.3.1
+      use-sync-external-store: 1.5.0(react@18.3.1)
+
   swr@2.3.3(react@19.1.0):
     dependencies:
       dequal: 2.0.3
@@ -15785,7 +15891,6 @@ snapshots:
   use-sync-external-store@1.5.0(react@18.3.1):
     dependencies:
       react: 18.3.1
-    optional: true
 
   use-sync-external-store@1.5.0(react@19.1.0):
     dependencies:
