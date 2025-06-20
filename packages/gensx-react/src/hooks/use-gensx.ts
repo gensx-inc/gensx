@@ -336,7 +336,7 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-export function useObject<T = JsonValue>(
+export function useObject<T extends JsonValue = JsonValue>(
   events: WorkflowMessage[],
   label: string,
 ): T | undefined {
