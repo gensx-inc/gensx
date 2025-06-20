@@ -16,8 +16,8 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@gensx/core": "^0.4.5",
-    "@gensx/openai": "^0.2.5"
+    "@gensx/core": "^0.4.6",
+    "@gensx/openai": "^0.2.6"
   },
   "devDependencies": {
     "@types/node": "^20",
