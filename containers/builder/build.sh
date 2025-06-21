@@ -18,6 +18,9 @@ done
 
 cd /tmp/project
 
+# Ensure "type": "module" is in the package.json
+jq '.type = "module"' package.json > package.json.tmp && mv package.json.tmp package.json
+
 # Use the right tool depending on the lockfile
 if [ -f "package-lock.json" ]; then
   npm install
@@ -32,7 +35,7 @@ fi
 WORKFLOW_PATH=${WORKFLOW_PATH:-"workflows.ts"}
 
 # Build with ncc - this should bundle all dependencies
-ncc build ./${WORKFLOW_PATH} -o /out/dist --target es2022 -e "@libsql/client"
+ncc build ./${WORKFLOW_PATH} -o /out/dist --source-map -m --target es2022 -e "@libsql/client"
 
 cd /out/dist
 
@@ -43,4 +46,4 @@ sed -i 's/@libsql\/linux-arm64-gnu/@libsql\/linux-x64-gnu/g' index.js
 npm install @libsql/client
 
 # tar the dist directory
-tar -czvf ../dist.tar.gz *
+tar -czvf ../dist.tar.gz * > /dev/null 2>&1
