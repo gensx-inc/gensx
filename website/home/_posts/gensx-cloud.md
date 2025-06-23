@@ -23,7 +23,7 @@ In a few lines we can build a tool for long-term memory using vector search prov
 
 ```ts
 // Create a per-user memory tool that uses vector search
-const createMemoryTool = (userId) => {
+const createMemoryTools = (userId) => {
   const memoryTool = tool({
     description: "Search the user's long-term memory for relevant information",
     parameters: z.object({
