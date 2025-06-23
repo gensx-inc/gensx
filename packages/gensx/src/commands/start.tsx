@@ -60,6 +60,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
     [stdout],
   );
   const [isRebuilding, setIsRebuilding] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Keep currentServerRef synchronized with currentServer state
   useEffect(() => {
@@ -184,6 +185,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
         currentServerRef.current = serverInstance;
         setCurrentServer(serverInstance);
         setPhase("running");
+        setIsInitialLoad(false);
       } catch (err) {
         // Add visible error message
         log(
@@ -284,7 +286,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
 
   return (
     <Box flexDirection="column">
-      {isRebuilding ? (
+      {isRebuilding && !isInitialLoad ? (
         <Box flexDirection="column">
           <LoadingSpinner message="Changes detected, rebuilding..." />
         </Box>
