@@ -106,7 +106,7 @@ const MemoryEnabledAgent = gensx.Component(
 With one command we can deploy this agent as a REST API running on serverless infrastructure with 60 minute execution timeouts.
 
 ```console
-$ npx gensx deploy ./src/workflows.tsx
+$ npx gensx deploy ./src/workflows.ts
 ```
 
 And just like that, each workflow in your project is deployed as a set of REST APIs. Each workflow includes a standard `POST` endpoint for synchronous and streaming invocations to power user-facing apps as well as a `/start` endpoint for long-running background jobs.
