@@ -24,21 +24,22 @@ In a few lines we can build a tool for long-term memory using vector search prov
 ```ts
 // Create a per-user memory tool that uses vector search
 const createMemoryTool = (userId) => {
-  const memoryTool = new GSXTool({
-    name: "searchMemory",
+  const memoryTool = tool({
     description: "Search the user's long-term memory for relevant information",
-    schema: memorySearchSchema,
-    run: async ({ query }) => {
+    parameters: z.object({
+      query: z.string().describe("the search query"),
+    }),
+    execute: async ({ query }) => {
       // Provisioned on-demand for each user in milliseconds
       const memory = await useSearch(`memory-${userId}`);
-      const embedding = await openai.embeddings.create({
-        model: "text-embedding-3-small",
-        input: query,
+      const { embedding } = await embed({
+        model: openai.embedding("text-embedding-3-small"),
+        value: query,
       });
 
       // Search for relevant memories
       const results = await memory.query({
-        vector: embedding.data[0].embedding,
+        vector: embedding,
         topK: 3,
       });
 
@@ -82,22 +83,22 @@ const MemoryEnabledAgent = gensx.Component(
     const { searchMemoryTool, addMemoryTool } = createMemoryTools(userId);
 
     // Run the chat completion with memory tool access
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+    const response = await generateText({
+      model: openai("gpt-4o"),
       messages: [
         { role: "system", content: "You are a helpful personal assistant" },
         ...chatHistory,
         { role: "user", content: message },
       ],
-      tools: [searchMemoryTool, addMemoryTool],
+      tools: { searchMemoryTool, addMemoryTool },
     });
 
     // Update and save conversation history
     chatHistory.push({ role: "user", content: message });
-    chatHistory.push({ role: "assistant", content: response });
+    chatHistory.push({ role: "assistant", content: response.text });
     await saveChatHistory(userId, threadId, chatHistory);
 
-    return response;
+    return response.text;
   },
 );
 ```
@@ -120,7 +121,7 @@ Available workflows:
 - TextToSQLWorkflow
 - RAGWorkflow
 
-Dashboard: https://app.gensx.com/gensx/your-project/default/workflows
+Dashboard: https://app.gensx.com/your-org/your-project/default/workflows
 ```
 
 And we can run our talk to our agent from the CLI:
@@ -138,7 +139,7 @@ We can call the API directly and stream results:
 
 ```console
 $ curl -X POST \
-  "https://api.gensx.com/org/gensx/projects/your-project/environments/default/workflows/ChatAgent" \
+  "https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/ChatAgent" \
   -H "Authorization: Bearer your_gensx_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -152,7 +153,7 @@ And if this workflow happened to take a long time, we can call it as a backgroun
 
 ```console
 $ curl -X POST \
-  "https://api.gensx.com/org/gensx/projects/your-project/environments/default/workflows/ChatAgent/start" \
+  "https://api.gensx.com/org/your-org/projects/your-project/environments/default/workflows/ChatAgent/start" \
   -H "Authorization: Bearer your_gensx_api_key" \
   -H "Content-Type: application/json" \
   -d '{
