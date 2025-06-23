@@ -77,18 +77,26 @@ export const testWorkflow = () => {
     }
   };
 
-  it("renders initial loading state", () => {
-    const { lastFrame } = render(
+  it("renders server running state", async () => {
+    // Create tsconfig.json and workflow file
+    createTestFiles({});
+    const workflowPath = path.join(tempDir, "project", "workflow.ts");
+
+    const { lastFrame, unmount } = render(
       React.createElement(StartUI, {
-        file: "test.ts",
+        file: workflowPath,
         options: {
           port: portCounter++,
         },
       }),
     );
 
-    expect(lastFrame()).toContain("Starting dev server...");
-  });
+    try {
+      await waitForText(lastFrame, "GenSX Dev Server running at", 15000);
+    } finally {
+      unmount();
+    }
+  }, 5000);
 
   it("renders error state when error occurs", async () => {
     const { lastFrame } = render(
@@ -104,18 +112,27 @@ export const testWorkflow = () => {
     await waitForText(lastFrame, /Error/);
   });
 
-  it("renders with custom port", () => {
-    const { lastFrame } = render(
+  it("renders with custom port", async () => {
+    // Create tsconfig.json and workflow file
+    createTestFiles({});
+    const workflowPath = path.join(tempDir, "project", "workflow.ts");
+
+    const testPort = portCounter++;
+    const { lastFrame, unmount } = render(
       React.createElement(StartUI, {
-        file: "test.ts",
+        file: workflowPath,
         options: {
-          port: portCounter++,
+          port: testPort,
         },
       }),
     );
 
-    expect(lastFrame()).toContain("Starting dev server...");
-  });
+    try {
+      await waitForText(lastFrame, `http://localhost:${testPort}`, 15000);
+    } finally {
+      unmount();
+    }
+  }, 5000);
 
   describe("path handling", () => {
     it("handles files in root directory without rootDir specified", async () => {
