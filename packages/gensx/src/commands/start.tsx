@@ -1,9 +1,9 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path, { resolve } from "node:path";
 
-import { Box, Text, useApp } from "ink";
+import { buildSync } from "esbuild";
+import { Box, Text, useApp, useStdout } from "ink";
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as ts from "typescript";
 import { Definition } from "typescript-json-schema";
 
 import { ErrorMessage } from "../components/ErrorMessage.js";
@@ -48,7 +48,17 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
     Record<string, { input: Definition; output: Definition }>
   >({});
   const isRebuildingRef = useRef(false);
-  const [serverLogs, setServerLogs] = useState<string[]>([]);
+  // Use Ink's stdout to stream log lines directly without triggering re-renders.
+  const { stdout } = useStdout();
+  const log = useCallback(
+    (...parts: unknown[]) => {
+      const line = parts
+        .map((p) => (typeof p === "string" ? p : JSON.stringify(p, null, 2)))
+        .join(" ");
+      stdout.write(line + "\n");
+    },
+    [stdout],
+  );
   const [isRebuilding, setIsRebuilding] = useState(false);
 
   // Keep currentServerRef synchronized with currentServer state
@@ -69,80 +79,45 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
   );
 
   const compileTypeScript = useCallback((tsFile: string): string => {
-    // Find and parse tsconfig.json
-    const tsconfigPath = resolve(process.cwd(), "tsconfig.json");
-    if (!existsSync(tsconfigPath)) {
-      throw new Error("Could not find tsconfig.json");
+    // Always bundle the workflow and **all** its dependencies into a single
+    // file using esbuild. Bundling guarantees that we don't rely on Node's
+    // module cache for nested imports, which was the root cause of stale code
+    // hanging around after a rebuild.
+
+    const outDir = resolve(process.cwd(), ".gensx", "dist");
+    if (!existsSync(outDir)) {
+      mkdirSync(outDir, { recursive: true });
     }
 
-    let tsconfig: ts.ParsedCommandLine;
-    try {
-      const tsconfigContent = readFileSync(tsconfigPath, "utf-8");
-      tsconfig = ts.parseJsonConfigFileContent(
-        JSON.parse(tsconfigContent),
-        ts.sys,
-        process.cwd(),
-        {
-          incremental: false,
-          noEmit: false,
-        },
-      );
-      tsconfig.options.incremental = false;
-      tsconfig.options.noEmit = false;
-      tsconfig.options.outDir ??= ".gensx/dist";
-      tsconfig.options.target = ts.ScriptTarget.ESNext;
-      tsconfig.options.module = ts.ModuleKind.NodeNext;
-      tsconfig.options.moduleResolution = ts.ModuleResolutionKind.NodeNext;
-    } catch (error) {
-      throw new Error(
-        `Failed to parse tsconfig.json: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-
-    // Create TypeScript program
-    const program = ts.createProgram([tsFile], tsconfig.options);
-    const sourceFile = program.getSourceFile(tsFile);
-
-    if (!sourceFile) {
-      throw new Error(`Could not find source file: ${tsFile}`);
-    }
-
-    // Get the output directory from tsconfig or use default
-    const configOutDir = tsconfig.options.outDir ?? ".gensx/dist";
-    const absoluteOutDir = resolve(process.cwd(), configOutDir);
-
-    // Ensure output directory exists
-    if (!existsSync(absoluteOutDir)) {
-      mkdirSync(absoluteOutDir, { recursive: true });
-    }
-
-    // Compile the file
-    const result = program.emit();
-    const diagnostics = ts
-      .getPreEmitDiagnostics(program)
-      .concat(result.diagnostics);
-
-    if (diagnostics.length > 0) {
-      const formattedDiagnostics = ts.formatDiagnostics(diagnostics, {
-        getCurrentDirectory: () => process.cwd(),
-        getCanonicalFileName: (fileName) => fileName,
-        getNewLine: () => "\n",
-      });
-      throw new Error(
-        `TypeScript compilation failed:\n${formattedDiagnostics}`,
-      );
-    }
-
-    // Get the actual output path that TypeScript generated
-    // If rootDir is specified in tsconfig, use it, otherwise use the source file's directory
-    const rootDir = tsconfig.options.rootDir ?? path.dirname(tsFile);
-    const relativeToRootDir = path.relative(rootDir, tsFile);
-    const actualOutputPath = path.join(
-      absoluteOutDir,
-      relativeToRootDir.replace(/\.tsx?$/, ".js"),
+    // Emit a unique filename every time to ensure a fresh evaluate step.
+    const outfile = path.join(
+      outDir,
+      `${path.basename(tsFile).replace(/\.(ts|tsx)$/, "")}-${Date.now()}.mjs`,
     );
 
-    return actualOutputPath;
+    try {
+      buildSync({
+        entryPoints: [tsFile],
+        bundle: true,
+        outfile,
+        platform: "node",
+        format: "esm",
+        sourcemap: "inline",
+        target: "esnext",
+        tsconfig: existsSync(resolve(process.cwd(), "tsconfig.json"))
+          ? resolve(process.cwd(), "tsconfig.json")
+          : undefined,
+        // Treat node_modules as external to keep bundle light, but include
+        // local files so they're rebundled on change.
+        packages: "external",
+      });
+    } catch (error) {
+      throw new Error(
+        `TypeScript compilation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
+    return outfile;
   }, []);
 
   const buildAndStartServer = useCallback(async () => {
@@ -155,18 +130,14 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
 
     try {
       if (currentServerRef.current) {
-        // Add restart message
-        setServerLogs((logs) => [
-          ...logs,
-          "",
-          "🔄 Restarting server due to code changes...",
-          "",
-        ]);
+        setPhase("compiling");
         await currentServerRef.current.stop();
         // Add a short delay to allow the OS to release the port
         await new Promise((resolve) => setTimeout(resolve, 250));
         currentServerRef.current = null;
         setCurrentServer(null);
+      } else {
+        log("Starting GenSX dev server...");
       }
 
       setPhase("compiling");
@@ -187,25 +158,21 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       const fileUrl = `file://${jsPath}?update=${Date.now().toString()}`;
       const workflows = (await import(fileUrl)) as Record<string, unknown>;
 
-      setServerLogs([]);
+      // clear line buffer – not needed with direct stdout logging
 
       const server = createServer(
         workflows,
         {
           port: options.port ?? 1337,
           logger: {
-            info: (msg) => {
-              setServerLogs((logs) => [...logs, msg]);
+            info: (msg, ...args) => {
+              log(msg, ...args);
             },
             error: (msg, err) => {
-              const errorStr = err instanceof Error ? err.message : String(err);
-              setServerLogs((logs) => [
-                ...logs,
-                `${msg}${err ? `: ${errorStr}` : ""}`,
-              ]);
+              log(msg, err);
             },
-            warn: (msg) => {
-              setServerLogs((logs) => [...logs, msg]);
+            warn: (msg, ...args) => {
+              log(msg, ...args);
             },
           },
         },
@@ -217,27 +184,13 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
         currentServerRef.current = serverInstance;
         setCurrentServer(serverInstance);
         setPhase("running");
-
-        // Add success message after restart
-        if (serverLogs.length > 0) {
-          // Only show for restarts, not first startup
-          setServerLogs((logs) => [
-            ...logs,
-            "",
-            "✅ Server restarted successfully!",
-            `🚀 Server running at http://localhost:${options.port ?? 1337}`,
-            "",
-          ]);
-        }
       } catch (err) {
         // Add visible error message
-        setServerLogs((logs) => [
-          ...logs,
+        log(
           "",
           "❌ Error restarting server:",
           err instanceof Error ? err.message : String(err),
-          "",
-        ]);
+        );
         // If this is an EADDRINUSE error, try to recover by forcibly stopping any server that might be lingering
         if (err instanceof Error && err.message.includes("EADDRINUSE")) {
           // Wait a bit longer to allow for port to potentially be released
@@ -264,8 +217,8 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
     setPhase,
     setCurrentServer,
     setSchemas,
-    setServerLogs,
     exit,
+    log,
   ]);
 
   useEffect(() => {
@@ -280,7 +233,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
         clearTimeout(rebuildTimer);
       }
 
-      // Set rebuilding state to show spinner
+      // Optional state flag
       setIsRebuilding(true);
 
       rebuildTimer = setTimeout(() => {
@@ -337,15 +290,6 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
         </Box>
       ) : (
         <>
-          {(phase === "initial" ||
-            phase === "compiling" ||
-            phase === "generatingSchema" ||
-            phase === "starting") && (
-            <Box flexDirection="column">
-              <LoadingSpinner message="Starting dev server..." />
-            </Box>
-          )}
-
           {phase === "running" && (
             <Box flexDirection="column">
               <Box marginTop={1} flexDirection="row">
@@ -405,13 +349,6 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
                   Listening for changes... {new Date().toLocaleTimeString()}
                 </Text>
               </Box>
-              {serverLogs.length > 0 && (
-                <Box flexDirection="column" paddingX={1} marginTop={1}>
-                  <Box>
-                    <Text>{serverLogs.slice(-20).join("\n")}</Text>
-                  </Box>
-                </Box>
-              )}
             </Box>
           )}
         </>
