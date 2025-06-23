@@ -194,12 +194,12 @@ Whether you are just getting started with simple chat bots, or building long-run
 
 The previous generation of serverless infra was designed for API servers and serving web pages. Agents have a fundamentally different set of requirements. They are dynamic, and they can run for a very long time. We designed GenSX cloud around these requirements:
 
-| Platform           | Max Wall Clock Time     | Runtime-Provisioned Storage     | Start/Poll for Long Jobs | Cold Start Times        | Notable Limitations                     |
-| ------------------ | ----------------------- | ------------------------------- | ------------------------ | ----------------------- | --------------------------------------- |
-| **GenSX Cloud**    | **60 minutes**          | **Blobs, Vectors, SQL (<10ms)** | **Built-in**             | **~100ms (every call)** | —                                       |
-| AWS Lambda         | 15 minutes              | No                              | Limited (Step Functions) | 200–500ms               | Requires replatforming for longer jobs  |
-| Vercel Functions   | 15 minutes (Enterprise) | No                              | No                       | 250–400ms               | No native long-running job support      |
-| Cloudflare Workers | 5 minutes CPU time      | Pre-provisioned KV/R2/D1        | No                       | <10ms                   | Max 1000 HTTP subrequests per execution |
+| Platform           | Max Wall Clock Time     | Runtime-Provisioned Storage     | Start/Poll for Long Jobs | Cold Start Times        | Notable Limitations                                                 |
+| ------------------ | ----------------------- | ------------------------------- | ------------------------ | ----------------------- | ------------------------------------------------------------------- |
+| **GenSX Cloud**    | **60 minutes**          | **Blobs, Vectors, SQL (<10ms)** | **Built-in**             | **~100ms (every call)** | —                                                                   |
+| AWS Lambda         | 15 minutes              | No                              | Limited (Step Functions) | 200–500ms               | Requires replatforming for longer jobs                              |
+| Vercel Functions   | 15 minutes (Enterprise) | No                              | No                       | 250–400ms               | No native long-running job support                                  |
+| Cloudflare Workers | 5 minutes CPU time      | Pre-provisioned KV/R2/D1        | No                       | <10ms                   | Max 1000 HTTP subrequests per execution, not a full Node.js runtime |
 
 The 60 minute timeouts on GenSX are just a temporary intermediate state as we work on delivering support for durable workflows. In the coming months, workflows will be able to pause, wait for human input, and run for days or even weeks.
 
