@@ -58,8 +58,8 @@ export function ChatInput({
             Let&apos;s make things happen.
           </h1>
           <p className="text-slate-500 text-lg">
-            I&apos;m here to assist you with any questions or tasks you might
-            have.
+            See the power of GenSX in action with streaming chat, thinking, and
+            tools.
           </p>
         </div>
 
@@ -110,7 +110,7 @@ export function ChatInput({
           </div>
         </form>
         <p className="text-slate-400 text-xs mt-4 text-center">
-          Powered by{" "}
+          Demo powered by{" "}
           <a
             href="https://gensx.com"
             target="_blank"
