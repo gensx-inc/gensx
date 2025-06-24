@@ -5,6 +5,8 @@ description: Deploy GenSX workflows as serverless APIs
 
 # Serverless deployments
 
+> **Note**: GenSX Cloud is currently in developer preview.
+
 Deploy your GenSX workflows as serverless APIs with support for both synchronous and asynchronous execution, as well as long-running operations.
 
 ## Deploy with the CLI
@@ -180,7 +182,7 @@ These extended timeouts make GenSX ideal for complex AI workflows that might inv
 
 The GenSX Cloud serverless architecture is designed to minimize cold starts:
 
-- **Millisecond-level cold starts**: Initial cold starts typically range from 10-30ms
+- **Fast cold starts**: Cold starts typically range from ~100ms
 - **Warm execution**: Subsequent executions of recently used workflows start in 1-5ms
 - **Auto-scaling**: Infrastructure automatically scales with workloads
 
