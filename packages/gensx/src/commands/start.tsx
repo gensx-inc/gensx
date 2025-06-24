@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import path, { resolve } from "node:path";
 
 import { buildSync } from "esbuild";
@@ -88,6 +94,20 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
     const outDir = resolve(process.cwd(), ".gensx", "dist");
     if (!existsSync(outDir)) {
       mkdirSync(outDir, { recursive: true });
+    }
+
+    // Clean up old generated files before creating new ones
+    const baseName = path.basename(tsFile).replace(/\.(ts|tsx)$/, "");
+    try {
+      const files = readdirSync(outDir);
+      files.forEach((file) => {
+        // Remove files that match our generated file pattern
+        if (file.startsWith(`${baseName}-`) && file.endsWith(".mjs")) {
+          unlinkSync(path.join(outDir, file));
+        }
+      });
+    } catch (_error) {
+      // Ignore errors during cleanup - not critical
     }
 
     // Emit a unique filename every time to ensure a fresh evaluate step.
