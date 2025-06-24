@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.7](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.6...gensx-core-v0.4.7) (2025-06-24)
+
+
+### ✨ New Features
+
+* Optional runtime param to capture the pending checkpoint updates promise. ([#815](https://github.com/gensx-inc/gensx/issues/815)) ([c4ef5f5](https://github.com/gensx-inc/gensx/commit/c4ef5f5699610659352458feb197148b841043fc))
+
 ## [0.4.6](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.5...gensx-core-v0.4.6) (2025-06-20)
 
 
