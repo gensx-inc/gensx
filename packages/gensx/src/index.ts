@@ -75,6 +75,9 @@ export async function runCLI() {
             file,
             options,
           }),
+          {
+            patchConsole: false,
+          },
         );
         waitUntilExit().then(resolve).catch(reject);
       });

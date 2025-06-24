@@ -5,6 +5,8 @@ description: Overview of the GenSX Cloud Platform
 
 # GenSX Cloud
 
+> **Note**: GenSX Cloud is currently in developer preview.
+
 GenSX Cloud provides everything you need to ship production-grade agents and workflows:
 
 - **Serverless runtime**: One command to deploy all of your workflows and agents as REST APIs running on serverless infrastructure optimized for long-running agents and workflows. Support for synchronous and background invocation, streaming, and intermediate status included.
@@ -22,7 +24,7 @@ Serverless deployments allow you to turn your GenSX workflows and agents into AP
 
 - **Generated REST APIs**: `gensx deploy` generates a REST API complete with schema and validation for every workflow in your project.
 - **Long-running**: GenSX Cloud is optimized for long-running LLM workloads. Workflows can run up to 5 minutes on the free tier and 60 minutes on the Pro tier.
-- **Millisecond-level cold starts**: initial cold starts are on the order of 10s of milliseconds -- an order of magnitude faster than other serverless providers.
+- **Fast cold starts**: on the order of ~100ms.
 
 Serverless deployments are billed per-second, with 50,000 seconds included per month in the free tier for individuals.
 

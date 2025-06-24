@@ -274,11 +274,8 @@ export const DeployUI: React.FC<Props> = ({ file, options }) => {
             <Text color="white">
               Dashboard:{" "}
               <Text color="cyan">
-                {auth?.consoleBaseUrl}/{auth?.org}/{deployment.projectName}/
-                {deployment.environmentName}/workflows
-                {deployment.buildId
-                  ? `?deploymentId=${deployment.buildId}`
-                  : ""}
+                {auth?.consoleBaseUrl}/{auth?.org}/{deployment.projectName}
+                ?env={deployment.environmentId}
               </Text>
             </Text>
           </Box>
