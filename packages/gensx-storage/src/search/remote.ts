@@ -1,11 +1,5 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
-import type {
-  NamespaceMetadata,
-  QueryResults,
-  Schema,
-} from "@turbopuffer/turbopuffer";
-
 import { readConfig } from "@gensx/core";
 
 import { USER_AGENT } from "../utils/user-agent.js";
@@ -14,6 +8,8 @@ import {
   EnsureNamespaceResult,
   Namespace,
   QueryOptions,
+  QueryResults,
+  Schema,
   SearchStorage as ISearchStorage,
   WriteParams,
 } from "./types.js";
@@ -156,10 +152,10 @@ export class SearchNamespace implements Namespace {
     deleteByFilter,
     distanceMetric,
     schema,
-  }: WriteParams): Promise<number> {
+  }: WriteParams): Promise<{ message: string; rowsAffected: number }> {
     try {
       const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(this.namespaceId)}/vectors`,
+        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(this.namespaceId)}`,
         {
           method: "POST",
           headers: {
@@ -176,7 +172,7 @@ export class SearchNamespace implements Namespace {
             deleteByFilter,
             distanceMetric,
             schema,
-          }),
+          } as Record<string, unknown>),
         },
       );
 
@@ -184,24 +180,25 @@ export class SearchNamespace implements Namespace {
         throw new SearchApiError(response.statusText);
       }
 
-      const data = (await response.json()) as { rowsAffected: number };
-      return data.rowsAffected;
+      const data = (await response.json()) as {
+        message: string;
+        rowsAffected: number;
+      };
+      return data;
     } catch (err) {
       if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "upsert");
+        throw handleApiError(err, "write");
       }
       throw err;
     }
   }
 
   async query({
-    vector,
-    distanceMetric,
     topK,
-    includeVectors,
     includeAttributes,
     filters,
     rankBy,
+    aggregateBy,
     consistency,
   }: QueryOptions): Promise<QueryResults> {
     try {
@@ -215,13 +212,11 @@ export class SearchNamespace implements Namespace {
             "User-Agent": USER_AGENT,
           },
           body: JSON.stringify({
-            vector,
-            distanceMetric,
-            topK: topK ?? 10,
-            includeVectors: includeVectors ?? false,
+            rankBy,
+            topK: topK,
             includeAttributes,
             filters,
-            rankBy,
+            aggregateBy,
             consistency,
           }),
         },
@@ -292,33 +287,6 @@ export class SearchNamespace implements Namespace {
     } catch (err) {
       if (!(err instanceof SearchError)) {
         throw handleApiError(err, "updateSchema");
-      }
-      throw err;
-    }
-  }
-
-  async getMetadata(): Promise<NamespaceMetadata> {
-    try {
-      const response = await fetch(
-        `${this.apiBaseUrl}/org/${this.org}/projects/${this.project}/environments/${this.environment}/search/${encodeURIComponent(this.namespaceId)}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "User-Agent": USER_AGENT,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new SearchApiError(response.statusText);
-      }
-
-      const data = (await response.json()) as { metadata: NamespaceMetadata };
-      return data.metadata;
-    } catch (err) {
-      if (!(err instanceof SearchError)) {
-        throw handleApiError(err, "metadata");
       }
       throw err;
     }

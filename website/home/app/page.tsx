@@ -89,7 +89,7 @@ const RAGTool = tool({
       model: openai.embedding("text-embedding-3-small"),
       value: query,
     });
-    return await docs.query({ vector: embedding, topK: 3 });
+    return await docs.query({ rankBy: ["vector", "ANN", embedding], topK: 3 });
   }
 });
 

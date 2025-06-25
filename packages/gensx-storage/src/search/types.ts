@@ -1,22 +1,87 @@
 import type {
-  Consistency,
+  AggregateBy,
   DistanceMetric,
-  Filters,
-  Id,
-  NamespaceMetadata,
-  PatchColumns,
-  PatchRows,
-  QueryResults,
+  Filter,
+  ID,
   RankBy,
-  SchemaType,
-  UpsertColumns,
-  UpsertRows,
-} from "@turbopuffer/turbopuffer";
+  Row,
+} from "@turbopuffer/turbopuffer/resources";
 
 /**
- * Query result from the vector search
+ * Query results response structure
  */
-export type QueryResult = QueryResults[0];
+export interface QueryResults {
+  /** Array of result rows */
+  rows?: Row[];
+  /** Aggregation results if requested */
+  aggregations?: Record<string, unknown>;
+}
+
+/**
+ * Schema type for TurboPuffer fields
+ */
+export type SchemaType =
+  | "string"
+  | "int"
+  | "uint"
+  | "uuid"
+  | "datetime"
+  | "bool"
+  | "[]string"
+  | "[]int"
+  | "[]uint"
+  | "[]uuid"
+  | `[${number}]f16`
+  | `[${number}]f32`;
+
+/**
+ * Consistency requirements for queries
+ */
+export interface Consistency {
+  /**
+   * The query's consistency level.
+   *
+   * - `strong` - Strong consistency. Requires a round-trip to object storage to
+   *   fetch the latest writes.
+   * - `eventual` - Eventual consistency. Does not require a round-trip to object
+   *   storage, but may not see the latest writes.
+   */
+  level?: "strong" | "eventual";
+}
+
+/**
+ * Column-based upsert format
+ */
+export interface UpsertColumns {
+  id: (string | number)[];
+  vector?: number[][];
+  [key: string]: unknown;
+}
+
+/**
+ * Row-based upsert format
+ */
+export type UpsertRows = {
+  id: string | number;
+  vector?: number[];
+  [key: string]: unknown;
+}[];
+
+/**
+ * Column-based patch format
+ */
+export interface PatchColumns {
+  id: (string | number)[];
+  [key: string]: unknown;
+}
+
+/**
+ * Row-based patch format
+ */
+export type PatchRows = {
+  id: string | number;
+  [key: string]: unknown;
+}[];
 
 /**
  * Options for namespace operations
@@ -49,9 +114,9 @@ export interface WriteParams {
    */
   patchRows?: PatchRows;
   /** Deletes documents by ID. */
-  deletes?: Id[];
+  deletes?: ID[];
   /** Deletes documents that match a filter. */
-  deleteByFilter?: Filters;
+  deleteByFilter?: Filter;
   distanceMetric?: DistanceMetric;
   schema?: Schema;
 }
@@ -61,24 +126,9 @@ export interface WriteParams {
  */
 export interface QueryOptions {
   /**
-   * The query vector
-   */
-  vector?: number[];
-
-  /**
-   * Distance metric to use for this query
-   */
-  distanceMetric?: DistanceMetric;
-
-  /**
    * Number of results to return
    */
   topK?: number;
-
-  /**
-   * Whether to include the original vectors in results
-   */
-  includeVectors?: boolean;
 
   /**
    * Whether to include attributes in results
@@ -88,12 +138,19 @@ export interface QueryOptions {
   /**
    * Filter results by attribute values
    */
-  filters?: Filters;
+  filters?: Filter;
 
   /**
    * How to rank results
    */
   rankBy?: RankBy;
+
+  /**
+   * Aggregate results by specified fields
+   * The key is the aggregation name, the value is an AggregateBy tuple.
+   * Example: { myCount: ["Count", "id"] }
+   */
+  aggregateBy?: Record<string, AggregateBy>;
 
   /**
    * Consistency requirements for the query
@@ -179,7 +236,7 @@ export interface Namespace {
     deleteByFilter,
     distanceMetric,
     schema,
-  }: WriteParams): Promise<number>;
+  }: WriteParams): Promise<{ message: string; rowsAffected: number }>;
 
   /**
    * Query vectors by similarity
@@ -187,21 +244,13 @@ export interface Namespace {
    * @returns Promise with query results
    */
   query({
-    vector,
-    distanceMetric,
     topK,
-    includeVectors,
     includeAttributes,
     filters,
     rankBy,
+    aggregateBy,
     consistency,
   }: QueryOptions): Promise<QueryResults>;
-
-  /**
-   * Get metadata about the namespace
-   * @returns Promise with namespace metadata
-   */
-  getMetadata(): Promise<NamespaceMetadata>;
 
   /**
    * Get the current schema for the namespace

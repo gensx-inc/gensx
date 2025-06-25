@@ -39,7 +39,7 @@ const createMemoryTools = (userId) => {
 
       // Search for relevant memories
       const results = await memory.query({
-        vector: embedding,
+        rankBy: ["vector", "ANN", embedding],
         topK: 3,
       });
 

@@ -3,7 +3,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/require-await */
 
-import type { DistanceMetric, Filters } from "@turbopuffer/turbopuffer";
+import type {
+  DistanceMetric,
+  Filter,
+} from "@turbopuffer/turbopuffer/resources";
 
 import { afterEach, beforeEach, expect, suite, test, vi } from "vitest";
 
@@ -73,7 +76,6 @@ suite("GenSX Search Storage", () => {
     expect(namespace).toBeDefined();
     expect(typeof namespace.write).toBe("function");
     expect(typeof namespace.query).toBe("function");
-    expect(typeof namespace.getMetadata).toBe("function");
     expect(typeof namespace.getSchema).toBe("function");
     expect(typeof namespace.updateSchema).toBe("function");
   });
@@ -203,24 +205,26 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => [
-        { id: "1", dist: 0.9, attributes: { text: "test document" } },
-        { id: "2", dist: 0.8, attributes: { text: "another document" } },
-      ],
+      json: async () => ({
+        rows: [
+          { id: "1", $dist: 0.9, text: "test document" },
+          { id: "2", $dist: 0.8, text: "another document" },
+        ],
+      }),
     });
 
     const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     const results = await namespace.query({
-      vector: [0.1, 0.2, 0.3],
       topK: 2,
     });
 
-    expect(results.length).toBe(2);
-    expect(results[0].id).toBe("1");
-    expect(results[0].dist).toBe(0.9);
-    expect(results[0].attributes?.text).toBe("test document");
+    expect(results.rows).toBeDefined();
+    expect(results.rows!.length).toBe(2);
+    expect(results.rows![0].id).toBe("1");
+    expect(results.rows![0].$dist).toBe(0.9);
+    expect(results.rows![0].text).toBe("test document");
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/search/test-ns/query"),
@@ -237,9 +241,12 @@ suite("GenSX Search Storage", () => {
     // Verify the body contains the query parameters
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).toEqual({
-      vector: [0.1, 0.2, 0.3],
+      rankBy: undefined,
       topK: 2,
-      includeVectors: false,
+      includeAttributes: undefined,
+      filters: undefined,
+      aggregateBy: undefined,
+      consistency: undefined,
     });
   });
 
@@ -247,7 +254,10 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ rowsAffected: 2 }),
+      json: async () => ({
+        message: "Successfully wrote 2 rows",
+        rowsAffected: 2,
+      }),
     });
 
     const storage = new SearchStorage("test-project", "test-environment");
@@ -270,12 +280,15 @@ suite("GenSX Search Storage", () => {
       upsertRows: vectors,
       distanceMetric: "cosine_distance" as DistanceMetric,
       deletes: ["3", "4"],
-      deleteByFilter: ["And", [["text", "Eq", "test document"]]] as Filters,
+      deleteByFilter: ["And", [["text", "Eq", "test document"]]] as Filter,
     });
 
-    expect(result).toBe(2);
+    expect(result).toEqual({
+      message: "Successfully wrote 2 rows",
+      rowsAffected: 2,
+    });
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/vectors"),
+      expect.stringContaining("/search/test-ns"),
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -300,7 +313,10 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ rowsAffected: 2 }),
+      json: async () => ({
+        message: "Successfully wrote 2 rows",
+        rowsAffected: 2,
+      }),
     });
 
     const storage = new SearchStorage("test-project", "test-environment");
@@ -324,9 +340,12 @@ suite("GenSX Search Storage", () => {
       distanceMetric: "cosine_distance" as DistanceMetric,
     });
 
-    expect(result).toBe(2);
+    expect(result).toEqual({
+      message: "Successfully wrote 2 rows",
+      rowsAffected: 2,
+    });
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/vectors"),
+      expect.stringContaining("/search/test-ns"),
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -349,7 +368,10 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ rowsAffected: 2 }),
+      json: async () => ({
+        message: "Successfully deleted 2 rows",
+        rowsAffected: 2,
+      }),
     });
 
     const storage = new SearchStorage("test-project", "test-environment");
@@ -359,9 +381,12 @@ suite("GenSX Search Storage", () => {
       deletes: ["1", "2"],
     });
 
-    expect(result).toBe(2);
+    expect(result).toEqual({
+      message: "Successfully deleted 2 rows",
+      rowsAffected: 2,
+    });
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/vectors"),
+      expect.stringContaining("/search/test-ns"),
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -383,19 +408,25 @@ suite("GenSX Search Storage", () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ rowsAffected: 2 }),
+      json: async () => ({
+        message: "Successfully deleted 2 rows",
+        rowsAffected: 2,
+      }),
     });
 
     const storage = new SearchStorage("test-project", "test-environment");
     const namespace = storage.getNamespace("test-ns");
 
     const result = await namespace.write({
-      deleteByFilter: ["And", [["text", "Eq", "test document"]]] as Filters,
+      deleteByFilter: ["And", [["text", "Eq", "test document"]]] as Filter,
     });
 
-    expect(result).toBe(2);
+    expect(result).toEqual({
+      message: "Successfully deleted 2 rows",
+      rowsAffected: 2,
+    });
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns/vectors"),
+      expect.stringContaining("/search/test-ns"),
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -411,41 +442,6 @@ suite("GenSX Search Storage", () => {
     expect(body).toEqual({
       deleteByFilter: ["And", [["text", "Eq", "test document"]]],
     });
-  });
-
-  test("should get namespace metadata", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        metadata: {
-          dimensions: 3,
-          distanceMetric: "cosine",
-          vectorCount: 100,
-        },
-      }),
-    });
-
-    const storage = new SearchStorage("test-project", "test-environment");
-    const namespace = storage.getNamespace("test-ns");
-
-    const metadata = await namespace.getMetadata();
-
-    expect(metadata).toEqual({
-      dimensions: 3,
-      distanceMetric: "cosine",
-      vectorCount: 100,
-    });
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/search/test-ns"),
-      expect.objectContaining({
-        method: "GET",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-api-key",
-        }),
-      }),
-    );
   });
 
   test("should get schema", async () => {

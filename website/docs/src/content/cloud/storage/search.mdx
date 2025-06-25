@@ -89,27 +89,25 @@ const SearchDocuments = gensx.Component(
 
     // Build query options
     const queryOptions = {
-      vector: embedding,
+      rankBy: ["vector", "ANN", embedding] as const,
       includeAttributes: true,
       topK: 5, // Return top 5 results
     };
 
     // Add filters if category is specified
     if (category) {
-      queryOptions.filters = {
-        where: { category: { $eq: category } },
-      };
+      queryOptions.filters = ["category", "Eq", category];
     }
 
     // Perform the search
     const results = await search.query(queryOptions);
 
-    // Process and return results
-    return results.map((result) => ({
+    // Process and return results from the rows array
+    return results.rows?.map((result) => ({
       id: result.id,
-      text: result.attributes?.text,
-      score: result.score,
-    }));
+      text: result.text,
+      distance: result.$dist,
+    })) || [];
   },
 );
 ```
@@ -174,13 +172,14 @@ const queryTool = tool({
 
     // Search for relevant documents
     const results = await search.query({
-      vector: embedding,
+      rankBy: ["vector", "ANN", embedding],
       includeAttributes: true,
+      topK: 10,
     });
 
     // Return formatted results
     return JSON.stringify(
-      results.map((r) => r.attributes?.text),
+      results.rows?.map((r) => r.text) || [],
       null,
       2,
     );
@@ -286,19 +285,17 @@ const RecallMemories = gensx.Component(
 
     // Query for relevant memories, prioritizing important ones
     const results = await search.query({
-      vector: embedding,
+      rankBy: ["vector", "ANN", embedding],
       topK: maxResults,
       includeAttributes: true,
-      // Optional: rank by both relevance and importance
-      rankBy: ["attributes.importance", "asc"],
     });
 
-    // Format memories for the agent
-    return results.map((result) => ({
-      content: result.attributes?.content,
-      timestamp: result.attributes?.timestamp,
-      relevance: result.score.toFixed(3),
-    }));
+    // Format memories for the agent from the rows array
+    return results.rows?.map((result) => ({
+      content: result.content,
+      timestamp: result.timestamp,
+      relevance: result.$dist?.toFixed(3),
+    })) || [];
   },
 );
 
@@ -376,22 +373,21 @@ const SearchKnowledgeBase = gensx.Component(
 
     // Perform hybrid search (vector + keyword) with filters
     const results = await search.query({
-      vector: embedding,
-      rankBy: ["text", "BM25", query],
+      rankBy: ["text", "BM25", query], // Text-based ranking for hybrid search
       includeAttributes: true,
       topK: 10,
       filters: filterConditions[1].length > 0 ? filterConditions : undefined,
     });
 
-    // Return formatted results
-    return results.map((result) => ({
-      title: result.attributes?.title,
-      snippet: result.attributes?.snippet,
-      url: result.attributes?.url,
-      category: result.attributes?.category,
-      tags: result.attributes?.tags,
-      score: result.score,
-    }));
+    // Return formatted results from the rows array
+    return results.rows?.map((result) => ({
+      title: result.title,
+      snippet: result.snippet,
+      url: result.url,
+      category: result.category,
+      tags: result.tags,
+      score: result.$dist,
+    })) || [];
   },
 );
 ```
@@ -407,7 +403,8 @@ const search = await useSearch("articles");
 
 // Search with filters
 const results = await search.query({
-  vector: queryEmbedding,
+  rankBy: ["vector", "ANN", queryEmbedding],
+  topK: 10,
   filters: [
     "And",
     [
@@ -432,9 +429,11 @@ const currentSchema = await search.getSchema();
 
 // Update schema to add new fields
 await search.updateSchema({
-  ...currentSchema,
-  newField: { type: "number" },
-  anotherField: { type: "string[]" },
+  schema: {
+    ...currentSchema,
+    newField: { type: "int" },
+    anotherField: { type: "[]string" },
+  },
 });
 ```
 

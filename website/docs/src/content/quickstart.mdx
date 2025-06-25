@@ -405,7 +405,7 @@ const tools = {
 
       // Search for similar documents
       const results = await namespace.query({
-        vector: embedding,
+        rankBy: ["vector", "ANN", embedding],
         topK: 5,
         includeAttributes: true,
       });

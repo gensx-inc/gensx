@@ -69,7 +69,7 @@ The namespace object returned by `useSearch` provides these methods:
 Inserts, updates, or deletes vectors in the namespace.
 
 ```tsx
-async write(options: WriteParams): Promise<number>
+async write(options: WriteParams): Promise<{ message: string; rowsAffected: number }>
 ```
 
 #### Parameters
@@ -80,8 +80,8 @@ async write(options: WriteParams): Promise<number>
 | `upsertRows`     | `UpsertRows`     | `undefined` | Row-based format for upserting documents    |
 | `patchColumns`   | `PatchColumns`   | `undefined` | Column-based format for patching documents  |
 | `patchRows`      | `PatchRows`      | `undefined` | Row-based format for patching documents     |
-| `deletes`        | `Id[]`           | `undefined` | Array of document IDs to delete             |
-| `deleteByFilter` | `Filters`        | `undefined` | Filter to match documents for deletion      |
+| `deletes`        | `ID[]`           | `undefined` | Array of document IDs to delete             |
+| `deleteByFilter` | `Filter`         | `undefined` | Filter to match documents for deletion      |
 | `distanceMetric` | `DistanceMetric` | `undefined` | Distance metric for similarity calculations |
 | `schema`         | `Schema`         | `undefined` | Optional schema definition for attributes   |
 
@@ -89,7 +89,7 @@ async write(options: WriteParams): Promise<number>
 
 ```tsx
 // Upsert documents in column-based format
-await namespace.write({
+const result = await namespace.write({
   upsertColumns: {
     id: ["doc-1", "doc-2"],
     vector: [
@@ -105,6 +105,7 @@ await namespace.write({
     category: { type: "string" },
   },
 });
+console.log(result); // { message: "Successfully wrote 2 rows", rowsAffected: 2 }
 
 // Upsert documents in row-based format
 await namespace.write({
@@ -154,11 +155,18 @@ await namespace.write({
 
 #### Return value
 
-Returns the number of rows affected by the operation.
+Returns an object with a success message and the number of rows affected by the operation:
+
+```tsx
+{
+  message: "Successfully wrote 2 rows",
+  rowsAffected: 2
+}
+```
 
 ### query
 
-Searches for similar vectors based on a query vector.
+Searches for similar vectors based on a query vector or other ranking criteria.
 
 ```tsx
 async query(options: QueryOptions): Promise<QueryResults>
@@ -168,21 +176,18 @@ async query(options: QueryOptions): Promise<QueryResults>
 
 | Parameter           | Type                  | Default     | Description                              |
 | ------------------- | --------------------- | ----------- | ---------------------------------------- |
-| `vector`            | `number[]`            | Required    | Query vector for similarity search       |
-| `topK`              | `number`              | `10`        | Number of results to return              |
-| `includeVectors`    | `boolean`             | `false`     | Whether to include vectors in results    |
-| `includeAttributes` | `boolean \| string[]` | `true`      | Include all attributes or specified ones |
-| `filters`           | `Filters`             | `undefined` | Metadata filters                         |
-| `rankBy`            | `RankBy`              | `undefined` | Attribute-based ranking or text ranking  |
-| `consistency`       | `string`              | `undefined` | Consistency level for reads              |
+| `rankBy`            | `RankBy`              | `undefined` | Vector, text, or attribute-based ranking |
+| `topK`              | `number`              | `undefined`        | Number of results to return              |
+| `includeAttributes` | `boolean \| string[]` | `['id']`    | Include all attributes or specified ones |
+| `filters`           | `Filter`              | `undefined` | Metadata filters                         |
+| `aggregateBy`       | `AggregateBy`         | `undefined` | Aggregate results by specified fields    |
+| `consistency`       | `Consistency`         | `undefined` | Consistency level for reads              |
 
 #### Example
 
 ```tsx
 const results = await namespace.query({
-  vector: [0.1, 0.2, 0.3, ...],     // Query vector
   topK: 10,                         // Number of results to return
-  includeVectors: false,            // Whether to include vectors in results
   includeAttributes: true,          // Include all attributes or specific ones
   filters: [                        // Optional metadata filters
     "And",
@@ -191,28 +196,35 @@ const results = await namespace.query({
       ["createdAt", "Gte", "2023-01-01"]
     ]
   ],
-  rankBy: ["attributes.importance", "asc"],  // Optional attribute-based ranking
+  rankBy: ["vector", "ANN", [0.1, 0.2, 0.3, ...]],  // Vector similarity search
+  // OR
+  rankBy: ["text", "BM25", "search query"],          // Text search
+  // OR
+  rankBy: ["importance", "desc"],                    // Attribute-based ranking
 });
 ```
 
 #### Return value
 
-Returns an array of matched documents with similarity scores:
+Returns a `QueryResults` object with an array of matched documents:
 
 ```tsx
-[
-  {
-    id: "doc-1",            // Document ID
-    score: 0.87,            // Similarity score (0-1)
-    vector?: number[],      // Original vector (if includeVectors=true)
-    attributes?: {          // Metadata (if includeAttributes=true)
-      text: "Document content",
+{
+  rows: [
+    {
+      id: "doc-1",            // Document ID
+      $dist: 0.87,            // Distance score (lower is more similar for most metrics)
+      vector?: number[],      // Original vector (if includeAttributes includes vectors)
+      text: "Document content",     // Document attributes
       category: "article",
       createdAt: "2023-07-15"
-    }
-  },
-  // ...more results
-]
+    },
+    // ...more results
+  ],
+  aggregations?: {          // Aggregation results (if aggregateBy was specified)
+    // aggregation data
+  }
+}
 ```
 
 ### getSchema
@@ -266,27 +278,6 @@ const updatedSchema = await namespace.updateSchema({
 #### Return value
 
 Returns the updated schema.
-
-### getMetadata
-
-Retrieves metadata about the namespace.
-
-```tsx
-async getMetadata(): Promise<NamespaceMetadata>
-```
-
-#### Example
-
-```tsx
-const metadata = await namespace.getMetadata();
-console.log(metadata);
-// {
-//   vectorCount: 1250,
-//   dimensions: 1536,
-//   distanceMetric: "cosine_distance",
-//   created: "2023-07-15T12:34:56Z"
-// }
-```
 
 ## SearchClient
 
@@ -379,7 +370,7 @@ async listNamespaces(options?: {
   limit?: number;
   cursor?: string;
 }): Promise<{
-  namespaces: string[];
+  namespaces: { name: string; createdAt: Date }[];
   nextCursor?: string;
 }>
 ```
@@ -388,7 +379,7 @@ async listNamespaces(options?: {
 
 ```tsx
 const { namespaces, nextCursor } = await searchClient.listNamespaces();
-console.log("Available namespaces:", namespaces); // ["products", "customers", "orders"]
+console.log("Available namespaces:", namespaces.map(ns => ns.name)); // ["products", "customers", "orders"]
 ```
 
 #### deleteNamespace
@@ -458,7 +449,7 @@ app.post("/api/search", async (req, res) => {
     // Search for similar documents
     const namespace = await searchClient.getNamespace("documents");
     const results = await namespace.query({
-      vector: embedding.data[0].embedding,
+      rankBy: ["vector", "ANN", embedding.data[0].embedding],
       topK: 5,
       includeAttributes: true,
     });

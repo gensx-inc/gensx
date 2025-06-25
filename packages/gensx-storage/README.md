@@ -184,7 +184,7 @@ const SearchVectors = Component<{ queryVector: number[] }, string>(
 
     // Query for similar vectors
     const results = await namespace.query({
-      vector: queryVector,
+      rankBy: ["vector", "ANN", queryVector],
       topK: 3,
       includeAttributes: true,
     });
@@ -201,7 +201,7 @@ const namespace = await useSearch("my-namespace");
 
 // Common operations
 await namespace.write({ upsertRows: [...], distanceMetric: "cosine_distance" }); // Upsert vectors
-await namespace.query({ vector, topK: 5 }); // Query similar vectors
+await namespace.query({ rankBy: ["vector", "ANN", queryVector], topK: 5 }); // Query similar vectors
 await namespace.getMetadata(); // Get namespace metadata
 await namespace.getSchema(); // Get schema
 await namespace.updateSchema({ schema: { ... } }); // Update schema
@@ -216,5 +216,8 @@ import { SearchClient } from "@gensx/storage";
 
 const client = new SearchClient();
 const namespace = await client.getNamespace("my-namespace");
-const results = await namespace.query({ vector: [0.1, 0.2, 0.3], topK: 3 });
+const results = await namespace.query({
+  rankBy: ["vector", "ANN", queryVector],
+  topK: 3,
+});
 ```

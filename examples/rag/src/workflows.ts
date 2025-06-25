@@ -27,7 +27,8 @@ const tools = {
         value: query,
       });
       const result = await search.query({
-        vector: embedding.embedding,
+        rankBy: ["vector", "ANN", embedding.embedding],
+        topK: 10,
         includeAttributes: true,
       });
       return JSON.stringify(result, null, 2);

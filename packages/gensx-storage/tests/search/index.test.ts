@@ -20,10 +20,12 @@ vi.mock("../../src/search/remote.js", () => {
           namespacesCache.has(name),
         getNamespace: (name: string) => ({
           namespaceId: name,
-          query: vi.fn().mockResolvedValue([]),
-          upsert: vi.fn().mockResolvedValue({}),
-          delete: vi.fn().mockResolvedValue({}),
-          patch: vi.fn().mockResolvedValue({}),
+          query: vi.fn().mockResolvedValue({ rows: [] }),
+          write: vi
+            .fn()
+            .mockResolvedValue({ message: "Success", rowsAffected: 0 }),
+          getSchema: vi.fn().mockResolvedValue({}),
+          updateSchema: vi.fn().mockResolvedValue({}),
         }),
         ensureNamespace: vi.fn().mockImplementation((name: string) => {
           const exists = namespacesCache.has(name);
@@ -60,9 +62,7 @@ vi.mock("../../src/search/remote.js", () => {
 
 // Extended Namespace type for testing
 interface TestNamespace extends Namespace {
-  upsert: () => Promise<unknown>;
-  delete: () => Promise<unknown>;
-  patch: () => Promise<unknown>;
+  // No additional methods needed for current API
 }
 
 suite("GenSX Search", () => {
@@ -193,9 +193,9 @@ suite("GenSX Search", () => {
 
       // Check that the namespace has all required methods
       expect(typeof namespace.query).toBe("function");
-      expect(typeof namespace.upsert).toBe("function");
-      expect(typeof namespace.delete).toBe("function");
-      expect(typeof namespace.patch).toBe("function");
+      expect(typeof namespace.write).toBe("function");
+      expect(typeof namespace.getSchema).toBe("function");
+      expect(typeof namespace.updateSchema).toBe("function");
     });
   });
 });
