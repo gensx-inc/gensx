@@ -4,8 +4,8 @@ import { Readable } from "stream";
 
 import { readConfig } from "@gensx/core";
 
-import { USER_AGENT } from "../utils/user-agent.js";
 import { parseErrorResponse } from "../utils/parse-error.js";
+import { USER_AGENT } from "../utils/user-agent.js";
 import {
   Blob,
   BlobConflictError,

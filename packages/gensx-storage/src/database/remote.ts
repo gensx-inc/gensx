@@ -3,8 +3,8 @@
 import { readConfig } from "@gensx/core";
 import { InArgs } from "@libsql/client";
 
-import { USER_AGENT } from "../utils/user-agent.js";
 import { parseErrorResponse } from "../utils/parse-error.js";
+import { USER_AGENT } from "../utils/user-agent.js";
 import {
   Database,
   DatabaseBatchResult,
@@ -303,9 +303,7 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
 
       if (!response.ok) {
         const message = await parseErrorResponse(response);
-        throw new DatabaseInternalError(
-          `Failed to list databases: ${message}`,
-        );
+        throw new DatabaseInternalError(`Failed to list databases: ${message}`);
       }
 
       const data = (await response.json()) as {

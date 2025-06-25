@@ -1,7 +1,7 @@
 export async function parseErrorResponse(response: Response): Promise<string> {
   try {
     const data = (await response.json()) as { error?: string };
-    if (data && typeof data.error === "string" && data.error.trim()) {
+    if (typeof data.error === "string" && data.error.trim()) {
       return data.error;
     }
   } catch {
