@@ -59,7 +59,7 @@ export function ChatInput({
           </h1>
           <p className="text-slate-500 text-lg">
             See the power of GenSX in action with streaming chat, thinking, and
-            tools
+            tools.
           </p>
         </div>
 
