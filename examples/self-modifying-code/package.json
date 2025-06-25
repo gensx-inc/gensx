@@ -16,7 +16,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.53.0",
+    "@anthropic-ai/sdk": "^0.55.0",
     "@gensx/anthropic": "0.1.17",
     "@mendable/firecrawl-js": "^1.25.5",
     "@gensx/core": "0.3.13",
