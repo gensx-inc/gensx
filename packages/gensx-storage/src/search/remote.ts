@@ -3,6 +3,7 @@
 import { readConfig } from "@gensx/core";
 
 import { USER_AGENT } from "../utils/user-agent.js";
+import { parseErrorResponse } from "../utils/parse-error.js";
 import {
   DeleteNamespaceResult,
   EnsureNamespaceResult,
@@ -177,7 +178,8 @@ export class SearchNamespace implements Namespace {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        const message = await parseErrorResponse(response);
+        throw new SearchApiError(message);
       }
 
       const data = (await response.json()) as {
@@ -223,7 +225,8 @@ export class SearchNamespace implements Namespace {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        const message = await parseErrorResponse(response);
+        throw new SearchApiError(message);
       }
 
       const data = (await response.json()) as QueryResults;
@@ -250,7 +253,8 @@ export class SearchNamespace implements Namespace {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        const message = await parseErrorResponse(response);
+        throw new SearchApiError(message);
       }
 
       const data = (await response.json()) as Schema;
@@ -279,7 +283,8 @@ export class SearchNamespace implements Namespace {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        const message = await parseErrorResponse(response);
+        throw new SearchApiError(message);
       }
 
       const data = (await response.json()) as Schema;
@@ -363,7 +368,8 @@ export class SearchStorage implements ISearchStorage {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        const message = await parseErrorResponse(response);
+        throw new SearchApiError(message);
       }
 
       const data = (await response.json()) as EnsureNamespaceResult;
@@ -396,7 +402,8 @@ export class SearchStorage implements ISearchStorage {
       );
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        const message = await parseErrorResponse(response);
+        throw new SearchApiError(message);
       }
 
       const data = (await response.json()) as DeleteNamespaceResult;
@@ -457,7 +464,8 @@ export class SearchStorage implements ISearchStorage {
       });
 
       if (!response.ok) {
-        throw new SearchApiError(response.statusText);
+        const message = await parseErrorResponse(response);
+        throw new SearchApiError(message);
       }
 
       const data = (await response.json()) as {

@@ -5,6 +5,7 @@ import { Readable } from "stream";
 import { readConfig } from "@gensx/core";
 
 import { USER_AGENT } from "../utils/user-agent.js";
+import { parseErrorResponse } from "../utils/parse-error.js";
 import {
   Blob,
   BlobConflictError,
@@ -83,9 +84,8 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get blob: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to get blob: ${message}`);
       }
 
       const data = (await response.json()) as BlobResponse<string>;
@@ -114,9 +114,8 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get blob: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to get blob: ${message}`);
       }
 
       const data = (await response.json()) as BlobResponse<string>;
@@ -144,9 +143,8 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get blob: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to get blob: ${message}`);
       }
 
       const data = (await response.json()) as {
@@ -198,9 +196,8 @@ export class RemoteBlob<T> implements Blob<T> {
       );
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get blob: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to get blob: ${message}`);
       }
 
       if (!response.body) {
@@ -237,9 +234,8 @@ export class RemoteBlob<T> implements Blob<T> {
         if (response.status === 412) {
           throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobInternalError(
-          `Failed to put blob: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to put blob: ${message}`);
       }
 
       const etag = response.headers.get("etag");
@@ -280,9 +276,8 @@ export class RemoteBlob<T> implements Blob<T> {
         if (response.status === 412) {
           throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobInternalError(
-          `Failed to put blob: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to put blob: ${message}`);
       }
 
       const etag = response.headers.get("etag");
@@ -331,9 +326,8 @@ export class RemoteBlob<T> implements Blob<T> {
         if (response.status === 412) {
           throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobInternalError(
-          `Failed to put blob: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to put blob: ${message}`);
       }
 
       const etag = response.headers.get("etag");
@@ -385,9 +379,8 @@ export class RemoteBlob<T> implements Blob<T> {
         if (response.status === 412) {
           throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobInternalError(
-          `Failed to put blob: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to put blob: ${message}`);
       }
 
       const etag = response.headers.get("etag");
@@ -415,9 +408,8 @@ export class RemoteBlob<T> implements Blob<T> {
       );
 
       if (!response.ok && response.status !== 404) {
-        throw new BlobInternalError(
-          `Failed to delete blob: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to delete blob: ${message}`);
       }
     } catch (err) {
       throw handleApiError(err, "delete");
@@ -460,9 +452,8 @@ export class RemoteBlob<T> implements Blob<T> {
       }
 
       if (!response.ok) {
-        throw new BlobInternalError(
-          `Failed to get metadata: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to get metadata: ${message}`);
       }
 
       // Extract standard headers
@@ -519,9 +510,8 @@ export class RemoteBlob<T> implements Blob<T> {
         if (response.status === 412) {
           throw new BlobConflictError("ETag mismatch");
         }
-        throw new BlobInternalError(
-          `Failed to update metadata: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to update metadata: ${message}`);
       }
     } catch (err) {
       throw handleApiError(err, "updateMetadata");
@@ -614,7 +604,8 @@ export class RemoteBlobStorage implements BlobStorage {
       );
 
       if (!response.ok) {
-        handleApiError(response, "listBlobs");
+        const message = await parseErrorResponse(response);
+        throw new BlobInternalError(`Failed to list blobs: ${message}`);
       }
 
       const data = (await response.json()) as {
