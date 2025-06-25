@@ -294,7 +294,7 @@ const RecallMemories = gensx.Component(
     return results.rows?.map((result) => ({
       content: result.content,
       timestamp: result.timestamp,
-      relevance: result.$dist?.toFixed(3),
+      distance: result.$dist?.toFixed(3),
     })) || [];
   },
 );
@@ -316,7 +316,7 @@ const MemoryAwareAgent = gensx.Component(
         {
           role: "system",
           content: `You are an assistant with memory. Consider these relevant memories about this user:
-          ${memories.map((m) => `[${m.timestamp}] ${m.content} (relevance: ${m.relevance})`).join("\n")}`,
+          ${memories.map((m) => `[${m.timestamp}] ${m.content} (distance: ${m.distance})`).join("\n")}`,
         },
         { role: "user", content: userMessage },
       ],

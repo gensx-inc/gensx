@@ -5,7 +5,7 @@ description: Vector search components for semantic search and RAG workflows.
 
 # Search reference
 
-API reference for GenSX Cloud search components. Search is powered by turbopuffer, and their documentation for [query](https://turbopuffer.com/docs/query) and [upsert operations](https://turbopuffer.com/docs/write) is a useful reference to augment this document.
+API reference for GenSX Cloud search components. Search is powered by turbopuffer, and their documentation for [query](https://turbopuffer.com/docs/query) and [write](https://turbopuffer.com/docs/write) operations is a useful reference to augment this document.
 
 ## Installation
 
@@ -53,7 +53,7 @@ const results = await namespace.query({
   includeAttributes: true,
 });
 
-// With configuration
+// With explicit configuration
 const namespace = await useSearch("documents", {
   project: "my-project",
   environment: "production",
@@ -74,16 +74,16 @@ async write(options: WriteParams): Promise<{ message: string; rowsAffected: numb
 
 #### Parameters
 
-| Parameter        | Type             | Default     | Description                                 |
-| ---------------- | ---------------- | ----------- | ------------------------------------------- |
-| `upsertColumns`  | `UpsertColumns`  | `undefined` | Column-based format for upserting documents |
-| `upsertRows`     | `UpsertRows`     | `undefined` | Row-based format for upserting documents    |
-| `patchColumns`   | `PatchColumns`   | `undefined` | Column-based format for patching documents  |
-| `patchRows`      | `PatchRows`      | `undefined` | Row-based format for patching documents     |
-| `deletes`        | `ID[]`           | `undefined` | Array of document IDs to delete             |
-| `deleteByFilter` | `Filter`         | `undefined` | Filter to match documents for deletion      |
-| `distanceMetric` | `DistanceMetric` | `undefined` | Distance metric for similarity calculations |
-| `schema`         | `Schema`         | `undefined` | Optional schema definition for attributes   |
+| Parameter        | Type             | Default | Description                                 |
+| ---------------- | ---------------- | ------- | ------------------------------------------- |
+| `upsertColumns`  | `UpsertColumns`  | none    | Column-based format for upserting documents |
+| `upsertRows`     | `UpsertRows`     | none    | Row-based format for upserting documents    |
+| `patchColumns`   | `PatchColumns`   | none    | Column-based format for patching documents  |
+| `patchRows`      | `PatchRows`      | none    | Row-based format for patching documents     |
+| `deletes`        | `ID[]`           | none    | Array of document IDs to delete             |
+| `deleteByFilter` | `Filter`         | none    | Filter to match documents for deletion      |
+| `distanceMetric` | `DistanceMetric` | none    | Distance metric for similarity calculations |
+| `schema`         | `Schema`         | none    | Optional schema definition for attributes   |
 
 #### Example
 
@@ -174,14 +174,14 @@ async query(options: QueryOptions): Promise<QueryResults>
 
 #### Parameters
 
-| Parameter           | Type                  | Default     | Description                              |
-| ------------------- | --------------------- | ----------- | ---------------------------------------- |
-| `rankBy`            | `RankBy`              | `undefined` | Vector, text, or attribute-based ranking |
-| `topK`              | `number`              | `undefined`        | Number of results to return              |
+| Parameter           | Type                  | Default | Description                              |
+| ------------------- | --------------------- | ------- | ---------------------------------------- |
+| `rankBy`            | `RankBy`              | none    | Vector, text, or attribute-based ranking |
+| `topK`              | `number`              | none    | Number of results to return              |
 | `includeAttributes` | `boolean \| string[]` | `['id']`    | Include all attributes or specified ones |
-| `filters`           | `Filter`              | `undefined` | Metadata filters                         |
-| `aggregateBy`       | `AggregateBy`         | `undefined` | Aggregate results by specified fields    |
-| `consistency`       | `Consistency`         | `undefined` | Consistency level for reads              |
+| `filters`           | `Filter`              | none    | Metadata filters                         |
+| `aggregateBy`       | `AggregateBy`         | none    | Aggregate results by specified fields    |
+| `consistency`       | `Consistency`         | none    | Consistency level for reads              |
 
 #### Example
 
@@ -213,16 +213,16 @@ Returns a `QueryResults` object with an array of matched documents:
   rows: [
     {
       id: "doc-1",            // Document ID
-      $dist: 0.87,            // Distance score (lower is more similar for most metrics)
-      vector?: number[],      // Original vector (if includeAttributes includes vectors)
-      text: "Document content",     // Document attributes
+      $dist: 0.13,            // Distance score (lower is more similar for most metrics)
+      vector: number[],      // If specified in includeAttributes
+      text: "Document content",     // Other attributes specified in includeAttributes
       category: "article",
       createdAt: "2023-07-15"
     },
     // ...more results
   ],
-  aggregations?: {          // Aggregation results (if aggregateBy was specified)
-    // aggregation data
+  aggregations: {          // Aggregation results (if aggregateBy was specified)
+    "numberOfDocuments": 100,
   }
 }
 ```
