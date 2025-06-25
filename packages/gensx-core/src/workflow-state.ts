@@ -119,6 +119,22 @@ export interface WorkflowEndMessage {
   type: "end";
 }
 
+export interface ExternalToolCallMessage {
+  type: "external-tool-call";
+  toolName: string;
+  params: JsonValue;
+  callId: string;
+  nodeId: string;
+  sequenceNumber: number;
+}
+
+export interface ExternalToolResponseMessage {
+  type: "external-tool-response";
+  callId: string;
+  result?: JsonValue;
+  error?: string;
+}
+
 // Union of all message types
 export type WorkflowMessage =
   | WorkflowStartMessage
@@ -128,7 +144,9 @@ export type WorkflowMessage =
   | WorkflowEventMessage
   | WorkflowObjectMessage
   | WorkflowErrorMessage
-  | WorkflowEndMessage;
+  | WorkflowEndMessage
+  | ExternalToolCallMessage
+  | ExternalToolResponseMessage;
 
 export type WorkflowMessageListener = (message: WorkflowMessage) => void;
 

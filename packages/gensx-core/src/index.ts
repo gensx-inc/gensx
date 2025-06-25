@@ -25,6 +25,8 @@ export type {
   WorkflowEndMessage,
   Operation,
   StringAppendOperation,
+  ExternalToolCallMessage,
+  ExternalToolResponseMessage,
 } from "./workflow-state.js";
 export * from "./wrap.js";
 export * from "./request-input.js";
@@ -35,3 +37,16 @@ export { Component, Workflow } from "./component.js";
 export { readConfig } from "./utils/config.js";
 export { getSelectedEnvironment } from "./utils/env-config.js";
 export { readProjectConfig } from "./utils/project-config.js";
+
+export {
+  createToolBox,
+  createToolImplementations,
+  executeExternalTool,
+} from "./external-tools.js";
+export type {
+  ToolDefinition,
+  ToolBox,
+  ToolImplementations,
+  InferToolParams,
+  InferToolResult,
+} from "./external-tools.js";
