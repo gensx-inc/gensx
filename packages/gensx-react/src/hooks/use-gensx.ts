@@ -1,4 +1,10 @@
-import type { JsonValue, WorkflowMessage } from "@gensx/core";
+import type {
+  ExternalToolResponseMessage,
+  JsonValue,
+  ToolImplementations,
+  ToolBox,
+  WorkflowMessage,
+} from "@gensx/core";
 
 import {
   startTransition,
@@ -28,11 +34,19 @@ export interface WorkflowConfig {
   headers?: Record<string, string>;
 }
 
-export interface UseWorkflowConfig<TOutput = unknown> {
+export interface UseWorkflowConfig<
+  TOutput = unknown,
+  TToolBox extends ToolBox<any> = {},
+> {
   /**
    * All workflow configuration in one place
    */
   config: WorkflowConfig;
+
+  /**
+   * External tools that can be called from the workflow
+   */
+  tools?: ToolImplementations<TToolBox>;
 
   /**
    * Callback fired when workflow starts
@@ -105,11 +119,22 @@ export interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
  * const allSteps = useEvents(workflow.events, 'step-completed');
  * ```
  */
-export function useWorkflow<TInputs = unknown, TOutput = unknown>(
-  options: UseWorkflowConfig<TOutput>,
+export function useWorkflow<
+  TInputs = unknown,
+  TOutput = unknown,
+  TToolBox extends ToolBox<any> = {},
+>(
+  options: UseWorkflowConfig<TOutput, TToolBox>,
 ): UseWorkflowResult<TInputs, TOutput> {
-  const { config, onStart, onComplete, onError, onEvent, outputTransformer } =
-    options;
+  const {
+    config,
+    tools,
+    onStart,
+    onComplete,
+    onError,
+    onEvent,
+    outputTransformer,
+  } = options;
 
   const { baseUrl, headers = {} } = config;
 
@@ -200,10 +225,56 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
             setInProgress(false);
             onError?.(event.error);
             break;
+
+          case "external-tool-call":
+            // Handle external tool calls from workflow
+            if (tools) {
+              const toolImpl = tools[event.toolName as keyof typeof tools];
+              if (toolImpl) {
+                // Execute the tool asynchronously
+                Promise.resolve(toolImpl.execute(event.params))
+                  .then((result) => {
+                    // Send response back through the message stream
+                    // Note: In a real implementation, this would need to be sent back to the workflow
+                    // For now, we'll just add it to the events
+                    const responseEvent: ExternalToolResponseMessage = {
+                      type: "external-tool-response",
+                      callId: event.callId,
+                      result: result as JsonValue,
+                    };
+                    processEvent(responseEvent);
+                  })
+                  .catch((error) => {
+                    const responseEvent: ExternalToolResponseMessage = {
+                      type: "external-tool-response",
+                      callId: event.callId,
+                      error:
+                        error instanceof Error ? error.message : String(error),
+                    };
+                    processEvent(responseEvent);
+                  });
+              } else {
+                // Tool not found
+                const responseEvent: ExternalToolResponseMessage = {
+                  type: "external-tool-response",
+                  callId: event.callId,
+                  error: `Tool '${event.toolName}' not found`,
+                };
+                processEvent(responseEvent);
+              }
+            }
+            break;
+
+          case "external-tool-response":
+            // Handle responses to external tool calls
+            // This would be used if the workflow was waiting for responses
+            // For now, just log it
+            console.log("External tool response:", event);
+            break;
         }
       });
     },
-    [onStart, onComplete, onError, onEvent, outputTransformer],
+    [onStart, onComplete, onError, onEvent, outputTransformer, tools],
   );
 
   // Parse streaming response
