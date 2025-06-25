@@ -4,16 +4,17 @@ import { NextRequest } from "next/server";
 type RequestBody = Record<string, unknown>;
 
 const shouldUseLocalDevServer = () => {
-  if (
-    process.env.GENSX_BASE_URL &&
-    !process.env.GENSX_BASE_URL.includes("localhost")
-  ) {
-    return false;
-  }
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
-    return false;
-  }
-  return true;
+  return false;
+  // if (
+  //   process.env.GENSX_BASE_URL &&
+  //   !process.env.GENSX_BASE_URL.includes("localhost")
+  // ) {
+  //   return false;
+  // }
+  // if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
+  //   return false;
+  // }
+  // return true;
 };
 
 /**
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     const workflowName = "updateDraft";
     const org = "gensx";
     const project = "draft-pad";
-    const environment = "default";
+    const environment = "production";
     const format = "ndjson";
 
     // Get API key from environment (or could accept from Authorization header)
@@ -123,7 +124,7 @@ export function GET() {
           workflowName: "updateDraft",
           org: "gensx",
           project: "draft-pad",
-          environment: "default",
+          environment: "production",
         },
         usage: {
           method: "POST",
