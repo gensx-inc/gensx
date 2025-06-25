@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.3](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.1.2...gensx-react-v0.1.3) (2025-06-24)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/client bumped to 0.1.3
+    * @gensx/core bumped to 0.4.7
+
 ## [0.1.2](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.1.1...gensx-react-v0.1.2) (2025-06-20)
 
 

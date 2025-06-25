@@ -20,7 +20,7 @@
     "@gensx/core": "^0.4.6",
     "@gensx/vercel-ai": "^0.2.6",
     "ai": "^4.3.16",
-    "zod": "^3.25.56"
+    "zod": "3.25.56"
   },
   "devDependencies": {
     "@types/node": "^20",

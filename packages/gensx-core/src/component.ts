@@ -27,8 +27,6 @@ import { WorkflowMessageListener } from "./workflow-state.js";
 
 export { STREAMING_PLACEHOLDER };
 
-// Decorator-based Component Model
-
 function getResolvedOpts(
   decoratorOpts?: DecoratorComponentOpts | string,
   callTimeOpts?: OriginalComponentOpts,
@@ -274,6 +272,21 @@ type WorkflowRuntimeOpts = WorkflowOpts & {
   printUrl?: boolean;
   onRequestInput?: () => Promise<void>;
   onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>;
+  /**
+   * Optional reference to capture the pending updates promise, that ensures that all traces are sent to the server after completion.
+   * If provided, the workflow will set this reference to the promise
+   * that resolves when all checkpoint updates are complete.
+   * If not provided, the workflow will wait for pending updates before returning.
+   *
+   * @example
+   * ```typescript
+   * const pendingUpdatesRef = { value: undefined };
+   * const result = await workflow(props, { pendingUpdatesRef });
+   * // result is available immediately
+   * await pendingUpdatesRef.value; // wait for checkpoint updates
+   * ```
+   */
+  pendingUpdatesRef?: { value?: Promise<void> };
 };
 
 export function Workflow<P extends object = {}, R = unknown>(
@@ -363,7 +376,12 @@ export function Workflow<P extends object = {}, R = unknown>(
 
       return result;
     } finally {
-      await workflowContext.checkpointManager.waitForPendingUpdates();
+      if (runtimeOpts?.pendingUpdatesRef) {
+        runtimeOpts.pendingUpdatesRef.value =
+          workflowContext.checkpointManager.waitForPendingUpdates();
+      } else {
+        await workflowContext.checkpointManager.waitForPendingUpdates();
+      }
     }
   };
 

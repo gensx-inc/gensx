@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.41](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.40...gensx-v0.3.41) (2025-06-24)
+
+
+### ✨ New Features
+
+* improving dev server ([#810](https://github.com/gensx-inc/gensx/issues/810)) ([643e5c7](https://github.com/gensx-inc/gensx/commit/643e5c75176079f9d4a5f73c429db9c23032797b))
+
+## [0.3.40](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.39...gensx-v0.3.40) (2025-06-24)
+
+
+### 🐛 Bug Fixes
+
+* update dashboard URL format to use env query parameter ([#811](https://github.com/gensx-inc/gensx/issues/811)) ([c64fd33](https://github.com/gensx-inc/gensx/commit/c64fd33423fccc696a5f05b6d2e5eb9e3894986b))
+
 ## [0.3.39](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.38...gensx-v0.3.39) (2025-06-20)
 
 
