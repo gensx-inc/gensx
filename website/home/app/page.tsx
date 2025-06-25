@@ -85,11 +85,11 @@ const RAGTool = tool({
   }),
   execute: async ({ query }) => {
     const docs = await useSearch("documentation");
-    const { embeddings } = await embed({
+    const { embedding } = await embed({
       model: openai.embedding("text-embedding-3-small"),
       value: query,
     });
-    return await docs.query({ vector: embedding, topK: 3 });
+    return await docs.query({ rankBy: ["vector", "ANN", embedding], topK: 3 });
   }
 });
 

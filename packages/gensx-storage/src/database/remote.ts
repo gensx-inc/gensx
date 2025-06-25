@@ -3,6 +3,7 @@
 import { readConfig } from "@gensx/core";
 import { InArgs } from "@libsql/client";
 
+import { parseErrorResponse } from "../utils/parse-error.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import {
   Database,
@@ -85,9 +86,8 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to execute SQL: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new DatabaseInternalError(`Failed to execute SQL: ${message}`);
       }
 
       const data = (await response.json()) as DatabaseResult;
@@ -113,9 +113,8 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to execute batch: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new DatabaseInternalError(`Failed to execute batch: ${message}`);
       }
 
       const data = (await response.json()) as DatabaseBatchResult;
@@ -141,8 +140,9 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
+        const message = await parseErrorResponse(response);
         throw new DatabaseInternalError(
-          `Failed to execute multiple: ${response.statusText}`,
+          `Failed to execute multiple: ${message}`,
         );
       }
 
@@ -169,8 +169,9 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
+        const message = await parseErrorResponse(response);
         throw new DatabaseInternalError(
-          `Failed to execute migration: ${response.statusText}`,
+          `Failed to execute migration: ${message}`,
         );
       }
 
@@ -195,8 +196,9 @@ export class RemoteDatabase implements Database {
       );
 
       if (!response.ok) {
+        const message = await parseErrorResponse(response);
         throw new DatabaseInternalError(
-          `Failed to get database info: ${response.statusText}`,
+          `Failed to get database info: ${message}`,
         );
       }
 
@@ -300,9 +302,8 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
       });
 
       if (!response.ok) {
-        throw new DatabaseInternalError(
-          `Failed to list databases: ${response.statusText}`,
-        );
+        const message = await parseErrorResponse(response);
+        throw new DatabaseInternalError(`Failed to list databases: ${message}`);
       }
 
       const data = (await response.json()) as {
@@ -339,8 +340,9 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
       );
 
       if (!response.ok) {
+        const message = await parseErrorResponse(response);
         throw new DatabaseInternalError(
-          `Failed to ensure database: ${response.statusText}`,
+          `Failed to ensure database: ${message}`,
         );
       }
 
@@ -383,8 +385,9 @@ export class RemoteDatabaseStorage implements DatabaseStorage {
       );
 
       if (!response.ok) {
+        const message = await parseErrorResponse(response);
         throw new DatabaseInternalError(
-          `Failed to delete database: ${response.statusText}`,
+          `Failed to delete database: ${message}`,
         );
       }
 

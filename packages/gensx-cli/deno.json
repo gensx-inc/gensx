@@ -23,6 +23,7 @@
     "commander": "npm:commander",
     "consola": "npm:consola",
     "enquirer": "npm:enquirer",
+    "esbuild": "npm:esbuild",
     "figures": "npm:figures",
     "find-up": "npm:find-up",
     "form-data": "npm:form-data",
