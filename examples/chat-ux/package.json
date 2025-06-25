@@ -17,7 +17,7 @@
     "@gensx/client": "^0.1.2",
     "@gensx/core": "^0.4.6",
     "@gensx/react": "^0.1.2",
-    "@gensx/storage": "^0.1.7",
+    "@gensx/storage": "^0.1.9",
     "@gensx/vercel-ai": "^0.2.6",
     "@mendable/firecrawl-js": "^1.25.5",
     "@radix-ui/react-slot": "^1.2.3",
