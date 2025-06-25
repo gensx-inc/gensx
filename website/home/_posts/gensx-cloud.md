@@ -9,9 +9,9 @@ ogImage:
   url: "/assets/blog/hello-world/cover.jpg"
 ---
 
-# Today we’re launching GenSX Cloud
+# Today we're launching GenSX Cloud
 
-Today we’re introducing GenSX Cloud in developer beta. It is a serverless platform for deploying agents and workflows on a full Node.js runtime with a 60 minute timeout, an order of magnitude longer than existing serverless compute providers.
+Today we're introducing GenSX Cloud in developer beta. It is a serverless platform for deploying agents and workflows on a full Node.js runtime with a 60 minute timeout, an order of magnitude longer than existing serverless compute providers.
 
 GenSX Cloud also comes with storage primitives for building agents including blobs, vector search, and SQL databases. All of this can be provisioned dynamically at runtime in just a few milliseconds, meaning that agents can create their own storage on the fly as they need it. This enables a lot of interesting patterns like creating a request-scoped SQL database to power text to sql queries over a CSV, or per-user vector indices for long-term memory.
 
@@ -44,7 +44,7 @@ const createMemoryTools = (userId) => {
       });
 
       return {
-        memories: results.map((m) => m.text),
+        memories: results.rows?.map((m) => m.text),
       };
     },
   });

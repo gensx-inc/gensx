@@ -85,7 +85,7 @@ const RAGTool = tool({
   }),
   execute: async ({ query }) => {
     const docs = await useSearch("documentation");
-    const { embeddings } = await embed({
+    const { embedding } = await embed({
       model: openai.embedding("text-embedding-3-small"),
       value: query,
     });
