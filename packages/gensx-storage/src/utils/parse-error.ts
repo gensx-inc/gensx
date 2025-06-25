@@ -1,6 +1,7 @@
 export async function parseErrorResponse(response: Response): Promise<string> {
   try {
-    const data = (await response.json()) as { error?: string };
+    const clonedResponse = response.clone();
+    const data = (await clonedResponse.json()) as { error?: string };
     if (typeof data.error === "string" && data.error.trim()) {
       return data.error;
     }
