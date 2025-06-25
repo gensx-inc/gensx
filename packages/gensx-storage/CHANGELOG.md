@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.1.8...gensx-storage-v0.1.9) (2025-06-25)
+
+
+### ✨ New Features
+
+* updating search to use the new query API and upgrading to v0.10 ([#817](https://github.com/gensx-inc/gensx/issues/817)) ([fa5a45e](https://github.com/gensx-inc/gensx/commit/fa5a45e683ea364a3c4a80b709fcec443de8de73))
+
 ## [0.1.8](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.1.7...gensx-storage-v0.1.8) (2025-06-24)
 
 
