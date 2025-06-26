@@ -15,7 +15,7 @@
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next",
-    "test": "vitest run",
+    "test": "GENSX_ORG=gensx vitest run",
     "test:watch": "vitest watch"
   },
   "dependencies": {

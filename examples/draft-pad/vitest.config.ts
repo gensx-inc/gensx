@@ -7,16 +7,16 @@ export default defineConfig({
     testTimeout: 60000, // 60 seconds for API calls
     globals: true,
     environment: "node",
-    // Don't process CSS files in tests
-    css: false,
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./"),
     },
   },
-  // Explicitly tell Vite not to load PostCSS
+  // Explicitly tell Vite not to load PostCSS config for tests
   css: {
-    postcss: undefined,
+    postcss: {
+      plugins: [],
+    },
   },
 });
