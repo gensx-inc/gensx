@@ -9,7 +9,7 @@ import { mistral } from "@ai-sdk/mistral";
 import { openai } from "@ai-sdk/openai";
 import { xai } from "@ai-sdk/xai";
 import * as gensx from "@gensx/core";
-import { streamText } from "@gensx/vercel-ai";
+import { streamText } from "ai";
 
 // Workflow with merged draft and progress state
 // Updated: Combined DraftState and ProgressUpdate into single DraftProgress
@@ -154,9 +154,10 @@ function getModelInstance(config: ModelConfig): any {
   }
 }
 
-const UpdateDraftWorkflow = gensx.Workflow(
-  "updateDraft",
-  ({ userMessage, currentDraft, models }: UpdateDraftInput) => {
+// Create a component that handles the actual workflow logic
+const UpdateDraftComponent = gensx.Component(
+  "UpdateDraftComponent",
+  async function* ({ userMessage, currentDraft, models }: UpdateDraftInput) {
     // Initialize model streams
     const modelStreams: ModelStreamState[] = models.map((model) => ({
       modelId: model.id,
@@ -245,7 +246,7 @@ const UpdateDraftWorkflow = gensx.Workflow(
           // Stream chunks
           for await (const chunk of result.textStream) {
             // Update model content
-            modelStream.content += chunk;
+            modelStream.content += chunk as string;
 
             // Update stats
             const words = modelStream.content
@@ -416,7 +417,17 @@ const UpdateDraftWorkflow = gensx.Workflow(
       gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
     };
 
-    return generator();
+    // Use yield* to delegate to the generator
+    yield* generator();
+  },
+);
+
+// Create the workflow that calls the component
+const UpdateDraftWorkflow = gensx.Workflow(
+  "updateDraft",
+  ({ userMessage, currentDraft, models }: UpdateDraftInput) => {
+    // Call the component which handles all the logic
+    return UpdateDraftComponent({ userMessage, currentDraft, models });
   },
 );
 

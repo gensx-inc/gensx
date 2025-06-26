@@ -4,17 +4,16 @@ import { NextRequest } from "next/server";
 type RequestBody = Record<string, unknown>;
 
 const shouldUseLocalDevServer = () => {
-  return false;
-  // if (
-  //   process.env.GENSX_BASE_URL &&
-  //   !process.env.GENSX_BASE_URL.includes("localhost")
-  // ) {
-  //   return false;
-  // }
-  // if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
-  //   return false;
-  // }
-  // return true;
+  if (
+    process.env.GENSX_BASE_URL &&
+    !process.env.GENSX_BASE_URL.includes("localhost")
+  ) {
+    return false;
+  }
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
+    return false;
+  }
+  return true;
 };
 
 /**
@@ -67,24 +66,28 @@ export async function POST(request: NextRequest) {
         environment,
       });
     } else {
+      console.log("Using local dev server");
       gensx = new GenSX({
         baseUrl: process.env.GENSX_BASE_URL ?? "http://localhost:1337",
       });
+      console.log("Initialized local dev server");
     }
 
     // Use runRaw to get the direct response
 
+    console.log("Running workflow");
     const response = await gensx.runRaw(workflowName, {
       inputs,
       format,
     });
-
+    console.log("Workflow response", response);
     // Determine content type based on format
     const contentType = {
       sse: "text/event-stream",
       ndjson: "application/x-ndjson",
       json: "application/json",
     }[format];
+    console.log("Content type", contentType);
 
     // Return the response directly to the client
     // This preserves the response format
