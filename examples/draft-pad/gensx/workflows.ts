@@ -114,7 +114,27 @@ type UpdateDraftInput = {
   models: ModelConfig[];
 };
 
-type UpdateDraftOutput = string;
+// Updated output type to include all model results
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type UpdateDraftOutput = {
+  results: ModelStreamState[];
+  summary: {
+    totalModels: number;
+    successfulModels: number;
+    failedModels: number;
+    totalGenerationTime: number; // in seconds
+    totalInputTokens: number;
+    totalOutputTokens: number;
+    fastestModel?: {
+      modelId: string;
+      time: number;
+    };
+    slowestModel?: {
+      modelId: string;
+      time: number;
+    };
+  };
+};
 
 // Helper function to get model instance
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,7 +176,11 @@ function getModelInstance(config: ModelConfig): any {
 
 const UpdateDraftWorkflow = gensx.Workflow(
   "updateDraft",
-  ({ userMessage, currentDraft, models }: UpdateDraftInput) => {
+  async ({
+    userMessage,
+    currentDraft,
+    models,
+  }: UpdateDraftInput): Promise<UpdateDraftOutput> => {
     // Initialize model streams
     const modelStreams: ModelStreamState[] = models.map((model) => ({
       modelId: model.id,
@@ -211,212 +235,189 @@ const UpdateDraftWorkflow = gensx.Workflow(
     draftProgress.lastUpdated = new Date().toISOString();
     gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
 
-    // Create parallel streams for each model
-    const modelGenerators = models.map((modelConfig, index) => {
+    // Create parallel promises for each model
+    const modelPromises = models.map(async (modelConfig, index) => {
       const modelStream = draftProgress.modelStreams[index];
 
-      // Create async generator for this model
-      return (async function* () {
-        try {
-          // Update model stream to generating and record start time
-          modelStream.status = "generating";
-          modelStream.startTime = Date.now();
-          modelStream.inputTokens = estimatedInputTokens;
-          gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
-
-          const model = getModelInstance(modelConfig);
-          const result = streamText({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            onFinish: ({ usage }) => {
-              // Update exact token counts from the response
-              modelStream.inputTokens = usage.promptTokens;
-              modelStream.outputTokens = usage.completionTokens;
-              gensx.publishObject<DraftProgress>(
-                "draft-progress",
-                draftProgress,
-              );
-            },
-          });
-
-          // Stream chunks
-          for await (const chunk of result.textStream) {
-            // Update model content
-            modelStream.content += chunk as string;
-
-            // Update stats
-            const words = modelStream.content
-              .split(/\s+/)
-              .filter((word) => word.length > 0);
-            modelStream.wordCount = words.length;
-            modelStream.charCount = modelStream.content.length;
-
-            // Yield chunk data
-            yield {
-              modelId: modelConfig.id,
-              index,
-              chunk,
-              error: null,
-              done: false,
-            };
-          }
-
-          // Model completed successfully
-          modelStream.status = "complete";
-          modelStream.endTime = Date.now();
-          if (modelStream.startTime) {
-            modelStream.generationTime =
-              (modelStream.endTime - modelStream.startTime) / 1000;
-          }
-          draftProgress.completedModels++;
-
-          yield {
-            modelId: modelConfig.id,
-            index,
-            chunk: null,
-            error: null,
-            done: true,
-          };
-        } catch (error) {
-          // Handle model initialization or streaming errors
-          modelStream.status = "error";
-
-          // Extract more meaningful error message
-          let errorMessage = "Unknown error";
-          if (error instanceof Error) {
-            // Check for specific API errors
-            if (
-              error.message.includes("model") &&
-              error.message.includes("does not exist")
-            ) {
-              errorMessage = `Model not available: ${modelConfig.model}`;
-            } else if (error.message.includes("API key")) {
-              errorMessage = `Invalid or missing API key for ${modelConfig.provider}`;
-            } else if (error.message.includes("rate limit")) {
-              errorMessage = "Rate limit exceeded. Please try again later.";
-            } else if (error.message.includes("timeout")) {
-              errorMessage = "Request timed out. Please try again.";
-            } else {
-              // For other errors, show a cleaner message
-              errorMessage = error.message.split("\n")[0]; // Take only first line
-              // Limit length for display
-              if (errorMessage.length > 100) {
-                errorMessage = errorMessage.substring(0, 97) + "...";
-              }
-            }
-          }
-
-          modelStream.error = errorMessage;
-          modelStream.endTime = Date.now();
-          if (modelStream.startTime) {
-            modelStream.generationTime =
-              (modelStream.endTime - modelStream.startTime) / 1000;
-          }
-          draftProgress.completedModels++; // Count as completed even if error
-          gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
-
-          yield {
-            modelId: modelConfig.id,
-            index,
-            chunk: null,
-            error: errorMessage,
-            done: true,
-          };
-        }
-      })();
-    });
-
-    // Return async generator function
-    const generator = async function* () {
-      // Create iterators for each generator
-      const iterators = modelGenerators.map((gen) =>
-        gen[Symbol.asyncIterator](),
-      );
-      const activeIterators = new Set(iterators.map((_, idx) => idx));
-
-      // Check if all models failed to initialize
-      if (activeIterators.size === 0) {
-        draftProgress.status = "complete";
-        draftProgress.stage = "complete";
-        draftProgress.message = "No models available";
+      try {
+        // Update model stream to generating and record start time
+        modelStream.status = "generating";
+        modelStream.startTime = Date.now();
+        modelStream.inputTokens = estimatedInputTokens;
         gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
-        return;
-      }
 
-      // Process chunks as they arrive from any model
-      while (activeIterators.size > 0) {
-        // Create promises for next chunk from each active iterator
-        const promises = Array.from(activeIterators).map(async (idx) => {
-          try {
-            const result = await iterators[idx].next();
-            return { idx, result: result.value, done: result.done };
-          } catch (error) {
-            return {
-              idx,
-              result: {
-                error: error instanceof Error ? error.message : "Unknown error",
-                done: true,
-              },
-              done: true,
-            };
-          }
+        const model = getModelInstance(modelConfig);
+        const result = streamText({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          onFinish: ({ usage }) => {
+            // Update exact token counts from the response
+            modelStream.inputTokens = usage.promptTokens;
+            modelStream.outputTokens = usage.completionTokens;
+            gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+          },
         });
 
-        // Race to get the first available chunk
-        const finishedPromise = await Promise.race(promises);
-        const { idx, result, done } = finishedPromise;
+        // Process the stream internally to update progress
+        for await (const chunk of result.textStream) {
+          // Update model content
+          modelStream.content += chunk as string;
 
-        if (done || (result && result.done)) {
-          activeIterators.delete(idx);
+          // Update stats
+          const words = modelStream.content
+            .split(/\s+/)
+            .filter((word) => word.length > 0);
+          modelStream.wordCount = words.length;
+          modelStream.charCount = modelStream.content.length;
+
+          // Publish progress update (but don't yield anything)
+          gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
         }
 
-        if (result && !result.done && "chunk" in result && result.chunk) {
-          // Yield the chunk
-          yield JSON.stringify({
-            modelId: result.modelId,
-            chunk: result.chunk,
-          });
+        // Model completed successfully
+        modelStream.status = "complete";
+        modelStream.endTime = Date.now();
+        if (modelStream.startTime) {
+          modelStream.generationTime =
+            (modelStream.endTime - modelStream.startTime) / 1000;
         }
-
-        // Update progress
-        const totalCompleted = draftProgress.completedModels;
-        const totalActive = activeIterators.size;
-        draftProgress.stage = totalActive > 0 ? "streaming" : "finalizing";
-        draftProgress.percentage = Math.min(
-          50 + (totalCompleted / models.length) * 40,
-          90,
-        );
-        draftProgress.message = `${totalActive} models generating, ${totalCompleted} completed...`;
-        draftProgress.lastUpdated = new Date().toISOString();
+        draftProgress.completedModels++;
         gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+
+        return modelStream.content; // Return the final content
+      } catch (error) {
+        // Handle model initialization or streaming errors
+        modelStream.status = "error";
+
+        // Extract more meaningful error message
+        let errorMessage = "Unknown error";
+        if (error instanceof Error) {
+          // Check for specific API errors
+          if (
+            error.message.includes("model") &&
+            error.message.includes("does not exist")
+          ) {
+            errorMessage = `Model not available: ${modelConfig.model}`;
+          } else if (error.message.includes("API key")) {
+            errorMessage = `Invalid or missing API key for ${modelConfig.provider}`;
+          } else if (error.message.includes("rate limit")) {
+            errorMessage = "Rate limit exceeded. Please try again later.";
+          } else if (error.message.includes("timeout")) {
+            errorMessage = "Request timed out. Please try again.";
+          } else {
+            // For other errors, show a cleaner message
+            errorMessage = error.message.split("\n")[0]; // Take only first line
+            // Limit length for display
+            if (errorMessage.length > 100) {
+              errorMessage = errorMessage.substring(0, 97) + "...";
+            }
+          }
+        }
+
+        modelStream.error = errorMessage;
+        modelStream.endTime = Date.now();
+        if (modelStream.startTime) {
+          modelStream.generationTime =
+            (modelStream.endTime - modelStream.startTime) / 1000;
+        }
+        draftProgress.completedModels++; // Count as completed even if error
+        gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+
+        throw error; // Re-throw to be caught by Promise.allSettled
       }
+    });
 
-      // Final progress update
-      draftProgress.stage = "finalizing";
-      draftProgress.percentage = 95;
-      draftProgress.message = "Finalizing all content streams...";
-      draftProgress.lastUpdated = new Date().toISOString();
-      gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+    // Wait for all models to complete (or fail)
+    draftProgress.stage = "streaming";
+    draftProgress.message = `Processing ${models.length} models...`;
+    gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
 
-      // Publish end event
-      gensx.publishEvent<EndContentEvent>("content-events", {
-        type: "endContent",
-        content: "draftContent",
-      });
+    await Promise.allSettled(modelPromises);
 
-      // Final complete state
-      draftProgress.status = "complete";
-      draftProgress.stage = "complete";
-      draftProgress.percentage = 100;
-      draftProgress.message = `Content generation complete! Generated content from ${draftProgress.completedModels} of ${models.length} models.`;
-      draftProgress.lastUpdated = new Date().toISOString();
-      gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+    // Final progress update
+    draftProgress.stage = "finalizing";
+    draftProgress.percentage = 95;
+    draftProgress.message = "Finalizing all content streams...";
+    draftProgress.lastUpdated = new Date().toISOString();
+    gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+
+    // Publish end event
+    gensx.publishEvent<EndContentEvent>("content-events", {
+      type: "endContent",
+      content: "draftContent",
+    });
+
+    // Final complete state
+    draftProgress.status = "complete";
+    draftProgress.stage = "complete";
+    draftProgress.percentage = 100;
+    draftProgress.message = `Content generation complete! Generated content from ${draftProgress.completedModels} of ${models.length} models.`;
+    draftProgress.lastUpdated = new Date().toISOString();
+    gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
+
+    // Calculate summary statistics
+    const successfulModels = draftProgress.modelStreams.filter(
+      (model) => model.status === "complete" && model.content.length > 0,
+    );
+    const failedModels = draftProgress.modelStreams.filter(
+      (model) => model.status === "error",
+    );
+
+    // Calculate timing statistics
+    const modelsWithTiming = draftProgress.modelStreams.filter(
+      (model) => model.generationTime !== undefined,
+    );
+    const totalGenerationTime = modelsWithTiming.reduce(
+      (sum, model) => sum + (model.generationTime ?? 0),
+      0,
+    );
+
+    let fastestModel: { modelId: string; time: number } | undefined;
+    let slowestModel: { modelId: string; time: number } | undefined;
+
+    if (modelsWithTiming.length > 0) {
+      const sortedByTime = [...modelsWithTiming].sort(
+        (a, b) => (a.generationTime ?? 0) - (b.generationTime ?? 0),
+      );
+      fastestModel = {
+        modelId: sortedByTime[0].modelId,
+        time: sortedByTime[0].generationTime ?? 0,
+      };
+      slowestModel = {
+        modelId: sortedByTime[sortedByTime.length - 1].modelId,
+        time: sortedByTime[sortedByTime.length - 1].generationTime ?? 0,
+      };
+    }
+
+    // Calculate token statistics
+    const totalInputTokens = draftProgress.modelStreams.reduce(
+      (sum, model) => sum + (model.inputTokens ?? 0),
+      0,
+    );
+    const totalOutputTokens = draftProgress.modelStreams.reduce(
+      (sum, model) => sum + (model.outputTokens ?? 0),
+      0,
+    );
+
+    // Return comprehensive results
+    const output: UpdateDraftOutput = {
+      results: draftProgress.modelStreams,
+      summary: {
+        totalModels: models.length,
+        successfulModels: successfulModels.length,
+        failedModels: failedModels.length,
+        totalGenerationTime,
+        totalInputTokens,
+        totalOutputTokens,
+        fastestModel,
+        slowestModel,
+      },
     };
 
-    return generator();
+    return output;
   },
 );
 

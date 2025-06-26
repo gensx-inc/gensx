@@ -1,172 +1,180 @@
-import { describe, expect, it } from "vitest";
+import { existsSync, renameSync } from "fs";
+
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { type ModelConfig, UpdateDraftWorkflow } from "./workflows";
 
-describe("UpdateDraftWorkflow - Integration Test", () => {
-  it("should run the workflow with a real model", async () => {
-    // Use a simple model configuration - adjust based on what API keys you have
-    const testModels: ModelConfig[] = [
+// Setup for PostCSS config conflict
+let postcssRenamed = false;
+
+beforeAll(() => {
+  // Temporarily rename postcss.config.mjs to avoid conflicts with vitest
+  if (existsSync("postcss.config.mjs")) {
+    renameSync("postcss.config.mjs", "postcss.config.mjs.backup");
+    postcssRenamed = true;
+  }
+});
+
+afterAll(() => {
+  // Restore postcss.config.mjs
+  if (postcssRenamed && existsSync("postcss.config.mjs.backup")) {
+    renameSync("postcss.config.mjs.backup", "postcss.config.mjs");
+  }
+});
+
+describe("UpdateDraftWorkflow", () => {
+  it("should generate content with a single model", async () => {
+    const models: ModelConfig[] = [
       {
-        id: "test-gpt-3.5",
+        id: "test-openai",
         provider: "openai",
-        model: "gpt-3.5-turbo",
-        displayName: "GPT-3.5 Turbo Test",
-        available: true,
+        model: "gpt-4o-mini",
+        displayName: "GPT-4O Mini",
       },
     ];
 
-    // Create test input
-    const input = {
-      userMessage: "Make this text more concise",
-      currentDraft:
-        "This is a very long and verbose piece of text that could definitely be made shorter and more to the point without losing any of the important meaning.",
-      models: testModels,
-    };
-
-    // Run the workflow with runtime options
-    const generator = await UpdateDraftWorkflow(input, {
-      messageListener: () => {
-        // Silently consume events
+    const result = await UpdateDraftWorkflow(
+      {
+        userMessage: "Write a short haiku about testing",
+        currentDraft: "",
+        models,
       },
-    });
-
-    // Collect all chunks
-    const chunks: string[] = [];
-    let chunkCount = 0;
-
-    for await (const chunk of generator) {
-      chunks.push(chunk);
-      chunkCount++;
-    }
-
-    // Basic assertions
-    expect(chunkCount).toBeGreaterThan(0);
-    expect(chunks.length).toBeGreaterThan(0);
-
-    // Parse and validate some chunks
-    const parsedChunks = chunks
-      .filter((chunk) => chunk.trim())
-      .map((chunk) => {
-        try {
-          return JSON.parse(chunk);
-        } catch {
-          return null;
-        }
-      })
-      .filter(Boolean);
-
-    // Should have received some valid JSON chunks
-    expect(parsedChunks.length).toBeGreaterThan(0);
-
-    // Check that we got chunks with the expected model ID
-    const modelChunks = parsedChunks.filter(
-      (chunk) => chunk.modelId === "test-gpt-3.5",
+      {
+        messageListener: (msg: unknown) => {
+          console.log("Message:", JSON.stringify(msg, null, 2));
+        },
+      },
     );
-    expect(modelChunks.length).toBeGreaterThan(0);
 
-    // Verify we got actual content
-    const contentChunks = modelChunks.filter((chunk) => chunk.chunk);
-    expect(contentChunks.length).toBeGreaterThan(0);
+    // Check the structure of the response
+    expect(result).toBeDefined();
+    expect(result).toHaveProperty("results");
+    expect(result).toHaveProperty("summary");
 
-    // Concatenate all content to verify we got a response
-    const fullContent = contentChunks.map((chunk) => chunk.chunk).join("");
+    // Check results array
+    expect(Array.isArray(result.results)).toBe(true);
+    expect(result.results).toHaveLength(1);
 
-    expect(fullContent).toBeTruthy();
-    expect(fullContent.length).toBeGreaterThan(0);
+    const modelResult = result.results[0];
+    expect(modelResult.modelId).toBe("test-openai");
+    expect(modelResult.displayName).toBe("GPT-4O Mini");
+    expect(modelResult.status).toBe("complete");
+    expect(modelResult.content).toBeDefined();
+    expect(modelResult.content.length).toBeGreaterThan(0);
+    expect(modelResult.wordCount).toBeGreaterThan(0);
+    expect(modelResult.generationTime).toBeGreaterThan(0);
 
-    // The response should be shorter than the original (since we asked for conciseness)
-    expect(fullContent.length).toBeLessThan(input.currentDraft.length);
-  }, 30000); // 30 second timeout for API calls
+    // Check summary
+    expect(result.summary.totalModels).toBe(1);
+    expect(result.summary.successfulModels).toBe(1);
+    expect(result.summary.failedModels).toBe(0);
+    expect(result.summary.totalInputTokens).toBeGreaterThan(0);
+    expect(result.summary.totalOutputTokens).toBeGreaterThan(0);
+    expect(result.summary.fastestModel).toBeDefined();
+    expect(result.summary.fastestModel?.modelId).toBe("test-openai");
+
+    console.log("Generated content:", modelResult.content);
+    console.log("Summary:", result.summary);
+  }, 30000);
 
   it("should handle multiple models in parallel", async () => {
-    // Test with multiple models if you have multiple API keys
-    const testModels: ModelConfig[] = [
+    const models: ModelConfig[] = [
       {
-        id: "model-1",
+        id: "test-openai-1",
+        provider: "openai",
+        model: "gpt-4o-mini",
+        displayName: "GPT-4O Mini",
+      },
+      {
+        id: "test-openai-2",
         provider: "openai",
         model: "gpt-3.5-turbo",
         displayName: "GPT-3.5 Turbo",
-        available: true,
       },
-      // Uncomment if you have Anthropic API key
-      // {
-      //   id: "model-2",
-      //   provider: "anthropic",
-      //   model: "claude-3-haiku-20240307",
-      //   displayName: "Claude 3 Haiku",
-      //   available: true,
-      // },
     ];
 
-    const input = {
-      userMessage: "Write a haiku about testing",
-      currentDraft: "",
-      models: testModels,
-    };
+    const result = await UpdateDraftWorkflow(
+      {
+        userMessage: "Write a very short poem about parallel processing",
+        currentDraft: "",
+        models,
+      },
+      {
+        messageListener: (msg: unknown) => {
+          console.log("Message:", JSON.stringify(msg, null, 2));
+        },
+      },
+    );
 
-    const generator = await UpdateDraftWorkflow(input);
+    // Check the structure
+    expect(result.results).toHaveLength(2);
+    expect(result.summary.totalModels).toBe(2);
+    expect(result.summary.successfulModels).toBe(2);
+    expect(result.summary.failedModels).toBe(0);
 
-    const modelResponses = new Map<string, string>();
+    // Check both models completed
+    result.results.forEach((modelResult) => {
+      expect(modelResult.status).toBe("complete");
+      expect(modelResult.content.length).toBeGreaterThan(0);
+      expect(modelResult.generationTime).toBeGreaterThan(0);
+    });
 
-    for await (const chunk of generator) {
-      if (!chunk.trim()) continue;
+    // Check timing statistics
+    expect(result.summary.fastestModel).toBeDefined();
+    expect(result.summary.slowestModel).toBeDefined();
+    expect(result.summary.totalGenerationTime).toBeGreaterThan(0);
 
-      try {
-        const parsed = JSON.parse(chunk);
-        if (parsed.modelId && parsed.chunk) {
-          const existing = modelResponses.get(parsed.modelId) ?? "";
-          modelResponses.set(
-            parsed.modelId,
-            existing + (parsed.chunk as string),
-          );
-        }
-      } catch {
-        // Skip non-JSON chunks
-      }
-    }
-
-    // Should have responses from all models
-    expect(modelResponses.size).toBe(testModels.length);
-
-    // Each model should have produced some content
-    for (const [modelId, content] of modelResponses) {
-      expect(content).toBeTruthy();
-      expect(content.length).toBeGreaterThan(0);
-      console.log(`Model ${modelId} response:`, content);
-    }
+    console.log("Model 1 content:", result.results[0].content);
+    console.log("Model 2 content:", result.results[1].content);
+    console.log("Fastest model:", result.summary.fastestModel);
+    console.log("Slowest model:", result.summary.slowestModel);
   }, 30000);
 
-  it("should handle workflow errors gracefully", async () => {
-    // Test with an invalid model to ensure error handling works
-    const testModels: ModelConfig[] = [
+  it("should handle errors gracefully", async () => {
+    const models: ModelConfig[] = [
       {
-        id: "invalid-model",
+        id: "test-invalid",
         provider: "openai",
-        model: "gpt-99-ultra", // Non-existent model
+        model: "invalid-model-name",
         displayName: "Invalid Model",
-        available: true,
       },
     ];
 
-    const input = {
-      userMessage: "Test error handling",
-      currentDraft: "Test content",
-      models: testModels,
-    };
+    const result = await UpdateDraftWorkflow(
+      {
+        userMessage: "Write something",
+        currentDraft: "",
+        models,
+      },
+      {
+        messageListener: (msg: unknown) => {
+          console.log("Error test message:", JSON.stringify(msg, null, 2));
+        },
+      },
+    );
 
-    const generator = await UpdateDraftWorkflow(input);
+    // Even with errors, we should get a result structure
+    expect(result).toBeDefined();
+    expect(result.results).toHaveLength(1);
+    expect(result.summary.totalModels).toBe(1);
 
-    let errorFound = false;
+    const modelResult = result.results[0];
+    expect(modelResult.modelId).toBe("test-invalid");
 
-    for await (const chunk of generator) {
-      // The workflow should complete even with errors
-      if (chunk.includes("error") || chunk.includes("Model not available")) {
-        errorFound = true;
-      }
+    // The model should either have failed with an error or returned empty content
+    const hasError = modelResult.status === "error" && modelResult.error;
+    const hasEmptyContent =
+      modelResult.status === "complete" && modelResult.content === "";
+
+    expect(Boolean(hasError) || Boolean(hasEmptyContent)).toBe(true);
+
+    if (hasError) {
+      expect(result.summary.failedModels).toBe(1);
+      expect(result.summary.successfulModels).toBe(0);
+      console.log("Model failed with error:", modelResult.error);
+    } else {
+      expect(result.summary.successfulModels).toBe(0); // Empty content doesn't count as successful
+      console.log("Model returned empty content");
     }
-
-    // We expect the workflow to handle the error gracefully
-    // It should complete without throwing
-    expect(errorFound).toBe(false); // The error is in the progress object, not the chunks
-  });
+  }, 30000);
 });
