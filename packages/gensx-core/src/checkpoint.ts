@@ -21,13 +21,12 @@ const gzipAsync = promisify(gzip);
 export function generateDeterministicId(
   name: string,
   props: Record<string, unknown>,
-  sequenceNumber: number,
   parentId?: string,
 ): string {
   // Simple but effective serialization for MVP
   const propsStr = JSON.stringify(props, Object.keys(props).sort());
   const propsHash = createHash("sha256")
-    .update(`${propsStr}:${parentId ?? "root"}:${sequenceNumber}`)
+    .update(`${propsStr}:${parentId ?? "root"}`)
     .digest("hex")
     .slice(0, 16);
 
@@ -69,7 +68,10 @@ export class CheckpointManager implements CheckpointWriter {
   private executionRunId?: string;
 
   // Replay functionality
-  private replayLookup = new Map<string, unknown>();
+  private replayLookup = new Map<
+    string,
+    (ExecutionNode & { consumed: boolean })[]
+  >();
   private sourceCheckpoint?: ExecutionNode;
 
   // Provide unified view of all secrets
@@ -792,6 +794,14 @@ export class CheckpointManager implements CheckpointWriter {
     this.printUrl = printUrl;
   }
 
+  getSequenceNumber(nodeId: string): number {
+    const node = this.nodes.get(nodeId);
+    if (node) {
+      return node.sequenceNumber;
+    }
+    throw new Error(`Node ${nodeId} not found`);
+  }
+
   updateNode(id: string, updates: Partial<ExecutionNode>) {
     const node = this.nodes.get(id);
     if (node) {
@@ -850,16 +860,42 @@ export class CheckpointManager implements CheckpointWriter {
 
   private buildReplayLookup(node: ExecutionNode) {
     if (node.endTime && node.output !== undefined) {
-      this.replayLookup.set(node.id, node.output);
+      if (!this.replayLookup.has(node.id)) {
+        this.replayLookup.set(node.id, []);
+      }
+      this.replayLookup.get(node.id)!.push({ ...node, consumed: false });
     }
     node.children.forEach((child) => {
       this.buildReplayLookup(child);
     });
   }
 
-  getCompletedResult(nodeId: string): unknown {
+  getCompletedResult(nodeId: string, sequenceNumber: number): unknown {
     const result = this.replayLookup.get(nodeId);
-    return result;
+    if (!result) {
+      return undefined;
+    }
+
+    // first try to find the node with the correct sequence number
+    const node = result.find(
+      (node) => node.sequenceNumber === sequenceNumber && !node.consumed,
+    );
+    if (node) {
+      node.consumed = true;
+      return node.output;
+    }
+
+    // then try to find the first node that hasn't been consumed
+    const firstNode = result.find((node) => !node.consumed);
+    if (firstNode) {
+      console.warn(
+        `[Checkpoint] Found Node with id "${nodeId}" but it has sequence number ${firstNode.sequenceNumber} but we expected ${sequenceNumber}`,
+      );
+      firstNode.consumed = true;
+      return firstNode.output;
+    }
+
+    return undefined;
   }
 
   // Checkpoint reconstruction methods

@@ -99,13 +99,15 @@ export function Component<P extends object = {}, R = unknown>(
     const nodeId = generateDeterministicId(
       checkpointName,
       props_for_id,
-      sequenceNumber,
       currentNodeId,
     );
 
     // Check checkpoint for existing result
     // TODO: Move this into the checkpoint manager so it is entirely responsible for managing the cache and generating node ids.
-    const cachedResult = checkpointManager.getCompletedResult(nodeId);
+    const cachedResult = checkpointManager.getCompletedResult(
+      nodeId,
+      sequenceNumber,
+    );
     if (cachedResult !== undefined) {
       console.info(`[Replay] Using cached result for ${name} (${nodeId})`);
 

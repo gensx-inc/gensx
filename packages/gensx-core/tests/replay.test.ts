@@ -34,7 +34,7 @@ suite("checkpoint replay", () => {
       sequenceNumber: 0,
       children: [
         {
-          id: "ExpensiveComponent:c6cc661b5d504e02",
+          id: "ExpensiveComponent:8a2b95df3bafc8df",
           componentName: "ExpensiveComponent",
           parentId: "TestWorkflow:-",
           startTime: Date.now() - 900,
@@ -138,7 +138,7 @@ suite("checkpoint replay", () => {
       sequenceNumber: 0,
       children: [
         {
-          id: "CachedComponent:c6cc661b5d504e02",
+          id: "CachedComponent:8a2b95df3bafc8df",
           componentName: "CachedComponent",
           parentId: "TestWorkflow:-",
           startTime: Date.now() - 900,
@@ -202,7 +202,7 @@ suite("checkpoint replay", () => {
 
     // Create checkpoint with nested completed components
     const mockCheckpoint: ExecutionNode = {
-      id: "TestWorkflow:7548c5ccf3e1e09c",
+      id: "TestWorkflow:-",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       endTime: Date.now() - 100,
@@ -211,9 +211,9 @@ suite("checkpoint replay", () => {
       sequenceNumber: 0,
       children: [
         {
-          id: "MiddleComponent:156403d8f795a18e",
+          id: "MiddleComponent:8a2b95df3bafc8df",
           componentName: "MiddleComponent",
-          parentId: "TestWorkflow:7548c5ccf3e1e09c",
+          parentId: "TestWorkflow:e3aab1c267157d72",
           startTime: Date.now() - 900,
           endTime: Date.now() - 200,
           props: { input: "test" },
@@ -221,9 +221,9 @@ suite("checkpoint replay", () => {
           sequenceNumber: 1,
           children: [
             {
-              id: "LeafComponent:93268aced3bf3c80",
+              id: "LeafComponent:d1249f33876ae0a7",
               componentName: "LeafComponent",
-              parentId: "MiddleComponent:156403d8f795a18e",
+              parentId: "MiddleComponent:8a2b95df3bafc8df",
               startTime: Date.now() - 800,
               endTime: Date.now() - 700,
               props: { value: "test" },
@@ -359,7 +359,7 @@ suite("checkpoint replay", () => {
       sequenceNumber: 0,
       children: [
         {
-          id: "CachedComponent:c6cc661b5d504e02",
+          id: "CachedComponent:8a2b95df3bafc8df",
           componentName: "CachedComponent",
           parentId: "TestWorkflow:-",
           startTime: Date.now() - 900,

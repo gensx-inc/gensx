@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
-  ExternalToolCallMessage,
+  ExternalInputMessage,
   ExternalToolResponseMessage,
   WorkflowMessage,
   WorkflowMessageListener,
@@ -603,7 +603,7 @@ suite("workflow state", () => {
 
   suite("External Tool Messages", () => {
     test("ExternalToolCallMessage has correct structure", () => {
-      const message: ExternalToolCallMessage = {
+      const message: ExternalInputMessage = {
         type: "external-tool-call",
         toolName: "testTool",
         params: { text: "Hello", count: 42 },
@@ -662,7 +662,7 @@ suite("workflow state", () => {
         },
       };
 
-      const message: ExternalToolCallMessage = {
+      const message: ExternalInputMessage = {
         type: "external-tool-call",
         toolName: "complexTool",
         params: complexParams,
@@ -728,12 +728,15 @@ suite("workflow state", () => {
       expect(toolResponseMessage.type).toBe("external-tool-response");
 
       // TypeScript should allow these as WorkflowMessage types
-      const messages: WorkflowMessage[] = [toolCallMessage, toolResponseMessage];
+      const messages: WorkflowMessage[] = [
+        toolCallMessage,
+        toolResponseMessage,
+      ];
       expect(messages).toHaveLength(2);
     });
 
     test("External tool messages can be JSON serialized and deserialized", () => {
-      const callMessage: ExternalToolCallMessage = {
+      const callMessage: ExternalInputMessage = {
         type: "external-tool-call",
         toolName: "jsonTestTool",
         params: {
@@ -756,10 +759,14 @@ suite("workflow state", () => {
 
       // Serialize and deserialize
       const serializedCall = JSON.stringify(callMessage);
-      const deserializedCall = JSON.parse(serializedCall) as ExternalToolCallMessage;
+      const deserializedCall = JSON.parse(
+        serializedCall,
+      ) as ExternalInputMessage;
 
       const serializedResponse = JSON.stringify(responseMessage);
-      const deserializedResponse = JSON.parse(serializedResponse) as ExternalToolResponseMessage;
+      const deserializedResponse = JSON.parse(
+        serializedResponse,
+      ) as ExternalToolResponseMessage;
 
       expect(deserializedCall).toEqual(callMessage);
       expect(deserializedResponse).toEqual(responseMessage);
