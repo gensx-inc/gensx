@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unused-vars */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { getCurrentContext } from "../src/context.js";
 import {
-  createToolImplementations,
   createToolBox,
+  createToolImplementations,
   executeExternalTool,
   InferToolParams,
   InferToolResult,
@@ -85,7 +87,8 @@ describe("External Tools", () => {
 
       const tools = createToolImplementations<typeof toolBox>({
         promptUser: (params) => `You said: ${params.text}`,
-        calculateSum: async (params) => params.a + params.b,
+        calculateSum: async (params) =>
+          await Promise.resolve(params.a + params.b),
       });
 
       // Test sync tool
@@ -101,19 +104,22 @@ describe("External Tools", () => {
   describe("Type inference", () => {
     it("should properly infer parameter and result types", () => {
       const toolDef = {
-        params: z.object({ 
-          name: z.string(), 
-          age: z.number().optional() 
+        params: z.object({
+          name: z.string(),
+          age: z.number().optional(),
         }),
-        result: z.object({ 
+        result: z.object({
           greeting: z.string(),
-          canVote: z.boolean()
+          canVote: z.boolean(),
         }),
       };
+      const tools = createToolBox({
+        testTool: toolDef,
+      });
 
       // These are compile-time tests - they should not cause TypeScript errors
-      type Params = InferToolParams<typeof toolDef>;
-      type Result = InferToolResult<typeof toolDef>;
+      type Params = InferToolParams<typeof tools, "testTool">;
+      type Result = InferToolResult<typeof tools, "testTool">;
 
       // Runtime verification that the types work correctly
       const params: Params = { name: "John", age: 25 };
@@ -173,9 +179,9 @@ describe("External Tools", () => {
     it("should validate params against schema", async () => {
       const toolBox = createToolBox({
         strictTool: {
-          params: z.object({ 
+          params: z.object({
             requiredString: z.string(),
-            requiredNumber: z.number()
+            requiredNumber: z.number(),
           }),
           result: z.string(),
         },
@@ -183,14 +189,18 @@ describe("External Tools", () => {
 
       // Should throw validation error for invalid params
       await expect(() =>
-        executeExternalTool(toolBox, "strictTool", { requiredString: "test" })
+        // @ts-expect-error - wrong type
+        executeExternalTool(toolBox, "strictTool", {
+          requiredString: "test",
+        }),
       ).rejects.toThrow(); // Missing requiredNumber
 
       await expect(() =>
-        executeExternalTool(toolBox, "strictTool", { 
+        executeExternalTool(toolBox, "strictTool", {
+          // @ts-expect-error - wrong type
           requiredString: 123, // Wrong type
-          requiredNumber: 456 
-        })
+          requiredNumber: 456,
+        }),
       ).rejects.toThrow();
     });
 
@@ -213,7 +223,7 @@ describe("External Tools", () => {
       expect(mockWorkflowContext.sendWorkflowMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           nodeId: "unknown",
-        })
+        }),
       );
     });
   });
@@ -223,31 +233,20 @@ describe("External Tools", () => {
       // Define a realistic set of tools
       const toolBox = createToolBox({
         promptUser: {
-          params: z.object({ 
+          params: z.object({
             text: z.string(),
-            defaultValue: z.string().optional() 
+            defaultValue: z.string().optional(),
           }),
           result: z.string(),
         },
-        uploadFile: {
-          params: z.object({ 
-            file: z.instanceof(File),
-            description: z.string().optional()
-          }),
-          result: z.object({ 
-            id: z.string(), 
-            url: z.string(),
-            filename: z.string()
-          }),
-        },
         calculateStats: {
-          params: z.object({ 
-            numbers: z.array(z.number()) 
+          params: z.object({
+            numbers: z.array(z.number()),
           }),
           result: z.object({
             sum: z.number(),
             average: z.number(),
-            count: z.number()
+            count: z.number(),
           }),
         },
       });
@@ -256,13 +255,6 @@ describe("External Tools", () => {
       const tools = createToolImplementations<typeof toolBox>({
         promptUser: (params) => {
           return params.defaultValue ?? `User input for: ${params.text}`;
-        },
-        uploadFile: (params) => {
-          return Promise.resolve({
-            id: `file-${Date.now()}`,
-            url: `https://example.com/files/${params.file.name}`,
-            filename: params.file.name,
-          });
         },
         calculateStats: (params) => {
           const sum = params.numbers.reduce((a, b) => a + b, 0);
@@ -275,15 +267,17 @@ describe("External Tools", () => {
       });
 
       // Test the tools
-      expect(tools.promptUser.execute({ text: "What's your name?" }))
-        .toBe("User input for: What's your name?");
+      expect(tools.promptUser.execute({ text: "What's your name?" })).toBe(
+        "User input for: What's your name?",
+      );
 
-      expect(tools.calculateStats.execute({ numbers: [1, 2, 3, 4, 5] }))
-        .toEqual({
-          sum: 15,
-          average: 3,
-          count: 5,
-        });
+      expect(
+        tools.calculateStats.execute({ numbers: [1, 2, 3, 4, 5] }),
+      ).toEqual({
+        sum: 15,
+        average: 3,
+        count: 5,
+      });
     });
   });
 });
