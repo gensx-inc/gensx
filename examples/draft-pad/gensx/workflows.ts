@@ -154,10 +154,9 @@ function getModelInstance(config: ModelConfig): any {
   }
 }
 
-// Create a component that handles the actual workflow logic
-const UpdateDraftComponent = gensx.Component(
-  "UpdateDraftComponent",
-  async function* ({ userMessage, currentDraft, models }: UpdateDraftInput) {
+const UpdateDraftWorkflow = gensx.Workflow(
+  "updateDraft",
+  ({ userMessage, currentDraft, models }: UpdateDraftInput) => {
     // Initialize model streams
     const modelStreams: ModelStreamState[] = models.map((model) => ({
       modelId: model.id,
@@ -417,17 +416,7 @@ const UpdateDraftComponent = gensx.Component(
       gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
     };
 
-    // Use yield* to delegate to the generator
-    yield* generator();
-  },
-);
-
-// Create the workflow that calls the component
-const UpdateDraftWorkflow = gensx.Workflow(
-  "updateDraft",
-  ({ userMessage, currentDraft, models }: UpdateDraftInput) => {
-    // Call the component which handles all the logic
-    return UpdateDraftComponent({ userMessage, currentDraft, models });
+    return generator();
   },
 );
 
