@@ -1,8 +1,8 @@
 import type {
-  ExternalToolResponseMessage,
+  InferToolParams,
   JsonValue,
-  ToolImplementations,
   ToolBox,
+  ToolImplementations,
   WorkflowMessage,
 } from "@gensx/core";
 
@@ -36,7 +36,7 @@ export interface WorkflowConfig {
 
 export interface UseWorkflowConfig<
   TOutput = unknown,
-  TToolBox extends ToolBox<any> = {},
+  TToolBox extends ToolBox = {},
 > {
   /**
    * All workflow configuration in one place
@@ -122,7 +122,7 @@ export interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
 export function useWorkflow<
   TInputs = unknown,
   TOutput = unknown,
-  TToolBox extends ToolBox<any> = {},
+  TToolBox extends ToolBox = {},
 >(
   options: UseWorkflowConfig<TOutput, TToolBox>,
 ): UseWorkflowResult<TInputs, TOutput> {
@@ -148,12 +148,13 @@ export function useWorkflow<
   const abortControllerRef = useRef<AbortController | null>(null);
   const outputRef = useRef<TOutput | null>(null);
   const accumulatedStringRef = useRef<string>("");
+  const executionId = useRef<string | null>(null);
 
   // Process a single WorkflowMessage event
   const processEvent = useCallback(
     (event: WorkflowMessage) => {
       // Batch all state updates for this event to prevent race conditions
-      startTransition(() => {
+      startTransition(async () => {
         // Add event to events array
         setEvents((prev) => [...prev, event]);
 
@@ -163,6 +164,7 @@ export function useWorkflow<
         // Handle specific event types and fire callbacks
         switch (event.type) {
           case "start":
+            executionId.current = event.workflowExecutionId ?? null;
             setInProgress(true);
             onStart?.(event.workflowName);
             break;
@@ -226,55 +228,64 @@ export function useWorkflow<
             onError?.(event.error);
             break;
 
-          case "external-tool-call":
+          case "external-tool":
+            console.log("external-tool", executionId);
+            if (!executionId.current) {
+              console.error(
+                "[GenSX] Cannot resolve tool call, execution ID is not set.",
+              );
+              break;
+            }
             // Handle external tool calls from workflow
             if (tools) {
               const toolImpl = tools[event.toolName as keyof typeof tools];
+
               if (toolImpl) {
-                // Execute the tool asynchronously
-                Promise.resolve(toolImpl.execute(event.params))
-                  .then((result) => {
-                    // Send response back through the message stream
-                    // Note: In a real implementation, this would need to be sent back to the workflow
-                    // For now, we'll just add it to the events
-                    const responseEvent: ExternalToolResponseMessage = {
-                      type: "external-tool-response",
-                      callId: event.callId,
-                      result: result as JsonValue,
-                    };
-                    processEvent(responseEvent);
-                  })
-                  .catch((error) => {
-                    const responseEvent: ExternalToolResponseMessage = {
-                      type: "external-tool-response",
-                      callId: event.callId,
-                      error:
-                        error instanceof Error ? error.message : String(error),
-                    };
-                    processEvent(responseEvent);
-                  });
+                const result = await toolImpl.execute(
+                  event.params as unknown as InferToolParams<
+                    TToolBox,
+                    typeof event.toolName
+                  >,
+                );
+
+                const completeNodeId = `${event.nodeId}-${event.sequenceNumber}`;
+
+                // Send this to the API
+                const response = await fetch(
+                  `${baseUrl}/workflowExecutions/${executionId.current}/resume/${completeNodeId}`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      ...headers,
+                    },
+                    body: JSON.stringify(result),
+                  },
+                );
+
+                if (!response.ok) {
+                  throw new Error(
+                    `Failed to resume workflow: ${response.status} ${response.statusText}`,
+                  );
+                }
               } else {
-                // Tool not found
-                const responseEvent: ExternalToolResponseMessage = {
-                  type: "external-tool-response",
-                  callId: event.callId,
-                  error: `Tool '${event.toolName}' not found`,
-                };
-                processEvent(responseEvent);
+                console.warn("[GenSX] Tool not found:", event.toolName);
+                throw new Error(`Tool not found: ${event.toolName}`);
               }
             }
-            break;
-
-          case "external-tool-response":
-            // Handle responses to external tool calls
-            // This would be used if the workflow was waiting for responses
-            // For now, just log it
-            console.log("External tool response:", event);
             break;
         }
       });
     },
-    [onStart, onComplete, onError, onEvent, outputTransformer, tools],
+    [
+      onStart,
+      onComplete,
+      onError,
+      onEvent,
+      outputTransformer,
+      tools,
+      executionId,
+    ],
   );
 
   // Parse streaming response
