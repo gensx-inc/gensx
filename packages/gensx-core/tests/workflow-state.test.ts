@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
-  ExternalInputMessage,
+  ExternalToolMessage,
   ExternalToolResponseMessage,
   WorkflowMessage,
   WorkflowMessageListener,
@@ -603,7 +603,7 @@ suite("workflow state", () => {
 
   suite("External Tool Messages", () => {
     test("ExternalToolCallMessage has correct structure", () => {
-      const message: ExternalInputMessage = {
+      const message: ExternalToolMessage = {
         type: "external-tool-call",
         toolName: "testTool",
         params: { text: "Hello", count: 42 },
@@ -662,7 +662,7 @@ suite("workflow state", () => {
         },
       };
 
-      const message: ExternalInputMessage = {
+      const message: ExternalToolMessage = {
         type: "external-tool-call",
         toolName: "complexTool",
         params: complexParams,
@@ -736,7 +736,7 @@ suite("workflow state", () => {
     });
 
     test("External tool messages can be JSON serialized and deserialized", () => {
-      const callMessage: ExternalInputMessage = {
+      const callMessage: ExternalToolMessage = {
         type: "external-tool-call",
         toolName: "jsonTestTool",
         params: {
@@ -761,7 +761,7 @@ suite("workflow state", () => {
       const serializedCall = JSON.stringify(callMessage);
       const deserializedCall = JSON.parse(
         serializedCall,
-      ) as ExternalInputMessage;
+      ) as ExternalToolMessage;
 
       const serializedResponse = JSON.stringify(responseMessage);
       const deserializedResponse = JSON.parse(

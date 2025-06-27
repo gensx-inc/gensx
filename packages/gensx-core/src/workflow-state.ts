@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
+import { JSONSchema } from "zod/v4/core";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
 import { getCurrentContext } from "./context.js";
 
 // JSON-serializable value type for progress data
@@ -11,80 +14,73 @@ export type JsonValue =
   | { [key: string]: JsonValue };
 
 // Individual message types
-export interface WorkflowStartMessage {
+export interface StartMessage {
   type: "start";
   workflowExecutionId?: string;
   workflowName: string;
 }
 
-export interface WorkflowComponentStartMessage {
+export interface ComponentStartMessage {
   type: "component-start";
   componentName: string;
   label?: string;
   componentId: string;
 }
 
-export interface WorkflowComponentEndMessage {
+export interface ComponentEndMessage {
   type: "component-end";
   componentName: string;
   label?: string;
   componentId: string;
 }
 
-export interface WorkflowDataMessage {
+export interface DataMessage {
   type: "data";
   data: JsonValue;
 }
 
-export interface WorkflowEventMessage {
+export interface EventMessage {
   type: "event";
   data: JsonValue;
   label: string;
 }
 
-export interface WorkflowObjectMessage {
+export interface ObjectMessage {
   type: "object";
   data: JsonValue;
   label: string;
 }
 
-export interface WorkflowErrorMessage {
+export interface ErrorMessage {
   type: "error";
   error: string;
 }
 
-export interface WorkflowEndMessage {
+export interface EndMessage {
   type: "end";
 }
 
-export interface ExternalToolCallMessage {
-  type: "external-tool-call";
+export interface ExternalToolMessage {
+  type: "external-tool";
   toolName: string;
   params: JsonValue;
-  callId: string;
+  paramsSchema: JSONSchema.BaseSchema | ReturnType<typeof zodToJsonSchema>;
+  resultSchema: JSONSchema.BaseSchema | ReturnType<typeof zodToJsonSchema>;
   nodeId: string;
   sequenceNumber: number;
 }
 
-export interface ExternalToolResponseMessage {
-  type: "external-tool-response";
-  callId: string;
-  result?: JsonValue;
-  error?: string;
-}
-
 // Union of all message types
 export type WorkflowMessage =
-  | WorkflowStartMessage
-  | WorkflowComponentStartMessage
-  | WorkflowComponentEndMessage
-  | WorkflowDataMessage
-  | WorkflowEventMessage
-  | WorkflowObjectMessage
-  | WorkflowErrorMessage
-  | WorkflowEndMessage
-  | ExternalToolCallMessage
-  | ExternalToolResponseMessage;
+  | StartMessage
+  | ComponentStartMessage
+  | ComponentEndMessage
+  | DataMessage
+  | EventMessage
+  | ObjectMessage
+  | ErrorMessage
+  | EndMessage
+  | ExternalToolMessage;
 
 export type WorkflowMessageListener = (message: WorkflowMessage) => void;
 

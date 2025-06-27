@@ -5,10 +5,26 @@ import { WorkflowMessage, WorkflowMessageListener } from "./workflow-state.js";
 // Static symbol for workflow context
 export const WORKFLOW_CONTEXT_SYMBOL = Symbol.for("gensx.workflow");
 
+export type InputRequest =
+  | {
+      type: "input-request";
+      nodeId: string;
+      sequenceNumber: number;
+    }
+  | {
+      type: "external-tool";
+      nodeId: string;
+      sequenceNumber: number;
+      params: unknown;
+      // TODO: Types
+      paramsSchema: unknown;
+      resultSchema: unknown;
+    };
+
 export interface WorkflowExecutionContext {
   checkpointManager: CheckpointManager;
   sendWorkflowMessage: WorkflowMessageListener;
-  onRequestInput: (nodeId: string) => Promise<void>;
+  onRequestInput: (request: InputRequest) => Promise<void>;
   onRestoreCheckpoint: (nodeId: string, feedback: unknown) => Promise<void>;
   checkpointLabelMap: Map<string, string>;
   // Future: Add more workflow-level utilities here
@@ -20,7 +36,7 @@ export function createWorkflowContext({
   onRestoreCheckpoint,
 }: {
   onMessage?: WorkflowMessageListener;
-  onRequestInput?: (nodeId: string) => Promise<void>;
+  onRequestInput?: (request: InputRequest) => Promise<void>;
   onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>;
 } = {}): WorkflowExecutionContext {
   return {
