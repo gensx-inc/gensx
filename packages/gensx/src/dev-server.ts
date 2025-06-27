@@ -114,6 +114,16 @@ export type WorkflowMessage = { id: string; timestamp: string } & (
   | { type: "object" | "event"; data: JsonValue; label: string }
   | { type: "error"; error: string }
   | { type: "end" }
+  | {
+      type: "external-tool";
+      nodeId: string;
+      sequenceNumber: number;
+      toolName: string;
+      params: JsonValue;
+      paramsSchema: Definition;
+      resultSchema: Definition;
+      fulfilled: boolean;
+    }
 );
 
 /**
@@ -130,6 +140,20 @@ export class GensxServer {
   private server: ReturnType<typeof serve> | null = null;
   private ajv: Ajv;
   private logger: ServerOptions["logger"];
+  private inputRequests: Map<
+    string,
+    Map<
+      string,
+      {
+        sequenceNumber: number;
+        nodeId: string;
+        // This means the data has been processed by the workflow.
+        fulfilled: boolean;
+        onInput?: (input: unknown) => void;
+        data?: JsonValue;
+      }[]
+    >
+  >;
 
   /**
    * Create a new GenSX dev server
@@ -159,6 +183,7 @@ export class GensxServer {
     this.executionsMap = new Map();
     this.ajv = new Ajv();
     this.logger = options.logger;
+    this.inputRequests = new Map();
 
     // Register all workflows from the input
     this.registerWorkflows(workflows);
@@ -549,6 +574,66 @@ export class GensxServer {
       });
     });
 
+    this.app.post(
+      `/workflowExecutions/:executionId/resume/:nodeIdWithSequenceNumber`,
+      async (c) => {
+        const executionId = c.req.param("executionId");
+        const nodeIdWithSequenceNumber = c.req.param(
+          "nodeIdWithSequenceNumber",
+        );
+        let execution = this.executionsMap.get(executionId);
+        if (!execution) {
+          throw new NotFoundError(`Execution '${executionId}' not found`);
+        }
+
+        const [nodeId, sequenceNumber] = nodeIdWithSequenceNumber.split("-");
+
+        let executionRequests = this.inputRequests.get(executionId);
+        if (!executionRequests) {
+          executionRequests = new Map();
+          this.inputRequests.set(executionId, executionRequests);
+        }
+
+        let requestsByNodeId = executionRequests.get(nodeId);
+        if (!requestsByNodeId) {
+          requestsByNodeId = [];
+          executionRequests.set(nodeId, requestsByNodeId);
+        }
+
+        let inputRequest = requestsByNodeId.find(
+          (request) =>
+            request.sequenceNumber === Number(sequenceNumber) &&
+            !request.fulfilled,
+        );
+
+        if (!inputRequest) {
+          inputRequest = requestsByNodeId.find((request) => !request.fulfilled);
+          if (inputRequest) {
+            console.warn(
+              `[GenSX] Sequence number mismatch for node '${nodeId}' with sequence number '${sequenceNumber}'`,
+            );
+          }
+        }
+
+        if (!inputRequest) {
+          requestsByNodeId.push({
+            sequenceNumber: Number(sequenceNumber),
+            nodeId,
+            fulfilled: false,
+            data: await c.req.json(),
+          });
+          return c.json({ success: true });
+        }
+
+        // TODO: validate the body against the schema
+        inputRequest.fulfilled = inputRequest.onInput !== undefined;
+        inputRequest.data = await c.req.json();
+        inputRequest.onInput?.(inputRequest.data);
+
+        return c.json({ success: true });
+      },
+    );
+
     // Execute workflow endpoint
     this.app.post(`/workflows/:workflowName`, async (c) => {
       const workflowName = c.req.param("workflowName");
@@ -607,6 +692,60 @@ export class GensxServer {
             acceptHeader === "text/event-stream" ||
             acceptHeader === "application/x-ndjson";
 
+          const onRequestInput = (request: {
+            nodeId: string;
+            sequenceNumber: number;
+          }) => {
+            const { nodeId, sequenceNumber } = request;
+            let executionRequests = this.inputRequests.get(executionId);
+            if (!executionRequests) {
+              executionRequests = new Map();
+              this.inputRequests.set(executionId, executionRequests);
+            }
+
+            let requestsByNodeId = executionRequests.get(nodeId);
+            if (!requestsByNodeId) {
+              requestsByNodeId = [];
+              executionRequests.set(nodeId, requestsByNodeId);
+            }
+
+            // find with the matching sequence number
+            let foundRequest = requestsByNodeId.find(
+              (request) =>
+                request.sequenceNumber === sequenceNumber && !request.fulfilled,
+            );
+            if (!foundRequest) {
+              foundRequest = requestsByNodeId.find(
+                (request) => !request.fulfilled,
+              );
+              if (foundRequest) {
+                console.warn(
+                  `Sequence number mismatch for node '${nodeId}' with sequence number '${sequenceNumber}'`,
+                );
+              }
+            }
+
+            if (foundRequest?.data) {
+              // This means the callback already happened and we have the data.
+              foundRequest.fulfilled = true;
+              return foundRequest.data;
+            } else if (foundRequest) {
+              return new Promise<unknown>((resolve) => {
+                foundRequest.onInput = resolve;
+              });
+            }
+
+            // otherwise we have not yet received the input from the user, so add a callback.
+            return new Promise<unknown>((resolve) => {
+              requestsByNodeId.push({
+                sequenceNumber,
+                nodeId,
+                fulfilled: false,
+                onInput: resolve,
+              });
+            });
+          };
+
           if (shouldStreamProgress) {
             // Create a stream for progress events
             const stream = new ReadableStream({
@@ -637,6 +776,8 @@ export class GensxServer {
                   // Execute workflow with progress listener
                   const result = await runMethod.call(workflow, body, {
                     messageListener,
+                    workflowExecutionId: executionId,
+                    onRequestInput,
                   });
 
                   if (
@@ -758,6 +899,8 @@ export class GensxServer {
               } as WorkflowMessage;
               execution.workflowMessages.push(message);
             },
+            workflowExecutionId: executionId,
+            onRequestInput,
           });
 
           // Update execution with result
