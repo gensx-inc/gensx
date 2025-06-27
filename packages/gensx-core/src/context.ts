@@ -1,6 +1,7 @@
 import { ExecutionNode } from "./checkpoint-types.js";
 import {
   createWorkflowContext,
+  InputRequest,
   WORKFLOW_CONTEXT_SYMBOL,
   WorkflowExecutionContext,
 } from "./workflow-context.js";
@@ -24,7 +25,7 @@ export class ExecutionContext {
     public context: WorkflowContext,
     private parent?: ExecutionContext,
     messageListener?: WorkflowMessageListener,
-    onRequestInput?: (nodeId: string) => Promise<void>,
+    onRequestInput?: (inputRequest: InputRequest) => Promise<void>,
     onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>,
   ) {
     this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext({

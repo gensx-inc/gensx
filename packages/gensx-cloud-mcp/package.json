@@ -41,7 +41,8 @@
   "devDependencies": {
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zod": "catalog:"
   },
   "publishConfig": {
     "access": "public"
@@ -49,7 +50,6 @@
   "dependencies": {
     "@gensx/core": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "tsx": "catalog:",
-    "zod": "catalog:"
+    "tsx": "catalog:"
   }
 }

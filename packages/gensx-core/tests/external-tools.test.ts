@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unused-vars */
+import { Workflow } from "src/index.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod/v4";
 
@@ -157,20 +158,29 @@ describe("External Tools", () => {
         },
       });
 
-      // This will reject with our placeholder error, but we can test the message sending
-      try {
-        await executeExternalTool(toolBox, "testTool", { text: "Hello" });
-      } catch (_error) {
-        expect(_error).toBeInstanceOf(Error);
-        expect((_error as Error).message).toContain("not yet implemented");
-      }
+      const onRequestInput = vi.fn();
+      const workflow = Workflow("TestWorkflow", async () => {
+        return await executeExternalTool(toolBox, "testTool", {
+          text: "Hello",
+        });
+      });
+
+      await workflow(
+        {
+          text: "Hello",
+        },
+        { onRequestInput },
+      );
+
+      await executeExternalTool(toolBox, "testTool", { text: "Hello" });
 
       // Verify the message was sent
       expect(mockWorkflowContext.sendWorkflowMessage).toHaveBeenCalledWith({
-        type: "external-tool-call",
+        type: "external-input",
         toolName: "testTool",
         params: { text: "Hello" },
-        callId: expect.stringMatching(/^testTool-\d+-[a-z0-9]+$/),
+        paramsSchema: expect.any(Object),
+        resultSchema: expect.any(Object),
         nodeId: "test-node-123",
         sequenceNumber: expect.any(Number),
       });

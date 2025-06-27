@@ -27,13 +27,20 @@ export async function requestInput<T extends Record<string, unknown>>(
     if (!currentNodeId) {
       throw new Error("No current node ID found");
     }
-    await TriggerComponent({ nodeId: currentNodeId });
+    const sequenceNumber =
+      workflowContext.checkpointManager.getSequenceNumber(currentNodeId);
+    const completeNodeId = `${currentNodeId}-${sequenceNumber}`;
+    await TriggerComponent({ nodeId: completeNodeId });
 
     // Ensure that the we have flushed all pending updates to the server.
     await workflowContext.checkpointManager.waitForPendingUpdates();
 
     // This is where the magic happens 🪄
-    await workflowContext.onRequestInput(currentNodeId);
+    await workflowContext.onRequestInput({
+      type: "input-request",
+      nodeId: currentNodeId,
+      sequenceNumber,
+    });
 
     // Log an error here, because this bit of code should never actually be executed.
     console.error("[GenSX] Requesting input not supported in this environment");

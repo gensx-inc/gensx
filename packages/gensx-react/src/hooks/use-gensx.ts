@@ -229,7 +229,6 @@ export function useWorkflow<
             break;
 
           case "external-tool":
-            console.log("external-tool", executionId);
             if (!executionId.current) {
               console.error(
                 "[GenSX] Cannot resolve tool call, execution ID is not set.",

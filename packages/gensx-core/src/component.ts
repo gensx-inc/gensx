@@ -22,7 +22,7 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
-import { WorkflowExecutionContext } from "./workflow-context.js";
+import { InputRequest, WorkflowExecutionContext } from "./workflow-context.js";
 import { WorkflowMessageListener } from "./workflow-state.js";
 
 export { STREAMING_PLACEHOLDER };
@@ -272,7 +272,7 @@ type WorkflowRuntimeOpts = WorkflowOpts & {
   messageListener?: WorkflowMessageListener;
   checkpoint?: ExecutionNode;
   printUrl?: boolean;
-  onRequestInput?: () => Promise<void>;
+  onRequestInput?: (request: InputRequest) => Promise<void>;
   onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>;
   /**
    * Optional reference to capture the pending updates promise, that ensures that all traces are sent to the server after completion.

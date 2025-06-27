@@ -1,93 +1,115 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
-/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { z } from "zod";
+import * as z3 from "zod/v3";
+import * as z4 from "zod/v4/core";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
+import { Component } from "./component.js";
 import { getCurrentContext } from "./context.js";
 import { JsonValue } from "./workflow-state.js";
 
-// Base tool definition - just schemas
-export interface ToolDefinition<TParams = any, TResult = any> {
-  params: z.ZodSchema<TParams>;
-  result: z.ZodSchema<TResult>;
+export interface ToolDefinition<
+  TParamsSchema extends z4.$ZodType | z3.ZodType = z4.$ZodType | z3.ZodType,
+  TResultSchema extends z4.$ZodType | z3.ZodType = z4.$ZodType | z3.ZodType,
+> {
+  description?: string;
+  params: TParamsSchema;
+  result: TResultSchema;
 }
 
 // Tool box type
-export type ToolBox<T extends Record<string, ToolDefinition>> = T;
+export type ToolBox = Record<string, ToolDefinition>;
 
 // Extract param/result types automatically
-export type InferToolParams<T extends ToolDefinition> = z.infer<T["params"]>;
-export type InferToolResult<T extends ToolDefinition> = z.infer<T["result"]>;
+export type InferToolParams<T extends ToolBox, Tool extends keyof T> = z4.infer<
+  T[Tool]["params"]
+>;
+export type InferToolResult<T extends ToolBox, Tool extends keyof T> = z4.infer<
+  T[Tool]["result"]
+>;
 
 // Tool implementations for frontend
-export type ToolImplementations<T extends ToolBox<any>> = {
+export type ToolImplementations<T extends ToolBox> = {
   [K in keyof T]: {
-    execute: (params: any) => any | Promise<any>;
+    execute: (
+      params: InferToolParams<T, K>,
+    ) => InferToolResult<T, K> | Promise<InferToolResult<T, K>>;
   };
 };
 
 // Helper to create tool box
-export function createToolBox<T extends Record<string, ToolDefinition>>(
-  definitions: T,
-): ToolBox<T> {
+export function createToolBox<T extends ToolBox>(definitions: T): T {
   return definitions;
 }
 
-// Helper to create tool implementations with type safety
-export function createToolImplementations<
-  T extends ToolBox<any>,
->(implementations: {
-  [K in keyof T]: (params: any) => any | Promise<any>;
-}): ToolImplementations<T> {
-  return Object.fromEntries(
-    Object.entries(implementations).map(([name, impl]) => [
-      name,
-      { execute: impl },
-    ]),
-  ) as ToolImplementations<T>;
-}
-
-// Enhanced executeExternalTool with tool box - workflow side helper
-
 export async function executeExternalTool<
-  T extends ToolBox<any>,
+  T extends Record<string, ToolDefinition>,
   K extends keyof T,
->(toolBox: T, toolName: K, params: any): Promise<any> {
-  const context = getCurrentContext();
-  const workflowContext = context.getWorkflowContext();
-
-  // Generate unique call ID
-  const callId = `${String(toolName)}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-
-  // Validate params against schema
-
+>(
+  toolBox: T,
+  toolName: K,
+  params: InferToolParams<T, K>,
+): Promise<InferToolResult<T, K>> {
   const toolDef = toolBox[toolName] as ToolDefinition;
-  const validatedParams = toolDef.params.parse(params);
+  let validatedParams: unknown;
+  if ("_zod" in toolDef.params) {
+    validatedParams = z4.parse(toolDef.params, params);
+  } else {
+    validatedParams = toolDef.params.parse(params);
+  }
 
-  // Send external tool call message
-  workflowContext.sendWorkflowMessage({
-    type: "external-tool-call",
-    toolName: String(toolName),
-    params: validatedParams as JsonValue,
-    callId,
-    nodeId: context.getCurrentNodeId() ?? "unknown",
-    sequenceNumber: Date.now(),
+  let paramsJsonSchema:
+    | ReturnType<typeof z4.toJSONSchema>
+    | ReturnType<typeof zodToJsonSchema>;
+  if ("_zod" in toolDef.params) {
+    paramsJsonSchema = z4.toJSONSchema(toolDef.params);
+  } else {
+    paramsJsonSchema = zodToJsonSchema(toolDef.params);
+  }
+  let resultJsonSchema:
+    | ReturnType<typeof z4.toJSONSchema>
+    | ReturnType<typeof zodToJsonSchema>;
+  if ("_zod" in toolDef.result) {
+    resultJsonSchema = z4.toJSONSchema(toolDef.result);
+  } else {
+    resultJsonSchema = zodToJsonSchema(toolDef.result);
+  }
+
+  const component = Component("ExternalTool", async () => {
+    const context = getCurrentContext();
+    const workflowContext = context.getWorkflowContext();
+    const currentNodeId = context.getCurrentNodeId();
+    if (!currentNodeId) {
+      throw new Error("No current node ID found");
+    }
+
+    // Ensure that the we have flushed all pending updates to the server.
+    await workflowContext.checkpointManager.waitForPendingUpdates();
+
+    // Send external tool call message
+    workflowContext.sendWorkflowMessage({
+      type: "external-tool",
+      toolName: String(toolName),
+      params: validatedParams as JsonValue,
+      paramsSchema: paramsJsonSchema,
+      resultSchema: resultJsonSchema,
+      nodeId: currentNodeId,
+      sequenceNumber:
+        workflowContext.checkpointManager.getSequenceNumber(currentNodeId),
+    });
+
+    // For now we rely on the request input mechanism to resume the workflow later.
+    // The next iteration of this will use the non-blocking queue.
+    await workflowContext.onRequestInput({
+      type: "external-tool",
+      nodeId: currentNodeId,
+      sequenceNumber:
+        workflowContext.checkpointManager.getSequenceNumber(currentNodeId),
+      params: validatedParams as JsonValue,
+      paramsSchema: paramsJsonSchema,
+      resultSchema: resultJsonSchema,
+    });
+
+    return {} as unknown as InferToolResult<T, K>;
   });
 
-  // Wait for response (this would need to be implemented in the workflow execution engine)
-  return new Promise((_resolve, reject) => {
-    // This is a placeholder - the actual implementation would need to:
-    // 1. Store the resolve/reject callbacks keyed by callId
-    // 2. Have the workflow execution engine call the appropriate callback
-    //    when it receives the external-tool-response message
-    // 3. Handle timeouts
-
-    // For now, we'll throw an error indicating this needs implementation
-    reject(
-      new Error(
-        "External tool execution not yet implemented in workflow engine",
-      ),
-    );
-  });
+  return await component({});
 }

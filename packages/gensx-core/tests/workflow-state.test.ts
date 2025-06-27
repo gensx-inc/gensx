@@ -1,7 +1,7 @@
 import { beforeEach, expect, suite, test } from "vitest";
 
 import {
-  ExternalToolCallMessage,
+  ExternalToolMessage,
   ExternalToolResponseMessage,
   generateOptimizedPatches,
   WorkflowMessage,
@@ -989,7 +989,7 @@ suite("workflow state", () => {
 
   suite("External Tool Messages", () => {
     test("ExternalToolCallMessage has correct structure", () => {
-      const message: ExternalToolCallMessage = {
+      const message: ExternalToolMessage = {
         type: "external-tool-call",
         toolName: "testTool",
         params: { text: "Hello", count: 42 },
@@ -1048,7 +1048,7 @@ suite("workflow state", () => {
         },
       };
 
-      const message: ExternalToolCallMessage = {
+      const message: ExternalToolMessage = {
         type: "external-tool-call",
         toolName: "complexTool",
         params: complexParams,
@@ -1122,7 +1122,7 @@ suite("workflow state", () => {
     });
 
     test("External tool messages can be JSON serialized and deserialized", () => {
-      const callMessage: ExternalToolCallMessage = {
+      const callMessage: ExternalToolMessage = {
         type: "external-tool-call",
         toolName: "jsonTestTool",
         params: {
@@ -1147,7 +1147,7 @@ suite("workflow state", () => {
       const serializedCall = JSON.stringify(callMessage);
       const deserializedCall = JSON.parse(
         serializedCall,
-      ) as ExternalToolCallMessage;
+      ) as ExternalToolMessage;
 
       const serializedResponse = JSON.stringify(responseMessage);
       const deserializedResponse = JSON.parse(

@@ -53,6 +53,7 @@ export class CheckpointManager implements CheckpointWriter {
   private printUrl = false;
   private runtime?: "cloud" | "sdk";
   private runtimeVersion?: string;
+  private checkpointListener?: (root: ExecutionNode) => Promise<void>;
 
   private sequenceNumber = 0;
 
@@ -264,6 +265,8 @@ export class CheckpointManager implements CheckpointWriter {
   private havePrintedUrl = false;
   private async writeCheckpoint() {
     if (!this.root) return;
+
+    await this.checkpointListener?.(this.root);
 
     try {
       // Create a deep copy of the execution tree for masking
