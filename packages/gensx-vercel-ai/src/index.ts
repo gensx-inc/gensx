@@ -229,3 +229,5 @@ function assertIsLanguageModel(
     throw new Error(`Invalid model. Is this a LanguageModelV1 instance?`);
   }
 }
+
+export { asToolSet } from "./tools.js";
