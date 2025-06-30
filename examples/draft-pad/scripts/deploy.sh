@@ -4,12 +4,6 @@
 
 set -e
 
-# Check for required environment variables
-if [ -z "$GENSX_API_KEY" ]; then
-  echo "❌ Error: GENSX_API_KEY environment variable is required"
-  exit 1
-fi
-
 # Build the command with required variables
 CMD="npx gensx@latest deploy ./gensx/workflows.ts --project draft-pad --env production --yes"
 

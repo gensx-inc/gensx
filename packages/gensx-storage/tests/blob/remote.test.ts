@@ -684,6 +684,7 @@ suite("RemoteBlobStorage", () => {
         ok: false,
         status: 400,
         statusText: "Bad Request",
+        json: async () => ({ error: "Bad Request" }),
       });
 
       const storage = new RemoteBlobStorage("test-project", "test-environment");
@@ -705,6 +706,7 @@ suite("RemoteBlobStorage", () => {
         ok: false,
         status: 500,
         statusText: "Internal Server Error",
+        json: async () => ({ error: "Internal Server Error" }),
       });
 
       const storage = new RemoteBlobStorage("test-project", "test-environment");

@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const workflowName = "updateDraft";
     const org = "gensx";
     const project = "draft-pad";
-    const environment = "default";
+    const environment = "production";
     const format = "ndjson";
 
     // Get API key from environment (or could accept from Authorization header)
@@ -66,24 +66,28 @@ export async function POST(request: NextRequest) {
         environment,
       });
     } else {
+      console.log("Using local dev server");
       gensx = new GenSX({
         baseUrl: process.env.GENSX_BASE_URL ?? "http://localhost:1337",
       });
+      console.log("Initialized local dev server");
     }
 
     // Use runRaw to get the direct response
 
+    console.log("Running workflow");
     const response = await gensx.runRaw(workflowName, {
       inputs,
       format,
     });
-
+    console.log("Workflow response", response);
     // Determine content type based on format
     const contentType = {
       sse: "text/event-stream",
       ndjson: "application/x-ndjson",
       json: "application/json",
     }[format];
+    console.log("Content type", contentType);
 
     // Return the response directly to the client
     // This preserves the response format
@@ -123,7 +127,7 @@ export function GET() {
           workflowName: "updateDraft",
           org: "gensx",
           project: "draft-pad",
-          environment: "default",
+          environment: "production",
         },
         usage: {
           method: "POST",

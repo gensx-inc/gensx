@@ -14,7 +14,9 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next"
+    "clean": "rm -rf .next",
+    "test": "GENSX_ORG=gensx vitest run",
+    "test:watch": "vitest watch"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.10",
@@ -27,11 +29,12 @@
     "@ai-sdk/mistral": "^1.2.8",
     "@ai-sdk/openai": "^1.3.22",
     "@ai-sdk/xai": "^1.2.16",
-    "@gensx/client": "workspace:*",
-    "@gensx/core": "workspace:*",
-    "@gensx/react": "workspace:*",
+    "@gensx/client": "^0.1.2",
+    "@gensx/core": "^0.4.6",
+    "@gensx/react": "^0.1.2",
     "@gensx/vercel-ai": "^0.2.4",
     "@radix-ui/react-slot": "^1.2.3",
+    "ai": "^4.3.16",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.513.0",
@@ -56,6 +59,7 @@
     "eslint-config-next": "15.3.3",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.8"
   }
 }

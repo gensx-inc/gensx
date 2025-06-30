@@ -525,6 +525,7 @@ suite("GenSX Search Storage", () => {
         ok: false,
         status: 400,
         statusText: "Bad Request",
+        json: async () => ({ error: "Bad Request" }),
       });
 
       const storage = new SearchStorage("test-project", "test-environment");
@@ -545,6 +546,7 @@ suite("GenSX Search Storage", () => {
         ok: false,
         status: 500,
         statusText: "Internal Server Error",
+        json: async () => ({ error: "Internal Server Error" }),
       });
 
       const storage = new SearchStorage("test-project", "test-environment");
@@ -581,6 +583,7 @@ suite("GenSX Search Storage", () => {
         ok: false,
         status: 404,
         statusText: "Not Found",
+        json: async () => ({ error: "Not Found" }),
       });
 
       const storage = new SearchStorage("test-project", "test-environment");
