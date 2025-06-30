@@ -7,6 +7,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import { asToolSet } from "@gensx/vercel-ai";
 import { toolbox } from "./tools/frontendTools";
+import { geocodeTool } from "./tools/geocode";
 
 interface ChatAgentProps {
   prompt: string;
@@ -48,7 +49,8 @@ export const ChatAgent = gensx.Workflow(
       ];
 
       const tools = {
-        web_search: webSearchTool,
+        webSearch: webSearchTool,
+        geocode: geocodeTool,
         ...asToolSet(toolbox),
       };
 
