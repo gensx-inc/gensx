@@ -152,7 +152,10 @@ export class GensxServer {
       });
 
       // Attempt to close all connections if the method exists
-      const serverWithAdvancedClose = this.server as any;
+      const serverWithAdvancedClose = this.server as {
+        closeAllConnections: () => void;
+        closeIdleConnections: () => void;
+      };
       if (typeof serverWithAdvancedClose.closeAllConnections === "function") {
         serverWithAdvancedClose.closeAllConnections();
       }
