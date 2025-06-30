@@ -237,6 +237,28 @@ export class ExecutionHandler {
     };
   }
 
+  getInputRequest(executionId: string, nodeId: string, sequenceNumber: number) {
+    const executionRequests = this.inputRequests.get(executionId);
+    if (!executionRequests) {
+      return null;
+    }
+
+    const requestsByNodeId = executionRequests.get(nodeId);
+    if (!requestsByNodeId) {
+      return null;
+    }
+
+    const request = requestsByNodeId.find(
+      (request) => request.sequenceNumber === sequenceNumber,
+    );
+
+    if (request) {
+      return request;
+    }
+
+    return requestsByNodeId[0];
+  }
+
   /**
    * Handle streaming responses
    */
