@@ -247,11 +247,9 @@ export function useWorkflow<
                   >,
                 );
 
-                const completeNodeId = `${event.nodeId}-${event.sequenceNumber}`;
-
                 // Send this to the API
                 const response = await fetch(
-                  `${baseUrl}/workflowExecutions/${executionId.current}/resume/${completeNodeId}`,
+                  `${baseUrl}/workflowExecutions/${executionId.current}/resume/${event.nodeId}`,
                   {
                     method: "POST",
                     headers: {

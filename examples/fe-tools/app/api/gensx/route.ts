@@ -1,26 +1,14 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
-
-const GENSX_WORKFLOW_NAME = "MapAgent";
-
-const GENSX_ORG = process.env.GENSX_ORG;
-const GENSX_PROJECT = process.env.GENSX_PROJECT ?? "frontend-tools";
-const GENSX_ENV = process.env.GENSX_ENV ?? "default";
+import {
+  GENSX_ENV,
+  GENSX_ORG,
+  GENSX_PROJECT,
+  GENSX_WORKFLOW_NAME,
+  shouldUseLocalDevServer,
+} from "./gensx";
 
 type RequestBody = Record<string, unknown>;
-
-const shouldUseLocalDevServer = () => {
-  if (
-    process.env.GENSX_BASE_URL &&
-    !process.env.GENSX_BASE_URL.includes("localhost")
-  ) {
-    return false;
-  }
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
-    return false;
-  }
-  return true;
-};
 
 /**
  * API route that acts as a pure passthrough to GenSX
@@ -64,6 +52,7 @@ export async function POST(request: NextRequest) {
         org: GENSX_ORG,
         project: GENSX_PROJECT,
         environment: GENSX_ENV,
+        overrideLocalMode: true,
       });
     } else {
       gensx = new GenSX({

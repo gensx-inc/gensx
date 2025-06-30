@@ -1,22 +1,12 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
-const GENSX_ORG = process.env.GENSX_ORG;
-const GENSX_PROJECT = process.env.GENSX_PROJECT ?? "chat-tools";
-const GENSX_ENV = process.env.GENSX_ENV ?? "default";
-
-const shouldUseLocalDevServer = () => {
-  if (
-    process.env.GENSX_BASE_URL &&
-    !process.env.GENSX_BASE_URL.includes("localhost")
-  ) {
-    return false;
-  }
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
-    return false;
-  }
-  return true;
-};
+import {
+  GENSX_ENV,
+  GENSX_ORG,
+  GENSX_PROJECT,
+  shouldUseLocalDevServer,
+} from "../../../../gensx";
 
 /**
  * API route that acts as a pure passthrough to GenSX
@@ -33,6 +23,10 @@ export async function POST(
     const data = await request.json();
 
     const useLocalDevServer = shouldUseLocalDevServer();
+    console.log("useLocalDevServer", {
+      useLocalDevServer,
+      API_KEY: process.env.GENSX_API_KEY,
+    });
 
     // Get API key from environment (or could accept from Authorization header)
     let gensx: GenSX;
@@ -63,6 +57,7 @@ export async function POST(
         org: GENSX_ORG,
         project: GENSX_PROJECT,
         environment: GENSX_ENV,
+        overrideLocalMode: true,
       });
     } else {
       gensx = new GenSX({
@@ -70,7 +65,11 @@ export async function POST(
       });
     }
 
-    // Use runRaw to get the direct response
+    console.log("data", {
+      data,
+      executionId,
+      nodeId,
+    });
 
     const response = await gensx.resume({
       executionId: executionId as string,
