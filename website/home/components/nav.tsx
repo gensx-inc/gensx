@@ -43,6 +43,11 @@ function NavMenu({ simple = false }: NavMenuProps) {
           </Link>
         </li>
         <li>
+          <Link href="/showcase" className="block text-gray-800 text-sm">
+            Showcase
+          </Link>
+        </li>
+        <li>
           <motion.a
             href="/docs"
             target="_blank"
@@ -89,6 +94,23 @@ function NavMenu({ simple = false }: NavMenuProps) {
         `}
       >
         Blog
+      </Link>
+      <Link
+        href="/showcase"
+        className={`relative py-2 transition-colors text-sm
+          ${
+            pathname === "/showcase"
+              ? "text-gray-900 font-medium"
+              : pathname === "/"
+                ? "text-gray-900 hover:text-gray-900"
+                : "text-gray-800 hover:text-gray-900"
+          }
+          after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full
+          after:origin-left after:scale-x-0 after:bg-[#ffde59] after:transition-transform after:duration-300
+          ${pathname === "/showcase" ? "after:scale-x-100" : "hover:after:scale-x-100"}
+        `}
+      >
+        Showcase
       </Link>
       <motion.a
         href="/docs"
