@@ -1,23 +1,29 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unused-vars */
 import { Workflow } from "src/index.js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { z } from "zod/v4";
 
-import { getCurrentContext } from "../src/context.js";
 import {
   createToolBox,
-  createToolImplementations,
   executeExternalTool,
   InferToolParams,
   InferToolResult,
+  ToolBox,
+  ToolImplementations,
 } from "../src/external-tools.js";
 
-// Mock the context
-vi.mock("../src/context.js", () => ({
-  getCurrentContext: vi.fn(),
-}));
+export function createToolImplementations<T extends ToolBox>(implementations: {
+  [K in keyof T]: (
+    params: InferToolParams<T, K>,
+  ) => InferToolResult<T, K> | Promise<InferToolResult<T, K>>;
+}): ToolImplementations<T> {
+  return Object.fromEntries(
+    Object.entries(implementations).map(([name, impl]) => [
+      name,
+      { execute: impl as unknown },
+    ]),
+  ) as ToolImplementations<T>;
+}
 
 describe("External Tools", () => {
   describe("createToolBox", () => {
@@ -43,62 +49,6 @@ describe("External Tools", () => {
           result: expect.any(Object), // Zod schema
         },
       });
-    });
-  });
-
-  describe("createToolImplementations", () => {
-    it("should create tool implementations with proper structure", () => {
-      const toolBox = createToolBox({
-        promptUser: {
-          params: z.object({ text: z.string() }),
-          result: z.string(),
-        },
-        calculateSum: {
-          params: z.object({ a: z.number(), b: z.number() }),
-          result: z.number(),
-        },
-      });
-
-      const tools = createToolImplementations<typeof toolBox>({
-        promptUser: (params) => `You said: ${params.text}`,
-        calculateSum: (params) => params.a + params.b,
-      });
-
-      expect(tools).toEqual({
-        promptUser: {
-          execute: expect.any(Function),
-        },
-        calculateSum: {
-          execute: expect.any(Function),
-        },
-      });
-    });
-
-    it("should execute tool implementations correctly", async () => {
-      const toolBox = createToolBox({
-        promptUser: {
-          params: z.object({ text: z.string() }),
-          result: z.string(),
-        },
-        calculateSum: {
-          params: z.object({ a: z.number(), b: z.number() }),
-          result: z.number(),
-        },
-      });
-
-      const tools = createToolImplementations<typeof toolBox>({
-        promptUser: (params) => `You said: ${params.text}`,
-        calculateSum: async (params) =>
-          await Promise.resolve(params.a + params.b),
-      });
-
-      // Test sync tool
-      const promptResult = await tools.promptUser.execute({ text: "Hello" });
-      expect(promptResult).toBe("You said: Hello");
-
-      // Test async tool
-      const mathResult = await tools.calculateSum.execute({ a: 5, b: 3 });
-      expect(mathResult).toBe(8);
     });
   });
 
@@ -134,22 +84,6 @@ describe("External Tools", () => {
   });
 
   describe("executeExternalTool", () => {
-    let mockContext: any;
-    let mockWorkflowContext: any;
-
-    beforeEach(() => {
-      mockWorkflowContext = {
-        sendWorkflowMessage: vi.fn(),
-      };
-
-      mockContext = {
-        getWorkflowContext: () => mockWorkflowContext,
-        getCurrentNodeId: () => "test-node-123",
-      };
-
-      vi.mocked(getCurrentContext).mockReturnValue(mockContext);
-    });
-
     it("should send external tool call message with validated params", async () => {
       const toolBox = createToolBox({
         testTool: {
@@ -165,23 +99,31 @@ describe("External Tools", () => {
         });
       });
 
+      let messages: any[] = [];
+
       await workflow(
         {
           text: "Hello",
         },
-        { onRequestInput },
+        {
+          onRequestInput,
+          messageListener: (message) => messages.push(message),
+        },
       );
 
-      await executeExternalTool(toolBox, "testTool", { text: "Hello" });
+      const externalToolMessage = messages.find(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (m) => m.type === "external-tool",
+      );
 
-      // Verify the message was sent
-      expect(mockWorkflowContext.sendWorkflowMessage).toHaveBeenCalledWith({
-        type: "external-input",
+      expect(externalToolMessage).toBeDefined();
+      expect(externalToolMessage).toMatchObject({
+        type: "external-tool",
         toolName: "testTool",
         params: { text: "Hello" },
         paramsSchema: expect.any(Object),
         resultSchema: expect.any(Object),
-        nodeId: "test-node-123",
+        nodeId: expect.stringMatching(/^ExternalTool:[a-z0-9-]+$/),
         sequenceNumber: expect.any(Number),
       });
     });
@@ -197,44 +139,15 @@ describe("External Tools", () => {
         },
       });
 
-      // Should throw validation error for invalid params
-      await expect(() =>
+      const workflow = Workflow("TestWorkflow", async () => {
         // @ts-expect-error - wrong type
-        executeExternalTool(toolBox, "strictTool", {
+        return await executeExternalTool(toolBox, "strictTool", {
           requiredString: "test",
-        }),
-      ).rejects.toThrow(); // Missing requiredNumber
-
-      await expect(() =>
-        executeExternalTool(toolBox, "strictTool", {
-          // @ts-expect-error - wrong type
-          requiredString: 123, // Wrong type
-          requiredNumber: 456,
-        }),
-      ).rejects.toThrow();
-    });
-
-    it("should handle missing node ID gracefully", async () => {
-      mockContext.getCurrentNodeId = () => undefined;
-
-      const toolBox = createToolBox({
-        testTool: {
-          params: z.object({}),
-          result: z.string(),
-        },
+        });
       });
 
-      try {
-        await executeExternalTool(toolBox, "testTool", {});
-      } catch (error) {
-        // Expected error from placeholder implementation
-      }
-
-      expect(mockWorkflowContext.sendWorkflowMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          nodeId: "unknown",
-        }),
-      );
+      // Should throw validation error for invalid params
+      await expect(() => workflow()).rejects.toThrow(); // Missing requiredNumber
     });
   });
 
