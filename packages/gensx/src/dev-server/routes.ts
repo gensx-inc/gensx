@@ -185,6 +185,26 @@ export function setupRoutes(
       ? events.filter((event) => event.id > lastEventId)
       : events;
 
+    const preparedEvents = filteredEvents.map((event) => {
+      // Amend the event if fulfilled
+      if (event.type === "external-tool") {
+        const inputRequest = executionHandler.getInputRequest(
+          executionId,
+          event.nodeId,
+          event.sequenceNumber,
+        );
+
+        if (inputRequest?.fulfilled) {
+          return {
+            ...event,
+            fulfilled: true,
+          };
+        }
+      }
+
+      return event;
+    });
+
     // Check if we should use SSE format
     const acceptHeader = c.req.header("Accept");
     const useSSE = acceptHeader === "text/event-stream";
@@ -193,7 +213,7 @@ export function setupRoutes(
       // Create a stream for SSE events
       const stream = new ReadableStream({
         start: (controller) => {
-          for (const event of filteredEvents) {
+          for (const event of preparedEvents) {
             const eventData = JSON.stringify(event);
             controller.enqueue(
               new TextEncoder().encode(
@@ -216,7 +236,7 @@ export function setupRoutes(
       // Return NDJSON format
       const stream = new ReadableStream({
         start: (controller) => {
-          for (const event of filteredEvents) {
+          for (const event of preparedEvents) {
             controller.enqueue(
               new TextEncoder().encode(JSON.stringify(event) + "\n"),
             );
