@@ -336,11 +336,21 @@ export class GenSX {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
       },
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
+      // If the execution is still running, retry.
+      if (
+        response.status === 400 &&
+        response.statusText === "Bad Request" &&
+        (await response.text()).includes("Execution is currently running.")
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return this.resume(options);
+      }
       throw new Error(
         `Failed to resume workflow: ${response.status} ${response.statusText}`,
       );

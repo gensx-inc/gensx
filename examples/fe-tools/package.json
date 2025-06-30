@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:gensx\"",
-    "dev:next": "next dev",
+    "dev:next": "next dev -p 3002",
     "dev:gensx": "gensx start ./gensx/workflows.ts",
     "deploy": "gensx deploy -e ANTHROPIC_API_KEY -e FIRECRAWL_API_KEY ./gensx/workflows.ts",
     "build": "next build",
