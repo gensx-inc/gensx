@@ -3,8 +3,7 @@ import { Agent } from "./agent";
 import { CoreMessage } from "ai";
 import { webSearchTool } from "./tools/webSearch";
 import { useBlob } from "@gensx/storage";
-import { anthropic } from "@ai-sdk/anthropic";
-import { AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
 import { asToolSet } from "@gensx/vercel-ai";
 import { toolbox } from "./tools/frontendTools";
 import { geocodeTool } from "./tools/geocode";
@@ -18,7 +17,7 @@ interface ChatAgentProps {
 
 export const ChatAgent = gensx.Workflow(
   "MapAgent",
-  async ({ prompt, threadId, userId, thinking = true }: ChatAgentProps) => {
+  async ({ prompt, threadId, userId }: ChatAgentProps) => {
     // Get blob instance for chat history storage
     const chatHistoryBlob = useBlob<CoreMessage[]>(
       `chat-history/${userId}/${threadId}.json`,
@@ -54,18 +53,18 @@ export const ChatAgent = gensx.Workflow(
         ...asToolSet(toolbox),
       };
 
-      const model = anthropic("claude-sonnet-4-20250514");
+      const model = openai("gpt-4o-mini");
       const result = await Agent({
         messages,
         tools,
         model,
-        providerOptions: thinking
-          ? {
-              anthropic: {
-                thinking: { type: "enabled", budgetTokens: 12000 },
-              } satisfies AnthropicProviderOptions,
-            }
-          : undefined,
+        // providerOptions: thinking
+        //   ? {
+        //       anthropic: {
+        //         thinking: { type: "enabled", budgetTokens: 12000 },
+        //       } satisfies AnthropicProviderOptions,
+        //     }
+        //   : undefined,
       });
 
       // Save the complete conversation history
