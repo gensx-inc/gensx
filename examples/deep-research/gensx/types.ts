@@ -2,6 +2,6 @@ export interface SearchResult {
   title: string;
   url: string;
   description: string;
-  relevant?: boolean;
+  relevanceScore?: number;
   content?: string;
 }

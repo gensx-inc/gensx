@@ -10,7 +10,7 @@ interface PlanInput {
 export const Plan = gensx.Component("Plan", async ({ prompt }: PlanInput) => {
   const systemMessage = "You are an experienced research assistant.";
 
-  const fullPrompt = `Given the following prompt, generate 5 unique search queries to research the topic thoroughly.
+  const fullPrompt = `Given the following prompt, generate a research brief and 5 unique search queries to research the topic thoroughly.
 
 PROMPT:
 ${prompt}`;
@@ -18,6 +18,11 @@ ${prompt}`;
   const { object } = await generateObject({
     model: anthropic("claude-sonnet-4-20250514"),
     schema: z.object({
+      researchBrief: z
+        .string()
+        .describe(
+          "A research brief outlining the objectives, scope, and key considerations.",
+        ),
       queries: z.array(z.string()),
     }),
     messages: [

@@ -59,9 +59,12 @@ export default function ChatPage() {
       setCurrentThreadId(threadId);
 
       if (threadId) {
-        // Always load research data when switching to a thread
-        clear(); // Clear current data first
-        loadResearch(threadId, userId);
+        // Only clear and load research if we're switching to an existing thread
+        // Don't clear if we're creating a new thread (currentThreadId is null)
+        if (currentThreadId !== null) {
+          clear(); // Clear current data first
+          loadResearch(threadId, userId);
+        }
       } else {
         // No thread selected, clear data
         clear();

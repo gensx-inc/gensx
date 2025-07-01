@@ -4,6 +4,7 @@ import { Search } from "./deep-research/search";
 import { SearchResult } from "./types";
 import { GenerateReport } from "./deep-research/generate-report";
 import { useBlob } from "@gensx/storage";
+import { GatherSources } from "./deep-research/gather-sources";
 
 export interface DeepResearchParams {
   prompt: string;
@@ -13,6 +14,7 @@ export interface DeepResearchParams {
 
 interface DeepResearchPlan {
   queries: string[];
+  researchBrief: string;
 }
 
 export interface DeepResearchOutput {
@@ -20,6 +22,7 @@ export interface DeepResearchOutput {
   prompt: string;
   plan: DeepResearchPlan;
   searchResults: SearchResult[];
+  processedSources: SearchResult[];
 }
 
 export const DeepResearch = gensx.Workflow(
@@ -41,8 +44,10 @@ export const DeepResearch = gensx.Workflow(
         report: "",
         plan: {
           queries: [],
+          researchBrief: "",
         },
         searchResults: [],
+        processedSources: [],
       };
 
       const updateStatus = gensx.createObjectStream<string>("status");
@@ -54,7 +59,7 @@ export const DeepResearch = gensx.Workflow(
       updateStatus("Searching");
       // Execute all search queries in parallel
       const searchPromises = output.plan.queries.map((query) =>
-        Search({ query, limit: 20 }),
+        Search({ query, limit: 10 }),
       );
       const allSearchResults = await Promise.all(searchPromises);
 
@@ -71,11 +76,23 @@ export const DeepResearch = gensx.Workflow(
       );
       await saveResearch(output);
 
+      updateStatus("Processing");
+      // Grade and scrape useful sources
+      const processedSources = await GatherSources({
+        prompt,
+        searchResults: output.searchResults,
+      });
+
+      // Update search results with processed sources
+      output.processedSources = processedSources;
+      gensx.publishObject<SearchResult[]>("processedSources", processedSources);
+      await saveResearch(output);
+
       // Generate a report (the component streams the report to the client)
       updateStatus("Generating");
       output.report = await GenerateReport({
         prompt,
-        documents: research,
+        documents: processedSources,
       });
       await saveResearch(output);
       updateStatus("Completed");
