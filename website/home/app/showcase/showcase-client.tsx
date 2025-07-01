@@ -20,7 +20,7 @@ interface ShowcaseItem {
 const showcaseItems: ShowcaseItem[] = [
   {
     id: "chat-ux",
-    title: "Chat UX Template",
+    title: "Chat UX",
     description:
       "Next.js chat interface with real-time streaming responses using GenSX workflows and server-sent events.",
     demo: "https://gensx-chat-ux.vercel.app",
