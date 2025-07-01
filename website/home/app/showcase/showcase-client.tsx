@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import AnimatedTitle from "@/components/ui/AnimatedTitle";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Github } from "lucide-react";
+import { useState } from "react";
 
 // Showcase data structure - easy to add new items
 interface ShowcaseItem {
@@ -23,6 +24,7 @@ const showcaseItems: ShowcaseItem[] = [
     title: "Chat UX",
     description:
       "Next.js chat interface with real-time streaming responses using GenSX workflows and server-sent events.",
+    image: "/showcase/chat-ux.png",
     demo: "https://gensx-chat-ux.vercel.app",
     github: "https://github.com/gensx-inc/gensx/tree/main/examples/chat-ux",
     tags: ["Framework: Next.js", "Feature: Streaming", "Type: UI Template"],
@@ -32,6 +34,7 @@ const showcaseItems: ShowcaseItem[] = [
     title: "Draft Pad",
     description:
       "Document editor with AI-powered writing assistance, supporting real-time suggestions and markdown export.",
+    image: "/showcase/draft-pad.png",
     demo: "https://draft-pad.vercel.app",
     github: "https://github.com/gensx-inc/gensx/tree/main/examples/draft-pad",
     tags: [
@@ -234,7 +237,197 @@ const showcaseItems: ShowcaseItem[] = [
   },
 ];
 
+// Separate component for showcase cards to handle hover state
+function ShowcaseCard({
+  item,
+  index,
+  startIndex,
+}: {
+  item: ShowcaseItem;
+  index: number;
+  startIndex: number;
+}) {
+  const [isGithubHovered, setIsGithubHovered] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.4,
+        delay: 0.1 * (startIndex + index + 1),
+        ease: "easeOut",
+      }}
+    >
+      <div className="relative group h-full">
+        <div
+          className="relative h-full bg-white rounded-[0px] border border-gray-200 transition-all duration-300 hover:border-[#ffde59] hover:shadow-lg hover:shadow-[#ffde59]/20 cursor-pointer"
+          onClick={() => {
+            const link = item.demo || item.github;
+            if (link) {
+              window.open(link, "_blank");
+            }
+          }}
+        >
+          {/* Image */}
+          <div className="aspect-video overflow-hidden bg-gray-100 relative">
+            {item.image ? (
+              <Image
+                src={item.image}
+                alt={item.title}
+                width={600}
+                height={400}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <div
+                style={{
+                  background: `linear-gradient(${120 + ((index * 137) % 240)}deg,
+                    hsl(${(index * 137) % 360}, 20%, 85%) 0%,
+                    hsl(${(index * 137 + 60) % 360}, 15%, 88%) 50%,
+                    hsl(${(index * 137 + 120) % 360}, 25%, 83%) 100%)`,
+                }}
+                className="w-full h-full"
+              />
+            )}
+            {/* Title overlay */}
+            <div className="absolute inset-0 flex items-center justify-center p-6">
+              <div className="relative">
+                {/* Gradient blur background */}
+                <div
+                  className="absolute -inset-x-16 -inset-y-8 backdrop-blur-md"
+                  style={{
+                    background:
+                      "radial-gradient(ellipse at center, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.6) 30%, rgba(255,255,255,0.3) 60%, transparent 90%)",
+                    mask: "radial-gradient(ellipse at center, black 0%, transparent 100%)",
+                    WebkitMask:
+                      "radial-gradient(ellipse at center, black 0%, transparent 100%)",
+                  }}
+                />
+                <h3 className="relative text-2xl font-bold text-black text-center px-8 py-4">
+                  {item.title}
+                </h3>
+              </div>
+            </div>
+            {/* Click indicator */}
+            {(item.demo || item.github) && (
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="bg-white/90 backdrop-blur-sm rounded px-2 py-1 flex items-center gap-1 text-xs text-gray-600">
+                  <ExternalLink size={12} />
+                  <span>{item.demo ? "Demo" : "GitHub"}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="p-6">
+            <p className="text-gray-600 mb-4">{item.description}</p>
+
+            {/* Links - only show GitHub link if there's also a demo link */}
+            {item.demo && item.github && (
+              <div className="flex gap-3" onClick={(e) => e.stopPropagation()}>
+                <div className="relative group/link">
+                  <Link
+                    href={item.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 transition-colors group/link px-3 py-1.5"
+                    onMouseEnter={() => setIsGithubHovered(true)}
+                    onMouseLeave={() => setIsGithubHovered(false)}
+                  >
+                    <Github size={16} />
+                    <span>GitHub</span>
+                  </Link>
+
+                  {/* Corner brackets for GitHub link */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {/* Top left corner */}
+                    <div
+                      className="absolute -top-1 -left-1 w-3 h-3 border-t border-l border-gray-800
+                      opacity-0 -translate-x-1 -translate-y-1 transition-all duration-300
+                      group-hover/link:opacity-100 group-hover/link:translate-x-0 group-hover/link:translate-y-0"
+                    ></div>
+                    {/* Top right corner */}
+                    <div
+                      className="absolute -top-1 -right-1 w-3 h-3 border-t border-r border-gray-800
+                      opacity-0 translate-x-1 -translate-y-1 transition-all duration-300
+                      group-hover/link:opacity-100 group-hover/link:translate-x-0 group-hover/link:translate-y-0"
+                    ></div>
+                    {/* Bottom left corner */}
+                    <div
+                      className="absolute -bottom-1 -left-1 w-3 h-3 border-b border-l border-gray-800
+                      opacity-0 -translate-x-1 translate-y-1 transition-all duration-300
+                      group-hover/link:opacity-100 group-hover/link:translate-x-0 group-hover/link:translate-y-0"
+                    ></div>
+                    {/* Bottom right corner */}
+                    <div
+                      className="absolute -bottom-1 -right-1 w-3 h-3 border-b border-r border-gray-800
+                      opacity-0 translate-x-1 translate-y-1 transition-all duration-300
+                      group-hover/link:opacity-100 group-hover/link:translate-x-0 group-hover/link:translate-y-0"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Decorative corner brackets - hide when GitHub link is hovered */}
+        <div
+          className={`absolute inset-0 pointer-events-none z-50 ${isGithubHovered ? "opacity-0" : ""} transition-opacity duration-300`}
+        >
+          {/* Top left corner */}
+          <div
+            className="absolute -top-2 -left-2 w-5 h-5 border-t border-l border-gray-800
+            opacity-0 -translate-x-2 -translate-y-2 transition-all duration-300
+            group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0"
+          ></div>
+          {/* Top right corner */}
+          <div
+            className="absolute -top-2 -right-2 w-5 h-5 border-t border-r border-gray-800
+            opacity-0 translate-x-2 -translate-y-2 transition-all duration-300
+            group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0"
+          ></div>
+          {/* Bottom left corner */}
+          <div
+            className="absolute -bottom-2 -left-2 w-5 h-5 border-b border-l border-gray-800
+            opacity-0 -translate-x-2 translate-y-2 transition-all duration-300
+            group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0"
+          ></div>
+          {/* Bottom right corner */}
+          <div
+            className="absolute -bottom-2 -right-2 w-5 h-5 border-b border-r border-gray-800
+            opacity-0 translate-x-2 translate-y-2 transition-all duration-300
+            group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0"
+          ></div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function ShowcaseClient() {
+  // Separate items with demos from those without
+  const itemsWithDemos = showcaseItems.filter((item) => item.demo);
+  const itemsWithoutDemos = showcaseItems.filter((item) => !item.demo);
+
+  const renderShowcaseGrid = (
+    items: ShowcaseItem[],
+    startIndex: number = 0,
+  ) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {items.map((item, index) => (
+        <ShowcaseCard
+          key={item.id}
+          item={item}
+          index={index}
+          startIndex={startIndex}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="min-h-screen w-full max-w-7xl mx-auto pt-32 px-4 md:px-8 pb-20">
       <div className="max-w-6xl mx-auto">
@@ -249,140 +442,35 @@ export default function ShowcaseClient() {
           research agents, see what&apos;s possible with our framework.
         </motion.p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {showcaseItems.map((item, index) => (
-            <motion.div
-              key={item.id}
+        {/* Live Demos Section */}
+        {itemsWithDemos.length > 0 && (
+          <div className="mb-16">
+            <motion.h2
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.4,
-                delay: 0.1 * (index + 1),
-                ease: "easeOut",
-              }}
+              transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
+              className="text-2xl md:text-3xl font-bold text-gray-900 mb-8"
             >
-              <div className="relative group h-full">
-                <div
-                  className="relative h-full bg-white rounded-[0px] border border-gray-200 transition-all duration-300 hover:border-[#ffde59] hover:shadow-lg hover:shadow-[#ffde59]/20 cursor-pointer"
-                  onClick={() => {
-                    const link = item.demo || item.github;
-                    if (link) {
-                      window.open(link, "_blank");
-                    }
-                  }}
-                >
-                  {/* Image */}
-                  <div className="aspect-video overflow-hidden bg-gray-100 relative">
-                    {item.image ? (
-                      <Image
-                        src={item.image}
-                        alt={item.title}
-                        width={600}
-                        height={400}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          background: `linear-gradient(${120 + ((index * 137) % 240)}deg,
-                            hsl(${(index * 137) % 360}, 20%, 85%) 0%,
-                            hsl(${(index * 137 + 60) % 360}, 15%, 88%) 50%,
-                            hsl(${(index * 137 + 120) % 360}, 25%, 83%) 100%)`,
-                        }}
-                        className="w-full h-full"
-                      />
-                    )}
-                    {/* Title overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center p-6">
-                      <h3 className="text-2xl font-bold text-black text-center backdrop-blur-[1px]">
-                        {item.title}
-                      </h3>
-                    </div>
-                    {/* Click indicator */}
-                    {(item.demo || item.github) && (
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="bg-white/90 backdrop-blur-sm rounded px-2 py-1 flex items-center gap-1 text-xs text-gray-600">
-                          <ExternalLink size={12} />
-                          <span>{item.demo ? "Demo" : "GitHub"}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              Live Demos
+            </motion.h2>
+            {renderShowcaseGrid(itemsWithDemos, 0)}
+          </div>
+        )}
 
-                  {/* Content */}
-                  <div className="p-6">
-                    <p className="text-gray-600 mb-4">{item.description}</p>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {item.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-[0px] border border-gray-200"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Links - only show GitHub link if there's also a demo link */}
-                    {item.demo && item.github && (
-                      <div
-                        className="flex gap-3"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Link
-                          href={item.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-[#ffde59] transition-colors group/link"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            width="16"
-                            height="16"
-                            fill="currentColor"
-                          >
-                            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                          </svg>
-                          <span>GitHub</span>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Decorative corner brackets */}
-                <div className="absolute inset-0 pointer-events-none z-50">
-                  {/* Top left corner */}
-                  <div
-                    className="absolute -top-2 -left-2 w-5 h-5 border-t border-l border-gray-800
-                    opacity-0 -translate-x-2 -translate-y-2 transition-all duration-300
-                    group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0"
-                  ></div>
-                  {/* Top right corner */}
-                  <div
-                    className="absolute -top-2 -right-2 w-5 h-5 border-t border-r border-gray-800
-                    opacity-0 translate-x-2 -translate-y-2 transition-all duration-300
-                    group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0"
-                  ></div>
-                  {/* Bottom left corner */}
-                  <div
-                    className="absolute -bottom-2 -left-2 w-5 h-5 border-b border-l border-gray-800
-                    opacity-0 -translate-x-2 translate-y-2 transition-all duration-300
-                    group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0"
-                  ></div>
-                  {/* Bottom right corner */}
-                  <div
-                    className="absolute -bottom-2 -right-2 w-5 h-5 border-b border-r border-gray-800
-                    opacity-0 translate-x-2 translate-y-2 transition-all duration-300
-                    group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0"
-                  ></div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {/* Code Examples Section */}
+        {itemsWithoutDemos.length > 0 && (
+          <div>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.4, ease: "easeOut" }}
+              className="text-2xl md:text-3xl font-bold text-gray-900 mb-8"
+            >
+              Code Examples
+            </motion.h2>
+            {renderShowcaseGrid(itemsWithoutDemos, itemsWithDemos.length)}
+          </div>
+        )}
       </div>
     </div>
   );
