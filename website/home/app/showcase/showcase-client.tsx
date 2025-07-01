@@ -216,7 +216,7 @@ const showcaseItems: ShowcaseItem[] = [
   },
   {
     id: "typescript-compatibility",
-    title: "TypeScript Examples",
+    title: "TypeScript Compatibility Example",
     description:
       "TypeScript configuration and usage patterns for GenSX with strict type checking enabled.",
     github:
