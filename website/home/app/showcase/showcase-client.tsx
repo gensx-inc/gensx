@@ -207,7 +207,7 @@ const showcaseItems: ShowcaseItem[] = [
   },
   {
     id: "commonjs-compatibility",
-    title: "CommonJS Compatibility",
+    title: "CommonJS Compatibility Example",
     description:
       "Demonstrates using GenSX with require() syntax in CommonJS environments and Node.js < 14.",
     github:
