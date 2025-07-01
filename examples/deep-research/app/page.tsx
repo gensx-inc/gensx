@@ -1,8 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { ChatMessage } from "@/components/ChatMessage";
-import { ChatInput } from "@/components/ChatInput";
+import { useEffect, useState } from "react";
 import { ChatHistory } from "@/components/ChatHistory";
 import { ResearchQueries } from "@/components/ResearchQueries";
 import { SearchResults } from "@/components/SearchResults";
@@ -13,11 +11,12 @@ import { Plus, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getUserId } from "@/lib/userId";
+import { ResearchPrompt } from "@/components/ResearchPrompt";
+import { ChatInput } from "@/components/ChatInput";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
@@ -27,14 +26,12 @@ export default function ChatPage() {
     queries,
     searchResults,
     report,
+    prompt,
     status,
     error,
     loadResearch,
     clear,
   } = useDeepResearch();
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
-    [],
-  );
   const [queriesExpanded, setQueriesExpanded] = useState(true);
   const [resultsExpanded, setResultsExpanded] = useState(true);
 
@@ -59,55 +56,23 @@ export default function ChatPage() {
     if (!userId) return; // Wait for userId to be initialized
 
     if (threadId !== currentThreadId) {
-      const previousThreadId = currentThreadId;
       setCurrentThreadId(threadId);
 
       if (threadId) {
-        // Load research data if:
-        // 1. We're switching FROM an existing thread (previousThreadId !== null), OR
-        // 2. We're loading a thread on page refresh/initial load and have no current data
-        if (
-          previousThreadId !== null ||
-          (!queries && !searchResults && !report)
-        ) {
-          clear(); // Clear current data first
-          loadResearch(threadId, userId);
-
-          // Create a message from the saved research prompt if available
-          // This will be handled by the loadResearch function setting the saved data
-        }
+        // Always load research data when switching to a thread
+        clear(); // Clear current data first
+        loadResearch(threadId, userId);
       } else {
         // No thread selected, clear data
         clear();
-        setMessages([]);
         setQueriesExpanded(true);
         setResultsExpanded(true);
       }
     }
-  }, [
-    threadId,
-    currentThreadId,
-    userId,
-    clear,
-    loadResearch,
-    queries,
-    searchResults,
-    report,
-  ]);
+  }, [threadId, currentThreadId, userId, clear, loadResearch]);
 
-  // Update messages when we have saved research data
-  useEffect(() => {
-    if (report && queries && !messages.length && threadId) {
-      // If we have research data but no messages, create a user message
-      // This happens when loading a saved research thread
-      const userMessage = { role: "user", content: "Research request" };
-      setMessages([userMessage]);
-    }
-  }, [report, queries, messages.length, threadId]);
-
-  // New Chat: clear messages and remove thread ID from URL
+  // New Chat: remove thread ID from URL and reset state
   const handleNewChat = () => {
-    setMessages([]);
     setQueriesExpanded(true);
     setResultsExpanded(true);
     clear();
@@ -118,11 +83,6 @@ export default function ChatPage() {
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !userId) return;
 
-    // Add user message
-    const userMsg = { role: "user", content: content.trim() };
-    setMessages((prev) => [...prev, userMsg]);
-
-    // Reset expansion states for new research
     setQueriesExpanded(true);
     setResultsExpanded(true);
 
@@ -208,7 +168,7 @@ export default function ChatPage() {
               </div>
             </div>
 
-            {messages.length === 0 && !threadId ? (
+            {!prompt && !threadId ? (
               /* Empty state */
               <div className="flex-1 flex items-center justify-center px-4">
                 <div className="max-w-4xl mx-auto w-full">
@@ -224,28 +184,12 @@ export default function ChatPage() {
                 </div>
               </div>
             ) : (
-              /* Messages exist */
               <>
-                {/* Messages Container */}
+                {/* Main Research Content Container */}
                 <div className="flex-1 overflow-y-auto px-4 py-6">
-                  <div className="max-w-4xl mx-auto space-y-0">
-                    {messages.map(
-                      (
-                        message: { role: string; content: string },
-                        index: number,
-                      ) => (
-                        <ChatMessage
-                          key={`${threadId || "new"}-${index}`}
-                          message={message}
-                          messages={messages}
-                          status={
-                            index === messages.length - 1
-                              ? status || "completed"
-                              : "completed"
-                          }
-                        />
-                      ),
-                    )}
+                  <div className="max-w-4xl mx-auto w-full">
+                    {/* Research Prompt */}
+                    <ResearchPrompt prompt={prompt} />
 
                     {/* Show research progress */}
                     {status && status !== "Completed" && (
@@ -256,21 +200,21 @@ export default function ChatPage() {
                       </div>
                     )}
 
-                    {/* Show research queries */}
+                    {/* Research Queries */}
                     <ResearchQueries
                       queries={queries || []}
                       expanded={queriesExpanded}
                       onToggle={() => setQueriesExpanded(!queriesExpanded)}
                     />
 
-                    {/* Show search results */}
+                    {/* Search Results */}
                     <SearchResults
                       searchResults={searchResults || []}
                       expanded={resultsExpanded}
                       onToggle={() => setResultsExpanded(!resultsExpanded)}
                     />
 
-                    {/* Show research report */}
+                    {/* Research Report */}
                     <ResearchReport report={report || ""} status={status} />
 
                     {error && (
@@ -280,25 +224,8 @@ export default function ChatPage() {
                         </div>
                       </div>
                     )}
-
-                    <div ref={messagesEndRef} />
                   </div>
                 </div>
-
-                {/* Input Area */}
-                {/* <div className="px-4 pb-4">
-                  <div className="max-w-4xl mx-auto">
-                    <ChatInput
-                      onSendMessage={handleSendMessage}
-                      disabled={
-                        status === "Planning" ||
-                        status === "Searching" ||
-                        status === "Generating"
-                      }
-                      isCentered={false}
-                    />
-                  </div>
-                </div> */}
               </>
             )}
           </div>

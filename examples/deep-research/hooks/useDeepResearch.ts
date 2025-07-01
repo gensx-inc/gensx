@@ -1,21 +1,7 @@
 import { useCallback, useState } from "react";
 import { useWorkflow, useObject } from "@gensx/react";
 import { JsonValue } from "@gensx/core";
-
-interface DeepResearchInput {
-  prompt: string;
-  userId: string;
-  threadId: string;
-}
-
-interface DeepResearchOutput {
-  report: string;
-  prompt: string;
-  plan: {
-    queries: string[];
-  };
-  searchResults: JsonValue[];
-}
+import { DeepResearchOutput, DeepResearchParams } from "../gensx/workflows";
 
 interface UseChatReturn {
   runWorkflow: (
@@ -26,6 +12,7 @@ interface UseChatReturn {
   queries: string[] | undefined;
   searchResults: JsonValue | undefined;
   report: string | undefined;
+  prompt: string | undefined;
   status: string | undefined;
   error: string | null;
   loadResearch: (threadId: string, userId: string) => Promise<void>;
@@ -34,13 +21,16 @@ interface UseChatReturn {
 
 export function useDeepResearch(): UseChatReturn {
   const [savedData, setSavedData] = useState<DeepResearchOutput | null>(null);
+  const [currentPrompt, setCurrentPrompt] = useState<string | undefined>(
+    undefined,
+  );
 
   // Use the workflow hook
   const {
     error: workflowError,
     execution,
     run,
-  } = useWorkflow<DeepResearchInput, DeepResearchOutput>({
+  } = useWorkflow<DeepResearchParams, DeepResearchOutput>({
     config: {
       baseUrl: "/api/gensx/DeepResearch",
     },
@@ -55,10 +45,21 @@ export function useDeepResearch(): UseChatReturn {
   const workflowReport = useObject<string>(execution, "report");
   const workflowStatus = useObject<string>(execution, "status");
 
-  // Use workflow data if available, otherwise fall back to saved data
-  const queries = workflowQueries || savedData?.plan?.queries;
-  const searchResults = workflowSearchResults || savedData?.searchResults;
-  const report = workflowReport || savedData?.report;
+  // Determine if we have active workflow data
+  const hasActiveWorkflow = workflowStatus && workflowStatus !== "Completed";
+
+  // Use workflow data if we have an active workflow, otherwise use saved data
+  const queries = hasActiveWorkflow
+    ? workflowQueries
+    : workflowQueries || savedData?.plan?.queries;
+  const searchResults = hasActiveWorkflow
+    ? workflowSearchResults
+    : workflowSearchResults ||
+      (savedData?.searchResults as unknown as JsonValue);
+  const report = hasActiveWorkflow
+    ? workflowReport
+    : workflowReport || savedData?.report;
+  const prompt = currentPrompt || savedData?.prompt;
   const status = workflowStatus;
 
   const loadResearch = useCallback(async (threadId: string, userId: string) => {
@@ -72,19 +73,25 @@ export function useDeepResearch(): UseChatReturn {
 
       const data: DeepResearchOutput = await response.json();
       setSavedData(data);
+      setCurrentPrompt(data.prompt); // Set current prompt from loaded data
     } catch (err) {
       console.error("Error loading research data:", err);
       setSavedData(null);
+      setCurrentPrompt(undefined);
     }
   }, []);
 
   const clear = useCallback(() => {
     setSavedData(null);
+    setCurrentPrompt(undefined);
   }, []);
 
   const runWorkflow = useCallback(
     async (prompt: string, userId: string, threadId: string) => {
       if (!prompt) return;
+
+      // Set current prompt immediately so it shows up in UI
+      setCurrentPrompt(prompt);
 
       // Clear saved data when starting new workflow
       setSavedData(null);
@@ -108,6 +115,7 @@ export function useDeepResearch(): UseChatReturn {
     queries,
     searchResults,
     report,
+    prompt,
     loadResearch,
     clear,
   };

@@ -5,7 +5,7 @@ import { SearchResult } from "./types";
 import { GenerateReport } from "./deep-research/generate-report";
 import { useBlob } from "@gensx/storage";
 
-interface DeepResearchParams {
+export interface DeepResearchParams {
   prompt: string;
   userId: string;
   threadId: string;
