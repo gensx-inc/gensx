@@ -9,9 +9,9 @@ import { motion } from "framer-motion";
 import { Menu, ArrowUpRight } from "lucide-react";
 // Replace Sheet components with Dropdown components
 import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
 
 // Logo component
