@@ -180,7 +180,7 @@ const showcaseItems: ShowcaseItem[] = [
   },
   {
     id: "openai-computer-use",
-    title: "Computer Use with Vision",
+    title: "OpenAI Computer Use",
     description:
       "Browser automation using OpenAI vision models to analyze screenshots and control web interfaces.",
     github:
