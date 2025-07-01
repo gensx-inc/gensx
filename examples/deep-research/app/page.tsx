@@ -22,8 +22,16 @@ export default function ChatPage() {
   const [collapsed, setCollapsed] = useState(true);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const { runWorkflow, queries, searchResults, report, status, error } =
-    useDeepResearch();
+  const {
+    runWorkflow,
+    queries,
+    searchResults,
+    report,
+    status,
+    error,
+    loadResearch,
+    clear,
+  } = useDeepResearch();
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(
     [],
   );
@@ -46,30 +54,67 @@ export default function ChatPage() {
     }
   }, [report]);
 
-  // Handle thread switching - simplified for new hook
+  // Handle thread switching - load research data when thread changes
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) return; // Wait for userId to be initialized
 
     if (threadId !== currentThreadId) {
+      const previousThreadId = currentThreadId;
       setCurrentThreadId(threadId);
-      if (!threadId) {
+
+      if (threadId) {
+        // Load research data if:
+        // 1. We're switching FROM an existing thread (previousThreadId !== null), OR
+        // 2. We're loading a thread on page refresh/initial load and have no current data
+        if (
+          previousThreadId !== null ||
+          (!queries && !searchResults && !report)
+        ) {
+          clear(); // Clear current data first
+          loadResearch(threadId, userId);
+
+          // Create a message from the saved research prompt if available
+          // This will be handled by the loadResearch function setting the saved data
+        }
+      } else {
+        // No thread selected, clear data
+        clear();
         setMessages([]);
-        // Reset expansion states for new conversation
         setQueriesExpanded(true);
         setResultsExpanded(true);
       }
     }
-  }, [threadId, currentThreadId, userId]);
+  }, [
+    threadId,
+    currentThreadId,
+    userId,
+    clear,
+    loadResearch,
+    queries,
+    searchResults,
+    report,
+  ]);
+
+  // Update messages when we have saved research data
+  useEffect(() => {
+    if (report && queries && !messages.length && threadId) {
+      // If we have research data but no messages, create a user message
+      // This happens when loading a saved research thread
+      const userMessage = { role: "user", content: "Research request" };
+      setMessages([userMessage]);
+    }
+  }, [report, queries, messages.length, threadId]);
 
   // New Chat: clear messages and remove thread ID from URL
   const handleNewChat = () => {
     setMessages([]);
     setQueriesExpanded(true);
     setResultsExpanded(true);
+    clear();
     router.push("?", { scroll: false });
   };
 
-  // Send message: use new runWorkflow instead
+  // Send message: use runWorkflow for new research
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !userId) return;
 

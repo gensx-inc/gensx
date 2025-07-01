@@ -40,7 +40,7 @@ export function ChatHistory({
         if (setLoading) {
           setIsLoading(true);
         }
-        const response = await fetch(`/api/chats/${userId}`);
+        const response = await fetch(`/api/research/${userId}`);
         if (response.ok) {
           const data = await response.json();
           setThreads(data);
@@ -82,9 +82,12 @@ export function ChatHistory({
     );
 
     try {
-      const response = await fetch(`/api/chats/${userId}/${threadIdToDelete}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/research/${userId}/${threadIdToDelete}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
         console.error("Failed to delete chat on server");
@@ -136,7 +139,7 @@ export function ChatHistory({
               </div>
             ) : (
               <div className="flex items-center justify-between w-full">
-                <h2 className="font-semibold text-slate-900 pl-2">Chat</h2>
+                <h2 className="font-semibold text-slate-900 pl-2">Research</h2>
                 <button
                   onClick={onCollapseToggle}
                   className="p-1.5 hover:bg-slate-100 rounded-md transition-colors group"
