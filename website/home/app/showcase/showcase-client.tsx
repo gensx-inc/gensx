@@ -33,7 +33,7 @@ const showcaseItems: ShowcaseItem[] = [
     id: "draft-pad",
     title: "Draft Pad",
     description:
-      "Document editor with AI-powered writing assistance, supporting real-time suggestions and markdown export.",
+      "Canvas-style document editor for iterative writing using multiple models across providers.",
     image: "/showcase/draft-pad.png",
     demo: "https://draft-pad.vercel.app",
     github: "https://github.com/gensx-inc/gensx/tree/main/examples/draft-pad",
@@ -438,8 +438,7 @@ export default function ShowcaseClient() {
           transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
           className="text-lg md:text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto -mt-12"
         >
-          Explore demo applications built with GenSX. From chat interfaces to
-          research agents, see what&apos;s possible with our framework.
+          Explore demo applications and code examples built with GenSX
         </motion.p>
 
         {/* Live Demos Section */}
