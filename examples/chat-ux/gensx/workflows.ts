@@ -1,8 +1,8 @@
 import * as gensx from "@gensx/core";
 import { Agent } from "./agent";
 import { CoreMessage } from "ai";
-import { webSearchTool } from "./tools/webSearch";
-import { scrapePageTool } from "./tools/scrapePage";
+import { webSearchTool } from "./tools/web-search";
+import { scrapePageTool } from "./tools/scrape-page";
 import { useBlob } from "@gensx/storage";
 import { anthropic } from "@ai-sdk/anthropic";
 import { AnthropicProviderOptions } from "@ai-sdk/anthropic";
@@ -14,8 +14,8 @@ interface ChatAgentProps {
   thinking?: boolean;
 }
 
-export const ChatAgent = gensx.Workflow(
-  "ChatAgent",
+export const Chat = gensx.Workflow(
+  "Chat",
   async ({ prompt, threadId, userId, thinking = true }: ChatAgentProps) => {
     // Get blob instance for chat history storage
     const chatHistoryBlob = useBlob<CoreMessage[]>(

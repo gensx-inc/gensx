@@ -1,10 +1,8 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
-const GENSX_WORKFLOW_NAME = "ChatAgent";
-
 const GENSX_ORG = process.env.GENSX_ORG;
-const GENSX_PROJECT = process.env.GENSX_PROJECT ?? "chat-tools";
+const GENSX_PROJECT = process.env.GENSX_PROJECT ?? "deep-research";
 const GENSX_ENV = process.env.GENSX_ENV ?? "default";
 
 type RequestBody = Record<string, unknown>;
@@ -28,8 +26,12 @@ const shouldUseLocalDevServer = () => {
  *
  * This is designed to work with the useGenSX hook
  */
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ workflow: string }> },
+) {
   try {
+    const { workflow } = await params;
     const inputs = (await request.json()) as RequestBody;
 
     const useLocalDevServer = shouldUseLocalDevServer();
@@ -73,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     // Use runRaw to get the direct response
 
-    const response = await gensx.runRaw(GENSX_WORKFLOW_NAME, {
+    const response = await gensx.runRaw(workflow, {
       inputs,
       format,
     });
