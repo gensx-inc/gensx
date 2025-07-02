@@ -82,7 +82,7 @@ const components: Partial<Components> = {
 
     return isInline ? (
       <code
-        className="bg-zinc-700 text-zinc-200 px-1 py-0.5 rounded text-sm font-mono"
+        className="bg-zinc-700 text-zinc-200 px-1 py-0.5 rounded text-xs font-mono"
         {...rest}
       >
         {children}
@@ -94,77 +94,79 @@ const components: Partial<Components> = {
     );
   },
   pre({ children }) {
-    return <div className="my-4">{children}</div>;
+    return <div className="my-3 text-xs">{children}</div>;
   },
   p({ children }) {
-    return <p className="mb-2 last:mb-0 text-zinc-300">{children}</p>;
+    return <p className="mb-1 last:mb-0 text-zinc-400 text-base">{children}</p>;
   },
   ul({ children }) {
     return (
-      <ul className="list-disc list-outside ml-4 mb-2 space-y-1">{children}</ul>
+      <ul className="list-disc list-outside ml-4 mb-1 space-y-0.5 text-base text-zinc-400">
+        {children}
+      </ul>
     );
   },
   ol({ children }) {
     return (
-      <ol className="list-decimal list-outside ml-4 mb-2 space-y-1">
+      <ol className="list-decimal list-outside ml-4 mb-1 space-y-0.5 text-base text-zinc-400">
         {children}
       </ol>
     );
   },
   li({ children }) {
-    return <li className="text-zinc-300 py-1">{children}</li>;
+    return <li className="text-zinc-400 py-0.5 text-base">{children}</li>;
   },
   blockquote({ children }) {
     return (
-      <blockquote className="border-l-4 border-zinc-600 pl-4 italic text-zinc-400 my-2">
+      <blockquote className="border-l-4 border-zinc-600 pl-4 italic text-zinc-500 my-1 text-base">
         {children}
       </blockquote>
     );
   },
   h1({ children }) {
     return (
-      <h1 className="text-3xl font-semibold mt-6 mb-2 text-zinc-200">
+      <h1 className="text-2xl font-semibold mt-4 mb-1 text-zinc-300">
         {children}
       </h1>
     );
   },
   h2({ children }) {
     return (
-      <h2 className="text-2xl font-semibold mt-6 mb-2 text-zinc-200">
+      <h2 className="text-xl font-semibold mt-4 mb-1 text-zinc-300">
         {children}
       </h2>
     );
   },
   h3({ children }) {
     return (
-      <h3 className="text-xl font-semibold mt-6 mb-2 text-zinc-200">
+      <h3 className="text-lg font-semibold mt-3 mb-1 text-zinc-300">
         {children}
       </h3>
     );
   },
   h4({ children }) {
     return (
-      <h4 className="text-lg font-semibold mt-6 mb-2 text-zinc-200">
+      <h4 className="text-base font-semibold mt-3 mb-1 text-zinc-300">
         {children}
       </h4>
     );
   },
   h5({ children }) {
     return (
-      <h5 className="text-base font-semibold mt-6 mb-2 text-zinc-200">
+      <h5 className="text-sm font-semibold mt-2 mb-1 text-zinc-300">
         {children}
       </h5>
     );
   },
   h6({ children }) {
     return (
-      <h6 className="text-sm font-semibold mt-6 mb-2 text-zinc-200">
+      <h6 className="text-xs font-semibold mt-2 mb-1 text-zinc-300">
         {children}
       </h6>
     );
   },
   strong({ children }) {
-    return <span className="font-semibold text-zinc-200">{children}</span>;
+    return <span className="font-semibold text-zinc-300/85">{children}</span>;
   },
   em({ children }) {
     return <em className="italic">{children}</em>;
@@ -175,7 +177,7 @@ const components: Partial<Components> = {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-400 hover:text-blue-300 underline"
+        className="text-blue-700 hover:text-blue-500 underline text-sm"
       >
         {children}
       </a>
@@ -183,8 +185,10 @@ const components: Partial<Components> = {
   },
   table({ children }) {
     return (
-      <div className="overflow-x-auto my-2">
-        <table className="min-w-full border border-zinc-700">{children}</table>
+      <div className="overflow-x-auto my-1">
+        <table className="min-w-full border border-zinc-700 text-base text-zinc-400">
+          {children}
+        </table>
       </div>
     );
   },
@@ -193,20 +197,20 @@ const components: Partial<Components> = {
   },
   th({ children }) {
     return (
-      <th className="border border-zinc-700 px-3 py-2 text-left font-semibold text-zinc-200">
+      <th className="border border-zinc-700 px-2 py-1 text-left font-semibold text-zinc-600 text-base">
         {children}
       </th>
     );
   },
   td({ children }) {
     return (
-      <td className="border border-zinc-700 px-3 py-2 text-zinc-300">
+      <td className="border border-zinc-700 px-2 py-1 text-zinc-500 text-base">
         {children}
       </td>
     );
   },
   hr() {
-    return <hr className="border-t border-zinc-700 my-4" />;
+    return <hr className="border-t border-zinc-700 my-2" />;
   },
 };
 
@@ -218,7 +222,10 @@ const NonMemoizedMarkdownContent = ({
   className = "",
 }: MarkdownContentProps) => {
   return (
-    <div className={`prose prose-sm max-w-none ${className}`}>
+    <div
+      className={`prose prose-sm max-w-none ${className}`}
+      style={{ fontSize: "1.05em" }}
+    >
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}

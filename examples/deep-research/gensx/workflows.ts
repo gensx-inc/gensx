@@ -57,7 +57,7 @@ export const DeepResearch = gensx.Workflow(
       gensx.publishObject("queries", output.queries);
       await saveResearch(output);
 
-      updateStatus("Querying");
+      updateStatus("Searching");
       // Execute queries, rank with Cohere, dedupe, and fetch content
       output.searchResults = await ExecuteQueries({
         prompt,

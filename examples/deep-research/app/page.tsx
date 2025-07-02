@@ -224,6 +224,7 @@ export default function ChatPage() {
                       onToggle={() =>
                         setResearchBriefExpanded(!researchBriefExpanded)
                       }
+                      isActive={status === "Planning"}
                     />
 
                     {/* Research Queries */}
@@ -231,6 +232,7 @@ export default function ChatPage() {
                       queries={queries || []}
                       expanded={queriesExpanded}
                       onToggle={() => setQueriesExpanded(!queriesExpanded)}
+                      isActive={status === "Searching"}
                     />
 
                     {/* Search Results */}
@@ -238,19 +240,14 @@ export default function ChatPage() {
                       searchResults={searchResults || []}
                       expanded={resultsExpanded}
                       onToggle={() => setResultsExpanded(!resultsExpanded)}
+                      isActive={status === "Reading"}
                     />
 
-                    {/* Show research progress */}
-                    {status && status !== "Completed" && (
-                      <div className="flex justify-start px-2 py-2">
-                        <div className="text-zinc-400 text-sm font-medium">
-                          Status: {status}
-                        </div>
-                      </div>
-                    )}
-
                     {/* Research Report */}
-                    <ResearchReport report={report || ""} status={status} />
+                    <ResearchReport
+                      report={report || ""}
+                      isActive={status === "Generating"}
+                    />
 
                     {error && (
                       <div className="flex justify-start px-2 py-2">
