@@ -22,12 +22,16 @@ export function TimelineSection({
     <div className="relative">
       {/* Timeline Line */}
       {showTimeline && (
-        <div className="absolute left-6 top-2.5 -bottom-6 w-px bg-zinc-700"></div>
+        <div
+          className={`absolute left-6 top-2.5 w-px bg-zinc-700 ${isActive === false ? " -bottom-6" : "bottom-0"}`}
+        ></div>
       )}
 
       {/* Timeline Dot */}
       {showTimeline && (
-        <div className="absolute left-4.5 top-2.5 w-3 h-3 bg-zinc-600 rounded-full border-2 border-zinc-900"></div>
+        <div
+          className={`absolute left-4.5 top-2.5 w-3 h-3 ${isActive ? "bg-slate-600" : "bg-zinc-600"} rounded-full border-2 border-zinc-900`}
+        ></div>
       )}
 
       <div className={showTimeline ? "pl-12 pr-2" : "pr-2"}>
@@ -38,7 +42,7 @@ export function TimelineSection({
           <h4
             className={`font-medium text-sm ${
               isActive
-                ? "bg-gradient-to-r from-zinc-400 via-zinc-600 to-zinc-400 bg-clip-text text-transparent bg-[length:200%_100%] animate-[shimmer_4s_linear_infinite]"
+                ? "bg-gradient-to-r from-slate-600 via-slate-400 to-slate-600 bg-clip-text text-transparent bg-[length:200%_100%] animate-[shimmer_4s_linear_infinite_reverse]"
                 : "text-zinc-400"
             }`}
           >

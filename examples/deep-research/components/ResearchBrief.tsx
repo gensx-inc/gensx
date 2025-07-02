@@ -14,8 +14,6 @@ export function ResearchBrief({
   onToggle,
   isActive,
 }: ResearchBriefProps) {
-  if (!researchBrief) return null;
-
   return (
     <TimelineSection
       title="Planning"

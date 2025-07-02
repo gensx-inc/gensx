@@ -38,6 +38,16 @@ export default function ChatPage() {
   const [resultsExpanded, setResultsExpanded] = useState(true);
   const [researchBriefExpanded, setResearchBriefExpanded] = useState(true);
 
+  // Check if status is valid
+  const validStatuses = [
+    "Planning",
+    "Searching",
+    "Reading",
+    "Generating",
+    "Completed",
+  ];
+  const isValidStatus = status ? validStatuses.includes(status) : false;
+
   // Get thread ID from URL
   const threadId = searchParams.get("thread");
 
@@ -45,15 +55,6 @@ export default function ChatPage() {
   useEffect(() => {
     setUserId(getUserId());
   }, []);
-
-  // Auto-collapse sections when report starts streaming
-  // useEffect(() => {
-  //   if (report && report.length > 0) {
-  //     setQueriesExpanded(false);
-  //     setResultsExpanded(false);
-  //     setResearchBriefExpanded(false);
-  //   }
-  // }, [report]);
 
   // Handle thread switching - load research data when thread changes
   useEffect(() => {
@@ -170,7 +171,7 @@ export default function ChatPage() {
                   rel="noopener noreferrer"
                 >
                   <Image
-                    src="/github-mark.svg"
+                    src="/github-mark-white.svg"
                     alt="GitHub"
                     className="w-6 h-6 opacity-70 hover:opacity-100 transition-opacity"
                     width={24}
@@ -184,7 +185,7 @@ export default function ChatPage() {
                   rel="noopener noreferrer"
                 >
                   <Image
-                    src="/logo.svg"
+                    src="/logo-dark.svg"
                     alt="Docs"
                     width={87}
                     height={35}
@@ -200,11 +201,6 @@ export default function ChatPage() {
                 <div className="max-w-4xl mx-auto w-full">
                   <ChatInput
                     onSendMessage={handleSendMessage}
-                    disabled={
-                      status === "Planning" ||
-                      status === "Searching" ||
-                      status === "Generating"
-                    }
                     isCentered={true}
                   />
                 </div>
@@ -242,6 +238,25 @@ export default function ChatPage() {
                       onToggle={() => setResultsExpanded(!resultsExpanded)}
                       isActive={status === "Reading"}
                     />
+
+                    {/* Show spinner for invalid/unknown status */}
+                    {status && !isValidStatus && (
+                      <div className="relative mb-6">
+                        {/* Timeline Line */}
+                        <div className="absolute left-6 top-2.5 w-px bg-zinc-700"></div>
+
+                        {/* Timeline Dot */}
+                        <div className="absolute left-4.5 top-2.5 w-3 h-3 bg-slate-600 rounded-full border-2 border-zinc-900"></div>
+
+                        <div className="pl-12 pr-2">
+                          <div className="px-3 py-1">
+                            <h4 className="bg-gradient-to-r from-slate-600 via-slate-400 to-slate-600 bg-clip-text text-transparent bg-[length:200%_100%] animate-[shimmer_4s_linear_infinite_reverse] font-medium text-sm">
+                              {status ?? "Working on it"}
+                            </h4>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Research Report */}
                     <ResearchReport

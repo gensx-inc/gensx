@@ -115,7 +115,7 @@ export function useDeepResearch(): UseChatReturn {
 
   return {
     runWorkflow,
-    status,
+    status: status ?? "Planning",
     error: workflowError,
     queries,
     searchResults,

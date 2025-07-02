@@ -97,7 +97,7 @@ const components: Partial<Components> = {
     return <div className="my-3 text-xs">{children}</div>;
   },
   p({ children }) {
-    return <p className="mb-1 last:mb-0 text-zinc-400 text-base">{children}</p>;
+    return <p className="mb-2 last:mb-0 text-zinc-400 text-base">{children}</p>;
   },
   ul({ children }) {
     return (
