@@ -310,7 +310,7 @@ export function useWorkflow<
             if (!line.trim()) continue;
 
             try {
-              const event = JSON.parse(line) as WorkflowMessage;
+              const event = JSON.parse(line.trim()) as WorkflowMessage;
               processEvent(event);
             } catch (_e) {
               console.warn("Failed to parse event:", line);
@@ -371,7 +371,7 @@ export function useWorkflow<
       abortControllerRef.current = new AbortController();
 
       try {
-        const response = await fetch(baseUrl, {
+        const response = await fetch(`${baseUrl}/start`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -387,8 +387,21 @@ export function useWorkflow<
           );
         }
 
+        const { executionId: newExecutionId } = (await response.json()) as {
+          executionId: string;
+        };
+        executionId.current = newExecutionId;
+
+        // Connect to progress events
+        const progressResponse = await fetch(
+          `${baseUrl}/workflowExecutions/${executionId.current}/progress`,
+          {
+            method: "POST",
+          },
+        );
+
         // Parse the stream
-        await parseStream(response);
+        await parseStream(progressResponse);
 
         // onComplete is already called in processEvent when 'end' event is received
       } catch (err) {
