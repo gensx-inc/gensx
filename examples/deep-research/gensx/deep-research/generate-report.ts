@@ -5,20 +5,25 @@ import { anthropic } from "@ai-sdk/anthropic";
 
 interface GenerateReportParams {
   prompt: string;
+  researchBrief: string;
   documents: SearchResult[];
 }
 
 export const GenerateReport = gensx.Component(
   "GenerateReport",
-  async ({ prompt, documents }: GenerateReportParams) => {
+  async ({ prompt, researchBrief, documents }: GenerateReportParams) => {
     const systemMessage = `You are an expert researcher.`;
-    const fullPrompt = `Given the following prompt and documents, please generated a detailed report.
+    const fullPrompt = `Given the following prompt, research brief, and sources, please generate a detailed report with proper citations.
 
 <prompt>
 ${prompt}
 </prompt>
 
-<documents>
+<researchBrief>
+${researchBrief}
+</researchBrief>
+
+<sources>
 ${documents
   .map(
     (document) => `<document>
@@ -28,7 +33,10 @@ ${documents
 </document>`,
   )
   .join("\n")}
-</documents>
+</sources>
+
+IMPORTANT: When writing the report, include citations wherever possible for facts, claims, and information you reference from the sources. Use markdown links for the numeric citations like this: [[1]](URL)
+
 `;
 
     const response = await streamText({

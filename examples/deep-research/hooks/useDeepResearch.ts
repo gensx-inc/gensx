@@ -12,6 +12,7 @@ interface UseChatReturn {
   queries: string[] | undefined;
   searchResults: JsonValue | undefined;
   report: string | undefined;
+  researchBrief: string | undefined;
   prompt: string | undefined;
   status: string | undefined;
   error: string | null;
@@ -43,6 +44,7 @@ export function useDeepResearch(): UseChatReturn {
     "searchResults",
   );
   const workflowReport = useObject<string>(execution, "report");
+  const workflowResearchBrief = useObject<string>(execution, "researchBrief");
   const workflowStatus = useObject<string>(execution, "status");
 
   // Determine if we have active workflow data
@@ -51,7 +53,7 @@ export function useDeepResearch(): UseChatReturn {
   // Use workflow data if we have an active workflow, otherwise use saved data
   const queries = hasActiveWorkflow
     ? workflowQueries
-    : workflowQueries || savedData?.plan?.queries;
+    : workflowQueries || savedData?.queries;
   const searchResults = hasActiveWorkflow
     ? workflowSearchResults
     : workflowSearchResults ||
@@ -59,6 +61,9 @@ export function useDeepResearch(): UseChatReturn {
   const report = hasActiveWorkflow
     ? workflowReport
     : workflowReport || savedData?.report;
+  const researchBrief = hasActiveWorkflow
+    ? workflowResearchBrief
+    : workflowResearchBrief || savedData?.researchBrief;
   const prompt = currentPrompt || savedData?.prompt;
   const status = workflowStatus;
 
@@ -115,6 +120,7 @@ export function useDeepResearch(): UseChatReturn {
     queries,
     searchResults,
     report,
+    researchBrief,
     prompt,
     loadResearch,
     clear,

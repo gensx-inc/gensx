@@ -1,30 +1,33 @@
 import * as gensx from "@gensx/core";
-import { generateObject } from "@gensx/vercel-ai";
+import { streamText } from "@gensx/vercel-ai";
 import { anthropic } from "@ai-sdk/anthropic";
-import z from "zod";
 
 interface PlanInput {
   prompt: string;
 }
 
 export const Plan = gensx.Component("Plan", async ({ prompt }: PlanInput) => {
-  const systemMessage = "You are an experienced research assistant.";
+  const systemMessage =
+    "You are an experienced research assistant who creates in depth reports based on user prompts.";
 
-  const fullPrompt = `Given the following prompt, generate a research brief and 5 unique search queries to research the topic thoroughly.
+  const fullPrompt = `Given the following prompt, generate a research brief for a report on the user's topic.
 
-PROMPT:
-${prompt}`;
+The brief should just be one or two paragraphs and state the following:
+- The objective of the report
+- The scope of the report
+- Important considerations
+- Any key insights or information that should be included in the report
+- Any other information that is relevant to the report
 
-  const { object } = await generateObject({
+The report should be in depth and cover all aspects of the user's topic while not being overly verbose.
+
+Here is the user's prompt:
+<prompt>
+${prompt}
+</prompt>`;
+
+  const response = await streamText({
     model: anthropic("claude-sonnet-4-20250514"),
-    schema: z.object({
-      researchBrief: z
-        .string()
-        .describe(
-          "A research brief outlining the objectives, scope, and key considerations.",
-        ),
-      queries: z.array(z.string()),
-    }),
     messages: [
       {
         role: "system",
@@ -36,5 +39,12 @@ ${prompt}`;
       },
     ],
   });
-  return object;
+
+  let text = "";
+  for await (const chunk of response.textStream) {
+    text += chunk;
+    gensx.publishObject("researchBrief", text);
+  }
+
+  return text;
 });

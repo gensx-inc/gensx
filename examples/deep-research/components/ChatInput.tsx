@@ -54,12 +54,12 @@ export function ChatInput({
       <div className="w-full flex flex-col items-center -mt-36">
         {/* Caption */}
         <div className="text-center mb-4">
-          <h1 className="text-4xl font-semibold text-slate-900 mb-2">
+          <h1 className="text-4xl font-semibold text-zinc-100 mb-2">
             Interactive Deep Research
           </h1>
-          <p className="text-slate-500 text-lg">
-            See how GenSX lets you build agents with streaming and human in the
-            loop.
+          <p className="text-zinc-400 text-lg">
+            Experience how GenSX lets you build agents with streaming and human
+            in the loop.
           </p>
         </div>
 
@@ -67,10 +67,10 @@ export function ChatInput({
         <form onSubmit={handleSubmit} className="relative w-full max-w-2xl">
           <div
             className={cn(
-              "relative flex items-end gap-3 p-2 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm shadow-lg",
+              "relative flex items-end gap-3 p-2 rounded-2xl border transition-all duration-200 bg-zinc-800 backdrop-blur-sm shadow-lg",
               isFocused
-                ? "shadow-xl shadow-slate-500/20"
-                : "border-slate-200 hover:border-slate-300 hover:shadow-xl",
+                ? "shadow-xl shadow-zinc-500/20"
+                : "border-zinc-700 hover:border-zinc-600 hover:shadow-lg",
             )}
           >
             {/* Text Input */}
@@ -83,7 +83,7 @@ export function ChatInput({
               onBlur={() => setIsFocused(false)}
               placeholder="What would you like to research?"
               disabled={disabled}
-              className="flex-1 min-h-[3rem] max-h-[12rem] resize-none border-0 bg-transparent p-2 text-gray-700 focus-visible:ring-0 focus-visible:ring-offset-0 text-base leading-relaxed placeholder:text-slate-400"
+              className="flex-1 min-h-[3rem] max-h-[12rem] resize-none border-0 bg-transparent p-2 text-zinc-200 focus-visible:ring-0 focus-visible:ring-offset-0 text-base leading-relaxed placeholder:text-zinc-400"
               rows={2}
             />
 
@@ -93,9 +93,9 @@ export function ChatInput({
               size="sm"
               disabled={!message.trim() || disabled}
               className={cn(
-                "flex-shrink-0 h-10 w-10 p-0 rounded-lg transition-all duration-200 bg-gradient-to-br from-slate-800 to-slate-700",
+                "flex-shrink-0 h-10 w-10 p-0 rounded-lg transition-all duration-200 bg-gradient-to-br from-zinc-800 to-zinc-700",
                 !message.trim() || disabled
-                  ? "bg-slate-100 hover:bg-slate-200 cursor-not-allowed"
+                  ? "bg-zinc-800 hover:bg-zinc-700 cursor-not-allowed"
                   : "hover:shadow-md transform hover:scale-105 active:scale-95",
               )}
             >
@@ -103,19 +103,19 @@ export function ChatInput({
                 size={18}
                 className={cn(
                   "transition-colors duration-200",
-                  !message.trim() || disabled ? "text-slate-400" : "text-white",
+                  !message.trim() || disabled ? "text-zinc-400" : "text-white",
                 )}
               />
             </Button>
           </div>
         </form>
-        <p className="text-slate-400 text-xs mt-4 text-center">
+        <p className="text-zinc-400 text-xs mt-4 text-center">
           Demo powered by{" "}
           <a
             href="https://gensx.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-slate-600 transition-colors"
+            className="hover:text-zinc-300 transition-colors"
           >
             GenSX
           </a>
@@ -128,10 +128,10 @@ export function ChatInput({
     <form onSubmit={handleSubmit} className="relative">
       <div
         className={cn(
-          "relative flex items-end gap-2 p-1 mb-2 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm",
+          "relative flex items-end gap-2 p-1 mb-2 rounded-2xl border transition-all duration-200 bg-zinc-800 backdrop-blur-sm",
           isFocused
-            ? " shadow-lg shadow-slate-500/20"
-            : "border-slate-200 shadow-lg hover:border-slate-300 hover:shadow-xl",
+            ? " shadow-lg shadow-zinc-500/20"
+            : "border-zinc-700 shadow-lg hover:border-zinc-600 hover:shadow-xl",
         )}
       >
         {/* Text Input */}
@@ -144,7 +144,7 @@ export function ChatInput({
           onBlur={() => setIsFocused(false)}
           placeholder="Type your message..."
           disabled={disabled}
-          className="flex-1 min-h-[1.5rem] max-h-[7.5rem] resize-none border-0 bg-transparent text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm leading-relaxed placeholder:text-slate-400"
+          className="flex-1 min-h-[1.5rem] max-h-[7.5rem] resize-none border-0 bg-transparent text-zinc-200 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm leading-relaxed placeholder:text-zinc-400"
           rows={1}
         />
 
@@ -154,9 +154,9 @@ export function ChatInput({
           size="sm"
           disabled={!message.trim() || disabled}
           className={cn(
-            "flex-shrink-0 h-8 w-8 p-0 rounded-lg transition-all duration-200 bg-gradient-to-br from-slate-800 to-slate-700 mr-1 mb-1",
+            "flex-shrink-0 h-8 w-8 p-0 rounded-lg transition-all duration-200 bg-gradient-to-br from-zinc-800 to-zinc-700 mr-1 mb-1",
             !message.trim() || disabled
-              ? "bg-slate-100 hover:bg-slate-200 cursor-not-allowed"
+              ? "bg-zinc-800 hover:bg-zinc-700 cursor-not-allowed"
               : "hover:shadow-md transform hover:scale-105 active:scale-95",
           )}
         >
@@ -164,7 +164,7 @@ export function ChatInput({
             size={16}
             className={cn(
               "transition-colors duration-200",
-              !message.trim() || disabled ? "text-slate-400" : "text-white",
+              !message.trim() || disabled ? "text-zinc-400" : "text-white",
             )}
           />
         </Button>

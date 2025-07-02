@@ -1,10 +1,11 @@
 import * as gensx from "@gensx/core";
+import { WriteQueries } from "./deep-research/write-queries";
 import { Plan } from "./deep-research/plan";
-import { Search } from "./deep-research/search";
 import { SearchResult } from "./types";
 import { GenerateReport } from "./deep-research/generate-report";
 import { useBlob } from "@gensx/storage";
-import { GatherSources } from "./deep-research/gather-sources";
+import { ExecuteQueries } from "./deep-research/execute-queries";
+import { Scrape } from "./deep-research/scrape";
 
 export interface DeepResearchParams {
   prompt: string;
@@ -12,17 +13,12 @@ export interface DeepResearchParams {
   threadId: string;
 }
 
-interface DeepResearchPlan {
-  queries: string[];
-  researchBrief: string;
-}
-
 export interface DeepResearchOutput {
   report: string;
   prompt: string;
-  plan: DeepResearchPlan;
+  researchBrief: string;
+  queries: string[];
   searchResults: SearchResult[];
-  processedSources: SearchResult[];
 }
 
 export const DeepResearch = gensx.Workflow(
@@ -42,57 +38,80 @@ export const DeepResearch = gensx.Workflow(
       const output: DeepResearchOutput = {
         prompt,
         report: "",
-        plan: {
-          queries: [],
-          researchBrief: "",
-        },
+        researchBrief: "",
+        queries: [],
         searchResults: [],
-        processedSources: [],
       };
 
       const updateStatus = gensx.createObjectStream<string>("status");
+
       updateStatus("Planning");
-      output.plan = await Plan({ prompt });
-      gensx.publishObject("queries", output.plan.queries);
+      output.researchBrief = await Plan({ prompt });
       await saveResearch(output);
 
-      updateStatus("Searching");
-      // Execute all search queries in parallel
-      const searchPromises = output.plan.queries.map((query) =>
-        Search({ query, limit: 10 }),
-      );
-      const allSearchResults = await Promise.all(searchPromises);
+      updateStatus("Writing queries");
+      const queriesResult = await WriteQueries({
+        researchBrief: output.researchBrief,
+      });
+      output.queries = queriesResult.queries;
+      gensx.publishObject("queries", output.queries);
+      await saveResearch(output);
 
-      // Combine all search results
-      const research = allSearchResults.flat();
-      // Deduplicate research results
-      output.searchResults = research.filter(
-        (result, index, self) =>
-          index === self.findIndex((t) => t.url === result.url),
+      updateStatus("Querying");
+      // Execute queries, rank with Cohere, dedupe, and fetch content
+      output.searchResults = await ExecuteQueries({
+        prompt,
+        queries: output.queries,
+      });
+
+      gensx.publishObject<SearchResult[]>(
+        "searchResults",
+        output.searchResults,
       );
+
+      // Scrape content for the ranked results
+      updateStatus("Reading");
+      const scrapedResults = await Promise.all(
+        output.searchResults.map(
+          async (document): Promise<SearchResult | null> => {
+            try {
+              // Scrape the content for each document
+              const content = await Scrape({ url: document.url });
+
+              // Return the document with content
+              return {
+                ...document,
+                content,
+              } as SearchResult;
+            } catch (error) {
+              console.error(
+                `Error processing document ${document.url}:`,
+                error,
+              );
+              return null;
+            }
+          },
+        ),
+      );
+
+      // Filter out null results and return only results with non-empty content
+      output.searchResults = scrapedResults.filter(
+        (result): result is SearchResult =>
+          result !== null && result.content !== "",
+      );
+
       gensx.publishObject<SearchResult[]>(
         "searchResults",
         output.searchResults,
       );
       await saveResearch(output);
 
-      updateStatus("Processing");
-      // Grade and scrape useful sources
-      const processedSources = await GatherSources({
-        prompt,
-        searchResults: output.searchResults,
-      });
-
-      // Update search results with processed sources
-      output.processedSources = processedSources;
-      gensx.publishObject<SearchResult[]>("processedSources", processedSources);
-      await saveResearch(output);
-
       // Generate a report (the component streams the report to the client)
       updateStatus("Generating");
       output.report = await GenerateReport({
         prompt,
-        documents: processedSources,
+        researchBrief: output.researchBrief,
+        documents: output.searchResults,
       });
       await saveResearch(output);
       updateStatus("Completed");

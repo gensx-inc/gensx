@@ -33,13 +33,13 @@ function CodeBlock({ language, children }: CodeBlockProps) {
     <div className="relative group">
       {/* Header with language and copy button */}
       <div
-        className="flex justify-between items-center text-slate-300 px-4 py-1 text-xs font-medium rounded-t-md border-b border-slate-900"
+        className="flex justify-between items-center text-zinc-300 px-4 py-1 text-xs font-medium rounded-t-md border-b border-zinc-900"
         style={{ backgroundColor: "#282c34" }}
       >
         <span className="lowercase tracking-wide">{language}</span>
         <button
           onClick={copyToClipboard}
-          className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity duration-200 hover:bg-slate-700 px-2 py-1 rounded"
+          className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity duration-200 hover:bg-zinc-700 px-2 py-1 rounded"
           title="Copy code"
         >
           {copied ? (
@@ -82,7 +82,7 @@ const components: Partial<Components> = {
 
     return isInline ? (
       <code
-        className="bg-slate-100 text-slate-800 px-1 py-0.5 rounded text-sm font-mono"
+        className="bg-zinc-700 text-zinc-200 px-1 py-0.5 rounded text-sm font-mono"
         {...rest}
       >
         {children}
@@ -97,7 +97,7 @@ const components: Partial<Components> = {
     return <div className="my-4">{children}</div>;
   },
   p({ children }) {
-    return <p className="mb-2 last:mb-0 text-slate-800">{children}</p>;
+    return <p className="mb-2 last:mb-0 text-zinc-300">{children}</p>;
   },
   ul({ children }) {
     return (
@@ -112,59 +112,59 @@ const components: Partial<Components> = {
     );
   },
   li({ children }) {
-    return <li className="text-slate-800 py-1">{children}</li>;
+    return <li className="text-zinc-300 py-1">{children}</li>;
   },
   blockquote({ children }) {
     return (
-      <blockquote className="border-l-4 border-slate-300 pl-4 italic text-slate-600 my-2">
+      <blockquote className="border-l-4 border-zinc-600 pl-4 italic text-zinc-400 my-2">
         {children}
       </blockquote>
     );
   },
   h1({ children }) {
     return (
-      <h1 className="text-3xl font-semibold mt-6 mb-2 text-slate-900">
+      <h1 className="text-3xl font-semibold mt-6 mb-2 text-zinc-200">
         {children}
       </h1>
     );
   },
   h2({ children }) {
     return (
-      <h2 className="text-2xl font-semibold mt-6 mb-2 text-slate-900">
+      <h2 className="text-2xl font-semibold mt-6 mb-2 text-zinc-200">
         {children}
       </h2>
     );
   },
   h3({ children }) {
     return (
-      <h3 className="text-xl font-semibold mt-6 mb-2 text-slate-900">
+      <h3 className="text-xl font-semibold mt-6 mb-2 text-zinc-200">
         {children}
       </h3>
     );
   },
   h4({ children }) {
     return (
-      <h4 className="text-lg font-semibold mt-6 mb-2 text-slate-900">
+      <h4 className="text-lg font-semibold mt-6 mb-2 text-zinc-200">
         {children}
       </h4>
     );
   },
   h5({ children }) {
     return (
-      <h5 className="text-base font-semibold mt-6 mb-2 text-slate-900">
+      <h5 className="text-base font-semibold mt-6 mb-2 text-zinc-200">
         {children}
       </h5>
     );
   },
   h6({ children }) {
     return (
-      <h6 className="text-sm font-semibold mt-6 mb-2 text-slate-900">
+      <h6 className="text-sm font-semibold mt-6 mb-2 text-zinc-200">
         {children}
       </h6>
     );
   },
   strong({ children }) {
-    return <span className="font-semibold text-slate-900">{children}</span>;
+    return <span className="font-semibold text-zinc-200">{children}</span>;
   },
   em({ children }) {
     return <em className="italic">{children}</em>;
@@ -175,7 +175,7 @@ const components: Partial<Components> = {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-600 hover:text-blue-800 underline"
+        className="text-blue-400 hover:text-blue-300 underline"
       >
         {children}
       </a>
@@ -184,29 +184,29 @@ const components: Partial<Components> = {
   table({ children }) {
     return (
       <div className="overflow-x-auto my-2">
-        <table className="min-w-full border border-slate-200">{children}</table>
+        <table className="min-w-full border border-zinc-700">{children}</table>
       </div>
     );
   },
   thead({ children }) {
-    return <thead className="bg-slate-50">{children}</thead>;
+    return <thead className="bg-zinc-800">{children}</thead>;
   },
   th({ children }) {
     return (
-      <th className="border border-slate-200 px-3 py-2 text-left font-semibold text-slate-900">
+      <th className="border border-zinc-700 px-3 py-2 text-left font-semibold text-zinc-200">
         {children}
       </th>
     );
   },
   td({ children }) {
     return (
-      <td className="border border-slate-200 px-3 py-2 text-slate-800">
+      <td className="border border-zinc-700 px-3 py-2 text-zinc-300">
         {children}
       </td>
     );
   },
   hr() {
-    return <hr className="border-t border-slate-200 my-4" />;
+    return <hr className="border-t border-zinc-700 my-4" />;
   },
 };
 
