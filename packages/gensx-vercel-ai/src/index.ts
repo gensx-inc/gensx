@@ -69,6 +69,9 @@ export const streamText = Component(
       ]);
     },
   }),
+  {
+    __streamingResultKey: "textStream",
+  },
 ) as typeof ai.streamText;
 
 export const streamObject = Component(
