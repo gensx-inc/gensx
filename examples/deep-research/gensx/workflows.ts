@@ -71,7 +71,7 @@ export const DeepResearch = gensx.Workflow(
 
       // Scrape content for the ranked results
       updateStatus("Reading");
-      const scrapedResults = await Promise.all(
+      output.searchResults = await Promise.all(
         output.searchResults.map(
           async (document): Promise<SearchResult | null> => {
             try {
@@ -92,12 +92,6 @@ export const DeepResearch = gensx.Workflow(
             }
           },
         ),
-      );
-
-      // Filter out null results and return only results with non-empty content
-      output.searchResults = scrapedResults.filter(
-        (result): result is SearchResult =>
-          result !== null && result.content !== "",
       );
 
       gensx.publishObject<SearchResult[]>(

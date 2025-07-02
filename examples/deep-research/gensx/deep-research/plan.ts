@@ -24,7 +24,9 @@ The report should be in depth and cover all aspects of the user's topic while no
 Here is the user's prompt:
 <prompt>
 ${prompt}
-</prompt>`;
+</prompt>
+
+DO NOT include any headings or subheadings in the brief. Use of bullets, bold, and italic is allowed.`;
 
   const response = await streamText({
     model: anthropic("claude-sonnet-4-20250514"),

@@ -47,13 +47,13 @@ export default function ChatPage() {
   }, []);
 
   // Auto-collapse sections when report starts streaming
-  useEffect(() => {
-    if (report && report.length > 0) {
-      setQueriesExpanded(false);
-      setResultsExpanded(false);
-      setResearchBriefExpanded(false);
-    }
-  }, [report]);
+  // useEffect(() => {
+  //   if (report && report.length > 0) {
+  //     setQueriesExpanded(false);
+  //     setResultsExpanded(false);
+  //     setResearchBriefExpanded(false);
+  //   }
+  // }, [report]);
 
   // Handle thread switching - load research data when thread changes
   useEffect(() => {
@@ -213,7 +213,7 @@ export default function ChatPage() {
               <>
                 {/* Main Research Content Container */}
                 <div className="flex-1 overflow-y-auto px-4 py-6 bg-zinc-900">
-                  <div className="max-w-4xl mx-auto w-full">
+                  <div className="max-w-5xl mx-auto w-full">
                     {/* Research Prompt */}
                     <ResearchPrompt prompt={prompt} />
 

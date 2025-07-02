@@ -12,7 +12,7 @@ export const WriteQueries = gensx.Component(
   async ({ researchBrief }: WriteQueriesInput) => {
     const systemMessage = "You are an experienced research assistant.";
 
-    const fullPrompt = `Given the following research brief, generate 3 short search queries to find relevant information on the topic.
+    const fullPrompt = `Given the following research brief, generate 3 short search queries to find relevant information on the topic. Search queries should generally be between 3 and 7 words.
 
 <researchBrief>
 ${researchBrief}
