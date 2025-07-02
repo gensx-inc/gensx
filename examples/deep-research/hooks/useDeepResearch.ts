@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useWorkflow, useObject } from "@gensx/react";
-import { JsonValue } from "@gensx/core";
 import { DeepResearchOutput, DeepResearchParams } from "../gensx/workflows";
+import { SearchResult } from "../gensx/types";
 
 interface UseChatReturn {
   runWorkflow: (
@@ -10,7 +10,7 @@ interface UseChatReturn {
     threadId: string,
   ) => Promise<void>;
   queries: string[] | undefined;
-  searchResults: JsonValue | undefined;
+  searchResults: SearchResult[] | undefined;
   report: string | undefined;
   researchBrief: string | undefined;
   prompt: string | undefined;
@@ -39,7 +39,7 @@ export function useDeepResearch(): UseChatReturn {
 
   // Get real-time updates from the workflow
   const workflowQueries = useObject<string[]>(execution, "queries");
-  const workflowSearchResults = useObject<JsonValue>(
+  const workflowSearchResults = useObject<SearchResult[]>(
     execution,
     "searchResults",
   );
@@ -56,8 +56,7 @@ export function useDeepResearch(): UseChatReturn {
     : workflowQueries || savedData?.queries;
   const searchResults = hasActiveWorkflow
     ? workflowSearchResults
-    : workflowSearchResults ||
-      (savedData?.searchResults as unknown as JsonValue);
+    : workflowSearchResults || savedData?.searchResults;
   const report = hasActiveWorkflow
     ? workflowReport
     : workflowReport || savedData?.report;
