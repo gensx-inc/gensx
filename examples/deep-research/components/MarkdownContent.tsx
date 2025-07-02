@@ -172,12 +172,41 @@ const components: Partial<Components> = {
     return <em className="italic">{children}</em>;
   },
   a({ children, href }) {
+    // If the link text is a single number in brackets (citation)
+    const isCitation =
+      (typeof children === "string" && /^\[\d+\]$/.test(children.trim())) ||
+      (Array.isArray(children) &&
+        children.length === 1 &&
+        typeof children[0] === "string" &&
+        /^\[\d+\]$/.test(children[0].trim()));
+
+    const citationNumber =
+      typeof children === "string"
+        ? children.replace(/^\[(\d+)\]$/, "$1")
+        : Array.isArray(children) && typeof children[0] === "string"
+          ? children[0].replace(/^\[(\d+)\]$/, "$1")
+          : null;
+
+    if (isCitation && citationNumber) {
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center px-1 py-0.25 mb-1 rounded bg-zinc-700/60 text-zinc-300 text-[10.5px] font-mono transition-colors hover:bg-zinc-700"
+          style={{ verticalAlign: "middle" }}
+        >
+          {citationNumber}
+        </a>
+      );
+    }
+
     return (
       <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-700 hover:text-blue-500 underline text-sm"
+        className="text-slate-500 hover:text-slate-700 underline text-sm"
       >
         {children}
       </a>
