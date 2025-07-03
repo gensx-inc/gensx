@@ -84,4 +84,36 @@ export const toolbox = createToolBox({
       }),
     ]),
   },
+  getUserLocation: {
+    description: "Get the user's current location using browser geolocation",
+    params: z.object({
+      enableHighAccuracy: z
+        .boolean()
+        .optional()
+        .describe("Enable high accuracy mode (default: false)"),
+      timeout: z
+        .number()
+        .optional()
+        .describe("Timeout in milliseconds (default: 10000)"),
+      maximumAge: z
+        .number()
+        .optional()
+        .describe(
+          "Maximum age of cached position in milliseconds (default: 60000)",
+        ),
+    }),
+    result: z.union([
+      z.object({
+        success: z.boolean(),
+        latitude: z.number(),
+        longitude: z.number(),
+        accuracy: z.number().optional(),
+        message: z.string(),
+      }),
+      z.object({
+        success: z.boolean(),
+        message: z.string(),
+      }),
+    ]),
+  },
 });

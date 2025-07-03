@@ -83,6 +83,64 @@ export default function ChatPage() {
           return { success: false, message: `error: ${error}` };
         }
       },
+      getUserLocation: async (params) => {
+        try {
+          const {
+            enableHighAccuracy = false,
+            timeout = 10000,
+            maximumAge = 60000,
+          } = params;
+
+          return new Promise((resolve) => {
+            if (!navigator.geolocation) {
+              resolve({
+                success: false,
+                message: "Geolocation is not supported by this browser",
+              });
+              return;
+            }
+
+            const options = {
+              enableHighAccuracy,
+              timeout,
+              maximumAge,
+            };
+
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                resolve({
+                  success: true,
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  accuracy: position.coords.accuracy,
+                  message: "Location retrieved successfully",
+                });
+              },
+              (error) => {
+                let errorMessage = "Failed to get location";
+                switch (error.code) {
+                  case error.PERMISSION_DENIED:
+                    errorMessage = "Location permission denied";
+                    break;
+                  case error.POSITION_UNAVAILABLE:
+                    errorMessage = "Location information unavailable";
+                    break;
+                  case error.TIMEOUT:
+                    errorMessage = "Location request timed out";
+                    break;
+                }
+                resolve({
+                  success: false,
+                  message: errorMessage,
+                });
+              },
+              options,
+            );
+          });
+        } catch (error) {
+          return { success: false, message: `error: ${error}` };
+        }
+      },
     });
   }, [
     moveMap,
