@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.10](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.1.9...gensx-storage-v0.1.10) (2025-07-03)
+
+
+### ✨ New Features
+
+* improve error handling in @gensx/storage ([#822](https://github.com/gensx-inc/gensx/issues/822)) ([58a51c3](https://github.com/gensx-inc/gensx/commit/58a51c3d142ab0a02be7fa061b08cab87d276d8a))
+
 ## [0.1.9](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.1.8...gensx-storage-v0.1.9) (2025-06-25)
 
 
