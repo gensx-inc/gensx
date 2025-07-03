@@ -24,9 +24,20 @@ export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
-    messageListener?: WorkflowMessageListener,
-    onRequestInput?: (inputRequest: InputRequest) => Promise<void>,
-    onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>,
+    {
+      messageListener,
+      onRequestInput,
+      onRestoreCheckpoint,
+      checkpoint,
+    }: {
+      messageListener?: WorkflowMessageListener;
+      onRequestInput?: (inputRequest: InputRequest) => Promise<void>;
+      onRestoreCheckpoint?: (
+        nodeId: string,
+        feedback: unknown,
+      ) => Promise<void>;
+      checkpoint?: ExecutionNode;
+    } = {},
   ) {
     this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext({
       onMessage:
@@ -37,6 +48,7 @@ export class ExecutionContext {
       onRestoreCheckpoint:
         onRestoreCheckpoint ??
         this.parent?.getWorkflowContext().onRestoreCheckpoint,
+      checkpoint,
     });
   }
 
@@ -226,8 +238,8 @@ export function getCurrentNodeCheckpointManager() {
   }
 
   return {
-    completeNode: (output: unknown) => {
-      checkpointManager.completeNode(currentNodeId, output);
+    completeNode: (output: unknown, wrapInPromise = false) => {
+      checkpointManager.completeNode(currentNodeId, output, wrapInPromise);
     },
     updateNode: (updates: Partial<ExecutionNode>) => {
       checkpointManager.updateNode(currentNodeId, updates);

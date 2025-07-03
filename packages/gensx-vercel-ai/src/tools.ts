@@ -16,7 +16,7 @@ export function asToolSet(toolBox: ToolBox): Record<string, Tool> {
         paramsSchema = toolDef.params;
       }
       acc[name] = {
-        description: toolDef.description ?? `Tool: ${name}`,
+        description: toolDef.description,
         parameters: paramsSchema,
         execute: async (args: InferToolParams<typeof toolBox, typeof name>) => {
           return await executeExternalTool(toolBox, name, args);

@@ -1,4 +1,4 @@
-import { CheckpointManager } from "./checkpoint.js";
+import { CheckpointManager, ExecutionNode } from "./checkpoint.js";
 import { getCurrentContext } from "./context.js";
 import {
   JsonValue,
@@ -38,13 +38,15 @@ export function createWorkflowContext({
   onMessage,
   onRequestInput,
   onRestoreCheckpoint,
+  checkpoint,
 }: {
   onMessage?: WorkflowMessageListener;
   onRequestInput?: (request: InputRequest) => Promise<void>;
   onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>;
+  checkpoint?: ExecutionNode;
 } = {}): WorkflowExecutionContext {
   return {
-    checkpointManager: new CheckpointManager(),
+    checkpointManager: new CheckpointManager({ checkpoint }),
     sendWorkflowMessage: (message: WorkflowMessage) => {
       onMessage?.(message);
     },
