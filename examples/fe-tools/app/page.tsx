@@ -5,12 +5,7 @@ import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { useChat } from "@/hooks/useChat";
 import { useSearchParams, useRouter } from "next/navigation";
-import {
-  Plus,
-  PanelLeftOpen,
-  Map as MapIcon,
-  MessageSquare,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getUserId } from "@/lib/userId";
@@ -23,10 +18,8 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [collapsed, setCollapsed] = useState(true);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [showMap, setShowMap] = useState(true);
   const {
     mapRef,
     currentView,
@@ -222,32 +215,12 @@ export default function ChatPage() {
           {/* Chat Header - now always at the top */}
           <div className="border-b border-slate-200/60 px-2 py-2 h-12 flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              {collapsed && (
-                <button
-                  onClick={() => setCollapsed(false)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors mr-2"
-                  title="Open sidebar"
-                >
-                  <PanelLeftOpen className="w-5 h-5 text-slate-600" />
-                </button>
-              )}
               <button
                 onClick={handleNewChat}
                 className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
                 title="New chat"
               >
                 <Plus className="w-5 h-5 text-slate-600" />
-              </button>
-              <button
-                onClick={() => setShowMap(!showMap)}
-                className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
-                title={showMap ? "Hide map" : "Show map"}
-              >
-                {showMap ? (
-                  <MessageSquare className="w-5 h-5 text-slate-600" />
-                ) : (
-                  <MapIcon className="w-5 h-5 text-slate-600" />
-                )}
               </button>
             </div>
             {/* Right-aligned links */}
@@ -282,15 +255,13 @@ export default function ChatPage() {
           <div
             className={
               // Responsive: stack vertically on mobile, side-by-side on desktop
-              `flex flex-col lg:flex-row flex-1 min-h-0 ${collapsed ? "" : "lg:ml-80"} transition-all duration-300 ease-in-out`
+              `flex flex-col lg:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out`
             }
           >
             {/* Map Section */}
-            {showMap && (
-              <div className="w-full lg:w-1/2 min-h-[250px] lg:min-h-0 h-72 lg:h-auto border-b lg:border-b-0 lg:border-r border-slate-200 flex-shrink-0">
-                <Map ref={mapRef} markers={markers} view={currentView} />
-              </div>
-            )}
+            <div className="w-full lg:w-1/2 min-h-[250px] lg:min-h-0 h-72 lg:h-auto border-b lg:border-b-0 lg:border-r border-slate-200 flex-shrink-0">
+              <Map ref={mapRef} markers={markers} view={currentView} />
+            </div>
 
             {/* Chat Section */}
             <div className="flex flex-col flex-1 w-full lg:w-1/2 min-h-0">
