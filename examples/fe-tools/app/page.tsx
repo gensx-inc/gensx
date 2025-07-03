@@ -138,6 +138,7 @@ export default function ChatPage() {
   // New Chat: clear messages and remove thread ID from URL
   const handleNewChat = () => {
     clear();
+    clearMarkers();
     router.push("?", { scroll: false });
   };
 
