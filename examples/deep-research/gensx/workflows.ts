@@ -148,7 +148,7 @@ export const DeepResearch = gensx.Workflow(
       // Create initial report step
       await addStep({
         type: "generate-report",
-        report: "Generating comprehensive report...",
+        report: "",
       });
 
       await GenerateReport({
