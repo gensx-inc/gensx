@@ -39,7 +39,7 @@ export default function RootLayout({
         <div className="fixed inset-0 z-0">
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url(/background-nature.png)" }}
+            style={{ backgroundImage: "url(/background-mountains-window.png)" }}
           />
           <div className="absolute inset-0" />
         </div>

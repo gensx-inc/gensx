@@ -1,9 +1,9 @@
 "use client";
 
-import { DraftEditorCard } from "@/components/ui/draft-editor-card";
 import { ModelGridSelector } from "@/components/ui/model-grid-selector";
 import { ModelStreamCard } from "@/components/ui/model-stream-card";
 import { ProviderFilter } from "@/components/ui/provider-filter";
+import { ProviderIcon } from "@/components/ui/provider-icon";
 import {
   type DraftProgress,
   type ModelConfig,
@@ -11,20 +11,31 @@ import {
   type UpdateDraftOutput,
 } from "@/gensx/workflows";
 import { fetchAvailableModels } from "@/lib/models";
+import { type ContentVersion } from "@/lib/types";
 import { useObject, useWorkflow } from "@gensx/react";
 import {
   ArrowDown,
+  ArrowLeft,
   ArrowLeftRight,
   ArrowUp,
   Brain,
   Check,
+  ChevronDown,
   Clock,
   DollarSign,
   FileText,
+  Send,
   WholeWord,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type SortField = "words" | "time" | "cost";
 type ModelSortField = "cost" | "context" | "maxOutput";
@@ -53,11 +64,85 @@ export default function Home() {
     field: null,
     direction: "none",
   });
+  const [selectedProvider, setSelectedProvider] = useState<string>("all");
   const [modelSortConfig, setModelSortConfig] = useState<ModelSortConfig>({
     field: null,
     direction: "none",
   });
-  const [selectedProvider, setSelectedProvider] = useState<string>("all");
+  const [showModelSelectorView, setShowModelSelectorView] = useState(false);
+
+  // Version history state
+  const [versionHistory, setVersionHistory] = useState<
+    Record<string, ContentVersion[]>
+  >({});
+  const [defaultModelId] = useState(
+    "groq/meta-llama/llama-4-maverick-17b-128e-instruct",
+  );
+
+  // Dropdown state
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dropdownSearch, setDropdownSearch] = useState("");
+
+  // Ref to store list container and its scroll position
+  const listContainerRef = useRef<HTMLDivElement | null>(null);
+  const lastScrollTopRef = useRef(0);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      const dropdown = target.closest(".model-dropdown-container");
+      if (!dropdown && isDropdownOpen) {
+        setIsDropdownOpen(false);
+        setDropdownSearch("");
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isDropdownOpen]);
+
+  // Auto-resize textarea function
+  const autoResizeTextarea = (textarea: HTMLTextAreaElement) => {
+    // Store current height
+    const currentHeight = textarea.offsetHeight;
+
+    // Reset height to measure actual content height
+    textarea.style.height = "auto";
+    const contentHeight = textarea.scrollHeight;
+
+    // Only resize if content actually needs more space or less space
+    const minHeight = 48;
+    const maxHeight = 300;
+    const newHeight = Math.max(minHeight, Math.min(contentHeight, maxHeight));
+
+    // Only apply if height actually needs to change
+    if (newHeight !== currentHeight) {
+      textarea.style.height = `${newHeight}px`;
+    } else {
+      // Restore original height if no change needed
+      textarea.style.height = `${currentHeight}px`;
+    }
+  };
+
+  // Disable smooth scrolling when dropdown is open
+  useEffect(() => {
+    if (isDropdownOpen) {
+      // Store original scroll behavior
+      const originalStyle = document.documentElement.style.scrollBehavior;
+      // Disable smooth scrolling
+      document.documentElement.style.scrollBehavior = "auto";
+
+      return () => {
+        // Restore original scroll behavior
+        document.documentElement.style.scrollBehavior = originalStyle;
+      };
+    }
+  }, [isDropdownOpen]);
 
   // Helper function to format numbers with K/M suffixes
   const formatTokenCount = (count: number): string => {
@@ -77,6 +162,22 @@ export default function Home() {
       try {
         const models = await fetchAvailableModels();
         setAvailableModels(models);
+
+        // Set default model if available
+        if (selectedModelsForRun.length === 0) {
+          const defaultModel = models.find(
+            (m) => m.id === defaultModelId && m.available,
+          );
+          if (defaultModel) {
+            setSelectedModelsForRun([defaultModel]);
+          } else {
+            // Fallback to first available model if default isn't found
+            const firstAvailable = models.find((m) => m.available);
+            if (firstAvailable) {
+              setSelectedModelsForRun([firstAvailable]);
+            }
+          }
+        }
       } catch (error) {
         console.error("Failed to load models:", error);
       } finally {
@@ -87,10 +188,12 @@ export default function Home() {
     void loadModels();
   }, []);
 
-  const { inProgress, error, execution, run } = useWorkflow<
-    UpdateDraftInput,
-    UpdateDraftOutput
-  >({
+  const {
+    inProgress: workflowInProgress,
+    error: workflowError,
+    execution,
+    run,
+  } = useWorkflow<UpdateDraftInput, UpdateDraftOutput>({
     config: {
       baseUrl: "/api/gensx",
     },
@@ -137,12 +240,38 @@ export default function Home() {
   }, [run, userMessage, selectedContent, selectedModelsForRun]);
 
   const onSubmit = useCallback(() => {
+    // Always hide model selector view when submitting
+    setShowModelSelectorView(false);
     void handleSubmit();
   }, [handleSubmit]);
 
   const handleModelSelect = useCallback((modelId: string) => {
     setSelectedModelId(modelId);
   }, []);
+
+  // Add new content to version history
+  const addVersionToHistory = useCallback(
+    (modelId: string, content: string) => {
+      setVersionHistory((prev) => {
+        const modelVersions = prev[modelId] ?? [];
+        const newVersion: ContentVersion = {
+          id: `${modelId}-v${modelVersions.length + 1}`,
+          version: modelVersions.length + 1,
+          content,
+          modelId,
+          timestamp: new Date(),
+        };
+
+        const updatedVersions = [...modelVersions, newVersion];
+
+        return {
+          ...prev,
+          [modelId]: updatedVersions,
+        };
+      });
+    },
+    [],
+  );
 
   const handleSort = useCallback((field: SortField) => {
     setSortConfig((prev) => {
@@ -158,6 +287,23 @@ export default function Home() {
       return { field, direction: "asc" };
     });
   }, []);
+
+  // Save completed streams to version history
+  useEffect(() => {
+    if (!draftProgress?.modelStreams) return;
+
+    draftProgress.modelStreams.forEach((stream) => {
+      if (stream.status === "complete" && stream.content) {
+        // Check if this content is already in history (to avoid duplicates)
+        const modelHistory = versionHistory[stream.modelId] ?? [];
+        const lastVersion = modelHistory[modelHistory.length - 1];
+
+        if (!lastVersion || lastVersion.content !== stream.content) {
+          addVersionToHistory(stream.modelId, stream.content);
+        }
+      }
+    });
+  }, [draftProgress?.modelStreams, versionHistory, addVersionToHistory]);
 
   const handleModelSort = useCallback((field: ModelSortField) => {
     setModelSortConfig((prev) => {
@@ -179,10 +325,10 @@ export default function Home() {
     (s) => s.status === "complete",
   );
   const showSelectionPrompt =
-    hasCompletedStreams && !selectedModelId && !inProgress;
+    hasCompletedStreams && !selectedModelId && !workflowInProgress;
 
-  // Show model selector if no streams exist
-  const showModelSelector = !draftProgress?.modelStreams.length && !inProgress;
+  // Show model selector based on view state
+  const showModelSelector = showModelSelectorView;
 
   // Create a map of model configs for easy lookup
   const modelConfigMap = useMemo(() => {
@@ -318,16 +464,10 @@ export default function Home() {
 
   // Get grid rows class based on number of models
   const getGridRowsClass = (modelCount: number) => {
-    if (modelCount >= 7) {
-      // 3x3 grid for 7-9 models
-      return "grid-rows-3";
-    } else if (modelCount >= 4) {
-      // 2 rows for 4-6 models
-      return "grid-rows-2";
-    } else {
-      // 1 row for 1-3 models
-      return "grid-rows-1";
-    }
+    if (modelCount <= 2) return "grid-rows-1";
+    if (modelCount <= 4) return "grid-rows-2";
+    if (modelCount <= 6) return "grid-rows-2";
+    return "grid-rows-3";
   };
 
   // State for showing the counter
@@ -495,13 +635,255 @@ export default function Home() {
     return Array.from(providers).sort();
   }, [availableModels]);
 
+  // Model dropdown component
+  const ModelDropdown = ({
+    direction = "up",
+  }: {
+    direction?: "up" | "down";
+  }) => {
+    const filteredModels = useMemo(() => {
+      if (!dropdownSearch) return sortedAvailableModels;
+      const search = dropdownSearch.toLowerCase();
+      return sortedAvailableModels.filter(
+        (model) =>
+          model.displayName?.toLowerCase().includes(search) ||
+          model.model.toLowerCase().includes(search) ||
+          model.provider?.toLowerCase().includes(search),
+      );
+    }, [dropdownSearch, sortedAvailableModels]);
+
+    return (
+      <div
+        className="relative model-dropdown-container "
+        data-state={isDropdownOpen ? "open" : "closed"}
+        key="model-dropdown"
+      >
+        {/* Dropdown trigger */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              setIsDropdownOpen(!isDropdownOpen);
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+            }}
+            onFocus={(e) => {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }}
+            type="button"
+            className="flex items-start justify-between gap-2 px-3 py-2 rounded-xl bg-transparent hover:bg-white/10 transition-colors"
+          >
+            <div className="min-w-0 ">
+              {selectedModelsForRun.length === 0 ? (
+                <span className="text-sm text-[#333333]/50">
+                  Select models...
+                </span>
+              ) : (
+                <div className="flex items-center gap-1.5 flex-wrap flex-1">
+                  {selectedModelsForRun.map((model) => (
+                    <span
+                      key={model.id}
+                      className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333] whitespace-nowrap flex items-center gap-1"
+                    >
+                      {model.displayName?.split(" (")[0] ?? model.model}
+                      {model.reasoning && <Brain className="w-3 h-3" />}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <ChevronDown
+              className={`w-4 h-4 text-[#333333]/50 transition-transform flex-shrink-0 ml-2 ${
+                isDropdownOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Dropdown menu */}
+        {isDropdownOpen && (
+          <div
+            className={`absolute left-1/2 -translate-x-1/2 z-[9999] ${direction === "up" ? "bottom-full mb-2" : "top-full mt-2"} rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.12),0_0_48px_rgba(0,0,0,0.08)] min-w-[600px] backdrop-blur-sm`}
+          >
+            {/* Glass gradient overlay */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br  from-white/10 to-white/5" />
+
+            {/* Glass effect border */}
+            <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.4)]" />
+
+            <div className="relative z-[2]">
+              {/* Header with selected count */}
+              <div className="p-3 border-b border-white/20 ">
+                <div className="flex items-center justify-center">
+                  <span className="text-sm font-medium text-[#333333]">
+                    {selectedModelsForRun.length}/9 models selected
+                  </span>
+                </div>
+              </div>
+
+              {/* Model list */}
+              <div
+                ref={listContainerRef}
+                className="max-h-96 overflow-y-auto"
+                onScroll={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                {filteredModels.length > 0 ? (
+                  <div className="p-2">
+                    {filteredModels.map((model) => {
+                      const isSelected = selectedModelsForRun.some(
+                        (m) => m.id === model.id,
+                      );
+                      const isDisabled =
+                        !isSelected && selectedModelsForRun.length >= 9;
+
+                      return (
+                        <button
+                          key={model.id}
+                          type="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!model.available) return;
+
+                            // capture scroll position before state updates
+                            if (listContainerRef.current) {
+                              lastScrollTopRef.current =
+                                listContainerRef.current.scrollTop;
+                            }
+
+                            if (isSelected) {
+                              setSelectedModelsForRun(
+                                selectedModelsForRun.filter(
+                                  (m) => m.id !== model.id,
+                                ),
+                              );
+                            } else if (selectedModelsForRun.length < 9) {
+                              setSelectedModelsForRun([
+                                ...selectedModelsForRun,
+                                model,
+                              ]);
+                            }
+                          }}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                          }}
+                          onFocus={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.blur();
+                          }}
+                          disabled={isDisabled || !model.available}
+                          className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors ${
+                            isDisabled || !model.available
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-black/10"
+                          } ${isSelected ? "bg-black/10" : ""}`}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            {/* Provider icon */}
+                            <ProviderIcon
+                              provider={model.provider}
+                              className="w-5 h-5 flex-shrink-0"
+                            />
+
+                            {/* Model info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`text-sm font-medium truncate ${model.available ? "text-[#333333]" : "text-[#333333]/50"}`}
+                                >
+                                  {model.displayName?.split(" (")[0] ??
+                                    model.model}
+                                </span>
+                                {/* Reasoning model indicator */}
+                                {model.reasoning && (
+                                  <Brain className="w-3.5 h-3.5 text-[#333333] flex-shrink-0" />
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Data badges */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {/* Input cost badge */}
+                              <span
+                                className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333]/70"
+                                title="Cost per million input tokens"
+                              >
+                                ${model.cost?.input.toFixed(2) ?? "0.00"}/M in
+                              </span>
+
+                              {/* Output cost badge */}
+                              <span
+                                className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333]/70"
+                                title="Cost per million output tokens"
+                              >
+                                ${model.cost?.output.toFixed(2) ?? "0.00"}/M out
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-sm text-[#333333]/70">
+                    No models found
+                  </div>
+                )}
+              </div>
+
+              {/* Search bar at bottom */}
+              <div className="p-3 border-t border-white/20">
+                <input
+                  type="text"
+                  value={dropdownSearch}
+                  onChange={(e) => {
+                    setDropdownSearch(e.target.value);
+                  }}
+                  placeholder="Search models..."
+                  className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm rounded-md outline-none focus:ring-2 focus:ring-white/30 text-sm placeholder-black/50 text-[#333333]"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Restore list scroll after selection updates
+  useLayoutEffect(() => {
+    if (isDropdownOpen && listContainerRef.current) {
+      listContainerRef.current.scrollTop = lastScrollTopRef.current;
+    }
+  }, [selectedModelsForRun.length, isDropdownOpen]);
+
+  // Set initial textarea height on mount
+  useEffect(() => {
+    const textareas = document.querySelectorAll("textarea");
+    textareas.forEach((textarea) => {
+      textarea.style.height = "48px"; // Start with single line height
+    });
+  }, []);
+
   return (
-    <div className="flex-1 flex flex-col h-screen p-6">
-      {/* Header with centered Draft Pad title and counter */}
+    <div
+      className="flex-1 flex flex-col h-screen p-6"
+      style={{ scrollBehavior: "auto" }}
+    >
+      {/* Header with centered Draft Pad title */}
       <div className="relative mb-6 flex-shrink-0 flex items-center justify-center h-10">
         <h1 className="text-3xl font-bold text-[#333333] font-atma">
           Draft Pad
         </h1>
+
+        {/* Show stats when generating */}
         {overallStats && overallStats.hasData && !showModelSelector && (
           <>
             {/* Completed badge positioned to the right of Draft Pad */}
@@ -702,9 +1084,35 @@ export default function Home() {
         )}
       </div>
 
-      {/* Model selector - fills remaining space */}
+      {/* Full screen model selector view */}
       {showModelSelector && (
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Header with back button and done button */}
+          <div className="mb-4 flex justify-between items-center">
+            <button
+              onClick={() => {
+                setShowModelSelectorView(false);
+              }}
+              className="flex items-center gap-2 text-[#333333]/70 hover:text-[#333333] transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowModelSelectorView(false);
+              }}
+              className="relative rounded-xl overflow-hidden shadow-[0_2px_2px_rgba(0,0,0,0.1),0_0_10px_rgba(0,0,0,0.05)] transition-all duration-400 ease-out backdrop-blur-[3px] bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium text-[#333333] disabled:opacity-50"
+              disabled={selectedModelsForRun.length === 0}
+            >
+              <div className="absolute inset-0 z-[1] overflow-hidden rounded-xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.3),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.3)]" />
+              <span className="relative z-[2]">
+                Done ({selectedModelsForRun.length} selected)
+              </span>
+            </button>
+          </div>
+
           {isLoadingModels ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-lg text-[#333333]/60">
@@ -715,93 +1123,222 @@ export default function Home() {
             <ModelGridSelector
               availableModels={sortedAvailableModels}
               selectedModels={selectedModelsForRun}
-              onModelsChange={setSelectedModelsForRun}
+              onModelsChange={(models) => {
+                setSelectedModelsForRun(models);
+              }}
               maxModels={9}
             />
           )}
         </div>
       )}
 
-      {/* Model streams section - adaptive grid layout */}
+      {/* Main content area */}
       {!showModelSelector && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          {sortedModelStreams.length > 0 ? (
-            <motion.div
-              className={`${getGridClassName(sortedModelStreams.length)} ${getGridRowsClass(sortedModelStreams.length)} flex-1 min-h-0 auto-rows-fr`}
-              layout
-            >
-              <AnimatePresence mode="popLayout">
-                {sortedModelStreams.map((modelStream) => {
-                  return (
-                    <motion.div
-                      key={modelStream.modelId}
-                      layout
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{
-                        layout: {
-                          type: "spring",
-                          bounce: 0.3,
-                          duration: 0.7,
-                        },
-                        opacity: { duration: 0.2 },
-                        scale: { duration: 0.2 },
-                      }}
-                      className="min-h-0 flex"
-                    >
-                      <ModelStreamCard
-                        modelStream={modelStream}
-                        modelConfig={modelConfigMap.get(modelStream.modelId)}
-                        isSelected={selectedModelId === modelStream.modelId}
-                        onSelect={() => {
-                          handleModelSelect(modelStream.modelId);
-                        }}
-                        scrollPosition={scrollPosition}
-                        onScrollUpdate={setScrollPosition}
-                        metricRanges={metricRanges}
-                      />
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </motion.div>
+        <>
+          {/* If no model streams, show initial centered view */}
+          {sortedModelStreams.length === 0 && !workflowInProgress ? (
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="w-full max-w-3xl">
+                {/* Glass-styled unified input area */}
+                <div className="bg-gradient-to-br from-white/20 to-white/10 rounded-2xl overflow-visible shadow-[0_4px_24px_rgba(0,0,0,0.12),0_0_48px_rgba(0,0,0,0.08)]">
+                  <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.4)]" />
+
+                  <div className="relative z-[2] flex flex-col h-full">
+                    {/* Input area */}
+                    <div className="relative rounded-2xl overflow-visible shadow-[0_4px_4px_rgba(0,0,0,0.15),0_0_15px_rgba(0,0,0,0.08)] transition-all duration-400 ease-out bg-white/25 backdrop-blur-xs">
+                      <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.4)]" />
+
+                      {/* Textarea */}
+                      <div className="relative z-[2]">
+                        <textarea
+                          value={userMessage}
+                          onChange={(e) => {
+                            setUserMessage(e.target.value);
+                            autoResizeTextarea(e.target as HTMLTextAreaElement);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              if (
+                                userMessage.trim() &&
+                                selectedModelsForRun.length > 0
+                              ) {
+                                onSubmit();
+                              }
+                            }
+                          }}
+                          placeholder={
+                            selectedModelsForRun.length === 0
+                              ? "Select models below to start..."
+                              : "What would you like to generate?"
+                          }
+                          className="w-full min-h-[48px] max-h-[300px] p-6 bg-transparent resize-none outline-none text-lg text-[#333333] placeholder-black/50 overflow-y-auto"
+                          disabled={selectedModelsForRun.length === 0}
+                        />
+                      </div>
+
+                      {/* Bottom section with model selector and send button */}
+                      <div className="relative z-50 px-2 pb-2 flex items-center gap-4">
+                        <div className="flex-1">
+                          <ModelDropdown direction="up" />
+                        </div>
+                        <button
+                          onClick={onSubmit}
+                          disabled={
+                            !userMessage.trim() ||
+                            selectedModelsForRun.length === 0
+                          }
+                          className="p-2 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        >
+                          <Send className="w-5 h-5 text-[#333333]" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 min-h-0">
-              <div className="flex items-center justify-center text-[#333333]/60 border-2 border-dashed border-gray-200 rounded-lg">
-                <div className="text-center">
-                  <div className="text-lg mb-2">Ready to generate content</div>
-                  <div className="text-sm">Select models above to start</div>
+            /* Generation view with model streams */
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              {/* Model selector button when generating */}
+              <div className="mb-4 flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowModelSelectorView(true);
+                  }}
+                  className="relative rounded-xl overflow-hidden shadow-[0_2px_2px_rgba(0,0,0,0.1),0_0_10px_rgba(0,0,0,0.05)] transition-all duration-400 ease-out backdrop-blur-[3px] bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium text-[#333333]"
+                >
+                  <div className="absolute inset-0 z-[1] overflow-hidden rounded-xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.3),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.3)]" />
+                  <span className="relative z-[2]">Change models</span>
+                </button>
+              </div>
+
+              {/* Model streams grid */}
+              {sortedModelStreams.length === 1 ? (
+                /* Single model - centered and larger */
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="w-full max-w-3xl h-full">
+                    <ModelStreamCard
+                      modelStream={sortedModelStreams[0]}
+                      modelConfig={modelConfigMap.get(
+                        sortedModelStreams[0].modelId,
+                      )}
+                      isSelected={
+                        selectedModelId === sortedModelStreams[0].modelId
+                      }
+                      onSelect={() => {
+                        handleModelSelect(sortedModelStreams[0].modelId);
+                      }}
+                      scrollPosition={scrollPosition}
+                      onScrollUpdate={setScrollPosition}
+                      metricRanges={metricRanges}
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* Multiple models - grid layout */
+                <motion.div
+                  className={`${getGridClassName(sortedModelStreams.length)} ${getGridRowsClass(sortedModelStreams.length)} flex-1 min-h-0 auto-rows-fr`}
+                  layout
+                >
+                  <AnimatePresence mode="popLayout">
+                    {sortedModelStreams.map((modelStream) => {
+                      return (
+                        <motion.div
+                          key={modelStream.modelId}
+                          layout
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{
+                            layout: {
+                              type: "spring",
+                              bounce: 0.3,
+                              duration: 0.7,
+                            },
+                            opacity: { duration: 0.2 },
+                            scale: { duration: 0.2 },
+                          }}
+                          className="min-h-0 flex"
+                        >
+                          <ModelStreamCard
+                            modelStream={modelStream}
+                            modelConfig={modelConfigMap.get(
+                              modelStream.modelId,
+                            )}
+                            isSelected={selectedModelId === modelStream.modelId}
+                            onSelect={() => {
+                              handleModelSelect(modelStream.modelId);
+                            }}
+                            scrollPosition={scrollPosition}
+                            onScrollUpdate={setScrollPosition}
+                            metricRanges={metricRanges}
+                          />
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+              {/* Input section at bottom when generating */}
+              <div className="flex-shrink-0 mt-6 flex justify-center">
+                <div className="w-full max-w-3xl">
+                  <div className="relative rounded-2xl overflow-visible shadow-[0_4px_4px_rgba(0,0,0,0.15),0_0_15px_rgba(0,0,0,0.08)] transition-all duration-400 ease-out bg-white/10">
+                    <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.4)]" />
+
+                    <div className="relative z-[2]">
+                      {/* Input field */}
+                      <input
+                        value={userMessage}
+                        onChange={(e) => {
+                          setUserMessage(e.target.value);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            onSubmit();
+                          }
+                        }}
+                        placeholder={
+                          showSelectionPrompt
+                            ? "Select a version above to continue"
+                            : "Continue the conversation..."
+                        }
+                        className="w-full px-6 py-4 bg-transparent resize-none outline-none text-lg text-[#333333] placeholder-black/50"
+                        disabled={
+                          showSelectionPrompt ||
+                          workflowInProgress ||
+                          selectedModelsForRun.length === 0
+                        }
+                      />
+
+                      {/* Bottom section with model selector and send button */}
+                      <div className="relative z-50 p-4 flex items-center gap-4">
+                        <div className="flex-1">
+                          <ModelDropdown direction="down" />
+                        </div>
+                        <button
+                          onClick={onSubmit}
+                          disabled={
+                            !userMessage.trim() ||
+                            selectedModelsForRun.length === 0 ||
+                            showSelectionPrompt ||
+                            workflowInProgress
+                          }
+                          className="p-3 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        >
+                          <Send className="w-5 h-5 text-[#333333]" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           )}
-        </div>
+        </>
       )}
-
-      {/* Input section - always at bottom */}
-      <div className="flex-shrink-0 mt-6 flex justify-center">
-        <DraftEditorCard
-          output={selectedContent}
-          isStreaming={inProgress}
-          error={error}
-          userMessage={userMessage}
-          onUserMessageChange={setUserMessage}
-          onSubmit={onSubmit}
-          className="w-full max-w-3xl"
-          disabled={
-            (showModelSelector && selectedModelsForRun.length === 0) ||
-            showSelectionPrompt
-          }
-          placeholder={
-            showModelSelector && selectedModelsForRun.length === 0
-              ? "Select models to start..."
-              : showSelectionPrompt
-                ? "Select an output above to continue..."
-                : undefined
-          }
-        />
-      </div>
     </div>
   );
 }

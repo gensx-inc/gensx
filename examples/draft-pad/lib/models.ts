@@ -109,6 +109,7 @@ export async function fetchAvailableModels(): Promise<ModelConfig[]> {
           providerName: provider.name,
           envVars,
           available: isAvailable,
+          reasoning: model.reasoning,
           cost: model.cost,
           limit: model.limit,
         });

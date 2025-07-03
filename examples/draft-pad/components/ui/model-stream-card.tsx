@@ -1,5 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { type ModelConfig, type ModelStreamState } from "@/gensx/workflows";
+import { type ContentVersion } from "@/lib/types";
+import { calculateDiff, calculateStreamingDiff } from "@/lib/diff-utils";
 import {
   Check,
   Clock,
@@ -13,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { LiveCostDisplay } from "./live-cost-display";
 import { ProviderIcon } from "./provider-icon";
+import { DiffDisplay } from "./diff-display";
 
 interface MetricRanges {
   minWordCount: number;
@@ -31,6 +34,8 @@ interface ModelStreamCardProps {
   scrollPosition: number;
   onScrollUpdate: (scrollTop: number) => void;
   metricRanges?: MetricRanges;
+  previousVersion?: ContentVersion;
+  showDiff?: boolean;
 }
 
 export function ModelStreamCard({
@@ -41,6 +46,8 @@ export function ModelStreamCard({
   scrollPosition,
   onScrollUpdate,
   metricRanges,
+  previousVersion,
+  showDiff = false,
 }: ModelStreamCardProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
@@ -217,6 +224,22 @@ export function ModelStreamCard({
   // Use either final generation time or current elapsed time
   const displayTime = modelStream.generationTime ?? elapsedTime;
 
+  // Calculate diff segments
+  const diffSegments = useMemo(() => {
+    if (!showDiff || !previousVersion || !modelStream.content) {
+      return null;
+    }
+
+    if (modelStream.status === "generating") {
+      return calculateStreamingDiff(
+        previousVersion.content,
+        modelStream.content,
+      );
+    } else {
+      return calculateDiff(previousVersion.content, modelStream.content);
+    }
+  }, [showDiff, previousVersion, modelStream.content, modelStream.status]);
+
   return (
     <motion.div className="h-full w-full flex flex-col gap-2">
       {/* Floating header */}
@@ -343,9 +366,17 @@ export function ModelStreamCard({
             onScroll={handleScroll}
           >
             {modelStream.content ? (
-              <div className="text-sm whitespace-pre-wrap text-[#333333] leading-relaxed">
-                {modelStream.content}
-              </div>
+              diffSegments && showDiff ? (
+                <DiffDisplay
+                  segments={diffSegments}
+                  isStreaming={modelStream.status === "generating"}
+                  className="whitespace-pre-wrap"
+                />
+              ) : (
+                <div className="text-sm whitespace-pre-wrap text-[#333333] leading-relaxed">
+                  {modelStream.content}
+                </div>
+              )
             ) : (
               <div className="h-full flex items-center justify-center text-[#333333]/60 text-sm">
                 {modelStream.status === "generating"
