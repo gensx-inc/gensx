@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.1.3...gensx-react-v0.1.4) (2025-07-03)
+
+
+### 🐛 Bug Fixes
+
+* make types for useObject more flexible ([#833](https://github.com/gensx-inc/gensx/issues/833)) ([044ee13](https://github.com/gensx-inc/gensx/commit/044ee13ead8e19783a85761aa62a85e5e1371164))
+
 ## [0.1.3](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.1.2...gensx-react-v0.1.3) (2025-06-24)
 
 

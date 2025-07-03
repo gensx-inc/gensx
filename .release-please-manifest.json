@@ -10,8 +10,8 @@
   "packages/gensx-cline-rules": "0.1.8",
   "packages/gensx-cursor-rules": "0.1.8",
   "packages/gensx-windsurf-rules": "0.1.8",
-  "packages/gensx-storage": "0.1.9",
+  "packages/gensx-storage": "0.1.10",
   "packages/gensx-vercel-ai": "0.2.7",
   "packages/gensx-client": "0.1.3",
-  "packages/gensx-react": "0.1.3"
+  "packages/gensx-react": "0.1.4"
 }
