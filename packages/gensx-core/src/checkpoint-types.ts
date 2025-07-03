@@ -10,6 +10,7 @@ export interface ExecutionNode {
   endTime?: number;
   props: Record<string, unknown>;
   output?: unknown;
+  completed: boolean;
   children: ExecutionNode[];
   metadata?: {
     logs?: string[];
@@ -29,7 +30,7 @@ export interface CheckpointWriter {
     node: Partial<ExecutionNode> & { id: string; sequenceNumber: number },
     parentId?: string,
   ) => string;
-  completeNode: (id: string, output: unknown) => void;
+  completeNode: (id: string, output: unknown, wrapInPromise: boolean) => void;
   addMetadata: (id: string, metadata: Record<string, unknown>) => void;
   updateNode: (id: string, updates: Partial<ExecutionNode>) => void;
   write: () => void;

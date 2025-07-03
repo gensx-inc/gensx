@@ -9,6 +9,7 @@ import {
   ExecutionNode,
   STREAMING_PLACEHOLDER,
 } from "./checkpoint-types.js";
+import { isAsyncIterable, isReadableStream } from "./component.js";
 import { readConfig } from "./utils/config.js";
 import { USER_AGENT } from "./utils/user-agent.js";
 
@@ -92,14 +93,15 @@ export class CheckpointManager implements CheckpointWriter {
   }
 
   constructor(opts?: {
-    apiKey: string;
-    org: string;
+    apiKey?: string;
+    org?: string;
     disabled?: boolean;
     apiBaseUrl?: string;
     consoleBaseUrl?: string;
     executionRunId?: string;
     runtime?: "cloud" | "sdk";
     runtimeVersion?: string;
+    checkpoint?: ExecutionNode;
   }) {
     // Priority order: constructor opts > env vars > config file
     const config = readConfig();
@@ -144,6 +146,11 @@ export class CheckpointManager implements CheckpointWriter {
       throw new Error(
         "Organization not set. Set it via constructor options, GENSX_ORG environment variable, or in ~/.config/gensx/config. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
       );
+    }
+
+    if (opts?.checkpoint) {
+      this.sourceCheckpoint = opts.checkpoint;
+      this.buildReplayLookup(opts.checkpoint);
     }
   }
 
@@ -292,13 +299,52 @@ export class CheckpointManager implements CheckpointWriter {
       const maskedRoot = this.maskExecutionTree(treeCopy as ExecutionNode);
       const steps = this.countSteps(this.root);
 
+      function replacer(key: string, value: unknown): unknown {
+        if (typeof value === "function") {
+          console.warn("[GenSX] Unserializable function found in checkpoint", {
+            key,
+          });
+          return "[function]";
+        }
+
+        if (typeof value === "object" && value !== null) {
+          if (isAsyncIterable(value)) {
+            console.warn(
+              "[GenSX] Unserializable async iterable found in checkpoint",
+              {
+                key,
+              },
+            );
+            return "[async-iterator]";
+          }
+          if (isReadableStream(value)) {
+            console.warn(
+              "[GenSX] Unserializable readable stream found in checkpoint",
+              {
+                key,
+              },
+            );
+            return "[readable-stream]";
+          }
+        }
+
+        if (typeof value === "symbol") {
+          return `[Symbol(${value.toString()})]`;
+        }
+
+        return value;
+      }
+
       // Separately gzip the rawExecution data
       const compressedExecution = await gzipAsync(
         Buffer.from(
-          JSON.stringify({
-            ...maskedRoot,
-            updatedAt: Date.now(),
-          }),
+          JSON.stringify(
+            {
+              ...maskedRoot,
+              updatedAt: Date.now(),
+            },
+            replacer,
+          ),
           "utf-8",
         ),
       );
@@ -654,6 +700,138 @@ export class CheckpointManager implements CheckpointWriter {
     );
   }
 
+  // private unserializeValue(value: unknown): unknown {
+  //   if (value === undefined) return undefined;
+  //   if (value === null) return null;
+  //   if (
+  //     typeof value === "string" ||
+  //     typeof value === "number" ||
+  //     typeof value === "boolean"
+  //   )
+  //     return value;
+  //   if (
+  //     typeof value === "object" &&
+  //     "__gensxSerialized" in value &&
+  //     "type" in value &&
+  //     typeof value.type === "string" &&
+  //     "value" in value
+  //   ) {
+  //     switch (value.type) {
+  //       case "async-iterator":
+  //         // create a faux async iterator
+  //         return {
+  //           // eslint-disable-next-line @typescript-eslint/require-await
+  //           [Symbol.asyncIterator]: async function* () {
+  //             yield value.value;
+  //           },
+  //         };
+  //       case "readable-stream":
+  //         // create a faux readable stream
+  //         return new ReadableStream({
+  //           start(controller) {
+  //             controller.enqueue(value.value);
+  //             controller.close();
+  //           },
+  //         });
+  //       case "promise":
+  //         return Promise.resolve(value.value);
+  //       default:
+  //         return value.value;
+  //     }
+  //   }
+
+  //   if (Array.isArray(value)) {
+  //     return value.map((item) => this.unserializeValue(item));
+  //   }
+
+  //   if (typeof value === "object" && !ArrayBuffer.isView(value)) {
+  //     return Object.fromEntries(
+  //       Object.entries(value).map(([key, val]) => [
+  //         key,
+  //         this.unserializeValue(val),
+  //       ]),
+  //     );
+  //   }
+
+  //   return value;
+  // }
+
+  // private async serializeValue(value: unknown, path: string): Promise<unknown> {
+  //   // Handle null/undefined
+  //   if (value == null) return value;
+
+  //   if (typeof value === "object" && "__gensxSerialized" in value) {
+  //     return value;
+  //   }
+
+  //   // Don't clone functions
+  //   if (typeof value === "function") {
+  //     console.warn(`[GenSX] Cannot serialize a function: ${path}`);
+  //     return value;
+  //   }
+
+  //   // Handle primitive values
+  //   if (typeof value !== "object") return value;
+
+  //   // Handle promises
+  //   if (
+  //     typeof value === "object" &&
+  //     "then" in value &&
+  //     typeof value.then === "function"
+  //   ) {
+  //     return {
+  //       __gensxSerialized: true,
+  //       type: "promise",
+  //       // eslint-disable-next-line @typescript-eslint/await-thenable
+  //       value: await this.serializeValue(await value, path),
+  //     };
+  //   }
+
+  //   // Handle async iterators
+  //   if (isAsyncIterable(value)) {
+  //     console.warn(`[GenSX] Found async iterator: ${path}`);
+  //     return {
+  //       __gensxSerialized: true,
+  //       type: "async-iterator",
+  //       value: value,
+  //     };
+  //   }
+
+  //   // Handle readable streams
+  //   if (isReadableStream(value)) {
+  //     console.warn(`[GenSX] Found readable stream: ${path}`);
+  //     return {
+  //       __gensxSerialized: true,
+  //       type: "readable-stream",
+  //       value: value,
+  //     };
+  //   }
+
+  //   // Handle arrays
+  //   if (Array.isArray(value)) {
+  //     return value.map((item, index) =>
+  //       this.serializeValue(item, `${path}[${index}]`),
+  //     );
+  //   }
+
+  //   // Handle objects that shouldn't be cloned
+  //   if (ArrayBuffer.isView(value)) return value;
+
+  //   // Check for toJSON method before doing regular object cloning
+  //   const objValue = value as { toJSON?: () => Promise<unknown> };
+  //   if (typeof objValue.toJSON === "function") {
+  //     return this.serializeValue(await objValue.toJSON(), path);
+  //   }
+
+  //   // For regular objects, clone each property
+  //   return Object.fromEntries(
+  //     Object.entries(value).map(([key, val]) => [
+  //       key,
+  //       this.serializeValue(val, `${path}.${key}`),
+  //     ]),
+  //   );
+  // }
+
   /**
    * Due to the async nature of component execution, nodes can arrive in any order.
    * For example, in a tree like:
@@ -696,6 +874,7 @@ export class CheckpointManager implements CheckpointWriter {
       partialNode,
     ) as Partial<ExecutionNode> & { sequenceNumber: number; id: string };
     const node: ExecutionNode = {
+      completed: false,
       componentName: "Unknown",
       startTime: Date.now(),
       children: [],
@@ -751,11 +930,21 @@ export class CheckpointManager implements CheckpointWriter {
     return node.id;
   }
 
-  completeNode(id: string, output: unknown) {
+  completeNode(id: string, output: unknown, wrapInPromise: boolean) {
     const node = this.nodes.get(id);
     if (node) {
+      node.completed = true;
       node.endTime = Date.now();
       node.output = this.cloneValue(output);
+
+      if (wrapInPromise) {
+        node.output = {
+          __gensxSerialized: true,
+          type: "promise",
+
+          value: node.output,
+        };
+      }
 
       if (
         node.componentOpts?.secretOutputs &&
@@ -845,12 +1034,6 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  // Replay functionality
-  setReplayCheckpoint(checkpoint: ExecutionNode) {
-    this.sourceCheckpoint = checkpoint;
-    this.buildReplayLookup(checkpoint);
-  }
-
   /**
    * Advances the sequence number to the specified value.
    * This is used during replay to ensure the sequence number matches the original execution.
@@ -873,32 +1056,37 @@ export class CheckpointManager implements CheckpointWriter {
     });
   }
 
-  getCompletedResult(nodeId: string, sequenceNumber: number): unknown {
+  getCompletedResult(
+    nodeId: string,
+    sequenceNumber: number,
+  ): { found: false; result?: unknown } | { found: true; result: unknown } {
     const result = this.replayLookup.get(nodeId);
     if (!result) {
-      return undefined;
+      return { found: false };
     }
 
     // first try to find the node with the correct sequence number
     const node = result.find(
-      (node) => node.sequenceNumber === sequenceNumber && !node.consumed,
+      (node) =>
+        node.sequenceNumber === sequenceNumber &&
+        !node.consumed &&
+        node.completed,
     );
     if (node) {
       node.consumed = true;
-      return node.output;
+      return { found: true, result: node.output };
     }
 
     // then try to find the first node that hasn't been consumed
-    const firstNode = result.find((node) => !node.consumed);
+    const firstNode = result.find((node) => !node.consumed && node.completed);
     if (firstNode) {
       console.warn(
-        `[Checkpoint] Found Node with id "${nodeId}" but it has sequence number ${firstNode.sequenceNumber} but we expected ${sequenceNumber}`,
+        `[Replay] Found Node with id "${nodeId}" but it has sequence number ${firstNode.sequenceNumber} but we expected ${sequenceNumber}`,
       );
       firstNode.consumed = true;
-      return firstNode.output;
+      return { found: true, result: firstNode.output };
     }
-
-    return undefined;
+    return { found: false };
   }
 
   // Checkpoint reconstruction methods
