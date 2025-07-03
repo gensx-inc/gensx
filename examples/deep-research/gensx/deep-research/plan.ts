@@ -4,13 +4,16 @@ import { anthropic } from "@ai-sdk/anthropic";
 
 interface PlanInput {
   prompt: string;
+  updateStep: (plan: string) => void | Promise<void>;
 }
 
-export const Plan = gensx.Component("Plan", async ({ prompt }: PlanInput) => {
-  const systemMessage =
-    "You are an experienced research assistant who creates in depth reports based on user prompts.";
+export const Plan = gensx.Component(
+  "Plan",
+  async ({ prompt, updateStep }: PlanInput) => {
+    const systemMessage =
+      "You are an experienced research assistant who creates in depth reports based on user prompts.";
 
-  const fullPrompt = `Given the following prompt, write a short plan for a report on the user's topic.
+    const fullPrompt = `Given the following prompt, write a short plan for a report on the user's topic.
 
 The plan should just be one or two paragraphs and state the following:
 - The objective of the report
@@ -27,25 +30,26 @@ ${prompt}
 
 DO NOT include any headings or subheadings in the brief. Use of bullets, bold, and italic is allowed.`;
 
-  const response = await streamText({
-    model: anthropic("claude-sonnet-4-20250514"),
-    messages: [
-      {
-        role: "system",
-        content: systemMessage,
-      },
-      {
-        role: "user",
-        content: fullPrompt,
-      },
-    ],
-  });
+    const response = await streamText({
+      model: anthropic("claude-sonnet-4-20250514"),
+      messages: [
+        {
+          role: "system",
+          content: systemMessage,
+        },
+        {
+          role: "user",
+          content: fullPrompt,
+        },
+      ],
+    });
 
-  let text = "";
-  for await (const chunk of response.textStream) {
-    text += chunk;
-    gensx.publishObject("researchBrief", text);
-  }
+    let text = "";
+    for await (const chunk of response.textStream) {
+      text += chunk;
+      await updateStep(text);
+    }
 
-  return text;
-});
+    return text;
+  },
+);

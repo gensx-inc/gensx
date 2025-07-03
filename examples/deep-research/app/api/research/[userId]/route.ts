@@ -46,13 +46,30 @@ export async function GET(
 
         // Use the beginning of the report as the last message, or a status indicator
         let lastMessage = "Research completed";
-        if (researchData.report && researchData.report.length > 0) {
+
+        // Extract data from steps
+        const reportStep = researchData.steps
+          .filter((step) => step.type === "generate-report")
+          .pop();
+        const queriesStep = researchData.steps
+          .filter((step) => step.type === "write-queries")
+          .pop();
+
+        if (
+          reportStep &&
+          reportStep.type === "generate-report" &&
+          reportStep.report
+        ) {
           lastMessage =
-            researchData.report.length > 100
-              ? researchData.report.substring(0, 100) + "..."
-              : researchData.report;
-        } else if (researchData.plan?.queries?.length > 0) {
-          lastMessage = `Research plan with ${researchData.plan.queries.length} queries`;
+            reportStep.report.length > 100
+              ? reportStep.report.substring(0, 100) + "..."
+              : reportStep.report;
+        } else if (
+          queriesStep &&
+          queriesStep.type === "write-queries" &&
+          queriesStep.queries.length > 0
+        ) {
+          lastMessage = `Research plan with ${queriesStep.queries.length} queries`;
         }
 
         summaries.push({

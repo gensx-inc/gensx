@@ -1,5 +1,4 @@
 import { Globe } from "lucide-react";
-import { JsonValue } from "@gensx/core";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,7 +12,7 @@ interface SearchResult {
 }
 
 interface SearchResultsProps {
-  searchResults: JsonValue;
+  searchResults: SearchResult[];
   expanded: boolean;
   onToggle: () => void;
   isActive?: boolean;

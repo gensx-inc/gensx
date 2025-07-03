@@ -6,6 +6,7 @@ import { Rank } from "./rank";
 interface ExecuteQueriesParams {
   prompt: string;
   queries: string[];
+  updateStep?: (searchResults: SearchResult[]) => void | Promise<void>;
 }
 
 export const ExecuteQueries = gensx.Component(
@@ -13,6 +14,7 @@ export const ExecuteQueries = gensx.Component(
   async ({
     prompt,
     queries,
+    updateStep,
   }: ExecuteQueriesParams): Promise<SearchResult[]> => {
     // Step 1: Execute searches for all queries in parallel
     const searchPromises = queries.map(
@@ -51,6 +53,13 @@ export const ExecuteQueries = gensx.Component(
     });
 
     // Step 5: Return top 10 results (content will be scraped separately)
-    return finalRankedResults.slice(0, 10);
+    const topResults = finalRankedResults.slice(0, 10);
+
+    // Update the step if updateStep function is provided
+    if (updateStep) {
+      await updateStep(topResults);
+    }
+
+    return topResults;
   },
 );

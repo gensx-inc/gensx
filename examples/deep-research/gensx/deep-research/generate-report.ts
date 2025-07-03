@@ -7,11 +7,17 @@ interface GenerateReportParams {
   prompt: string;
   researchBrief: string;
   documents: SearchResult[];
+  updateStep: (report: string) => void | Promise<void>;
 }
 
 export const GenerateReport = gensx.Component(
   "GenerateReport",
-  async ({ prompt, researchBrief, documents }: GenerateReportParams) => {
+  async ({
+    prompt,
+    researchBrief,
+    documents,
+    updateStep,
+  }: GenerateReportParams) => {
     const systemMessage = `You are an expert researcher.`;
     const fullPrompt = `Given the following prompt, research brief, and sources, please generate a detailed report with proper citations.
 
@@ -53,7 +59,7 @@ IMPORTANT: When writing the report, include citations wherever possible for fact
     let text = "";
     for await (const chunk of response.textStream) {
       text += chunk;
-      gensx.publishObject("report", text);
+      await updateStep(text);
     }
 
     return text;

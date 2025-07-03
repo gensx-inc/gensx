@@ -37,7 +37,7 @@ export function TimelineSection({
       <div className={showTimeline ? "pl-12 pr-2" : "pr-2"}>
         <button
           onClick={onToggle}
-          className="w-full flex items-center justify-between px-3 py-1 border border-transparent hover:border-zinc-700/50 transition-colors rounded-lg"
+          className="w-full flex items-center justify-between px-3 py-1 border border-transparent hover:border-zinc-700/50 hover:cursor-pointer transition-colors rounded-lg"
         >
           <h4
             className={`font-medium text-sm ${

@@ -5,11 +5,12 @@ import z from "zod";
 
 interface WriteQueriesInput {
   researchBrief: string;
+  updateStep?: (queries: string[]) => void | Promise<void>;
 }
 
 export const WriteQueries = gensx.Component(
   "WriteQueries",
-  async ({ researchBrief }: WriteQueriesInput) => {
+  async ({ researchBrief, updateStep }: WriteQueriesInput) => {
     const systemMessage = "You are an experienced research assistant.";
 
     const fullPrompt = `Given the following research brief, generate 3 short search queries to find relevant information on the topic. Search queries should generally be between 3 and 7 words.
@@ -35,6 +36,12 @@ ${researchBrief}
         },
       ],
     });
+
+    // Update the step if updateStep function is provided
+    if (updateStep) {
+      await updateStep(object.queries);
+    }
+
     return object;
   },
 );

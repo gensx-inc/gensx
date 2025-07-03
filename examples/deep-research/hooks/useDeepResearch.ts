@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo } from "react";
 import { useWorkflow, useObject } from "@gensx/react";
 import { DeepResearchOutput, DeepResearchParams } from "../gensx/workflows";
-import { SearchResult } from "../gensx/types";
+import { DeepResearchStep } from "../gensx/types";
 
 interface UseChatReturn {
   runWorkflow: (
@@ -9,10 +9,9 @@ interface UseChatReturn {
     userId: string,
     threadId: string,
   ) => Promise<void>;
-  queries: string[] | undefined;
-  searchResults: SearchResult[] | undefined;
-  report: string | undefined;
+  steps: DeepResearchStep[] | undefined;
   researchBrief: string | undefined;
+  report: string | undefined;
   prompt: string | undefined;
   status: string | undefined;
   error: string | null;
@@ -38,31 +37,28 @@ export function useDeepResearch(): UseChatReturn {
   });
 
   // Get real-time updates from the workflow
-  const workflowQueries = useObject<string[]>(execution, "queries");
-  const workflowSearchResults = useObject<SearchResult[]>(
-    execution,
-    "searchResults",
-  );
-  const workflowReport = useObject<string>(execution, "report");
-  const workflowResearchBrief = useObject<string>(execution, "researchBrief");
+  const workflowSteps = useObject<DeepResearchStep[]>(execution, "steps");
   const workflowStatus = useObject<string>(execution, "status");
 
-  // Determine if we have active workflow data
-  const hasActiveWorkflow = workflowStatus && workflowStatus !== "Completed";
+  // Get the current steps (workflow or saved)
+  const steps = workflowSteps || savedData?.steps;
 
-  // Use workflow data if we have an active workflow, otherwise use saved data
-  const queries = hasActiveWorkflow
-    ? workflowQueries
-    : workflowQueries || savedData?.queries;
-  const searchResults = hasActiveWorkflow
-    ? workflowSearchResults
-    : workflowSearchResults || savedData?.searchResults;
-  const report = hasActiveWorkflow
-    ? workflowReport
-    : workflowReport || savedData?.report;
-  const researchBrief = hasActiveWorkflow
-    ? workflowResearchBrief
-    : workflowResearchBrief || savedData?.researchBrief;
+  // Extract only researchBrief and report for easy access
+  const { researchBrief, report } = useMemo(() => {
+    if (!steps) return { researchBrief: undefined, report: undefined };
+
+    const planStep = steps.filter((step) => step.type === "plan").pop();
+    const reportStep = steps
+      .filter((step) => step.type === "generate-report")
+      .pop();
+
+    return {
+      researchBrief: planStep?.type === "plan" ? planStep.plan : undefined,
+      report:
+        reportStep?.type === "generate-report" ? reportStep.report : undefined,
+    };
+  }, [steps]);
+
   const prompt = currentPrompt || savedData?.prompt;
   const status = workflowStatus;
 
@@ -116,10 +112,9 @@ export function useDeepResearch(): UseChatReturn {
     runWorkflow,
     status: status ?? "Planning",
     error: workflowError,
-    queries,
-    searchResults,
-    report,
+    steps,
     researchBrief,
+    report,
     prompt,
     loadResearch,
     clear,

@@ -14,6 +14,7 @@ import { getUserId } from "@/lib/userId";
 import { ResearchPrompt } from "@/components/ResearchPrompt";
 import { ChatInput } from "@/components/ChatInput";
 import { ResearchBrief } from "@/components/ResearchBrief";
+import { DeepResearchStep } from "@/gensx/types";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -24,19 +25,21 @@ export default function ChatPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const {
     runWorkflow,
-    queries,
-    searchResults,
+    steps,
     report,
-    researchBrief,
     prompt,
     status,
     error,
     loadResearch,
     clear,
   } = useDeepResearch();
-  const [queriesExpanded, setQueriesExpanded] = useState(true);
-  const [resultsExpanded, setResultsExpanded] = useState(true);
-  const [researchBriefExpanded, setResearchBriefExpanded] = useState(true);
+
+  // Track expanded state for each step by index
+  const [expandedSteps, setExpandedSteps] = useState<Record<number, boolean>>(
+    {},
+  );
+
+  console.log("STEPS", steps);
 
   // Check if status is valid
   const validStatuses = [
@@ -68,15 +71,14 @@ export default function ChatPage() {
         // Load research if:
         // 1. We're switching FROM an existing thread (previousThreadId !== null), OR
         // 2. We're loading a thread on page refresh/initial load and have no data
-        if (previousThreadId !== null || (!prompt && !queries && !report)) {
+        if (previousThreadId !== null || (!prompt && !steps && !report)) {
           clear(); // Clear current data first
           loadResearch(threadId, userId);
         }
       } else {
         // No thread selected, clear data
         clear();
-        setQueriesExpanded(true);
-        setResultsExpanded(true);
+        setExpandedSteps({});
       }
     }
   }, [
@@ -86,15 +88,13 @@ export default function ChatPage() {
     clear,
     loadResearch,
     prompt,
-    queries,
+    steps,
     report,
   ]);
 
   // New Chat: remove thread ID from URL and reset state
   const handleNewChat = () => {
-    setQueriesExpanded(true);
-    setResultsExpanded(true);
-    setResearchBriefExpanded(true);
+    setExpandedSteps({});
     clear();
     router.push("?", { scroll: false });
   };
@@ -103,9 +103,7 @@ export default function ChatPage() {
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !userId) return;
 
-    setQueriesExpanded(true);
-    setResultsExpanded(true);
-    setResearchBriefExpanded(true);
+    setExpandedSteps({});
 
     let currentThreadId = threadId;
     if (!currentThreadId) {
@@ -114,6 +112,99 @@ export default function ChatPage() {
     }
 
     await runWorkflow(content.trim(), userId, currentThreadId);
+  };
+
+  // Function to toggle expansion state for a step
+  const toggleStepExpansion = (stepIndex: number) => {
+    setExpandedSteps((prev) => ({
+      ...prev,
+      [stepIndex]: !prev[stepIndex],
+    }));
+  };
+
+  // Function to get current active step based on status
+  const getCurrentActiveStep = (): string | null => {
+    switch (status) {
+      case "Planning":
+        return "plan";
+      case "Searching":
+        return "write-queries";
+      case "Reading":
+        return "execute-queries";
+      case "Generating":
+        return "generate-report";
+      default:
+        return null;
+    }
+  };
+
+  // Function to render step components dynamically
+  const renderStepComponent = (step: DeepResearchStep, index: number) => {
+    const isExpanded = expandedSteps[index] ?? true; // Default to expanded
+    const isActive = getCurrentActiveStep() === step.type;
+    const key = `${step.type}-${index}`;
+
+    switch (step.type) {
+      case "plan":
+        return (
+          <ResearchBrief
+            key={key}
+            researchBrief={step.plan}
+            expanded={isExpanded}
+            onToggle={() => toggleStepExpansion(index)}
+            isActive={isActive}
+          />
+        );
+
+      case "write-queries":
+        return (
+          <ResearchQueries
+            key={key}
+            queries={step.queries}
+            expanded={isExpanded}
+            onToggle={() => toggleStepExpansion(index)}
+            isActive={isActive}
+          />
+        );
+
+      case "execute-queries":
+        return (
+          <SearchResults
+            key={key}
+            searchResults={step.searchResults}
+            expanded={isExpanded}
+            onToggle={() => toggleStepExpansion(index)}
+            isActive={isActive}
+          />
+        );
+
+      case "generate-report":
+        return (
+          <ResearchReport key={key} report={step.report} isActive={isActive} />
+        );
+
+      case "evaluate-research":
+        // TODO: Implement evaluation component
+        return (
+          <div key={key} className="relative mb-6">
+            <div className="absolute left-6 top-2.5 w-px bg-zinc-700"></div>
+            <div className="absolute left-4.5 top-2.5 w-3 h-3 bg-blue-600 rounded-full border-2 border-zinc-900"></div>
+            <div className="pl-12 pr-2">
+              <div className="px-3 py-1">
+                <h4 className="text-blue-400 font-medium text-sm">
+                  Research Evaluation
+                </h4>
+                <p className="text-zinc-400 text-sm mt-1">
+                  Evaluating research quality...
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
@@ -213,31 +304,10 @@ export default function ChatPage() {
                     {/* Research Prompt */}
                     <ResearchPrompt prompt={prompt} />
 
-                    {/* Research Brief */}
-                    <ResearchBrief
-                      researchBrief={researchBrief || ""}
-                      expanded={researchBriefExpanded}
-                      onToggle={() =>
-                        setResearchBriefExpanded(!researchBriefExpanded)
-                      }
-                      isActive={status === "Planning"}
-                    />
-
-                    {/* Research Queries */}
-                    <ResearchQueries
-                      queries={queries || []}
-                      expanded={queriesExpanded}
-                      onToggle={() => setQueriesExpanded(!queriesExpanded)}
-                      isActive={status === "Searching"}
-                    />
-
-                    {/* Search Results */}
-                    <SearchResults
-                      searchResults={searchResults || []}
-                      expanded={resultsExpanded}
-                      onToggle={() => setResultsExpanded(!resultsExpanded)}
-                      isActive={status === "Reading"}
-                    />
+                    {/* Dynamically render steps */}
+                    {steps?.map((step, index) =>
+                      renderStepComponent(step, index),
+                    )}
 
                     {/* Show spinner for invalid/unknown status */}
                     {status && !isValidStatus && (
@@ -257,12 +327,6 @@ export default function ChatPage() {
                         </div>
                       </div>
                     )}
-
-                    {/* Research Report */}
-                    <ResearchReport
-                      report={report || ""}
-                      isActive={status === "Generating"}
-                    />
 
                     {error && (
                       <div className="flex justify-start px-2 py-2">
