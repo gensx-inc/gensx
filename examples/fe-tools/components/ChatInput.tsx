@@ -53,18 +53,28 @@ export function ChatInput({
     return (
       <div className="w-full flex flex-col items-center -mt-36">
         {/* Caption */}
-        <div className="text-center mb-4">
-          <h1 className="text-4xl font-semibold text-slate-900 mb-2">
-            Let&apos;s make things happen.
+        <div className="text-center mb-8">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-2">
+            Explore the World with GenSX
           </h1>
-          <p className="text-slate-500 text-lg">
-            See the power of GenSX in action with streaming chat, thinking, and
-            tools.
+          <h2 className="text-xl sm:text-2xl font-semibold text-slate-800 mt-4 mb-2">
+            Your AI-Powered Map Chat Demo
+          </h2>
+          <p className="text-slate-600 text-base sm:text-lg mt-2 max-w-md sm:max-w-2xl mx-auto">
+            See the power of GenSX in action—chat with the map, get instant
+            answers, and discover new places.
+          </p>
+          <p className="text-slate-500 text-sm sm:text-base mt-2 max-w-md sm:max-w-2xl mx-auto">
+            Ask about locations, directions, or landmarks. GenSX moves the map,
+            places markers, and helps you explore—all in real time.
           </p>
         </div>
 
         {/* Centered Chat Input */}
-        <form onSubmit={handleSubmit} className="relative w-full max-w-2xl">
+        <form
+          onSubmit={handleSubmit}
+          className="relative w-full max-w-md sm:max-w-2xl"
+        >
           <div
             className={cn(
               "relative flex items-end gap-3 p-2 rounded-2xl border transition-all duration-200 bg-white/95 backdrop-blur-sm shadow-lg",
