@@ -89,7 +89,7 @@ export const geocodeTool = tool({
           return `Error geocoding: ${response.statusText}`;
         }
         const data = await response.json();
-        return data;
+        return JSON.stringify(data, null, 2);
       } catch (error) {
         return `Error geocoding: ${error instanceof Error ? error.message : String(error)}`;
       }
