@@ -30,7 +30,7 @@ export default function ChatPage() {
     placeMarkers,
     getCurrentView,
     listMarkers,
-  } = useMapTools();
+  } = useMapTools(userId, currentThreadId);
 
   const toolImplementations = useMemo(() => {
     return createToolImplementations<typeof toolbox>({

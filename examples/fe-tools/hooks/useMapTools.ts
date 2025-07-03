@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import L from "leaflet";
 
 export interface MapView {
@@ -16,7 +16,7 @@ export interface MapMarker {
   color?: string;
 }
 
-export function useMapTools() {
+export function useMapTools(userId: string | null, threadId: string | null) {
   const mapRef = useRef<L.Map | null>(null);
   const [currentView, setCurrentView] = useState<MapView>({
     latitude: 40.7128,
@@ -24,6 +24,58 @@ export function useMapTools() {
     zoom: 12,
   });
   const [markers, setMarkers] = useState<MapMarker[]>([]);
+
+  useEffect(() => {
+    console.log("useMapTools", userId, threadId);
+    if (!userId || !threadId) {
+      setMarkers([]);
+      setCurrentView({
+        latitude: 40.7128,
+        longitude: -74.006,
+        zoom: 12,
+      });
+      return;
+    }
+
+    const fetchMapState = async () => {
+      const response = await fetch(`/api/map-state/${userId}/${threadId}`);
+      if (response.status === 404) {
+        setMarkers([]);
+        setCurrentView({
+          latitude: 40.7128,
+          longitude: -74.006,
+          zoom: 12,
+        });
+        return;
+      }
+      const data = await response.json();
+      console.log("fetchMapState", response.status, data);
+      setCurrentView({
+        latitude: data.latitude,
+        longitude: data.longitude,
+        zoom: data.zoom,
+      });
+      setMarkers(data.markers ?? []);
+    };
+    fetchMapState();
+  }, [userId, threadId]);
+
+  // Keep the persisted map state in sync with the current view
+  useEffect(() => {
+    if (!userId || !threadId) return;
+
+    const updateMapState = async () => {
+      await fetch(`/api/map-state/${userId}/${threadId}`, {
+        method: "POST",
+        body: JSON.stringify({
+          ...currentView,
+          markers,
+        }),
+      });
+    };
+
+    updateMapState();
+  }, [currentView, markers, userId, threadId]);
 
   // Simple tool implementations for map control
   const moveMap = useCallback(
