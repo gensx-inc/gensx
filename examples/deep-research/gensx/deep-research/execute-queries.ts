@@ -1,24 +1,30 @@
 import * as gensx from "@gensx/core";
-import { SearchResult } from "../types";
+import { QueryResult } from "../types";
 import { Search } from "./search";
 import { Rank } from "./rank";
 
 interface ExecuteQueriesParams {
-  prompt: string;
   queries: string[];
-  updateStep?: (searchResults: SearchResult[]) => void | Promise<void>;
+  queryOptions?: {
+    docsToFetch?: number;
+    topK?: number;
+  };
+  updateStep?: (queryResults: QueryResult[]) => void | Promise<void>;
 }
 
-export const ExecuteQueries = gensx.Component(
+export const ExecuteQuery = gensx.Component(
   "ExecuteQueries",
   async ({
-    prompt,
     queries,
+    queryOptions = {
+      docsToFetch: 20,
+      topK: 3,
+    },
     updateStep,
-  }: ExecuteQueriesParams): Promise<SearchResult[]> => {
+  }: ExecuteQueriesParams): Promise<QueryResult[]> => {
     // Step 1: Execute searches for all queries in parallel
     const searchPromises = queries.map(
-      (query) => Search({ query, limit: 20 }), // Get more results initially for better ranking
+      (query) => Search({ query, limit: queryOptions.docsToFetch ?? 20 }), // Get more results initially for better ranking
     );
     const allSearchResults = await Promise.all(searchPromises);
 
@@ -26,7 +32,7 @@ export const ExecuteQueries = gensx.Component(
     const rankedResultsPerQuery = await Promise.all(
       queries.map(async (query, index) => {
         const searchResults = allSearchResults[index];
-        if (searchResults.length === 0) return [];
+        if (searchResults.length === 0) return { query, results: [] };
 
         // Use Cohere to rank documents for this specific query
         const rankedResults = await Rank({
@@ -34,32 +40,19 @@ export const ExecuteQueries = gensx.Component(
           documents: searchResults,
         });
 
-        // Return top 3 for this query
-        return rankedResults.slice(0, 3);
+        // Return top results for this query
+        return {
+          query,
+          results: rankedResults.slice(0, queryOptions.topK),
+        };
       }),
     );
 
-    // Step 3: Combine all results and dedupe by URL
-    const allRankedResults = rankedResultsPerQuery.flat();
-    const dedupedResults = allRankedResults.filter(
-      (result, index, self) =>
-        index === self.findIndex((r) => r.url === result.url),
-    );
-
-    // Step 4: Further rank the deduped results using the main prompt
-    const finalRankedResults = await Rank({
-      prompt,
-      documents: dedupedResults,
-    });
-
-    // Step 5: Return top 10 results (content will be scraped separately)
-    const topResults = finalRankedResults.slice(0, 10);
-
-    // Update the step if updateStep function is provided
+    // Step 3: Return the ranked results per query
     if (updateStep) {
-      await updateStep(topResults);
+      await updateStep(rankedResultsPerQuery);
     }
 
-    return topResults;
+    return rankedResultsPerQuery;
   },
 );

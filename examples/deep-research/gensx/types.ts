@@ -6,11 +6,16 @@ export interface SearchResult {
   content?: string;
 }
 
+export interface QueryResult {
+  query: string;
+  results: SearchResult[];
+}
+
 export type StepType =
   | "plan"
   | "write-queries"
   | "execute-queries"
-  | "evaluate-research"
+  | "reflect"
   | "generate-report";
 
 export interface PlanStep {
@@ -25,12 +30,14 @@ export interface WriteQueriesStep {
 
 export interface ExecuteQueriesStep {
   type: "execute-queries";
-  searchResults: SearchResult[];
+  queryResults: QueryResult[];
 }
 
-export interface EvaluateResearchStep {
-  type: "evaluate-research";
-  searchResults: SearchResult[];
+export interface EvaluateStep {
+  type: "evaluate";
+  isSufficient: boolean;
+  analysis: string;
+  followUpQueries: string[];
 }
 
 export interface GenerateReportStep {
@@ -42,5 +49,5 @@ export type DeepResearchStep =
   | PlanStep
   | WriteQueriesStep
   | ExecuteQueriesStep
-  | EvaluateResearchStep
+  | EvaluateStep
   | GenerateReportStep;

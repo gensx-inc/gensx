@@ -4,13 +4,13 @@ import { generateText } from "@gensx/vercel-ai";
 
 interface SummarizeInput {
   researchBrief: string;
-  queries: string[];
+  query: string;
   content: string;
 }
 
 export const Summarize = gensx.Component(
   "Summarize",
-  async ({ researchBrief, queries, content }: SummarizeInput) => {
+  async ({ researchBrief, query, content }: SummarizeInput) => {
     if (content === "") {
       return "";
     }
@@ -30,10 +30,10 @@ Here is the brief for the research report:
 ${researchBrief}
 </researchBrief>
 
-Here are the queries used to retrieve this document:
-<queries>
-${queries.map((query) => `<query>${query}</query>`).join("\n")}
-</queries>
+Here is the query used to retrieve this document:
+<query>
+${query}
+</query>
 
 Here is the search result:
 <searchResult>

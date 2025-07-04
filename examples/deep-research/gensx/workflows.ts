@@ -1,13 +1,12 @@
 import * as gensx from "@gensx/core";
 import { WriteQueries } from "./deep-research/write-queries";
 import { Plan } from "./deep-research/plan";
-import { SearchResult, DeepResearchStep } from "./types";
+import { DeepResearchStep, QueryResult } from "./types";
 import { GenerateReport } from "./deep-research/generate-report";
 import { useBlob } from "@gensx/storage";
-import { ExecuteQueries } from "./deep-research/execute-queries";
-import { Scrape } from "./deep-research/scrape";
-import { Summarize } from "./deep-research/summarize";
-import { cleanContent } from "./utils";
+import { ExecuteQuery } from "./deep-research/execute-queries";
+import { ProcessResults } from "./deep-research/process-results";
+import { Evaluate } from "./deep-research/evaluate";
 
 export interface DeepResearchParams {
   prompt: string;
@@ -58,6 +57,11 @@ export const DeepResearch = gensx.Workflow(
         }
       };
 
+      // Helper function to get the current step index
+      const getCurrentStepIndex = (): number => {
+        return output.steps.length - 1;
+      };
+
       const updateStatus = gensx.createObjectStream<string>("status");
 
       // Step 1: Plan
@@ -71,7 +75,8 @@ export const DeepResearch = gensx.Workflow(
 
       const researchBrief = await Plan({
         prompt,
-        updateStep: (plan: string) => updateStep(0, { type: "plan", plan }),
+        updateStep: (plan: string) =>
+          updateStep(getCurrentStepIndex(), { type: "plan", plan }),
       });
 
       // Step 2: Write initial queries
@@ -86,7 +91,7 @@ export const DeepResearch = gensx.Workflow(
       const queriesResult = await WriteQueries({
         researchBrief,
         updateStep: (queries: string[]) =>
-          updateStep(1, { type: "write-queries", queries }),
+          updateStep(getCurrentStepIndex(), { type: "write-queries", queries }),
       });
 
       // Step 3: Execute queries
@@ -95,54 +100,139 @@ export const DeepResearch = gensx.Workflow(
       // Create initial search step
       await addStep({
         type: "execute-queries",
-        searchResults: [],
+        queryResults: [],
       });
 
-      let searchResults = await ExecuteQueries({
-        prompt,
+      const queryResults = await ExecuteQuery({
         queries: queriesResult.queries,
-        updateStep: (searchResults: SearchResult[]) =>
-          updateStep(2, { type: "execute-queries", searchResults }),
+        updateStep: (queryResults: QueryResult[]) =>
+          updateStep(getCurrentStepIndex(), {
+            type: "execute-queries",
+            queryResults,
+          }),
       });
 
-      // Step 4: Scrape and summarize content
+      // Step 4: Scrape and summarize content for each query result
       updateStatus("Reading");
-      const processedResults = await Promise.all(
-        searchResults.map(async (document): Promise<SearchResult | null> => {
-          try {
-            // Scrape the content for each document
-            const content = await Scrape({ url: document.url });
-            const cleanedContent = cleanContent(content);
-            const extractiveSummary = await Summarize({
-              researchBrief,
-              queries: queriesResult.queries,
-              content: cleanedContent,
-            });
 
-            // Return the document with content
-            return {
-              ...document,
-              content: extractiveSummary,
-            } as SearchResult;
-          } catch (error) {
-            console.error(`Error processing document ${document.url}:`, error);
-            return null;
-          }
-        }),
-      );
-
-      // Filter out null values
-      searchResults = processedResults.filter(
-        (result): result is SearchResult => result !== null,
-      );
+      const processedQueryResults = await ProcessResults({
+        researchBrief,
+        queryResults,
+        updateStep: (queryResults: QueryResult[]) =>
+          updateStep(getCurrentStepIndex(), {
+            type: "execute-queries",
+            queryResults,
+          }),
+      });
 
       // Update the search results step with final results
-      await updateStep(2, {
+      await updateStep(getCurrentStepIndex(), {
         type: "execute-queries",
-        searchResults,
+        queryResults: processedQueryResults,
       });
 
-      // Step 5: Generate report
+      // Step 5: Reflect on the research
+      updateStatus("Evaluating research");
+
+      // Create initial reflection step
+      await addStep({
+        type: "evaluate",
+        isSufficient: false,
+        analysis: "",
+        followUpQueries: [],
+      });
+
+      const reflection = await Evaluate({
+        researchBrief,
+        queryResults: processedQueryResults,
+      });
+
+      // Update reflection step with results
+      await updateStep(getCurrentStepIndex(), {
+        type: "evaluate",
+        isSufficient: reflection.is_sufficient,
+        analysis: reflection.analysis,
+        followUpQueries: reflection.follow_up_queries,
+      });
+
+      // If research is not sufficient, do additional rounds
+      let currentQueryResults = processedQueryResults;
+      let round = 1;
+      const maxRounds = 3; // Limit to prevent infinite loops
+
+      while (!reflection.is_sufficient && round < maxRounds) {
+        round++;
+        updateStatus(`Additional research round ${round}`);
+
+        // Add new execute-queries step for follow-up research
+        await addStep({
+          type: "execute-queries",
+          queryResults: [],
+        });
+
+        // Execute follow-up queries
+        const followUpQueryResults = await ExecuteQuery({
+          queries: reflection.follow_up_queries,
+          updateStep: (queryResults: QueryResult[]) =>
+            updateStep(getCurrentStepIndex(), {
+              type: "execute-queries",
+              queryResults: queryResults,
+            }),
+        });
+
+        // Process the new results
+        const processedFollowUpResults = await ProcessResults({
+          researchBrief,
+          queryResults: followUpQueryResults,
+          updateStep: (queryResults: QueryResult[]) =>
+            updateStep(getCurrentStepIndex(), {
+              type: "execute-queries",
+              queryResults: queryResults,
+            }),
+        });
+
+        // Combine all results for the next reflection
+        currentQueryResults = [
+          ...currentQueryResults,
+          ...processedFollowUpResults,
+        ];
+
+        // Update the search results step with only the new results
+        await updateStep(getCurrentStepIndex(), {
+          type: "execute-queries",
+          queryResults: processedFollowUpResults,
+        });
+
+        // Add new reflection step for this round
+        await addStep({
+          type: "evaluate",
+          isSufficient: false,
+          analysis: "",
+          followUpQueries: [],
+        });
+
+        // Reflect again on the combined research
+        updateStatus(`Evaluating research (round ${round})`);
+
+        const newReflection = await Evaluate({
+          researchBrief,
+          queryResults: currentQueryResults,
+        });
+
+        // Update reflection step
+        await updateStep(getCurrentStepIndex(), {
+          type: "evaluate",
+          isSufficient: newReflection.is_sufficient,
+          analysis: newReflection.analysis,
+          followUpQueries: newReflection.follow_up_queries,
+        });
+
+        // Update reflection variable for next iteration
+        reflection.is_sufficient = newReflection.is_sufficient;
+        reflection.follow_up_queries = newReflection.follow_up_queries;
+      }
+
+      // Step 6: Generate report
       updateStatus("Generating");
 
       // Create initial report step
@@ -154,9 +244,12 @@ export const DeepResearch = gensx.Workflow(
       await GenerateReport({
         prompt,
         researchBrief,
-        documents: searchResults,
+        documents: currentQueryResults.flatMap((qr) => qr.results),
         updateStep: (report: string) =>
-          updateStep(3, { type: "generate-report", report }),
+          updateStep(getCurrentStepIndex(), {
+            type: "generate-report",
+            report,
+          }),
       });
 
       updateStatus("Completed");

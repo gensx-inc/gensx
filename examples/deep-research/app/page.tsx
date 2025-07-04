@@ -14,6 +14,7 @@ import { getUserId } from "@/lib/userId";
 import { ResearchPrompt } from "@/components/ResearchPrompt";
 import { ChatInput } from "@/components/ChatInput";
 import { ResearchBrief } from "@/components/ResearchBrief";
+import { ResearchEvaluation } from "@/components/ResearchEvaluation";
 import { DeepResearchStep } from "@/gensx/types";
 
 export default function ChatPage() {
@@ -44,8 +45,10 @@ export default function ChatPage() {
   // Check if status is valid
   const validStatuses = [
     "Planning",
+    "Writing queries",
     "Searching",
     "Reading",
+    "Evaluating research",
     "Generating",
     "Completed",
   ];
@@ -127,10 +130,14 @@ export default function ChatPage() {
     switch (status) {
       case "Planning":
         return "plan";
-      case "Searching":
+      case "Writing queries":
         return "write-queries";
+      case "Searching":
+        return "execute-queries";
       case "Reading":
         return "execute-queries";
+      case "Evaluating research":
+        return "reflect";
       case "Generating":
         return "generate-report";
       default:
@@ -171,7 +178,7 @@ export default function ChatPage() {
         return (
           <SearchResults
             key={key}
-            searchResults={step.searchResults}
+            searchResults={step.queryResults?.flatMap((qr) => qr.results) ?? []}
             expanded={isExpanded}
             onToggle={() => toggleStepExpansion(index)}
             isActive={isActive}
@@ -183,23 +190,17 @@ export default function ChatPage() {
           <ResearchReport key={key} report={step.report} isActive={isActive} />
         );
 
-      case "evaluate-research":
-        // TODO: Implement evaluation component
+      case "evaluate":
         return (
-          <div key={key} className="relative mb-6">
-            <div className="absolute left-6 top-2.5 w-px bg-zinc-700"></div>
-            <div className="absolute left-4.5 top-2.5 w-3 h-3 bg-blue-600 rounded-full border-2 border-zinc-900"></div>
-            <div className="pl-12 pr-2">
-              <div className="px-3 py-1">
-                <h4 className="text-blue-400 font-medium text-sm">
-                  Research Evaluation
-                </h4>
-                <p className="text-zinc-400 text-sm mt-1">
-                  Evaluating research quality...
-                </p>
-              </div>
-            </div>
-          </div>
+          <ResearchEvaluation
+            key={key}
+            analysis={step.analysis}
+            followUpQueries={step.followUpQueries}
+            isSufficient={step.isSufficient}
+            expanded={isExpanded}
+            onToggle={() => toggleStepExpansion(index)}
+            isActive={isActive}
+          />
         );
 
       default:
