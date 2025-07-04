@@ -3,12 +3,14 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { TimelineSection } from "./TimelineSection";
+import { ResearchSnippets } from "./ResearchSnippets";
 
 interface SearchResult {
   title: string;
   url: string;
   description: string;
   content?: string;
+  snippet?: string;
 }
 
 interface SearchResultsProps {
@@ -85,8 +87,9 @@ export function SearchResults({
       onToggle={onToggle}
       isActive={isActive}
     >
+      {/* Source Links Section */}
       <div className="flex flex-wrap gap-2">
-        {results.slice(0, 10).map((result, index) => (
+        {results.map((result, index) => (
           <Link
             key={index}
             href={result.url}
@@ -107,11 +110,8 @@ export function SearchResults({
           </Link>
         ))}
       </div>
-      {results.length > 10 && (
-        <p className="text-zinc-500 text-sm text-center py-2 mt-2">
-          ... and {results.length - 10} more sources
-        </p>
-      )}
+      {/* Research Snippets Section */}
+      {!isActive && <ResearchSnippets searchResults={results} />}
     </TimelineSection>
   );
 }

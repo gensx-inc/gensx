@@ -4,6 +4,7 @@ export interface SearchResult {
   description: string;
   relevanceScore?: number;
   content?: string;
+  snippet?: string;
 }
 
 export interface QueryResult {
