@@ -25,6 +25,7 @@ Please extract a short snippet from the document relevant to the search query an
 Instructions:
 - The goal of the snippet is to provide an interesting or useful fact or insight from the search result that is relevant to the research brief and query.
 - The snippet should represent one of the key ideas or insights from the search result.
+- The snippet should make sense to a reader looking at it given the research brief and query.
 - Prefer interesting sentences over more generic ones
 - Extract the sentence verbatim - no paraphrasing or rephrasing. Fixing formatting is fine.
 - Snippets should be one sentence long or shorter.

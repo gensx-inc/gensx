@@ -148,7 +148,18 @@ export default function ChatPage() {
   // Function to render step components dynamically
   const renderStepComponent = (step: DeepResearchStep, index: number) => {
     const isExpanded = expandedSteps[index] ?? true; // Default to expanded
-    const isActive = getCurrentActiveStep() === step.type;
+    const currentActiveStepType = getCurrentActiveStep();
+
+    // Find the last step of the current active type
+    const lastActiveStepIndex = currentActiveStepType
+      ? steps
+          ?.map((s, i) => ({ step: s, index: i }))
+          .filter(({ step }) => step.type === currentActiveStepType)
+          .pop()?.index
+      : -1;
+
+    // No step should be active when status is "Completed"
+    const isActive = status !== "Completed" && index === lastActiveStepIndex;
     const key = `${step.type}-${index}`;
 
     switch (step.type) {
