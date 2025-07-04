@@ -105,6 +105,7 @@ export const DeepResearch = gensx.Workflow(
 
       const queryResults = await ExecuteQuery({
         queries: queriesResult.queries,
+        previousResults: [], // No previous results for initial search
         updateStep: (queryResults: QueryResult[]) =>
           updateStep(getCurrentStepIndex(), {
             type: "execute-queries",
@@ -162,7 +163,7 @@ export const DeepResearch = gensx.Workflow(
 
       while (!reflection.is_sufficient && round < maxRounds) {
         round++;
-        updateStatus(`Additional research round ${round}`);
+        updateStatus(`Searching`);
 
         // Add new execute-queries step for follow-up research
         await addStep({
@@ -173,12 +174,15 @@ export const DeepResearch = gensx.Workflow(
         // Execute follow-up queries
         const followUpQueryResults = await ExecuteQuery({
           queries: reflection.follow_up_queries,
+          previousResults: currentQueryResults, // Pass all previous results to filter out duplicates
           updateStep: (queryResults: QueryResult[]) =>
             updateStep(getCurrentStepIndex(), {
               type: "execute-queries",
               queryResults: queryResults,
             }),
         });
+
+        updateStatus(`Reading`);
 
         // Process the new results
         const processedFollowUpResults = await ProcessResults({
@@ -203,6 +207,12 @@ export const DeepResearch = gensx.Workflow(
           queryResults: processedFollowUpResults,
         });
 
+        if (round === maxRounds) {
+          break;
+        }
+
+        updateStatus(`Evaluating research`);
+
         // Add new reflection step for this round
         await addStep({
           type: "evaluate",
@@ -210,9 +220,6 @@ export const DeepResearch = gensx.Workflow(
           analysis: "",
           followUpQueries: [],
         });
-
-        // Reflect again on the combined research
-        updateStatus(`Evaluating research (round ${round})`);
 
         const newReflection = await Evaluate({
           researchBrief,

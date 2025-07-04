@@ -54,6 +54,7 @@ IMPORTANT: When writing the report, include citations wherever possible for fact
         },
         { role: "user", content: fullPrompt },
       ],
+      maxTokens: 32000,
     });
 
     let text = "";
