@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { type ModelConfig, type ModelStreamState } from "@/gensx/workflows";
-import { type ContentVersion } from "@/lib/types";
 import { calculateDiff, calculateStreamingDiff } from "@/lib/diff-utils";
+import { type ContentVersion } from "@/lib/types";
 import {
   Check,
   Clock,
@@ -13,9 +13,9 @@ import {
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { DiffDisplay } from "./diff-display";
 import { LiveCostDisplay } from "./live-cost-display";
 import { ProviderIcon } from "./provider-icon";
-import { DiffDisplay } from "./diff-display";
 
 interface MetricRanges {
   minWordCount: number;
@@ -31,8 +31,8 @@ interface ModelStreamCardProps {
   modelConfig?: ModelConfig;
   isSelected?: boolean;
   onSelect?: () => void;
-  scrollPosition: number;
-  onScrollUpdate: (scrollTop: number) => void;
+  scrollPosition?: number;
+  onScrollUpdate?: (scrollTop: number) => void;
   metricRanges?: MetricRanges;
   previousVersion?: ContentVersion;
   showDiff?: boolean;
@@ -117,7 +117,8 @@ export function ModelStreamCard({
     if (
       scrollContainerRef.current &&
       modelStream.status !== "generating" &&
-      !isSyncingScrollRef.current // Don't sync if we're already syncing
+      !isSyncingScrollRef.current && // Don't sync if we're already syncing
+      scrollPosition !== undefined // Only sync if scrollPosition is provided
     ) {
       // Set flag to prevent feedback loop
       isSyncingScrollRef.current = true;
@@ -197,8 +198,8 @@ export function ModelStreamCard({
 
     const target = e.currentTarget;
 
-    // Only sync scroll position if not generating
-    if (modelStream.status !== "generating") {
+    // Only sync scroll position if not generating and onScrollUpdate is provided
+    if (modelStream.status !== "generating" && onScrollUpdate) {
       // Cancel any pending animation frame
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -347,18 +348,12 @@ export function ModelStreamCard({
 
       {/* Content Card */}
       <Card
-        className={`flex-1 min-h-0 cursor-pointer transition-all duration-200 backdrop-blur-md bg-white/20 border border-white/30 ${
+        className={`flex-1 min-h-0 cursor-pointer transition-all duration-200 backdrop-blur-md bg-white/40 border border-white/30 ${
           isSelected ? "" : "hover:border-gray-400"
         } ${modelStream.status === "generating" ? "animate-pulse" : ""} relative`}
         onClick={onSelect}
         liquidGlass={false} // Disable glass effect to simplify scrolling
       >
-        {/* Selection indicator */}
-        {isSelected && (
-          <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-            <Check className="w-4 h-4 text-white" />
-          </div>
-        )}
         <CardContent className="h-full p-0 overflow-hidden rounded-2xl">
           <div
             ref={scrollContainerRef}
