@@ -28,15 +28,30 @@ export const geocodeTool = tool({
     "Geocode a location from an address to a specific latitude and longitude. Try to provide as much information as possible, but if you don't have all the information, you can still geocode the location.",
   parameters: schema,
   execute: async (params: z.infer<typeof schema>) => {
+    const { amenity, street, city, county, state, country, postalcode } =
+      params;
+
+    if (
+      !amenity &&
+      !street &&
+      !city &&
+      !county &&
+      !state &&
+      !country &&
+      !postalcode
+    ) {
+      return "No parameters provided";
+    }
+
     const hashParams = crypto
       .createHash("sha256")
-      .update(params.amenity ?? "")
-      .update(params.street ?? "")
-      .update(params.city ?? "")
-      .update(params.county ?? "")
-      .update(params.state ?? "")
-      .update(params.country ?? "")
-      .update(params.postalcode ?? "")
+      .update(amenity ?? "")
+      .update(street ?? "")
+      .update(city ?? "")
+      .update(county ?? "")
+      .update(state ?? "")
+      .update(country ?? "")
+      .update(postalcode ?? "")
       .digest("hex");
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -49,23 +64,8 @@ export const geocodeTool = tool({
       return cachedAddress;
     }
 
-    return await limit(async () => {
+    const data = await limit(async () => {
       try {
-        const { amenity, street, city, county, state, country, postalcode } =
-          params;
-
-        if (
-          !amenity &&
-          !street &&
-          !city &&
-          !county &&
-          !state &&
-          !country &&
-          !postalcode
-        ) {
-          return "No parameters provided";
-        }
-
         const queryParams = new URLSearchParams();
         if (amenity) queryParams.set("amenity", amenity);
         if (street) queryParams.set("street", street);
@@ -88,11 +88,14 @@ export const geocodeTool = tool({
         if (!response.ok) {
           return `Error geocoding: ${response.statusText}`;
         }
-        const data = await response.json();
-        return JSON.stringify(data, null, 2);
+        return await response.json();
       } catch (error) {
         return `Error geocoding: ${error instanceof Error ? error.message : String(error)}`;
       }
     });
+
+    await addressBlob.putJSON(data);
+
+    return JSON.stringify(data, null, 2);
   },
 });
