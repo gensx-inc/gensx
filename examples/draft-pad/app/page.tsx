@@ -25,6 +25,8 @@ import {
   DollarSign,
   FileText,
   Send,
+  ToggleLeft,
+  ToggleRight,
   WholeWord,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -76,12 +78,13 @@ export default function Home() {
     Record<string, ContentVersion[]>
   >({});
   const [defaultModelId] = useState(
-    "groq/meta-llama/llama-4-maverick-17b-128e-instruct",
+    "groq-meta-llama/llama-4-maverick-17b-128e-instruct",
   );
 
   // Dropdown state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState("");
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
   // Ref to store list container and its scroll position
   const listContainerRef = useRef<HTMLDivElement | null>(null);
@@ -341,7 +344,10 @@ export default function Home() {
         const modelHistory = versionHistory[stream.modelId] ?? [];
         const lastVersion = modelHistory[modelHistory.length - 1];
 
-        if (!lastVersion || lastVersion.content !== stream.content) {
+        if (
+          modelHistory.length === 0 ||
+          lastVersion.content !== stream.content
+        ) {
           addVersionToHistory(stream.modelId, stream.content);
         }
       }
@@ -529,8 +535,7 @@ export default function Home() {
 
   // Get grid rows class based on number of models
   const getGridRowsClass = (modelCount: number) => {
-    if (modelCount <= 2) return "grid-rows-1";
-    if (modelCount <= 4) return "grid-rows-2";
+    if (modelCount <= 3) return "grid-rows-1";
     if (modelCount <= 6) return "grid-rows-2";
     return "grid-rows-3";
   };
@@ -711,9 +716,9 @@ export default function Home() {
       const search = dropdownSearch.toLowerCase();
       return sortedAvailableModels.filter(
         (model) =>
-          model.displayName?.toLowerCase().includes(search) ||
+          (model.displayName?.toLowerCase().includes(search) ?? false) ||
           model.model.toLowerCase().includes(search) ||
-          model.provider?.toLowerCase().includes(search),
+          model.provider.toLowerCase().includes(search),
       );
     }, [dropdownSearch, sortedAvailableModels]);
 
@@ -742,19 +747,38 @@ export default function Home() {
             <div className="min-w-0 ">
               {selectedModelsForRun.length === 0 ? (
                 <span className="text-sm text-[#333333]/50">
-                  Select models...
+                  {isMultiSelectMode ? "Select models..." : "Select a model..."}
                 </span>
-              ) : (
+              ) : isMultiSelectMode ? (
                 <div className="flex items-center gap-1.5 flex-wrap flex-1">
                   {selectedModelsForRun.map((model) => (
                     <span
                       key={model.id}
                       className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333] whitespace-nowrap flex items-center gap-1"
                     >
+                      <ProviderIcon
+                        provider={model.provider}
+                        className="w-3 h-3 flex-shrink-0"
+                      />
                       {model.displayName?.split(" (")[0] ?? model.model}
                       {model.reasoning && <Brain className="w-3 h-3" />}
                     </span>
                   ))}
+                </div>
+              ) : (
+                // Single-select mode: show just the selected model name
+                <div className="flex items-center gap-1.5">
+                  <ProviderIcon
+                    provider={selectedModelsForRun[0].provider}
+                    className="w-4 h-4 flex-shrink-0"
+                  />
+                  <span className="text-sm text-[#333333] truncate">
+                    {selectedModelsForRun[0].displayName?.split(" (")[0] ??
+                      selectedModelsForRun[0].model}
+                  </span>
+                  {selectedModelsForRun[0].reasoning && (
+                    <Brain className="w-4 h-4" />
+                  )}
                 </div>
               )}
             </div>
@@ -780,9 +804,36 @@ export default function Home() {
             <div className="relative z-[2]">
               {/* Header with selected count */}
               <div className="p-3 border-b border-white/20 ">
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const newMode = !isMultiSelectMode;
+                        setIsMultiSelectMode(newMode);
+
+                        // When switching to single-select mode, keep only the first model
+                        if (!newMode && selectedModelsForRun.length > 1) {
+                          setSelectedModelsForRun([selectedModelsForRun[0]]);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/10 hover:bg-black/20 transition-colors"
+                    >
+                      {isMultiSelectMode ? (
+                        <ToggleRight className="w-4 h-4 text-[#333333]" />
+                      ) : (
+                        <ToggleLeft className="w-4 h-4 text-[#333333]/50" />
+                      )}
+                      <span className="text-xs font-medium text-[#333333]">
+                        Multi-select
+                      </span>
+                    </button>
+                  </div>
                   <span className="text-sm font-medium text-[#333333]">
-                    {selectedModelsForRun.length}/9 models selected
+                    {isMultiSelectMode
+                      ? `${selectedModelsForRun.length}/9 models selected`
+                      : selectedModelsForRun.length === 0
+                        ? "Select a model"
+                        : "1 model selected"}
                   </span>
                 </div>
               </div>
@@ -791,6 +842,7 @@ export default function Home() {
               <div
                 ref={listContainerRef}
                 className="max-h-96 overflow-y-auto"
+                style={{ maxHeight: direction === "up" ? "40vh" : "60vh" }}
                 onScroll={(e) => {
                   e.stopPropagation();
                 }}
@@ -801,8 +853,9 @@ export default function Home() {
                       const isSelected = selectedModelsForRun.some(
                         (m) => m.id === model.id,
                       );
-                      const isDisabled =
-                        !isSelected && selectedModelsForRun.length >= 9;
+                      const isDisabled = isMultiSelectMode
+                        ? !isSelected && selectedModelsForRun.length >= 9
+                        : false;
 
                       return (
                         <button
@@ -820,17 +873,25 @@ export default function Home() {
                                 listContainerRef.current.scrollTop;
                             }
 
-                            if (isSelected) {
-                              setSelectedModelsForRun(
-                                selectedModelsForRun.filter(
-                                  (m) => m.id !== model.id,
-                                ),
-                              );
-                            } else if (selectedModelsForRun.length < 9) {
-                              setSelectedModelsForRun([
-                                ...selectedModelsForRun,
-                                model,
-                              ]);
+                            if (isMultiSelectMode) {
+                              // Multi-select mode: add/remove models
+                              if (isSelected) {
+                                setSelectedModelsForRun(
+                                  selectedModelsForRun.filter(
+                                    (m) => m.id !== model.id,
+                                  ),
+                                );
+                              } else if (selectedModelsForRun.length < 9) {
+                                setSelectedModelsForRun([
+                                  ...selectedModelsForRun,
+                                  model,
+                                ]);
+                              }
+                            } else {
+                              // Single-select mode: replace current selection
+                              setSelectedModelsForRun([model]);
+                              setIsDropdownOpen(false);
+                              setDropdownSearch("");
                             }
                           }}
                           onMouseDown={(e) => {
@@ -948,27 +1009,27 @@ export default function Home() {
       {/* Header with centered Draft Pad title */}
       <div className="relative mb-6 flex-shrink-0 flex items-center justify-center h-10">
         {/* Back button for single model view */}
-        {selectedModelId && !showModelSelector && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="absolute left-0"
-          >
-            <button
-              onClick={() => {
-                setSelectedModelId(null);
-              }}
-              className="flex items-center gap-2 text-[#333333]/70 hover:text-[#333333] transition-colors px-3 py-2 rounded-xl hover:bg-white/10"
+        {selectedModelId &&
+          !showModelSelector &&
+          sortedModelStreams.length > 1 && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="absolute left-0"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                Back to all model outputs
-              </span>
-            </button>
-          </motion.div>
-        )}
+              <button
+                onClick={() => {
+                  setSelectedModelId(null);
+                }}
+                className="flex items-center gap-2 text-[#333333]/70 hover:text-[#333333] transition-colors px-3 py-2 rounded-xl hover:bg-white/10"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-sm font-medium">Back to all models</span>
+              </button>
+            </motion.div>
+          )}
 
         <h1 className="text-3xl font-bold text-[#333333] font-atma">
           Draft Pad
