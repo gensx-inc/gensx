@@ -111,7 +111,7 @@ export function SearchResults({
         ))}
       </div>
       {/* Research Snippets Section */}
-      {!isActive && <ResearchSnippets searchResults={results} />}
+      {isActive && <ResearchSnippets searchResults={results} />}
     </TimelineSection>
   );
 }

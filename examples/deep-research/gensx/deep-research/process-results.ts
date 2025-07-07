@@ -33,6 +33,26 @@ export const ProcessResults = gensx.Component(
       await updateStep(sharedResults);
     }
 
+    // Global debouncing for all updates
+    let updateTimeout: NodeJS.Timeout | undefined;
+    const sendUpdate = () => {
+      if (updateStep) {
+        // Clear any pending update
+        if (updateTimeout) {
+          clearTimeout(updateTimeout);
+        }
+
+        // Debounce the update call by 100ms
+        updateTimeout = setTimeout(() => {
+          const currentState = sharedResults.map((qr) => ({
+            ...qr,
+            results: [...qr.results],
+          }));
+          updateStep(currentState);
+        }, 100);
+      }
+    };
+
     const processedQueryResults = await Promise.all(
       queryResults.map(async (queryResult: QueryResult, queryIndex: number) => {
         const processedResults = await Promise.all(
@@ -45,19 +65,49 @@ export const ProcessResults = gensx.Component(
                 // Scrape the content for each document
                 const content = await Scrape({ url: document.url });
                 const cleanedContent = cleanContent(content);
-                const snippet = await ExtractSnippet({
+
+                // Start both operations in parallel
+                const snippetPromise = ExtractSnippet({
                   researchBrief,
                   query: queryResult.query,
                   content: cleanedContent,
                 });
 
-                const extractiveSummary = await Summarize({
+                const summaryPromise = Summarize({
                   researchBrief,
                   query: queryResult.query,
                   content: cleanedContent,
                 });
 
-                // Create the processed document
+                // Update when snippet completes
+                snippetPromise.then((snippet) => {
+                  const processedSnippet =
+                    snippet !== "No useful snippets found."
+                      ? snippet
+                      : undefined;
+                  sharedResults[queryIndex].results[docIndex] = {
+                    ...sharedResults[queryIndex].results[docIndex],
+                    snippet: processedSnippet,
+                  };
+                  sendUpdate();
+                });
+
+                // Update when summary completes
+                summaryPromise.then((extractiveSummary) => {
+                  sharedResults[queryIndex].results[docIndex] = {
+                    ...sharedResults[queryIndex].results[docIndex],
+                    content: extractiveSummary,
+                  };
+                  sendUpdate();
+                });
+
+                // Wait for both to complete before proceeding
+                const [snippet, extractiveSummary] = await Promise.all([
+                  snippetPromise,
+                  summaryPromise,
+                ]);
+
+                // Create the final processed document (though it's already updated in shared state)
                 const processedDocument = {
                   ...document,
                   content: extractiveSummary,
@@ -66,19 +116,6 @@ export const ProcessResults = gensx.Component(
                       ? snippet
                       : undefined,
                 } as SearchResult;
-
-                // Update the specific document in shared state
-                sharedResults[queryIndex].results[docIndex] = processedDocument;
-
-                // Publish immediate update if callback is provided
-                if (updateStep) {
-                  // Create a deep copy of current state for the update
-                  const currentState = sharedResults.map((qr) => ({
-                    ...qr,
-                    results: [...qr.results],
-                  }));
-                  await updateStep(currentState);
-                }
 
                 return processedDocument;
               } catch (error) {
@@ -104,6 +141,11 @@ export const ProcessResults = gensx.Component(
         };
       }),
     );
+
+    // Clean up any pending debounced update
+    if (updateTimeout) {
+      clearTimeout(updateTimeout);
+    }
 
     // Final update with all results
     if (updateStep) {

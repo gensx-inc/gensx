@@ -1,6 +1,7 @@
 import * as gensx from "@gensx/core";
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "@gensx/vercel-ai";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 interface SummarizeInput {
   researchBrief: string;
@@ -8,13 +9,29 @@ interface SummarizeInput {
   content: string;
 }
 
-export const Summarize = gensx.Component(
-  "Summarize",
-  async ({ researchBrief, query, content }: SummarizeInput) => {
-    if (content === "") {
-      return "";
-    }
+interface SummarizeContentInput {
+  researchBrief: string;
+  query: string;
+  content: string;
+}
 
+const splitter = new RecursiveCharacterTextSplitter({
+  chunkSize: 10_000,
+  chunkOverlap: 0,
+  // Splitter tries these separators in order until the chunk fits
+  separators: [
+    "\n# ", // h1
+    "\n## ", // h2
+    "\n### ", // h3
+    "\n\n", // blank line
+    " ", // word
+    "", // single char fallback
+  ],
+});
+
+export const SummarizeContent = gensx.Component(
+  "SummarizeContent",
+  async ({ researchBrief, query, content }: SummarizeContentInput) => {
     const systemMessage = "You are an experienced research assistant.";
 
     const fullPrompt = `Given the research brief, search query, and the search result, please remove any part of the search results not relevant to the research breif and queries.
@@ -65,5 +82,34 @@ IMPORTANT: do NOT include any text besides the summary. Just write the summary.`
     });
 
     return text;
+  },
+);
+
+export const Summarize = gensx.Component(
+  "Summarize",
+  async ({ researchBrief, query, content }: SummarizeInput) => {
+    if (content === "") {
+      return "";
+    }
+
+    // If content is small enough, process it directly
+    if (content.length <= 50_000) {
+      return await SummarizeContent({ researchBrief, query, content });
+    }
+
+    // For large content, split into chunks and summarize each
+    const chunks = await splitter.splitText(content);
+
+    const chunkSummaries = await Promise.all(
+      chunks.map(async (chunk, index) => {
+        console.log(`Summarizing chunk ${index + 1}/${chunks.length}`);
+        return await SummarizeContent({ researchBrief, query, content: chunk });
+      }),
+    );
+
+    // Manually combine all chunk summaries
+    return chunkSummaries
+      .filter((summary) => summary.trim() !== "")
+      .join("\n\n");
   },
 );
