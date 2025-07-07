@@ -101,8 +101,7 @@ export const Summarize = gensx.Component(
     const chunks = await splitter.splitText(content);
 
     const chunkSummaries = await Promise.all(
-      chunks.map(async (chunk, index) => {
-        console.log(`Summarizing chunk ${index + 1}/${chunks.length}`);
+      chunks.map(async (chunk) => {
         return await SummarizeContent({ researchBrief, query, content: chunk });
       }),
     );

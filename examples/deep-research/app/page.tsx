@@ -121,7 +121,7 @@ export default function ChatPage() {
   const toggleStepExpansion = (stepIndex: number) => {
     setExpandedSteps((prev) => ({
       ...prev,
-      [stepIndex]: !prev[stepIndex],
+      [stepIndex]: !(prev[stepIndex] ?? true),
     }));
   };
 

@@ -25,6 +25,7 @@ export const ProcessResults = gensx.Component(
         ...doc,
         content: undefined,
         snippet: undefined,
+        status: "pending" as const,
       })),
     }));
 
@@ -94,9 +95,14 @@ export const ProcessResults = gensx.Component(
 
                 // Update when summary completes
                 summaryPromise.then((extractiveSummary) => {
+                  const processedSummary = !extractiveSummary.includes(
+                    "No relevant content",
+                  )
+                    ? extractiveSummary
+                    : undefined;
                   sharedResults[queryIndex].results[docIndex] = {
                     ...sharedResults[queryIndex].results[docIndex],
-                    content: extractiveSummary,
+                    content: processedSummary,
                   };
                   sendUpdate();
                 });
@@ -110,11 +116,14 @@ export const ProcessResults = gensx.Component(
                 // Create the final processed document (though it's already updated in shared state)
                 const processedDocument = {
                   ...document,
-                  content: extractiveSummary,
+                  content: !extractiveSummary.includes("No relevant content")
+                    ? extractiveSummary
+                    : undefined,
                   snippet:
                     snippet !== "No useful snippets found."
                       ? snippet
                       : undefined,
+                  status: "completed" as const,
                 } as SearchResult;
 
                 return processedDocument;

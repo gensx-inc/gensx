@@ -70,8 +70,6 @@ IMPORTANT: do NOT include any text besides the snippet. Just write the snippet.`
       },
     });
 
-    console.log(text);
-
     return text;
   },
 );

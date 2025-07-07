@@ -40,8 +40,8 @@ export function useDeepResearch(): UseChatReturn {
   const workflowSteps = useObject<DeepResearchStep[]>(execution, "steps");
   const workflowStatus = useObject<string>(execution, "status");
 
-  // Get the current steps (workflow or saved)
-  const steps = workflowSteps || savedData?.steps;
+  // Get the current steps (prioritize saved data when available, otherwise use workflow)
+  const steps = savedData?.steps || workflowSteps;
 
   // Extract only researchBrief and report for easy access
   const { researchBrief, report } = useMemo(() => {

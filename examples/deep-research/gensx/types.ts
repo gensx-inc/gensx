@@ -5,6 +5,7 @@ export interface SearchResult {
   relevanceScore?: number;
   content?: string;
   snippet?: string;
+  status?: "pending" | "completed";
 }
 
 export interface QueryResult {
