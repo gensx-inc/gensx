@@ -1,19 +1,19 @@
 import { MarkdownContent } from "./MarkdownContent";
 import { TimelineSection } from "./TimelineSection";
 
-interface ResearchBriefProps {
+interface PlanProps {
   researchBrief: string;
   expanded: boolean;
   onToggle: () => void;
   isActive?: boolean;
 }
 
-export function ResearchBrief({
+export function Plan({
   researchBrief,
   expanded,
   onToggle,
   isActive,
-}: ResearchBriefProps) {
+}: PlanProps) {
   return (
     <TimelineSection
       title="Planning"

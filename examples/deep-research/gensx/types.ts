@@ -16,7 +16,7 @@ export type StepType =
   | "plan"
   | "write-queries"
   | "execute-queries"
-  | "reflect"
+  | "evaluate"
   | "generate-report";
 
 export interface PlanStep {

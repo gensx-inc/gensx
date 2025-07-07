@@ -1,8 +1,8 @@
 import { TimelineSection } from "./TimelineSection";
 import { MarkdownContent } from "./MarkdownContent";
-import { ResearchQueries } from "./ResearchQueries";
+import { Queries } from "./Queries";
 
-interface ResearchEvaluationProps {
+interface EvaluationProps {
   analysis: string;
   followUpQueries: string[];
   isSufficient: boolean;
@@ -11,13 +11,13 @@ interface ResearchEvaluationProps {
   isActive?: boolean;
 }
 
-export function ResearchEvaluation({
+export function Evaluation({
   analysis,
   followUpQueries,
   expanded,
   onToggle,
   isActive,
-}: ResearchEvaluationProps) {
+}: EvaluationProps) {
   return (
     <>
       <TimelineSection
@@ -41,7 +41,7 @@ export function ResearchEvaluation({
 
       {/* Follow-up Queries Section */}
       {followUpQueries.length > 0 && (
-        <ResearchQueries
+        <Queries
           queries={followUpQueries}
           expanded={true}
           onToggle={() => {}}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChatHistory } from "@/components/ChatHistory";
-import { ResearchQueries } from "@/components/ResearchQueries";
+import { Queries } from "@/components/Queries";
 import { SearchResults } from "@/components/SearchResults";
 import { ResearchReport } from "@/components/ResearchReport";
 import { useDeepResearch } from "@/hooks/useDeepResearch";
@@ -13,8 +13,8 @@ import Image from "next/image";
 import { getUserId } from "@/lib/userId";
 import { ResearchPrompt } from "@/components/ResearchPrompt";
 import { ChatInput } from "@/components/ChatInput";
-import { ResearchBrief } from "@/components/ResearchBrief";
-import { ResearchEvaluation } from "@/components/ResearchEvaluation";
+import { Plan } from "@/components/Plan";
+import { Evaluation } from "@/components/Evaluation";
 import { DeepResearchStep } from "@/gensx/types";
 
 export default function ChatPage() {
@@ -125,38 +125,14 @@ export default function ChatPage() {
     }));
   };
 
-  // Function to get current active step based on status
-  const getCurrentActiveStep = (): string | null => {
-    switch (status) {
-      case "Planning":
-        return "plan";
-      case "Writing queries":
-        return "write-queries";
-      case "Searching":
-        return "execute-queries";
-      case "Reading":
-        return "execute-queries";
-      case "Evaluating research":
-        return "reflect";
-      case "Generating":
-        return "generate-report";
-      default:
-        return null;
-    }
-  };
-
   // Function to render step components dynamically
   const renderStepComponent = (step: DeepResearchStep, index: number) => {
     const isExpanded = expandedSteps[index] ?? true; // Default to expanded
-    const currentActiveStepType = getCurrentActiveStep();
 
     // Find the last step of the current active type
-    const lastActiveStepIndex = currentActiveStepType
-      ? steps
-          ?.map((s, i) => ({ step: s, index: i }))
-          .filter(({ step }) => step.type === currentActiveStepType)
-          .pop()?.index
-      : -1;
+    const lastActiveStepIndex = steps
+      ?.map((s, i) => ({ step: s, index: i }))
+      .pop()?.index;
 
     // No step should be active when status is "Completed"
     const isActive = status !== "Completed" && index === lastActiveStepIndex;
@@ -165,7 +141,7 @@ export default function ChatPage() {
     switch (step.type) {
       case "plan":
         return (
-          <ResearchBrief
+          <Plan
             key={key}
             researchBrief={step.plan}
             expanded={isExpanded}
@@ -176,7 +152,7 @@ export default function ChatPage() {
 
       case "write-queries":
         return (
-          <ResearchQueries
+          <Queries
             key={key}
             queries={step.queries}
             expanded={isExpanded}
@@ -203,7 +179,7 @@ export default function ChatPage() {
 
       case "evaluate":
         return (
-          <ResearchEvaluation
+          <Evaluation
             key={key}
             analysis={step.analysis}
             followUpQueries={step.followUpQueries}

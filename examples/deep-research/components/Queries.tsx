@@ -1,19 +1,19 @@
 import { Search } from "lucide-react";
 import { TimelineSection } from "./TimelineSection";
 
-interface ResearchQueriesProps {
+interface QueriesProps {
   queries: string[];
   expanded: boolean;
   onToggle: () => void;
   isActive?: boolean;
 }
 
-export function ResearchQueries({
+export function Queries({
   queries,
   expanded,
   onToggle,
   isActive,
-}: ResearchQueriesProps) {
+}: QueriesProps) {
   if (!queries || queries.length === 0) return null;
 
   return (

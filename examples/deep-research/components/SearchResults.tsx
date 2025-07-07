@@ -3,7 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { TimelineSection } from "./TimelineSection";
-import { ResearchSnippets } from "./ResearchSnippets";
+import { Snippets } from "./Snippets";
 
 interface SearchResult {
   title: string;
@@ -111,7 +111,7 @@ export function SearchResults({
         ))}
       </div>
       {/* Research Snippets Section */}
-      {isActive && <ResearchSnippets searchResults={results} />}
+      {isActive && <Snippets searchResults={results} />}
     </TimelineSection>
   );
 }

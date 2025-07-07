@@ -21,7 +21,7 @@ function getDomain(url: string): string {
   }
 }
 
-export function ResearchSnippets({ searchResults }: ResearchSnippetsProps) {
+export function Snippets({ searchResults }: ResearchSnippetsProps) {
   // Filter results that have snippets
   const resultsWithSnippets = searchResults.filter(
     (result) => result.snippet && result.snippet.trim() !== "",
