@@ -6,6 +6,7 @@ export interface SearchResult {
   content?: string;
   snippet?: string;
   status?: "pending" | "completed";
+  favicon?: string;
 }
 
 export interface QueryResult {

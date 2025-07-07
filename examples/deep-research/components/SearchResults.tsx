@@ -22,37 +22,37 @@ function getDomain(url: string): string {
   }
 }
 
-// Helper function to get favicon URL
-function getFaviconUrl(url: string): string {
-  const domain = getDomain(url);
-  if (!domain) return "";
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
-}
-
 // Component for favicon with fallback
-function WebsiteIcon({ url }: { url: string }) {
+function WebsiteIcon({ url, large = false }: { url: string; large?: boolean }) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const faviconUrl = getFaviconUrl(url);
 
-  if (!faviconUrl || imageError) {
+  const size = large ? "w-6 h-6" : "w-5 h-5";
+  const iconSize = large ? "w-5 h-5" : "w-4 h-4";
+  const imageSize = large ? 28 : 18;
+
+  if (!url || imageError) {
     return (
-      <div className="w-5 h-5 bg-zinc-700 rounded-full flex items-center justify-center flex-shrink-0">
-        <Globe className="w-4 h-4 text-zinc-400" />
+      <div
+        className={`${size} bg-zinc-700 rounded-full flex items-center justify-center flex-shrink-0`}
+      >
+        <Globe className={`${iconSize} text-zinc-400`} />
       </div>
     );
   }
 
   return (
-    <div className="w-5 h-5 bg-zinc-700 rounded-full flex items-center justify-center flex-shrink-0">
+    <div
+      className={`${size} rounded-full flex items-center justify-center flex-shrink-0`}
+    >
       {!imageLoaded && (
-        <div className="w-3 h-3 bg-zinc-600 rounded animate-pulse" />
+        <div className={`${iconSize} bg-zinc-600 animate-pulse`} />
       )}
       <Image
-        src={faviconUrl}
+        src={url}
         alt=""
-        width={12}
-        height={12}
+        width={imageSize}
+        height={imageSize}
         className={imageLoaded ? "opacity-100" : "opacity-0"}
         onLoad={() => setImageLoaded(true)}
         onError={() => setImageError(true)}
@@ -69,7 +69,9 @@ function SearchResultDetail({ result }: { result: SearchResult }) {
     <div className="absolute top-full left-0 mt-1 w-[30rem] bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 p-4">
       {/* Header with favicon and title */}
       <div className="flex items-start gap-3 mb-3">
-        <WebsiteIcon url={result.url} />
+        <div className="mt-1">
+          <WebsiteIcon url={result.favicon} large={true} />
+        </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-zinc-100 font-medium text-sm leading-tight mb-1 text-ellipsis overflow-hidden whitespace-nowrap">
             {result.title}
@@ -132,17 +134,20 @@ export function SearchResults({
       <div className="flex flex-wrap gap-2">
         {results.map((result, index) => (
           <div key={index} className="relative group">
-            {/* Expanded hover area that includes the card space */}
-            <div className="absolute inset-0 w-[30rem] h-[15rem] group-hover:block" />
+            {/* Hover area that includes both card and popup */}
+            <div className="absolute inset-0 w-[15rem] h-[15rem] group-hover:block" />
 
             <Link
               href={result.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-2 py-2 bg-zinc-800/50 hover:bg-zinc-700/70 transition-colors cursor-pointer rounded-xl border border-zinc-700/50 hover:border-zinc-600/50 max-w-[240px] relative z-10"
+              className="flex items-center gap-2 px-2 p-2 bg-zinc-800/50 hover:bg-zinc-700/70 transition-colors cursor-pointer rounded-xl border border-zinc-700/50 hover:border-zinc-600/50 max-w-[240px] relative z-10"
               title={result.title}
             >
-              <WebsiteIcon url={result.url} />
+              <div className="mb-1">
+                <WebsiteIcon url={result.favicon} />
+              </div>
+
               <div className="min-w-0 flex-1">
                 <p className="text-zinc-200 text-xs font-medium truncate">
                   {result.title}

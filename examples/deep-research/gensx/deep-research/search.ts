@@ -18,7 +18,11 @@ export const Search = gensx.Component(
       }
 
       const client = tavily({ apiKey });
-      const searchResults = await client.search(query, { maxResults: limit });
+      const searchResults = await client.search(query, {
+        maxResults: limit,
+        includeFavicon: true,
+        format: "markdown",
+      });
 
       if (!searchResults.results || searchResults.results.length === 0) {
         console.error("Search failed for query:", query, "No results found");
@@ -29,6 +33,7 @@ export const Search = gensx.Component(
         title: result.title ?? "",
         url: result.url ?? "",
         description: result.content ?? "",
+        favicon: result.favicon ?? "",
       }));
     } catch (error) {
       console.error("Search failed for query:", query, error);
