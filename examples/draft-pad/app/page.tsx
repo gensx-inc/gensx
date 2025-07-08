@@ -119,8 +119,11 @@ export default function Home() {
 
   // Auto-resize textarea function
   const autoResizeTextarea = (textarea: HTMLTextAreaElement) => {
-    const minHeight = 72; // Increased to account for padding (24px top + 24px bottom + ~24px for text)
-    const maxHeight = 300;
+    // Determine min height based on whether we're in initial state or generating state
+    const isInitialState =
+      sortedModelStreams.length === 0 && !workflowInProgress;
+    const minHeight = 32; // Single line height for both states
+    const maxHeight = isInitialState ? 300 : 200; // Smaller max height for generating state
 
     // Get current height to avoid unnecessary changes
     const currentHeight = parseInt(textarea.style.height) || minHeight;
@@ -768,77 +771,80 @@ export default function Home() {
         key="model-dropdown"
       >
         {/* Dropdown trigger */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              const wasOpen = isDropdownOpen;
-              setIsDropdownOpen(!isDropdownOpen);
-              // Focus input when closing dropdown
-              if (wasOpen) {
-                setTimeout(() => {
-                  if (textareaRef.current) {
-                    textareaRef.current.focus();
-                  } else if (inputRef.current) {
-                    inputRef.current.focus();
-                  }
-                }, 100);
-              }
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-            }}
-            onFocus={(e) => {
-              e.preventDefault();
-              e.currentTarget.blur();
-            }}
-            type="button"
-            className="flex items-start justify-between gap-2 px-3 py-2 rounded-xl bg-transparent hover:bg-white/10 transition-colors"
-          >
-            <div className="min-w-0 ">
-              {selectedModelsForRun.length === 0 ? (
-                <span className="text-sm text-[#333333]/50">
-                  {isMultiSelectMode ? "Select models..." : "Select a model..."}
-                </span>
-              ) : isMultiSelectMode ? (
-                <div className="flex items-center gap-1.5 flex-wrap flex-1">
-                  {selectedModelsForRun.map((model) => (
-                    <span
-                      key={model.id}
-                      className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333] whitespace-nowrap flex items-center gap-1"
-                    >
-                      <ProviderIcon
-                        provider={model.provider}
-                        className="w-3 h-3 flex-shrink-0"
-                      />
-                      {model.displayName?.split(" (")[0] ?? model.model}
-                      {model.reasoning && <Brain className="w-3 h-3" />}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                // Single-select mode: show just the selected model name
-                <div className="flex items-center gap-1.5">
-                  <ProviderIcon
-                    provider={selectedModelsForRun[0].provider}
-                    className="w-4 h-4 flex-shrink-0"
-                  />
-                  <span className="text-sm text-[#333333] truncate">
-                    {selectedModelsForRun[0].displayName?.split(" (")[0] ??
-                      selectedModelsForRun[0].model}
+        <button
+          onClick={() => {
+            const wasOpen = isDropdownOpen;
+            setIsDropdownOpen(!isDropdownOpen);
+            // Focus input when closing dropdown
+            if (wasOpen) {
+              setTimeout(() => {
+                if (textareaRef.current) {
+                  textareaRef.current.focus();
+                } else if (inputRef.current) {
+                  inputRef.current.focus();
+                }
+              }, 100);
+            }
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+          }}
+          onFocus={(e) => {
+            e.preventDefault();
+            e.currentTarget.blur();
+          }}
+          type="button"
+          className="flex items-center justify-between gap-2 px-3 py-0.5 rounded-xl bg-transparent hover:bg-white/10 transition-colors"
+        >
+          <div className="min-w-0 ">
+            {selectedModelsForRun.length === 0 ? (
+              <span className="text-sm text-[#333333]/50">
+                {isMultiSelectMode ? "Select models..." : "Select a model..."}
+              </span>
+            ) : isMultiSelectMode ? (
+              <div className="flex items-center gap-1.5 flex-1 overflow-hidden">
+                {selectedModelsForRun.slice(0, 2).map((model) => (
+                  <span
+                    key={model.id}
+                    className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333] whitespace-nowrap flex items-center gap-1 flex-shrink-0"
+                  >
+                    <ProviderIcon
+                      provider={model.provider}
+                      className="w-3 h-3 flex-shrink-0"
+                    />
+                    {model.displayName?.split(" (")[0] ?? model.model}
+                    {model.reasoning && <Brain className="w-3 h-3" />}
                   </span>
-                  {selectedModelsForRun[0].reasoning && (
-                    <Brain className="w-4 h-4" />
-                  )}
-                </div>
-              )}
-            </div>
-            <ChevronDown
-              className={`w-4 h-4 text-[#333333]/50 transition-transform flex-shrink-0 ml-2 ${
-                isDropdownOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-        </div>
+                ))}
+                {selectedModelsForRun.length > 2 && (
+                  <span className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333] whitespace-nowrap flex-shrink-0">
+                    +{selectedModelsForRun.length - 2} models
+                  </span>
+                )}
+              </div>
+            ) : (
+              // Single-select mode: show just the selected model name
+              <div className="flex items-center gap-1.5">
+                <ProviderIcon
+                  provider={selectedModelsForRun[0].provider}
+                  className="w-4 h-4 flex-shrink-0"
+                />
+                <span className="text-sm text-[#333333] truncate">
+                  {selectedModelsForRun[0].displayName?.split(" (")[0] ??
+                    selectedModelsForRun[0].model}
+                </span>
+                {selectedModelsForRun[0].reasoning && (
+                  <Brain className="w-4 h-4" />
+                )}
+              </div>
+            )}
+          </div>
+          <ChevronDown
+            className={`w-4 h-4 text-[#333333]/50 transition-transform flex-shrink-0 ml-2 ${
+              isDropdownOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
 
         {/* Dropdown menu */}
         {isDropdownOpen && (
@@ -1053,7 +1059,7 @@ export default function Home() {
     if (textareaRef.current) {
       const textarea = textareaRef.current;
       // Set initial properties for smooth auto-resize
-      textarea.style.height = "72px";
+      textarea.style.height = "32px";
       textarea.style.transition = "height 0.1s ease";
       textarea.style.boxSizing = "border-box";
     }
@@ -1509,7 +1515,7 @@ export default function Home() {
             className={`flex-shrink-0 flex justify-center ${
               sortedModelStreams.length === 0 && !workflowInProgress
                 ? "absolute inset-0 items-center"
-                : "mt-6"
+                : "mt-2"
             }`}
             style={
               sortedModelStreams.length === 0 && !workflowInProgress
@@ -1517,7 +1523,7 @@ export default function Home() {
                 : {}
             }
           >
-            <motion.div layout className="w-full max-w-3xl">
+            <motion.div layout className="w-full max-w-xl">
               <motion.div
                 layout
                 className={`relative overflow-visible shadow-[0_4px_24px_rgba(0,0,0,0.12),0_0_48px_rgba(0,0,0,0.08)] bg-white/40 ${
@@ -1567,25 +1573,34 @@ export default function Home() {
                           ? "Select models below to start..."
                           : "What would you like to generate?"
                       }
-                      className="w-full min-h-[76px] max-h-[300px] p-6 bg-transparent resize-none outline-none text-lg text-[#333333] placeholder-black/50 overflow-y-auto"
+                      className="w-full min-h-[32px] max-h-[300px] px-6 pt-1.5 pb-0.5 bg-transparent resize-none outline-none text-base text-[#333333] placeholder-black/50 overflow-y-auto"
                       disabled={selectedModelsForRun.length === 0}
                       style={{
-                        height: "76px",
+                        height: "32px",
                         transition: "height 0.1s ease",
                         boxSizing: "border-box",
                       }}
                     />
                   ) : (
-                    /* Generating state - input */
-                    <input
-                      ref={inputRef}
+                    /* Generating state - textarea with auto-resize */
+                    <textarea
+                      ref={textareaRef}
                       value={userMessage}
                       onChange={(e) => {
                         setUserMessage(e.target.value);
+                        autoResizeTextarea(e.target as HTMLTextAreaElement);
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          onSubmit();
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          if (
+                            userMessage.trim() &&
+                            selectedModelsForRun.length > 0 &&
+                            !showSelectionPrompt &&
+                            !workflowInProgress
+                          ) {
+                            onSubmit();
+                          }
                         }
                       }}
                       placeholder={
@@ -1593,17 +1608,22 @@ export default function Home() {
                           ? "Select a version above to continue"
                           : "Update the draft..."
                       }
-                      className="w-full px-6 py-4 bg-transparent resize-none outline-none text-lg text-[#333333] placeholder-black/50"
+                      className="w-full min-h-[32px] max-h-[200px] px-6 pt-1.5 pb-0.5 bg-transparent resize-none outline-none text-base text-[#333333] placeholder-black/50 overflow-y-auto"
                       disabled={
                         showSelectionPrompt ||
                         workflowInProgress ||
                         selectedModelsForRun.length === 0
                       }
+                      style={{
+                        height: "32px",
+                        transition: "height 0.1s ease",
+                        boxSizing: "border-box",
+                      }}
                     />
                   )}
 
                   {/* Bottom section with model selector and send button */}
-                  <div className="relative z-50 p-4 flex items-center gap-4">
+                  <div className="relative z-50 px-4 pt-0 pb-1 flex items-center gap-2">
                     <div className="flex-1">
                       <ModelDropdown direction="up" />
                     </div>
@@ -1615,9 +1635,9 @@ export default function Home() {
                         showSelectionPrompt ||
                         workflowInProgress
                       }
-                      className="p-3 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      className="p-2 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                     >
-                      <Send className="w-5 h-5 text-[#333333]" />
+                      <Send className="w-4 h-4 text-[#333333]" />
                     </button>
                   </div>
                 </div>
