@@ -44,7 +44,7 @@ export function useChat(): UseChatReturn {
     run,
   } = useWorkflow<ChatWorkflowInput, ChatWorkflowOutput>({
     config: {
-      baseUrl: "/api/gensx/chat",
+      baseUrl: "/api/gensx/Chat",
     },
   });
 
