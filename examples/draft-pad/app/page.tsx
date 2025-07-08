@@ -22,6 +22,8 @@ import {
   ChevronDown,
   Clock,
   DollarSign,
+  Eye,
+  EyeOff,
   FileText,
   Send,
   ToggleLeft,
@@ -77,6 +79,9 @@ export default function Home() {
   const [versionHistory, setVersionHistory] = useState<
     Record<string, ContentVersion[]>
   >({});
+  const [showDiff, setShowDiff] = useState(false);
+  const [userToggledDiff, setUserToggledDiff] = useState(false);
+  const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [defaultModelId] = useState(
     "groq-meta-llama/llama-4-maverick-17b-128e-instruct",
   );
@@ -299,6 +304,8 @@ export default function Home() {
     setShowModelSelectorView(false);
     // Clear selected model to show all models during generation
     setSelectedModelId(null);
+    // Reset user toggled diff state for new generation
+    setUserToggledDiff(false);
     void handleSubmit();
   }, [handleSubmit]);
 
@@ -364,6 +371,41 @@ export default function Home() {
       }
     });
   }, [draftProgress?.modelStreams, versionHistory, addVersionToHistory]);
+
+  // Show diff temporarily when generation completes
+  useEffect(() => {
+    if (!draftProgress?.modelStreams || userToggledDiff) return;
+
+    const hasJustCompleted = draftProgress.modelStreams.some(
+      (stream) => stream.status === "complete",
+    );
+    const hasGenerating = draftProgress.modelStreams.some(
+      (stream) => stream.status === "generating",
+    );
+
+    // Show diff when at least one stream completes
+    if (hasJustCompleted && !hasGenerating) {
+      setShowDiff(true);
+
+      // Clear any existing timer
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+      }
+
+      // Hide diff after 3 seconds
+      autoHideTimerRef.current = setTimeout(() => {
+        setShowDiff(false);
+        autoHideTimerRef.current = null;
+      }, 3000);
+    }
+
+    return () => {
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+        autoHideTimerRef.current = null;
+      }
+    };
+  }, [draftProgress?.modelStreams, userToggledDiff]);
 
   const handleModelSort = useCallback((field: ModelSortField) => {
     setModelSortConfig((prev) => {
@@ -1170,9 +1212,72 @@ export default function Home() {
                     <ArrowDown className="w-3 h-3 text-[#000000]/60" />
                   ))}
               </button>
+
+              {/* Diff toggle button */}
+              {sortedModelStreams.length > 0 && (
+                <button
+                  onClick={() => {
+                    // Clear any auto-hide timer
+                    if (autoHideTimerRef.current) {
+                      clearTimeout(autoHideTimerRef.current);
+                      autoHideTimerRef.current = null;
+                    }
+                    setShowDiff(!showDiff);
+                    setUserToggledDiff(true);
+                  }}
+                  className={`${
+                    showDiff
+                      ? "bg-white/60 scale-105"
+                      : "bg-white/40 hover:bg-white/60"
+                  } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
+                >
+                  {showDiff ? (
+                    <Eye className="w-4 h-4 text-[#000000]/60" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-[#000000]/60" />
+                  )}
+                  <span className="text-sm font-medium text-[#333333]">
+                    {showDiff ? "Hide Diff" : "Show Diff"}
+                  </span>
+                </button>
+              )}
             </div>
           </>
         )}
+
+        {/* Show diff toggle when we have streams but no stats */}
+        {sortedModelStreams.length > 0 &&
+          !overallStats?.hasData &&
+          !showModelSelector && (
+            <div className="absolute right-0">
+              <button
+                onClick={() => {
+                  // Clear any auto-hide timer
+                  if (autoHideTimerRef.current) {
+                    clearTimeout(autoHideTimerRef.current);
+                    autoHideTimerRef.current = null;
+                  }
+                  setShowDiff(!showDiff);
+                  setUserToggledDiff(true);
+                }}
+                className={`${
+                  showDiff
+                    ? "bg-white/60 scale-105"
+                    : "bg-white/40 hover:bg-white/60"
+                } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
+              >
+                {showDiff ? (
+                  <Eye className="w-4 h-4 text-[#000000]/60" />
+                ) : (
+                  <EyeOff className="w-4 h-4 text-[#000000]/60" />
+                )}
+                <span className="text-sm font-medium text-[#333333]">
+                  {showDiff ? "Hide Diff" : "Show Diff"}
+                </span>
+              </button>
+            </div>
+          )}
+
         {showCounter && (
           <>
             {/* Provider filter on the left */}
@@ -1393,6 +1498,13 @@ export default function Home() {
                               isSelected={true}
                               onSelect={undefined}
                               metricRanges={metricRanges}
+                              showDiff={showDiff}
+                              previousVersion={
+                                versionHistory[selectedStream.modelId]?.[
+                                  (versionHistory[selectedStream.modelId]
+                                    ?.length ?? 0) - 2
+                                ]
+                              }
                             />
                           ) : null;
                         })()}
@@ -1426,6 +1538,13 @@ export default function Home() {
                               handleModelSelect(sortedModelStreams[0].modelId);
                             }}
                             metricRanges={metricRanges}
+                            showDiff={showDiff}
+                            previousVersion={
+                              versionHistory[sortedModelStreams[0].modelId]?.[
+                                (versionHistory[sortedModelStreams[0].modelId]
+                                  ?.length ?? 0) - 2
+                              ]
+                            }
                           />
                         </div>
                       </motion.div>
@@ -1490,6 +1609,13 @@ export default function Home() {
                                     handleModelSelect(modelStream.modelId);
                                   }}
                                   metricRanges={metricRanges}
+                                  showDiff={showDiff}
+                                  previousVersion={
+                                    versionHistory[modelStream.modelId]?.[
+                                      (versionHistory[modelStream.modelId]
+                                        ?.length ?? 0) - 2
+                                    ]
+                                  }
                                 />
                               </motion.div>
                             );

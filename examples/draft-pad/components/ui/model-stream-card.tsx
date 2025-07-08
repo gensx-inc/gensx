@@ -51,6 +51,8 @@ export function ModelStreamCard({
   const animationFrameRef = useRef<number | null>(null);
   const [showCompletionFlash, setShowCompletionFlash] = useState(false);
   const previousStatusRef = useRef<string | null>(null);
+  const [localShowDiff, setLocalShowDiff] = useState(false);
+  const diffTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Calculate current cost for this model
   const currentCost = useMemo(() => {
@@ -94,7 +96,11 @@ export function ModelStreamCard({
 
   // Calculate diff segments
   const diffSegments = useMemo(() => {
-    if (!showDiff || !previousVersion || !modelStream.content) {
+    if (
+      (!showDiff && !localShowDiff) ||
+      !previousVersion ||
+      !modelStream.content
+    ) {
       return null;
     }
 
@@ -106,7 +112,13 @@ export function ModelStreamCard({
     } else {
       return calculateDiff(previousVersion.content, modelStream.content);
     }
-  }, [showDiff, previousVersion, modelStream.content, modelStream.status]);
+  }, [
+    showDiff,
+    localShowDiff,
+    previousVersion,
+    modelStream.content,
+    modelStream.status,
+  ]);
 
   // Check if this model has highest/lowest metrics
   const isHighestTime = metricRanges
@@ -209,6 +221,22 @@ export function ModelStreamCard({
       const timer = setTimeout(() => {
         setShowCompletionFlash(false);
       }, 600); // Flash for 0.6 seconds
+
+      // Also show diff when completion happens (only if global diff is not active)
+      if (previousVersion && modelStream.content && !showDiff) {
+        setLocalShowDiff(true);
+
+        // Clear any existing timer
+        if (diffTimerRef.current) {
+          clearTimeout(diffTimerRef.current);
+        }
+
+        // Hide diff after 3 seconds to match parent timing
+        diffTimerRef.current = setTimeout(() => {
+          setLocalShowDiff(false);
+        }, 3000);
+      }
+
       return () => {
         clearTimeout(timer);
       };
@@ -216,7 +244,32 @@ export function ModelStreamCard({
 
     // Update the previous status ref
     previousStatusRef.current = modelStream.status;
-  }, [modelStream.status]);
+  }, [modelStream.status, previousVersion, modelStream.content, showDiff]);
+
+  // Handle global showDiff changes
+  useEffect(() => {
+    // When global showDiff is manually toggled on, clear local timer
+    if (showDiff && diffTimerRef.current) {
+      clearTimeout(diffTimerRef.current);
+      diffTimerRef.current = null;
+      setLocalShowDiff(false); // Turn off local since global is on
+    }
+    // When global showDiff is manually toggled off, also clear local timer
+    if (!showDiff && diffTimerRef.current) {
+      clearTimeout(diffTimerRef.current);
+      diffTimerRef.current = null;
+      setLocalShowDiff(false); // Turn off local diff too
+    }
+  }, [showDiff]);
+
+  // Cleanup diff timer on unmount
+  useEffect(() => {
+    return () => {
+      if (diffTimerRef.current) {
+        clearTimeout(diffTimerRef.current);
+      }
+    };
+  }, []);
 
   // Apply scroll position whenever it changes (from other cards)
   useEffect(() => {
@@ -397,7 +450,7 @@ export function ModelStreamCard({
                 </div>
 
                 {modelStream.content ? (
-                  diffSegments && showDiff ? (
+                  diffSegments && (showDiff || localShowDiff) ? (
                     <DiffDisplay
                       segments={diffSegments}
                       isStreaming={modelStream.status === "generating"}

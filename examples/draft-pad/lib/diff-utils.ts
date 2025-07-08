@@ -1,4 +1,4 @@
-import * as Diff from "diff";
+import { DIFF_DELETE, DIFF_INSERT, diff_match_patch } from "diff-match-patch";
 
 export interface DiffSegment {
   type: "unchanged" | "added" | "removed";
@@ -6,15 +6,18 @@ export interface DiffSegment {
 }
 
 export function calculateDiff(oldText: string, newText: string): DiffSegment[] {
-  const changes = Diff.diffWords(oldText, newText);
+  const dmp = new diff_match_patch();
+  const diffs = dmp.diff_main(oldText, newText);
+  dmp.diff_cleanupSemantic(diffs);
 
-  return changes.map((change) => {
-    if (change.added) {
-      return { type: "added", value: change.value };
-    } else if (change.removed) {
-      return { type: "removed", value: change.value };
+  return diffs.map((diff) => {
+    const [operation, value] = diff;
+    if (operation === DIFF_INSERT) {
+      return { type: "added", value };
+    } else if (operation === DIFF_DELETE) {
+      return { type: "removed", value };
     } else {
-      return { type: "unchanged", value: change.value };
+      return { type: "unchanged", value };
     }
   });
 }
