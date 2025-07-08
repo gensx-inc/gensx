@@ -50,6 +50,7 @@ export function ModelStreamCard({
   const isSyncingScrollRef = useRef(false);
   const animationFrameRef = useRef<number | null>(null);
   const [showCompletionFlash, setShowCompletionFlash] = useState(false);
+  const previousStatusRef = useRef<string | null>(null);
 
   // Calculate current cost for this model
   const currentCost = useMemo(() => {
@@ -199,7 +200,11 @@ export function ModelStreamCard({
 
   // Show completion flash when status changes to complete
   useEffect(() => {
-    if (modelStream.status === "complete") {
+    // Only show flash when transitioning from generating to complete
+    if (
+      modelStream.status === "complete" &&
+      previousStatusRef.current === "generating"
+    ) {
       setShowCompletionFlash(true);
       const timer = setTimeout(() => {
         setShowCompletionFlash(false);
@@ -208,6 +213,9 @@ export function ModelStreamCard({
         clearTimeout(timer);
       };
     }
+
+    // Update the previous status ref
+    previousStatusRef.current = modelStream.status;
   }, [modelStream.status]);
 
   // Apply scroll position whenever it changes (from other cards)
