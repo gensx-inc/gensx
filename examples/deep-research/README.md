@@ -1,8 +1,8 @@
-# GenSX Chat Template
+# GenSX Deep Research
 
-This is a [Next.js](https://nextjs.org) chat template for [GenSX](https://gensx.com) with streaming chat, thinking, and tools built in. It also includes chat history stored using `@gensx/storage`.
+This is a [Next.js](https://nextjs.org) deep research template for [GenSX](https://gensx.com) with a multi-step research workflow that iteratively searches the web, extracts key findings, and generates detailed reports.
 
-![Chat UX Screenshot](./public/chat-ux.png)
+![Deep Research Screenshot](./public/deep-research.png)
 
 ## Getting started
 
@@ -12,11 +12,12 @@ To get started, first install the dependencies:
 pnpm install
 ```
 
-Then export the environment variables. For this template, you'll need both the [OpenAI API key](https://platform.openai.com) and the [Firecrawl API key](https://www.firecrawl.dev/):
+Then export the environment variables. For this template, you'll need both the [OpenAI API key](https://platform.openai.com), [Anthropic API key](https://www.anthropic.com/), and the [Tavily API key](https://www.tavily.com/):
 
 ```bash
 export OPENAI_API_KEY=...
-export FIRECRAWL_API_KEY=...
+export ANTHROPIC_API_KEY=...
+export TAVILY_API_KEY=...
 ```
 
 ```bash

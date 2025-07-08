@@ -55,7 +55,7 @@ export function ChatInput({
         {/* Caption */}
         <div className="text-center mb-4">
           <h1 className="text-4xl font-semibold text-zinc-100 mb-2">
-            Interactive Deep Research
+            Deep Research
           </h1>
           <p className="text-zinc-400 text-lg">
             Experience how GenSX lets you build agents with streaming and human
