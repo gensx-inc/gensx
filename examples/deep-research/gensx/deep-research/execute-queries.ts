@@ -1,7 +1,6 @@
 import * as gensx from "@gensx/core";
 import { QueryResult } from "../types";
 import { Search } from "./search";
-import { Rank } from "./rank";
 
 interface ExecuteQueriesParams {
   queries: string[];
@@ -44,36 +43,29 @@ export const ExecuteQuery = gensx.Component(
     );
     const allSearchResults = await Promise.all(searchPromises);
 
-    // Step 2: For each query, filter out duplicates and use Cohere to rank and get top 3 documents
-    const rankedResultsPerQuery = await Promise.all(
-      queries.map(async (query, index) => {
-        const searchResults = allSearchResults[index];
-        if (searchResults.length === 0) return { query, results: [] };
+    // Step 2: For each query, filter out duplicates and take top results
+    const filteredResultsPerQuery = queries.map((query, index) => {
+      const searchResults = allSearchResults[index];
+      if (searchResults.length === 0) return { query, results: [] };
 
-        // Filter out results that match previous URLs
-        const filteredResults = searchResults.filter(
-          (result) => !previousUrls.has(result.url),
-        );
+      // Filter out results that match previous URLs
+      const filteredResults = searchResults.filter(
+        (result) => !previousUrls.has(result.url),
+      );
 
-        if (filteredResults.length === 0) return { query, results: [] };
+      console.log("filteredResults" + index, filteredResults);
+      if (filteredResults.length === 0) return { query, results: [] };
 
-        // Use Cohere to rank documents for this specific query
-        const rankedResults = await Rank({
-          prompt: query, // Use the specific query for ranking
-          documents: filteredResults,
-        });
-
-        // Return top results for this query
-        return {
-          query,
-          results: rankedResults.slice(0, queryOptions.topK),
-        };
-      }),
-    );
+      // Return top results for this query (no ranking, just take first N)
+      return {
+        query,
+        results: filteredResults.slice(0, queryOptions.topK),
+      };
+    });
 
     // Step 3: Remove any duplicate URLs across all query results
     const seenUrls = new Set<string>();
-    const deduplicatedResults = rankedResultsPerQuery.map((queryResult) => ({
+    const deduplicatedResults = filteredResultsPerQuery.map((queryResult) => ({
       query: queryResult.query,
       results: queryResult.results.filter((result) => {
         if (seenUrls.has(result.url)) {

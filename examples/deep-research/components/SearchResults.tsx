@@ -23,7 +23,13 @@ function getDomain(url: string): string {
 }
 
 // Component for favicon with fallback
-function WebsiteIcon({ url, large = false }: { url: string; large?: boolean }) {
+function WebsiteIcon({
+  url,
+  large = false,
+}: {
+  url?: string;
+  large?: boolean;
+}) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
