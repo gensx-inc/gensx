@@ -135,7 +135,7 @@ export function SearchResults({
         {results.map((result, index) => (
           <div key={index} className="relative group">
             {/* Hover area that includes both card and popup */}
-            <div className="absolute inset-0 w-[15rem] h-[15rem] group-hover:block" />
+            <div className="absolute inset-0 w-[15rem] h-[6rem] group-hover:block" />
 
             <Link
               href={result.url}

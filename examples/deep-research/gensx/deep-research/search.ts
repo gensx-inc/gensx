@@ -33,6 +33,7 @@ export const Search = gensx.Component(
         title: result.title ?? "",
         url: result.url ?? "",
         description: result.content ?? "",
+        // @ts-expect-error - favicon is not in the type
         favicon: result.favicon ?? "",
       }));
     } catch (error) {

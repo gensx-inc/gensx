@@ -43,16 +43,17 @@ export default function ChatPage() {
   console.log("STEPS", steps);
 
   // Check if status is valid
-  const validStatuses = [
+  const handledStatuses = [
     "Planning",
-    "Writing queries",
     "Searching",
     "Reading",
     "Evaluating research",
     "Generating",
     "Completed",
   ];
-  const isValidStatus = status ? validStatuses.includes(status) : false;
+  const shouldShowStatusSeparately = status
+    ? !handledStatuses.includes(status)
+    : true;
 
   // Get thread ID from URL
   const threadId = searchParams.get("thread");
@@ -298,7 +299,7 @@ export default function ChatPage() {
                     )}
 
                     {/* Show spinner for invalid/unknown status */}
-                    {status && !isValidStatus && (
+                    {status && shouldShowStatusSeparately && (
                       <div className="relative mb-6">
                         {/* Timeline Line */}
                         <div className="absolute left-6 top-2.5 w-px bg-zinc-700"></div>

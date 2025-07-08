@@ -97,20 +97,26 @@ export const DeepResearch = gensx.Workflow(
       // Step 3: Execute queries
       updateStatus("Searching");
 
-      // Create initial search step
-      await addStep({
-        type: "execute-queries",
-        queryResults: [],
-      });
-
       const queryResults = await ExecuteQuery({
         queries: queriesResult.queries,
         previousResults: [], // No previous results for initial search
-        updateStep: (queryResults: QueryResult[]) =>
-          updateStep(getCurrentStepIndex(), {
+        updateStep: async (queryResults: QueryResult[]) => {
+          // If the last step is not "execute-queries", add it
+          const steps = output.steps;
+          if (
+            !steps.length ||
+            steps[steps.length - 1].type !== "execute-queries"
+          ) {
+            await addStep({
+              type: "execute-queries",
+              queryResults: [],
+            });
+          }
+          await updateStep(getCurrentStepIndex(), {
             type: "execute-queries",
             queryResults,
-          }),
+          });
+        },
       });
 
       // Step 4: Scrape and summarize content for each query result
@@ -165,21 +171,27 @@ export const DeepResearch = gensx.Workflow(
         round++;
         updateStatus(`Searching`);
 
-        // Add new execute-queries step for follow-up research
-        await addStep({
-          type: "execute-queries",
-          queryResults: [],
-        });
-
         // Execute follow-up queries
         const followUpQueryResults = await ExecuteQuery({
           queries: reflection.follow_up_queries,
           previousResults: currentQueryResults, // Pass all previous results to filter out duplicates
-          updateStep: (queryResults: QueryResult[]) =>
-            updateStep(getCurrentStepIndex(), {
+          updateStep: async (queryResults: QueryResult[]) => {
+            // If the last step is not "execute-queries", add it
+            const steps = output.steps;
+            if (
+              !steps.length ||
+              steps[steps.length - 1].type !== "execute-queries"
+            ) {
+              await addStep({
+                type: "execute-queries",
+                queryResults: [],
+              });
+            }
+            await updateStep(getCurrentStepIndex(), {
               type: "execute-queries",
-              queryResults: queryResults,
-            }),
+              queryResults,
+            });
+          },
         });
 
         updateStatus(`Reading`);

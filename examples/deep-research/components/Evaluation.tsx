@@ -24,7 +24,7 @@ export function Evaluation({
         title="Evaluating research"
         expanded={expanded}
         onToggle={onToggle}
-        isActive={isActive}
+        isActive={isActive && followUpQueries.length === 0}
       >
         <div className="space-y-4">
           {/* Analysis Section */}
@@ -45,7 +45,7 @@ export function Evaluation({
           queries={followUpQueries}
           expanded={true}
           onToggle={() => {}}
-          isActive={false}
+          isActive={isActive && followUpQueries.length > 0}
         />
       )}
     </>
