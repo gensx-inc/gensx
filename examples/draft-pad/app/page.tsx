@@ -19,7 +19,6 @@ import {
   ArrowLeftRight,
   ArrowUp,
   Brain,
-  Check,
   ChevronDown,
   Clock,
   DollarSign,
@@ -56,6 +55,7 @@ interface ModelSortConfig {
 export default function Home() {
   const [userMessage, setUserMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [selectedModelsForRun, setSelectedModelsForRun] = useState<
     ModelConfig[]
@@ -98,6 +98,14 @@ export default function Home() {
       if (!dropdown && isDropdownOpen) {
         setIsDropdownOpen(false);
         setDropdownSearch("");
+        // Focus input after closing dropdown
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+          } else if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 100);
       }
     }
 
@@ -471,15 +479,8 @@ export default function Home() {
 
   // Calculate min/max values for metrics
   const metricRanges = useMemo(() => {
-    if (!sortedModelStreams.length) {
-      return {
-        minWordCount: 0,
-        maxWordCount: 0,
-        minTime: 0,
-        maxTime: 0,
-        minCost: 0,
-        maxCost: 0,
-      };
+    if (!sortedModelStreams.length || sortedModelStreams.length < 2) {
+      return null; // No metric ranges for single model or no models
     }
 
     // Word counts
@@ -509,6 +510,22 @@ export default function Home() {
       })
       .filter((cost): cost is number => cost !== null);
 
+    // Calculate tokens per second
+    const tokensPerSecond = sortedModelStreams
+      .map((s) => {
+        const effectiveTime =
+          s.generationTime ??
+          (s.status === "generating" && s.startTime
+            ? (Date.now() - s.startTime) / 1000
+            : null);
+
+        if (!effectiveTime || effectiveTime <= 0) return null;
+
+        const outputTokens = s.outputTokens ?? Math.ceil(s.charCount / 4);
+        return outputTokens / effectiveTime;
+      })
+      .filter((tps): tps is number => tps !== null);
+
     return {
       minWordCount: wordCounts.length ? Math.min(...wordCounts) : 0,
       maxWordCount: wordCounts.length ? Math.max(...wordCounts) : 0,
@@ -516,6 +533,12 @@ export default function Home() {
       maxTime: times.length ? Math.max(...times) : 0,
       minCost: costs.length ? Math.min(...costs) : 0,
       maxCost: costs.length ? Math.max(...costs) : 0,
+      minTokensPerSecond: tokensPerSecond.length
+        ? Math.min(...tokensPerSecond)
+        : 0,
+      maxTokensPerSecond: tokensPerSecond.length
+        ? Math.max(...tokensPerSecond)
+        : 0,
     };
   }, [sortedModelStreams, modelConfigMap]);
 
@@ -524,19 +547,35 @@ export default function Home() {
     if (modelCount >= 7) {
       // 3x3 grid for 7-9 models
       return "grid grid-cols-3 gap-4";
-    } else if (modelCount >= 4) {
-      // 2x3 grid for 4-6 models
+    } else if (modelCount === 6) {
+      // 2x3 grid for 6 models
       return "grid grid-cols-2 lg:grid-cols-3 gap-4";
-    } else {
-      // 1x3 grid for 1-3 models
+    } else if (modelCount === 5) {
+      // 2x3 grid for 5 models (2 on top, 3 on bottom)
+      return "grid grid-cols-2 lg:grid-cols-3 gap-4";
+    } else if (modelCount === 4) {
+      // 2x2 grid for 4 models
+      return "grid grid-cols-2 gap-4";
+    } else if (modelCount === 3) {
+      // 1x3 grid for 3 models
       return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4";
+    } else if (modelCount === 2) {
+      // 1x2 grid for 2 models
+      return "grid grid-cols-2 gap-4";
+    } else {
+      // 1x1 grid for 1 model
+      return "grid grid-cols-1 gap-4";
     }
   };
 
   // Get grid rows class based on number of models
   const getGridRowsClass = (modelCount: number) => {
-    if (modelCount <= 3) return "grid-rows-1";
-    if (modelCount <= 6) return "grid-rows-2";
+    if (modelCount === 1) return "grid-rows-1";
+    if (modelCount === 2) return "grid-rows-1";
+    if (modelCount === 3) return "grid-rows-1";
+    if (modelCount === 4) return "grid-rows-2";
+    if (modelCount === 5) return "grid-rows-2";
+    if (modelCount === 6) return "grid-rows-2";
     return "grid-rows-3";
   };
 
@@ -732,7 +771,18 @@ export default function Home() {
         <div className="relative">
           <button
             onClick={() => {
+              const wasOpen = isDropdownOpen;
               setIsDropdownOpen(!isDropdownOpen);
+              // Focus input when closing dropdown
+              if (wasOpen) {
+                setTimeout(() => {
+                  if (textareaRef.current) {
+                    textareaRef.current.focus();
+                  } else if (inputRef.current) {
+                    inputRef.current.focus();
+                  }
+                }, 100);
+              }
             }}
             onMouseDown={(e) => {
               e.preventDefault();
@@ -892,6 +942,14 @@ export default function Home() {
                               setSelectedModelsForRun([model]);
                               setIsDropdownOpen(false);
                               setDropdownSearch("");
+                              // Focus input after selection
+                              setTimeout(() => {
+                                if (textareaRef.current) {
+                                  textareaRef.current.focus();
+                                } else if (inputRef.current) {
+                                  inputRef.current.focus();
+                                }
+                              }, 100);
                             }
                           }}
                           onMouseDown={(e) => {
@@ -1038,27 +1096,6 @@ export default function Home() {
         {/* Show stats when generating */}
         {overallStats && overallStats.hasData && !showModelSelector && (
           <>
-            {/* Completed badge positioned to the right of Draft Pad */}
-            <motion.div
-              key={overallStats.completed}
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 20,
-              }}
-              className="absolute left-[calc(50%+85px)] bg-white/40 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5"
-            >
-              {overallStats.completed === overallStats.total ? (
-                <Check className="w-3.5 h-3.5 text-green-600" />
-              ) : (
-                <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-blue-600"></div>
-              )}
-              <span className="text-sm font-medium text-[#333333]">
-                {overallStats.completed}/{overallStats.total} done
-              </span>
-            </motion.div>
             {/* Sort filter badges on the right */}
             <div className="absolute right-0 flex items-center gap-2">
               {/* Word range badge */}
@@ -1244,6 +1281,14 @@ export default function Home() {
             <button
               onClick={() => {
                 setShowModelSelectorView(false);
+                // Focus input after closing model selector
+                setTimeout(() => {
+                  if (textareaRef.current) {
+                    textareaRef.current.focus();
+                  } else if (inputRef.current) {
+                    inputRef.current.focus();
+                  }
+                }, 100);
               }}
               className="flex items-center gap-2 text-[#333333]/70 hover:text-[#333333] transition-colors"
             >
@@ -1254,6 +1299,14 @@ export default function Home() {
             <button
               onClick={() => {
                 setShowModelSelectorView(false);
+                // Focus input after closing model selector
+                setTimeout(() => {
+                  if (textareaRef.current) {
+                    textareaRef.current.focus();
+                  } else if (inputRef.current) {
+                    inputRef.current.focus();
+                  }
+                }, 100);
               }}
               className="relative rounded-xl overflow-hidden shadow-[0_2px_2px_rgba(0,0,0,0.1),0_0_10px_rgba(0,0,0,0.05)] transition-all duration-400 ease-out backdrop-blur-[3px] bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium text-[#333333] disabled:opacity-50"
               disabled={selectedModelsForRun.length === 0}
@@ -1525,6 +1578,7 @@ export default function Home() {
                   ) : (
                     /* Generating state - input */
                     <input
+                      ref={inputRef}
                       value={userMessage}
                       onChange={(e) => {
                         setUserMessage(e.target.value);
