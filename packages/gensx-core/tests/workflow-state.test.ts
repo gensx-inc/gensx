@@ -1,4 +1,5 @@
 import {
+  generateOptimizedPatches,
   WorkflowMessage,
   WorkflowMessageListener,
 } from "src/workflow-state.js";
@@ -1174,5 +1175,62 @@ suite("getValueByJsonPath", () => {
   test("returns root value for empty path (array)", () => {
     const arr = [1, 2, 3];
     expect(getValueByJsonPath(arr, "")).toBe(arr);
+  });
+});
+
+suite("generateOptimizedPatches edge cases", () => {
+  test("emits only parent add for new array, not child adds", () => {
+    const oldData = {};
+    const newData = { messages: [{ text: "hello" }] };
+    const patches = generateOptimizedPatches(oldData, newData);
+    expect(patches.some((p: gensx.Operation) => p.path === "/messages")).toBe(
+      true,
+    );
+    expect(patches.some((p: gensx.Operation) => p.path === "/messages/0")).toBe(
+      false,
+    );
+  });
+
+  test("emits only granular patch for array element update", () => {
+    const oldData = { messages: [{ text: "hello" }] };
+    const newData = { messages: [{ text: "hello world" }] };
+    const patches = generateOptimizedPatches(oldData, newData);
+    expect(
+      patches.some((p: gensx.Operation) => p.path === "/messages/0/text"),
+    ).toBe(true);
+    expect(patches.some((p: gensx.Operation) => p.path === "/messages")).toBe(
+      false,
+    );
+  });
+
+  test("emits string-append for string append", () => {
+    const oldData = { msg: "foo" };
+    const newData = { msg: "foobar" };
+    const patches = generateOptimizedPatches(oldData, newData);
+    expect(patches).toEqual([
+      { op: "string-append", path: "/msg", value: "bar" },
+    ]);
+  });
+
+  test("emits replace for string overwrite", () => {
+    const oldData = { msg: "foo" };
+    const newData = { msg: "baz" };
+    const patches = generateOptimizedPatches(oldData, newData);
+    expect(patches).toEqual([{ op: "replace", path: "/msg", value: "baz" }]);
+  });
+
+  test("filters out child patches when parent is added", () => {
+    const oldData = {};
+    const newData = { messages: [{ text: "hello" }, { text: "world" }] };
+    const patches = generateOptimizedPatches(oldData, newData);
+    expect(patches.some((p: gensx.Operation) => p.path === "/messages")).toBe(
+      true,
+    );
+    expect(
+      patches.some((p: gensx.Operation) => p.path.startsWith("/messages/0")),
+    ).toBe(false);
+    expect(
+      patches.some((p: gensx.Operation) => p.path.startsWith("/messages/1")),
+    ).toBe(false);
   });
 });

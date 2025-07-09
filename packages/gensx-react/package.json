@@ -48,7 +48,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@gensx/client": "workspace:*",
-    "@gensx/core": "workspace:*"
+    "@gensx/core": "workspace:*",
+    "fast-json-patch": "^3.1.1"
   },
   "devDependencies": {
     "@types/react": "^19",
