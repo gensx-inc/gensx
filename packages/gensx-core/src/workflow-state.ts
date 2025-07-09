@@ -190,7 +190,7 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
   
   if (previousData === undefined) {
     // First time publishing this object - send complete data as patches
-    const patches = compare({}, newData);
+    const patches = compare({}, newData ?? {});
     workflowContext.sendWorkflowMessage({
       type: "object",
       label,
@@ -221,7 +221,7 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
  */
 function generateOptimizedPatches(oldData: JsonValue, newData: JsonValue): Operation[] {
   // First, get standard JSON patches
-  const standardPatches = compare(oldData as any, newData as any);
+  const standardPatches = compare(oldData ?? {}, newData ?? {});
   const optimizedPatches: Operation[] = [];
   
   for (const patch of standardPatches) {

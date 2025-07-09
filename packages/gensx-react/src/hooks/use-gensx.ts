@@ -1,4 +1,5 @@
-import type { JsonValue, WorkflowMessage } from "@gensx/core";
+import type { JsonValue, WorkflowMessage, WorkflowObjectMessage } from "@gensx/core";
+import { applyObjectPatches } from "@gensx/core";
 
 import {
   startTransition,
@@ -341,16 +342,37 @@ export function useObject<T = JsonValue>(
   label: string,
 ): T | undefined {
   return useMemo(() => {
-    const objectEvents: T[] = [];
+    let reconstructedObject: JsonValue = {};
 
     for (const event of events) {
       if (event.type === "object" && event.label === label) {
-        objectEvents.push(event.data as T);
+        const objectEvent = event as WorkflowObjectMessage;
+        
+        // If this is an initial event, start with an empty object
+        if (objectEvent.isInitial) {
+          reconstructedObject = {};
+        }
+        
+        // Apply the patches to reconstruct the object
+        try {
+          reconstructedObject = applyObjectPatches(objectEvent.patches, reconstructedObject);
+        } catch (error) {
+          console.warn(`Failed to apply patches for object "${label}":`, error);
+          // Continue with the current state if patch application fails
+        }
       }
     }
 
-    // Return the most recent object for this label
-    return objectEvents[objectEvents.length - 1];
+    // Return undefined if no object events were found (empty object would be {})
+    const hasObjectEvents = events.some(
+      (event) => event.type === "object" && event.label === label
+    );
+    
+    if (!hasObjectEvents) {
+      return undefined;
+    }
+
+    return reconstructedObject as T;
   }, [events, label]);
 }
 
