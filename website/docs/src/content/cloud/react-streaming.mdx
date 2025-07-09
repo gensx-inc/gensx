@@ -9,11 +9,95 @@ GenSX provides utilities and hooks that make it easy to build interactive, strea
 
 ## Streaming data from workflows
 
-There are several ways to stream data from your workflows.
+There are multiple ways to stream data from your workflows. You can steam outputs, objects, events, or an arbitrary data.
 
-- Standard streaming
-- Streaming with `publishObject`
-- Streaming with `publishEvent`
-- Streaming with `publishData`
+### Streaming an output
+
+### Streaming objects
+
+GenSX provides a `publishObject` function that allows you to stream an object to the client. It's designed for you to continually publish the latest state of an object as it gets updated. The changes will be patched to efficiently update the state on the client.
+
+```typescript
+import * as gensx from "@gensx/core";
+
+interface Message {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+gensx.publishObject<Message[]>("messages", [
+  { role: "assistant", content: "Hello, how can I help you today?" },
+]);
+```
+
+You can also use `createObjectStream` to create a reusable function for publishing a given object.
+
+```typescript
+const publishMessages = gensx.createObjectStream<Message[]>("messages");
+
+publishMessages([
+  { role: "assistant", content: "Hello, how can I help you today?" },
+]);
+```
+
+On the client side, you use the `useObject` hook to subscribe to the object and get the latest state.
+
+### Streaming events
+
+GenSX provides a `publishEvent` function that allows you to stream an event to the client. It's designed for you to publish events that happen over time.
+
+```typescript
+gensx.publishEvent("draft-progress", draftProgress);
+```
+
+There is also a `createEventStream` helper available for creating a reusable function for publishing the events.
+
+### Streaming arbitrary data
+
+GenSX provides a `publishData` function that allows you to stream arbitrary data to the client. It's designed for you to stream data that doesn't fit into the other categories.
+
+```typescript
+gensx.publishData("draft-progress", draftProgress);
+```
 
 ## Consuming streaming data in React
+
+The `@gensx/react` library is the best way to consume streaming data from GenSX workflows.
+
+`useWorkflow` is a React hook that allows you to run a workflow and subscribe to its events and output.
+
+```typescript
+const { inProgress, error, execution, run } = useWorkflow<
+  ChatInput,
+  ChatOutput
+>({
+  config: {
+    baseUrl: "/api/gensx/Chat",
+  },
+});
+```
+
+```typescript
+const messages = useObject<Message[]>(execution, "messages");
+```
+
+- show using events
+
+```typescript
+interface ProgressEvent {
+  progress: "brainstorming" | "researching" | "writing" | "editing";
+}
+
+const progressEvents = useEvents<ProgressEvent>(execution, "progress");
+
+progressEvents.forEach((event) => {
+  console.log(event.progress);
+});
+```
+
+- show consuming outputs
+- discuss passthrough api
+
+## Consuming streaming data from the API
+
+- You can set the `Accept` param as `text/event-stream` to get SSE events or `application/x-ndjson` to get a newline delimited json stream, also known as JSON lines.
