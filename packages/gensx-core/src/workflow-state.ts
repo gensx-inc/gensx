@@ -285,7 +285,7 @@ function isPlainObject(val: unknown): val is Record<string, JsonValue> {
 }
 
 /**
- * Get a value from an object using a JSON pointer path
+ * Get a value from an object using a JSON pointer path (RFC 6901 compliant, supports arrays)
  */
 export function getValueByJsonPath(
   obj: JsonValue,
@@ -296,13 +296,22 @@ export function getValueByJsonPath(
   }
   const pathParts = path.split("/").slice(1); // Remove empty first element
   let current: JsonValue = obj;
-  if (!isPlainObject(current)) {
-    return undefined;
-  }
 
   for (const part of pathParts) {
-    if (isPlainObject(current) && part in current) {
-      current = current[part];
+    if (Array.isArray(current)) {
+      // Try to parse as array index
+      const idx = Number(part);
+      if (!Number.isNaN(idx) && idx >= 0 && idx < current.length) {
+        current = current[idx];
+      } else {
+        return undefined;
+      }
+    } else if (isPlainObject(current)) {
+      if (part in current) {
+        current = current[part];
+      } else {
+        return undefined;
+      }
     } else {
       return undefined;
     }
@@ -411,13 +420,24 @@ export function applyObjectPatches(
 }
 
 /**
- * Helper function to get a value by path in an object
+ * Helper function to get a value by path in an object or array (RFC 6901 compliant)
  */
 function getValueByPath(obj: PublishableData, path: string[]): PublishableData {
   let current: PublishableData = obj;
   for (const segment of path) {
-    if (isPlainObject(current) && segment in current) {
-      current = current[segment];
+    if (Array.isArray(current)) {
+      const idx = Number(segment);
+      if (!Number.isNaN(idx) && idx >= 0 && idx < current.length) {
+        current = current[idx];
+      } else {
+        return undefined;
+      }
+    } else if (isPlainObject(current)) {
+      if (segment in current) {
+        current = current[segment];
+      } else {
+        return undefined;
+      }
     } else {
       return undefined;
     }

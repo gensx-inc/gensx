@@ -5,7 +5,10 @@ import {
 import { beforeEach, expect, suite, test } from "vitest";
 
 import * as gensx from "../src/index.js";
-import { getValueByJsonPath } from "../src/workflow-state.js";
+import {
+  applyObjectPatches,
+  getValueByJsonPath,
+} from "../src/workflow-state.js";
 
 suite("workflow state", () => {
   beforeEach(() => {
@@ -840,7 +843,7 @@ suite("workflow state", () => {
         },
       ];
 
-      const result = gensx.applyObjectPatches(patches, initialState);
+      const result = applyObjectPatches(patches, initialState);
 
       expect(result).toEqual({
         name: "John",
@@ -867,7 +870,7 @@ suite("workflow state", () => {
         { op: "replace", path: "/address/city", value: "San Francisco" },
       ];
 
-      const result = gensx.applyObjectPatches(patches, initialState);
+      const result = applyObjectPatches(patches, initialState);
 
       expect(result).toEqual({
         name: "John",
@@ -934,7 +937,7 @@ suite("workflow state", () => {
         { op: "string-append", path: "/content", value: " world" },
       ];
 
-      const result = gensx.applyObjectPatches(patches, initialState);
+      const result = applyObjectPatches(patches, initialState);
 
       expect(result).toEqual({ content: "Hello world" });
     });
@@ -1012,13 +1015,13 @@ suite("publishObject root-level values", () => {
 
     // Apply patches in sequence
     let state: gensx.JsonValue | undefined = undefined;
-    state = gensx.applyObjectPatches(patches1, state);
+    state = applyObjectPatches(patches1, state);
     expect(state).toBe(42);
-    state = gensx.applyObjectPatches(patches2, state);
+    state = applyObjectPatches(patches2, state);
     expect(state).toBe(43);
-    state = gensx.applyObjectPatches(patches3, state);
+    state = applyObjectPatches(patches3, state);
     expect(state).toBe(true);
-    state = gensx.applyObjectPatches(patches4, state);
+    state = applyObjectPatches(patches4, state);
     expect(state).toBe(null);
   });
 
@@ -1042,11 +1045,11 @@ suite("publishObject root-level values", () => {
     ];
 
     let state: gensx.JsonValue | undefined = undefined;
-    state = gensx.applyObjectPatches(patches1, state);
+    state = applyObjectPatches(patches1, state);
     expect(state).toEqual(arr1);
-    state = gensx.applyObjectPatches(patches2, state);
+    state = applyObjectPatches(patches2, state);
     expect(state).toEqual(arr2);
-    state = gensx.applyObjectPatches(patches3, state);
+    state = applyObjectPatches(patches3, state);
     expect(state).toEqual(arr3);
   });
 
@@ -1067,11 +1070,11 @@ suite("publishObject root-level values", () => {
     ];
 
     let state: gensx.JsonValue | undefined = undefined;
-    state = gensx.applyObjectPatches(patches1, state);
+    state = applyObjectPatches(patches1, state);
     expect(state).toBe(s1);
-    state = gensx.applyObjectPatches(patches2, state);
+    state = applyObjectPatches(patches2, state);
     expect(state).toBe(s2);
-    state = gensx.applyObjectPatches(patches3, state);
+    state = applyObjectPatches(patches3, state);
     expect(state).toBe(s3);
   });
 
@@ -1087,9 +1090,9 @@ suite("publishObject root-level values", () => {
     ];
 
     let state: gensx.JsonValue | undefined = undefined;
-    state = gensx.applyObjectPatches(patches1, state);
+    state = applyObjectPatches(patches1, state);
     expect(state).toBe(s1);
-    state = gensx.applyObjectPatches(patches2, state);
+    state = applyObjectPatches(patches2, state);
     expect(state).toBe(s2);
   });
 });
@@ -1100,7 +1103,7 @@ suite("applyObjectPatches edge cases", () => {
     const patches: gensx.Operation[] = [
       { op: "string-append", path: "/doesnotexist", value: "baz" },
     ];
-    const result = gensx.applyObjectPatches(patches, initialState);
+    const result = applyObjectPatches(patches, initialState);
     expect(result).toEqual(initialState);
   });
 
@@ -1109,8 +1112,49 @@ suite("applyObjectPatches edge cases", () => {
     const patches: gensx.Operation[] = [
       { op: "string-append", path: "/foo", value: "baz" },
     ];
-    const result = gensx.applyObjectPatches(patches, initialState);
+    const result = applyObjectPatches(patches, initialState);
     expect(result).toEqual(initialState);
+  });
+});
+
+suite("getValueByJsonPath and getValueByPath array handling", () => {
+  test("getValueByJsonPath can access array elements by index", () => {
+    const obj = { items: ["a", "b", { deep: "c" }] };
+    expect(getValueByJsonPath(obj, "/items/0")).toBe("a");
+    expect(getValueByJsonPath(obj, "/items/1")).toBe("b");
+    expect(getValueByJsonPath(obj, "/items/2/deep")).toBe("c");
+    expect(getValueByJsonPath(obj, "/items/3")).toBeUndefined();
+    expect(getValueByJsonPath(obj, "/items/2")).toEqual({ deep: "c" });
+  });
+
+  test("getValueByJsonPath returns undefined for invalid array indices", () => {
+    const arr = [10, 20];
+    expect(getValueByJsonPath(arr, "/2")).toBeUndefined();
+    expect(getValueByJsonPath(arr, "/-1")).toBeUndefined();
+    expect(getValueByJsonPath(arr, "/foo")).toBeUndefined();
+  });
+
+  test("applyObjectPatches string-append works for array elements", () => {
+    const initialState: { arr: string[] } = { arr: ["foo", "bar"] };
+    const patches = [
+      { op: "string-append" as const, path: "/arr/0", value: "baz" },
+      { op: "string-append" as const, path: "/arr/1", value: "!" },
+    ];
+    const result = applyObjectPatches(patches, initialState);
+    expect(result).toEqual({ arr: ["foobaz", "bar!"] });
+  });
+
+  test("applyObjectPatches string-append does nothing for non-string array elements", () => {
+    const initialState: { arr: (number | null | object)[] } = {
+      arr: [123, null, {}],
+    };
+    const patches = [
+      { op: "string-append" as const, path: "/arr/0", value: "baz" },
+      { op: "string-append" as const, path: "/arr/1", value: "!" },
+      { op: "string-append" as const, path: "/arr/2", value: "x" },
+    ];
+    const result = applyObjectPatches(patches, initialState);
+    expect(result).toEqual({ arr: ["baz", "!", "x"] });
   });
 });
 
