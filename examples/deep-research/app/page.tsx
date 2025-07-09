@@ -40,8 +40,6 @@ export default function ChatPage() {
     {},
   );
 
-  console.log("STEPS", steps);
-
   // Check if status is valid
   const handledStatuses = [
     "Planning",

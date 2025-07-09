@@ -370,20 +370,20 @@ importers:
         specifier: ^1.1.3
         version: 1.1.3
       '@gensx/client':
-        specifier: ^0.1.2
-        version: 0.1.2
+        specifier: workspace:*
+        version: link:../../packages/gensx-client
       '@gensx/core':
-        specifier: ^0.4.7
-        version: 0.4.7
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/react':
-        specifier: ^0.1.4
-        version: 0.1.4(react@19.1.0)
+        specifier: workspace:*
+        version: link:../../packages/gensx-react
       '@gensx/storage':
-        specifier: ^0.1.9
-        version: 0.1.9
+        specifier: workspace:*
+        version: link:../../packages/gensx-storage
       '@gensx/vercel-ai':
-        specifier: ^0.2.6
-        version: 0.2.6(react@19.1.0)
+        specifier: workspace:*
+        version: link:../../packages/gensx-vercel-ai
       '@langchain/textsplitters':
         specifier: ^0.1.0
         version: 0.1.0(@langchain/core@0.3.62(@opentelemetry/api@1.9.0)(openai@4.104.0(ws@8.18.2)(zod@3.25.56)))
@@ -2398,10 +2398,6 @@ packages:
     resolution: {integrity: sha512-RkhCLMSoQw32HdkgJUYzmJM0m5ySYpiIpxbDZ5FbIpR8kesW+O5UUPp0ZhXEGwiCDyxmxmRIJfLU8hg0IIfZAg==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
-  '@gensx/client@0.1.3':
-    resolution: {integrity: sha512-d4Cw3gmzlR+S8FVwP3pZAb7+5RmyCPuREos9b0cCkAGEUH+wjkZzEPYYiBQc2xe9a7c5odyWntrtYr3pdYoqSQ==}
-    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
-
   '@gensx/core@0.3.13':
     resolution: {integrity: sha512-NK0pZWroT39tK8LQTuS3D5a1O9qhGcKr9LZRoFREe0IKntgj6yCmLJA5uzvsztUcSbtITFrDW4HviuIpUadNXg==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
@@ -2430,12 +2426,6 @@ packages:
 
   '@gensx/react@0.1.2':
     resolution: {integrity: sha512-oYkzhu4qs0YecPQwOjiGLDOJm9y5ICzQeZqnlGAg5n9ShfDP3VvU5OpmXza8bjLLug7cimYsVTYEp93PBpZyoA==}
-    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
-    peerDependencies:
-      react: '>=18.0.0'
-
-  '@gensx/react@0.1.4':
-    resolution: {integrity: sha512-3P7adEwi08ojdiwwgK81flJShfcd6YClwLAFMNNZ2WfBtfL/552NQPIj5pf16Kza3FWy+8UtkVw6i9nlbvrCrQ==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
     peerDependencies:
       react: '>=18.0.0'
@@ -9630,10 +9620,6 @@ snapshots:
     dependencies:
       '@gensx/core': 0.4.6
 
-  '@gensx/client@0.1.3':
-    dependencies:
-      '@gensx/core': 0.4.7
-
   '@gensx/core@0.3.13':
     dependencies:
       '@common.js/serialize-error': 11.0.3
@@ -9692,12 +9678,6 @@ snapshots:
     dependencies:
       '@gensx/client': 0.1.2
       '@gensx/core': 0.4.6
-      react: 19.1.0
-
-  '@gensx/react@0.1.4(react@19.1.0)':
-    dependencies:
-      '@gensx/client': 0.1.3
-      '@gensx/core': 0.4.7
       react: 19.1.0
 
   '@gensx/storage@0.1.9':

@@ -53,7 +53,6 @@ export const ExecuteQuery = gensx.Component(
         (result) => !previousUrls.has(result.url),
       );
 
-      console.log("filteredResults" + index, filteredResults);
       if (filteredResults.length === 0) return { query, results: [] };
 
       // Return top results for this query (no ranking, just take first N)
