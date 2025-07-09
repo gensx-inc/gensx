@@ -64,15 +64,22 @@ gensx.publishData("draft-progress", draftProgress);
 
 The `@gensx/react` library is the best way to consume streaming data from GenSX workflows.
 
-`useWorkflow` is a React hook that allows you to run a workflow and subscribe to its events and output.
+The `useWorkflow` hook lets you run a workflow and subscribe to its events and output.
 
 ```typescript
 const { inProgress, error, execution, run } = useWorkflow<
-  ChatInput,
-  ChatOutput
+  ChatInput, // the input type of the workflow
+  ChatOutput // the output type of the workflow
 >({
   config: {
     baseUrl: "/api/gensx/Chat",
+  },
+});
+
+// Run the workflow
+run({
+  inputs: {
+    userMessage: "Hello, how are you?",
   },
 });
 ```
