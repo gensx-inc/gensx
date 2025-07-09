@@ -460,11 +460,9 @@ function StreamingChat() {
       <button onClick={() => workflow.run({ inputs: { message: "Hello!" } })}>
         Send Message
       </button>
-      
+
       {chatResponse && (
-        <div className="chat-bubble">
-          {chatResponse.content}
-        </div>
+        <div className="chat-bubble">{chatResponse.content}</div>
       )}
     </div>
   );
@@ -491,7 +489,10 @@ interface ChatResponse {
   isComplete: boolean;
 }
 
-const chatResponse = useObject<ChatResponse>(workflow.execution, "chat-response");
+const chatResponse = useObject<ChatResponse>(
+  workflow.execution,
+  "chat-response",
+);
 // chatResponse is typed as ChatResponse | undefined
 ```
 
