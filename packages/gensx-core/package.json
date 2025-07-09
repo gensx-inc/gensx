@@ -48,13 +48,11 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@common.js/serialize-error": "^11.0.3",
-    "diff": "^5.1.0",
     "fast-json-patch": "^3.1.1",
     "ini": "^5.0.0",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/diff": "^5.0.9",
     "@types/ini": "^4.1.1",
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",

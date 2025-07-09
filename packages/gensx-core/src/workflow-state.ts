@@ -1,16 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
-import { diffChars } from "diff";
 import { applyPatch, compare } from "fast-json-patch";
 
 import { getCurrentContext } from "./context.js";
-
-// Define the Change type based on diff library output
-interface Change {
-  count?: number;
-  added?: boolean;
-  removed?: boolean;
-  value: string;
-}
 
 // Define JSON Patch operation types based on RFC 6902
 interface BaseOperation {
@@ -76,21 +67,8 @@ export interface StringAppendOperation {
   value: string;
 }
 
-export interface StringDiffOperation {
-  op: "string-diff";
-  path: string;
-  diff: {
-    type: "retain" | "insert" | "delete";
-    count?: number;
-    value?: string;
-  }[];
-}
-
 // Combined operation type including standard JSON Patch and our extensions
-export type Operation =
-  | JsonPatchOperation
-  | StringAppendOperation
-  | StringDiffOperation;
+export type Operation = JsonPatchOperation | StringAppendOperation;
 
 // Individual message types
 export interface WorkflowStartMessage {
@@ -255,23 +233,6 @@ function generateOptimizedPatches(
             continue;
           }
         }
-
-        // For more complex changes, use string diff if it's beneficial
-        const changes = diffChars(oldValue, newValue);
-        const diffOperations = convertChangesToDiffOperations(changes);
-
-        // Only use string-diff if it's smaller than the replace operation
-        const diffSize = JSON.stringify(diffOperations).length;
-        const replaceSize = JSON.stringify(newValue).length;
-
-        if (diffSize < replaceSize && oldValue.length > 50) {
-          optimizedPatches.push({
-            op: "string-diff",
-            path: patch.path,
-            diff: diffOperations,
-          });
-          continue;
-        }
       }
     }
 
@@ -298,42 +259,6 @@ function getValueByJsonPath(obj: object, path: string): JsonValue | undefined {
   }
 
   return current;
-}
-
-/**
- * Convert diff changes to our diff operation format
- */
-function convertChangesToDiffOperations(changes: Change[]): {
-  type: "retain" | "insert" | "delete";
-  count?: number;
-  value?: string;
-}[] {
-  const operations: {
-    type: "retain" | "insert" | "delete";
-    count?: number;
-    value?: string;
-  }[] = [];
-
-  for (const change of changes) {
-    if (change.added) {
-      operations.push({
-        type: "insert",
-        value: change.value,
-      });
-    } else if (change.removed) {
-      operations.push({
-        type: "delete",
-        count: change.value.length,
-      });
-    } else {
-      operations.push({
-        type: "retain",
-        count: change.value.length,
-      });
-    }
-  }
-
-  return operations;
 }
 
 /**
@@ -411,20 +336,6 @@ export function applyObjectPatches(
           (target as Record<string, JsonValue>)[property] = operation.value;
         }
       }
-    } else if (operation.op === "string-diff") {
-      // Handle string diff operation
-      const pathParts = operation.path.split("/").slice(1);
-      const target = getValueByPath(document, pathParts.slice(0, -1));
-      const property = pathParts[pathParts.length - 1];
-
-      if (typeof target === "object" && target !== null) {
-        const currentValue =
-          (target as Record<string, JsonValue>)[property] ?? "";
-        (target as Record<string, JsonValue>)[property] = applyStringDiff(
-          currentValue as string,
-          operation.diff,
-        );
-      }
     } else {
       // Handle standard JSON Patch operations
       const standardPatches = [operation];
@@ -449,42 +360,4 @@ function getValueByPath(obj: JsonValue, path: string[]): JsonValue | undefined {
     }
   }
   return current;
-}
-
-/**
- * Apply string diff operations to reconstruct a string
- */
-function applyStringDiff(
-  originalString: string,
-  diff: {
-    type: "retain" | "insert" | "delete";
-    count?: number;
-    value?: string;
-  }[],
-): string {
-  let result = "";
-  let position = 0;
-
-  for (const operation of diff) {
-    switch (operation.type) {
-      case "retain":
-        if (operation.count !== undefined) {
-          result += originalString.slice(position, position + operation.count);
-          position += operation.count;
-        }
-        break;
-      case "insert":
-        if (operation.value !== undefined) {
-          result += operation.value;
-        }
-        break;
-      case "delete":
-        if (operation.count !== undefined) {
-          position += operation.count; // Skip the deleted characters
-        }
-        break;
-    }
-  }
-
-  return result;
 }
