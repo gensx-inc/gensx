@@ -3,11 +3,15 @@ import {
   WorkflowMessage,
   WorkflowMessageListener,
 } from "src/workflow-state.js";
-import { expect, suite, test } from "vitest";
+import { expect, suite, test, beforeEach } from "vitest";
 
 import * as gensx from "../src/index.js";
 
 suite("workflow state", () => {
+  beforeEach(() => {
+    // Clear all object states before each test
+    gensx.clearAllObjectStates();
+  });
   test("can emit workflow messages from components", async () => {
     const events: WorkflowMessage[] = [];
 
@@ -517,10 +521,11 @@ suite("workflow state", () => {
     expect(events[3]).toEqual({
       type: "object",
       label: "test-state",
-      data: {
-        bag: "of",
-        things: ["a", "b", "c"],
-      },
+      patches: [
+        { op: "add", path: "/bag", value: "of" },
+        { op: "add", path: "/things", value: ["a", "b", "c"] },
+      ],
+      isInitial: true,
     });
   });
 
@@ -591,9 +596,277 @@ suite("workflow state", () => {
       expect(events[3]).toEqual({
         type: "object",
         label: "test-state",
-        data: {
-          bag: "of",
-          things: ["a", "b", "c"],
+        patches: [
+          { op: "add", path: "/bag", value: "of" },
+          { op: "add", path: "/things", value: ["a", "b", "c"] },
+        ],
+        isInitial: true,
+      });
+    });
+  });
+
+  suite("publishObject JSON patches", () => {
+    test("first publication creates initial patches", async () => {
+      const events: WorkflowMessage[] = [];
+
+      const TestComponent = gensx.Component("TestComponent", async () => {
+        await Promise.resolve();
+        gensx.publishObject("test-state", {
+          name: "John",
+          age: 30,
+          address: {
+            city: "New York",
+            zip: "10001",
+          },
+        });
+        return "done";
+      });
+
+      const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+        return await TestComponent();
+      });
+
+      const messageListener: WorkflowMessageListener = (event) => {
+        events.push(event);
+      };
+
+      await TestWorkflow(undefined, {
+        messageListener,
+      });
+
+      expect(events).toHaveLength(7);
+      const objectMessage = events[3] as any;
+      expect(objectMessage.type).toBe("object");
+      expect(objectMessage.label).toBe("test-state");
+      expect(objectMessage.isInitial).toBe(true);
+      expect(objectMessage.patches).toEqual([
+        { op: "add", path: "/name", value: "John" },
+        { op: "add", path: "/age", value: 30 },
+        { op: "add", path: "/address", value: { city: "New York", zip: "10001" } },
+      ]);
+    });
+
+    test("subsequent publications only send changed parts", async () => {
+      const events: WorkflowMessage[] = [];
+
+      const TestComponent = gensx.Component("TestComponent", async () => {
+        await Promise.resolve();
+        
+        // First publication
+        gensx.publishObject("test-state", {
+          name: "John",
+          age: 30,
+          address: {
+            city: "New York",
+            zip: "10001",
+          },
+        });
+
+        // Second publication - only change age
+        gensx.publishObject("test-state", {
+          name: "John",
+          age: 31,
+          address: {
+            city: "New York",
+            zip: "10001",
+          },
+        });
+
+        return "done";
+      });
+
+      const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+        return await TestComponent();
+      });
+
+      const messageListener: WorkflowMessageListener = (event) => {
+        events.push(event);
+      };
+
+      await TestWorkflow(undefined, {
+        messageListener,
+      });
+
+      expect(events).toHaveLength(8); // Extra event for the second publication
+      
+      // First publication should be initial
+      const firstMessage = events[3] as any;
+      expect(firstMessage.type).toBe("object");
+      expect(firstMessage.isInitial).toBe(true);
+      
+      // Second publication should only contain the changed field
+      const secondMessage = events[4] as any;
+      expect(secondMessage.type).toBe("object");
+      expect(secondMessage.isInitial).toBe(false);
+      expect(secondMessage.patches).toEqual([
+        { op: "replace", path: "/age", value: 31 },
+      ]);
+    });
+
+    test("no event is sent when object state hasn't changed", async () => {
+      const events: WorkflowMessage[] = [];
+
+      const TestComponent = gensx.Component("TestComponent", async () => {
+        await Promise.resolve();
+        
+        // First publication
+        gensx.publishObject("test-state", {
+          name: "John",
+          age: 30,
+        });
+
+        // Second publication - same data
+        gensx.publishObject("test-state", {
+          name: "John",
+          age: 30,
+        });
+
+        return "done";
+      });
+
+      const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+        return await TestComponent();
+      });
+
+      const messageListener: WorkflowMessageListener = (event) => {
+        events.push(event);
+      };
+
+      await TestWorkflow(undefined, {
+        messageListener,
+      });
+
+      expect(events).toHaveLength(7); // No extra event for the second publication
+    });
+  });
+
+  suite("object state management", () => {
+    test("clearObjectState removes state for a specific label", async () => {
+      const events: WorkflowMessage[] = [];
+
+      const TestComponent = gensx.Component("TestComponent", async () => {
+        await Promise.resolve();
+        
+        // First publication
+        gensx.publishObject("test-state", { name: "John" });
+        
+        // Clear the state
+        gensx.clearObjectState("test-state");
+        
+        // Second publication - should be treated as initial again
+        gensx.publishObject("test-state", { name: "Jane" });
+
+        return "done";
+      });
+
+      const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+        return await TestComponent();
+      });
+
+      const messageListener: WorkflowMessageListener = (event) => {
+        events.push(event);
+      };
+
+      await TestWorkflow(undefined, {
+        messageListener,
+      });
+
+      expect(events).toHaveLength(8); // Two object events
+
+      // First publication should be initial
+      const firstMessage = events[3] as any;
+      expect(firstMessage.isInitial).toBe(true);
+
+      // Second publication should also be initial since we cleared the state
+      const secondMessage = events[4] as any;
+      expect(secondMessage.isInitial).toBe(true);
+    });
+
+    test("clearAllObjectStates removes all stored states", async () => {
+      const events: WorkflowMessage[] = [];
+
+      const TestComponent = gensx.Component("TestComponent", async () => {
+        await Promise.resolve();
+        
+        // First publications
+        gensx.publishObject("state1", { name: "John" });
+        gensx.publishObject("state2", { name: "Jane" });
+        
+        // Clear all states
+        gensx.clearAllObjectStates();
+        
+        // Second publications - should be treated as initial again
+        gensx.publishObject("state1", { name: "Bob" });
+        gensx.publishObject("state2", { name: "Alice" });
+
+        return "done";
+      });
+
+      const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+        return await TestComponent();
+      });
+
+      const messageListener: WorkflowMessageListener = (event) => {
+        events.push(event);
+      };
+
+      await TestWorkflow(undefined, {
+        messageListener,
+      });
+
+      expect(events).toHaveLength(10); // Four object events
+
+      // All four publications should be initial
+      const objectMessages = events.filter(e => e.type === "object") as any[];
+      expect(objectMessages).toHaveLength(4);
+      objectMessages.forEach(msg => {
+        expect(msg.isInitial).toBe(true);
+      });
+    });
+
+    test("applyObjectPatches reconstructs object state from patches", () => {
+      const initialState = {};
+      const patches = [
+        { op: "add", path: "/name", value: "John" },
+        { op: "add", path: "/age", value: 30 },
+        { op: "add", path: "/address", value: { city: "New York", zip: "10001" } },
+      ];
+
+      const result = gensx.applyObjectPatches(patches, initialState);
+
+      expect(result).toEqual({
+        name: "John",
+        age: 30,
+        address: {
+          city: "New York",
+          zip: "10001",
+        },
+      });
+    });
+
+    test("applyObjectPatches works with replace operations", () => {
+      const initialState = {
+        name: "John",
+        age: 30,
+        address: {
+          city: "New York",
+          zip: "10001",
+        },
+      };
+
+      const patches = [
+        { op: "replace", path: "/age", value: 31 },
+        { op: "replace", path: "/address/city", value: "San Francisco" },
+      ];
+
+      const result = gensx.applyObjectPatches(patches, initialState);
+
+      expect(result).toEqual({
+        name: "John",
+        age: 31,
+        address: {
+          city: "San Francisco",
+          zip: "10001",
         },
       });
     });

@@ -7,6 +7,9 @@ export {
   publishObject,
   createEventStream,
   createObjectStream,
+  clearObjectState,
+  clearAllObjectStates,
+  applyObjectPatches,
 } from "./workflow-state.js";
 export type {
   WorkflowMessage,

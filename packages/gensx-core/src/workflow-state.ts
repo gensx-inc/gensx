@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 import { getCurrentContext } from "./context.js";
+import { compare, applyPatch, Operation } from "fast-json-patch";
 
 // JSON-serializable value type for progress data
 export type JsonValue =
@@ -42,10 +43,12 @@ export interface WorkflowEventMessage {
   label: string;
 }
 
+// Updated to support JSON patches
 export interface WorkflowObjectMessage {
   type: "object";
-  data: JsonValue;
   label: string;
+  patches: Operation[];
+  isInitial?: boolean;
 }
 
 export interface WorkflowErrorMessage {
@@ -69,6 +72,9 @@ export type WorkflowMessage =
   | WorkflowEndMessage;
 
 export type WorkflowMessageListener = (message: WorkflowMessage) => void;
+
+// Store the current state of published objects
+const objectStateMap = new Map<string, JsonValue>();
 
 /**
  * Publish data to the workflow message stream. This is a low-level utility for putting arbitrary data on the stream.
@@ -100,17 +106,44 @@ export function publishEvent<T = JsonValue>(label: string, data: T) {
 
 /**
  * Publish a state to the workflow message stream. A State represents a snapshot of an object that is updated over time.
+ * This now uses JSON patches to efficiently send only the differences between states.
  *
  * @param label - The label of the state.
  * @param data - The data to publish.
  */
 export function publishObject<T = JsonValue>(label: string, data: T) {
   const context = getCurrentContext();
-  context.getWorkflowContext().sendWorkflowMessage({
-    type: "object",
-    label,
-    data: data as JsonValue,
-  });
+  const workflowContext = context.getWorkflowContext();
+  
+  const newData = data as JsonValue;
+  const previousData = objectStateMap.get(label);
+  
+  if (previousData === undefined) {
+    // First time publishing this object - send complete data as patches
+    const patches = compare({}, newData);
+    workflowContext.sendWorkflowMessage({
+      type: "object",
+      label,
+      patches,
+      isInitial: true,
+    });
+  } else {
+    // Generate patches from previous state to new state
+    const patches = compare(previousData, newData);
+    
+    // Only send message if there are changes
+    if (patches.length > 0) {
+      workflowContext.sendWorkflowMessage({
+        type: "object",
+        label,
+        patches,
+        isInitial: false,
+      });
+    }
+  }
+  
+  // Store the new state
+  objectStateMap.set(label, newData);
 }
 
 /**
@@ -139,4 +172,32 @@ export function createObjectStream<T extends JsonValue = JsonValue>(
   return (data: T) => {
     publishObject(label, data);
   };
+}
+
+/**
+ * Clear stored state for a given label. This is useful when starting a new workflow execution.
+ *
+ * @param label - The label of the state to clear.
+ */
+export function clearObjectState(label: string) {
+  objectStateMap.delete(label);
+}
+
+/**
+ * Clear all stored object states. This is useful when starting a new workflow execution.
+ */
+export function clearAllObjectStates() {
+  objectStateMap.clear();
+}
+
+/**
+ * Apply a JSON patch to reconstruct object state. This is useful for consumers who want to reconstruct the full object state from patches.
+ *
+ * @param patches - The JSON patch operations to apply.
+ * @param currentState - The current state of the object (defaults to empty object).
+ * @returns The new state after applying the patches.
+ */
+export function applyObjectPatches(patches: Operation[], currentState: JsonValue = {}): JsonValue {
+  const result = applyPatch(currentState, patches);
+  return result.newDocument;
 }
