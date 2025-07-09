@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 import { applyPatch, compare } from "fast-json-patch";
 
@@ -132,6 +133,9 @@ export type WorkflowMessage =
 
 export type WorkflowMessageListener = (message: WorkflowMessage) => void;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type PublishableData = any;
+
 /**
  * Publish data to the workflow message stream. This is a low-level utility for putting arbitrary data on the stream.
  *
@@ -151,12 +155,12 @@ export function publishData(data: JsonValue) {
  * @param label - The label of the event.
  * @param data - The data to publish.
  */
-export function publishEvent<T = JsonValue>(label: string, data: T) {
+export function publishEvent<T = PublishableData>(label: string, data: T) {
   const context = getCurrentContext();
   context.getWorkflowContext().sendWorkflowMessage({
     type: "event",
     label,
-    data: data as JsonValue,
+    data: data as PublishableData,
   });
 }
 
@@ -165,7 +169,7 @@ export function publishEvent<T = JsonValue>(label: string, data: T) {
  * This now uses JSON patches to efficiently send only the differences between states.
  *
  * @param label - The label of the state.
- * @param data - The data to publish.
+ * @param data - The data to publish. Can be any value that can be serialized to JSON .
  */
 export function publishObject<T = JsonValue>(label: string, data: T) {
   const context = getCurrentContext();
@@ -175,8 +179,15 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
   const previousData = workflowContext.objectStateMap.get(label);
 
   if (previousData === undefined) {
-    // First time publishing this object - send complete data as patches
-    const patches = compare({}, newData as object);
+    // First time publishing this object
+    let patches: Operation[];
+    if (isPlainObject(newData)) {
+      // Use RFC 6902 add patches for each property
+      patches = compare({}, newData);
+    } else {
+      // For primitives/arrays, use a root-level replace
+      patches = [{ op: "replace", path: "", value: newData }];
+    }
     workflowContext.sendWorkflowMessage({
       type: "object",
       label,
@@ -203,20 +214,44 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
 }
 
 /**
- * Generate optimized patches that use string-specific operations when beneficial
+ * Generate optimized patches that use string-specific operations when beneficial.
+ * Handles any JsonValue at the root, including string-append optimization for root strings.
  */
 function generateOptimizedPatches(
-  oldData: JsonValue,
-  newData: JsonValue,
+  oldData: PublishableData,
+  newData: PublishableData,
 ): Operation[] {
-  // First, get standard JSON patches
-  const standardPatches = compare(oldData ?? {}, newData ?? {});
+  // Handle root-level string-append optimization
+  if (typeof oldData === "string" && typeof newData === "string") {
+    if (newData.startsWith(oldData)) {
+      const appendedText = newData.slice(oldData.length);
+      if (appendedText.length > 0) {
+        return [{ op: "string-append", path: "", value: appendedText }];
+      }
+    }
+    // If not an append, just replace
+    if (oldData !== newData) {
+      return [{ op: "replace", path: "", value: newData }];
+    }
+    return [];
+  }
+
+  // If either is not a plain object, use a single replace patch at the root
+  if (!isPlainObject(oldData) || !isPlainObject(newData)) {
+    if (oldData !== newData) {
+      return [{ op: "replace", path: "", value: newData }];
+    }
+    return [];
+  }
+
+  // Both are plain objects: use standard patching and string-append optimization for properties
+  const standardPatches = compare(oldData, newData);
   const optimizedPatches: Operation[] = [];
 
   for (const patch of standardPatches) {
     if (patch.op === "replace" && typeof patch.value === "string") {
       // Check if this is a string replacement that could be optimized
-      const oldValue = getValueByJsonPath(oldData as object, patch.path);
+      const oldValue = getValueByJsonPath(oldData, patch.path);
 
       if (typeof oldValue === "string") {
         const newValue = patch.value;
@@ -244,15 +279,28 @@ function generateOptimizedPatches(
 }
 
 /**
+ * Utility to check if a value is a non-null, non-array object
+ */
+function isPlainObject(val: unknown): val is Record<string, JsonValue> {
+  return typeof val === "object" && val !== null && !Array.isArray(val);
+}
+
+/**
  * Get a value from an object using a JSON pointer path
  */
-function getValueByJsonPath(obj: object, path: string): JsonValue | undefined {
+function getValueByJsonPath(
+  obj: JsonValue,
+  path: string,
+): JsonValue | undefined {
   const pathParts = path.split("/").slice(1); // Remove empty first element
-  let current: Record<string, JsonValue> = obj as Record<string, JsonValue>;
+  let current: JsonValue = obj;
+  if (!isPlainObject(current)) {
+    return undefined;
+  }
 
   for (const part of pathParts) {
-    if (typeof current === "object" && part in current) {
-      current = current[part] as Record<string, JsonValue>;
+    if (isPlainObject(current) && part in current) {
+      current = current[part];
     } else {
       return undefined;
     }
@@ -267,9 +315,7 @@ function getValueByJsonPath(obj: object, path: string): JsonValue | undefined {
  * @param label - The label of the event.
  * @returns A function that publishes an event to the workflow message stream.
  */
-export function createEventStream<T extends JsonValue = JsonValue>(
-  label: string,
-) {
+export function createEventStream<T = PublishableData>(label: string) {
   return (data: T) => {
     publishEvent(label, data);
   };
@@ -316,13 +362,22 @@ export function clearAllObjectStates() {
  */
 export function applyObjectPatches(
   patches: Operation[],
-  currentState: JsonValue = {},
-): JsonValue {
+  currentState: PublishableData = {},
+): PublishableData {
   let document = currentState;
 
   for (const operation of patches) {
     if (operation.op === "string-append") {
       // Handle string append operation
+      if (operation.path === "") {
+        // Root-level string append
+        if (typeof document === "string") {
+          document = document + operation.value;
+        } else {
+          document = operation.value;
+        }
+        continue;
+      }
       const pathParts = operation.path.split("/").slice(1); // Remove empty first element
       const target = getValueByPath(document, pathParts.slice(0, -1));
       const property = pathParts[pathParts.length - 1];
@@ -350,11 +405,11 @@ export function applyObjectPatches(
 /**
  * Helper function to get a value by path in an object
  */
-function getValueByPath(obj: JsonValue, path: string[]): JsonValue | undefined {
-  let current: Record<string, JsonValue> = obj as Record<string, JsonValue>;
+function getValueByPath(obj: PublishableData, path: string[]): PublishableData {
+  let current: PublishableData = obj;
   for (const segment of path) {
-    if (typeof current === "object" && segment in current) {
-      current = current[segment] as Record<string, JsonValue>;
+    if (isPlainObject(current) && segment in current) {
+      current = current[segment];
     } else {
       return undefined;
     }

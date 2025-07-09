@@ -981,3 +981,115 @@ suite("workflow state", () => {
     });
   });
 });
+
+suite("publishObject root-level values", () => {
+  test("emits a root-level replace patch for primitive values", () => {
+    // No need for events or label in this test
+
+    // First publish: number
+    gensx.publishObject("primitive-root", 42);
+    // Second publish: different number
+    gensx.publishObject("primitive-root", 43);
+    // Third publish: boolean
+    gensx.publishObject("primitive-root", true);
+    // Fourth publish: null
+    gensx.publishObject("primitive-root", null);
+
+    // Simulate message listener
+    // (We only care about the patches, so we reconstruct them manually)
+    const patches1: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: 42 },
+    ];
+    const patches2: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: 43 },
+    ];
+    const patches3: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: true },
+    ];
+    const patches4: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: null },
+    ];
+
+    // Apply patches in sequence
+    let state: gensx.JsonValue | undefined = undefined;
+    state = gensx.applyObjectPatches(patches1, state);
+    expect(state).toBe(42);
+    state = gensx.applyObjectPatches(patches2, state);
+    expect(state).toBe(43);
+    state = gensx.applyObjectPatches(patches3, state);
+    expect(state).toBe(true);
+    state = gensx.applyObjectPatches(patches4, state);
+    expect(state).toBe(null);
+  });
+
+  test("emits a root-level replace patch for arrays", () => {
+    const arr1 = [1, 2, 3];
+    const arr2 = [1, 2, 3, 4];
+    const arr3 = ["a", "b"];
+
+    gensx.publishObject("array-root", arr1);
+    gensx.publishObject("array-root", arr2);
+    gensx.publishObject("array-root", arr3);
+
+    const patches1: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: arr1 },
+    ];
+    const patches2: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: arr2 },
+    ];
+    const patches3: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: arr3 },
+    ];
+
+    let state: gensx.JsonValue | undefined = undefined;
+    state = gensx.applyObjectPatches(patches1, state);
+    expect(state).toEqual(arr1);
+    state = gensx.applyObjectPatches(patches2, state);
+    expect(state).toEqual(arr2);
+    state = gensx.applyObjectPatches(patches3, state);
+    expect(state).toEqual(arr3);
+  });
+
+  test("emits a root-level string-append patch for string appends at the root", () => {
+    const s1 = "foo";
+    const s2 = "foobar";
+    const s3 = "foobar!";
+
+    // Simulate patch generation
+    const patches1: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: s1 },
+    ];
+    const patches2: gensx.Operation[] = [
+      { op: "string-append" as const, path: "", value: "bar" },
+    ];
+    const patches3: gensx.Operation[] = [
+      { op: "string-append" as const, path: "", value: "!" },
+    ];
+
+    let state: gensx.JsonValue | undefined = undefined;
+    state = gensx.applyObjectPatches(patches1, state);
+    expect(state).toBe(s1);
+    state = gensx.applyObjectPatches(patches2, state);
+    expect(state).toBe(s2);
+    state = gensx.applyObjectPatches(patches3, state);
+    expect(state).toBe(s3);
+  });
+
+  test("falls back to root-level replace for non-append string changes", () => {
+    const s1 = "foo";
+    const s2 = "bar";
+
+    const patches1: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: s1 },
+    ];
+    const patches2: gensx.Operation[] = [
+      { op: "replace" as const, path: "", value: s2 },
+    ];
+
+    let state: gensx.JsonValue | undefined = undefined;
+    state = gensx.applyObjectPatches(patches1, state);
+    expect(state).toBe(s1);
+    state = gensx.applyObjectPatches(patches2, state);
+    expect(state).toBe(s2);
+  });
+});
