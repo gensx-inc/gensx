@@ -23,6 +23,9 @@ export type {
   WorkflowObjectMessage,
   WorkflowErrorMessage,
   WorkflowEndMessage,
+  Operation,
+  StringAppendOperation,
+  StringDiffOperation,
 } from "./workflow-state.js";
 export * from "./wrap.js";
 export * from "./request-input.js";

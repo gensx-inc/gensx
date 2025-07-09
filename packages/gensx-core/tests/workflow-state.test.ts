@@ -871,4 +871,173 @@ suite("workflow state", () => {
       });
     });
   });
+
+  suite("string optimization operations", () => {
+    test("string-append operation is used for simple string appends", async () => {
+      const events: WorkflowMessage[] = [];
+
+      const TestComponent = gensx.Component("TestComponent", async () => {
+        await Promise.resolve();
+        
+        // First publication
+        gensx.publishObject("streaming-content", {
+          content: "Hello"
+        });
+
+        // Second publication - append text (common in streaming)
+        gensx.publishObject("streaming-content", {
+          content: "Hello world"
+        });
+
+        return "done";
+      });
+
+      const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+        return await TestComponent();
+      });
+
+      const messageListener: WorkflowMessageListener = (event) => {
+        events.push(event);
+      };
+
+      await TestWorkflow(undefined, {
+        messageListener,
+      });
+
+      expect(events).toHaveLength(8); // Two object events
+
+      // First publication should be initial
+      const firstMessage = events[3] as any;
+      expect(firstMessage.type).toBe("object");
+      expect(firstMessage.isInitial).toBe(true);
+
+      // Second publication should use string-append optimization
+      const secondMessage = events[4] as any;
+      expect(secondMessage.type).toBe("object");
+      expect(secondMessage.isInitial).toBe(false);
+      expect(secondMessage.patches).toEqual([
+        { op: "string-append", path: "/content", value: " world" }
+      ]);
+    });
+
+    test("applyObjectPatches correctly handles string-append operations", () => {
+      const initialState = { content: "Hello" };
+      const patches = [
+        { op: "string-append" as const, path: "/content", value: " world" }
+      ];
+
+      const result = gensx.applyObjectPatches(patches, initialState);
+
+      expect(result).toEqual({ content: "Hello world" });
+    });
+
+    test("applyObjectPatches correctly handles string-diff operations", () => {
+      const initialState = { content: "Hello world" };
+      const patches = [
+        {
+          op: "string-diff" as const,
+          path: "/content",
+          diff: [
+            { type: "retain" as const, count: 5 }, // Keep "Hello"
+            { type: "delete" as const, count: 6 }, // Delete " world"
+            { type: "insert" as const, value: " universe" } // Insert " universe"
+          ]
+        }
+      ];
+
+      const result = gensx.applyObjectPatches(patches, initialState);
+
+      expect(result).toEqual({ content: "Hello universe" });
+    });
+
+    test("falls back to standard replace for complex string changes", async () => {
+      const events: WorkflowMessage[] = [];
+
+      const TestComponent = gensx.Component("TestComponent", async () => {
+        await Promise.resolve();
+        
+        // First publication
+        gensx.publishObject("content", {
+          text: "Short text"
+        });
+
+        // Second publication - completely different short text
+        gensx.publishObject("content", {
+          text: "Different"
+        });
+
+        return "done";
+      });
+
+      const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+        return await TestComponent();
+      });
+
+      const messageListener: WorkflowMessageListener = (event) => {
+        events.push(event);
+      };
+
+      await TestWorkflow(undefined, {
+        messageListener,
+      });
+
+      expect(events).toHaveLength(8); // Two object events
+
+      // Second publication should use standard replace (not append or diff)
+      const secondMessage = events[4] as any;
+      expect(secondMessage.type).toBe("object");
+      expect(secondMessage.patches[0].op).toBe("replace");
+      expect(secondMessage.patches[0].value).toBe("Different");
+    });
+
+    test("handles multiple string fields with different optimizations", async () => {
+      const events: WorkflowMessage[] = [];
+
+      const TestComponent = gensx.Component("TestComponent", async () => {
+        await Promise.resolve();
+        
+        // First publication
+        gensx.publishObject("multi-content", {
+          title: "Chapter 1",
+          content: "Once upon a time"
+        });
+
+        // Second publication - append to content, replace title
+        gensx.publishObject("multi-content", {
+          title: "Chapter 2", // Replace
+          content: "Once upon a time, there was a princess" // Append
+        });
+
+        return "done";
+      });
+
+      const TestWorkflow = gensx.Workflow("TestWorkflow", async () => {
+        return await TestComponent();
+      });
+
+      const messageListener: WorkflowMessageListener = (event) => {
+        events.push(event);
+      };
+
+      await TestWorkflow(undefined, {
+        messageListener,
+      });
+
+      expect(events).toHaveLength(8); // Two object events
+
+      const secondMessage = events[4] as any;
+      expect(secondMessage.type).toBe("object");
+      expect(secondMessage.patches).toHaveLength(2);
+      
+      // Should have one replace for title and one string-append for content
+      const titlePatch = secondMessage.patches.find((p: any) => p.path === "/title");
+      const contentPatch = secondMessage.patches.find((p: any) => p.path === "/content");
+      
+      expect(titlePatch.op).toBe("replace");
+      expect(titlePatch.value).toBe("Chapter 2");
+      
+      expect(contentPatch.op).toBe("string-append");
+      expect(contentPatch.value).toBe(", there was a princess");
+    });
+  });
 });
