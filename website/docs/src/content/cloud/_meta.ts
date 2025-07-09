@@ -4,8 +4,9 @@ const meta = {
   storage: "Cloud storage",
   "local-development": "Local development",
   observability: "Observability & tracing",
+  "react-streaming": "React integration & streaming",
   "mcp-server": "MCP server",
-  "projects-environments": "Projects and environments",
+  "projects-environments": "Projects & environments",
   pricing: "Pricing & limits",
 };
 

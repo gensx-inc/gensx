@@ -1,0 +1,421 @@
+-----
+
+---
+
+--
+
+---
+
+## Overview
+
+The React integration consists of three main parts:
+
+1. **Publishing real-time data from workflows** using `publishObject` and `publishEvent`
+2. **React hooks** from `@gensx/react` to consume streaming data
+3. **API routes** to proxy workflow requests through your Next.js backend
+
+## Publishing Real-time Data from Workflows
+
+### Using `publishObject` and `publishEvent`
+
+In your workflows, you can publish real-time updates using the streaming utilities from `@gensx/core`:
+
+```typescript
+import { publishObject, publishEvent } from "@gensx/core";
+
+export const ChatAgent = gensx.Workflow("ChatAgent", async ({ prompt }) => {
+  // Publish object state (snapshots that get replaced)
+  publishObject("messages", [
+    { role: "user", content: prompt },
+    { role: "assistant", content: "" },
+  ]);
+
+  // Publish events (individual events that accumulate)
+  publishEvent("thinking", { status: "processing", step: 1 });
+  publishEvent("thinking", { status: "reasoning", step: 2 });
+
+  // Your workflow logic here...
+  const result = await someProcessing();
+
+  // Update the messages object with final state
+  publishObject("messages", [
+    { role: "user", content: prompt },
+    { role: "assistant", content: result.response },
+  ]);
+
+  return result;
+});
+```
+
+### Key Differences
+
+- **`publishObject`**: Publishes state snapshots that replace previous values. Perfect for showing the current state of something like a conversation or progress indicator.
+- **`publishEvent`**: Publishes individual events that accumulate over time. Great for logs, step-by-step progress, or notifications.
+
+### Creating Streaming Functions
+
+You can also create reusable streaming functions:
+
+```typescript
+import { createObjectStream, createEventStream } from "@gensx/core";
+
+// Create a reusable message stream
+const updateMessages = createObjectStream<CoreMessage[]>("messages");
+
+// Create a reusable event stream
+const logEvent = createEventStream<{ step: string; timestamp: number }>("log");
+
+export const ChatAgent = gensx.Workflow("ChatAgent", async ({ prompt }) => {
+  // Use the streaming functions
+  updateMessages([{ role: "user", content: prompt }]);
+  logEvent({ step: "processing", timestamp: Date.now() });
+
+  // ... rest of workflow
+});
+```
+
+## React Hooks
+
+### `useWorkflow`
+
+The main hook for running workflows and consuming their streaming output:
+
+```typescript
+import { useWorkflow } from "@gensx/react";
+
+interface ChatInput {
+  prompt: string;
+  threadId: string;
+}
+
+interface ChatOutput {
+  response: string;
+  messages: CoreMessage[];
+}
+
+function ChatComponent() {
+  const { run, execution, inProgress, error, output } = useWorkflow<ChatInput, ChatOutput>({
+    config: {
+      baseUrl: "/api/gensx", // Your API endpoint
+    },
+    onComplete: (output) => {
+      console.log("Workflow completed:", output);
+    },
+    onError: (error) => {
+      console.error("Workflow error:", error);
+    },
+    onEvent: (event) => {
+      console.log("Workflow event:", event);
+    }
+  });
+
+  const handleSend = async (message: string) => {
+    await run({
+      inputs: {
+        prompt: message,
+        threadId: "thread-123"
+      }
+    });
+  };
+
+  return (
+    <div>
+      {inProgress && <div>Processing...</div>}
+      {error && <div>Error: {error}</div>}
+      {output && <div>Final output: {JSON.stringify(output)}</div>}
+      {/* Your UI here */}
+    </div>
+  );
+}
+```
+
+### `useObject`
+
+Subscribes to object updates published by `publishObject`:
+
+```typescript
+import { useObject } from "@gensx/react";
+
+function ChatMessages() {
+  const { execution } = useWorkflow(/* ... */);
+
+  // Subscribe to messages object updates
+  const messages = useObject<CoreMessage[]>(execution, "messages");
+
+  return (
+    <div>
+      {messages?.map((msg, i) => (
+        <div key={i}>
+          <strong>{msg.role}:</strong> {msg.content}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### `useEvents`
+
+Subscribes to events published by `publishEvent`:
+
+```typescript
+import { useEvents } from "@gensx/react";
+
+function ThinkingProcess() {
+  const { execution } = useWorkflow(/* ... */);
+
+  // Subscribe to thinking events
+  const thinkingEvents = useEvents<{ status: string; step: number }>(
+    execution,
+    "thinking"
+  );
+
+  return (
+    <div>
+      <h3>Thinking Process:</h3>
+      {thinkingEvents.map((event, i) => (
+        <div key={i}>
+          Step {event.step}: {event.status}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Complete Example: Chat Hook
+
+Here's a complete example of a custom hook that combines all the concepts:
+
+```typescript
+import { useState, useCallback, useEffect } from "react";
+import { useWorkflow, useObject } from "@gensx/react";
+import { CoreMessage } from "ai";
+
+export interface ChatWorkflowInput {
+  prompt: string;
+  threadId: string;
+  userId: string;
+}
+
+export interface ChatWorkflowOutput {
+  response: string;
+  messages: CoreMessage[];
+}
+
+export type ChatStatus = "completed" | "waiting" | "reasoning" | "streaming";
+
+export function useChat() {
+  const [messages, setMessages] = useState<CoreMessage[]>([]);
+  const [status, setStatus] = useState<ChatStatus>("completed");
+
+  // Use the workflow hook
+  const { error, execution, run } = useWorkflow<
+    ChatWorkflowInput,
+    ChatWorkflowOutput
+  >({
+    config: {
+      baseUrl: "/api/gensx",
+    },
+  });
+
+  // Subscribe to real-time message updates
+  const messagesProgress = useObject<{ messages: CoreMessage[] }>(
+    execution,
+    "messages",
+  );
+
+  // Update local state when workflow publishes new messages
+  useEffect(() => {
+    if (messagesProgress?.messages && execution?.length > 0) {
+      const workflowMessages = messagesProgress.messages;
+      const lastMessage = workflowMessages[workflowMessages.length - 1];
+
+      // Update status based on message content
+      if (status === "waiting" || status === "reasoning") {
+        if (lastMessage?.content) {
+          setStatus("streaming");
+        }
+      }
+
+      // Update messages, replacing any existing assistant messages
+      setMessages((prev) => {
+        const lastUserIndex = prev.findLastIndex((msg) => msg.role === "user");
+        if (lastUserIndex === -1) return prev;
+
+        const messagesBeforeAssistant = prev.slice(0, lastUserIndex + 1);
+        return [...messagesBeforeAssistant, ...workflowMessages];
+      });
+    }
+  }, [messagesProgress, execution, status]);
+
+  const sendMessage = useCallback(
+    async (prompt: string, threadId: string, userId: string) => {
+      setStatus("waiting");
+
+      // Add user message immediately
+      const userMessage: CoreMessage = {
+        role: "user",
+        content: prompt,
+      };
+      setMessages((prev) => [...prev, userMessage]);
+
+      // Run the workflow
+      await run({
+        inputs: {
+          prompt,
+          threadId,
+          userId,
+        },
+      });
+
+      setStatus("completed");
+    },
+    [run],
+  );
+
+  return {
+    sendMessage,
+    messages,
+    status,
+    error,
+  };
+}
+```
+
+## Workflow Definition
+
+Your workflow should publish updates using the streaming utilities:
+
+```typescript
+import * as gensx from "@gensx/core";
+import { publishObject } from "@gensx/core";
+import { CoreMessage } from "ai";
+
+export const ChatAgent = gensx.Workflow(
+  "ChatAgent",
+  async ({ prompt, threadId, userId }) => {
+    // Load existing messages
+    const existingMessages = await loadChatHistory(threadId);
+
+    // Add user message
+    const messages: CoreMessage[] = [
+      ...existingMessages,
+      { role: "user", content: prompt },
+    ];
+
+    // Publish initial state
+    publishObject("messages", messages);
+
+    // Process with AI
+    const result = await Agent({
+      messages,
+      tools: {
+        /* your tools */
+      },
+      model: anthropic("claude-sonnet-4-20250514"),
+    });
+
+    // Publish final state
+    publishObject("messages", [...messages, ...result.messages]);
+
+    return result;
+  },
+);
+```
+
+## API Route Setup
+
+You need a Next.js API route to proxy requests to GenSX:
+
+```typescript
+// app/api/gensx/[workflow]/route.ts
+import { GenSX } from "@gensx/client";
+import { NextRequest } from "next/server";
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ workflow: string }> },
+) {
+  try {
+    const { workflow } = await params;
+    const inputs = await request.json();
+
+    // Initialize GenSX client
+    const gensx = new GenSX({
+      apiKey: process.env.GENSX_API_KEY,
+      baseUrl: process.env.GENSX_BASE_URL ?? "https://api.gensx.com",
+      org: process.env.GENSX_ORG,
+      project: process.env.GENSX_PROJECT,
+      environment: process.env.GENSX_ENV ?? "default",
+    });
+
+    // Get streaming response
+    const response = await gensx.runRaw(workflow, {
+      inputs,
+      format: "ndjson",
+    });
+
+    // Return streaming response
+    return new Response(response.body, {
+      status: response.status,
+      headers: {
+        "Content-Type": "application/x-ndjson",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        type: "error",
+        error: error instanceof Error ? error.message : "Internal server error",
+      }) + "\n",
+      {
+        status: 500,
+        headers: { "Content-Type": "application/x-ndjson" },
+      },
+    );
+  }
+}
+```
+
+## Environment Variables
+
+Set up your environment variables:
+
+```bash
+# .env.local
+GENSX_API_KEY=your-api-key
+GENSX_ORG=your-org
+GENSX_PROJECT=your-project
+GENSX_ENV=production
+```
+
+## Package Installation
+
+Install the required packages:
+
+```bash
+npm install @gensx/react @gensx/client @gensx/core
+```
+
+## Best Practices
+
+1. **Use `publishObject` for state**: When you want to show the current state of something (like messages in a conversation).
+
+2. **Use `publishEvent` for logs**: When you want to accumulate events over time (like step-by-step progress).
+
+3. **Handle loading states**: Always show loading indicators when workflows are in progress.
+
+4. **Error handling**: Always handle errors from workflows and show appropriate UI feedback.
+
+5. **Optimize re-renders**: Use `useCallback` and `useMemo` appropriately to prevent unnecessary re-renders when consuming streaming data.
+
+6. **Type safety**: Define clear input and output types for your workflows to catch errors at compile time.
+
+7. **Event handling**: Use the `onEvent` callback to handle custom events and provide rich user feedback.
+
+8. **Graceful degradation**: Always provide fallback UI states for when workflows are loading or have errors.
+
+This integration enables powerful real-time applications where your workflows can stream live updates directly to your React components, creating responsive and engaging user experiences.

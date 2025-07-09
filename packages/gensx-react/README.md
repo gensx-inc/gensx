@@ -12,7 +12,7 @@ import { useWorkflow } from "@gensx/react";
 
 ## useWorkflow Hook
 
-A React hook that mirrors the GenSX Client interface, making it easy to create passthrough APIs.
+A React hook for interacting with GenSX workflows.
 
 ### Features
 

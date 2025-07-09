@@ -75,7 +75,20 @@ export default function Page() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Image src="/logo.svg" alt="Docs" width={87} height={35} />
+            <Image
+              src="/logo.svg"
+              alt="Docs"
+              width={87}
+              height={35}
+              className="block dark:hidden"
+            />
+            <Image
+              src="/logo-dark.svg"
+              alt="Docs"
+              width={87}
+              height={35}
+              className="hidden dark:block"
+            />
           </Link>
         </div>
       </div>
@@ -83,13 +96,7 @@ export default function Page() {
       {/* Main Content */}
       <div className="p-4">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-6 text-center">
-            <h1 className="text-3xl font-bold text-foreground my-4">
-              GenSX Next.js Template
-            </h1>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-2 gap-6 mt-18">
             <WorkflowInput
               jsonInput={jsonInput}
               onInputChange={setJsonInput}
