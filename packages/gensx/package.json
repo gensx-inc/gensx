@@ -1,6 +1,6 @@
 {
   "name": "gensx",
-  "version": "0.3.41",
+  "version": "0.4.0",
   "description": "`GenSX command line tools.",
   "repository": {
     "type": "git",
