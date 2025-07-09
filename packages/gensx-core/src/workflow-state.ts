@@ -288,10 +288,13 @@ function isPlainObject(val: unknown): val is Record<string, JsonValue> {
 /**
  * Get a value from an object using a JSON pointer path
  */
-function getValueByJsonPath(
+export function getValueByJsonPath(
   obj: JsonValue,
   path: string,
 ): JsonValue | undefined {
+  if (path === "") {
+    return obj;
+  }
   const pathParts = path.split("/").slice(1); // Remove empty first element
   let current: JsonValue = obj;
   if (!isPlainObject(current)) {
@@ -390,6 +393,12 @@ export function applyObjectPatches(
         } else {
           (target as Record<string, JsonValue>)[property] = operation.value;
         }
+      } else {
+        // Warn and skip instead of throwing
+        console.warn(
+          `Cannot apply string-append: target path '${operation.path}' does not exist or is not an object. Skipping operation.`,
+        );
+        // Do nothing
       }
     } else {
       // Handle standard JSON Patch operations

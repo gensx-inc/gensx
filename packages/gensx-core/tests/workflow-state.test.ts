@@ -6,6 +6,7 @@ import {
 import { beforeEach, expect, suite, test } from "vitest";
 
 import * as gensx from "../src/index.js";
+import { getValueByJsonPath } from "../src/workflow-state.js";
 
 suite("workflow state", () => {
   beforeEach(() => {
@@ -931,7 +932,7 @@ suite("workflow state", () => {
     test("applyObjectPatches correctly handles string-append operations", () => {
       const initialState = { content: "Hello" };
       const patches: gensx.Operation[] = [
-        { op: "string-append" as const, path: "/content", value: " world" },
+        { op: "string-append", path: "/content", value: " world" },
       ];
 
       const result = gensx.applyObjectPatches(patches, initialState);
@@ -976,7 +977,6 @@ suite("workflow state", () => {
       const secondMessage = events[4] as gensx.WorkflowObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.patches[0].op).toBe("replace");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
       expect((secondMessage.patches[0] as any).value).toBe("Different");
     });
   });
@@ -1091,5 +1091,44 @@ suite("publishObject root-level values", () => {
     expect(state).toBe(s1);
     state = gensx.applyObjectPatches(patches2, state);
     expect(state).toBe(s2);
+  });
+});
+
+suite("applyObjectPatches edge cases", () => {
+  test("does nothing and warns if string-append targets non-existent path", () => {
+    const initialState: Record<string, string> = { foo: "bar" };
+    const patches: gensx.Operation[] = [
+      { op: "string-append", path: "/doesnotexist", value: "baz" },
+    ];
+    const result = gensx.applyObjectPatches(patches, initialState);
+    expect(result).toEqual(initialState);
+  });
+
+  test("does nothing and warns if string-append targets non-object parent", () => {
+    const initialState = "not-an-object";
+    const patches: gensx.Operation[] = [
+      { op: "string-append", path: "/foo", value: "baz" },
+    ];
+    const result = gensx.applyObjectPatches(patches, initialState);
+    expect(result).toEqual(initialState);
+  });
+});
+
+suite("getValueByJsonPath", () => {
+  test("returns root object for empty path (object)", () => {
+    const obj = { a: 1 };
+    expect(getValueByJsonPath(obj, "")).toBe(obj);
+  });
+  test("returns root value for empty path (string)", () => {
+    const str = "hello";
+    expect(getValueByJsonPath(str, "")).toBe(str);
+  });
+  test("returns root value for empty path (number)", () => {
+    const num = 42;
+    expect(getValueByJsonPath(num, "")).toBe(num);
+  });
+  test("returns root value for empty path (array)", () => {
+    const arr = [1, 2, 3];
+    expect(getValueByJsonPath(arr, "")).toBe(arr);
   });
 });
