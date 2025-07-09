@@ -75,7 +75,7 @@ export function useObject<T = JsonValue>(
  * @param currentState - The current state of the object (defaults to empty object).
  * @returns The new state after applying the patches.
  */
-export function applyObjectPatches(
+function applyObjectPatches(
   patches: Operation[],
   currentState: PublishableData = {},
 ): PublishableData {
