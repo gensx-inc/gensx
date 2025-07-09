@@ -1,6 +1,10 @@
 import { CheckpointManager } from "./checkpoint.js";
 import { getCurrentContext } from "./context.js";
-import { WorkflowMessage, WorkflowMessageListener } from "./workflow-state.js";
+import {
+  JsonValue,
+  WorkflowMessage,
+  WorkflowMessageListener,
+} from "./workflow-state.js";
 
 // Static symbol for workflow context
 export const WORKFLOW_CONTEXT_SYMBOL = Symbol.for("gensx.workflow");
@@ -11,7 +15,7 @@ export interface WorkflowExecutionContext {
   onRequestInput: (nodeId: string) => Promise<void>;
   onRestoreCheckpoint: (nodeId: string, feedback: unknown) => Promise<void>;
   checkpointLabelMap: Map<string, string>;
-  // Future: Add more workflow-level utilities here
+  objectStateMap: Map<string, JsonValue>;
 }
 
 export function createWorkflowContext({
@@ -45,6 +49,7 @@ export function createWorkflowContext({
         );
       }),
     checkpointLabelMap: new Map(),
+    objectStateMap: new Map(),
   };
 }
 

@@ -126,7 +126,6 @@ export function Wrap(options: WrapOptions = {}) {
     };
 
     // Copy prototype so instanceof operator still works
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     WrappedClass.prototype = constructor.prototype;
     // Copy static properties
     Object.assign(WrappedClass, constructor);

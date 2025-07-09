@@ -1,5 +1,7 @@
 import type { JsonValue, WorkflowMessage } from "@gensx/core";
 
+import { WorkflowObjectMessage } from "@gensx/core";
+import { applyObjectPatches } from "@gensx/core";
 import {
   startTransition,
   useCallback,
@@ -340,18 +342,55 @@ export function useObject<T = JsonValue>(
   events: WorkflowMessage[],
   label: string,
 ): T | undefined {
-  return useMemo(() => {
-    const objectEvents: T[] = [];
+  const [result, setResult] = useState<T | undefined>(undefined);
 
-    for (const event of events) {
-      if (event.type === "object" && event.label === label) {
-        objectEvents.push(event.data as T);
+  // Store the reconstructed object and last processed event index
+  const reconstructedRef = useRef<JsonValue>({});
+  const lastIndexRef = useRef<number>(-1);
+  const lastEventsRef = useRef<WorkflowMessage[]>([]);
+
+  useEffect(() => {
+    // Find all relevant object events
+    const objectEvents = events.filter(
+      (event): event is WorkflowObjectMessage =>
+        event.type === "object" && event.label === label,
+    );
+
+    // Detect reset: events array replaced or truncated
+    const isReset =
+      events !== lastEventsRef.current ||
+      objectEvents.length < lastIndexRef.current + 1;
+
+    if (isReset) {
+      reconstructedRef.current = {};
+      lastIndexRef.current = -1;
+    }
+
+    // Apply only new patches
+    for (let i = lastIndexRef.current + 1; i < objectEvents.length; i++) {
+      const event = objectEvents[i];
+      if (event.isInitial) {
+        reconstructedRef.current = {};
+      }
+      try {
+        reconstructedRef.current = applyObjectPatches(
+          event.patches,
+          reconstructedRef.current,
+        );
+      } catch (error) {
+        console.warn(`Failed to apply patches for object "${label}":`, error);
       }
     }
 
-    // Return the most recent object for this label
-    return objectEvents[objectEvents.length - 1];
+    lastIndexRef.current = objectEvents.length - 1;
+    lastEventsRef.current = events;
+
+    setResult(
+      objectEvents.length > 0 ? (reconstructedRef.current as T) : undefined,
+    );
   }, [events, label]);
+
+  return result;
 }
 
 // New hook to get all events by label from WorkflowMessage events

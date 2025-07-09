@@ -404,6 +404,126 @@ await gensx.run({
 });
 ```
 
+## useObject Hook
+
+A React hook for accessing streaming object state from GenSX workflows. Now supports efficient JSON patch-based updates for improved performance.
+
+### Features
+
+- **JSON Patch Support**: Efficiently handles incremental object updates using JSON patches
+- **String Optimizations**: Automatic optimizations for streaming text scenarios (string-append, string-diff)
+- **Real-time Updates**: Object state updates in real-time as patches are received
+- **Error Handling**: Graceful error handling with fallback to previous state
+- **Type Safety**: Full TypeScript support with generics
+
+### Basic Usage
+
+```tsx
+import { useWorkflow, useObject } from "@gensx/react";
+
+function MyComponent() {
+  const workflow = useWorkflow({
+    config: { baseUrl: "/api/gensx" },
+  });
+
+  // Get streaming object state
+  const userProfile = useObject(workflow.execution, "user-profile");
+  const chatResponse = useObject(workflow.execution, "chat-response");
+
+  return (
+    <div>
+      <h1>User: {userProfile?.name}</h1>
+      <p>Age: {userProfile?.age}</p>
+      <div>
+        <h2>Chat Response:</h2>
+        <p>{chatResponse?.content}</p>
+      </div>
+    </div>
+  );
+}
+```
+
+### Streaming LLM Response
+
+Perfect for streaming LLM responses where text is progressively built up:
+
+```tsx
+function StreamingChat() {
+  const workflow = useWorkflow({
+    config: { baseUrl: "/api/chat" },
+  });
+
+  const chatResponse = useObject(workflow.execution, "chat-response");
+
+  return (
+    <div>
+      <button onClick={() => workflow.run({ inputs: { message: "Hello!" } })}>
+        Send Message
+      </button>
+
+      {chatResponse && (
+        <div className="chat-bubble">{chatResponse.content}</div>
+      )}
+    </div>
+  );
+}
+```
+
+### Performance Benefits
+
+The hook automatically handles JSON patch operations for optimal performance:
+
+- **String Append**: Efficiently appends text for streaming scenarios
+- **String Diff**: Character-level diffing for complex string changes
+- **Incremental Updates**: Only changed parts of objects are transmitted
+- **Reduced Bandwidth**: Up to 55% reduction in message size for streaming content
+
+### Type Safety
+
+Use TypeScript generics for type-safe object access:
+
+```tsx
+interface ChatResponse {
+  content: string;
+  timestamp: number;
+  isComplete: boolean;
+}
+
+const chatResponse = useObject<ChatResponse>(
+  workflow.execution,
+  "chat-response",
+);
+// chatResponse is typed as ChatResponse | undefined
+```
+
+### Migration
+
+The `useObject` hook is fully backward compatible. Existing code will continue to work without modifications while automatically benefiting from the performance improvements when used with the new patch-based system.
+
+## useEvents Hook
+
+A React hook for accessing all events with a specific label from GenSX workflows.
+
+```tsx
+import { useEvents } from "@gensx/react";
+
+function ProgressComponent() {
+  const workflow = useWorkflow({
+    config: { baseUrl: "/api/gensx" },
+  });
+
+  const progressEvents = useEvents(workflow.execution, "progress");
+
+  return (
+    <div>
+      {progressEvents.map((event, index) => (
+        <div key={index}>{event.message}</div>
+      ))}
+    </div>
+  );
+}
+```
+
 ## Components
 
 (Add component documentation here)

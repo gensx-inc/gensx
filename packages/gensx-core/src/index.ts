@@ -7,6 +7,9 @@ export {
   publishObject,
   createEventStream,
   createObjectStream,
+  clearObjectState,
+  clearAllObjectStates,
+  applyObjectPatches,
 } from "./workflow-state.js";
 export type {
   WorkflowMessage,
@@ -20,6 +23,8 @@ export type {
   WorkflowObjectMessage,
   WorkflowErrorMessage,
   WorkflowEndMessage,
+  Operation,
+  StringAppendOperation,
 } from "./workflow-state.js";
 export * from "./wrap.js";
 export * from "./request-input.js";

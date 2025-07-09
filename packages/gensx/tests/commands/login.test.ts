@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 import { render } from "ink-testing-library";
 import React from "react";
 import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
