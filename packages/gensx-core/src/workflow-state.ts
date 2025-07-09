@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
-import { getCurrentContext } from "./context.js";
-import { compare, applyPatch } from "fast-json-patch";
 import { diffChars } from "diff";
+import { applyPatch, compare } from "fast-json-patch";
+
+import { getCurrentContext } from "./context.js";
 
 // Define the Change type based on diff library output
 interface Change {
@@ -17,40 +18,47 @@ interface BaseOperation {
 }
 
 interface AddOperation<T> extends BaseOperation {
-  op: 'add';
+  op: "add";
   value: T;
 }
 
 interface RemoveOperation extends BaseOperation {
-  op: 'remove';
+  op: "remove";
 }
 
 interface ReplaceOperation<T> extends BaseOperation {
-  op: 'replace';
+  op: "replace";
   value: T;
 }
 
 interface MoveOperation extends BaseOperation {
-  op: 'move';
+  op: "move";
   from: string;
 }
 
 interface CopyOperation extends BaseOperation {
-  op: 'copy';
+  op: "copy";
   from: string;
 }
 
 interface TestOperation<T> extends BaseOperation {
-  op: 'test';
+  op: "test";
   value: T;
 }
 
 interface GetOperation<T> extends BaseOperation {
-  op: '_get';
+  op: "_get";
   value: T;
 }
 
-type JsonPatchOperation = AddOperation<any> | RemoveOperation | ReplaceOperation<any> | MoveOperation | CopyOperation | TestOperation<any> | GetOperation<any>;
+type JsonPatchOperation =
+  | AddOperation<JsonValue>
+  | RemoveOperation
+  | ReplaceOperation<JsonValue>
+  | MoveOperation
+  | CopyOperation
+  | TestOperation<JsonValue>
+  | GetOperation<JsonValue>;
 
 // JSON-serializable value type for progress data
 export type JsonValue =
@@ -71,15 +79,18 @@ export interface StringAppendOperation {
 export interface StringDiffOperation {
   op: "string-diff";
   path: string;
-  diff: Array<{
+  diff: {
     type: "retain" | "insert" | "delete";
     count?: number;
     value?: string;
-  }>;
+  }[];
 }
 
 // Combined operation type including standard JSON Patch and our extensions
-export type Operation = JsonPatchOperation | StringAppendOperation | StringDiffOperation;
+export type Operation =
+  | JsonPatchOperation
+  | StringAppendOperation
+  | StringDiffOperation;
 
 // Individual message types
 export interface WorkflowStartMessage {
@@ -184,13 +195,13 @@ export function publishEvent<T = JsonValue>(label: string, data: T) {
 export function publishObject<T = JsonValue>(label: string, data: T) {
   const context = getCurrentContext();
   const workflowContext = context.getWorkflowContext();
-  
+
   const newData = data as JsonValue;
   const previousData = objectStateMap.get(label);
-  
+
   if (previousData === undefined) {
     // First time publishing this object - send complete data as patches
-    const patches = compare({}, newData ?? {});
+    const patches = compare({}, newData as object);
     workflowContext.sendWorkflowMessage({
       type: "object",
       label,
@@ -200,7 +211,7 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
   } else {
     // Generate optimized patches from previous state to new state
     const patches = generateOptimizedPatches(previousData, newData);
-    
+
     // Only send message if there are changes
     if (patches.length > 0) {
       workflowContext.sendWorkflowMessage({
@@ -211,7 +222,7 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
       });
     }
   }
-  
+
   // Store the new state
   objectStateMap.set(label, newData);
 }
@@ -219,43 +230,46 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
 /**
  * Generate optimized patches that use string-specific operations when beneficial
  */
-function generateOptimizedPatches(oldData: JsonValue, newData: JsonValue): Operation[] {
+function generateOptimizedPatches(
+  oldData: JsonValue,
+  newData: JsonValue,
+): Operation[] {
   // First, get standard JSON patches
   const standardPatches = compare(oldData ?? {}, newData ?? {});
   const optimizedPatches: Operation[] = [];
-  
+
   for (const patch of standardPatches) {
-    if (patch.op === 'replace' && typeof patch.value === 'string') {
+    if (patch.op === "replace" && typeof patch.value === "string") {
       // Check if this is a string replacement that could be optimized
-      const oldValue = getValueByJsonPath(oldData, patch.path);
-      
-      if (typeof oldValue === 'string') {
+      const oldValue = getValueByJsonPath(oldData as object, patch.path);
+
+      if (typeof oldValue === "string") {
         const newValue = patch.value;
-        
+
         // Check if it's a simple append (common in streaming scenarios)
         if (newValue.startsWith(oldValue)) {
           const appendedText = newValue.slice(oldValue.length);
           if (appendedText.length > 0) {
             optimizedPatches.push({
-              op: 'string-append',
+              op: "string-append",
               path: patch.path,
               value: appendedText,
             });
             continue;
           }
         }
-        
+
         // For more complex changes, use string diff if it's beneficial
         const changes = diffChars(oldValue, newValue);
         const diffOperations = convertChangesToDiffOperations(changes);
-        
+
         // Only use string-diff if it's smaller than the replace operation
         const diffSize = JSON.stringify(diffOperations).length;
         const replaceSize = JSON.stringify(newValue).length;
-        
+
         if (diffSize < replaceSize && oldValue.length > 50) {
           optimizedPatches.push({
-            op: 'string-diff',
+            op: "string-diff",
             path: patch.path,
             diff: diffOperations,
           });
@@ -263,65 +277,65 @@ function generateOptimizedPatches(oldData: JsonValue, newData: JsonValue): Opera
         }
       }
     }
-    
+
     // Use standard patch if no optimization applies
     optimizedPatches.push(patch);
   }
-  
+
   return optimizedPatches;
 }
 
 /**
  * Get a value from an object using a JSON pointer path
  */
-function getValueByJsonPath(obj: JsonValue, path: string): any {
-  const pathParts = path.split('/').slice(1); // Remove empty first element
-  let current: any = obj;
-  
+function getValueByJsonPath(obj: object, path: string): JsonValue | undefined {
+  const pathParts = path.split("/").slice(1); // Remove empty first element
+  let current: Record<string, JsonValue> = obj as Record<string, JsonValue>;
+
   for (const part of pathParts) {
-    if (current && typeof current === 'object' && part in current) {
-      current = current[part];
+    if (typeof current === "object" && part in current) {
+      current = current[part] as Record<string, JsonValue>;
     } else {
       return undefined;
     }
   }
-  
+
   return current;
 }
 
 /**
  * Convert diff changes to our diff operation format
  */
-function convertChangesToDiffOperations(changes: Change[]): Array<{
+function convertChangesToDiffOperations(changes: Change[]): {
   type: "retain" | "insert" | "delete";
   count?: number;
   value?: string;
-}> {
-  const operations: Array<{
+}[] {
+  const operations: {
     type: "retain" | "insert" | "delete";
     count?: number;
     value?: string;
-  }> = [];
-  
+  }[] = [];
+
   for (const change of changes) {
     if (change.added) {
       operations.push({
-        type: 'insert',
+        type: "insert",
         value: change.value,
       });
     } else if (change.removed) {
       operations.push({
-        type: 'delete',
+        type: "delete",
         count: change.value.length,
       });
     } else {
       operations.push({
-        type: 'retain',
+        type: "retain",
         count: change.value.length,
       });
     }
   }
-  
+
   return operations;
 }
 
@@ -376,53 +390,61 @@ export function clearAllObjectStates() {
  * @param currentState - The current state of the object (defaults to empty object).
  * @returns The new state after applying the patches.
  */
-export function applyObjectPatches(patches: Operation[], currentState: JsonValue = {}): JsonValue {
+export function applyObjectPatches(
+  patches: Operation[],
+  currentState: JsonValue = {},
+): JsonValue {
   let document = currentState;
-  
+
   for (const operation of patches) {
-    if (operation.op === 'string-append') {
+    if (operation.op === "string-append") {
       // Handle string append operation
-      const pathParts = operation.path.split('/').slice(1); // Remove empty first element
+      const pathParts = operation.path.split("/").slice(1); // Remove empty first element
       const target = getValueByPath(document, pathParts.slice(0, -1));
       const property = pathParts[pathParts.length - 1];
-      
-      if (target && typeof target === 'object' && target !== null) {
-        const currentValue = (target as any)[property];
-        if (typeof currentValue === 'string') {
-          (target as any)[property] = currentValue + operation.value;
+
+      if (typeof target === "object" && target !== null) {
+        const currentValue = (target as Record<string, JsonValue>)[property];
+        if (typeof currentValue === "string") {
+          (target as Record<string, JsonValue>)[property] =
+            currentValue + operation.value;
         } else {
-          (target as any)[property] = operation.value;
+          (target as Record<string, JsonValue>)[property] = operation.value;
         }
       }
-    } else if (operation.op === 'string-diff') {
+    } else if (operation.op === "string-diff") {
       // Handle string diff operation
-      const pathParts = operation.path.split('/').slice(1);
+      const pathParts = operation.path.split("/").slice(1);
       const target = getValueByPath(document, pathParts.slice(0, -1));
       const property = pathParts[pathParts.length - 1];
-      
-      if (target && typeof target === 'object' && target !== null) {
-        const currentValue = (target as any)[property] || '';
-        (target as any)[property] = applyStringDiff(currentValue, operation.diff);
+
+      if (typeof target === "object" && target !== null) {
+        const currentValue =
+          (target as Record<string, JsonValue>)[property] ?? "";
+        (target as Record<string, JsonValue>)[property] = applyStringDiff(
+          currentValue as string,
+          operation.diff,
+        );
       }
     } else {
       // Handle standard JSON Patch operations
-      const standardPatches = [operation as JsonPatchOperation];
+      const standardPatches = [operation];
       const result = applyPatch(document, standardPatches);
       document = result.newDocument;
     }
   }
-  
+
   return document;
 }
 
 /**
  * Helper function to get a value by path in an object
  */
-function getValueByPath(obj: any, path: string[]): any {
-  let current = obj;
+function getValueByPath(obj: JsonValue, path: string[]): JsonValue | undefined {
+  let current: Record<string, JsonValue> = obj as Record<string, JsonValue>;
   for (const segment of path) {
-    if (current && typeof current === 'object' && segment in current) {
-      current = current[segment];
+    if (typeof current === "object" && segment in current) {
+      current = current[segment] as Record<string, JsonValue>;
     } else {
       return undefined;
     }
@@ -433,34 +455,37 @@ function getValueByPath(obj: any, path: string[]): any {
 /**
  * Apply string diff operations to reconstruct a string
  */
-function applyStringDiff(originalString: string, diff: Array<{
-  type: "retain" | "insert" | "delete";
-  count?: number;
-  value?: string;
-}>): string {
-  let result = '';
+function applyStringDiff(
+  originalString: string,
+  diff: {
+    type: "retain" | "insert" | "delete";
+    count?: number;
+    value?: string;
+  }[],
+): string {
+  let result = "";
   let position = 0;
-  
+
   for (const operation of diff) {
     switch (operation.type) {
-      case 'retain':
+      case "retain":
         if (operation.count !== undefined) {
           result += originalString.slice(position, position + operation.count);
           position += operation.count;
         }
         break;
-      case 'insert':
+      case "insert":
         if (operation.value !== undefined) {
           result += operation.value;
         }
         break;
-      case 'delete':
+      case "delete":
         if (operation.count !== undefined) {
           position += operation.count; // Skip the deleted characters
         }
         break;
     }
   }
-  
+
   return result;
 }

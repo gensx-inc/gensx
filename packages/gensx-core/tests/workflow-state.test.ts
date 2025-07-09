@@ -3,7 +3,7 @@ import {
   WorkflowMessage,
   WorkflowMessageListener,
 } from "src/workflow-state.js";
-import { expect, suite, test, beforeEach } from "vitest";
+import { beforeEach, expect, suite, test } from "vitest";
 
 import * as gensx from "../src/index.js";
 
@@ -635,14 +635,18 @@ suite("workflow state", () => {
       });
 
       expect(events).toHaveLength(7);
-      const objectMessage = events[3] as any;
+      const objectMessage = events[3] as gensx.WorkflowObjectMessage;
       expect(objectMessage.type).toBe("object");
       expect(objectMessage.label).toBe("test-state");
       expect(objectMessage.isInitial).toBe(true);
       expect(objectMessage.patches).toEqual([
         { op: "add", path: "/name", value: "John" },
         { op: "add", path: "/age", value: 30 },
-        { op: "add", path: "/address", value: { city: "New York", zip: "10001" } },
+        {
+          op: "add",
+          path: "/address",
+          value: { city: "New York", zip: "10001" },
+        },
       ]);
     });
 
@@ -651,7 +655,7 @@ suite("workflow state", () => {
 
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
-        
+
         // First publication
         gensx.publishObject("test-state", {
           name: "John",
@@ -688,14 +692,14 @@ suite("workflow state", () => {
       });
 
       expect(events).toHaveLength(8); // Extra event for the second publication
-      
+
       // First publication should be initial
-      const firstMessage = events[3] as any;
+      const firstMessage = events[3] as gensx.WorkflowObjectMessage;
       expect(firstMessage.type).toBe("object");
       expect(firstMessage.isInitial).toBe(true);
-      
+
       // Second publication should only contain the changed field
-      const secondMessage = events[4] as any;
+      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.isInitial).toBe(false);
       expect(secondMessage.patches).toEqual([
@@ -708,7 +712,7 @@ suite("workflow state", () => {
 
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
-        
+
         // First publication
         gensx.publishObject("test-state", {
           name: "John",
@@ -746,13 +750,13 @@ suite("workflow state", () => {
 
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
-        
+
         // First publication
         gensx.publishObject("test-state", { name: "John" });
-        
+
         // Clear the state
         gensx.clearObjectState("test-state");
-        
+
         // Second publication - should be treated as initial again
         gensx.publishObject("test-state", { name: "Jane" });
 
@@ -774,11 +778,11 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Two object events
 
       // First publication should be initial
-      const firstMessage = events[3] as any;
+      const firstMessage = events[3] as gensx.WorkflowObjectMessage;
       expect(firstMessage.isInitial).toBe(true);
 
       // Second publication should also be initial since we cleared the state
-      const secondMessage = events[4] as any;
+      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
       expect(secondMessage.isInitial).toBe(true);
     });
 
@@ -787,14 +791,14 @@ suite("workflow state", () => {
 
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
-        
+
         // First publications
         gensx.publishObject("state1", { name: "John" });
         gensx.publishObject("state2", { name: "Jane" });
-        
+
         // Clear all states
         gensx.clearAllObjectStates();
-        
+
         // Second publications - should be treated as initial again
         gensx.publishObject("state1", { name: "Bob" });
         gensx.publishObject("state2", { name: "Alice" });
@@ -817,19 +821,23 @@ suite("workflow state", () => {
       expect(events).toHaveLength(10); // Four object events
 
       // All four publications should be initial
-      const objectMessages = events.filter(e => e.type === "object") as any[];
+      const objectMessages = events.filter((e) => e.type === "object");
       expect(objectMessages).toHaveLength(4);
-      objectMessages.forEach(msg => {
+      objectMessages.forEach((msg) => {
         expect(msg.isInitial).toBe(true);
       });
     });
 
     test("applyObjectPatches reconstructs object state from patches", () => {
       const initialState = {};
-      const patches = [
+      const patches: gensx.Operation[] = [
         { op: "add", path: "/name", value: "John" },
         { op: "add", path: "/age", value: 30 },
-        { op: "add", path: "/address", value: { city: "New York", zip: "10001" } },
+        {
+          op: "add",
+          path: "/address",
+          value: { city: "New York", zip: "10001" },
+        },
       ];
 
       const result = gensx.applyObjectPatches(patches, initialState);
@@ -854,7 +862,7 @@ suite("workflow state", () => {
         },
       };
 
-      const patches = [
+      const patches: gensx.Operation[] = [
         { op: "replace", path: "/age", value: 31 },
         { op: "replace", path: "/address/city", value: "San Francisco" },
       ];
@@ -878,15 +886,15 @@ suite("workflow state", () => {
 
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
-        
+
         // First publication
         gensx.publishObject("streaming-content", {
-          content: "Hello"
+          content: "Hello",
         });
 
         // Second publication - append text (common in streaming)
         gensx.publishObject("streaming-content", {
-          content: "Hello world"
+          content: "Hello world",
         });
 
         return "done";
@@ -907,23 +915,23 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Two object events
 
       // First publication should be initial
-      const firstMessage = events[3] as any;
+      const firstMessage = events[3] as gensx.WorkflowObjectMessage;
       expect(firstMessage.type).toBe("object");
       expect(firstMessage.isInitial).toBe(true);
 
       // Second publication should use string-append optimization
-      const secondMessage = events[4] as any;
+      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.isInitial).toBe(false);
       expect(secondMessage.patches).toEqual([
-        { op: "string-append", path: "/content", value: " world" }
+        { op: "string-append", path: "/content", value: " world" },
       ]);
     });
 
     test("applyObjectPatches correctly handles string-append operations", () => {
       const initialState = { content: "Hello" };
-      const patches = [
-        { op: "string-append" as const, path: "/content", value: " world" }
+      const patches: gensx.Operation[] = [
+        { op: "string-append" as const, path: "/content", value: " world" },
       ];
 
       const result = gensx.applyObjectPatches(patches, initialState);
@@ -933,16 +941,16 @@ suite("workflow state", () => {
 
     test("applyObjectPatches correctly handles string-diff operations", () => {
       const initialState = { content: "Hello world" };
-      const patches = [
+      const patches: gensx.Operation[] = [
         {
           op: "string-diff" as const,
           path: "/content",
           diff: [
             { type: "retain" as const, count: 5 }, // Keep "Hello"
             { type: "delete" as const, count: 6 }, // Delete " world"
-            { type: "insert" as const, value: " universe" } // Insert " universe"
-          ]
-        }
+            { type: "insert" as const, value: " universe" }, // Insert " universe"
+          ],
+        },
       ];
 
       const result = gensx.applyObjectPatches(patches, initialState);
@@ -955,15 +963,15 @@ suite("workflow state", () => {
 
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
-        
+
         // First publication
         gensx.publishObject("content", {
-          text: "Short text"
+          text: "Short text",
         });
 
         // Second publication - completely different short text
         gensx.publishObject("content", {
-          text: "Different"
+          text: "Different",
         });
 
         return "done";
@@ -984,7 +992,7 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Two object events
 
       // Second publication should use standard replace (not append or diff)
-      const secondMessage = events[4] as any;
+      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.patches[0].op).toBe("replace");
       expect(secondMessage.patches[0].value).toBe("Different");
@@ -995,17 +1003,17 @@ suite("workflow state", () => {
 
       const TestComponent = gensx.Component("TestComponent", async () => {
         await Promise.resolve();
-        
+
         // First publication
         gensx.publishObject("multi-content", {
           title: "Chapter 1",
-          content: "Once upon a time"
+          content: "Once upon a time",
         });
 
         // Second publication - append to content, replace title
         gensx.publishObject("multi-content", {
           title: "Chapter 2", // Replace
-          content: "Once upon a time, there was a princess" // Append
+          content: "Once upon a time, there was a princess", // Append
         });
 
         return "done";
@@ -1025,19 +1033,23 @@ suite("workflow state", () => {
 
       expect(events).toHaveLength(8); // Two object events
 
-      const secondMessage = events[4] as any;
+      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.patches).toHaveLength(2);
-      
+
       // Should have one replace for title and one string-append for content
-      const titlePatch = secondMessage.patches.find((p: any) => p.path === "/title");
-      const contentPatch = secondMessage.patches.find((p: any) => p.path === "/content");
-      
-      expect(titlePatch.op).toBe("replace");
-      expect(titlePatch.value).toBe("Chapter 2");
-      
-      expect(contentPatch.op).toBe("string-append");
-      expect(contentPatch.value).toBe(", there was a princess");
+      const titlePatch = secondMessage.patches.find(
+        (p: gensx.Operation) => p.path === "/title",
+      );
+      const contentPatch = secondMessage.patches.find(
+        (p: gensx.StringDiffOperation) => p.path === "/content",
+      );
+
+      expect(titlePatch?.op).toBe("replace");
+      expect(titlePatch?.value).toBe("Chapter 2");
+
+      expect(contentPatch?.op).toBe("string-append");
+      expect(contentPatch?.value).toBe(", there was a princess");
     });
   });
 });

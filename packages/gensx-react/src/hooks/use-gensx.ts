@@ -1,6 +1,6 @@
-import type { JsonValue, WorkflowMessage, WorkflowObjectMessage } from "@gensx/core";
-import { applyObjectPatches } from "@gensx/core";
+import type { JsonValue, WorkflowMessage } from "@gensx/core";
 
+import { applyObjectPatches } from "@gensx/core";
 import {
   startTransition,
   useCallback,
@@ -346,16 +346,19 @@ export function useObject<T = JsonValue>(
 
     for (const event of events) {
       if (event.type === "object" && event.label === label) {
-        const objectEvent = event as WorkflowObjectMessage;
-        
+        const objectEvent = event;
+
         // If this is an initial event, start with an empty object
         if (objectEvent.isInitial) {
           reconstructedObject = {};
         }
-        
+
         // Apply the patches to reconstruct the object
         try {
-          reconstructedObject = applyObjectPatches(objectEvent.patches, reconstructedObject);
+          reconstructedObject = applyObjectPatches(
+            objectEvent.patches,
+            reconstructedObject,
+          );
         } catch (error) {
           console.warn(`Failed to apply patches for object "${label}":`, error);
           // Continue with the current state if patch application fails
@@ -365,9 +368,9 @@ export function useObject<T = JsonValue>(
 
     // Return undefined if no object events were found (empty object would be {})
     const hasObjectEvents = events.some(
-      (event) => event.type === "object" && event.label === label
+      (event) => event.type === "object" && event.label === label,
     );
-    
+
     if (!hasObjectEvents) {
       return undefined;
     }
