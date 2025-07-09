@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.4](https://github.com/gensx-inc/gensx/compare/gensx-client-v0.1.3...gensx-client-v0.1.4) (2025-07-09)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.0
+
 ## [0.1.3](https://github.com/gensx-inc/gensx/compare/gensx-client-v0.1.2...gensx-client-v0.1.3) (2025-06-24)
 
 
