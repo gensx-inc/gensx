@@ -1,9 +1,9 @@
 "use client";
 
-import { ModelGridSelector } from "@/components/ui/model-grid-selector";
-import { ModelStreamCard } from "@/components/ui/model-stream-card";
-import { ProviderFilter } from "@/components/ui/provider-filter";
-import { ProviderIcon } from "@/components/ui/provider-icon";
+import { Header } from "@/components/Header";
+import { InputSection } from "@/components/InputSection";
+import { ModelSelectorView } from "@/components/ModelSelectorView";
+import { ModelStreamView } from "@/components/ModelStreamView";
 import {
   type DraftProgress,
   type ModelConfig,
@@ -14,27 +14,9 @@ import { fetchAvailableModels } from "@/lib/models";
 import { type ContentVersion } from "@/lib/types";
 import { useObject, useWorkflow } from "@gensx/react";
 import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowLeftRight,
-  ArrowUp,
-  Brain,
-  ChevronDown,
-  Clock,
-  DollarSign,
-  Eye,
-  EyeOff,
-  FileText,
-  Send,
-  ToggleLeft,
-  ToggleRight,
-  WholeWord,
-} from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-import {
+  type RefObject,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -79,109 +61,83 @@ export default function Home() {
   const [versionHistory, setVersionHistory] = useState<
     Record<string, ContentVersion[]>
   >({});
+
+  // Simpler diff state management
   const [showDiff, setShowDiff] = useState(false);
-  const [userToggledDiff, setUserToggledDiff] = useState(false);
+  const [autoShowDiff, setAutoShowDiff] = useState(false);
   const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const showDiffRef = useRef(showDiff);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    showDiffRef.current = showDiff;
+  }, [showDiff]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+      }
+    };
+  }, []);
+
+  const isDiffVisible = showDiff || autoShowDiff;
+
+  const toggleDiff = useCallback(() => {
+    // Clear any auto-hide timer
+    if (autoHideTimerRef.current) {
+      clearTimeout(autoHideTimerRef.current);
+      autoHideTimerRef.current = null;
+    }
+
+    // If manually showing, hide it
+    if (showDiff) {
+      setShowDiff(false);
+      setAutoShowDiff(false);
+    } else {
+      // Otherwise, show it manually
+      setShowDiff(true);
+      setAutoShowDiff(false);
+    }
+  }, [showDiff]);
+
+  const showAutoCompletion = useCallback(() => {
+    if (!showDiff) {
+      setAutoShowDiff(true);
+
+      // Clear any existing timer
+      if (autoHideTimerRef.current) {
+        clearTimeout(autoHideTimerRef.current);
+      }
+
+      // Hide after 3 seconds (but only if manual diff is not enabled)
+      autoHideTimerRef.current = setTimeout(() => {
+        // Only hide auto diff if manual diff is not enabled
+        if (!showDiffRef.current) {
+          setAutoShowDiff(false);
+        }
+        autoHideTimerRef.current = null;
+      }, 3000);
+    }
+  }, [showDiff]);
+
+  const resetDiff = useCallback(() => {
+    // Clear any existing timer
+    if (autoHideTimerRef.current) {
+      clearTimeout(autoHideTimerRef.current);
+      autoHideTimerRef.current = null;
+    }
+    setAutoShowDiff(false);
+  }, []);
+
   const [defaultModelId] = useState(
     "groq-meta-llama/llama-4-maverick-17b-128e-instruct",
   );
 
   // Dropdown state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [dropdownSearch, setDropdownSearch] = useState("");
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-
-  // Ref to store list container and its scroll position
-  const listContainerRef = useRef<HTMLDivElement | null>(null);
-  const lastScrollTopRef = useRef(0);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as HTMLElement;
-      const dropdown = target.closest(".model-dropdown-container");
-      if (!dropdown && isDropdownOpen) {
-        setIsDropdownOpen(false);
-        setDropdownSearch("");
-        // Focus input after closing dropdown
-        setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.focus();
-          } else if (inputRef.current) {
-            inputRef.current.focus();
-          }
-        }, 100);
-      }
-    }
-
-    if (isDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [isDropdownOpen]);
-
-  // Auto-resize textarea function
-  const autoResizeTextarea = (textarea: HTMLTextAreaElement) => {
-    // Determine min height based on whether we're in initial state or generating state
-    const isInitialState =
-      sortedModelStreams.length === 0 && !workflowInProgress;
-    const minHeight = 32; // Single line height for both states
-    const maxHeight = isInitialState ? 300 : 200; // Smaller max height for generating state
-
-    // Get current height to avoid unnecessary changes
-    const currentHeight = parseInt(textarea.style.height) || minHeight;
-
-    // Save the current scroll position
-    const scrollTop = textarea.scrollTop;
-
-    // Temporarily shrink to minimum to get accurate scrollHeight
-    textarea.style.height = `${minHeight}px`;
-
-    // Get the content height
-    const contentHeight = textarea.scrollHeight;
-
-    // Calculate new height within bounds
-    const newHeight = Math.max(minHeight, Math.min(contentHeight, maxHeight));
-
-    // Only apply if height actually changed to prevent unnecessary updates
-    if (newHeight !== currentHeight) {
-      textarea.style.height = `${newHeight}px`;
-    } else {
-      // Restore the original height if no change needed
-      textarea.style.height = `${currentHeight}px`;
-    }
-
-    // Restore scroll position
-    textarea.scrollTop = scrollTop;
-  };
-
-  // Disable smooth scrolling when dropdown is open
-  useEffect(() => {
-    if (isDropdownOpen) {
-      // Store original scroll behavior
-      const originalStyle = document.documentElement.style.scrollBehavior;
-      // Disable smooth scrolling
-      document.documentElement.style.scrollBehavior = "auto";
-
-      return () => {
-        // Restore original scroll behavior
-        document.documentElement.style.scrollBehavior = originalStyle;
-      };
-    }
-  }, [isDropdownOpen]);
-
-  // Helper function to format numbers with K/M suffixes
-  const formatTokenCount = (count: number): string => {
-    if (count >= 1_000_000) {
-      return `${(count / 1_000_000).toFixed(1)}M`;
-    } else if (count >= 1_000) {
-      return `${(count / 1_000).toFixed(0)}K`;
-    } else {
-      return `${count}`;
-    }
-  };
 
   // Fetch available models from models.dev API
   useEffect(() => {
@@ -304,10 +260,10 @@ export default function Home() {
     setShowModelSelectorView(false);
     // Clear selected model to show all models during generation
     setSelectedModelId(null);
-    // Reset user toggled diff state for new generation
-    setUserToggledDiff(false);
+    // Reset diff state for new generation
+    resetDiff();
     void handleSubmit();
-  }, [handleSubmit]);
+  }, [handleSubmit, resetDiff]);
 
   const handleModelSelect = useCallback((modelId: string) => {
     setSelectedModelId(modelId);
@@ -372,40 +328,24 @@ export default function Home() {
     });
   }, [draftProgress?.modelStreams, versionHistory, addVersionToHistory]);
 
-  // Show diff temporarily when generation completes
-  useEffect(() => {
-    if (!draftProgress?.modelStreams || userToggledDiff) return;
+  // Show auto diff when all models complete
+  const prevGeneratingRef = useRef(false);
 
-    const hasJustCompleted = draftProgress.modelStreams.some(
-      (stream) => stream.status === "complete",
-    );
+  if (draftProgress?.modelStreams) {
     const hasGenerating = draftProgress.modelStreams.some(
       (stream) => stream.status === "generating",
     );
+    const hasCompleted = draftProgress.modelStreams.some(
+      (stream) => stream.status === "complete",
+    );
 
-    // Show diff when at least one stream completes
-    if (hasJustCompleted && !hasGenerating) {
-      setShowDiff(true);
-
-      // Clear any existing timer
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current);
-      }
-
-      // Hide diff after 3 seconds
-      autoHideTimerRef.current = setTimeout(() => {
-        setShowDiff(false);
-        autoHideTimerRef.current = null;
-      }, 3000);
+    // Show auto diff when transitioning from generating to all completed
+    if (prevGeneratingRef.current && !hasGenerating && hasCompleted) {
+      showAutoCompletion();
     }
 
-    return () => {
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current);
-        autoHideTimerRef.current = null;
-      }
-    };
-  }, [draftProgress?.modelStreams, userToggledDiff]);
+    prevGeneratingRef.current = hasGenerating;
+  }
 
   const handleModelSort = useCallback((field: ModelSortField) => {
     setModelSortConfig((prev) => {
@@ -587,43 +527,6 @@ export default function Home() {
     };
   }, [sortedModelStreams, modelConfigMap]);
 
-  // Determine grid layout based on number of models
-  const getGridClassName = (modelCount: number) => {
-    if (modelCount >= 7) {
-      // 3x3 grid for 7-9 models
-      return "grid grid-cols-3 gap-4";
-    } else if (modelCount === 6) {
-      // 2x3 grid for 6 models
-      return "grid grid-cols-2 lg:grid-cols-3 gap-4";
-    } else if (modelCount === 5) {
-      // 2x3 grid for 5 models (2 on top, 3 on bottom)
-      return "grid grid-cols-2 lg:grid-cols-3 gap-4";
-    } else if (modelCount === 4) {
-      // 2x2 grid for 4 models
-      return "grid grid-cols-2 gap-4";
-    } else if (modelCount === 3) {
-      // 1x3 grid for 3 models
-      return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4";
-    } else if (modelCount === 2) {
-      // 1x2 grid for 2 models
-      return "grid grid-cols-2 gap-4";
-    } else {
-      // 1x1 grid for 1 model
-      return "grid grid-cols-1 gap-4";
-    }
-  };
-
-  // Get grid rows class based on number of models
-  const getGridRowsClass = (modelCount: number) => {
-    if (modelCount === 1) return "grid-rows-1";
-    if (modelCount === 2) return "grid-rows-1";
-    if (modelCount === 3) return "grid-rows-1";
-    if (modelCount === 4) return "grid-rows-2";
-    if (modelCount === 5) return "grid-rows-2";
-    if (modelCount === 6) return "grid-rows-2";
-    return "grid-rows-3";
-  };
-
   // State for showing the counter
   const showCounter = showModelSelector && !isLoadingModels;
 
@@ -789,321 +692,11 @@ export default function Home() {
     return Array.from(providers).sort();
   }, [availableModels]);
 
-  // Model dropdown component
-  const ModelDropdown = ({
-    direction = "up",
-  }: {
-    direction?: "up" | "down";
-  }) => {
-    const filteredModels = useMemo(() => {
-      if (!dropdownSearch) return sortedAvailableModels;
-      const search = dropdownSearch.toLowerCase();
-      return sortedAvailableModels.filter(
-        (model) =>
-          (model.displayName?.toLowerCase().includes(search) ?? false) ||
-          model.model.toLowerCase().includes(search) ||
-          model.provider.toLowerCase().includes(search),
-      );
-    }, [dropdownSearch, sortedAvailableModels]);
-
-    return (
-      <div
-        className="relative model-dropdown-container"
-        data-state={isDropdownOpen ? "open" : "closed"}
-        key="model-dropdown"
-      >
-        {/* Dropdown trigger */}
-        <button
-          onClick={() => {
-            const wasOpen = isDropdownOpen;
-            setIsDropdownOpen(!isDropdownOpen);
-            // Focus input when closing dropdown
-            if (wasOpen) {
-              setTimeout(() => {
-                if (textareaRef.current) {
-                  textareaRef.current.focus();
-                } else if (inputRef.current) {
-                  inputRef.current.focus();
-                }
-              }, 100);
-            }
-          }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-          }}
-          onFocus={(e) => {
-            e.preventDefault();
-            e.currentTarget.blur();
-          }}
-          type="button"
-          className="flex items-center justify-between gap-2 px-3 py-0.5 rounded-xl bg-transparent hover:bg-white/10 transition-colors"
-        >
-          <div className="min-w-0 ">
-            {selectedModelsForRun.length === 0 ? (
-              <span className="text-sm text-[#333333]/50">
-                {isMultiSelectMode ? "Select models..." : "Select a model..."}
-              </span>
-            ) : isMultiSelectMode ? (
-              <div className="flex items-center gap-1.5 flex-1 overflow-hidden">
-                {selectedModelsForRun.slice(0, 2).map((model) => (
-                  <span
-                    key={model.id}
-                    className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333] whitespace-nowrap flex items-center gap-1 flex-shrink-0"
-                  >
-                    <ProviderIcon
-                      provider={model.provider}
-                      className="w-3 h-3 flex-shrink-0"
-                    />
-                    {model.displayName?.split(" (")[0] ?? model.model}
-                    {model.reasoning && <Brain className="w-3 h-3" />}
-                  </span>
-                ))}
-                {selectedModelsForRun.length > 2 && (
-                  <span className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333] whitespace-nowrap flex-shrink-0">
-                    +{selectedModelsForRun.length - 2} models
-                  </span>
-                )}
-              </div>
-            ) : (
-              // Single-select mode: show just the selected model name
-              <div className="flex items-center gap-1.5">
-                <ProviderIcon
-                  provider={selectedModelsForRun[0].provider}
-                  className="w-4 h-4 flex-shrink-0"
-                />
-                <span className="text-sm text-[#333333] truncate">
-                  {selectedModelsForRun[0].displayName?.split(" (")[0] ??
-                    selectedModelsForRun[0].model}
-                </span>
-                {selectedModelsForRun[0].reasoning && (
-                  <Brain className="w-4 h-4" />
-                )}
-              </div>
-            )}
-          </div>
-          <ChevronDown
-            className={`w-4 h-4 text-[#333333]/50 transition-transform flex-shrink-0 ml-2 ${
-              isDropdownOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
-
-        {/* Dropdown menu */}
-        {isDropdownOpen && (
-          <div
-            className={`absolute left-0 z-[9999] ${direction === "up" ? "bottom-full mb-2" : "top-full mt-2"} rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.12),0_0_48px_rgba(0,0,0,0.08)] min-w-[300px] max-w-[90vw] w-auto`}
-          >
-            {/* Glass background with strong blur */}
-            <div className="absolute inset-0 rounded-2xl bg-white/20 backdrop-blur-xl" />
-
-            {/* Glass effect border */}
-            <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.4)]" />
-
-            <div className="relative z-[2]">
-              {/* Header with selected count */}
-              <div className="p-3 border-b border-white/20 ">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        const newMode = !isMultiSelectMode;
-                        setIsMultiSelectMode(newMode);
-
-                        // When switching to single-select mode, keep only the first model
-                        if (!newMode && selectedModelsForRun.length > 1) {
-                          setSelectedModelsForRun([selectedModelsForRun[0]]);
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/10 hover:bg-black/20 transition-colors"
-                    >
-                      {isMultiSelectMode ? (
-                        <ToggleRight className="w-4 h-4 text-[#333333]" />
-                      ) : (
-                        <ToggleLeft className="w-4 h-4 text-[#333333]/50" />
-                      )}
-                      <span className="text-xs font-medium text-[#333333]">
-                        Multi-select
-                      </span>
-                    </button>
-                  </div>
-                  <span className="text-sm font-medium text-[#333333]">
-                    {isMultiSelectMode
-                      ? `${selectedModelsForRun.length}/9 models selected`
-                      : selectedModelsForRun.length === 0
-                        ? "Select a model"
-                        : "1 model selected"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Model list */}
-              <div
-                ref={listContainerRef}
-                className="max-h-96 overflow-y-auto"
-                style={{ maxHeight: direction === "up" ? "40vh" : "60vh" }}
-                onScroll={(e) => {
-                  e.stopPropagation();
-                }}
-              >
-                {filteredModels.length > 0 ? (
-                  <div className="p-2">
-                    {filteredModels.map((model) => {
-                      const isSelected = selectedModelsForRun.some(
-                        (m) => m.id === model.id,
-                      );
-                      const isDisabled = isMultiSelectMode
-                        ? !isSelected && selectedModelsForRun.length >= 9
-                        : false;
-
-                      return (
-                        <button
-                          key={model.id}
-                          type="button"
-                          tabIndex={-1}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (!model.available) return;
-
-                            // capture scroll position before state updates
-                            if (listContainerRef.current) {
-                              lastScrollTopRef.current =
-                                listContainerRef.current.scrollTop;
-                            }
-
-                            if (isMultiSelectMode) {
-                              // Multi-select mode: add/remove models
-                              if (isSelected) {
-                                setSelectedModelsForRun(
-                                  selectedModelsForRun.filter(
-                                    (m) => m.id !== model.id,
-                                  ),
-                                );
-                              } else if (selectedModelsForRun.length < 9) {
-                                setSelectedModelsForRun([
-                                  ...selectedModelsForRun,
-                                  model,
-                                ]);
-                              }
-                            } else {
-                              // Single-select mode: replace current selection
-                              setSelectedModelsForRun([model]);
-                              setIsDropdownOpen(false);
-                              setDropdownSearch("");
-                              // Focus input after selection
-                              setTimeout(() => {
-                                if (textareaRef.current) {
-                                  textareaRef.current.focus();
-                                } else if (inputRef.current) {
-                                  inputRef.current.focus();
-                                }
-                              }, 100);
-                            }
-                          }}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                          }}
-                          onFocus={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.blur();
-                          }}
-                          disabled={isDisabled || !model.available}
-                          className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors ${
-                            isDisabled || !model.available
-                              ? "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer hover:bg-black/10"
-                          } ${isSelected ? "bg-black/10" : ""}`}
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            {/* Provider icon */}
-                            <ProviderIcon
-                              provider={model.provider}
-                              className="w-5 h-5 flex-shrink-0"
-                            />
-
-                            {/* Model info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`text-sm font-medium truncate ${model.available ? "text-[#333333]" : "text-[#333333]/50"}`}
-                                >
-                                  {model.displayName?.split(" (")[0] ??
-                                    model.model}
-                                </span>
-                                {/* Reasoning model indicator */}
-                                {model.reasoning && (
-                                  <Brain className="w-3.5 h-3.5 text-[#333333] flex-shrink-0" />
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Data badges */}
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              {/* Input cost badge */}
-                              <span
-                                className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333]/70"
-                                title="Cost per million input tokens"
-                              >
-                                ${model.cost?.input.toFixed(2) ?? "0.00"}/M in
-                              </span>
-
-                              {/* Output cost badge */}
-                              <span
-                                className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333]/70"
-                                title="Cost per million output tokens"
-                              >
-                                ${model.cost?.output.toFixed(2) ?? "0.00"}/M out
-                              </span>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="p-4 text-center text-sm text-[#333333]/70">
-                    No models found
-                  </div>
-                )}
-              </div>
-
-              {/* Search bar at bottom */}
-              <div className="p-3 border-t border-white/20">
-                <input
-                  type="text"
-                  value={dropdownSearch}
-                  onChange={(e) => {
-                    setDropdownSearch(e.target.value);
-                  }}
-                  placeholder="Search models..."
-                  className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm rounded-md outline-none focus:ring-2 focus:ring-white/30 text-sm placeholder-black/50 text-[#333333]"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Restore list scroll after selection updates
-  useLayoutEffect(() => {
-    if (isDropdownOpen && listContainerRef.current) {
-      listContainerRef.current.scrollTop = lastScrollTopRef.current;
-    }
-  }, [selectedModelsForRun.length, isDropdownOpen]);
-
-  // Initialize textarea on mount
-  useEffect(() => {
+  const focusInput = useCallback(() => {
     if (textareaRef.current) {
-      const textarea = textareaRef.current;
-      // Set initial properties for smooth auto-resize
-      textarea.style.height = "32px";
-      textarea.style.transition = "height 0.1s ease";
-      textarea.style.boxSizing = "border-box";
+      textareaRef.current.focus();
+    } else if (inputRef.current) {
+      inputRef.current.focus();
     }
   }, []);
 
@@ -1112,340 +705,42 @@ export default function Home() {
       className="flex-1 flex flex-col h-screen pt-6 px-6"
       style={{ scrollBehavior: "auto" }}
     >
-      {/* Header with centered Draft Pad title */}
-      <div className="relative mb-6 flex-shrink-0 flex items-center justify-center h-10">
-        {/* Back button for single model view */}
-        {selectedModelId &&
-          !showModelSelector &&
-          sortedModelStreams.length > 1 && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="absolute left-0"
-            >
-              <button
-                onClick={() => {
-                  setSelectedModelId(null);
-                }}
-                className="flex items-center gap-2 text-[#333333]/70 hover:text-[#333333] transition-colors px-3 py-2 rounded-xl hover:bg-white/10"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span className="text-sm font-medium">Back to all models</span>
-              </button>
-            </motion.div>
-          )}
-
-        <h1 className="text-3xl font-bold text-[#333333] font-atma">
-          Draft Pad
-        </h1>
-
-        {/* Show stats when generating */}
-        {overallStats && overallStats.hasData && !showModelSelector && (
-          <>
-            {/* Sort filter badges on the right */}
-            <div className="absolute right-0 flex items-center gap-2">
-              {/* Word range badge */}
-              <button
-                onClick={() => {
-                  handleSort("words");
-                }}
-                className={`${
-                  sortConfig.field === "words"
-                    ? "bg-white/60 scale-105"
-                    : "bg-white/40 hover:bg-white/60"
-                } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
-              >
-                <WholeWord className="w-4 h-4 text-[#000000]/60" />
-                <span className="text-sm font-medium text-[#333333]">
-                  {overallStats.wordRange} words
-                </span>
-                {sortConfig.field === "words" &&
-                  (sortConfig.direction === "asc" ? (
-                    <ArrowUp className="w-3 h-3 text-[#000000]/60" />
-                  ) : (
-                    <ArrowDown className="w-3 h-3 text-[#000000]/60" />
-                  ))}
-              </button>
-              {/* Time range badge */}
-              <button
-                onClick={() => {
-                  handleSort("time");
-                }}
-                className={`${
-                  sortConfig.field === "time"
-                    ? "bg-white/60 scale-105"
-                    : "bg-white/40 hover:bg-white/60"
-                } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
-              >
-                <Clock className="w-3.5 h-3.5 text-[#000000]/60" />
-                <span className="text-sm font-medium text-[#333333]">
-                  {overallStats.timeRange}
-                </span>
-                {sortConfig.field === "time" &&
-                  (sortConfig.direction === "asc" ? (
-                    <ArrowUp className="w-3 h-3 text-[#000000]/60" />
-                  ) : (
-                    <ArrowDown className="w-3 h-3 text-[#000000]/60" />
-                  ))}
-              </button>
-              {/* Cost range badge */}
-              <button
-                onClick={() => {
-                  handleSort("cost");
-                }}
-                className={`${
-                  sortConfig.field === "cost"
-                    ? "bg-white/60 scale-105"
-                    : "bg-white/40 hover:bg-white/60"
-                } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
-              >
-                <DollarSign className="w-3.5 h-3.5 text-[#000000]/60" />
-                <span className="text-sm font-medium text-[#333333]">
-                  {overallStats.costRange}
-                </span>
-                {sortConfig.field === "cost" &&
-                  (sortConfig.direction === "asc" ? (
-                    <ArrowUp className="w-3 h-3 text-[#000000]/60" />
-                  ) : (
-                    <ArrowDown className="w-3 h-3 text-[#000000]/60" />
-                  ))}
-              </button>
-
-              {/* Diff toggle button */}
-              {sortedModelStreams.length > 0 && (
-                <button
-                  onClick={() => {
-                    // Clear any auto-hide timer
-                    if (autoHideTimerRef.current) {
-                      clearTimeout(autoHideTimerRef.current);
-                      autoHideTimerRef.current = null;
-                    }
-                    setShowDiff(!showDiff);
-                    setUserToggledDiff(true);
-                  }}
-                  className={`${
-                    showDiff
-                      ? "bg-white/60 scale-105"
-                      : "bg-white/40 hover:bg-white/60"
-                  } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
-                >
-                  {showDiff ? (
-                    <Eye className="w-4 h-4 text-[#000000]/60" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-[#000000]/60" />
-                  )}
-                  <span className="text-sm font-medium text-[#333333]">
-                    {showDiff ? "Hide Diff" : "Show Diff"}
-                  </span>
-                </button>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Show diff toggle when we have streams but no stats */}
-        {sortedModelStreams.length > 0 &&
-          !overallStats?.hasData &&
-          !showModelSelector && (
-            <div className="absolute right-0">
-              <button
-                onClick={() => {
-                  // Clear any auto-hide timer
-                  if (autoHideTimerRef.current) {
-                    clearTimeout(autoHideTimerRef.current);
-                    autoHideTimerRef.current = null;
-                  }
-                  setShowDiff(!showDiff);
-                  setUserToggledDiff(true);
-                }}
-                className={`${
-                  showDiff
-                    ? "bg-white/60 scale-105"
-                    : "bg-white/40 hover:bg-white/60"
-                } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
-              >
-                {showDiff ? (
-                  <Eye className="w-4 h-4 text-[#000000]/60" />
-                ) : (
-                  <EyeOff className="w-4 h-4 text-[#000000]/60" />
-                )}
-                <span className="text-sm font-medium text-[#333333]">
-                  {showDiff ? "Hide Diff" : "Show Diff"}
-                </span>
-              </button>
-            </div>
-          )}
-
-        {showCounter && (
-          <>
-            {/* Provider filter on the left */}
-            <div className="absolute left-0">
-              <ProviderFilter
-                providers={uniqueProviders}
-                selectedProvider={selectedProvider}
-                onProviderChange={setSelectedProvider}
-              />
-            </div>
-
-            {/* Model selector counter positioned to the right of Draft Pad */}
-            <motion.div
-              key={selectedModelsForRun.length}
-              initial={{ scale: 0.8, y: -10 }}
-              animate={{ scale: 1, y: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 20,
-              }}
-              className="absolute left-[calc(50%+85px)] bg-white/40 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg"
-            >
-              <span className="text-sm font-medium text-[#333333]">
-                {selectedModelsForRun.length} / 9 selected
-              </span>
-            </motion.div>
-
-            {/* Sort badges on the right */}
-            <div className="absolute right-0 flex items-center gap-2">
-              {/* Combined Cost badge */}
-              <button
-                onClick={() => {
-                  handleModelSort("cost");
-                }}
-                className={`${
-                  modelSortConfig.field === "cost"
-                    ? "bg-white/60 scale-105"
-                    : "bg-white/40 hover:bg-white/60"
-                } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
-              >
-                <ArrowLeftRight className="w-3.5 h-3.5 text-[#000000]/60" />
-                <span className="text-sm font-medium text-[#333333]">
-                  ${modelMetricRanges.minCost.toFixed(2)}-$
-                  {modelMetricRanges.maxCost.toFixed(2)}
-                </span>
-                {modelSortConfig.field === "cost" &&
-                  (modelSortConfig.direction === "asc" ? (
-                    <ArrowUp className="w-3 h-3 text-[#000000]/60" />
-                  ) : (
-                    <ArrowDown className="w-3 h-3 text-[#000000]/60" />
-                  ))}
-              </button>
-
-              {/* Context badge */}
-              <button
-                onClick={() => {
-                  handleModelSort("context");
-                }}
-                className={`${
-                  modelSortConfig.field === "context"
-                    ? "bg-white/60 scale-105"
-                    : "bg-white/40 hover:bg-white/60"
-                } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
-              >
-                <Brain className="w-3.5 h-3.5 text-[#000000]/60" />
-                <span className="text-sm font-medium text-[#333333]">
-                  {formatTokenCount(modelMetricRanges.minContext)}-
-                  {formatTokenCount(modelMetricRanges.maxContext)}
-                </span>
-                {modelSortConfig.field === "context" &&
-                  (modelSortConfig.direction === "asc" ? (
-                    <ArrowUp className="w-3 h-3 text-[#000000]/60" />
-                  ) : (
-                    <ArrowDown className="w-3 h-3 text-[#000000]/60" />
-                  ))}
-              </button>
-
-              {/* Max Output badge */}
-              <button
-                onClick={() => {
-                  handleModelSort("maxOutput");
-                }}
-                className={`${
-                  modelSortConfig.field === "maxOutput"
-                    ? "bg-white/60 scale-105"
-                    : "bg-white/40 hover:bg-white/60"
-                } backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer`}
-              >
-                <FileText className="w-3.5 h-3.5 text-[#000000]/60" />
-                <span className="text-sm font-medium text-[#333333]">
-                  {formatTokenCount(modelMetricRanges.minMaxOutput)}-
-                  {formatTokenCount(modelMetricRanges.maxMaxOutput)}
-                </span>
-                {modelSortConfig.field === "maxOutput" &&
-                  (modelSortConfig.direction === "asc" ? (
-                    <ArrowUp className="w-3 h-3 text-[#000000]/60" />
-                  ) : (
-                    <ArrowDown className="w-3 h-3 text-[#000000]/60" />
-                  ))}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+      {/* Header */}
+      <Header
+        selectedModelId={selectedModelId}
+        showModelSelector={showModelSelector}
+        sortedModelStreams={sortedModelStreams}
+        overallStats={overallStats}
+        showCounter={showCounter}
+        selectedModelsForRun={selectedModelsForRun}
+        uniqueProviders={uniqueProviders}
+        selectedProvider={selectedProvider}
+        onProviderChange={setSelectedProvider}
+        modelMetricRanges={modelMetricRanges}
+        modelSortConfig={modelSortConfig}
+        sortConfig={sortConfig}
+        showDiff={showDiff}
+        autoShowDiff={autoShowDiff}
+        onToggleDiff={toggleDiff}
+        onModelSort={handleModelSort}
+        onSort={handleSort}
+        onBackToAllModels={() => {
+          setSelectedModelId(null);
+        }}
+      />
 
       {/* Full screen model selector view */}
       {showModelSelector && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          {/* Header with back button and done button */}
-          <div className="mb-4 flex justify-between items-center">
-            <button
-              onClick={() => {
-                setShowModelSelectorView(false);
-                // Focus input after closing model selector
-                setTimeout(() => {
-                  if (textareaRef.current) {
-                    textareaRef.current.focus();
-                  } else if (inputRef.current) {
-                    inputRef.current.focus();
-                  }
-                }, 100);
-              }}
-              className="flex items-center gap-2 text-[#333333]/70 hover:text-[#333333] transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">Back</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setShowModelSelectorView(false);
-                // Focus input after closing model selector
-                setTimeout(() => {
-                  if (textareaRef.current) {
-                    textareaRef.current.focus();
-                  } else if (inputRef.current) {
-                    inputRef.current.focus();
-                  }
-                }, 100);
-              }}
-              className="relative rounded-xl overflow-hidden shadow-[0_2px_2px_rgba(0,0,0,0.1),0_0_10px_rgba(0,0,0,0.05)] transition-all duration-400 ease-out backdrop-blur-[3px] bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium text-[#333333] disabled:opacity-50"
-              disabled={selectedModelsForRun.length === 0}
-            >
-              <div className="absolute inset-0 z-[1] overflow-hidden rounded-xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.3),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.3)]" />
-              <span className="relative z-[2]">
-                Done ({selectedModelsForRun.length} selected)
-              </span>
-            </button>
-          </div>
-
-          {isLoadingModels ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-lg text-[#333333]/60">
-                Loading available models from models.dev...
-              </div>
-            </div>
-          ) : (
-            <ModelGridSelector
-              availableModels={sortedAvailableModels}
-              selectedModels={selectedModelsForRun}
-              onModelsChange={(models) => {
-                setSelectedModelsForRun(models);
-              }}
-              maxModels={9}
-            />
-          )}
-        </div>
+        <ModelSelectorView
+          isLoadingModels={isLoadingModels}
+          sortedAvailableModels={sortedAvailableModels}
+          selectedModelsForRun={selectedModelsForRun}
+          onModelsChange={setSelectedModelsForRun}
+          onClose={() => {
+            setShowModelSelectorView(false);
+          }}
+          focusInput={focusInput}
+        />
       )}
 
       {/* Main content area */}
@@ -1458,318 +753,35 @@ export default function Home() {
             </div>
           ) : (
             /* Generation view with model streams */
-            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-              {/* Show single selected model or grid */}
-              <AnimatePresence mode="wait">
-                {selectedModelId ? (
-                  /* Single selected model view */
-                  <motion.div
-                    key="single-view"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex-1 flex flex-col min-h-0"
-                  >
-                    {/* Single model card */}
-                    <motion.div
-                      layout
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 25,
-                        duration: 0.6,
-                      }}
-                      className="flex-1 flex justify-center min-h-0"
-                    >
-                      <div className="w-full max-w-3xl min-h-0 flex">
-                        {(() => {
-                          const selectedStream = sortedModelStreams.find(
-                            (s) => s.modelId === selectedModelId,
-                          );
-                          return selectedStream ? (
-                            <ModelStreamCard
-                              modelStream={selectedStream}
-                              modelConfig={modelConfigMap.get(
-                                selectedStream.modelId,
-                              )}
-                              isSelected={true}
-                              onSelect={undefined}
-                              metricRanges={metricRanges}
-                              showDiff={showDiff}
-                              previousVersion={
-                                versionHistory[selectedStream.modelId]?.[
-                                  (versionHistory[selectedStream.modelId]
-                                    ?.length ?? 0) - 2
-                                ]
-                              }
-                            />
-                          ) : null;
-                        })()}
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                ) : (
-                  /* Grid view of all models */
-                  <motion.div
-                    key="grid-view"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex-1 min-h-0 flex flex-col"
-                  >
-                    {sortedModelStreams.length === 1 ? (
-                      /* Single model - full height with overflow */
-                      <motion.div
-                        layout
-                        className="flex-1 flex justify-center min-h-0"
-                      >
-                        <div className="w-full max-w-3xl min-h-0 flex">
-                          <ModelStreamCard
-                            modelStream={sortedModelStreams[0]}
-                            modelConfig={modelConfigMap.get(
-                              sortedModelStreams[0].modelId,
-                            )}
-                            isSelected={false}
-                            onSelect={() => {
-                              handleModelSelect(sortedModelStreams[0].modelId);
-                            }}
-                            metricRanges={metricRanges}
-                            showDiff={showDiff}
-                            previousVersion={
-                              versionHistory[sortedModelStreams[0].modelId]?.[
-                                (versionHistory[sortedModelStreams[0].modelId]
-                                  ?.length ?? 0) - 2
-                              ]
-                            }
-                          />
-                        </div>
-                      </motion.div>
-                    ) : (
-                      /* Multiple models - grid layout */
-                      <motion.div
-                        layout
-                        className={`${getGridClassName(sortedModelStreams.length)} ${getGridRowsClass(sortedModelStreams.length)} flex-1 min-h-0 auto-rows-fr`}
-                      >
-                        <AnimatePresence mode="popLayout">
-                          {sortedModelStreams.map((modelStream, index) => {
-                            return (
-                              <motion.div
-                                key={modelStream.modelId}
-                                layout
-                                layoutId={`model-${modelStream.modelId}`}
-                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.8, y: -20 }}
-                                whileHover={{
-                                  scale: 1.02,
-                                  transition: { duration: 0.2 },
-                                }}
-                                whileTap={{ scale: 0.98 }}
-                                transition={{
-                                  layout: {
-                                    type: "spring",
-                                    stiffness: 200,
-                                    damping: 25,
-                                    duration: 0.6,
-                                  },
-                                  opacity: {
-                                    duration: 0.6,
-                                    delay: index * 0.1,
-                                  },
-                                  scale: {
-                                    duration: 0.6,
-                                    delay: index * 0.1,
-                                    type: "spring",
-                                    stiffness: 200,
-                                    damping: 20,
-                                  },
-                                  y: {
-                                    duration: 0.6,
-                                    delay: index * 0.1,
-                                    type: "spring",
-                                    stiffness: 200,
-                                    damping: 20,
-                                  },
-                                }}
-                                className="min-h-0 flex"
-                              >
-                                <ModelStreamCard
-                                  modelStream={modelStream}
-                                  modelConfig={modelConfigMap.get(
-                                    modelStream.modelId,
-                                  )}
-                                  isSelected={
-                                    selectedModelId === modelStream.modelId
-                                  }
-                                  onSelect={() => {
-                                    handleModelSelect(modelStream.modelId);
-                                  }}
-                                  metricRanges={metricRanges}
-                                  showDiff={showDiff}
-                                  previousVersion={
-                                    versionHistory[modelStream.modelId]?.[
-                                      (versionHistory[modelStream.modelId]
-                                        ?.length ?? 0) - 2
-                                    ]
-                                  }
-                                />
-                              </motion.div>
-                            );
-                          })}
-                        </AnimatePresence>
-                      </motion.div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <ModelStreamView
+              selectedModelId={selectedModelId}
+              sortedModelStreams={sortedModelStreams}
+              modelConfigMap={modelConfigMap}
+              versionHistory={versionHistory}
+              isDiffVisible={isDiffVisible}
+              metricRanges={metricRanges}
+              onModelSelect={handleModelSelect}
+            />
           )}
 
           {/* Unified input section - transitions from center to bottom */}
-          <motion.div
-            layout
-            transition={{
-              type: "spring",
-              stiffness: 150,
-              damping: 25,
-              duration: 1.2,
-            }}
-            className={`flex-shrink-0 flex justify-center ${
-              sortedModelStreams.length === 0 && !workflowInProgress
-                ? "absolute inset-0 items-center"
-                : "mt-2"
-            }`}
-            style={
-              sortedModelStreams.length === 0 && !workflowInProgress
-                ? { zIndex: 10 }
-                : {}
-            }
-          >
-            <motion.div layout className="w-full max-w-xl">
-              <motion.div
-                layout
-                className={`relative overflow-visible shadow-[0_4px_24px_rgba(0,0,0,0.12),0_0_48px_rgba(0,0,0,0.08)] bg-white/40 ${
-                  isDropdownOpen ? "" : "backdrop-blur-sm"
-                } ${
-                  sortedModelStreams.length === 0 && !workflowInProgress
-                    ? "rounded-2xl"
-                    : "rounded-t-2xl"
-                }`}
-                style={{
-                  transition:
-                    "background-color 400ms ease-out, box-shadow 400ms ease-out",
-                }}
-              >
-                <div
-                  className={`absolute inset-0 z-[1] overflow-hidden shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.4)] ${
-                    sortedModelStreams.length === 0 && !workflowInProgress
-                      ? "rounded-2xl"
-                      : "rounded-t-2xl"
-                  }`}
-                />
-
-                <div className="relative z-[2]">
-                  {/* Input field - changes between textarea and input based on state */}
-                  {sortedModelStreams.length === 0 && !workflowInProgress ? (
-                    /* Initial state - textarea */
-                    <textarea
-                      ref={textareaRef}
-                      value={userMessage}
-                      onChange={(e) => {
-                        setUserMessage(e.target.value);
-                        autoResizeTextarea(e.target as HTMLTextAreaElement);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          if (
-                            userMessage.trim() &&
-                            selectedModelsForRun.length > 0
-                          ) {
-                            onSubmit();
-                          }
-                        }
-                      }}
-                      placeholder={
-                        selectedModelsForRun.length === 0
-                          ? "Select models below to start..."
-                          : "What would you like to generate?"
-                      }
-                      className="w-full min-h-[32px] max-h-[300px] px-6 pt-1.5 pb-0.5 bg-transparent resize-none outline-none text-base text-[#333333] placeholder-black/50 overflow-y-auto"
-                      disabled={selectedModelsForRun.length === 0}
-                      style={{
-                        height: "32px",
-                        transition: "height 0.1s ease",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  ) : (
-                    /* Generating state - textarea with auto-resize */
-                    <textarea
-                      ref={textareaRef}
-                      value={userMessage}
-                      onChange={(e) => {
-                        setUserMessage(e.target.value);
-                        autoResizeTextarea(e.target as HTMLTextAreaElement);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          if (
-                            userMessage.trim() &&
-                            selectedModelsForRun.length > 0 &&
-                            !showSelectionPrompt &&
-                            !workflowInProgress
-                          ) {
-                            onSubmit();
-                          }
-                        }
-                      }}
-                      placeholder={
-                        showSelectionPrompt
-                          ? "Select a version above to continue"
-                          : "Update the draft..."
-                      }
-                      className="w-full min-h-[32px] max-h-[200px] px-6 pt-1.5 pb-0.5 bg-transparent resize-none outline-none text-base text-[#333333] placeholder-black/50 overflow-y-auto"
-                      disabled={
-                        showSelectionPrompt ||
-                        workflowInProgress ||
-                        selectedModelsForRun.length === 0
-                      }
-                      style={{
-                        height: "32px",
-                        transition: "height 0.1s ease",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  )}
-
-                  {/* Bottom section with model selector and send button */}
-                  <div className="relative z-50 px-4 pt-0 pb-1 flex items-center gap-2">
-                    <div className="flex-1">
-                      <ModelDropdown direction="up" />
-                    </div>
-                    <button
-                      onClick={onSubmit}
-                      disabled={
-                        !userMessage.trim() ||
-                        selectedModelsForRun.length === 0 ||
-                        showSelectionPrompt ||
-                        workflowInProgress
-                      }
-                      className="p-2 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    >
-                      <Send className="w-4 h-4 text-[#333333]" />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+          <InputSection
+            userMessage={userMessage}
+            selectedModelsForRun={selectedModelsForRun}
+            sortedAvailableModels={sortedAvailableModels}
+            isMultiSelectMode={isMultiSelectMode}
+            showSelectionPrompt={showSelectionPrompt ?? false}
+            workflowInProgress={workflowInProgress}
+            sortedModelStreamsLength={sortedModelStreams.length}
+            isDropdownOpen={isDropdownOpen}
+            textareaRef={textareaRef as RefObject<HTMLTextAreaElement>}
+            inputRef={inputRef as RefObject<HTMLInputElement>}
+            onUserMessageChange={setUserMessage}
+            onMultiSelectModeChange={setIsMultiSelectMode}
+            onModelsChange={setSelectedModelsForRun}
+            onDropdownOpenChange={setIsDropdownOpen}
+            onSubmit={onSubmit}
+          />
         </>
       )}
     </div>
