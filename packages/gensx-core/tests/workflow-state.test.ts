@@ -1154,7 +1154,7 @@ suite("getValueByJsonPath and getValueByPath array handling", () => {
       { op: "string-append" as const, path: "/arr/2", value: "x" },
     ];
     const result = applyObjectPatches(patches, initialState);
-    expect(result).toEqual({ arr: ["baz", "!", "x"] });
+    expect(result).toEqual({ arr: [123, null, {}] });
   });
 });
 

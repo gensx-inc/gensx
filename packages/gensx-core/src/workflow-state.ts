@@ -385,7 +385,11 @@ export function applyObjectPatches(
         if (typeof document === "string") {
           document = document + operation.value;
         } else {
-          document = operation.value;
+          // Warn and skip instead of throwing or replacing
+          console.warn(
+            `Cannot apply string-append: root value is not a string. Skipping operation.`,
+          );
+          // Do nothing
         }
         continue;
       }
@@ -399,7 +403,11 @@ export function applyObjectPatches(
           (target as Record<string, JsonValue>)[property] =
             currentValue + operation.value;
         } else {
-          (target as Record<string, JsonValue>)[property] = operation.value;
+          // Warn and skip instead of replacing
+          console.warn(
+            `Cannot apply string-append: target path '${operation.path}' is not a string. Skipping operation.`,
+          );
+          // Do nothing
         }
       } else {
         // Warn and skip instead of throwing
