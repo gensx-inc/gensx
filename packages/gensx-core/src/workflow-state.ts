@@ -174,7 +174,8 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
   const context = getCurrentContext();
   const workflowContext = context.getWorkflowContext();
 
-  const newData = data as JsonValue;
+  // Deep clone the data to avoid mutations affecting the ability to diff
+  const newData = JSON.parse(JSON.stringify(data)) as JsonValue;
   const previousData = workflowContext.objectStateMap.get(label);
 
   if (previousData === undefined) {
@@ -216,7 +217,7 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
  * Generate optimized patches that use string-specific operations when beneficial.
  * Handles any JsonValue at the root, including string-append optimization for root strings.
  */
-function generateOptimizedPatches(
+export function generateOptimizedPatches(
   oldData: PublishableData,
   newData: PublishableData,
 ): Operation[] {
@@ -247,14 +248,27 @@ function generateOptimizedPatches(
   const standardPatches = fastJsonPatch.compare(oldData, newData);
   const optimizedPatches: Operation[] = [];
 
+  // Collect all parent paths that are being added/replaced
+  const parentPaths = new Set(
+    standardPatches
+      .filter((patch) => patch.op === "add" || patch.op === "replace")
+      .map((patch) => patch.path),
+  );
+
   for (const patch of standardPatches) {
+    // If this patch's path is a child of any parent path, skip it
+    if (
+      Array.from(parentPaths).some(
+        (parent) => parent !== "" && patch.path.startsWith(parent + "/"),
+      )
+    ) {
+      continue;
+    }
     if (patch.op === "replace" && typeof patch.value === "string") {
       // Check if this is a string replacement that could be optimized
       const oldValue = getValueByJsonPath(oldData, patch.path);
-
       if (typeof oldValue === "string") {
         const newValue = patch.value;
-
         // Check if it's a simple append (common in streaming scenarios)
         if (newValue.startsWith(oldValue)) {
           const appendedText = newValue.slice(oldValue.length);
@@ -269,7 +283,6 @@ function generateOptimizedPatches(
         }
       }
     }
-
     // Use standard patch if no optimization applies
     optimizedPatches.push(patch);
   }
@@ -375,8 +388,9 @@ export function applyObjectPatches(
   patches: Operation[],
   currentState: PublishableData = {},
 ): PublishableData {
-  let document = currentState;
+  let document = fastJsonPatch.deepClone(currentState);
 
+  let standardPatches: fastJsonPatch.Operation[] = [];
   for (const operation of patches) {
     if (operation.op === "string-append") {
       // Handle string append operation
@@ -418,10 +432,16 @@ export function applyObjectPatches(
       }
     } else {
       // Handle standard JSON Patch operations
-      const standardPatches = [operation];
-      const result = fastJsonPatch.applyPatch(document, standardPatches);
-      document = result.newDocument;
+      standardPatches.push(operation);
     }
+  }
+
+  if (standardPatches.length > 0) {
+    const result = fastJsonPatch.applyPatch(
+      document,
+      fastJsonPatch.deepClone(standardPatches) as fastJsonPatch.Operation[],
+    );
+    return result.newDocument;
   }
 
   return document;
