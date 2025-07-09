@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   WorkflowMessage,
   WorkflowMessageListener,
@@ -977,6 +976,7 @@ suite("workflow state", () => {
       const secondMessage = events[4] as gensx.WorkflowObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.patches[0].op).toBe("replace");
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
       expect((secondMessage.patches[0] as any).value).toBe("Different");
     });
   });

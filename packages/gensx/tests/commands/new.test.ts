@@ -134,7 +134,6 @@ suite("new command UI", () => {
     // Verify exec was called for the assistant
     expect(exec).toHaveBeenCalledWith(
       "npx @gensx/claude-md",
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       expect.objectContaining({ cwd: expect.stringContaining("test-project") }),
     );
   });
@@ -171,28 +170,24 @@ suite("new command UI", () => {
     expect(exec).toHaveBeenCalledWith(
       "npx @gensx/claude-md",
       expect.objectContaining({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         cwd: expect.stringContaining("test-project-all"),
       }),
     );
     expect(exec).toHaveBeenCalledWith(
       "npx @gensx/cursor-rules",
       expect.objectContaining({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         cwd: expect.stringContaining("test-project-all"),
       }),
     );
     expect(exec).toHaveBeenCalledWith(
       "npx @gensx/cline-rules",
       expect.objectContaining({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         cwd: expect.stringContaining("test-project-all"),
       }),
     );
     expect(exec).toHaveBeenCalledWith(
       "npx @gensx/windsurf-rules",
       expect.objectContaining({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         cwd: expect.stringContaining("test-project-all"),
       }),
     );
