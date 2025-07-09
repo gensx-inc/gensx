@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
-import { applyPatch, compare } from "fast-json-patch";
+import * as fastJsonPatch from "fast-json-patch";
 
 import { getCurrentContext } from "./context.js";
 
@@ -183,7 +183,7 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
     let patches: Operation[];
     if (isPlainObject(newData)) {
       // Use RFC 6902 add patches for each property
-      patches = compare({}, newData);
+      patches = fastJsonPatch.compare({}, newData);
     } else {
       // For primitives/arrays, use a root-level replace
       patches = [{ op: "replace", path: "", value: newData }];
@@ -245,7 +245,7 @@ function generateOptimizedPatches(
   }
 
   // Both are plain objects: use standard patching and string-append optimization for properties
-  const standardPatches = compare(oldData, newData);
+  const standardPatches = fastJsonPatch.compare(oldData, newData);
   const optimizedPatches: Operation[] = [];
 
   for (const patch of standardPatches) {
@@ -394,7 +394,7 @@ export function applyObjectPatches(
     } else {
       // Handle standard JSON Patch operations
       const standardPatches = [operation];
-      const result = applyPatch(document, standardPatches);
+      const result = fastJsonPatch.applyPatch(document, standardPatches);
       document = result.newDocument;
     }
   }
