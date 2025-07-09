@@ -1,26 +1,5 @@
 # Changelog
 
-## [Unreleased]
-
-### Added
-- **JSON Patch Support**: Updated `useObject` hook to support the new JSON patch mechanism from `@gensx/core`
-- **String Optimizations**: Automatic handling of string-append and string-diff operations for improved streaming performance
-- **Performance Improvements**: Up to 55% reduction in message size for streaming content scenarios
-
-### Changed
-- **useObject Hook**: Now reconstructs object state from JSON patches instead of using complete object data
-- **Error Handling**: Improved error handling with graceful fallback to previous state when patches fail to apply
-
-### Technical Details
-- Added `applyObjectPatches` import from `@gensx/core` for patch reconstruction
-- Implemented sequential patch application with proper state management
-- Added support for `isInitial` flag to handle state resets
-- Maintained full backward compatibility with existing code
-
-### Migration
-- **No Breaking Changes**: Existing code using `useObject` will continue to work without modifications
-- **Automatic Benefits**: Existing applications will automatically benefit from performance improvements when used with the new patch-based system
-
 ## [0.1.4](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.1.3...gensx-react-v0.1.4) (2025-07-03)
 
 
