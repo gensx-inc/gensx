@@ -154,9 +154,6 @@ export type WorkflowMessage =
 
 export type WorkflowMessageListener = (message: WorkflowMessage) => void;
 
-// Store the current state of published objects
-const objectStateMap = new Map<string, JsonValue>();
-
 /**
  * Publish data to the workflow message stream. This is a low-level utility for putting arbitrary data on the stream.
  *
@@ -197,7 +194,7 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
   const workflowContext = context.getWorkflowContext();
 
   const newData = data as JsonValue;
-  const previousData = objectStateMap.get(label);
+  const previousData = workflowContext.objectStateMap.get(label);
 
   if (previousData === undefined) {
     // First time publishing this object - send complete data as patches
@@ -224,7 +221,7 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
   }
 
   // Store the new state
-  objectStateMap.set(label, newData);
+  workflowContext.objectStateMap.set(label, newData);
 }
 
 /**
@@ -373,14 +370,16 @@ export function createObjectStream<T extends JsonValue = JsonValue>(
  * @param label - The label of the state to clear.
  */
 export function clearObjectState(label: string) {
-  objectStateMap.delete(label);
+  const context = getCurrentContext();
+  context.getWorkflowContext().objectStateMap.delete(label);
 }
 
 /**
  * Clear all stored object states. This is useful when starting a new workflow execution.
  */
 export function clearAllObjectStates() {
-  objectStateMap.clear();
+  const context = getCurrentContext();
+  context.getWorkflowContext().objectStateMap.clear();
 }
 
 /**
