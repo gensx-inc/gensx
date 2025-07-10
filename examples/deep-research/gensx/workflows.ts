@@ -42,7 +42,7 @@ export const DeepResearch = gensx.Workflow(
       const addStep = async (step: DeepResearchStep): Promise<void> => {
         output.steps.push(step);
         await saveResearch(output);
-        gensx.publishObject("steps", output.steps);
+        gensx.publishObject("steps", { steps: output.steps });
       };
 
       // Helper function to update a step at a specific index
@@ -53,7 +53,7 @@ export const DeepResearch = gensx.Workflow(
         if (index >= 0 && index < output.steps.length) {
           output.steps[index] = step;
           await saveResearch(output);
-          gensx.publishObject("steps", output.steps);
+          gensx.publishObject("steps", { steps: output.steps });
         }
       };
 

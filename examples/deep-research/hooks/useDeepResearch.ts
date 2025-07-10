@@ -37,11 +37,14 @@ export function useDeepResearch(): UseChatReturn {
   });
 
   // Get real-time updates from the workflow
-  const workflowSteps = useObject<DeepResearchStep[]>(execution, "steps");
+  const workflowSteps = useObject<{ steps: DeepResearchStep[] }>(
+    execution,
+    "steps",
+  );
   const workflowStatus = useObject<string>(execution, "status");
 
   // Get the current steps (prioritize saved data when available, otherwise use workflow)
-  const steps = savedData?.steps || workflowSteps;
+  const steps = savedData?.steps || workflowSteps?.steps;
 
   // Extract only researchBrief and report for easy access
   const { researchBrief, report } = useMemo(() => {

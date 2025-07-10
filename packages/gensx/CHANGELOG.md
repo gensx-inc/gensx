@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.41...gensx-v0.4.0) (2025-07-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* Update publishObject to use json patches ([#837](https://github.com/gensx-inc/gensx/issues/837))
+
+### ✨ New Features
+
+* Implement JSON Patch with string optimizations for publishObject ([55829d2](https://github.com/gensx-inc/gensx/commit/55829d2a49b50d11d9a5748b34cce6e8302c1763))
+
+
+### 🐛 Bug Fixes
+
+* Update publishObject to use json patches ([#837](https://github.com/gensx-inc/gensx/issues/837)) ([55829d2](https://github.com/gensx-inc/gensx/commit/55829d2a49b50d11d9a5748b34cce6e8302c1763))
+
 ## [0.3.41](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.40...gensx-v0.3.41) (2025-06-24)
 
 

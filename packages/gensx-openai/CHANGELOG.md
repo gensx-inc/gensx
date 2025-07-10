@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.3.0](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.2.7...gensx-openai-v0.3.0) (2025-07-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* Update publishObject to use json patches ([#837](https://github.com/gensx-inc/gensx/issues/837))
+
+### ✨ New Features
+
+* Implement JSON Patch with string optimizations for publishObject ([55829d2](https://github.com/gensx-inc/gensx/commit/55829d2a49b50d11d9a5748b34cce6e8302c1763))
+
+
+### 🐛 Bug Fixes
+
+* Update publishObject to use json patches ([#837](https://github.com/gensx-inc/gensx/issues/837)) ([55829d2](https://github.com/gensx-inc/gensx/commit/55829d2a49b50d11d9a5748b34cce6e8302c1763))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.0
+
 ## [0.2.7](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.2.6...gensx-openai-v0.2.7) (2025-06-24)
 
 
