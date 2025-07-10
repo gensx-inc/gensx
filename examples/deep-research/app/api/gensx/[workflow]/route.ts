@@ -9,8 +9,9 @@ type RequestBody = Record<string, unknown>;
 
 const shouldUseLocalDevServer = () => {
   if (
-    process.env.GENSX_BASE_URL &&
-    !process.env.GENSX_BASE_URL.includes("localhost")
+    process.env.USE_LOCAL_DEV_SERVER === "false" ||
+    (process.env.GENSX_BASE_URL &&
+      !process.env.GENSX_BASE_URL.includes("localhost"))
   ) {
     return false;
   }
