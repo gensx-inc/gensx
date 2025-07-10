@@ -29,3 +29,13 @@ export const StreamOutput = gensx.Workflow(
     return generator();
   },
 );
+
+export const BasicOutput = gensx.Workflow(
+  "BasicOutput",
+  async ({ userMessage }: ChatProps) => {
+    return {
+      message: "Hello, world!",
+      confidence: 0.95,
+    };
+  },
+);

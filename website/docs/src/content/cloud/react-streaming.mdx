@@ -44,10 +44,16 @@ On the client side, you use the `useObject` hook to subscribe to the object and 
 
 ### Streaming events
 
-GenSX provides a `publishEvent` function that allows you to stream an event to the client. It's designed for you to publish events that happen over time.
+GenSX provides a `publishEvent` function that allows you to stream events to the client. It's designed for you to publish events that happen over time.
 
 ```typescript
-gensx.publishEvent("draft-progress", draftProgress);
+interface ProgressEvent {
+  progress: "brainstorming" | "researching" | "writing" | "editing";
+}
+
+gensx.publishEvent<ProgressEvent>("progress", {
+  progress: "brainstorming",
+});
 ```
 
 There is also a `createEventStream` helper available for creating a reusable function for publishing the events.
@@ -64,37 +70,67 @@ gensx.publishData("draft-progress", draftProgress);
 
 The `@gensx/react` library is the best way to consume streaming data from GenSX workflows.
 
+### Setting up the passthrough API
+
+To avoid exposing your GenSX API key to the client, we recommend setting up a passthrough API that forwards the request to the GenSX API. For brevity, we won't include the code here but you can grab [the code here](https://github.com/gensx-inc/gensx/blob/main/examples/chat-ux/app/api/gensx/%5Bworkflow%5D/route.ts) as a reference.
+
+### Using the `useWorkflow` hook
+
 The `useWorkflow` hook lets you run a workflow and subscribe to its events and output.
 
 ```typescript
-const { inProgress, error, execution, run } = useWorkflow<
+const { inProgress, error, output, execution, run, stop } = useWorkflow<
   ChatInput, // the input type of the workflow
   ChatOutput // the output type of the workflow
 >({
   config: {
-    baseUrl: "/api/gensx/Chat",
+    baseUrl: "/api/gensx/chat", // the passthrough API route
   },
 });
 
 // Run the workflow
-run({
+await run({
   inputs: {
     userMessage: "Hello, how are you?",
   },
 });
 ```
 
+`useWorkflow` also supports callbacks for `onStart`, `onComplete`, `onError`, and `onEvent` that you can use to handle the workflow's lifecycle.
+
+```typescript
+const { error, output, execution, run } = useWorkflow<ChatInput, ChatOutput>({
+  config: {
+    baseUrl: "/api/gensx/chat", // the passthrough API route
+  },
+  onStart: () => {
+    console.log("Workflow started");
+  },
+  onComplete: () => {
+    console.log("Workflow completed");
+  },
+  onError: (error) => {
+    console.error(error);
+  },
+  onEvent: (event) => {
+    console.log(event);
+  },
+});
+```
+
+### Using the `useObject` hook
+
+The `useObject` hook lets you subscribe to an object and get the latest state.
+
 ```typescript
 const messages = useObject<Message[]>(execution, "messages");
 ```
 
-- show using events
+### Using the `useEvents` hook
+
+The `useEvents` hook lets you subscribe to events and get the latest state.
 
 ```typescript
-interface ProgressEvent {
-  progress: "brainstorming" | "researching" | "writing" | "editing";
-}
-
 const progressEvents = useEvents<ProgressEvent>(execution, "progress");
 
 progressEvents.forEach((event) => {
@@ -102,9 +138,73 @@ progressEvents.forEach((event) => {
 });
 ```
 
-- show consuming outputs
-- discuss passthrough api
+## Event types
+
+In addition to the events created by `publishEvent`, `publishObject`, and `publishData`, GenSX also emits the following events:
+
+| Event Type        | Description                        | Key Properties  |
+| ----------------- | ---------------------------------- | --------------- |
+| `start`           | Emitted when the workflow starts   | `workflowName`  |
+| `end`             | Emitted when the workflow ends     | `id`            |
+| `component-start` | Emitted when a component starts    | `componentName` |
+| `component-end`   | Emitted when a component ends      | `componentName` |
+| `output`          | Emitted when an output is returned | `content`       |
+| `error`           | Emitted when an error occurs       | `error`         |
+
+### Example event payloads:
+
+```json
+// start event
+{
+  "type": "start",
+  "workflowName": "Chat",
+  "id": "1752108242902",
+  "timestamp": "2025-07-10T00:44:02.902Z"
+}
+
+// end event
+{
+  "type": "end",
+  "id": "1752108243493",
+  "timestamp": "2025-07-10T00:44:03.493Z"
+}
+
+// component-start event
+{
+  "type": "component-start",
+  "componentName": "StreamText",
+  "componentId": "StreamText:7e1339d69eee8d3d",
+  "id": "1752108242902",
+  "timestamp": "2025-07-10T00:44:02.902Z"
+}
+
+// component-end event
+{
+  "type": "component-end",
+  "componentName": "StreamText",
+  "componentId": "StreamText:7e1339d69eee8d3d",
+  "id": "1752108242904",
+  "timestamp": "2025-07-10T00:44:02.904Z"
+}
+
+// output event
+{
+    "id": "1752109017087",
+    "timestamp": "2025-07-10T00:56:57.087Z",
+    "type": "output",
+    // content is a string, JSON will be stringified
+    "content": "{\"message\":\"Hello, world!\",\"confidence\":0.95}"
+}
+
+// error event
+{
+    "id": "1752109017087",
+    "timestamp": "2025-07-10T00:56:57.087Z",
+    "type": "error",
+    "error": "An error occurred"
+}
+```
 
 ## Consuming streaming data from the API
 
-- You can set the `Accept` param as `text/event-stream` to get SSE events or `application/x-ndjson` to get a newline delimited json stream, also known as JSON lines.
+To consume the streaming messages from the API, you need to set the `Accept` header to `text/event-stream` or `application/x-ndjson`. The `@gensx/react` and `@gensx/client` libraries automatically set the `Accept` header for you.
