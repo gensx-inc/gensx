@@ -4,7 +4,7 @@ import { cors } from "hono/cors";
 import { BadRequestError, NotFoundError } from "./errors.js";
 import { ExecutionHandler } from "./execution-handler.js";
 import { generateOpenApiSpec, generateSwaggerUI } from "./openapi.js";
-import { JsonValue, WorkflowMessage } from "./types.js";
+import { CustomEvent, JsonValue, WorkflowMessage } from "./types.js";
 import { generateWorkflowId } from "./utils.js";
 import { ValidationManager } from "./validation.js";
 import { WorkflowManager } from "./workflow-manager.js";
@@ -180,7 +180,7 @@ export function setupRoutes(
       c.req.query("lastEventId") ?? c.req.header("Last-Event-Id");
 
     // Filter events based on lastEventId if provided
-    const events = execution.workflowMessages;
+    const events = execution.workflowMessages.getMessages();
     const filteredEvents = lastEventId
       ? events.filter((event) => event.id > lastEventId)
       : events;
@@ -191,7 +191,6 @@ export function setupRoutes(
         const inputRequest = executionHandler.getInputRequest(
           executionId,
           event.nodeId,
-          event.sequenceNumber,
         );
 
         if (inputRequest?.fulfilled) {
@@ -221,7 +220,27 @@ export function setupRoutes(
               ),
             );
           }
-          controller.close();
+
+          if (!preparedEvents.find((event) => event.type === "end")) {
+            execution.workflowMessages.addEventListener(
+              "message",
+              (evt: Event) => {
+                const event = evt as CustomEvent<WorkflowMessage>;
+
+                controller.enqueue(
+                  new TextEncoder().encode(
+                    `id: ${event.detail.id}\ndata: ${JSON.stringify(event.detail)}\n\n`,
+                  ),
+                );
+
+                if (event.detail.type === "end") {
+                  controller.close();
+                }
+              },
+            );
+          } else {
+            controller.close();
+          }
         },
       });
 
@@ -241,7 +260,24 @@ export function setupRoutes(
               new TextEncoder().encode(JSON.stringify(event) + "\n"),
             );
           }
-          controller.close();
+
+          if (!preparedEvents.find((event) => event.type === "end")) {
+            execution.workflowMessages.addEventListener(
+              "message",
+              (evt: Event) => {
+                const event = evt as CustomEvent<WorkflowMessage>;
+                controller.enqueue(
+                  new TextEncoder().encode(JSON.stringify(event.detail) + "\n"),
+                );
+
+                if (event.detail.type === "end") {
+                  controller.close();
+                }
+              },
+            );
+          } else {
+            controller.close();
+          }
         },
       });
 
@@ -277,30 +313,20 @@ export function setupRoutes(
   });
 
   // Resume workflow execution with input
-  app.post(
-    `/workflowExecutions/:executionId/resume/:nodeIdWithSequenceNumber`,
-    async (c) => {
-      const executionId = c.req.param("executionId");
-      const nodeIdWithSequenceNumber = c.req.param("nodeIdWithSequenceNumber");
-      const execution = workflowManager.getExecution(executionId);
-      if (!execution) {
-        throw new NotFoundError(`Execution '${executionId}' not found`);
-      }
+  app.post(`/workflowExecutions/:executionId/resume/:nodeId`, async (c) => {
+    const executionId = c.req.param("executionId");
+    const nodeId = c.req.param("nodeId");
+    const execution = workflowManager.getExecution(executionId);
+    if (!execution) {
+      throw new NotFoundError(`Execution '${executionId}' not found`);
+    }
 
-      const [nodeId, sequenceNumber] = nodeIdWithSequenceNumber.split("-");
+    const data = (await c.req.json()) as unknown as JsonValue;
 
-      const data = (await c.req.json()) as unknown as JsonValue;
+    executionHandler.handleInputRequest(executionId, nodeId, data);
 
-      executionHandler.handleInputRequest(
-        executionId,
-        nodeId,
-        Number(sequenceNumber),
-        data,
-      );
-
-      return c.json({ success: true });
-    },
-  );
+    return c.json({ success: true });
+  });
 
   // Execute workflow endpoint
   app.post(`/workflows/:workflowName`, async (c) => {

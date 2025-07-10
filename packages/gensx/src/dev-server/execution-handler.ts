@@ -3,6 +3,7 @@ import {
   JsonValue,
   WorkflowExecution,
   WorkflowMessage,
+  WorkflowMessageList,
 } from "./types.js";
 import { generateExecutionId } from "./utils.js";
 import { WorkflowManager } from "./workflow-manager.js";
@@ -12,7 +13,7 @@ import { WorkflowManager } from "./workflow-manager.js";
  */
 export class ExecutionHandler {
   private workflowManager: WorkflowManager;
-  private inputRequests: Map<string, Map<string, InputRequest[]>>;
+  private inputRequests: Map<string, Map<string, InputRequest>>;
 
   constructor(workflowManager: WorkflowManager) {
     this.workflowManager = workflowManager;
@@ -32,7 +33,7 @@ export class ExecutionHandler {
       executionStatus: "queued",
       createdAt: now,
       input,
-      workflowMessages: [],
+      workflowMessages: new WorkflowMessageList(),
     };
 
     this.workflowManager.setExecution(executionId, execution);
@@ -66,7 +67,7 @@ export class ExecutionHandler {
 
     try {
       // Initialize progress events array
-      execution.workflowMessages = [];
+      execution.workflowMessages = new WorkflowMessageList();
 
       // Update status to starting
       execution.executionStatus = "starting";
@@ -98,6 +99,8 @@ export class ExecutionHandler {
 
       const result = await runMethod.call(workflow, input, {
         messageListener,
+        onRequestInput: this.createInputRequestCallback(executionId),
+        workflowExecutionId: executionId,
       });
 
       // Update execution with result
@@ -139,7 +142,6 @@ export class ExecutionHandler {
   handleInputRequest(
     executionId: string,
     nodeId: string,
-    sequenceNumber: number,
     data: JsonValue,
   ): void {
     let executionRequests = this.inputRequests.get(executionId);
@@ -148,33 +150,14 @@ export class ExecutionHandler {
       this.inputRequests.set(executionId, executionRequests);
     }
 
-    let requestsByNodeId = executionRequests.get(nodeId);
-    if (!requestsByNodeId) {
-      requestsByNodeId = [];
-      executionRequests.set(nodeId, requestsByNodeId);
-    }
-
-    let inputRequest = requestsByNodeId.find(
-      (request) =>
-        request.sequenceNumber === sequenceNumber && !request.fulfilled,
-    );
-
+    let inputRequest = executionRequests.get(nodeId);
     if (!inputRequest) {
-      inputRequest = requestsByNodeId.find((request) => !request.fulfilled);
-      if (inputRequest) {
-        console.warn(
-          `[GenSX] Sequence number mismatch for node '${nodeId}' with sequence number '${sequenceNumber}'`,
-        );
-      }
-    }
-
-    if (!inputRequest) {
-      requestsByNodeId.push({
-        sequenceNumber,
+      inputRequest = {
         nodeId,
         fulfilled: false,
         data,
-      });
+      };
+      executionRequests.set(nodeId, inputRequest);
       return;
     }
 
@@ -188,32 +171,14 @@ export class ExecutionHandler {
    */
   createInputRequestCallback(executionId: string) {
     return (request: { nodeId: string; sequenceNumber: number }) => {
-      const { nodeId, sequenceNumber } = request;
+      const { nodeId } = request;
       let executionRequests = this.inputRequests.get(executionId);
       if (!executionRequests) {
         executionRequests = new Map();
         this.inputRequests.set(executionId, executionRequests);
       }
 
-      let requestsByNodeId = executionRequests.get(nodeId);
-      if (!requestsByNodeId) {
-        requestsByNodeId = [];
-        executionRequests.set(nodeId, requestsByNodeId);
-      }
-
-      // find with the matching sequence number
-      let foundRequest = requestsByNodeId.find(
-        (request) =>
-          request.sequenceNumber === sequenceNumber && !request.fulfilled,
-      );
-      if (!foundRequest) {
-        foundRequest = requestsByNodeId.find((request) => !request.fulfilled);
-        if (foundRequest) {
-          console.warn(
-            `Sequence number mismatch for node '${nodeId}' with sequence number '${sequenceNumber}'`,
-          );
-        }
-      }
+      let foundRequest = executionRequests.get(nodeId);
 
       if (foundRequest?.data) {
         // This means the callback already happened and we have the data.
@@ -221,42 +186,34 @@ export class ExecutionHandler {
         return foundRequest.data;
       } else if (foundRequest) {
         return new Promise<unknown>((resolve) => {
-          foundRequest.onInput = resolve;
+          foundRequest!.onInput = resolve;
         });
       }
 
       // otherwise we have not yet received the input from the user, so add a callback.
       return new Promise<unknown>((resolve) => {
-        requestsByNodeId.push({
-          sequenceNumber,
+        foundRequest = {
           nodeId,
           fulfilled: false,
           onInput: resolve,
-        });
+        };
+        executionRequests.set(nodeId, foundRequest);
       });
     };
   }
 
-  getInputRequest(executionId: string, nodeId: string, sequenceNumber: number) {
+  getInputRequest(executionId: string, nodeId: string) {
     const executionRequests = this.inputRequests.get(executionId);
     if (!executionRequests) {
       return null;
     }
 
-    const requestsByNodeId = executionRequests.get(nodeId);
-    if (!requestsByNodeId) {
-      return null;
-    }
-
-    const request = requestsByNodeId.find(
-      (request) => request.sequenceNumber === sequenceNumber,
-    );
-
+    const request = executionRequests.get(nodeId);
     if (request) {
       return request;
     }
 
-    return requestsByNodeId[0];
+    return null;
   }
 
   /**

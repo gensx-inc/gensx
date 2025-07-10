@@ -4,8 +4,6 @@ This directory contains the GenSX development server.
 
 ## Architecture Overview
 
-The dev server has been refactored from a single large file into a modular structure with clear separation of concerns:
-
 ```
 dev-server/
 ├── index.ts              # Main exports and public API

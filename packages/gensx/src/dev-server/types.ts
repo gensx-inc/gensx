@@ -48,7 +48,36 @@ export interface WorkflowExecution {
   input: unknown;
   output?: unknown;
   error?: string;
-  workflowMessages: WorkflowMessage[];
+  workflowMessages: WorkflowMessageList;
+}
+
+export class CustomEvent<T> extends Event {
+  detail: T;
+  constructor(
+    message: string,
+    data: {
+      bubbles?: boolean;
+      cancelable?: boolean;
+      composed?: boolean;
+      detail: T;
+    },
+  ) {
+    super(message, data);
+    this.detail = data.detail;
+  }
+}
+
+export class WorkflowMessageList extends EventTarget {
+  private messages: WorkflowMessage[] = [];
+
+  push(message: WorkflowMessage) {
+    this.messages.push(message);
+    this.dispatchEvent(new CustomEvent("message", { detail: message }));
+  }
+
+  getMessages() {
+    return this.messages;
+  }
 }
 
 export type JsonValue =
@@ -93,7 +122,6 @@ export type WorkflowMessage = { id: string; timestamp: string } & (
  * Input request structure for handling external tool requests
  */
 export interface InputRequest {
-  sequenceNumber: number;
   nodeId: string;
   fulfilled: boolean;
   onInput?: (input: unknown) => void;
