@@ -33,7 +33,7 @@ export class ExecutionContext {
       messageListener?: WorkflowMessageListener;
       onRequestInput?: (inputRequest: InputRequest) => Promise<void>;
       onRestoreCheckpoint?: (
-        nodeId: string,
+        node: ExecutionNode,
         feedback: unknown,
       ) => Promise<void>;
       checkpoint?: ExecutionNode;
@@ -84,12 +84,12 @@ export class ExecutionContext {
     return this.get(WORKFLOW_CONTEXT_SYMBOL) as WorkflowExecutionContext;
   }
 
-  getCurrentNodeId(): string | undefined {
-    return this.get(CURRENT_NODE_SYMBOL) as string | undefined;
+  getCurrentNode(): ExecutionNode | undefined {
+    return this.get(CURRENT_NODE_SYMBOL) as ExecutionNode | undefined;
   }
 
-  withCurrentNode<T>(nodeId: string, fn: () => T): T {
-    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
+  withCurrentNode<T>(node: ExecutionNode, fn: () => T): T {
+    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: node }), fn);
   }
 }
 
@@ -220,32 +220,37 @@ export function getCurrentNodeCheckpointManager() {
   const context = getCurrentContext();
   const workflowContext = context.getWorkflowContext();
   const { checkpointManager } = workflowContext;
-  const currentNodeId = context.getCurrentNodeId();
+  const currentNode = context.getCurrentNode();
 
-  if (!currentNodeId) {
-    console.warn("No current node found");
+  if (!currentNode) {
+    console.warn("[GenSX] No current node found.");
     return {
+      node: undefined,
       completeNode: () => {
         // noop
+        console.warn("[GenSX] Cannot complete node - no current node found.");
       },
       updateNode: () => {
         // noop
+        console.warn("[GenSX] Cannot update node - no current node found.");
       },
       addMetadata: () => {
         // noop
+        console.warn("[GenSX] Cannot add metadata - no current node found.");
       },
     };
   }
 
   return {
-    completeNode: (output: unknown, wrapInPromise = false) => {
-      checkpointManager.completeNode(currentNodeId, output, wrapInPromise);
+    node: currentNode,
+    completeNode: (output: unknown, opts: { wrapInPromise?: boolean } = {}) => {
+      checkpointManager.completeNode(currentNode, output, opts);
     },
     updateNode: (updates: Partial<ExecutionNode>) => {
-      checkpointManager.updateNode(currentNodeId, updates);
+      checkpointManager.updateNode(currentNode, updates);
     },
     addMetadata: (metadata: Record<string, unknown>) => {
-      checkpointManager.addMetadata(currentNodeId, metadata);
+      checkpointManager.addMetadata(currentNode, metadata);
     },
   };
 }

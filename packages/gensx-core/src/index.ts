@@ -17,8 +17,6 @@ export type {
   JsonValue,
   Operation,
   StringAppendOperation,
-  ExternalToolCallMessage,
-  ExternalToolResponseMessage,
   StartMessage,
   ComponentStartMessage,
   ComponentEndMessage,
@@ -27,7 +25,7 @@ export type {
   EventMessage,
   ErrorMessage,
   EndMessage,
-  ExternalToolMessage as ExternalInputMessage,
+  ExternalToolMessage,
 } from "./workflow-state.js";
 export * from "./wrap.js";
 export * from "./request-input.js";

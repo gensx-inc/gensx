@@ -1,4 +1,3 @@
-
 export type MaybePromise<T> = T | Promise<T>;
 
 export type Primitive = string | number | boolean | null | undefined;
@@ -11,6 +10,7 @@ export interface ComponentOpts {
   aggregator?: (chunks: unknown[]) => unknown; // Aggregator function to use for streaming results, default is to accumulate all chunks into an array, and concatenate strings.
   __streamingResultKey?: string; // Key to use for the looking up streaming iterator, default is to use the component name.
   onComplete?: () => void; // Callback to call when the component completes
+  idPropsKeys?: string[]; // Paths to values in the props to include in the id. Default is all props.
 }
 
 // omit name from ComponentOpts
@@ -27,4 +27,3 @@ export interface DecoratorWorkflowOpts extends WorkflowOpts {
 export interface WorkflowOpts extends ComponentOpts {
   metadata?: Record<string, unknown>;
 }
-

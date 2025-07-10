@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
-import * as fastJsonPatch from "fast-json-patch";
-import { JSONSchema } from "zod/v4/core";
-import { zodToJsonSchema } from "zod-to-json-schema";
-
 import { getCurrentContext } from "./context.js";
+import * as fastJsonPatch from "./utils/fast-json-patch/index.js";
 
 // Define JSON Patch operation types based on RFC 6902
 interface BaseOperation {
@@ -124,10 +121,9 @@ export interface ExternalToolMessage {
   type: "external-tool";
   toolName: string;
   params: JsonValue;
-  paramsSchema: JSONSchema.BaseSchema | ReturnType<typeof zodToJsonSchema>;
-  resultSchema: JSONSchema.BaseSchema | ReturnType<typeof zodToJsonSchema>;
+  paramsSchema: unknown;
+  resultSchema: unknown;
   nodeId: string;
-  sequenceNumber: number;
 }
 
 // Union of all message types

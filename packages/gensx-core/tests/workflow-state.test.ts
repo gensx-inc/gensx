@@ -1,15 +1,14 @@
-import { beforeEach, expect, suite, test } from "vitest";
-
 import {
-  ExternalToolMessage,
-  ExternalToolResponseMessage,
   generateOptimizedPatches,
   WorkflowMessage,
   WorkflowMessageListener,
-} from "../src/index.js";
+} from "src/workflow-state.js";
+import { beforeEach, expect, suite, test } from "vitest";
+
 import * as gensx from "../src/index.js";
 import {
   applyObjectPatches,
+  ExternalToolMessage,
   getValueByJsonPath,
 } from "../src/workflow-state.js";
 
@@ -641,7 +640,7 @@ suite("workflow state", () => {
       });
 
       expect(events).toHaveLength(7);
-      const objectMessage = events[3] as gensx.WorkflowObjectMessage;
+      const objectMessage = events[3] as gensx.ObjectMessage;
       expect(objectMessage.type).toBe("object");
       expect(objectMessage.label).toBe("test-state");
       expect(objectMessage.isInitial).toBe(true);
@@ -700,12 +699,12 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Extra event for the second publication
 
       // First publication should be initial
-      const firstMessage = events[3] as gensx.WorkflowObjectMessage;
+      const firstMessage = events[3] as gensx.ObjectMessage;
       expect(firstMessage.type).toBe("object");
       expect(firstMessage.isInitial).toBe(true);
 
       // Second publication should only contain the changed field
-      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
+      const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.isInitial).toBe(false);
       expect(secondMessage.patches).toEqual([
@@ -784,11 +783,11 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Two object events
 
       // First publication should be initial
-      const firstMessage = events[3] as gensx.WorkflowObjectMessage;
+      const firstMessage = events[3] as gensx.ObjectMessage;
       expect(firstMessage.isInitial).toBe(true);
 
       // Second publication should also be initial since we cleared the state
-      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
+      const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.isInitial).toBe(true);
     });
 
@@ -921,12 +920,12 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Two object events
 
       // First publication should be initial
-      const firstMessage = events[3] as gensx.WorkflowObjectMessage;
+      const firstMessage = events[3] as gensx.ObjectMessage;
       expect(firstMessage.type).toBe("object");
       expect(firstMessage.isInitial).toBe(true);
 
       // Second publication should use string-append optimization
-      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
+      const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.isInitial).toBe(false);
       expect(secondMessage.patches).toEqual([
@@ -979,7 +978,7 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Two object events
 
       // Second publication should use standard replace (not append or diff)
-      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
+      const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.patches[0].op).toBe("replace");
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
@@ -988,159 +987,17 @@ suite("workflow state", () => {
   });
 
   suite("External Tool Messages", () => {
-    test("ExternalToolCallMessage has correct structure", () => {
-      const message: ExternalToolMessage = {
-        type: "external-tool-call",
-        toolName: "testTool",
-        params: { text: "Hello", count: 42 },
-        callId: "test-call-123",
-        nodeId: "test-node-456",
-        sequenceNumber: 1000,
-      };
-
-      expect(message.type).toBe("external-tool-call");
-      expect(message.toolName).toBe("testTool");
-      expect(message.params).toEqual({ text: "Hello", count: 42 });
-      expect(message.callId).toBe("test-call-123");
-      expect(message.nodeId).toBe("test-node-456");
-      expect(message.sequenceNumber).toBe(1000);
-    });
-
-    test("ExternalToolResponseMessage with result has correct structure", () => {
-      const message: ExternalToolResponseMessage = {
-        type: "external-tool-response",
-        callId: "test-call-123",
-        result: "Tool execution successful",
-      };
-
-      expect(message.type).toBe("external-tool-response");
-      expect(message.callId).toBe("test-call-123");
-      expect(message.result).toBe("Tool execution successful");
-      expect(message.error).toBeUndefined();
-    });
-
-    test("ExternalToolResponseMessage with error has correct structure", () => {
-      const message: ExternalToolResponseMessage = {
-        type: "external-tool-response",
-        callId: "test-call-123",
-        error: "Tool execution failed",
-      };
-
-      expect(message.type).toBe("external-tool-response");
-      expect(message.callId).toBe("test-call-123");
-      expect(message.error).toBe("Tool execution failed");
-      expect(message.result).toBeUndefined();
-    });
-
-    test("ExternalToolCallMessage supports complex params", () => {
-      const complexParams = {
-        user: {
-          name: "John Doe",
-          preferences: {
-            theme: "dark",
-            notifications: true,
-          },
-        },
-        data: [1, 2, 3],
-        metadata: {
-          timestamp: "2024-01-01T00:00:00Z",
-          version: "1.0.0",
-        },
-      };
-
-      const message: ExternalToolMessage = {
-        type: "external-tool-call",
-        toolName: "complexTool",
-        params: complexParams,
-        callId: "complex-call-456",
-        nodeId: "complex-node-789",
-        sequenceNumber: 2000,
-      };
-
-      expect(message.params).toEqual(complexParams);
-      expect(message.params).toHaveProperty("user.name", "John Doe");
-      expect(message.params).toHaveProperty("user.preferences.theme", "dark");
-      expect(message.params).toHaveProperty("data", [1, 2, 3]);
-    });
-
-    test("ExternalToolResponseMessage supports complex results", () => {
-      const complexResult = {
-        success: true,
-        data: {
-          processedItems: 15,
-          results: [
-            { id: 1, status: "completed" },
-            { id: 2, status: "pending" },
-          ],
-        },
-        metadata: {
-          executionTime: 1500,
-          resourcesUsed: {
-            memory: "256MB",
-            cpu: "0.5 cores",
-          },
-        },
-      };
-
-      const message: ExternalToolResponseMessage = {
-        type: "external-tool-response",
-        callId: "complex-response-789",
-        result: complexResult,
-      };
-
-      expect(message.result).toEqual(complexResult);
-      expect(message.result).toHaveProperty("success", true);
-      expect(message.result).toHaveProperty("data.processedItems", 15);
-      expect(message.result).toHaveProperty("metadata.executionTime", 1500);
-    });
-
-    test("External tool messages are part of WorkflowMessage union", () => {
-      const toolCallMessage: WorkflowMessage = {
-        type: "external-tool-call",
-        toolName: "testTool",
-        params: {},
-        callId: "call-123",
-        nodeId: "node-456",
-        sequenceNumber: 1,
-      };
-
-      const toolResponseMessage: WorkflowMessage = {
-        type: "external-tool-response",
-        callId: "call-123",
-        result: "success",
-      };
-
-      expect(toolCallMessage.type).toBe("external-tool-call");
-      expect(toolResponseMessage.type).toBe("external-tool-response");
-
-      // TypeScript should allow these as WorkflowMessage types
-      const messages: WorkflowMessage[] = [
-        toolCallMessage,
-        toolResponseMessage,
-      ];
-      expect(messages).toHaveLength(2);
-    });
-
     test("External tool messages can be JSON serialized and deserialized", () => {
       const callMessage: ExternalToolMessage = {
-        type: "external-tool-call",
+        type: "external-tool",
         toolName: "jsonTestTool",
         params: {
           data: { nested: { value: 42 } },
           array: [1, "two", true, null],
         },
-        callId: "json-call-123",
+        paramsSchema: {},
+        resultSchema: {},
         nodeId: "json-node-456",
-        sequenceNumber: 999,
-      };
-
-      const responseMessage: ExternalToolResponseMessage = {
-        type: "external-tool-response",
-        callId: "json-call-123",
-        result: {
-          processed: true,
-          output: { items: ["a", "b", "c"] },
-        },
       };
 
       // Serialize and deserialize
@@ -1149,13 +1006,7 @@ suite("workflow state", () => {
         serializedCall,
       ) as ExternalToolMessage;
 
-      const serializedResponse = JSON.stringify(responseMessage);
-      const deserializedResponse = JSON.parse(
-        serializedResponse,
-      ) as ExternalToolResponseMessage;
-
       expect(deserializedCall).toEqual(callMessage);
-      expect(deserializedResponse).toEqual(responseMessage);
     });
   });
 });

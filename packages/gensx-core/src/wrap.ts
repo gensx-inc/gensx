@@ -47,6 +47,11 @@ export function wrap<T extends object>(sdk: T, opts: WrapOptions = {}): T {
 
         // ----- Case 1: it's a function → return a GenSX component
         if (typeof value === "function") {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+          if ((value as any).__gensxComponent) {
+            return value;
+          }
+
           const componentName =
             (opts.prefix ? `${opts.prefix}.` : "") +
             [...path, String(propKey)].join(".");
