@@ -113,13 +113,7 @@ export const StreamingChat = gensx.Workflow(
       model: openai("gpt-4o-mini"),
     });
 
-    const generator = async function* () {
-      for await (const chunk of result.textStream) {
-        yield chunk;
-      }
-    };
-
-    return generator();
+    return result.textStream;
   },
 );
 ```
