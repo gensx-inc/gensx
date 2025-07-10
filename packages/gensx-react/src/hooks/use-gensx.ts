@@ -36,7 +36,7 @@ export interface WorkflowConfig {
 
 export interface UseWorkflowConfig<
   TOutput = unknown,
-  TToolBox extends ToolBox = {},
+  TToolBox extends ToolBox = ToolBox,
 > {
   /**
    * All workflow configuration in one place
@@ -122,7 +122,7 @@ export interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
 export function useWorkflow<
   TInputs = unknown,
   TOutput = unknown,
-  TToolBox extends ToolBox = {},
+  TToolBox extends ToolBox = ToolBox,
 >(
   options: UseWorkflowConfig<TOutput, TToolBox>,
 ): UseWorkflowResult<TInputs, TOutput> {
@@ -239,6 +239,7 @@ export function useWorkflow<
             if (tools) {
               const toolImpl = tools[event.toolName as keyof typeof tools];
 
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               if (toolImpl) {
                 const result = await toolImpl.execute(
                   event.params as unknown as InferToolParams<
