@@ -23,11 +23,6 @@ export async function POST(
     const data = await request.json();
 
     const useLocalDevServer = shouldUseLocalDevServer();
-    console.log("useLocalDevServer", {
-      useLocalDevServer,
-      API_KEY: process.env.GENSX_API_KEY,
-    });
-
     // Get API key from environment (or could accept from Authorization header)
     let gensx: GenSX;
     if (!useLocalDevServer) {
@@ -64,12 +59,6 @@ export async function POST(
         baseUrl: process.env.GENSX_BASE_URL ?? "http://localhost:1337",
       });
     }
-
-    console.log("data", {
-      data,
-      executionId,
-      nodeId,
-    });
 
     const response = await gensx.resume({
       executionId: executionId as string,

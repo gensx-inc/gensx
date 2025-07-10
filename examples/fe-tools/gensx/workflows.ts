@@ -3,7 +3,7 @@ import { Agent } from "./agent";
 import { CoreMessage } from "ai";
 import { webSearchTool } from "./tools/webSearch";
 import { useBlob } from "@gensx/storage";
-import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
 import { asToolSet } from "@gensx/vercel-ai";
 import { toolbox } from "./tools/frontendTools";
 import { geocodeTool } from "./tools/geocode";
@@ -80,7 +80,7 @@ Always be proactive about using the map tools to enhance the user's experience. 
         ...asToolSet(toolbox),
       };
 
-      const model = anthropic("claude-3-5-sonnet-20241022");
+      const model = openai("gpt-4o-mini");
       const result = await Agent({
         messages,
         tools,
@@ -92,11 +92,6 @@ Always be proactive about using the map tools to enhance the user's experience. 
         //       } satisfies AnthropicProviderOptions,
         //     }
         //   : undefined,
-      });
-
-      console.log("saving messages", {
-        messages: JSON.stringify(messages, null, 2),
-        result: JSON.stringify(result.messages, null, 2),
       });
 
       // Save the complete conversation history

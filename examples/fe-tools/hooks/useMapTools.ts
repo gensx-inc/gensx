@@ -26,7 +26,6 @@ export function useMapTools(userId: string | null, threadId: string | null) {
   const [markers, setMarkers] = useState<MapMarker[]>([]);
 
   useEffect(() => {
-    console.log("useMapTools", userId, threadId);
     if (!userId || !threadId) {
       setMarkers([]);
       setCurrentView({

@@ -99,6 +99,7 @@ export default function ChatPage() {
 
             navigator.geolocation.getCurrentPosition(
               (position) => {
+                console.log("Location retrieved successfully", position);
                 resolve({
                   success: true,
                   latitude: position.coords.latitude,
@@ -120,6 +121,7 @@ export default function ChatPage() {
                     errorMessage = "Location request timed out";
                     break;
                 }
+                console.error("Error retrieving location", error);
                 resolve({
                   success: false,
                   message: errorMessage,

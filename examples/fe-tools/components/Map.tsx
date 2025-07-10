@@ -25,6 +25,9 @@ const Map = (MapProps: MapProps) => {
   const { ref, markers, view = defaultView } = MapProps;
 
   useEffect(() => {
+    if (!view || !view.latitude || !view.longitude) {
+      return;
+    }
     if (ref?.current) {
       ref.current.setView([view.latitude, view.longitude], view.zoom);
     }

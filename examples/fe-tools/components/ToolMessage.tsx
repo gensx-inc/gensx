@@ -53,11 +53,11 @@ export function ToolMessage({ message, messages }: ToolMessageProps) {
         type: "tool-result";
         toolCallId: string;
         toolName: string;
-        result: string;
+        result: unknown;
       } =>
         item.type === "tool-result" && item.toolCallId === toolCall.toolCallId,
     );
-    toolResultContent = resultItem?.result || null;
+    toolResultContent = JSON.stringify(resultItem?.result, null, 2) || null;
   }
 
   const isComplete = !!toolResult;
