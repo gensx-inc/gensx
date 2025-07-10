@@ -221,6 +221,11 @@ export function ModelStreamCard({
         setShowCompletionFlash(false);
       }, 600); // Flash for 0.6 seconds
 
+      // Scroll to top of this card's content when it completes
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
       return () => {
         clearTimeout(timer);
       };
@@ -229,6 +234,26 @@ export function ModelStreamCard({
     // Update the previous status ref
     previousStatusRef.current = modelStream.status;
   }, [modelStream.status]);
+
+  // Additional effect to ensure scroll happens on any completion
+  useEffect(() => {
+    if (
+      modelStream.status === "complete" &&
+      modelStream.content &&
+      scrollContainerRef.current
+    ) {
+      // Small delay to ensure content is fully rendered
+      const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      }, 100);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [modelStream.status, modelStream.content]);
 
   // Apply scroll position whenever it changes (from other cards)
   useEffect(() => {
