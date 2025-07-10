@@ -206,9 +206,9 @@ const messages = useObject<Message[]>(execution, "messages");
 Whenever a new version of the object is published, the value will automatically be updated, making it a great way to render data in real-time. In this example, you can render the messages as they are published and the latest text will be streamed to the UI.
 
 ```tsx
-messages.forEach((message) => {
-  <ChatMessage role={message.role} content={message.content} />;
-});
+messages.map((message, index) => (
+  <ChatMessage key={index} role={message.role} content={message.content} />
+));
 ```
 
 ### Using the `useEvents` hook
