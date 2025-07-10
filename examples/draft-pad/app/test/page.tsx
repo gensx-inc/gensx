@@ -42,7 +42,12 @@ export default function TestPage() {
         <h2 className="font-semibold mb-2">Diff Display:</h2>
         <div className="p-4 bg-white rounded shadow">
           {showDiff ? (
-            <DiffDisplay segments={diffSegments} isStreaming={false} />
+            <DiffDisplay
+              segments={diffSegments}
+              isStreaming={false}
+              showDiff={showDiff}
+              autoShowDiff={false}
+            />
           ) : (
             <p>{newText}</p>
           )}

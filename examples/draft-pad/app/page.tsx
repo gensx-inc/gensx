@@ -124,6 +124,9 @@ export default function Home() {
               modelConfigMap={draftPad.modelConfigMap}
               versionHistory={draftPad.versionHistory}
               isDiffVisible={diffState.isDiffVisible}
+              showDiff={diffState.showDiff}
+              autoShowDiff={diffState.autoShowDiff}
+              isManuallyHiding={diffState.isManuallyHiding}
               metricRanges={metricRanges}
               onModelSelect={draftPad.handleModelSelect}
             />

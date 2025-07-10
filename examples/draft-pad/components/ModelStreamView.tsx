@@ -11,6 +11,9 @@ interface ModelStreamViewProps {
   modelConfigMap: Map<string, ModelConfig>;
   versionHistory: Record<string, ContentVersion[]>;
   isDiffVisible: boolean;
+  showDiff?: boolean;
+  autoShowDiff?: boolean;
+  isManuallyHiding?: boolean;
   metricRanges: {
     minWordCount: number;
     maxWordCount: number;

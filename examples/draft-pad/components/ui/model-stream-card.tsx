@@ -414,6 +414,8 @@ export function ModelStreamCard({
                       segments={diffSegments}
                       isStreaming={modelStream.status === "generating"}
                       className="whitespace-pre-wrap"
+                      showDiff={showDiff}
+                      autoShowDiff={autoShowDiff}
                     />
                   ) : (
                     <div className="text-sm whitespace-pre-wrap text-[#333333] leading-relaxed">

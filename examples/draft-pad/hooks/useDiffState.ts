@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export function useDiffState() {
   const [showDiff, setShowDiff] = useState(false);
   const [autoShowDiff, setAutoShowDiff] = useState(false);
+  const [isManuallyHiding, setIsManuallyHiding] = useState(false);
   const autoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const showDiffRef = useRef(showDiff);
 
@@ -31,14 +32,20 @@ export function useDiffState() {
       autoHideTimerRef.current = null;
     }
 
-    // If manually showing, hide it
+    // If manually showing, trigger hide animation
     if (showDiff) {
-      setShowDiff(false);
+      setIsManuallyHiding(true);
+      setShowDiff(false); // Set immediately for responsive UI
       setAutoShowDiff(false);
+      // Reset hiding flag after animation completes
+      setTimeout(() => {
+        setIsManuallyHiding(false);
+      }, 2500);
     } else {
-      // Otherwise, show it manually
+      // Otherwise, show it manually (no animation needed)
       setShowDiff(true);
       setAutoShowDiff(false);
+      setIsManuallyHiding(false);
     }
   }, [showDiff]);
 
@@ -74,6 +81,7 @@ export function useDiffState() {
   return {
     showDiff,
     autoShowDiff,
+    isManuallyHiding,
     isDiffVisible,
     toggleDiff,
     showAutoCompletion,
