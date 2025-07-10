@@ -10,6 +10,7 @@ interface ModelStreamViewProps {
   sortedModelStreams: DraftProgress["modelStreams"];
   modelConfigMap: Map<string, ModelConfig>;
   versionHistory: Record<string, ContentVersion[]>;
+  chosenResponseForCurrentGeneration: string | null;
   isDiffVisible: boolean;
   showDiff?: boolean;
   autoShowDiff?: boolean;
@@ -32,6 +33,7 @@ export function ModelStreamView({
   sortedModelStreams,
   modelConfigMap,
   versionHistory,
+  chosenResponseForCurrentGeneration,
   isDiffVisible,
   metricRanges,
   onModelSelect,
@@ -104,10 +106,23 @@ export function ModelStreamView({
                       metricRanges={metricRanges}
                       showDiff={isDiffVisible}
                       autoShowDiff={false}
-                      previousVersion={(() => {
-                        const history = versionHistory[selectedStream.modelId];
-                        return history?.[history.length - 2];
-                      })()}
+                      previousVersion={
+                        chosenResponseForCurrentGeneration
+                          ? {
+                              id: "chosen-response",
+                              version: 0,
+                              content: chosenResponseForCurrentGeneration,
+                              modelId: "chosen",
+                              timestamp: new Date(),
+                            }
+                          : (() => {
+                              const history =
+                                versionHistory[selectedStream.modelId] ?? [];
+                              return history.length >= 2
+                                ? history[history.length - 2]
+                                : undefined;
+                            })()
+                      }
                     />
                   ) : null;
                 })()}
@@ -140,11 +155,24 @@ export function ModelStreamView({
                     metricRanges={metricRanges}
                     showDiff={isDiffVisible}
                     autoShowDiff={false}
-                    previousVersion={(() => {
-                      const history =
-                        versionHistory[sortedModelStreams[0].modelId];
-                      return history?.[history.length - 2];
-                    })()}
+                    previousVersion={
+                      chosenResponseForCurrentGeneration
+                        ? {
+                            id: "chosen-response",
+                            version: 0,
+                            content: chosenResponseForCurrentGeneration,
+                            modelId: "chosen",
+                            timestamp: new Date(),
+                          }
+                        : (() => {
+                            const history =
+                              versionHistory[sortedModelStreams[0].modelId] ??
+                              [];
+                            return history.length >= 2
+                              ? history[history.length - 2]
+                              : undefined;
+                          })()
+                    }
                   />
                 </div>
               </motion.div>
@@ -207,10 +235,23 @@ export function ModelStreamView({
                           metricRanges={metricRanges}
                           showDiff={isDiffVisible}
                           autoShowDiff={false}
-                          previousVersion={(() => {
-                            const history = versionHistory[modelStream.modelId];
-                            return history?.[history.length - 2];
-                          })()}
+                          previousVersion={
+                            chosenResponseForCurrentGeneration
+                              ? {
+                                  id: "chosen-response",
+                                  version: 0,
+                                  content: chosenResponseForCurrentGeneration,
+                                  modelId: "chosen",
+                                  timestamp: new Date(),
+                                }
+                              : (() => {
+                                  const history =
+                                    versionHistory[modelStream.modelId] ?? [];
+                                  return history.length >= 2
+                                    ? history[history.length - 2]
+                                    : undefined;
+                                })()
+                          }
                         />
                       </motion.div>
                     );

@@ -122,6 +122,9 @@ export default function Home() {
               sortedModelStreams={sortedModelStreams}
               modelConfigMap={draftPad.modelConfigMap}
               versionHistory={draftPad.versionHistory}
+              chosenResponseForCurrentGeneration={
+                draftPad.chosenResponseForCurrentGeneration
+              }
               isDiffVisible={diffState.isDiffVisible}
               showDiff={diffState.showDiff}
               autoShowDiff={diffState.autoShowDiff}

@@ -38,6 +38,10 @@ export function useDraftPad() {
   const [versionHistory, setVersionHistory] = useState<
     Record<string, ContentVersion[]>
   >({});
+  const [
+    chosenResponseForCurrentGeneration,
+    setChosenResponseForCurrentGeneration,
+  ] = useState<string | null>(null);
 
   // Sort state
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -144,6 +148,9 @@ export function useDraftPad() {
       ({ available, reasoning, ...model }) => model,
     );
 
+    // Store the chosen response for diff calculations
+    setChosenResponseForCurrentGeneration(selectedContent);
+
     await run({
       inputs: {
         userMessage: userMessage.trim(),
@@ -156,7 +163,13 @@ export function useDraftPad() {
     setTimeout(() => {
       setSelectedModelId(null);
     }, 100);
-  }, [run, userMessage, selectedContent, selectedModelsForRun]);
+  }, [
+    run,
+    userMessage,
+    selectedContent,
+    selectedModelsForRun,
+    setChosenResponseForCurrentGeneration,
+  ]);
 
   // Handle model selection
   const handleModelSelect = useCallback((modelId: string) => {
@@ -297,6 +310,7 @@ export function useDraftPad() {
     showModelSelectorView,
     setShowModelSelectorView,
     versionHistory,
+    chosenResponseForCurrentGeneration,
     sortConfig,
     modelSortConfig,
     selectedProvider,
