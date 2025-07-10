@@ -4,7 +4,7 @@ const meta = {
   storage: "Cloud storage",
   "local-development": "Local development",
   observability: "Observability & tracing",
-  "react-streaming": "Streaming & React integration",
+  "streaming-react": "Streaming & React",
   "mcp-server": "MCP server",
   "projects-environments": "Projects & environments",
   pricing: "Pricing & limits",

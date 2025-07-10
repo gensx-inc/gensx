@@ -33,6 +33,16 @@ export const StreamOutput = gensx.Workflow(
 export const BasicOutput = gensx.Workflow(
   "BasicOutput",
   async ({ userMessage }: ChatProps) => {
+    gensx.publishData({
+      message: "Hello, world!",
+      confidence: 0.95,
+    });
+
+    gensx.publishEvent("answer", {
+      message: "Hello, world!",
+      confidence: 0.95,
+    });
+
     return {
       message: "Hello, world!",
       confidence: 0.95,
