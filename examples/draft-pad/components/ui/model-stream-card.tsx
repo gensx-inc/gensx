@@ -482,7 +482,7 @@ export function ModelStreamCard({
                 provider={modelConfig?.provider ?? "openai"}
                 className="w-4 h-4"
               />
-              <span className="text-sm font-medium text-[#333333] truncate max-w-[100px]">
+              <span className="text-sm font-medium text-[#333333] truncate max-w-[200px]">
                 {modelStream.displayName.replace(/\s*\([^)]*\)\s*$/, "")}
               </span>
               {/* Status indicators within the badge */}
