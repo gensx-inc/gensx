@@ -669,11 +669,11 @@ importers:
         specifier: ^0.1.2
         version: 0.1.4
       '@gensx/core':
-        specifier: ^0.4.6
-        version: 0.4.7
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/react':
-        specifier: ^0.1.2
-        version: 0.1.2(react@19.1.0)
+        specifier: workspace:*
+        version: link:../../packages/gensx-react
       '@gensx/storage':
         specifier: ^0.1.9
         version: 0.1.9

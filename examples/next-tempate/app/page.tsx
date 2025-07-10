@@ -1,109 +1,55 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import WorkflowInput from "@/components/WorkflowInput";
 import WorkflowOutput from "@/components/WorkflowOutput";
+import Header from "@/components/Header";
+import { useWorkflow, useObject } from "@gensx/react";
+import { ChatProps } from "@/gensx/workflows";
 
 export default function Page() {
-  const [jsonInput, setJsonInput] = useState("");
-  const [result, setResult] = useState<{
-    isValid: boolean;
-    data?: unknown;
-    error?: string;
-    formatted?: string;
-  } | null>(null);
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
 
-  const handleSubmit = () => {
-    if (!jsonInput.trim()) {
-      setResult({
-        isValid: false,
-        error: "Please enter some JSON to validate",
-      });
-      return;
-    }
+  // Use the workflow hook
+  const { error, execution, run, clear } = useWorkflow<ChatProps, string>({
+    config: {
+      baseUrl: "/api/gensx/StreamOutput",
+    },
+    onEvent: (event) => {
+      if (event.type === "event" && event.label === "status") {
+        setStatus(event.data as string);
+      }
+    },
+  });
 
-    try {
-      const parsed = JSON.parse(jsonInput);
-      const formatted = JSON.stringify(parsed, null, 2);
-      setResult({
-        isValid: true,
-        data: parsed,
-        formatted: formatted,
-      });
-    } catch (error) {
-      setResult({
-        isValid: false,
-        error: error instanceof Error ? error.message : "Invalid JSON format",
-      });
-    }
-  };
+  const result = useObject<string>(execution, "text");
 
   const handleClear = () => {
-    setJsonInput("");
-    setResult(null);
+    setMessage("");
+    setStatus(null);
+    clear();
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with links */}
-      <div className="border-b border-border px-2 py-2 h-12 flex items-center gap-2 justify-between">
-        <div className="flex items-center gap-2">
-          {/* Left side - empty for now */}
-        </div>
-        {/* Right-aligned links */}
-        <div className="flex items-center gap-2 ml-auto mr-4">
-          <Link
-            href="https://github.com/gensx-inc/gensx"
-            passHref
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              src="/github-mark.svg"
-              alt="GitHub"
-              className="w-6 h-6 dark:invert"
-              width={24}
-              height={24}
-            />
-          </Link>
-          <div className="h-6 border-l border-border mx-2" />
-          <Link
-            href="https://gensx.com/docs"
-            passHref
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              src="/logo.svg"
-              alt="Docs"
-              width={87}
-              height={35}
-              className="block dark:hidden"
-            />
-            <Image
-              src="/logo-dark.svg"
-              alt="Docs"
-              width={87}
-              height={35}
-              className="hidden dark:block"
-            />
-          </Link>
-        </div>
-      </div>
+      <Header />
 
       {/* Main Content */}
       <div className="p-4">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-6 mt-18">
             <WorkflowInput
-              jsonInput={jsonInput}
-              onInputChange={setJsonInput}
-              onSubmit={handleSubmit}
+              input={message}
+              onInputChange={setMessage}
+              onSubmit={() => run({ inputs: { userMessage: message } })}
               onClear={handleClear}
             />
-            <WorkflowOutput result={result} />
+            <WorkflowOutput
+              result={result as string | null}
+              status={status ?? null}
+              error={error ?? null}
+            />
           </div>
         </div>
       </div>

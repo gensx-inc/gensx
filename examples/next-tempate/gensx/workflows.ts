@@ -2,13 +2,15 @@ import * as gensx from "@gensx/core";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "@gensx/vercel-ai";
 
-interface ChatProps {
+export interface ChatProps {
   userMessage: string;
 }
 
 export const StreamOutput = gensx.Workflow(
   "StreamOutput",
   async ({ userMessage }: ChatProps) => {
+    gensx.publishEvent<string>("status", "starting");
+
     const result = await streamText({
       model: openai("gpt-4.1-mini"),
       messages: [
@@ -20,32 +22,17 @@ export const StreamOutput = gensx.Workflow(
       ],
     });
 
-    const generator = async function* () {
-      for await (const chunk of result.textStream) {
-        yield chunk;
-      }
-    };
+    gensx.publishEvent<string>("status", "streaming");
 
-    return generator();
-  },
-);
+    let text = "";
+    for await (const chunk of result.textStream) {
+      text += chunk;
+      gensx.publishObject<string>("text", text);
+    }
 
-export const BasicOutput = gensx.Workflow(
-  "BasicOutput",
-  async ({ userMessage }: ChatProps) => {
-    gensx.publishData({
-      message: "Hello, world!",
-      confidence: 0.95,
-    });
+    // throw new Error("oh no something went wrong");
 
-    gensx.publishEvent("answer", {
-      message: "Hello, world!",
-      confidence: 0.95,
-    });
-
-    return {
-      message: "Hello, world!",
-      confidence: 0.95,
-    };
+    gensx.publishEvent<string>("status", "completed");
+    return text;
   },
 );

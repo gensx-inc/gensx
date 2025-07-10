@@ -6,14 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
 interface WorkflowInputProps {
-  jsonInput: string;
+  input: string;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   onClear: () => void;
 }
 
 export default function WorkflowInput({
-  jsonInput,
+  input,
   onInputChange,
   onSubmit,
   onClear,
@@ -28,14 +28,8 @@ export default function WorkflowInput({
       </CardHeader>
       <CardContent className="space-y-4">
         <Textarea
-          placeholder='Enter your JSON here...
-Example:
-{
-  "name": "John Doe",
-  "age": 30,
-  "city": "New York"
-}'
-          value={jsonInput}
+          placeholder="Enter your message here..."
+          value={input}
           onChange={(e) => onInputChange(e.target.value)}
           className="min-h-[400px] font-mono text-sm"
         />

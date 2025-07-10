@@ -79,6 +79,9 @@ export interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
 
   /** Stop the current workflow */
   stop: () => void;
+
+  /** Clear workflow state */
+  clear: () => void;
 }
 
 /**
@@ -332,6 +335,7 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
     execution: events,
     run,
     stop,
+    clear,
   };
 }
 
