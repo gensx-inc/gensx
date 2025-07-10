@@ -43,7 +43,6 @@ interface HeaderProps {
     direction: "asc" | "desc" | "none";
   };
   showDiff: boolean;
-  autoShowDiff: boolean;
   onToggleDiff: () => void;
   onModelSort: (field: "cost" | "context" | "maxOutput") => void;
   onSort: (field: "words" | "time" | "cost") => void;
@@ -64,7 +63,6 @@ export function Header({
   modelSortConfig,
   sortConfig,
   showDiff,
-  autoShowDiff,
   onToggleDiff,
   onModelSort,
   onSort,
@@ -85,10 +83,12 @@ export function Header({
           >
             <button
               onClick={onBackToAllModels}
-              className="flex items-center gap-2 text-[#333333]/70 hover:text-[#333333] transition-colors px-3 py-2 rounded-xl hover:bg-white/10"
+              className="bg-white/40 hover:bg-white/60 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">Back to all models</span>
+              <ArrowLeft className="w-4 h-4 text-[#000000]/60" />
+              <span className="text-sm font-medium text-[#333333]">
+                Back to all models
+              </span>
             </button>
           </motion.div>
         )}
@@ -105,11 +105,7 @@ export function Header({
               onSort={onSort}
             />
             {sortedModelStreams.length > 0 && (
-              <DiffToggleButton
-                showDiff={showDiff}
-                autoShowDiff={autoShowDiff}
-                onToggle={onToggleDiff}
-              />
+              <DiffToggleButton showDiff={showDiff} onToggle={onToggleDiff} />
             )}
           </div>
         </>
@@ -120,11 +116,7 @@ export function Header({
         !overallStats?.hasData &&
         !showModelSelector && (
           <div className="absolute right-0">
-            <DiffToggleButton
-              showDiff={showDiff}
-              autoShowDiff={autoShowDiff}
-              onToggle={onToggleDiff}
-            />
+            <DiffToggleButton showDiff={showDiff} onToggle={onToggleDiff} />
           </div>
         )}
 

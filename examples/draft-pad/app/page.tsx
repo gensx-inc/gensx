@@ -85,7 +85,6 @@ export default function Home() {
         modelSortConfig={draftPad.modelSortConfig}
         sortConfig={draftPad.sortConfig}
         showDiff={diffState.showDiff}
-        autoShowDiff={diffState.autoShowDiff}
         onToggleDiff={diffState.toggleDiff}
         onModelSort={draftPad.handleModelSort}
         onSort={draftPad.handleSort}
