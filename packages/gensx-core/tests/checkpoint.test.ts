@@ -2,7 +2,7 @@ import { setTimeout } from "timers/promises";
 
 import { expect, suite, test } from "vitest";
 
-import { generateDeterministicId } from "../src/checkpoint.js";
+import { ExecutionNode } from "../src/checkpoint.js";
 import * as gensx from "../src/index.js";
 
 // Helper function to generate test IDs
@@ -11,98 +11,6 @@ export function generateTestId(): string {
 }
 
 suite("checkpoint", () => {
-  suite("deterministic ID generation", () => {
-    test("generates same ID for same inputs", () => {
-      const props = { name: "test", value: 42 };
-      const id1 = generateDeterministicId("TestComponent", props, "parent123");
-      const id2 = generateDeterministicId("TestComponent", props, "parent123");
-
-      expect(id1).toBe(id2);
-    });
-
-    test("generates different IDs for different component names", () => {
-      const props = { name: "test" };
-      const id1 = generateDeterministicId("ComponentA", props, "parent123");
-      const id2 = generateDeterministicId("ComponentB", props, "parent123");
-
-      expect(id1).not.toBe(id2);
-    });
-
-    test("generates different IDs for different props", () => {
-      const props1 = { name: "test", value: 42 };
-      const props2 = { name: "test", value: 43 };
-      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
-      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
-
-      expect(id1).not.toBe(id2);
-    });
-
-    test("generates different IDs for different parent IDs", () => {
-      const props = { name: "test" };
-      const id1 = generateDeterministicId("TestComponent", props, "parent1");
-      const id2 = generateDeterministicId("TestComponent", props, "parent2");
-
-      expect(id1).not.toBe(id2);
-    });
-
-    test("handles empty props", () => {
-      const id1 = generateDeterministicId("TestComponent", {}, "parent123");
-      const id2 = generateDeterministicId("TestComponent", {}, "parent123");
-
-      expect(id1).toBe(id2);
-    });
-
-    test("prop order doesn't matter", () => {
-      const props1 = { a: 1, b: 2, c: 3 };
-      const props2 = { c: 3, a: 1, b: 2 };
-      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
-      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
-
-      expect(id1).toBe(id2);
-    });
-
-    test("handles complex nested objects", () => {
-      const props1 = {
-        user: { name: "John", age: 30 },
-        settings: { theme: "dark", notifications: true },
-      };
-      const props2 = {
-        user: { name: "John", age: 30 },
-        settings: { theme: "dark", notifications: true },
-      };
-      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
-      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
-
-      expect(id1).toBe(id2);
-    });
-
-    test("handles arrays consistently", () => {
-      const props1 = { items: [1, 2, 3], tags: ["a", "b"] };
-      const props2 = { items: [1, 2, 3], tags: ["a", "b"] };
-      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
-      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
-
-      expect(id1).toBe(id2);
-    });
-
-    test("different array order produces different IDs", () => {
-      const props1 = { items: [1, 2, 3] };
-      const props2 = { items: [3, 2, 1] };
-      const id1 = generateDeterministicId("TestComponent", props1, "parent123");
-      const id2 = generateDeterministicId("TestComponent", props2, "parent123");
-
-      expect(id1).not.toBe(id2);
-    });
-
-    test("ID format is consistent", () => {
-      const props = { name: "test" };
-      const id = generateDeterministicId("TestComponent", props, "parent123");
-
-      // Should be in format: parentId:componentName:propsHash
-      expect(id).toMatch(/^TestComponent:[a-f0-9]{16}$/);
-    });
-  });
-
   test("component returns expected results", async () => {
     // Define a simple component that returns a string
     async function simpleComponent({
@@ -183,23 +91,25 @@ suite("checkpoint", () => {
     const NewComponent = gensx.Component("NewComponent", newComponent);
 
     // Create a checkpoint with only the cached component completed
-    const mockCheckpoint = {
-      id: "TestWorkflow:-",
+    const mockCheckpoint: ExecutionNode = {
+      id: "TestWorkflow:7db44194:0",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
+      startedAt: process.hrtime.bigint().toString(),
       props: { input: "test" },
-      sequenceNumber: 0,
+      completed: false,
       children: [
         {
-          id: "CachedComponent:8a2b95df3bafc8df",
+          id: "TestWorkflow-CachedComponent:bb17e0d6:0",
           componentName: "CachedComponent",
-          parentId: "TestWorkflow:-",
+          parentId: "TestWorkflow:7db44194:0",
           startTime: Date.now() - 900,
+          startedAt: process.hrtime.bigint().toString(),
           endTime: Date.now() - 800,
           props: { input: "test" },
           output: "cached: test",
           children: [],
-          sequenceNumber: 1,
+          completed: true,
         },
       ],
     };

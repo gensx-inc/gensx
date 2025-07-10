@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { Workflow } from "src/index.js";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod/v4";
@@ -123,8 +123,9 @@ describe("External Tools", () => {
         params: { text: "Hello" },
         paramsSchema: expect.any(Object),
         resultSchema: expect.any(Object),
-        nodeId: expect.stringMatching(/^ExternalTool:[a-z0-9-]+$/),
-        sequenceNumber: expect.any(Number),
+        nodeId: expect.stringMatching(
+          /^TestWorkflow-ExternalTool:[a-z0-9-]+:\d+$/,
+        ),
       });
     });
 

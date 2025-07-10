@@ -42,14 +42,8 @@ export function createCheckpoint<T = unknown>(
 
   label ??= `checkpoint-marker-${Date.now()}`;
 
-  let counter = 0;
-  while (workflowContext.checkpointLabelMap.has(label)) {
-    label = `${label}-${counter++}`;
-    if (counter > 1000) {
-      throw new Error(
-        `[GenSX] Checkpoint ${label} has been created more than 1000 times.`,
-      );
-    }
+  if (workflowContext.checkpointLabelMap.has(label)) {
+    throw new Error(`[GenSX] Checkpoint ${label} has already been created.`);
   }
   // Do not pass the label as a prop, as that would affect that ability to deterministically calculate the nodeId.
   const result = CheckpointMarkerComponent(

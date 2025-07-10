@@ -1,6 +1,6 @@
 import { expect, suite, test, vi } from "vitest";
 
-import { CheckpointManager } from "../src/checkpoint.js";
+import { CheckpointManager, ExecutionNode } from "../src/checkpoint.js";
 import { ExecutionContext, withContext } from "../src/context.js";
 import {
   createWorkflowContext,
@@ -47,13 +47,19 @@ suite("workflow context", () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {
       // Mock implementation
     });
-    await context.onRequestInput("test-node-id");
+    await context.onRequestInput({
+      type: "input-request",
+      nodeId: "test-node-id",
+    });
     expect(consoleSpy).toHaveBeenCalledWith(
       "[GenSX] Requesting input not supported in this environment",
     );
 
     // Test default onRestoreCheckpoint - should log warning
-    await context.onRestoreCheckpoint("test-node-id", { feedback: "test" });
+    await context.onRestoreCheckpoint(
+      { id: "test-node-id" } as unknown as ExecutionNode,
+      { feedback: "test" },
+    );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[GenSX] Restore checkpoint not supported in this environment",
     );
@@ -90,12 +96,16 @@ suite("workflow context", () => {
     expect(context.checkpointLabelMap.size).toBe(0);
 
     // Add some labels
-    context.checkpointLabelMap.set("checkpoint1", "node-id-1");
-    context.checkpointLabelMap.set("checkpoint2", "node-id-2");
+    context.checkpointLabelMap.set("checkpoint1", {
+      id: "node-id-1",
+    } as unknown as ExecutionNode);
+    context.checkpointLabelMap.set("checkpoint2", {
+      id: "node-id-2",
+    } as unknown as ExecutionNode);
 
     expect(context.checkpointLabelMap.size).toBe(2);
-    expect(context.checkpointLabelMap.get("checkpoint1")).toBe("node-id-1");
-    expect(context.checkpointLabelMap.get("checkpoint2")).toBe("node-id-2");
+    expect(context.checkpointLabelMap.get("checkpoint1")?.id).toBe("node-id-1");
+    expect(context.checkpointLabelMap.get("checkpoint2")?.id).toBe("node-id-2");
     expect(context.checkpointLabelMap.has("checkpoint3")).toBe(false);
   });
 

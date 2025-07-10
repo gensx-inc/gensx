@@ -170,7 +170,7 @@ export class ExecutionHandler {
    * Create input request callback for workflow execution
    */
   createInputRequestCallback(executionId: string) {
-    return (request: { nodeId: string; sequenceNumber: number }) => {
+    return (request: { nodeId: string }) => {
       const { nodeId } = request;
       let executionRequests = this.inputRequests.get(executionId);
       if (!executionRequests) {

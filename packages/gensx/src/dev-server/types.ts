@@ -109,7 +109,6 @@ export type WorkflowMessage = { id: string; timestamp: string } & (
   | {
       type: "external-tool";
       nodeId: string;
-      sequenceNumber: number;
       toolName: string;
       params: JsonValue;
       paramsSchema: Definition;

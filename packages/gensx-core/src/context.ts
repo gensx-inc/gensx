@@ -138,25 +138,41 @@ const configureAsyncLocalStorage = (async () => {
   }
 })();
 
-const rootContext = new ExecutionContext({});
+let rootContextRef: { context: ExecutionContext | undefined } = {
+  context: undefined,
+};
 
 // Create a global symbol for the fallback context
 const GLOBAL_CONTEXT_SYMBOL = Symbol.for("gensx.globalContext");
 
 // Initialize the global fallback context if it doesn't exist
-globalObj[GLOBAL_CONTEXT_SYMBOL] ??= rootContext;
+globalObj[GLOBAL_CONTEXT_SYMBOL] ??= rootContextRef;
 
 // Helper to get/set the global context
-const getGlobalContext = (): ExecutionContext =>
-  globalObj[GLOBAL_CONTEXT_SYMBOL] as ExecutionContext;
+const getGlobalContext = (): ExecutionContext => {
+  const context = (
+    globalObj[GLOBAL_CONTEXT_SYMBOL] as {
+      context: ExecutionContext | undefined;
+    }
+  ).context;
+  if (context === undefined) {
+    const newContext = new ExecutionContext({});
+    setGlobalContext(newContext);
+    return newContext;
+  }
+  return context;
+};
+
 const setGlobalContext = (context: ExecutionContext): void => {
-  globalObj[GLOBAL_CONTEXT_SYMBOL] = context;
+  (globalObj[GLOBAL_CONTEXT_SYMBOL] as { context: ExecutionContext }).context =
+    context;
 };
 
 // Update contextManager implementation
 const contextManager = {
   async init() {
     await configureAsyncLocalStorage;
+    rootContextRef.context = new ExecutionContext({});
   },
 
   getCurrentContext(): ExecutionContext {
@@ -165,7 +181,7 @@ const contextManager = {
     ] as AsyncLocalStorageType<ExecutionContext> | null;
     if (storage) {
       const store = storage.getStore();
-      return store ?? rootContext;
+      return store ?? getGlobalContext();
     }
     return getGlobalContext();
   },

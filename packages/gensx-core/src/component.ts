@@ -21,6 +21,7 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
+import { generateNodeId } from "./utils/nodeId.js";
 import { InputRequest, WorkflowExecutionContext } from "./workflow-context.js";
 import { WorkflowMessageListener } from "./workflow-state.js";
 
@@ -109,7 +110,7 @@ export function Component<P extends object = {}, R = unknown>(
     );
 
     // Generate the node ID
-    const nodeId = checkpointManager.generateNodeId(
+    const nodeId = generateNodeId(
       componentName,
       props as Record<string, unknown>,
       resolvedComponentOpts.idPropsKeys,

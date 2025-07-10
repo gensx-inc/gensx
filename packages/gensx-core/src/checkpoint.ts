@@ -5,9 +5,6 @@ import { hrtime } from "node:process";
 import { promisify } from "node:util";
 import { gzip } from "node:zlib";
 
-import { deterministicString } from "deterministic-object-hash";
-import { ZodObject } from "zod/v4";
-
 import {
   CheckpointWriter,
   ContentId,
@@ -18,6 +15,7 @@ import {
 } from "./checkpoint-types.js";
 import { isAsyncIterable, isReadableStream } from "./component.js";
 import { readConfig } from "./utils/config.js";
+import { generateNodeId, stringifyProps } from "./utils/nodeId.js";
 import { USER_AGENT } from "./utils/user-agent.js";
 
 export type { CheckpointWriter, ExecutionNode, NodeId };
@@ -168,7 +166,7 @@ export class CheckpointManager implements CheckpointWriter {
   ): number {
     const contentContext = {
       name: componentName,
-      props: this.stringifyProps(props, idPropsKeys),
+      props: stringifyProps(props, idPropsKeys),
       parent: parentPath,
     };
     const contentStr = JSON.stringify(contentContext);
@@ -922,7 +920,7 @@ export class CheckpointManager implements CheckpointWriter {
     parentNode?: ExecutionNode,
   ) {
     const parentPath = parentNode?.id ? getPathId(parentNode.id) : "";
-    const nodeId = this.generateNodeId(
+    const nodeId = generateNodeId(
       node.componentName,
       node.props,
       node.componentOpts?.idPropsKeys,
@@ -1091,129 +1089,6 @@ export class CheckpointManager implements CheckpointWriter {
     if (this.pendingUpdate || this.activeCheckpoint) {
       await this.waitForPendingUpdates();
     }
-  }
-
-  public generateNodeId(
-    componentName: string,
-    props: Record<string, unknown>,
-    idPropsKeys: string[] | undefined,
-    parentPath = "",
-    callIndex = 0,
-  ): NodeId {
-    // Generate hierarchical path
-    const pathId: PathId =
-      parentPath && parentPath.length > 0
-        ? `${parentPath}-${componentName}`
-        : componentName;
-
-    const propsStr = this.stringifyProps(props, idPropsKeys);
-    // Generate content hash from component name + props
-    const contentId: ContentId = createHash("sha1")
-      .update(componentName)
-      .update(propsStr)
-      .digest("hex")
-      .slice(0, 8);
-
-    // Create primary ID: path:contentHash:callIndex
-    const nodeId: NodeId = `${pathId}:${contentId}:${callIndex}`;
-
-    return nodeId;
-  }
-
-  private stringifyProps(
-    props: Record<string, unknown>,
-    idPropsKeys?: string[],
-  ): string {
-    return deterministicString(
-      this.deterministicProps(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        JSON.parse(JSON.stringify(props)),
-        idPropsKeys,
-      ),
-    );
-  }
-
-  private deterministicProps(
-    props: Record<string, unknown>,
-    idPropsKeys: string[] | undefined,
-    path = "",
-  ): Record<string, unknown> {
-    const filteredProps: Record<string, unknown> = !idPropsKeys
-      ? props
-      : this.filterProps(props, idPropsKeys);
-    // Do some processing on certain types of props that are hard to serialize like zod schemas
-    for (const key in filteredProps) {
-      const value = filteredProps[key];
-      if (value instanceof ZodObject) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        filteredProps[key] = value.toString();
-      } else if (typeof value === "function") {
-        console.warn(
-          `[Checkpoint] Function prop found in ${path}.${key}, this is not serializable and cannot be used for node id generation.`,
-          {
-            path: `${path}.${key}`,
-            value,
-          },
-        );
-        filteredProps[key] = "[Function]";
-      } else if (typeof value === "object" && value !== null) {
-        filteredProps[key] = this.deterministicProps(
-          value as Record<string, unknown>,
-          undefined,
-          `${path}.${key}`,
-        );
-      }
-    }
-    return filteredProps;
-  }
-
-  /**
-   * Filter the props to only include the keys in idPropsKeys
-   * @param props - The props to filter
-   * @param idPropsKeys - A list of paths to values in the props to include in the id.
-   * @returns The filtered props
-   */
-  private filterProps(
-    props: Record<string, unknown>,
-    idPropsKeys: string[],
-  ): Record<string, unknown> {
-    const result: Record<string, unknown> = {};
-
-    for (const path of idPropsKeys) {
-      const parts = path.split(".");
-      let current: Record<string, unknown> | undefined = props;
-      let target = result;
-
-      // Traverse the path
-      for (let i = 0; i < parts.length - 1; i++) {
-        const part = parts[i];
-        current = current[part] as Record<string, unknown> | undefined;
-        if (!current) break;
-
-        target[part] ??= {};
-        target = target[part] as Record<string, unknown>;
-      }
-
-      // Set the final value
-      const lastPart = parts[parts.length - 1];
-      if (current && lastPart in current) {
-        const value = current[lastPart];
-        // If the value is not a primitive, copy the whole thing
-        if (
-          value &&
-          typeof value !== "string" &&
-          typeof value !== "number" &&
-          typeof value !== "boolean" &&
-          typeof value !== "bigint"
-        ) {
-          target[lastPart] = structuredClone(value);
-        } else {
-          target[lastPart] = value;
-        }
-      }
-    }
-
-    return result;
   }
 
   private buildReplayLookup(node: ExecutionNode) {
