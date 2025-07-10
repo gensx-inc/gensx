@@ -1,5 +1,5 @@
 ---
-title: Streaming
+title: Streaming & React
 description: Build streaming applications with GenSX
 ---
 
@@ -9,13 +9,7 @@ GenSX provides utilities and hooks that make it easy to build interactive, strea
 
 ## Streaming data from workflows
 
-There are multiple ways to stream data from your workflows. You can steam outputs, objects, events, or an arbitrary data.
-
-TODO: improve this section
-
-### Streaming an output
-
-TODO
+There are multiple ways to stream data from your workflows. You can stream outputs, objects, events, or any arbitrary data.
 
 ### Streaming objects
 
@@ -44,7 +38,7 @@ publishMessages([
 ]);
 ```
 
-On the client side, you use the `useObject` hook to subscribe to the object and get the latest state.
+On the client side, you use the [`useObject`](#using-the-useobject-hook) hook to subscribe to the object and get the latest state.
 
 ### Streaming events
 
@@ -62,7 +56,7 @@ gensx.publishEvent<ProgressEvent>("progress", {
 
 There is also a `createEventStream` helper available for creating a reusable function for publishing the events.
 
-On the client side, you use the `useEvents` hook to subscribe to the events and get a list of events or process them in the `onEvent` callback.
+On the client side, you use the [`useEvents`](#using-the-useevents-hook) hook to subscribe to the events and get a list of events or process them in the [`onEvent`](#using-the-useworkflow-hook) callback.
 
 ### Streaming arbitrary data
 
@@ -94,13 +88,61 @@ Unlike `publishEvent` and `publishObject`, `publishData` does not take in a labe
 }
 ```
 
+### Streaming an output
+
+Often we recommend using the utilities above to stream and then to just return the final accumulated result from your workflow. That approach makes consuming the stream simpler and makes it easy to read the outputs in traces. However, GenSX gives you the flexibility to stream the output directly too.
+
+To stream an output, just have your workflow return a `ReadableStream` or an `AsyncIterator`. Here's an example of streaming a chat response with the Vercel AI SDK:
+
+```typescript
+export const StreamingChat = gensx.Workflow(
+  "StreamingChat",
+  ({ prompt }: { prompt: string }) => {
+    const result = streamText({
+      messages: [
+        {
+          role: "system",
+          content:
+            "you are a trash eating infrastructure engineer embodied as a racoon. Be sassy and fun. ",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: openai("gpt-4o-mini"),
+    });
+
+    const generator = async function* () {
+      for await (const chunk of result.textStream) {
+        yield chunk;
+      }
+    };
+
+    return generator();
+  },
+);
+```
+
+When using the streaming headers, the output will be a series of events with the `type: "output"` with the data in the `content` property:
+
+```json
+{
+  "id": "1752109017087",
+  "timestamp": "2025-07-10T00:56:57.087Z",
+  "type": "output",
+  // content is a string, JSON will be stringified
+  "content": "Hello, world!"
+}
+```
+
 ## Consuming streaming data in React
 
 The `@gensx/react` library is the best way to consume streaming data from GenSX workflows.
 
 ### Setting up the passthrough API
 
-To avoid exposing your GenSX API key to the client, we recommend setting up a passthrough API that forwards the request to the GenSX API. For brevity, we won't include the code here but you can grab [the code here](https://github.com/gensx-inc/gensx/blob/main/examples/chat-ux/app/api/gensx/%5Bworkflow%5D/route.ts) as a reference.
+To avoid exposing your GenSX API key to the client, we recommend setting up a passthrough API that forwards the request to the GenSX API. For brevity, we won't include the code in this guide but you can grab [the code here](https://github.com/gensx-inc/gensx/blob/main/examples/chat-ux/app/api/gensx/%5Bworkflow%5D/route.ts) as a reference.
 
 ### Using the `useWorkflow` hook
 
@@ -146,6 +188,8 @@ const { error, output, execution, run } = useWorkflow<ChatInput, ChatOutput>({
     } else if (event.type === "event") {
       console.log(event.label);
       console.log(event.data);
+    } else if (event.type === "output") {
+      console.log(event.content);
     }
   },
 });
@@ -153,13 +197,13 @@ const { error, output, execution, run } = useWorkflow<ChatInput, ChatOutput>({
 
 ### Using the `useObject` hook
 
-The `useObject` hook lets you subscribe to an object published via `publishObject` and get it's latest state.
+The `useObject` hook lets you subscribe to an object published via `publishObject` and get its latest state.
 
 ```typescript
 const messages = useObject<Message[]>(execution, "messages");
 ```
 
-Whenever a new version of the object is published, the value will automatically be updated making it a great way to render data in real-time. In this example, you can render the messages as they are published and the latest text will be streamed into the UI.
+Whenever a new version of the object is published, the value will automatically be updated, making it a great way to render data in real-time. In this example, you can render the messages as they are published and the latest text will be streamed to the UI.
 
 ```tsx
 messages.forEach((message) => {
@@ -248,10 +292,20 @@ In addition to the events created by `publishEvent`, `publishObject`, and `publi
 
 ## Consuming streaming data from the API
 
-To consume the streaming messages from the API, you need to set the `Accept` header to `text/event-stream` or `application/x-ndjson`. The `@gensx/react` and `@gensx/client` libraries automatically set the `Accept` header for you.
+To consume the streaming messages from the API, you need to set the `Accept` header to `text/event-stream` or `application/x-ndjson`. The `@gensx/react` and `@gensx/client` libraries automatically set the `Accept` header for you. If you don't set the `Accept` header, only outputs will be streamed and they will be returned as a basic `application/stream`.
 
-TODO: finish this section
+GenSX also allows you to resume a stream at any time by calling the `progress` API:
+
+```bash
+curl "https://api.gensx.com/org/{orgName}/workflowExecutions/{executionId}/progress" \
+-H "Authorization: Bearer {apiKey}" \
+-H "Accept: text/event-stream" # or application/x-ndjson
+```
 
 ## Examples
 
-TODO: Add example links
+The links below are end-to-end examples showing how to build streaming applications with GenSX:
+
+- [Chat UX](https://github.com/gensx-inc/gensx/tree/main/examples/chat-ux)
+- [Draft Pad](https://github.com/gensx-inc/gensx/tree/main/examples/draft-pad)
+- [Deep Research](https://github.com/gensx-inc/gensx/tree/main/examples/deep-research)
