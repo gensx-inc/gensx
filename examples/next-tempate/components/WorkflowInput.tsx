@@ -31,7 +31,7 @@ export default function WorkflowInput({
           placeholder="Enter your message here..."
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
-          className="min-h-[400px] font-mono text-sm"
+          className="min-h-[400px] text-sm"
         />
         <div className="flex justify-end gap-2">
           <Button onClick={onSubmit} className="w-24">

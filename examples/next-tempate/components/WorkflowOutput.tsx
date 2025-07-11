@@ -34,9 +34,11 @@ export default function WorkflowOutput({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-muted-foreground" />
-          Output
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-muted-foreground" />
+            Workflow Output
+          </div>
           <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
         </CardTitle>
       </CardHeader>
@@ -61,7 +63,7 @@ export default function WorkflowOutput({
         ) : (
           <div className="space-y-4">
             <div>
-              <div className="bg-muted p-4 rounded-lg overflow-auto max-h-[400px] text-sm border border-border">
+              <div className="bg-background p-4 rounded-lg overflow-auto max-h-[400px] text-sm border border-border">
                 <div className="whitespace-pre-wrap text-foreground">
                   {result}
                 </div>
