@@ -2,6 +2,7 @@ const meta = {
   index: "Overview",
   quickstart: "Quickstart",
   "basic-concepts": "Basic concepts",
+  "streaming-react": "Streaming & React",
   "why-components": "Why components?",
   cloud: "GenSX Cloud ",
   "component-reference": "Components reference",
