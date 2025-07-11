@@ -86,9 +86,9 @@ interface UseWorkflowConfig<TOutput = unknown> {
 
 interface WorkflowRunConfig<TInputs = unknown> {
   inputs: TInputs;
-  org?: string; // Organization for this run
-  project?: string; // Project for this run
-  environment?: string; // Environment for this run
+  org?: string; // Override org for this run
+  project?: string; // Override project for this run
+  environment?: string; // Override environment for this run
 }
 ```
 
