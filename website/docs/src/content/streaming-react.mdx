@@ -150,7 +150,7 @@ To avoid exposing your GenSX API key to the client, we recommend setting up a pa
 The `useWorkflow` hook lets you run a workflow and subscribe to its events and output.
 
 ```typescript
-const { inProgress, error, output, execution, run, stop } = useWorkflow<
+const { inProgress, error, output, execution, run, stop, clear } = useWorkflow<
   ChatInput, // the input type of the workflow
   ChatOutput // the output type of the workflow
 >({

@@ -1,18 +1,20 @@
 # @gensx/react - React Hooks for GenSX
 
-React hooks and components for interacting with GenSX workflows.
+React hooks for interacting with GenSX workflows.
 
 ## Installation
 
-This package is part of the monorepo and is available to all apps in the workspace.
-
-```typescript
-import { useWorkflow } from "@gensx/react";
+```bash
+npm install @gensx/react
 ```
 
 ## useWorkflow Hook
 
-A React hook that mirrors the GenSX Client interface, making it easy to create passthrough APIs.
+A React hook for interacting with GenSX workflows.
+
+```typescript
+import { useWorkflow } from "@gensx/react";
+```
 
 ### Features
 
@@ -33,10 +35,6 @@ function MyComponent() {
   const gensx = useWorkflow({
     config: {
       baseUrl: "/api/gensx",
-      workflowName: "ChatWorkflow",
-      org: "my-org",
-      project: "my-project",
-      environment: "production",
     },
     onComplete: (output) => console.log("Done:", output),
   });
@@ -74,39 +72,37 @@ function MyComponent() {
 ```typescript
 interface WorkflowConfig {
   baseUrl: string; // Your API base URL
-  workflowName: string; // Workflow name to execute
-  org: string; // GenSX organization
-  project: string; // GenSX project
-  environment?: string; // Optional environment
   headers?: Record<string, string>; // Optional request headers
 }
 
-interface UseWorkflowConfig<TInputs = unknown, TOutput = unknown> {
+interface UseWorkflowConfig<TOutput = unknown> {
   config: WorkflowConfig; // All workflow configuration
   onStart?: (message: string) => void;
-  onComplete?: (output: TOutput) => void;
+  onComplete?: (output: TOutput | null) => void;
   onError?: (error: string) => void;
   onEvent?: (event: WorkflowMessage) => void;
+  outputTransformer?: (accumulatedContent: string) => TOutput;
 }
 
 interface WorkflowRunConfig<TInputs = unknown> {
   inputs: TInputs;
-  org?: string; // Override org for this run
-  project?: string; // Override project for this run
-  environment?: string; // Override environment for this run
+  org?: string; // Organization for this run
+  project?: string; // Project for this run
+  environment?: string; // Environment for this run
 }
 ```
 
 ### Return Values
 
 ```typescript
-interface UseWorkflowResult<TInputs = any, TOutput = any> {
+interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
   inProgress: boolean; // Workflow is running
   error: string | null; // Error message if any
   output: TOutput | null; // Final output (accumulated from stream)
-  events: WorkflowMessage[]; // All events received
+  execution: WorkflowMessage[]; // All events received
   run: (config: WorkflowRunConfig<TInputs>) => Promise<void>;
   stop: () => void;
+  clear: () => void; // Clear all workflow state
 }
 ```
 
@@ -177,39 +173,13 @@ export async function POST(request: Request) {
 ## GenSX Event Types
 
 ```typescript
-type GenSXEvent =
-  | { type: "started"; message: string }
-  | { type: "progress"; message: string }
-  | { type: "output"; chunk: string }
-  | { type: "completed"; status: "success"; output: any }
-  | { type: "error"; error: string };
-```
-
-## Migration from Direct Client Usage
-
-If you're currently using the GenSX Client directly in your React components, migrating to the hook is straightforward:
-
-```typescript
-// Before - Direct Client usage
-const gensx = new GenSX({ apiKey: "xxx" });
-const response = await gensx.runRaw("ChatWorkflow", {
-  org: "my-org",
-  project: "my-project",
-  inputs: { userMessage: "Hello" },
-});
-
-// After - Using the hook
-const gensx = useWorkflow({
-  config: {
-    baseUrl: "/api/gensx",
-    workflowName: "ChatWorkflow",
-    org: "my-org",
-    project: "my-project",
-  },
-});
-await gensx.run({
-  inputs: { userMessage: "Hello" },
-});
+type WorkflowMessage =
+  | { type: "start"; workflowName: string }
+  | { type: "data"; data: JsonValue }
+  | { type: "event"; label: string; data: JsonValue }
+  | { type: "end" }
+  | { type: "error"; error: string }
+  | { type: "object"; label: string; patches: Operation[]; isInitial: boolean };
 ```
 
 ## Examples
@@ -245,10 +215,6 @@ import { useWorkflow } from "@gensx/react";
 const gensx = useWorkflow({
   config: {
     baseUrl: "/api/gensx",
-    workflowName: "MyWorkflow",
-    org: "my-org",
-    project: "my-project",
-    environment: "production",
   },
 });
 
@@ -261,14 +227,13 @@ interface ChatResponse {
 const gensx = useWorkflow<UpdateDraftInput, ChatResponse>({
   config: {
     baseUrl: "/api/gensx",
-    workflowName: "ChatWorkflow",
-    org: "my-org",
-    project: "my-project",
   },
   onComplete: (output) => {
-    // output is typed as ChatResponse
-    console.log(output.message);
-    console.log(output.confidence);
+    // output is typed as ChatResponse | null
+    if (output) {
+      console.log(output.message);
+      console.log(output.confidence);
+    }
   },
 });
 
@@ -276,9 +241,6 @@ const gensx = useWorkflow<UpdateDraftInput, ChatResponse>({
 const gensx = useWorkflow<UpdateDraftInput, string>({
   config: {
     baseUrl: "/api/gensx",
-    workflowName: "MyWorkflow",
-    org: "my-org",
-    project: "my-project",
   },
   onEvent: (event) => {
     // Called for each event
@@ -308,13 +270,14 @@ interface UseWorkflowConfig<TInputs = unknown, TOutput = unknown> {
 #### Hook Return Value
 
 ```typescript
-interface UseWorkflowResult<TInputs = any, TOutput = any> {
+interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
   inProgress: boolean;
   error: string | null;
   output: TOutput | null;
-  events: WorkflowMessage[];
+  execution: WorkflowMessage[];
   run: (config: WorkflowRunConfig<TInputs>) => Promise<void>;
   stop: () => void;
+  clear: () => void;
 }
 ```
 
@@ -331,13 +294,12 @@ interface DraftResponse {
 const gensx = useWorkflow<UpdateDraftInput, DraftResponse>({
   config: {
     baseUrl: "/api/gensx",
-    workflowName: "UpdateDraft",
-    org: "my-org",
-    project: "my-project",
   },
   onComplete: (output) => {
-    setDraft(output.content);
-    setWordCount(output.wordCount);
+    if (output) {
+      setDraft(output.content);
+      setWordCount(output.wordCount);
+    }
   },
 });
 
@@ -355,9 +317,6 @@ console.log("Current output:", gensx.output);
 const gensx = useWorkflow<StoryInput, string>({
   config: {
     baseUrl: "/api/gensx",
-    workflowName: "GenerateStory",
-    org: "my-org",
-    project: "my-project",
   },
   onEvent: (event) => {
     if (event.type === "output") {
@@ -381,19 +340,18 @@ await gensx.run({
 const gensx = useWorkflow({
   config: {
     baseUrl: "/api/gensx",
-    workflowName: "MyWorkflow",
-    org: "my-org",
-    project: "my-project",
-    environment: "production",
     headers: {
       "X-Custom-Header": "value",
     },
   },
 });
 
-// Uses config values
+// Basic run with org/project/environment
 await gensx.run({
   inputs: { data: "test" },
+  org: "my-org",
+  project: "my-project",
+  environment: "my-env",
 });
 
 // Override org/project/environment for specific run
@@ -496,10 +454,6 @@ const chatResponse = useObject<ChatResponse>(
 // chatResponse is typed as ChatResponse | undefined
 ```
 
-### Migration
-
-The `useObject` hook is fully backward compatible. Existing code will continue to work without modifications while automatically benefiting from the performance improvements when used with the new patch-based system.
-
 ## useEvents Hook
 
 A React hook for accessing all events with a specific label from GenSX workflows.
@@ -523,7 +477,3 @@ function ProgressComponent() {
   );
 }
 ```
-
-## Components
-
-(Add component documentation here)

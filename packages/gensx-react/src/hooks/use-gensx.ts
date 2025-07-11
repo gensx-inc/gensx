@@ -8,13 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-export interface WorkflowRunOptions {
-  org: string;
-  project: string;
-  environment?: string;
-  inputs?: Record<string, unknown>;
-  format?: "sse" | "ndjson" | "json";
-}
 
 export interface WorkflowRunConfig<TInputs = unknown> {
   inputs: TInputs;
@@ -79,6 +72,9 @@ export interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
 
   /** Stop the current workflow */
   stop: () => void;
+
+  /** Clear all workflow state */
+  clear: () => void;
 }
 
 /**
@@ -89,20 +85,23 @@ export interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
  * const workflow = useWorkflow({
  *   config: {
  *     baseUrl: '/api/gensx',
- *     workflowName: 'updateDraft',
- *     org: 'my-org',
- *     project: 'my-project',
- *     environment: 'production',
  *   },
- *   onComplete: (output) => console.log('Done:', output)
+ *   onEvent: (event) => console.log('Event:', event)
  * });
  *
- * // Run workflow (always streams)
+ * // Run the workflow
  * await workflow.run({ inputs: { userMessage: 'Hello' } });
  *
- * // Use structured data hooks with WorkflowMessage events
- * const currentProgress = useObject(workflow.events, 'progress');
- * const allSteps = useEvents(workflow.events, 'step-completed');
+ * // Stream strongly-typed objects
+ * const currentProgress = useObject<ProgressEvent>(workflow.execution, 'progress');
+ *
+ * // Process events as they come in
+ * const allSteps = useEvents<StepEvent>(workflow.execution, 'step-completed', (step) => {
+ *   console.log('Step completed:', step);
+ * });
+ *
+ * // Clear workflow state
+ * workflow.clear();
  * ```
  */
 export function useWorkflow<TInputs = unknown, TOutput = unknown>(
@@ -332,6 +331,7 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
     execution: events,
     run,
     stop,
+    clear,
   };
 }
 
