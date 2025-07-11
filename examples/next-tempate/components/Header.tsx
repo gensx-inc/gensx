@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function Header() {
   return (
-    <div className="border-b border-border px-2 py-2 h-12 flex items-center gap-2 justify-between">
+    <div className="border-b border-border/60 px-2 py-2 h-12 flex items-center gap-2 justify-between shadow-xs dark:shadow-white/10">
       <div className="flex items-center gap-2">
         {/* Left side - empty for now */}
       </div>
