@@ -33,11 +33,11 @@ export default function WorkflowInput({
           onChange={(e) => onInputChange(e.target.value)}
           className="min-h-[400px] font-mono text-sm"
         />
-        <div className="flex gap-2">
-          <Button onClick={onSubmit} className="flex-1">
-            Submit
+        <div className="flex justify-end gap-2">
+          <Button onClick={onSubmit} className="w-24">
+            Run
           </Button>
-          <Button variant="destructive" onClick={onClear}>
+          <Button variant="outline" onClick={onClear}>
             Clear
           </Button>
         </div>

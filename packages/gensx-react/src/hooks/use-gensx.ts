@@ -126,6 +126,7 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
   const abortControllerRef = useRef<AbortController | null>(null);
   const outputRef = useRef<TOutput | null>(null);
   const accumulatedStringRef = useRef<string>("");
+  const errorHandledRef = useRef<boolean>(false);
 
   // Process a single WorkflowMessage event
   const processEvent = useCallback(
@@ -199,9 +200,13 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
             break;
 
           case "error":
-            setError(event.error);
-            setInProgress(false);
-            onError?.(event.error);
+            // Only set error if not already handled to prevent duplicate error states
+            if (!errorHandledRef.current) {
+              errorHandledRef.current = true;
+              setError(event.error);
+              setInProgress(false);
+              onError?.(event.error);
+            }
             break;
         }
       });
@@ -266,6 +271,7 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
     setEvents([]);
     outputRef.current = null;
     accumulatedStringRef.current = "";
+    errorHandledRef.current = false;
   }, []);
 
   // Stop current workflow
@@ -316,9 +322,14 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
 
         // onComplete is already called in processEvent when 'end' event is received
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Unknown error";
-        setError(errorMessage);
+        // Only set error if not already handled (e.g., from stream error event)
+        if (!errorHandledRef.current) {
+          errorHandledRef.current = true;
+          const errorMessage =
+            err instanceof Error ? err.message : "Unknown error";
+          setError(errorMessage);
+          onError?.(errorMessage);
+        }
         throw err;
       } finally {
         setInProgress(false);

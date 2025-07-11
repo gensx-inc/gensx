@@ -21,11 +21,13 @@ export default function WorkflowOutput({
     if (status === "completed")
       return { variant: "default" as const, label: "Completed" };
     if (status === "streaming")
-      return { variant: "secondary" as const, label: "Streaming" };
+      return { variant: "default" as const, label: "Streaming" };
     if (status === "starting")
-      return { variant: "secondary" as const, label: "Starting" };
-    return { variant: "secondary" as const, label: "Ready" };
+      return { variant: "default" as const, label: "Starting" };
+    return { variant: "default" as const, label: "Ready" };
   };
+
+  console.log("error", error);
 
   const statusBadge = getStatusBadge();
 
@@ -34,7 +36,7 @@ export default function WorkflowOutput({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-muted-foreground" />
-          AI Response
+          Output
           <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
         </CardTitle>
       </CardHeader>
@@ -51,17 +53,14 @@ export default function WorkflowOutput({
             <div className="text-center">
               <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>
-                Enter a message and click &quot;Submit&quot; to get an AI
-                response
+                Enter a message and click &quot;Submit&quot; to run the
+                workflow.
               </p>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold mb-2 text-foreground">
-                AI Response:
-              </h3>
               <div className="bg-muted p-4 rounded-lg overflow-auto max-h-[400px] text-sm border border-border">
                 <div className="whitespace-pre-wrap text-foreground">
                   {result}

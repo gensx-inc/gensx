@@ -30,8 +30,6 @@ export const StreamOutput = gensx.Workflow(
       gensx.publishObject<string>("text", text);
     }
 
-    // throw new Error("oh no something went wrong");
-
     gensx.publishEvent<string>("status", "completed");
     return text;
   },
