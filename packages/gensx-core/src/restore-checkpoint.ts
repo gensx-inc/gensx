@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
+import { ExecutionNode } from "./checkpoint-types.js";
 import { Component } from "./component.js";
 import { getCurrentContext } from "./context.js";
 
@@ -8,8 +9,8 @@ const CheckpointMarkerComponent = Component(
   `CheckpointMarker`,
   ({ maxRestores }: { maxRestores: number }) => {
     const context = getCurrentContext();
-    const currentNodeId = context.getCurrentNodeId();
-    if (!currentNodeId) {
+    const currentNode = context.getCurrentNode();
+    if (!currentNode) {
       throw new Error(`[GenSX] No current node id found.`);
     }
 
@@ -17,7 +18,7 @@ const CheckpointMarkerComponent = Component(
       feedback: null,
       restoreCount: 0,
       maxRestores,
-      nodeId: currentNodeId,
+      node: currentNode,
     };
   },
 );
@@ -39,10 +40,16 @@ export function createCheckpoint<T = unknown>(
   const context = getCurrentContext();
   const workflowContext = context.getWorkflowContext();
 
-  label ??= `checkpoint-marker-${workflowContext.checkpointManager.nodeSequenceNumber}`;
+  label ??= `checkpoint-marker-${Date.now()}`;
 
-  if (workflowContext.checkpointLabelMap.has(label)) {
-    throw new Error(`[GenSX] Checkpoint ${label} has already been created.`);
+  let counter = 0;
+  while (workflowContext.checkpointLabelMap.has(label)) {
+    label = `${label}-${counter++}`;
+    if (counter > 1000) {
+      throw new Error(
+        `[GenSX] Checkpoint ${label} has been created more than 1000 times.`,
+      );
+    }
   }
   // Do not pass the label as a prop, as that would affect that ability to deterministically calculate the nodeId.
   const result = CheckpointMarkerComponent(
@@ -51,7 +58,7 @@ export function createCheckpoint<T = unknown>(
       metadata: { label, maxRestores },
     },
   );
-  workflowContext.checkpointLabelMap.set(label, result.nodeId);
+  workflowContext.checkpointLabelMap.set(label, result.node);
 
   if (result.restoreCount >= result.maxRestores) {
     throw new Error(
@@ -61,20 +68,19 @@ export function createCheckpoint<T = unknown>(
 
   return {
     feedback: result.feedback as T | null,
-    restore: (feedback: T) =>
-      restoreCheckpointByNodeId(result.nodeId, feedback),
+    restore: (feedback: T) => restoreCheckpointByNode(result.node, feedback),
     label,
   };
 }
 
-async function restoreCheckpointByNodeId(nodeId: string, feedback: unknown) {
+async function restoreCheckpointByNode(node: ExecutionNode, feedback: unknown) {
   const context = getCurrentContext();
   const workflowContext = context.getWorkflowContext();
 
   await workflowContext.checkpointManager.waitForPendingUpdates();
 
   // This is where the magic happens. The execution layer will halt execution and update the checkpoint with the given feedback.
-  await workflowContext.onRestoreCheckpoint(nodeId, feedback);
+  await workflowContext.onRestoreCheckpoint(node, feedback);
 
   console.error(
     `[GenSX] Restoring checkpoints is not supported in this environment.`,
@@ -88,10 +94,10 @@ export async function restoreCheckpoint<T = unknown>(
   // TODO: Add some locking mechanism to prevent multiple simultaneous restores, or for other workflow work to happen while we're restoring.
   const context = getCurrentContext();
   const workflowContext = context.getWorkflowContext();
-  const nodeId = workflowContext.checkpointLabelMap.get(label);
-  if (!nodeId) {
+  const node = workflowContext.checkpointLabelMap.get(label);
+  if (!node) {
     throw new Error(`[GenSX] Checkpoint ${label} has not been created.`);
   }
 
-  await restoreCheckpointByNodeId(nodeId, feedback);
+  await restoreCheckpointByNode(node, feedback);
 }

@@ -1,8 +1,8 @@
 import type {
   JsonValue,
+  ObjectMessage,
   Operation,
   WorkflowMessage,
-  WorkflowObjectMessage,
 } from "@gensx/core";
 
 import * as fastJsonPatch from "fast-json-patch";
@@ -27,7 +27,7 @@ export function useObject<T = JsonValue>(
   useEffect(() => {
     // Find all relevant object events
     const objectEvents = events.filter(
-      (event): event is WorkflowObjectMessage =>
+      (event): event is ObjectMessage =>
         event.type === "object" && event.label === label,
     );
 
