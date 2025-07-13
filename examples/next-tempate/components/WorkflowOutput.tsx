@@ -55,7 +55,7 @@ export default function WorkflowOutput({
             <div className="text-center">
               <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>
-                Enter a message and click &quot;Submit&quot; to run the
+                Enter a message and click &quot;Run&quot; to execute the
                 workflow.
               </p>
             </div>
