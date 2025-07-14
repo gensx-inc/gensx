@@ -1,0 +1,38 @@
+{
+  "name": "next",
+  "description": "A Next.js app with GenSX integration",
+  "dependencies": [
+    "@ai-sdk/openai",
+    "@gensx/client",
+    "@gensx/core",
+    "@gensx/react",
+    "@gensx/storage",
+    "@gensx/vercel-ai",
+    "@radix-ui/react-slot",
+    "ai",
+    "class-variance-authority",
+    "clsx",
+    "lucide-react",
+    "next",
+    "react",
+    "react-dom",
+    "react-markdown",
+    "rehype-raw",
+    "remark-gfm",
+    "tailwind-merge"
+  ],
+  "devDependencies": [
+    "@eslint/eslintrc",
+    "@tailwindcss/postcss",
+    "@types/node",
+    "@types/react",
+    "@types/react-dom",
+    "@types/webpack",
+    "concurrently",
+    "eslint",
+    "eslint-config-next",
+    "tailwindcss",
+    "typescript"
+  ],
+  "runCommand": "npm run dev"
+}

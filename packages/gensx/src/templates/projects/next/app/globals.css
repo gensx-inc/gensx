@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+:root {
+  /* Light mode - keeping the warmer gray tones */
+  --background: theme(colors.gray.50);
+  --foreground: theme(colors.gray.900);
+
+  /* Cards elevated from background */
+  --card: theme(colors.white);
+  --card-foreground: theme(colors.gray.900);
+
+  /* Muted elements with better contrast */
+  --muted: theme(colors.gray.100);
+  --muted-foreground: theme(colors.gray.600);
+
+  /* Borders and inputs more visible */
+  --border: theme(colors.gray.200);
+  --input: theme(colors.gray.50);
+
+  /* Subtle, sophisticated accent - muted teal/slate */
+  --ring: theme(colors.slate.400);
+
+  /* Primary - subtle slate blue that won't clash with yellow */
+  --primary: theme(colors.slate.700);
+  --primary-foreground: theme(colors.white);
+
+  /* Secondary actions */
+  --secondary: theme(colors.gray.200);
+  --secondary-foreground: theme(colors.gray.900);
+
+  /* Destructive actions */
+  --destructive: theme(colors.red.600);
+  --destructive-foreground: theme(colors.white);
+
+  /* Accent for highlights - very subtle */
+  --accent: theme(colors.slate.50);
+  --accent-foreground: theme(colors.slate.700);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark mode - using zinc as requested */
+    --background: theme(colors.zinc.900);
+    --foreground: theme(colors.zinc.100);
+
+    /* Cards slightly elevated */
+    --card: theme(colors.zinc.800);
+    --card-foreground: theme(colors.zinc.100);
+
+    /* Muted with good contrast */
+    --muted: theme(colors.zinc.700);
+    --muted-foreground: theme(colors.zinc.400);
+
+    /* Subtle borders */
+    --border: theme(colors.zinc.700);
+    --input: theme(colors.zinc.800);
+
+    /* Subtle focus states */
+    --ring: theme(colors.zinc.500);
+
+    /* Primary - muted for dark mode */
+    --primary: theme(colors.zinc.300);
+    --primary-foreground: theme(colors.zinc.900);
+
+    /* Secondary actions */
+    --secondary: theme(colors.zinc.700);
+    --secondary-foreground: theme(colors.zinc.100);
+
+    /* Destructive actions */
+    --destructive: theme(colors.red.500);
+    --destructive-foreground: theme(colors.white);
+
+    /* Very subtle accent */
+    --accent: theme(colors.zinc.800);
+    --accent-foreground: theme(colors.zinc.300);
+  }
+}
+
+/* Add smooth transitions between themes */
+* {
+  @apply transition-colors duration-200;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  @apply antialiased;
+}
+
+/* Better focus styles - more subtle */
+*:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-0 ring-offset-background;
+}
+
+/* Card shadows for depth */
+/* .card {
+  @apply shadow-sm hover:shadow-md transition-shadow;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    @apply shadow-none border border-border;
+  }
+} */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

@@ -21,6 +21,8 @@ const TEMPLATE_DIR = path.join(
   process.env.DENO_BINARY ? "src/templates/projects" : "../templates/projects",
 );
 
+export type TemplateKind = "typescript" | "next";
+
 interface Template {
   name: string;
   description: string;
@@ -44,6 +46,7 @@ interface AiAssistantOption {
 type Phase =
   | "initial"
   | "login"
+  | "selectTemplate"
   | "createProject"
   | "copyFiles"
   | "installDeps"
@@ -69,6 +72,8 @@ export function NewProjectUI({ projectPath, options }: Props) {
   const { exit } = useApp();
   const [phase, setPhase] = useState<Phase>("initial");
   const [error, setError] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<TemplateKind>("typescript");
   const [description, setDescription] = useState<string>("");
   const [_selectedAssistants, setSelectedAssistants] = useState<string[]>([]);
   const [hasCopiedFiles, setHasCopiedFiles] = useState(false);
@@ -86,6 +91,11 @@ export function NewProjectUI({ projectPath, options }: Props) {
     },
     [exit],
   );
+
+  const handleTemplateSelect = useCallback((template: TemplateKind) => {
+    setSelectedTemplate(template);
+    setPhase("createProject");
+  }, []);
 
   const handleDescriptionSubmit = useCallback(
     (value: string) => {
@@ -137,12 +147,19 @@ export function NewProjectUI({ projectPath, options }: Props) {
           return;
         }
 
-        // If description is provided in options, skip the createProject phase
-        if (options.description) {
-          setDescription(options.description);
-          setPhase("copyFiles");
+        // If template is provided in options, skip template selection
+        if (options.template) {
+          const templateType = options.template as TemplateKind;
+          setSelectedTemplate(templateType);
+          // If description is provided in options, skip the createProject phase
+          if (options.description) {
+            setDescription(options.description);
+            setPhase("copyFiles");
+          } else {
+            setPhase("createProject");
+          }
         } else {
-          setPhase("createProject");
+          setPhase("selectTemplate");
         }
       } catch (err) {
         handleError(err);
@@ -150,13 +167,13 @@ export function NewProjectUI({ projectPath, options }: Props) {
     }
 
     void initialize();
-  }, [handleError, options.skipLogin, options.description]);
+  }, [handleError, options.skipLogin, options.template, options.description]);
 
   useEffect(() => {
     async function copyFiles() {
       if (phase === "copyFiles" && !hasCopiedFiles) {
         try {
-          await copyTemplateFiles("ts", projectPath);
+          await copyTemplateFiles(selectedTemplate, projectPath);
 
           // Save gensx.yaml config
           const projectName = path.basename(projectPath);
@@ -176,13 +193,20 @@ export function NewProjectUI({ projectPath, options }: Props) {
       }
     }
     void copyFiles();
-  }, [phase, projectPath, handleError, hasCopiedFiles, description]);
+  }, [
+    phase,
+    projectPath,
+    handleError,
+    hasCopiedFiles,
+    description,
+    selectedTemplate,
+  ]);
 
   useEffect(() => {
     async function installDependencies() {
       if (phase === "installDeps" && !hasInstalledDeps) {
         try {
-          const template = await loadTemplate("ts");
+          const template = await loadTemplate(selectedTemplate);
 
           if (template.dependencies.length > 0) {
             await exec(`npm install ${template.dependencies.join(" ")}`, {
@@ -216,7 +240,13 @@ export function NewProjectUI({ projectPath, options }: Props) {
       }
     }
     void installDependencies();
-  }, [phase, handleError, hasInstalledDeps, options.skipIdeRules]);
+  }, [
+    phase,
+    handleError,
+    hasInstalledDeps,
+    options.skipIdeRules,
+    selectedTemplate,
+  ]);
 
   if (error) {
     return <ErrorMessage message={error} />;
@@ -232,9 +262,20 @@ export function NewProjectUI({ projectPath, options }: Props) {
         </Text>
         <LoginUI
           onComplete={() => {
-            setPhase("createProject");
+            setPhase("selectTemplate");
           }}
         />
+      </Box>
+    );
+  }
+
+  if (phase === "selectTemplate") {
+    return (
+      <Box flexDirection="column">
+        <Text>
+          <Text color="blue">➜</Text> Select a project template:
+        </Text>
+        <TemplateSelector onSelect={handleTemplateSelect} />
       </Box>
     );
   }
@@ -381,8 +422,13 @@ export function NewProjectUI({ projectPath, options }: Props) {
 
           <Box marginTop={2}>
             <Text>
-              Open <Text color="cyan">src/workflows.tsx</Text> to start building
-              your workflows.
+              Open{" "}
+              <Text color="cyan">
+                {selectedTemplate === "next"
+                  ? "gensx/workflows.ts"
+                  : "src/workflows.tsx"}
+              </Text>{" "}
+              to start building your workflows.
             </Text>
           </Box>
         </Box>
@@ -484,8 +530,70 @@ function AiAssistantSelector({ onSelect }: AiAssistantSelectorProps) {
   );
 }
 
-async function loadTemplate(_templateName: string): Promise<Template> {
-  const templatePath = path.join(TEMPLATE_DIR, "typescript");
+interface TemplateSelectorProps {
+  onSelect: (template: TemplateKind) => void;
+}
+
+function TemplateSelector({ onSelect }: TemplateSelectorProps) {
+  const [availableTemplates, setAvailableTemplates] = useState<Template[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTemplates() {
+      try {
+        const templates = await getAvailableTemplates();
+        setAvailableTemplates(templates);
+      } catch (err) {
+        console.error("Error loading templates:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    void loadTemplates();
+  }, []);
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading templates..." />;
+  }
+
+  const items: Item[] = availableTemplates.map((template) => ({
+    label: `${template.name} - ${template.description}`,
+    value: template.name,
+  }));
+
+  return (
+    <SelectInput
+      items={items}
+      onSelect={(item: Item) => {
+        onSelect(item.value as TemplateKind);
+      }}
+    />
+  );
+}
+
+async function getAvailableTemplates(): Promise<Template[]> {
+  try {
+    const templates: Template[] = [];
+    const availableTemplates: TemplateKind[] = ["typescript", "next"];
+
+    for (const templateName of availableTemplates) {
+      try {
+        const template = await loadTemplate(templateName);
+        templates.push(template);
+      } catch (err) {
+        console.error(`Error loading template ${templateName}:`, err);
+      }
+    }
+
+    return templates;
+  } catch (err) {
+    console.error("Error getting available templates:", err);
+    return [];
+  }
+}
+
+async function loadTemplate(templateName: string): Promise<Template> {
+  const templatePath = path.join(TEMPLATE_DIR, templateName);
   const templateConfigPath = path.join(templatePath, "template.json");
 
   try {
@@ -493,12 +601,12 @@ async function loadTemplate(_templateName: string): Promise<Template> {
     const template = JSON.parse(configContent) as Template;
     return template;
   } catch {
-    throw new Error(`Template "typescript" not found or invalid.`);
+    throw new Error(`Template "${templateName}" not found or invalid.`);
   }
 }
 
-async function copyTemplateFiles(_templateName: string, targetPath: string) {
-  const templatePath = path.join(TEMPLATE_DIR, "typescript");
+async function copyTemplateFiles(templateName: string, targetPath: string) {
+  const templatePath = path.join(TEMPLATE_DIR, templateName);
 
   async function copyDir(currentPath: string, targetBase: string) {
     const entries = await readdir(currentPath, { withFileTypes: true });
@@ -509,6 +617,7 @@ async function copyTemplateFiles(_templateName: string, targetPath: string) {
         .join(targetBase, path.relative(templatePath, sourcePath))
         .replace(/\.template$/, "");
 
+      // Skip template.json as it's configuration, not template content
       if (entry.name === "template.json") continue;
 
       if (entry.isDirectory()) {
