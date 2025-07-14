@@ -280,7 +280,6 @@ function deserializeResult<R>(result: unknown): R {
     typeof result.type === "string" &&
     "value" in result
   ) {
-    console.info("deserializing result", { type: result.type });
     switch (result.type) {
       case "async-iterator":
       case "readable-stream":
@@ -288,7 +287,6 @@ function deserializeResult<R>(result: unknown): R {
           start(controller) {
             if (Array.isArray(result.value)) {
               for (const item of result.value) {
-                console.info("enqueueing item", { item });
                 controller.enqueue(item);
               }
             } else {
@@ -701,7 +699,6 @@ async function* captureAsyncIterator(
     while (!isDone) {
       const value = await runInContext(async () => {
         const { value, done } = await iterator.next();
-        console.info("got async iterator value", { value, done });
         if (done) {
           const { completeNode } = getCurrentNodeCheckpointManager();
           const aggregatedValue = aggregator(chunks);
@@ -783,12 +780,7 @@ async function* captureAsyncIterator(
       yield value;
     }
   } catch (e) {
-    const { completeNode, addMetadata, node } =
-      getCurrentNodeCheckpointManager();
-    console.info("completing node due to error at stream end", {
-      node,
-      streamKey,
-    });
+    const { completeNode, addMetadata } = getCurrentNodeCheckpointManager();
     addMetadata({ error: serializeError(e) });
     const aggregatedValue = aggregator(chunks);
     if (streamKey) {

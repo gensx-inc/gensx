@@ -237,10 +237,6 @@ export class CheckpointManager implements CheckpointWriter {
     }
 
     if (opts?.checkpoint) {
-      console.info(
-        "source checkpoint",
-        JSON.stringify(this.slimCheckpoint(opts.checkpoint), null, 2),
-      );
       this.buildReplayLookup(opts.checkpoint);
     }
   }
