@@ -14,7 +14,7 @@ import {
   ServerError,
   WorkflowExecution,
   WorkflowMessage,
-} from "../src/dev-server.js";
+} from "../src/dev-server/index.js";
 import { WorkflowMessageList } from "../src/dev-server/types.js";
 
 // Mock ulid module
