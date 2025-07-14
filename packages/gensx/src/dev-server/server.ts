@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { Definition } from "typescript-json-schema";
 
 import { BadRequestError, NotFoundError } from "./errors.js";
-import { ExecutionHandler } from "./execution-handler.js";
+import { ExecutionManager } from "./execution-handler.js";
 import { setupRoutes } from "./routes.js";
 import { ServerOptions, WorkflowInfo } from "./types.js";
 import { ValidationManager } from "./validation.js";
@@ -13,15 +13,15 @@ import { WorkflowManager } from "./workflow-manager.js";
  * GenSX Server - A development server for GenSX workflows
  */
 export class GensxServer {
-  private app: Hono;
+  public app: Hono;
   private port: number;
   private hostname: string;
   private isRunning = false;
   private server: ReturnType<typeof serve> | null = null;
   private logger: ServerOptions["logger"];
-  private workflowManager: WorkflowManager;
+  public workflowManager: WorkflowManager;
   private validationManager: ValidationManager;
-  private executionHandler: ExecutionHandler;
+  public executionHandler: ExecutionManager;
 
   /**
    * Create a new GenSX dev server
@@ -55,7 +55,7 @@ export class GensxServer {
       schemas,
     );
     this.validationManager = new ValidationManager();
-    this.executionHandler = new ExecutionHandler(this.workflowManager);
+    this.executionHandler = new ExecutionManager(this.workflowManager);
 
     // Register all workflows from the input
     this.workflowManager.registerWorkflows(workflows);
@@ -203,6 +203,89 @@ export class GensxServer {
    */
   public getHostname(): string {
     return this.hostname;
+  }
+
+  /**
+   * Expose parseJsonBody for testing
+   */
+  public async parseJsonBody(
+    c: import("hono").Context,
+  ): Promise<Record<string, unknown>> {
+    return this.validationManager.parseJsonBody(c);
+  }
+
+  /**
+   * Expose validateInput for testing
+   */
+  public validateInput(workflowName: string, input: unknown): void {
+    const schema = this.workflowManager.getSchema(workflowName);
+    this.validationManager.validateInput(input, schema);
+  }
+
+  /**
+   * Expose executeWorkflowAsync for testing
+   */
+  public async executeWorkflowAsync(
+    workflowName: string,
+    workflow: {
+      run: (
+        input: unknown,
+        options: {
+          messageListener: (
+            event: import("./types.js").WorkflowMessage,
+          ) => void;
+          onRequestInput?: (request: { nodeId: string }) => unknown;
+          workflowExecutionId?: string;
+        },
+      ) => Promise<unknown>;
+    },
+    executionId: string,
+    input: unknown,
+  ): Promise<void> {
+    // Use the server's logger for consistency
+    return this.executionHandler.executeWorkflowAsync(
+      workflowName,
+      workflow,
+      executionId,
+      input,
+      this.logger,
+    );
+  }
+
+  /**
+   * Expose handleStreamingResponse for testing
+   */
+  public handleStreamingResponse(
+    streamResult: AsyncIterable<unknown>,
+  ): Response {
+    return this.executionHandler.handleStreamingResponse(
+      streamResult,
+      this.logger,
+    );
+  }
+
+  /**
+   * Expose workflow lookup for testing
+   */
+  public getWorkflowByName(workflowName: string) {
+    return this.workflowManager.getWorkflowOrThrow(workflowName);
+  }
+
+  /**
+   * Expose setExecution for testing
+   */
+  public setExecution(
+    executionId: string,
+    execution: import("./types.js").WorkflowExecution,
+  ): void {
+    this.workflowManager.setExecution(executionId, execution);
+  }
+
+  /**
+   * Expose getExecution for testing
+   */
+  public getExecution(executionId: string) {
+    return this.workflowManager.getExecution(executionId);
   }
 }
 

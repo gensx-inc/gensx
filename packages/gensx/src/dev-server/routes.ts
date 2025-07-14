@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { BadRequestError, NotFoundError } from "./errors.js";
-import { ExecutionHandler } from "./execution-handler.js";
+import { ExecutionManager } from "./execution-handler.js";
 import { generateOpenApiSpec, generateSwaggerUI } from "./openapi.js";
 import { CustomEvent, JsonValue, WorkflowMessage } from "./types.js";
 import { generateWorkflowId } from "./utils.js";
@@ -16,7 +16,7 @@ export function setupRoutes(
   app: Hono,
   workflowManager: WorkflowManager,
   validationManager: ValidationManager,
-  executionHandler: ExecutionHandler,
+  executionHandler: ExecutionManager,
   logger: {
     info: (msg: string, ...args: unknown[]) => void;
     error: (msg: string, error?: unknown) => void;

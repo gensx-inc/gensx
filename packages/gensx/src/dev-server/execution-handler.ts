@@ -11,7 +11,7 @@ import { WorkflowManager } from "./workflow-manager.js";
 /**
  * Handles workflow execution and input request management
  */
-export class ExecutionHandler {
+export class ExecutionManager {
   private workflowManager: WorkflowManager;
   private inputRequests: Map<string, Map<string, InputRequest>>;
 

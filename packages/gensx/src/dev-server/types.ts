@@ -70,6 +70,11 @@ export class CustomEvent<T> extends Event {
 export class WorkflowMessageList extends EventTarget {
   private messages: WorkflowMessage[] = [];
 
+  constructor(messages?: WorkflowMessage[]) {
+    super();
+    this.messages = messages ?? [];
+  }
+
   push(message: WorkflowMessage) {
     this.messages.push(message);
     this.dispatchEvent(new CustomEvent("message", { detail: message }));
