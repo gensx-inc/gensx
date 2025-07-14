@@ -73,9 +73,6 @@ export async function executeExternalTool<
         throw new Error("No current node ID found");
       }
 
-      // Ensure that the we have flushed all pending updates to the server.
-      await workflowContext.checkpointManager.waitForPendingUpdates();
-
       // Send external tool call message
       workflowContext.sendWorkflowMessage({
         type: "external-tool",
