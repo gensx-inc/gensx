@@ -235,41 +235,61 @@ export function useWorkflow<
               );
               break;
             }
+            const toolImpl = tools?.[event.toolName as keyof typeof tools];
             // Handle external tool calls from workflow
-            if (tools) {
-              const toolImpl = tools[event.toolName as keyof typeof tools];
+            if (toolImpl) {
+              const result = await toolImpl.execute(
+                event.params as unknown as InferToolParams<
+                  TToolBox,
+                  typeof event.toolName
+                >,
+              );
 
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-              if (toolImpl) {
-                const result = await toolImpl.execute(
-                  event.params as unknown as InferToolParams<
-                    TToolBox,
-                    typeof event.toolName
-                  >,
-                );
-
-                // Send this to the API
-                const response = await fetch(
-                  `${baseUrl}/workflowExecutions/${executionId.current}/resume/${event.nodeId}`,
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      ...headers,
-                    },
-                    body: JSON.stringify(result),
+              // Send this to the API
+              const response = await fetch(
+                `${baseUrl}/workflowExecutions/${executionId.current}/resume/${event.nodeId}`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...headers,
                   },
-                );
+                  body: JSON.stringify(result),
+                },
+              );
 
-                if (!response.ok) {
-                  throw new Error(
-                    `Failed to resume workflow: ${response.status} ${response.statusText}`,
-                  );
-                }
-              } else {
-                console.warn("[GenSX] Tool not found:", event.toolName);
-                throw new Error(`Tool not found: ${event.toolName}`);
+              if (!response.ok) {
+                throw new Error(
+                  `Failed to resume workflow: ${response.status} ${response.statusText}`,
+                );
               }
+
+              break;
+            }
+            console.warn(
+              "[GenSX] Tool implementation not found:",
+              event.toolName,
+            );
+
+            // If there is no tool implementation, return a well-known object as the result so the workflow can continue
+            const response = await fetch(
+              `${baseUrl}/workflowExecutions/${executionId.current}/resume/${event.nodeId}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...headers,
+                },
+                body: JSON.stringify({
+                  __gensxMissingToolImplementation: true,
+                  toolName: event.toolName,
+                }),
+              },
+            );
+            if (!response.ok) {
+              throw new Error(
+                `Failed to resume workflow: ${response.status} ${response.statusText}`,
+              );
             }
             break;
         }

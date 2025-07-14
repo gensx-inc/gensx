@@ -88,14 +88,24 @@ export async function executeExternalTool<
 
       // For now we rely on the request input mechanism to resume the workflow later.
       // The next iteration of this will use the non-blocking queue.
-      return (await workflowContext.onRequestInput({
+      const result = await workflowContext.onRequestInput({
         type: "external-tool",
         toolName: String(toolName),
         nodeId: currentNode.id,
         params: validatedParams as JsonValue,
         paramsSchema: paramsJsonSchema,
         resultSchema: resultJsonSchema,
-      })) as InferToolResult<T, K>;
+      });
+
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "__gensxMissingToolImplementation" in result
+      ) {
+        throw new Error(`Tool implementation not found: ${String(toolName)}`);
+      }
+
+      return result as InferToolResult<T, K>;
     },
   );
 
