@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { z } from "zod/v4";
+import { z } from "zod";
 
 // Define schema for gensx.yaml
 const ProjectConfigSchema = z.object({

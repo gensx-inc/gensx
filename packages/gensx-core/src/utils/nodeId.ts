@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { deterministicString } from "deterministic-object-hash";
-import { ZodObject } from "zod/v4";
+import { isZodSchemaObject } from "src/zod.js";
 
 import { ContentId, NodeId, PathId } from "../checkpoint-types.js";
 
@@ -64,7 +64,7 @@ function deterministicProps(
   // Do some processing on certain types of props that are hard to serialize like zod schemas
   for (const key in filteredProps) {
     const value = filteredProps[key];
-    if (value instanceof ZodObject) {
+    if (isZodSchemaObject(value)) {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       filteredProps[key] = value.toString();
     } else if (typeof value === "function") {

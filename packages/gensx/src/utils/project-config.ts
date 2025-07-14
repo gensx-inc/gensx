@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { z } from "zod/v4";
+import { z } from "zod";
 
 // Define schema for gensx.yaml
 const ProjectConfigSchema = z.object({

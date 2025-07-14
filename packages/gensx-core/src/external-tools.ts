@@ -1,14 +1,16 @@
-import * as z3 from "zod/v3";
-import * as z4 from "zod/v4/core";
-import { zodToJsonSchema } from "zod-to-json-schema";
-
 import { Component } from "./component.js";
 import { getCurrentContext } from "./context.js";
 import { JsonValue } from "./workflow-state.js";
+import {
+  AnyZodSchema,
+  InferZodType,
+  toJsonSchema,
+  zodValidate,
+} from "./zod.js";
 
 export interface ToolDefinition<
-  TParamsSchema extends z4.$ZodType | z3.ZodType = z4.$ZodType | z3.ZodType,
-  TResultSchema extends z4.$ZodType | z3.ZodType = z4.$ZodType | z3.ZodType,
+  TParamsSchema extends AnyZodSchema = AnyZodSchema,
+  TResultSchema extends AnyZodSchema = AnyZodSchema,
 > {
   description?: string;
   params: TParamsSchema;
@@ -19,12 +21,14 @@ export interface ToolDefinition<
 export type ToolBox = Record<string, ToolDefinition>;
 
 // Extract param/result types automatically
-export type InferToolParams<T extends ToolBox, Tool extends keyof T> = z4.infer<
-  T[Tool]["params"]
->;
-export type InferToolResult<T extends ToolBox, Tool extends keyof T> = z4.infer<
-  T[Tool]["result"]
->;
+export type InferToolParams<
+  T extends ToolBox,
+  Tool extends keyof T,
+> = InferZodType<T[Tool]["params"]>;
+export type InferToolResult<
+  T extends ToolBox,
+  Tool extends keyof T,
+> = InferZodType<T[Tool]["result"]>;
 
 // Tool implementations for frontend
 export type ToolImplementations<T extends ToolBox> = {
@@ -49,29 +53,9 @@ export async function executeExternalTool<
   params: InferToolParams<T, K>,
 ): Promise<InferToolResult<T, K>> {
   const toolDef = toolBox[toolName] as ToolDefinition;
-  let validatedParams: unknown;
-  if ("_zod" in toolDef.params) {
-    validatedParams = z4.parse(toolDef.params, params);
-  } else {
-    validatedParams = toolDef.params.parse(params);
-  }
-
-  let paramsJsonSchema:
-    | ReturnType<typeof z4.toJSONSchema>
-    | ReturnType<typeof zodToJsonSchema>;
-  if ("_zod" in toolDef.params) {
-    paramsJsonSchema = z4.toJSONSchema(toolDef.params);
-  } else {
-    paramsJsonSchema = zodToJsonSchema(toolDef.params);
-  }
-  let resultJsonSchema:
-    | ReturnType<typeof z4.toJSONSchema>
-    | ReturnType<typeof zodToJsonSchema>;
-  if ("_zod" in toolDef.result) {
-    resultJsonSchema = z4.toJSONSchema(toolDef.result);
-  } else {
-    resultJsonSchema = zodToJsonSchema(toolDef.result);
-  }
+  const validatedParams = zodValidate(toolDef.params, params);
+  const paramsJsonSchema = toJsonSchema(toolDef.params);
+  const resultJsonSchema = toJsonSchema(toolDef.result);
 
   const component = Component(
     "ExternalTool",
