@@ -1,5 +1,5 @@
 {
-  "name": "@examples/fe-tools",
+  "name": "@examples/client-side-tools",
   "version": "0.1.0",
   "private": true,
   "scripts": {
