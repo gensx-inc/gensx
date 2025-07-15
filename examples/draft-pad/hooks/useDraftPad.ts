@@ -3,6 +3,7 @@
 import {
   type DraftProgress,
   type ModelConfig,
+  type ModelStreamState,
   type UpdateDraftInput,
   type UpdateDraftOutput,
 } from "@/gensx/workflows";
@@ -12,8 +13,8 @@ import { useObject, useWorkflow } from "@gensx/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type SortField = "words" | "time" | "cost";
-type ModelSortField = "cost" | "context" | "maxOutput";
 type SortDirection = "asc" | "desc" | "none";
+type ModelSortField = "cost" | "context" | "maxOutput";
 
 interface SortConfig {
   field: SortField | null;
@@ -42,6 +43,11 @@ export function useDraftPad() {
     chosenResponseForCurrentGeneration,
     setChosenResponseForCurrentGeneration,
   ] = useState<string | null>(null);
+
+  // Version navigation state
+  const [currentVersionIndex, setCurrentVersionIndex] = useState<number>(0);
+  const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+  const [isViewingHistory, setIsViewingHistory] = useState(false);
 
   // Sort state
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -176,17 +182,56 @@ export function useDraftPad() {
     setSelectedModelId(modelId);
   }, []);
 
+  // Create model config map early so it can be used in other functions
+  const modelConfigMap = useMemo(() => {
+    const map = new Map<string, ModelConfig>();
+    selectedModelsForRun.forEach((model) => {
+      map.set(model.id, model);
+    });
+    return map;
+  }, [selectedModelsForRun]);
+
   // Add version to history
   const addVersionToHistory = useCallback(
-    (modelId: string, content: string) => {
+    (
+      modelId: string,
+      content: string,
+      modelStream?: ModelStreamState,
+      modelConfig?: ModelConfig,
+    ) => {
       setVersionHistory((prev) => {
         const modelVersions = prev[modelId] ?? [];
+
+        // Calculate cost if we have the config and stream data
+        let cost = undefined;
+        if (modelConfig?.cost && modelStream) {
+          const inputTokens = modelStream.inputTokens ?? 500;
+          const outputTokens =
+            modelStream.outputTokens ?? Math.ceil(modelStream.charCount / 4);
+          const inputCost = (inputTokens / 1_000_000) * modelConfig.cost.input;
+          const outputCost =
+            (outputTokens / 1_000_000) * modelConfig.cost.output;
+          cost = {
+            input: inputCost,
+            output: outputCost,
+            total: inputCost + outputCost,
+          };
+        }
+
         const newVersion: ContentVersion = {
           id: `${modelId}-v${modelVersions.length + 1}`,
           version: modelVersions.length + 1,
           content,
           modelId,
           timestamp: new Date(),
+          generationTime: modelStream?.generationTime,
+          inputTokens: modelStream?.inputTokens,
+          outputTokens: modelStream?.outputTokens,
+          wordCount:
+            modelStream?.wordCount ??
+            content.split(/\s+/).filter((w) => w.length > 0).length,
+          charCount: modelStream?.charCount ?? content.length,
+          cost,
         };
         return {
           ...prev,
@@ -210,11 +255,22 @@ export function useDraftPad() {
           modelHistory.length === 0 ||
           lastVersion.content !== stream.content
         ) {
-          addVersionToHistory(stream.modelId, stream.content);
+          const modelConfig = modelConfigMap.get(stream.modelId);
+          addVersionToHistory(
+            stream.modelId,
+            stream.content,
+            stream,
+            modelConfig,
+          );
         }
       }
     });
-  }, [draftProgress?.modelStreams, versionHistory, addVersionToHistory]);
+  }, [
+    draftProgress?.modelStreams,
+    versionHistory,
+    addVersionToHistory,
+    modelConfigMap,
+  ]);
 
   // Handle sorting
   const handleSort = useCallback((field: SortField) => {
@@ -273,14 +329,6 @@ export function useDraftPad() {
     !workflowInProgress &&
     completedStreams.length > 1;
 
-  const modelConfigMap = useMemo(() => {
-    const map = new Map<string, ModelConfig>();
-    selectedModelsForRun.forEach((model) => {
-      map.set(model.id, model);
-    });
-    return map;
-  }, [selectedModelsForRun]);
-
   // Get unique providers
   const uniqueProviders = useMemo(() => {
     const providers = new Set(
@@ -296,6 +344,63 @@ export function useDraftPad() {
       inputRef.current.focus();
     }
   }, []);
+
+  // Get all versions across all models for global navigation
+  const allVersions = useMemo(() => {
+    const versions: ContentVersion[] = [];
+    Object.values(versionHistory).forEach((modelVersions) => {
+      versions.push(...modelVersions);
+    });
+    // Sort by timestamp, oldest first
+    return versions.sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+    );
+  }, [versionHistory]);
+
+  // Current version content
+  const currentVersionContent = useMemo(() => {
+    if (allVersions.length === 0) return "";
+    const index = Math.min(currentVersionIndex, allVersions.length - 1);
+    return allVersions[index]?.content || "";
+  }, [allVersions, currentVersionIndex]);
+
+  // Navigate to previous version
+  const navigateToPreviousVersion = useCallback(() => {
+    setCurrentVersionIndex((prev) => Math.max(0, prev - 1));
+    setIsViewingHistory(true);
+  }, []);
+
+  // Navigate to next version
+  const navigateToNextVersion = useCallback(() => {
+    setCurrentVersionIndex((prev) => {
+      const newIndex = Math.min(allVersions.length - 1, prev + 1);
+      // If we're at the latest version, exit history mode
+      if (newIndex === allVersions.length - 1) {
+        setIsViewingHistory(false);
+      }
+      return newIndex;
+    });
+  }, [allVersions.length]);
+
+  // Copy current version to clipboard
+  const copyCurrentVersion = useCallback(async () => {
+    if (currentVersionContent) {
+      await navigator.clipboard.writeText(currentVersionContent);
+      setShowCopyFeedback(true);
+      setTimeout(() => {
+        setShowCopyFeedback(false);
+      }, 2000);
+    }
+  }, [currentVersionContent]);
+
+  // Update current version index when new versions are added
+  useEffect(() => {
+    // Always navigate to the latest version when a new one is added
+    if (allVersions.length > 0) {
+      setCurrentVersionIndex(allVersions.length - 1);
+      setIsViewingHistory(false); // Exit history mode when new content arrives
+    }
+  }, [allVersions.length]);
 
   return {
     // State
@@ -319,6 +424,16 @@ export function useDraftPad() {
     setIsDropdownOpen,
     isMultiSelectMode,
     setIsMultiSelectMode,
+
+    // Version navigation
+    currentVersionIndex,
+    allVersions,
+    currentVersionContent,
+    navigateToPreviousVersion,
+    navigateToNextVersion,
+    copyCurrentVersion,
+    showCopyFeedback,
+    isViewingHistory,
 
     // Refs
     textareaRef,

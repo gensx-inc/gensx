@@ -4,6 +4,8 @@ import { Header } from "@/components/Header";
 import { InputSection } from "@/components/InputSection";
 import { ModelSelectorView } from "@/components/ModelSelectorView";
 import { ModelStreamView } from "@/components/ModelStreamView";
+import { ModelStreamCard } from "@/components/ui/model-stream-card";
+import { VersionControls } from "@/components/ui/version-controls";
 import { useAvailableModels } from "@/hooks/useAvailableModels";
 import { useDiffState } from "@/hooks/useDiffState";
 import { useDraftPad } from "@/hooks/useDraftPad";
@@ -115,8 +117,62 @@ export default function Home() {
             <div className="flex-1 flex flex-col items-center justify-center">
               {/* Empty space for centering - input will be positioned at bottom */}
             </div>
+          ) : /* Check if we're viewing history or live streams */
+          draftPad.isViewingHistory && draftPad.allVersions.length > 0 ? (
+            /* Show historical version */
+            <div className="flex-1 min-h-0 flex flex-col">
+              <div className="flex-1 flex justify-center min-h-0">
+                <div className="w-full max-w-3xl min-h-0 flex">
+                  <ModelStreamCard
+                    modelStream={{
+                      modelId:
+                        draftPad.allVersions[draftPad.currentVersionIndex]
+                          .modelId,
+                      displayName:
+                        draftPad.modelConfigMap.get(
+                          draftPad.allVersions[draftPad.currentVersionIndex]
+                            .modelId,
+                        )?.displayName ??
+                        draftPad.allVersions[draftPad.currentVersionIndex]
+                          .modelId,
+                      status: "complete" as const,
+                      content: draftPad.currentVersionContent,
+                      wordCount:
+                        draftPad.allVersions[draftPad.currentVersionIndex]
+                          .wordCount,
+                      charCount:
+                        draftPad.allVersions[draftPad.currentVersionIndex]
+                          .charCount,
+                      generationTime:
+                        draftPad.allVersions[draftPad.currentVersionIndex]
+                          .generationTime,
+                      inputTokens:
+                        draftPad.allVersions[draftPad.currentVersionIndex]
+                          .inputTokens,
+                      outputTokens:
+                        draftPad.allVersions[draftPad.currentVersionIndex]
+                          .outputTokens,
+                    }}
+                    modelConfig={draftPad.modelConfigMap.get(
+                      draftPad.allVersions[draftPad.currentVersionIndex]
+                        .modelId,
+                    )}
+                    isSelected={true}
+                    onSelect={undefined}
+                    metricRanges={null}
+                    showDiff={diffState.showDiff}
+                    autoShowDiff={false}
+                    previousVersion={
+                      draftPad.currentVersionIndex > 0
+                        ? draftPad.allVersions[draftPad.currentVersionIndex - 1]
+                        : undefined
+                    }
+                  />
+                </div>
+              </div>
+            </div>
           ) : (
-            /* Generation view with model streams */
+            /* Show live model streams */
             <ModelStreamView
               selectedModelId={draftPad.selectedModelId}
               sortedModelStreams={sortedModelStreams}
@@ -132,6 +188,26 @@ export default function Home() {
               metricRanges={metricRanges}
               onModelSelect={draftPad.handleModelSelect}
             />
+          )}
+
+          {/* Version controls - show when we have versions */}
+          {draftPad.allVersions.length > 0 && (
+            <div className="mb-4 flex justify-center">
+              <VersionControls
+                currentVersion={draftPad.currentVersionIndex + 1}
+                totalVersions={draftPad.allVersions.length}
+                onPreviousVersion={draftPad.navigateToPreviousVersion}
+                onNextVersion={draftPad.navigateToNextVersion}
+                showDiff={diffState.showDiff}
+                onToggleDiff={diffState.toggleDiff}
+                onCopy={() => void draftPad.copyCurrentVersion()}
+                canGoPrevious={draftPad.currentVersionIndex > 0}
+                canGoNext={
+                  draftPad.currentVersionIndex < draftPad.allVersions.length - 1
+                }
+                showCopyFeedback={draftPad.showCopyFeedback}
+              />
+            </div>
           )}
 
           {/* Unified input section - transitions from center to bottom */}
