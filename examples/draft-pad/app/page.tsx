@@ -192,7 +192,7 @@ export default function Home() {
 
           {/* Version controls - show when we have versions */}
           {draftPad.allVersions.length > 0 && (
-            <div className="mb-4 flex justify-center">
+            <div className="mt-2 flex justify-center">
               <VersionControls
                 currentVersion={draftPad.currentVersionIndex + 1}
                 totalVersions={draftPad.allVersions.length}

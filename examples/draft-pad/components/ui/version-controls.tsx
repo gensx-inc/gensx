@@ -44,7 +44,7 @@ export function VersionControls({
           size="icon"
           onClick={onPreviousVersion}
           disabled={!canGoPrevious}
-          className="rounded-full h-8 w-8 hover:bg-white/20"
+          className="rounded-full h-8 w-8 hover:bg-white/20 text-[#333333] bg-transparent border-none shadow-none"
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
@@ -56,20 +56,20 @@ export function VersionControls({
           size="icon"
           onClick={onNextVersion}
           disabled={!canGoNext}
-          className="rounded-full h-8 w-8 hover:bg-white/20"
+          className="rounded-full h-8 w-8 hover:bg-white/20 text-[#333333] bg-transparent border-none shadow-none"
         >
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
 
-      <div className="h-6 w-px bg-[#333333]/20" />
+      <div className="h-6 w-px" />
 
       <div className="flex items-center gap-1 pr-1">
         <Button
           variant="ghost"
           size="sm"
           onClick={onToggleDiff}
-          className="rounded-full px-3 h-8 hover:bg-white/20 gap-2"
+          className="rounded-full px-3 h-8 hover:bg-white/20 gap-2 text-[#333333] bg-transparent border-none shadow-none"
         >
           {showDiff ? (
             <EyeOff className="w-4 h-4" />
@@ -82,7 +82,7 @@ export function VersionControls({
           variant="ghost"
           size="sm"
           onClick={onCopy}
-          className="rounded-full px-3 h-8 hover:bg-white/20 gap-2"
+          className="rounded-full px-3 h-8 hover:bg-white/20 gap-2 text-[#333333] bg-transparent border-none shadow-none"
         >
           {showCopyFeedback ? (
             <Check className="w-4 h-4 text-green-600" />
