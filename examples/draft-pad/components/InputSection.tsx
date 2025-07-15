@@ -264,33 +264,34 @@ export function InputSection({
                 />
               </div>
 
-              {/* Voice button */}
-              <VoiceButton
-                isRecording={voice.isRecording}
-                isTranscribing={voice.isTranscribing}
-                disabled={
-                  selectedModelsForRun.length === 0 ||
-                  showSelectionPrompt ||
-                  workflowInProgress
-                }
-                onStartRecording={handleStartRecording}
-                onStopRecording={handleStopRecording}
-              />
-
-              {/* Send button */}
-              <button
-                onClick={handleManualSubmit}
-                disabled={
-                  !userMessage.trim() ||
-                  selectedModelsForRun.length === 0 ||
-                  showSelectionPrompt ||
-                  workflowInProgress ||
-                  isVoiceActive
-                }
-                className="p-2 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                <Send className="w-4 h-4 text-[#333333]" />
-              </button>
+              {/* Show voice button when no text input, send button when there is text */}
+              {!userMessage.trim() ? (
+                <VoiceButton
+                  isRecording={voice.isRecording}
+                  isTranscribing={voice.isTranscribing}
+                  disabled={
+                    selectedModelsForRun.length === 0 ||
+                    showSelectionPrompt ||
+                    workflowInProgress
+                  }
+                  onStartRecording={handleStartRecording}
+                  onStopRecording={handleStopRecording}
+                />
+              ) : (
+                <button
+                  onClick={handleManualSubmit}
+                  disabled={
+                    !userMessage.trim() ||
+                    selectedModelsForRun.length === 0 ||
+                    showSelectionPrompt ||
+                    workflowInProgress ||
+                    isVoiceActive
+                  }
+                  className="p-2 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
+                >
+                  <Send className="w-4 h-4 text-[#333333]" />
+                </button>
+              )}
             </div>
 
             {/* Voice error display */}
