@@ -706,7 +706,7 @@ suite("workflow state", () => {
       // Second publication should only contain the changed field
       const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.type).toBe("object");
-      expect(secondMessage.isInitial).toBe(false);
+      expect(secondMessage.isInitial).toBe(undefined);
       expect(secondMessage.patches).toEqual([
         { op: "replace", path: "/age", value: 31 },
       ]);
@@ -927,7 +927,7 @@ suite("workflow state", () => {
       // Second publication should use string-append optimization
       const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.type).toBe("object");
-      expect(secondMessage.isInitial).toBe(false);
+      expect(secondMessage.isInitial).toBe(undefined);
       expect(secondMessage.patches).toEqual([
         { op: "string-append", path: "/content", value: " world" },
       ]);

@@ -83,8 +83,6 @@ export async function executeExternalTool<
         nodeId: currentNode.id,
       });
 
-      // For now we rely on the request input mechanism to resume the workflow later.
-      // The next iteration of this will use the non-blocking queue.
       const result = await workflowContext.onRequestInput({
         type: "external-tool",
         toolName: String(toolName),

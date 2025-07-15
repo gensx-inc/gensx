@@ -212,7 +212,6 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
         type: "object",
         label,
         patches,
-        isInitial: false,
       });
     }
   }
