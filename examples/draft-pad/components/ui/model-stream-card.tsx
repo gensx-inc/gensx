@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { type ModelConfig, type ModelStreamState } from "@/gensx/workflows";
 import { calculateDiff, calculateStreamingDiff } from "@/lib/diff-utils";
 import { type ContentVersion } from "@/lib/types";
-import { Clock, Copy, DollarSign, WholeWord, Zap } from "lucide-react";
+import { Check, Clock, Copy, DollarSign, WholeWord, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -32,6 +32,7 @@ interface ModelStreamCardProps {
   previousVersion?: ContentVersion;
   showDiff?: boolean;
   autoShowDiff?: boolean;
+  totalStreams?: number;
 }
 
 export function ModelStreamCard({
@@ -45,6 +46,7 @@ export function ModelStreamCard({
   previousVersion,
   showDiff = false,
   autoShowDiff = false,
+  totalStreams = 1,
 }: ModelStreamCardProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
@@ -53,6 +55,10 @@ export function ModelStreamCard({
   const animationFrameRef = useRef<number | null>(null);
   const [showCompletionFlash, setShowCompletionFlash] = useState(false);
   const previousStatusRef = useRef<string | null>(null);
+  const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+
+  // Determine if selection should be shown (only when there are multiple streams)
+  const showSelection = totalStreams > 1;
 
   // Calculate current cost for this model
   const currentCost = useMemo(() => {
@@ -403,13 +409,15 @@ export function ModelStreamCard({
                 ? "border-2 border-blue-500 animate-pulse"
                 : showCompletionFlash
                   ? "border-2 border-green-500"
-                  : isSelected && modelStream.status === "complete"
+                  : isSelected &&
+                      showSelection &&
+                      modelStream.status === "complete"
                     ? "border-2 border-blue-500"
                     : "border border-white/30"
             } ${
-              isSelected ? "" : "hover:border-gray-400"
+              isSelected || !showSelection ? "" : "hover:border-gray-400"
             } relative rounded-2xl overflow-hidden`}
-            onClick={onSelect}
+            onClick={showSelection ? onSelect : undefined}
             liquidGlass={false} // Disable glass effect to simplify scrolling
           >
             {/* Green completion overlay */}
@@ -425,25 +433,27 @@ export function ModelStreamCard({
               )}
             </AnimatePresence>
 
-            {/* Selected indicator */}
-            {isSelected && modelStream.status === "complete" && (
-              <div className="absolute top-3 right-3 z-10">
-                <div className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-                  <svg
-                    className="w-3 h-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Selected
+            {/* Selected indicator - only show when there are multiple streams */}
+            {isSelected &&
+              showSelection &&
+              modelStream.status === "complete" && (
+                <div className="absolute top-3 right-3 z-10">
+                  <div className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+                    <svg
+                      className="w-3 h-3"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Selected
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             <CardContent className="h-full p-0 overflow-hidden rounded-2xl relative">
               <div
                 ref={scrollContainerRef}
@@ -458,11 +468,19 @@ export function ModelStreamCard({
                       onClick={(e) => {
                         e.stopPropagation();
                         void navigator.clipboard.writeText(modelStream.content);
+                        setShowCopyFeedback(true);
+                        setTimeout(() => {
+                          setShowCopyFeedback(false);
+                        }, 2000);
                       }}
-                      className="flex items-center justify-center w-7 h-7 rounded-full bg-white/40 backdrop-blur-sm hover:bg-white/60 transition-colors"
-                      title="Copy content"
+                      className="flex items-center justify-center w-7 h-7 rounded-full bg-white/40 backdrop-blur-sm hover:bg-white/60 transition-all duration-200"
+                      title={showCopyFeedback ? "Copied!" : "Copy content"}
                     >
-                      <Copy className="w-3.5 h-3.5 text-[#333333]/70" />
+                      {showCopyFeedback ? (
+                        <Check className="w-3.5 h-3.5 text-green-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-[#333333]/70" />
+                      )}
                     </button>
                   )}
                 </div>

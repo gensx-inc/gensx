@@ -11,14 +11,15 @@ function getPreviousVersionForModel(
   chosenResponseContent: string | null,
 ): ContentVersion | undefined {
   if (chosenResponseContent) {
-    // Return a ContentVersion-compatible object for chosen response
+    // For single model or initial generation, create a version with the chosen content
+    // The selectedModelId should match what the diff calculation expects
     return {
       id: "chosen-response",
       version: 0,
       timestamp: new Date(),
       modelResponses: [
         {
-          modelId: "chosen",
+          modelId: "previous",
           content: chosenResponseContent,
           wordCount: chosenResponseContent
             .split(/\s+/)
@@ -26,7 +27,7 @@ function getPreviousVersionForModel(
           charCount: chosenResponseContent.length,
         },
       ],
-      selectedModelId: "chosen",
+      selectedModelId: "previous", // This must match the modelId above
       userMessage: "",
     };
   }
@@ -150,6 +151,7 @@ export function ModelStreamView({
                         versionHistory,
                         chosenResponseForCurrentGeneration,
                       )}
+                      totalStreams={sortedModelStreams.length}
                     />
                   ) : null;
                 })()}
@@ -182,28 +184,11 @@ export function ModelStreamView({
                     metricRanges={metricRanges}
                     showDiff={isDiffVisible}
                     autoShowDiff={false}
-                    previousVersion={
-                      chosenResponseForCurrentGeneration
-                        ? {
-                            id: "previous-generation",
-                            version: 0,
-                            timestamp: new Date(),
-                            modelResponses: [
-                              {
-                                modelId: sortedModelStreams[0].modelId,
-                                content: chosenResponseForCurrentGeneration,
-                                wordCount: chosenResponseForCurrentGeneration
-                                  .split(/\s+/)
-                                  .filter((w) => w.length > 0).length,
-                                charCount:
-                                  chosenResponseForCurrentGeneration.length,
-                              },
-                            ],
-                            selectedModelId: sortedModelStreams[0].modelId,
-                            userMessage: "",
-                          }
-                        : getPreviousVersionForModel(versionHistory, null)
-                    }
+                    previousVersion={getPreviousVersionForModel(
+                      versionHistory,
+                      chosenResponseForCurrentGeneration,
+                    )}
+                    totalStreams={1}
                   />
                 </div>
               </motion.div>
@@ -270,6 +255,7 @@ export function ModelStreamView({
                             versionHistory,
                             chosenResponseForCurrentGeneration,
                           )}
+                          totalStreams={sortedModelStreams.length}
                         />
                       </motion.div>
                     );

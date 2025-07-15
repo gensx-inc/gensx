@@ -9,11 +9,18 @@ import { useAvailableModels } from "@/hooks/useAvailableModels";
 import { useDiffState } from "@/hooks/useDiffState";
 import { useDraftPad } from "@/hooks/useDraftPad";
 import { useModelStreams } from "@/hooks/useModelStreams";
-import { type RefObject, useCallback, useEffect, useRef } from "react";
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 export default function Home() {
   const draftPad = useDraftPad();
   const diffState = useDiffState();
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
 
   const { sortedModelStreams, metricRanges, overallStats } = useModelStreams(
     draftPad.draftProgress,
@@ -85,8 +92,6 @@ export default function Home() {
         modelMetricRanges={modelMetricRanges}
         modelSortConfig={draftPad.modelSortConfig}
         sortConfig={draftPad.sortConfig}
-        showDiff={diffState.showDiff}
-        onToggleDiff={diffState.toggleDiff}
         onModelSort={draftPad.handleModelSort}
         onSort={draftPad.handleSort}
         onBackToAllModels={() => {
@@ -190,9 +195,7 @@ export default function Home() {
               modelConfigMap={draftPad.modelConfigMap}
               versionHistory={draftPad.versionHistory}
               chosenResponseForCurrentGeneration={
-                draftPad.selectedModelId && draftPad.selectedContent
-                  ? draftPad.selectedContent
-                  : null
+                draftPad.baseContentForCurrentGeneration
               }
               isDiffVisible={diffState.isDiffVisible}
               showDiff={diffState.showDiff}
@@ -213,12 +216,10 @@ export default function Home() {
                 onNextVersion={draftPad.navigateToNextVersion}
                 showDiff={diffState.showDiff}
                 onToggleDiff={diffState.toggleDiff}
-                onCopy={() => void draftPad.copyCurrentVersion()}
                 canGoPrevious={draftPad.currentVersionIndex > 0}
                 canGoNext={
                   draftPad.currentVersionIndex < draftPad.allVersions.length - 1
                 }
-                showCopyFeedback={draftPad.showCopyFeedback}
               />
             </div>
           )}
@@ -235,11 +236,13 @@ export default function Home() {
             isDropdownOpen={draftPad.isDropdownOpen}
             textareaRef={draftPad.textareaRef as RefObject<HTMLTextAreaElement>}
             inputRef={draftPad.inputRef as RefObject<HTMLInputElement>}
+            isVoiceActive={isVoiceActive}
             onUserMessageChange={draftPad.setUserMessage}
             onMultiSelectModeChange={draftPad.setIsMultiSelectMode}
             onModelsChange={draftPad.setSelectedModelsForRun}
             onDropdownOpenChange={draftPad.setIsDropdownOpen}
             onSubmit={onSubmit}
+            onVoiceActiveChange={setIsVoiceActive}
           />
         </>
       )}

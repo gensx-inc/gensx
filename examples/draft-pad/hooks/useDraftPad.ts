@@ -42,7 +42,6 @@ export function useDraftPad() {
 
   // Version navigation state
   const [currentVersionIndex, setCurrentVersionIndex] = useState<number>(0);
-  const [showCopyFeedback, setShowCopyFeedback] = useState(false);
   const [isViewingHistory, setIsViewingHistory] = useState(false);
 
   // Sort state
@@ -160,6 +159,9 @@ export function useDraftPad() {
     // Reset hasCreatedVersion for new generation
     setHasCreatedVersion(false);
 
+    // Store the base content used for this generation
+    setBaseContentForCurrentGeneration(selectedContent || null);
+
     await run({
       inputs: {
         userMessage: userMessage.trim(),
@@ -221,6 +223,10 @@ export function useDraftPad() {
 
   // Track if we've already created a version for the current generation
   const [hasCreatedVersion, setHasCreatedVersion] = useState(false);
+
+  // Track the base content used for the current generation
+  const [baseContentForCurrentGeneration, setBaseContentForCurrentGeneration] =
+    useState<string | null>(null);
 
   // Save completed generation to version history
   useEffect(() => {
@@ -395,6 +401,8 @@ export function useDraftPad() {
   const navigateToPreviousVersion = useCallback(() => {
     setCurrentVersionIndex((prev) => Math.max(0, prev - 1));
     setIsViewingHistory(true);
+    // Clear base content when viewing history
+    setBaseContentForCurrentGeneration(null);
   }, []);
 
   // Navigate to next version
@@ -407,18 +415,9 @@ export function useDraftPad() {
       }
       return newIndex;
     });
+    // Clear base content when viewing history
+    setBaseContentForCurrentGeneration(null);
   }, [allVersions.length]);
-
-  // Copy current version to clipboard
-  const copyCurrentVersion = useCallback(async () => {
-    if (currentVersionContent) {
-      await navigator.clipboard.writeText(currentVersionContent);
-      setShowCopyFeedback(true);
-      setTimeout(() => {
-        setShowCopyFeedback(false);
-      }, 2000);
-    }
-  }, [currentVersionContent]);
 
   // Update current version index when new versions are added
   useEffect(() => {
@@ -458,8 +457,6 @@ export function useDraftPad() {
     currentVersionContent,
     navigateToPreviousVersion,
     navigateToNextVersion,
-    copyCurrentVersion,
-    showCopyFeedback,
     isViewingHistory,
 
     // Refs
@@ -476,6 +473,7 @@ export function useDraftPad() {
     showSelectionPrompt,
     modelConfigMap,
     uniqueProviders,
+    baseContentForCurrentGeneration,
 
     // Actions
     handleSubmit,

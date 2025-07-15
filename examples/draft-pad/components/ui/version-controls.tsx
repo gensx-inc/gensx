@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "./button";
 
@@ -18,10 +11,8 @@ interface VersionControlsProps {
   onNextVersion: () => void;
   showDiff: boolean;
   onToggleDiff: () => void;
-  onCopy: () => void;
   canGoPrevious: boolean;
   canGoNext: boolean;
-  showCopyFeedback?: boolean;
 }
 
 export function VersionControls({
@@ -31,10 +22,8 @@ export function VersionControls({
   onNextVersion,
   showDiff,
   onToggleDiff,
-  onCopy,
   canGoPrevious,
   canGoNext,
-  showCopyFeedback = false,
 }: VersionControlsProps) {
   return (
     <div className="inline-flex items-center gap-4 bg-white/40 backdrop-blur-md rounded-full px-1 py-1 shadow-lg">
@@ -77,21 +66,6 @@ export function VersionControls({
             <Eye className="w-4 h-4" />
           )}
           <span className="text-sm">{showDiff ? "Hide" : "Show"} Diff</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onCopy}
-          className="rounded-full px-3 h-8 hover:bg-white/20 gap-2 text-[#333333] bg-transparent border-none shadow-none"
-        >
-          {showCopyFeedback ? (
-            <Check className="w-4 h-4 text-green-600" />
-          ) : (
-            <Copy className="w-4 h-4" />
-          )}
-          <span className="text-sm">
-            {showCopyFeedback ? "Copied!" : "Copy"}
-          </span>
         </Button>
       </div>
     </div>

@@ -5,6 +5,7 @@ interface VoiceRecordingState {
   isTranscribing: boolean;
   error: string | null;
   transcription: string | null;
+  audioLevels: number[]; // Array of audio levels for visualization
 }
 
 interface UseVoiceRecordingReturn extends VoiceRecordingState {
@@ -19,11 +20,14 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
     isTranscribing: false,
     error: null,
     transcription: null,
+    audioLevels: [0, 0, 0, 0, 0, 0, 0], // Initialize with 7 bars
   });
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const isRecordingRef = useRef(false);
 
   const startRecording = useCallback(async () => {
     try {
@@ -37,8 +41,50 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
       });
 
       streamRef.current = stream;
-      const mediaRecorder = new MediaRecorder(stream);
 
+      // Simple random animation instead of complex audio analysis
+      isRecordingRef.current = true;
+
+      // Store previous levels for smooth transitions
+      let previousLevels = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
+      let lastFrameTime = Date.now();
+
+      // Start random animation for visual feedback
+      const animateRandomLevels = () => {
+        if (!isRecordingRef.current) return;
+
+        const currentTime = Date.now();
+        const deltaTime = currentTime - lastFrameTime;
+        lastFrameTime = currentTime;
+
+        // Generate smooth random levels for each bar
+        const levels: number[] = [];
+        for (let i = 0; i < 7; i++) {
+          // Target level with some randomness
+          const targetLevel = 0.2 + Math.random() * 0.6;
+
+          // Smooth transition from previous level
+          const smoothingFactor = Math.min(deltaTime / 100, 1); // Smoother transitions
+          const currentLevel =
+            previousLevels[i] +
+            (targetLevel - previousLevels[i]) * smoothingFactor * 0.3;
+
+          // Add slight wave effect based on index and time
+          const wave = Math.sin(currentTime / 200 + i * 0.5) * 0.1;
+
+          levels.push(Math.max(0.1, Math.min(0.9, currentLevel + wave)));
+        }
+
+        previousLevels = levels;
+
+        // Update state with levels
+        setState((prev) => ({ ...prev, audioLevels: levels }));
+
+        // Continue animation
+        animationFrameRef.current = requestAnimationFrame(animateRandomLevels);
+      };
+
+      const mediaRecorder = new MediaRecorder(stream);
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
@@ -51,6 +97,11 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
       mediaRecorder.start();
 
       setState((prev) => ({ ...prev, isRecording: true }));
+
+      // Start animation after a short delay
+      setTimeout(() => {
+        animateRandomLevels();
+      }, 100);
     } catch (error) {
       setState((prev) => ({
         ...prev,
@@ -62,14 +113,29 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
   }, []);
 
   const stopRecording = useCallback(async () => {
+    // Immediately update state for responsive UI
+    isRecordingRef.current = false;
+
+    // Stop animation frame immediately
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    // Reset audio levels immediately
+    setState((prev) => ({
+      ...prev,
+      isRecording: false,
+      isTranscribing: true,
+      audioLevels: [0, 0, 0, 0, 0, 0, 0],
+    }));
+
     if (
       !mediaRecorderRef.current ||
       mediaRecorderRef.current.state !== "recording"
     ) {
       return;
     }
-
-    setState((prev) => ({ ...prev, isRecording: false, isTranscribing: true }));
 
     return new Promise<void>((resolve) => {
       const mediaRecorder = mediaRecorderRef.current!;

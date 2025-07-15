@@ -31,6 +31,42 @@ export function ModelDropdown({
   const [dropdownSearch, setDropdownSearch] = useState("");
   const listContainerRef = useRef<HTMLDivElement | null>(null);
   const lastScrollTopRef = useRef(0);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [actualDirection, setActualDirection] = useState<"up" | "down">(
+    direction,
+  );
+
+  // Calculate dropdown position based on available space
+  useEffect(() => {
+    if (isDropdownOpen && buttonRef.current && dropdownRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const dropdownHeight = 500; // Approximate max height of dropdown
+      const spaceAbove = buttonRect.top;
+      const spaceBelow = window.innerHeight - buttonRect.bottom;
+
+      // If preferred direction is up but not enough space, flip to down
+      if (
+        direction === "up" &&
+        spaceAbove < dropdownHeight &&
+        spaceBelow > spaceAbove
+      ) {
+        setActualDirection("down");
+      }
+      // If preferred direction is down but not enough space, flip to up
+      else if (
+        direction === "down" &&
+        spaceBelow < dropdownHeight &&
+        spaceAbove > spaceBelow
+      ) {
+        setActualDirection("up");
+      }
+      // Otherwise use the preferred direction
+      else {
+        setActualDirection(direction);
+      }
+    }
+  }, [isDropdownOpen, direction]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -89,6 +125,7 @@ export function ModelDropdown({
     >
       {/* Dropdown trigger */}
       <button
+        ref={buttonRef}
         onClick={() => {
           const wasOpen = isDropdownOpen;
           onDropdownOpenChange(!isDropdownOpen);
@@ -158,7 +195,14 @@ export function ModelDropdown({
       {/* Dropdown menu */}
       {isDropdownOpen && (
         <div
-          className={`absolute left-0 z-[9999] ${direction === "up" ? "bottom-full mb-2" : "top-full mt-2"} rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.12),0_0_48px_rgba(0,0,0,0.08)] min-w-[300px] max-w-[90vw] w-auto`}
+          ref={dropdownRef}
+          className={`absolute left-0 z-[9999] ${actualDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"} rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.12),0_0_48px_rgba(0,0,0,0.08)] min-w-[300px] max-w-[90vw] w-auto flex flex-col`}
+          style={{
+            maxHeight:
+              actualDirection === "up"
+                ? `min(400px, ${buttonRef.current?.getBoundingClientRect().top ?? 400}px - 40px)`
+                : `min(400px, ${window.innerHeight - (buttonRef.current?.getBoundingClientRect().bottom ?? 0) - 40}px)`,
+          }}
         >
           {/* Glass background with strong blur */}
           <div className="absolute inset-0 rounded-2xl bg-white/20 backdrop-blur-xl" />
@@ -166,9 +210,9 @@ export function ModelDropdown({
           {/* Glass effect border */}
           <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_1px_1px_1px_0_rgba(255,255,255,0.4),inset_-1px_-1px_1px_1px_rgba(255,255,255,0.4)]" />
 
-          <div className="relative z-[2]">
+          <div className="relative z-[2] flex flex-col h-full">
             {/* Header with selected count */}
-            <div className="p-3 border-b border-white/20 ">
+            <div className="p-3 border-b border-white/20 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button
@@ -205,14 +249,13 @@ export function ModelDropdown({
             {/* Model list */}
             <div
               ref={listContainerRef}
-              className="max-h-96 overflow-y-auto"
-              style={{ maxHeight: direction === "up" ? "40vh" : "60vh" }}
+              className="flex-1 overflow-y-auto min-h-0 max-h-[250px] scrollbar-thin scrollbar-thumb-black/20 scrollbar-track-transparent"
               onScroll={(e) => {
                 e.stopPropagation();
               }}
             >
               {filteredModels.length > 0 ? (
-                <div className="p-2">
+                <div className="p-2 pb-1">
                   {filteredModels.map((model) => {
                     const isSelected = selectedModelsForRun.some(
                       (m) => m.id === model.id,
@@ -324,7 +367,7 @@ export function ModelDropdown({
             </div>
 
             {/* Search bar at bottom */}
-            <div className="p-3 border-t border-white/20">
+            <div className="p-3 pb-2 border-t border-white/20 flex-shrink-0 bg-white/10 backdrop-blur-sm rounded-b-2xl">
               <input
                 type="text"
                 value={dropdownSearch}

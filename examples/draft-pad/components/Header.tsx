@@ -1,6 +1,5 @@
 "use client";
 
-import { DiffToggleButton } from "@/components/ui/diff-toggle-button";
 import { ProviderFilter } from "@/components/ui/provider-filter";
 import { type DraftProgress, type ModelConfig } from "@/gensx/workflows";
 import { ArrowLeft } from "lucide-react";
@@ -42,8 +41,6 @@ interface HeaderProps {
     field: "words" | "time" | "cost" | null;
     direction: "asc" | "desc" | "none";
   };
-  showDiff: boolean;
-  onToggleDiff: () => void;
   onModelSort: (field: "cost" | "context" | "maxOutput") => void;
   onSort: (field: "words" | "time" | "cost") => void;
   onBackToAllModels: () => void;
@@ -62,8 +59,6 @@ export function Header({
   modelMetricRanges,
   modelSortConfig,
   sortConfig,
-  showDiff,
-  onToggleDiff,
   onModelSort,
   onSort,
   onBackToAllModels,
@@ -104,21 +99,9 @@ export function Header({
               sortConfig={sortConfig}
               onSort={onSort}
             />
-            {sortedModelStreams.length > 0 && (
-              <DiffToggleButton showDiff={showDiff} onToggle={onToggleDiff} />
-            )}
           </div>
         </>
       )}
-
-      {/* Show diff toggle when we have streams but no stats */}
-      {sortedModelStreams.length > 0 &&
-        !overallStats?.hasData &&
-        !showModelSelector && (
-          <div className="absolute right-0">
-            <DiffToggleButton showDiff={showDiff} onToggle={onToggleDiff} />
-          </div>
-        )}
 
       {showCounter && (
         <>
