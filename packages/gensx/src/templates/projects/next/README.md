@@ -2,7 +2,7 @@
 
 This is a [Next.js](https://nextjs.org) template for [GenSX](https://gensx.com) with streaming chat, thinking, and tools built in. It also includes chat history stored using `@gensx/storage`.
 
-![Chat UX Screenshot](./public/chat-ux.png)
+![Template UX Screenshot](./public/template-ux.png)
 
 ## Getting started
 
@@ -17,6 +17,8 @@ Then export the environment variables. For this template, you'll need an [OpenAI
 ```bash
 export OPENAI_API_KEY=...
 ```
+
+Finally, run the development server:
 
 ```bash
 pnpm run dev
@@ -43,6 +45,6 @@ Once you deploy, make sure to set the following environment variables so the app
 ```bash
 export GENSX_API_KEY=...
 export GENSX_ORG=...
-export GENSX_PROJECT=chat-tools
+export GENSX_PROJECT=...
 export GENSX_ENV=default
 ```

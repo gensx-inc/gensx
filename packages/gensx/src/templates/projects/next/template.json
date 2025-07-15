@@ -1,6 +1,6 @@
 {
   "name": "next",
-  "description": "A Next.js app with GenSX integration",
+  "description": "A Next.js web app with GenSX integration",
   "dependencies": [
     "@ai-sdk/openai",
     "@gensx/client",

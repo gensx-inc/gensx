@@ -556,8 +556,13 @@ function TemplateSelector({ onSelect }: TemplateSelectorProps) {
     return <LoadingSpinner message="Loading templates..." />;
   }
 
+  const nameMap: Record<TemplateKind, string> = {
+    typescript: "TypeScript",
+    next: "Next.js",
+  };
+
   const items: Item[] = availableTemplates.map((template) => ({
-    label: `${template.name} - ${template.description}`,
+    label: `${nameMap[template.name as TemplateKind]} (${template.description})`,
     value: template.name,
   }));
 
