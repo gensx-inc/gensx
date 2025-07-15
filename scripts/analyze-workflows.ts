@@ -692,44 +692,61 @@ async function main() {
 }
 
 function generateMermaidDiagram(graph: WorkflowGraph): string {
-  const lines = ["graph TD"];
+  const lines = ["sequenceDiagram"];
   
-  // Add workflow nodes
-  for (const workflow of graph.workflows) {
-    const nodeId = workflow.functionName?.replace(/[^a-zA-Z0-9]/g, "_") || workflow.name;
-    lines.push(`    ${nodeId}[${workflow.name}]:::workflow`);
+  // Add participants (workflows and components)
+  const allDefinitions = [...graph.workflows, ...graph.components];
+  for (const definition of allDefinitions) {
+    const participantId = definition.functionName || definition.name.replace(/[^a-zA-Z0-9]/g, "_");
+    const participantLabel = definition.name;
+    const typeIndicator = definition.type === "workflow" ? "🔄" : "⚙️";
+    lines.push(`    participant ${participantId} as ${typeIndicator} ${participantLabel}`);
   }
   
-  // Add component nodes  
-  for (const component of graph.components) {
-    const nodeId = component.functionName?.replace(/[^a-zA-Z0-9]/g, "_") || component.name;
-    lines.push(`    ${nodeId}[${component.name}]:::component`);
-  }
-  
-  // Sort dependencies by source and order to create sequential flow
-  const sortedDeps = graph.dependencies.sort((a, b) => {
-    if (a.from !== b.from) return a.from.localeCompare(b.from);
-    return a.order - b.order;
-  });
-  
-  // Add dependencies with ordering information
-  for (const dep of sortedDeps) {
-    const fromNode = [...graph.workflows, ...graph.components]
-      .find(d => d.name === dep.from)?.functionName?.replace(/[^a-zA-Z0-9]/g, "_");
-    const toNode = [...graph.workflows, ...graph.components]
-      .find(d => d.name === dep.to)?.functionName?.replace(/[^a-zA-Z0-9]/g, "_");
+  // Group dependencies by source and sort by order
+  const dependenciesBySource = graph.dependencies.reduce((acc, dep) => {
+    if (!acc[dep.from]) acc[dep.from] = [];
+    acc[dep.from].push(dep);
+    return acc;
+  }, {} as Record<string, typeof graph.dependencies>);
+
+  // Generate sequence flows
+  for (const [source, deps] of Object.entries(dependenciesBySource)) {
+    const sortedDeps = deps.sort((a, b) => a.order - b.order);
+    const sourceDefinition = allDefinitions.find(d => d.name === source);
+    const sourceId = sourceDefinition?.functionName || source.replace(/[^a-zA-Z0-9]/g, "_");
     
-    if (fromNode && toNode) {
-      // Create arrow with order number and await indicator
-      const awaitIndicator = dep.awaitUsed ? "await " : "";
-      const orderLabel = `|${dep.order}. ${awaitIndicator}|`;
-      lines.push(`    ${fromNode} -->${orderLabel} ${toNode}`);
+    if (sortedDeps.length > 0) {
+      lines.push(`    Note over ${sourceId}: Execution Flow`);
+    }
+    
+    for (const dep of sortedDeps) {
+      const targetDefinition = allDefinitions.find(d => d.name === dep.to);
+      const targetId = targetDefinition?.functionName || dep.to.replace(/[^a-zA-Z0-9]/g, "_");
+      
+      if (sourceId && targetId) {
+        // Choose arrow type based on await usage
+        const arrow = dep.awaitUsed ? "->>" : "->>"; // sync vs async call
+        const awaitLabel = dep.awaitUsed ? " (await)" : "";
+        const message = `${dep.order}. Call${awaitLabel}`;
+        
+        lines.push(`    ${sourceId}${arrow}+${targetId}: ${message}`);
+        
+        if (dep.awaitUsed) {
+          // Show return for awaited calls
+          lines.push(`    ${targetId}-->>-${sourceId}: Result`);
+        } else {
+          // Just deactivate for non-awaited calls
+          lines.push(`    deactivate ${targetId}`);
+        }
+      }
+    }
+    
+    // Add some spacing between different sources
+    if (Object.keys(dependenciesBySource).length > 1) {
+      lines.push("");
     }
   }
-  
-  // Add styling
-  lines.push("    classDef workflow fill:#e1f5fe,stroke:#01579b,stroke-width:2px");
-  lines.push("    classDef component fill:#f3e5f5,stroke:#4a148c,stroke-width:2px");
   
   return lines.join("\n");
 }

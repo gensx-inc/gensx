@@ -87,6 +87,15 @@ The analyzer tracks:
 - **Numbers** - Show the order of execution within each function
 - **Arrows (→)** - Connect components in execution order
 
+#### Sequence Diagram Benefits
+The analyzer uses **Mermaid sequence diagrams** instead of traditional graph diagrams for superior flow visualization:
+
+- **⏱️ Temporal Order** - Shows execution sequence over time, left to right
+- **🔄 Activation Boxes** - Visual indication of when components are "active" during execution  
+- **↩️ Return Flows** - Clear visualization of awaited vs. fire-and-forget operations
+- **📋 Execution Context** - Groups related calls with "Execution Flow" notes
+- **🎯 Participant Focus** - Clear distinction between workflows (🔄) and components (⚙️)
+
 ## Output
 
 The analysis provides:
@@ -139,28 +148,39 @@ The analysis provides:
   Files: 5
 ```
 
-### Mermaid Diagram Output
+### Mermaid Sequence Diagram Output
 ```mermaid
-graph TD
-    WriteBlog[WriteBlog]:::workflow
-    WriteSection[WriteSection]:::component
-    WriteDraft[WriteDraft]:::component
-    GenerateTopics[GenerateTopics]:::component
-    WebResearch[WebResearch]:::component
-    Research[Research]:::component
-    MatchTone[MatchTone]:::component
-    Editorial[Editorial]:::component
-    WriteOutline[WriteOutline]:::component
-    Research -->|1. await | GenerateTopics
-    Research -->|2. | WebResearch
-    WriteBlog -->|1. await | Research
-    WriteBlog -->|2. await | WriteOutline
-    WriteBlog -->|3. await | WriteDraft
-    WriteBlog -->|4. await | Editorial
-    WriteBlog -->|5. await | MatchTone
-    WriteDraft -->|1. | WriteSection
-    classDef workflow fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef component fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+sequenceDiagram
+    participant WriteBlog as 🔄 WriteBlog
+    participant WriteSection as ⚙️ WriteSection
+    participant WriteDraft as ⚙️ WriteDraft
+    participant GenerateTopics as ⚙️ GenerateTopics
+    participant WebResearch as ⚙️ WebResearch
+    participant Research as ⚙️ Research
+    participant MatchTone as ⚙️ MatchTone
+    participant Editorial as ⚙️ Editorial
+    participant WriteOutline as ⚙️ WriteOutline
+    Note over WriteBlog: Execution Flow
+    WriteBlog->>+Research: 1. Call (await)
+    Research-->>-WriteBlog: Result
+    WriteBlog->>+WriteOutline: 2. Call (await)
+    WriteOutline-->>-WriteBlog: Result
+    WriteBlog->>+WriteDraft: 3. Call (await)
+    WriteDraft-->>-WriteBlog: Result
+    WriteBlog->>+Editorial: 4. Call (await)
+    Editorial-->>-WriteBlog: Result
+    WriteBlog->>+MatchTone: 5. Call (await)
+    MatchTone-->>-WriteBlog: Result
+
+    Note over WriteDraft: Execution Flow
+    WriteDraft->>+WriteSection: 1. Call
+    deactivate WriteSection
+
+    Note over Research: Execution Flow
+    Research->>+GenerateTopics: 1. Call (await)
+    GenerateTopics-->>-Research: Result
+    Research->>+WebResearch: 2. Call
+    deactivate WebResearch
 ```
 
 ## Features
@@ -173,7 +193,7 @@ The analyzer provides comprehensive analysis capabilities:
 - **Sequential Flow Analysis** - Tracks the order of component calls within workflows and components
 - **Async/Await Detection** - Distinguishes between awaited and non-awaited async operations
 - **Dependency Graph Generation** - Maps all relationships between workflows and components with execution order
-- **Multiple Output Formats** - Text summary, JSON data, and beautiful Mermaid diagrams with numbered flow
+- **Multiple Output Formats** - Text summary, JSON data, and Mermaid sequence diagrams showing temporal execution flow
 - **Intelligent Filtering** - Focuses on gensx patterns while filtering out external API calls
 
 ## Use Cases
