@@ -329,8 +329,8 @@ export class GenSX {
     const { executionId, nodeId, data } = options;
 
     const url = this.isLocal
-      ? `${this.baseUrl}/workflowExecutions/${executionId}/resume/${nodeId}`
-      : `${this.baseUrl}/org/${this.org}/workflowExecutions/${executionId}/resume/${nodeId}`;
+      ? `${this.baseUrl}/workflowExecutions/${executionId}/fulfill-input-request/${nodeId}`
+      : `${this.baseUrl}/org/${this.org}/workflowExecutions/${executionId}/fulfill-input-request/${nodeId}`;
 
     const response = await fetch(url, {
       method: "POST",

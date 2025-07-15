@@ -2,7 +2,7 @@ import { Component } from "./component.js";
 import { getCurrentContext } from "./context.js";
 
 function getCallbackUrl(nodeId: string) {
-  return `${process.env.GENSX_API_BASE_URL}/org/${process.env.GENSX_ORG}/workflowExecutions/${process.env.GENSX_EXECUTION_ID}/resume/${nodeId}`;
+  return `${process.env.GENSX_API_BASE_URL}/org/${process.env.GENSX_ORG}/workflowExecutions/${process.env.GENSX_EXECUTION_ID}/fulfill-input-request/${nodeId}`;
 }
 
 export async function requestInput<T extends Record<string, unknown>>(
@@ -17,7 +17,7 @@ export async function requestInput<T extends Record<string, unknown>>(
     },
   );
 
-  // This is a magical component that, upon resume, will have the expected output in the checkpoint, filled in by the cloud runtime when the /resume endpoint is called.
+  // This is a magical component that, upon resume, will have the expected output in the checkpoint, filled in by the cloud runtime when the /fulfill-input-request endpoint is called.
   // We define this inside the requestInput function so that it can reference the trigger function _without_ it being passed in as an argument.
   const RequestInputComponent = Component("RequestInput", async () => {
     const context = getCurrentContext();

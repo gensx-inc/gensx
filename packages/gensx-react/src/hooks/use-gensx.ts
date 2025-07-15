@@ -246,7 +246,7 @@ export function useWorkflow<
 
               // Send this to the API
               const response = await fetch(
-                `${baseUrl}/workflowExecutions/${executionId.current}/resume/${event.nodeId}`,
+                `${baseUrl}/workflowExecutions/${executionId.current}/fulfill-input-request/${event.nodeId}`,
                 {
                   method: "POST",
                   headers: {
@@ -272,7 +272,7 @@ export function useWorkflow<
 
             // If there is no tool implementation, return a well-known object as the result so the workflow can continue
             const response = await fetch(
-              `${baseUrl}/workflowExecutions/${executionId.current}/resume/${event.nodeId}`,
+              `${baseUrl}/workflowExecutions/${executionId.current}/fulfill-input-request/${event.nodeId}`,
               {
                 method: "POST",
                 headers: {
