@@ -79,17 +79,15 @@ export function InputSection({
 
   // Initialize textarea on mount
   useEffect(() => {
-    if (textareaRef.current) {
-      const textarea = textareaRef.current;
-      textarea.style.height = "32px";
-      textarea.style.transition = "height 0.1s ease";
-      textarea.style.boxSizing = "border-box";
-    }
+    const textarea = textareaRef.current;
+    textarea.style.height = "32px";
+    textarea.style.transition = "height 0.1s ease";
+    textarea.style.boxSizing = "border-box";
   }, []);
 
   // Handle voice transcription completion - SIMPLIFIED
   useEffect(() => {
-    if (voice.transcription && voice.transcription.trim()) {
+    if (voice.transcription?.trim()) {
       const transcribedText = voice.transcription.trim();
 
       // Store in ref
@@ -139,24 +137,21 @@ export function InputSection({
 
   // Voice button handlers
   const handleStartRecording = useCallback(() => {
-    voice.startRecording().catch((error) => {
+    voice.startRecording().catch((error: unknown) => {
       console.error("Failed to start recording:", error);
     });
   }, [voice.startRecording]);
 
   const handleStopRecording = useCallback(() => {
-    voice.stopRecording().catch((error) => {
+    voice.stopRecording().catch((error: unknown) => {
       console.error("Failed to stop recording:", error);
     });
   }, [voice.stopRecording]);
 
   const handleClose = () => {
     setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      } else if (inputRef.current) {
-        inputRef.current.focus();
-      }
+      textareaRef.current.focus();
+      inputRef.current.focus();
     }, 100);
   };
 
