@@ -10,11 +10,18 @@ interface ComponentDefinition {
   type: "workflow" | "component";
   filePath: string;
   functionName?: string;
-  dependencies: string[];
+  dependencies: DependencyCall[];
   sourceLocation: {
     line: number;
     column: number;
   };
+}
+
+interface DependencyCall {
+  name: string;
+  order: number;
+  line?: number;
+  awaitUsed: boolean;
 }
 
 interface ImportInfo {
@@ -38,6 +45,9 @@ interface WorkflowGraph {
     type: "workflow-to-component" | "component-to-component" | "workflow-to-workflow";
     fromFile: string;
     toFile: string;
+    order: number;
+    line?: number;
+    awaitUsed: boolean;
   }[];
   files: string[];
 }
@@ -317,7 +327,11 @@ class WorkflowAnalyzer {
 
     // Look for function calls within the body
     const dependencies = this.findFunctionCalls(functionBody, definition.filePath);
-    definition.dependencies = [...new Set(dependencies)]; // Remove duplicates
+    // Remove duplicates by name while preserving the first occurrence (earliest call)
+    const uniqueDeps = dependencies.filter((dep, index, arr) => 
+      arr.findIndex(d => d.name === dep.name) === index
+    );
+    definition.dependencies = uniqueDeps;
   }
 
   private findFunctionBody(functionName?: string, sourceFile?: ts.SourceFile): ts.Block | ts.Expression | null {
@@ -351,12 +365,13 @@ class WorkflowAnalyzer {
     return functionBody;
   }
 
-  private findFunctionCalls(body: ts.Block | ts.Expression, currentFilePath: string): string[] {
-    const calls: string[] = [];
+  private findFunctionCalls(body: ts.Block | ts.Expression, currentFilePath: string): DependencyCall[] {
+    const calls: DependencyCall[] = [];
     const imports = this.importMap.get(currentFilePath) || [];
     const importLookup = new Map(imports.map(imp => [imp.localName, imp.importedName]));
+    let callOrder = 0;
 
-    const visit = (node: ts.Node): void => {
+    const visit = (node: ts.Node, isAwait: boolean = false): void => {
       // Look for call expressions
       if (ts.isCallExpression(node)) {
         const expression = node.expression;
@@ -371,30 +386,55 @@ class WorkflowAnalyzer {
             return;
           }
           
+          let isValidCall = false;
+          
           // Check if it's an imported function (likely a gensx component)
           const importedName = importLookup.get(functionName);
           if (importedName) {
-            calls.push(functionName); // Use local name for dependency tracking
+            isValidCall = true;
           } else {
             // Check if it's a local definition
             const localDefinition = this.findLocalDefinition(functionName, currentFilePath);
             if (localDefinition) {
-              calls.push(functionName);
+              isValidCall = true;
             }
+          }
+          
+          if (isValidCall) {
+            const sourceFile = this.getSourceFileForPath(currentFilePath);
+            const line = sourceFile ? sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1 : undefined;
+            
+            calls.push({
+              name: functionName,
+              order: ++callOrder,
+              line,
+              awaitUsed: isAwait
+            });
           }
         }
       }
 
       // Look for await expressions
       if (ts.isAwaitExpression(node) && node.expression) {
-        visit(node.expression);
+        visit(node.expression, true);
+        return; // Don't visit children again
       }
 
-      ts.forEachChild(node, visit);
+      ts.forEachChild(node, child => visit(child, isAwait));
     };
 
     visit(body);
     return calls;
+  }
+
+  private getSourceFileForPath(filePath: string): ts.SourceFile | null {
+    // This is a simplified implementation - in practice, we'd cache source files
+    try {
+      const content = require('fs').readFileSync(filePath, 'utf-8');
+      return ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+    } catch {
+      return null;
+    }
   }
 
   private findLocalDefinition(functionName: string, filePath: string): ComponentDefinition | null {
@@ -460,17 +500,17 @@ class WorkflowAnalyzer {
     const dependencies: WorkflowGraph["dependencies"] = [];
 
     for (const definition of this.allDefinitions.values()) {
-      for (const dependency of definition.dependencies) {
+      for (const dependencyCall of definition.dependencies) {
         // Find the target definition
         let targetDefinition: ComponentDefinition | null = null;
         
         // First check local definitions in the same file
-        targetDefinition = this.findLocalDefinition(dependency, definition.filePath);
+        targetDefinition = this.findLocalDefinition(dependencyCall.name, definition.filePath);
         
         // If not found locally, check imports
         if (!targetDefinition) {
           const imports = this.importMap.get(definition.filePath) || [];
-          const importInfo = imports.find(imp => imp.localName === dependency);
+          const importInfo = imports.find(imp => imp.localName === dependencyCall.name);
           
           if (importInfo) {
             const importedFilePath = await this.resolveImportPath(importInfo.fromFile, definition.filePath);
@@ -492,7 +532,10 @@ class WorkflowAnalyzer {
             to: targetDefinition.name,
             type,
             fromFile: definition.filePath,
-            toFile: targetDefinition.filePath
+            toFile: targetDefinition.filePath,
+            order: dependencyCall.order,
+            line: dependencyCall.line,
+            awaitUsed: dependencyCall.awaitUsed
           });
         }
       }
@@ -502,7 +545,11 @@ class WorkflowAnalyzer {
   }
 
   private getSourceLocation(node: ts.Node, filePath: string): { line: number; column: number } {
-    // This is a simplified version - in a real implementation you'd need access to the source file
+    const sourceFile = this.getSourceFileForPath(filePath);
+    if (sourceFile) {
+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart());
+      return { line: line + 1, column: character + 1 };
+    }
     return { line: 0, column: 0 };
   }
 }
@@ -554,7 +601,16 @@ async function main() {
         console.log(`  • ${workflow.name} (${workflow.functionName})`);
         console.log(`    File: ${path.relative(process.cwd(), workflow.filePath)}`);
         if (workflow.dependencies.length > 0) {
-          console.log(`    Dependencies: ${workflow.dependencies.join(", ")}`);
+          const depsList = workflow.dependencies
+            .sort((a, b) => a.order - b.order)
+            .map(dep => `${dep.name}${dep.awaitUsed ? ' (await)' : ''}`)
+            .join(" → ");
+          console.log(`    Flow: ${depsList}`);
+          if (args.includes("--verbose")) {
+            workflow.dependencies.forEach(dep => {
+              console.log(`      ${dep.order}. ${dep.name}${dep.line ? ` (line ${dep.line})` : ''}${dep.awaitUsed ? ' [awaited]' : ''}`);
+            });
+          }
         }
       }
     }
@@ -566,7 +622,16 @@ async function main() {
         console.log(`  • ${component.name} (${component.functionName})`);
         console.log(`    File: ${path.relative(process.cwd(), component.filePath)}`);
         if (component.dependencies.length > 0) {
-          console.log(`    Dependencies: ${component.dependencies.join(", ")}`);
+          const depsList = component.dependencies
+            .sort((a, b) => a.order - b.order)
+            .map(dep => `${dep.name}${dep.awaitUsed ? ' (await)' : ''}`)
+            .join(" → ");
+          console.log(`    Flow: ${depsList}`);
+          if (args.includes("--verbose")) {
+            component.dependencies.forEach(dep => {
+              console.log(`      ${dep.order}. ${dep.name}${dep.line ? ` (line ${dep.line})` : ''}${dep.awaitUsed ? ' [awaited]' : ''}`);
+            });
+          }
         }
       }
     }
@@ -574,13 +639,31 @@ async function main() {
     // Show dependency graph
     if (graph.dependencies.length > 0) {
       console.log("\n🔗 Dependency Graph:");
-      for (const dep of graph.dependencies) {
-        const fromFile = path.relative(process.cwd(), dep.fromFile);
-        const toFile = path.relative(process.cwd(), dep.toFile);
-        console.log(`  ${dep.from} → ${dep.to} (${dep.type})`);
-        if (args.includes("--verbose") && fromFile !== toFile) {
-          console.log(`    ${fromFile} → ${toFile}`);
-        }
+      
+      // Group dependencies by source and sort by order
+      const dependenciesBySource = graph.dependencies.reduce((acc, dep) => {
+        if (!acc[dep.from]) acc[dep.from] = [];
+        acc[dep.from].push(dep);
+        return acc;
+      }, {} as Record<string, typeof graph.dependencies>);
+
+      for (const [source, deps] of Object.entries(dependenciesBySource)) {
+        const sortedDeps = deps.sort((a, b) => a.order - b.order);
+        console.log(`  📍 ${source}:`);
+        
+        sortedDeps.forEach(dep => {
+          const awaitIndicator = dep.awaitUsed ? ' (await)' : '';
+          const lineInfo = dep.line ? ` [line ${dep.line}]` : '';
+          console.log(`    ${dep.order}. → ${dep.to}${awaitIndicator}${lineInfo}`);
+          
+          if (args.includes("--verbose")) {
+            const fromFile = path.relative(process.cwd(), dep.fromFile);
+            const toFile = path.relative(process.cwd(), dep.toFile);
+            if (fromFile !== toFile) {
+              console.log(`       ${fromFile} → ${toFile}`);
+            }
+          }
+        });
       }
     }
 
@@ -623,15 +706,24 @@ function generateMermaidDiagram(graph: WorkflowGraph): string {
     lines.push(`    ${nodeId}[${component.name}]:::component`);
   }
   
-  // Add dependencies
-  for (const dep of graph.dependencies) {
+  // Sort dependencies by source and order to create sequential flow
+  const sortedDeps = graph.dependencies.sort((a, b) => {
+    if (a.from !== b.from) return a.from.localeCompare(b.from);
+    return a.order - b.order;
+  });
+  
+  // Add dependencies with ordering information
+  for (const dep of sortedDeps) {
     const fromNode = [...graph.workflows, ...graph.components]
       .find(d => d.name === dep.from)?.functionName?.replace(/[^a-zA-Z0-9]/g, "_");
     const toNode = [...graph.workflows, ...graph.components]
       .find(d => d.name === dep.to)?.functionName?.replace(/[^a-zA-Z0-9]/g, "_");
     
     if (fromNode && toNode) {
-      lines.push(`    ${fromNode} --> ${toNode}`);
+      // Create arrow with order number and await indicator
+      const awaitIndicator = dep.awaitUsed ? "await " : "";
+      const orderLabel = `|${dep.order}. ${awaitIndicator}|`;
+      lines.push(`    ${fromNode} -->${orderLabel} ${toNode}`);
     }
   }
   

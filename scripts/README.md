@@ -73,12 +73,19 @@ const MyWorkflow = Workflow("MyWorkflow", async (props) => {
 });
 ```
 
-### Dependencies
+### Dependencies & Flow Analysis
 The analyzer tracks:
-- Which components are called by workflows
-- Which components call other components
-- Cross-file dependencies via imports
-- The hierarchy and flow between all workflow elements
+- **Execution Order** - The sequential order in which components are called
+- **Async Patterns** - Whether calls are awaited or started in parallel
+- **Cross-File Dependencies** - Components imported from other files
+- **Line Numbers** - Exact source code locations of each call (with `--verbose`)
+- **Call Hierarchy** - The complete dependency tree with flow visualization
+
+#### Flow Indicators
+- **`(await)`** - Indicates the call is awaited (blocking)
+- **No indicator** - Call is not awaited (parallel/fire-and-forget)
+- **Numbers** - Show the order of execution within each function
+- **Arrows (→)** - Connect components in execution order
 
 ## Output
 
@@ -102,27 +109,28 @@ The analysis provides:
 📋 Workflows:
   • WriteBlog (WriteBlog)
     File: examples/blog-writer/src/workflows.ts
-    Dependencies: Research, WriteOutline, WriteDraft, Editorial, MatchTone
+    Flow: Research (await) → WriteOutline (await) → WriteDraft (await) → Editorial (await) → MatchTone (await)
 
 🔧 Components:
-  • WriteSection (WriteSection)
-    File: examples/blog-writer/src/components/draft.ts
   • WriteDraft (WriteDraft)
     File: examples/blog-writer/src/components/draft.ts
-    Dependencies: WriteSection
+    Flow: WriteSection
   • Research (Research)
     File: examples/blog-writer/src/components/research.ts
-    Dependencies: GenerateTopics, WebResearch
+    Flow: GenerateTopics (await) → WebResearch
 
 🔗 Dependency Graph:
-  WriteBlog → Research (workflow-to-component)
-  WriteBlog → WriteOutline (workflow-to-component)
-  WriteBlog → WriteDraft (workflow-to-component)
-  WriteBlog → Editorial (workflow-to-component)
-  WriteBlog → MatchTone (workflow-to-component)
-  WriteDraft → WriteSection (component-to-component)
-  Research → GenerateTopics (component-to-component)
-  Research → WebResearch (component-to-component)
+  📍 WriteBlog:
+    1. → Research (await)
+    2. → WriteOutline (await)
+    3. → WriteDraft (await)
+    4. → Editorial (await)
+    5. → MatchTone (await)
+  📍 WriteDraft:
+    1. → WriteSection
+  📍 Research:
+    1. → GenerateTopics (await)
+    2. → WebResearch
 
 📊 Summary:
   Workflows: 1
@@ -143,14 +151,14 @@ graph TD
     MatchTone[MatchTone]:::component
     Editorial[Editorial]:::component
     WriteOutline[WriteOutline]:::component
-    WriteBlog --> Research
-    WriteBlog --> WriteOutline
-    WriteBlog --> WriteDraft
-    WriteBlog --> Editorial
-    WriteBlog --> MatchTone
-    WriteDraft --> WriteSection
-    Research --> GenerateTopics
-    Research --> WebResearch
+    Research -->|1. await | GenerateTopics
+    Research -->|2. | WebResearch
+    WriteBlog -->|1. await | Research
+    WriteBlog -->|2. await | WriteOutline
+    WriteBlog -->|3. await | WriteDraft
+    WriteBlog -->|4. await | Editorial
+    WriteBlog -->|5. await | MatchTone
+    WriteDraft -->|1. | WriteSection
     classDef workflow fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef component fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
 ```
@@ -162,8 +170,10 @@ The analyzer provides comprehensive analysis capabilities:
 - **Complete Project Analysis** - Analyzes single files or entire TypeScript projects with cross-file dependencies
 - **Universal Import Detection** - Supports all import patterns: namespace, named, aliased, and mixed imports
 - **Smart Import Resolution** - Follows relative imports and handles TypeScript `.js` to `.ts` mapping
-- **Dependency Graph Generation** - Maps all relationships between workflows and components
-- **Multiple Output Formats** - Text summary, JSON data, and beautiful Mermaid diagrams
+- **Sequential Flow Analysis** - Tracks the order of component calls within workflows and components
+- **Async/Await Detection** - Distinguishes between awaited and non-awaited async operations
+- **Dependency Graph Generation** - Maps all relationships between workflows and components with execution order
+- **Multiple Output Formats** - Text summary, JSON data, and beautiful Mermaid diagrams with numbered flow
 - **Intelligent Filtering** - Focuses on gensx patterns while filtering out external API calls
 
 ## Use Cases
