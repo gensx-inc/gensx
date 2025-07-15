@@ -1012,4 +1012,228 @@ describe("GenSX Dev Server", () => {
       expect(response.status).toBe(404);
     });
   });
+
+  describe("graceful shutdown", () => {
+    it("should wait for active executions to complete", async () => {
+      const workflows = {
+        longRunningWorkflow: vi.fn(async function longRunningWorkflow() {
+          // Simulate a long-running workflow
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return { result: "completed" };
+        }) as WorkflowFunction,
+      };
+      workflows.longRunningWorkflow.__gensxWorkflow = true;
+
+      server = createServer(workflows, {
+        port: 0,
+        logger: {
+          info: vi.fn(),
+          error: vi.fn(),
+          warn: vi.fn(),
+        },
+        shutdownTimeout: 3000,
+      });
+
+      server.start();
+
+      // Start a long-running workflow execution
+      const execution = server.executionHandler.createExecution("longRunningWorkflow", {});
+      
+      // Execute the workflow asynchronously (don't await)
+      server.executeWorkflowAsync(
+        "longRunningWorkflow",
+        workflows.longRunningWorkflow,
+        execution.id,
+        {}
+      );
+
+      // Wait a moment for execution to start
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify execution is active
+      const activeExecutions = server.workflowManager.getAllExecutions()
+        .filter(exec => exec.executionStatus === 'starting' || exec.executionStatus === 'running');
+      
+      expect(activeExecutions.length).toBe(1);
+
+      // Start graceful shutdown
+      const shutdownStart = Date.now();
+      
+      // Mock process.exit to prevent actual exit during test
+      const originalExit = process.exit;
+      process.exit = vi.fn() as any;
+
+      try {
+        await server.gracefulShutdown();
+        
+        // Verify shutdown took reasonable time (should wait for execution to complete)
+        const shutdownDuration = Date.now() - shutdownStart;
+        expect(shutdownDuration).toBeGreaterThan(900); // At least most of the 1s execution time
+        
+        // Verify server is in shutdown mode
+        expect(server.isInShutdown()).toBe(true);
+
+        // Verify execution completed
+        const finalExecution = server.workflowManager.getExecution(execution.id);
+        expect(finalExecution?.executionStatus).toBe('completed');
+      } finally {
+        process.exit = originalExit;
+      }
+    }, 10000); // Increase timeout for this test
+
+    it("should timeout if executions don't complete in time", async () => {
+      const workflows = {
+        infiniteWorkflow: vi.fn(async function infiniteWorkflow() {
+          // Simulate an infinite workflow that will be interrupted
+          await new Promise(resolve => setTimeout(resolve, 10000)); // Long delay
+          return { result: "should not complete" };
+        }) as WorkflowFunction,
+      };
+      workflows.infiniteWorkflow.__gensxWorkflow = true;
+
+      server = createServer(workflows, {
+        port: 0,
+        logger: {
+          info: vi.fn(),
+          error: vi.fn(),
+          warn: vi.fn(),
+        },
+        shutdownTimeout: 500, // Short timeout for test
+      });
+
+      server.start();
+
+      // Start an infinite workflow execution
+      const execution = server.executionHandler.createExecution("infiniteWorkflow", {});
+      
+      // Execute the workflow asynchronously (don't await)
+      server.executeWorkflowAsync(
+        "infiniteWorkflow",
+        workflows.infiniteWorkflow,
+        execution.id,
+        {}
+      );
+
+      // Wait a moment for execution to start
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Mock process.exit to prevent actual exit during test
+      const originalExit = process.exit;
+      process.exit = vi.fn() as any;
+
+      try {
+        // Start graceful shutdown
+        const startTime = Date.now();
+        await server.gracefulShutdown();
+        const endTime = Date.now();
+
+        // Verify it timed out (should take about 500ms + some overhead)
+        expect(endTime - startTime).toBeGreaterThan(400);
+        expect(endTime - startTime).toBeLessThan(1000);
+      } finally {
+        process.exit = originalExit;
+      }
+    }, 5000);
+
+    it("should reject new requests during shutdown", async () => {
+      const workflows = {
+        testWorkflow: mockWorkflow,
+      };
+
+      server = createServer(workflows, {
+        port: 0,
+        logger: {
+          info: vi.fn(),
+          error: vi.fn(),
+          warn: vi.fn(),
+        },
+      });
+
+      server.start();
+      const port = server.getPort();
+
+      // Mark server as shutting down
+      (server as any).isShuttingDown = true;
+
+      // Try to make a request
+      const response = await fetch(`http://localhost:${port}/workflows`);
+      
+      expect(response.status).toBe(503);
+      const data = await response.json();
+      expect(data.error).toBe("Service unavailable");
+      expect(data.message).toBe("Server is shutting down");
+    });
+  });
+
+  describe("health endpoint", () => {
+    it("should return healthy when no active executions", async () => {
+      const workflows = {
+        testWorkflow: mockWorkflow,
+      };
+
+      server = createServer(workflows, {
+        port: 0,
+        logger: {
+          info: vi.fn(),
+          error: vi.fn(),
+          warn: vi.fn(),
+        },
+      });
+
+      server.start();
+      const port = server.getPort();
+
+      const response = await fetch(`http://localhost:${port}/health`);
+      
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      expect(data.status).toBe("healthy");
+      expect(data.activeExecutions).toBe(0);
+      expect(data.readyForTermination).toBe(true);
+    });
+
+    it("should return draining when active executions exist", async () => {
+      const workflows = {
+        longRunningWorkflow: vi.fn(async function longRunningWorkflow() {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return { result: "completed" };
+        }) as WorkflowFunction,
+      };
+      workflows.longRunningWorkflow.__gensxWorkflow = true;
+
+      server = createServer(workflows, {
+        port: 0,
+        logger: {
+          info: vi.fn(),
+          error: vi.fn(),
+          warn: vi.fn(),
+        },
+      });
+
+      server.start();
+      const port = server.getPort();
+
+      // Start a long-running workflow execution
+      const execution = server.executionHandler.createExecution("longRunningWorkflow", {});
+      
+      // Execute the workflow asynchronously (don't await)
+      server.executeWorkflowAsync(
+        "longRunningWorkflow",
+        workflows.longRunningWorkflow,
+        execution.id,
+        {}
+      );
+
+      // Wait a moment for execution to start
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const response = await fetch(`http://localhost:${port}/health`);
+      
+      expect(response.status).toBe(503);
+      const data = await response.json();
+      expect(data.status).toBe("draining");
+      expect(data.activeExecutions).toBe(1);
+      expect(data.readyForTermination).toBe(false);
+    }, 5000);
+  });
 });

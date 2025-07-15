@@ -22,6 +22,9 @@ export class GensxServer {
   public workflowManager: WorkflowManager;
   private validationManager: ValidationManager;
   public executionHandler: ExecutionManager;
+  private isShuttingDown = false;
+  private shutdownTimeout = 30000; // 30 seconds default timeout
+  private signalHandlersRegistered = false;
 
   /**
    * Create a new GenSX dev server
@@ -47,6 +50,7 @@ export class GensxServer {
     this.hostname = options.hostname ?? "localhost";
     this.app = new Hono();
     this.logger = options.logger;
+    this.shutdownTimeout = options.shutdownTimeout ?? 30000;
 
     // Initialize managers
     this.workflowManager = new WorkflowManager(
@@ -62,6 +66,17 @@ export class GensxServer {
 
     // Set up error handling middleware
     this.setupErrorHandler();
+
+    // Add middleware to check shutdown state before processing requests
+    this.app.use('*', async (c, next) => {
+      if (this.isShuttingDown) {
+        return c.json({ 
+          error: "Service unavailable", 
+          message: "Server is shutting down" 
+        }, 503);
+      }
+      await next();
+    });
 
     // Set up routes
     setupRoutes(
@@ -102,6 +117,9 @@ export class GensxServer {
       this.logger.warn("⚠️ Server is already running");
       return this;
     }
+
+    // Register signal handlers for graceful shutdown
+    this.registerSignalHandlers();
 
     try {
       this.server = serve({
@@ -163,6 +181,103 @@ export class GensxServer {
         serverWithAdvancedClose.closeIdleConnections();
       }
     });
+  }
+
+  /**
+   * Register signal handlers for graceful shutdown
+   */
+  private registerSignalHandlers(): void {
+    if (this.signalHandlersRegistered) {
+      return;
+    }
+
+    const handleShutdown = (signal: string) => {
+      this.logger.info(`🔄 Received ${signal}, initiating graceful shutdown...`);
+      this.gracefulShutdown().catch((error) => {
+        this.logger.error("❌ Error during graceful shutdown:", error);
+        process.exit(1);
+      });
+    };
+
+    process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+    process.on('SIGINT', () => handleShutdown('SIGINT'));
+    
+    this.signalHandlersRegistered = true;
+  }
+
+  /**
+   * Get all active workflow executions (starting or running)
+   */
+  private getActiveExecutions(): import("./types.js").WorkflowExecution[] {
+    const allExecutions = Array.from(this.workflowManager.getAllExecutions());
+    return allExecutions.filter(execution => 
+      execution.executionStatus === 'starting' || 
+      execution.executionStatus === 'running'
+    );
+  }
+
+  /**
+   * Wait for active executions to complete or timeout
+   */
+  private async waitForActiveExecutions(): Promise<void> {
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < this.shutdownTimeout) {
+      const activeExecutions = this.getActiveExecutions();
+      
+      if (activeExecutions.length === 0) {
+        this.logger.info("✅ All active workflow executions completed");
+        return;
+      }
+
+      this.logger.info(
+        `⏳ Waiting for ${activeExecutions.length} active execution(s) to complete...`
+      );
+      
+      // Wait 1 second before checking again
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const remainingExecutions = this.getActiveExecutions();
+    if (remainingExecutions.length > 0) {
+      this.logger.warn(
+        `⚠️ Shutdown timeout reached. ${remainingExecutions.length} execution(s) still active. Forcing shutdown.`
+      );
+    }
+  }
+
+  /**
+   * Perform graceful shutdown by waiting for active executions to complete
+   */
+  public async gracefulShutdown(): Promise<void> {
+    if (this.isShuttingDown) {
+      this.logger.warn("⚠️ Graceful shutdown already in progress");
+      return;
+    }
+
+    this.isShuttingDown = true;
+    this.logger.info("🛑 Starting graceful shutdown process...");
+
+    try {
+      // Wait for active executions to complete
+      await this.waitForActiveExecutions();
+      
+      // Stop the server
+      await this.stop();
+      
+      this.logger.info("✅ Graceful shutdown completed");
+      process.exit(0);
+    } catch (error) {
+      this.logger.error("❌ Error during graceful shutdown:", error);
+      process.exit(1);
+    }
+  }
+
+  /**
+   * Check if the server is in shutdown mode
+   */
+  public isInShutdown(): boolean {
+    return this.isShuttingDown;
   }
 
   /**

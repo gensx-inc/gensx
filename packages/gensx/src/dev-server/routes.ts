@@ -36,6 +36,25 @@ export function setupRoutes(
   });
   app.use("*", cors());
 
+  // Health check endpoint for graceful shutdown
+  app.get('/health', (c) => {
+    const allExecutions = workflowManager.getAllExecutions();
+    const activeExecutions = allExecutions.filter(execution => 
+      execution.executionStatus === 'starting' || 
+      execution.executionStatus === 'running'
+    );
+
+    const isHealthy = activeExecutions.length === 0;
+    const status = isHealthy ? 200 : 503;
+
+    return c.json({
+      status: isHealthy ? 'healthy' : 'draining',
+      activeExecutions: activeExecutions.length,
+      totalExecutions: allExecutions.length,
+      readyForTermination: isHealthy
+    }, status);
+  });
+
   // List all workflows
   app.get(`/workflows`, (c) => {
     return c.json({

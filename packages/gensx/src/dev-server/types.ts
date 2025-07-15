@@ -6,6 +6,7 @@ import { Definition } from "typescript-json-schema";
 export interface ServerOptions {
   port?: number;
   hostname?: string;
+  shutdownTimeout?: number; // Timeout in milliseconds for graceful shutdown
   logger: {
     info: (message: string, ...args: unknown[]) => void;
     error: (message: string, error?: unknown) => void;

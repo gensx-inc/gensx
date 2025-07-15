@@ -129,6 +129,13 @@ export class WorkflowManager {
   }
 
   /**
+   * Get all executions across all workflows
+   */
+  getAllExecutions(): WorkflowExecution[] {
+    return Array.from(this.executionsMap.values());
+  }
+
+  /**
    * Return information about available workflows
    */
   getWorkflows(): WorkflowInfo[] {
