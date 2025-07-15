@@ -1,11 +1,10 @@
-# Workflow Analysis Scripts
+# Workflow Analysis Tool
 
-This directory contains CLI tools for statically analyzing JavaScript/TypeScript projects that use the gensx-core package to build workflows and components.
+This directory contains a CLI tool for statically analyzing JavaScript/TypeScript projects that use the gensx-core package to build workflows and components.
 
-## Scripts
+## `analyze-workflows.ts`
 
-### `analyze-workflows.ts`
-Basic analyzer that analyzes a single workflows.ts file and extracts workflow and component definitions along with their dependencies.
+A comprehensive analyzer that can follow imports and analyze component files across multiple files to build a complete dependency graph of workflows and components.
 
 **Usage:**
 ```bash
@@ -17,31 +16,17 @@ tsx scripts/analyze-workflows.ts <path-to-workflows.ts> [options]
 # Basic analysis
 tsx scripts/analyze-workflows.ts ./examples/openai-examples/src/workflows.ts
 
+# Analysis with cross-file dependencies
+tsx scripts/analyze-workflows.ts ./examples/blog-writer/src/workflows.ts
+
 # With mermaid diagram
 npm run analyze:workflows ./examples/openai-examples/src/workflows.ts -- --mermaid
 
-# JSON output for programmatic use
-tsx scripts/analyze-workflows.ts ./examples/openai-examples/src/workflows.ts --json
-```
-
-### `analyze-workflows-enhanced.ts`
-Enhanced analyzer that can follow imports and analyze component files across multiple files to build a complete dependency graph.
-
-**Usage:**
-```bash
-tsx scripts/analyze-workflows-enhanced.ts <path-to-workflows.ts> [options]
-```
-
-**Example:**
-```bash
-# Enhanced analysis with cross-file dependencies
-tsx scripts/analyze-workflows-enhanced.ts ./examples/blog-writer/src/workflows.ts
-
 # Detailed analysis with visual diagram
-npm run analyze:workflows:enhanced ./examples/blog-writer/src/workflows.ts -- --verbose --mermaid
+npm run analyze:workflows ./examples/blog-writer/src/workflows.ts -- --verbose --mermaid
 
-# Complete analysis of a complex workflow
-tsx scripts/analyze-workflows-enhanced.ts ./examples/blog-writer/src/workflows.ts --json
+# JSON output for programmatic use
+tsx scripts/analyze-workflows.ts ./examples/blog-writer/src/workflows.ts --json
 ```
 
 ## Options
@@ -89,7 +74,7 @@ The analysis provides:
 
 ### Blog Writer Analysis
 ```
-🔍 Enhanced Workflow Analysis Results
+🔍 Workflow Analysis Results
 ==================================================
 
 📁 Analyzed Files: 5
@@ -149,6 +134,16 @@ graph TD
     classDef workflow fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef component fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
 ```
+
+## Features
+
+The analyzer provides comprehensive analysis capabilities:
+
+- **Complete Project Analysis** - Analyzes single files or entire TypeScript projects with cross-file dependencies
+- **Smart Import Resolution** - Follows relative imports and handles TypeScript `.js` to `.ts` mapping
+- **Dependency Graph Generation** - Maps all relationships between workflows and components
+- **Multiple Output Formats** - Text summary, JSON data, and beautiful Mermaid diagrams
+- **Intelligent Filtering** - Focuses on gensx patterns while filtering out external API calls
 
 ## Use Cases
 

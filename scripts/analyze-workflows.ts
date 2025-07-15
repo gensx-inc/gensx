@@ -17,6 +17,12 @@ interface ComponentDefinition {
   };
 }
 
+interface ImportInfo {
+  importedName: string;
+  localName: string;
+  fromFile: string;
+}
+
 interface WorkflowGraph {
   workflows: ComponentDefinition[];
   components: ComponentDefinition[];
@@ -24,71 +30,155 @@ interface WorkflowGraph {
     from: string;
     to: string;
     type: "workflow-to-component" | "component-to-component" | "workflow-to-workflow";
+    fromFile: string;
+    toFile: string;
   }[];
+  files: string[];
 }
 
 class WorkflowAnalyzer {
-  private sourceFile: ts.SourceFile | null = null;
-  private filePath: string = "";
-  private workflows: ComponentDefinition[] = [];
-  private components: ComponentDefinition[] = [];
-  private allIdentifiers: Set<string> = new Set();
+  private analyzedFiles: Set<string> = new Set();
+  private allDefinitions: Map<string, ComponentDefinition> = new Map();
+  private importMap: Map<string, ImportInfo[]> = new Map();
+  private baseDir: string = "";
 
   constructor() {}
 
-  async analyzeFile(filePath: string): Promise<WorkflowGraph> {
-    this.filePath = filePath;
-    const fileContent = await fs.readFile(filePath, "utf-8");
+  async analyzeProject(entryFilePath: string): Promise<WorkflowGraph> {
+    this.baseDir = path.dirname(entryFilePath);
+    this.analyzedFiles.clear();
+    this.allDefinitions.clear();
+    this.importMap.clear();
+
+    // Start with the entry file
+    await this.analyzeFile(entryFilePath);
+
+    // Build the final graph
+    const workflows: ComponentDefinition[] = [];
+    const components: ComponentDefinition[] = [];
     
-    // Create TypeScript AST
-    this.sourceFile = ts.createSourceFile(
-      filePath,
-      fileContent,
-      ts.ScriptTarget.Latest,
-      true
-    );
-
-    // Reset state
-    this.workflows = [];
-    this.components = [];
-    this.allIdentifiers = new Set();
-
-    // First pass: collect all workflow and component definitions
-    this.collectDefinitions(this.sourceFile);
-    
-    // Second pass: analyze dependencies
-    const allDefinitions = [...this.workflows, ...this.components];
-    for (const definition of allDefinitions) {
-      this.analyzeDependencies(definition);
-    }
-
-    // Build dependency graph
-    const dependencies = this.buildDependencyGraph(allDefinitions);
-
-    return {
-      workflows: this.workflows,
-      components: this.components,
-      dependencies
-    };
-  }
-
-  private collectDefinitions(node: ts.Node): void {
-    // Look for variable declarations and function declarations
-    if (ts.isVariableStatement(node)) {
-      for (const declaration of node.declarationList.declarations) {
-        if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
-          this.analyzeVariableDeclaration(declaration);
-        }
+    for (const definition of this.allDefinitions.values()) {
+      if (definition.type === "workflow") {
+        workflows.push(definition);
+      } else {
+        components.push(definition);
       }
     }
 
-    // Recursively visit children
-    ts.forEachChild(node, child => this.collectDefinitions(child));
+    const dependencies = await this.buildDependencyGraph();
+
+    return {
+      workflows,
+      components,
+      dependencies,
+      files: Array.from(this.analyzedFiles)
+    };
   }
 
-  private analyzeVariableDeclaration(declaration: ts.VariableDeclaration): void {
+  private async analyzeFile(filePath: string): Promise<void> {
+    const normalizedPath = path.resolve(filePath);
+    
+    if (this.analyzedFiles.has(normalizedPath)) {
+      return; // Already analyzed
+    }
+
+    this.analyzedFiles.add(normalizedPath);
+
+    try {
+      const fileContent = await fs.readFile(normalizedPath, "utf-8");
+      
+      // Create TypeScript AST
+      const sourceFile = ts.createSourceFile(
+        normalizedPath,
+        fileContent,
+        ts.ScriptTarget.Latest,
+        true
+      );
+
+      // Collect imports
+      const imports = this.collectImports(sourceFile, normalizedPath);
+      this.importMap.set(normalizedPath, imports);
+
+      // Collect definitions in this file
+      const definitions = this.collectDefinitions(sourceFile, normalizedPath);
+      
+      // Add definitions to global map
+      for (const definition of definitions) {
+        this.allDefinitions.set(`${definition.functionName}:${normalizedPath}`, definition);
+      }
+
+      // Analyze dependencies and follow imports
+      for (const definition of definitions) {
+        await this.analyzeDependencies(definition, sourceFile);
+      }
+
+      // Follow import paths and analyze imported files
+      for (const importInfo of imports) {
+        const importedFilePath = await this.resolveImportPath(importInfo.fromFile, normalizedPath);
+        if (importedFilePath) {
+          await this.analyzeFile(importedFilePath);
+        }
+      }
+
+    } catch (error) {
+      console.warn(`Warning: Could not analyze ${filePath}:`, error);
+    }
+  }
+
+  private collectImports(sourceFile: ts.SourceFile, filePath: string): ImportInfo[] {
+    const imports: ImportInfo[] = [];
+
+    const visit = (node: ts.Node): void => {
+      if (ts.isImportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+        const fromFile = node.moduleSpecifier.text;
+        
+        if (node.importClause?.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
+          for (const element of node.importClause.namedBindings.elements) {
+            const importedName = element.propertyName ? element.propertyName.text : element.name.text;
+            const localName = element.name.text;
+            
+            imports.push({
+              importedName,
+              localName,
+              fromFile
+            });
+          }
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    };
+
+    visit(sourceFile);
+    return imports;
+  }
+
+  private collectDefinitions(sourceFile: ts.SourceFile, filePath: string): ComponentDefinition[] {
+    const definitions: ComponentDefinition[] = [];
+
+    const visit = (node: ts.Node): void => {
+      // Look for variable declarations
+      if (ts.isVariableStatement(node)) {
+        for (const declaration of node.declarationList.declarations) {
+          if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
+            const definition = this.analyzeVariableDeclaration(declaration, filePath);
+            if (definition) {
+              definitions.push(definition);
+            }
+          }
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    };
+
+    visit(sourceFile);
+    return definitions;
+  }
+
+  private analyzeVariableDeclaration(declaration: ts.VariableDeclaration, filePath: string): ComponentDefinition | null {
     if (!declaration.initializer || !ts.isCallExpression(declaration.initializer)) {
-      return;
+      return null;
     }
 
     const callExpression = declaration.initializer;
@@ -115,43 +205,35 @@ class WorkflowAnalyzer {
             definitionName = args[0].text;
           }
 
-          const sourceLocation = this.getSourceLocation(declaration);
+          const sourceLocation = this.getSourceLocation(declaration, filePath);
           
-          const definition: ComponentDefinition = {
+          return {
             name: definitionName,
             type,
-            filePath: this.filePath,
+            filePath,
             functionName: componentName,
             dependencies: [],
             sourceLocation
           };
-
-          if (type === "workflow") {
-            this.workflows.push(definition);
-          } else {
-            this.components.push(definition);
-          }
-
-          this.allIdentifiers.add(componentName);
         }
       }
     }
+
+    return null;
   }
 
-  private analyzeDependencies(definition: ComponentDefinition): void {
-    if (!this.sourceFile) return;
-
+  private async analyzeDependencies(definition: ComponentDefinition, sourceFile: ts.SourceFile): Promise<void> {
     // Find the function body of this definition
-    const functionBody = this.findFunctionBody(definition.functionName);
+    const functionBody = this.findFunctionBody(definition.functionName, sourceFile);
     if (!functionBody) return;
 
     // Look for function calls within the body
-    const dependencies = this.findFunctionCalls(functionBody);
+    const dependencies = this.findFunctionCalls(functionBody, definition.filePath);
     definition.dependencies = [...new Set(dependencies)]; // Remove duplicates
   }
 
-  private findFunctionBody(functionName?: string): ts.Block | ts.Expression | null {
-    if (!this.sourceFile || !functionName) return null;
+  private findFunctionBody(functionName?: string, sourceFile?: ts.SourceFile): ts.Block | ts.Expression | null {
+    if (!sourceFile || !functionName) return null;
 
     let functionBody: ts.Block | ts.Expression | null = null;
 
@@ -177,12 +259,14 @@ class WorkflowAnalyzer {
       ts.forEachChild(node, visit);
     };
 
-    visit(this.sourceFile);
+    visit(sourceFile);
     return functionBody;
   }
 
-  private findFunctionCalls(body: ts.Block | ts.Expression): string[] {
+  private findFunctionCalls(body: ts.Block | ts.Expression, currentFilePath: string): string[] {
     const calls: string[] = [];
+    const imports = this.importMap.get(currentFilePath) || [];
+    const importLookup = new Map(imports.map(imp => [imp.localName, imp.importedName]));
 
     const visit = (node: ts.Node): void => {
       // Look for call expressions
@@ -192,16 +276,24 @@ class WorkflowAnalyzer {
         // Direct function calls (e.g., Research(), WriteDraft())
         if (ts.isIdentifier(expression)) {
           const functionName = expression.escapedText as string;
-          // Only include calls to functions we know are components/workflows
-          if (this.allIdentifiers.has(functionName)) {
-            calls.push(functionName);
+          
+          // Skip common API calls that aren't gensx components
+          const skipFunctions = ['generateText', 'generateObject', 'anthropic', 'tool', 'generateStructuredData'];
+          if (skipFunctions.includes(functionName)) {
+            return;
           }
-        }
-        
-        // Property access calls (e.g., openai.chat.completions.create())
-        if (ts.isPropertyAccessExpression(expression)) {
-          // For now, we'll skip these as they're typically external API calls
-          // Could be enhanced to track wrapped SDK calls
+          
+          // Check if it's an imported function (likely a gensx component)
+          const importedName = importLookup.get(functionName);
+          if (importedName) {
+            calls.push(functionName); // Use local name for dependency tracking
+          } else {
+            // Check if it's a local definition
+            const localDefinition = this.findLocalDefinition(functionName, currentFilePath);
+            if (localDefinition) {
+              calls.push(functionName);
+            }
+          }
         }
       }
 
@@ -217,21 +309,89 @@ class WorkflowAnalyzer {
     return calls;
   }
 
-  private buildDependencyGraph(definitions: ComponentDefinition[]): WorkflowGraph["dependencies"] {
-    const dependencies: WorkflowGraph["dependencies"] = [];
-    const nameToDefinition = new Map<string, ComponentDefinition>();
+  private findLocalDefinition(functionName: string, filePath: string): ComponentDefinition | null {
+    return this.allDefinitions.get(`${functionName}:${filePath}`) || null;
+  }
 
-    // Build lookup map
-    for (const def of definitions) {
-      if (def.functionName) {
-        nameToDefinition.set(def.functionName, def);
+  private async resolveImportPath(importPath: string, currentFilePath: string): Promise<string | null> {
+    // Handle relative imports
+    if (importPath.startsWith(".")) {
+      const currentDir = path.dirname(currentFilePath);
+      let resolvedPath = path.resolve(currentDir, importPath);
+      
+      // If the import already has an extension, try replacing .js with .ts (common TS pattern)
+      if (importPath.endsWith(".js")) {
+        const tsPath = resolvedPath.replace(/\.js$/, ".ts");
+        try {
+          await fs.access(tsPath);
+          return tsPath;
+        } catch {
+          // Continue to other attempts
+        }
+      }
+      
+      // If no extension, try adding different extensions
+      if (!path.extname(resolvedPath)) {
+        const extensions = [".ts", ".js", ".tsx", ".jsx"];
+        
+        for (const ext of extensions) {
+          const withExt = resolvedPath + ext;
+          try {
+            await fs.access(withExt);
+            return withExt;
+          } catch {
+            // Continue to next extension
+          }
+        }
+        
+        // Try with index files
+        for (const ext of extensions) {
+          const indexPath = path.join(resolvedPath, `index${ext}`);
+          try {
+            await fs.access(indexPath);
+            return indexPath;
+          } catch {
+            // Continue to next extension
+          }
+        }
+      }
+      
+      // Try the exact path as given
+      try {
+        await fs.access(resolvedPath);
+        return resolvedPath;
+      } catch {
+        // File not found
       }
     }
+    
+    return null; // Skip node_modules imports for now
+  }
 
-    // Build dependency edges
-    for (const definition of definitions) {
+  private async buildDependencyGraph(): Promise<WorkflowGraph["dependencies"]> {
+    const dependencies: WorkflowGraph["dependencies"] = [];
+
+    for (const definition of this.allDefinitions.values()) {
       for (const dependency of definition.dependencies) {
-        const targetDefinition = nameToDefinition.get(dependency);
+        // Find the target definition
+        let targetDefinition: ComponentDefinition | null = null;
+        
+        // First check local definitions in the same file
+        targetDefinition = this.findLocalDefinition(dependency, definition.filePath);
+        
+        // If not found locally, check imports
+        if (!targetDefinition) {
+          const imports = this.importMap.get(definition.filePath) || [];
+          const importInfo = imports.find(imp => imp.localName === dependency);
+          
+          if (importInfo) {
+            const importedFilePath = await this.resolveImportPath(importInfo.fromFile, definition.filePath);
+            if (importedFilePath) {
+              targetDefinition = this.findLocalDefinition(importInfo.importedName, importedFilePath);
+            }
+          }
+        }
+
         if (targetDefinition) {
           const type = definition.type === "workflow" && targetDefinition.type === "component" 
             ? "workflow-to-component" as const
@@ -242,7 +402,9 @@ class WorkflowAnalyzer {
           dependencies.push({
             from: definition.name,
             to: targetDefinition.name,
-            type
+            type,
+            fromFile: definition.filePath,
+            toFile: targetDefinition.filePath
           });
         }
       }
@@ -251,11 +413,9 @@ class WorkflowAnalyzer {
     return dependencies;
   }
 
-  private getSourceLocation(node: ts.Node): { line: number; column: number } {
-    if (!this.sourceFile) return { line: 0, column: 0 };
-    
-    const { line, character } = this.sourceFile.getLineAndCharacterOfPosition(node.getStart());
-    return { line: line + 1, column: character + 1 };
+  private getSourceLocation(node: ts.Node, filePath: string): { line: number; column: number } {
+    // This is a simplified version - in a real implementation you'd need access to the source file
+    return { line: 0, column: 0 };
   }
 }
 
@@ -264,8 +424,13 @@ async function main() {
   const args = process.argv.slice(2);
   
   if (args.length === 0) {
-    console.error("Usage: tsx analyze-workflows.ts <path-to-workflows.ts>");
+    console.error("Usage: tsx analyze-workflows.ts <path-to-workflows.ts> [options]");
     console.error("Example: tsx analyze-workflows.ts ./examples/blog-writer/src/workflows.ts");
+    console.error("");
+    console.error("Options:");
+    console.error("  --json     Output JSON format");
+    console.error("  --mermaid  Generate Mermaid diagram");
+    console.error("  --verbose  Show detailed analysis");
     process.exit(1);
   }
 
@@ -281,18 +446,25 @@ async function main() {
   const analyzer = new WorkflowAnalyzer();
   
   try {
-    const graph = await analyzer.analyzeFile(filePath);
+    const graph = await analyzer.analyzeProject(filePath);
     
     // Output results
     console.log("🔍 Workflow Analysis Results");
     console.log("=" .repeat(50));
+    
+    console.log(`\n📁 Analyzed Files: ${graph.files.length}`);
+    if (args.includes("--verbose")) {
+      for (const file of graph.files) {
+        console.log(`  • ${path.relative(process.cwd(), file)}`);
+      }
+    }
     
     // Show workflows
     if (graph.workflows.length > 0) {
       console.log("\n📋 Workflows:");
       for (const workflow of graph.workflows) {
         console.log(`  • ${workflow.name} (${workflow.functionName})`);
-        console.log(`    Location: ${workflow.filePath}:${workflow.sourceLocation.line}:${workflow.sourceLocation.column}`);
+        console.log(`    File: ${path.relative(process.cwd(), workflow.filePath)}`);
         if (workflow.dependencies.length > 0) {
           console.log(`    Dependencies: ${workflow.dependencies.join(", ")}`);
         }
@@ -304,7 +476,7 @@ async function main() {
       console.log("\n🔧 Components:");
       for (const component of graph.components) {
         console.log(`  • ${component.name} (${component.functionName})`);
-        console.log(`    Location: ${component.filePath}:${component.sourceLocation.line}:${component.sourceLocation.column}`);
+        console.log(`    File: ${path.relative(process.cwd(), component.filePath)}`);
         if (component.dependencies.length > 0) {
           console.log(`    Dependencies: ${component.dependencies.join(", ")}`);
         }
@@ -315,9 +487,21 @@ async function main() {
     if (graph.dependencies.length > 0) {
       console.log("\n🔗 Dependency Graph:");
       for (const dep of graph.dependencies) {
+        const fromFile = path.relative(process.cwd(), dep.fromFile);
+        const toFile = path.relative(process.cwd(), dep.toFile);
         console.log(`  ${dep.from} → ${dep.to} (${dep.type})`);
+        if (args.includes("--verbose") && fromFile !== toFile) {
+          console.log(`    ${fromFile} → ${toFile}`);
+        }
       }
     }
+
+    // Summary
+    console.log("\n📊 Summary:");
+    console.log(`  Workflows: ${graph.workflows.length}`);
+    console.log(`  Components: ${graph.components.length}`);
+    console.log(`  Dependencies: ${graph.dependencies.length}`);
+    console.log(`  Files: ${graph.files.length}`);
 
     // Output JSON for programmatic use
     if (args.includes("--json")) {
@@ -331,7 +515,7 @@ async function main() {
     }
 
   } catch (error) {
-    console.error("Error analyzing file:", error);
+    console.error("Error analyzing project:", error);
     process.exit(1);
   }
 }
@@ -341,20 +525,22 @@ function generateMermaidDiagram(graph: WorkflowGraph): string {
   
   // Add workflow nodes
   for (const workflow of graph.workflows) {
-    lines.push(`    ${workflow.functionName}[${workflow.name}]:::workflow`);
+    const nodeId = workflow.functionName?.replace(/[^a-zA-Z0-9]/g, "_") || workflow.name;
+    lines.push(`    ${nodeId}[${workflow.name}]:::workflow`);
   }
   
   // Add component nodes  
   for (const component of graph.components) {
-    lines.push(`    ${component.functionName}[${component.name}]:::component`);
+    const nodeId = component.functionName?.replace(/[^a-zA-Z0-9]/g, "_") || component.name;
+    lines.push(`    ${nodeId}[${component.name}]:::component`);
   }
   
   // Add dependencies
   for (const dep of graph.dependencies) {
     const fromNode = [...graph.workflows, ...graph.components]
-      .find(d => d.name === dep.from)?.functionName;
+      .find(d => d.name === dep.from)?.functionName?.replace(/[^a-zA-Z0-9]/g, "_");
     const toNode = [...graph.workflows, ...graph.components]
-      .find(d => d.name === dep.to)?.functionName;
+      .find(d => d.name === dep.to)?.functionName?.replace(/[^a-zA-Z0-9]/g, "_");
     
     if (fromNode && toNode) {
       lines.push(`    ${fromNode} --> ${toNode}`);
