@@ -14,7 +14,7 @@ export default function Page() {
   // Use the workflow hook
   const { error, execution, run, clear } = useWorkflow<ChatProps, string>({
     config: {
-      baseUrl: "/api/gensx/StreamOutput",
+      baseUrl: "/api/gensx/StreamText",
     },
     onEvent: (event) => {
       if (event.type === "event" && event.label === "status") {

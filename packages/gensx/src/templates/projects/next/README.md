@@ -12,11 +12,10 @@ To get started, first install the dependencies:
 pnpm install
 ```
 
-Then export the environment variables. For this template, you'll need both the [OpenAI API key](https://platform.openai.com) and the [Firecrawl API key](https://www.firecrawl.dev/):
+Then export the environment variables. For this template, you'll need an [OpenAI API key](https://platform.openai.com):
 
 ```bash
 export OPENAI_API_KEY=...
-export FIRECRAWL_API_KEY=...
 ```
 
 ```bash

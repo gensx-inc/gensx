@@ -6,8 +6,8 @@ export interface ChatProps {
   userMessage: string;
 }
 
-export const StreamOutput = gensx.Workflow(
-  "StreamOutput",
+export const StreamText = gensx.Workflow(
+  "StreamText",
   async ({ userMessage }: ChatProps) => {
     gensx.publishEvent<string>("status", "starting");
 

@@ -621,14 +621,14 @@ async function copyTemplateFiles(templateName: string, targetPath: string) {
       if (entry.name === "template.json") continue;
 
       // Skip extra compiled files
-      if (
-        entry.name === "next.config.d.ts" ||
-        entry.name === "next.config.d.ts.map" ||
-        entry.name === "next.config.js" ||
-        entry.name === "next.config.js.map"
-      ) {
-        continue;
-      }
+      // if (
+      //   entry.name === "next.config.d.ts" ||
+      //   entry.name === "next.config.d.ts.map" ||
+      //   entry.name === "next.config.js" ||
+      //   entry.name === "next.config.js.map"
+      // ) {
+      //   continue;
+      // }
 
       if (entry.isDirectory()) {
         await mkdir(targetFilePath, { recursive: true });
