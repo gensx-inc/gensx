@@ -103,13 +103,25 @@ export function ModelStreamCard({
       return null;
     }
 
-    if (modelStream.status === "generating") {
-      return calculateStreamingDiff(
-        previousVersion.content,
-        modelStream.content,
+    // Extract content from previousVersion's selected model
+    let previousContent: string | null = null;
+
+    // The previous version should have a selected model that was used as the base for this generation
+    if (previousVersion.selectedModelId) {
+      const selectedResponse = previousVersion.modelResponses.find(
+        (r) => r.modelId === previousVersion.selectedModelId,
       );
+      previousContent = selectedResponse?.content ?? null;
+    }
+
+    if (!previousContent) {
+      return null;
+    }
+
+    if (modelStream.status === "generating") {
+      return calculateStreamingDiff(previousContent, modelStream.content);
     } else {
-      return calculateDiff(previousVersion.content, modelStream.content);
+      return calculateDiff(previousContent, modelStream.content);
     }
   }, [
     showDiff,
@@ -391,7 +403,9 @@ export function ModelStreamCard({
                 ? "border-2 border-blue-500 animate-pulse"
                 : showCompletionFlash
                   ? "border-2 border-green-500"
-                  : "border border-white/30"
+                  : isSelected && modelStream.status === "complete"
+                    ? "border-2 border-blue-500"
+                    : "border border-white/30"
             } ${
               isSelected ? "" : "hover:border-gray-400"
             } relative rounded-2xl overflow-hidden`}
@@ -406,10 +420,30 @@ export function ModelStreamCard({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute inset-0 bg-green-500/20 pointer-events-none z-10 rounded-2xl"
+                  className="absolute inset-0 bg-green-500/10 pointer-events-none"
                 />
               )}
             </AnimatePresence>
+
+            {/* Selected indicator */}
+            {isSelected && modelStream.status === "complete" && (
+              <div className="absolute top-3 right-3 z-10">
+                <div className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+                  <svg
+                    className="w-3 h-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Selected
+                </div>
+              </div>
+            )}
             <CardContent className="h-full p-0 overflow-hidden rounded-2xl relative">
               <div
                 ref={scrollContainerRef}

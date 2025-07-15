@@ -4,7 +4,6 @@ import { Header } from "@/components/Header";
 import { InputSection } from "@/components/InputSection";
 import { ModelSelectorView } from "@/components/ModelSelectorView";
 import { ModelStreamView } from "@/components/ModelStreamView";
-import { ModelStreamCard } from "@/components/ui/model-stream-card";
 import { VersionControls } from "@/components/ui/version-controls";
 import { useAvailableModels } from "@/hooks/useAvailableModels";
 import { useDiffState } from "@/hooks/useDiffState";
@@ -118,59 +117,71 @@ export default function Home() {
               {/* Empty space for centering - input will be positioned at bottom */}
             </div>
           ) : /* Check if we're viewing history or live streams */
-          draftPad.isViewingHistory && draftPad.allVersions.length > 0 ? (
-            /* Show historical version */
-            <div className="flex-1 min-h-0 flex flex-col">
-              <div className="flex-1 flex justify-center min-h-0">
-                <div className="w-full max-w-3xl min-h-0 flex">
-                  <ModelStreamCard
-                    modelStream={{
-                      modelId:
-                        draftPad.allVersions[draftPad.currentVersionIndex]
-                          .modelId,
-                      displayName:
-                        draftPad.modelConfigMap.get(
-                          draftPad.allVersions[draftPad.currentVersionIndex]
-                            .modelId,
-                        )?.displayName ??
-                        draftPad.allVersions[draftPad.currentVersionIndex]
-                          .modelId,
+          draftPad.isViewingHistory && draftPad.currentVersion ? (
+            /* Show historical version with all models */
+            (() => {
+              console.log("Viewing history - currentVersion:", {
+                version: draftPad.currentVersion.version,
+                modelResponsesCount:
+                  draftPad.currentVersion.modelResponses.length,
+                selectedModelId: draftPad.currentVersion.selectedModelId,
+                modelIds: draftPad.currentVersion.modelResponses.map(
+                  (r) => r.modelId,
+                ),
+              });
+
+              return (
+                <ModelStreamView
+                  selectedModelId={draftPad.currentVersion.selectedModelId}
+                  sortedModelStreams={draftPad.currentVersion.modelResponses.map(
+                    (response) => ({
+                      modelId: response.modelId,
+                      displayName: response.displayName ?? response.modelId,
                       status: "complete" as const,
-                      content: draftPad.currentVersionContent,
-                      wordCount:
-                        draftPad.allVersions[draftPad.currentVersionIndex]
-                          .wordCount,
-                      charCount:
-                        draftPad.allVersions[draftPad.currentVersionIndex]
-                          .charCount,
-                      generationTime:
-                        draftPad.allVersions[draftPad.currentVersionIndex]
-                          .generationTime,
-                      inputTokens:
-                        draftPad.allVersions[draftPad.currentVersionIndex]
-                          .inputTokens,
-                      outputTokens:
-                        draftPad.allVersions[draftPad.currentVersionIndex]
-                          .outputTokens,
-                    }}
-                    modelConfig={draftPad.modelConfigMap.get(
-                      draftPad.allVersions[draftPad.currentVersionIndex]
-                        .modelId,
-                    )}
-                    isSelected={true}
-                    onSelect={undefined}
-                    metricRanges={null}
-                    showDiff={diffState.showDiff}
-                    autoShowDiff={false}
-                    previousVersion={
-                      draftPad.currentVersionIndex > 0
-                        ? draftPad.allVersions[draftPad.currentVersionIndex - 1]
-                        : undefined
-                    }
-                  />
-                </div>
-              </div>
-            </div>
+                      content: response.content,
+                      wordCount: response.wordCount,
+                      charCount: response.charCount,
+                      generationTime: response.generationTime,
+                      inputTokens: response.inputTokens,
+                      outputTokens: response.outputTokens,
+                    }),
+                  )}
+                  modelConfigMap={draftPad.modelConfigMap}
+                  versionHistory={draftPad.versionHistory}
+                  chosenResponseForCurrentGeneration={(() => {
+                    // When viewing history, we need the previous version's selected model content
+                    // to show diffs properly
+                    const currentVersion = draftPad.currentVersion;
+                    if (!currentVersion) return null;
+
+                    const currentIndex = draftPad.allVersions.findIndex(
+                      (v) => v.id === currentVersion.id,
+                    );
+                    if (currentIndex <= 0) return null; // No previous version
+
+                    const previousVersion =
+                      draftPad.allVersions[currentIndex - 1];
+                    if (!previousVersion.selectedModelId) return null;
+
+                    const previousSelectedResponse =
+                      previousVersion.modelResponses.find(
+                        (r) => r.modelId === previousVersion.selectedModelId,
+                      );
+                    return previousSelectedResponse?.content ?? null;
+                  })()}
+                  isDiffVisible={diffState.isDiffVisible}
+                  showDiff={diffState.showDiff}
+                  autoShowDiff={true} // Show diffs automatically when viewing history
+                  isManuallyHiding={diffState.isManuallyHiding}
+                  showAllModels={true} // Force showing all models when viewing history
+                  metricRanges={metricRanges}
+                  onModelSelect={(_modelId) => {
+                    // When viewing history, selection is read-only
+                    // The selectedModelId shows which model was chosen for next generation
+                  }}
+                />
+              );
+            })()
           ) : (
             /* Show live model streams */
             <ModelStreamView
@@ -179,7 +190,9 @@ export default function Home() {
               modelConfigMap={draftPad.modelConfigMap}
               versionHistory={draftPad.versionHistory}
               chosenResponseForCurrentGeneration={
-                draftPad.chosenResponseForCurrentGeneration
+                draftPad.selectedModelId && draftPad.selectedContent
+                  ? draftPad.selectedContent
+                  : null
               }
               isDiffVisible={diffState.isDiffVisible}
               showDiff={diffState.showDiff}

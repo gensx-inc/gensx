@@ -3,12 +3,11 @@
 import {
   type DraftProgress,
   type ModelConfig,
-  type ModelStreamState,
   type UpdateDraftInput,
   type UpdateDraftOutput,
 } from "@/gensx/workflows";
 import { fetchAvailableModels } from "@/lib/models";
-import { type ContentVersion } from "@/lib/types";
+import { type ContentVersion, type ModelResponse } from "@/lib/types";
 import { useObject, useWorkflow } from "@gensx/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -36,13 +35,10 @@ export function useDraftPad() {
   const [availableModels, setAvailableModels] = useState<ModelConfig[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(true);
   const [showModelSelectorView, setShowModelSelectorView] = useState(false);
-  const [versionHistory, setVersionHistory] = useState<
-    Record<string, ContentVersion[]>
-  >({});
-  const [
-    chosenResponseForCurrentGeneration,
-    setChosenResponseForCurrentGeneration,
-  ] = useState<string | null>(null);
+  const [versionHistory, setVersionHistory] = useState<ContentVersion[]>([]);
+  const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(
+    null,
+  );
 
   // Version navigation state
   const [currentVersionIndex, setCurrentVersionIndex] = useState<number>(0);
@@ -154,8 +150,15 @@ export function useDraftPad() {
       ({ available, reasoning, ...model }) => model,
     );
 
-    // Store the chosen response for diff calculations
-    setChosenResponseForCurrentGeneration(selectedContent);
+    // Store the user message for version history
+    setPreviousUserMessage(userMessage.trim());
+
+    // Generate a unique ID for this generation
+    const generationId = `gen-${Date.now()}`;
+    setCurrentGenerationId(generationId);
+
+    // Reset hasCreatedVersion for new generation
+    setHasCreatedVersion(false);
 
     await run({
       inputs: {
@@ -174,12 +177,34 @@ export function useDraftPad() {
     userMessage,
     selectedContent,
     selectedModelsForRun,
-    setChosenResponseForCurrentGeneration,
+    selectedModelId,
+    versionHistory,
   ]);
 
   // Handle model selection
   const handleModelSelect = useCallback((modelId: string) => {
     setSelectedModelId(modelId);
+
+    // Update the latest version's selectedModelId if it exists
+    setVersionHistory((prev) => {
+      if (prev.length === 0) return prev;
+
+      const updatedVersions = [...prev];
+      const latestVersion = updatedVersions[updatedVersions.length - 1];
+
+      // Only update if this model is part of the latest version
+      const modelExists = latestVersion.modelResponses.some(
+        (r) => r.modelId === modelId,
+      );
+      if (modelExists) {
+        updatedVersions[updatedVersions.length - 1] = {
+          ...latestVersion,
+          selectedModelId: modelId,
+        };
+      }
+
+      return updatedVersions;
+    });
   }, []);
 
   // Create model config map early so it can be used in other functions
@@ -191,23 +216,40 @@ export function useDraftPad() {
     return map;
   }, [selectedModelsForRun]);
 
-  // Add version to history
-  const addVersionToHistory = useCallback(
-    (
-      modelId: string,
-      content: string,
-      modelStream?: ModelStreamState,
-      modelConfig?: ModelConfig,
-    ) => {
-      setVersionHistory((prev) => {
-        const modelVersions = prev[modelId] ?? [];
+  // Store previous user message for version history
+  const [previousUserMessage, setPreviousUserMessage] = useState("");
+
+  // Track if we've already created a version for the current generation
+  const [hasCreatedVersion, setHasCreatedVersion] = useState(false);
+
+  // Save completed generation to version history
+  useEffect(() => {
+    if (
+      !draftProgress?.modelStreams ||
+      !currentGenerationId ||
+      hasCreatedVersion
+    )
+      return;
+
+    // Check if all models have completed
+    const allCompleted = draftProgress.modelStreams.every(
+      (stream) => stream.status === "complete" || stream.status === "error",
+    );
+
+    if (!allCompleted) return;
+
+    // Build model responses
+    const modelResponses: ModelResponse[] = draftProgress.modelStreams
+      .filter((stream) => stream.status === "complete" && stream.content)
+      .map((stream) => {
+        const modelConfig = modelConfigMap.get(stream.modelId);
 
         // Calculate cost if we have the config and stream data
         let cost = undefined;
-        if (modelConfig?.cost && modelStream) {
-          const inputTokens = modelStream.inputTokens ?? 500;
+        if (modelConfig?.cost) {
+          const inputTokens = stream.inputTokens ?? 500;
           const outputTokens =
-            modelStream.outputTokens ?? Math.ceil(modelStream.charCount / 4);
+            stream.outputTokens ?? Math.ceil(stream.charCount / 4);
           const inputCost = (inputTokens / 1_000_000) * modelConfig.cost.input;
           const outputCost =
             (outputTokens / 1_000_000) * modelConfig.cost.output;
@@ -218,58 +260,40 @@ export function useDraftPad() {
           };
         }
 
-        const newVersion: ContentVersion = {
-          id: `${modelId}-v${modelVersions.length + 1}`,
-          version: modelVersions.length + 1,
-          content,
-          modelId,
-          timestamp: new Date(),
-          generationTime: modelStream?.generationTime,
-          inputTokens: modelStream?.inputTokens,
-          outputTokens: modelStream?.outputTokens,
-          wordCount:
-            modelStream?.wordCount ??
-            content.split(/\s+/).filter((w) => w.length > 0).length,
-          charCount: modelStream?.charCount ?? content.length,
+        return {
+          modelId: stream.modelId,
+          content: stream.content,
+          displayName: modelConfig?.displayName ?? stream.modelId, // Store the display name
+          generationTime: stream.generationTime,
+          inputTokens: stream.inputTokens,
+          outputTokens: stream.outputTokens,
+          wordCount: stream.wordCount,
+          charCount: stream.charCount,
           cost,
         };
-        return {
-          ...prev,
-          [modelId]: [...modelVersions, newVersion],
-        };
       });
-    },
-    [],
-  );
 
-  // Save completed streams to version history
-  useEffect(() => {
-    if (!draftProgress?.modelStreams) return;
+    if (modelResponses.length === 0) return;
 
-    draftProgress.modelStreams.forEach((stream) => {
-      if (stream.status === "complete" && stream.content) {
-        const modelHistory = versionHistory[stream.modelId] ?? [];
-        const lastVersion = modelHistory[modelHistory.length - 1];
+    // Create new version
+    const newVersion: ContentVersion = {
+      id: currentGenerationId,
+      version: versionHistory.length + 1,
+      timestamp: new Date(),
+      modelResponses,
+      selectedModelId: null, // No model selected yet from this generation
+      userMessage: previousUserMessage,
+    };
 
-        if (
-          modelHistory.length === 0 ||
-          lastVersion.content !== stream.content
-        ) {
-          const modelConfig = modelConfigMap.get(stream.modelId);
-          addVersionToHistory(
-            stream.modelId,
-            stream.content,
-            stream,
-            modelConfig,
-          );
-        }
-      }
-    });
+    setVersionHistory((prev) => [...prev, newVersion]);
+    setHasCreatedVersion(true);
   }, [
     draftProgress?.modelStreams,
-    versionHistory,
-    addVersionToHistory,
+    currentGenerationId,
+    hasCreatedVersion,
     modelConfigMap,
+    previousUserMessage,
+    versionHistory.length,
   ]);
 
   // Handle sorting
@@ -345,24 +369,27 @@ export function useDraftPad() {
     }
   }, []);
 
-  // Get all versions across all models for global navigation
-  const allVersions = useMemo(() => {
-    const versions: ContentVersion[] = [];
-    Object.values(versionHistory).forEach((modelVersions) => {
-      versions.push(...modelVersions);
-    });
-    // Sort by timestamp, oldest first
-    return versions.sort(
-      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
-    );
-  }, [versionHistory]);
+  // Use versionHistory directly since it's now an array
+  const allVersions = versionHistory;
 
-  // Current version content
-  const currentVersionContent = useMemo(() => {
-    if (allVersions.length === 0) return "";
+  // Get current version
+  const currentVersion = useMemo(() => {
+    if (allVersions.length === 0) return null;
     const index = Math.min(currentVersionIndex, allVersions.length - 1);
-    return allVersions[index]?.content || "";
+    return allVersions[index];
   }, [allVersions, currentVersionIndex]);
+
+  // Current version content (selected model's content)
+  const currentVersionContent = useMemo(() => {
+    if (!currentVersion) return "";
+
+    // If viewing history, get the selected model's content
+    const selectedResponse = currentVersion.modelResponses.find(
+      (response) => response.modelId === currentVersion.selectedModelId,
+    );
+
+    return selectedResponse?.content ?? "";
+  }, [currentVersion]);
 
   // Navigate to previous version
   const navigateToPreviousVersion = useCallback(() => {
@@ -415,7 +442,6 @@ export function useDraftPad() {
     showModelSelectorView,
     setShowModelSelectorView,
     versionHistory,
-    chosenResponseForCurrentGeneration,
     sortConfig,
     modelSortConfig,
     selectedProvider,
@@ -428,6 +454,7 @@ export function useDraftPad() {
     // Version navigation
     currentVersionIndex,
     allVersions,
+    currentVersion,
     currentVersionContent,
     navigateToPreviousVersion,
     navigateToNextVersion,

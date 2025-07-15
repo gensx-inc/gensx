@@ -1,10 +1,8 @@
 // Version history types
-export interface ContentVersion {
-  id: string;
-  version: number;
-  content: string;
+export interface ModelResponse {
   modelId: string;
-  timestamp: Date;
+  content: string;
+  displayName?: string; // Store the display name with the response
   // Generation metrics
   generationTime?: number;
   inputTokens?: number;
@@ -18,4 +16,13 @@ export interface ContentVersion {
   };
 }
 
-export type VersionHistory = Record<string, ContentVersion[]>;
+export interface ContentVersion {
+  id: string;
+  version: number;
+  timestamp: Date;
+  modelResponses: ModelResponse[];
+  selectedModelId: string | null; // Which model was chosen for this version
+  userMessage: string; // The prompt that generated this version
+}
+
+export type VersionHistory = ContentVersion[];

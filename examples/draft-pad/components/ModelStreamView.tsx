@@ -5,16 +5,55 @@ import { type DraftProgress, type ModelConfig } from "@/gensx/workflows";
 import { type ContentVersion } from "@/lib/types";
 import { AnimatePresence, motion } from "motion/react";
 
+// Helper function to get the previous version content for a specific model
+function getPreviousVersionForModel(
+  versionHistory: ContentVersion[],
+  chosenResponseContent: string | null,
+): ContentVersion | undefined {
+  if (chosenResponseContent) {
+    // Return a ContentVersion-compatible object for chosen response
+    return {
+      id: "chosen-response",
+      version: 0,
+      timestamp: new Date(),
+      modelResponses: [
+        {
+          modelId: "chosen",
+          content: chosenResponseContent,
+          wordCount: chosenResponseContent
+            .split(/\s+/)
+            .filter((w) => w.length > 0).length,
+          charCount: chosenResponseContent.length,
+        },
+      ],
+      selectedModelId: "chosen",
+      userMessage: "",
+    };
+  }
+
+  // Find the previous version (not the current one)
+  // The previous version's selected model is what was used as the base for this generation
+  if (versionHistory.length >= 2) {
+    const previousVersion = versionHistory[versionHistory.length - 2];
+
+    // Return the previous version so ModelStreamCard can extract the selected model's content
+    return previousVersion;
+  }
+
+  return undefined;
+}
+
 interface ModelStreamViewProps {
   selectedModelId: string | null;
   sortedModelStreams: DraftProgress["modelStreams"];
   modelConfigMap: Map<string, ModelConfig>;
-  versionHistory: Record<string, ContentVersion[]>;
+  versionHistory: ContentVersion[];
   chosenResponseForCurrentGeneration: string | null;
   isDiffVisible: boolean;
   showDiff?: boolean;
   autoShowDiff?: boolean;
   isManuallyHiding?: boolean;
+  showAllModels?: boolean; // Add this prop to force grid view
   metricRanges: {
     minWordCount: number;
     maxWordCount: number;
@@ -35,6 +74,7 @@ export function ModelStreamView({
   versionHistory,
   chosenResponseForCurrentGeneration,
   isDiffVisible,
+  showAllModels = false, // Default to false for backward compatibility
   metricRanges,
   onModelSelect,
 }: ModelStreamViewProps) {
@@ -70,8 +110,8 @@ export function ModelStreamView({
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <AnimatePresence mode="wait">
-        {selectedModelId ? (
-          /* Single selected model view */
+        {selectedModelId && !showAllModels ? (
+          /* Single selected model view - only show when not forcing all models */
           <motion.div
             key="single-view"
             initial={{ opacity: 0 }}
@@ -106,23 +146,10 @@ export function ModelStreamView({
                       metricRanges={metricRanges}
                       showDiff={isDiffVisible}
                       autoShowDiff={false}
-                      previousVersion={
-                        chosenResponseForCurrentGeneration
-                          ? {
-                              id: "chosen-response",
-                              version: 0,
-                              content: chosenResponseForCurrentGeneration,
-                              modelId: "chosen",
-                              timestamp: new Date(),
-                            }
-                          : (() => {
-                              const history =
-                                versionHistory[selectedStream.modelId] ?? [];
-                              return history.length >= 2
-                                ? history[history.length - 2]
-                                : undefined;
-                            })()
-                      }
+                      previousVersion={getPreviousVersionForModel(
+                        versionHistory,
+                        chosenResponseForCurrentGeneration,
+                      )}
                     />
                   ) : null;
                 })()}
@@ -158,20 +185,24 @@ export function ModelStreamView({
                     previousVersion={
                       chosenResponseForCurrentGeneration
                         ? {
-                            id: "chosen-response",
+                            id: "previous-generation",
                             version: 0,
-                            content: chosenResponseForCurrentGeneration,
-                            modelId: "chosen",
                             timestamp: new Date(),
+                            modelResponses: [
+                              {
+                                modelId: sortedModelStreams[0].modelId,
+                                content: chosenResponseForCurrentGeneration,
+                                wordCount: chosenResponseForCurrentGeneration
+                                  .split(/\s+/)
+                                  .filter((w) => w.length > 0).length,
+                                charCount:
+                                  chosenResponseForCurrentGeneration.length,
+                              },
+                            ],
+                            selectedModelId: sortedModelStreams[0].modelId,
+                            userMessage: "",
                           }
-                        : (() => {
-                            const history =
-                              versionHistory[sortedModelStreams[0].modelId] ??
-                              [];
-                            return history.length >= 2
-                              ? history[history.length - 2]
-                              : undefined;
-                          })()
+                        : getPreviousVersionForModel(versionHistory, null)
                     }
                   />
                 </div>
@@ -235,23 +266,10 @@ export function ModelStreamView({
                           metricRanges={metricRanges}
                           showDiff={isDiffVisible}
                           autoShowDiff={false}
-                          previousVersion={
-                            chosenResponseForCurrentGeneration
-                              ? {
-                                  id: "chosen-response",
-                                  version: 0,
-                                  content: chosenResponseForCurrentGeneration,
-                                  modelId: "chosen",
-                                  timestamp: new Date(),
-                                }
-                              : (() => {
-                                  const history =
-                                    versionHistory[modelStream.modelId] ?? [];
-                                  return history.length >= 2
-                                    ? history[history.length - 2]
-                                    : undefined;
-                                })()
-                          }
+                          previousVersion={getPreviousVersionForModel(
+                            versionHistory,
+                            chosenResponseForCurrentGeneration,
+                          )}
                         />
                       </motion.div>
                     );
