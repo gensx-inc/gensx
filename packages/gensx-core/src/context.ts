@@ -1,6 +1,7 @@
 import { ExecutionNode } from "./checkpoint-types.js";
 import {
   createWorkflowContext,
+  InputRequest,
   WORKFLOW_CONTEXT_SYMBOL,
   WorkflowExecutionContext,
 } from "./workflow-context.js";
@@ -23,9 +24,20 @@ export class ExecutionContext {
   constructor(
     public context: WorkflowContext,
     private parent?: ExecutionContext,
-    messageListener?: WorkflowMessageListener,
-    onRequestInput?: (nodeId: string) => Promise<void>,
-    onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>,
+    {
+      messageListener,
+      onRequestInput,
+      onRestoreCheckpoint,
+      checkpoint,
+    }: {
+      messageListener?: WorkflowMessageListener;
+      onRequestInput?: (inputRequest: InputRequest) => Promise<void>;
+      onRestoreCheckpoint?: (
+        node: ExecutionNode,
+        feedback: unknown,
+      ) => Promise<void>;
+      checkpoint?: ExecutionNode;
+    } = {},
   ) {
     this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext({
       onMessage:
@@ -36,6 +48,7 @@ export class ExecutionContext {
       onRestoreCheckpoint:
         onRestoreCheckpoint ??
         this.parent?.getWorkflowContext().onRestoreCheckpoint,
+      checkpoint,
     });
   }
 
@@ -71,12 +84,12 @@ export class ExecutionContext {
     return this.get(WORKFLOW_CONTEXT_SYMBOL) as WorkflowExecutionContext;
   }
 
-  getCurrentNodeId(): string | undefined {
-    return this.get(CURRENT_NODE_SYMBOL) as string | undefined;
+  getCurrentNode(): ExecutionNode | undefined {
+    return this.get(CURRENT_NODE_SYMBOL) as ExecutionNode | undefined;
   }
 
-  withCurrentNode<T>(nodeId: string, fn: () => T): T {
-    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: nodeId }), fn);
+  withCurrentNode<T>(node: ExecutionNode, fn: () => T): T {
+    return withContext(this.withContext({ [CURRENT_NODE_SYMBOL]: node }), fn);
   }
 }
 
@@ -125,25 +138,41 @@ const configureAsyncLocalStorage = (async () => {
   }
 })();
 
-const rootContext = new ExecutionContext({});
+let rootContextRef: { context: ExecutionContext | undefined } = {
+  context: undefined,
+};
 
 // Create a global symbol for the fallback context
 const GLOBAL_CONTEXT_SYMBOL = Symbol.for("gensx.globalContext");
 
 // Initialize the global fallback context if it doesn't exist
-globalObj[GLOBAL_CONTEXT_SYMBOL] ??= rootContext;
+globalObj[GLOBAL_CONTEXT_SYMBOL] ??= rootContextRef;
 
 // Helper to get/set the global context
-const getGlobalContext = (): ExecutionContext =>
-  globalObj[GLOBAL_CONTEXT_SYMBOL] as ExecutionContext;
+const getGlobalContext = (): ExecutionContext => {
+  const context = (
+    globalObj[GLOBAL_CONTEXT_SYMBOL] as {
+      context: ExecutionContext | undefined;
+    }
+  ).context;
+  if (context === undefined) {
+    const newContext = new ExecutionContext({});
+    setGlobalContext(newContext);
+    return newContext;
+  }
+  return context;
+};
+
 const setGlobalContext = (context: ExecutionContext): void => {
-  globalObj[GLOBAL_CONTEXT_SYMBOL] = context;
+  (globalObj[GLOBAL_CONTEXT_SYMBOL] as { context: ExecutionContext }).context =
+    context;
 };
 
 // Update contextManager implementation
 const contextManager = {
   async init() {
     await configureAsyncLocalStorage;
+    rootContextRef.context = new ExecutionContext({});
   },
 
   getCurrentContext(): ExecutionContext {
@@ -152,7 +181,7 @@ const contextManager = {
     ] as AsyncLocalStorageType<ExecutionContext> | null;
     if (storage) {
       const store = storage.getStore();
-      return store ?? rootContext;
+      return store ?? getGlobalContext();
     }
     return getGlobalContext();
   },
@@ -207,32 +236,37 @@ export function getCurrentNodeCheckpointManager() {
   const context = getCurrentContext();
   const workflowContext = context.getWorkflowContext();
   const { checkpointManager } = workflowContext;
-  const currentNodeId = context.getCurrentNodeId();
+  const currentNode = context.getCurrentNode();
 
-  if (!currentNodeId) {
-    console.warn("No current node found");
+  if (!currentNode) {
+    console.warn("[GenSX] No current node found.");
     return {
+      node: undefined,
       completeNode: () => {
         // noop
+        console.warn("[GenSX] Cannot complete node - no current node found.");
       },
       updateNode: () => {
         // noop
+        console.warn("[GenSX] Cannot update node - no current node found.");
       },
       addMetadata: () => {
         // noop
+        console.warn("[GenSX] Cannot add metadata - no current node found.");
       },
     };
   }
 
   return {
-    completeNode: (output: unknown) => {
-      checkpointManager.completeNode(currentNodeId, output);
+    node: currentNode,
+    completeNode: (output: unknown, opts: { wrapInPromise?: boolean } = {}) => {
+      checkpointManager.completeNode(currentNode, output, opts);
     },
     updateNode: (updates: Partial<ExecutionNode>) => {
-      checkpointManager.updateNode(currentNodeId, updates);
+      checkpointManager.updateNode(currentNode, updates);
     },
     addMetadata: (metadata: Record<string, unknown>) => {
-      checkpointManager.addMetadata(currentNodeId, metadata);
+      checkpointManager.addMetadata(currentNode, metadata);
     },
   };
 }

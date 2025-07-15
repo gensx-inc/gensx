@@ -15,11 +15,12 @@
     "Firecrawl",
     "gensx",
     "jsxs",
-    "libsql",
     "Kysely",
+    "libsql",
     "modelcontextprotocol",
     "Streamable",
-    "turbopuffer"
+    "turbopuffer",
+    "unserialize"
   ],
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"

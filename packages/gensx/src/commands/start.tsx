@@ -14,7 +14,7 @@ import { Definition } from "typescript-json-schema";
 
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import { LoadingSpinner } from "../components/LoadingSpinner.js";
-import { createServer } from "../dev-server.js";
+import { createServer } from "../dev-server/index.js";
 import { generateSchema } from "../utils/schema.js";
 
 export interface StartOptions {

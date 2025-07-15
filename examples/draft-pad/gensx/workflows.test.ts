@@ -75,7 +75,7 @@ describe("UpdateDraftWorkflow", () => {
 
     console.log("Generated content:", modelResult.content);
     console.log("Summary:", result.summary);
-  }, 30000);
+  }, 60000);
 
   it("should handle multiple models in parallel", async () => {
     const models: ModelConfig[] = [
@@ -128,7 +128,7 @@ describe("UpdateDraftWorkflow", () => {
     console.log("Model 2 content:", result.results[1].content);
     console.log("Fastest model:", result.summary.fastestModel);
     console.log("Slowest model:", result.summary.slowestModel);
-  }, 30000);
+  }, 60000);
 
   it("should handle errors gracefully", async () => {
     const models: ModelConfig[] = [
@@ -176,5 +176,5 @@ describe("UpdateDraftWorkflow", () => {
       expect(result.summary.successfulModels).toBe(0); // Empty content doesn't count as successful
       console.log("Model returned empty content");
     }
-  }, 30000);
+  }, 60000);
 });

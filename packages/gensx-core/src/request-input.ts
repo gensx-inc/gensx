@@ -1,7 +1,6 @@
 import { Component } from "./component.js";
 import { getCurrentContext } from "./context.js";
 
-// TODO: Is there a security issue here? Does this endpoint need to be authenticated?
 function getCallbackUrl(nodeId: string) {
   return `${process.env.GENSX_API_BASE_URL}/org/${process.env.GENSX_ORG}/workflowExecutions/${process.env.GENSX_EXECUTION_ID}/resume/${nodeId}`;
 }
@@ -23,7 +22,7 @@ export async function requestInput<T extends Record<string, unknown>>(
   const RequestInputComponent = Component("RequestInput", async () => {
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
-    const currentNodeId = context.getCurrentNodeId();
+    const currentNodeId = context.getCurrentNode()?.id;
     if (!currentNodeId) {
       throw new Error("No current node ID found");
     }
@@ -33,11 +32,10 @@ export async function requestInput<T extends Record<string, unknown>>(
     await workflowContext.checkpointManager.waitForPendingUpdates();
 
     // This is where the magic happens 🪄
-    await workflowContext.onRequestInput(currentNodeId);
-
-    // Log an error here, because this bit of code should never actually be executed.
-    console.error("[GenSX] Requesting input not supported in this environment");
-    return {};
+    return await workflowContext.onRequestInput({
+      type: "input-request",
+      nodeId: currentNodeId,
+    });
   });
 
   return (await RequestInputComponent()) as T;

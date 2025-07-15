@@ -78,7 +78,7 @@ export default [
       ...tseslint.configs["strict-type-checked"].rules,
       ...tseslint.configs["stylistic-type-checked"].rules,
       ...prettierConfig.rules,
-      "no-console": ["error", { allow: ["warn", "error", "info"] }],
+      "no-console": ["error", { allow: ["warn", "error", "info", "debug"] }],
       "@typescript-eslint/restrict-template-expressions": [
         "error",
         {
@@ -120,6 +120,7 @@ export default [
         },
       ],
       "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
     },
   },
   {

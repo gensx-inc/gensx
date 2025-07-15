@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { readdirSync, rmdirSync, unlinkSync } from "node:fs";
@@ -35,7 +34,7 @@ describe("schema generator", () => {
     validator: (parsedSchema: Record<string, unknown>) => void,
   ) {
     const [tempFile, tempDir] = await createTempFile(fileContent);
-    // Create a tsconfig.json file in the temp directory
+    // Create a tsconfig.json file in the temp director
     await fs.writeFile(
       resolve(tempDir, "tsconfig.json"),
       JSON.stringify({

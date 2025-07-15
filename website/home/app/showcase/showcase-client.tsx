@@ -45,15 +45,17 @@ const showcaseItems: ShowcaseItem[] = [
   },
   {
     id: "deep-research",
-    title: "Deep Research Agent",
+    title: "Deep Research",
     description:
-      "Multi-step research workflow that searches ArXiv papers, extracts key findings, and generates structured summaries.",
+      "Multi-step research workflow that iteratively searches the web, extracts key findings, and generates detailed reports.",
+    image: "/showcase/deep-research.png",
+    demo: "https://gensx-deep-research.vercel.app",
     github:
       "https://github.com/gensx-inc/gensx/tree/main/examples/deep-research",
     tags: [
+      "Framework: Next.js",
       "Category: Research Agent",
-      "Integration: ArXiv API",
-      "Type: Workflow",
+      "Integration: Tavily API",
     ],
   },
   {

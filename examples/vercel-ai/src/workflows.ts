@@ -88,13 +88,7 @@ export const StreamingChat = gensx.Workflow(
       model: openai("gpt-4o-mini"),
     });
 
-    const generator = async function* () {
-      for await (const chunk of result.textStream) {
-        yield chunk;
-      }
-    };
-
-    return generator();
+    return result.textStream;
   },
 );
 
@@ -118,13 +112,7 @@ export const StreamingChatWithTools = gensx.Workflow(
       tools: tools,
     });
 
-    const generator = async function* () {
-      for await (const chunk of result.textStream) {
-        yield chunk;
-      }
-    };
-
-    return generator();
+    return result.textStream;
   },
 );
 
@@ -185,12 +173,6 @@ export const StreamingStructuredOutput = gensx.Workflow(
       model: openai("gpt-4o-mini"),
     });
 
-    const generator = async function* () {
-      for await (const chunk of result.partialObjectStream) {
-        yield chunk;
-      }
-    };
-
-    return generator();
+    return result.partialObjectStream;
   },
 );

@@ -1,83 +1,50 @@
-# Deep Research Example
+# GenSX Deep Research
 
-This example demonstrates how to use GenSX to create an AI-powered deep research workflow. The workflow leverages the Arxiv and Firecrawl APIs to find, filter, and summarize research papers, ultimately generating a research report based on a user prompt.
+This is a [Next.js](https://nextjs.org) deep research template for [GenSX](https://gensx.com) with a multi-step research workflow that iteratively searches the web, extracts key findings, and generates detailed reports.
 
-## Overview
+![Deep Research Screenshot](./public/deep-research.png)
 
-The DeepResearchWorkflow takes a `prompt` as input and orchestrates a multi-step research process:
+## Getting started
 
-1. Converts the prompt into a series of queries
-2. Uses the [Arxiv API](https://arxiv.org/help/api/user-manual) to retrieve relevant research papers
-3. Determines if the papers are relevant to the prompt
-4. Scrapes the full text of the relevant papers using the [Firecrawl API](https://www.firecrawl.dev/)
-5. Summarizes the relevant parts of the papers
-6. Uses the summaries to generate a research report
-
-## Getting Started
-
-1. Log in to GenSX (if you haven't already):
-
-   ```bash
-   npx gensx login
-   ```
-
-2. Install the required dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-3. Set up your environment variables:
-
-   ```bash
-   export FIRECRAWL_API_KEY=your_firecrawl_api_key
-   export OPENAI_API_KEY=your_openai_api_key
-   ```
-
-## Running in GenSX Cloud
-
-To run the workflow in GenSX Cloud:
-
-1. Deploy your workflow:
-
-   ```bash
-   pnpm run deploy
-   ```
-
-2. Start a research job by calling the workflow:
-
-   ```bash
-   gensx run DeepResearch --input '{"prompt": "find research comparing the writing style of humans and LLMs. We want to figure out how to quantify the differences."}'
-   ```
-
-Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see your workflow, test it, analyze traces, and get code snippets.
-
-## Running locally
-
-### Test the workflow directly
-
-You can run the workflow directly using the `src/index.ts` file:
+To get started, first install the dependencies:
 
 ```bash
-pnpm dev "find research comparing the writing style of humans and LLMs. We want to figure out how to quantify the differences."
+pnpm install
 ```
 
-### Run the API locally
-
-You can also start a local API server to test the workflow via HTTP:
+Then export the environment variables. For this template, you'll need both the [OpenAI API key](https://platform.openai.com), [Anthropic API key](https://www.anthropic.com/), and the [Tavily API key](https://www.tavily.com/):
 
 ```bash
-pnpm start
+export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
+export TAVILY_API_KEY=...
 ```
-
-This will start a local API server and you can call the workflow APIs via curl or any HTTP client:
 
 ```bash
-curl -X POST http://localhost:1337/workflows/DeepResearchWorkflow \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "find research comparing the writing style of humans and LLMs. We want to figure out how to quantify the differences."
-  }'
+pnpm run dev
 ```
 
-A swagger UI will also be available at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.
+This will start both the Next.js app as well as the local GenSX dev server. The app will be available at [http://localhost:3000](http://localhost:3000) and the GenSX dev server will be available at [http://localhost:1337](http://localhost:1337/swagger-ui).
+
+## Deploying the app
+
+### Deploying the GenSX workflows
+
+To deploy the GenSX workflows, run:
+
+```bash
+pnpm run deploy
+```
+
+### Deploying the Next.js app
+
+The easiest way to deploy your Next.js app is to use [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
+
+Once you deploy, make sure to set the following environment variables so the app can access the GenSX workflows:
+
+```bash
+export GENSX_API_KEY=...
+export GENSX_ORG=...
+export GENSX_PROJECT=chat-tools
+export GENSX_ENV=default
+```

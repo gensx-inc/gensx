@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.2.0](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.1.10...gensx-storage-v0.2.0) (2025-07-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* Update publishObject to use json patches ([#837](https://github.com/gensx-inc/gensx/issues/837))
+
+### ✨ New Features
+
+* Implement JSON Patch with string optimizations for publishObject ([55829d2](https://github.com/gensx-inc/gensx/commit/55829d2a49b50d11d9a5748b34cce6e8302c1763))
+
+
+### 🐛 Bug Fixes
+
+* Update publishObject to use json patches ([#837](https://github.com/gensx-inc/gensx/issues/837)) ([55829d2](https://github.com/gensx-inc/gensx/commit/55829d2a49b50d11d9a5748b34cce6e8302c1763))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.0
+
+## [0.1.10](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.1.9...gensx-storage-v0.1.10) (2025-07-03)
+
+
+### ✨ New Features
+
+* improve error handling in @gensx/storage ([#822](https://github.com/gensx-inc/gensx/issues/822)) ([58a51c3](https://github.com/gensx-inc/gensx/commit/58a51c3d142ab0a02be7fa061b08cab87d276d8a))
+
 ## [0.1.9](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.1.8...gensx-storage-v0.1.9) (2025-06-25)
 
 

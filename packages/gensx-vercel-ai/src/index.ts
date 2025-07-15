@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import type { Tool, ToolExecutionOptions } from "ai";
 
@@ -70,6 +68,9 @@ export const streamText = Component(
       ]);
     },
   }),
+  {
+    __streamingResultKey: "textStream",
+  },
 ) as typeof ai.streamText;
 
 export const streamObject = Component(
@@ -149,55 +150,56 @@ export const wrapVercelAIModel = <T extends object>(
     get(target, propKey, receiver) {
       const originalValue = Reflect.get(target, propKey, receiver);
       if (typeof originalValue === "function") {
-        let aggregator: ((chunks: any[]) => unknown) | undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((originalValue as any).__gensxComponent) {
+          return originalValue;
+        }
+
+        // let aggregator: ((chunks: any[]) => unknown) | undefined;
         let __streamingResultKey: string | undefined;
         if (propKey === "doStream") {
           __streamingResultKey = "stream";
-          aggregator =
-            componentOpts?.aggregator ??
-            ((
-              chunks: {
-                type: "text-delta" | "tool-call" | "finish" | "something-else";
-                textDelta: string;
-                usage: unknown;
-                finishReason: unknown;
-              }[],
-            ) => {
-              return chunks.reduce(
-                (aggregated, chunk) => {
-                  if (chunk.type === "text-delta") {
-                    return {
-                      ...aggregated,
-                      text: aggregated.text + chunk.textDelta,
-                    };
-                  } else if (chunk.type === "tool-call") {
-                    return {
-                      ...aggregated,
-                      ...chunk,
-                    };
-                  } else if (chunk.type === "finish") {
-                    return {
-                      ...aggregated,
-                      usage: chunk.usage,
-                      finishReason: chunk.finishReason,
-                    };
-                  } else {
-                    return aggregated;
-                  }
-                },
-                {
-                  text: "",
-                },
-              );
-            });
+          // aggregator =
+          //   componentOpts?.aggregator ??
+          //   ((
+          //     chunks: {
+          //       type: "text-delta" | "tool-call" | "finish" | "something-else";
+          //       textDelta: string;
+          //       usage: unknown;
+          //       finishReason: unknown;
+          //     }[],
+          //   ) => {
+          //     return chunks.reduce((aggregated, chunk) => {
+          //       console.log("aggregating chunk", chunk);
+          //       if (chunk.type === "text-delta") {
+          //         return {
+          //           ...aggregated,
+          //         };
+          //       } else if (chunk.type === "tool-call") {
+          //         return {
+          //           ...aggregated,
+          //           ...chunk,
+          //         };
+          //       } else if (chunk.type === "finish") {
+          //         return {
+          //           ...aggregated,
+          //           usage: chunk.usage,
+          //           finishReason: chunk.finishReason,
+          //         };
+          //       } else {
+          //         return aggregated;
+          //       }
+          //     }, {});
+          //   });
         }
         return Component(
           componentName,
           originalValue.bind(target) as (input: object) => unknown,
           {
             ...componentOpts,
-            aggregator,
+            // aggregator,
             __streamingResultKey,
+            idPropsKeys: ["inputFormat", "prompt", "responseFormat", "seed"],
           },
         );
       } else if (
@@ -229,3 +231,5 @@ function assertIsLanguageModel(
     throw new Error(`Invalid model. Is this a LanguageModelV1 instance?`);
   }
 }
+
+export { asToolSet } from "./tools.js";
