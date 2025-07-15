@@ -23,6 +23,12 @@ interface ImportInfo {
   fromFile: string;
 }
 
+interface GensxImport {
+  localName: string;
+  type: "workflow" | "component";
+  importType: "namespace" | "named" | "default";
+}
+
 interface WorkflowGraph {
   workflows: ComponentDefinition[];
   components: ComponentDefinition[];
@@ -40,6 +46,7 @@ class WorkflowAnalyzer {
   private analyzedFiles: Set<string> = new Set();
   private allDefinitions: Map<string, ComponentDefinition> = new Map();
   private importMap: Map<string, ImportInfo[]> = new Map();
+  private gensxImports: Map<string, GensxImport[]> = new Map();
   private baseDir: string = "";
 
   constructor() {}
@@ -49,6 +56,7 @@ class WorkflowAnalyzer {
     this.analyzedFiles.clear();
     this.allDefinitions.clear();
     this.importMap.clear();
+    this.gensxImports.clear();
 
     // Start with the entry file
     await this.analyzeFile(entryFilePath);
@@ -98,6 +106,10 @@ class WorkflowAnalyzer {
       // Collect imports
       const imports = this.collectImports(sourceFile, normalizedPath);
       this.importMap.set(normalizedPath, imports);
+
+      // Collect gensx-specific imports (Workflow/Component)
+      const gensxImports = this.collectGensxImports(sourceFile);
+      this.gensxImports.set(normalizedPath, gensxImports);
 
       // Collect definitions in this file
       const definitions = this.collectDefinitions(sourceFile, normalizedPath);
@@ -153,6 +165,69 @@ class WorkflowAnalyzer {
     return imports;
   }
 
+  private collectGensxImports(sourceFile: ts.SourceFile): GensxImport[] {
+    const gensxImports: GensxImport[] = [];
+
+    const visit = (node: ts.Node): void => {
+      if (ts.isImportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+        const moduleSpecifier = node.moduleSpecifier.text;
+        
+        // Check if this is a gensx-related import
+        if (this.isGensxModule(moduleSpecifier)) {
+          const importClause = node.importClause;
+          
+          if (importClause) {
+            // Handle namespace imports: import * as gensx from "@gensx/core"
+            if (importClause.namedBindings && ts.isNamespaceImport(importClause.namedBindings)) {
+              const localName = importClause.namedBindings.name.text;
+              gensxImports.push(
+                { localName: `${localName}.Workflow`, type: "workflow", importType: "namespace" },
+                { localName: `${localName}.Component`, type: "component", importType: "namespace" }
+              );
+            }
+            
+            // Handle named imports: import { Workflow, Component } from "@gensx/core"
+            if (importClause.namedBindings && ts.isNamedImports(importClause.namedBindings)) {
+              for (const element of importClause.namedBindings.elements) {
+                const importedName = element.propertyName ? element.propertyName.text : element.name.text;
+                const localName = element.name.text;
+                
+                if (importedName === "Workflow") {
+                  gensxImports.push({ localName, type: "workflow", importType: "named" });
+                } else if (importedName === "Component") {
+                  gensxImports.push({ localName, type: "component", importType: "named" });
+                }
+              }
+            }
+            
+            // Handle default imports (if applicable)
+            if (importClause.name) {
+              const localName = importClause.name.text;
+              // This would be for cases like: import Workflow from "@gensx/core/workflow"
+              if (moduleSpecifier.includes("workflow")) {
+                gensxImports.push({ localName, type: "workflow", importType: "default" });
+              } else if (moduleSpecifier.includes("component")) {
+                gensxImports.push({ localName, type: "component", importType: "default" });
+              }
+            }
+          }
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    };
+
+    visit(sourceFile);
+    return gensxImports;
+  }
+
+  private isGensxModule(moduleSpecifier: string): boolean {
+    return moduleSpecifier === "@gensx/core" || 
+           moduleSpecifier.startsWith("@gensx/core/") ||
+           moduleSpecifier === "gensx-core" ||
+           moduleSpecifier.startsWith("gensx-core/");
+  }
+
   private collectDefinitions(sourceFile: ts.SourceFile, filePath: string): ComponentDefinition[] {
     const definitions: ComponentDefinition[] = [];
 
@@ -183,40 +258,53 @@ class WorkflowAnalyzer {
 
     const callExpression = declaration.initializer;
     const expression = callExpression.expression;
+    const gensxImports = this.gensxImports.get(filePath) || [];
 
-    // Check if it's a gensx.Workflow or gensx.Component call
-    if (ts.isPropertyAccessExpression(expression)) {
+    let type: "workflow" | "component" | null = null;
+    let functionCallName = "";
+
+    // Check for direct function calls: Workflow() or Component()
+    if (ts.isIdentifier(expression)) {
+      functionCallName = expression.escapedText as string;
+      const gensxImport = gensxImports.find(imp => imp.localName === functionCallName);
+      if (gensxImport) {
+        type = gensxImport.type;
+      }
+    }
+    
+    // Check for property access: gensx.Workflow() or gensx.Component()
+    else if (ts.isPropertyAccessExpression(expression)) {
       const { expression: object, name } = expression;
       
-      if (ts.isIdentifier(object) && 
-          object.escapedText === "gensx" && 
-          ts.isIdentifier(name)) {
-        
-        const type = name.escapedText === "Workflow" ? "workflow" : 
-                     name.escapedText === "Component" ? "component" : null;
-        
-        if (type && ts.isIdentifier(declaration.name)) {
-          const componentName = declaration.name.escapedText as string;
-          const args = callExpression.arguments;
-          
-          // Get the name from the first argument (should be a string literal)
-          let definitionName = componentName;
-          if (args.length > 0 && ts.isStringLiteral(args[0])) {
-            definitionName = args[0].text;
-          }
-
-          const sourceLocation = this.getSourceLocation(declaration, filePath);
-          
-          return {
-            name: definitionName,
-            type,
-            filePath,
-            functionName: componentName,
-            dependencies: [],
-            sourceLocation
-          };
+      if (ts.isIdentifier(object) && ts.isIdentifier(name)) {
+        functionCallName = `${object.escapedText}.${name.escapedText}`;
+        const gensxImport = gensxImports.find(imp => imp.localName === functionCallName);
+        if (gensxImport) {
+          type = gensxImport.type;
         }
       }
+    }
+
+    if (type && ts.isIdentifier(declaration.name)) {
+      const componentName = declaration.name.escapedText as string;
+      const args = callExpression.arguments;
+      
+      // Get the name from the first argument (should be a string literal)
+      let definitionName = componentName;
+      if (args.length > 0 && ts.isStringLiteral(args[0])) {
+        definitionName = args[0].text;
+      }
+
+      const sourceLocation = this.getSourceLocation(declaration, filePath);
+      
+      return {
+        name: definitionName,
+        type,
+        filePath,
+        functionName: componentName,
+        dependencies: [],
+        sourceLocation
+      };
     }
 
     return null;

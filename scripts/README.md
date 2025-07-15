@@ -37,19 +37,39 @@ tsx scripts/analyze-workflows.ts ./examples/blog-writer/src/workflows.ts --json
 
 ## What It Analyzes
 
-### Workflows
-Functions wrapped with `gensx.Workflow()`:
+The analyzer detects workflows and components regardless of how the `Workflow` and `Component` functions are imported.
+
+### Supported Import Patterns
+
+**Namespace imports:**
 ```typescript
+import * as gensx from "@gensx/core";
 const MyWorkflow = gensx.Workflow("MyWorkflow", async (props) => {
   // workflow logic
 });
 ```
 
-### Components  
-Functions wrapped with `gensx.Component()`:
+**Named imports:**
 ```typescript
-const MyComponent = gensx.Component("MyComponent", async (props) => {
-  // component logic
+import { Workflow, Component } from "@gensx/core";
+const MyWorkflow = Workflow("MyWorkflow", async (props) => {
+  // workflow logic
+});
+```
+
+**Aliased imports:**
+```typescript
+import { Workflow as W, Component as C } from "@gensx/core";
+const MyWorkflow = W("MyWorkflow", async (props) => {
+  // workflow logic
+});
+```
+
+**Mixed imports:**
+```typescript
+import gensx, { Workflow, Component as C } from "@gensx/core";
+const MyWorkflow = Workflow("MyWorkflow", async (props) => {
+  // workflow logic
 });
 ```
 
@@ -140,6 +160,7 @@ graph TD
 The analyzer provides comprehensive analysis capabilities:
 
 - **Complete Project Analysis** - Analyzes single files or entire TypeScript projects with cross-file dependencies
+- **Universal Import Detection** - Supports all import patterns: namespace, named, aliased, and mixed imports
 - **Smart Import Resolution** - Follows relative imports and handles TypeScript `.js` to `.ts` mapping
 - **Dependency Graph Generation** - Maps all relationships between workflows and components
 - **Multiple Output Formats** - Text summary, JSON data, and beautiful Mermaid diagrams
