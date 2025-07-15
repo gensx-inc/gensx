@@ -313,23 +313,20 @@ export function setupRoutes(
   });
 
   // Fulfill input request for a node
-  app.post(
-    `/workflowExecutions/:executionId/fulfill-input-request/:nodeId`,
-    async (c) => {
-      const executionId = c.req.param("executionId");
-      const nodeId = c.req.param("nodeId");
-      const execution = workflowManager.getExecution(executionId);
-      if (!execution) {
-        throw new NotFoundError(`Execution '${executionId}' not found`);
-      }
+  app.post(`/workflowExecutions/:executionId/fulfill/:nodeId`, async (c) => {
+    const executionId = c.req.param("executionId");
+    const nodeId = c.req.param("nodeId");
+    const execution = workflowManager.getExecution(executionId);
+    if (!execution) {
+      throw new NotFoundError(`Execution '${executionId}' not found`);
+    }
 
-      const data = (await c.req.json()) as unknown as JsonValue;
+    const data = (await c.req.json()) as unknown as JsonValue;
 
-      executionHandler.handleInputRequest(executionId, nodeId, data);
+    executionHandler.handleInputRequest(executionId, nodeId, data);
 
-      return c.json({ success: true });
-    },
-  );
+    return c.json({ success: true });
+  });
 
   // Execute workflow endpoint
   app.post(`/workflows/:workflowName`, async (c) => {

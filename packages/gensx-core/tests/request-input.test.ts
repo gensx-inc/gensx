@@ -53,7 +53,7 @@ suite("request input", () => {
         // Verify trigger was called with a callback URL
         expect(mockTrigger).toHaveBeenCalledWith(
           expect.stringMatching(
-            /^https:\/\/api\.test\.com\/org\/test-org\/workflowExecutions\/exec-123\/fulfill-input-request\//,
+            /^https:\/\/api\.test\.com\/org\/test-org\/workflowExecutions\/exec-123\/fulfill\//,
           ),
         );
 
@@ -144,7 +144,7 @@ suite("request input", () => {
 
         const callbackUrl = mockTrigger.mock.calls[0]?.[0] as string;
         expect(callbackUrl).toMatch(
-          /^https:\/\/custom-api\.gensx\.com\/org\/my-org\/workflowExecutions\/execution-456\/fulfill-input-request\/.+$/,
+          /^https:\/\/custom-api\.gensx\.com\/org\/my-org\/workflowExecutions\/execution-456\/fulfill\/.+$/,
         );
       });
     } finally {
