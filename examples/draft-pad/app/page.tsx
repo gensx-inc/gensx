@@ -157,8 +157,6 @@ export default function Home() {
                     // When viewing history, we need the previous version's selected model content
                     // to show diffs properly
                     const currentVersion = draftPad.currentVersion;
-                    if (!currentVersion) return null;
-
                     const currentIndex = draftPad.allVersions.findIndex(
                       (v) => v.id === currentVersion.id,
                     );
@@ -235,7 +233,7 @@ export default function Home() {
             sortedModelStreamsLength={sortedModelStreams.length}
             isDropdownOpen={draftPad.isDropdownOpen}
             textareaRef={draftPad.textareaRef as RefObject<HTMLTextAreaElement>}
-            inputRef={draftPad.inputRef as RefObject<HTMLInputElement>}
+            _inputRef={draftPad.inputRef as RefObject<HTMLInputElement>}
             isVoiceActive={isVoiceActive}
             onUserMessageChange={draftPad.setUserMessage}
             onMultiSelectModeChange={draftPad.setIsMultiSelectMode}

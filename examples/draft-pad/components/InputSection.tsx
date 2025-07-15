@@ -20,7 +20,7 @@ interface InputSectionProps {
   sortedModelStreamsLength: number;
   isDropdownOpen: boolean;
   textareaRef: RefObject<HTMLTextAreaElement>;
-  inputRef: RefObject<HTMLInputElement>;
+  _inputRef: RefObject<HTMLInputElement>;
   isVoiceActive?: boolean;
   onUserMessageChange: (value: string) => void;
   onMultiSelectModeChange: (value: boolean) => void;
@@ -40,7 +40,7 @@ export function InputSection({
   sortedModelStreamsLength,
   isDropdownOpen,
   textareaRef,
-  inputRef,
+  _inputRef,
   isVoiceActive: _isVoiceActive,
   onUserMessageChange,
   onMultiSelectModeChange,
@@ -154,12 +154,8 @@ export function InputSection({
 
   const handleClose = () => {
     setTimeout(() => {
-      // Focus on the appropriate input after dropdown closes
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      } else if (inputRef.current) {
-        inputRef.current.focus();
-      }
+      // Focus on the textarea after dropdown closes
+      textareaRef.current.focus();
     }, 100);
   };
 
