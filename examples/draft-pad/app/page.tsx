@@ -157,9 +157,16 @@ export default function Home() {
 
       {/* GenSX Logo Badge - Bottom Right */}
       <div className="fixed bottom-2 right-2 z-50">
-        <div className="bg-gray-700/20 backdrop-blur-3xl rounded-3xl p-0.5 shadow-lg border border-white/30 hover:bg-white/60 transition-all duration-300">
-          <img src="/gensx-logo.svg" alt="GenSX Logo" className="w-48 h-16" />
-        </div>
+        <a
+          href="https://gensx.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <div className="bg-gray-700/20 backdrop-blur-3xl rounded-3xl p-0.5 shadow-lg border border-white/30 hover:bg-white/60 transition-all duration-300 cursor-pointer">
+            <img src="/gensx-logo.svg" alt="GenSX Logo" className="w-48 h-16" />
+          </div>
+        </a>
       </div>
     </div>
   );
