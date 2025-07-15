@@ -22,7 +22,9 @@
     "test:all": "turbo run test",
     "clean": "turbo run clean",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\""
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "analyze:workflows": "tsx scripts/analyze-workflows.ts",
+    "analyze:workflows:enhanced": "tsx scripts/analyze-workflows-enhanced.ts"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "catalog:",
