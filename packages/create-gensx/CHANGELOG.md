@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.56](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.55...create-gensx-v0.1.56) (2025-07-16)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.4.2
+
 ## [0.1.55](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.54...create-gensx-v0.1.55) (2025-07-16)
 
 

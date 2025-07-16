@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/gensx-inc/gensx/compare/gensx-v0.4.1...gensx-v0.4.2) (2025-07-16)
+
+
+### ✨ New Features
+
+* Support non-interactive deploys. ([#857](https://github.com/gensx-inc/gensx/issues/857)) ([3b8d523](https://github.com/gensx-inc/gensx/commit/3b8d523cf634bb007f337476def61bb53439dc1c))
+
 ## [0.4.1](https://github.com/gensx-inc/gensx/compare/gensx-v0.4.0...gensx-v0.4.1) (2025-07-16)
 
 
