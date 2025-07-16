@@ -67,6 +67,7 @@ jobs:
       version: ${{ steps.get-version.outputs.version }}
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         target: [win, linux, macos-x64, macos-arm64]
 
