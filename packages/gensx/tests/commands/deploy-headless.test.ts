@@ -117,7 +117,9 @@ suite("headlessDeploy command", () => {
       },
     });
     vi.spyOn(fsSync, "existsSync").mockReturnValue(true);
-    vi.spyOn(fsSync, "createReadStream").mockReturnValue({ pipe: vi.fn() } as unknown as ReadStream);
+    vi.spyOn(fsSync, "createReadStream").mockReturnValue({
+      pipe: vi.fn(),
+    } as unknown as ReadStream);
   });
 
   it("should deploy successfully in headless mode", async () => {

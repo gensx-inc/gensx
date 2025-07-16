@@ -35,7 +35,9 @@ export async function headlessDeploy(
     projectName = projectConfig.projectName;
   }
 
-  console.info(`Deploying project '${projectName}' to environment '${options.env}'...`);
+  console.info(
+    `Deploying project '${projectName}' to environment '${options.env}'...`,
+  );
 
   // 2. Validate project exists
   const projectExists = await checkProjectExists(projectName);
