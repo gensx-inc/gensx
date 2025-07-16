@@ -13,6 +13,7 @@
     "types": ["npm:@types/node"]
   },
   "nodeModulesDir": "auto",
+  "exclude": ["../gensx/dist/templates/**"],
   "imports": {
     "@gensx/core": "../gensx-core/dist/esm/index.js",
     "@hono/node-server": "npm:@hono/node-server",
