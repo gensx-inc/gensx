@@ -121,8 +121,6 @@ runs:
         echo "status=success" >> $GITHUB_OUTPUT
         if [ -n "$deployment_url" ]; then
           echo "url=$deployment_url" >> $GITHUB_OUTPUT
-        else
-          echo "url=https://app.gensx.com/projects/${{ inputs.project_name }}/environments/${{ inputs.environment_name }}" >> $GITHUB_OUTPUT
         fi
 
     - name: Deployment summary
