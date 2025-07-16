@@ -1,6 +1,8 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
+import { shouldUseLocalDevServer } from "../../../start/route";
+
 /**
  * API route that acts as a pure passthrough to GenSX
  * Accepts the same parameters as the GenSX SDK
@@ -14,48 +16,44 @@ export async function POST(
   try {
     const { executionId } = await params;
 
-    // const useLocalDevServer = false;
+    const useLocalDevServer = shouldUseLocalDevServer();
 
     // Get API key from environment (or could accept from Authorization header)
     let gensx: GenSX;
-    // if (!useLocalDevServer) {
-    //   const apiKey =
-    //     process.env.GENSX_API_KEY ??
-    //     request.headers.get("Authorization")?.replace("Bearer ", "");
+    if (!useLocalDevServer) {
+      const apiKey =
+        process.env.GENSX_API_KEY ??
+        request.headers.get("Authorization")?.replace("Bearer ", "");
 
-    //   if (!apiKey) {
-    //     return new Response(
-    //       JSON.stringify({
-    //         type: "error",
-    //         error: "API key not configured",
-    //       }) + "\n",
-    //       {
-    //         status: 401,
-    //         headers: { "Content-Type": "application/x-ndjson" },
-    //       },
-    //     );
-    //   }
+      if (!apiKey) {
+        return new Response(
+          JSON.stringify({
+            type: "error",
+            error: "API key not configured",
+          }) + "\n",
+          {
+            status: 401,
+            headers: { "Content-Type": "application/x-ndjson" },
+          },
+        );
+      }
 
-    //   // Initialize GenSX SDK
-    //   const baseUrl = process.env.GENSX_BASE_URL ?? "https://api.gensx.com";
+      // Initialize GenSX SDK
+      const baseUrl = process.env.GENSX_BASE_URL ?? "https://api.gensx.com";
 
-    //   gensx = new GenSX({
-    //     apiKey,
-    //     baseUrl,
-    //     org: "gensx",
-    //     project: "draft-pad",
-    //     environment: "production",
-    //     overrideLocalMode: true,
-    //   });
-    // } else {
-    const baseUrl = process.env.GENSX_BASE_URL ?? "https://api.gensx.com";
-    gensx = new GenSX({
-      baseUrl,
-      org: "gensx",
-      project: "draft-pad",
-      environment: "production",
-    });
-    // }
+      gensx = new GenSX({
+        apiKey,
+        baseUrl,
+        org: "gensx",
+        project: "draft-pad",
+        environment: "production",
+        overrideLocalMode: true,
+      });
+    } else {
+      gensx = new GenSX({
+        baseUrl: process.env.GENSX_BASE_URL ?? "http://localhost:1337",
+      });
+    }
 
     console.log("Getting progress for executionId", executionId);
 

@@ -3,16 +3,16 @@ import { NextRequest } from "next/server";
 
 type RequestBody = Record<string, unknown>;
 
-const shouldUseLocalDevServer = () => {
-  // if (
-  //   process.env.GENSX_BASE_URL &&
-  //   !process.env.GENSX_BASE_URL.includes("localhost")
-  // ) {
-  //   return false;
-  // }
-  // if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
-  //   return false;
-  // }
+export const shouldUseLocalDevServer = () => {
+  if (
+    process.env.GENSX_BASE_URL &&
+    !process.env.GENSX_BASE_URL.includes("localhost")
+  ) {
+    return false;
+  }
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
+    return false;
+  }
   return false;
 };
 
