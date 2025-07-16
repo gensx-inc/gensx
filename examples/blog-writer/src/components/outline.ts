@@ -165,9 +165,9 @@ Based on the research provided and the guidelines above, create a detailed, comp
     });
 
     gensx.publishData(
-      `Outline complete with ${(result.object as z.infer<typeof OutlineSchema>).sections.length} sections`,
+      `Outline complete with ${result.object.sections.length} sections`,
     );
-    return result.object as z.infer<typeof OutlineSchema>;
+    return result.object;
   },
 );
 
