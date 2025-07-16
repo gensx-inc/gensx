@@ -9,6 +9,7 @@ import { useAvailableModels } from "@/hooks/useAvailableModels";
 import { useDiffState } from "@/hooks/useDiffState";
 import { useDraftPad } from "@/hooks/useDraftPad";
 import { useModelStreams } from "@/hooks/useModelStreams";
+import { getApiBasePath } from "@/lib/config";
 import {
   type RefObject,
   useCallback,
@@ -21,6 +22,7 @@ export default function Home() {
   const draftPad = useDraftPad();
   const diffState = useDiffState();
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [logoSrc, setLogoSrc] = useState("/gensx-logo.svg"); // Default fallback
 
   const { sortedModelStreams, metricRanges, overallStats } = useModelStreams(
     draftPad.draftProgress,
@@ -33,6 +35,12 @@ export default function Home() {
     draftPad.modelSortConfig,
     draftPad.selectedProvider,
   );
+
+  // Set the correct logo path on client side
+  useEffect(() => {
+    const basePath = getApiBasePath();
+    setLogoSrc(`${basePath}/gensx-logo.svg`);
+  }, []);
 
   // Show auto diff when all models complete
   const prevGeneratingRef = useRef(false);
@@ -254,7 +262,7 @@ export default function Home() {
           className="block"
         >
           <div className="bg-gray-700/20 backdrop-blur-3xl rounded-3xl p-0.5 shadow-lg border border-white/30 hover:bg-white/60 transition-all duration-300 cursor-pointer">
-            <img src="/gensx-logo.svg" alt="GenSX Logo" className="w-48 h-16" />
+            <img src={logoSrc} alt="GenSX Logo" className="w-48 h-16" />
           </div>
         </a>
       </div>

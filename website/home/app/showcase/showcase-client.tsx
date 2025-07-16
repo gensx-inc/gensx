@@ -35,7 +35,7 @@ const showcaseItems: ShowcaseItem[] = [
     description:
       "Canvas-style document editor for iterative writing using multiple models across providers.",
     image: "/showcase/draft-pad.png",
-    demo: "https://draft-pad.vercel.app",
+    demo: "/demos/draft-pad",
     github: "https://github.com/gensx-inc/gensx/tree/main/examples/draft-pad",
     tags: [
       "Framework: Next.js",

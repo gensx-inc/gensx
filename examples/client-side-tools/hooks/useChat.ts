@@ -42,7 +42,7 @@ export function useChat(tools?: ToolImplementations<any>): UseChatReturn {
   const {
     error: workflowError,
     execution,
-    run,
+    start,
   } = useWorkflow<ChatWorkflowInput, ChatWorkflowOutput>({
     config: {
       baseUrl: "/api/gensx",
@@ -136,7 +136,7 @@ export function useChat(tools?: ToolImplementations<any>): UseChatReturn {
       setMessages((prev) => [...prev, userMessage]);
 
       // Run the workflow
-      await run({
+      await start({
         inputs: {
           prompt: prompt,
           threadId: threadId,
@@ -145,7 +145,7 @@ export function useChat(tools?: ToolImplementations<any>): UseChatReturn {
       });
       setStatus("completed");
     },
-    [run],
+    [start],
   );
 
   return {

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"pnpm run dev:next\" \"pnpm run dev:gensx\"",
-    "dev:next": "next dev",
+    "dev:next": "next dev -p 3100",
     "dev:gensx": "npx gensx@latest start ./gensx/workflows.ts",
     "build": "next build",
     "build:typescript": "tsc --noEmit",

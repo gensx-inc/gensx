@@ -6,6 +6,7 @@ import {
   type UpdateDraftInput,
   type UpdateDraftOutput,
 } from "@/gensx/workflows";
+import { getApiUrl } from "@/lib/config";
 import { fetchAvailableModels } from "@/lib/models";
 import { type ContentVersion, type ModelResponse } from "@/lib/types";
 import { useObject, useWorkflow } from "@gensx/react";
@@ -74,7 +75,7 @@ export function useDraftPad() {
     run,
   } = useWorkflow<UpdateDraftInput, UpdateDraftOutput>({
     config: {
-      baseUrl: "/api/gensx",
+      baseUrl: getApiUrl("/api/gensx"),
     },
   });
 

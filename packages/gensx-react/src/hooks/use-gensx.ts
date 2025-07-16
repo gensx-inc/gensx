@@ -84,6 +84,9 @@ export interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
   /** Run workflow in streaming mode */
   run: (config: WorkflowRunConfig<TInputs>) => Promise<void>;
 
+  /** Run workflow in streaming mode */
+  start: (config: WorkflowRunConfig<TInputs>) => Promise<void>;
+
   /** Stop the current workflow */
   stop: () => void;
 
@@ -381,7 +384,7 @@ export function useWorkflow<
   }, []);
 
   // Run workflow in streaming mode
-  const run = useCallback(
+  const start = useCallback(
     async (runConfig: WorkflowRunConfig<TInputs>) => {
       // Reset state
       clear();
@@ -437,12 +440,57 @@ export function useWorkflow<
     [baseUrl, headers, clear, parseStream, buildPayload],
   );
 
+  // Run workflow in streaming mode
+  const run = useCallback(
+    async (runConfig: WorkflowRunConfig<TInputs>) => {
+      // Reset state
+      clear();
+      setInProgress(true);
+
+      // Create abort controller
+      abortControllerRef.current = new AbortController();
+
+      try {
+        const response = await fetch(baseUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...headers,
+          },
+          body: JSON.stringify(buildPayload(runConfig)),
+          signal: abortControllerRef.current.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to run workflow: ${response.status} ${response.statusText}`,
+          );
+        }
+
+        // Parse the stream
+        await parseStream(response);
+
+        // onComplete is already called in processEvent when 'end' event is received
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setInProgress(false);
+        abortControllerRef.current = null;
+      }
+    },
+    [baseUrl, headers, clear, parseStream, buildPayload],
+  );
+
   return {
     inProgress,
     error,
     output,
     execution: events,
     run,
+    start,
     stop,
     clear,
   };

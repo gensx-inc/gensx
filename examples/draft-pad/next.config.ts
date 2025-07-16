@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // For development, we need to handle the proxy scenario
+  assetPrefix: "/demos/draft-pad",
+  basePath: "",
+  trailingSlash: false,
 };
 
 export default nextConfig;

@@ -1,11 +1,7 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
-import {
-  GENSX_ENV,
-  GENSX_ORG,
-  GENSX_PROJECT,
-  shouldUseLocalDevServer,
-} from "../../../gensx";
+
+import { shouldUseLocalDevServer } from "../../../../../../lib/utils";
 
 /**
  * API route that acts as a pure passthrough to GenSX
@@ -48,9 +44,9 @@ export async function POST(
       gensx = new GenSX({
         apiKey,
         baseUrl,
-        org: GENSX_ORG,
-        project: GENSX_PROJECT,
-        environment: GENSX_ENV,
+        org: "gensx",
+        project: "draft-pad",
+        environment: "production",
         overrideLocalMode: true,
       });
     } else {
@@ -59,14 +55,17 @@ export async function POST(
       });
     }
 
+    console.log("Getting progress for executionId", executionId);
+
     const response = await gensx.getProgress({
       executionId,
     });
 
-    const textDecoder = new TextDecoder("utf-8");
     const transform = new TransformStream({
       transform(chunk, controller) {
-        controller.enqueue(textDecoder.decode(chunk) + "\n");
+        const textDecoder = new TextDecoder("utf-8");
+        const text = textDecoder.decode(chunk);
+        controller.enqueue(text + "\n");
       },
     });
 

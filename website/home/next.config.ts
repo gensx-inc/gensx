@@ -6,6 +6,7 @@ const DOCS_URL = process.env.DOCS_URL || "http://localhost:4000";
 const nextConfig = {
   async rewrites() {
     return [
+      // Docs routes
       {
         source: "/docs",
         destination: `${DOCS_URL}/docs`,
@@ -26,6 +27,16 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: "/demos/draft-pad/:path*",
+        destination: "https://draft-pad.vercel.app/:path*",
+        permanent: false,
+      },
+      {
+        source: "/demos/draft-pad",
+        destination: "https://draft-pad.vercel.app",
+        permanent: false,
+      },
       {
         source: "/overview",
         destination: `/docs`,
