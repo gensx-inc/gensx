@@ -71,6 +71,7 @@ runs:
       env:
         GENSX_API_KEY: ${{ inputs.api_key }}
       run: |
+        set +xe
         echo "🚀 Deploying GenSX workflow..."
         echo "📁 Workflow file: ${{ inputs.workflow_file }}"
         echo "📦 Project: ${{ inputs.project_name }}"
@@ -91,11 +92,10 @@ runs:
 
         # Add environment variables
         if [ -n "${{ inputs.env }}" ]; then
-          echo "Setting environment variables: ${{ inputs.env }}"
           echo "${{ inputs.env }}" | while IFS= read -r var; do
             if [ -n "$var" ]; then
               echo "Setting environment variable: $var"
-              deploy_cmd="$deploy_cmd --e \"$var\""
+              deploy_cmd="$deploy_cmd -e $var"
             fi
           done
         fi
