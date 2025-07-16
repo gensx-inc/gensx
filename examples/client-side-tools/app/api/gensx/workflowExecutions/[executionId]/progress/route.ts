@@ -63,11 +63,10 @@ export async function POST(
       executionId,
     });
 
+    const textDecoder = new TextDecoder("utf-8");
     const transform = new TransformStream({
       transform(chunk, controller) {
-        const textDecoder = new TextDecoder("utf-8");
-        const text = textDecoder.decode(chunk);
-        controller.enqueue(text + "\n");
+        controller.enqueue(textDecoder.decode(chunk) + "\n");
       },
     });
 
