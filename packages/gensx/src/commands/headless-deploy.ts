@@ -16,7 +16,10 @@ import { generateSchema } from "../utils/schema.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import { build } from "./build.js";
 
-export async function headlessDeploy(file: string, options: DeployOptions) {
+export async function headlessDeploy(file: string, options: DeployOptions & {
+  outDir?: string;
+  tsconfig?: string;
+}) {
   // 1. Resolve project name
   let projectName = options.project;
   if (!projectName) {
@@ -53,37 +56,55 @@ export async function headlessDeploy(file: string, options: DeployOptions) {
     throw new Error(`Environment ${environment} does not exist for project ${projectName}.`);
   }
 
-  // 5. Build or use archive
+  // 5. Validate and select environment (before deployment)
+  const validEnv = await validateAndSelectEnvironment(projectName, environment);
+  if (!validEnv) {
+    throw new Error(`Failed to validate or select environment '${environment}' for project '${projectName}'.`);
+  }
+
+  // 6. Build or use archive
   let schemas: Record<string, { input: Definition; output: Definition }>;
   let bundleFile: string;
   if (options.archive) {
     bundleFile = options.archive;
+    const archivePath = resolve(process.cwd(), bundleFile);
+    if (!existsSync(archivePath)) {
+      throw new Error(`Archive file ${bundleFile} does not exist`);
+    }
     const absolutePath = resolve(process.cwd(), file);
     if (!existsSync(absolutePath)) {
-      throw new Error(`File ${file} does not exist`);
+      throw new Error(`Workflow file ${file} does not exist (needed for schema generation)`);
     }
     schemas = generateSchema(absolutePath);
   } else {
-    const buildResult = await build(file, {}, options.verbose ? (data) => { console.info(data); } : undefined);
+    const buildResult = await build(
+      file,
+      {
+        outDir: options.outDir,
+        tsconfig: options.tsconfig,
+        verbose: options.verbose,
+      },
+      options.verbose ? (data) => { console.info(data); } : undefined
+    );
     bundleFile = buildResult.bundleFile;
     schemas = buildResult.schemas;
   }
 
-  // 6. Get auth config
+  // 7. Get auth config
   const authConfig = await getAuth();
   if (!authConfig) {
     throw new Error("Not authenticated. Please run 'gensx login' first.");
   }
 
-  // 7. Create form data with bundle
+  // 8. Create form data with bundle
   const form = new FormData();
-  form.append("file", fs.createReadStream(bundleFile), "bundle.js");
+  form.append("file", fs.createReadStream(resolve(process.cwd(), bundleFile)), "bundle.js");
   if (options.envVar) {
     form.append("environmentVariables", JSON.stringify(options.envVar));
   }
   form.append("schemas", JSON.stringify(schemas));
 
-  // 8. Deploy
+  // 9. Deploy
   const url = new URL(
     `/org/${authConfig.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environment)}/deploy`,
     authConfig.apiBaseUrl
@@ -107,9 +128,8 @@ export async function headlessDeploy(file: string, options: DeployOptions) {
     environmentId: string;
     workflows: { name: string }[];
   };
-  await validateAndSelectEnvironment(projectName, environment);
 
-  // 9. Print summary
+  // 10. Print summary
   console.info("✅ Deployed to GenSX Cloud");
   console.info(`Project: ${deploymentData.projectName}`);
   console.info(`Environment: ${deploymentData.environmentName}`);
