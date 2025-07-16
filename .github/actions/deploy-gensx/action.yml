@@ -92,7 +92,7 @@ runs:
         # Add environment variables
         for var in ${{ inputs.env }}; do
           echo "Setting environment variable: $var"
-          deploy_cmd="$deploy_cmd --e $var"
+          deploy_cmd="$deploy_cmd --e \"$var\""
         done
 
         # Add auto-yes flag
