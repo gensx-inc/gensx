@@ -16,13 +16,9 @@ inputs:
     description: "GenSX API key"
     required: true
   env:
-    description: "Environment variables as YAML list (e.g., ['VAR1=value1', 'VAR2=value2'])"
+    description: "Environment variables as multiline string (e.g., 'VAR1=value1\nVAR2=value2' or 'VAR1\nVAR2=value2')"
     required: false
-    type: environment
-  node_version:
-    description: "Node.js version to use"
-    required: false
-    default: '18'
+    type: string
   working_directory:
     description: "Working directory for the deployment"
     required: false
@@ -78,6 +74,15 @@ runs:
         echo "🌍 Environment: ${{ inputs.environment_name }}"
 
         # Build the deployment command
+        env_flags=""
+        if [ -n "${{ inputs.env }}" ]; then
+          while IFS= read -r var; do
+            if [ -n "$var" ]; then
+              env_flags="$env_flags -e $var"
+            fi
+          done <<< "${{ inputs.env }}"
+        fi
+
         deploy_cmd="npx gensx deploy ${{ inputs.workflow_file }}"
 
         # Add project if specified
@@ -91,14 +96,7 @@ runs:
         fi
 
         # Add environment variables
-        if [ -n "${{ inputs.env }}" ]; then
-          echo "${{ inputs.env }}" | while IFS= read -r var; do
-            if [ -n "$var" ]; then
-              echo "Setting environment variable: $var"
-              deploy_cmd="$deploy_cmd -e $var"
-            fi
-          done
-        fi
+        deploy_cmd="$deploy_cmd $env_flags"
 
         # Add auto-yes flag
         deploy_cmd="$deploy_cmd --yes"
