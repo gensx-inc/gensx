@@ -28,7 +28,7 @@ export async function POST(
     if (!useLocalDevServer) {
       const apiKey =
         process.env.GENSX_API_KEY ??
-        request.headers.get("authorization")?.replace("Bearer ", "");
+        request.headers.get("Authorization")?.replace("Bearer ", "");
 
       if (!apiKey) {
         return new Response(
