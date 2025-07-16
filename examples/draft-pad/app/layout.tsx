@@ -26,6 +26,19 @@ export const metadata: Metadata = {
   description: "Draft Pad",
 };
 
+// Client component for dynamic background
+function DynamicBackground() {
+  return (
+    <div
+      className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage:
+          "var(--bg-image, url(/background-mountains-window.png))",
+      }}
+    />
+  );
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,14 +46,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const pathname = window.location.pathname;
+                const basePath = pathname.startsWith('/demos/draft-pad') ? '/demos/draft-pad' : '';
+                document.documentElement.style.setProperty('--bg-image', 'url(' + basePath + '/background-mountains-window.png)');
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${figtree.variable} ${atma.variable} ${meow.variable} antialiased`}
       >
         <div className="fixed inset-0 z-0">
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url(/background-mountains-window.png)" }}
-          />
+          <DynamicBackground />
           <div className="absolute inset-0" />
         </div>
         <div className="relative z-10 h-screen flex flex-col overflow-hidden">
