@@ -1,0 +1,29 @@
+name: Deploy GenSX Examples
+
+on:
+  pull_request:
+    paths:
+      - "examples/client-side-tools/gensx"
+  push:
+    branches: [main]
+    paths:
+      - "examples/client-side-tools/gensx"
+
+jobs:
+  deploy-client-side-tools:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy GenSX Workflow
+        uses: ./.github/actions/deploy-gensx
+        with:
+          working_directory: examples/client-side-tools
+          environment_name: prod
+          api_key: ${{ secrets.GENSX_API_KEY }}
+          workflow_file: gensx/workflows.ts
+          env_vars: |
+            - ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+            - OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}

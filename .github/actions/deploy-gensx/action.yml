@@ -8,9 +8,9 @@ inputs:
     required: true
   project_name:
     description: "GenSX project name"
-    required: true
-  environment:
-    description: "Deployment environment (dev, staging, prod)"
+    required: false
+  environment_name:
+    description: "Deployment environment"
     required: true
   api_key:
     description: "GenSX API key"
@@ -39,27 +39,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ inputs.node_version }}
-
-    - name: Install dependencies
-      shell: bash
-      working-directory: ${{ inputs.working_directory }}
-      run: |
-        if [ -f "package-lock.json" ]; then
-          npm ci
-        elif [ -f "pnpm-lock.yaml" ]; then
-          npm install -g pnpm
-          pnpm install --frozen-lockfile
-        elif [ -f "yarn.lock" ]; then
-          npm install -g yarn
-          yarn install --frozen-lockfile
-        else
-          npm install
-        fi
-
     - name: Validate workflow file exists
       shell: bash
       working-directory: ${{ inputs.working_directory }}
