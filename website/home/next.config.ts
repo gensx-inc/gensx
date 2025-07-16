@@ -22,8 +22,32 @@ const nextConfig = {
         destination: `${DRAFT_PAD_URL}/background-mountains-window.png`,
       },
       {
-        source: "/demos/draft-pad/:file.(svg|png|ico|jpg|jpeg|gif|webp)",
-        destination: `${DRAFT_PAD_URL}/:file.(svg|png|ico|jpg|jpeg|gif|webp)`,
+        source: "/demos/draft-pad/:file.svg",
+        destination: `${DRAFT_PAD_URL}/:file.svg`,
+      },
+      {
+        source: "/demos/draft-pad/:file.png",
+        destination: `${DRAFT_PAD_URL}/:file.png`,
+      },
+      {
+        source: "/demos/draft-pad/:file.ico",
+        destination: `${DRAFT_PAD_URL}/:file.ico`,
+      },
+      {
+        source: "/demos/draft-pad/:file.jpg",
+        destination: `${DRAFT_PAD_URL}/:file.jpg`,
+      },
+      {
+        source: "/demos/draft-pad/:file.jpeg",
+        destination: `${DRAFT_PAD_URL}/:file.jpeg`,
+      },
+      {
+        source: "/demos/draft-pad/:file.gif",
+        destination: `${DRAFT_PAD_URL}/:file.gif`,
+      },
+      {
+        source: "/demos/draft-pad/:file.webp",
+        destination: `${DRAFT_PAD_URL}/:file.webp`,
       },
       // Handle root-level public assets that the draft-pad might request
       {
@@ -49,8 +73,74 @@ const nextConfig = {
         ],
       },
       {
-        source: "/:file.(svg|png|ico|jpg|jpeg|gif|webp)",
-        destination: `${DRAFT_PAD_URL}/:file.(svg|png|ico|jpg|jpeg|gif|webp)`,
+        source: "/:file.svg",
+        destination: `${DRAFT_PAD_URL}/:file.svg`,
+        has: [
+          {
+            type: "header",
+            key: "referer",
+            value: ".*demos/draft-pad.*",
+          },
+        ],
+      },
+      {
+        source: "/:file.png",
+        destination: `${DRAFT_PAD_URL}/:file.png`,
+        has: [
+          {
+            type: "header",
+            key: "referer",
+            value: ".*demos/draft-pad.*",
+          },
+        ],
+      },
+      {
+        source: "/:file.ico",
+        destination: `${DRAFT_PAD_URL}/:file.ico`,
+        has: [
+          {
+            type: "header",
+            key: "referer",
+            value: ".*demos/draft-pad.*",
+          },
+        ],
+      },
+      {
+        source: "/:file.jpg",
+        destination: `${DRAFT_PAD_URL}/:file.jpg`,
+        has: [
+          {
+            type: "header",
+            key: "referer",
+            value: ".*demos/draft-pad.*",
+          },
+        ],
+      },
+      {
+        source: "/:file.jpeg",
+        destination: `${DRAFT_PAD_URL}/:file.jpeg`,
+        has: [
+          {
+            type: "header",
+            key: "referer",
+            value: ".*demos/draft-pad.*",
+          },
+        ],
+      },
+      {
+        source: "/:file.gif",
+        destination: `${DRAFT_PAD_URL}/:file.gif`,
+        has: [
+          {
+            type: "header",
+            key: "referer",
+            value: ".*demos/draft-pad.*",
+          },
+        ],
+      },
+      {
+        source: "/:file.webp",
+        destination: `${DRAFT_PAD_URL}/:file.webp`,
         has: [
           {
             type: "header",
