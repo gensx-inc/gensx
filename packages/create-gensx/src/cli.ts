@@ -11,15 +11,15 @@ export async function runCLI() {
     .name("create-gensx")
     .description("Create a new GenSX project")
     .argument("<project-directory>", "Directory to create the project in")
-    .option("-t, --template <name>", "Template to use", "ts")
+    .option("-t, --template <type>", "Template to use (typescript, next)")
     .option("-f, --force", "Overwrite existing files", false)
-    .option("-s, --skip-login", "Skip check for login to GenSX", false)
+    .option("-s, --skip-login", "Skip login step", false)
     .option("--skip-ide-rules", "Skip IDE rules selection", false)
     .option(
       "--ide-rules <rules>",
       "Comma-separated list of IDE rules to install (cline,windsurf,claude,cursor)",
     )
-    .option("-d, --description <desc>", "Description of the project")
+    .option("-d, --description <desc>", "Optional project description")
     .action(async (projectPath: string, options: NewCommandOptions) => {
       try {
         await createGensxProject(projectPath, options);

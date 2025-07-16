@@ -89,7 +89,7 @@ suite("create-gensx", () => {
 
     // Create the project using the TypeScript template
     await createGensxProject(projectPath, {
-      template: "ts",
+      template: "typescript",
       force: false,
       skipLogin: true,
       skipIdeRules: true, // Skip IDE rules selection in tests
@@ -133,6 +133,60 @@ suite("create-gensx", () => {
     }
   }, 60000); // Increase timeout to 60s since npm install can be slow
 
+  it("creates a working Next.js project", async () => {
+    // Create a temporary directory for our test
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "gensx-next-test-"));
+    const projectName = "test-next-project";
+    const projectPath = path.join(tempDir, projectName);
+
+    // Create the project using the Next.js template
+    await createGensxProject(projectPath, {
+      template: "next",
+      force: false,
+      skipLogin: true,
+      skipIdeRules: true, // Skip IDE rules selection in tests
+      description: "A test Next.js project", // Add description to skip the prompt
+    });
+
+    // Update package.json to use local versions of all @gensx packages
+    await updatePackageJsonToUseLocalVersions(projectPath);
+
+    // Verify the project was created
+    const { stdout: lsOutput } = await exec("ls", { cwd: projectPath });
+    expect(lsOutput).toContain("package.json");
+    expect(lsOutput).toContain("next.config.ts");
+    expect(lsOutput).toContain("app"); // Next.js app directory
+    expect(lsOutput).toContain("gensx"); // GenSX directory
+
+    // Verify Next.js specific files
+    const files = await readdir(projectPath);
+    expect(files).toContain("next-env.d.ts"); // Next.js TypeScript definitions
+    expect(files).toContain("postcss.config.mjs"); // PostCSS config
+    expect(files).toContain("components"); // Components directory
+    expect(files).toContain("lib"); // Lib directory
+
+    // Check for GenSX workflow file
+    const gensxFiles = await readdir(path.join(projectPath, "gensx"));
+    expect(gensxFiles).toContain("workflows.ts");
+
+    // Install dependencies
+    await exec("npm install", { cwd: projectPath });
+
+    try {
+      // Build the project
+      const { stderr: buildOutput } = await exec("npm run build", {
+        cwd: projectPath,
+      });
+      expect(buildOutput).not.toContain("error");
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+
+    // Note: We skip running the dev server since it would start both Next.js and GenSX servers
+    // and would require more complex setup to properly test in CI
+  }, 60000); // Increase timeout to 60s since npm install can be slow
+
   it("creates a project with AI assistant integrations", async () => {
     // Create a temporary directory for our test
     tempDir = await mkdtemp(path.join(os.tmpdir(), "gensx-ai-test-"));
@@ -140,7 +194,7 @@ suite("create-gensx", () => {
     const projectPath = path.join(tempDir, projectName);
 
     const options = {
-      template: "ts",
+      template: "typescript",
       force: false,
       skipLogin: true,
       skipIdeRules: true,

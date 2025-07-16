@@ -307,7 +307,7 @@ suite("new command UI", () => {
 
     // Verify Next.js template specific output
     expect(lastFrame()).toContain("export OPENAI_API_KEY=your_api_key");
-    expect(lastFrame()).toContain("pnpm run dev");
+    expect(lastFrame()).toContain("npm run dev");
     expect(lastFrame()).toContain("Your app will be available at:");
     expect(lastFrame()).toContain("http://localhost:3000");
     expect(lastFrame()).toContain("Next.js app");
@@ -334,7 +334,7 @@ suite("new command UI", () => {
     await waitForText(lastFrame, /Successfully created GenSX project/);
 
     // Verify Next.js template output is shown
-    expect(lastFrame()).toMatch(/pnpm run dev/);
+    expect(lastFrame()).toMatch(/npm run dev/);
     expect(lastFrame()).toMatch(/gensx\/workflows\.ts/);
   });
 });

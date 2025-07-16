@@ -4,11 +4,6 @@ import React from "react";
 
 export type { NewCommandOptions };
 
-export interface CreateOptions {
-  template?: string;
-  force: boolean;
-}
-
 export async function createGensxProject(
   projectPath: string,
   options: NewCommandOptions,
