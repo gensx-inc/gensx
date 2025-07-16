@@ -110,6 +110,29 @@ export function NewProjectUI({ projectPath, options }: Props) {
     [handleError],
   );
 
+  const handleTemplateAndDescriptionFromOptions = useCallback(() => {
+    // If template is provided in options, skip template selection
+    if (options.template) {
+      const validTemplates: TemplateKind[] = ["typescript", "next"];
+      if (!validTemplates.includes(options.template as TemplateKind)) {
+        throw new Error(
+          `Invalid template "${options.template}". Valid templates are: ${validTemplates.join(", ")}`,
+        );
+      }
+      const templateType = options.template as TemplateKind;
+      setSelectedTemplate(templateType);
+      // If description is provided in options, skip the createProject phase
+      if (options.description) {
+        setDescription(options.description);
+        setPhase("copyFiles");
+      } else {
+        setPhase("createProject");
+      }
+    } else {
+      setPhase("selectTemplate");
+    }
+  }, [options.template, options.description]);
+
   const handleAssistantSelect = useCallback(
     (assistants: string[]) => {
       setSelectedAssistants(assistants);
@@ -147,33 +170,14 @@ export function NewProjectUI({ projectPath, options }: Props) {
           return;
         }
 
-        // If template is provided in options, skip template selection
-        if (options.template) {
-          const validTemplates: TemplateKind[] = ["typescript", "next"];
-          if (!validTemplates.includes(options.template as TemplateKind)) {
-            throw new Error(
-              `Invalid template "${options.template}". Valid templates are: ${validTemplates.join(", ")}`,
-            );
-          }
-          const templateType = options.template as TemplateKind;
-          setSelectedTemplate(templateType);
-          // If description is provided in options, skip the createProject phase
-          if (options.description) {
-            setDescription(options.description);
-            setPhase("copyFiles");
-          } else {
-            setPhase("createProject");
-          }
-        } else {
-          setPhase("selectTemplate");
-        }
+        handleTemplateAndDescriptionFromOptions();
       } catch (err) {
         handleError(err);
       }
     }
 
     void initialize();
-  }, [handleError, options.skipLogin, options.template, options.description]);
+  }, [handleError, options.skipLogin, handleTemplateAndDescriptionFromOptions]);
 
   useEffect(() => {
     async function copyFiles() {
@@ -268,7 +272,11 @@ export function NewProjectUI({ projectPath, options }: Props) {
         </Text>
         <LoginUI
           onComplete={() => {
-            setPhase("selectTemplate");
+            try {
+              handleTemplateAndDescriptionFromOptions();
+            } catch (err) {
+              handleError(err);
+            }
           }}
         />
       </Box>

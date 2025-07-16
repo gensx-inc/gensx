@@ -9,7 +9,7 @@ This is a [Next.js](https://nextjs.org) template for [GenSX](https://gensx.com) 
 To get started, first install the dependencies:
 
 ```bash
-pnpm install
+npm install
 ```
 
 Then export the environment variables. For this template, you'll need an [OpenAI API key](https://platform.openai.com):
@@ -21,7 +21,7 @@ export OPENAI_API_KEY=...
 Finally, run the development server:
 
 ```bash
-pnpm run dev
+npm run dev
 ```
 
 This will start both the Next.js app as well as the local GenSX dev server. The app will be available at [http://localhost:3000](http://localhost:3000) and the GenSX dev server will be available at [http://localhost:1337](http://localhost:1337/swagger-ui).
@@ -33,7 +33,7 @@ This will start both the Next.js app as well as the local GenSX dev server. The 
 To deploy the GenSX workflows, run:
 
 ```bash
-pnpm run deploy
+npm run deploy
 ```
 
 ### Deploying the Next.js app
