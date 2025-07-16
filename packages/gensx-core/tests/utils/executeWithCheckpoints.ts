@@ -3,7 +3,7 @@ import zlib from "node:zlib";
 
 import { afterEach, vi } from "vitest";
 
-import { CheckpointManager } from "../../src/checkpoint.js";
+import { CheckpointManager, NodeId } from "../../src/checkpoint.js";
 import { ExecutionNode } from "../../src/checkpoint.js";
 import { withContext } from "../../src/context.js";
 import { ExecutionContext } from "../../src/context.js";
@@ -43,14 +43,15 @@ export async function executeWithCheckpoints<T, P extends object = {}>(
 
     // Save a placeholder checkpoint if we can't parse the real one
     const placeholderCheckpoint: ExecutionNode = {
-      id: testId,
+      id: `${testId}:abc123:0`,
       componentName: "TestComponent",
       startTime: Date.now(),
+      startedAt: process.hrtime.bigint().toString(),
       endTime: Date.now(),
       children: [],
       props: {},
       output: "test-output",
-      sequenceNumber: 0,
+      completed: true,
     };
 
     try {
@@ -139,14 +140,15 @@ export async function executeWorkflowWithCheckpoints<T, P extends object = {}>(
 
     // Save a placeholder checkpoint if we can't parse the real one
     const placeholderCheckpoint: ExecutionNode = {
-      id: testId,
+      id: testId as NodeId,
       componentName: "WorkflowComponentWrapper",
       startTime: Date.now(),
       endTime: Date.now(),
       children: [],
       props: {},
       output: "test-output",
-      sequenceNumber: 0,
+      startedAt: "0",
+      completed: false,
     };
 
     try {
@@ -226,12 +228,13 @@ export function getExecutionFromBody(bodyStr: string): {
     console.error("Error parsing execution body:", error);
     return {
       node: {
-        id: "test-id-" + Date.now().toString(),
+        id: ("test-id-" + Date.now().toString()) as NodeId,
         componentName: "TestComponent",
         startTime: Date.now(),
         children: [],
         props: {},
-        sequenceNumber: 0,
+        startedAt: "0",
+        completed: false,
       },
       workflowName: "test-workflow",
     };

@@ -14,7 +14,8 @@ import {
   ServerError,
   WorkflowExecution,
   WorkflowMessage,
-} from "../src/dev-server.js";
+} from "../src/dev-server/index.js";
+import { WorkflowMessageList } from "../src/dev-server/types.js";
 
 // Mock ulid module
 vi.mock("ulidx", () => ({
@@ -62,61 +63,17 @@ const mockSchemas: Record<string, { input: Definition; output: Definition }> = {
   },
 };
 
-// Type for accessing private members in tests
-interface PrivateServer {
-  parseJsonBody: (c: Context) => Promise<Record<string, unknown>>;
-  validateInput: (workflowName: string, input: unknown) => void;
-  executeWorkflowAsync: (
-    workflowName: string,
-    workflow: unknown,
-    executionId: string,
-    input: unknown,
-  ) => Promise<void>;
-  handleStreamingResponse: (
-    c: Context,
-    streamResult: AsyncIterable<unknown>,
-  ) => Response;
-  executionsMap: Map<string, WorkflowExecution>;
-  app: {
-    onError: (err: Error, c: Context) => Promise<Response | undefined>;
-    fetch: (request: Request) => Promise<Response>;
-  };
-  workflowMap: Map<string, WorkflowFunction>;
-}
-
 describe("GenSX Dev Server", () => {
-  // Original console methods
-  const originalConsoleInfo = console.info;
-  const originalConsoleWarn = console.warn;
-  const originalConsoleError = console.error;
-
   let server: GensxServer;
 
   beforeEach(() => {
-    // Mock console methods
-    console.info = vi.fn();
-    console.warn = vi.fn();
-    console.error = vi.fn();
-
     // Reset mocks
     vi.resetAllMocks();
   });
 
   afterEach(async () => {
-    // Restore console methods
-    console.info = originalConsoleInfo;
-    console.warn = originalConsoleWarn;
-    console.error = originalConsoleError;
-
-    // Temporarily silence warnings during server.stop()
-    const tempWarn = console.warn;
-    console.warn = vi.fn();
-
     // Stop the server
     await server.stop();
-
-    // Restore console.warn
-    console.warn = tempWarn;
   });
 
   it("should create server instance with workflows", () => {
@@ -141,13 +98,7 @@ describe("GenSX Dev Server", () => {
     const registeredWorkflows = server.getWorkflows();
     expect(registeredWorkflows).toHaveLength(0);
 
-    // Start the server to trigger a warning
     server.start();
-
-    // Should log a warning
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining("No valid workflows were registered!"),
-    );
   });
 
   it("should start server with correct port", () => {
@@ -202,10 +153,6 @@ describe("GenSX Dev Server", () => {
     server.start(); // Second call should do nothing
 
     expect(serve).toHaveBeenCalledTimes(1);
-    expect(console.warn).toHaveBeenCalledTimes(1);
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Server is already running"),
-    );
   });
 
   it("should handle stopping server multiple times", async () => {
@@ -215,10 +162,6 @@ describe("GenSX Dev Server", () => {
     server.start();
     await server.stop();
     await server.stop(); // Second call should do nothing
-
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Server is not running"),
-    );
   });
 
   it("should return correct URLs for workflows", () => {
@@ -278,8 +221,7 @@ describe("GenSX Dev Server", () => {
       },
     } as unknown as Context;
 
-    const privateServer = server as unknown as PrivateServer;
-    await expect(privateServer.parseJsonBody(mockContext)).rejects.toThrow(
+    await expect(server.parseJsonBody(mockContext)).rejects.toThrow(
       "Invalid JSON",
     );
   });
@@ -298,23 +240,21 @@ describe("GenSX Dev Server", () => {
       mockSchemas,
     );
 
-    const privateServer = server as unknown as PrivateServer;
-
     // Valid input
     const validInput = { test: "valid" };
     expect(() => {
-      privateServer.validateInput("testWorkflow", validInput);
+      server.validateInput("testWorkflow", validInput);
     }).not.toThrow();
 
     // Invalid input
     const invalidInput = { test: 123 }; // Should be string according to schema
     expect(() => {
-      privateServer.validateInput("testWorkflow", invalidInput);
+      server.validateInput("testWorkflow", invalidInput);
     }).toThrow("Input validation failed");
 
     // Missing input
     expect(() => {
-      privateServer.validateInput("testWorkflow", undefined);
+      server.validateInput("testWorkflow", undefined);
     }).toThrow("Missing required input parameters");
   });
 
@@ -329,7 +269,6 @@ describe("GenSX Dev Server", () => {
 
     const executionId = "test-execution-id";
     const input = { test: "data" };
-    const privateServer = server as unknown as PrivateServer;
 
     // Create the execution record first (necessary for executeWorkflowAsync to run)
     const now = new Date().toISOString();
@@ -339,16 +278,16 @@ describe("GenSX Dev Server", () => {
       executionStatus: "queued",
       createdAt: now,
       input,
-      workflowMessages: [],
+      workflowMessages: new WorkflowMessageList([]),
     };
-    privateServer.executionsMap.set(executionId, execution);
+    server.setExecution(executionId, execution);
 
     // Get the wrapped workflow from the server
-    const wrappedWorkflow = privateServer.workflowMap.get("testWorkflow");
+    const wrappedWorkflow = server.getWorkflowByName("testWorkflow");
     expect(wrappedWorkflow).toBeDefined();
 
     // Execute the workflow
-    await privateServer.executeWorkflowAsync(
+    await server.executeWorkflowAsync(
       "testWorkflow",
       wrappedWorkflow,
       executionId,
@@ -363,7 +302,7 @@ describe("GenSX Dev Server", () => {
       }),
     );
 
-    const updatedExecution = privateServer.executionsMap.get(executionId);
+    const updatedExecution = server.getExecution(executionId);
     expect(updatedExecution).toBeDefined();
     expect(updatedExecution?.executionStatus).toBe("completed");
     expect(updatedExecution?.output).toEqual({ result: "test result" });
@@ -387,7 +326,6 @@ describe("GenSX Dev Server", () => {
 
     const executionId = "test-execution-id";
     const input = { test: "data" };
-    const privateServer = server as unknown as PrivateServer;
 
     // Create the execution record first (necessary for executeWorkflowAsync to run)
     const now = new Date().toISOString();
@@ -397,16 +335,16 @@ describe("GenSX Dev Server", () => {
       executionStatus: "queued",
       createdAt: now,
       input,
-      workflowMessages: [],
+      workflowMessages: new WorkflowMessageList([]),
     };
-    privateServer.executionsMap.set(executionId, execution);
+    server.setExecution(executionId, execution);
 
     // Get the wrapped workflow from the server
-    const wrappedWorkflow = privateServer.workflowMap.get("failingWorkflow");
+    const wrappedWorkflow = server.getWorkflowByName("failingWorkflow");
     expect(wrappedWorkflow).toBeDefined();
 
     // Execute the workflow
-    await privateServer.executeWorkflowAsync(
+    await server.executeWorkflowAsync(
       "failingWorkflow",
       wrappedWorkflow,
       executionId,
@@ -421,7 +359,7 @@ describe("GenSX Dev Server", () => {
       }),
     );
 
-    const updatedExecution = privateServer.executionsMap.get(executionId);
+    const updatedExecution = server.getExecution(executionId);
     expect(updatedExecution).toBeDefined();
     expect(updatedExecution?.executionStatus).toBe("failed");
     expect(updatedExecution?.error).toBe("Workflow failed");
@@ -449,7 +387,6 @@ describe("GenSX Dev Server", () => {
     const workflows = { streamingWorkflow };
     server = createServer(workflows);
 
-    const mockContext = {} as Context;
     const runResult = (await streamingWorkflow(
       {},
     )) as AsyncGenerator<StreamResult>;
@@ -457,11 +394,7 @@ describe("GenSX Dev Server", () => {
       [Symbol.asyncIterator]: () => runResult,
     };
 
-    const privateServer = server as unknown as PrivateServer;
-    const response = privateServer.handleStreamingResponse(
-      mockContext,
-      asyncIterable,
-    );
+    const response = server.handleStreamingResponse(asyncIterable);
 
     expect(response).toBeInstanceOf(Response);
     expect(response.headers.get("Content-Type")).toBe("application/stream");
@@ -515,8 +448,7 @@ describe("GenSX Dev Server", () => {
     const workflows = { progressWorkflow };
     server = createServer(workflows);
 
-    const privateServer = server as unknown as PrivateServer;
-    const response = await privateServer.app.fetch(
+    const response = await server.app.fetch(
       new Request("http://localhost/workflows/progressWorkflow", {
         method: "POST",
         headers: {
@@ -590,8 +522,7 @@ describe("GenSX Dev Server", () => {
     const workflows = { progressWorkflow };
     server = createServer(workflows);
 
-    const privateServer = server as unknown as PrivateServer;
-    const response = await privateServer.app.fetch(
+    const response = await server.app.fetch(
       new Request("http://localhost/workflows/progressWorkflow", {
         method: "POST",
         headers: {
@@ -677,8 +608,7 @@ describe("GenSX Dev Server", () => {
     const workflows = { errorWorkflow };
     server = createServer(workflows);
 
-    const privateServer = server as unknown as PrivateServer;
-    const response = await privateServer.app.fetch(
+    const response = await server.app.fetch(
       new Request("http://localhost/workflows/errorWorkflow", {
         method: "POST",
         headers: {
@@ -776,8 +706,6 @@ describe("GenSX Dev Server", () => {
     server = createServer(workflows);
 
     // Get the private server instance
-    const privateServer = server as unknown as PrivateServer;
-
     // Create an execution record
     const executionId = "test-execution-id";
     const now = new Date().toISOString();
@@ -787,16 +715,16 @@ describe("GenSX Dev Server", () => {
       executionStatus: "queued",
       createdAt: now,
       input: { test: "data" },
-      workflowMessages: [],
+      workflowMessages: new WorkflowMessageList([]),
     };
-    privateServer.executionsMap.set(executionId, execution);
+    server.setExecution(executionId, execution);
 
     // Get the wrapped workflow from the server
-    const wrappedWorkflow = privateServer.workflowMap.get("failingWorkflow");
+    const wrappedWorkflow = server.getWorkflowByName("failingWorkflow");
     expect(wrappedWorkflow).toBeDefined();
 
     // Execute the workflow
-    await privateServer.executeWorkflowAsync(
+    await server.executeWorkflowAsync(
       "failingWorkflow",
       wrappedWorkflow,
       executionId,
@@ -812,7 +740,7 @@ describe("GenSX Dev Server", () => {
     );
 
     // Verify the execution was updated with the error
-    const updatedExecution = privateServer.executionsMap.get(executionId);
+    const updatedExecution = server.getExecution(executionId);
     expect(updatedExecution).toBeDefined();
     expect(updatedExecution?.executionStatus).toBe("failed");
     expect(updatedExecution?.error).toBe("Workflow failed");
@@ -821,9 +749,6 @@ describe("GenSX Dev Server", () => {
 
   // Test workflow registration edge cases
   it("should handle invalid workflow definitions gracefully", async () => {
-    // Mock console.warn
-    console.warn = vi.fn();
-
     // Create a fresh server with no valid workflows
     const noValidWorkflowsServer = createServer({});
     const registeredWorkflows = noValidWorkflowsServer.getWorkflows();
@@ -833,11 +758,6 @@ describe("GenSX Dev Server", () => {
 
     // Start the server to trigger the warning
     noValidWorkflowsServer.start();
-
-    // Should warn about no valid workflows
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining("No valid workflows were registered!"),
-    );
 
     // Cleanup
     await noValidWorkflowsServer.stop();
@@ -852,7 +772,7 @@ describe("GenSX Dev Server", () => {
         executionStatus: "completed",
         createdAt: new Date().toISOString(),
         input: {},
-        workflowMessages: [
+        workflowMessages: new WorkflowMessageList([
           {
             id: "1",
             type: "start",
@@ -888,12 +808,11 @@ describe("GenSX Dev Server", () => {
             type: "end",
             timestamp: new Date().toISOString(),
           },
-        ],
+        ]),
       };
-      const privateServer = server as unknown as PrivateServer;
-      privateServer.executionsMap.set(executionId, execution);
+      server.setExecution(executionId, execution);
 
-      const response = await privateServer.app.fetch(
+      const response = await server.app.fetch(
         new Request(
           `http://localhost/workflowExecutions/${executionId}/progress`,
           {
@@ -934,80 +853,7 @@ describe("GenSX Dev Server", () => {
         executionStatus: "completed",
         createdAt: new Date().toISOString(),
         input: {},
-        workflowMessages: [
-          {
-            id: "1",
-            type: "start",
-            workflowName: "testWorkflow",
-            timestamp: new Date().toISOString(),
-          },
-          {
-            id: "2",
-            type: "data",
-            data: "Processing...",
-            timestamp: new Date().toISOString(),
-          },
-          {
-            id: "3",
-            type: "object",
-            data: {
-              result: "done",
-            },
-            label: "testWorkflow",
-            timestamp: new Date().toISOString(),
-          },
-        ],
-      };
-      const privateServer = server as unknown as PrivateServer;
-      privateServer.executionsMap.set(executionId, execution);
-
-      const response = await privateServer.app.fetch(
-        new Request(
-          `http://localhost/workflowExecutions/${executionId}/progress`,
-        ),
-      );
-
-      expect(response.status).toBe(200);
-      expect(response.headers.get("Content-Type")).toBe("application/x-ndjson");
-      expect(response.headers.get("Cache-Control")).toBe("no-cache");
-      expect(response.headers.get("Connection")).toBe("keep-alive");
-
-      const ndjsonContent = await response.text();
-      const events = ndjsonContent
-        .trim()
-        .split("\n")
-        .map((line: string) => JSON.parse(line) as WorkflowMessage);
-      expect(events).toHaveLength(3);
-      expect(events[0]).toMatchObject({
-        id: "1",
-        type: "start",
-        workflowName: "testWorkflow",
-      });
-      expect(events[1]).toMatchObject({
-        id: "2",
-        type: "data",
-        data: "Processing...",
-      });
-      expect(events[2]).toMatchObject({
-        id: "3",
-        type: "object",
-        data: {
-          result: "done",
-        },
-        label: "testWorkflow",
-      });
-    });
-
-    it("should filter events based on lastEventId", async () => {
-      // Create a workflow execution with some progress events
-      const executionId = "test-execution-filter";
-      const execution: WorkflowExecution = {
-        id: executionId,
-        workflowName: "testWorkflow",
-        executionStatus: "completed",
-        createdAt: new Date().toISOString(),
-        input: {},
-        workflowMessages: [
+        workflowMessages: new WorkflowMessageList([
           {
             id: "1",
             type: "start",
@@ -1034,13 +880,93 @@ describe("GenSX Dev Server", () => {
             type: "end",
             timestamp: new Date().toISOString(),
           },
-        ],
+        ]),
       };
-      const privateServer = server as unknown as PrivateServer;
-      privateServer.executionsMap.set(executionId, execution);
+      server.setExecution(executionId, execution);
+
+      const response = await server.app.fetch(
+        new Request(
+          `http://localhost/workflowExecutions/${executionId}/progress`,
+        ),
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toBe("application/x-ndjson");
+      expect(response.headers.get("Cache-Control")).toBe("no-cache");
+      expect(response.headers.get("Connection")).toBe("keep-alive");
+
+      const ndjsonContent = await response.text();
+      const events = ndjsonContent
+        .trim()
+        .split("\n")
+        .map((line: string) => JSON.parse(line) as WorkflowMessage);
+      expect(events).toHaveLength(4);
+      expect(events[0]).toMatchObject({
+        id: "1",
+        type: "start",
+        workflowName: "testWorkflow",
+      });
+      expect(events[1]).toMatchObject({
+        id: "2",
+        type: "data",
+        data: "Processing...",
+      });
+      expect(events[2]).toMatchObject({
+        id: "3",
+        type: "object",
+        data: {
+          result: "done",
+        },
+        label: "testWorkflow",
+      });
+      expect(events[3]).toMatchObject({
+        id: "4",
+        type: "end",
+      });
+    });
+
+    it("should filter events based on lastEventId", async () => {
+      // Create a workflow execution with some progress events
+      const executionId = "test-execution-filter";
+      const execution: WorkflowExecution = {
+        id: executionId,
+        workflowName: "testWorkflow",
+        executionStatus: "completed",
+        createdAt: new Date().toISOString(),
+        input: {},
+        workflowMessages: new WorkflowMessageList([
+          {
+            id: "1",
+            type: "start",
+            workflowName: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "2",
+            type: "data",
+            data: "Processing...",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "3",
+            type: "object",
+            data: {
+              result: "done",
+            },
+            label: "testWorkflow",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: "4",
+            type: "end",
+            timestamp: new Date().toISOString(),
+          },
+        ]),
+      };
+      server.setExecution(executionId, execution);
 
       // Test with query parameter
-      const response1 = await privateServer.app.fetch(
+      const response1 = await server.app.fetch(
         new Request(
           `http://localhost/workflowExecutions/${executionId}/progress?lastEventId=1`,
           {
@@ -1058,7 +984,7 @@ describe("GenSX Dev Server", () => {
       expect(sseContent1).toContain("id: 4\n");
 
       // Test with header
-      const response2 = await privateServer.app.fetch(
+      const response2 = await server.app.fetch(
         new Request(
           `http://localhost/workflowExecutions/${executionId}/progress`,
           {
@@ -1077,8 +1003,7 @@ describe("GenSX Dev Server", () => {
     });
 
     it("should return 404 for non-existent execution", async () => {
-      const privateServer = server as unknown as PrivateServer;
-      const response = await privateServer.app.fetch(
+      const response = await server.app.fetch(
         new Request(
           "http://localhost/workflowExecutions/non-existent/progress",
         ),

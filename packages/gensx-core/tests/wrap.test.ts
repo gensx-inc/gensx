@@ -371,13 +371,11 @@ describe("type preservation", () => {
   it("preserves void return types", async () => {
     class Logger {
       log(input: { message: string }): void {
-        // Using console.info instead of console.log
         console.info(input.message);
       }
 
       async logAsync(input: { message: string }): Promise<void> {
         await Promise.resolve();
-        // Using console.info instead of console.log
         console.info(input.message);
       }
     }

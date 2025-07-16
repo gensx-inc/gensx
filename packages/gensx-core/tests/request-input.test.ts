@@ -20,10 +20,10 @@ function createTestContext() {
 suite("request input", () => {
   test("requestInput calls trigger with callback URL", async () => {
     const mockTrigger = vi.fn().mockResolvedValue(undefined);
-    const mockOnWaitForInput = vi.fn().mockResolvedValue(undefined);
+    const mockOnRequestInput = vi.fn().mockResolvedValue({ message: "test" });
 
     const { workflowContext, contextWithWorkflow } = createTestContext();
-    workflowContext.onRequestInput = mockOnWaitForInput;
+    workflowContext.onRequestInput = mockOnRequestInput;
 
     // Mock environment variables for URL generation
     const originalEnv = process.env;
@@ -33,12 +33,6 @@ suite("request input", () => {
       GENSX_ORG: "test-org",
       GENSX_EXECUTION_ID: "exec-123",
     };
-
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {
-        // Mock implementation
-      });
 
     try {
       // Create a component that uses requestInput to test in proper context
@@ -54,33 +48,26 @@ suite("request input", () => {
       await withContext(contextWithWorkflow, async () => {
         const result = await TestComponent();
 
-        // requestInput returns {} in test environment
-        expect(result).toEqual({});
+        expect(result).toEqual({ message: "test" });
 
         // Verify trigger was called with a callback URL
         expect(mockTrigger).toHaveBeenCalledWith(
           expect.stringMatching(
-            /^https:\/\/api\.test\.com\/org\/test-org\/workflowExecutions\/exec-123\/resume\//,
+            /^https:\/\/api\.test\.com\/org\/test-org\/workflowExecutions\/exec-123\/fulfill\//,
           ),
         );
 
         // Verify onRequestInput was called
-        expect(mockOnWaitForInput).toHaveBeenCalled();
-
-        // Verify error was logged
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "[GenSX] Requesting input not supported in this environment",
-        );
+        expect(mockOnRequestInput).toHaveBeenCalled();
       });
     } finally {
       process.env = originalEnv;
-      consoleErrorSpy.mockRestore();
     }
   });
 
   test("requestInput waits for pending updates before pausing", async () => {
     const mockTrigger = vi.fn().mockResolvedValue(undefined);
-    const mockOnRequestInput = vi.fn().mockResolvedValue(undefined);
+    const mockOnRequestInput = vi.fn().mockResolvedValue({ message: "test" });
     const mockWaitForPendingUpdates = vi.fn().mockResolvedValue(undefined);
 
     const { workflowContext, contextWithWorkflow } = createTestContext();
@@ -97,7 +84,7 @@ suite("request input", () => {
 
     await withContext(contextWithWorkflow, async () => {
       const result = await TestComponent();
-      expect(result).toEqual({});
+      expect(result).toEqual({ message: "test" });
 
       // Verify that waitForPendingUpdates was called before onRequestInput
       expect(mockWaitForPendingUpdates).toHaveBeenCalledBefore(
@@ -108,7 +95,9 @@ suite("request input", () => {
 
   test("requestInput handles missing current node ID", async () => {
     const mockTrigger = vi.fn().mockResolvedValue(undefined);
-    const { contextWithWorkflow } = createTestContext();
+    const mockOnRequestInput = vi.fn().mockResolvedValue(undefined);
+    const { workflowContext, contextWithWorkflow } = createTestContext();
+    workflowContext.onRequestInput = mockOnRequestInput;
 
     // Test without a current node context (outside of component execution)
     // The error might be caught and handled differently in the execution flow
@@ -116,7 +105,7 @@ suite("request input", () => {
       try {
         const result = await requestInput(mockTrigger);
         // If it doesn't throw, it should return empty object
-        expect(result).toEqual({});
+        expect(result).toEqual(undefined);
       } catch (error) {
         // If it does throw, verify it's the expected error
         expect(error).toEqual(
@@ -155,7 +144,7 @@ suite("request input", () => {
 
         const callbackUrl = mockTrigger.mock.calls[0]?.[0] as string;
         expect(callbackUrl).toMatch(
-          /^https:\/\/custom-api\.gensx\.com\/org\/my-org\/workflowExecutions\/execution-456\/resume\/.+$/,
+          /^https:\/\/custom-api\.gensx\.com\/org\/my-org\/workflowExecutions\/execution-456\/fulfill\/.+$/,
         );
       });
     } finally {
@@ -163,9 +152,11 @@ suite("request input", () => {
     }
   });
 
-  test("requestInput returns empty object by default", async () => {
+  test("requestInput returns the result from the onRequestInput callback", async () => {
     const mockTrigger = vi.fn().mockResolvedValue(undefined);
+    const mockOnRequestInput = vi.fn().mockResolvedValue({ message: "test" });
     const { workflowContext, contextWithWorkflow } = createTestContext();
+    workflowContext.onRequestInput = mockOnRequestInput;
 
     const TestComponent = gensx.Component("TestComponent", async () => {
       vi.spyOn(
@@ -178,7 +169,7 @@ suite("request input", () => {
 
     await withContext(contextWithWorkflow, async () => {
       const result = await TestComponent();
-      expect(result).toEqual({});
+      expect(result).toEqual({ message: "test" });
     });
   });
 });

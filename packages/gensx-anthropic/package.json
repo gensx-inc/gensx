@@ -1,6 +1,6 @@
 {
   "name": "@gensx/anthropic",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Anthropic integration for GenSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
@@ -61,8 +61,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@gensx/core": "workspace:*",
-    "zod": "catalog:",
-    "zod-to-json-schema": "catalog:"
+    "@gensx/core": "workspace:*"
   }
 }

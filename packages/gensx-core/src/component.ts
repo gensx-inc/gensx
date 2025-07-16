@@ -12,7 +12,6 @@ import type {
 import serializeErrorPkg from "@common.js/serialize-error";
 const { serializeError } = serializeErrorPkg;
 
-import { generateDeterministicId } from "./checkpoint.js";
 import { ExecutionNode, STREAMING_PLACEHOLDER } from "./checkpoint-types.js";
 import {
   ExecutionContext,
@@ -22,10 +21,20 @@ import {
   RunInContext,
   withContext,
 } from "./context.js";
-import { WorkflowExecutionContext } from "./workflow-context.js";
+import { generateNodeId } from "./utils/nodeId.js";
+import { InputRequest, WorkflowExecutionContext } from "./workflow-context.js";
 import { WorkflowMessageListener } from "./workflow-state.js";
 
 export { STREAMING_PLACEHOLDER };
+
+// Helper function to extract path from enhanced ID format: "path:contentHash:callIndex"
+function extractPathFromId(nodeId: string): string {
+  if (nodeId.includes(":")) {
+    return nodeId.split(":")[0] ?? "";
+  }
+  // Fallback for legacy IDs - return the ID as-is
+  return nodeId;
+}
 
 function getResolvedOpts(
   decoratorOpts?: DecoratorComponentOpts | string,
@@ -73,7 +82,7 @@ export function Component<P extends object = {}, R = unknown>(
     const context = getCurrentContext();
     const workflowContext = context.getWorkflowContext();
     const { checkpointManager } = workflowContext;
-    const currentNodeId = context.getCurrentNodeId();
+    const parentNode = context.getCurrentNode();
 
     // Get resolved options for checkpointing, including name (runtime props > decorator > function name)
     const resolvedComponentOpts = getResolvedOpts(
@@ -81,65 +90,79 @@ export function Component<P extends object = {}, R = unknown>(
       runtimeOpts,
       name,
     );
-    const checkpointName = resolvedComponentOpts.name;
+    const componentName = resolvedComponentOpts.name;
 
-    if (!checkpointName) {
+    if (!componentName) {
       throw new Error(
-        "Internal error: Component checkpoint name could not be determined.",
+        "Internal error: Component name could not be determined.",
       );
     }
 
-    // Generate deterministic ID for replay
-    const props_for_id = props ? Object.fromEntries(Object.entries(props)) : {};
+    // Enhanced ID generation: Calculate parent path and call index
+    const parentPath = parentNode?.id ? extractPathFromId(parentNode.id) : "";
 
-    // Only call nodeSequenceNumber once per component
-    const sequenceNumber = checkpointManager.nextNodeSequenceNumber;
+    // Use call counter from checkpoint manager for unique callIndex
+    const callIndex = checkpointManager.getNextCallIndex(
+      parentPath,
+      componentName,
+      props as Record<string, unknown>,
+      resolvedComponentOpts.idPropsKeys,
+    );
 
-    // Generate the deterministic ID for this component
-    const nodeId = generateDeterministicId(
-      checkpointName,
-      props_for_id,
-      sequenceNumber,
-      currentNodeId,
+    // Generate the node ID
+    const nodeId = generateNodeId(
+      componentName,
+      props as Record<string, unknown>,
+      resolvedComponentOpts.idPropsKeys,
+      parentPath,
+      callIndex,
     );
 
     // Check checkpoint for existing result
-    // TODO: Move this into the checkpoint manager so it is entirely responsible for managing the cache and generating node ids.
-    const cachedResult = checkpointManager.getCompletedResult(nodeId);
-    if (cachedResult !== undefined) {
-      console.info(`[Replay] Using cached result for ${name} (${nodeId})`);
+    const cachedResult = checkpointManager.getNodeFromCheckpoint(nodeId);
+    if (cachedResult.found && cachedResult.node.completed) {
+      const { node } = cachedResult;
+      console.debug(`[Replay] Using cached result for ${name} (${nodeId})`);
 
       // Add the cached subtree to the new checkpoint being built
-      checkpointManager.addCachedSubtreeToCheckpoint(nodeId);
+      checkpointManager.addCachedSubtreeToCheckpoint(node, parentNode);
 
-      return cachedResult as R;
+      return deserializeResult<R>(node.output);
     }
 
     function onComplete() {
       workflowContext.sendWorkflowMessage({
         type: "component-end",
-        componentName: checkpointName ?? "",
+        componentName: componentName ?? "",
         componentId: nodeId,
       });
       resolvedComponentOpts.onComplete?.();
     }
 
-    checkpointManager.addNode(
+    const node = checkpointManager.addNode(
       {
         id: nodeId,
-        componentName: checkpointName,
-        props: props_for_id,
+        componentName: componentName,
+        props: props as Record<string, unknown>,
         componentOpts: resolvedComponentOpts,
-        sequenceNumber, // Pass the sequence number explicitly
       },
-      currentNodeId,
+      parentNode,
+      {
+        // Do not update the checkpoint if we are adding an existing node that has not finished yet.
+        // This prevents "resetting" the checkpoint and rebuilding it on the server side (causing the visualization to reset when we do human in the loop or input requests).
+        skipCheckpointUpdate: cachedResult.found,
+      },
     );
 
     if (resolvedComponentOpts.metadata) {
-      checkpointManager.addMetadata(nodeId, resolvedComponentOpts.metadata);
+      checkpointManager.addMetadata(node, resolvedComponentOpts.metadata);
     }
 
-    function handleResultValue(value: unknown, runInContext: RunInContext) {
+    function handleResultValue(
+      value: unknown,
+      runInContext: RunInContext,
+      wrapInPromise: boolean,
+    ) {
       if (
         !Array.isArray(value) &&
         typeof value === "object" &&
@@ -166,6 +189,7 @@ export function Component<P extends object = {}, R = unknown>(
             aggregator: resolvedComponentOpts.aggregator,
             fullValue: value,
             onComplete,
+            wrapInPromise,
           },
         );
 
@@ -188,19 +212,17 @@ export function Component<P extends object = {}, R = unknown>(
             aggregator: resolvedComponentOpts.aggregator,
             fullValue: value,
             onComplete,
+            wrapInPromise,
           },
         );
 
         return streamingResult;
       }
 
-      workflowContext.sendWorkflowMessage({
-        type: "component-end",
-        componentName: checkpointName ?? "",
-        componentId: nodeId,
+      onComplete();
+      checkpointManager.completeNode(node, value, {
+        wrapInPromise,
       });
-      resolvedComponentOpts.onComplete?.();
-      checkpointManager.completeNode(nodeId, value);
       return value;
     }
 
@@ -209,26 +231,26 @@ export function Component<P extends object = {}, R = unknown>(
       let runInContext: RunInContext;
       workflowContext.sendWorkflowMessage({
         type: "component-start",
-        componentName: checkpointName,
+        componentName: componentName,
         componentId: nodeId,
       });
-      const result = context.withCurrentNode(nodeId, () => {
+      const result = context.withCurrentNode(node, () => {
         runInContext = getContextSnapshot();
         return target((props ?? {}) as P);
       });
 
       if (result instanceof Promise) {
         return result
-          .then((value) => handleResultValue(value, runInContext))
+          .then((value) => handleResultValue(value, runInContext, true))
           .catch((error: unknown) => {
-            handleError(nodeId, error, workflowContext);
+            handleError(node, error, workflowContext, true);
             throw error;
           }) as R;
       }
 
-      return handleResultValue(result, runInContext!) as R;
+      return handleResultValue(result, runInContext!, false) as R;
     } catch (error) {
-      handleError(nodeId, error, workflowContext);
+      handleError(node, error, workflowContext, false);
       throw error;
     }
   };
@@ -244,16 +266,76 @@ export function Component<P extends object = {}, R = unknown>(
   return ComponentFn;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+function deserializeResult<R>(result: unknown): R {
+  if (!result) {
+    return result as R;
+  }
+
+  if (
+    typeof result === "object" &&
+    "__gensxSerialized" in result &&
+    result.__gensxSerialized &&
+    "type" in result &&
+    typeof result.type === "string" &&
+    "value" in result
+  ) {
+    switch (result.type) {
+      case "async-iterator":
+      case "readable-stream":
+        const stream = new ReadableStream({
+          start(controller) {
+            if (Array.isArray(result.value)) {
+              for (const item of result.value) {
+                controller.enqueue(item);
+              }
+            } else {
+              controller.enqueue(result.value);
+            }
+            controller.close();
+          },
+        }) as R;
+        Object.defineProperty(stream, "__gensxDeserializedStream", {
+          value: true,
+        });
+        return stream;
+      case "promise":
+        return Promise.resolve(deserializeResult(result.value)) as R;
+      default:
+        console.warn("[GenSX] Unknown serialized result type: ", result.type);
+        return deserializeResult(result.value);
+    }
+  }
+
+  if (Array.isArray(result)) {
+    return result.map(deserializeResult) as R;
+  }
+
+  if (typeof result === "object" && !ArrayBuffer.isView(result)) {
+    return Object.fromEntries(
+      Object.entries(result).map(([key, value]) => [
+        key,
+        deserializeResult(value),
+      ]),
+    ) as R;
+  }
+
+  return result as R;
+}
+
 function handleError(
-  nodeId: string,
+  node: ExecutionNode,
   error: unknown,
   workflowContext: WorkflowExecutionContext,
+  wrapInPromise: boolean,
 ) {
   const serializedError = serializeError(error);
-  workflowContext.checkpointManager.addMetadata(nodeId, {
+  workflowContext.checkpointManager.addMetadata(node, {
     error: serializedError,
   });
-  workflowContext.checkpointManager.completeNode(nodeId, undefined);
+  workflowContext.checkpointManager.completeNode(node, undefined, {
+    wrapInPromise,
+  });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!(error as any).__gensxErrorEventEmitted) {
     workflowContext.sendWorkflowMessage({
@@ -270,8 +352,11 @@ type WorkflowRuntimeOpts = WorkflowOpts & {
   messageListener?: WorkflowMessageListener;
   checkpoint?: ExecutionNode;
   printUrl?: boolean;
-  onRequestInput?: () => Promise<void>;
-  onRestoreCheckpoint?: (nodeId: string, feedback: unknown) => Promise<void>;
+  onRequestInput?: (request: InputRequest) => Promise<void>;
+  onRestoreCheckpoint?: (
+    node: ExecutionNode,
+    feedback: unknown,
+  ) => Promise<void>;
   /**
    * Optional reference to capture the pending updates promise, that ensures that all traces are sent to the server after completion.
    * If provided, the workflow will set this reference to the promise
@@ -298,13 +383,12 @@ export function Workflow<P extends object = {}, R = unknown>(
     props?: P,
     runtimeOpts?: WorkflowRuntimeOpts,
   ): Promise<Awaited<R>> => {
-    const context = new ExecutionContext(
-      {},
-      undefined,
-      runtimeOpts?.messageListener,
-      runtimeOpts?.onRequestInput,
-      runtimeOpts?.onRestoreCheckpoint,
-    );
+    const context = new ExecutionContext({}, undefined, {
+      messageListener: runtimeOpts?.messageListener,
+      onRequestInput: runtimeOpts?.onRequestInput,
+      onRestoreCheckpoint: runtimeOpts?.onRestoreCheckpoint,
+      checkpoint: runtimeOpts?.checkpoint,
+    });
     await context.init();
 
     const resolvedOpts = {
@@ -317,13 +401,6 @@ export function Workflow<P extends object = {}, R = unknown>(
     };
 
     const workflowContext = context.getWorkflowContext();
-
-    // Initialize checkpoint manager with checkpoint if provided
-    if (runtimeOpts?.checkpoint) {
-      workflowContext.checkpointManager.setReplayCheckpoint(
-        runtimeOpts.checkpoint,
-      );
-    }
 
     workflowContext.checkpointManager.setPrintUrl(
       resolvedOpts.printUrl ?? false,
@@ -359,11 +436,11 @@ export function Workflow<P extends object = {}, R = unknown>(
         }),
       );
 
-      const rootId = workflowContext.checkpointManager.root?.id;
-      if (rootId) {
+      const root = workflowContext.checkpointManager.root;
+      if (root) {
         if (workflowOpts?.metadata) {
           workflowContext.checkpointManager.addMetadata(
-            rootId,
+            root,
             workflowOpts.metadata,
           );
         }
@@ -404,11 +481,13 @@ function captureAsyncGenerator(
     aggregator,
     fullValue,
     onComplete,
+    wrapInPromise,
   }: {
     streamKey?: string;
     aggregator?: (chunks: unknown[]) => unknown;
     fullValue: unknown;
     onComplete: () => void;
+    wrapInPromise: boolean;
   },
 ) {
   aggregator ??= (chunks: unknown[]) => {
@@ -425,6 +504,7 @@ function captureAsyncGenerator(
       aggregator,
       fullValue,
       onComplete,
+      wrapInPromise,
     });
   }
   const iterator = iterable[Symbol.asyncIterator]();
@@ -433,6 +513,7 @@ function captureAsyncGenerator(
     aggregator,
     fullValue,
     onComplete,
+    wrapInPromise,
   });
   iterable[Symbol.asyncIterator] = () => wrappedIterator;
   return iterable;
@@ -446,11 +527,13 @@ function captureReadableStream(
     aggregator,
     fullValue,
     onComplete,
+    wrapInPromise,
   }: {
     streamKey?: string;
     aggregator: (chunks: unknown[]) => unknown;
     fullValue: unknown;
     onComplete: () => void;
+    wrapInPromise: boolean;
   },
 ) {
   const reader = stream.getReader();
@@ -469,12 +552,26 @@ function captureReadableStream(
               const { completeNode } = getCurrentNodeCheckpointManager();
               const aggregatedValue = aggregator(chunks);
               if (streamKey) {
-                completeNode({
-                  ...(fullValue as Record<string, unknown>),
-                  [streamKey]: aggregatedValue,
-                });
+                completeNode(
+                  {
+                    ...(fullValue as Record<string, unknown>),
+                    [streamKey]: {
+                      __gensxSerialized: true,
+                      type: "readable-stream",
+                      value: aggregatedValue,
+                    },
+                  },
+                  { wrapInPromise },
+                );
               } else {
-                completeNode(aggregatedValue);
+                completeNode(
+                  {
+                    __gensxSerialized: true,
+                    type: "readable-stream",
+                    value: aggregatedValue,
+                  },
+                  { wrapInPromise },
+                );
               }
               onComplete();
               controller.close();
@@ -486,14 +583,38 @@ function captureReadableStream(
               const { updateNode } = getCurrentNodeCheckpointManager();
               const aggregatedValue = aggregator(chunks);
               if (streamKey) {
-                updateNode({
-                  output: {
-                    ...(fullValue as Record<string, unknown>),
-                    [streamKey]: aggregatedValue,
+                const value = {
+                  ...(fullValue as Record<string, unknown>),
+                  [streamKey]: {
+                    __gensxSerialized: true,
+                    type: "readable-stream",
+                    value: aggregatedValue,
                   },
+                };
+                updateNode({
+                  output: wrapInPromise
+                    ? {
+                        __gensxSerialized: true,
+                        type: "promise",
+                        value,
+                      }
+                    : value,
                 });
               } else {
-                updateNode({ output: aggregatedValue });
+                const value = {
+                  __gensxSerialized: true,
+                  type: "readable-stream",
+                  value: aggregatedValue,
+                };
+                updateNode({
+                  output: wrapInPromise
+                    ? {
+                        __gensxSerialized: true,
+                        type: "promise",
+                        value,
+                      }
+                    : value,
+                });
               }
               lastUpdateNodeCall = performance.now();
             }
@@ -505,12 +626,26 @@ function captureReadableStream(
         addMetadata({ error: serializeError(e) });
         const aggregatedValue = aggregator(chunks);
         if (streamKey) {
-          completeNode({
-            ...(fullValue as Record<string, unknown>),
-            [streamKey]: aggregatedValue,
-          });
+          completeNode(
+            {
+              ...(fullValue as Record<string, unknown>),
+              [streamKey]: {
+                __gensxSerialized: true,
+                type: "readable-stream",
+                value: aggregatedValue,
+              },
+            },
+            { wrapInPromise },
+          );
         } else {
-          completeNode(aggregatedValue);
+          completeNode(
+            {
+              __gensxSerialized: true,
+              type: "readable-stream",
+              value: aggregatedValue,
+            },
+            { wrapInPromise },
+          );
         }
         throw e;
       }
@@ -521,7 +656,14 @@ function captureReadableStream(
           const { completeNode, addMetadata } =
             getCurrentNodeCheckpointManager();
           addMetadata({ cancelled: true });
-          completeNode(aggregator(chunks));
+          completeNode(
+            {
+              __gensxSerialized: true,
+              type: "readable-stream",
+              value: aggregator(chunks),
+            },
+            { wrapInPromise },
+          );
         }
         return reader.cancel(reason);
       });
@@ -539,11 +681,13 @@ async function* captureAsyncIterator(
     aggregator,
     fullValue,
     onComplete,
+    wrapInPromise,
   }: {
     streamKey?: string;
     aggregator: (chunks: unknown[]) => unknown;
     fullValue: unknown;
     onComplete: () => void;
+    wrapInPromise: boolean;
   },
 ) {
   const chunks: unknown[] = [];
@@ -559,12 +703,26 @@ async function* captureAsyncIterator(
           const { completeNode } = getCurrentNodeCheckpointManager();
           const aggregatedValue = aggregator(chunks);
           if (streamKey) {
-            completeNode({
-              ...(fullValue as Record<string, unknown>),
-              [streamKey]: aggregatedValue,
-            });
+            completeNode(
+              {
+                ...(fullValue as Record<string, unknown>),
+                [streamKey]: {
+                  __gensxSerialized: true,
+                  type: "async-iterator",
+                  value: aggregatedValue,
+                },
+              },
+              { wrapInPromise },
+            );
           } else {
-            completeNode(aggregatedValue);
+            completeNode(
+              {
+                __gensxSerialized: true,
+                type: "async-iterator",
+                value: aggregatedValue,
+              },
+              { wrapInPromise },
+            );
           }
           isDone = true;
           onComplete();
@@ -576,14 +734,38 @@ async function* captureAsyncIterator(
           const { updateNode } = getCurrentNodeCheckpointManager();
           const aggregatedValue = aggregator(chunks);
           if (streamKey) {
-            updateNode({
-              output: {
-                ...(fullValue as Record<string, unknown>),
-                [streamKey]: aggregatedValue,
+            const value = {
+              ...(fullValue as Record<string, unknown>),
+              [streamKey]: {
+                __gensxSerialized: true,
+                type: "async-iterator",
+                value: aggregatedValue,
               },
+            };
+            updateNode({
+              output: wrapInPromise
+                ? {
+                    __gensxSerialized: true,
+                    type: "promise",
+                    value,
+                  }
+                : value,
             });
           } else {
-            updateNode({ output: aggregatedValue });
+            const value = {
+              __gensxSerialized: true,
+              type: "async-iterator",
+              value: aggregatedValue,
+            };
+            updateNode({
+              output: wrapInPromise
+                ? {
+                    __gensxSerialized: true,
+                    type: "promise",
+                    value,
+                  }
+                : value,
+            });
           }
           lastUpdateNodeCall = performance.now();
         }
@@ -602,12 +784,26 @@ async function* captureAsyncIterator(
     addMetadata({ error: serializeError(e) });
     const aggregatedValue = aggregator(chunks);
     if (streamKey) {
-      completeNode({
-        ...(fullValue as Record<string, unknown>),
-        [streamKey]: aggregatedValue,
-      });
+      completeNode(
+        {
+          ...(fullValue as Record<string, unknown>),
+          [streamKey]: {
+            __gensxSerialized: true,
+            type: "async-iterator",
+            value: aggregatedValue,
+          },
+        },
+        { wrapInPromise },
+      );
     } else {
-      completeNode(aggregatedValue);
+      completeNode(
+        {
+          __gensxSerialized: true,
+          type: "async-iterator",
+          value: aggregatedValue,
+        },
+        { wrapInPromise },
+      );
     }
     throw e;
   }

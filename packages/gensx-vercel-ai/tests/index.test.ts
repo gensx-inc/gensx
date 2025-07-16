@@ -1,6 +1,6 @@
 import * as gensx from "@gensx/core";
 import { expect, test } from "vitest";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { openai } from "../__mocks__/ai-sdk.js";
 import * as AI from "../src/index.js";

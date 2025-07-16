@@ -27,22 +27,24 @@ suite("checkpoint replay", () => {
 
     // Create a mock checkpoint with a completed component
     const mockCheckpoint: ExecutionNode = {
-      id: "TestWorkflow:-",
+      id: "TestWorkflow:7db44194:0",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
-      sequenceNumber: 0,
+      startedAt: "0",
+      completed: false,
       children: [
         {
-          id: "ExpensiveComponent:c6cc661b5d504e02",
+          id: "TestWorkflow-ExpensiveComponent:bed9c3e4:0",
+          startedAt: "1",
+          completed: true,
           componentName: "ExpensiveComponent",
-          parentId: "TestWorkflow:-",
+          parentId: "TestWorkflow:7db44194:0",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },
           output: "processed: test",
           children: [],
-          sequenceNumber: 1,
         },
       ],
     };
@@ -79,11 +81,12 @@ suite("checkpoint replay", () => {
 
     // Create a checkpoint without this component
     const mockCheckpoint: ExecutionNode = {
-      id: "root:TestWorkflow:156403d8f795a18e",
+      id: "root-TestWorkflow:156403d8f795a18e:0",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
+      startedAt: "0",
+      completed: false,
       props: { input: "test" },
-      sequenceNumber: 0,
       children: [], // Empty - no completed components
     };
 
@@ -131,22 +134,24 @@ suite("checkpoint replay", () => {
 
     // Create checkpoint with only the cached component
     const mockCheckpoint: ExecutionNode = {
-      id: "TestWorkflow:-",
+      id: "TestWorkflow:7db44194:0",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
-      sequenceNumber: 0,
+      startedAt: "0",
+      completed: false,
       children: [
         {
-          id: "CachedComponent:c6cc661b5d504e02",
+          id: "TestWorkflow-CachedComponent:bb17e0d6:0",
+          startedAt: "1",
+          completed: true,
           componentName: "CachedComponent",
-          parentId: "TestWorkflow:-",
+          parentId: "TestWorkflow:7db44194:0",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
           props: { input: "test" },
           output: "cached: test",
           children: [],
-          sequenceNumber: 1,
         },
       ],
     };
@@ -202,34 +207,37 @@ suite("checkpoint replay", () => {
 
     // Create checkpoint with nested completed components
     const mockCheckpoint: ExecutionNode = {
-      id: "TestWorkflow:7548c5ccf3e1e09c",
+      id: "TestWorkflow:7db44194:0",
+      startedAt: "0",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       endTime: Date.now() - 100,
+      completed: true,
       props: { input: "test" },
       output: "middle: leaf: test",
-      sequenceNumber: 0,
       children: [
         {
-          id: "MiddleComponent:156403d8f795a18e",
+          id: "TestWorkflow-MiddleComponent:51281f02:0",
+          startedAt: "1",
           componentName: "MiddleComponent",
-          parentId: "TestWorkflow:7548c5ccf3e1e09c",
+          parentId: "TestWorkflow:e3aab1c267157d72:0",
           startTime: Date.now() - 900,
           endTime: Date.now() - 200,
+          completed: true,
           props: { input: "test" },
           output: "middle: leaf: test",
-          sequenceNumber: 1,
           children: [
             {
-              id: "LeafComponent:93268aced3bf3c80",
+              id: "TestWorkflow-MiddleComponent-LeafComponent:a68e221e:0",
+              startedAt: "2",
               componentName: "LeafComponent",
-              parentId: "MiddleComponent:156403d8f795a18e",
+              parentId: "TestWorkflow-MiddleComponent:51281f02:0",
               startTime: Date.now() - 800,
               endTime: Date.now() - 700,
+              completed: true,
               props: { value: "test" },
               output: "leaf: test",
               children: [],
-              sequenceNumber: 2,
             },
           ],
         },
@@ -272,11 +280,12 @@ suite("checkpoint replay", () => {
 
     // Create empty checkpoint
     const emptyCheckpoint: ExecutionNode = {
-      id: "root:TestWorkflow:156403d8f795a18e",
+      id: "root-TestWorkflow:156403d8f795a18e:0",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
-      sequenceNumber: 0,
+      startedAt: "0",
+      completed: false,
       children: [], // No completed components
     };
 
@@ -352,22 +361,24 @@ suite("checkpoint replay", () => {
 
     // Create checkpoint with only the cached component
     const mockCheckpoint: ExecutionNode = {
-      id: "TestWorkflow:-",
+      id: "TestWorkflow:7db44194:0",
       componentName: "TestWorkflow",
       startTime: Date.now() - 1000,
       props: { input: "test" },
-      sequenceNumber: 0,
+      startedAt: "1000",
+      completed: false,
       children: [
         {
-          id: "CachedComponent:c6cc661b5d504e02",
+          id: "TestWorkflow-CachedComponent:bb17e0d6:0",
+          startedAt: "1000",
           componentName: "CachedComponent",
-          parentId: "TestWorkflow:-",
+          parentId: "TestWorkflow:7db44194:0",
           startTime: Date.now() - 900,
           endTime: Date.now() - 800,
+          completed: true,
           props: { input: "test" },
           output: "cached: test",
           children: [],
-          sequenceNumber: 1,
         },
       ],
     };

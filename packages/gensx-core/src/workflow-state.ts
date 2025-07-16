@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
-import * as fastJsonPatch from "fast-json-patch";
-
 import { getCurrentContext } from "./context.js";
+import * as fastJsonPatch from "./utils/fast-json-patch/index.js";
 
 // Define JSON Patch operation types based on RFC 6902
 interface BaseOperation {
@@ -71,64 +70,73 @@ export interface StringAppendOperation {
 export type Operation = JsonPatchOperation | StringAppendOperation;
 
 // Individual message types
-export interface WorkflowStartMessage {
+export interface StartMessage {
   type: "start";
   workflowExecutionId?: string;
   workflowName: string;
 }
 
-export interface WorkflowComponentStartMessage {
+export interface ComponentStartMessage {
   type: "component-start";
   componentName: string;
   label?: string;
   componentId: string;
 }
 
-export interface WorkflowComponentEndMessage {
+export interface ComponentEndMessage {
   type: "component-end";
   componentName: string;
   label?: string;
   componentId: string;
 }
 
-export interface WorkflowDataMessage {
+export interface DataMessage {
   type: "data";
   data: JsonValue;
 }
 
-export interface WorkflowEventMessage {
+export interface EventMessage {
   type: "event";
   data: JsonValue;
   label: string;
 }
 
-// Updated to support JSON patches
-export interface WorkflowObjectMessage {
+export interface ObjectMessage {
   type: "object";
   label: string;
   patches: Operation[];
   isInitial?: boolean;
 }
 
-export interface WorkflowErrorMessage {
+export interface ErrorMessage {
   type: "error";
   error: string;
 }
 
-export interface WorkflowEndMessage {
+export interface EndMessage {
   type: "end";
+}
+
+export interface ExternalToolMessage {
+  type: "external-tool";
+  toolName: string;
+  params: JsonValue;
+  paramsSchema: unknown;
+  resultSchema: unknown;
+  nodeId: string;
 }
 
 // Union of all message types
 export type WorkflowMessage =
-  | WorkflowStartMessage
-  | WorkflowComponentStartMessage
-  | WorkflowComponentEndMessage
-  | WorkflowDataMessage
-  | WorkflowEventMessage
-  | WorkflowObjectMessage
-  | WorkflowErrorMessage
-  | WorkflowEndMessage;
+  | StartMessage
+  | ComponentStartMessage
+  | ComponentEndMessage
+  | DataMessage
+  | EventMessage
+  | ObjectMessage
+  | ErrorMessage
+  | EndMessage
+  | ExternalToolMessage;
 
 export type WorkflowMessageListener = (message: WorkflowMessage) => void;
 
@@ -204,7 +212,6 @@ export function publishObject<T = JsonValue>(label: string, data: T) {
         type: "object",
         label,
         patches,
-        isInitial: false,
       });
     }
   }

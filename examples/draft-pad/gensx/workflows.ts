@@ -46,6 +46,7 @@ type ModelConfig = {
   providerName?: string; // Human-readable provider name
   envVars?: string[]; // Environment variables required for this provider
   available?: boolean; // Whether the provider has required API keys configured
+  reasoning?: boolean; // Whether this is a reasoning/thinking model
   // Cost information (per million tokens)
   cost?: {
     input: number;
@@ -264,7 +265,7 @@ const UpdateDraftWorkflow = gensx.Workflow(
         // Process the stream internally to update progress
         for await (const chunk of result.textStream) {
           // Update model content
-          modelStream.content += chunk as string;
+          modelStream.content += chunk;
 
           // Update stats
           const words = modelStream.content

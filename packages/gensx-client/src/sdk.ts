@@ -5,11 +5,11 @@
 // Note: These types are imported from @gensx/core which needs to be built first
 // The types extend the core WorkflowMessage types with additional fields for SDK usage
 import type {
-  WorkflowComponentEndMessage,
-  WorkflowComponentStartMessage,
-  WorkflowEndMessage,
-  WorkflowErrorMessage,
-  WorkflowStartMessage,
+  ComponentEndMessage,
+  ComponentStartMessage,
+  EndMessage,
+  ErrorMessage,
+  StartMessage,
 } from "@gensx/core";
 
 // Type declarations for environment variables
@@ -20,19 +20,18 @@ declare const process:
   | undefined;
 
 // GenSX Event Types - These extend the core WorkflowMessage types with additional fields
-export interface GenSXStartEvent extends WorkflowStartMessage {
+export interface GenSXStartEvent extends StartMessage {
   id: string;
   timestamp: string;
   workflowExecutionId: string; // Make this required for SDK events
 }
 
-export interface GenSXComponentStartEvent
-  extends WorkflowComponentStartMessage {
+export interface GenSXComponentStartEvent extends ComponentStartMessage {
   id: string;
   timestamp: string;
 }
 
-export interface GenSXComponentEndEvent extends WorkflowComponentEndMessage {
+export interface GenSXComponentEndEvent extends ComponentEndMessage {
   id: string;
   timestamp: string;
 }
@@ -51,12 +50,12 @@ export interface GenSXOutputEvent {
   timestamp: string;
 }
 
-export interface GenSXEndEvent extends WorkflowEndMessage {
+export interface GenSXEndEvent extends EndMessage {
   id: string;
   timestamp: string;
 }
 
-export interface GenSXErrorEvent extends WorkflowErrorMessage {
+export interface GenSXErrorEvent extends ErrorMessage {
   id: string;
   timestamp: string;
   message?: string; // Additional field for compatibility
@@ -114,6 +113,12 @@ export interface WorkflowExecution {
   progress?: unknown[];
   result?: unknown;
   error?: unknown;
+}
+
+export interface ResumeOptions {
+  executionId: string;
+  nodeId: string;
+  data: unknown;
 }
 
 /**
@@ -318,6 +323,40 @@ export class GenSX {
     }
 
     return response.body;
+  }
+
+  async resume(options: ResumeOptions): Promise<Response> {
+    const { executionId, nodeId, data } = options;
+
+    const url = this.isLocal
+      ? `${this.baseUrl}/workflowExecutions/${executionId}/fulfill/${nodeId}`
+      : `${this.baseUrl}/org/${this.org}/workflowExecutions/${executionId}/fulfill/${nodeId}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      // If the execution is still running, retry.
+      if (
+        response.status === 400 &&
+        response.statusText === "Bad Request" &&
+        (await response.text()).includes("Execution is currently running.")
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return this.resume(options);
+      }
+      throw new Error(
+        `Failed to resume workflow: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    return response;
   }
 
   // Private helper methods

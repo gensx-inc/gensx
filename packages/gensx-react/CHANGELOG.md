@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.1](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.2.0...gensx-react-v0.2.1) (2025-07-16)
+
+
+### ✨ New Features
+
+* rename /resume to /fulfill-input-request ([#850](https://github.com/gensx-inc/gensx/issues/850)) ([d0eb55f](https://github.com/gensx-inc/gensx/commit/d0eb55f839e28376badc00da55f2810e6312a7d1))
+* Support front end tool calling ([#830](https://github.com/gensx-inc/gensx/issues/830)) ([60ac51f](https://github.com/gensx-inc/gensx/commit/60ac51ffc9d139a9bd2a9fb6015dc40292634c60))
+
+
+### 🐛 Bug Fixes
+
+* exporting clear method, fixing docs for useWorkflow hook ([#845](https://github.com/gensx-inc/gensx/issues/845)) ([aee6d73](https://github.com/gensx-inc/gensx/commit/aee6d73578f745287c469f3b538b3e451bb21704))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/client bumped to 0.1.5
+    * @gensx/core bumped to 0.5.1
+
 ## [0.2.0](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.1.4...gensx-react-v0.2.0) (2025-07-09)
 
 

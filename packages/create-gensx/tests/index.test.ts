@@ -11,10 +11,57 @@ import { createGensxProject } from "../src/index.js";
 
 const exec = promisify(execCallback);
 
+// Helper function to update all @gensx packages to use local versions
+async function updatePackageJsonToUseLocalVersions(projectPath: string) {
+  const packageJsonPath = path.join(projectPath, "package.json");
+  const packageJson: {
+    dependencies: Record<string, string>;
+    devDependencies?: Record<string, string>;
+    [key: string]: unknown;
+  } = JSON.parse(await readFile(packageJsonPath, "utf-8")) as {
+    dependencies: Record<string, string>;
+    devDependencies?: Record<string, string>;
+    [key: string]: unknown;
+  };
+
+  // Map of @gensx packages to their local paths
+  const localPackages: Record<string, string> = {
+    "@gensx/core": gensxPackagePath,
+    "@gensx/openai": gensxOpenaiPackagePath,
+    "@gensx/vercel-ai": gensxVercelAiPackagePath,
+    "@gensx/anthropic": path.resolve(__dirname, "../../gensx-anthropic"),
+    "@gensx/storage": path.resolve(__dirname, "../../gensx-storage"),
+    "@gensx/client": path.resolve(__dirname, "../../gensx-client"),
+    "@gensx/react": path.resolve(__dirname, "../../gensx-react"),
+  };
+
+  // Update dependencies
+  for (const [pkg, localPath] of Object.entries(localPackages)) {
+    if (packageJson.dependencies[pkg]) {
+      packageJson.dependencies[pkg] = `file:${localPath}`;
+    }
+  }
+
+  // Update devDependencies
+  if (packageJson.devDependencies) {
+    for (const [pkg, localPath] of Object.entries(localPackages)) {
+      if (packageJson.devDependencies[pkg]) {
+        packageJson.devDependencies[pkg] = `file:${localPath}`;
+      }
+    }
+  }
+
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+}
+
 // Get the absolute path to the gensx package
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const gensxPackagePath = path.resolve(__dirname, "../../gensx-core");
 const gensxOpenaiPackagePath = path.resolve(__dirname, "../../gensx-openai");
+const gensxVercelAiPackagePath = path.resolve(
+  __dirname,
+  "../../gensx-vercel-ai",
+);
 const gensxClaudeMdPath = path.resolve(__dirname, "../../gensx-claude-md");
 const gensxCursorRulesPath = path.resolve(
   __dirname,
@@ -49,20 +96,8 @@ suite("create-gensx", () => {
       description: "A test TypeScript project", // Add description to skip the prompt
     });
 
-    // Update package.json to use local version of @gensx/core and @gensx/openai
-    const packageJsonPath = path.join(projectPath, "package.json");
-    const packageJson: {
-      dependencies: Record<string, string>;
-      [key: string]: unknown;
-    } = JSON.parse(await readFile(packageJsonPath, "utf-8")) as {
-      dependencies: Record<string, string>;
-      [key: string]: unknown;
-    };
-    packageJson.dependencies["@gensx/core"] = `file:${gensxPackagePath}`;
-    packageJson.dependencies["@gensx/openai"] =
-      `file:${gensxOpenaiPackagePath}`;
-
-    await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+    // Update package.json to use local versions of all @gensx packages
+    await updatePackageJsonToUseLocalVersions(projectPath);
 
     // Verify the project was created
     const { stdout: lsOutput } = await exec("ls", { cwd: projectPath });
@@ -115,21 +150,8 @@ suite("create-gensx", () => {
     // Create the project with AI assistant integrations
     await createGensxProject(projectPath, options);
 
-    // Update package.json to use local versions
-    const packageJsonPath = path.join(projectPath, "package.json");
-    const packageJson: {
-      dependencies: Record<string, string>;
-      [key: string]: unknown;
-    } = JSON.parse(await readFile(packageJsonPath, "utf-8")) as {
-      dependencies: Record<string, string>;
-      [key: string]: unknown;
-    };
-
-    packageJson.dependencies["@gensx/core"] = `file:${gensxPackagePath}`;
-    packageJson.dependencies["@gensx/openai"] =
-      `file:${gensxOpenaiPackagePath}`;
-
-    await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+    // Update package.json to use local versions of all @gensx packages
+    await updatePackageJsonToUseLocalVersions(projectPath);
 
     // Install dependencies
     await exec("npm install", { cwd: projectPath });

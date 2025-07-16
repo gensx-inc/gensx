@@ -8,6 +8,7 @@ import { beforeEach, expect, suite, test } from "vitest";
 import * as gensx from "../src/index.js";
 import {
   applyObjectPatches,
+  ExternalToolMessage,
   getValueByJsonPath,
 } from "../src/workflow-state.js";
 
@@ -639,7 +640,7 @@ suite("workflow state", () => {
       });
 
       expect(events).toHaveLength(7);
-      const objectMessage = events[3] as gensx.WorkflowObjectMessage;
+      const objectMessage = events[3] as gensx.ObjectMessage;
       expect(objectMessage.type).toBe("object");
       expect(objectMessage.label).toBe("test-state");
       expect(objectMessage.isInitial).toBe(true);
@@ -698,14 +699,14 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Extra event for the second publication
 
       // First publication should be initial
-      const firstMessage = events[3] as gensx.WorkflowObjectMessage;
+      const firstMessage = events[3] as gensx.ObjectMessage;
       expect(firstMessage.type).toBe("object");
       expect(firstMessage.isInitial).toBe(true);
 
       // Second publication should only contain the changed field
-      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
+      const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.type).toBe("object");
-      expect(secondMessage.isInitial).toBe(false);
+      expect(secondMessage.isInitial).toBe(undefined);
       expect(secondMessage.patches).toEqual([
         { op: "replace", path: "/age", value: 31 },
       ]);
@@ -782,11 +783,11 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Two object events
 
       // First publication should be initial
-      const firstMessage = events[3] as gensx.WorkflowObjectMessage;
+      const firstMessage = events[3] as gensx.ObjectMessage;
       expect(firstMessage.isInitial).toBe(true);
 
       // Second publication should also be initial since we cleared the state
-      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
+      const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.isInitial).toBe(true);
     });
 
@@ -919,14 +920,14 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Two object events
 
       // First publication should be initial
-      const firstMessage = events[3] as gensx.WorkflowObjectMessage;
+      const firstMessage = events[3] as gensx.ObjectMessage;
       expect(firstMessage.type).toBe("object");
       expect(firstMessage.isInitial).toBe(true);
 
       // Second publication should use string-append optimization
-      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
+      const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.type).toBe("object");
-      expect(secondMessage.isInitial).toBe(false);
+      expect(secondMessage.isInitial).toBe(undefined);
       expect(secondMessage.patches).toEqual([
         { op: "string-append", path: "/content", value: " world" },
       ]);
@@ -977,11 +978,35 @@ suite("workflow state", () => {
       expect(events).toHaveLength(8); // Two object events
 
       // Second publication should use standard replace (not append or diff)
-      const secondMessage = events[4] as gensx.WorkflowObjectMessage;
+      const secondMessage = events[4] as gensx.ObjectMessage;
       expect(secondMessage.type).toBe("object");
       expect(secondMessage.patches[0].op).toBe("replace");
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
       expect((secondMessage.patches[0] as any).value).toBe("Different");
+    });
+  });
+
+  suite("External Tool Messages", () => {
+    test("External tool messages can be JSON serialized and deserialized", () => {
+      const callMessage: ExternalToolMessage = {
+        type: "external-tool",
+        toolName: "jsonTestTool",
+        params: {
+          data: { nested: { value: 42 } },
+          array: [1, "two", true, null],
+        },
+        paramsSchema: {},
+        resultSchema: {},
+        nodeId: "json-node-456",
+      };
+
+      // Serialize and deserialize
+      const serializedCall = JSON.stringify(callMessage);
+      const deserializedCall = JSON.parse(
+        serializedCall,
+      ) as ExternalToolMessage;
+
+      expect(deserializedCall).toEqual(callMessage);
     });
   });
 });

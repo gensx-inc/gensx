@@ -15,16 +15,17 @@ export type {
   WorkflowMessage,
   WorkflowMessageListener,
   JsonValue,
-  WorkflowStartMessage,
-  WorkflowComponentStartMessage,
-  WorkflowComponentEndMessage,
-  WorkflowDataMessage,
-  WorkflowEventMessage,
-  WorkflowObjectMessage,
-  WorkflowErrorMessage,
-  WorkflowEndMessage,
   Operation,
   StringAppendOperation,
+  StartMessage,
+  ComponentStartMessage,
+  ComponentEndMessage,
+  DataMessage,
+  ObjectMessage,
+  EventMessage,
+  ErrorMessage,
+  EndMessage,
+  ExternalToolMessage,
 } from "./workflow-state.js";
 export * from "./wrap.js";
 export * from "./request-input.js";
@@ -35,3 +36,12 @@ export { Component, Workflow } from "./component.js";
 export { readConfig } from "./utils/config.js";
 export { getSelectedEnvironment } from "./utils/env-config.js";
 export { readProjectConfig } from "./utils/project-config.js";
+
+export { createToolBox, executeExternalTool } from "./external-tools.js";
+export type {
+  ToolDefinition,
+  ToolBox,
+  ToolImplementations,
+  InferToolParams,
+  InferToolResult,
+} from "./external-tools.js";

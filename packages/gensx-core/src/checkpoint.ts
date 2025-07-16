@@ -1,45 +1,119 @@
 import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
+import { hrtime } from "node:process";
 import { promisify } from "node:util";
 import { gzip } from "node:zlib";
 
 import {
   CheckpointWriter,
+  ContentId,
   ExecutionNode,
+  NodeId,
+  PathId,
   STREAMING_PLACEHOLDER,
 } from "./checkpoint-types.js";
+import { isAsyncIterable, isReadableStream } from "./component.js";
 import { readConfig } from "./utils/config.js";
+import { generateNodeId, stringifyProps } from "./utils/nodeId.js";
 import { USER_AGENT } from "./utils/user-agent.js";
 
-export type { CheckpointWriter, ExecutionNode };
+export type { CheckpointWriter, ExecutionNode, NodeId };
 export { STREAMING_PLACEHOLDER };
 
 const gzipAsync = promisify(gzip);
 
-// Deterministic ID generation for checkpoint replay
-export function generateDeterministicId(
-  name: string,
-  props: Record<string, unknown>,
-  sequenceNumber: number,
-  parentId?: string,
-): string {
-  // Simple but effective serialization for MVP
-  const propsStr = JSON.stringify(props, Object.keys(props).sort());
-  const propsHash = createHash("sha256")
-    .update(`${propsStr}:${parentId ?? "root"}:${sequenceNumber}`)
-    .digest("hex")
-    .slice(0, 16);
+class NodeMap<T extends ExecutionNode> {
+  // Primary lookup by full ID
+  private idLookup = new Map<string, T>();
 
-  const id = `${name}:${propsHash}`;
-  return id;
+  // Secondary lookups for fuzzy matching
+  private pathLookup = new Map<string, Set<string>>(); // pathId -> Set<primaryId>
+  private contentLookup = new Map<string, Set<string>>(); // contentId -> Set<primaryId>
+  private pathContentLookup = new Map<string, Set<string>>(); // pathId:contentId -> Set<primaryId>
+
+  set(node: T) {
+    this.idLookup.set(node.id, node);
+
+    // Update secondary lookups
+    const pathId = getPathId(node.id);
+    if (pathId) {
+      if (!this.pathLookup.has(pathId)) {
+        this.pathLookup.set(pathId, new Set());
+      }
+      this.pathLookup.get(pathId)!.add(node.id);
+    }
+
+    const contentId = getContentId(node.id);
+    if (contentId) {
+      if (!this.contentLookup.has(contentId)) {
+        this.contentLookup.set(contentId, new Set());
+      }
+      this.contentLookup.get(contentId)!.add(node.id);
+    }
+
+    const pathContentId = `${pathId}:${contentId}`;
+    if (!this.pathContentLookup.has(pathContentId)) {
+      this.pathContentLookup.set(pathContentId, new Set());
+    }
+    this.pathContentLookup.get(pathContentId)!.add(node.id);
+  }
+
+  get(primaryIdOrNode: string | T): T | undefined {
+    if (typeof primaryIdOrNode === "string") {
+      return this.idLookup.get(primaryIdOrNode);
+    }
+
+    const node = primaryIdOrNode;
+    return this.idLookup.get(node.id);
+  }
+
+  has(primaryIdOrNode: string | T): boolean {
+    if (typeof primaryIdOrNode === "string") {
+      return this.idLookup.has(primaryIdOrNode);
+    }
+    return this.get(primaryIdOrNode) !== undefined;
+  }
+
+  getByPathAndContent(pathId: string, contentId: string): T[] {
+    const primaryIds =
+      this.pathContentLookup.get(`${pathId}:${contentId}`) ?? new Set();
+    return Array.from(primaryIds)
+      .map((id) => this.idLookup.get(id))
+      .filter((node): node is T => node !== undefined);
+  }
+
+  getByPath(pathId: string): T[] {
+    const primaryIds = this.pathLookup.get(pathId) ?? new Set();
+    return Array.from(primaryIds)
+      .map((id) => this.idLookup.get(id))
+      .filter((node): node is T => node !== undefined);
+  }
+
+  getByContent(contentId: string): T[] {
+    const primaryIds = this.contentLookup.get(contentId) ?? new Set();
+    return Array.from(primaryIds)
+      .map((id) => this.idLookup.get(id))
+      .filter((node): node is T => node !== undefined);
+  }
+
+  entries() {
+    return Array.from(this.idLookup.entries());
+  }
+
+  clear() {
+    this.idLookup.clear();
+    this.pathLookup.clear();
+    this.contentLookup.clear();
+    this.pathContentLookup.clear();
+  }
 }
 
 export class CheckpointManager implements CheckpointWriter {
-  private nodes = new Map<string, ExecutionNode>();
+  private nodes = new NodeMap<ExecutionNode>();
   private orphanedNodes = new Map<string, Set<ExecutionNode>>();
   private _secretValues = new Map<string, Set<unknown>>(); // Internal per-node secrets
-  private currentNodeChain: string[] = []; // Track current execution context
+  private currentNodeChain: ExecutionNode[] = []; // Track current execution context
   private readonly MIN_SECRET_LENGTH = 8;
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
@@ -54,23 +128,13 @@ export class CheckpointManager implements CheckpointWriter {
   private printUrl = false;
   private runtime?: "cloud" | "sdk";
   private runtimeVersion?: string;
-
-  private sequenceNumber = 0;
-
-  get nextNodeSequenceNumber() {
-    return this.sequenceNumber++;
-  }
-
-  get nodeSequenceNumber() {
-    return this.sequenceNumber;
-  }
+  private checkpointListener?: (root: ExecutionNode) => Promise<void>;
 
   private traceId?: string;
   private executionRunId?: string;
 
-  // Replay functionality
-  private replayLookup = new Map<string, unknown>();
-  private sourceCheckpoint?: ExecutionNode;
+  // Replay functionality with enhanced fuzzy matching
+  private replayLookup: ExecutionNode[] = [];
 
   // Provide unified view of all secrets
   get secretValues(): Set<unknown> {
@@ -85,18 +149,47 @@ export class CheckpointManager implements CheckpointWriter {
 
   // Public getter for testing purposes
   get nodesForTesting(): Map<string, ExecutionNode> {
-    return this.nodes;
+    const legacyMap = new Map<string, ExecutionNode>();
+    for (const [primaryId, node] of this.nodes.entries()) {
+      legacyMap.set(primaryId, node);
+    }
+    return legacyMap;
+  }
+
+  private callCounters = new Map<string, number>();
+
+  public getNextCallIndex(
+    parentPath: string,
+    componentName: string,
+    props: Record<string, unknown>,
+    idPropsKeys: string[] | undefined,
+  ): number {
+    const contentContext = {
+      name: componentName,
+      props: stringifyProps(props, idPropsKeys),
+      parent: parentPath,
+    };
+    const contentStr = JSON.stringify(contentContext);
+    const contentHash = createHash("sha256")
+      .update(contentStr)
+      .digest("hex")
+      .slice(0, 8);
+    const key = `${parentPath}-${componentName}:${contentHash}`;
+    const current = this.callCounters.get(key) ?? 0;
+    this.callCounters.set(key, current + 1);
+    return current;
   }
 
   constructor(opts?: {
-    apiKey: string;
-    org: string;
+    apiKey?: string;
+    org?: string;
     disabled?: boolean;
     apiBaseUrl?: string;
     consoleBaseUrl?: string;
     executionRunId?: string;
     runtime?: "cloud" | "sdk";
     runtimeVersion?: string;
+    checkpoint?: ExecutionNode;
   }) {
     // Priority order: constructor opts > env vars > config file
     const config = readConfig();
@@ -142,25 +235,40 @@ export class CheckpointManager implements CheckpointWriter {
         "Organization not set. Set it via constructor options, GENSX_ORG environment variable, or in ~/.config/gensx/config. You can disable checkpoints by setting GENSX_CHECKPOINTS=false or unsetting GENSX_API_KEY.",
       );
     }
+
+    if (opts?.checkpoint) {
+      this.buildReplayLookup(opts.checkpoint);
+    }
   }
 
-  private attachToParent(node: ExecutionNode, parent: ExecutionNode) {
+  private attachToParent(
+    nodeToUpdate: ExecutionNode,
+    parentToUpdate: ExecutionNode,
+  ) {
+    const node = this.nodes.get(nodeToUpdate);
+    if (!node) {
+      throw new Error("Node not found");
+    }
+    const parent = this.nodes.get(parentToUpdate);
+    if (!parent) {
+      throw new Error("Parent node not found");
+    }
     node.parentId = parent.id;
     if (!parent.children.some((child) => child.id === node.id)) {
       parent.children.push(node);
     }
   }
 
-  private handleOrphanedNode(node: ExecutionNode, expectedParentId: string) {
-    let orphans = this.orphanedNodes.get(expectedParentId);
+  private handleOrphanedNode(node: ExecutionNode, parent: ExecutionNode) {
+    let orphans = this.orphanedNodes.get(parent.id);
     if (!orphans) {
       orphans = new Set();
-      this.orphanedNodes.set(expectedParentId, orphans);
+      this.orphanedNodes.set(parent.id, orphans);
     }
     orphans.add(node);
 
     // Add diagnostic timeout to detect stuck orphans
-    this.checkOrphanTimeout(node.id, expectedParentId);
+    this.checkOrphanTimeout(node, parent);
   }
 
   private isNativeFunction(value: unknown): boolean {
@@ -170,14 +278,24 @@ export class CheckpointManager implements CheckpointWriter {
     );
   }
 
-  private checkOrphanTimeout(nodeId: string, expectedParentId: string) {
+  private checkOrphanTimeout(
+    expectedNode: ExecutionNode,
+    expectedParent: ExecutionNode,
+  ) {
     setTimeout(() => {
-      const orphans = this.orphanedNodes.get(expectedParentId);
-      if (orphans?.has(this.nodes.get(nodeId)!)) {
+      const orphans = this.orphanedNodes.get(expectedParent.id);
+      const node = this.nodes.get(expectedNode);
+      if (!node) {
         console.warn(
-          `[Checkpoint] Node ${nodeId} (${this.nodes.get(nodeId)?.componentName}) still waiting for parent ${expectedParentId} after 5s`,
+          `[Checkpoint] Node ${expectedNode.id} (${expectedNode.componentName}) no longer exists`,
+        );
+        return;
+      }
+      if (orphans?.has(node)) {
+        console.warn(
+          `[Checkpoint] Node ${node.id} (${node.componentName}) still waiting for parent ${expectedParent.id} after 5s`,
           {
-            node: this.nodes.get(nodeId),
+            node,
             existingNodes: Array.from(this.nodes.entries()).map(
               ([id, node]) => ({
                 id,
@@ -263,6 +381,8 @@ export class CheckpointManager implements CheckpointWriter {
   private async writeCheckpoint() {
     if (!this.root) return;
 
+    await this.checkpointListener?.(this.root);
+
     try {
       // Create a deep copy of the execution tree for masking
       const cloneWithoutFunctions = (obj: unknown): unknown => {
@@ -287,13 +407,52 @@ export class CheckpointManager implements CheckpointWriter {
       const maskedRoot = this.maskExecutionTree(treeCopy as ExecutionNode);
       const steps = this.countSteps(this.root);
 
+      function replacer(key: string, value: unknown): unknown {
+        if (typeof value === "function") {
+          console.warn("[GenSX] Unserializable function found in checkpoint", {
+            key,
+          });
+          return "[function]";
+        }
+
+        if (typeof value === "object" && value !== null) {
+          if (isAsyncIterable(value)) {
+            console.warn(
+              "[GenSX] Unserializable async iterable found in checkpoint",
+              {
+                key,
+              },
+            );
+            return "[async-iterator]";
+          }
+          if (isReadableStream(value)) {
+            console.warn(
+              "[GenSX] Unserializable readable stream found in checkpoint",
+              {
+                key,
+              },
+            );
+            return "[readable-stream]";
+          }
+        }
+
+        if (typeof value === "symbol") {
+          return `[Symbol(${value.toString()})]`;
+        }
+
+        return value;
+      }
+
       // Separately gzip the rawExecution data
       const compressedExecution = await gzipAsync(
         Buffer.from(
-          JSON.stringify({
-            ...maskedRoot,
-            updatedAt: Date.now(),
-          }),
+          JSON.stringify(
+            {
+              ...maskedRoot,
+              updatedAt: Date.now(),
+            },
+            replacer,
+          ),
           "utf-8",
         ),
       );
@@ -302,7 +461,7 @@ export class CheckpointManager implements CheckpointWriter {
 
       const workflowName = this.workflowName ?? this.root.componentName;
       const payload = {
-        executionId: this.root.id,
+        executionId: this.executionRunId,
         version: this.version,
         schemaVersion: 2,
         workflowName,
@@ -395,21 +554,18 @@ export class CheckpointManager implements CheckpointWriter {
 
   private maskExecutionTree(node: ExecutionNode): ExecutionNode {
     // Mask props
-    node.props = this.scrubSecrets(node.props, node.id) as Record<
-      string,
-      unknown
-    >;
+    node.props = this.scrubSecrets(node.props, node) as Record<string, unknown>;
 
     // Mask output if present
     if (node.output !== undefined) {
-      node.output = this.scrubSecrets(node.output, node.id, "output");
+      node.output = this.scrubSecrets(node.output, node, "output");
     }
 
     // Mask metadata if present
     if (node.metadata) {
       node.metadata = this.scrubSecrets(
         node.metadata,
-        node.id,
+        node,
         "metadata",
       ) as Record<string, unknown>;
     }
@@ -452,8 +608,8 @@ export class CheckpointManager implements CheckpointWriter {
     return false;
   }
 
-  private withNode<T>(nodeId: string, fn: () => T): T {
-    this.currentNodeChain.push(nodeId);
+  private withNode<T>(node: ExecutionNode, fn: () => T): T {
+    this.currentNodeChain.push(node);
     try {
       return fn();
     } finally {
@@ -463,9 +619,8 @@ export class CheckpointManager implements CheckpointWriter {
 
   private getEffectiveSecrets(): Set<unknown> {
     const allSecrets = new Set<unknown>();
-    // Collect secrets from current node and all ancestors
-    for (const nodeId of this.currentNodeChain) {
-      const nodeSecrets = this._secretValues.get(nodeId);
+    for (const node of this.currentNodeChain) {
+      const nodeSecrets = this._secretValues.get(node.id);
       if (nodeSecrets) {
         for (const secret of nodeSecrets) {
           allSecrets.add(secret);
@@ -478,14 +633,14 @@ export class CheckpointManager implements CheckpointWriter {
   private registerSecrets(
     props: Record<string, unknown>,
     paths: string[],
-    nodeId: string,
+    node: ExecutionNode,
   ) {
-    this.withNode(nodeId, () => {
+    this.withNode(node, () => {
       // Initialize secrets set for this node
-      let nodeSecrets = this._secretValues.get(nodeId);
+      let nodeSecrets = this._secretValues.get(node.id);
       if (!nodeSecrets) {
         nodeSecrets = new Set();
-        this._secretValues.set(nodeId, nodeSecrets);
+        this._secretValues.set(node.id, nodeSecrets);
       }
 
       // Use paths purely for collection
@@ -533,8 +688,16 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  private scrubSecrets(data: unknown, nodeId?: string, path = ""): unknown {
-    return this.withNode(nodeId ?? "", () => {
+  private scrubSecrets(
+    data: unknown,
+    nodeToScrub: ExecutionNode,
+    path = "",
+  ): unknown {
+    const node = this.nodes.get(nodeToScrub);
+    if (!node) {
+      throw new Error("Node not found");
+    }
+    return this.withNode(node, () => {
       // Handle native functions
       if (this.isNativeFunction(data)) {
         return "[native function]";
@@ -546,9 +709,8 @@ export class CheckpointManager implements CheckpointWriter {
       }
 
       // Handle primitive values
-      if (typeof data === "string" || typeof data === "number") {
-        const strValue = String(data);
-        return this.scrubString(strValue);
+      if (typeof data === "string") {
+        return this.scrubString(data);
       }
 
       // Skip other primitives
@@ -559,11 +721,7 @@ export class CheckpointManager implements CheckpointWriter {
       // Handle arrays
       if (Array.isArray(data)) {
         return data.map((item, index) =>
-          this.scrubSecrets(
-            item,
-            nodeId,
-            path ? `${path}.${index}` : `${index}`,
-          ),
+          this.scrubSecrets(item, node, path ? `${path}.${index}` : `${index}`),
         );
       }
 
@@ -572,7 +730,7 @@ export class CheckpointManager implements CheckpointWriter {
         return Object.fromEntries(
           Object.entries(data).map(([key, value]) => [
             key,
-            this.scrubSecrets(value, nodeId, path ? `${path}.${key}` : key),
+            this.scrubSecrets(value, node, path ? `${path}.${key}` : key),
           ]),
         );
       }
@@ -678,21 +836,21 @@ export class CheckpointManager implements CheckpointWriter {
    */
   addNode(
     partialNode: Partial<ExecutionNode> & {
-      id: string;
-      sequenceNumber: number;
+      id: NodeId;
     },
-    parentId?: string,
-  ): string {
-    const nodeId = partialNode.id;
-    if (!nodeId) {
-      throw new Error("Node ID is required");
-    }
+    parentNode?: ExecutionNode,
+    { skipCheckpointUpdate }: { skipCheckpointUpdate?: boolean } = {},
+  ): ExecutionNode {
     const clonedPartial = this.cloneValue(
       partialNode,
-    ) as Partial<ExecutionNode> & { sequenceNumber: number; id: string };
+    ) as Partial<ExecutionNode> & { id: NodeId };
     const node: ExecutionNode = {
+      completed: false,
       componentName: "Unknown",
       startTime: Date.now(),
+      // This gives us nanosecond precision for the start time, but without a stable epoch.
+      // This lets us relatively compare the start time between nodes, but not absolutely know when it started (use startTime for that)
+      startedAt: hrtime.bigint().toString(),
       children: [],
       props: {},
       ...clonedPartial, // Clone mutable state while preserving functions
@@ -700,22 +858,27 @@ export class CheckpointManager implements CheckpointWriter {
 
     // Register any secrets from componentOpts
     if (node.componentOpts?.secretProps) {
-      this.registerSecrets(node.props, node.componentOpts.secretProps, nodeId);
+      this.registerSecrets(node.props, node.componentOpts.secretProps, node);
     }
 
-    // Store raw values - masking happens at write time
-    this.nodes.set(node.id, node);
+    // Store enhanced node
+    this.nodes.set(node);
 
-    if (parentId) {
-      const parent = this.nodes.get(parentId);
-      if (parent) {
-        // Normal case - parent exists
-        this.attachToParent(node, parent);
-      } else {
-        // Parent doesn't exist yet - track as orphaned
-        node.parentId = parentId;
-        this.handleOrphanedNode(node, parentId);
-      }
+    const parent = parentNode ? this.nodes.get(parentNode) : undefined;
+    if (!parent && parentNode) {
+      console.warn("[Checkpoint] Parent node not stored", {
+        parentNode: {
+          id: parentNode.id,
+        },
+      });
+      // Parent doesn't exist yet - track as orphaned
+      node.parentId = parentNode.id;
+      this.handleOrphanedNode(node, parentNode);
+    }
+
+    if (parent) {
+      // Normal case - parent exists
+      this.attachToParent(node, parent);
     } else {
       // Handle root node case
       if (!this.root) {
@@ -742,25 +905,113 @@ export class CheckpointManager implements CheckpointWriter {
       this.orphanedNodes.delete(node.id);
     }
 
-    this.updateCheckpoint();
-    return node.id;
+    if (!skipCheckpointUpdate) {
+      this.updateCheckpoint();
+    }
+    return node;
   }
 
-  completeNode(id: string, output: unknown) {
-    const node = this.nodes.get(id);
+  private addCachedNodeRecursively(
+    node: ExecutionNode,
+    parentNode?: ExecutionNode,
+  ) {
+    const parentPath = parentNode?.id ? getPathId(parentNode.id) : "";
+    const nodeId = generateNodeId(
+      node.componentName,
+      node.props,
+      node.componentOpts?.idPropsKeys,
+      parentPath,
+      this.getNextCallIndex(
+        parentPath,
+        node.componentName,
+        node.props,
+        node.componentOpts?.idPropsKeys,
+      ),
+    );
+    // Check if this node already exists in the current checkpoint
+    if (this.nodes.has(nodeId)) {
+      console.debug(`[Replay] Node ${nodeId} already exists, skipping subtree`);
+      return;
+    }
+
+    // Create a copy of the node to avoid modifying the original
+    const nodeCopy: ExecutionNode = {
+      ...node,
+      id: nodeId,
+      startedAt: hrtime.bigint().toString(),
+      children: [], // We'll add children recursively
+    };
+
+    // Add this node to the current checkpoint
+    this.nodes.set(nodeCopy);
+
+    const parent = parentNode ? this.nodes.get(parentNode) : undefined;
+    if (parentNode && !parent) {
+      console.warn("[Checkpoint] Parent node not stored", {
+        parentNode: {
+          id: parentNode.id,
+        },
+      });
+
+      // Parent doesn't exist yet - track as orphaned
+      this.handleOrphanedNode(nodeCopy, parentNode);
+    }
+
+    // Handle parent-child relationships
+    if (parent) {
+      this.attachToParent(nodeCopy, parent);
+    } else {
+      // This is a root node
+      this.root ??= nodeCopy;
+    }
+
+    // Check if this node resolves any orphaned children
+    const waitingChildren = this.orphanedNodes.get(nodeCopy.id);
+    if (waitingChildren) {
+      for (const orphan of waitingChildren) {
+        this.attachToParent(orphan, nodeCopy);
+      }
+      this.orphanedNodes.delete(nodeCopy.id);
+    }
+
+    // Recursively add all children
+    node.children.forEach((child) => {
+      if (child.completed) {
+        this.addCachedNodeRecursively(child, nodeCopy);
+      }
+    });
+  }
+
+  completeNode(
+    nodeToUpdate: ExecutionNode,
+    output: unknown,
+    { wrapInPromise }: { wrapInPromise?: boolean } = {},
+  ) {
+    const node = this.nodes.get(nodeToUpdate);
+
     if (node) {
+      node.completed = true;
       node.endTime = Date.now();
       node.output = this.cloneValue(output);
+
+      if (wrapInPromise) {
+        node.output = {
+          __gensxSerialized: true,
+          type: "promise",
+
+          value: node.output,
+        };
+      }
 
       if (
         node.componentOpts?.secretOutputs &&
         output !== STREAMING_PLACEHOLDER
       ) {
-        this.withNode(id, () => {
-          let nodeSecrets = this._secretValues.get(id);
+        this.withNode(node, () => {
+          let nodeSecrets = this._secretValues.get(node.id);
           if (!nodeSecrets) {
             nodeSecrets = new Set();
-            this._secretValues.set(id, nodeSecrets);
+            this._secretValues.set(node.id, nodeSecrets);
           }
           this.collectSecretValues(output, nodeSecrets);
         });
@@ -768,12 +1019,14 @@ export class CheckpointManager implements CheckpointWriter {
 
       this.updateCheckpoint();
     } else {
-      console.warn(`[Tracker] Attempted to complete unknown node:`, { id });
+      console.warn(`[Tracker] Attempted to complete unknown node:`, {
+        id: nodeToUpdate.id,
+      });
     }
   }
 
-  addMetadata(id: string, metadata: Record<string, unknown>) {
-    const node = this.nodes.get(id);
+  addMetadata(nodeToUpdate: ExecutionNode, metadata: Record<string, unknown>) {
+    const node = this.nodes.get(nodeToUpdate);
     if (node) {
       node.metadata = {
         ...node.metadata,
@@ -792,19 +1045,19 @@ export class CheckpointManager implements CheckpointWriter {
     this.printUrl = printUrl;
   }
 
-  updateNode(id: string, updates: Partial<ExecutionNode>) {
-    const node = this.nodes.get(id);
+  updateNode(nodeToUpdate: ExecutionNode, updates: Partial<ExecutionNode>) {
+    const node = this.nodes.get(nodeToUpdate);
     if (node) {
       if (
         "output" in updates &&
         node.componentOpts?.secretOutputs &&
         updates.output !== STREAMING_PLACEHOLDER
       ) {
-        this.withNode(id, () => {
-          let nodeSecrets = this._secretValues.get(id);
+        this.withNode(node, () => {
+          let nodeSecrets = this._secretValues.get(node.id);
           if (!nodeSecrets) {
             nodeSecrets = new Set();
-            this._secretValues.set(id, nodeSecrets);
+            this._secretValues.set(node.id, nodeSecrets);
           }
           this.collectSecretValues(updates.output, nodeSecrets);
         });
@@ -813,7 +1066,9 @@ export class CheckpointManager implements CheckpointWriter {
       Object.assign(node, this.cloneValue(updates));
       this.updateCheckpoint();
     } else {
-      console.warn(`[Tracker] Attempted to update unknown node:`, { id });
+      console.warn(`[Tracker] Attempted to update unknown node:`, {
+        id: nodeToUpdate.id,
+      });
     }
   }
 
@@ -832,118 +1087,145 @@ export class CheckpointManager implements CheckpointWriter {
     }
   }
 
-  // Replay functionality
-  setReplayCheckpoint(checkpoint: ExecutionNode) {
-    this.sourceCheckpoint = checkpoint;
-    this.buildReplayLookup(checkpoint);
+  private buildReplayLookup(node: ExecutionNode) {
+    this.addToReplayLookup(node);
+
+    // Ensure all the nodes are in order of when they started, so we can just pick the appropriate node off the front of the list
+    this.replayLookup.sort((a, b) =>
+      Number(BigInt(a.startedAt) - BigInt(b.startedAt)),
+    );
+  }
+
+  private addToReplayLookup(node: ExecutionNode) {
+    this.replayLookup.push(node);
+
+    node.children.forEach((child) => {
+      this.addToReplayLookup(child);
+    });
   }
 
   /**
-   * Advances the sequence number to the specified value.
-   * This is used during replay to ensure the sequence number matches the original execution.
+   * 1. Check the first node in the list. If it has the same path, content ID and call index use it.
+   * 2. If something does not match, look through the list to find a potential match (and warn about non-deterministic behavior if there is a match):
+   *   a. Look for the first node that has the same path, content ID and call index.
+   *   b. Look for the first node that has the same path and content ID.
+   *   c. Look for the first node that has the same content ID.
+   *   d. Look for the first node that has the same component name.
+   * 3. If no match is found, this component is probably not in the checkpoint. If there are nodes in the checkpoint, this indicates non-deterministic behavior.
+   * @param nodeId
+   * @returns
    */
-  private advanceSequenceNumberTo(targetSequence: number) {
-    if (this.sequenceNumber < targetSequence) {
-      this.sequenceNumber = targetSequence;
+  getNodeFromCheckpoint(
+    nodeId: NodeId,
+  ):
+    | { found: false; node?: ExecutionNode }
+    | { found: true; node: ExecutionNode } {
+    if (!this.replayLookup.length) {
+      return { found: false };
     }
-  }
 
-  private buildReplayLookup(node: ExecutionNode) {
-    if (node.endTime && node.output !== undefined) {
-      this.replayLookup.set(node.id, node.output);
+    const [pathId, contentId] = nodeId.split(":");
+    const componentName = pathId.split("-").pop();
+
+    // Strategy 1: Exact Node ID Match
+    const exactNode = this.replayLookup.find((node) => node.id === nodeId);
+    if (exactNode) {
+      if (this.replayLookup.indexOf(exactNode) !== 0) {
+        console.debug(
+          `[Replay] Non-deterministic behavior detected ${exactNode.id} is not the next node in the checkpoint (next: ${this.replayLookup[0].id})`,
+        );
+      }
+      this.replayLookup.splice(this.replayLookup.indexOf(exactNode), 1);
+      return { found: true, node: exactNode };
     }
-    node.children.forEach((child) => {
-      this.buildReplayLookup(child);
+
+    // Strategy 2: Path/Content matching (same path, same content, different call index)
+    const pathContentNode = this.replayLookup.find((node) => {
+      const [nodePathId, nodeContentId] = node.id.split(":");
+      return nodePathId === pathId && nodeContentId === contentId;
     });
+    if (pathContentNode) {
+      console.debug(
+        `[Replay] Non-deterministic behavior detected: Found node with same path and content but different call index (target: ${nodeId}, found: ${pathContentNode.id})`,
+      );
+      this.replayLookup.splice(this.replayLookup.indexOf(pathContentNode), 1);
+      return { found: true, node: pathContentNode };
+    }
+
+    // Strategy 3: Content-based matching (same content/component name, different path)
+    const contentNode = this.replayLookup.find((node) => {
+      const nodeContentId = getContentId(node.id);
+      return (
+        node.componentName === componentName && nodeContentId === contentId
+      );
+    });
+    if (contentNode) {
+      console.debug(
+        `[Replay] Non-deterministic behavior detected: Found node with same content but different path (target: ${nodeId}, found: ${contentNode.id})`,
+      );
+      this.replayLookup.splice(this.replayLookup.indexOf(contentNode), 1);
+      return { found: true, node: contentNode };
+    }
+
+    console.debug(
+      `[Replay] No match found for node ${nodeId}, but there are unused nodes in the checkpoint. This may indicate non-deterministic behavior.`,
+      JSON.stringify(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        this.replayLookup.map((node) => this.slimCheckpoint(node)),
+        null,
+        2,
+      ),
+    );
+    return { found: false };
   }
 
-  getCompletedResult(nodeId: string): unknown {
-    const result = this.replayLookup.get(nodeId);
-    return result;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public slimCheckpoint(checkpoint?: ExecutionNode): any {
+    if (!checkpoint) return undefined;
+    const slimmed = {
+      id: checkpoint.id,
+      completed: checkpoint.completed,
+      startedAt: checkpoint.startedAt,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      children: checkpoint.children.map((child) => this.slimCheckpoint(child)),
+    };
+    return slimmed;
   }
 
   // Checkpoint reconstruction methods
-  addCachedSubtreeToCheckpoint(nodeId: string) {
-    if (!this.sourceCheckpoint) {
-      console.warn(
-        `[Checkpoint] No source checkpoint available for node ${nodeId}`,
-      );
+  addCachedSubtreeToCheckpoint(node: ExecutionNode, parent?: ExecutionNode) {
+    console.debug(
+      `[Replay] Adding cached subtree for ${node.componentName} (${node.id})`,
+    );
+
+    if (!node.completed) {
       return;
     }
 
-    const cachedNode = this.findNodeInCheckpoint(nodeId, this.sourceCheckpoint);
-    if (cachedNode) {
-      console.info(
-        `[Checkpoint] Adding cached subtree for ${cachedNode.componentName} (${nodeId})`,
-      );
-      this.addCachedNodeRecursively(cachedNode);
-    } else {
+    this.addCachedNodeRecursively(node, parent);
+
+    // Validate tree structure after adding cached nodes
+    if (!this.isTreeValid()) {
       console.warn(
-        `[Checkpoint] Node ${nodeId} not found in source checkpoint`,
+        `[Replay] Tree validation failed after adding cached subtree for ${node.componentName}`,
       );
     }
-    this.updateCheckpoint();
   }
+}
 
-  private findNodeInCheckpoint(
-    nodeId: string,
-    checkpoint: ExecutionNode,
-  ): ExecutionNode | null {
-    if (checkpoint.id === nodeId) return checkpoint;
+const pathIdsMap = new Map<string, PathId>();
+const contentIdsMap = new Map<string, ContentId>();
 
-    for (const child of checkpoint.children) {
-      const found = this.findNodeInCheckpoint(nodeId, child);
-      if (found) return found;
-    }
+// Helpers for working with node IDs
+// eg. "Workflow/Component:456:789" -> "Workflow/Component", "456", "789"
+function getPathId(id: NodeId): PathId {
+  const pathId = pathIdsMap.get(id) ?? id.split(":")[0];
+  pathIdsMap.set(id, pathId);
+  return pathId;
+}
 
-    return null;
-  }
-
-  private addCachedNodeRecursively(node: ExecutionNode) {
-    // Check if this node already exists in the current checkpoint
-    if (this.nodes.has(node.id)) {
-      console.info(`[Checkpoint] Node ${node.id} already exists, skipping`);
-      return;
-    }
-
-    // Create a copy of the node to avoid modifying the original
-    const nodeCopy: ExecutionNode = {
-      ...node,
-      children: [], // We'll add children recursively
-    };
-
-    // During replay, advance the sequence number to match the original execution
-    this.advanceSequenceNumberTo(nodeCopy.sequenceNumber + 1);
-
-    // Add this node to the current checkpoint
-    this.nodes.set(nodeCopy.id, nodeCopy);
-
-    // Handle parent-child relationships
-    if (nodeCopy.parentId) {
-      const parent = this.nodes.get(nodeCopy.parentId);
-      if (parent) {
-        this.attachToParent(nodeCopy, parent);
-      } else {
-        // Parent doesn't exist yet - track as orphaned
-        this.handleOrphanedNode(nodeCopy, nodeCopy.parentId);
-      }
-    } else {
-      // This is a root node
-      this.root ??= nodeCopy;
-    }
-
-    // Check if this node resolves any orphaned children
-    const waitingChildren = this.orphanedNodes.get(nodeCopy.id);
-    if (waitingChildren) {
-      for (const orphan of waitingChildren) {
-        this.attachToParent(orphan, nodeCopy);
-      }
-      this.orphanedNodes.delete(nodeCopy.id);
-    }
-
-    // Recursively add all children
-    node.children.forEach((child) => {
-      this.addCachedNodeRecursively(child);
-    });
-  }
+function getContentId(id: NodeId): ContentId {
+  const contentId = contentIdsMap.get(id) ?? id.split(":")[1];
+  contentIdsMap.set(id, contentId);
+  return contentId;
 }

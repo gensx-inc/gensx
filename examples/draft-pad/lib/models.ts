@@ -1,5 +1,7 @@
 import { type ModelConfig } from "@/gensx/workflows";
 
+import { getApiUrl } from "./config";
+
 interface ModelsDotDevModel {
   id: string;
   name: string;
@@ -60,7 +62,7 @@ const PROVIDER_MAPPING: Record<
 export async function fetchAvailableModels(): Promise<ModelConfig[]> {
   try {
     // Use our API route to avoid CORS issues
-    const response = await fetch("/api/models");
+    const response = await fetch(getApiUrl("/api/models"));
 
     if (!response.ok) {
       throw new Error("Failed to fetch models");

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.2.0...gensx-storage-v0.2.1) (2025-07-16)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.1
+
 ## [0.2.0](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.1.10...gensx-storage-v0.2.0) (2025-07-09)
 
 

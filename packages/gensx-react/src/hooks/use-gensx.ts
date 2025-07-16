@@ -1,4 +1,10 @@
-import type { JsonValue, WorkflowMessage } from "@gensx/core";
+import type {
+  InferToolParams,
+  JsonValue,
+  ToolBox,
+  ToolImplementations,
+  WorkflowMessage,
+} from "@gensx/core";
 
 import {
   startTransition,
@@ -21,11 +27,19 @@ export interface WorkflowConfig {
   headers?: Record<string, string>;
 }
 
-export interface UseWorkflowConfig<TOutput = unknown> {
+export interface UseWorkflowConfig<
+  TOutput = unknown,
+  TToolBox extends ToolBox = ToolBox,
+> {
   /**
    * All workflow configuration in one place
    */
   config: WorkflowConfig;
+
+  /**
+   * External tools that can be called from the workflow
+   */
+  tools?: ToolImplementations<TToolBox>;
 
   /**
    * Callback fired when workflow starts
@@ -104,11 +118,22 @@ export interface UseWorkflowResult<TInputs = unknown, TOutput = unknown> {
  * workflow.clear();
  * ```
  */
-export function useWorkflow<TInputs = unknown, TOutput = unknown>(
-  options: UseWorkflowConfig<TOutput>,
+export function useWorkflow<
+  TInputs = unknown,
+  TOutput = unknown,
+  TToolBox extends ToolBox = ToolBox,
+>(
+  options: UseWorkflowConfig<TOutput, TToolBox>,
 ): UseWorkflowResult<TInputs, TOutput> {
-  const { config, onStart, onComplete, onError, onEvent, outputTransformer } =
-    options;
+  const {
+    config,
+    tools,
+    onStart,
+    onComplete,
+    onError,
+    onEvent,
+    outputTransformer,
+  } = options;
 
   const { baseUrl, headers = {} } = config;
 
@@ -122,12 +147,13 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
   const abortControllerRef = useRef<AbortController | null>(null);
   const outputRef = useRef<TOutput | null>(null);
   const accumulatedStringRef = useRef<string>("");
+  const executionId = useRef<string | null>(null);
 
   // Process a single WorkflowMessage event
   const processEvent = useCallback(
     (event: WorkflowMessage) => {
       // Batch all state updates for this event to prevent race conditions
-      startTransition(() => {
+      startTransition(async () => {
         // Add event to events array
         setEvents((prev) => [...prev, event]);
 
@@ -137,6 +163,7 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
         // Handle specific event types and fire callbacks
         switch (event.type) {
           case "start":
+            executionId.current = event.workflowExecutionId ?? null;
             setInProgress(true);
             onStart?.(event.workflowName);
             break;
@@ -199,10 +226,83 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
             setInProgress(false);
             onError?.(event.error);
             break;
+
+          case "external-tool":
+            if (!executionId.current) {
+              console.error(
+                "[GenSX] Cannot resolve tool call, execution ID is not set.",
+              );
+              break;
+            }
+            const toolImpl = tools?.[event.toolName as keyof typeof tools];
+            // Handle external tool calls from workflow
+            if (toolImpl) {
+              const result = await toolImpl.execute(
+                event.params as unknown as InferToolParams<
+                  TToolBox,
+                  typeof event.toolName
+                >,
+              );
+
+              // Send this to the API
+              const response = await fetch(
+                `${baseUrl}/workflowExecutions/${executionId.current}/fulfill/${event.nodeId}`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...headers,
+                  },
+                  body: JSON.stringify(result),
+                },
+              );
+
+              if (!response.ok) {
+                throw new Error(
+                  `Failed to resume workflow: ${response.status} ${response.statusText}`,
+                );
+              }
+
+              break;
+            }
+            console.warn(
+              "[GenSX] Tool implementation not found:",
+              event.toolName,
+            );
+
+            // If there is no tool implementation, return a well-known object as the result so the workflow can continue
+            const response = await fetch(
+              `${baseUrl}/workflowExecutions/${executionId.current}/fulfill/${event.nodeId}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...headers,
+                },
+                body: JSON.stringify({
+                  __gensxMissingToolImplementation: true,
+                  toolName: event.toolName,
+                }),
+              },
+            );
+            if (!response.ok) {
+              throw new Error(
+                `Failed to resume workflow: ${response.status} ${response.statusText}`,
+              );
+            }
+            break;
         }
       });
     },
-    [onStart, onComplete, onError, onEvent, outputTransformer],
+    [
+      onStart,
+      onComplete,
+      onError,
+      onEvent,
+      outputTransformer,
+      tools,
+      executionId,
+    ],
   );
 
   // Parse streaming response
@@ -230,7 +330,7 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
             if (!line.trim()) continue;
 
             try {
-              const event = JSON.parse(line) as WorkflowMessage;
+              const event = JSON.parse(line.trim()) as WorkflowMessage;
               processEvent(event);
             } catch (_e) {
               console.warn("Failed to parse event:", line);
@@ -291,7 +391,7 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
       abortControllerRef.current = new AbortController();
 
       try {
-        const response = await fetch(baseUrl, {
+        const response = await fetch(`${baseUrl}/start`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -307,8 +407,21 @@ export function useWorkflow<TInputs = unknown, TOutput = unknown>(
           );
         }
 
+        const { executionId: newExecutionId } = (await response.json()) as {
+          executionId: string;
+        };
+        executionId.current = newExecutionId;
+
+        // Connect to progress events
+        const progressResponse = await fetch(
+          `${baseUrl}/workflowExecutions/${executionId.current}/progress`,
+          {
+            method: "POST",
+          },
+        );
+
         // Parse the stream
-        await parseStream(response);
+        await parseStream(progressResponse);
 
         // onComplete is already called in processEvent when 'end' event is received
       } catch (err) {
