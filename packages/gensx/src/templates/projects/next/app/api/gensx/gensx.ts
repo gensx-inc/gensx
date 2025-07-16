@@ -1,7 +1,5 @@
-export const GENSX_WORKFLOW_NAME = "MapAgent";
-
 export const GENSX_ORG = process.env.GENSX_ORG;
-export const GENSX_PROJECT = process.env.GENSX_PROJECT ?? "client-side-tools";
+export const GENSX_PROJECT = process.env.GENSX_PROJECT;
 export const GENSX_ENV = process.env.GENSX_ENV ?? "default";
 
 export const shouldUseLocalDevServer = () => {
