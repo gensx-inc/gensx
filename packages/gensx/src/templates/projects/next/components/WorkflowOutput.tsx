@@ -27,8 +27,6 @@ export default function WorkflowOutput({
     return { variant: "default" as const, label: "Ready" };
   };
 
-  console.log("error", error);
-
   const statusBadge = getStatusBadge();
 
   return (

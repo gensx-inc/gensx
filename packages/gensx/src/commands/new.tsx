@@ -149,6 +149,12 @@ export function NewProjectUI({ projectPath, options }: Props) {
 
         // If template is provided in options, skip template selection
         if (options.template) {
+          const validTemplates: TemplateKind[] = ["typescript", "next"];
+          if (!validTemplates.includes(options.template as TemplateKind)) {
+            throw new Error(
+              `Invalid template "${options.template}". Valid templates are: ${validTemplates.join(", ")}`,
+            );
+          }
           const templateType = options.template as TemplateKind;
           setSelectedTemplate(templateType);
           // If description is provided in options, skip the createProject phase

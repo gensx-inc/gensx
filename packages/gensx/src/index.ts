@@ -41,7 +41,7 @@ export async function runCLI() {
     .command("new")
     .description("Create a new GenSX project")
     .argument("<project-directory>", "Directory to create the project in")
-    .option("-t, --template <type>", "Template to use (ts, next)")
+    .option("-t, --template <type>", "Template to use (typescript, next)")
     .option("-f, --force", "Overwrite existing files", false)
     .option("-s, --skip-login", "Skip login step", false)
     .option("--skip-ide-rules", "Skip IDE rules selection", false)
