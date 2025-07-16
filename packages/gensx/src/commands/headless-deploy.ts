@@ -16,17 +16,20 @@ import { generateSchema } from "../utils/schema.js";
 import { USER_AGENT } from "../utils/user-agent.js";
 import { build } from "./build.js";
 
-export async function headlessDeploy(file: string, options: DeployOptions & {
-  outDir?: string;
-  tsconfig?: string;
-}) {
+export async function headlessDeploy(
+  file: string,
+  options: DeployOptions & {
+    outDir?: string;
+    tsconfig?: string;
+  },
+) {
   // 1. Resolve project name
   let projectName = options.project;
   if (!projectName) {
     const projectConfig = await readProjectConfig(process.cwd());
     if (!projectConfig?.projectName) {
       throw new Error(
-        "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field."
+        "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
       );
     }
     projectName = projectConfig.projectName;
@@ -44,7 +47,7 @@ export async function headlessDeploy(file: string, options: DeployOptions & {
     const projectConfig = await readProjectConfig(process.cwd());
     if (!projectConfig?.environmentName) {
       throw new Error(
-        "No environment specified. Use --env or add 'environmentName' to gensx.yaml."
+        "No environment specified. Use --env or add 'environmentName' to gensx.yaml.",
       );
     }
     environment = projectConfig.environmentName;
@@ -53,13 +56,17 @@ export async function headlessDeploy(file: string, options: DeployOptions & {
   // 4. Validate environment exists
   const envExists = await checkEnvironmentExists(projectName, environment);
   if (!envExists) {
-    throw new Error(`Environment ${environment} does not exist for project ${projectName}.`);
+    throw new Error(
+      `Environment ${environment} does not exist for project ${projectName}.`,
+    );
   }
 
   // 5. Validate and select environment (before deployment)
   const validEnv = await validateAndSelectEnvironment(projectName, environment);
   if (!validEnv) {
-    throw new Error(`Failed to validate or select environment '${environment}' for project '${projectName}'.`);
+    throw new Error(
+      `Failed to validate or select environment '${environment}' for project '${projectName}'.`,
+    );
   }
 
   // 6. Build or use archive
@@ -73,7 +80,9 @@ export async function headlessDeploy(file: string, options: DeployOptions & {
     }
     const absolutePath = resolve(process.cwd(), file);
     if (!existsSync(absolutePath)) {
-      throw new Error(`Workflow file ${file} does not exist (needed for schema generation)`);
+      throw new Error(
+        `Workflow file ${file} does not exist (needed for schema generation)`,
+      );
     }
     schemas = generateSchema(absolutePath);
   } else {
@@ -84,7 +93,11 @@ export async function headlessDeploy(file: string, options: DeployOptions & {
         tsconfig: options.tsconfig,
         verbose: options.verbose,
       },
-      options.verbose ? (data) => { console.info(data); } : undefined
+      options.verbose
+        ? (data) => {
+            console.info(data);
+          }
+        : undefined,
     );
     bundleFile = buildResult.bundleFile;
     schemas = buildResult.schemas;
@@ -98,7 +111,11 @@ export async function headlessDeploy(file: string, options: DeployOptions & {
 
   // 8. Create form data with bundle
   const form = new FormData();
-  form.append("file", fs.createReadStream(resolve(process.cwd(), bundleFile)), "bundle.js");
+  form.append(
+    "file",
+    fs.createReadStream(resolve(process.cwd(), bundleFile)),
+    "bundle.js",
+  );
   if (options.envVar) {
     form.append("environmentVariables", JSON.stringify(options.envVar));
   }
@@ -107,10 +124,12 @@ export async function headlessDeploy(file: string, options: DeployOptions & {
   // 9. Deploy
   const url = new URL(
     `/org/${authConfig.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environment)}/deploy`,
-    authConfig.apiBaseUrl
+    authConfig.apiBaseUrl,
   );
 
-  console.info(`Deploying project '${projectName}' to environment '${environment}'...`);
+  console.info(
+    `Deploying project '${projectName}' to environment '${environment}'...`,
+  );
   const response = await axios.post(url.toString(), form, {
     headers: {
       Authorization: `Bearer ${authConfig.token}`,
@@ -119,7 +138,9 @@ export async function headlessDeploy(file: string, options: DeployOptions & {
   });
 
   if (response.status >= 400) {
-    throw new Error(`Failed to deploy: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Failed to deploy: ${response.status} ${response.statusText}`,
+    );
   }
 
   const deploymentData = response.data as {
@@ -138,6 +159,6 @@ export async function headlessDeploy(file: string, options: DeployOptions & {
     console.info(`- ${workflow.name}`);
   }
   console.info(
-    `Dashboard: ${authConfig.consoleBaseUrl}/${authConfig.org}/${deploymentData.projectName}?env=${deploymentData.environmentId}`
+    `Dashboard: ${authConfig.consoleBaseUrl}/${authConfig.org}/${deploymentData.projectName}?env=${deploymentData.environmentId}`,
   );
 }
