@@ -389,36 +389,64 @@ export function NewProjectUI({ projectPath, options }: Props) {
             )}
           </Box>
 
-          <Box marginTop={1} flexDirection="column">
-            <Text>2. Choose what you want to do:</Text>
+          {selectedTemplate === "next" ? (
+            <>
+              <Box marginTop={1}>
+                <Text>2. </Text>
+                <Text color="cyan">export OPENAI_API_KEY=your_api_key</Text>
+              </Box>
 
-            <Box marginTop={1} marginLeft={2} flexDirection="column">
-              <Text bold>DEPLOY THE PROJECT</Text>
-              <Text>
-                <Text color="cyan">
-                  OPENAI_API_KEY=your_api_key npm run deploy
-                </Text>
-              </Text>
-            </Box>
+              <Box marginTop={1}>
+                <Text>3. Run the app:</Text>
+                <Text color="cyan">pnpm run dev</Text>
+              </Box>
 
-            <Box marginTop={1} marginLeft={2} flexDirection="column">
-              <Text bold>RUN LOCALLY</Text>
-              <Text>
-                <Text color="cyan">
-                  OPENAI_API_KEY=your_api_key npm run dev
+              <Box marginTop={2} flexDirection="column">
+                <Text>Your app will be available at:</Text>
+                <Text>
+                  - <Text color="cyan">http://localhost:3000</Text> (Next.js
+                  app)
                 </Text>
-              </Text>
-            </Box>
+                <Text>
+                  - <Text color="cyan">http://localhost:1337/swagger-ui</Text>{" "}
+                  (GenSX Workflows)
+                </Text>
+              </Box>
+            </>
+          ) : (
+            <>
+              <Box marginTop={1} flexDirection="column">
+                <Text>2. Choose what you want to do:</Text>
 
-            <Box marginTop={1} marginLeft={2} flexDirection="column">
-              <Text bold>START API SERVER</Text>
-              <Text>
-                <Text color="cyan">
-                  OPENAI_API_KEY=your_api_key npm run start
-                </Text>
-              </Text>
-            </Box>
-          </Box>
+                <Box marginTop={1} marginLeft={2} flexDirection="column">
+                  <Text bold>DEPLOY THE PROJECT</Text>
+                  <Text>
+                    <Text color="cyan">
+                      OPENAI_API_KEY=your_api_key npm run deploy
+                    </Text>
+                  </Text>
+                </Box>
+
+                <Box marginTop={1} marginLeft={2} flexDirection="column">
+                  <Text bold>RUN LOCALLY</Text>
+                  <Text>
+                    <Text color="cyan">
+                      OPENAI_API_KEY=your_api_key npm run dev
+                    </Text>
+                  </Text>
+                </Box>
+
+                <Box marginTop={1} marginLeft={2} flexDirection="column">
+                  <Text bold>START API SERVER</Text>
+                  <Text>
+                    <Text color="cyan">
+                      OPENAI_API_KEY=your_api_key npm run start
+                    </Text>
+                  </Text>
+                </Box>
+              </Box>
+            </>
+          )}
 
           <Box marginTop={2}>
             <Text>
@@ -624,16 +652,6 @@ async function copyTemplateFiles(templateName: string, targetPath: string) {
 
       // Skip template.json as it's configuration, not template content
       if (entry.name === "template.json") continue;
-
-      // Skip extra compiled files
-      // if (
-      //   entry.name === "next.config.d.ts" ||
-      //   entry.name === "next.config.d.ts.map" ||
-      //   entry.name === "next.config.js" ||
-      //   entry.name === "next.config.js.map"
-      // ) {
-      //   continue;
-      // }
 
       if (entry.isDirectory()) {
         await mkdir(targetFilePath, { recursive: true });

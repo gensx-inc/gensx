@@ -100,7 +100,7 @@ suite("new command UI", () => {
     const { lastFrame } = render(
       React.createElement(NewProjectUI, {
         projectPath: path.join(tempDir, "test-project"),
-        options: { force: true },
+        options: { force: true, template: "typescript" },
       }),
     );
 
@@ -142,7 +142,7 @@ suite("new command UI", () => {
     const { lastFrame } = render(
       React.createElement(NewProjectUI, {
         projectPath: path.join(tempDir, "test-project-all"),
-        options: { force: true },
+        options: { force: true, template: "typescript" },
       }),
     );
 
@@ -197,7 +197,7 @@ suite("new command UI", () => {
     const { lastFrame } = render(
       React.createElement(NewProjectUI, {
         projectPath: path.join(tempDir, "test-project-none"),
-        options: { force: true },
+        options: { force: true, template: "typescript" },
       }),
     );
 
@@ -226,5 +226,115 @@ suite("new command UI", () => {
     expect(exec).not.toHaveBeenCalledWith(
       expect.stringMatching(/npx @gensx\/.+/),
     );
+  });
+
+  it("should allow template selection and show typescript template output", async () => {
+    const { lastFrame } = render(
+      React.createElement(NewProjectUI, {
+        projectPath: path.join(tempDir, "test-typescript-project"),
+        options: { force: true },
+      }),
+    );
+
+    // Wait for template selection
+    await waitForText(lastFrame, /Select a project template/);
+
+    // Simulate selecting TypeScript template
+    if (!global.__selectInputOnSelect || !global.__selectInputOptions)
+      throw new Error("SelectInput handler/options not found");
+    const typescriptOption = global.__selectInputOptions.find(
+      (opt) => opt.value === "typescript",
+    );
+    if (!typescriptOption) throw new Error("TypeScript option not found");
+    global.__selectInputOnSelect(typescriptOption);
+
+    // Wait for description prompt
+    await waitForText(lastFrame, /Enter a project description/);
+    if (!global.__textInputOnChange || !global.__textInputOnSubmit)
+      throw new Error("TextInput handlers not found");
+    global.__textInputOnChange("");
+    global.__textInputOnSubmit("");
+
+    // Skip AI assistants selection
+    await waitForText(lastFrame, /Select AI assistants to integrate/);
+    const noneOption = global.__selectInputOptions.find(
+      (opt) => opt.value === "none",
+    );
+    if (!noneOption) throw new Error("None option not found");
+    global.__selectInputOnSelect(noneOption);
+
+    await waitForText(lastFrame, /Successfully created GenSX project/);
+
+    // Verify TypeScript template specific output
+    expect(lastFrame()).toMatch(/DEPLOY THE PROJECT/);
+    expect(lastFrame()).toMatch(/RUN LOCALLY/);
+    expect(lastFrame()).toMatch(/START API SERVER/);
+    expect(lastFrame()).toMatch(/src\/workflows\.tsx/);
+  });
+
+  it("should allow template selection and show next.js template output", async () => {
+    const { lastFrame } = render(
+      React.createElement(NewProjectUI, {
+        projectPath: path.join(tempDir, "test-nextjs-project"),
+        options: { force: true },
+      }),
+    );
+
+    // Wait for template selection
+    await waitForText(lastFrame, /Select a project template/);
+
+    // Simulate selecting Next.js template
+    const nextOption = global.__selectInputOptions!.find(
+      (opt) => opt.value === "next",
+    );
+    if (!nextOption) throw new Error("Next.js option not found");
+    global.__selectInputOnSelect!(nextOption);
+
+    // Wait for description prompt
+    await waitForText(lastFrame, /Enter a project description/);
+    global.__textInputOnChange!("");
+    global.__textInputOnSubmit!("");
+
+    // Skip AI assistants selection
+    await waitForText(lastFrame, /Select AI assistants to integrate/);
+    const noneOption = global.__selectInputOptions!.find(
+      (opt) => opt.value === "none",
+    );
+    if (!noneOption) throw new Error("None option not found");
+    global.__selectInputOnSelect!(noneOption);
+
+    await waitForText(lastFrame, /Successfully created GenSX project/);
+
+    // Verify Next.js template specific output
+    expect(lastFrame()).toContain("export OPENAI_API_KEY=your_api_key");
+    expect(lastFrame()).toContain("pnpm run dev");
+    expect(lastFrame()).toContain("Your app will be available at:");
+    expect(lastFrame()).toContain("http://localhost:3000");
+    expect(lastFrame()).toContain("Next.js app");
+    expect(lastFrame()).toContain("http://localhost:1337/swagger-ui");
+    expect(lastFrame()).toContain("GenSX Workflows");
+    expect(lastFrame()).toContain("gensx/workflows.ts");
+  });
+
+  it("should skip template selection when template is provided in options", async () => {
+    const { lastFrame } = render(
+      React.createElement(NewProjectUI, {
+        projectPath: path.join(tempDir, "test-preset-template"),
+        options: {
+          force: true,
+          template: "next",
+          description: "Preset Next.js project",
+          skipIdeRules: true,
+        },
+      }),
+    );
+
+    // Should skip template selection, description input, and AI assistant selection
+    // and go straight to completion due to skipIdeRules: true
+    await waitForText(lastFrame, /Successfully created GenSX project/);
+
+    // Verify Next.js template output is shown
+    expect(lastFrame()).toMatch(/pnpm run dev/);
+    expect(lastFrame()).toMatch(/gensx\/workflows\.ts/);
   });
 });
