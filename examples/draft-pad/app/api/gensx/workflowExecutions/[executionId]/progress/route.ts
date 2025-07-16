@@ -1,7 +1,7 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
-import { shouldUseLocalDevServer } from "../../../start/route";
+import { shouldUseLocalDevServer } from "../../../../../../lib/utils";
 
 /**
  * API route that acts as a pure passthrough to GenSX

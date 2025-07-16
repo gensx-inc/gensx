@@ -1,20 +1,9 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
 
-type RequestBody = Record<string, unknown>;
+import { shouldUseLocalDevServer } from "../../../../lib/utils";
 
-export const shouldUseLocalDevServer = () => {
-  if (
-    process.env.GENSX_BASE_URL &&
-    !process.env.GENSX_BASE_URL.includes("localhost")
-  ) {
-    return false;
-  }
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
-    return false;
-  }
-  return false;
-};
+type RequestBody = Record<string, unknown>;
 
 /**
  * API route that acts as a pure passthrough to GenSX
