@@ -7,7 +7,7 @@ import axios from "axios";
 import FormData from "form-data";
 import { Definition } from "typescript-json-schema";
 
-import { checkEnvironmentExists } from "../models/environment.js";
+import { checkEnvironmentExists, createEnvironment } from "../models/environment.js";
 import { checkProjectExists } from "../models/projects.js";
 import { getAuth } from "../utils/config.js";
 import { readProjectConfig } from "../utils/project-config.js";
@@ -27,13 +27,7 @@ export async function headlessDeploy(
   let apiBaseUrl = process.env.GENSX_API_BASE_URL;
   let consoleBaseUrl = process.env.GENSX_CONSOLE_BASE_URL;
 
-  console.log("org", org);
-  console.log("token", token);
-  console.log("apiBaseUrl", apiBaseUrl);
-  console.log("consoleBaseUrl", consoleBaseUrl);
-
   if (!org || !token) {
-    // 7. Get auth config
     const authConfig = await getAuth();
     if (!authConfig) {
       throw new Error("Not authenticated. Please specify GENSX_ORG and GENSX_API_KEY.");
@@ -70,17 +64,15 @@ export async function headlessDeploy(
     throw new Error(`Project ${projectName} does not exist.`);
   }
 
-  console.info(
-    `Deploying project '${projectName}' to environment '${environmentName}'...`,
-  );
-
   // 3. Validate environment exists
   const envExists = await checkEnvironmentExists(projectName, environmentName, { token, org, apiBaseUrl });
   if (!envExists) {
-    throw new Error(
-      `Environment ${environmentName} does not exist for project ${projectName}.`,
-    );
+    await createEnvironment(projectName, environmentName, { token, org, apiBaseUrl });
   }
+
+  console.info(
+    `Deploying project '${projectName}' to environment '${environmentName}'...`,
+  );
 
   // 4. Build or use archive
   let schemas: Record<string, { input: Definition; output: Definition }>;

@@ -60,27 +60,34 @@ interface CreateEnvironmentResponse {
 export async function createEnvironment(
   projectName: string,
   environmentName: string,
+  { token, org, apiBaseUrl }: { token?: string; org?: string; apiBaseUrl?: string } = {},
 ): Promise<CreateEnvironmentResponse> {
-  const auth = await getAuth();
-  if (!auth) {
+  if (!token || !org) {
+    const auth = await getAuth();
+    if (!auth) {
     throw new Error("Not authenticated. Please run 'gensx login' first.");
   }
 
+    token ??= auth.token;
+    org ??= auth.org;
+    apiBaseUrl ??= auth.apiBaseUrl;
+  }
+
   // Check if the project exists
-  const projectExists = await checkProjectExists(projectName);
+  const projectExists = await checkProjectExists(projectName, { token, org, apiBaseUrl });
   if (!projectExists) {
     throw new Error(`Project ${projectName} does not exist`);
   }
 
   // Check if the environment already exists
-  const envExists = await checkEnvironmentExists(projectName, environmentName);
+  const envExists = await checkEnvironmentExists(projectName, environmentName, { token, org, apiBaseUrl });
   if (envExists) {
     throw new Error(`Environment ${environmentName} already exists`);
   }
 
   const url = new URL(
-    `/org/${auth.org}/projects/${encodeURIComponent(projectName)}/environments`,
-    auth.apiBaseUrl,
+    `/org/${org}/projects/${encodeURIComponent(projectName)}/environments`,
+    apiBaseUrl ?? "https://api.gensx.com",
   );
 
   const body = {
@@ -90,7 +97,7 @@ export async function createEnvironment(
   const response = await fetch(url.toString(), {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${auth.token}`,
+      Authorization: `Bearer ${token}`,
       "User-Agent": USER_AGENT,
       "Content-Type": "application/json",
     },
