@@ -31,7 +31,7 @@
     "@ai-sdk/xai": "^1.2.16",
     "@gensx/client": "^0.1.5",
     "@gensx/core": "^0.5.1",
-    "@gensx/react": "^0.2.1",
+    "@gensx/react": "^0.2.2",
     "@gensx/vercel-ai": "^0.3.1",
     "@radix-ui/react-slot": "^1.2.3",
     "@types/diff-match-patch": "^1.0.36",

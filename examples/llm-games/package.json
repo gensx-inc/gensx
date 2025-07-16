@@ -15,9 +15,9 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@gensx/anthropic": "0.2.9",
-    "@gensx/core": "0.5.1",
-    "@gensx/openai": "0.3.1",
+    "@gensx/anthropic": "0.1.17",
+    "@gensx/openai": "0.1.28",
+    "@gensx/core": "0.3.13",
     "zod": "catalog:"
   },
   "devDependencies": {

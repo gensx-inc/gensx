@@ -16,7 +16,7 @@
     "@ai-sdk/provider": "^1.1.3",
     "@gensx/client": "^0.1.5",
     "@gensx/core": "^0.5.1",
-    "@gensx/react": "^0.2.1",
+    "@gensx/react": "^0.2.2",
     "@gensx/storage": "^0.2.1",
     "@gensx/vercel-ai": "^0.3.1",
     "@mendable/firecrawl-js": "^1.25.5",
