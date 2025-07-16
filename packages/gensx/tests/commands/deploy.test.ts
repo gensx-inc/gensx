@@ -9,6 +9,7 @@ import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 
 import * as buildCommand from "../../src/commands/build.js";
 import { DeployUI } from "../../src/commands/deploy.js";
+import { headlessDeploy } from "../../src/commands/headless-deploy.js";
 import * as projectModel from "../../src/models/projects.js";
 import * as envConfig from "../../src/utils/env-config.js";
 import * as projectConfig from "../../src/utils/project-config.js";
@@ -402,5 +403,40 @@ hasCompletedFirstTimeSetup = false
 
     // Wait for error message
     await waitForText(lastFrame, /Deployment failed/, 5000);
+  });
+
+  it("should deploy successfully in headless mode", async () => {
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({
+      projectName: "test-project",
+      environmentName: "production",
+    });
+    vi.mocked(envConfig.validateAndSelectEnvironment).mockResolvedValue(true);
+    const consoleInfoSpy = vi.spyOn(console, "info").mockImplementation(() => {
+      // do nothing
+    });
+
+    await headlessDeploy("workflow.ts", { project: "test-project", env: "production" });
+
+    expect(axios.post).toHaveBeenCalledWith(
+      expect.stringContaining("/projects/test-project/environments/production/deploy"),
+      expect.any(Object),
+      expect.objectContaining({ headers: expect.any(Object) })
+    );
+    expect(consoleInfoSpy).toHaveBeenCalledWith(expect.stringContaining("Deployed to GenSX Cloud"));
+    consoleInfoSpy.mockRestore();
+  });
+
+  it("should throw if project is missing in headless mode", async () => {
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue(null);
+    await expect(headlessDeploy("workflow.ts", { env: "production" })).rejects.toThrow(
+      /No project name found/
+    );
+  });
+
+  it("should throw if environment is missing in headless mode", async () => {
+    vi.mocked(projectConfig.readProjectConfig).mockResolvedValue({ projectName: "test-project" });
+    await expect(headlessDeploy("workflow.ts", { project: "test-project" })).rejects.toThrow(
+      /No environment specified/
+    );
   });
 });

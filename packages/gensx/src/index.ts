@@ -6,12 +6,13 @@ import { BuildOptions, BuildWorkflowUI } from "./commands/build.js";
 import { DeployOptions, DeployUI } from "./commands/deploy.js";
 import { CreateEnvironmentUI } from "./commands/environment/create.js";
 import {
-  ListEnvironmentOptions,
-  ListEnvironmentsUI,
+    ListEnvironmentOptions,
+    ListEnvironmentsUI,
 } from "./commands/environment/list.js";
 import { SelectEnvironmentUI } from "./commands/environment/select.js";
 import { ShowEnvironmentUI } from "./commands/environment/show.js";
 import { UnselectEnvironmentUI } from "./commands/environment/unselect.js";
+import { headlessDeploy } from "./commands/headless-deploy.js";
 import { LoginUI } from "./commands/login.js";
 import { NewCommandOptions, NewProjectUI } from "./commands/new.js";
 import { CreateProjectUI } from "./commands/project/create.js";
@@ -137,16 +138,26 @@ export async function runCLI() {
     .option("--env <name>", "Environment name to deploy to")
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
     .option("-v, --verbose", "Verbose output", false)
-    .action((file: string, options: DeployOptions) => {
-      return new Promise<void>((resolve, reject) => {
-        const { waitUntilExit } = render(
-          React.createElement(DeployUI, {
-            file,
-            options,
-          }),
-        );
-        waitUntilExit().then(resolve).catch(reject);
-      });
+    .action(async (file: string, options: DeployOptions) => {
+      const isNonInteractive = process.env.CI === "true" || !process.stdin.isTTY;
+      if (isNonInteractive) {
+        try {
+          await headlessDeploy(file, options);
+        } catch (err) {
+          console.error((err instanceof Error ? err.message : String(err)));
+          process.exit(1);
+        }
+      } else {
+        return new Promise<void>((resolve, reject) => {
+          const { waitUntilExit } = render(
+            React.createElement(DeployUI, {
+              file,
+              options,
+            }),
+          );
+          waitUntilExit().then(resolve).catch(reject);
+        });
+      }
     });
 
   program
