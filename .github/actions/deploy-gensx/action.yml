@@ -1,0 +1,153 @@
+name: "Deploy GenSX Workflow"
+
+description: "Deploy a GenSX workflow to a specified environment"
+
+inputs:
+  workflow_file:
+    description: "Path to the GenSX workflow file"
+    required: true
+  project_name:
+    description: "GenSX project name"
+    required: true
+  environment:
+    description: "Deployment environment (dev, staging, prod)"
+    required: true
+  api_key:
+    description: "GenSX API key"
+    required: true
+  env_vars:
+    description: "Environment variables as YAML list (e.g., ['VAR1=value1', 'VAR2=value2'])"
+    required: false
+    default: '[]'
+  node_version:
+    description: "Node.js version to use"
+    required: false
+    default: '18'
+  working_directory:
+    description: "Working directory for the deployment"
+    required: false
+    default: '.'
+
+outputs:
+  deployment_status:
+    description: "Status of the deployment"
+    value: ${{ steps.deploy.outputs.status }}
+  deployment_url:
+    description: "URL of the deployed workflow (if applicable)"
+    value: ${{ steps.deploy.outputs.url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node_version }}
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        if [ -f "package-lock.json" ]; then
+          npm ci
+        elif [ -f "pnpm-lock.yaml" ]; then
+          npm install -g pnpm
+          pnpm install --frozen-lockfile
+        elif [ -f "yarn.lock" ]; then
+          npm install -g yarn
+          yarn install --frozen-lockfile
+        else
+          npm install
+        fi
+
+    - name: Validate workflow file exists
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        if [ ! -f "${{ inputs.workflow_file }}" ]; then
+          echo "❌ Error: Workflow file '${{ inputs.workflow_file }}' not found"
+          exit 1
+        fi
+        echo "✅ Workflow file found: ${{ inputs.workflow_file }}"
+
+    - name: Verify Docker is available
+      shell: bash
+      run: |
+        if ! command -v docker &> /dev/null; then
+          echo "❌ Error: Docker is not installed or not in PATH"
+          exit 1
+        fi
+
+        if ! docker info &> /dev/null; then
+          echo "❌ Error: Docker daemon is not running"
+          exit 1
+        fi
+
+        echo "✅ Docker is available and running"
+
+    - name: Deploy GenSX workflow
+      id: deploy
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        GENSX_API_KEY: ${{ inputs.api_key }}
+      run: |
+        echo "🚀 Deploying GenSX workflow..."
+        echo "📁 Workflow file: ${{ inputs.workflow_file }}"
+        echo "📦 Project: ${{ inputs.project_name }}"
+        echo "🌍 Environment: ${{ inputs.environment }}"
+
+        # Build the deployment command
+        deploy_cmd="npx gensx deploy ${{ inputs.workflow_file }}"
+
+        # Add project if specified
+        if [ -n "${{ inputs.project_name }}" ]; then
+          deploy_cmd="$deploy_cmd --project ${{ inputs.project_name }}"
+        fi
+
+        # Add environment if specified
+        if [ -n "${{ inputs.environment }}" ]; then
+          deploy_cmd="$deploy_cmd --env ${{ inputs.environment }}"
+        fi
+
+        # Add environment variables
+        for var in ${{ inputs.env_vars }}; do
+          deploy_cmd="$deploy_cmd --env-var $var"
+        done
+
+        # Add auto-yes flag
+        deploy_cmd="$deploy_cmd --yes"
+
+        echo "Running: $deploy_cmd"
+
+        # Run deployment and capture output
+        deploy_output=$(eval $deploy_cmd 2>&1)
+        deploy_exit_code=$?
+
+        echo "$deploy_output"
+
+        if [ $deploy_exit_code -ne 0 ]; then
+          echo "❌ Deployment failed"
+          exit $deploy_exit_code
+        fi
+
+        # Extract URL from output (look for lines containing app.gensx.com)
+        deployment_url=$(echo "$deploy_output" | grep -E "app\.gensx\.com" | head -1 | sed -E 's/.*https:\/\/app\.gensx\.com[^[:space:]]*/https:\/\/\1/' | tr -d '[:space:]')
+
+        # Set outputs
+        echo "status=success" >> $GITHUB_OUTPUT
+        if [ -n "$deployment_url" ]; then
+          echo "url=$deployment_url" >> $GITHUB_OUTPUT
+        else
+          echo "url=https://app.gensx.com/projects/${{ inputs.project_name }}/environments/${{ inputs.environment }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Deployment summary
+      shell: bash
+      run: |
+        echo "## 🎉 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Workflow File**: \`${{ inputs.workflow_file }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Project**: \`${{ inputs.project_name }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: \`${{ inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ✅ Deployed successfully" >> $GITHUB_STEP_SUMMARY
+        echo "- **Console URL**: [View in GenSX Console](${{ steps.deploy.outputs.url }})" >> $GITHUB_STEP_SUMMARY
