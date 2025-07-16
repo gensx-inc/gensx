@@ -5,9 +5,7 @@ import {
   GENSX_ORG,
   GENSX_PROJECT,
   shouldUseLocalDevServer,
-} from "../../gensx";
-
-type RequestBody = Record<string, unknown>;
+} from "../../../../gensx";
 
 /**
  * API route that acts as a pure passthrough to GenSX
@@ -17,11 +15,10 @@ type RequestBody = Record<string, unknown>;
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ workflow: string }> },
+  { params }: { params: Promise<{ executionId: string }> },
 ) {
   try {
-    const inputs = (await request.json()) as RequestBody;
-    const { workflow } = await params;
+    const { executionId } = await params;
 
     const useLocalDevServer = shouldUseLocalDevServer();
 
@@ -61,14 +58,24 @@ export async function POST(
       });
     }
 
-    const response = await gensx.start(workflow, {
-      inputs,
+    const response = await gensx.getProgress({
+      executionId,
     });
 
-    return new Response(JSON.stringify(response), {
+    const transform = new TransformStream({
+      transform(chunk, controller) {
+        const textDecoder = new TextDecoder("utf-8");
+        const text = textDecoder.decode(chunk);
+        controller.enqueue(text + "\n");
+      },
+    });
+
+    return new Response(response.pipeThrough(transform), {
       status: 200,
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-ndjson",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
       },
     });
   } catch (error) {
