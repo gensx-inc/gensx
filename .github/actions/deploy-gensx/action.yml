@@ -90,10 +90,15 @@ runs:
         fi
 
         # Add environment variables
-        for var in ${{ inputs.env }}; do
-          echo "Setting environment variable: $var"
-          deploy_cmd="$deploy_cmd --e \"$var\""
-        done
+        if [ -n "${{ inputs.env }}" ]; then
+          echo "Setting environment variables: ${{ inputs.env }}"
+          echo "${{ inputs.env }}" | while IFS= read -r var; do
+            if [ -n "$var" ]; then
+              echo "Setting environment variable: $var"
+              deploy_cmd="$deploy_cmd --e \"$var\""
+            fi
+          done
+        fi
 
         # Add auto-yes flag
         deploy_cmd="$deploy_cmd --yes"
