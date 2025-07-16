@@ -30,6 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# lockfiles (using pnpm in monorepo)
+package-lock.json
+yarn.lock
+
 # env files (can opt-in for committing if needed)
 .env*
 
