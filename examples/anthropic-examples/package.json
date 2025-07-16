@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@gensx/anthropic": "^0.2.9",
-    "@gensx/core": "^0.4.7",
+    "@gensx/core": "^0.5.1",
     "zod": "3.25.56"
   },
   "devDependencies": {
