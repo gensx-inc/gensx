@@ -13,5 +13,5 @@
   "packages/gensx-storage": "0.2.1",
   "packages/gensx-vercel-ai": "0.3.1",
   "packages/gensx-client": "0.1.5",
-  "packages/gensx-react": "0.2.1"
+  "packages/gensx-react": "0.2.2"
 }

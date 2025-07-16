@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.2.1...gensx-react-v0.2.2) (2025-07-16)
+
+
+### 🐛 Bug Fixes
+
+* Keep the useWorkflow method for calling run. ([#863](https://github.com/gensx-inc/gensx/issues/863)) ([a26c264](https://github.com/gensx-inc/gensx/commit/a26c264c6f38fa852d598a34a6aebfe2a242b2d6))
+
 ## [0.2.1](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.2.0...gensx-react-v0.2.1) (2025-07-16)
 
 
