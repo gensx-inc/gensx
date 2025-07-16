@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.1](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.3.0...gensx-vercel-ai-v0.3.1) (2025-07-16)
+
+
+### ✨ New Features
+
+* Support front end tool calling ([#830](https://github.com/gensx-inc/gensx/issues/830)) ([60ac51f](https://github.com/gensx-inc/gensx/commit/60ac51ffc9d139a9bd2a9fb6015dc40292634c60))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.1
+
 ## [0.3.0](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.2.7...gensx-vercel-ai-v0.3.0) (2025-07-09)
 
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.55](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.54...create-gensx-v0.1.55) (2025-07-16)
+
+
+### 🐛 Bug Fixes
+
+* Fix create-gensx test for mismatch local vs npm versions. ([#854](https://github.com/gensx-inc/gensx/issues/854)) ([ee34759](https://github.com/gensx-inc/gensx/commit/ee347599cd961e9b7a85c3e8ce9417ff904f3c50))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.4.1
+
 ## [0.1.54](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.53...create-gensx-v0.1.54) (2025-07-09)
 
 

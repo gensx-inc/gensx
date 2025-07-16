@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/gensx-inc/gensx/compare/gensx-v0.4.0...gensx-v0.4.1) (2025-07-16)
+
+
+### ✨ New Features
+
+* rename /resume to /fulfill-input-request ([#850](https://github.com/gensx-inc/gensx/issues/850)) ([d0eb55f](https://github.com/gensx-inc/gensx/commit/d0eb55f839e28376badc00da55f2810e6312a7d1))
+* Support front end tool calling ([#830](https://github.com/gensx-inc/gensx/issues/830)) ([60ac51f](https://github.com/gensx-inc/gensx/commit/60ac51ffc9d139a9bd2a9fb6015dc40292634c60))
+
 ## [0.4.0](https://github.com/gensx-inc/gensx/compare/gensx-v0.3.41...gensx-v0.4.0) (2025-07-09)
 
 

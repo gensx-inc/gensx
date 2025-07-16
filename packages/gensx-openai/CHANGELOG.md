@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.1](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.3.0...gensx-openai-v0.3.1) (2025-07-16)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.1
+
 ## [0.3.0](https://github.com/gensx-inc/gensx/compare/gensx-openai-v0.2.7...gensx-openai-v0.3.0) (2025-07-09)
 
 

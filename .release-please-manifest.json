@@ -1,17 +1,17 @@
 {
-  "packages/create-gensx": "0.1.54",
-  "packages/gensx-anthropic": "0.2.8",
-  "packages/gensx-cloud-mcp": "0.0.17",
-  "packages/gensx-openai": "0.3.0",
+  "packages/create-gensx": "0.1.55",
+  "packages/gensx-anthropic": "0.2.9",
+  "packages/gensx-cloud-mcp": "0.0.18",
+  "packages/gensx-openai": "0.3.1",
   "packages/gensx-vercel-ai-sdk": "0.1.17",
-  "packages/gensx": "0.4.0",
-  "packages/gensx-core": "0.5.0",
+  "packages/gensx": "0.4.1",
+  "packages/gensx-core": "0.5.1",
   "packages/gensx-claude-md": "0.1.8",
   "packages/gensx-cline-rules": "0.1.8",
   "packages/gensx-cursor-rules": "0.1.8",
   "packages/gensx-windsurf-rules": "0.1.8",
-  "packages/gensx-storage": "0.2.0",
-  "packages/gensx-vercel-ai": "0.3.0",
-  "packages/gensx-client": "0.1.4",
-  "packages/gensx-react": "0.2.0"
+  "packages/gensx-storage": "0.2.1",
+  "packages/gensx-vercel-ai": "0.3.1",
+  "packages/gensx-client": "0.1.5",
+  "packages/gensx-react": "0.2.1"
 }

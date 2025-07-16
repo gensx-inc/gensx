@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.18](https://github.com/gensx-inc/gensx/compare/gensx-cloud-mcp-v0.0.17...gensx-cloud-mcp-v0.0.18) (2025-07-16)
+
+
+### ✨ New Features
+
+* Support front end tool calling ([#830](https://github.com/gensx-inc/gensx/issues/830)) ([60ac51f](https://github.com/gensx-inc/gensx/commit/60ac51ffc9d139a9bd2a9fb6015dc40292634c60))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.1
+
 ## [0.0.17](https://github.com/gensx-inc/gensx/compare/gensx-cloud-mcp-v0.0.16...gensx-cloud-mcp-v0.0.17) (2025-07-09)
 
 

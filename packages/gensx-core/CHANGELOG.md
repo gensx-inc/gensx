@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.1](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.0...gensx-core-v0.5.1) (2025-07-16)
+
+
+### ✨ New Features
+
+* real time front end tools ([#849](https://github.com/gensx-inc/gensx/issues/849)) ([44a4c68](https://github.com/gensx-inc/gensx/commit/44a4c681faa25505823617dd0b7449cf7f609893))
+* rename /resume to /fulfill-input-request ([#850](https://github.com/gensx-inc/gensx/issues/850)) ([d0eb55f](https://github.com/gensx-inc/gensx/commit/d0eb55f839e28376badc00da55f2810e6312a7d1))
+* Support front end tool calling ([#830](https://github.com/gensx-inc/gensx/issues/830)) ([60ac51f](https://github.com/gensx-inc/gensx/commit/60ac51ffc9d139a9bd2a9fb6015dc40292634c60))
+
 ## [0.5.0](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.4.7...gensx-core-v0.5.0) (2025-07-09)
 
 
