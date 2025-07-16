@@ -33,7 +33,6 @@ export async function POST(request: NextRequest) {
     const org = "gensx";
     const project = "draft-pad";
     const environment = "production";
-    const format = "ndjson";
 
     // Get API key from environment (or could accept from Authorization header)
     let gensx: GenSX;
@@ -76,28 +75,11 @@ export async function POST(request: NextRequest) {
     // Use runRaw to get the direct response
 
     console.log("Running workflow");
-    const response = await gensx.runRaw(workflowName, {
-      inputs,
-      format,
-    });
-    console.log("Workflow response", response);
-    // Determine content type based on format
-    const contentType = {
-      sse: "text/event-stream",
-      ndjson: "application/x-ndjson",
-      json: "application/json",
-    }[format];
-    console.log("Content type", contentType);
-
-    // Return the response directly to the client
-    // This preserves the response format
-
-    return new Response(response.body, {
-      status: response.status,
+    const response = await gensx.start(workflowName, { inputs });
+    return new Response(JSON.stringify(response), {
+      status: 200,
       headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
+        "Content-Type": "application/json",
       },
     });
   } catch (error) {
