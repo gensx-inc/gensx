@@ -43,8 +43,6 @@ export async function headlessDeploy(
     throw new Error(`Project ${projectName} does not exist.`);
   }
 
-  console.info(`Project '${projectName}' exists.`);
-
   // 3. Resolve environment
   let environment = options.env;
   if (!environment) {
@@ -57,8 +55,6 @@ export async function headlessDeploy(
     environment = projectConfig.environmentName;
   }
 
-  console.info(`Environment '${environment}' exists.`);
-
   // 4. Validate environment exists
   const envExists = await checkEnvironmentExists(projectName, environment);
   if (!envExists) {
@@ -67,8 +63,6 @@ export async function headlessDeploy(
     );
   }
 
-  console.info(`Environment '${environment}' exists.`);
-
   // 5. Validate and select environment (before deployment)
   const validEnv = await validateAndSelectEnvironment(projectName, environment);
   if (!validEnv) {
@@ -76,8 +70,6 @@ export async function headlessDeploy(
       `Failed to validate or select environment '${environment}' for project '${projectName}'.`,
     );
   }
-
-  console.info(`Environment '${environment}' is valid.`);
 
   // 6. Build or use archive
   let schemas: Record<string, { input: Definition; output: Definition }>;
@@ -112,8 +104,6 @@ export async function headlessDeploy(
     bundleFile = buildResult.bundleFile;
     schemas = buildResult.schemas;
   }
-
-  console.info(`Bundle file '${bundleFile}' created. ${JSON.stringify(schemas)}`);
 
   // 7. Get auth config
   const authConfig = await getAuth();
