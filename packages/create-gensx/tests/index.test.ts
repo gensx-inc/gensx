@@ -42,7 +42,6 @@ async function updatePackageJsonToUseLocalVersions(projectPath: string) {
     }
   }
 
-
   // Update devDependencies
   if (packageJson.devDependencies) {
     for (const [pkg, localPath] of Object.entries(localPackages)) {
