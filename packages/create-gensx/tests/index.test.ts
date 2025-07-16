@@ -36,13 +36,12 @@ async function updatePackageJsonToUseLocalVersions(projectPath: string) {
   };
 
   // Update dependencies
-  if (packageJson.dependencies) {
-    for (const [pkg, localPath] of Object.entries(localPackages)) {
-      if (packageJson.dependencies[pkg]) {
-        packageJson.dependencies[pkg] = `file:${localPath}`;
-      }
+  for (const [pkg, localPath] of Object.entries(localPackages)) {
+    if (packageJson.dependencies[pkg]) {
+      packageJson.dependencies[pkg] = `file:${localPath}`;
     }
   }
+
 
   // Update devDependencies
   if (packageJson.devDependencies) {
@@ -60,7 +59,10 @@ async function updatePackageJsonToUseLocalVersions(projectPath: string) {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const gensxPackagePath = path.resolve(__dirname, "../../gensx-core");
 const gensxOpenaiPackagePath = path.resolve(__dirname, "../../gensx-openai");
-const gensxVercelAiPackagePath = path.resolve(__dirname, "../../gensx-vercel-ai");
+const gensxVercelAiPackagePath = path.resolve(
+  __dirname,
+  "../../gensx-vercel-ai",
+);
 const gensxClaudeMdPath = path.resolve(__dirname, "../../gensx-claude-md");
 const gensxCursorRulesPath = path.resolve(
   __dirname,
