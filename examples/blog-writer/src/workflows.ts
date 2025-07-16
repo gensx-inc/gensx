@@ -33,7 +33,7 @@ const WriteBlog = gensx.Workflow("WriteBlog", async (props: WriteBlogProps) => {
   const draft = await WriteDraft({
     title: props.title,
     prompt: props.prompt,
-    outline: outline.object,
+    outline: outline,
     research: research,
     targetWordCount: targetWordCount,
   });
@@ -61,7 +61,7 @@ const WriteBlog = gensx.Workflow("WriteBlog", async (props: WriteBlogProps) => {
     content: toneMatchedContent,
     metadata: {
       researchTopics: research.topics,
-      sectionsCount: outline.object.sections.length,
+      sectionsCount: outline.sections.length,
       hasWebResearch: research.webResearch.length > 0,
       hasToneMatching: !!props.referenceURL,
       wordCount: toneMatchedContent.split(" ").length,

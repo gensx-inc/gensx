@@ -16,26 +16,22 @@ A comprehensive GenSX workflow for automated blog writing that combines AI resea
 ## Workflow Steps
 
 1. **Research Phase**:
-
    - Generates 5-7 focused research topics based on the blog title and prompt
    - Conducts web research using Perplexity's Sonar Pro API for real-time information with citations
    - Searches internal documentation catalog using GenSX storage (when configured)
 
 2. **Outline Creation**:
-
    - Creates structured outline with introduction, body sections, and conclusion
    - Incorporates research findings into outline structure
    - Defines key points, research topics, and subsections for each section
 
 3. **Draft Writing**:
-
    - Writes each section using expert SaaS company writer prompts
    - Integrates research data and citations throughout content
    - Includes web research tool for additional section-specific information
    - Maintains consistent structure with proper markdown formatting
 
 4. **Editorial Enhancement**:
-
    - Comprehensive editorial pass to improve engagement, flow, and readability
    - Applies professional writing guidelines (short sentences, clear language, data-driven claims)
    - Ensures proper word count management and content density

@@ -78,7 +78,7 @@ const EvaluateText = gensx.Component(
         continueProcessing: z.boolean(),
       }),
     });
-    return result.object;
+    return result.object as ReflectionOutput;
   },
 );
 

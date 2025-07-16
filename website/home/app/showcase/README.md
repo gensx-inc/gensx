@@ -21,7 +21,6 @@ This directory contains the showcase page that displays demo applications built 
 Note: You can include either `demo`, `github`, or both links. At least one link is recommended.
 
 2. **Add a screenshot** (optional but recommended):
-
    - Place your screenshot in `/website/home/public/assets/showcase/`
    - Use a 16:9 aspect ratio (e.g., 1920x1080 or 1280x720)
    - Name it to match the image path in your showcase item

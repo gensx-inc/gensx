@@ -24,8 +24,10 @@ const GenerateTopics = gensx.Component(
       Focus on topics that would benefit from current, real-time information and detailed analysis.`,
     });
 
-    gensx.publishData(`Found ${result.object.topics.length} research topics`);
-    return result;
+    gensx.publishData(
+      `Found ${(result.object as { topics: string[] }).topics.length} research topics`,
+    );
+    return result.object as { topics: string[] };
   },
 );
 
@@ -116,8 +118,8 @@ const Research = gensx.Component(
     });
 
     // Conduct web research for each topic
-    const webResearchPromises = topicsResult.object.topics.map(
-      (topic: string) => WebResearch({ topic }),
+    const webResearchPromises = topicsResult.topics.map((topic: string) =>
+      WebResearch({ topic }),
     );
 
     const webResearch = await Promise.all(webResearchPromises);
@@ -125,7 +127,7 @@ const Research = gensx.Component(
     gensx.publishData("Research phase complete");
 
     return {
-      topics: topicsResult.object.topics,
+      topics: topicsResult.topics,
       webResearch,
     };
   },

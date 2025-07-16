@@ -1,7 +1,7 @@
 import * as gensx from "@gensx/core";
 import { OpenAI } from "@gensx/openai";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
-import z from "zod";
+import z from "zod/v3";
 
 // importing the openai client from the @gensx/openai package
 const openai = new OpenAI();
@@ -95,8 +95,7 @@ const tools = [
 export const Tools = gensx.Workflow(
   "Tools",
   async ({ prompt }: OpenAIExampleProps) => {
-    // eslint-disable-next-line
-    const result = await openai.beta.chat.completions.runTools({
+    const result = openai.chat.completions.runTools({
       model: "gpt-4.1-mini",
       temperature: 0.7,
       messages: [
@@ -118,9 +117,8 @@ export const Tools = gensx.Workflow(
 
 export const StreamingTools = gensx.Workflow(
   "StreamingTools",
-  async ({ prompt }: OpenAIExampleProps) => {
-    // eslint-disable-next-line
-    const result = await openai.beta.chat.completions.runTools({
+  ({ prompt }: OpenAIExampleProps) => {
+    const result = openai.chat.completions.runTools({
       model: "gpt-4.1-mini",
       temperature: 0.7,
       messages: [
@@ -165,7 +163,7 @@ const trashRatingSchema = z.object({
 export const StructuredOutput = gensx.Workflow(
   "StructuredOutput",
   async ({ prompt }: OpenAIExampleProps) => {
-    const result = await openai.beta.chat.completions.parse({
+    const result = await openai.chat.completions.parse({
       model: "gpt-4.1-mini",
       temperature: 0.7,
       messages: [
