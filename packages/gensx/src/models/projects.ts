@@ -103,20 +103,26 @@ export async function createProject(
  */
 export async function checkProjectExists(
   projectName: string,
+  { token, org, apiBaseUrl }: { token?: string; org?: string; apiBaseUrl?: string } = {},
 ): Promise<boolean> {
-  const auth = await getAuth();
-  if (!auth) {
-    throw new Error("Not authenticated. Please run 'gensx login' first.");
+  if (!token || !org) {
+    const auth = await getAuth();
+    if (!auth) {
+      throw new Error("Not authenticated. Please run 'gensx login' first.");
+    }
+    token ??= auth.token;
+    org ??= auth.org;
+    apiBaseUrl ??= auth.apiBaseUrl;
   }
 
   const url = new URL(
-    `/org/${auth.org}/projects/${encodeURIComponent(projectName)}`,
-    auth.apiBaseUrl,
+    `/org/${org}/projects/${encodeURIComponent(projectName)}`,
+    apiBaseUrl ?? "https://api.gensx.com",
   );
 
   const response = await fetch(url.toString(), {
     headers: {
-      Authorization: `Bearer ${auth.token}`,
+      Authorization: `Bearer ${token}`,
       "User-Agent": USER_AGENT,
     },
   });
