@@ -50,7 +50,7 @@
     "@common.js/serialize-error": "^11.0.3",
     "deterministic-object-hash": "^2.0.2",
     "ini": "^5.0.0",
-    "zod": "^3.25.0 || ^4.0.0",
+    "zod": "^3.25.76",
     "zod-to-json-schema": "catalog:"
   },
   "devDependencies": {
