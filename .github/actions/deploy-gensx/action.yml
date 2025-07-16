@@ -83,7 +83,7 @@ runs:
           done <<< "${{ inputs.env }}"
         fi
 
-        deploy_cmd="npx gensx deploy ${{ inputs.workflow_file }}"
+        deploy_cmd="npx gensx@latest deploy ${{ inputs.workflow_file }}"
 
         # Add project if specified
         if [ -n "${{ inputs.project_name }}" ]; then
