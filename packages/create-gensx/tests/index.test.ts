@@ -184,7 +184,7 @@ suite("create-gensx", () => {
 
     // Note: We skip running the dev server since it would start both Next.js and GenSX servers
     // and would require more complex setup to properly test in CI
-  }, 60000); // Increase timeout to 60s since npm install can be slow
+  }, 90000);
 
   it("creates a project with AI assistant integrations", async () => {
     // Create a temporary directory for our test
