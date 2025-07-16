@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Let the main site handle the /demos/draft-pad routing via rewrites
+  // For development, we need to handle the proxy scenario
+  assetPrefix: "/demos/draft-pad",
+  basePath: "",
+  trailingSlash: false,
 };
 
 export default nextConfig;
