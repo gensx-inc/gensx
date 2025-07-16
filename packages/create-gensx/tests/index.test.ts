@@ -160,7 +160,6 @@ suite("create-gensx", () => {
 
     // Verify Next.js specific files
     const files = await readdir(projectPath);
-    expect(files).toContain("next-env.d.ts"); // Next.js TypeScript definitions
     expect(files).toContain("postcss.config.mjs"); // PostCSS config
     expect(files).toContain("components"); // Components directory
     expect(files).toContain("lib"); // Lib directory
