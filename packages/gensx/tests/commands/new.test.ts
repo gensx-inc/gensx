@@ -312,7 +312,7 @@ suite("new command UI", () => {
     expect(lastFrame()).toContain("http://localhost:3000");
     expect(lastFrame()).toContain("Next.js app");
     expect(lastFrame()).toContain("http://localhost:1337/swagger-ui");
-    expect(lastFrame()).toContain("GenSX Workflows");
+    expect(lastFrame()).toContain("GenSX server");
     expect(lastFrame()).toContain("gensx/workflows.ts");
   });
 

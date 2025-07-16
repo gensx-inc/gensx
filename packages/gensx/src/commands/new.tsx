@@ -392,13 +392,13 @@ export function NewProjectUI({ projectPath, options }: Props) {
           {selectedTemplate === "next" ? (
             <>
               <Box marginTop={1}>
-                <Text>2. </Text>
+                <Text>2. Set up env: </Text>
                 <Text color="cyan">export OPENAI_API_KEY=your_api_key</Text>
               </Box>
 
               <Box marginTop={1}>
-                <Text>3. Run the app:</Text>
-                <Text color="cyan">pnpm run dev</Text>
+                <Text>3. Run the app: </Text>
+                <Text color="cyan">npm run dev</Text>
               </Box>
 
               <Box marginTop={2} flexDirection="column">
@@ -409,7 +409,7 @@ export function NewProjectUI({ projectPath, options }: Props) {
                 </Text>
                 <Text>
                   - <Text color="cyan">http://localhost:1337/swagger-ui</Text>{" "}
-                  (GenSX Workflows)
+                  (GenSX server)
                 </Text>
               </Box>
             </>
