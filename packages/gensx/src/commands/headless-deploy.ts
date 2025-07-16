@@ -107,10 +107,26 @@ export async function headlessDeploy(
     schemas = buildResult.schemas;
   }
 
-  // 7. Get auth config
-  const authConfig = await getAuth();
-  if (!authConfig) {
-    throw new Error("Not authenticated. Please run 'gensx login' first.");
+  let org = process.env.GENSX_ORG;
+  let token = process.env.GENSX_API_KEY;
+  let apiBaseUrl = process.env.GENSX_API_BASE_URL;
+  let consoleBaseUrl = process.env.GENSX_CONSOLE_BASE_URL;
+
+  console.log("org", org);
+  console.log("token", token);
+  console.log("apiBaseUrl", apiBaseUrl);
+  console.log("consoleBaseUrl", consoleBaseUrl);
+
+  if (!org || !token) {
+    // 7. Get auth config
+    const authConfig = await getAuth();
+    if (!authConfig) {
+      throw new Error("Not authenticated. Please specify GENSX_ORG and GENSX_API_KEY.");
+    }
+    org ??= authConfig.org;
+    token ??= authConfig.token;
+    apiBaseUrl ??= authConfig.apiBaseUrl;
+    consoleBaseUrl ??= authConfig.consoleBaseUrl;
   }
 
   // 8. Create form data with bundle
@@ -127,8 +143,8 @@ export async function headlessDeploy(
 
   // 9. Deploy
   const url = new URL(
-    `/org/${authConfig.org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environment)}/deploy`,
-    authConfig.apiBaseUrl,
+    `/org/${org}/projects/${encodeURIComponent(projectName)}/environments/${encodeURIComponent(environment)}/deploy`,
+    apiBaseUrl ?? "https://api.gensx.com",
   );
 
   console.info(
@@ -136,7 +152,7 @@ export async function headlessDeploy(
   );
   const response = await axios.post(url.toString(), form, {
     headers: {
-      Authorization: `Bearer ${authConfig.token}`,
+      Authorization: `Bearer ${token}`,
       "User-Agent": USER_AGENT,
     },
   });
@@ -163,6 +179,6 @@ export async function headlessDeploy(
     console.info(`- ${workflow.name}`);
   }
   console.info(
-    `Dashboard: ${authConfig.consoleBaseUrl}/${authConfig.org}/${deploymentData.projectName}?env=${deploymentData.environmentId}`,
+    `Dashboard: ${consoleBaseUrl ?? "https://app.gensx.com"}/${org}/${deploymentData.projectName}?env=${deploymentData.environmentId}`,
   );
 }
