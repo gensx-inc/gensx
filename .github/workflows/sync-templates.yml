@@ -1,6 +1,7 @@
 name: Sync Templates
 on:
   push:
+    branches: [main]
     paths: ["examples/deep-research"] # re‑split only when examples change
 jobs:
   split:
