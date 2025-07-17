@@ -10,7 +10,6 @@ interface ModelSelectorViewProps {
   selectedModelsForRun: ModelConfig[];
   onModelsChange: (models: ModelConfig[]) => void;
   onClose: () => void;
-  focusInput: () => void;
 }
 
 export function ModelSelectorView({
@@ -19,14 +18,9 @@ export function ModelSelectorView({
   selectedModelsForRun,
   onModelsChange,
   onClose,
-  focusInput,
 }: ModelSelectorViewProps) {
   const handleClose = () => {
     onClose();
-    // Focus input after closing model selector
-    setTimeout(() => {
-      focusInput();
-    }, 100);
   };
 
   return (

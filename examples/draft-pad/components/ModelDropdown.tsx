@@ -149,8 +149,8 @@ export function ModelDropdown({
               {isMultiSelectMode ? "Select models..." : "Select a model..."}
             </span>
           ) : isMultiSelectMode ? (
-            <div className="flex items-center gap-1.5 flex-1 overflow-hidden">
-              {selectedModelsForRun.slice(0, 2).map((model) => (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {selectedModelsForRun.map((model) => (
                 <span
                   key={model.id}
                   className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333] whitespace-nowrap flex items-center gap-1 flex-shrink-0"
@@ -163,11 +163,6 @@ export function ModelDropdown({
                   {model.reasoning && <Brain className="w-3 h-3" />}
                 </span>
               ))}
-              {selectedModelsForRun.length > 2 && (
-                <span className="px-2 py-0.5 rounded-full bg-black/10 text-xs text-[#333333] whitespace-nowrap flex-shrink-0">
-                  +{selectedModelsForRun.length - 2} models
-                </span>
-              )}
             </div>
           ) : (
             <div className="flex items-center gap-1.5">

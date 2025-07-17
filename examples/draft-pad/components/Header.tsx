@@ -3,7 +3,7 @@
 import { ProviderFilter } from "@/components/ui/provider-filter";
 import { type DraftProgress, type ModelConfig } from "@/gensx/workflows";
 import { ArrowLeft } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 
 import { ModelSortBadges } from "./ModelSortBadges";
 import { OverallStatsBadges } from "./OverallStatsBadges";
@@ -43,13 +43,13 @@ interface HeaderProps {
   };
   onModelSort: (field: "cost" | "context" | "maxOutput") => void;
   onSort: (field: "words" | "time" | "cost") => void;
-  onBackToAllModels: () => void;
+  onBackToAllModels?: () => void; // Made optional
 }
 
 export function Header({
   selectedModelId,
   showModelSelector,
-  sortedModelStreams,
+  sortedModelStreams: _sortedModelStreams,
   overallStats,
   showCounter,
   selectedModelsForRun,
@@ -65,10 +65,9 @@ export function Header({
 }: HeaderProps) {
   return (
     <div className="relative mb-6 flex-shrink-0 flex items-center justify-center h-10">
-      {/* Back button for single model view */}
-      {selectedModelId &&
-        !showModelSelector &&
-        sortedModelStreams.length > 1 && (
+      {/* Back button - only show when viewing a specific model and callback is provided */}
+      <AnimatePresence>
+        {selectedModelId && onBackToAllModels && (
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -87,6 +86,7 @@ export function Header({
             </button>
           </motion.div>
         )}
+      </AnimatePresence>
 
       <h1 className="text-3xl font-bold text-[#333333] font-atma">Draft Pad</h1>
 

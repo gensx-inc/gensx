@@ -1,6 +1,7 @@
 "use client";
 
 import { type ModelConfig } from "@/gensx/workflows";
+import { type UseVoiceCommandsReturn } from "@/hooks/useVoiceCommands";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { Send } from "lucide-react";
 import { motion } from "motion/react";
@@ -8,7 +9,6 @@ import { RefObject, useCallback, useEffect, useRef } from "react";
 
 import { ModelDropdown } from "./ModelDropdown";
 import { VoiceButton } from "./VoiceButton";
-import { VoiceVisualization } from "./VoiceVisualization";
 
 interface InputSectionProps {
   userMessage: string;
@@ -28,6 +28,7 @@ interface InputSectionProps {
   onDropdownOpenChange: (open: boolean) => void;
   onSubmit: () => void;
   onVoiceActiveChange?: (active: boolean) => void;
+  voiceCommands?: UseVoiceCommandsReturn;
 }
 
 export function InputSection({
@@ -48,6 +49,7 @@ export function InputSection({
   onDropdownOpenChange,
   onSubmit,
   onVoiceActiveChange,
+  voiceCommands,
 }: InputSectionProps) {
   // Voice recording hook
   const voice = useVoiceRecording();
@@ -89,7 +91,7 @@ export function InputSection({
     textarea.style.boxSizing = "border-box";
   }, []);
 
-  // Handle voice transcription completion - SIMPLIFIED
+  // Handle voice transcription completion - ENHANCED with voice commands
   useEffect(() => {
     if (voice.transcription?.trim()) {
       const transcribedText = voice.transcription.trim();
@@ -97,20 +99,53 @@ export function InputSection({
       // Store in ref
       transcribedTextRef.current = transcribedText;
 
-      // Set the text in the input field
-      onUserMessageChange(transcribedText);
+      // Try to process as voice command first (async)
+      if (voiceCommands) {
+        voiceCommands
+          .processVoiceCommand(transcribedText)
+          .then((commandHandled) => {
+            if (!commandHandled) {
+              // Set the text in the input field (original behavior)
+              onUserMessageChange(transcribedText);
+
+              // Check if we should auto-submit and mark it
+              if (
+                selectedModelsForRun.length > 0 &&
+                !showSelectionPrompt &&
+                !workflowInProgress
+              ) {
+                shouldAutoSubmitRef.current = true;
+              }
+            }
+          })
+          .catch((error: unknown) => {
+            console.error("Error processing voice command:", error);
+            // Fallback to text input on error
+            onUserMessageChange(transcribedText);
+
+            if (
+              selectedModelsForRun.length > 0 &&
+              !showSelectionPrompt &&
+              !workflowInProgress
+            ) {
+              shouldAutoSubmitRef.current = true;
+            }
+          });
+      } else {
+        // No voice commands available, fallback to text input
+        onUserMessageChange(transcribedText);
+
+        if (
+          selectedModelsForRun.length > 0 &&
+          !showSelectionPrompt &&
+          !workflowInProgress
+        ) {
+          shouldAutoSubmitRef.current = true;
+        }
+      }
 
       // Clear transcription to prevent loops
       voice.clearTranscription();
-
-      // Check if we should auto-submit and mark it
-      if (
-        selectedModelsForRun.length > 0 &&
-        !showSelectionPrompt &&
-        !workflowInProgress
-      ) {
-        shouldAutoSubmitRef.current = true;
-      }
     }
   }, [
     voice.transcription,
@@ -119,6 +154,7 @@ export function InputSection({
     workflowInProgress,
     onUserMessageChange,
     voice.clearTranscription,
+    voiceCommands,
   ]);
 
   // Watch for userMessage changes and auto-submit if needed
@@ -160,7 +196,11 @@ export function InputSection({
   };
 
   const isInitialState = sortedModelStreamsLength === 0 && !workflowInProgress;
-  const isVoiceActive = voice.isRecording || voice.isTranscribing;
+  // Keep track of voice state for parent component, but don't hide input
+  const isVoiceActive =
+    voice.isRecording ||
+    voice.isTranscribing ||
+    (voiceCommands?.isProcessingCommand ?? false);
 
   // Notify parent component when voice active state changes
   useEffect(() => {
@@ -183,12 +223,12 @@ export function InputSection({
       }`}
       style={isInitialState ? { zIndex: 10 } : {}}
     >
-      <motion.div layout className="w-full max-w-xl">
+      <motion.div layout className="w-full max-w-xl flex items-center gap-3">
         <motion.div
           layout
           className={`relative overflow-visible shadow-[0_4px_24px_rgba(0,0,0,0.12),0_0_48px_rgba(0,0,0,0.08)] bg-white/40 ${
             isDropdownOpen ? "" : "backdrop-blur-sm"
-          } ${isInitialState ? "rounded-2xl" : "rounded-t-2xl"}`}
+          } ${isInitialState ? "rounded-2xl" : "rounded-t-2xl"} flex-1`}
           style={{
             transition:
               "background-color 400ms ease-out, box-shadow 400ms ease-out",
@@ -201,125 +241,83 @@ export function InputSection({
           />
 
           <div className="relative z-[2]">
-            {/* Voice visualization when recording or transcribing */}
-            {isVoiceActive && (
-              <VoiceVisualization
-                isRecording={voice.isRecording}
-                isTranscribing={voice.isTranscribing}
-                isExpanded={isInitialState}
-                audioLevels={voice.audioLevels}
-                error={voice.error}
-              />
-            )}
+            {/* Voice visualization is now handled inside the voice button */}
 
-            {/* Textarea input - hidden when voice is active */}
-            {!isVoiceActive && (
-              <textarea
-                ref={textareaRef}
-                value={userMessage}
-                onChange={(e) => {
-                  onUserMessageChange(e.target.value);
-                  autoResizeTextarea(e.target as HTMLTextAreaElement);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (
-                      userMessage.trim() &&
-                      selectedModelsForRun.length > 0 &&
-                      (isInitialState ||
-                        (!showSelectionPrompt && !workflowInProgress))
-                    ) {
-                      handleManualSubmit();
-                    }
+            {/* Textarea input - always visible since voice visualization is in button */}
+            <textarea
+              ref={textareaRef}
+              value={userMessage}
+              onChange={(e) => {
+                onUserMessageChange(e.target.value);
+                autoResizeTextarea(e.target as HTMLTextAreaElement);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (
+                    userMessage.trim() &&
+                    selectedModelsForRun.length > 0 &&
+                    (isInitialState ||
+                      (!showSelectionPrompt && !workflowInProgress))
+                  ) {
+                    handleManualSubmit();
                   }
-                }}
-                placeholder={
-                  selectedModelsForRun.length === 0
-                    ? "Select models below to start..."
-                    : showSelectionPrompt
-                      ? "Select a version above to continue"
-                      : isInitialState
-                        ? "What would you like to generate?"
-                        : "Update the draft..."
                 }
-                className={`w-full min-h-[32px] ${isInitialState ? "max-h-[300px]" : "max-h-[200px]"} px-6 pt-1.5 pb-0.5 bg-transparent resize-none outline-none text-base text-[#333333] placeholder-black/50 overflow-y-auto`}
+              }}
+              placeholder={
+                selectedModelsForRun.length === 0
+                  ? "Select models below to start, or use voice commands..."
+                  : showSelectionPrompt
+                    ? "Select a version above to continue"
+                    : isInitialState
+                      ? "What would you like to generate?"
+                      : "Update the draft..."
+              }
+              className={`w-full min-h-[32px] ${isInitialState ? "max-h-[300px]" : "max-h-[200px]"} px-6 pt-1.5 pb-0.5 bg-transparent resize-none outline-none text-base text-[#333333] placeholder-black/50 overflow-y-auto`}
+              disabled={
+                selectedModelsForRun.length === 0 ||
+                showSelectionPrompt ||
+                workflowInProgress
+              }
+              style={{
+                height: "32px",
+                transition: "height 0.1s ease",
+                boxSizing: "border-box",
+              }}
+            />
+
+            {/* Bottom section with model selector and send button - always visible now */}
+            <div className="relative z-50 px-4 pt-0 pb-1 flex items-center gap-2">
+              <div className="flex-1">
+                <ModelDropdown
+                  direction="up"
+                  selectedModelsForRun={selectedModelsForRun}
+                  sortedAvailableModels={sortedAvailableModels}
+                  isMultiSelectMode={isMultiSelectMode}
+                  isDropdownOpen={isDropdownOpen}
+                  onMultiSelectModeChange={onMultiSelectModeChange}
+                  onModelsChange={onModelsChange}
+                  onDropdownOpenChange={onDropdownOpenChange}
+                  onClose={handleClose}
+                />
+              </div>
+
+              {/* Send button - to the right of input */}
+              <button
+                onClick={handleManualSubmit}
                 disabled={
+                  !userMessage.trim() ||
                   selectedModelsForRun.length === 0 ||
                   showSelectionPrompt ||
                   workflowInProgress
                 }
-                style={{
-                  height: "32px",
-                  transition: "height 0.1s ease",
-                  boxSizing: "border-box",
-                }}
-              />
-            )}
+                className="p-2 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
+              >
+                <Send className="w-4 h-4 text-[#333333]" />
+              </button>
+            </div>
 
-            {/* Bottom section with model selector, voice button, and send button - hide model selector when voice is active */}
-            {!isVoiceActive && (
-              <div className="relative z-50 px-4 pt-0 pb-1 flex items-center gap-2">
-                <div className="flex-1">
-                  <ModelDropdown
-                    direction="up"
-                    selectedModelsForRun={selectedModelsForRun}
-                    sortedAvailableModels={sortedAvailableModels}
-                    isMultiSelectMode={isMultiSelectMode}
-                    isDropdownOpen={isDropdownOpen}
-                    onMultiSelectModeChange={onMultiSelectModeChange}
-                    onModelsChange={onModelsChange}
-                    onDropdownOpenChange={onDropdownOpenChange}
-                    onClose={handleClose}
-                  />
-                </div>
-
-                {/* Show voice button when no text input, send button when there is text */}
-                {!userMessage.trim() ? (
-                  <VoiceButton
-                    isRecording={voice.isRecording}
-                    isTranscribing={voice.isTranscribing}
-                    disabled={
-                      selectedModelsForRun.length === 0 ||
-                      showSelectionPrompt ||
-                      workflowInProgress
-                    }
-                    onStartRecording={handleStartRecording}
-                    onStopRecording={handleStopRecording}
-                  />
-                ) : (
-                  <button
-                    onClick={handleManualSubmit}
-                    disabled={
-                      !userMessage.trim() ||
-                      selectedModelsForRun.length === 0 ||
-                      showSelectionPrompt ||
-                      workflowInProgress ||
-                      isVoiceActive
-                    }
-                    className="p-2 rounded-xl bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
-                  >
-                    <Send className="w-4 h-4 text-[#333333]" />
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Show stop button when voice is active */}
-            {isVoiceActive && (
-              <div className="px-4 pb-2 pt-2 flex items-center justify-between">
-                <div className="flex-1">
-                  {/* Empty space or could show recording time */}
-                </div>
-                <VoiceButton
-                  isRecording={voice.isRecording}
-                  isTranscribing={voice.isTranscribing}
-                  disabled={false}
-                  onStartRecording={handleStartRecording}
-                  onStopRecording={handleStopRecording}
-                />
-              </div>
-            )}
+            {/* Empty space when voice is active - voice button is now positioned outside */}
 
             {/* Voice error display */}
             {voice.error && (
@@ -331,6 +329,18 @@ export function InputSection({
             )}
           </div>
         </motion.div>
+
+        {/* Voice button - positioned outside and to the right of the input container */}
+        <VoiceButton
+          isRecording={voice.isRecording}
+          isTranscribing={voice.isTranscribing}
+          isProcessingCommand={voiceCommands?.isProcessingCommand}
+          commandFeedback={voiceCommands?.commandFeedback}
+          audioLevels={voice.audioLevels}
+          disabled={false}
+          onStartRecording={handleStartRecording}
+          onStopRecording={handleStopRecording}
+        />
       </motion.div>
     </motion.div>
   );

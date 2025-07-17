@@ -9,11 +9,16 @@ import { useAvailableModels } from "@/hooks/useAvailableModels";
 import { useDiffState } from "@/hooks/useDiffState";
 import { useDraftPad } from "@/hooks/useDraftPad";
 import { useModelStreams } from "@/hooks/useModelStreams";
+import {
+  useVoiceCommands,
+  type VoiceActionsInterface,
+} from "@/hooks/useVoiceCommands";
 import { getApiBasePath } from "@/lib/config";
 import {
   type RefObject,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -78,6 +83,246 @@ export default function Home() {
     draftPad.handleSubmit,
   ]);
 
+  // Voice command actions interface
+  const voiceActions: VoiceActionsInterface = useMemo(() => {
+    // Helper function for precise model matching
+    const findMatchingModels = (
+      modelNames: string[],
+      matchType: "exact" | "partial" | "provider" = "partial",
+    ) => {
+      return draftPad.availableModels.filter((model) => {
+        // Only include available models
+        if (!model.available) return false;
+
+        return modelNames.some((name) => {
+          const nameLower = name.toLowerCase();
+
+          switch (matchType) {
+            case "exact":
+              // Exact match on model ID, model name, or display name
+              return (
+                model.id.toLowerCase() === nameLower ||
+                model.model.toLowerCase() === nameLower ||
+                (model.displayName?.toLowerCase() ?? "") === nameLower
+              );
+
+            case "provider":
+              // Match by provider name
+              return (
+                model.provider.toLowerCase() === nameLower ||
+                (model.providerName?.toLowerCase() ?? "") === nameLower ||
+                // Common provider aliases
+                (nameLower === "openai" &&
+                  model.provider.toLowerCase() === "openai") ||
+                (nameLower === "anthropic" &&
+                  model.provider.toLowerCase() === "anthropic") ||
+                (nameLower === "google" &&
+                  model.provider.toLowerCase() === "google") ||
+                (nameLower === "gemini" &&
+                  model.provider.toLowerCase() === "google") ||
+                (nameLower === "meta" &&
+                  model.provider.toLowerCase() === "meta") ||
+                (nameLower === "llama" &&
+                  model.provider.toLowerCase() === "meta")
+              );
+
+            case "partial":
+            default:
+              // Intelligent partial matching - prioritize model names over IDs
+              const modelMatch = model.model.toLowerCase().includes(nameLower);
+              const displayNameMatch = (
+                model.displayName?.toLowerCase() ?? ""
+              ).includes(nameLower);
+              const idMatch = model.id.toLowerCase().includes(nameLower);
+              const providerMatch = model.provider.toLowerCase() === nameLower;
+
+              // Return true if we have a good match (prioritize specific model names)
+              return modelMatch || displayNameMatch || providerMatch || idMatch;
+          }
+        });
+      });
+    };
+
+    return {
+      // Model selection actions
+      addModels: (
+        modelNames: string[],
+        matchType: "exact" | "partial" | "provider" = "partial",
+      ) => {
+        const currentSelected = draftPad.selectedModelsForRun;
+        const modelsToAdd = findMatchingModels(modelNames, matchType);
+
+        // Filter out already selected models
+        const newModels = modelsToAdd.filter(
+          (model) =>
+            !currentSelected.some((selected) => selected.id === model.id),
+        );
+
+        if (newModels.length > 0) {
+          const updatedModels = [...currentSelected, ...newModels].slice(0, 9); // Max 9 models
+          draftPad.setSelectedModelsForRun(updatedModels);
+
+          // Enable multi-select if adding multiple models
+          if (updatedModels.length > 1) {
+            draftPad.setIsMultiSelectMode(true);
+          }
+        }
+      },
+
+      removeModels: (
+        modelNames: string[],
+        matchType: "exact" | "partial" | "provider" = "partial",
+      ) => {
+        const currentSelected = draftPad.selectedModelsForRun;
+        const modelsToRemove = findMatchingModels(modelNames, matchType);
+
+        const modelsToKeep = currentSelected.filter(
+          (model) =>
+            !modelsToRemove.some((removeModel) => removeModel.id === model.id),
+        );
+
+        draftPad.setSelectedModelsForRun(modelsToKeep);
+      },
+
+      selectOnlyModels: (
+        modelNames: string[],
+        matchType: "exact" | "partial" | "provider" = "partial",
+      ) => {
+        const modelsToSelect = findMatchingModels(modelNames, matchType);
+
+        if (modelsToSelect.length > 0) {
+          draftPad.setSelectedModelsForRun(modelsToSelect.slice(0, 9)); // Max 9 models
+
+          // Set multi-select mode based on selection count
+          draftPad.setIsMultiSelectMode(modelsToSelect.length > 1);
+        }
+      },
+
+      setToSingleModel: (
+        modelName: string,
+        matchType: "exact" | "partial" | "provider" = "exact",
+      ) => {
+        const matchingModels = findMatchingModels([modelName], matchType);
+
+        if (matchingModels.length > 0) {
+          // Select only the first matching model
+          draftPad.setSelectedModelsForRun([matchingModels[0]]);
+          // Always set to single-select mode
+          draftPad.setIsMultiSelectMode(false);
+        }
+      },
+
+      clearAllModels: () => {
+        draftPad.setSelectedModelsForRun([]);
+      },
+
+      toggleMultiSelect: () => {
+        const newMode = !draftPad.isMultiSelectMode;
+        draftPad.setIsMultiSelectMode(newMode);
+
+        // When switching to single-select mode, keep only the first model
+        if (!newMode && draftPad.selectedModelsForRun.length > 1) {
+          draftPad.setSelectedModelsForRun([draftPad.selectedModelsForRun[0]]);
+        }
+      },
+
+      // Sorting actions
+      sortGenerations: (field: "words" | "time" | "cost") => {
+        draftPad.handleSort(field);
+      },
+
+      sortModels: (field: "cost" | "context" | "maxOutput") => {
+        draftPad.handleModelSort(field);
+      },
+
+      // Diff control actions
+      showDiff: () => {
+        // Force show diff by setting manual mode
+        if (!diffState.showDiff) {
+          diffState.toggleDiff();
+        }
+      },
+
+      hideDiff: () => {
+        // Force hide diff
+        if (diffState.showDiff) {
+          diffState.toggleDiff();
+        }
+      },
+
+      toggleDiff: () => {
+        diffState.toggleDiff();
+      },
+
+      // Version navigation actions
+      goToPreviousVersion: () => {
+        if (draftPad.currentVersionIndex > 0) {
+          draftPad.navigateToPreviousVersion();
+        }
+      },
+
+      goToNextVersion: () => {
+        if (draftPad.currentVersionIndex < draftPad.allVersions.length - 1) {
+          draftPad.navigateToNextVersion();
+        }
+      },
+
+      goToVersion: (version: number) => {
+        const targetIndex = version - 1; // Convert 1-based to 0-based
+        if (targetIndex >= 0 && targetIndex < draftPad.allVersions.length) {
+          // Navigate to specific version by calling previous/next multiple times
+          const currentIndex = draftPad.currentVersionIndex;
+          const diff = targetIndex - currentIndex;
+
+          if (diff > 0) {
+            // Go forward
+            for (let i = 0; i < diff; i++) {
+              draftPad.navigateToNextVersion();
+            }
+          } else if (diff < 0) {
+            // Go backward
+            for (let i = 0; i < Math.abs(diff); i++) {
+              draftPad.navigateToPreviousVersion();
+            }
+          }
+        }
+      },
+
+      goToLatestVersion: () => {
+        // Navigate to the latest version
+        while (draftPad.currentVersionIndex < draftPad.allVersions.length - 1) {
+          draftPad.navigateToNextVersion();
+        }
+      },
+
+      // UI control actions
+      openModelSelector: () => {
+        draftPad.setShowModelSelectorView(true);
+      },
+
+      closeModelSelector: () => {
+        draftPad.setShowModelSelectorView(false);
+      },
+
+      // Text input actions
+      submitText: (text: string) => {
+        draftPad.setUserMessage(text);
+        // Submit after a brief delay to ensure state is updated
+        setTimeout(() => {
+          onSubmit();
+        }, 50);
+      },
+    };
+  }, [draftPad, diffState, onSubmit]);
+
+  // Voice commands hook
+  const voiceCommands = useVoiceCommands({
+    availableModels: draftPad.availableModels,
+    selectedModelsForRun: draftPad.selectedModelsForRun,
+    actions: voiceActions,
+    isVoiceActive,
+  });
+
   const showCounter =
     draftPad.showModelSelectorView && !draftPad.isLoadingModels;
 
@@ -86,6 +331,39 @@ export default function Home() {
       className="flex-1 flex flex-col h-screen pt-6 px-6"
       style={{ scrollBehavior: "auto" }}
     >
+      {/* Logo Section - Top Left */}
+      <div className="fixed top-4 left-4 z-50 flex items-center gap-3">
+        {/* GenSX Logo */}
+        <a
+          href="https://gensx.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <div className="bg-white/60 backdrop-blur-3xl rounded-2xl p-1 shadow-lg border border-white/30 hover:bg-white/80 transition-all duration-300 cursor-pointer">
+            <img src={logoSrc} alt="GenSX Logo" className="h-12" />
+          </div>
+        </a>
+
+        {/* Groq Logo */}
+        <a
+          href="https://groq.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <div className="bg-white/60 backdrop-blur-3xl rounded-2xl p-2 shadow-lg border border-white/30 hover:bg-white/80 transition-all duration-300 cursor-pointer">
+            <img
+              src="https://console.groq.com/powered-by-groq.svg"
+              alt="Powered by Groq for fast inference."
+              className="h-10"
+            />
+          </div>
+        </a>
+      </div>
+
+      {/* Voice command feedback is now shown in the voice button itself */}
+
       {/* Header */}
       <Header
         selectedModelId={draftPad.selectedModelId}
@@ -102,9 +380,6 @@ export default function Home() {
         sortConfig={draftPad.sortConfig}
         onModelSort={draftPad.handleModelSort}
         onSort={draftPad.handleSort}
-        onBackToAllModels={() => {
-          draftPad.setSelectedModelId(null);
-        }}
       />
 
       {/* Full screen model selector view */}
@@ -117,7 +392,6 @@ export default function Home() {
           onClose={() => {
             draftPad.setShowModelSelectorView(false);
           }}
-          focusInput={draftPad.focusInput}
         />
       )}
 
@@ -190,6 +464,9 @@ export default function Home() {
                     // When viewing history, selection is read-only
                     // The selectedModelId shows which model was chosen for next generation
                   }}
+                  onShowAllModels={() => {
+                    // No-op for historical view since it's read-only
+                  }}
                 />
               );
             })()
@@ -209,12 +486,15 @@ export default function Home() {
               isManuallyHiding={diffState.isManuallyHiding}
               metricRanges={metricRanges}
               onModelSelect={draftPad.handleModelSelect}
+              onShowAllModels={() => {
+                draftPad.setSelectedModelId(null);
+              }}
             />
           )}
 
           {/* Version controls - show when we have versions */}
           {draftPad.allVersions.length > 0 && (
-            <div className="mt-2 flex justify-center">
+            <div className="mt-2 flex justify-center items-center">
               <VersionControls
                 currentVersion={draftPad.currentVersionIndex + 1}
                 totalVersions={draftPad.allVersions.length}
@@ -249,23 +529,10 @@ export default function Home() {
             onDropdownOpenChange={draftPad.setIsDropdownOpen}
             onSubmit={onSubmit}
             onVoiceActiveChange={setIsVoiceActive}
+            voiceCommands={voiceCommands}
           />
         </>
       )}
-
-      {/* GenSX Logo Badge - Bottom Right */}
-      <div className="fixed bottom-2 right-2 z-50">
-        <a
-          href="https://gensx.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block"
-        >
-          <div className="bg-gray-700/20 backdrop-blur-3xl rounded-3xl p-0.5 shadow-lg border border-white/30 hover:bg-white/60 transition-all duration-300 cursor-pointer">
-            <img src={logoSrc} alt="GenSX Logo" className="w-48 h-16" />
-          </div>
-        </a>
-      </div>
     </div>
   );
 }

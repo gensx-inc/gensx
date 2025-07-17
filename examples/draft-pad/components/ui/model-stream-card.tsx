@@ -2,7 +2,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { type ModelConfig, type ModelStreamState } from "@/gensx/workflows";
 import { calculateDiff, calculateStreamingDiff } from "@/lib/diff-utils";
 import { type ContentVersion } from "@/lib/types";
-import { Check, Clock, Copy, DollarSign, WholeWord, Zap } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Clock,
+  Copy,
+  DollarSign,
+  WholeWord,
+  Zap,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -26,6 +34,7 @@ interface ModelStreamCardProps {
   modelConfig?: ModelConfig;
   isSelected?: boolean;
   onSelect?: () => void;
+  onShowAllModels?: () => void;
   scrollPosition?: number;
   onScrollUpdate?: (scrollTop: number) => void;
   metricRanges?: MetricRanges | null;
@@ -40,6 +49,7 @@ export function ModelStreamCard({
   modelConfig,
   isSelected = false,
   onSelect,
+  onShowAllModels,
   scrollPosition,
   onScrollUpdate,
   metricRanges,
@@ -409,14 +419,8 @@ export function ModelStreamCard({
                 ? "border-2 border-blue-500 animate-pulse"
                 : showCompletionFlash
                   ? "border-2 border-green-500"
-                  : isSelected &&
-                      showSelection &&
-                      modelStream.status === "complete"
-                    ? "border-2 border-blue-500"
-                    : "border border-white/30"
-            } ${
-              isSelected || !showSelection ? "" : "hover:border-gray-400"
-            } relative rounded-2xl overflow-hidden`}
+                  : "border border-white/30"
+            } hover:border-gray-400 relative rounded-2xl overflow-hidden`}
             onClick={showSelection ? onSelect : undefined}
             liquidGlass={false} // Disable glass effect to simplify scrolling
           >
@@ -433,58 +437,61 @@ export function ModelStreamCard({
               )}
             </AnimatePresence>
 
-            {/* Selected indicator - only show when there are multiple streams */}
+            {/* Show all model outputs button - only show when this model is selected and there are multiple streams */}
             {isSelected &&
               showSelection &&
-              modelStream.status === "complete" && (
-                <div className="absolute top-3 right-3 z-10">
-                  <div className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-                    <svg
-                      className="w-3 h-3"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Selected
-                  </div>
+              modelStream.status === "complete" &&
+              totalStreams > 1 && (
+                <div className="absolute top-3 left-3 z-10">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onShowAllModels?.(); // This will clear the selection and show all models
+                    }}
+                    className="bg-white/40 hover:bg-white/60 backdrop-blur-sm text-[#333333] text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all duration-200 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3 h-3" />
+                    Show all model outputs
+                  </button>
                 </div>
               )}
+
+            {/* Copy button - positioned in top-right corner */}
+            {modelStream.content && (
+              <div className="absolute top-3 right-3 z-10">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void navigator.clipboard.writeText(modelStream.content);
+                    setShowCopyFeedback(true);
+                    setTimeout(() => {
+                      setShowCopyFeedback(false);
+                    }, 2000);
+                  }}
+                  className="flex items-center justify-center w-7 h-7 rounded-full bg-white/40 backdrop-blur-sm hover:bg-white/60 transition-all duration-200 cursor-pointer"
+                  title={showCopyFeedback ? "Copied!" : "Copy content"}
+                >
+                  {showCopyFeedback ? (
+                    <Check className="w-3.5 h-3.5 text-green-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 text-[#333333]/70" />
+                  )}
+                </button>
+              </div>
+            )}
             <CardContent className="h-full p-0 overflow-hidden rounded-2xl relative">
               <div
                 ref={scrollContainerRef}
-                className="h-full p-3 overflow-y-auto rounded-2xl relative"
+                className={`h-full overflow-y-auto rounded-2xl relative ${
+                  isSelected &&
+                  showSelection &&
+                  modelStream.status === "complete" &&
+                  totalStreams > 1
+                    ? "p-3 pt-12"
+                    : "p-3"
+                }`}
                 onScroll={handleScroll}
               >
-                {/* Floating copy button only */}
-                <div className="sticky top-0 right-0 z-10 float-right mb-1">
-                  {/* Copy button */}
-                  {modelStream.content && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void navigator.clipboard.writeText(modelStream.content);
-                        setShowCopyFeedback(true);
-                        setTimeout(() => {
-                          setShowCopyFeedback(false);
-                        }, 2000);
-                      }}
-                      className="flex items-center justify-center w-7 h-7 rounded-full bg-white/40 backdrop-blur-sm hover:bg-white/60 transition-all duration-200"
-                      title={showCopyFeedback ? "Copied!" : "Copy content"}
-                    >
-                      {showCopyFeedback ? (
-                        <Check className="w-3.5 h-3.5 text-green-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-[#333333]/70" />
-                      )}
-                    </button>
-                  )}
-                </div>
-
                 {modelStream.content ? (
                   diffSegments && (showDiff || autoShowDiff) ? (
                     <DiffDisplay

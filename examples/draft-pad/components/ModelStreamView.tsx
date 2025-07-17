@@ -66,6 +66,7 @@ interface ModelStreamViewProps {
     maxTokensPerSecond: number;
   } | null;
   onModelSelect: (modelId: string) => void;
+  onShowAllModels?: () => void;
 }
 
 export function ModelStreamView({
@@ -78,6 +79,7 @@ export function ModelStreamView({
   showAllModels = false, // Default to false for backward compatibility
   metricRanges,
   onModelSelect,
+  onShowAllModels,
 }: ModelStreamViewProps) {
   // Helper functions for grid layout
   const getGridClassName = (modelCount: number) => {
@@ -144,6 +146,7 @@ export function ModelStreamView({
                       modelConfig={modelConfigMap.get(selectedStream.modelId)}
                       isSelected={true}
                       onSelect={undefined}
+                      onShowAllModels={onShowAllModels}
                       metricRanges={metricRanges}
                       showDiff={isDiffVisible}
                       autoShowDiff={false}
@@ -248,6 +251,7 @@ export function ModelStreamView({
                           onSelect={() => {
                             onModelSelect(modelStream.modelId);
                           }}
+                          onShowAllModels={onShowAllModels}
                           metricRanges={metricRanges}
                           showDiff={isDiffVisible}
                           autoShowDiff={false}
