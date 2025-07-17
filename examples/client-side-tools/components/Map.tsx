@@ -16,9 +16,9 @@ interface MapProps {
 }
 
 const defaultView = {
-  zoom: 19,
-  latitude: 4.79029,
-  longitude: -75.69003,
+  zoom: 12,
+  latitude: 37.7749, // San Francisco
+  longitude: -122.4194,
 };
 
 const createMarkerIcon = (color: string = "#3B82F6") => {

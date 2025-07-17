@@ -1,4 +1,4 @@
-const USER_ID_KEY = "chat-ux-user-id";
+const USER_ID_KEY = "map-explorer-user-id";
 
 export function getUserId(): string {
   // Check if we're in a browser environment

@@ -36,6 +36,14 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for mobile */
+}
+
+html {
+  overflow: hidden;
+  height: 100%;
 }
 
 @keyframes shimmer {

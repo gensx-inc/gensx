@@ -30,8 +30,8 @@ export async function getMapState(
 
     const mapState = await blob.getJSON();
     return mapState ?? {
-      latitude: -33.8688,
-      longitude: 151.2093,
+      latitude: 37.7749, // San Francisco
+      longitude: -122.4194,
       zoom: 12,
       markers: [],
     };

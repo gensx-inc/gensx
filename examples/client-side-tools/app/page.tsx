@@ -194,14 +194,14 @@ export default function ChatPage() {
   // Auto-scroll to bottom when messages change or status changes (only if user is near bottom)
   useEffect(() => {
     if (messagesEndRef.current) {
-      const messagesContainer =
-        messagesEndRef.current.closest(".overflow-y-auto");
+      const messagesContainer = messagesEndRef.current.closest(".overflow-y-auto");
       if (messagesContainer) {
         const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
         const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
 
         if (isNearBottom) {
-          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+          // Use container's scrollTop instead of scrollIntoView to avoid page-level scrolling
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
       }
     }
@@ -213,7 +213,10 @@ export default function ChatPage() {
       // Small delay to ensure DOM is updated
       setTimeout(() => {
         if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+          const messagesContainer = messagesEndRef.current.closest(".overflow-y-auto");
+          if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
         }
       }, 100);
     }
@@ -266,7 +269,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-white">
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-white overflow-hidden">
       {/* Show loading state until userId is initialized */}
       {!userId ? (
         <div className="flex-1 flex items-center justify-center">
@@ -343,17 +346,17 @@ export default function ChatPage() {
             </div>
 
             {/* Content Area with Map and Chat */}
-            <div className="flex flex-col lg:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out">
+            <div className="flex flex-col lg:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-hidden">
               {/* Map Section */}
               <div className="w-full lg:w-1/2 min-h-[250px] lg:min-h-0 h-72 lg:h-auto border-b lg:border-b-0 lg:border-r border-slate-200 flex-shrink-0">
                 <Map ref={mapRef} markers={markers} view={currentView} />
               </div>
 
               {/* Chat Section */}
-              <div className="flex flex-col flex-1 w-full lg:w-1/2 min-h-0">
+              <div className="flex flex-col flex-1 w-full lg:w-1/2 min-h-0 overflow-hidden max-w-full">
                 {messages.length === 0 && !threadId ? (
                   /* Empty state - Center the input in the entire remaining area */
-                  <div className="flex-1 flex items-center justify-center px-4">
+                  <div className="flex-1 flex items-center justify-center px-2 sm:px-4">
                     <div className="max-w-4xl mx-auto w-full">
                       <ChatInput
                         onSendMessage={handleSendMessage}
@@ -366,8 +369,8 @@ export default function ChatPage() {
                   /* Messages exist - Use normal layout with messages and bottom input */
                   <>
                     {/* Messages Container */}
-                    <div className="flex-1 overflow-y-auto px-4 py-6 min-h-0">
-                      <div className="max-w-4xl mx-auto space-y-0">
+                    <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-6 min-h-0">
+                      <div className="max-w-4xl mx-auto space-y-0 w-full">
                         {messages.map((message, index) => (
                           <ChatMessage
                             key={`${threadId || "new"}-${index}`}
@@ -403,8 +406,8 @@ export default function ChatPage() {
                     </div>
 
                     {/* Input Area */}
-                    <div className="px-4 pb-4">
-                      <div className="max-w-4xl mx-auto">
+                    <div className="px-2 sm:px-4 pb-4">
+                      <div className="max-w-4xl mx-auto w-full">
                         <ChatInput
                           onSendMessage={handleSendMessage}
                           disabled={status !== "completed"}

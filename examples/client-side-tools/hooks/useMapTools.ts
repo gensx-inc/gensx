@@ -17,11 +17,44 @@ export interface MapMarker {
   color?: string;
 }
 
+const getDefaultLocation = async (): Promise<MapView> => {
+  const fallbackView = {
+    latitude: 37.7749, // San Francisco
+    longitude: -122.4194,
+    zoom: 12,
+  };
+
+  if (!navigator.geolocation) {
+    return fallbackView;
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          zoom: 12,
+        });
+      },
+      () => {
+        // If geolocation fails, use San Francisco
+        resolve(fallbackView);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 300000, // 5 minutes
+      }
+    );
+  });
+};
+
 export function useMapTools(userId: string | null, threadId: string | null) {
   const mapRef = useRef<L.Map | null>(null);
   const [currentView, setCurrentView] = useState<MapView>({
-    latitude: 40.7128,
-    longitude: -74.006,
+    latitude: 37.7749, // San Francisco fallback
+    longitude: -122.4194,
     zoom: 12,
   });
   const [markers, setMarkers] = useState<MapMarker[]>([]);
@@ -32,12 +65,11 @@ export function useMapTools(userId: string | null, threadId: string | null) {
 
     if (!userId || !threadId) {
       setMarkers([]);
-      setCurrentView({
-        latitude: 40.7128,
-        longitude: -74.006,
-        zoom: 12,
+      // Get user's location for new threads
+      getDefaultLocation().then((location) => {
+        setCurrentView(location);
+        setIsLoaded(true);
       });
-      setIsLoaded(true);
       return;
     }
 
@@ -46,11 +78,9 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         const data = await getMapState(userId, threadId);
         if (!data) {
           setMarkers([]);
-          setCurrentView({
-            latitude: 40.7128,
-            longitude: -74.006,
-            zoom: 12,
-          });
+          // Get user's location for new threads
+          const location = await getDefaultLocation();
+          setCurrentView(location);
         } else {
           console.log("fetchMapState", data);
           setCurrentView({
@@ -63,11 +93,9 @@ export function useMapTools(userId: string | null, threadId: string | null) {
       } catch (error) {
         console.error("Error fetching map state:", error);
         setMarkers([]);
-        setCurrentView({
-          latitude: 40.7128,
-          longitude: -74.006,
-          zoom: 12,
-        });
+        // Get user's location on error
+        const location = await getDefaultLocation();
+        setCurrentView(location);
       } finally {
         setIsLoaded(true);
       }

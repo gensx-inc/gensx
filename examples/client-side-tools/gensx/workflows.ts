@@ -76,6 +76,8 @@ When users ask about locations, places, or geographic questions:
 4. Use placeMarker to highlight important locations
 5. Provide helpful context about the places they're asking about
 
+If the user does not provide an explicit reference to a location, you can assume they are asking about their current location, or the location that the map is currently focused on. Use the right tool to get the information you need to answer the question.
+
 Always be proactive about using the map tools to enhance the user's experience. If they ask about a place, show it to them on the map!`,
         };
 
