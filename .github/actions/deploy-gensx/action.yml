@@ -42,16 +42,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Validate workflow file exists
-      shell: bash
-      working-directory: ${{ inputs.working_directory }}
-      run: |
-        if [ ! -f "${{ inputs.workflow_file }}" ]; then
-          echo "❌ Error: Workflow file '${{ inputs.workflow_file }}' not found"
-          exit 1
-        fi
-        echo "✅ Workflow file found: ${{ inputs.workflow_file }}"
-
     - name: Verify Docker is available
       shell: bash
       run: |
@@ -65,8 +55,6 @@ runs:
           exit 1
         fi
 
-        echo "✅ Docker is available and running"
-
     - name: Deploy GenSX workflow
       id: deploy
       shell: bash
@@ -76,10 +64,6 @@ runs:
         GENSX_ORG: ${{ inputs.org }}
       run: |
         set +xe
-        echo "🚀 Deploying GenSX workflow..."
-        echo "📁 Workflow file: ${{ inputs.workflow_file }}"
-        echo "📦 Project: ${{ inputs.project_name }}"
-        echo "🌍 Environment: ${{ inputs.environment_name }}"
 
         # Build the deployment command
         env_flags=""
