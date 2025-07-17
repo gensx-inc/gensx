@@ -239,6 +239,8 @@ export default function ChatPage() {
     loadThreadTitle();
   }, [userId, threadId]);
 
+
+
   // New Chat: clear messages and remove thread ID from URL
   const handleNewChat = () => {
     clear();
