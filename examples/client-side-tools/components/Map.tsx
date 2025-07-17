@@ -28,10 +28,10 @@ const createMarkerIcon = (color: string = "#3B82F6") => {
       <circle cx="16" cy="10" r="3" fill="#ffffff"/>
     </svg>
   `;
-  
+
   return L.divIcon({
     html: svgIcon,
-    className: 'custom-marker',
+    className: "custom-marker",
     iconSize: [32, 32],
     iconAnchor: [16, 32],
     popupAnchor: [0, -32],
