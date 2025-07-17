@@ -26,6 +26,10 @@ inputs:
     description: "Working directory for the deployment"
     required: false
     default: '.'
+  gensx_cli_version:
+    description: "GenSX CLI version"
+    required: false
+    default: 'latest'
 
 outputs:
   deployment_status:
@@ -87,7 +91,7 @@ runs:
           done <<< "${{ inputs.env }}"
         fi
 
-        deploy_cmd="npx gensx@latest deploy ${{ inputs.workflow_file }}"
+        deploy_cmd="npx gensx@${{ inputs.gensx_cli_version }} deploy ${{ inputs.workflow_file }}"
 
         # Add project if specified
         if [ -n "${{ inputs.project_name }}" ]; then
