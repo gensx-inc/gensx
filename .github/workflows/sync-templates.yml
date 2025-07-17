@@ -15,5 +15,9 @@ jobs:
       - name: Split & push
         run: |
           ex=${{ matrix.path }}
+          # Delete existing split branch if it exists
+          git branch -D split/$ex || true
+          # Create new split branch
           git subtree split -P examples/$ex -b split/$ex
-          git push --force git@github.com:gensx-inc/$ex-template split/$ex:main
+          # Push using HTTPS with custom GitHub token (PAT required for cross-repo access)
+          git push --force https://${{ secrets.PAT_GITHUB_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main
