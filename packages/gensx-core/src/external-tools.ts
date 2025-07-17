@@ -1,13 +1,11 @@
-import { z } from "zod";
-
 import { Component } from "./component.js";
 import { getCurrentContext } from "./context.js";
 import { JsonValue } from "./workflow-state.js";
-import { toJsonSchema, zodValidate } from "./zod.js";
+import { InferZodType, toJsonSchema, ZodTypeAny, zodValidate } from "./zod.js";
 
 export interface ToolDefinition<
-  TParamsSchema extends z.ZodTypeAny,
-  TResultSchema extends z.ZodTypeAny,
+  TParamsSchema extends ZodTypeAny,
+  TResultSchema extends ZodTypeAny,
 > {
   description?: string;
   params: TParamsSchema;
@@ -15,19 +13,16 @@ export interface ToolDefinition<
 }
 
 // Tool box type
-export type ToolBox = Record<
-  string,
-  ToolDefinition<z.ZodTypeAny, z.ZodTypeAny>
->;
+export type ToolBox = Record<string, ToolDefinition<ZodTypeAny, ZodTypeAny>>;
 
 // Extract param/result types automatically
 export type InferToolParams<T extends ToolBox, K extends keyof T> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T[K] extends ToolDefinition<infer P, any> ? z.infer<P> : never;
+  T[K] extends ToolDefinition<infer P, any> ? InferZodType<P> : never;
 
 export type InferToolResult<T extends ToolBox, K extends keyof T> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T[K] extends ToolDefinition<any, infer R> ? z.infer<R> : never;
+  T[K] extends ToolDefinition<any, infer R> ? InferZodType<R> : never;
 
 // Tool implementations for frontend
 export type ToolImplementations<T extends ToolBox> = {
@@ -48,10 +43,7 @@ export async function executeExternalTool<T extends ToolBox, K extends keyof T>(
   toolName: K,
   params: InferToolParams<T, K>,
 ): Promise<InferToolResult<T, K>> {
-  const toolDef = toolBox[toolName] as ToolDefinition<
-    z.ZodTypeAny,
-    z.ZodTypeAny
-  >;
+  const toolDef = toolBox[toolName] as ToolDefinition<ZodTypeAny, ZodTypeAny>;
   const validatedParams = zodValidate(toolDef.params, params);
   const paramsJsonSchema = toJsonSchema(toolDef.params);
   const resultJsonSchema = toJsonSchema(toolDef.result);

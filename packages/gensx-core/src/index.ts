@@ -30,6 +30,7 @@ export type {
 export * from "./wrap.js";
 export * from "./request-input.js";
 export * from "./restore-checkpoint.js";
+export type { ZodTypeAny } from "./zod.js";
 
 export { Component, Workflow } from "./component.js";
 

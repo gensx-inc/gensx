@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { Workflow } from "src/index.js";
 import { describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import * as z3 from "zod/v3";
+import * as z4 from "zod/v4";
 
 import {
   createToolBox,
@@ -30,12 +31,12 @@ describe("External Tools", () => {
     it("should create a tool box with proper types", () => {
       const toolBox = createToolBox({
         testTool: {
-          params: z.object({ text: z.string() }),
-          result: z.string(),
+          params: z3.object({ text: z3.string() }),
+          result: z3.string(),
         },
         mathTool: {
-          params: z.object({ a: z.number(), b: z.number() }),
-          result: z.number(),
+          params: z3.object({ a: z3.number(), b: z3.number() }),
+          result: z3.number(),
         },
       });
 
@@ -55,13 +56,42 @@ describe("External Tools", () => {
   describe("Type inference", () => {
     it("should properly infer parameter and result types", () => {
       const toolDef = {
-        params: z.object({
-          name: z.string(),
-          age: z.number().optional(),
+        params: z3.object({
+          name: z3.string(),
+          age: z3.number().optional(),
         }),
-        result: z.object({
-          greeting: z.string(),
-          canVote: z.boolean(),
+        result: z3.object({
+          greeting: z3.string(),
+          canVote: z3.boolean(),
+        }),
+      };
+      const tools = createToolBox({
+        testTool: toolDef,
+      });
+
+      // These are compile-time tests - they should not cause TypeScript errors
+      type Params = InferToolParams<typeof tools, "testTool">;
+      type Result = InferToolResult<typeof tools, "testTool">;
+
+      // Runtime verification that the types work correctly
+      const params: Params = { name: "John", age: 25 };
+      const result: Result = { greeting: "Hello John", canVote: true };
+
+      expect(params.name).toBe("John");
+      expect(params.age).toBe(25);
+      expect(result.greeting).toBe("Hello John");
+      expect(result.canVote).toBe(true);
+    });
+
+    it("should properly infer parameter and result types for zod v4", () => {
+      const toolDef = {
+        params: z4.object({
+          name: z4.string(),
+          age: z4.number().optional(),
+        }),
+        result: z4.object({
+          greeting: z4.string(),
+          canVote: z4.boolean(),
         }),
       };
       const tools = createToolBox({
@@ -87,8 +117,8 @@ describe("External Tools", () => {
     it("should send external tool call message with validated params", async () => {
       const toolBox = createToolBox({
         testTool: {
-          params: z.object({ text: z.string() }),
-          result: z.string(),
+          params: z3.object({ text: z3.string() }),
+          result: z3.string(),
         },
       });
 
@@ -132,11 +162,11 @@ describe("External Tools", () => {
     it("should validate params against schema", async () => {
       const toolBox = createToolBox({
         strictTool: {
-          params: z.object({
-            requiredString: z.string(),
-            requiredNumber: z.number(),
+          params: z3.object({
+            requiredString: z3.string(),
+            requiredNumber: z3.number(),
           }),
-          result: z.string(),
+          result: z3.string(),
         },
       });
 
@@ -157,20 +187,20 @@ describe("External Tools", () => {
       // Define a realistic set of tools
       const toolBox = createToolBox({
         promptUser: {
-          params: z.object({
-            text: z.string(),
-            defaultValue: z.string().optional(),
+          params: z3.object({
+            text: z3.string(),
+            defaultValue: z3.string().optional(),
           }),
-          result: z.string(),
+          result: z3.string(),
         },
         calculateStats: {
-          params: z.object({
-            numbers: z.array(z.number()),
+          params: z3.object({
+            numbers: z3.array(z3.number()),
           }),
-          result: z.object({
-            sum: z.number(),
-            average: z.number(),
-            count: z.number(),
+          result: z3.object({
+            sum: z3.number(),
+            average: z3.number(),
+            count: z3.number(),
           }),
         },
       });

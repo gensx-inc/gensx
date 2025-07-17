@@ -2,7 +2,8 @@ import type { InferToolParams, ToolBox } from "@gensx/core";
 
 import { executeExternalTool } from "@gensx/core";
 import { jsonSchema, type Tool } from "ai";
-import { zodToJsonSchema } from "zod-to-json-schema";
+
+import { toJsonSchema } from "./zod.js";
 
 // Utility function to convert ToolBox to Vercel AI SDK ToolSet format
 export function asToolSet(toolBox: ToolBox): Record<string, Tool> {
@@ -11,7 +12,7 @@ export function asToolSet(toolBox: ToolBox): Record<string, Tool> {
       acc[name] = {
         description: toolDef.description,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-        parameters: jsonSchema(zodToJsonSchema(toolDef.params) as any),
+        parameters: jsonSchema(toJsonSchema(toolDef.params) as any),
         execute: async (args: InferToolParams<typeof toolBox, typeof name>) => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-return
           return await executeExternalTool(toolBox, name, args);

@@ -3,10 +3,14 @@
  * See https://zod.dev/library-authors for a reference.
  */
 
-import { z } from "zod";
+import { ZodTypeAny } from "@gensx/core";
+import * as z4 from "zod/v4";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-export function toJsonSchema(schema: z.ZodTypeAny) {
+export function toJsonSchema(schema: ZodTypeAny) {
+  if ("_zod" in schema) {
+    return z4.toJSONSchema(schema as z4.ZodType);
+  }
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
   return zodToJsonSchema(schema as any);
 }
