@@ -14,6 +14,7 @@ import { useMapTools } from "@/hooks/useMapTools";
 import dynamic from "next/dynamic";
 import { createToolImplementations } from "@gensx/react";
 import { toolbox } from "@/gensx/tools/frontendTools";
+import { getThreadSummary } from "@/lib/actions/chat-history";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -22,6 +23,7 @@ export default function ChatPage() {
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [threadTitle, setThreadTitle] = useState<string | null>(null);
   const {
     mapRef,
     currentView,
@@ -184,9 +186,57 @@ export default function ChatPage() {
       } else {
         // No thread selected, clear messages
         clear();
+        setThreadTitle(null);
       }
     }
   }, [threadId, currentThreadId, userId, clear, loadHistory, messages.length]);
+
+  // Auto-scroll to bottom when messages change or status changes (only if user is near bottom)
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      const messagesContainer = messagesEndRef.current.closest('.overflow-y-auto');
+      if (messagesContainer) {
+        const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
+        const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
+        
+        if (isNearBottom) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    }
+  }, [messages, status]);
+
+  // Scroll to bottom when thread loads (after history is loaded)
+  useEffect(() => {
+    if (threadId && messages.length > 0) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  }, [threadId, messages.length]);
+
+  // Load thread title when thread changes
+  useEffect(() => {
+    if (!userId || !threadId) {
+      setThreadTitle(null);
+      return;
+    }
+
+    const loadThreadTitle = async () => {
+      try {
+        const title = await getThreadSummary(userId, threadId);
+        setThreadTitle(title);
+      } catch (error) {
+        console.error("Error loading thread title:", error);
+        setThreadTitle(null);
+      }
+    };
+
+    loadThreadTitle();
+  }, [userId, threadId]);
 
   // New Chat: clear messages and remove thread ID from URL
   const handleNewChat = () => {
@@ -252,6 +302,14 @@ export default function ChatPage() {
                 >
                   <Plus className="w-5 h-5 text-slate-600" />
                 </button>
+                {threadTitle && (
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 border-l border-slate-300" />
+                    <h1 className="text-sm font-medium text-slate-700 truncate">
+                      {threadTitle}
+                    </h1>
+                  </div>
+                )}
               </div>
               {/* Right-aligned links */}
               <div className="flex items-center gap-2 ml-auto mr-4">

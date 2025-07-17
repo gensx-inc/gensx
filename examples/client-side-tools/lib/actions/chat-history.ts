@@ -10,6 +10,11 @@ export interface ThreadSummary {
   lastMessage: string;
 }
 
+export interface ThreadData {
+  summary?: string;
+  messages: CoreMessage[];
+}
+
 // Helper function to extract text content from CoreMessage
 function extractTextContent(content: CoreMessage["content"]): string {
   if (typeof content === "string") {
@@ -39,15 +44,21 @@ export async function getChatHistory(
     });
 
     const blobPath = `chat-history/${userId}/${threadId}.json`;
-    const blob = await blobClient.getBlob<CoreMessage[]>(blobPath);
+    const blob = await blobClient.getBlob<ThreadData>(blobPath);
 
     const exists = await blob.exists();
     if (!exists) {
       return [];
     }
 
-    const conversation = await blob.getJSON();
-    return conversation ?? [];
+    const threadData = await blob.getJSON();
+    
+    // Handle old format (array of messages) - convert to new format
+    if (Array.isArray(threadData)) {
+      return threadData;
+    }
+    
+    return threadData?.messages ?? [];
   } catch (error) {
     console.error("Error reading chat history:", error);
     return [];
@@ -64,7 +75,7 @@ export async function deleteChatHistory(
     });
 
     const blobPath = `chat-history/${userId}/${threadId}.json`;
-    const blob = await blobClient.getBlob(blobPath);
+    const blob = await blobClient.getBlob<ThreadData>(blobPath);
 
     const exists = await blob.exists();
     if (!exists) {
@@ -77,6 +88,41 @@ export async function deleteChatHistory(
     throw new Error("Failed to delete chat");
   }
 }
+
+export async function getThreadSummary(
+  userId: string,
+  threadId: string,
+): Promise<string | null> {
+  try {
+    const blobClient = new BlobClient({
+      kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
+    });
+
+    const blobPath = `chat-history/${userId}/${threadId}.json`;
+    const blob = await blobClient.getBlob<ThreadData>(blobPath);
+
+    const exists = await blob.exists();
+    if (!exists) {
+      return null;
+    }
+
+    const threadData = await blob.getJSON();
+    
+    // Return summary or fall back to first user message
+    if (threadData?.summary) {
+      return threadData.summary;
+    }
+    
+    const firstUserMessage = threadData?.messages?.find((m) => m.role === "user");
+    return firstUserMessage
+      ? extractTextContent(firstUserMessage.content) || "Untitled Chat"
+      : "Untitled Chat";
+  } catch (error) {
+    console.error("Error reading thread summary:", error);
+    return null;
+  }
+}
+
 
 export async function getThreadSummaries(
   userId: string,
@@ -97,18 +143,35 @@ export async function getThreadSummaries(
         continue;
       }
 
-      const blob = await blobClient.getBlob<CoreMessage[]>(blobInfo.key);
-      const messages = await blob.getJSON();
+      const blob = await blobClient.getBlob<ThreadData>(blobInfo.key);
+      const threadData = await blob.getJSON();
+
+      // Handle old format (array of messages)
+      let messages: CoreMessage[];
+      let summary: string | undefined;
+      
+      if (Array.isArray(threadData)) {
+        messages = threadData;
+        summary = undefined;
+      } else {
+        messages = threadData?.messages || [];
+        summary = threadData?.summary;
+      }
 
       if (messages && messages.length > 0) {
         // Extract threadId from the path: chat-history/userId/threadId.json
         const threadId = blobInfo.key.replace(prefix, "").replace(".json", "");
 
-        // Find the first user message for the title
-        const firstUserMessage = messages.find((m) => m.role === "user");
-        const title = firstUserMessage
-          ? extractTextContent(firstUserMessage.content) || "Untitled Chat"
-          : "Untitled Chat";
+        // Use summary if available, otherwise fall back to first user message
+        let title: string;
+        if (summary) {
+          title = summary;
+        } else {
+          const firstUserMessage = messages.find((m) => m.role === "user");
+          title = firstUserMessage
+            ? extractTextContent(firstUserMessage.content) || "Untitled Chat"
+            : "Untitled Chat";
+        }
 
         // Get the last message
         const lastMessage = messages[messages.length - 1];

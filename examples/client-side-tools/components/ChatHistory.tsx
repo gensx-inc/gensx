@@ -43,7 +43,7 @@ export function ChatHistory({
           setIsLoading(true);
         }
         const data = await getThreadSummaries(userId);
-        setThreads(data);
+        setThreads(data || []);
       } catch (error) {
         console.error("Error fetching chat history:", error);
         setThreads([]);
@@ -61,7 +61,7 @@ export function ChatHistory({
   }, [fetchHistory]);
 
   const isNewThread =
-    activeThreadId && !threads.find((t) => t.id === activeThreadId);
+    activeThreadId && !threads?.find((t) => t.id === activeThreadId);
 
   // Refresh when a stream finishes for a new thread
   useEffect(() => {
