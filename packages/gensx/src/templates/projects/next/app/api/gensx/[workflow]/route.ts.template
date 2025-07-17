@@ -1,25 +1,13 @@
 import { GenSX } from "@gensx/client";
 import { NextRequest } from "next/server";
-
-const GENSX_ORG = process.env.GENSX_ORG;
-const GENSX_PROJECT = process.env.GENSX_PROJECT ?? "deep-research";
-const GENSX_ENV = process.env.GENSX_ENV ?? "default";
+import {
+  GENSX_ENV,
+  GENSX_ORG,
+  GENSX_PROJECT,
+  shouldUseLocalDevServer,
+} from "../gensx";
 
 type RequestBody = Record<string, unknown>;
-
-const shouldUseLocalDevServer = () => {
-  if (
-    process.env.USE_LOCAL_DEV_SERVER === "false" ||
-    (process.env.GENSX_BASE_URL &&
-      !process.env.GENSX_BASE_URL.includes("localhost"))
-  ) {
-    return false;
-  }
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
-    return false;
-  }
-  return true;
-};
 
 /**
  * API route that acts as a pure passthrough to GenSX
