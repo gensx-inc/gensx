@@ -1,5 +1,5 @@
 import { createToolBox } from "@gensx/core";
-import z from "zod";
+import { z } from "zod";
 
 export const toolbox = createToolBox({
   moveMap: {
