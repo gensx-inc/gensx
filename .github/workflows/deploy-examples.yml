@@ -22,6 +22,7 @@ jobs:
       - name: Deploy GenSX Workflow
         uses: ./.github/actions/deploy-gensx
         with:
+          org: gensx
           working_directory: examples/client-side-tools
           environment_name: prod
           api_key: ${{ secrets.GENSX_API_KEY }}

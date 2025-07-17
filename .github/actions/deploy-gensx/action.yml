@@ -3,6 +3,9 @@ name: "Deploy GenSX Workflow"
 description: "Deploy a GenSX workflow to a specified environment"
 
 inputs:
+  org:
+    description: "GenSX organization"
+    required: true
   workflow_file:
     description: "Path to the GenSX workflow file"
     required: true
@@ -66,6 +69,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       env:
         GENSX_API_KEY: ${{ inputs.api_key }}
+        GENSX_ORG: ${{ inputs.org }}
       run: |
         set +xe
         echo "🚀 Deploying GenSX workflow..."
