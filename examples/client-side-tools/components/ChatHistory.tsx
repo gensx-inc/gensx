@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { PanelLeftOpen, PanelLeftClose, Trash } from "lucide-react";
+import { PanelLeftClose, Trash } from "lucide-react";
+import {
+  getThreadSummaries,
+  deleteChatHistory,
+} from "@/lib/actions/chat-history";
 
 interface ChatHistoryProps {
   isOpen: boolean;
@@ -22,8 +26,6 @@ interface Thread {
 export function ChatHistory({
   isOpen,
   onToggle,
-  collapsed,
-  onCollapseToggle,
   activeThreadId,
   onNewChat,
   userId,
@@ -40,14 +42,8 @@ export function ChatHistory({
         if (setLoading) {
           setIsLoading(true);
         }
-        const response = await fetch(`/api/chats/${userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setThreads(data);
-        } else {
-          console.error("Failed to fetch chat history");
-          setThreads([]);
-        }
+        const data = await getThreadSummaries(userId);
+        setThreads(data);
       } catch (error) {
         console.error("Error fetching chat history:", error);
         setThreads([]);
@@ -82,23 +78,14 @@ export function ChatHistory({
     );
 
     try {
-      const response = await fetch(`/api/chats/${userId}/${threadIdToDelete}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        console.error("Failed to delete chat on server");
-        // If the deletion fails, re-fetch the history to revert the change
-        fetchHistory();
-      } else {
-        // If the active chat is deleted, start a new one
-        if (activeThreadId === threadIdToDelete) {
-          onNewChat();
-        }
+      await deleteChatHistory(userId, threadIdToDelete);
+      // If the active chat is deleted, start a new one
+      if (activeThreadId === threadIdToDelete) {
+        onNewChat();
       }
     } catch (error) {
       console.error("Error deleting chat:", error);
-      // Re-fetch on error as well
+      // Re-fetch on error to revert the change
       fetchHistory();
     }
   };
@@ -126,7 +113,9 @@ export function ChatHistory({
           {/* Header */}
           <div className="border-b border-slate-200/60 px-2 py-2 h-12 flex items-center">
             <div className="flex items-center justify-between w-full">
-              <h2 className="font-semibold text-slate-900 pl-2">Chat History</h2>
+              <h2 className="font-semibold text-slate-900 pl-2">
+                Chat History
+              </h2>
               <button
                 onClick={onToggle}
                 className="p-1.5 hover:bg-slate-100 rounded-md transition-colors group"
@@ -145,8 +134,12 @@ export function ChatHistory({
               </div>
             ) : threads.length === 0 ? (
               <div className="px-4 py-8 text-center">
-                <div className="text-sm text-slate-500">No conversations yet</div>
-                <div className="text-xs text-slate-400 mt-1">Start chatting to see your history</div>
+                <div className="text-sm text-slate-500">
+                  No conversations yet
+                </div>
+                <div className="text-xs text-slate-400 mt-1">
+                  Start chatting to see your history
+                </div>
               </div>
             ) : (
               <div className="px-2">

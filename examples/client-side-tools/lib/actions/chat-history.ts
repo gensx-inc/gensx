@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+"use server";
+
 import { BlobClient } from "@gensx/storage";
 import { CoreMessage } from "ai";
-import { shouldUseLocalDevServer } from "../../gensx/gensx";
+import { shouldUseLocalDevServer } from "@/app/api/gensx/gensx";
 
-interface ThreadSummary {
+export interface ThreadSummary {
   id: string;
   title: string;
   lastMessage: string;
@@ -28,13 +29,59 @@ function extractTextContent(content: CoreMessage["content"]): string {
   return "";
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> },
-) {
+export async function getChatHistory(
+  userId: string,
+  threadId: string,
+): Promise<CoreMessage[]> {
   try {
-    const { userId } = await params;
+    const blobClient = new BlobClient({
+      kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
+    });
 
+    const blobPath = `chat-history/${userId}/${threadId}.json`;
+    const blob = await blobClient.getBlob<CoreMessage[]>(blobPath);
+
+    const exists = await blob.exists();
+    if (!exists) {
+      return [];
+    }
+
+    const conversation = await blob.getJSON();
+    return conversation ?? [];
+  } catch (error) {
+    console.error("Error reading chat history:", error);
+    return [];
+  }
+}
+
+export async function deleteChatHistory(
+  userId: string,
+  threadId: string,
+): Promise<void> {
+  try {
+    const blobClient = new BlobClient({
+      kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
+    });
+
+    const blobPath = `chat-history/${userId}/${threadId}.json`;
+    const blob = await blobClient.getBlob(blobPath);
+
+    const exists = await blob.exists();
+    if (!exists) {
+      throw new Error("Chat not found");
+    }
+
+    await blob.delete();
+  } catch (error) {
+    console.error("Error deleting chat history:", error);
+    throw new Error("Failed to delete chat");
+  }
+}
+
+export async function getThreadSummaries(
+  userId: string,
+): Promise<ThreadSummary[]> {
+  try {
     const blobClient = new BlobClient({
       kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
     });
@@ -79,9 +126,9 @@ export async function GET(
     // Sort by last activity (most recent first), assuming threadId is timestamp-based
     summaries.sort((a, b) => b.id.localeCompare(a.id));
 
-    return NextResponse.json(summaries);
+    return summaries;
   } catch (error) {
-    console.error("API: Error listing conversations for user:", error);
-    return NextResponse.json([], { status: 500 });
+    console.error("Error listing thread summaries:", error);
+    return [];
   }
 }

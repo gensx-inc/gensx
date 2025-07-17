@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import L from "leaflet";
+import { getMapState, updateMapState } from "@/lib/actions/map-state";
 
 export interface MapView {
   latitude: number;
@@ -37,24 +38,33 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     }
 
     const fetchMapState = async () => {
-      const response = await fetch(`/api/map-state/${userId}/${threadId}`);
-      if (response.status === 404) {
+      try {
+        const data = await getMapState(userId, threadId);
+        if (!data) {
+          setMarkers([]);
+          setCurrentView({
+            latitude: 40.7128,
+            longitude: -74.006,
+            zoom: 12,
+          });
+          return;
+        }
+        console.log("fetchMapState", data);
+        setCurrentView({
+          latitude: data.latitude,
+          longitude: data.longitude,
+          zoom: data.zoom,
+        });
+        setMarkers(data.markers ?? []);
+      } catch (error) {
+        console.error("Error fetching map state:", error);
         setMarkers([]);
         setCurrentView({
           latitude: 40.7128,
           longitude: -74.006,
           zoom: 12,
         });
-        return;
       }
-      const data = await response.json();
-      console.log("fetchMapState", response.status, data);
-      setCurrentView({
-        latitude: data.latitude,
-        longitude: data.longitude,
-        zoom: data.zoom,
-      });
-      setMarkers(data.markers ?? []);
     };
     fetchMapState();
   }, [userId, threadId]);
@@ -63,17 +73,18 @@ export function useMapTools(userId: string | null, threadId: string | null) {
   useEffect(() => {
     if (!userId || !threadId) return;
 
-    const updateMapState = async () => {
-      await fetch(`/api/map-state/${userId}/${threadId}`, {
-        method: "POST",
-        body: JSON.stringify({
+    const updateMapStateData = async () => {
+      try {
+        await updateMapState(userId, threadId, {
           ...currentView,
           markers,
-        }),
-      });
+        });
+      } catch (error) {
+        console.error("Error updating map state:", error);
+      }
     };
 
-    updateMapState();
+    updateMapStateData();
   }, [currentView, markers, userId, threadId]);
 
   // Simple tool implementations for map control
