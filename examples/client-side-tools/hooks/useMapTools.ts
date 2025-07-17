@@ -25,8 +25,11 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     zoom: 12,
   });
   const [markers, setMarkers] = useState<MapMarker[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    setIsLoaded(false); // Reset loading state when userId or threadId changes
+    
     if (!userId || !threadId) {
       setMarkers([]);
       setCurrentView({
@@ -34,6 +37,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         longitude: -74.006,
         zoom: 12,
       });
+      setIsLoaded(true);
       return;
     }
 
@@ -47,15 +51,15 @@ export function useMapTools(userId: string | null, threadId: string | null) {
             longitude: -74.006,
             zoom: 12,
           });
-          return;
+        } else {
+          console.log("fetchMapState", data);
+          setCurrentView({
+            latitude: data.latitude,
+            longitude: data.longitude,
+            zoom: data.zoom,
+          });
+          setMarkers(data.markers ?? []);
         }
-        console.log("fetchMapState", data);
-        setCurrentView({
-          latitude: data.latitude,
-          longitude: data.longitude,
-          zoom: data.zoom,
-        });
-        setMarkers(data.markers ?? []);
       } catch (error) {
         console.error("Error fetching map state:", error);
         setMarkers([]);
@@ -64,6 +68,8 @@ export function useMapTools(userId: string | null, threadId: string | null) {
           longitude: -74.006,
           zoom: 12,
         });
+      } finally {
+        setIsLoaded(true);
       }
     };
     fetchMapState();
@@ -71,7 +77,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
 
   // Keep the persisted map state in sync with the current view
   useEffect(() => {
-    if (!userId || !threadId) return;
+    if (!userId || !threadId || !isLoaded) return;
 
     const updateMapStateData = async () => {
       try {
@@ -85,7 +91,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     };
 
     updateMapStateData();
-  }, [currentView, markers, userId, threadId]);
+  }, [currentView, markers, userId, threadId, isLoaded]);
 
   // Simple tool implementations for map control
   const moveMap = useCallback(
