@@ -21,6 +21,23 @@ const defaultView = {
   longitude: -75.69003,
 };
 
+const createMarkerIcon = (color: string = "#3B82F6") => {
+  const svgIcon = `
+    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+      <circle cx="16" cy="10" r="3" fill="#ffffff"/>
+    </svg>
+  `;
+  
+  return L.divIcon({
+    html: svgIcon,
+    className: 'custom-marker',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  });
+};
+
 const Map = (MapProps: MapProps) => {
   const { ref, markers, view = defaultView } = MapProps;
 
@@ -50,12 +67,7 @@ const Map = (MapProps: MapProps) => {
           key={marker.id}
           position={[marker.latitude, marker.longitude]}
           draggable={false}
-          icon={L.icon({
-            iconUrl: "/marker-icon.png",
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
-            popupAnchor: [0, -10],
-          })}
+          icon={createMarkerIcon(marker.color)}
         >
           <Popup>
             <div>
