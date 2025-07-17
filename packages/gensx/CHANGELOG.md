@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/gensx-inc/gensx/compare/gensx-v0.4.2...gensx-v0.4.3) (2025-07-17)
+
+
+### 🐛 Bug Fixes
+
+* Fix auth for headless deploy ([#868](https://github.com/gensx-inc/gensx/issues/868)) ([5c81d88](https://github.com/gensx-inc/gensx/commit/5c81d88e64b9b753acf3cb100500a3c7d2b76e7f))
+
 ## [0.4.2](https://github.com/gensx-inc/gensx/compare/gensx-v0.4.1...gensx-v0.4.2) (2025-07-16)
 
 
