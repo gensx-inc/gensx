@@ -354,7 +354,13 @@ export default function ChatPage() {
                   rel="noopener noreferrer"
                   className="flex-shrink-0"
                 >
-                  <Image src="/logo.svg" alt="Docs" width={87} height={35} className="flex-shrink-0" />
+                  <Image
+                    src="/logo.svg"
+                    alt="Docs"
+                    width={87}
+                    height={35}
+                    className="flex-shrink-0"
+                  />
                 </Link>
               </div>
             </div>

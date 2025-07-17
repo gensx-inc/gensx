@@ -32,7 +32,7 @@ interface UseChatReturn {
   error: string | null;
   clear: () => void;
   loadHistory: (threadId: string, userId: string) => Promise<void>;
-  execution: WorkflowMessage[],
+  execution: WorkflowMessage[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,6 +152,6 @@ export function useChat(tools?: ToolImplementations<any>): UseChatReturn {
     error: workflowError,
     clear,
     loadHistory,
-    execution
+    execution,
   };
 }

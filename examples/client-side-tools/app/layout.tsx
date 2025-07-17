@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "GenSX Map Explorer",
   description: "GenSX Frontend Tool Calling Example",
   icons: {
-    icon: '/favicon.ico',
+    icon: "/favicon.ico",
   },
 };
 

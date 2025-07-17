@@ -174,7 +174,9 @@ Summary:`,
     } catch (error) {
       console.error("Error generating summary:", error);
       // Fallback to truncated user message
-      return userMessage.length > 30 ? userMessage.substring(0, 30) + "..." : userMessage;
+      return userMessage.length > 30
+        ? userMessage.substring(0, 30) + "..."
+        : userMessage;
     }
-  }
+  },
 );

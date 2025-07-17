@@ -46,7 +46,7 @@ const getDefaultLocation = async (): Promise<MapView> => {
         enableHighAccuracy: false,
         timeout: 5000,
         maximumAge: 300000, // 5 minutes
-      }
+      },
     );
   });
 };

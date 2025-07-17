@@ -29,12 +29,14 @@ export async function getMapState(
     }
 
     const mapState = await blob.getJSON();
-    return mapState ?? {
-      latitude: 37.7749, // San Francisco
-      longitude: -122.4194,
-      zoom: 12,
-      markers: [],
-    };
+    return (
+      mapState ?? {
+        latitude: 37.7749, // San Francisco
+        longitude: -122.4194,
+        zoom: 12,
+        markers: [],
+      }
+    );
   } catch (error) {
     console.error("Error reading map state:", error);
     throw new Error("Failed to read map state");

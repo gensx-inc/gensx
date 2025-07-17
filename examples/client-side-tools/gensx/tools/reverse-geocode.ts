@@ -25,10 +25,7 @@ export const reverseGeocodeTool = tool({
   execute: async (params: z.infer<typeof schema>) => {
     const { latitude, longitude } = params;
 
-    if (
-      !latitude ||
-      !longitude
-    ) {
+    if (!latitude || !longitude) {
       return "No parameters provided";
     }
 

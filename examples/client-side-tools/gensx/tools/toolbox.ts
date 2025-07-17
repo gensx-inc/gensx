@@ -17,7 +17,8 @@ export const toolbox = createToolBox({
     }),
   },
   placeMarkers: {
-    description: "Place markers on the map. Do your very best to include a photo of the place (such as the interior or a menu for a restaurant, or a scenic photo of a landmark). Ensure that any photos are real URLs that were retrieved from the web search tool. When adding new markers, be sure that they are visible in the current view.",
+    description:
+      "Place markers on the map. Do your very best to include a photo of the place (such as the interior or a menu for a restaurant, or a scenic photo of a landmark). Ensure that any photos are real URLs that were retrieved from the web search tool. When adding new markers, be sure that they are visible in the current view.",
     params: z.object({
       markers: z.array(
         z.object({
@@ -35,7 +36,9 @@ export const toolbox = createToolBox({
           photoUrl: z
             .string()
             .optional()
-            .describe("Photo URL to display as the marker icon. Be sure this is a real URL that is accessible to the user."),
+            .describe(
+              "Photo URL to display as the marker icon. Be sure this is a real URL that is accessible to the user.",
+            ),
         }),
       ),
     }),

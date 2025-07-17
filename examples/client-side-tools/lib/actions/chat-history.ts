@@ -52,12 +52,12 @@ export async function getChatHistory(
     }
 
     const threadData = await blob.getJSON();
-    
+
     // Handle old format (array of messages) - convert to new format
     if (Array.isArray(threadData)) {
       return threadData;
     }
-    
+
     return threadData?.messages ?? [];
   } catch (error) {
     console.error("Error reading chat history:", error);
@@ -107,13 +107,15 @@ export async function getThreadSummary(
     }
 
     const threadData = await blob.getJSON();
-    
+
     // Return summary or fall back to first user message
     if (threadData?.summary) {
       return threadData.summary;
     }
-    
-    const firstUserMessage = threadData?.messages?.find((m) => m.role === "user");
+
+    const firstUserMessage = threadData?.messages?.find(
+      (m) => m.role === "user",
+    );
     return firstUserMessage
       ? extractTextContent(firstUserMessage.content) || "Untitled Chat"
       : "Untitled Chat";
@@ -122,7 +124,6 @@ export async function getThreadSummary(
     return null;
   }
 }
-
 
 export async function getThreadSummaries(
   userId: string,
@@ -149,7 +150,7 @@ export async function getThreadSummaries(
       // Handle old format (array of messages)
       let messages: CoreMessage[];
       let summary: string | undefined;
-      
+
       if (Array.isArray(threadData)) {
         messages = threadData;
         summary = undefined;
