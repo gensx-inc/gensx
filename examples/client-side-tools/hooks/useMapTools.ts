@@ -29,7 +29,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
 
   useEffect(() => {
     setIsLoaded(false); // Reset loading state when userId or threadId changes
-    
+
     if (!userId || !threadId) {
       setMarkers([]);
       setCurrentView({
@@ -149,7 +149,13 @@ export function useMapTools(userId: string | null, threadId: string | null) {
 
   const getCurrentView = useCallback(() => {
     console.log("getCurrentView", currentView);
-    return currentView;
+    const center = mapRef.current?.getCenter();
+    const zoom = mapRef.current?.getZoom();
+    return {
+      latitude: center?.lat ?? currentView.latitude,
+      longitude: center?.lng ?? currentView.longitude,
+      zoom: zoom ?? currentView.zoom,
+    };
   }, [currentView]);
 
   const removeMarker = useCallback((id: string) => {

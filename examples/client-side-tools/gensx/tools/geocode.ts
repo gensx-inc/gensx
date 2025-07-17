@@ -25,7 +25,7 @@ const schema = z.object({
 
 export const geocodeTool = tool({
   description:
-    "Geocode a location from an address to a specific latitude and longitude. Try to provide as much information as possible, but if you don't have all the information, you can still geocode the location.",
+    "Geocode a location from an address to a specific latitude and longitude. Try to provide as much information as possible, but if you don't have all the information, you can still geocode the location. Use an address if you have it, and only use the amenity name if you don't have an address.",
   parameters: schema,
   execute: async (params: z.infer<typeof schema>) => {
     const { amenity, street, city, county, state, country, postalcode } =

@@ -13,11 +13,12 @@ export const webSearchTool = tool({
   description: "Search the web for current information on any topic.",
   parameters: z.object({
     query: z.string().describe("The search query to find information about"),
+    location: z.string().describe('Optional location to geo-target results. Examples: "Germany", "San Francisco,California,United States".').optional(),
   }),
-  execute: async ({ query }: { query: string }) => {
+  execute: async ({ query, location }: { query: string; location?: string }) => {
     const limit = 10;
     try {
-      const searchResult = await app.search(query, { limit });
+      const searchResult = await app.search(query, { limit, location });
 
       if (!searchResult.success) {
         return `Search failed: ${searchResult.error ?? "Unknown error"}`;
