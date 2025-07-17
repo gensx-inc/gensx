@@ -321,38 +321,40 @@ export default function ChatPage() {
                   <Plus className="w-5 h-5 text-slate-600" />
                 </button>
                 {threadTitle && (
-                  <div className="flex items-center gap-2">
-                    <div className="h-6 border-l border-slate-300" />
-                    <h1 className="text-sm font-medium text-slate-700 truncate">
+                  <div className="hidden sm:flex items-center gap-2 min-w-0 flex-1">
+                    <div className="h-6 border-l border-slate-300 flex-shrink-0" />
+                    <h1 className="text-sm font-medium text-slate-700 truncate min-w-0">
                       {threadTitle}
                     </h1>
                   </div>
                 )}
               </div>
               {/* Right-aligned links */}
-              <div className="flex items-center gap-2 ml-auto mr-4">
+              <div className="flex items-center gap-2 ml-auto mr-2 sm:mr-4 flex-shrink-0">
                 <Link
                   href="https://github.com/gensx-inc/gensx"
                   passHref
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="flex-shrink-0"
                 >
                   <Image
                     src="/github-mark.svg"
                     alt="GitHub"
-                    className="w-6 h-6"
+                    className="w-6 h-6 flex-shrink-0"
                     width={24}
                     height={24}
                   />
                 </Link>
-                <div className="h-6 border-l border-slate-300 mx-2" />
+                <div className="h-6 border-l border-slate-300 mx-1 sm:mx-2 flex-shrink-0" />
                 <Link
                   href="https://gensx.com/docs"
                   passHref
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="flex-shrink-0"
                 >
-                  <Image src="/logo.svg" alt="Docs" width={87} height={35} />
+                  <Image src="/logo.svg" alt="Docs" width={87} height={35} className="flex-shrink-0" />
                 </Link>
               </div>
             </div>
@@ -383,6 +385,14 @@ export default function ChatPage() {
                     {/* Messages Container */}
                     <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-6 min-h-0">
                       <div className="max-w-4xl mx-auto space-y-0 w-full">
+                        {/* Thread Title - Show only on mobile */}
+                        {threadTitle && (
+                          <div className="block sm:hidden mb-6">
+                            <h1 className="text-lg font-semibold text-slate-800 text-center">
+                              {threadTitle}
+                            </h1>
+                          </div>
+                        )}
                         {messages.map((message, index) => (
                           <ChatMessage
                             key={`${threadId || "new"}-${index}`}
