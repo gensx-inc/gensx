@@ -357,8 +357,16 @@ importers:
         specifier: workspace:*
         version: link:../../packages/gensx-storage
       '@gensx/vercel-ai':
+<<<<<<< HEAD
         specifier: workspace:*
         version: link:../../packages/gensx-vercel-ai
+||||||| parent of 2a135a9 (Fix issues with zod/firecrawl deps.)
+        specifier: ^0.3.1
+        version: 0.3.1(react@19.1.0)(zod@4.0.0)
+=======
+        specifier: ^0.3.1
+        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+>>>>>>> 2a135a9 (Fix issues with zod/firecrawl deps.)
       '@mendable/firecrawl-js':
         specifier: ~1.21.1
         version: 1.21.1(ws@8.18.2)
@@ -417,7 +425,14 @@ importers:
         specifier: ^3.3.0
         version: 3.3.1
       zod:
+<<<<<<< HEAD
         specifier: 3.25.56
+||||||| parent of 2a135a9 (Fix issues with zod/firecrawl deps.)
+        specifier: 4.0.0
+        version: 4.0.0
+=======
+        specifier: ^3.25.0
+>>>>>>> 2a135a9 (Fix issues with zod/firecrawl deps.)
         version: 3.25.56
     devDependencies:
       '@eslint/eslintrc':
@@ -1345,7 +1360,14 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       zod:
+<<<<<<< HEAD
         specifier: 'catalog:'
+||||||| parent of 2a135a9 (Fix issues with zod/firecrawl deps.)
+        specifier: ^3.25.0 || ^4.0.0
+        version: 4.0.5
+=======
+        specifier: ^3.25.0
+>>>>>>> 2a135a9 (Fix issues with zod/firecrawl deps.)
         version: 3.25.56
       zod-to-json-schema:
         specifier: 'catalog:'
@@ -1473,7 +1495,14 @@ importers:
         specifier: 'catalog:'
         version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
       zod:
+<<<<<<< HEAD
         specifier: 'catalog:'
+||||||| parent of 2a135a9 (Fix issues with zod/firecrawl deps.)
+        specifier: ^3.25.0 || ^4.0.0
+        version: 4.0.5
+=======
+        specifier: ^3.25.0
+>>>>>>> 2a135a9 (Fix issues with zod/firecrawl deps.)
         version: 3.25.56
 
   packages/gensx-windsurf-rules:
