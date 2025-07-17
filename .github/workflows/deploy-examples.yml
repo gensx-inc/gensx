@@ -20,6 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy GenSX Workflow
+        id: deploy
         uses: ./.github/actions/deploy-gensx
         with:
           org: gensx
@@ -30,3 +31,9 @@ jobs:
           env: |
             ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          echo "Client Side Tools Deploy to: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY

@@ -107,11 +107,16 @@ runs:
 
         echo "Running: $deploy_cmd"
 
-        # Run deployment and capture output
-        deploy_output=$(eval $deploy_cmd 2>&1)
-        deploy_exit_code=$?
+        # Create a temp file for capturing output
+        deploy_output_file=$(mktemp)
 
-        echo "$deploy_output"
+        # Run deployment, show output live, and capture it
+        set -o pipefail
+        eval $deploy_cmd 2>&1 | tee "$deploy_output_file"
+        deploy_exit_code=${PIPESTATUS[0]}
+
+        # Read output from file
+        deploy_output=$(cat "$deploy_output_file")
 
         if [ $deploy_exit_code -ne 0 ]; then
           echo "❌ Deployment failed"
@@ -119,20 +124,8 @@ runs:
         fi
 
         # Extract URL from output (look for lines containing app.gensx.com)
-        deployment_url=$(echo "$deploy_output" | grep -E "app\.gensx\.com" | head -1 | sed -E 's/.*https:\/\/app\.gensx\.com[^[:space:]]*/https:\/\/\1/' | tr -d '[:space:]')
+        deployment_url=$(grep -Eo "https://app\\.gensx\\.com[^[:space:]]*" "$deploy_output_file" | head -1 | tr -d '[:space:]')
 
         # Set outputs
         echo "status=success" >> $GITHUB_OUTPUT
-        if [ -n "$deployment_url" ]; then
-          echo "url=$deployment_url" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Deployment summary
-      shell: bash
-      run: |
-        echo "## 🎉 Deployment Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **Workflow File**: \`${{ inputs.workflow_file }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Project**: \`${{ inputs.project_name }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Environment**: \`${{ inputs.environment_name }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Status**: ✅ Deployed successfully" >> $GITHUB_STEP_SUMMARY
-        echo "- **Console URL**: [View in GenSX Console](${{ steps.deploy.outputs.url }})" >> $GITHUB_STEP_SUMMARY
+        echo "deployment_url=$deployment_url" >> $GITHUB_OUTPUT
