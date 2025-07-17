@@ -132,4 +132,4 @@ runs:
 
         # Set outputs
         echo "status=success" >> $GITHUB_OUTPUT
-        echo "deployment_url=$deployment_url" >> $GITHUB_OUTPUT
+        echo "url=$deployment_url" >> $GITHUB_OUTPUT
