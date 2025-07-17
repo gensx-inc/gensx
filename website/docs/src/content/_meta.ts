@@ -1,6 +1,7 @@
 const meta = {
   index: "Overview",
   quickstart: "Quickstart",
+  templates: "Start with a template",
   "basic-concepts": "Basic concepts",
   "streaming-react": "Streaming & React",
   "why-components": "Why components?",
