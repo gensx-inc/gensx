@@ -103,7 +103,11 @@ export async function createProject(
  */
 export async function checkProjectExists(
   projectName: string,
-  { token, org, apiBaseUrl }: { token?: string; org?: string; apiBaseUrl?: string } = {},
+  {
+    token,
+    org,
+    apiBaseUrl,
+  }: { token?: string; org?: string; apiBaseUrl?: string } = {},
 ): Promise<boolean> {
   if (!token || !org) {
     const auth = await getAuth();

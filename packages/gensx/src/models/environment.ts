@@ -60,13 +60,17 @@ interface CreateEnvironmentResponse {
 export async function createEnvironment(
   projectName: string,
   environmentName: string,
-  { token, org, apiBaseUrl }: { token?: string; org?: string; apiBaseUrl?: string } = {},
+  {
+    token,
+    org,
+    apiBaseUrl,
+  }: { token?: string; org?: string; apiBaseUrl?: string } = {},
 ): Promise<CreateEnvironmentResponse> {
   if (!token || !org) {
     const auth = await getAuth();
     if (!auth) {
-    throw new Error("Not authenticated. Please run 'gensx login' first.");
-  }
+      throw new Error("Not authenticated. Please run 'gensx login' first.");
+    }
 
     token ??= auth.token;
     org ??= auth.org;
@@ -74,13 +78,21 @@ export async function createEnvironment(
   }
 
   // Check if the project exists
-  const projectExists = await checkProjectExists(projectName, { token, org, apiBaseUrl });
+  const projectExists = await checkProjectExists(projectName, {
+    token,
+    org,
+    apiBaseUrl,
+  });
   if (!projectExists) {
     throw new Error(`Project ${projectName} does not exist`);
   }
 
   // Check if the environment already exists
-  const envExists = await checkEnvironmentExists(projectName, environmentName, { token, org, apiBaseUrl });
+  const envExists = await checkEnvironmentExists(projectName, environmentName, {
+    token,
+    org,
+    apiBaseUrl,
+  });
   if (envExists) {
     throw new Error(`Environment ${environmentName} already exists`);
   }
@@ -120,7 +132,11 @@ export async function createEnvironment(
 export async function checkEnvironmentExists(
   projectName: string,
   environmentName: string,
-  { token, org, apiBaseUrl }: { token?: string; org?: string; apiBaseUrl?: string } = {},
+  {
+    token,
+    org,
+    apiBaseUrl,
+  }: { token?: string; org?: string; apiBaseUrl?: string } = {},
 ): Promise<boolean> {
   if (!token || !org) {
     const auth = await getAuth();

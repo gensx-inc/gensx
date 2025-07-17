@@ -142,7 +142,9 @@ export async function runCLI() {
       const isNonInteractive =
         process.env.CI === "true" || !process.stdin.isTTY;
       if (isNonInteractive) {
-        console.info("Running in headless mode due to CI or non-TTY environment.");
+        console.info(
+          "Running in headless mode due to CI or non-TTY environment.",
+        );
         try {
           await headlessDeploy(file, options);
         } catch (err) {

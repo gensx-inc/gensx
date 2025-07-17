@@ -7,7 +7,10 @@ import axios from "axios";
 import FormData from "form-data";
 import { Definition } from "typescript-json-schema";
 
-import { checkEnvironmentExists, createEnvironment } from "../models/environment.js";
+import {
+  checkEnvironmentExists,
+  createEnvironment,
+} from "../models/environment.js";
 import { checkProjectExists } from "../models/projects.js";
 import { getAuth } from "../utils/config.js";
 import { readProjectConfig } from "../utils/project-config.js";
@@ -30,7 +33,9 @@ export async function headlessDeploy(
   if (!org || !token) {
     const authConfig = await getAuth();
     if (!authConfig) {
-      throw new Error("Not authenticated. Please specify GENSX_ORG and GENSX_API_KEY.");
+      throw new Error(
+        "Not authenticated. Please specify GENSX_ORG and GENSX_API_KEY.",
+      );
     }
     org ??= authConfig.org;
     token ??= authConfig.token;
@@ -43,33 +48,50 @@ export async function headlessDeploy(
   let environmentName = options.env;
   if (!projectName || !environmentName) {
     const projectConfig = await readProjectConfig(process.cwd());
-    if (!projectConfig?.projectName) {
+    if (!projectName && !projectConfig?.projectName) {
       throw new Error(
         "No project name found. Either specify --project or create a gensx.yaml file with a 'projectName' field.",
       );
     }
-    projectName ??= projectConfig.projectName;
-    environmentName ??= projectConfig.environmentName;
+    if (!environmentName && !projectConfig?.environmentName) {
+      throw new Error(
+        "No environment specified. Either specify --env or create a gensx.yaml file with an 'environmentName' field.",
+      );
+    }
+    projectName ??= projectConfig?.projectName;
+    environmentName ??= projectConfig?.environmentName;
   }
 
-  if (!projectName || !environmentName) {
-    throw new Error(
-      "No project name or environment name found. Either specify --project and --env or create a gensx.yaml file with a 'projectName' and 'environmentName' field.",
-    );
-  }
+  // At this point, both projectName and environmentName are guaranteed to be defined
+  // TypeScript: assert as string
+  projectName = projectName!;
+  environmentName = environmentName!;
 
   // 2. Validate project exists
-  const projectExists = await checkProjectExists(projectName, { token, org, apiBaseUrl });
+  const projectExists = await checkProjectExists(projectName, {
+    token,
+    org,
+    apiBaseUrl,
+  });
   if (!projectExists) {
     throw new Error(`Project ${projectName} does not exist.`);
   }
 
   // 3. Validate environment exists
-  const envExists = await checkEnvironmentExists(projectName, environmentName, { token, org, apiBaseUrl });
+  const envExists = await checkEnvironmentExists(projectName, environmentName, {
+    token,
+    org,
+    apiBaseUrl,
+  });
   if (!envExists) {
-    await createEnvironment(projectName, environmentName, { token, org, apiBaseUrl });
+    await createEnvironment(projectName, environmentName, {
+      token,
+      org,
+      apiBaseUrl,
+    });
   }
 
+  // Only print the deployment message once, right before the API call
   console.info(
     `Deploying project '${projectName}' to environment '${environmentName}'...`,
   );
@@ -126,9 +148,6 @@ export async function headlessDeploy(
     apiBaseUrl ?? "https://api.gensx.com",
   );
 
-  console.info(
-    `Deploying project '${projectName}' to environment '${environmentName}'...`,
-  );
   const response = await axios.post(url.toString(), form, {
     headers: {
       Authorization: `Bearer ${token}`,
