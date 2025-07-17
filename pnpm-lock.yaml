@@ -348,17 +348,17 @@ importers:
         specifier: ^0.1.5
         version: 0.1.5
       '@gensx/core':
-        specifier: ^0.5.1
-        version: 0.5.1
+        specifier: workspace:*
+        version: link:../../packages/gensx-core
       '@gensx/react':
-        specifier: ^0.2.2
-        version: 0.2.2(react@19.1.0)
+        specifier: workspace:*
+        version: link:../../packages/gensx-react
       '@gensx/storage':
         specifier: ^0.2.1
         version: 0.2.1
       '@gensx/vercel-ai':
-        specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+        specifier: workspace:*
+        version: link:../../packages/gensx-vercel-ai
       '@mendable/firecrawl-js':
         specifier: ~1.21.1
         version: 1.21.1(ws@8.18.2)
