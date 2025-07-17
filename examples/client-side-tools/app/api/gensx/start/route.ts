@@ -45,6 +45,8 @@ export async function POST(request: NextRequest) {
       // Initialize GenSX SDK
       const baseUrl = process.env.GENSX_BASE_URL ?? "https://api.gensx.com";
 
+      console.log("baseUrl", baseUrl);
+
       gensx = new GenSX({
         apiKey,
         baseUrl,

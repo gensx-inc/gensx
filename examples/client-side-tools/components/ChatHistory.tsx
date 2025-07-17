@@ -108,44 +108,33 @@ export function ChatHistory({
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 lg:hidden z-40"
+          className="fixed inset-0 bg-black/50 lg:hidden z-[9998]"
           onClick={onToggle}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-slate-100/60 border-r border-slate-200/60 transition-all duration-300 ease-in-out z-50
+        className={`fixed top-0 left-0 h-full bg-slate-100/95 border-r border-slate-200/80 transition-all duration-300 ease-in-out z-[9999]
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          lg:translate-x-0
-          ${collapsed ? "w-20" : "w-80"}
+          w-80
+          ${isOpen ? "w-[80%]" : ""}
+          sm:w-80
         `}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="border-b border-slate-200/60 px-2 py-2 h-12 flex items-center">
-            {collapsed ? (
-              <div className="flex flex-col items-center gap-2">
-                <button
-                  onClick={onCollapseToggle}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors group"
-                  title="Expand sidebar"
-                >
-                  <PanelLeftOpen className="w-5 h-5 text-slate-600 group-hover:text-slate-700" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between w-full">
-                <h2 className="font-semibold text-slate-900 pl-2">Chat</h2>
-                <button
-                  onClick={onCollapseToggle}
-                  className="p-1.5 hover:bg-slate-100 rounded-md transition-colors group"
-                  title="Collapse sidebar"
-                >
-                  <PanelLeftClose className="w-5 h-5 text-slate-600 group-hover:text-slate-700" />
-                </button>
-              </div>
-            )}
+            <div className="flex items-center justify-between w-full">
+              <h2 className="font-semibold text-slate-900 pl-2">Chat History</h2>
+              <button
+                onClick={onToggle}
+                className="p-1.5 hover:bg-slate-100 rounded-md transition-colors group"
+                title="Close sidebar"
+              >
+                <PanelLeftClose className="w-5 h-5 text-slate-600 group-hover:text-slate-700" />
+              </button>
+            </div>
           </div>
 
           {/* Chat List */}
@@ -154,8 +143,11 @@ export function ChatHistory({
               <div className="px-4 py-8 text-center">
                 <div className="text-sm text-slate-500">Loading...</div>
               </div>
-            ) : collapsed ? (
-              <></>
+            ) : threads.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <div className="text-sm text-slate-500">No conversations yet</div>
+                <div className="text-xs text-slate-400 mt-1">Start chatting to see your history</div>
+              </div>
             ) : (
               <div className="px-2">
                 {threads.map((thread, index) => (

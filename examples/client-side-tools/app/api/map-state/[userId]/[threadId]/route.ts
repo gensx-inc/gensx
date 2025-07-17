@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BlobClient } from "@gensx/storage";
 import { MapMarker } from "@/hooks/useMapTools";
+import { shouldUseLocalDevServer } from "@/app/api/gensx/gensx";
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +11,7 @@ export async function GET(
     const { userId, threadId } = await params;
 
     const blobClient = new BlobClient({
-      kind: process.env.NODE_ENV === "production" ? "cloud" : "filesystem",
+      kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
     });
 
     const blobPath = `map-state/${userId}/${threadId}.json`;
@@ -32,6 +33,8 @@ export async function GET(
     }
 
     const mapState = await blob.getJSON();
+
+    console.log("mapState", mapState);
 
     return NextResponse.json(
       mapState ?? {
@@ -55,7 +58,7 @@ export async function DELETE(
     const { userId, threadId } = await params;
 
     const blobClient = new BlobClient({
-      kind: process.env.NODE_ENV === "production" ? "cloud" : "filesystem",
+      kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
     });
 
     const blobPath = `map-state/${userId}/${threadId}.json`;
@@ -92,7 +95,7 @@ export async function POST(
   const { userId, threadId } = await params;
 
   const blobClient = new BlobClient({
-    kind: process.env.NODE_ENV === "production" ? "cloud" : "filesystem",
+    kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
   });
 
   const blobPath = `map-state/${userId}/${threadId}.json`;

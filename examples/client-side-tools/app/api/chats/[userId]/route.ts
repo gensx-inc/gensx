@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BlobClient } from "@gensx/storage";
 import { CoreMessage } from "ai";
+import { shouldUseLocalDevServer } from "../../gensx/gensx";
 
 interface ThreadSummary {
   id: string;
@@ -35,7 +36,7 @@ export async function GET(
     const { userId } = await params;
 
     const blobClient = new BlobClient({
-      kind: process.env.NODE_ENV === "production" ? "cloud" : "filesystem",
+      kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
     });
 
     const prefix = `chat-history/${userId}/`;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BlobClient } from "@gensx/storage";
 import { CoreMessage } from "ai";
+import { shouldUseLocalDevServer } from "@/app/api/gensx/gensx";
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +11,7 @@ export async function GET(
     const { userId, threadId } = await params;
 
     const blobClient = new BlobClient({
-      kind: process.env.NODE_ENV === "production" ? "cloud" : "filesystem",
+      kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
     });
 
     const blobPath = `chat-history/${userId}/${threadId}.json`;
@@ -40,7 +41,7 @@ export async function DELETE(
     const { userId, threadId } = await params;
 
     const blobClient = new BlobClient({
-      kind: process.env.NODE_ENV === "production" ? "cloud" : "filesystem",
+      kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
     });
 
     const blobPath = `chat-history/${userId}/${threadId}.json`;
