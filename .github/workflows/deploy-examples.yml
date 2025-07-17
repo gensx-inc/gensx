@@ -1,11 +1,6 @@
 name: Deploy GenSX Examples
 
 on:
-  pull_request:
-    paths:
-      - "examples/client-side-tools/gensx"
-      - ".github/workflows/deploy-examples.yml"
-      - ".github/actions/deploy-gensx/action.yml"
   push:
     branches: [main]
     paths:
