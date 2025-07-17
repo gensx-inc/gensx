@@ -128,10 +128,10 @@ importers:
     dependencies:
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/openai':
         specifier: ^0.3.1
-        version: 0.3.1(openai@5.10.1(ws@8.18.2)(zod@4.0.5))
+        version: 0.3.2(openai@5.10.1(ws@8.18.2)(zod@3.25.56))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -147,10 +147,10 @@ importers:
     dependencies:
       '@gensx/anthropic':
         specifier: ^0.2.9
-        version: 0.2.9(@anthropic-ai/sdk@0.56.0)
+        version: 0.2.10(@anthropic-ai/sdk@0.56.0)
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       zod:
         specifier: 3.25.56
         version: 3.25.56
@@ -172,10 +172,10 @@ importers:
         version: 1.2.12(zod@3.25.56)
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/vercel-ai':
         specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+        version: 0.3.2(react@19.1.0)(zod@3.25.56)
       ai:
         specifier: ^4.3.16
         version: 4.3.19(react@19.1.0)(zod@3.25.56)
@@ -200,13 +200,13 @@ importers:
         version: 1.3.23(zod@3.25.56)
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/storage':
         specifier: ^0.2.1
-        version: 0.2.1
+        version: 0.2.2
       '@gensx/vercel-ai':
         specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+        version: 0.3.2(react@19.1.0)(zod@3.25.56)
       ai:
         specifier: ^4.2.10
         version: 4.3.19(react@19.1.0)(zod@3.25.56)
@@ -237,19 +237,19 @@ importers:
         version: 1.1.3
       '@gensx/client':
         specifier: ^0.1.5
-        version: 0.1.5
+        version: 0.1.6
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/react':
         specifier: ^0.2.2
         version: 0.2.2(react@19.1.0)
       '@gensx/storage':
         specifier: ^0.2.1
-        version: 0.2.1
+        version: 0.2.2
       '@gensx/vercel-ai':
         specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+        version: 0.3.2(react@19.1.0)(zod@3.25.56)
       '@mendable/firecrawl-js':
         specifier: ~1.21.1
         version: 1.21.1(ws@8.18.2)
@@ -345,28 +345,20 @@ importers:
         specifier: ^1.1.3
         version: 1.1.3
       '@gensx/client':
-        specifier: workspace:*
-        version: link:../../packages/gensx-client
+        specifier: ^0.1.6
+        version: 0.1.6
       '@gensx/core':
-        specifier: workspace:*
-        version: link:../../packages/gensx-core
+        specifier: ^0.5.2
+        version: 0.5.2
       '@gensx/react':
-        specifier: workspace:*
-        version: link:../../packages/gensx-react
+        specifier: ^0.2.3
+        version: 0.2.3(react@19.1.0)
       '@gensx/storage':
-        specifier: workspace:*
-        version: link:../../packages/gensx-storage
+        specifier: ^0.2.2
+        version: 0.2.2
       '@gensx/vercel-ai':
-<<<<<<< HEAD
-        specifier: workspace:*
-        version: link:../../packages/gensx-vercel-ai
-||||||| parent of 2a135a9 (Fix issues with zod/firecrawl deps.)
-        specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@4.0.0)
-=======
-        specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
->>>>>>> 2a135a9 (Fix issues with zod/firecrawl deps.)
+        specifier: ^0.3.2
+        version: 0.3.2(react@19.1.0)(zod@3.25.56)
       '@mendable/firecrawl-js':
         specifier: ~1.21.1
         version: 1.21.1(ws@8.18.2)
@@ -425,14 +417,7 @@ importers:
         specifier: ^3.3.0
         version: 3.3.1
       zod:
-<<<<<<< HEAD
         specifier: 3.25.56
-||||||| parent of 2a135a9 (Fix issues with zod/firecrawl deps.)
-        specifier: 4.0.0
-        version: 4.0.0
-=======
-        specifier: ^3.25.0
->>>>>>> 2a135a9 (Fix issues with zod/firecrawl deps.)
         version: 3.25.56
     devDependencies:
       '@eslint/eslintrc':
@@ -510,19 +495,19 @@ importers:
         version: 1.1.3
       '@gensx/client':
         specifier: ^0.1.5
-        version: 0.1.5
+        version: 0.1.6
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/react':
         specifier: ^0.2.2
         version: 0.2.2(react@19.1.0)
       '@gensx/storage':
         specifier: ^0.2.1
-        version: 0.2.1
+        version: 0.2.2
       '@gensx/vercel-ai':
         specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+        version: 0.3.2(react@19.1.0)(zod@3.25.56)
       '@langchain/textsplitters':
         specifier: ^0.1.0
         version: 0.1.0(@langchain/core@0.3.62(@opentelemetry/api@1.9.0)(openai@5.10.1(ws@8.18.2)(zod@3.25.56)))
@@ -643,16 +628,16 @@ importers:
         version: 1.2.18(zod@3.25.56)
       '@gensx/client':
         specifier: ^0.1.5
-        version: 0.1.5
+        version: 0.1.6
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/react':
         specifier: ^0.2.2
         version: 0.2.2(react@18.3.1)
       '@gensx/vercel-ai':
         specifier: ^0.3.1
-        version: 0.3.1(react@18.3.1)(zod@3.25.56)
+        version: 0.3.2(react@18.3.1)(zod@3.25.56)
       '@radix-ui/react-slot':
         specifier: ^1.2.3
         version: 1.2.3(@types/react@19.1.8)(react@18.3.1)
@@ -749,10 +734,10 @@ importers:
     dependencies:
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/openai':
         specifier: ^0.3.1
-        version: 0.3.1(openai@5.10.1(ws@8.18.2)(zod@3.25.76))
+        version: 0.3.2(openai@5.10.1(ws@8.18.2)(zod@3.25.76))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -768,10 +753,10 @@ importers:
     dependencies:
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/openai':
         specifier: ^0.3.1
-        version: 0.3.1(openai@5.10.1(ws@8.18.2)(zod@3.25.76))
+        version: 0.3.2(openai@5.10.1(ws@8.18.2)(zod@3.25.76))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -815,10 +800,10 @@ importers:
     dependencies:
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/openai':
         specifier: ^0.3.1
-        version: 0.3.1(openai@5.10.1(ws@8.18.2)(zod@3.25.76))
+        version: 0.3.2(openai@5.10.1(ws@8.18.2)(zod@3.25.76))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -865,10 +850,10 @@ importers:
     dependencies:
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/openai':
         specifier: ^0.3.1
-        version: 0.3.1(openai@5.10.1(ws@8.18.2)(zod@3.25.56))
+        version: 0.3.2(openai@5.10.1(ws@8.18.2)(zod@3.25.56))
       openai:
         specifier: ^5.10.1
         version: 5.10.1(ws@8.18.2)(zod@3.25.56)
@@ -893,13 +878,13 @@ importers:
         version: 1.3.23(zod@3.25.56)
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/storage':
         specifier: ^0.2.1
-        version: 0.2.1
+        version: 0.2.2
       '@gensx/vercel-ai':
         specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+        version: 0.3.2(react@19.1.0)(zod@3.25.56)
       ai:
         specifier: ^4.2.10
         version: 4.3.19(react@19.1.0)(zod@3.25.56)
@@ -927,10 +912,10 @@ importers:
         version: 1.3.23(zod@3.25.56)
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/vercel-ai':
         specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+        version: 0.3.2(react@19.1.0)(zod@3.25.56)
       ai:
         specifier: ^4.2.10
         version: 4.3.19(react@19.1.0)(zod@3.25.56)
@@ -1020,13 +1005,13 @@ importers:
         version: 1.3.23(zod@3.25.56)
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/storage':
         specifier: ^0.2.1
-        version: 0.2.1
+        version: 0.2.2
       '@gensx/vercel-ai':
         specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+        version: 0.3.2(react@19.1.0)(zod@3.25.56)
       ai:
         specifier: ^4.2.10
         version: 4.3.19(react@19.1.0)(zod@3.25.56)
@@ -1076,10 +1061,10 @@ importers:
         version: 1.3.23(zod@3.25.56)
       '@gensx/core':
         specifier: ^0.5.1
-        version: 0.5.1
+        version: 0.5.2
       '@gensx/vercel-ai':
         specifier: ^0.3.1
-        version: 0.3.1(react@19.1.0)(zod@3.25.56)
+        version: 0.3.2(react@19.1.0)(zod@3.25.56)
       ai:
         specifier: ^4.3.16
         version: 4.3.19(react@19.1.0)(zod@3.25.56)
@@ -1183,7 +1168,7 @@ importers:
         version: 7.0.0
       form-data:
         specifier: ^4.0.3
-        version: 4.0.3
+        version: 4.0.4
       hono:
         specifier: ^4.7.11
         version: 4.8.5
@@ -1360,14 +1345,7 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       zod:
-<<<<<<< HEAD
         specifier: 'catalog:'
-||||||| parent of 2a135a9 (Fix issues with zod/firecrawl deps.)
-        specifier: ^3.25.0 || ^4.0.0
-        version: 4.0.5
-=======
-        specifier: ^3.25.0
->>>>>>> 2a135a9 (Fix issues with zod/firecrawl deps.)
         version: 3.25.56
       zod-to-json-schema:
         specifier: 'catalog:'
@@ -1495,14 +1473,7 @@ importers:
         specifier: 'catalog:'
         version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
       zod:
-<<<<<<< HEAD
         specifier: 'catalog:'
-||||||| parent of 2a135a9 (Fix issues with zod/firecrawl deps.)
-        specifier: ^3.25.0 || ^4.0.0
-        version: 4.0.5
-=======
-        specifier: ^3.25.0
->>>>>>> 2a135a9 (Fix issues with zod/firecrawl deps.)
         version: 3.25.56
 
   packages/gensx-windsurf-rules:
@@ -2520,14 +2491,18 @@ packages:
     peerDependencies:
       '@anthropic-ai/sdk': ^0.39.0
 
-  '@gensx/anthropic@0.2.9':
-    resolution: {integrity: sha512-r1UAmYrMHpUsdZDmf4W7ve0eJX2pVYFOIwEGjypIbGuBCEEeyb1cWjZlh28fbkxAa9rL1Yw8z8kqJNSdfQp3sQ==}
+  '@gensx/anthropic@0.2.10':
+    resolution: {integrity: sha512-0SDnI/vOP9Sh1ZE/rJUbmjBEtvyCkN4E13T56wzK1P3EK/hboJazGRtEP1AR4xyC2DD/CEcYeLmyz3G9c/7KrA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
     peerDependencies:
       '@anthropic-ai/sdk': ^0.53.0
 
   '@gensx/client@0.1.5':
     resolution: {integrity: sha512-RwykKoz+RQFfBhC/bqs83OfVtfpALCk5OkaUiZzl1+aI+LWLUoHNw1cUVIJ1R24Z/6CNRfbye3yoFIfkX0xrNA==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
+  '@gensx/client@0.1.6':
+    resolution: {integrity: sha512-qDLiEwv+Aeebw2JUEeOkUQS9rOpreQ/jH8qcQ9uQFT22qkUQdYZ0N4YymW3zjqcftP0e/vbST4quhuP38Lq2Sw==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@gensx/core@0.3.13':
@@ -2538,13 +2513,17 @@ packages:
     resolution: {integrity: sha512-MXddAnOqT6J80BqsmBZ+IS3DmKjU06M2CEx14O9uzUOuNctRV/joYoxBQdks3kOUK7cPhnGPQgh6mJncPbNgRg==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
+  '@gensx/core@0.5.2':
+    resolution: {integrity: sha512-qcKmSO1qQbPuMYkUAgkIOzkr2NdFNtu23DbjeFXeeQkdem1eg0qRBy/wj1PFk8FPXo/VBV4wDEPV6PY25p4+Sw==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
   '@gensx/openai@0.1.28':
     resolution: {integrity: sha512-iSZ+4vGNp3IyALW7ONopvUU4U4rfkk8T0IzjnfTyaPUrP6AazxSzyRrUmBLm8Mk1Kxq0YCYZIq5YhfguEVNOlQ==}
     peerDependencies:
       openai: ^4.87.4
 
-  '@gensx/openai@0.3.1':
-    resolution: {integrity: sha512-OhKlP3+WwGhv6Gj775QRqEMblcjg5DItPVgHZsmQ8aJiPisyKv43eVXT5uFrmJacLr9TDtvwZ/ELI2K76SDQFA==}
+  '@gensx/openai@0.3.2':
+    resolution: {integrity: sha512-tlvZFW+MbyKzLWrqWcw0a5LV89elze3xGXvN6A8IbeHGVDPmjcn0w0bKLBjQHDI5zuYjFLnFm1lt3ycJxzmpXg==}
     peerDependencies:
       openai: '>=4.0.0'
 
@@ -2554,19 +2533,25 @@ packages:
     peerDependencies:
       react: '>=18.0.0'
 
-  '@gensx/storage@0.2.1':
-    resolution: {integrity: sha512-IWOcj2vBpPSYcLl70Cp+uc7vXIkr2b/aKV9YOMAgb9unlWU97EMdmmifjeBxjhT0cAdhQrn9k9zlivMR3sJurg==}
+  '@gensx/react@0.2.3':
+    resolution: {integrity: sha512-/CH7fgBvdQlAuvsmGS0rT28uWEJ8/wvFnk5/rR+EuvU4tEtrHC0oRUCKIntPOxhz757Tnolw37xnfnjilbvcSQ==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+    peerDependencies:
+      react: '>=18.0.0'
+
+  '@gensx/storage@0.2.2':
+    resolution: {integrity: sha512-84n9iiiCxVQu3sbFSW/Ph4O0Zgf9/6yY/opqdorFSYCubk8+qX+rXcnzlJtYGFTl03EVNVbfLrTNTFAqriiXqA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   '@gensx/vercel-ai-sdk@0.1.17':
     resolution: {integrity: sha512-LasIxzHf0b2+FE8nXvFHFLUTaZOqVwsoH83dsbGJY1ZMEMlA10pghGWArvF9LNGY9HmahjK858EeiHPDFXFivA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
-  '@gensx/vercel-ai@0.3.1':
-    resolution: {integrity: sha512-bygdQdLzp7rimb/0EX1oy7J1WZnzVBX95trzpocScu1c6RdY1YQKKujkltRefFxrTV/teTQPrhrLLd38Qm8ROQ==}
+  '@gensx/vercel-ai@0.3.2':
+    resolution: {integrity: sha512-xsNl6Vr6PTZ8ZyDXRMquMIGgpPdp+WUolnT6JS69NAIFhGXskZOlYvmrmXKk9RD2ma9papT7hx2D89N59RtpuA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
     peerDependencies:
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^3.25.0
 
   '@headlessui/react@2.2.0':
     resolution: {integrity: sha512-RzCEg+LXsuI7mHiSomsu/gBJSjpupm6A1qIZ5sWjd7JhARNlMiSA4kKfJpCKwU9tE+zMRterhhrP74PvfJrpXQ==}
@@ -6021,8 +6006,8 @@ packages:
   form-data-encoder@1.7.2:
     resolution: {integrity: sha512-qfqtYan3rxrnCk1VYaA4H+Ms9xdpPqvLZa6xmMgFvhO32x7/3J/ExcTd6qpxM0vH2GdMI+poehyBZvqfMTto8A==}
 
-  form-data@4.0.3:
-    resolution: {integrity: sha512-qsITQPfmvMOSAdeyZ+12I1c+CKSstAFAwu+97zrnWAbIr5u8wfsExUzCesVLC8NgHuRUqNN4Zy6UPWUTRGslcA==}
+  form-data@4.0.4:
+    resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
     engines: {node: '>= 6'}
 
   format@0.2.2:
@@ -6847,6 +6832,7 @@ packages:
 
   libsql@0.5.15:
     resolution: {integrity: sha512-N1ZhjpTadoxDW8UNssgJyZz+cAX/gi9OxOFHapH8AY6p7Qk/6umTC5UwQ+6bPnACDcxqbzhRlbLO+Mk60owFRA==}
+    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   lightningcss-darwin-arm64@1.30.1:
@@ -9970,14 +9956,18 @@ snapshots:
       zod: 3.25.56
       zod-to-json-schema: 3.24.6(zod@3.25.56)
 
-  '@gensx/anthropic@0.2.9(@anthropic-ai/sdk@0.56.0)':
+  '@gensx/anthropic@0.2.10(@anthropic-ai/sdk@0.56.0)':
     dependencies:
       '@anthropic-ai/sdk': 0.56.0
-      '@gensx/core': 0.5.1
+      '@gensx/core': 0.5.2
 
   '@gensx/client@0.1.5':
     dependencies:
       '@gensx/core': 0.5.1
+
+  '@gensx/client@0.1.6':
+    dependencies:
+      '@gensx/core': 0.5.2
 
   '@gensx/core@0.3.13':
     dependencies:
@@ -9990,8 +9980,16 @@ snapshots:
       '@common.js/serialize-error': 11.0.3
       deterministic-object-hash: 2.0.2
       ini: 5.0.0
-      zod: 4.0.5
-      zod-to-json-schema: 3.24.6(zod@4.0.5)
+      zod: 3.25.56
+      zod-to-json-schema: 3.24.6(zod@3.25.56)
+
+  '@gensx/core@0.5.2':
+    dependencies:
+      '@common.js/serialize-error': 11.0.3
+      deterministic-object-hash: 2.0.2
+      ini: 5.0.0
+      zod: 3.25.56
+      zod-to-json-schema: 3.24.6(zod@3.25.56)
 
   '@gensx/openai@0.1.28(openai@4.104.0(ws@8.18.2)(zod@3.25.56))':
     dependencies:
@@ -10021,20 +10019,15 @@ snapshots:
       zod: 3.25.56
       zod-to-json-schema: 3.24.6(zod@3.25.56)
 
-  '@gensx/openai@0.3.1(openai@5.10.1(ws@8.18.2)(zod@3.25.56))':
+  '@gensx/openai@0.3.2(openai@5.10.1(ws@8.18.2)(zod@3.25.56))':
     dependencies:
-      '@gensx/core': 0.5.1
+      '@gensx/core': 0.5.2
       openai: 5.10.1(ws@8.18.2)(zod@3.25.56)
 
-  '@gensx/openai@0.3.1(openai@5.10.1(ws@8.18.2)(zod@3.25.76))':
+  '@gensx/openai@0.3.2(openai@5.10.1(ws@8.18.2)(zod@3.25.76))':
     dependencies:
-      '@gensx/core': 0.5.1
+      '@gensx/core': 0.5.2
       openai: 5.10.1(ws@8.18.2)(zod@3.25.76)
-
-  '@gensx/openai@0.3.1(openai@5.10.1(ws@8.18.2)(zod@4.0.5))':
-    dependencies:
-      '@gensx/core': 0.5.1
-      openai: 5.10.1(ws@8.18.2)(zod@4.0.5)
 
   '@gensx/react@0.2.2(react@18.3.1)':
     dependencies:
@@ -10050,9 +10043,16 @@ snapshots:
       fast-json-patch: 3.1.1
       react: 19.1.0
 
-  '@gensx/storage@0.2.1':
+  '@gensx/react@0.2.3(react@19.1.0)':
     dependencies:
-      '@gensx/core': 0.5.1
+      '@gensx/client': 0.1.6
+      '@gensx/core': 0.5.2
+      fast-json-patch: 3.1.1
+      react: 19.1.0
+
+  '@gensx/storage@0.2.2':
+    dependencies:
+      '@gensx/core': 0.5.2
       '@libsql/client': 0.15.10
       '@turbopuffer/turbopuffer': 0.10.8
     transitivePeerDependencies:
@@ -10067,20 +10067,20 @@ snapshots:
       - react
       - zod
 
-  '@gensx/vercel-ai@0.3.1(react@18.3.1)(zod@3.25.56)':
+  '@gensx/vercel-ai@0.3.2(react@18.3.1)(zod@3.25.56)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@gensx/core': 0.5.1
+      '@gensx/core': 0.5.2
       ai: 4.3.19(react@18.3.1)(zod@3.25.56)
       zod: 3.25.56
       zod-to-json-schema: 3.24.6(zod@3.25.56)
     transitivePeerDependencies:
       - react
 
-  '@gensx/vercel-ai@0.3.1(react@19.1.0)(zod@3.25.56)':
+  '@gensx/vercel-ai@0.3.2(react@19.1.0)(zod@3.25.56)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@gensx/core': 0.5.1
+      '@gensx/core': 0.5.2
       ai: 4.3.19(react@19.1.0)(zod@3.25.56)
       zod: 3.25.56
       zod-to-json-schema: 3.24.6(zod@3.25.56)
@@ -11663,7 +11663,7 @@ snapshots:
   '@types/node-fetch@2.6.12':
     dependencies:
       '@types/node': 20.19.8
-      form-data: 4.0.3
+      form-data: 4.0.4
 
   '@types/node@18.19.119':
     dependencies:
@@ -12499,7 +12499,7 @@ snapshots:
   axios@1.10.0:
     dependencies:
       follow-redirects: 1.15.9
-      form-data: 4.0.3
+      form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
@@ -12550,7 +12550,7 @@ snapshots:
 
   browserslist@4.24.4:
     dependencies:
-      caniuse-lite: 1.0.30001707
+      caniuse-lite: 1.0.30001727
       electron-to-chromium: 1.5.129
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.24.4)
@@ -13410,8 +13410,8 @@ snapshots:
       '@typescript-eslint/parser': 8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3)
       eslint: 9.31.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.31.0(jiti@2.4.2))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.31.0(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.31.0(jiti@2.4.2))
       eslint-plugin-react: 7.37.5(eslint@9.31.0(jiti@2.4.2))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.31.0(jiti@2.4.2))
@@ -13434,7 +13434,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.31.0(jiti@2.4.2)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.1(supports-color@5.5.0)
@@ -13445,18 +13445,18 @@ snapshots:
       tinyglobby: 0.2.14
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.31.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.31.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3)
       eslint: 9.31.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.31.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
@@ -13467,7 +13467,7 @@ snapshots:
       eslint: 9.31.0(jiti@2.4.2)
       eslint-compat-utils: 0.5.1(eslint@9.31.0(jiti@2.4.2))
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.31.0(jiti@2.4.2)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -13478,7 +13478,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.31.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2)))(eslint@9.31.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.31.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -13905,7 +13905,7 @@ snapshots:
 
   form-data-encoder@1.7.2: {}
 
-  form-data@4.0.3:
+  form-data@4.0.4:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
@@ -15976,11 +15976,6 @@ snapshots:
     optionalDependencies:
       ws: 8.18.2
       zod: 3.25.76
-
-  openai@5.10.1(ws@8.18.2)(zod@4.0.5):
-    optionalDependencies:
-      ws: 8.18.2
-      zod: 4.0.5
 
   optionator@0.9.4:
     dependencies:
