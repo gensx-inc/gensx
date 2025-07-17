@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.10](https://github.com/gensx-inc/gensx/compare/gensx-anthropic-v0.2.9...gensx-anthropic-v0.2.10) (2025-07-17)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.2
+
 ## [0.2.9](https://github.com/gensx-inc/gensx/compare/gensx-anthropic-v0.2.8...gensx-anthropic-v0.2.9) (2025-07-16)
 
 

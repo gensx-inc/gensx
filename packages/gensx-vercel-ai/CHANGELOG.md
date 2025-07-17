@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.2](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.3.1...gensx-vercel-ai-v0.3.2) (2025-07-17)
+
+
+### 🐛 Bug Fixes
+
+* Fix issues with zod/firecrawl deps. ([#870](https://github.com/gensx-inc/gensx/issues/870)) ([0e86e27](https://github.com/gensx-inc/gensx/commit/0e86e278aa09449ee0a0a27a1e1238370f9f8e2d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.2
+
 ## [0.3.1](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.3.0...gensx-vercel-ai-v0.3.1) (2025-07-16)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.1...gensx-core-v0.5.2) (2025-07-17)
+
+
+### 🐛 Bug Fixes
+
+* Fix issues with zod/firecrawl deps. ([#870](https://github.com/gensx-inc/gensx/issues/870)) ([0e86e27](https://github.com/gensx-inc/gensx/commit/0e86e278aa09449ee0a0a27a1e1238370f9f8e2d))
+
 ## [0.5.1](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.0...gensx-core-v0.5.1) (2025-07-16)
 
 
