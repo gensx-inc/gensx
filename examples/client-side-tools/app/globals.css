@@ -81,6 +81,42 @@ html {
   border: none !important;
 }
 
+.custom-photo-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.photo-marker {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.marker-photo {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  top: 0;
+  left: 5px;
+}
+
+.photo-marker-pointer {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 12px solid white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
 /* Ensure map controls are visible */
 .leaflet-control-zoom {
   border: 2px solid rgba(0, 0, 0, 0.2) !important;

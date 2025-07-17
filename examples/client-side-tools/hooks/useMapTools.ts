@@ -15,6 +15,7 @@ export interface MapMarker {
   title?: string;
   description?: string;
   color?: string;
+  photoUrl?: string;
 }
 
 const getDefaultLocation = async (): Promise<MapView> => {
@@ -148,6 +149,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         title?: string;
         description?: string;
         color?: string;
+        photoUrl?: string;
       }[];
     }) => {
       console.log("placeMarkers", markers);

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useWorkflow, useObject } from "@gensx/react";
-import { JsonValue, ToolImplementations } from "@gensx/core";
+import { JsonValue, ToolImplementations, WorkflowMessage } from "@gensx/core";
 import { CoreMessage, TextPart, ToolCallPart } from "ai";
 import { getChatHistory } from "@/lib/actions/chat-history";
 
@@ -32,6 +32,7 @@ interface UseChatReturn {
   error: string | null;
   clear: () => void;
   loadHistory: (threadId: string, userId: string) => Promise<void>;
+  execution: WorkflowMessage[],
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -151,5 +152,6 @@ export function useChat(tools?: ToolImplementations<any>): UseChatReturn {
     error: workflowError,
     clear,
     loadHistory,
+    execution
   };
 }

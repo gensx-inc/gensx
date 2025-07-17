@@ -12,7 +12,7 @@ import Image from "next/image";
 import { getUserId } from "@/lib/userId";
 import { useMapTools } from "@/hooks/useMapTools";
 import dynamic from "next/dynamic";
-import { createToolImplementations } from "@gensx/react";
+import { createToolImplementations, useEvents } from "@gensx/react";
 import { toolbox } from "@/gensx/tools/toolbox";
 import { getThreadSummary } from "@/lib/actions/chat-history";
 
@@ -147,8 +147,15 @@ export default function ChatPage() {
     getCurrentView,
     listMarkers,
   ]);
-  const { sendMessage, messages, status, error, clear, loadHistory } =
-    useChat(toolImplementations);
+  const {
+    sendMessage,
+    messages,
+    status,
+    error,
+    clear,
+    loadHistory,
+    execution,
+  } = useChat(toolImplementations);
 
   const Map = useMemo(
     () =>
@@ -166,6 +173,11 @@ export default function ChatPage() {
   useEffect(() => {
     setUserId(getUserId());
   }, []);
+
+  // Listen for summary-generated events
+  useEvents(execution, "summary-generated", (event: { summary: string }) => {
+    setThreadTitle(event.summary);
+  });
 
   // Handle thread switching - clear messages and load new thread's history
   useEffect(() => {
@@ -194,7 +206,8 @@ export default function ChatPage() {
   // Auto-scroll to bottom when messages change or status changes (only if user is near bottom)
   useEffect(() => {
     if (messagesEndRef.current) {
-      const messagesContainer = messagesEndRef.current.closest(".overflow-y-auto");
+      const messagesContainer =
+        messagesEndRef.current.closest(".overflow-y-auto");
       if (messagesContainer) {
         const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
         const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
@@ -213,7 +226,8 @@ export default function ChatPage() {
       // Small delay to ensure DOM is updated
       setTimeout(() => {
         if (messagesEndRef.current) {
-          const messagesContainer = messagesEndRef.current.closest(".overflow-y-auto");
+          const messagesContainer =
+            messagesEndRef.current.closest(".overflow-y-auto");
           if (messagesContainer) {
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
           }
@@ -241,8 +255,6 @@ export default function ChatPage() {
 
     loadThreadTitle();
   }, [userId, threadId]);
-
-
 
   // New Chat: clear messages and remove thread ID from URL
   const handleNewChat = () => {

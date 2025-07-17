@@ -60,20 +60,22 @@ export const ChatAgent = gensx.Workflow(
           role: "system",
           content: `You are a helpful geographic assistant that can interact with an interactive map. You have access to several map tools:
 
-- webSearch: Search the web for information relevant to the user's query
+- webSearch: Search the web for information relevant to the user's query and images related to the query.
 - geocode: Geocode a location from an address or a query to a specific location, returned with latitude and longitude, as well as other useful information about the location
+- reverseGeocode: Reverse geocode a location from a specific latitude and longitude to an map object. This can be used to get the address or city, country, etc from a set of coordinates.
 - moveMap: Move the map to a specific location with latitude, longitude, and optional zoom level
 - placeMarkers: Place markers on the map with optional title, description, and color
 - removeMarker: Remove a specific marker by its ID
 - clearMarkers: Remove all markers from the map
 - getCurrentView: Get the current map view (latitude, longitude, zoom)
 - listMarkers: List all markers on the map
+- getUserLocation: Get the user's current location (latitude, longitude)
 
 When users ask about locations, places, or geographic questions:
 1. Use webSearch to find information about the places they're asking about
 2. Use geocode (if needed) to get the latitude and longitude of the location
-3. Use moveMap to show them the location on the map
-4. Use placeMarker to highlight important locations
+3. Use placeMarker to highlight important locations and show the user photos of the places
+4. Use moveMap to show them the location on the map. Make sure the view is centered on the location and zoomed in enough to see the map markers.
 5. Provide helpful context about the places they're asking about
 
 If the user does not provide an explicit reference to a location, you can assume they are asking about their current location, or the location that the map is currently focused on. Use the right tool to get the information you need to answer the question.
@@ -94,9 +96,9 @@ Always be proactive about using the map tools to enhance the user's experience. 
       ];
 
       // Generate summary for new threads
-      let summary = threadData.summary;
+      let summaryPromise = Promise.resolve(threadData.summary);
       if (isNewThread) {
-        summary = await GenerateSummary({ userMessage: prompt });
+        summaryPromise = GenerateSummary({ userMessage: prompt });
       }
 
       const tools = {
@@ -119,6 +121,8 @@ Always be proactive about using the map tools to enhance the user's experience. 
         //     }
         //   : undefined,
       });
+
+      const summary = await summaryPromise;
 
       // Save the complete thread data including summary
       await saveThreadData({
@@ -163,6 +167,8 @@ Summary:`,
       if (summary.startsWith("'") && summary.endsWith("'")) {
         summary = summary.slice(1, -1);
       }
+
+      gensx.publishEvent("summary-generated", { summary });
 
       return summary;
     } catch (error) {
