@@ -1,0 +1,18 @@
+name: Sync Templates
+on:
+  push:
+    paths: ["examples/deep-research"] # re‑split only when examples change
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path: [deep-research] # enumerate your folders
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Split & push
+        run: |
+          ex=${{ matrix.path }}
+          git subtree split -P examples/$ex -b split/$ex
+          git push --force git@github.com:gensx-inc/$ex-template split/$ex:main
