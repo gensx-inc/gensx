@@ -35,6 +35,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
+    "react-leaflet-markercluster": "5.0.0-rc.0",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^15.6.1",
     "rehype-raw": "^7.0.0",
