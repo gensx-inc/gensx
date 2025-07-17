@@ -72,7 +72,7 @@ export function useDraftPad() {
     inProgress: workflowInProgress,
     error: _workflowError,
     execution,
-    run,
+    start,
   } = useWorkflow<UpdateDraftInput, UpdateDraftOutput>({
     config: {
       baseUrl: getApiUrl("/api/gensx"),
@@ -163,7 +163,7 @@ export function useDraftPad() {
     // Store the base content used for this generation
     setBaseContentForCurrentGeneration(selectedContent || null);
 
-    await run({
+    await start({
       inputs: {
         userMessage: userMessage.trim(),
         currentDraft: selectedContent,
@@ -176,7 +176,7 @@ export function useDraftPad() {
       setSelectedModelId(null);
     }, 100);
   }, [
-    run,
+    start,
     userMessage,
     selectedContent,
     selectedModelsForRun,
