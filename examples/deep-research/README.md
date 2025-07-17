@@ -1,5 +1,7 @@
 # GenSX Deep Research
 
+[![Use this template](https://img.shields.io/badge/use%20this%20template-black?style=for-the-badge&logo=github)](https://github.com/gensx-inc/deep-research-template/generate)
+
 This is a [Next.js](https://nextjs.org) deep research template for [GenSX](https://gensx.com) with a multi-step research workflow that iteratively searches the web, extracts key findings, and generates detailed reports.
 
 ![Deep Research Screenshot](./public/deep-research.png)
