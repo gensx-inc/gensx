@@ -2,10 +2,10 @@ import { tavily } from "@tavily/core";
 import { z } from "zod";
 import { tool } from "ai";
 
-// Initialize the Firecrawl client with your API key
+// Initialize the Tavily client with your API key
 const apiKey = process.env.TAVILY_API_KEY;
 if (!apiKey) {
-  throw new Error("FIRECRAWL_API_KEY environment variable is required");
+  throw new Error("TAVILY_API_KEY environment variable is required");
 }
 const tvly = tavily({ apiKey });
 

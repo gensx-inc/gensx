@@ -26,7 +26,7 @@ jobs:
           env: |
             ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}
+            TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
 
       - name: Deployment summary
         shell: bash

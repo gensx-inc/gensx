@@ -97,7 +97,7 @@ Get the current map view information.
 
    ```
    ANTHROPIC_API_KEY=your_anthropic_api_key
-   FIRECRAWL_API_KEY=your_firecrawl_api_key
+   TAVILY_API_KEY=your_tavily_api_key
    ```
 
 3. **Start the development server**:
