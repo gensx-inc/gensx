@@ -47,7 +47,7 @@ import { createToolBox } from "@gensx/core";
 import { asToolSet, addAsToolSetMethod } from "@gensx/vercel-ai";
 import { generateText } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 // Define a ToolBox using GenSX's createToolBox
 const myToolBox = createToolBox({

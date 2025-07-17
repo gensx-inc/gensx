@@ -39,7 +39,7 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.3.0",
-    "zod": "^3.25.0"
+    "zod": "3.25.56"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

@@ -52,13 +52,13 @@
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:",
-    "zod": "^3.25.0"
+    "zod": "catalog:"
   },
   "publishConfig": {
     "access": "public"
   },
   "peerDependencies": {
-    "zod": "^3.25.0 || ^4.0.0"
+    "zod": "^3.25.0"
   },
   "dependencies": {
     "@ai-sdk/provider": "^1.1.3",
