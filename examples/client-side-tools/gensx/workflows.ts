@@ -1,13 +1,14 @@
 import * as gensx from "@gensx/core";
 import { Agent } from "./agent";
 import { CoreMessage } from "ai";
-import { webSearchTool } from "./tools/webSearch";
+import { webSearchTool } from "./tools/web-search";
 import { useBlob } from "@gensx/storage";
 import { anthropic } from "@ai-sdk/anthropic";
 import { asToolSet } from "@gensx/vercel-ai";
-import { toolbox } from "./tools/frontendTools";
+import { toolbox } from "./tools/toolbox";
 import { geocodeTool } from "./tools/geocode";
 import { generateText } from "ai";
+import { reverseGeocodeTool } from "./tools/reverse-geocode";
 
 interface ChatAgentProps {
   prompt: string;
@@ -32,12 +33,12 @@ export const ChatAgent = gensx.Workflow(
     // Function to load thread data
     const loadThreadData = async (): Promise<ThreadData> => {
       const data = await chatHistoryBlob.getJSON();
-      
+
       // Handle old format (array of messages) - convert to new format
       if (Array.isArray(data)) {
         return { messages: data };
       }
-      
+
       return data ?? { messages: [] };
     };
 
@@ -99,6 +100,7 @@ Always be proactive about using the map tools to enhance the user's experience. 
       const tools = {
         webSearch: webSearchTool,
         geocode: geocodeTool,
+        reverseGeocode: reverseGeocodeTool,
         ...asToolSet(toolbox),
       };
 
@@ -150,7 +152,7 @@ User message: "${userMessage}"
 Summary:`,
         maxTokens: 50,
       });
-      
+
       // Remove quotes and trim whitespace
       let summary = result.text.trim();
       if (summary.startsWith('"') && summary.endsWith('"')) {
@@ -159,7 +161,7 @@ Summary:`,
       if (summary.startsWith("'") && summary.endsWith("'")) {
         summary = summary.slice(1, -1);
       }
-      
+
       return summary;
     } catch (error) {
       console.error("Error generating summary:", error);
