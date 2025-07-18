@@ -26,6 +26,7 @@ const StatefulWorkflow = gensx.Component(
     );
 
     if (approval.approved) {
+      // If the program crashes during the finalizeUserData component, it can recover and resume without needing to re-fetch human approval.
       return await finalizeUserData(processedData);
     }
 
