@@ -21,7 +21,9 @@ jobs:
         path: [deep-research] # enumerate your folders
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Verify Token Access
         run: |
@@ -68,6 +70,9 @@ jobs:
         run: |
           ex=${{ matrix.path }}
           echo "Processing example: $ex"
+
+          # Ensure no leftover credentials from checkout
+          git config --global --unset-all http.https://github.com/.extraheader || true
 
           # Configure git to use the token owner's identity
           git config --global user.name "${{ steps.token_user.outputs.username }}"
