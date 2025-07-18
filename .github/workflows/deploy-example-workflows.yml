@@ -5,21 +5,31 @@ on:
     branches: [main]
     paths:
       - "examples/client-side-tools/gensx/**"
+      - "examples/chat-ux/gensx/**"
+      - "examples/draft-pad/gensx/**"
+      - "examples/deep-research/gensx/**"
 
 jobs:
-  deploy-client-side-tools:
+  deploy-workflows:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workflow:
+          - "examples/client-side-tools"
+          - "examples/chat-ux"
+          - "examples/draft-pad"
+          - "examples/deep-research"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy Map Agent Workflow
+      - name: Deploy Workflow
         id: deploy
         uses: ./.github/actions/deploy-gensx
         with:
           org: gensx
-          working_directory: examples/client-side-tools
+          working_directory: ${{ matrix.workflow }}
           environment_name: prod
           api_key: ${{ secrets.GENSX_API_KEY }}
           workflow_file: gensx/workflows.ts

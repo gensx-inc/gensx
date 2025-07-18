@@ -4,10 +4,21 @@ on:
   pull_request:
     paths:
       - "examples/client-side-tools/gensx/**"
+      - "examples/chat-ux/gensx/**"
+      - "examples/draft-pad/gensx/**"
+      - "examples/deep-research/gensx/**"
 
 jobs:
-  build-client-side-tools:
+  build-workflows:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workflow:
+          - "examples/client-side-tools"
+          - "examples/chat-ux"
+          - "examples/draft-pad"
+          - "examples/deep-research"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,6 +28,6 @@ jobs:
         with:
           version: 22.x
 
-      - name: Build Map Agent Workflow
+      - name: Build Workflow
         run: |
-          npx gensx@latest build examples/client-side-tools/gensx/workflows.ts
+          npx gensx@latest build ${{ matrix.workflow }}/gensx/workflows.ts
