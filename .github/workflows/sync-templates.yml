@@ -24,4 +24,4 @@ jobs:
           # Create new split branch
           git subtree split -P examples/$ex -b split/$ex
           # Push using HTTPS with custom GitHub token (PAT required for cross-repo access)
-          git push --force https://x-access-token:${{ secrets.PAT_GITHUB_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main
+          git push --force https://jmoseley:${{ secrets.PAT_GITHUB_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main
