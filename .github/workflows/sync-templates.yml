@@ -1,4 +1,8 @@
-name: Sync Templates
+name: "🛁 Sync Templates"
+
+permissions:
+  contents: write # Default permission, just being explicit
+
 on:
   push:
     branches: [main]
