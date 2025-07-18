@@ -1,10 +1,5 @@
 name: "🛁 Sync Templates"
 
-# Add permissions for the workflow
-permissions:
-  contents: write
-  actions: read
-
 on:
   push:
     branches: [main]
@@ -24,61 +19,12 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-
-      - name: Get Token Owner Identity
-        id: token_user
-        run: |
-          echo "Getting token owner information..."
-          user_info=$(curl -s \
-            -H "Authorization: token ${{ secrets.TEMPLATE_SYNC_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/user")
-
-          username=$(echo "$user_info" | jq -r '.login')
-          email=$(echo "$user_info" | jq -r '.email // empty')
-
-          # If email is null or empty, use the noreply email format
-          if [ -z "$email" ] || [ "$email" = "null" ]; then
-            user_id=$(echo "$user_info" | jq -r '.id')
-            email="${user_id}+${username}@users.noreply.github.com"
-          fi
-
-          echo "Token belongs to user: $username"
-          echo "Using email: $email"
-          echo "username=$username" >> $GITHUB_OUTPUT
-          echo "email=$email" >> $GITHUB_OUTPUT
-
       - name: Split & push
         run: |
           ex=${{ matrix.path }}
-          echo "Processing example: $ex"
-
-          # Ensure no leftover credentials from checkout
-          git config --global --unset-all http.https://github.com/.extraheader || true
-
-          # Configure git to use the token owner's identity
-          #git config --global user.name "${{ steps.token_user.outputs.username }}"
-          #git config --global user.email "${{ steps.token_user.outputs.email }}"
-          #echo "Git configured for user: ${{ steps.token_user.outputs.username }}"
-
           # Delete existing split branch if it exists
-          echo "Cleaning up existing split branch..."
           git branch -D split/$ex || true
-
           # Create new split branch
-          echo "Creating split branch for examples/$ex..."
           git subtree split -P examples/$ex -b split/$ex
-
           # Push using HTTPS with custom GitHub token (PAT required for cross-repo access)
-          echo "Pushing to gensx-inc/$ex-template..."
-          if ! git push --force https://x-access-token:${{ secrets.TEMPLATE_SYNC_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main; then
-            echo "❌ Push failed. Possible causes:"
-            echo "1. TEMPLATE_SYNC_TOKEN is expired or invalid"
-            echo "2. Token lacks 'Contents: Write' permission for gensx-inc/$ex-template"
-            echo "3. Repository gensx-inc/$ex-template doesn't exist or is not accessible"
-            echo "4. Network connectivity issues"
-            echo "5. Git user identity mismatch with token owner"
-            exit 1
-          else
-            echo "✅ Successfully pushed to gensx-inc/$ex-template"
-          fi
+          git push --force https://x-access-token:${{ secrets.PAT_GITHUB_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main
