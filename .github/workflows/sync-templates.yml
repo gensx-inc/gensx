@@ -1,8 +1,9 @@
-name: Sync Templates
+name: "💦 Sync Templates"
+
 on:
   push:
     branches: [main]
-    paths: ["examples/deep-research"] # re‑split only when examples change
+    paths: ["examples/deep-research/**"] # re‑split only when examples change
 jobs:
   split:
     runs-on: ubuntu-latest
@@ -11,7 +12,9 @@ jobs:
         path: [deep-research] # enumerate your folders
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Split & push
         run: |
           ex=${{ matrix.path }}
@@ -20,4 +23,4 @@ jobs:
           # Create new split branch
           git subtree split -P examples/$ex -b split/$ex
           # Push using HTTPS with custom GitHub token (PAT required for cross-repo access)
-          git push --force https://${{ secrets.PAT_GITHUB_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main
+          git push --force https://x-access-token:${{ secrets.PAT_GITHUB_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main

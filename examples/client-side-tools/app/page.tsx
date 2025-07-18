@@ -380,17 +380,18 @@ export default function ChatPage() {
 
             {/* Content Area with Map and Chat */}
             <div className="flex flex-col md:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-hidden">
-              {/* Desktop/Tablet: Side-by-side layout */}
-              <div className="hidden md:flex md:w-1/2 border-r border-slate-200 flex-shrink-0">
-                <Map ref={mapRef} markers={markers} view={currentView} />
-              </div>
-
-              {/* Mobile: Fixed map when keyboard closed */}
-              {!isKeyboardOpen && (
-                <div className="md:hidden w-full h-[40%] min-h-[250px] max-h-[350px] border-b border-slate-200 flex-shrink-0">
+              {/* Single Map Component - positioned responsively */}
+              <div
+                className={`
+                md:flex md:w-1/2 md:h-full md:border-r md:border-b-0
+                ${isKeyboardOpen ? "max-md:hidden" : "flex border-b max-md:h-[40%] max-md:min-h-[250px] max-md:max-h-[350px]"}
+                border-slate-200 flex-shrink-0 w-full
+              `}
+              >
+                <div className="w-full h-full">
                   <Map ref={mapRef} markers={markers} view={currentView} />
                 </div>
-              )}
+              </div>
 
               {/* Mobile and Desktop Chat Section */}
               <div className="flex flex-col flex-1 min-h-0 overflow-hidden max-w-full md:w-1/2">
@@ -415,19 +416,6 @@ export default function ChatPage() {
                     {/* Messages Container - Independent scrollable area */}
                     <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-6 min-h-0">
                       <div className="max-w-4xl mx-auto space-y-0 w-full">
-                        {/* Mobile Map - At top of scrollable content when keyboard is open */}
-                        {isKeyboardOpen && (
-                          <div className="md:hidden mb-6 -mx-2 sm:-mx-4">
-                            <div className="h-64 border-b border-slate-200">
-                              <Map
-                                ref={mapRef}
-                                markers={markers}
-                                view={currentView}
-                              />
-                            </div>
-                          </div>
-                        )}
-
                         {/* Thread Title - Show only on mobile */}
                         {threadTitle && (
                           <div className="block sm:hidden mb-6">
