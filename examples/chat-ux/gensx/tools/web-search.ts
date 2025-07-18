@@ -24,7 +24,7 @@ export const webSearchTool = tool({
 
       if (!searchResults.results || searchResults.results.length === 0) {
         console.error("Search failed for query:", query, "No results found");
-        return [];
+        return JSON.stringify([]);
       }
 
       const results = searchResults.results.map((result) => ({
