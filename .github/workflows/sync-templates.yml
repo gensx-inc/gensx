@@ -1,8 +1,5 @@
 name: "🛁 Sync Templates"
 
-permissions:
-  contents: write # Default permission, just being explicit
-
 on:
   push:
     branches: [main]
@@ -22,12 +19,10 @@ jobs:
         with: { fetch-depth: 0 }
       - name: Split & push
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           ex=${{ matrix.path }}
           # Delete existing split branch if it exists
           git branch -D split/$ex || true
           # Create new split branch
           git subtree split -P examples/$ex -b split/$ex
           # Push using HTTPS with custom GitHub token (PAT required for cross-repo access)
-          git push --force https://x-access-token:${{ secrets.PAT_GITHUB_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main
+          git push --force https://x-access-token:${{ secrets.TEMPLATE_SYNC_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main
