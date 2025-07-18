@@ -1,0 +1,326 @@
+---
+title: Durable Execution
+description: Build resilient workflows with pause/resume, retries, and human-in-the-loop capabilities
+---
+
+# Durable Execution
+
+GenSX provides durable execution capabilities that make your workflows resilient and allow for complex orchestration patterns. This includes state preservation, checkpoint restoration, and seamless human-in-the-loop integration.
+
+## Key capabilities
+
+### State preservation
+
+All workflow state is automatically preserved across restarts and failures:
+
+```tsx
+const StatefulWorkflow = gensx.Component(
+  "StatefulWorkflow",
+  async ({ userId }: { userId: string }) => {
+    // Step 1: Fetch user data
+    const userData = await fetchUserData(userId);
+    
+    // Step 2: Process data (this might fail and retry)
+    const processedData = await processUserData(userData);
+    
+    // Step 3: Human approval required
+    const approval = await requestInput<{ approved: boolean }>(
+      async (callbackUrl) => {
+        await sendApprovalRequest(callbackUrl, processedData);
+      }
+    );
+    
+    // Step 4: Finalize (only if approved)
+    if (approval.approved) {
+      return await finalizeUserData(processedData);
+    }
+    
+    return "User data processing cancelled";
+  }
+);
+```
+
+## Human-in-the-loop integration
+
+Durable execution seamlessly integrates with human-in-the-loop patterns. See the [Human-in-the-Loop](/human-in-the-loop) documentation for detailed examples.
+
+### Long-running approvals
+
+Workflows can wait indefinitely for human input without consuming resources:
+
+```tsx
+const LongRunningApproval = gensx.Component(
+  "LongRunningApproval",
+  async ({ requestId }: { requestId: string }) => {
+    // This might wait days or weeks for approval
+    const approval = await requestInput<{ approved: boolean; notes: string }>(
+      async (callbackUrl) => {
+        await scheduleApprovalRequest(callbackUrl, requestId);
+      }
+    );
+    
+    if (approval.approved) {
+      return await processApprovedRequest(requestId, approval.notes);
+    }
+    
+    return "Request denied";
+  }
+);
+```
+
+## Error handling and recovery
+
+### Workflow-level error handling
+
+Handle errors at the workflow level:
+
+```tsx
+const RobustWorkflow = gensx.Component(
+  "RobustWorkflow",
+  async ({ items }: { items: any[] }) => {
+    const results = [];
+    const errors = [];
+    
+    for (const item of items) {
+      try {
+        const result = await ProcessItem({ item });
+        results.push(result);
+      } catch (error) {
+        errors.push({ item, error: error.message });
+        // Continue processing other items
+      }
+    }
+    
+    return { results, errors };
+  }
+);
+```
+
+## Best practices
+
+
+
+## Monitoring and observability
+
+### Execution traces
+
+All workflow executions are automatically traced and can be viewed in the GenSX console:
+
+- View execution timeline
+- See component inputs/outputs
+- Track checkpoint restoration events
+
+
+## Deterministic execution
+
+For workflows to be properly replayed during recovery, all code outside of components must be deterministic. This means:
+
+### What must be deterministic
+
+- **Component props and inputs** - Must produce the same values on replay
+- **Component configuration** - Cannot change between executions
+- **External dependencies** - Must be accessed through components
+
+```tsx
+// ❌ Non-deterministic - will break replay
+const BadWorkflow = gensx.Component(
+  "BadWorkflow",
+  async () => {
+    const timestamp = Date.now(); // Different on replay!
+    const randomId = Math.random(); // Different on replay!
+    
+    return await ProcessData({ timestamp, randomId });
+  }
+);
+
+// ✅ Deterministic - safe for replay
+const GoodWorkflow = gensx.Component(
+  "GoodWorkflow",
+  async ({ timestamp, randomId }: { timestamp: number; randomId: string }) => {
+    return await ProcessData({ timestamp, randomId });
+  }
+);
+```
+
+### Component isolation
+
+Components are the unit of non-determinism. Inside components, you can:
+
+```tsx
+const SafeComponent = gensx.Component(
+  "SafeComponent",
+  async ({ userId }: { userId: string }) => {
+    // ✅ Safe inside component
+    const now = Date.now();
+    const requestId = Math.random().toString(36);
+    
+    // ✅ API calls are safe inside components
+    const response = await fetch(`/api/users/${userId}`, {
+      headers: { 'X-Request-ID': requestId }
+    });
+    
+    return await response.json();
+  }
+);
+```
+
+### Best practices for determinism
+
+1. **Pass time-based values as props**:
+```tsx
+// ✅ Good
+const workflow = () => (
+  <TimeBasedComponent timestamp={Date.now()} />
+);
+```
+
+2. **Generate IDs outside the workflow**:
+```tsx
+// ✅ Good
+const runWorkflow = () => {
+  const sessionId = generateId();
+  return workflow.run({ sessionId });
+};
+```
+
+3. **Use components for external state**:
+```tsx
+// ✅ Good
+const GetUserData = gensx.Component(
+  "GetUserData",
+  async ({ userId }: { userId: string }) => {
+    return await database.users.findById(userId);
+  }
+);
+```
+
+## Checkpoint restoration
+
+GenSX provides checkpoint restoration capabilities that work like a "goto" statement - allowing workflows to jump back to an earlier point with feedback:
+
+### How it works
+
+Checkpoint restoration works by:
+1. Creating a checkpoint that returns `null` feedback on first run
+2. Later calling `restore()` with feedback causes execution to jump back to the checkpoint
+3. The checkpoint now returns the provided feedback instead of `null`
+
+### Basic usage
+
+```tsx
+import { createCheckpoint } from "@gensx/core";
+
+const CheckpointWorkflow = gensx.Component(
+  "CheckpointWorkflow",
+  async ({ data }: { data: any }) => {
+    // Create a checkpoint - feedback will be null on first run
+    const { restore, feedback } = createCheckpoint();
+    
+    // Check if we have feedback from a previous restore
+    if (feedback) {
+      console.log("Received feedback:", feedback);
+      // Use feedback to modify processing
+      return await processDataWithFeedback(data, feedback);
+    }
+    
+    // First-time processing
+    const result = await processData(data);
+    
+    // If result needs review, restore to checkpoint with feedback
+    if (result.needsReview) {
+      await restore({
+        message: "Data processing needs review",
+        result: result
+      });
+      // Execution will jump back to createCheckpoint() line
+      // This line will never be reached
+    }
+    
+    return result;
+  }
+);
+```
+
+### Checkpoint limits
+
+Checkpoints have built-in limits to prevent infinite loops:
+
+```tsx
+const LimitedCheckpoint = gensx.Component(
+  "LimitedCheckpoint",
+  async () => {
+    const { restore, feedback } = createCheckpoint(
+      { label: "retry-process" },
+      { maxRestores: 3 } // Maximum 3 restores
+    );
+    
+    if (feedback) {
+      const { attempt } = feedback;
+      if (attempt >= 3) {
+        throw new Error("Maximum retries exceeded");
+      }
+    }
+    
+    // Process with retry logic
+    const result = await processWithRetry();
+    
+    if (!result.success) {
+      await restore({
+        attempt: (feedback?.attempt || 0) + 1,
+        error: result.error
+      });
+      // Execution jumps back to createCheckpoint() line
+    }
+    
+    return result;
+  }
+);
+```
+
+### Use cases for checkpoint restoration
+
+1. **Recover from Agent dead ends**: When an AI agent gets stuck or produces poor results
+2. **Error recovery**: Restore with corrected parameters after failures
+3. **Iterative refinement**: Improve results through multiple iterations
+4. **A/B testing**: Restore with different configurations
+
+```tsx
+const HumanReviewWorkflow = gensx.Component(
+  "HumanReviewWorkflow",
+  async ({ document }: { document: any }) => {
+    const { restore, feedback } = createCheckpoint({ label: "review-point" });
+    
+    if (feedback) {
+      const { approved, changes } = feedback;
+      if (approved) {
+        return await finalizeDocument(document, changes);
+      } else {
+        return await reviseDocument(document, changes);
+      }
+    }
+    
+    // Generate initial version
+    const draft = await generateDocument(document);
+    
+    // Request human review
+    const reviewResult = await requestInput<{ approved: boolean; changes: any }>(
+      async (callbackUrl) => {
+        await sendForReview(draft, callbackUrl);
+      }
+    );
+    
+    // Restore checkpoint with review feedback
+    await restore(reviewResult);
+    // Execution jumps back to createCheckpoint() line
+    // This line will never be reached
+    
+    return "Review completed";
+  }
+);
+```
+
+## Related documentation
+
+- [Human-in-the-Loop](/human-in-the-loop) - Detailed guide on human approval workflows
+- [Client-Side Tools](/client-side-tools) - Execute functions in the browser
+- [GenSX Cloud](/cloud) - Managed execution environment with enhanced durability features
