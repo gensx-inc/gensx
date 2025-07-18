@@ -23,7 +23,7 @@ export const webSearchTool = tool({
       });
 
       if (!searchResults.results || searchResults.results.length === 0) {
-        console.error("Search failed for query:", query, "No results found");
+        console.info("No results found for query:", query);
         return JSON.stringify([]);
       }
 
@@ -35,7 +35,9 @@ export const webSearchTool = tool({
 
       return JSON.stringify(results);
     } catch (error) {
-      return `Error searching: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMessage = `Error searching: ${error instanceof Error ? error.message : String(error)}`;
+      console.error(errorMessage);
+      return JSON.stringify({ error: errorMessage });
     }
   },
 });
