@@ -181,6 +181,11 @@ html {
   margin-bottom: env(keyboard-inset-height, 0);
 }
 
+/* Safe area padding for mobile devices */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 1rem);
+}
+
 /* Ensure map controls are visible */
 .leaflet-control-zoom {
   border: 2px solid rgba(0, 0, 0, 0.2) !important;

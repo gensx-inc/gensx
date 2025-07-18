@@ -56,12 +56,12 @@ export function ChatInput({
   if (isCentered) {
     return (
       <div
-        className={`w-full flex flex-col items-center ${isKeyboardOpen ? "mt-0" : "-mt-36"}`}
+        className={`w-full flex flex-col items-center ${isKeyboardOpen ? "mt-0 pt-4" : "mt-8 pt-safe"}`}
       >
         {/* Caption */}
         <div className={`text-center ${isKeyboardOpen ? "mb-4" : "mb-8"}`}>
           <h1
-            className={`font-extrabold text-slate-900 mb-2 ${isKeyboardOpen ? "text-2xl sm:text-3xl" : "text-4xl sm:text-5xl"}`}
+            className={`font-extrabold text-slate-900 mb-2 px-4 ${isKeyboardOpen ? "text-xl sm:text-2xl md:text-3xl" : "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"}`}
           >
             Explore the World with GenSX
           </h1>
