@@ -25,7 +25,7 @@ const showcaseItems: ShowcaseItem[] = [
     description:
       "Next.js chat interface with real-time streaming responses using GenSX workflows and server-sent events.",
     image: "/showcase/chat-ux.png",
-    demo: "https://gensx-chat-ux.vercel.app",
+    demo: "https://chat-demo.gensx.com",
     github: "https://github.com/gensx-inc/gensx/tree/main/examples/chat-ux",
     tags: ["Framework: Next.js", "Feature: Streaming", "Type: UI Template"],
   },
@@ -35,7 +35,7 @@ const showcaseItems: ShowcaseItem[] = [
     description:
       "Canvas-style document editor for iterative writing using multiple models across providers.",
     image: "/showcase/draft-pad.png",
-    demo: "/demos/draft-pad",
+    demo: "https://draft-pad-demo.gensx.com",
     github: "https://github.com/gensx-inc/gensx/tree/main/examples/draft-pad",
     tags: [
       "Framework: Next.js",
@@ -49,7 +49,7 @@ const showcaseItems: ShowcaseItem[] = [
     description:
       "Multi-step research workflow that iteratively searches the web, extracts key findings, and generates detailed reports.",
     image: "/showcase/deep-research.png",
-    demo: "https://gensx-deep-research.vercel.app",
+    demo: "https://deep-research-demo.gensx.com",
     github:
       "https://github.com/gensx-inc/gensx/tree/main/examples/deep-research",
     tags: [
