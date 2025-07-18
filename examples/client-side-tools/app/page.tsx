@@ -384,7 +384,7 @@ export default function ChatPage() {
               <div
                 className={`
                 md:flex md:w-1/2 md:h-full md:border-r md:border-b-0
-                ${isKeyboardOpen ? "hidden" : "flex border-b max-md:h-[40%] max-md:min-h-[250px] max-md:max-h-[350px]"}
+                ${isKeyboardOpen ? "max-md:hidden" : "flex border-b max-md:h-[40%] max-md:min-h-[250px] max-md:max-h-[350px]"}
                 border-slate-200 flex-shrink-0 w-full
               `}
               >
