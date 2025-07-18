@@ -1,5 +1,10 @@
 name: "🛁 Sync Templates"
 
+# Add permissions for the workflow
+permissions:
+  contents: write
+  actions: read
+
 on:
   push:
     branches: [main]
@@ -17,12 +22,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+
+      - name: Verify Token Access
+        run: |
+          echo "Checking TEMPLATE_SYNC_TOKEN access to target repository..."
+          ex=${{ matrix.path }}
+          # Test token access to target repository
+          response=$(curl -s -w "%{http_code}" -o /dev/null \
+            -H "Authorization: token ${{ secrets.TEMPLATE_SYNC_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/gensx-inc/$ex-template")
+
+          if [ "$response" = "200" ]; then
+            echo "✅ Token has access to gensx-inc/$ex-template"
+          else
+            echo "❌ Token access failed with HTTP $response"
+            echo "This suggests the token is expired, lacks permissions, or the repository doesn't exist"
+            exit 1
+          fi
+
       - name: Split & push
         run: |
           ex=${{ matrix.path }}
+          echo "Processing example: $ex"
+
+          # Configure git with token authentication
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           # Delete existing split branch if it exists
+          echo "Cleaning up existing split branch..."
           git branch -D split/$ex || true
+
           # Create new split branch
+          echo "Creating split branch for examples/$ex..."
           git subtree split -P examples/$ex -b split/$ex
+
           # Push using HTTPS with custom GitHub token (PAT required for cross-repo access)
-          git push --force https://x-access-token:${{ secrets.TEMPLATE_SYNC_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main
+          echo "Pushing to gensx-inc/$ex-template..."
+          if ! git push --force https://x-access-token:${{ secrets.TEMPLATE_SYNC_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main; then
+            echo "❌ Push failed. Possible causes:"
+            echo "1. TEMPLATE_SYNC_TOKEN is expired or invalid"
+            echo "2. Token lacks 'Contents: Write' permission for gensx-inc/$ex-template"
+            echo "3. Repository gensx-inc/$ex-template doesn't exist or is not accessible"
+            echo "4. Network connectivity issues"
+            exit 1
+          else
+            echo "✅ Successfully pushed to gensx-inc/$ex-template"
+          fi
