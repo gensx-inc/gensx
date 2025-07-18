@@ -39,22 +39,22 @@ jobs:
 
           # Check each example directory
           if echo "$CHANGED_FILES" | grep -q "examples/client-side-tools/gensx/"; then
-            MATRIX=$(echo "$MATRIX" | jq '. += ["examples/client-side-tools"]')
+            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/client-side-tools"]')
             echo "Detected changes in client-side-tools"
           fi
 
           if echo "$CHANGED_FILES" | grep -q "examples/chat-ux/gensx/"; then
-            MATRIX=$(echo "$MATRIX" | jq '. += ["examples/chat-ux"]')
+            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/chat-ux"]')
             echo "Detected changes in chat-ux"
           fi
 
           if echo "$CHANGED_FILES" | grep -q "examples/draft-pad/gensx/"; then
-            MATRIX=$(echo "$MATRIX" | jq '. += ["examples/draft-pad"]')
+            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/draft-pad"]')
             echo "Detected changes in draft-pad"
           fi
 
           if echo "$CHANGED_FILES" | grep -q "examples/deep-research/gensx/"; then
-            MATRIX=$(echo "$MATRIX" | jq '. += ["examples/deep-research"]')
+            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/deep-research"]')
             echo "Detected changes in deep-research"
           fi
 
