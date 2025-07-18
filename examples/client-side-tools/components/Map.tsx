@@ -14,7 +14,7 @@ import L from "leaflet";
 // Create cluster icon with count
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const createClusterIcon = (cluster: any) => {
-  const count = cluster.getChildCount();
+  const count = Math.max(0, Math.floor(cluster.getChildCount())); // Ensure count is a positive integer
 
   // Different sizes and colors based on count
   let size = 40;
@@ -28,13 +28,17 @@ const createClusterIcon = (cluster: any) => {
     bgColor = "#F59E0B"; // Orange for medium clusters
   }
 
+  // Clamp size to reasonable bounds
+  size = Math.max(30, Math.min(60, size));
   const scale = size / 32; // Scale based on original 32px size
+  const fontSize = size > 45 ? 14 : 12;
+
   const clusterIcon = `
     <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
       <g transform="scale(${scale})">
         <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${bgColor}" stroke="#ffffff" stroke-width="2"/>
       </g>
-      <text x="${size / 2}" y="${size / 2 - 4}" text-anchor="middle" dominant-baseline="middle" fill="white" font-family="Arial, sans-serif" font-size="${size > 45 ? "14px" : "12px"}" font-weight="bold">${count}</text>
+      <text x="${size / 2}" y="${size / 2 - 4}" text-anchor="middle" dominant-baseline="middle" fill="white" font-family="Arial, sans-serif" font-size="${fontSize}px" font-weight="bold">${count}</text>
     </svg>
   `;
 
@@ -59,12 +63,80 @@ const defaultView = {
   longitude: -122.4194,
 };
 
+const escapeHtml = (text: string): string => {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+};
+
+const sanitizeColor = (color: string): string => {
+  // Only allow valid hex colors (3 or 6 digit) or basic CSS color names
+  const hexPattern = /^#([0-9A-F]{3}|[0-9A-F]{6})$/i;
+  const basicColors = [
+    "red",
+    "blue",
+    "green",
+    "yellow",
+    "orange",
+    "purple",
+    "black",
+    "white",
+    "gray",
+    "pink",
+  ];
+
+  if (hexPattern.test(color) || basicColors.includes(color.toLowerCase())) {
+    return color;
+  }
+
+  // Default to safe color if invalid
+  return "#3B82F6";
+};
+
+const sanitizeUrl = (url: string): string => {
+  try {
+    const urlObj = new URL(url);
+    // Only allow http/https protocols
+    if (urlObj.protocol === "http:" || urlObj.protocol === "https:") {
+      return urlObj.toString();
+    }
+  } catch {
+    // Invalid URL
+  }
+
+  // Return empty string for invalid URLs
+  return "";
+};
+
 const createMarkerIcon = (color: string = "#3B82F6", photoUrl?: string) => {
+  const sanitizedColor = sanitizeColor(color);
+
   if (photoUrl) {
+    const sanitizedPhotoUrl = sanitizeUrl(photoUrl);
+
+    // Don't create photo marker if URL is invalid
+    if (!sanitizedPhotoUrl) {
+      // Fall back to regular marker
+      const svgIcon = `
+        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${sanitizedColor}" stroke="#ffffff" stroke-width="2"/>
+          <circle cx="16" cy="10" r="3" fill="#ffffff"/>
+        </svg>
+      `;
+
+      return L.divIcon({
+        html: svgIcon,
+        className: "custom-marker",
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32],
+      });
+    }
+
     const photoIcon = `
       <div class="photo-marker">
-        <img src="${photoUrl}" alt="Marker photo" class="marker-photo" style="border-color: ${color};" />
-        <div class="photo-marker-pointer" style="border-top-color: ${color};"></div>
+        <img src="${escapeHtml(sanitizedPhotoUrl)}" alt="Marker photo" class="marker-photo" style="border-color: ${sanitizedColor};" />
+        <div class="photo-marker-pointer" style="border-top-color: ${sanitizedColor};"></div>
       </div>
     `;
 
@@ -79,7 +151,7 @@ const createMarkerIcon = (color: string = "#3B82F6", photoUrl?: string) => {
 
   const svgIcon = `
     <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+      <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${sanitizedColor}" stroke="#ffffff" stroke-width="2"/>
       <circle cx="16" cy="10" r="3" fill="#ffffff"/>
     </svg>
   `;

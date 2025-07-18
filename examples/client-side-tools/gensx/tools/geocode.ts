@@ -27,17 +27,9 @@ export const geocodeTool = tool({
     "Geocode a location from an address to a specific latitude and longitude.",
   parameters: schema,
   execute: async (params: z.infer<typeof schema>) => {
-    const { street, city, county, state, country, postalcode } =
-      params;
+    const { street, city, county, state, country, postalcode } = params;
 
-    if (
-      !street &&
-      !city &&
-      !county &&
-      !state &&
-      !country &&
-      !postalcode
-    ) {
+    if (!street && !city && !county && !state && !country && !postalcode) {
       return "No parameters provided";
     }
 
