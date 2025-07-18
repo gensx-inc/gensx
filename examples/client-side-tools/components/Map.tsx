@@ -174,15 +174,17 @@ const Map = (MapProps: MapProps) => {
             closeOnClick={false}
             eventHandlers={{
               remove: () => {
-                console.log("Popup closed for marker:", marker.id);
                 if (originalPositionRef.current) {
+                  // Capture the original position to avoid race condition
+                  const originalPosition = originalPositionRef.current;
+                  originalPositionRef.current = null;
+
                   setTimeout(() => {
-                    if (ref?.current) {
+                    if (ref?.current && originalPosition) {
                       ref.current.setView(
-                        originalPositionRef.current!.center,
-                        originalPositionRef.current!.zoom,
+                        originalPosition.center,
+                        originalPosition.zoom,
                       );
-                      originalPositionRef.current = null;
                     }
                   }, 100);
                 }
