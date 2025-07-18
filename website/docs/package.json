@@ -15,7 +15,7 @@
     "@next/third-parties": "^15.3.3",
     "@tailwindcss/postcss": "^4.1.8",
     "@vercel/analytics": "^1.5.0",
-    "next": "^15.3.3",
+    "next": "^15.4.1",
     "next-sitemap": "^4.2.3",
     "nextra": "^4.2.17",
     "nextra-theme-docs": "^4.2.17",
