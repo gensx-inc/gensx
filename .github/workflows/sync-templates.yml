@@ -1,13 +1,9 @@
-name: "🛁 Sync Templates"
+name: "💦 Sync Templates"
 
 on:
   push:
     branches: [main]
     paths: ["examples/deep-research/**"] # re‑split only when examples change
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - ".github/workflows/sync-templates.yml" # run only when you tweak this file
 jobs:
   split:
     runs-on: ubuntu-latest
