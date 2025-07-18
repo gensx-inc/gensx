@@ -1,0 +1,396 @@
+---
+title: Client-Side Tools
+description: Execute functions in the browser from your workflows
+---
+
+# Client-Side Tools
+
+Client-side tools let your workflows execute functions directly in the browser or client application. This is useful for interacting with client-side APIs, updating UI state, or accessing browser features like geolocation.
+
+## Basic setup
+
+Client-side tools work by having your workflow emit `external-tool` messages that the React `useWorkflow` hook intercepts and executes locally.
+
+### 1. Define your tools
+
+Start by defining your tools with schemas:
+
+```tsx
+// tools/toolbox.ts
+import { createToolBox } from "@gensx/core";
+import { z } from "zod";
+
+export const toolbox = createToolBox({
+  getUserLocation: {
+    description: "Get the user's current location using browser geolocation",
+    params: z.object({
+      enableHighAccuracy: z.boolean().optional(),
+      timeout: z.number().optional(),
+    }),
+    result: z.object({
+      latitude: z.number(),
+      longitude: z.number(),
+      accuracy: z.number(),
+    }),
+  },
+  moveMap: {
+    description: "Move the map to a specific location",
+    params: z.object({
+      latitude: z.number(),
+      longitude: z.number(),
+      zoom: z.number().optional(),
+    }),
+    result: z.object({
+      success: z.boolean(),
+      message: z.string(),
+    }),
+  },
+});
+```
+
+### 2. Implement tool functions
+
+Create React hooks that implement the tool logic:
+
+```tsx
+// hooks/useMapTools.ts
+import { ToolImplementations } from "@gensx/core";
+import { toolbox } from "../tools/toolbox";
+
+export function useMapTools() {
+  const [mapState, setMapState] = useState({
+    latitude: 37.7749,
+    longitude: -122.4194,
+    zoom: 12,
+  });
+
+  const toolImplementations: ToolImplementations<typeof toolbox> = {
+    getUserLocation: {
+      execute: async (params) => {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error("Geolocation not supported"));
+            return;
+          }
+
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+              });
+            },
+            (error) => reject(error),
+            {
+              enableHighAccuracy: params.enableHighAccuracy ?? false,
+              timeout: params.timeout ?? 10000,
+            }
+          );
+        });
+      },
+    },
+    moveMap: {
+      execute: async (params) => {
+        setMapState({
+          latitude: params.latitude,
+          longitude: params.longitude,
+          zoom: params.zoom ?? 12,
+        });
+        return { success: true, message: "Map moved" };
+      },
+    },
+  };
+
+  return { toolImplementations, mapState };
+}
+```
+
+### 3. Connect tools to workflow
+
+Use the `useWorkflow` hook with your tool implementations:
+
+```tsx
+// components/ChatInterface.tsx
+import { useWorkflow } from "@gensx/react";
+import { useMapTools } from "../hooks/useMapTools";
+
+export function ChatInterface() {
+  const { toolImplementations } = useMapTools();
+
+  const workflow = useWorkflow({
+    config: {
+      baseUrl: "/api/gensx",
+    },
+    tools: toolImplementations,
+  });
+
+  const sendMessage = async (message: string) => {
+    await workflow.run({
+      inputs: { message },
+    });
+  };
+
+  return (
+    <div>
+      {/* Your chat interface */}
+    </div>
+  );
+}
+```
+
+## Using with AI SDK
+
+Client-side tools work seamlessly with LLM calls. Use `asToolSet` to convert your toolbox to AI SDK format:
+
+```tsx
+// workflows/mapWorkflow.ts
+import { Agent } from "./agent";
+import { anthropic } from "@ai-sdk/anthropic";
+import { asToolSet } from "@gensx/vercel-ai";
+import { tool } from "ai";
+import { z } from "zod";
+import { toolbox } from "../tools/toolbox";
+
+// Server-side tools
+const geocodeTool = tool({
+  description: "Geocode a location from an address",
+  parameters: z.object({
+    address: z.string(),
+  }),
+  execute: async ({ address }) => {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${address}&format=json`);
+    return await response.json();
+  },
+});
+
+const MapWorkflow = gensx.Component(
+  "MapWorkflow",
+  async ({ userMessage }: { userMessage: string }) => {
+    // Combine server-side and client-side tools
+    const tools = {
+      geocode: geocodeTool,              // Server-side geocoding
+      ...asToolSet(toolbox),             // Client-side map tools
+    };
+
+    const model = anthropic("claude-3-5-sonnet-20240620");
+
+    const result = await Agent({
+      messages: [
+        {
+          role: "system",
+          content: `You are a geographic assistant with access to:
+          - geocode: Convert addresses to coordinates (server-side)
+          - getUserLocation: Get user's current location (client-side)
+          - moveMap: Move the map view (client-side)
+
+          When users ask about locations, use geocode to find coordinates,
+          then use moveMap to show them on the map.`,
+        },
+        {
+          role: "user",
+          content: userMessage,
+        },
+      ],
+      tools,
+      model,
+    });
+
+    return result;
+  }
+);
+```
+
+## Using with OpenAI SDK
+
+You can also use client-side tools with OpenAI models:
+
+```tsx
+// workflows/openaiMapWorkflow.ts
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "ai";
+import { executeExternalTool } from "@gensx/core";
+import { toolbox } from "../tools/toolbox";
+
+const OpenAIMapWorkflow = gensx.Component(
+  "OpenAIMapWorkflow",
+  async ({ userMessage }: { userMessage: string }) => {
+    const result = await generateText({
+      model: openai("gpt-4o"),
+      messages: [
+        {
+          role: "system",
+          content: "You are a location-aware assistant that can move maps and get user locations.",
+        },
+        {
+          role: "user",
+          content: userMessage,
+        },
+      ],
+      tools: {
+        moveMap: {
+          description: "Move the map to show a specific location",
+          parameters: z.object({
+            latitude: z.number(),
+            longitude: z.number(),
+            zoom: z.number().optional(),
+          }),
+          execute: async (params) => {
+            return await executeExternalTool(toolbox, "moveMap", params);
+          },
+        },
+        getUserLocation: {
+          description: "Get the user's current location",
+          parameters: z.object({
+            enableHighAccuracy: z.boolean().optional(),
+          }),
+          execute: async (params) => {
+            return await executeExternalTool(toolbox, "getUserLocation", params);
+          },
+        },
+      },
+    });
+
+    return result.text;
+  }
+);
+```
+
+## Advanced patterns
+
+### LLM-driven tool selection
+
+Let the LLM decide which tools to use based on user queries:
+
+```tsx
+const SmartMapWorkflow = gensx.Component(
+  "SmartMapWorkflow",
+  async ({ userMessage }: { userMessage: string }) => {
+    const tools = {
+      webSearch: webSearchTool,
+      ...asToolSet(toolbox),
+    };
+
+    const model = anthropic("claude-3-5-sonnet-20240620");
+
+    const result = await Agent({
+      messages: [
+        {
+          role: "system",
+          content: `You are a smart geographic assistant. Based on user queries:
+
+          For location queries ("Where is X?"):
+          1. Use webSearch to find information about the location
+          2. Use moveMap to center the map on the location
+
+          For "near me" queries:
+          1. Use getUserLocation to get their current position
+          2. Use webSearch to find places near them
+          3. Use moveMap to show results`,
+        },
+        {
+          role: "user",
+          content: userMessage,
+        },
+      ],
+      tools,
+      model,
+    });
+
+    return result;
+  }
+);
+```
+
+### Tool result validation
+
+Validate client-side tool results before using them:
+
+```tsx
+const ValidatedToolWorkflow = gensx.Component(
+  "ValidatedToolWorkflow",
+  async ({ userMessage }: { userMessage: string }) => {
+    const LocationSchema = z.object({
+      latitude: z.number().min(-90).max(90),
+      longitude: z.number().min(-180).max(180),
+      accuracy: z.number().positive(),
+    });
+
+    const tools = {
+      getUserLocation: {
+        description: "Get user's current location",
+        parameters: z.object({
+          enableHighAccuracy: z.boolean().optional(),
+        }),
+        execute: async (params) => {
+          const result = await executeExternalTool(toolbox, "getUserLocation", params);
+          return LocationSchema.parse(result); // Validate before returning
+        },
+      },
+    };
+
+    const model = anthropic("claude-3-5-sonnet-20240620");
+
+    const result = await Agent({
+      messages: [
+        {
+          role: "system",
+          content: "You are a location-aware assistant with validated location data.",
+        },
+        {
+          role: "user",
+          content: userMessage,
+        },
+      ],
+      tools,
+      model,
+    });
+
+    return result;
+  }
+);
+```
+
+## Best practices
+
+### Optimized tool descriptions
+
+Write clear, specific descriptions to help LLMs use tools efficiently:
+
+```tsx
+const optimizedToolbox = createToolBox({
+  moveMap: {
+    description: "Move the map to center on specific coordinates. Use this when showing locations to the user.",
+    params: z.object({
+      latitude: z.number().describe("Latitude coordinate (-90 to 90)"),
+      longitude: z.number().describe("Longitude coordinate (-180 to 180)"),
+      zoom: z.number().optional().describe("Zoom level (1-20, default 12)"),
+    }),
+    result: z.object({
+      success: z.boolean(),
+      message: z.string(),
+    }),
+  },
+  getUserLocation: {
+    description: "Get the user's current location using browser geolocation. Only call when you need their current position.",
+    params: z.object({
+      enableHighAccuracy: z.boolean().optional().describe("Request high accuracy (uses more battery)"),
+    }),
+    result: z.object({
+      latitude: z.number(),
+      longitude: z.number(),
+      accuracy: z.number().describe("Accuracy in meters"),
+    }),
+  },
+});
+```
+
+## Complete example
+
+Check out the full implementation in the [client-side-tools example](https://github.com/cortexclick/gensx/tree/main/examples/client-side-tools) which demonstrates:
+
+- Map-based chat interface
+- Real-time tool execution
+- Geolocation and geocoding tools
+- Type-safe tool definitions
+- Error handling and fallbacks
