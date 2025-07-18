@@ -220,10 +220,12 @@ const Map = (MapProps: MapProps) => {
       />
       <MarkerClusterGroup
         iconCreateFunction={createClusterIcon}
-        chunkedLoading={true}
+        chunkedLoading={false}
         spiderfyOnMaxZoom={true}
-        maxClusterRadius={100}
+        maxClusterRadius={60}
         showCoverageOnHover={false}
+        disableClusteringAtZoom={15}
+        removeOutsideVisibleBounds={false}
       >
         {memoizedMarkers}
       </MarkerClusterGroup>
