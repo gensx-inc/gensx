@@ -18,13 +18,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Detect changed examples
         id: changes
         run: |
+          # For pushes to main, compare against the previous commit
+          BASE_SHA="HEAD~1"
+          CURRENT_SHA="HEAD"
+
+          echo "Comparing $BASE_SHA..$CURRENT_SHA"
+
           # Get list of changed files
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$CURRENT_SHA")
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
 
           # Initialize matrix array
           MATRIX='[]'
@@ -32,20 +40,25 @@ jobs:
           # Check each example directory
           if echo "$CHANGED_FILES" | grep -q "examples/client-side-tools/gensx/"; then
             MATRIX=$(echo "$MATRIX" | jq '. += ["examples/client-side-tools"]')
+            echo "Detected changes in client-side-tools"
           fi
 
           if echo "$CHANGED_FILES" | grep -q "examples/chat-ux/gensx/"; then
             MATRIX=$(echo "$MATRIX" | jq '. += ["examples/chat-ux"]')
+            echo "Detected changes in chat-ux"
           fi
 
           if echo "$CHANGED_FILES" | grep -q "examples/draft-pad/gensx/"; then
             MATRIX=$(echo "$MATRIX" | jq '. += ["examples/draft-pad"]')
+            echo "Detected changes in draft-pad"
           fi
 
           if echo "$CHANGED_FILES" | grep -q "examples/deep-research/gensx/"; then
             MATRIX=$(echo "$MATRIX" | jq '. += ["examples/deep-research"]')
+            echo "Detected changes in deep-research"
           fi
 
+          echo "Final matrix: $MATRIX"
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   deploy-workflows:
