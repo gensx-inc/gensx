@@ -10,15 +10,51 @@ on:
       - "examples/deep-research/gensx/**"
 
 jobs:
-  deploy-workflows:
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.changes.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed examples
+        id: changes
+        run: |
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+
+          # Initialize matrix array
+          MATRIX='[]'
+
+          # Check each example directory
+          if echo "$CHANGED_FILES" | grep -q "examples/client-side-tools/gensx/"; then
+            MATRIX=$(echo "$MATRIX" | jq '. += ["examples/client-side-tools"]')
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "examples/chat-ux/gensx/"; then
+            MATRIX=$(echo "$MATRIX" | jq '. += ["examples/chat-ux"]')
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "examples/draft-pad/gensx/"; then
+            MATRIX=$(echo "$MATRIX" | jq '. += ["examples/draft-pad"]')
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "examples/deep-research/gensx/"; then
+            MATRIX=$(echo "$MATRIX" | jq '. += ["examples/deep-research"]')
+          fi
+
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  deploy-workflows:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.matrix != '[]'
     strategy:
       matrix:
-        workflow:
-          - "examples/client-side-tools"
-          - "examples/chat-ux"
-          - "examples/draft-pad"
-          - "examples/deep-research"
+        workflow: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
 
     steps:
       - name: Checkout repository
@@ -41,4 +77,4 @@ jobs:
       - name: Deployment summary
         shell: bash
         run: |
-          echo "Client Side Tools Deploy to: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed ${{ matrix.workflow }} to: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
