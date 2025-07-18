@@ -25,7 +25,7 @@ export default function ChatPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [threadTitle, setThreadTitle] = useState<string | null>(null);
-  const { isKeyboardOpen, keyboardHeight, viewports } = useKeyboardState();
+  const { isKeyboardOpen, viewports } = useKeyboardState();
   const [isMobile, setIsMobile] = useState(false);
   const {
     mapRef,
