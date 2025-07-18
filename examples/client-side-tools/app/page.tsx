@@ -381,11 +381,13 @@ export default function ChatPage() {
             {/* Content Area with Map and Chat */}
             <div className="flex flex-col md:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-hidden">
               {/* Single Map Component - positioned responsively */}
-              <div className={`
+              <div
+                className={`
                 md:flex md:w-1/2 md:h-full md:border-r md:border-b-0
-                ${isKeyboardOpen ? 'hidden' : 'flex border-b max-md:h-[40%] max-md:min-h-[250px] max-md:max-h-[350px]'}
+                ${isKeyboardOpen ? "hidden" : "flex border-b max-md:h-[40%] max-md:min-h-[250px] max-md:max-h-[350px]"}
                 border-slate-200 flex-shrink-0 w-full
-              `}>
+              `}
+              >
                 <div className="w-full h-full">
                   <Map ref={mapRef} markers={markers} view={currentView} />
                 </div>
