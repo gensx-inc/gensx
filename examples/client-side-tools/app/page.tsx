@@ -175,7 +175,7 @@ export default function ChatPage() {
   // Initialize user ID and detect mobile on client side
   useEffect(() => {
     setUserId(getUserId());
-    setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    setIsMobile(window.innerWidth < 768); // md breakpoint
   }, []);
 
   // Update CSS custom property when viewport changes
@@ -377,21 +377,21 @@ export default function ChatPage() {
             </div>
 
             {/* Content Area with Map and Chat */}
-            <div className="flex flex-col lg:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-hidden">
-              {/* Desktop: Side-by-side layout */}
-              <div className="hidden lg:flex lg:w-1/2 border-r border-slate-200 flex-shrink-0">
+            <div className="flex flex-col md:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-hidden">
+              {/* Desktop/Tablet: Side-by-side layout */}
+              <div className="hidden md:flex md:w-1/2 border-r border-slate-200 flex-shrink-0">
                 <Map ref={mapRef} markers={markers} view={currentView} />
               </div>
 
               {/* Mobile: Fixed map when keyboard closed */}
               {!isKeyboardOpen && (
-                <div className="lg:hidden w-full h-[40%] border-b border-slate-200 flex-shrink-0">
+                <div className="md:hidden w-full h-[40%] min-h-[250px] max-h-[350px] border-b border-slate-200 flex-shrink-0">
                   <Map ref={mapRef} markers={markers} view={currentView} />
                 </div>
               )}
 
               {/* Mobile and Desktop Chat Section */}
-              <div className="flex flex-col flex-1 min-h-0 overflow-hidden max-w-full lg:w-1/2">
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden max-w-full md:w-1/2">
                 {messages.length === 0 && !threadId ? (
                   /* Empty state - Center the input in the entire remaining area */
                   <div className={`flex-1 flex ${isKeyboardOpen ? 'items-start pt-8' : 'items-center'} justify-center px-2 sm:px-4`}>
@@ -413,7 +413,7 @@ export default function ChatPage() {
                       <div className="max-w-4xl mx-auto space-y-0 w-full">
                         {/* Mobile Map - At top of scrollable content when keyboard is open */}
                         {isKeyboardOpen && (
-                          <div className="lg:hidden mb-6 -mx-2 sm:-mx-4">
+                          <div className="md:hidden mb-6 -mx-2 sm:-mx-4">
                             <div className="h-64 border-b border-slate-200">
                               <Map ref={mapRef} markers={markers} view={currentView} />
                             </div>
