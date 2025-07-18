@@ -1,0 +1,23 @@
+name: Build GenSX Example Workflows
+
+on:
+  pull_request:
+    paths:
+      - "examples/client-side-tools/gensx/**"
+      - ".github/workflows/build-example-workflows.yml"
+
+jobs:
+  build-client-side-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node ⚙️
+        uses: ./.github/actions/setup-node
+        with:
+          version: 22.x
+
+      - name: Build Map Agent Workflow
+        run: |
+          npx gensx@latest build examples/client-side-tools/gensx/workflows.ts

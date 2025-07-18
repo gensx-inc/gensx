@@ -1,10 +1,10 @@
-name: Deploy GenSX Examples
+name: Deploy GenSX Example Workflows
 
 on:
   push:
     branches: [main]
     paths:
-      - "examples/client-side-tools/gensx"
+      - "examples/client-side-tools/gensx/**"
 
 jobs:
   deploy-client-side-tools:
