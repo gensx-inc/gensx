@@ -25,24 +25,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify Token Access
-        run: |
-          echo "Checking TEMPLATE_SYNC_TOKEN access to target repository..."
-          ex=${{ matrix.path }}
-          # Test token access to target repository
-          response=$(curl -s -w "%{http_code}" -o /dev/null \
-            -H "Authorization: token ${{ secrets.TEMPLATE_SYNC_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/gensx-inc/$ex-template")
-
-          if [ "$response" = "200" ]; then
-            echo "✅ Token has access to gensx-inc/$ex-template"
-          else
-            echo "❌ Token access failed with HTTP $response"
-            echo "This suggests the token is expired, lacks permissions, or the repository doesn't exist"
-            exit 1
-          fi
-
       - name: Get Token Owner Identity
         id: token_user
         run: |
@@ -75,9 +57,9 @@ jobs:
           git config --global --unset-all http.https://github.com/.extraheader || true
 
           # Configure git to use the token owner's identity
-          git config --global user.name "${{ steps.token_user.outputs.username }}"
-          git config --global user.email "${{ steps.token_user.outputs.email }}"
-          echo "Git configured for user: ${{ steps.token_user.outputs.username }}"
+          #git config --global user.name "${{ steps.token_user.outputs.username }}"
+          #git config --global user.email "${{ steps.token_user.outputs.email }}"
+          #echo "Git configured for user: ${{ steps.token_user.outputs.username }}"
 
           # Delete existing split branch if it exists
           echo "Cleaning up existing split branch..."
