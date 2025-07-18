@@ -20,6 +20,23 @@ interface ShowcaseItem {
 
 const showcaseItems: ShowcaseItem[] = [
   {
+    id: "map-agent",
+    title: "AI Map Agent",
+    description:
+      "This demo demonstrates the use of client-side tools for enabling the AI agent to interact with the map view and streaming with server-sent events using GenSX.",
+    image: "/showcase/map-agent.png",
+    demo: "https://map-generator-demo.gensx.com",
+    github:
+      "https://github.com/gensx-inc/gensx/tree/main/examples/client-side-tools",
+    tags: [
+      "Framework: Next.js",
+      "Category: Map Agent",
+      "Integration: Tavily API",
+      "Feature: Client-side tools",
+      "Feature: Streaming",
+    ],
+  },
+  {
     id: "chat-ux",
     title: "Chat UX",
     description:
