@@ -5,7 +5,7 @@ description: Execute functions in the browser from your workflows
 
 # Client-Side Tools
 
-Client-side tools let your workflows execute functions directly in the browser or client application. This is useful for interacting with client-side APIs, updating UI state, or accessing browser features like geolocation.
+Client-side tools are for cases where a tool can’t run on the same system that’s calling the LLM API. Instead, the tool needs to execute in the user’s environment—like a browser, a desktop app, or any other remote client. Use this when the function needs to touch client-only APIs (e.g. geolocation), update UI state, search through code on a users local machine, or interact with something the server can’t access directly.
 
 ## Basic setup
 
@@ -15,7 +15,7 @@ Client-side tools work by having your workflow emit `external-tool` messages tha
 
 Start by defining your tools with schemas:
 
-```tsx
+```ts
 // tools/toolbox.ts
 import { createToolBox } from "@gensx/core";
 import { z } from "zod";
@@ -52,7 +52,7 @@ export const toolbox = createToolBox({
 
 Create React hooks that implement the tool logic:
 
-```tsx
+```ts
 // hooks/useMapTools.ts
 import { ToolImplementations } from "@gensx/core";
 import { toolbox } from "../tools/toolbox";
@@ -143,7 +143,7 @@ export function ChatInterface() {
 
 Client-side tools work seamlessly with LLM calls. Use `asToolSet` to convert your toolbox to AI SDK format:
 
-```tsx
+```ts
 // workflows/mapWorkflow.ts
 import { Agent } from "./agent";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -205,7 +205,7 @@ const MapWorkflow = gensx.Component(
 
 You can also use client-side tools with OpenAI models:
 
-```tsx
+```ts
 // workflows/openaiMapWorkflow.ts
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
@@ -262,7 +262,7 @@ const OpenAIMapWorkflow = gensx.Component(
 
 Let the LLM decide which tools to use based on user queries:
 
-```tsx
+```ts
 const SmartMapWorkflow = gensx.Component(
   "SmartMapWorkflow",
   async ({ userMessage }: { userMessage: string }) => {
@@ -306,7 +306,7 @@ const SmartMapWorkflow = gensx.Component(
 
 Validate client-side tool results before using them:
 
-```tsx
+```ts
 const ValidatedToolWorkflow = gensx.Component(
   "ValidatedToolWorkflow",
   async ({ userMessage }: { userMessage: string }) => {
@@ -357,7 +357,7 @@ const ValidatedToolWorkflow = gensx.Component(
 
 Write clear, specific descriptions to help LLMs use tools efficiently:
 
-```tsx
+```ts
 const optimizedToolbox = createToolBox({
   moveMap: {
     description: "Move the map to center on specific coordinates. Use this when showing locations to the user.",

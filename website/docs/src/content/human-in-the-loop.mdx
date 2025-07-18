@@ -5,11 +5,11 @@ description: Pause workflows and wait for human input
 
 # Human-in-the-Loop
 
-Human-in-the-loop workflows let you pause workflow execution and wait for human input or approval before continuing. This is useful for approval workflows, manual review processes, or collecting user feedback.
+Some decisions require a human. GenSX lets you pause a workflow mid-execution and wait for input—approval, edits, review, anything—before continuing. No polling, no weird state machines, no extra infra.
 
 ## Basic usage
 
-The `requestInput` function pauses your workflow and calls a trigger function with a callback URL. Your trigger function can integrate with any system to collect input:
+Use `requestInput` when you need to pause execution and resume later with human input. It generates a callback URL and passes it to your trigger function. You decide how to collect the input—email, Slack, custom UI, whatever.
 
 ```tsx
 import { requestInput } from "@gensx/core";
@@ -41,7 +41,7 @@ const ApprovalWorkflow = gensx.Component(
 
 ## Slack integration
 
-You can integrate with Slack using interactive buttons:
+You can wire this into Slack with interactive buttons. Here's an example using `@slack/web-api`:
 
 ```tsx
 import { requestInput } from "@gensx/core";
@@ -94,7 +94,7 @@ const SlackApprovalWorkflow = gensx.Component(
 
 ## Web interface integration
 
-For web applications, you can store pending approvals in a database:
+For apps with a UI, just store the callback and surface it wherever makes sense:
 
 ```tsx
 import { requestInput } from "@gensx/core";
@@ -130,7 +130,7 @@ const WebApprovalWorkflow = gensx.Component(
 
 ### Performing callback from your system
 
-Here is an example of calling the GenSX callback from your own API:
+Here’s what calling back into GenSX looks like from your API:
 
 ```tsx
 // app/api/approval/[taskId]/route.ts
@@ -173,7 +173,7 @@ export async function POST(
 
 ## Error handling
 
-Handle errors gracefully in your trigger function:
+If your trigger fails (e.g. Slack down, webhook times out), you’re still in control:
 
 ```tsx
 const RobustApprovalWorkflow = gensx.Component(
@@ -203,7 +203,7 @@ const RobustApprovalWorkflow = gensx.Component(
 
 ## Type safety
 
-Use Zod schemas for input validation:
+Use Zod (or your favorite schema lib) to validate input:
 
 ```tsx
 import { z } from "zod";
@@ -233,12 +233,12 @@ const TypedApprovalWorkflow = gensx.Component(
 
 ## How it works
 
-The `requestInput` function:
+Behind the scenes, `requestInput`:
 
-1. Generates a unique callback URL using the current node ID
-2. Calls your trigger function with the callback URL
-3. Pauses workflow execution and waits for the callback
-4. Resumes when the callback URL receives data
+1. Generates a callback URL tied to the current execution node
+2. Passes it to your trigger function
+3. Pauses the workflow
+4. Resumes once the callback receives input
 
 The callback URL format is:
 ```
