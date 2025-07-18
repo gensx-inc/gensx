@@ -25,7 +25,21 @@ export const Chat = gensx.Workflow(
     // Function to load chat history
     const loadChatHistory = async (): Promise<CoreMessage[]> => {
       const history = await chatHistoryBlob.getJSON();
-      return history ?? [];
+      return (
+        history ?? [
+          {
+            role: "system",
+            content:
+              "You are a helpful assistant.\n\nToday's date is " +
+              new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              }),
+          },
+        ]
+      );
     };
 
     // Function to save chat history
