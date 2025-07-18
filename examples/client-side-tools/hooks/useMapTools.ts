@@ -83,7 +83,6 @@ export function useMapTools(userId: string | null, threadId: string | null) {
           const location = await getDefaultLocation();
           setCurrentView(location);
         } else {
-          console.log("fetchMapState", data);
           setCurrentView({
             latitude: data.latitude,
             longitude: data.longitude,
@@ -126,7 +125,6 @@ export function useMapTools(userId: string | null, threadId: string | null) {
   const moveMap = useCallback(
     (latitude: number, longitude: number, zoom = 12) => {
       try {
-        console.log("moveMap", latitude, longitude, zoom);
         setCurrentView({ latitude, longitude, zoom });
         return {
           success: true,
@@ -152,8 +150,6 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         photoUrl?: string;
       }[];
     }) => {
-      console.log("placeMarkers", markers);
-
       markers.forEach((marker) => {
         const markerId = `marker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newMarker: MapMarker = {
@@ -173,12 +169,10 @@ export function useMapTools(userId: string | null, threadId: string | null) {
   );
 
   const listMarkers = useCallback(() => {
-    console.log("listMarkers", markers);
     return markers;
   }, [markers]);
 
   const getCurrentView = useCallback(() => {
-    console.log("getCurrentView", currentView);
     const center = mapRef.current?.getCenter();
     const zoom = mapRef.current?.getZoom();
     return {
@@ -189,13 +183,11 @@ export function useMapTools(userId: string | null, threadId: string | null) {
   }, [currentView]);
 
   const removeMarker = useCallback((id: string) => {
-    console.log("removeMarker", id);
     setMarkers((prev) => prev.filter((marker) => marker.id !== id));
     return { success: true, message: `Marker ${id} removed` };
   }, []);
 
   const clearMarkers = useCallback(() => {
-    console.log("clearMarkers");
     setMarkers([]);
     return { success: true, message: "All markers cleared" };
   }, []);

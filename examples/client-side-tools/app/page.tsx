@@ -106,7 +106,6 @@ export default function ChatPage() {
 
             navigator.geolocation.getCurrentPosition(
               (position) => {
-                console.log("Location retrieved successfully", position);
                 resolve({
                   success: true,
                   latitude: position.coords.latitude,
@@ -181,7 +180,10 @@ export default function ChatPage() {
   // Update CSS custom property when viewport changes
   useEffect(() => {
     if (viewports) {
-      document.documentElement.style.setProperty('--viewport-height', `${viewports.visualViewport.height}px`);
+      document.documentElement.style.setProperty(
+        "--viewport-height",
+        `${viewports.visualViewport.height}px`,
+      );
     }
   }, [viewports]);
 
@@ -394,7 +396,9 @@ export default function ChatPage() {
               <div className="flex flex-col flex-1 min-h-0 overflow-hidden max-w-full md:w-1/2">
                 {messages.length === 0 && !threadId ? (
                   /* Empty state - Center the input in the entire remaining area */
-                  <div className={`flex-1 flex ${isKeyboardOpen ? 'items-start pt-8' : 'items-center'} justify-center px-2 sm:px-4`}>
+                  <div
+                    className={`flex-1 flex ${isKeyboardOpen ? "items-start pt-8" : "items-center"} justify-center px-2 sm:px-4`}
+                  >
                     <div className="max-w-4xl mx-auto w-full">
                       <ChatInput
                         onSendMessage={handleSendMessage}
@@ -415,7 +419,11 @@ export default function ChatPage() {
                         {isKeyboardOpen && (
                           <div className="md:hidden mb-6 -mx-2 sm:-mx-4">
                             <div className="h-64 border-b border-slate-200">
-                              <Map ref={mapRef} markers={markers} view={currentView} />
+                              <Map
+                                ref={mapRef}
+                                markers={markers}
+                                view={currentView}
+                              />
                             </div>
                           </div>
                         )}

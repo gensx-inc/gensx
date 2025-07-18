@@ -55,10 +55,14 @@ export function ChatInput({
 
   if (isCentered) {
     return (
-      <div className={`w-full flex flex-col items-center ${isKeyboardOpen ? 'mt-0' : '-mt-36'}`}>
+      <div
+        className={`w-full flex flex-col items-center ${isKeyboardOpen ? "mt-0" : "-mt-36"}`}
+      >
         {/* Caption */}
-        <div className={`text-center ${isKeyboardOpen ? 'mb-4' : 'mb-8'}`}>
-          <h1 className={`font-extrabold text-slate-900 mb-2 ${isKeyboardOpen ? 'text-2xl sm:text-3xl' : 'text-4xl sm:text-5xl'}`}>
+        <div className={`text-center ${isKeyboardOpen ? "mb-4" : "mb-8"}`}>
+          <h1
+            className={`font-extrabold text-slate-900 mb-2 ${isKeyboardOpen ? "text-2xl sm:text-3xl" : "text-4xl sm:text-5xl"}`}
+          >
             Explore the World with GenSX
           </h1>
           {!isKeyboardOpen && (
@@ -71,8 +75,8 @@ export function ChatInput({
                 answers, and discover new places.
               </p>
               <p className="text-slate-500 text-sm sm:text-base mt-2 max-w-md sm:max-w-2xl mx-auto">
-                Ask about locations, directions, or landmarks. GenSX moves the map,
-                places markers, and helps you explore—all in real time.
+                Ask about locations, directions, or landmarks. GenSX moves the
+                map, places markers, and helps you explore—all in real time.
               </p>
             </>
           )}

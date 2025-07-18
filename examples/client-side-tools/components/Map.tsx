@@ -145,7 +145,6 @@ const Map = (MapProps: MapProps) => {
 
   // Memoize markers with clustering to prevent flickering during streaming
   const memoizedMarkers = useMemo(() => {
-    console.log("Memoizing markers - count:", markers?.length, "ref:", !!ref?.current);
     if (!markers) return [];
 
     return markers.map((item) => {
@@ -159,7 +158,6 @@ const Map = (MapProps: MapProps) => {
           icon={createMarkerIcon(marker.color, marker.photoUrl)}
           eventHandlers={{
             click: (e) => {
-              console.log('Marker clicked:', marker.id);
               if (ref?.current) {
                 originalPositionRef.current = {
                   center: ref.current.getCenter(),
@@ -169,11 +167,6 @@ const Map = (MapProps: MapProps) => {
               // Prevent event from bubbling to map
               e.originalEvent?.stopPropagation();
             },
-            touchstart: (e) => {
-              console.log('Marker touchstart:', marker.id);
-              // Prevent map pan/zoom during marker touch
-              e.originalEvent?.stopPropagation();
-            },
           }}
         >
           <Popup
@@ -181,10 +174,9 @@ const Map = (MapProps: MapProps) => {
             closeOnClick={false}
             eventHandlers={{
               add: () => {
-                console.log('Popup opened for marker:', marker.id);
+                //
               },
               remove: () => {
-                console.log('Popup closed for marker:', marker.id);
                 if (originalPositionRef.current) {
                   setTimeout(() => {
                     if (ref?.current) {
