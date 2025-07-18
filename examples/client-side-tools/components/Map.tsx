@@ -173,10 +173,8 @@ const Map = (MapProps: MapProps) => {
             closeOnEscapeKey={false}
             closeOnClick={false}
             eventHandlers={{
-              add: () => {
-                //
-              },
               remove: () => {
+                console.log("Popup closed for marker:", marker.id);
                 if (originalPositionRef.current) {
                   setTimeout(() => {
                     if (ref?.current) {
