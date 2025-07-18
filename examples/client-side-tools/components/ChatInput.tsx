@@ -11,6 +11,7 @@ interface ChatInputProps {
   disabled?: boolean;
   isCentered?: boolean;
   isKeyboardOpen?: boolean;
+  autoFocus?: boolean;
 }
 
 export function ChatInput({
@@ -18,6 +19,7 @@ export function ChatInput({
   disabled,
   isCentered,
   isKeyboardOpen,
+  autoFocus = true,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -31,10 +33,10 @@ export function ChatInput({
   }, [message]);
 
   useEffect(() => {
-    if (!disabled) {
+    if (!disabled && autoFocus) {
       textareaRef.current?.focus();
     }
-  }, [disabled]);
+  }, [disabled, autoFocus]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

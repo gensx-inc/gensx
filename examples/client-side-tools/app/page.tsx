@@ -26,6 +26,7 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [threadTitle, setThreadTitle] = useState<string | null>(null);
   const { isKeyboardOpen, keyboardHeight, viewports } = useKeyboardState();
+  const [isMobile, setIsMobile] = useState(false);
   const {
     mapRef,
     currentView,
@@ -171,9 +172,10 @@ export default function ChatPage() {
   // Get thread ID from URL
   const threadId = searchParams.get("thread");
 
-  // Initialize user ID on client side
+  // Initialize user ID and detect mobile on client side
   useEffect(() => {
     setUserId(getUserId());
+    setIsMobile(window.innerWidth < 1024); // lg breakpoint
   }, []);
 
   // Update CSS custom property when viewport changes
@@ -399,6 +401,7 @@ export default function ChatPage() {
                         disabled={status !== "completed"}
                         isCentered={true}
                         isKeyboardOpen={isKeyboardOpen}
+                        autoFocus={!isMobile}
                       />
                     </div>
                   </div>
@@ -466,6 +469,7 @@ export default function ChatPage() {
                           onSendMessage={handleSendMessage}
                           disabled={status !== "completed"}
                           isCentered={false}
+                          autoFocus={!isMobile}
                         />
                       </div>
                     </div>
