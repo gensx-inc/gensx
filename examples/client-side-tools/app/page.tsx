@@ -11,6 +11,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getUserId } from "@/lib/userId";
 import { useMapTools } from "@/hooks/useMapTools";
+import { useKeyboardState } from "@/hooks/useVisualViewport";
 import dynamic from "next/dynamic";
 import { createToolImplementations, useEvents } from "@gensx/react";
 import { toolbox } from "@/gensx/tools/toolbox";
@@ -24,6 +25,7 @@ export default function ChatPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [threadTitle, setThreadTitle] = useState<string | null>(null);
+  const { isKeyboardOpen, keyboardHeight, viewports } = useKeyboardState();
   const {
     mapRef,
     currentView,
@@ -174,6 +176,13 @@ export default function ChatPage() {
     setUserId(getUserId());
   }, []);
 
+  // Update CSS custom property when viewport changes
+  useEffect(() => {
+    if (viewports) {
+      document.documentElement.style.setProperty('--viewport-height', `${viewports.visualViewport.height}px`);
+    }
+  }, [viewports]);
+
   // Listen for summary-generated events
   useEvents(execution, "summary-generated", (event: { summary: string }) => {
     setThreadTitle(event.summary);
@@ -281,7 +290,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-white overflow-hidden">
+    <div className="flex viewport-height bg-gradient-to-br from-slate-50 to-white overflow-hidden">
       {/* Show loading state until userId is initialized */}
       {!userId ? (
         <div className="flex-1 flex items-center justify-center">
@@ -302,9 +311,9 @@ export default function ChatPage() {
           />
 
           {/* Main Content Area */}
-          <div className="flex flex-col flex-1">
-            {/* Chat Header */}
-            <div className="border-b border-slate-200/60 px-2 py-2 h-12 flex items-center gap-2 justify-between">
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* Chat Header - Pinned to top */}
+            <div className="border-b border-slate-200/60 px-2 py-2 h-12 flex items-center gap-2 justify-between flex-shrink-0 sticky top-0 bg-white z-20">
               <div className="flex items-center gap-2">
                 <button
                   onClick={toggleSidebar}
@@ -367,30 +376,47 @@ export default function ChatPage() {
 
             {/* Content Area with Map and Chat */}
             <div className="flex flex-col lg:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-hidden">
-              {/* Map Section */}
-              <div className="w-full lg:w-1/2 min-h-[250px] lg:min-h-0 h-72 lg:h-auto border-b lg:border-b-0 lg:border-r border-slate-200 flex-shrink-0">
+              {/* Desktop: Side-by-side layout */}
+              <div className="hidden lg:flex lg:w-1/2 border-r border-slate-200 flex-shrink-0">
                 <Map ref={mapRef} markers={markers} view={currentView} />
               </div>
 
-              {/* Chat Section */}
-              <div className="flex flex-col flex-1 w-full lg:w-1/2 min-h-0 overflow-hidden max-w-full">
+              {/* Mobile: Fixed map when keyboard closed */}
+              {!isKeyboardOpen && (
+                <div className="lg:hidden w-full h-[40%] border-b border-slate-200 flex-shrink-0">
+                  <Map ref={mapRef} markers={markers} view={currentView} />
+                </div>
+              )}
+
+              {/* Mobile and Desktop Chat Section */}
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden max-w-full lg:w-1/2">
                 {messages.length === 0 && !threadId ? (
                   /* Empty state - Center the input in the entire remaining area */
-                  <div className="flex-1 flex items-center justify-center px-2 sm:px-4">
+                  <div className={`flex-1 flex ${isKeyboardOpen ? 'items-start pt-8' : 'items-center'} justify-center px-2 sm:px-4`}>
                     <div className="max-w-4xl mx-auto w-full">
                       <ChatInput
                         onSendMessage={handleSendMessage}
                         disabled={status !== "completed"}
                         isCentered={true}
+                        isKeyboardOpen={isKeyboardOpen}
                       />
                     </div>
                   </div>
                 ) : (
-                  /* Messages exist - Use normal layout with messages and bottom input */
-                  <>
-                    {/* Messages Container */}
+                  /* Messages exist - Separate scrollable chat and fixed input */
+                  <div className="flex flex-col h-full min-h-0">
+                    {/* Messages Container - Independent scrollable area */}
                     <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-6 min-h-0">
                       <div className="max-w-4xl mx-auto space-y-0 w-full">
+                        {/* Mobile Map - At top of scrollable content when keyboard is open */}
+                        {isKeyboardOpen && (
+                          <div className="lg:hidden mb-6 -mx-2 sm:-mx-4">
+                            <div className="h-64 border-b border-slate-200">
+                              <Map ref={mapRef} markers={markers} view={currentView} />
+                            </div>
+                          </div>
+                        )}
+
                         {/* Thread Title - Show only on mobile */}
                         {threadTitle && (
                           <div className="block sm:hidden mb-6">
@@ -433,8 +459,8 @@ export default function ChatPage() {
                       </div>
                     </div>
 
-                    {/* Input Area */}
-                    <div className="px-2 sm:px-4 pb-4">
+                    {/* Input Area - Fixed at bottom, never scrolls */}
+                    <div className="px-2 sm:px-4 pb-4 bg-gradient-to-t from-slate-50 to-transparent pt-2 flex-shrink-0 keyboard-safe-input">
                       <div className="max-w-4xl mx-auto w-full">
                         <ChatInput
                           onSendMessage={handleSendMessage}
@@ -443,7 +469,7 @@ export default function ChatPage() {
                         />
                       </div>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>

@@ -39,6 +39,8 @@ body {
   overflow: hidden;
   height: 100vh;
   height: 100dvh; /* Use dynamic viewport height for mobile */
+  /* Handle virtual keyboard */
+  padding-bottom: env(keyboard-inset-height, 0);
 }
 
 html {
@@ -163,6 +165,20 @@ html {
   border-right: 8px solid transparent;
   border-top: 12px solid white;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Virtual keyboard support */
+:root {
+  --viewport-height: 100vh;
+}
+
+.viewport-height {
+  height: var(--viewport-height);
+}
+
+/* Input area that adjusts for keyboard */
+.keyboard-safe-input {
+  margin-bottom: env(keyboard-inset-height, 0);
 }
 
 /* Ensure map controls are visible */
