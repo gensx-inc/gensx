@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - "examples/client-side-tools/gensx/**"
-      - ".github/workflows/build-example-workflows.yml"
 
 jobs:
   build-client-side-tools:
