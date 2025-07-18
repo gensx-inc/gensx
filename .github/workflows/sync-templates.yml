@@ -27,6 +27,7 @@ jobs:
         run: |
           echo "Checking TEMPLATE_SYNC_TOKEN access to target repository..."
           ex=${{ matrix.path }}
+
           # Test token access to target repository
           response=$(curl -s -w "%{http_code}" -o /dev/null \
             -H "Authorization: token ${{ secrets.TEMPLATE_SYNC_TOKEN }}" \
@@ -41,6 +42,23 @@ jobs:
             exit 1
           fi
 
+          # Check token scopes and permissions
+          echo "Checking token scopes..."
+          scopes=$(curl -s \
+            -H "Authorization: token ${{ secrets.TEMPLATE_SYNC_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -I "https://api.github.com/user" | grep -i "x-oauth-scopes" | cut -d' ' -f2- | tr -d '\r')
+
+          echo "Token scopes: $scopes"
+
+          if echo "$scopes" | grep -q "repo\|public_repo"; then
+            echo "✅ Token has repository write permissions"
+          else
+            echo "❌ Token missing repository write permissions"
+            echo "Required scopes: 'repo' (for private repos) or 'public_repo' (for public repos)"
+            exit 1
+          fi
+
       - name: Split & push
         run: |
           ex=${{ matrix.path }}
@@ -50,6 +68,9 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Alternative: Configure git to use token for all GitHub operations
+          git config --global url."https://x-access-token:${{ secrets.TEMPLATE_SYNC_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
           # Delete existing split branch if it exists
           echo "Cleaning up existing split branch..."
           git branch -D split/$ex || true
@@ -58,15 +79,23 @@ jobs:
           echo "Creating split branch for examples/$ex..."
           git subtree split -P examples/$ex -b split/$ex
 
-          # Push using HTTPS with custom GitHub token (PAT required for cross-repo access)
+          # Method 1: Try direct push with token
           echo "Pushing to gensx-inc/$ex-template..."
-          if ! git push --force https://x-access-token:${{ secrets.TEMPLATE_SYNC_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main; then
-            echo "❌ Push failed. Possible causes:"
-            echo "1. TEMPLATE_SYNC_TOKEN is expired or invalid"
-            echo "2. Token lacks 'Contents: Write' permission for gensx-inc/$ex-template"
-            echo "3. Repository gensx-inc/$ex-template doesn't exist or is not accessible"
-            echo "4. Network connectivity issues"
-            exit 1
-          else
+          if git push --force https://x-access-token:${{ secrets.TEMPLATE_SYNC_TOKEN }}@github.com/gensx-inc/$ex-template split/$ex:main; then
             echo "✅ Successfully pushed to gensx-inc/$ex-template"
+          else
+            echo "❌ Direct push failed, trying alternative method..."
+
+            # Method 2: Try with remote configuration
+            git remote add template-repo https://github.com/gensx-inc/$ex-template.git
+            if git push --force template-repo split/$ex:main; then
+              echo "✅ Successfully pushed via configured remote"
+            else
+              echo "❌ Push failed. Possible causes:"
+              echo "1. TEMPLATE_SYNC_TOKEN lacks 'Contents: Write' permission"
+              echo "2. Token is not a classic Personal Access Token with 'repo' scope"
+              echo "3. Target repository has branch protection rules"
+              echo "4. Token was created for wrong organization/user"
+              exit 1
+            fi
           fi
