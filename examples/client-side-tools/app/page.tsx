@@ -16,6 +16,7 @@ import dynamic from "next/dynamic";
 import { createToolImplementations, useEvents } from "@gensx/react";
 import { toolbox } from "@/gensx/tools/toolbox";
 import { getThreadSummary } from "@/lib/actions/chat-history";
+import { DirectionsPanel } from "@/components/DirectionsPanel";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -31,12 +32,16 @@ export default function ChatPage() {
     mapRef,
     currentView,
     markers,
+    route,
     removeMarker,
     clearMarkers,
     moveMap,
     placeMarkers,
     getCurrentView,
     listMarkers,
+    getUserLocation,
+    showDirections,
+    clearDirections,
   } = useMapTools(userId, currentThreadId);
 
   const toolImplementations = useMemo(() => {
@@ -140,6 +145,20 @@ export default function ChatPage() {
           return { success: false, message: `error: ${error}` };
         }
       },
+      showDirections: (params) => {
+        try {
+          return showDirections(params);
+        } catch (error) {
+          return { success: false, message: `error: ${error}` };
+        }
+      },
+      clearDirections: () => {
+        try {
+          return clearDirections();
+        } catch (error) {
+          return { success: false, message: `error: ${error}` };
+        }
+      },
     });
   }, [
     moveMap,
@@ -148,6 +167,8 @@ export default function ChatPage() {
     clearMarkers,
     getCurrentView,
     listMarkers,
+    showDirections,
+    clearDirections,
   ]);
   const {
     sendMessage,
@@ -388,8 +409,12 @@ export default function ChatPage() {
                 border-slate-200 flex-shrink-0 w-full
               `}
               >
-                <div className="w-full h-full">
-                  <Map ref={mapRef} markers={markers} view={currentView} />
+                <div className="w-full h-full relative">
+                  <Map ref={mapRef} markers={markers} view={currentView} route={route} />
+                  <DirectionsPanel 
+                    route={route} 
+                    onClose={clearDirections}
+                  />
                 </div>
               </div>
 

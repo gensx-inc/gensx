@@ -1,7 +1,7 @@
 "use server";
 
 import { BlobClient } from "@gensx/storage";
-import { MapMarker } from "@/hooks/useMapTools";
+import { MapMarker, RouteData } from "@/hooks/useMapTools";
 import { shouldUseLocalDevServer } from "@/app/api/gensx/gensx";
 
 interface MapState {
@@ -9,6 +9,7 @@ interface MapState {
   longitude: number;
   zoom: number;
   markers?: MapMarker[];
+  route?: RouteData | null;
 }
 
 export async function getMapState(
@@ -35,6 +36,7 @@ export async function getMapState(
         longitude: -122.4194,
         zoom: 12,
         markers: [],
+        route: null,
       }
     );
   } catch (error) {
