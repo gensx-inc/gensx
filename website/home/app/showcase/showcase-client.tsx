@@ -25,7 +25,7 @@ const showcaseItems: ShowcaseItem[] = [
     description:
       "This demo demonstrates the use of client-side tools for enabling the AI agent to interact with the map view and streaming with server-sent events using GenSX.",
     image: "/showcase/map-agent.png",
-    demo: "https://map-generator-demo.gensx.com",
+    demo: "https://map-demo.gensx.com",
     github:
       "https://github.com/gensx-inc/gensx/tree/main/examples/client-side-tools",
     tags: [
