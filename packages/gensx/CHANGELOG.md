@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/gensx-inc/gensx/compare/gensx-v0.4.3...gensx-v0.4.4) (2025-07-18)
+
+
+### ✨ New Features
+
+* adding next.js template to `gensx new` ([#859](https://github.com/gensx-inc/gensx/issues/859)) ([ede1217](https://github.com/gensx-inc/gensx/commit/ede121711b3a6b38a6d1f3bd06b7bec736ab3c97))
+
 ## [0.4.3](https://github.com/gensx-inc/gensx/compare/gensx-v0.4.2...gensx-v0.4.3) (2025-07-17)
 
 
