@@ -1,5 +1,7 @@
 # Draft Pad - GenSX Real-time Editor Example
 
+[![Use this template](https://img.shields.io/badge/use%20this%20template-black?style=for-the-badge&logo=github)](https://github.com/gensx-inc/draft-pad-template/generate)
+
 A real-time collaborative draft editor powered by GenSX workflows. This example demonstrates how to build a Next.js application that integrates with GenSX for real-time AI-powered content generation and editing.
 
 ## Features

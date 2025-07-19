@@ -1,5 +1,7 @@
 # Interactive Map Chat Example
 
+[![Use this template](https://img.shields.io/badge/use%20this%20template-black?style=for-the-badge&logo=github)](https://github.com/gensx-inc/client-side-tools-template/generate)
+
 This example demonstrates how to build an interactive chat application with frontend tool calling capabilities, specifically focused on geographic interactions. The app features a split-screen layout with an interactive map on the left and a chat interface on the right.
 
 ## Features
