@@ -1,13 +1,13 @@
-import FirecrawlApp from "@mendable/firecrawl-js";
+import { tavily } from "@tavily/core";
 import { z } from "zod";
 import { tool } from "ai";
 
 // Initialize the Firecrawl client with your API key
-const apiKey = process.env.FIRECRAWL_API_KEY;
+const apiKey = process.env.TAVILY_API_KEY;
 if (!apiKey) {
-  throw new Error("FIRECRAWL_API_KEY environment variable is required");
+  throw new Error("TAVILY_API_KEY environment variable is required");
 }
-const app = new FirecrawlApp({ apiKey });
+const client = tavily({ apiKey });
 
 export const scrapePageTool = tool({
   description: "Scrape a web page and return its content as markdown.",
@@ -16,22 +16,18 @@ export const scrapePageTool = tool({
   }),
   execute: async ({ url }: { url: string }) => {
     try {
-      const scrapeResult = await app.scrapeUrl(url, {
-        formats: ["markdown"],
-      });
+      const response = await client.extract([url]);
 
-      if (!scrapeResult.success) {
-        return `Scraping failed: ${scrapeResult.error ?? "Unknown error"}`;
-      }
-
-      const markdown = scrapeResult.markdown;
-      //const title = scrapeResult.metadata?.title;
-
-      if (!markdown) {
+      if (!response.results || response.results.length === 0) {
         return `No content found for URL: ${url}`;
       }
 
-      return markdown;
+      const result = response.results[0];
+      if (!result.rawContent) {
+        return `No content extracted for URL: ${url}`;
+      }
+
+      return result.rawContent;
     } catch (error) {
       return `Error scraping page: ${error instanceof Error ? error.message : String(error)}`;
     }

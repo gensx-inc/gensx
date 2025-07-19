@@ -250,12 +250,12 @@ importers:
       '@gensx/vercel-ai':
         specifier: ^0.3.1
         version: 0.3.2(react@19.1.0)(zod@3.25.56)
-      '@mendable/firecrawl-js':
-        specifier: ~1.21.1
-        version: 1.21.1(ws@8.18.2)
       '@radix-ui/react-slot':
         specifier: ^1.2.3
         version: 1.2.3(@types/react@19.1.8)(react@19.1.0)
+      '@tavily/core':
+        specifier: ^0.5.9
+        version: 0.5.9
       '@types/react-syntax-highlighter':
         specifier: ^15.5.13
         version: 15.5.13

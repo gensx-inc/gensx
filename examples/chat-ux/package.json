@@ -6,7 +6,7 @@
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:gensx\"",
     "dev:next": "next dev",
     "dev:gensx": "gensx start ./gensx/workflows.ts",
-    "deploy": "gensx deploy -e ANTHROPIC_API_KEY -e FIRECRAWL_API_KEY ./gensx/workflows.ts",
+    "deploy": "gensx deploy -e ANTHROPIC_API_KEY -e TAVILY_API_KEY -e OPENAI_API_KEY ./gensx/workflows.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -19,8 +19,8 @@
     "@gensx/react": "^0.2.2",
     "@gensx/storage": "^0.2.1",
     "@gensx/vercel-ai": "^0.3.1",
-    "@mendable/firecrawl-js": "~1.21.1",
     "@radix-ui/react-slot": "^1.2.3",
+    "@tavily/core": "^0.5.9",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vercel/analytics": "^1.5.0",
     "ai": "^4.3.16",
