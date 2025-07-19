@@ -18,6 +18,28 @@ export interface MapMarker {
   photoUrl?: string;
 }
 
+export interface RouteData {
+  id: string;
+  geometry: any; // GeoJSON LineString geometry
+  startLat: number;
+  startLon: number;
+  endLat: number;
+  endLon: number;
+  profile: string;
+  directions: Array<{
+    instruction: string;
+    distance: number;
+    duration: number;
+    type?: number;
+    name?: string;
+  }>;
+  summary: {
+    distanceText: string;
+    durationText: string;
+    profile: string;
+  };
+}
+
 const getDefaultLocation = async (): Promise<MapView> => {
   const fallbackView = {
     latitude: 37.7749, // San Francisco
@@ -59,6 +81,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     zoom: 12,
   });
   const [markers, setMarkers] = useState<MapMarker[]>([]);
+  const [route, setRoute] = useState<RouteData | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -79,6 +102,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         const data = await getMapState(userId, threadId);
         if (!data) {
           setMarkers([]);
+          setRoute(null);
           // Get user's location for new threads
           const location = await getDefaultLocation();
           setCurrentView(location);
@@ -89,10 +113,12 @@ export function useMapTools(userId: string | null, threadId: string | null) {
             zoom: data.zoom,
           });
           setMarkers(data.markers ?? []);
+          setRoute(data.route ?? null);
         }
       } catch (error) {
         console.error("Error fetching map state:", error);
         setMarkers([]);
+        setRoute(null);
         // Get user's location on error
         const location = await getDefaultLocation();
         setCurrentView(location);
@@ -112,6 +138,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         await updateMapState(userId, threadId, {
           ...currentView,
           markers,
+          route,
         });
       } catch (error) {
         console.error("Error updating map state:", error);
@@ -119,7 +146,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     };
 
     updateMapStateData();
-  }, [currentView, markers, userId, threadId, isLoaded]);
+  }, [currentView, markers, route, userId, threadId, isLoaded]);
 
   // Simple tool implementations for map control
   const moveMap = useCallback(
@@ -192,15 +219,118 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     return { success: true, message: "All markers cleared" };
   }, []);
 
+  const getUserLocation = useCallback(() => {
+    return new Promise<{ success: boolean; latitude?: number; longitude?: number; accuracy?: number; message: string }>((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ success: false, message: "Geolocation is not supported by this browser." });
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            success: true,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            message: "Location obtained successfully",
+          });
+        },
+        (error) => {
+          resolve({ success: false, message: `Error getting location: ${error.message}` });
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 60000,
+        }
+      );
+    });
+  }, []);
+
+  const showDirections = useCallback((params: {
+    startLat: number;
+    startLon: number;
+    endLat: number;
+    endLon: number;
+    profile?: "driving-car" | "foot-walking" | "cycling-regular";
+    routeGeometry?: any;
+    directions: Array<{
+      instruction: string;
+      distance: number;
+      duration: number;
+      type?: number;
+      name?: string;
+    }>;
+    summary: {
+      distanceText: string;
+      durationText: string;
+      profile: string;
+    };
+  }) => {
+    try {
+      const routeData: RouteData = {
+        id: `route-${Date.now()}`,
+        geometry: params.routeGeometry || null,
+        startLat: params.startLat,
+        startLon: params.startLon,
+        endLat: params.endLat,
+        endLon: params.endLon,
+        profile: params.profile ?? "driving-car",
+        directions: params.directions,
+        summary: params.summary,
+      };
+
+      setRoute(routeData);
+
+      // Fit map to route bounds
+      if (params.routeGeometry && params.routeGeometry.coordinates) {
+        const coordinates = params.routeGeometry.coordinates;
+        if (coordinates.length > 0) {
+          // Calculate rough center and zoom to fit the route
+          const lats = coordinates.map((coord: number[]) => coord[1]);
+          const lngs = coordinates.map((coord: number[]) => coord[0]);
+          
+          const minLat = Math.min(...lats);
+          const maxLat = Math.max(...lats);
+          const minLng = Math.min(...lngs);
+          const maxLng = Math.max(...lngs);
+          
+          const centerLat = (minLat + maxLat) / 2;
+          const centerLng = (minLng + maxLng) / 2;
+          
+          setCurrentView({ 
+            latitude: centerLat, 
+            longitude: centerLng, 
+            zoom: 13 
+          });
+        }
+      }
+
+      return { success: true, message: "Directions displayed on map" };
+    } catch (error) {
+      return { success: false, message: `Failed to show directions: ${error}` };
+    }
+  }, []);
+
+  const clearDirections = useCallback(() => {
+    setRoute(null);
+    return { success: true, message: "Directions cleared from map" };
+  }, []);
+
   return {
     mapRef,
     currentView,
     markers,
+    route,
     removeMarker,
     clearMarkers,
     moveMap,
     placeMarkers,
     getCurrentView,
     listMarkers,
+    getUserLocation,
+    showDirections,
+    clearDirections,
   };
 }

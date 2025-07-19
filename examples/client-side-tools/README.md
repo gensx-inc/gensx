@@ -13,6 +13,8 @@ This example demonstrates how to build an interactive chat application with fron
   - Remove individual markers or clear all markers
   - Search for locations by name
   - Get current map view information
+  - Calculate and display turn-by-turn directions between locations
+  - Clear displayed routes from the map
 - **Real-time Chat**: Powered by GenSX with Claude Sonnet 4
 - **Web Search Integration**: AI can search the web for current information
 - **Chat History**: Persistent conversation history with thread management
@@ -86,6 +88,42 @@ Get the current map view information.
 } // No parameters required
 ```
 
+### `showDirections`
+
+Display a route on the map with turn-by-turn directions.
+
+```typescript
+{
+  startLat: number,              // Starting point latitude
+  startLon: number,              // Starting point longitude
+  endLat: number,                // Ending point latitude
+  endLon: number,                // Ending point longitude
+  profile?: string,              // Transportation mode (driving-car, foot-walking, cycling-regular)
+  routeGeometry: object,         // GeoJSON LineString geometry for the route
+  directions: Array<{            // Turn-by-turn directions
+    instruction: string,
+    distance: number,
+    duration: number,
+    type?: number,
+    name?: string
+  }>,
+  summary: {                     // Route summary information
+    distanceText: string,
+    durationText: string,
+    profile: string
+  }
+}
+```
+
+### `clearDirections`
+
+Clear any displayed route from the map.
+
+```typescript
+{
+} // No parameters required
+```
+
 ## Getting Started
 
 1. **Install dependencies**:
@@ -119,6 +157,9 @@ Try asking the AI questions like:
 - "What's the weather like in Paris?" (it will search and show Paris on the map)
 - "Show me all the major landmarks in London"
 - "Clear all markers and show me Tokyo"
+- "Find restaurants near me and give me directions to the closest one"
+- "How do I get to the nearest hospital?"
+- "Show me directions to Central Park from my location"
 
 The AI will automatically use the appropriate map tools to enhance your experience by showing locations, placing markers, and providing geographic context.
 
@@ -148,9 +189,23 @@ You can easily extend this example by:
 3. **Enhancing the AI**: Update the system prompt in `agent.ts` to focus on different domains
 4. **Adding more data sources**: Integrate additional APIs for weather, traffic, or other geographic data
 
+## Routing Service
+
+The directions functionality uses the OSRM Demo Server (https://router.project-osrm.org/) which is free but has limitations:
+
+- **Rate limits**: Limited requests per minute/day
+- **Reliability**: Demo server may be unavailable at times
+- **Coverage**: Global coverage but may lack some detailed local routing
+
+For production use, consider:
+- Setting up your own OSRM server
+- Using a commercial routing service (Google Directions API, Mapbox Directions API, etc.)
+- Using other free alternatives like OpenRouteService with your own API key
+
 ## Learn More
 
 - [GenSX Documentation](https://gensx.com/docs)
 - [React-Leaflet Documentation](https://react-leaflet.js.org/)
 - [OpenStreetMap](https://www.openstreetmap.org/)
 - [Claude API Documentation](https://docs.anthropic.com/)
+- [OSRM Documentation](http://project-osrm.org/)

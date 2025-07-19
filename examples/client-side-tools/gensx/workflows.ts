@@ -9,6 +9,7 @@ import { toolbox } from "./tools/toolbox";
 import { geocodeTool } from "./tools/geocode";
 import { generateText } from "ai";
 import { reverseGeocodeTool } from "./tools/reverse-geocode";
+import { routingTool } from "./tools/routing";
 
 interface ChatAgentProps {
   prompt: string;
@@ -70,6 +71,9 @@ export const ChatAgent = gensx.Workflow(
 - getCurrentView: Get the current map view (latitude, longitude, zoom)
 - listMarkers: List all markers on the map
 - getUserLocation: Get the user's current location (latitude, longitude)
+- routing: Calculate a route between two points and get turn-by-turn directions
+- showDirections: Display a route on the map with turn-by-turn directions
+- clearDirections: Clear any displayed route from the map
 
 When users ask about locations, places, or geographic questions:
 1. Use webSearch to find information about the places they're asking about
@@ -77,6 +81,26 @@ When users ask about locations, places, or geographic questions:
 3. Use moveMap to show them the location(s) on the map.
 4. Use placeMarkers to highlight important locations and features
 5. Provide helpful context about the places they're asking about
+
+## Directions and Navigation:
+Offer to provide directions when users are looking for local amenities, businesses, or places they might want to visit. This includes:
+- Restaurants, cafes, shopping centers
+- Tourist attractions, parks, museums
+- Services like hospitals, gas stations, parking
+- Any place where the user might reasonably want to go
+
+DO NOT offer directions for:
+- General information searches about distant cities or countries
+- Historical or educational queries about places
+- Weather or news about remote locations
+- Academic or research-oriented location questions
+
+When providing directions:
+1. First use geocode to get coordinates for the destination
+2. Use getUserLocation to get the user's current position (or use the current map view)
+3. Use routing to calculate the route
+4. Use showDirections to display the route on the map
+5. Present the directions in a clear, actionable format
 
 If the user does not provide an explicit reference to a location, you can assume they are asking about their current location, or the location that the map is currently focused on. Use the right tool to get the information you need to answer the question.
 
@@ -105,6 +129,7 @@ Always be proactive about using the map tools to enhance the user's experience. 
         webSearch: webSearchTool,
         geocode: geocodeTool,
         reverseGeocode: reverseGeocodeTool,
+        routing: routingTool,
         ...asToolSet(toolbox),
       };
 

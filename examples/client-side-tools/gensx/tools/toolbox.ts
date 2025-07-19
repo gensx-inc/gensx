@@ -123,4 +123,43 @@ export const toolbox = createToolBox({
       }),
     ]),
   },
+  showDirections: {
+    description: "Display a route on the map between two points with turn-by-turn directions",
+    params: z.object({
+      startLat: z.number().describe("Starting point latitude"),
+      startLon: z.number().describe("Starting point longitude"),
+      endLat: z.number().describe("Ending point latitude"),
+      endLon: z.number().describe("Ending point longitude"),
+      profile: z
+        .enum(["driving-car", "foot-walking", "cycling-regular"])
+        .optional()
+        .default("driving-car")
+        .describe("Transportation mode: driving-car, foot-walking, or cycling-regular"),
+      routeGeometry: z.any().describe("GeoJSON LineString geometry for the route"),
+      directions: z.array(z.object({
+        instruction: z.string(),
+        distance: z.number(),
+        duration: z.number(),
+        type: z.number().optional(),
+        name: z.string().optional(),
+      })).describe("Turn-by-turn directions"),
+      summary: z.object({
+        distanceText: z.string(),
+        durationText: z.string(),
+        profile: z.string(),
+      }).describe("Route summary information"),
+    }),
+    result: z.object({
+      success: z.boolean(),
+      message: z.string(),
+    }),
+  },
+  clearDirections: {
+    description: "Clear any displayed route from the map",
+    params: z.object({}),
+    result: z.object({
+      success: z.boolean(),
+      message: z.string(),
+    }),
+  },
 });
