@@ -65,7 +65,7 @@ const Footer = () => {
             </Link>
             {/* GitHub */}
             <Link
-              href="#" // Replace with actual GitHub link
+              href="https://github.com/gensx-inc/gensx"
               className="hover:text-gray-900 dark:hover:text-gray-50 flex items-center justify-center sm:justify-end gap-2"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
