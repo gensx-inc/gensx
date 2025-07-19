@@ -16,6 +16,13 @@ export interface MapMarker {
   description?: string;
   color?: string;
   photoUrl?: string;
+  // Enhanced metadata for better maps integration
+  placeId?: string; // Google Maps Place ID for direct place links
+  address?: string; // Full address for more accurate searches
+  businessName?: string; // Business/restaurant name for search queries
+  category?: string; // Type of place (restaurant, hotel, etc.)
+  website?: string; // Official website URL
+  phoneNumber?: string; // Phone number
 }
 
 const getDefaultLocation = async (): Promise<MapView> => {

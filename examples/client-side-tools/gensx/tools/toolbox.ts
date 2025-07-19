@@ -18,7 +18,7 @@ export const toolbox = createToolBox({
   },
   placeMarkers: {
     description:
-      "Place markers on the map. Do your very best to include a photo of the place (such as the interior or a menu for a restaurant, or a scenic photo of a landmark). Ensure that any photos are real URLs that were retrieved from the web search tool.",
+      "Place markers on the map. Do your very best to include a photo of the place (such as the interior or a menu for a restaurant, or a scenic photo of a landmark). Ensure that any photos are real URLs that were retrieved from the web search tool. For businesses like restaurants, hotels, or attractions, include additional metadata like business name, address, category, phone, and website for better Maps integration.",
     params: z.object({
       markers: z.array(
         z.object({
@@ -39,6 +39,30 @@ export const toolbox = createToolBox({
             .describe(
               "Photo URL to display as the marker icon. Be sure this is a real URL that is accessible to the user.",
             ),
+          placeId: z
+            .string()
+            .optional()
+            .describe("Google Maps Place ID for direct place links"),
+          address: z
+            .string()
+            .optional()
+            .describe("Full street address of the location"),
+          businessName: z
+            .string()
+            .optional()
+            .describe("Name of the business, restaurant, or establishment"),
+          category: z
+            .string()
+            .optional()
+            .describe("Type of place (e.g., Restaurant, Hotel, Museum, Park)"),
+          website: z
+            .string()
+            .optional()
+            .describe("Official website URL of the business"),
+          phoneNumber: z
+            .string()
+            .optional()
+            .describe("Phone number of the business"),
         }),
       ),
     }),

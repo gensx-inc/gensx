@@ -173,18 +173,49 @@ const MarkerPopup = ({ marker }: MarkerPopupProps) => {
   const hasPhoto = marker.photoUrl && marker.photoUrl.length > 0;
 
   const openInMaps = () => {
-    const { latitude, longitude } = marker;
-    const query = encodeURIComponent(`${latitude},${longitude}`);
+    const { latitude, longitude, placeId, address, businessName, title } = marker;
     
     // Check if user is on mobile device
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
+    // Build the most specific query possible
+    let query = '';
+    let googleMapsUrl = '';
+    let mapsUrl = '';
+    
+    if (placeId) {
+      // Use Google Maps Place ID for most accurate results
+      googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+      mapsUrl = `maps://maps.google.com/maps/place/?q=place_id:${placeId}`;
+    } else if (businessName && address) {
+      // Use business name + address for better restaurant/business searches
+      query = encodeURIComponent(`${businessName}, ${address}`);
+      googleMapsUrl = `https://www.google.com/maps/search/${query}`;
+      mapsUrl = `maps://maps.google.com/maps/search/${query}`;
+    } else if (businessName) {
+      // Use business name with coordinates as fallback
+      query = encodeURIComponent(`${businessName} near ${latitude},${longitude}`);
+      googleMapsUrl = `https://www.google.com/maps/search/${query}`;
+      mapsUrl = `maps://maps.google.com/maps/search/${query}`;
+    } else if (address) {
+      // Use address for more accurate location than coordinates
+      query = encodeURIComponent(address);
+      googleMapsUrl = `https://www.google.com/maps/search/${query}`;
+      mapsUrl = `maps://maps.google.com/maps/search/${query}`;
+    } else if (title) {
+      // Use title with coordinates
+      query = encodeURIComponent(`${title} at ${latitude},${longitude}`);
+      googleMapsUrl = `https://www.google.com/maps/search/${query}`;
+      mapsUrl = `maps://maps.google.com/maps/search/${query}`;
+    } else {
+      // Fallback to coordinates only
+      query = encodeURIComponent(`${latitude},${longitude}`);
+      googleMapsUrl = `https://www.google.com/maps?q=${query}`;
+      mapsUrl = `maps:${latitude},${longitude}`;
+    }
+    
     if (isMobile) {
       // Try to open native maps app first, fallback to Google Maps web
-      const mapsUrl = `maps:${latitude},${longitude}`;
-      const googleMapsUrl = `https://www.google.com/maps?q=${query}`;
-      
-      // Try native maps app
       window.location.href = mapsUrl;
       
       // Fallback to Google Maps after a short delay if native app doesn't open
@@ -193,7 +224,6 @@ const MarkerPopup = ({ marker }: MarkerPopupProps) => {
       }, 500);
     } else {
       // Desktop: Open Google Maps in new tab
-      const googleMapsUrl = `https://www.google.com/maps?q=${query}`;
       window.open(googleMapsUrl, '_blank');
     }
   };
@@ -209,8 +239,30 @@ const MarkerPopup = ({ marker }: MarkerPopupProps) => {
         </button>
       </div>
       {marker.title && <h3 className="font-semibold mb-2">{marker.title}</h3>}
+      {marker.category && (
+        <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full mb-2">
+          {marker.category}
+        </span>
+      )}
       {marker.description && (
         <p className="text-sm text-gray-600 mb-2">{marker.description}</p>
+      )}
+      {marker.address && (
+        <p className="text-sm text-gray-500 mb-2">📍 {marker.address}</p>
+      )}
+      {(marker.phoneNumber || marker.website) && (
+        <div className="text-sm space-y-1 mb-2">
+          {marker.phoneNumber && (
+            <p className="text-gray-600">
+              📞 <a href={`tel:${marker.phoneNumber}`} className="text-blue-600 hover:underline">{marker.phoneNumber}</a>
+            </p>
+          )}
+          {marker.website && (
+            <p className="text-gray-600">
+              🌐 <a href={marker.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Website</a>
+            </p>
+          )}
+        </div>
       )}
       {hasPhoto && (
         <div className="border-t pt-2">

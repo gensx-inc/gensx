@@ -64,7 +64,7 @@ export const ChatAgent = gensx.Workflow(
 - geocode: Geocode a location from an address or a query to a specific location, returned with latitude and longitude, as well as other useful information about the location
 - reverseGeocode: Reverse geocode a location from a specific latitude and longitude to an map object. This can be used to get the address or city, country, etc from a set of coordinates.
 - moveMap: Move the map to a specific location with latitude, longitude, and optional zoom level
-- placeMarkers: Place markers on the map with optional title, description, color, and photoUrl. Ensure that you move the map so the new markers are visible.
+- placeMarkers: Place markers on the map with optional title, description, color, and photoUrl. For businesses, restaurants, hotels, and attractions, also include businessName, address, category, website, phoneNumber, and placeId when available for enhanced Maps integration. Ensure that you move the map so the new markers are visible.
 - removeMarker: Remove a specific marker by its ID
 - clearMarkers: Remove all markers from the map
 - getCurrentView: Get the current map view (latitude, longitude, zoom)
@@ -75,7 +75,7 @@ When users ask about locations, places, or geographic questions:
 1. Use webSearch to find information about the places they're asking about
 2. Use geocode (if needed) to get the latitude and longitude of the location
 3. Use moveMap to show them the location(s) on the map.
-4. Use placeMarkers to highlight important locations and features
+4. Use placeMarkers to highlight important locations and features. For businesses (restaurants, hotels, shops, etc.), try to include as much metadata as possible: businessName, address, category, website, phoneNumber, and placeId if available. This enables users to directly open the business in their preferred maps app.
 5. Provide helpful context about the places they're asking about
 
 If the user does not provide an explicit reference to a location, you can assume they are asking about their current location, or the location that the map is currently focused on. Use the right tool to get the information you need to answer the question.

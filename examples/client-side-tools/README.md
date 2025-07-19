@@ -84,6 +84,44 @@ Get the current map view information.
 } // No parameters required
 ```
 
+## Enhanced Maps Integration
+
+This demo now supports enhanced metadata for markers that enables direct links to specific businesses in Google Maps or native map apps. When placing markers for businesses, restaurants, hotels, or other establishments, the AI can include additional metadata that makes the "Open in Maps" functionality much more useful.
+
+### Supported Metadata Fields
+
+- `placeId`: Google Maps Place ID for direct place links
+- `address`: Full street address for more accurate searches  
+- `businessName`: Name of the business or establishment
+- `category`: Type of place (Restaurant, Hotel, Museum, etc.)
+- `website`: Official website URL
+- `phoneNumber`: Phone number (becomes clickable in popup)
+
+### Example Usage
+
+When you ask about restaurants or businesses, the AI will try to include this metadata:
+
+```typescript
+{
+  latitude: 37.7749,
+  longitude: -122.4194,
+  title: "Famous Italian Restaurant",
+  description: "Authentic Italian cuisine in North Beach",
+  businessName: "Tony's Italian Kitchen", 
+  address: "123 Columbus Ave, San Francisco, CA 94133",
+  category: "Restaurant",
+  phoneNumber: "(415) 555-0123",
+  website: "https://tonysitaliankitchen.com",
+  placeId: "ChIJd8BlQ2uAhYARsW_35kDwKRM"
+}
+```
+
+This enables the "Open in Maps" link to:
+- Open directly to the specific business page instead of just coordinates
+- Show business hours, reviews, and photos in the maps app
+- Provide turn-by-turn directions to the exact entrance
+- Work seamlessly across desktop (Google Maps) and mobile (native maps apps)
+
 ## Getting Started
 
 1. **Install dependencies**:
