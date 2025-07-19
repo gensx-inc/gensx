@@ -19,15 +19,15 @@
     "@gensx/react": "^0.2.2",
     "@gensx/storage": "^0.2.1",
     "@gensx/vercel-ai": "^0.3.1",
-    "@mendable/firecrawl-js": "~1.21.1",
+    "@mendable/firecrawl-js": "~1.29.1",
     "@radix-ui/react-slot": "^1.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vercel/analytics": "^1.5.0",
     "ai": "^4.3.16",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.513.0",
-    "next": "15.3.3",
+    "lucide-react": "^0.525.0",
+    "next": "15.4.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
@@ -35,7 +35,7 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.3.0",
-    "zod": "3.25.56"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -46,7 +46,7 @@
     "@types/webpack": "^5.28.5",
     "concurrently": "^9.1.2",
     "eslint": "^9",
-    "eslint-config-next": "15.3.3",
+    "eslint-config-next": "15.4.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
