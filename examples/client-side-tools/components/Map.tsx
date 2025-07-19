@@ -172,8 +172,42 @@ interface MarkerPopupProps {
 const MarkerPopup = ({ marker }: MarkerPopupProps) => {
   const hasPhoto = marker.photoUrl && marker.photoUrl.length > 0;
 
+  const openInMaps = () => {
+    const { latitude, longitude } = marker;
+    const query = encodeURIComponent(`${latitude},${longitude}`);
+    
+    // Check if user is on mobile device
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Try to open native maps app first, fallback to Google Maps web
+      const mapsUrl = `maps:${latitude},${longitude}`;
+      const googleMapsUrl = `https://www.google.com/maps?q=${query}`;
+      
+      // Try native maps app
+      window.location.href = mapsUrl;
+      
+      // Fallback to Google Maps after a short delay if native app doesn't open
+      setTimeout(() => {
+        window.open(googleMapsUrl, '_blank');
+      }, 500);
+    } else {
+      // Desktop: Open Google Maps in new tab
+      const googleMapsUrl = `https://www.google.com/maps?q=${query}`;
+      window.open(googleMapsUrl, '_blank');
+    }
+  };
+
   return (
     <div className="max-w-xs">
+      <div className="mb-2">
+        <button
+          onClick={openInMaps}
+          className="text-blue-600 hover:text-blue-800 text-sm font-medium underline cursor-pointer"
+        >
+          📍 Open in Maps
+        </button>
+      </div>
       {marker.title && <h3 className="font-semibold mb-2">{marker.title}</h3>}
       {marker.description && (
         <p className="text-sm text-gray-600 mb-2">{marker.description}</p>
