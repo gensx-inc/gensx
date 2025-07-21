@@ -8,7 +8,6 @@ export function generateWorkflowId(name: string): string {
   const encoded = Buffer.from(name)
     .toString("base64")
     .replace(/[+/=]/g, "")
-    .toUpperCase()
     .substring(0, 22);
 
   return `${prefix}${encoded}`;

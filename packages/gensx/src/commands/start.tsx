@@ -74,15 +74,28 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
   }, [currentServer]);
 
   const handleError = useCallback(
-    (err: unknown) => {
+    (err: unknown, shouldExit = false) => {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
       setPhase("error");
-      setTimeout(() => {
-        exit();
-      }, 100);
+      
+      // Log the error but don't exit unless explicitly requested
+      log("❌ Error:", message);
+      
+      if (shouldExit) {
+        setTimeout(() => {
+          exit();
+        }, 100);
+      } else {
+        // Reset to initial phase after a delay to allow for recovery
+        log("🔄 Will retry automatically when files change...");
+        setTimeout(() => {
+          setError(null);
+          setPhase("initial");
+        }, 3000);
+      }
     },
-    [exit],
+    [exit, log],
   );
 
   const compileTypeScript = useCallback((tsFile: string): string => {
@@ -226,7 +239,9 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
         throw err; // rethrow to the outer catch block
       }
     } catch (err) {
-      handleError(err);
+      // Exit on initial startup errors, but allow recovery on rebuilds
+      const shouldExit = isInitialLoad;
+      handleError(err, shouldExit);
     } finally {
       isRebuildingRef.current = false;
       setIsRebuilding(false);
@@ -246,9 +261,10 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
   useEffect(() => {
     void buildAndStartServer();
 
-    // Set up file watching
+    // Set up file watching with recursive watching for subdirectories
     const directoryToWatch = path.dirname(resolve(process.cwd(), file));
     let rebuildTimer: NodeJS.Timeout | null = null;
+    let cleanupWatcher: (() => void) | null = null;
 
     const triggerRebuild = () => {
       if (rebuildTimer) {
@@ -263,20 +279,47 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       }, 1000);
     };
 
-    const fs = import("node:fs");
-    void fs
+    // Use chokidar for better file watching with recursive support
+    const chokidar = import("chokidar");
+    void chokidar
       .then(({ watch }) => {
-        const watcher = watch(directoryToWatch, (_eventType, filename) => {
+        const watcher = watch(directoryToWatch, {
+          ignoreInitial: true,
+          ignored: [
+            "**/node_modules/**",
+            "**/.git/**", 
+            "**/.gensx/**",
+            "**/dist/**",
+            "**/build/**"
+          ]
+        });
+
+        watcher.on("change", (filePath) => {
           if (
-            filename &&
-            (filename.endsWith(".ts") || filename.endsWith(".tsx"))
+            filePath.endsWith(".ts") || 
+            filePath.endsWith(".tsx") ||
+            filePath.endsWith(".js") ||
+            filePath.endsWith(".jsx")
           ) {
             triggerRebuild();
           }
         });
 
-        return () => {
-          watcher.close();
+        watcher.on("add", (filePath) => {
+          if (
+            filePath.endsWith(".ts") || 
+            filePath.endsWith(".tsx") ||
+            filePath.endsWith(".js") ||
+            filePath.endsWith(".jsx")
+          ) {
+            triggerRebuild();
+          }
+        });
+
+        cleanupWatcher = () => {
+          watcher.close().catch((err: unknown) => {
+            console.error("Error closing watcher:", err);
+          });
           if (rebuildTimer) {
             clearTimeout(rebuildTimer);
           }
@@ -287,11 +330,43 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
           }
         };
       })
-      .catch((err: unknown) => {
-        handleError(err);
+      .catch((_err: unknown) => {
+        // Fallback to basic fs.watch if chokidar fails
+        log("Warning: Failed to use advanced file watcher, falling back to basic watcher");
+        
+        const fs = import("node:fs");
+        void fs
+          .then(({ watch }) => {
+            const watcher = watch(directoryToWatch, { recursive: true }, (_eventType, filename) => {
+              if (
+                filename &&
+                (filename.endsWith(".ts") || filename.endsWith(".tsx"))
+              ) {
+                triggerRebuild();
+              }
+            });
+
+            cleanupWatcher = () => {
+              watcher.close();
+              if (rebuildTimer) {
+                clearTimeout(rebuildTimer);
+              }
+              if (currentServerRef.current) {
+                currentServerRef.current.stop().catch((err: unknown) => {
+                  console.error("Error stopping server:", err);
+                });
+              }
+            };
+          })
+                     .catch((err: unknown) => {
+             handleError(err, true); // File watching setup failure should exit
+           });
       });
 
     return () => {
+      if (cleanupWatcher) {
+        cleanupWatcher();
+      }
       if (currentServerRef.current) {
         currentServerRef.current.stop().catch((err: unknown) => {
           console.error("Error stopping server:", err);
