@@ -41,6 +41,7 @@
     "react-syntax-highlighter": "^15.6.1",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
+    "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.0",
     "zod": "3.25.56"
   },

@@ -16,6 +16,7 @@ import dynamic from "next/dynamic";
 import { createToolImplementations, useEvents } from "@gensx/react";
 import { toolbox } from "@/gensx/tools/toolbox";
 import { getThreadSummary } from "@/lib/actions/chat-history";
+import { toast } from "sonner";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -44,40 +45,52 @@ export default function ChatPage() {
       moveMap: (params) => {
         try {
           const { latitude, longitude, zoom } = params;
+          toast.info(`Moving map to ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (zoom: ${zoom})`);
           return moveMap(latitude, longitude, zoom);
         } catch (error) {
+          toast.error("Failed to move map");
           return { success: false, message: `error: ${error}` };
         }
       },
       placeMarkers: (params) => {
         try {
+          const markers = params.markers;
+          toast.success(`Placed ${markers.length} marker${markers.length !== 1 ? 's' : ''} on the map`);
           return placeMarkers(params);
         } catch (error) {
+          toast.error("Failed to place markers");
           return { success: false, message: `error: ${error}` };
         }
       },
       removeMarker: (params) => {
         try {
           const { markerId } = params;
+          toast.info(`Removed marker: ${markerId}`);
           return removeMarker(markerId);
         } catch (error) {
+          toast.error("Failed to remove marker");
           return { success: false, message: `error: ${error}` };
         }
       },
       clearMarkers: () => {
         try {
+          toast.info("Cleared all markers from the map");
           return clearMarkers();
         } catch (error) {
+          toast.error("Failed to clear markers");
           return { success: false, message: `error: ${error}` };
         }
       },
       getCurrentView: async () => {
+        toast.info("Getting current map view");
         return getCurrentView();
       },
       listMarkers: () => {
         try {
+          toast.info("Listing all markers");
           return listMarkers();
         } catch (error) {
+          toast.error("Failed to list markers");
           return { success: false, message: `error: ${error}` };
         }
       },
@@ -89,8 +102,11 @@ export default function ChatPage() {
             maximumAge = 60000,
           } = params;
 
+          toast.info("Getting user location...");
+
           return new Promise((resolve) => {
             if (!navigator.geolocation) {
+              toast.error("Geolocation not supported");
               resolve({
                 success: false,
                 message: "Geolocation is not supported by this browser",
@@ -106,6 +122,7 @@ export default function ChatPage() {
 
             navigator.geolocation.getCurrentPosition(
               (position) => {
+                toast.success("Location retrieved successfully");
                 resolve({
                   success: true,
                   latitude: position.coords.latitude,
@@ -128,6 +145,7 @@ export default function ChatPage() {
                     break;
                 }
                 console.error("Error retrieving location", error);
+                toast.error(errorMessage);
                 resolve({
                   success: false,
                   message: errorMessage,
@@ -137,6 +155,7 @@ export default function ChatPage() {
             );
           });
         } catch (error) {
+          toast.error("Failed to get user location");
           return { success: false, message: `error: ${error}` };
         }
       },
