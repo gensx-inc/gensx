@@ -3,13 +3,18 @@ name: "💦 Sync Templates"
 on:
   push:
     branches: [main]
-    paths: ["examples/deep-research/**"] # re‑split only when examples change
+    paths: [
+        "examples/deep-research/**",
+        "examples/chat-ux/**",
+        "examples/client-side-tools/**",
+        "examples/draft-pad/**",
+      ] # re‑split only when examples change
 jobs:
   split:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        path: [deep-research] # enumerate your folders
+        path: [deep-research, chat-ux, client-side-tools, draft-pad] # enumerate your folders
     steps:
       - uses: actions/checkout@v4
         with:

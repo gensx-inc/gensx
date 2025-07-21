@@ -1,5 +1,7 @@
 # GenSX Chat Template
 
+[![Use this template](https://img.shields.io/badge/use%20this%20template-black?style=for-the-badge&logo=github)](https://github.com/gensx-inc/chat-ux-template/generate)
+
 This is a [Next.js](https://nextjs.org) chat template for [GenSX](https://gensx.com) with streaming chat, thinking, and tools built in. It also includes chat history stored using `@gensx/storage`.
 
 ![Chat UX Screenshot](./public/chat-ux.png)
