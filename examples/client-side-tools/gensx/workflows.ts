@@ -9,7 +9,6 @@ import { toolbox } from "./tools/toolbox";
 import { geocodeTool } from "./tools/geocode";
 import { generateText } from "ai";
 import { reverseGeocodeTool } from "./tools/reverse-geocode";
-import { routingTool } from "./tools/routing";
 
 interface ChatAgentProps {
   prompt: string;
@@ -129,7 +128,6 @@ Always be proactive about using the map tools to enhance the user's experience. 
         webSearch: webSearchTool,
         geocode: geocodeTool,
         reverseGeocode: reverseGeocodeTool,
-        routing: routingTool,
         ...asToolSet(toolbox),
       };
 

@@ -78,10 +78,10 @@ export function DirectionsPanel({ route, onClose }: DirectionsPanelProps) {
       <div className="p-4 border-b bg-gray-50">
         <div className="flex justify-between items-center">
           <div className="text-lg font-bold text-gray-900">
-            {route.summary.distanceText}
+            {route.distanceText}
           </div>
           <div className="text-lg font-bold text-blue-600">
-            {route.summary.durationText}
+            {route.durationText}
           </div>
         </div>
       </div>

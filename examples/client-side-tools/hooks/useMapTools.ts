@@ -2,6 +2,96 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import L from "leaflet";
 import { getMapState, updateMapState } from "@/lib/actions/map-state";
 
+// OSRM API interfaces
+interface OSRMManeuver {
+  instruction?: string;
+  type?: string;
+  bearing_before?: number;
+  bearing_after?: number;
+  location?: [number, number];
+}
+
+interface OSRMStep {
+  distance?: number;
+  duration?: number;
+  geometry?: GeoJSON.LineString;
+  name?: string;
+  maneuver?: OSRMManeuver;
+  mode?: string;
+  ref?: string;
+}
+
+interface OSRMLeg {
+  distance?: number;
+  duration?: number;
+  steps?: OSRMStep[];
+  summary?: string;
+}
+
+interface OSRMRoute {
+  distance?: number;
+  duration?: number;
+  geometry?: GeoJSON.LineString;
+  legs?: OSRMLeg[];
+  weight_name?: string;
+  weight?: number;
+}
+
+interface OSRMResponse {
+  code: string;
+  routes?: OSRMRoute[];
+  waypoints?: Array<{
+    hint?: string;
+    distance?: number;
+    name?: string;
+    location?: [number, number];
+  }>;
+}
+
+// Utility functions for formatting
+const formatDistance = (meters: number): string => {
+  if (meters < 1000) {
+    return `${Math.round(meters)} m`;
+  } else {
+    return `${(meters / 1000).toFixed(1)} km`;
+  }
+};
+
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else {
+    return `${minutes}m`;
+  }
+};
+
+const getManeuverType = (osrmType: string | undefined): number => {
+  // Map OSRM maneuver types to simple numeric types for the UI
+  switch (osrmType) {
+    case "depart":
+    case "arrive":
+      return 0; // Start/end
+    case "turn":
+      return 3; // Turn
+    case "continue":
+    case "merge":
+      return 1; // Continue
+    case "on ramp":
+    case "off ramp":
+      return 2; // Ramp
+    case "fork":
+      return 2; // Fork
+    case "roundabout":
+    case "rotary":
+      return 4; // Roundabout
+    default:
+      return 1; // Default to continue
+  }
+};
+
 export interface MapView {
   latitude: number;
   longitude: number;
@@ -25,6 +115,8 @@ export interface RouteData {
   startLon: number;
   endLat: number;
   endLon: number;
+  startLabel?: string;
+  endLabel?: string;
   profile: string;
   directions: Array<{
     instruction: string;
@@ -247,49 +339,90 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     });
   }, []);
 
-  const showDirections = useCallback((params: {
+  const calculateAndShowRoute = useCallback(async (params: {
     startLat: number;
     startLon: number;
     endLat: number;
     endLon: number;
+    startLabel?: string;
+    endLabel?: string;
     profile?: "driving-car" | "foot-walking" | "cycling-regular";
-    geometry?: GeoJSON.LineString;
-    directions: Array<{
-      instruction: string;
-      distance: number;
-      duration: number;
-      type?: number;
-      name?: string;
-    }>;
-    distance: number;
-    duration: number;
-    distanceText: string;
-    durationText: string;
   }) => {
+    const { startLat, startLon, endLat, endLon, startLabel, endLabel, profile = "driving-car" } = params;
+
     try {
-      const routeData: RouteData = {
+      // Map profile to OSRM profile
+      let osrmProfile = "driving";
+      if (profile === "foot-walking") {
+        osrmProfile = "foot";
+      } else if (profile === "cycling-regular") {
+        osrmProfile = "cycling";
+      }
+
+      // Call OSRM API for routing
+      const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson&steps=true`;
+
+      const response = await fetch(url, {
+        headers: {
+          "Accept": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        return {
+          success: false as const,
+          message: `Error calculating route: ${response.statusText}`,
+        };
+      }
+
+      const routeData: OSRMResponse = await response.json();
+
+      if (!routeData.routes || routeData.routes.length === 0) {
+        return {
+          success: false as const,
+          message: "No route found between the specified points",
+        };
+      }
+
+      const route = routeData.routes[0];
+      const legs = route.legs || [];
+
+      // Extract turn-by-turn directions from steps
+      const directions = legs.flatMap((leg: OSRMLeg) =>
+        leg.steps?.map((step: OSRMStep) => ({
+          instruction: step.maneuver?.instruction || "Continue",
+          distance: step.distance || 0,
+          duration: step.duration || 0,
+          type: getManeuverType(step.maneuver?.type),
+          name: step.name || "",
+        })) || []
+      );
+
+      const routeInfo: RouteData = {
         id: `route-${Date.now()}`,
-        geometry: params.geometry ?? {
+        geometry: route.geometry ?? {
           type: "LineString",
           coordinates: [],
         },
-        startLat: params.startLat,
-        startLon: params.startLon,
-        endLat: params.endLat,
-        endLon: params.endLon,
+        startLat: startLat,
+        startLon: startLon,
+        endLat: endLat,
+        endLon: endLon,
+        startLabel: startLabel,
+        endLabel: endLabel,
         profile: params.profile ?? "driving-car",
-        directions: params.directions,
-        distance: params.distance,
-        duration: params.duration,
-        distanceText: params.distanceText,
-        durationText: params.durationText,
+        directions: directions,
+        distance: route.distance ?? 0,
+        duration: route.duration ?? 0,
+        distanceText: formatDistance(route.distance ?? 0),
+        durationText: formatDuration(route.duration ?? 0),
       };
 
-      setRoute(routeData);
+      setRoute(routeInfo);
 
       // Fit map to route bounds
-      if (params.geometry && params.geometry.coordinates) {
-        const coordinates = params.geometry.coordinates;
+      if (route.geometry && route.geometry.coordinates) {
+        const coordinates = route.geometry.coordinates;
         if (coordinates.length > 0) {
           // Calculate rough center and zoom to fit the route
           const lats = coordinates.map((coord: number[]) => coord[1]);
@@ -311,9 +444,26 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         }
       }
 
-      return { success: true, message: "Directions displayed on map" };
+      return {
+        success: true as const,
+        message: "Route calculated and displayed on map",
+        route: {
+          geometry: route.geometry ?? {
+            type: "LineString",
+            coordinates: [],
+          },
+          distance: route.distance ?? 0,
+          duration: route.duration ?? 0,
+          distanceText: formatDistance(route.distance ?? 0),
+          durationText: formatDuration(route.duration ?? 0),
+          directions: directions,
+        },
+      };
     } catch (error) {
-      return { success: false, message: `Failed to show directions: ${error}` };
+      return {
+        success: false as const,
+        message: `Failed to calculate route: ${error instanceof Error ? error.message : String(error)}`,
+      };
     }
   }, []);
 
@@ -334,7 +484,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     getCurrentView,
     listMarkers,
     getUserLocation,
-    showDirections,
+    calculateAndShowRoute,
     clearDirections,
   };
 }

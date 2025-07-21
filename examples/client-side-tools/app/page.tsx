@@ -40,7 +40,7 @@ export default function ChatPage() {
     placeMarkers,
     getCurrentView,
     listMarkers,
-    showDirections,
+    calculateAndShowRoute,
     clearDirections,
   } = useMapTools(userId, currentThreadId);
 
@@ -184,9 +184,9 @@ export default function ChatPage() {
           return { success: false, message: `error: ${error}` };
         }
       },
-      showDirections: (params) => {
+      calculateAndShowRoute: async (params) => {
         try {
-          return showDirections(params);
+          return await calculateAndShowRoute(params);
         } catch (error) {
           return { success: false, message: `error: ${error}` };
         }
@@ -206,7 +206,7 @@ export default function ChatPage() {
     clearMarkers,
     getCurrentView,
     listMarkers,
-    showDirections,
+    calculateAndShowRoute,
     clearDirections,
   ]);
   const {

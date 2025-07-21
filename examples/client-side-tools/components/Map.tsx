@@ -297,19 +297,8 @@ const Map = (MapProps: MapProps) => {
   const routeMarkers = useMemo(() => {
     if (!route) return [];
 
-    const startIcon = L.divIcon({
-      html: `<div style="background-color: #10B981; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">A</div>`,
-      className: 'route-marker',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-    });
-
-    const endIcon = L.divIcon({
-      html: `<div style="background-color: #EF4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">B</div>`,
-      className: 'route-marker',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-    });
+    const startIcon = createMarkerIcon("#10B981");
+    const endIcon = createMarkerIcon("#EF4444");
 
     return [
       <Marker
@@ -320,6 +309,12 @@ const Map = (MapProps: MapProps) => {
         <Popup>
           <div>
             <strong>Start</strong>
+            {route.startLabel && (
+              <>
+                <br />
+                <small>{route.startLabel}</small>
+              </>
+            )}
             <br />
             {route.distanceText} • {route.durationText}
             <br />
@@ -335,6 +330,12 @@ const Map = (MapProps: MapProps) => {
         <Popup>
           <div>
             <strong>Destination</strong>
+            {route.endLabel && (
+              <>
+                <br />
+                <small>{route.endLabel}</small>
+              </>
+            )}
             <br />
             {route.directions.length} turn{route.directions.length !== 1 ? 's' : ''}
           </div>

@@ -123,38 +123,48 @@ export const toolbox = createToolBox({
       }),
     ]),
   },
-  showDirections: {
-    description: "Display a route on the map between two points with turn-by-turn directions",
+  calculateAndShowRoute: {
+    description: "Calculate a route between two points and display it on the map with turn-by-turn directions. You must provide coordinates for both start and end points. Optionally include address labels for better display.",
     params: z.object({
       startLat: z.number().describe("Starting point latitude"),
       startLon: z.number().describe("Starting point longitude"),
       endLat: z.number().describe("Ending point latitude"),
       endLon: z.number().describe("Ending point longitude"),
+      startLabel: z.string().optional().describe("Optional label/address for the starting point (for display purposes)"),
+      endLabel: z.string().optional().describe("Optional label/address for the ending point (for display purposes)"),
       profile: z
         .enum(["driving-car", "foot-walking", "cycling-regular"])
         .optional()
         .default("driving-car")
         .describe("Transportation mode: driving-car, foot-walking, or cycling-regular"),
-      geometry: z.object({
-        type: z.literal("LineString"),
-        coordinates: z.array(z.array(z.number())).describe("Array of coordinate pairs (longitude, latitude)"),
-      }).describe("GeoJSON LineString geometry for the route"),
-      directions: z.array(z.object({
-        instruction: z.string(),
-        distance: z.number(),
-        duration: z.number(),
-        type: z.number().optional(),
-        name: z.string().optional(),
-      })).describe("Turn-by-turn directions"),
-      distance: z.number().describe("Total route distance in meters"),
-      duration: z.number().describe("Total route duration in seconds"),
-      distanceText: z.string().describe("Formatted distance text"),
-      durationText: z.string().describe("Formatted duration text"),
     }),
-    result: z.object({
-      success: z.boolean(),
-      message: z.string(),
-    }),
+    result: z.union([
+      z.object({
+        success: z.literal(true),
+        message: z.string(),
+        route: z.object({
+          geometry: z.object({
+            type: z.literal("LineString"),
+            coordinates: z.array(z.array(z.number())),
+          }),
+          distance: z.number().describe("Distance in meters"),
+          duration: z.number().describe("Duration in seconds"),
+          distanceText: z.string(),
+          durationText: z.string(),
+          directions: z.array(z.object({
+            instruction: z.string(),
+            distance: z.number(),
+            duration: z.number(),
+            type: z.number().optional(),
+            name: z.string().optional(),
+          })),
+        }),
+      }),
+      z.object({
+        success: z.literal(false),
+        message: z.string(),
+      }),
+    ]),
   },
   clearDirections: {
     description: "Clear any displayed route from the map",
