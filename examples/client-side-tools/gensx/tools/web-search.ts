@@ -28,12 +28,12 @@ export const webSearchTool = tool({
         country,
         includeImages: true,
         includeImageDescriptions: true,
-        includeAnswer: true,
+        includeAnswer: false,
       });
 
       const results = {
         images: searchResult.images,
-        answer: searchResult.answer,
+        results: searchResult.results,
       };
 
       return JSON.stringify(results);

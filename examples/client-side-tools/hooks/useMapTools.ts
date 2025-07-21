@@ -20,7 +20,7 @@ export interface MapMarker {
 
 export interface RouteData {
   id: string;
-  geometry: any; // GeoJSON LineString geometry
+  geometry: GeoJSON.LineString;
   startLat: number;
   startLon: number;
   endLat: number;
@@ -33,11 +33,10 @@ export interface RouteData {
     type?: number;
     name?: string;
   }>;
-  summary: {
-    distanceText: string;
-    durationText: string;
-    profile: string;
-  };
+  distance: number;
+  duration: number;
+  distanceText: string;
+  durationText: string;
 }
 
 const getDefaultLocation = async (): Promise<MapView> => {
@@ -254,7 +253,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     endLat: number;
     endLon: number;
     profile?: "driving-car" | "foot-walking" | "cycling-regular";
-    routeGeometry?: any;
+    geometry?: GeoJSON.LineString;
     directions: Array<{
       instruction: string;
       distance: number;
@@ -262,47 +261,52 @@ export function useMapTools(userId: string | null, threadId: string | null) {
       type?: number;
       name?: string;
     }>;
-    summary: {
-      distanceText: string;
-      durationText: string;
-      profile: string;
-    };
+    distance: number;
+    duration: number;
+    distanceText: string;
+    durationText: string;
   }) => {
     try {
       const routeData: RouteData = {
         id: `route-${Date.now()}`,
-        geometry: params.routeGeometry || null,
+        geometry: params.geometry ?? {
+          type: "LineString",
+          coordinates: [],
+        },
         startLat: params.startLat,
         startLon: params.startLon,
         endLat: params.endLat,
         endLon: params.endLon,
         profile: params.profile ?? "driving-car",
         directions: params.directions,
-        summary: params.summary,
+        distance: params.distance,
+        duration: params.duration,
+        distanceText: params.distanceText,
+        durationText: params.durationText,
       };
 
       setRoute(routeData);
 
       // Fit map to route bounds
-      if (params.routeGeometry && params.routeGeometry.coordinates) {
-        const coordinates = params.routeGeometry.coordinates;
+      if (params.geometry && params.geometry.coordinates) {
+        const coordinates = params.geometry.coordinates;
         if (coordinates.length > 0) {
           // Calculate rough center and zoom to fit the route
           const lats = coordinates.map((coord: number[]) => coord[1]);
           const lngs = coordinates.map((coord: number[]) => coord[0]);
-          
+
           const minLat = Math.min(...lats);
           const maxLat = Math.max(...lats);
           const minLng = Math.min(...lngs);
           const maxLng = Math.max(...lngs);
-          
+
           const centerLat = (minLat + maxLat) / 2;
           const centerLng = (minLng + maxLng) / 2;
-          
-          setCurrentView({ 
-            latitude: centerLat, 
-            longitude: centerLng, 
-            zoom: 13 
+
+          setCurrentView({
+            latitude: centerLat,
+            longitude: centerLng,
+            zoom: 13
           });
         }
       }

@@ -4,6 +4,70 @@ import { pRateLimit } from "p-ratelimit";
 import { useBlob } from "@gensx/storage";
 import crypto from "crypto";
 
+// Types
+interface RoutingResult {
+  success: boolean;
+  geometry?: GeoJSON.LineString;
+  distance?: number;
+  duration?: number;
+  profile?: string;
+  directions?: Array<{
+    instruction: string;
+    distance: number;
+    duration: number;
+    type?: number;
+    name?: string;
+  }>;
+  distanceText?: string;
+  durationText?: string;
+  error?: string;
+}
+
+interface OSRMManeuver {
+  instruction?: string;
+  type?: string;
+  bearing_before?: number;
+  bearing_after?: number;
+  location?: [number, number];
+}
+
+interface OSRMStep {
+  distance?: number;
+  duration?: number;
+  geometry?: GeoJSON.LineString;
+  name?: string;
+  maneuver?: OSRMManeuver;
+  mode?: string;
+  ref?: string;
+}
+
+interface OSRMLeg {
+  distance?: number;
+  duration?: number;
+  steps?: OSRMStep[];
+  summary?: string;
+}
+
+interface OSRMRoute {
+  distance?: number;
+  duration?: number;
+  geometry?: GeoJSON.LineString;
+  legs?: OSRMLeg[];
+  weight_name?: string;
+  weight?: number;
+}
+
+interface OSRMResponse {
+  code: string;
+  routes?: OSRMRoute[];
+  waypoints?: Array<{
+    hint?: string;
+    distance?: number;
+    name?: string;
+    location?: [number, number];
+  }>;
+}
+
 // Rate limit for routing API calls
 const limit = pRateLimit({
   interval: 1000, // 1000 ms == 1 second
@@ -38,7 +102,7 @@ export const routingTool = tool({
       .digest("hex");
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const routeBlob = useBlob<any>(
+    const routeBlob = useBlob<RoutingResult>(
       `route-cache/${hashParams}.json`,
     );
 
@@ -69,24 +133,26 @@ export const routingTool = tool({
 
         if (!response.ok) {
           return {
+            success: false,
             error: `Error calculating route: ${response.statusText}`,
           };
         }
 
-        const routeData = await response.json();
-        
+        const routeData: OSRMResponse = await response.json();
+
         if (!routeData.routes || routeData.routes.length === 0) {
           return {
+            success: false,
             error: "No route found between the specified points",
           };
         }
 
         const route = routeData.routes[0];
         const legs = route.legs || [];
-        
+
         // Extract turn-by-turn directions from steps
-        const directions = legs.flatMap((leg: any) => 
-          leg.steps?.map((step: any) => ({
+        const directions = legs.flatMap((leg: OSRMLeg) =>
+          leg.steps?.map((step: OSRMStep) => ({
             instruction: step.maneuver?.instruction || "Continue",
             distance: step.distance || 0,
             duration: step.duration || 0,
@@ -95,20 +161,15 @@ export const routingTool = tool({
           })) || []
         );
 
-        const result = {
+        const result: RoutingResult = {
           success: true,
-          route: {
-            geometry: route.geometry,
-            distance: route.distance, // in meters
-            duration: route.duration, // in seconds
-            profile: profile,
-            directions: directions,
-          },
-          summary: {
-            distanceText: formatDistance(route.distance),
-            durationText: formatDuration(route.duration),
-            profile: profile,
-          }
+          geometry: route.geometry,
+          distance: route.distance, // in meters
+          duration: route.duration, // in seconds
+          profile: profile,
+          directions: directions,
+          distanceText: route.distance ? formatDistance(route.distance) : undefined,
+          durationText: route.duration ? formatDuration(route.duration) : undefined,
         };
 
         await routeBlob.putJSON(result);
@@ -116,6 +177,7 @@ export const routingTool = tool({
 
       } catch (error) {
         return {
+          success: false,
           error: `Error calculating route: ${error instanceof Error ? error.message : String(error)}`,
         };
       }
@@ -136,7 +198,7 @@ function formatDistance(meters: number): string {
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  
+
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
   } else {
@@ -144,7 +206,7 @@ function formatDuration(seconds: number): string {
   }
 }
 
-function getManeuverType(osrmType: string): number {
+function getManeuverType(osrmType: string | undefined): number {
   // Map OSRM maneuver types to simple numeric types for the UI
   switch (osrmType) {
     case "depart":

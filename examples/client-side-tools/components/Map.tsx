@@ -276,7 +276,9 @@ const Map = (MapProps: MapProps) => {
     if (!route || !route.geometry || !route.geometry.coordinates) return null;
 
     // Convert GeoJSON coordinates to Leaflet format [lat, lng]
-    const positions = route.geometry.coordinates.map((coord: number[]) => [coord[1], coord[0]]);
+    const positions = route.geometry.coordinates
+      .filter((coord: number[]) => coord.length >= 2)
+      .map((coord: number[]): [number, number] => [coord[1], coord[0]]);
 
     return (
       <Polyline
@@ -319,7 +321,7 @@ const Map = (MapProps: MapProps) => {
           <div>
             <strong>Start</strong>
             <br />
-            {route.summary.distanceText} • {route.summary.durationText}
+            {route.distanceText} • {route.durationText}
             <br />
             <small>Mode: {route.profile.replace('-', ' ')}</small>
           </div>

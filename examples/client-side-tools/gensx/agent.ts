@@ -148,6 +148,7 @@ export const Agent = gensx.Component(
             publishMessages();
             break;
           case "tool-call":
+            console.log("tool-call", chunk.toolName, chunk.args);
             // Add tool call part - ensure args is an object, not a string
             let parsedArgs = chunk.args;
             if (typeof chunk.args === "string") {

@@ -135,7 +135,10 @@ export const toolbox = createToolBox({
         .optional()
         .default("driving-car")
         .describe("Transportation mode: driving-car, foot-walking, or cycling-regular"),
-      routeGeometry: z.any().describe("GeoJSON LineString geometry for the route"),
+      geometry: z.object({
+        type: z.literal("LineString"),
+        coordinates: z.array(z.array(z.number())).describe("Array of coordinate pairs (longitude, latitude)"),
+      }).describe("GeoJSON LineString geometry for the route"),
       directions: z.array(z.object({
         instruction: z.string(),
         distance: z.number(),
@@ -143,11 +146,10 @@ export const toolbox = createToolBox({
         type: z.number().optional(),
         name: z.string().optional(),
       })).describe("Turn-by-turn directions"),
-      summary: z.object({
-        distanceText: z.string(),
-        durationText: z.string(),
-        profile: z.string(),
-      }).describe("Route summary information"),
+      distance: z.number().describe("Total route distance in meters"),
+      duration: z.number().describe("Total route duration in seconds"),
+      distanceText: z.string().describe("Formatted distance text"),
+      durationText: z.string().describe("Formatted duration text"),
     }),
     result: z.object({
       success: z.boolean(),
