@@ -45,8 +45,13 @@ export default function ChatPage() {
       moveMap: (params) => {
         try {
           const { latitude, longitude, zoom } = params;
-          toast.info(`Moving map to ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (zoom: ${zoom})`);
-          return moveMap(latitude, longitude, zoom);
+          const result = moveMap(latitude, longitude, zoom);
+          if (result.success !== false) {
+            toast.info(
+              `Moved map to ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (zoom: ${zoom})`,
+            );
+          }
+          return result;
         } catch (error) {
           toast.error("Failed to move map");
           return { success: false, message: `error: ${error}` };
@@ -54,9 +59,14 @@ export default function ChatPage() {
       },
       placeMarkers: (params) => {
         try {
-          const markers = params.markers;
-          toast.success(`Placed ${markers.length} marker${markers.length !== 1 ? 's' : ''} on the map`);
-          return placeMarkers(params);
+          const result = placeMarkers(params);
+          if (result.success !== false && params.markers) {
+            const markers = params.markers;
+            toast.success(
+              `Placed ${markers.length} marker${markers.length !== 1 ? "s" : ""} on the map`,
+            );
+          }
+          return result;
         } catch (error) {
           toast.error("Failed to place markers");
           return { success: false, message: `error: ${error}` };
@@ -65,8 +75,11 @@ export default function ChatPage() {
       removeMarker: (params) => {
         try {
           const { markerId } = params;
-          toast.info(`Removed marker: ${markerId}`);
-          return removeMarker(markerId);
+          const result = removeMarker(markerId);
+          if (result.success !== false) {
+            toast.info(`Removed marker: ${markerId}`);
+          }
+          return result;
         } catch (error) {
           toast.error("Failed to remove marker");
           return { success: false, message: `error: ${error}` };
@@ -74,21 +87,31 @@ export default function ChatPage() {
       },
       clearMarkers: () => {
         try {
-          toast.info("Cleared all markers from the map");
-          return clearMarkers();
+          const result = clearMarkers();
+          if (result.success !== false) {
+            toast.info("Cleared all markers from the map");
+          }
+          return result;
         } catch (error) {
           toast.error("Failed to clear markers");
           return { success: false, message: `error: ${error}` };
         }
       },
       getCurrentView: async () => {
-        toast.info("Getting current map view");
-        return getCurrentView();
+        try {
+          const result = await getCurrentView();
+          toast.info("Retrieved current map view");
+          return result;
+        } catch (error) {
+          toast.error("Failed to get current view");
+          throw error;
+        }
       },
       listMarkers: () => {
         try {
-          toast.info("Listing all markers");
-          return listMarkers();
+          const result = listMarkers();
+          toast.info("Retrieved list of markers");
+          return result;
         } catch (error) {
           toast.error("Failed to list markers");
           return { success: false, message: `error: ${error}` };
@@ -101,8 +124,6 @@ export default function ChatPage() {
             timeout = 10000,
             maximumAge = 60000,
           } = params;
-
-          toast.info("Getting user location...");
 
           return new Promise((resolve) => {
             if (!navigator.geolocation) {
