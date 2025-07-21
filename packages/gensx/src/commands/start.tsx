@@ -78,10 +78,10 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
       setPhase("error");
-      
+
       // Log the error but don't exit unless explicitly requested
       log("❌ Error:", message);
-      
+
       if (shouldExit) {
         setTimeout(() => {
           exit();
@@ -287,16 +287,16 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
           ignoreInitial: true,
           ignored: [
             "**/node_modules/**",
-            "**/.git/**", 
+            "**/.git/**",
             "**/.gensx/**",
             "**/dist/**",
-            "**/build/**"
-          ]
+            "**/build/**",
+          ],
         });
 
         watcher.on("change", (filePath) => {
           if (
-            filePath.endsWith(".ts") || 
+            filePath.endsWith(".ts") ||
             filePath.endsWith(".tsx") ||
             filePath.endsWith(".js") ||
             filePath.endsWith(".jsx")
@@ -307,7 +307,7 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
 
         watcher.on("add", (filePath) => {
           if (
-            filePath.endsWith(".ts") || 
+            filePath.endsWith(".ts") ||
             filePath.endsWith(".tsx") ||
             filePath.endsWith(".js") ||
             filePath.endsWith(".jsx")
@@ -332,53 +332,58 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
       })
       .catch((_err: unknown) => {
         // Fallback to basic fs.watch if chokidar fails
-        log("Warning: Failed to use advanced file watcher, falling back to basic watcher");
-        
-        const fs = import("node:fs");
-        const path = import("node:path");
-        
-        void Promise.all([fs, path])
-          .then(([{ watch, readdir, stat }, { join }]) => {
-            const watchers: Array<import("node:fs").FSWatcher> = [];
-            
+        log(
+          "Warning: Failed to use advanced file watcher, falling back to basic watcher",
+        );
+
+        void Promise.all([import("node:fs"), import("node:path")])
+          .then(([fsModule, pathModule]) => {
+            const watchers: import("node:fs").FSWatcher[] = [];
+
             const watchDirectory = (dir: string) => {
               try {
-                const watcher = watch(dir, (_eventType, filename) => {
+                const watcher = fsModule.watch(dir, (_eventType, filename) => {
                   if (
                     filename &&
-                    (filename.endsWith(".ts") || 
-                     filename.endsWith(".tsx") ||
-                     filename.endsWith(".js") || 
-                     filename.endsWith(".jsx"))
+                    (filename.endsWith(".ts") ||
+                      filename.endsWith(".tsx") ||
+                      filename.endsWith(".js") ||
+                      filename.endsWith(".jsx"))
                   ) {
                     triggerRebuild();
                   }
                 });
                 watchers.push(watcher);
-                
+
                 // Recursively watch subdirectories (manually since recursive: true is unsupported on Linux)
-                readdir(dir, { withFileTypes: true }, (err, entries) => {
-                  if (err) return;
-                  
-                  for (const entry of entries) {
-                    if (entry.isDirectory() && 
-                        !entry.name.startsWith('.') && 
-                        entry.name !== 'node_modules' && 
-                        entry.name !== 'dist' && 
-                        entry.name !== 'build') {
-                      watchDirectory(join(dir, entry.name));
+                fsModule.readdir(
+                  dir,
+                  { withFileTypes: true },
+                  (err, entries) => {
+                    if (err) return;
+
+                    for (const entry of entries) {
+                      if (
+                        entry.isDirectory() &&
+                        !entry.name.startsWith(".") &&
+                        entry.name !== "node_modules" &&
+                        entry.name !== "dist" &&
+                        entry.name !== "build"
+                      ) {
+                        watchDirectory(pathModule.join(dir, entry.name));
+                      }
                     }
-                  }
-                });
+                  },
+                );
               } catch (err) {
                 console.warn(`Failed to watch directory ${dir}:`, err);
               }
             };
-            
+
             watchDirectory(directoryToWatch);
 
             cleanupWatcher = () => {
-              watchers.forEach(watcher => {
+              watchers.forEach((watcher) => {
                 try {
                   watcher.close();
                 } catch (err) {
@@ -395,9 +400,9 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
               }
             };
           })
-                     .catch((err: unknown) => {
-             handleError(err, true); // File watching setup failure should exit
-           });
+          .catch((err: unknown) => {
+            handleError(err, true); // File watching setup failure should exit
+          });
       });
 
     return () => {
