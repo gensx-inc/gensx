@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await gensx.start(GENSX_WORKFLOW_NAME, {
+      environment: GENSX_ENV,
       inputs,
     });
 
