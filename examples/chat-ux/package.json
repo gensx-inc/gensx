@@ -6,7 +6,7 @@
     "dev": "concurrently \"npm run dev:next\" \"npm run dev:gensx\"",
     "dev:next": "next dev",
     "dev:gensx": "gensx start ./gensx/workflows.ts",
-    "deploy": "gensx deploy -e ANTHROPIC_API_KEY -e TAVILY_API_KEY -e OPENAI_API_KEY ./gensx/workflows.ts",
+    "deploy": "gensx deploy -e ANTHROPIC_API_KEY -e TAVILY_API_KEY ./gensx/workflows.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
