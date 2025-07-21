@@ -335,19 +335,56 @@ export const StartUI: React.FC<Props> = ({ file, options }) => {
         log("Warning: Failed to use advanced file watcher, falling back to basic watcher");
         
         const fs = import("node:fs");
-        void fs
-          .then(({ watch }) => {
-            const watcher = watch(directoryToWatch, { recursive: true }, (_eventType, filename) => {
-              if (
-                filename &&
-                (filename.endsWith(".ts") || filename.endsWith(".tsx"))
-              ) {
-                triggerRebuild();
+        const path = import("node:path");
+        
+        void Promise.all([fs, path])
+          .then(([{ watch, readdir, stat }, { join }]) => {
+            const watchers: Array<import("node:fs").FSWatcher> = [];
+            
+            const watchDirectory = (dir: string) => {
+              try {
+                const watcher = watch(dir, (_eventType, filename) => {
+                  if (
+                    filename &&
+                    (filename.endsWith(".ts") || 
+                     filename.endsWith(".tsx") ||
+                     filename.endsWith(".js") || 
+                     filename.endsWith(".jsx"))
+                  ) {
+                    triggerRebuild();
+                  }
+                });
+                watchers.push(watcher);
+                
+                // Recursively watch subdirectories (manually since recursive: true is unsupported on Linux)
+                readdir(dir, { withFileTypes: true }, (err, entries) => {
+                  if (err) return;
+                  
+                  for (const entry of entries) {
+                    if (entry.isDirectory() && 
+                        !entry.name.startsWith('.') && 
+                        entry.name !== 'node_modules' && 
+                        entry.name !== 'dist' && 
+                        entry.name !== 'build') {
+                      watchDirectory(join(dir, entry.name));
+                    }
+                  }
+                });
+              } catch (err) {
+                console.warn(`Failed to watch directory ${dir}:`, err);
               }
-            });
+            };
+            
+            watchDirectory(directoryToWatch);
 
             cleanupWatcher = () => {
-              watcher.close();
+              watchers.forEach(watcher => {
+                try {
+                  watcher.close();
+                } catch (err) {
+                  console.warn("Error closing watcher:", err);
+                }
+              });
               if (rebuildTimer) {
                 clearTimeout(rebuildTimer);
               }
