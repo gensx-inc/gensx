@@ -68,8 +68,6 @@ IMPORTANT: When writing the report, include citations wherever possible for fact
       })
     ).input_tokens;
 
-    console.log("tokenCount", tokenCount);
-
     // Remove lowest ranked documents until within token limit
     docs.sort((a, b) => (a.relevanceScore ?? 0) - (b.relevanceScore ?? 0));
     while (
