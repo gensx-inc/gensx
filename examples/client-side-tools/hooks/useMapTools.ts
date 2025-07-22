@@ -108,6 +108,12 @@ export interface MapMarker {
   photoUrl?: string;
 }
 
+export interface Waypoint {
+  lat: number;
+  lon: number;
+  label?: string;
+}
+
 export interface RouteData {
   id: string;
   geometry: GeoJSON.LineString;
@@ -117,6 +123,7 @@ export interface RouteData {
   endLon: number;
   startLabel?: string;
   endLabel?: string;
+  waypoints?: Waypoint[];
   profile: string;
   directions: Array<{
     instruction: string;
@@ -346,9 +353,10 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     endLon: number;
     startLabel?: string;
     endLabel?: string;
+    waypoints?: Waypoint[];
     profile?: "driving-car" | "foot-walking" | "cycling-regular";
   }) => {
-    const { startLat, startLon, endLat, endLon, startLabel, endLabel, profile = "driving-car" } = params;
+    const { startLat, startLon, endLat, endLon, startLabel, endLabel, waypoints = [], profile = "driving-car" } = params;
 
     try {
       // Map profile to OSRM profile
@@ -359,8 +367,20 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         osrmProfile = "cycling";
       }
 
+      // Build coordinates string for OSRM API (start, waypoints, end)
+      let coordinates = `${startLon},${startLat}`;
+      
+      // Add waypoints if provided
+      if (waypoints && waypoints.length > 0) {
+        for (const waypoint of waypoints) {
+          coordinates += `;${waypoint.lon},${waypoint.lat}`;
+        }
+      }
+      
+      coordinates += `;${endLon},${endLat}`;
+
       // Call OSRM API for routing
-      const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson&steps=true`;
+      const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordinates}?overview=full&geometries=geojson&steps=true`;
 
       const response = await fetch(url, {
         headers: {
@@ -410,6 +430,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         endLon: endLon,
         startLabel: startLabel,
         endLabel: endLabel,
+        waypoints: waypoints,
         profile: params.profile ?? "driving-car",
         directions: directions,
         distance: route.distance ?? 0,

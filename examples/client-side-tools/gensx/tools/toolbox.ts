@@ -124,7 +124,7 @@ export const toolbox = createToolBox({
     ]),
   },
   calculateAndShowRoute: {
-    description: "Calculate a route between two points and display it on the map with turn-by-turn directions. You must provide coordinates for both start and end points. Optionally include address labels for better display.",
+    description: "Calculate a route with multiple stops and display it on the map with turn-by-turn directions. You must provide coordinates for start and end points. Optionally include waypoints between them and labels for better display.",
     params: z.object({
       startLat: z.number().describe("Starting point latitude"),
       startLon: z.number().describe("Starting point longitude"),
@@ -132,6 +132,11 @@ export const toolbox = createToolBox({
       endLon: z.number().describe("Ending point longitude"),
       startLabel: z.string().optional().describe("Optional label/address for the starting point (for display purposes)"),
       endLabel: z.string().optional().describe("Optional label/address for the ending point (for display purposes)"),
+      waypoints: z.array(z.object({
+        lat: z.number().describe("Waypoint latitude"),
+        lon: z.number().describe("Waypoint longitude"),
+        label: z.string().optional().describe("Optional label for the waypoint"),
+      })).optional().describe("Optional intermediate stops between start and end points"),
       profile: z
         .enum(["driving-car", "foot-walking", "cycling-regular"])
         .optional()

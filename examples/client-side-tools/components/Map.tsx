@@ -293,14 +293,15 @@ const Map = (MapProps: MapProps) => {
     );
   }, [route]);
 
-  // Create start and end markers for the route
+  // Create start, waypoint, and end markers for the route
   const routeMarkers = useMemo(() => {
     if (!route) return [];
 
     const startIcon = createMarkerIcon("#10B981");
     const endIcon = createMarkerIcon("#EF4444");
+    const waypointIcon = createMarkerIcon("#F59E0B");
 
-    return [
+    const markers = [
       <Marker
         key={`${route.id}-start`}
         position={[route.startLat, route.startLon]}
@@ -342,6 +343,33 @@ const Map = (MapProps: MapProps) => {
         </Popup>
       </Marker>
     ];
+
+    // Add waypoint markers
+    if (route.waypoints && route.waypoints.length > 0) {
+      route.waypoints.forEach((waypoint, index) => {
+        markers.push(
+          <Marker
+            key={`${route.id}-waypoint-${index}`}
+            position={[waypoint.lat, waypoint.lon]}
+            icon={waypointIcon}
+          >
+            <Popup>
+              <div>
+                <strong>Stop {index + 1}</strong>
+                {waypoint.label && (
+                  <>
+                    <br />
+                    <small>{waypoint.label}</small>
+                  </>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        );
+      });
+    }
+
+    return markers;
   }, [route]);
 
   return (

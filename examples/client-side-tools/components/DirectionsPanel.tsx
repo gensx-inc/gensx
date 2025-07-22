@@ -56,7 +56,7 @@ export function DirectionsPanel({ route, onClose }: DirectionsPanelProps) {
   };
 
   return (
-    <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg border max-w-sm w-80 max-h-96 overflow-hidden z-10">
+    <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg border max-w-sm w-80 max-h-96 overflow-hidden z-[1000]">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-blue-50">
         <div className="flex items-center gap-2">
