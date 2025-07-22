@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TextPart } from "ai";
+import { MarkdownContent } from "./MarkdownContent";
 
 interface CombinedFloatingPanelProps {
   messages: Message[];
@@ -96,12 +97,16 @@ export function CombinedFloatingPanel({
     if (message.role === "user") {
       return (
         <div className="text-sm text-slate-900 leading-relaxed font-medium">
-          {typeof message.content === "string"
-            ? message.content
-            : message.content
-                ?.filter((part): part is TextPart => part.type === "text")
-                .map((part) => part.text)
-                .join(" ") || ""}
+          <MarkdownContent
+            content={
+              typeof message.content === "string"
+                ? message.content
+                : message.content
+                    ?.filter((part): part is TextPart => part.type === "text")
+                    .map((part) => part.text)
+                    .join(" ") || ""
+            }
+          />
         </div>
       );
     }
@@ -113,7 +118,7 @@ export function CombinedFloatingPanel({
       if (typeof content === "string") {
         return (
           <div className="text-sm text-slate-700 leading-relaxed">
-            {content}
+            <MarkdownContent content={content} />
           </div>
         );
       }
@@ -131,7 +136,7 @@ export function CombinedFloatingPanel({
         <div className="space-y-2">
           {textParts.map((part, index) => (
             <div key={index} className="text-sm text-slate-700 leading-relaxed">
-              {part.text}
+              <MarkdownContent content={part.text} />
             </div>
           ))}
         </div>
