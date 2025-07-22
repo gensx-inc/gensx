@@ -80,14 +80,12 @@ function ChatPageContent() {
             type: "info",
             title: "Moving map",
             description: `Moving to ${latitude}, ${longitude}`,
-            autoHide: false,
           });
           const result = moveMap(latitude, longitude, zoom);
           addToast({
             type: "success",
             title: "Map moved",
             description: `Successfully moved to location`,
-            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -95,7 +93,6 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to move map",
             description: `Error: ${error}`,
-            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
@@ -106,14 +103,12 @@ function ChatPageContent() {
             type: "info",
             title: "Placing markers",
             description: `Adding ${params.markers?.length || 1} marker(s)`,
-            autoHide: false,
           });
           const result = placeMarkers(params);
           addToast({
             type: "success",
             title: "Markers placed",
             description: `Successfully added markers to map`,
-            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -121,7 +116,6 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to place markers",
             description: `Error: ${error}`,
-            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
@@ -133,14 +127,12 @@ function ChatPageContent() {
             type: "info",
             title: "Removing marker",
             description: `Removing marker ${markerId}`,
-            autoHide: false,
           });
           const result = removeMarker(markerId);
           addToast({
             type: "success",
             title: "Marker removed",
             description: `Successfully removed marker`,
-            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -148,7 +140,6 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to remove marker",
             description: `Error: ${error}`,
-            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
@@ -159,14 +150,12 @@ function ChatPageContent() {
             type: "info",
             title: "Clearing markers",
             description: "Removing all markers from map",
-            autoHide: false,
           });
           const result = clearMarkers();
           addToast({
             type: "success",
             title: "Markers cleared",
             description: "Successfully removed all markers",
-            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -174,7 +163,6 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to clear markers",
             description: `Error: ${error}`,
-            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
@@ -186,7 +174,6 @@ function ChatPageContent() {
             type: "success",
             title: "Retrieved current view",
             description: "Got current map position",
-            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -194,7 +181,6 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to get current view",
             description: `Error: ${error}`,
-            autoHide: false,
           });
           return { latitude: 0, longitude: 0, zoom: 1 };
         }
@@ -206,7 +192,6 @@ function ChatPageContent() {
             type: "success",
             title: "Listed markers",
             description: `Found ${Array.isArray(result) ? result.length : 0} markers`,
-            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -214,7 +199,6 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to list markers",
             description: `Error: ${error}`,
-            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
@@ -231,7 +215,6 @@ function ChatPageContent() {
             type: "info",
             title: "Getting location",
             description: "Requesting your current location...",
-            autoHide: false,
           });
 
           return new Promise((resolve) => {
@@ -240,7 +223,6 @@ function ChatPageContent() {
                 type: "error",
                 title: "Location not supported",
                 description: "Geolocation is not supported by this browser",
-                autoHide: false,
               });
               resolve({
                 success: false,
@@ -261,7 +243,6 @@ function ChatPageContent() {
                   type: "success",
                   title: "Location found",
                   description: "Successfully retrieved your location",
-                  autoHide: false,
                 });
                 resolve({
                   success: true,
@@ -288,7 +269,6 @@ function ChatPageContent() {
                   type: "error",
                   title: "Location failed",
                   description: errorMessage,
-                  autoHide: false,
                 });
                 console.error("Error retrieving location", error);
                 resolve({
@@ -304,7 +284,6 @@ function ChatPageContent() {
             type: "error",
             title: "Location error",
             description: `Error: ${error}`,
-            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
@@ -338,13 +317,23 @@ function ChatPageContent() {
   // Handle server-side tool calls and show toasts
   const handleToolCall = useCallback((toolName: string, args: unknown) => {
     switch (toolName) {
+      case "locationSearch":
+        const locationSearchArgs = args as {
+          query: string;
+          country?: string;
+        };
+        addToast({
+          type: "info",
+          title: "Searching locations",
+          description: `Searching for: ${locationSearchArgs.query}`,
+        });
+        break;
       case "webSearch":
         const searchArgs = args as { query: string; country?: string };
         addToast({
           type: "info",
           title: "Searching web",
           description: `Searching for: ${searchArgs.query}`,
-          autoHide: false,
         });
         break;
       case "geocode":
@@ -362,7 +351,6 @@ function ChatPageContent() {
           type: "info",
           title: "Geocoding location",
           description: `Looking up: ${location}`,
-          autoHide: false,
         });
         break;
       case "reverseGeocode":
@@ -371,7 +359,6 @@ function ChatPageContent() {
           type: "info",
           title: "Reverse geocoding",
           description: `Looking up coordinates: ${reverseArgs.latitude}, ${reverseArgs.longitude}`,
-          autoHide: false,
         });
         break;
     }
@@ -461,7 +448,6 @@ function ChatPageContent() {
         type: "error",
         title: "Request failed",
         description: error,
-        autoHide: false,
       });
     }
   }, [error]);

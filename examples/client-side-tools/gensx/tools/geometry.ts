@@ -77,6 +77,92 @@ export const findBoundingBoxTool = tool({
   },
 });
 
+const createBoundingBoxSchema = z.object({
+  points: z.array(
+    z.object({
+      latitude: z.number().describe("Point latitude"),
+      longitude: z.number().describe("Point longitude"),
+    }),
+  ),
+  padding: z
+    .number()
+    .optional()
+    .describe("Padding in meters around the points"),
+});
+
+export const createBoundingBoxTool = tool({
+  description: "Create a bounding box around a list of points",
+  parameters: createBoundingBoxSchema,
+  execute: async (params: z.infer<typeof createBoundingBoxSchema>) => {
+    const { points, padding } = params;
+
+    try {
+      if (points.length === 0) {
+        return JSON.stringify(
+          {
+            success: false,
+            error: "No points provided",
+            boundingBox: { north: 0, south: 0, east: 0, west: 0 },
+          },
+          null,
+          2,
+        );
+      }
+
+      // Find the min/max coordinates
+      let minLat = points[0].latitude;
+      let maxLat = points[0].latitude;
+      let minLon = points[0].longitude;
+      let maxLon = points[0].longitude;
+
+      for (const point of points) {
+        minLat = Math.min(minLat, point.latitude);
+        maxLat = Math.max(maxLat, point.latitude);
+        minLon = Math.min(minLon, point.longitude);
+        maxLon = Math.max(maxLon, point.longitude);
+      }
+
+      // Apply padding if specified
+      let paddingDegrees = 0;
+      if (padding && padding > 0) {
+        // Convert meters to degrees (approximate)
+        paddingDegrees = padding / 111000; // Rough conversion: 1 degree ≈ 111km
+      }
+
+      const boundingBox = {
+        north: maxLat + paddingDegrees,
+        south: minLat - paddingDegrees,
+        east: maxLon + paddingDegrees,
+        west: minLon - paddingDegrees,
+      };
+
+      return JSON.stringify(
+        {
+          success: true,
+          boundingBox,
+          points,
+          padding: padding || 0,
+          paddingDegrees,
+        },
+        null,
+        2,
+      );
+    } catch (error) {
+      return JSON.stringify(
+        {
+          success: false,
+          error: `Failed to create bounding box: ${error instanceof Error ? error.message : "Unknown error"}`,
+          boundingBox: { north: 0, south: 0, east: 0, west: 0 },
+          points,
+          padding: padding || 0,
+        },
+        null,
+        2,
+      );
+    }
+  },
+});
+
 const findClosestSchema = z.object({
   start: z.object({
     latitude: z.number().describe("Starting point latitude"),

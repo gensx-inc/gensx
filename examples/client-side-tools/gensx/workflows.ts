@@ -16,6 +16,7 @@ import {
   calculateDistanceTool,
   isPointInBoundingBoxTool,
   sortPointsByDistanceTool,
+  createBoundingBoxTool,
 } from "./tools/geometry";
 
 interface ChatAgentProps {
@@ -94,6 +95,7 @@ You also have access to the following geometry tools:
 - calculateDistance: Calculate the distance between two points
 - isPointInBoundingBox: Check if a point is within a bounding box
 - sortPointsByDistance: Sort points by distance from a given point
+- createBoundingBox: Create a bounding box around a list of points
 
 When users ask about locations, places, or geographic questions:
 1. Use webSearch to find information about the places they're asking about
@@ -102,6 +104,7 @@ When users ask about locations, places, or geographic questions:
 4. Use moveMap to show them the location(s) on the map.
 5. Use placeMarkers to highlight important locations, features, and it is important to include photos and detailed descriptions.
 6. Provide helpful context about the places they're asking about
+7. After placing multiple markers on the map, use the moveMap tool to move the map to show all the markers using a bounding box that includes all the markers.
 
 For location-specific searches (restaurants, hotels, gas stations, etc.):
 - Use locationSearch with appropriate category filters
@@ -142,10 +145,21 @@ IMPORTANT: When routing to airports, be specific about the terminal within the a
 
 If the user does not provide an explicit reference to a location, you can assume they are asking about their current location, or the location that the map is currently focused on. Use the getUserLocation tool to get the user's current location, or the getCurrentView tool to get the current map view.
 
-Always be proactive about using the map tools to enhance the user's experience. If they ask about a place, show it to them on the map!`,
+Always be proactive about using the map tools to enhance the user's experience. If they ask about a place, show it to them on the map!
+
+<date>The current date and time is ${new Date().toLocaleString()}.</date>`,
         };
 
         existingMessages.push(systemMessage);
+      } else if (
+        existingMessages[0].role === "system" &&
+        typeof existingMessages[0].content === "string"
+      ) {
+        // update the system message with the current date and time
+        existingMessages[0].content = existingMessages[0].content.replace(
+          /<date>.*<\/date>/,
+          `<date>The current date and time is ${new Date().toLocaleString()}.</date>`,
+        );
       }
 
       // Add the new user message
@@ -173,6 +187,7 @@ Always be proactive about using the map tools to enhance the user's experience. 
         calculateDistance: calculateDistanceTool,
         isPointInBoundingBox: isPointInBoundingBoxTool,
         sortPointsByDistance: sortPointsByDistanceTool,
+        createBoundingBox: createBoundingBoxTool,
         ...asToolSet(toolbox),
       };
 
