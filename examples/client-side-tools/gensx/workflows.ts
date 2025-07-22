@@ -9,6 +9,7 @@ import { geocodeTool } from "./tools/geocode";
 import { generateText } from "ai";
 import { reverseGeocodeTool } from "./tools/reverse-geocode";
 import { createOpenAI } from "@ai-sdk/openai";
+import { locationSearchTool } from "./tools/location-search";
 
 interface ChatAgentProps {
   prompt: string;
@@ -60,9 +61,16 @@ export const ChatAgent = gensx.Workflow(
           role: "system",
           content: `You are a helpful geographic assistant that can interact with an interactive map. You have access to several map tools:
 
-- webSearch: Search the web for information relevant to the user's query and images related to the query.
+- webSearch: Search the web for general information, including images.
 - geocode: Geocode a location from an address or a query to a specific location, returned with latitude and longitude, as well as other useful information about the location
 - reverseGeocode: Reverse geocode a location from a specific latitude and longitude to an map object. This can be used to get the address or city, country, etc from a set of coordinates.
+- locationSearch: Location based search to be used for finding places, businesses, and points of interest with advanced filtering options:
+  * Search within specific areas using bounding boxes
+  * Search along routes between waypoints
+  * Filter by categories (restaurants, hotels, gas stations, etc.)
+  * Proximity-based search around specific coordinates
+  * Multi-language support
+  * Country-specific searches
 - moveMap: Move the map to a specific location with latitude, longitude, and optional zoom level
 - placeMarkers: Place markers on the map with optional title, description, color, and photoUrl. Ensure that you move the map so the new markers are visible and include a photo and detailed description of the place.
 - removeMarker: Remove a specific marker by its ID
@@ -76,9 +84,16 @@ export const ChatAgent = gensx.Workflow(
 When users ask about locations, places, or geographic questions:
 1. Use webSearch to find information about the places they're asking about
 2. Use geocode (if needed) to get the latitude and longitude of the location
-3. Use moveMap to show them the location(s) on the map.
-4. Use placeMarkers to highlight important locations, features, and it is important to include photos and detailed descriptions.
-5. Provide helpful context about the places they're asking about
+3. Use locationSearch for finding specific types of places, businesses, or amenities in particular areas
+4. Use moveMap to show them the location(s) on the map.
+5. Use placeMarkers to highlight important locations, features, and it is important to include photos and detailed descriptions.
+6. Provide helpful context about the places they're asking about
+
+For location-specific searches (restaurants, hotels, gas stations, etc.):
+- Use locationSearch with appropriate category filters
+- Consider using proximity search around the user's current location or a specific area
+- For route-based searches, use the route parameter to find amenities along a specific path
+- Use bounding box searches when users want to find places within a specific geographic area
 
 If you are searching for multiple amenities, places, or locations in one specific area, move the map to the general area first, and then do the search, to help keep the user involved in the process. As you find results add a marker for each place before searching for the next one.
 
@@ -98,8 +113,9 @@ DO NOT offer directions for:
 When providing directions:
 1. First use geocode to get coordinates for the destination (and waypoints if multiple stops)
 2. Use getUserLocation to get the user's current position (or use the current map view)
-3. Use calculateAndShowRoute to calculate and display the route on the map (this combines routing calculation and display)
-4. Present the directions in a clear, actionable format
+3. Gather a title, description, and photo (if available) for the start, end, and any waypoints along the route
+4. Use calculateAndShowRoute to calculate and display the route on the map (this combines routing calculation and display)
+5. Do not add extra markers for the route, these are already added by the calculateAndShowRoute tool
 
 For multi-stop routes:
 - Include waypoints array with intermediate stops
@@ -137,6 +153,7 @@ Always be proactive about using the map tools to enhance the user's experience. 
         webSearch: webSearchTool,
         geocode: geocodeTool,
         reverseGeocode: reverseGeocodeTool,
+        locationSearch: locationSearchTool,
         ...asToolSet(toolbox),
       };
 

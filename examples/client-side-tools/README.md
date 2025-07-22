@@ -78,6 +78,9 @@ You can use natural language with voice input:
 
    # Groq API key for voice transcription
    GROQ_API_KEY=your_groq_api_key_here
+
+   # Mapbox access token for routing and location search
+   NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=your_MAPBOX_ACCESS_TOKEN_here
    ```
 
 4. Start the development server:
@@ -100,7 +103,13 @@ You can use natural language with voice input:
 2. Create a new API key
 3. Add it to your `.env.local` file
 
-**Note**: Voice functionality requires a valid Groq API key. Without it, only text input will work.
+### Mapbox API Key (for Routing and Location Search)
+
+1. Sign up at [mapbox.com](https://mapbox.com)
+2. Create a new access token
+3. Add it to your `.env.local` file as `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN`
+
+**Note**: Voice functionality requires a valid Groq API key. Without it, only text input will work. Routing and location search require a valid Mapbox API key.
 
 ## Architecture
 
@@ -125,17 +134,24 @@ You can use natural language with voice input:
 
 ## Routing Service
 
-The directions functionality uses the OSRM Demo Server (https://router.project-osrm.org/) which is free but has limitations:
+The directions functionality uses the Mapbox Directions API which provides:
 
-- **Rate limits**: Limited requests per minute/day
-- **Reliability**: Demo server may be unavailable at times
-- **Coverage**: Global coverage but may lack some detailed local routing
+- **High-quality routing**: Accurate turn-by-turn directions
+- **Multiple transport modes**: Driving, walking, and cycling
+- **Global coverage**: Comprehensive worldwide routing
+- **Reliable service**: Production-ready API with high uptime
 
-For production use, consider:
+For setup, you'll need:
 
-- Setting up your own OSRM server
-- Using a commercial routing service (Google Directions API, Mapbox Directions API, etc.)
-- Using other free alternatives like OpenRouteService with your own API key
+1. A Mapbox access token (sign up at [mapbox.com](https://mapbox.com))
+2. Set the environment variable: `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=your_token_here`
+
+The routing service supports:
+
+- **Multiple waypoints**: Plan routes with intermediate stops
+- **Custom labels**: Add descriptive labels for start, end, and waypoints
+- **Transport modes**: Driving, walking, and cycling
+- **Real-time updates**: Routes are calculated and displayed immediately
 
 ## Usage Examples
 

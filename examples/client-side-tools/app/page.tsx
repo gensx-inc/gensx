@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ChatInput } from "@/components/ChatInput";
 import { useChat } from "@/hooks/useChat";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getUserId } from "@/lib/userId";
@@ -11,13 +10,14 @@ import dynamic from "next/dynamic";
 import { createToolImplementations } from "@gensx/react";
 import { AppLogo } from "@/components/AppLogo";
 import { InstructionsModal } from "@/components/InstructionsModal";
-import { FloatingChatHistory } from "@/components/FloatingChatHistory";
-import { DirectionsPanel } from "@/components/DirectionsPanel";
+import { CombinedFloatingPanel } from "@/components/CombinedFloatingPanel";
 import {
   addToast,
   clearAllToasts,
   ToastContainer,
 } from "@/components/ui/toast";
+import { toolbox } from "@/gensx/tools/toolbox";
+import { ChatInput } from "@/components/ChatInput";
 
 function ChatPageContent() {
   const searchParams = useSearchParams();
@@ -72,9 +72,8 @@ function ChatPageContent() {
   } = useMapTools(userId, currentThreadId);
 
   const toolImplementations = useMemo(() => {
-    return createToolImplementations({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      moveMap: (params: any) => {
+    return createToolImplementations<typeof toolbox>({
+      moveMap: (params) => {
         try {
           const { latitude, longitude, zoom } = params;
           addToast({
@@ -220,8 +219,7 @@ function ChatPageContent() {
           return { success: false, message: `error: ${error}` };
         }
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      getUserLocation: async (params: any) => {
+      getUserLocation: async (params) => {
         try {
           const {
             enableHighAccuracy = false,
@@ -484,9 +482,10 @@ function ChatPageContent() {
         onExampleClick={handleExampleClick}
       />
 
-      {/* Floating Chat History */}
-      <FloatingChatHistory
+      {/* Combined Floating Panel */}
+      <CombinedFloatingPanel
         messages={messages}
+        route={route}
         isVisible={showChatHistory}
         onClose={handleCloseChatHistory}
       />
@@ -506,7 +505,6 @@ function ChatPageContent() {
               view={currentView}
               route={route}
             />
-            <DirectionsPanel route={route} onClose={clearDirections} />
           </div>
 
           {/* Floating Chat Bar - Glass Morphism */}

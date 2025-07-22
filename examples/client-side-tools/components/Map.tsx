@@ -64,7 +64,7 @@ interface MapProps {
   route?: RouteData | null;
 }
 
-const defaultView = {
+const defaultView: MapView = {
   zoom: 12,
   latitude: 37.7749, // San Francisco
   longitude: -122.4194,
@@ -223,6 +223,72 @@ const MarkerPopup = ({ marker }: MarkerPopupProps) => {
   );
 };
 
+const MapMarkerComponent = ({
+  marker,
+  isNew,
+  ref,
+  originalPositionRef,
+}: {
+  marker: MapMarker;
+  isNew: boolean;
+  ref: React.RefObject<L.Map | null>;
+  originalPositionRef: React.RefObject<{
+    center: L.LatLng;
+    zoom: number;
+  } | null>;
+}) => {
+  return (
+    <Marker
+      key={marker.id}
+      position={[marker.latitude, marker.longitude]}
+      draggable={false}
+      icon={createMarkerIcon(
+        marker.color,
+        marker.photoUrl,
+        isNew,
+        marker.title,
+      )}
+      eventHandlers={{
+        click: (e) => {
+          if (ref?.current) {
+            originalPositionRef.current = {
+              center: ref.current.getCenter(),
+              zoom: ref.current.getZoom(),
+            };
+          }
+          // Prevent event from bubbling to map
+          e.originalEvent?.stopPropagation();
+        },
+      }}
+    >
+      <Popup
+        closeOnEscapeKey={false}
+        closeOnClick={false}
+        eventHandlers={{
+          remove: () => {
+            if (originalPositionRef.current) {
+              // Capture the original position to avoid race condition
+              const originalPosition = originalPositionRef.current;
+              originalPositionRef.current = null;
+
+              setTimeout(() => {
+                if (ref?.current && originalPosition) {
+                  ref.current.setView(
+                    originalPosition.center,
+                    originalPosition.zoom,
+                  );
+                }
+              }, 100);
+            }
+          },
+        }}
+      >
+        <MarkerPopup marker={marker} />
+      </Popup>
+    </Marker>
+  );
+};
+
 const Map = (MapProps: MapProps) => {
   const { ref, markers, view = defaultView, route } = MapProps;
   const originalPositionRef = useRef<{ center: L.LatLng; zoom: number } | null>(
@@ -277,54 +343,13 @@ const Map = (MapProps: MapProps) => {
       const isNew = newMarkersRef.current.has(marker.id);
 
       return (
-        <Marker
+        <MapMarkerComponent
           key={marker.id}
-          position={[marker.latitude, marker.longitude]}
-          draggable={false}
-          icon={createMarkerIcon(
-            marker.color,
-            marker.photoUrl,
-            isNew,
-            marker.title,
-          )}
-          eventHandlers={{
-            click: (e) => {
-              if (ref?.current) {
-                originalPositionRef.current = {
-                  center: ref.current.getCenter(),
-                  zoom: ref.current.getZoom(),
-                };
-              }
-              // Prevent event from bubbling to map
-              e.originalEvent?.stopPropagation();
-            },
-          }}
-        >
-          <Popup
-            closeOnEscapeKey={false}
-            closeOnClick={false}
-            eventHandlers={{
-              remove: () => {
-                if (originalPositionRef.current) {
-                  // Capture the original position to avoid race condition
-                  const originalPosition = originalPositionRef.current;
-                  originalPositionRef.current = null;
-
-                  setTimeout(() => {
-                    if (ref?.current && originalPosition) {
-                      ref.current.setView(
-                        originalPosition.center,
-                        originalPosition.zoom,
-                      );
-                    }
-                  }, 100);
-                }
-              },
-            }}
-          >
-            <MarkerPopup marker={marker} />
-          </Popup>
-        </Marker>
+          marker={marker}
+          isNew={isNew}
+          ref={ref as React.RefObject<L.Map | null>}
+          originalPositionRef={originalPositionRef}
+        />
       );
     });
   }, [markers, ref]);
@@ -355,86 +380,58 @@ const Map = (MapProps: MapProps) => {
   const routeMarkers = useMemo(() => {
     if (!route) return [];
 
-    const startIcon = createMarkerIcon("#10B981");
-    const endIcon = createMarkerIcon("#EF4444");
-    const waypointIcon = createMarkerIcon("#F59E0B");
-
     const markers = [
-      <Marker
+      <MapMarkerComponent
         key={`${route.id}-start`}
-        position={[route.startLat, route.startLon]}
-        icon={startIcon}
-      >
-        <Popup>
-          <div>
-            <strong>Start</strong>
-            {route.startLabel && (
-              <>
-                <br />
-                <small>{route.startLabel}</small>
-              </>
-            )}
-            <br />
-            {route.distanceText} • {route.durationText}
-            <br />
-            <small>Mode: {route.profile.replace("-", " ")}</small>
-          </div>
-        </Popup>
-      </Marker>,
-      <Marker
+        marker={route.start}
+        isNew={false}
+        ref={ref as React.RefObject<L.Map | null>}
+        originalPositionRef={originalPositionRef}
+      />,
+      <MapMarkerComponent
         key={`${route.id}-end`}
-        position={[route.endLat, route.endLon]}
-        icon={endIcon}
-      >
-        <Popup>
-          <div>
-            <strong>Destination</strong>
-            {route.endLabel && (
-              <>
-                <br />
-                <small>{route.endLabel}</small>
-              </>
-            )}
-            <br />
-            {route.directions.length} turn
-            {route.directions.length !== 1 ? "s" : ""}
-          </div>
-        </Popup>
-      </Marker>,
+        marker={route.end}
+        isNew={false}
+        ref={ref as React.RefObject<L.Map | null>}
+        originalPositionRef={originalPositionRef}
+      />,
     ];
 
     // Add waypoint markers
     if (route.waypoints && route.waypoints.length > 0) {
       route.waypoints.forEach((waypoint, index) => {
         markers.push(
-          <Marker
+          <MapMarkerComponent
             key={`${route.id}-waypoint-${index}`}
-            position={[waypoint.lat, waypoint.lon]}
-            icon={waypointIcon}
-          >
-            <Popup>
-              <div>
-                <strong>Stop {index + 1}</strong>
-                {waypoint.label && (
-                  <>
-                    <br />
-                    <small>{waypoint.label}</small>
-                  </>
-                )}
-              </div>
-            </Popup>
-          </Marker>,
+            marker={{
+              ...waypoint,
+              id: `${route.id}-waypoint-${index}`,
+            }}
+            isNew={false}
+            ref={ref as React.RefObject<L.Map | null>}
+            originalPositionRef={originalPositionRef}
+          />,
         );
       });
     }
 
     return markers;
-  }, [route]);
+  }, [route, ref, originalPositionRef]);
+
+  useEffect(() => {
+    if (view.fitBounds) {
+      ref?.current?.flyToBounds(view.fitBounds);
+    }
+  }, [view.fitBounds, ref]);
 
   return (
     <MapContainer
-      center={[view.latitude, view.longitude]}
-      zoom={view.zoom}
+      center={
+        view.latitude !== undefined && view.longitude !== undefined
+          ? [view.latitude, view.longitude]
+          : undefined
+      }
+      zoom={view.zoom !== undefined ? view.zoom : undefined}
       scrollWheelZoom={true}
       style={{ height: "100%", width: "100%" }}
       ref={ref}

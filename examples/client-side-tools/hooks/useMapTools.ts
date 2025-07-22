@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import L from "leaflet";
+import type L from "leaflet";
 import { getMapState, updateMapState } from "@/lib/actions/map-state";
 
-// OSRM API interfaces
-interface OSRMManeuver {
+// Mapbox Directions API interfaces
+interface MapboxManeuver {
   instruction?: string;
   type?: string;
   bearing_before?: number;
@@ -11,35 +11,35 @@ interface OSRMManeuver {
   location?: [number, number];
 }
 
-interface OSRMStep {
+interface MapboxStep {
   distance?: number;
   duration?: number;
   geometry?: GeoJSON.LineString;
   name?: string;
-  maneuver?: OSRMManeuver;
+  maneuver?: MapboxManeuver;
   mode?: string;
   ref?: string;
 }
 
-interface OSRMLeg {
+interface MapboxLeg {
   distance?: number;
   duration?: number;
-  steps?: OSRMStep[];
+  steps?: MapboxStep[];
   summary?: string;
 }
 
-interface OSRMRoute {
+interface MapboxRoute {
   distance?: number;
   duration?: number;
   geometry?: GeoJSON.LineString;
-  legs?: OSRMLeg[];
+  legs?: MapboxLeg[];
   weight_name?: string;
   weight?: number;
 }
 
-interface OSRMResponse {
+interface MapboxDirectionsResponse {
   code: string;
-  routes?: OSRMRoute[];
+  routes?: MapboxRoute[];
   waypoints?: Array<{
     hint?: string;
     distance?: number;
@@ -92,11 +92,19 @@ const getManeuverType = (osrmType: string | undefined): number => {
   }
 };
 
-export interface MapView {
-  latitude: number;
-  longitude: number;
-  zoom: number;
-}
+export type MapView =
+  | {
+      latitude?: never;
+      longitude?: never;
+      zoom?: never;
+      fitBounds: L.LatLngBoundsExpression;
+    }
+  | {
+      latitude: number;
+      longitude: number;
+      zoom: number;
+      fitBounds?: never;
+    };
 
 export interface MapMarker {
   id: string;
@@ -108,21 +116,13 @@ export interface MapMarker {
   photoUrl?: string;
 }
 
-export interface Waypoint {
-  lat: number;
-  lon: number;
-  label?: string;
-}
+export type Waypoint = Omit<MapMarker, "id">;
 
 export interface RouteData {
   id: string;
   geometry: GeoJSON.LineString;
-  startLat: number;
-  startLon: number;
-  endLat: number;
-  endLon: number;
-  startLabel?: string;
-  endLabel?: string;
+  start: MapMarker;
+  end: MapMarker;
   waypoints?: Waypoint[];
   profile: string;
   directions: Array<{
@@ -209,7 +209,8 @@ export function useMapTools(userId: string | null, threadId: string | null) {
             latitude: data.latitude,
             longitude: data.longitude,
             zoom: data.zoom,
-          });
+            fitBounds: data.fitBounds,
+          } as MapView);
           setMarkers(data.markers ?? []);
           setRoute(data.route ?? null);
         }
@@ -360,49 +361,38 @@ export function useMapTools(userId: string | null, threadId: string | null) {
 
   const calculateAndShowRoute = useCallback(
     async (params: {
-      startLat: number;
-      startLon: number;
-      endLat: number;
-      endLon: number;
-      startLabel?: string;
-      endLabel?: string;
+      start: Omit<MapMarker, "id">;
+      end: Omit<MapMarker, "id">;
       waypoints?: Waypoint[];
-      profile?: "driving-car" | "foot-walking" | "cycling-regular";
+      profile?: "driving" | "walking" | "cycling";
     }) => {
-      const {
-        startLat,
-        startLon,
-        endLat,
-        endLon,
-        startLabel,
-        endLabel,
-        waypoints = [],
-        profile = "driving-car",
-      } = params;
+      const { start, end, waypoints = [], profile = "driving" } = params;
 
       try {
-        // Map profile to OSRM profile
-        let osrmProfile = "driving";
-        if (profile === "foot-walking") {
-          osrmProfile = "foot";
-        } else if (profile === "cycling-regular") {
-          osrmProfile = "cycling";
-        }
-
-        // Build coordinates string for OSRM API (start, waypoints, end)
-        let coordinates = `${startLon},${startLat}`;
+        // Build coordinates string for Mapbox API (start, waypoints, end)
+        let coordinates = `${start.longitude},${start.latitude}`;
 
         // Add waypoints if provided
         if (waypoints && waypoints.length > 0) {
           for (const waypoint of waypoints) {
-            coordinates += `;${waypoint.lon},${waypoint.lat}`;
+            coordinates += `;${waypoint.longitude},${waypoint.latitude}`;
           }
         }
 
-        coordinates += `;${endLon},${endLat}`;
+        coordinates += `;${end.longitude},${end.latitude}`;
 
-        // Call OSRM API for routing
-        const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordinates}?overview=full&geometries=geojson&steps=true`;
+        // Get Mapbox access token
+        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+        if (!mapboxToken) {
+          console.error("Mapbox access token not configured");
+          return {
+            success: false as const,
+            message: "Mapbox access token not configured",
+          };
+        }
+
+        // Call Mapbox Directions API for routing
+        const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?access_token=${mapboxToken}&overview=full&geometries=geojson&steps=true`;
 
         const response = await fetch(url, {
           headers: {
@@ -411,15 +401,17 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         });
 
         if (!response.ok) {
+          console.error("Error calculating route:", response.statusText);
           return {
             success: false as const,
             message: `Error calculating route: ${response.statusText}`,
           };
         }
 
-        const routeData: OSRMResponse = await response.json();
+        const routeData: MapboxDirectionsResponse = await response.json();
 
         if (!routeData.routes || routeData.routes.length === 0) {
+          console.error("No route found between the specified points");
           return {
             success: false as const,
             message: "No route found between the specified points",
@@ -431,8 +423,8 @@ export function useMapTools(userId: string | null, threadId: string | null) {
 
         // Extract turn-by-turn directions from steps
         const directions = legs.flatMap(
-          (leg: OSRMLeg) =>
-            leg.steps?.map((step: OSRMStep) => ({
+          (leg: MapboxLeg) =>
+            leg.steps?.map((step: MapboxStep) => ({
               instruction: step.maneuver?.instruction || "Continue",
               distance: step.distance || 0,
               duration: step.duration || 0,
@@ -447,15 +439,17 @@ export function useMapTools(userId: string | null, threadId: string | null) {
             type: "LineString",
             coordinates: [],
           },
-          startLat: startLat,
-          startLon: startLon,
-          endLat: endLat,
-          endLon: endLon,
-          startLabel: startLabel,
-          endLabel: endLabel,
-          waypoints: waypoints,
-          profile: params.profile ?? "driving-car",
-          directions: directions,
+          start: {
+            ...start,
+            id: `start-${Date.now()}`,
+          },
+          end: {
+            ...end,
+            id: `end-${Date.now()}`,
+          },
+          waypoints,
+          profile,
+          directions,
           distance: route.distance ?? 0,
           duration: route.duration ?? 0,
           distanceText: formatDistance(route.distance ?? 0),
@@ -477,18 +471,16 @@ export function useMapTools(userId: string | null, threadId: string | null) {
             const minLng = Math.min(...lngs);
             const maxLng = Math.max(...lngs);
 
-            const centerLat = (minLat + maxLat) / 2;
-            const centerLng = (minLng + maxLng) / 2;
-
             setCurrentView({
-              latitude: centerLat,
-              longitude: centerLng,
-              zoom: 13,
+              fitBounds: [
+                [minLat, minLng],
+                [maxLat, maxLng],
+              ] as const,
             });
           }
         }
 
-        return {
+        const result = {
           success: true as const,
           message: "Route calculated and displayed on map",
           route: {
@@ -503,6 +495,7 @@ export function useMapTools(userId: string | null, threadId: string | null) {
             directions: directions,
           },
         };
+        return result;
       } catch (error) {
         return {
           success: false as const,

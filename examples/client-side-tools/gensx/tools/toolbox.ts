@@ -69,9 +69,10 @@ export const toolbox = createToolBox({
     description: "Get the current view of the map",
     params: z.object({}),
     result: z.object({
-      latitude: z.number(),
-      longitude: z.number(),
-      zoom: z.number(),
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+      zoom: z.number().optional(),
+      fitBounds: z.array(z.array(z.number())).optional(),
     }),
   },
   listMarkers: {
@@ -127,39 +128,45 @@ export const toolbox = createToolBox({
     description:
       "Calculate a route with multiple stops and display it on the map with turn-by-turn directions. You must provide coordinates for start and end points. Optionally include waypoints between them and labels for better display.",
     params: z.object({
-      startLat: z.number().describe("Starting point latitude"),
-      startLon: z.number().describe("Starting point longitude"),
-      endLat: z.number().describe("Ending point latitude"),
-      endLon: z.number().describe("Ending point longitude"),
-      startLabel: z
-        .string()
-        .optional()
-        .describe(
-          "Optional label/address for the starting point (for display purposes)",
-        ),
-      endLabel: z
-        .string()
-        .optional()
-        .describe(
-          "Optional label/address for the ending point (for display purposes)",
-        ),
+      start: z.object({
+        latitude: z.number().describe("Starting point latitude"),
+        longitude: z.number().describe("Starting point longitude"),
+        title: z.string().optional().describe("Starting point title"),
+        description: z
+          .string()
+          .optional()
+          .describe("Starting point description"),
+        color: z.string().optional().describe("Starting point color"),
+        photoUrl: z.string().optional().describe("Starting point photo URL"),
+      }),
+      end: z.object({
+        latitude: z.number().describe("Ending point latitude"),
+        longitude: z.number().describe("Ending point longitude"),
+        title: z.string().optional().describe("Ending point title"),
+        description: z.string().optional().describe("Ending point description"),
+        color: z.string().optional().describe("Ending point color"),
+        photoUrl: z.string().optional().describe("Ending point photo URL"),
+      }),
       waypoints: z
         .array(
           z.object({
-            lat: z.number().describe("Waypoint latitude"),
-            lon: z.number().describe("Waypoint longitude"),
-            label: z
+            latitude: z.number().describe("Waypoint latitude"),
+            longitude: z.number().describe("Waypoint longitude"),
+            title: z.string().optional().describe("Title for the waypoint"),
+            description: z
               .string()
               .optional()
-              .describe("Optional label for the waypoint"),
+              .describe("Description for the waypoint"),
+            color: z.string().optional().describe("Waypoint color"),
+            photoUrl: z.string().optional().describe("Waypoint photo URL"),
           }),
         )
         .optional()
         .describe("Optional intermediate stops between start and end points"),
       profile: z
-        .enum(["driving-car", "foot-walking", "cycling-regular"])
+        .enum(["driving", "walking", "cycling"])
         .optional()
-        .default("driving-car")
+        .default("driving")
         .describe(
           "Transportation mode: driving-car, foot-walking, or cycling-regular",
         ),
