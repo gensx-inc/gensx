@@ -176,8 +176,6 @@ Use this tool when you need to find specific types of places, businesses, or ame
       types,
     } = params;
 
-    console.log("locationSearchTool", params);
-
     if (!query) {
       return "No search query provided";
     }
@@ -338,14 +336,12 @@ Use this tool when you need to find specific types of places, businesses, or ame
       }
     });
 
-    console.log("locationSearchTool data", data);
-
     if (typeof data === "string") {
+      console.error("Error searching locations", data);
       return data; // Return error message
     }
 
     const result = formatSearchResults(data);
-    console.log("locationSearchTool formatted result", result);
     return result;
   },
 });

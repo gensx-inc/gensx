@@ -10,6 +10,13 @@ import { generateText } from "ai";
 import { reverseGeocodeTool } from "./tools/reverse-geocode";
 import { createOpenAI } from "@ai-sdk/openai";
 import { locationSearchTool } from "./tools/location-search";
+import {
+  findBoundingBoxTool,
+  findClosestTool,
+  calculateDistanceTool,
+  isPointInBoundingBoxTool,
+  sortPointsByDistanceTool,
+} from "./tools/geometry";
 
 interface ChatAgentProps {
   prompt: string;
@@ -61,9 +68,6 @@ export const ChatAgent = gensx.Workflow(
           role: "system",
           content: `You are a helpful geographic assistant that can interact with an interactive map. You have access to several map tools:
 
-- webSearch: Search the web for general information, including images.
-- geocode: Geocode a location from an address or a query to a specific location, returned with latitude and longitude, as well as other useful information about the location
-- reverseGeocode: Reverse geocode a location from a specific latitude and longitude to an map object. This can be used to get the address or city, country, etc from a set of coordinates.
 - locationSearch: Location based search to be used for finding places, businesses, and points of interest with advanced filtering options:
   * Search within specific areas using bounding boxes
   * Search along routes between waypoints
@@ -71,6 +75,9 @@ export const ChatAgent = gensx.Workflow(
   * Proximity-based search around specific coordinates
   * Multi-language support
   * Country-specific searches
+- webSearch: Search the web for information, such as images, details, and other information about a location.
+- geocode: Geocode a location from an address or a query to a specific location, returned with latitude and longitude, as well as other useful information about the location
+- reverseGeocode: Reverse geocode a location from a specific latitude and longitude to an map object. This can be used to get the address or city, country, etc from a set of coordinates.
 - moveMap: Move the map to a specific location with latitude, longitude, and optional zoom level
 - placeMarkers: Place markers on the map with optional title, description, color, and photoUrl. Ensure that you move the map so the new markers are visible and include a photo and detailed description of the place.
 - removeMarker: Remove a specific marker by its ID
@@ -80,6 +87,13 @@ export const ChatAgent = gensx.Workflow(
 - getUserLocation: Get the user's current location (latitude, longitude)
 - calculateAndShowRoute: Calculate a route with multiple stops and display it on the map with turn-by-turn directions. Supports start/end coordinates with optional waypoints and labels.
 - clearDirections: Clear any displayed route from the map
+
+You also have access to the following geometry tools:
+- findBoundingBox: Find a bounding box around a center point with a given radius in meters
+- findClosest: Find the closest point to a given latitude and longitude
+- calculateDistance: Calculate the distance between two points
+- isPointInBoundingBox: Check if a point is within a bounding box
+- sortPointsByDistance: Sort points by distance from a given point
 
 When users ask about locations, places, or geographic questions:
 1. Use webSearch to find information about the places they're asking about
@@ -154,6 +168,11 @@ Always be proactive about using the map tools to enhance the user's experience. 
         geocode: geocodeTool,
         reverseGeocode: reverseGeocodeTool,
         locationSearch: locationSearchTool,
+        findBoundingBox: findBoundingBoxTool,
+        findClosest: findClosestTool,
+        calculateDistance: calculateDistanceTool,
+        isPointInBoundingBox: isPointInBoundingBoxTool,
+        sortPointsByDistance: sortPointsByDistanceTool,
         ...asToolSet(toolbox),
       };
 
