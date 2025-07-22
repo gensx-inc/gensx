@@ -24,10 +24,11 @@ function ChatPageContent() {
   const router = useRouter();
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const { viewports } = useKeyboardState();
+  const { viewports, isKeyboardOpen } = useKeyboardState();
   const [isMobile, setIsMobile] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [lastSeenMessageCount, setLastSeenMessageCount] = useState(0);
 
   // Show instructions on first visit
   useEffect(() => {
@@ -369,6 +370,17 @@ function ChatPageContent() {
     handleToolCall,
   );
 
+  // Mark messages as seen when chat history is opened
+  useEffect(() => {
+    if (showChatHistory) {
+      setLastSeenMessageCount(messages.length);
+    }
+  }, [showChatHistory, messages.length]);
+
+  // Calculate if there are unread messages
+  const hasUnreadMessages =
+    !showChatHistory && messages.length > lastSeenMessageCount;
+
   const Map = useMemo(
     () =>
       dynamic(() => import("@/components/Map"), {
@@ -387,12 +399,19 @@ function ChatPageContent() {
     setIsMobile(window.innerWidth < 768); // md breakpoint
   }, []);
 
-  // Update CSS custom property when viewport changes
+  // Update CSS custom properties when viewport changes
   useEffect(() => {
     if (viewports) {
       document.documentElement.style.setProperty(
         "--viewport-height",
         `${viewports.visualViewport.height}px`,
+      );
+      // Set keyboard height for CSS usage
+      const keyboardHeight =
+        viewports.viewport.height - viewports.visualViewport.height;
+      document.documentElement.style.setProperty(
+        "--keyboard-height",
+        `${Math.max(0, keyboardHeight)}px`,
       );
     }
   }, [viewports]);
@@ -423,14 +442,14 @@ function ChatPageContent() {
         router.push(`?thread=${currentThreadId}`);
       }
 
-      // Show chat history automatically after sending a message
-      if (!showChatHistory) {
+      // Show chat history automatically after sending a message (desktop only)
+      if (!showChatHistory && !isMobile) {
         setShowChatHistory(true);
       }
 
       await sendMessage(content.trim(), currentThreadId, userId);
     },
-    [threadId, userId, router, sendMessage, showChatHistory],
+    [threadId, userId, router, sendMessage, showChatHistory, isMobile],
   );
 
   const handleExampleClick = useCallback(
@@ -459,6 +478,7 @@ function ChatPageContent() {
         onHelpClick={handleShowInstructions}
         onChatToggle={handleToggleChatHistory}
         showChatHistory={showChatHistory}
+        hasUnreadMessages={hasUnreadMessages}
       />
 
       {/* Instructions Modal */}
@@ -484,7 +504,7 @@ function ChatPageContent() {
       ) : (
         <div className="relative w-full h-full">
           {/* Full-screen Map */}
-          <div className="absolute inset-0 w-full h-full">
+          <div className="absolute inset-0 w-full h-full md:top-0 top-[60px]">
             <Map
               ref={mapRef}
               markers={markers}
@@ -493,16 +513,21 @@ function ChatPageContent() {
             />
           </div>
 
-          {/* Floating Chat Bar - Glass Morphism */}
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[9999] w-full max-w-md px-4 pointer-events-none">
+          {/* Floating Chat Bar */}
+          <div
+            className={`fixed bottom-0 left-0 right-0 z-[9999] md:bottom-6 md:left-1/2 md:right-auto md:transform md:-translate-x-1/2 md:w-full md:max-w-md px-4 pb-safe-area keyboard-safe-input pointer-events-none transition-all duration-300 ${!isKeyboardOpen ? "mb-6 md:mb-0" : ""}`}
+          >
             <div className="relative rounded-2xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/25 border border-white/40 pointer-events-auto">
+              {/* Glass morphism effects for both desktop and mobile */}
               <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)]" />
+
               <div className="relative z-[2] p-2">
                 <ChatInput
                   onSendMessage={handleSendMessage}
                   disabled={status !== "completed"}
                   isCentered={false}
                   autoFocus={!isMobile}
+                  isKeyboardOpen={isKeyboardOpen}
                 />
               </div>
             </div>

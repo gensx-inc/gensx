@@ -253,10 +253,12 @@ export function CombinedFloatingPanel({
   };
 
   return (
-    <div className="fixed top-6 right-6 z-[9995] w-80 max-h-[calc(100vh-12rem)] flex flex-col">
-      {/* Glass morphism container */}
-      <div className="relative rounded-3xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/25 border border-white/40">
-        <div className="absolute inset-0 z-[1] overflow-hidden rounded-3xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)]" />
+    <>
+      {/* Desktop Layout */}
+      <div className="hidden md:block fixed top-6 right-6 z-[9995] w-80 max-h-[calc(100vh-12rem)]">
+        {/* Glass morphism container */}
+        <div className="relative rounded-3xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/25 border border-white/40">
+          <div className="absolute inset-0 z-[1] overflow-hidden rounded-3xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)]" />
 
         {/* Header */}
         <div className="relative z-[2] p-4 border-b border-white/20">
@@ -337,8 +339,189 @@ export function CombinedFloatingPanel({
             {activeTab === "chat" && renderChatTab()}
             {activeTab === "directions" && renderDirectionsTab()}
           </>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden fixed inset-x-0 top-[60px] bottom-[100px] z-[9995] mx-4">
+        {/* Mobile container with glass morphism */}
+        <div className="relative rounded-2xl shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/25 border border-white/40 h-full flex flex-col">
+          {/* Glass morphism effects */}
+          <div className="absolute inset-0 z-[1] rounded-2xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)] pointer-events-none" />
+          {/* Header */}
+          <div className="relative z-[2] p-4 border-b border-white/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                  {activeTab === "chat" ? (
+                    <MessageCircle className="w-4 h-4 text-white" />
+                  ) : (
+                    <Navigation className="w-4 h-4 text-white" />
+                  )}
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {activeTab === "chat" ? "Chat History" : "Directions"}
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    {activeTab === "chat"
+                      ? `${visibleMessages.length} messages`
+                      : route
+                        ? formatTransportMode(route.profile)
+                        : "No route"}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Only show chevron on desktop */}
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="hidden md:flex p-2.5 rounded-xl bg-white/20 hover:bg-white/30 active:scale-95 transition-all duration-200 min-h-[44px] min-w-[44px]"
+                >
+                  {isExpanded ? (
+                    <ChevronUp className="w-5 h-5 text-slate-700" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-slate-700" />
+                  )}
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-2.5 rounded-xl bg-white/20 hover:bg-white/30 active:scale-95 transition-all duration-200 min-h-[44px] min-w-[44px]"
+                >
+                  <X className="w-5 h-5 text-slate-700" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Tab Navigation */}
+          {!!route && (
+            <div className="relative z-[2] flex border-b border-white/20">
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={cn(
+                  "flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 min-h-[48px]",
+                  activeTab === "chat"
+                    ? "text-blue-600 bg-white/20 border-b-2 border-blue-600"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/10",
+                )}
+              >
+                Chat
+              </button>
+              <button
+                onClick={() => setActiveTab("directions")}
+                className={cn(
+                  "flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 min-h-[48px]",
+                  activeTab === "directions"
+                    ? "text-blue-600 bg-white/20 border-b-2 border-blue-600"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/10",
+                )}
+              >
+                Directions
+              </button>
+            </div>
+          )}
+
+          {/* Content - Mobile always shows, no expand/collapse */}
+          <div className="flex-1 overflow-hidden">
+            {activeTab === "chat" && (
+              <div className="h-full overflow-y-scroll touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {visibleMessages.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <div className="text-sm text-slate-600">
+                      No messages yet. Start a conversation!
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-4">
+                    {visibleMessages.map((message, index) => (
+                      <div key={index} className="space-y-2">
+                        <div
+                          className={cn(
+                            "rounded-2xl p-3 max-w-[90%] shadow-sm",
+                            message.role === "user"
+                              ? "bg-blue-500/20 border border-blue-300/30 ml-auto"
+                              : message.role === "system"
+                                ? "bg-slate-400/20 border border-slate-300/30"
+                                : message.role === "tool"
+                                  ? "bg-blue-400/20 border border-blue-300/30"
+                                  : "bg-slate-100/60 border border-slate-200/40",
+                          )}
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1">{renderMessageContent(message)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
+              </div>
+            )}
+            {activeTab === "directions" && (
+              <div className="h-full flex flex-col">
+                {!route ? (
+                  <div className="p-6 text-center">
+                    <div className="text-sm text-slate-600">
+                      No route available. Get directions first!
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Route Summary */}
+                    <div className="flex-shrink-0 p-4 border-b border-white/10 bg-white/10">
+                      <div className="flex justify-between items-center">
+                        <div className="text-lg font-bold text-slate-900">
+                          {route.distanceText}
+                        </div>
+                        <div className="text-lg font-bold text-blue-600">
+                          {route.durationText}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Directions List - Scrollable */}
+                    <div className="flex-1 overflow-y-scroll touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      {route.directions.map((direction, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-3 p-4 border-b border-white/10 last:border-b-0 hover:bg-white/10"
+                        >
+                          <div className="text-lg mt-1 flex-shrink-0">
+                            {getInstructionIcon(direction.type || 0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-slate-900 leading-relaxed">
+                              {direction.instruction}
+                            </p>
+                            {direction.name && (
+                              <p className="text-xs text-slate-600 mt-1">
+                                on {direction.name}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-slate-500">
+                                {formatDistance(direction.distance)}
+                              </span>
+                              {direction.duration > 0 && (
+                                <span className="text-xs text-slate-500">
+                                  • {Math.round(direction.duration / 60)}min
+                                </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+        </div>
+      </div>
+    </>
   );
 }

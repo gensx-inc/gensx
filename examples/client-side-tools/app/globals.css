@@ -264,6 +264,7 @@ html {
 /* Virtual keyboard support */
 :root {
   --viewport-height: 100vh;
+  --keyboard-height: 0px;
 }
 
 .viewport-height {
@@ -272,12 +273,41 @@ html {
 
 /* Input area that adjusts for keyboard */
 .keyboard-safe-input {
-  margin-bottom: env(keyboard-inset-height, 0);
+  /* Enhanced keyboard support for iOS */
+  padding-bottom: env(keyboard-inset-height, 0);
+  /* Ensure the input stays visible above virtual keyboard */
+  transform: translateY(calc(-1 * max(var(--keyboard-height), env(keyboard-inset-height, 0px))));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Better mobile viewport handling for iOS Safari */
+@supports (-webkit-touch-callout: none) {
+  .keyboard-safe-input {
+    /* iOS-specific keyboard handling */
+    margin-bottom: max(env(keyboard-inset-height, 0), env(safe-area-inset-bottom, 0));
+    padding-bottom: env(keyboard-inset-height, 0);
+  }
 }
 
 /* Safe area padding for mobile devices */
 .pt-safe {
   padding-top: env(safe-area-inset-top, 1rem);
+}
+
+.pt-safe-area {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.pb-safe-area {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.pr-safe-area {
+  padding-right: env(safe-area-inset-right, 0);
+}
+
+.pl-safe-area {
+  padding-left: env(safe-area-inset-left, 0);
 }
 
 /* Ensure map controls are visible */
