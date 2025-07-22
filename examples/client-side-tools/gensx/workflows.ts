@@ -3,12 +3,12 @@ import { Agent } from "./agent";
 import { CoreMessage } from "ai";
 import { webSearchTool } from "./tools/web-search";
 import { useBlob } from "@gensx/storage";
-import { anthropic } from "@ai-sdk/anthropic";
 import { asToolSet } from "@gensx/vercel-ai";
 import { toolbox } from "./tools/toolbox";
 import { geocodeTool } from "./tools/geocode";
 import { generateText } from "ai";
 import { reverseGeocodeTool } from "./tools/reverse-geocode";
+import { createOpenAI } from "@ai-sdk/openai";
 
 interface ChatAgentProps {
   prompt: string;
@@ -138,7 +138,12 @@ Always be proactive about using the map tools to enhance the user's experience. 
         ...asToolSet(toolbox),
       };
 
-      const model = anthropic("claude-3-5-sonnet-20240620");
+      const groqClient = createOpenAI({
+        apiKey: process.env.GROQ_API_KEY!,
+        baseURL: "https://api.groq.com/openai/v1",
+      });
+
+      const model = groqClient("moonshotai/kimi-k2-instruct");
       const result = await Agent({
         messages,
         tools,
@@ -176,7 +181,10 @@ const GenerateSummary = gensx.Component(
   async ({ userMessage }: { userMessage: string }): Promise<string> => {
     try {
       const result = await generateText({
-        model: anthropic("claude-3-haiku-20240307"),
+        model: createOpenAI({
+          apiKey: process.env.GROQ_API_KEY!,
+          baseURL: "https://api.groq.com/openai/v1",
+        })("moonshotai/kimi-k2-instruct"),
         prompt: `Please create a concise 3-5 word summary of this user question/request. Focus on the main topic or intent. Examples:
 - "Tell me about Paris" → Paris Information
 - "Find restaurants near me" → Local Restaurant Search

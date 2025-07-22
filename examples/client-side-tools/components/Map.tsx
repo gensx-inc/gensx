@@ -115,60 +115,76 @@ const sanitizeUrl = (url: string): string => {
   return "";
 };
 
-const createMarkerIcon = (color: string = "#3B82F6", photoUrl?: string) => {
+const createMarkerIcon = (
+  color: string = "#3B82F6",
+  photoUrl?: string,
+  isNew: boolean = false,
+  title?: string,
+) => {
   const sanitizedColor = sanitizeColor(color);
+  const animationClass = isNew ? " new-marker" : "";
+  const displayTitle = title ? escapeHtml(title) : "";
 
   if (photoUrl) {
     const sanitizedPhotoUrl = sanitizeUrl(photoUrl);
 
     // Don't create photo marker if URL is invalid
     if (!sanitizedPhotoUrl) {
-      // Fall back to regular marker
+      // Fall back to regular marker with label
       const svgIcon = `
-        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${sanitizedColor}" stroke="#ffffff" stroke-width="2"/>
-          <circle cx="16" cy="10" r="3" fill="#ffffff"/>
-        </svg>
+        <div class="marker-with-label">
+          <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${sanitizedColor}" stroke="#ffffff" stroke-width="2"/>
+            <circle cx="16" cy="10" r="3" fill="#ffffff"/>
+          </svg>
+          ${displayTitle ? `<div class="marker-label">${displayTitle}</div>` : ""}
+        </div>
       `;
 
       return L.divIcon({
         html: svgIcon,
-        className: "custom-marker",
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32],
+        className: `custom-marker${animationClass}`,
+        iconSize: [120, displayTitle ? 55 : 32],
+        iconAnchor: [60, displayTitle ? 55 : 32],
+        popupAnchor: [0, displayTitle ? -55 : -32],
       });
     }
 
     const photoIcon = `
-      <div class="photo-marker">
-        <img src="${escapeHtml(sanitizedPhotoUrl)}" alt="Marker photo" class="marker-photo" style="border-color: ${sanitizedColor};" />
-        <div class="photo-marker-pointer" style="border-top-color: ${sanitizedColor};"></div>
+      <div class="marker-with-label">
+        <div class="photo-marker">
+          <img src="${escapeHtml(sanitizedPhotoUrl)}" alt="Marker photo" class="marker-photo" style="border-color: ${sanitizedColor};" />
+          <div class="photo-marker-pointer" style="border-top-color: ${sanitizedColor};"></div>
+        </div>
+        ${displayTitle ? `<div class="marker-label photo-marker-label">${displayTitle}</div>` : ""}
       </div>
     `;
 
     return L.divIcon({
       html: photoIcon,
-      className: "custom-photo-marker",
-      iconSize: [80, 80],
-      iconAnchor: [40, 70],
-      popupAnchor: [0, -70],
+      className: `custom-photo-marker${animationClass}`,
+      iconSize: [120, displayTitle ? 95 : 80],
+      iconAnchor: [60, displayTitle ? 95 : 70],
+      popupAnchor: [0, displayTitle ? -95 : -70],
     });
   }
 
   const svgIcon = `
-    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${sanitizedColor}" stroke="#ffffff" stroke-width="2"/>
-      <circle cx="16" cy="10" r="3" fill="#ffffff"/>
-    </svg>
+    <div class="marker-with-label">
+      <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${sanitizedColor}" stroke="#ffffff" stroke-width="2"/>
+        <circle cx="16" cy="10" r="3" fill="#ffffff"/>
+      </svg>
+      ${displayTitle ? `<div class="marker-label">${displayTitle}</div>` : ""}
+    </div>
   `;
 
   return L.divIcon({
     html: svgIcon,
-    className: "custom-marker",
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
+    className: `custom-marker${animationClass}`,
+    iconSize: [120, displayTitle ? 55 : 32],
+    iconAnchor: [60, displayTitle ? 55 : 32],
+    popupAnchor: [0, displayTitle ? -55 : -32],
   });
 };
 
@@ -212,6 +228,8 @@ const Map = (MapProps: MapProps) => {
   const originalPositionRef = useRef<{ center: L.LatLng; zoom: number } | null>(
     null,
   );
+  const previousMarkersRef = useRef<Set<string>>(new Set());
+  const newMarkersRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!view || !view.latitude || !view.longitude) {
@@ -222,6 +240,33 @@ const Map = (MapProps: MapProps) => {
     }
   }, [view, ref]);
 
+  // Track newly added markers
+  useEffect(() => {
+    if (!markers) return;
+
+    const currentMarkerIds = new Set(markers.map((m) => m.id));
+    const previousMarkerIds = previousMarkersRef.current;
+
+    // Find new markers (those in current but not in previous)
+    const newMarkerIds = new Set<string>();
+    for (const id of currentMarkerIds) {
+      if (!previousMarkerIds.has(id)) {
+        newMarkerIds.add(id);
+      }
+    }
+
+    // Update refs
+    newMarkersRef.current = newMarkerIds;
+    previousMarkersRef.current = currentMarkerIds;
+
+    // Clear new marker animations after animation duration
+    if (newMarkerIds.size > 0) {
+      setTimeout(() => {
+        newMarkersRef.current.clear();
+      }, 1400); // Duration of both animations combined
+    }
+  }, [markers]);
+
   // Memoize markers with clustering to prevent flickering during streaming
   const memoizedMarkers = useMemo(() => {
     if (!markers) return [];
@@ -229,12 +274,19 @@ const Map = (MapProps: MapProps) => {
     return markers.map((item) => {
       // Render single marker
       const marker = item as MapMarker;
+      const isNew = newMarkersRef.current.has(marker.id);
+
       return (
         <Marker
           key={marker.id}
           position={[marker.latitude, marker.longitude]}
           draggable={false}
-          icon={createMarkerIcon(marker.color, marker.photoUrl)}
+          icon={createMarkerIcon(
+            marker.color,
+            marker.photoUrl,
+            isNew,
+            marker.title,
+          )}
           eventHandlers={{
             click: (e) => {
               if (ref?.current) {
@@ -383,7 +435,7 @@ const Map = (MapProps: MapProps) => {
     <MapContainer
       center={[view.latitude, view.longitude]}
       zoom={view.zoom}
-      scrollWheelZoom={false}
+      scrollWheelZoom={true}
       style={{ height: "100%", width: "100%" }}
       ref={ref}
     >

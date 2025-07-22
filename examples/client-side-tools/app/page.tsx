@@ -1,34 +1,69 @@
 "use client";
 
-import { useRef, useEffect, useState, useMemo } from "react";
-import { ChatMessage } from "@/components/ChatMessage";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { ChatInput } from "@/components/ChatInput";
-import { ChatHistory } from "@/components/ChatHistory";
 import { useChat } from "@/hooks/useChat";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Plus, Menu } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
 import { getUserId } from "@/lib/userId";
 import { useMapTools } from "@/hooks/useMapTools";
 import { useKeyboardState } from "@/hooks/useVisualViewport";
 import dynamic from "next/dynamic";
+<<<<<<< HEAD
 import { createToolImplementations, useEvents } from "@gensx/react";
 import { toolbox } from "@/gensx/tools/toolbox";
 import { getThreadSummary } from "@/lib/actions/chat-history";
 import { toast } from "sonner";
 import { DirectionsPanel } from "@/components/DirectionsPanel";
+||||||| parent of f5060307 (update)
+import { createToolImplementations, useEvents } from "@gensx/react";
+import { toolbox } from "@/gensx/tools/toolbox";
+import { getThreadSummary } from "@/lib/actions/chat-history";
+=======
+import { createToolImplementations } from "@gensx/react";
+import { ToastProvider, useToast } from "@/components/ui/toast";
+import { AppLogo } from "@/components/AppLogo";
+import { InstructionsModal } from "@/components/InstructionsModal";
+import { FloatingChatHistory } from "@/components/FloatingChatHistory";
+>>>>>>> f5060307 (update)
 
-export default function ChatPage() {
+function ChatPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [threadTitle, setThreadTitle] = useState<string | null>(null);
-  const { isKeyboardOpen, viewports } = useKeyboardState();
+  const { viewports } = useKeyboardState();
   const [isMobile, setIsMobile] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const { addToast } = useToast();
+
+  // Show instructions on first visit
+  useEffect(() => {
+    const hasSeenInstructions = localStorage.getItem(
+      "gensx-map-explorer-seen-instructions",
+    );
+    if (!hasSeenInstructions) {
+      setShowInstructions(true);
+      localStorage.setItem("gensx-map-explorer-seen-instructions", "true");
+    }
+  }, []);
+
+  const handleShowInstructions = useCallback(() => {
+    setShowInstructions(true);
+  }, []);
+
+  const handleCloseInstructions = useCallback(() => {
+    setShowInstructions(false);
+  }, []);
+
+  const handleToggleChatHistory = useCallback(() => {
+    setShowChatHistory(!showChatHistory);
+  }, [showChatHistory]);
+
+  const handleCloseChatHistory = useCallback(() => {
+    setShowChatHistory(false);
+  }, []);
+
   const {
     mapRef,
     currentView,
@@ -45,24 +80,54 @@ export default function ChatPage() {
   } = useMapTools(userId, currentThreadId);
 
   const toolImplementations = useMemo(() => {
-    return createToolImplementations<typeof toolbox>({
-      moveMap: (params) => {
+    return createToolImplementations({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      moveMap: (params: any) => {
         try {
           const { latitude, longitude, zoom } = params;
+<<<<<<< HEAD
           const result = moveMap(latitude, longitude, zoom);
           if (result.success !== false) {
             toast.info(
               `Moved map to ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (zoom: ${zoom})`,
             );
           }
+||||||| parent of f5060307 (update)
+          return moveMap(latitude, longitude, zoom);
+=======
+          addToast({
+            type: "info",
+            title: "Moving map",
+            description: `Moving to ${latitude}, ${longitude}`,
+            autoHide: false,
+          });
+          const result = moveMap(latitude, longitude, zoom);
+          addToast({
+            type: "success",
+            title: "Map moved",
+            description: `Successfully moved to location`,
+            autoHide: false,
+          });
+>>>>>>> f5060307 (update)
           return result;
         } catch (error) {
+<<<<<<< HEAD
           toast.error("Failed to move map");
+||||||| parent of f5060307 (update)
+=======
+          addToast({
+            type: "error",
+            title: "Failed to move map",
+            description: `Error: ${error}`,
+            autoHide: false,
+          });
+>>>>>>> f5060307 (update)
           return { success: false, message: `error: ${error}` };
         }
       },
       placeMarkers: (params) => {
         try {
+<<<<<<< HEAD
           const result = placeMarkers(params);
           if (result.success !== false && params.markers) {
             const markers = params.markers;
@@ -70,58 +135,162 @@ export default function ChatPage() {
               `Placed ${markers.length} marker${markers.length !== 1 ? "s" : ""} on the map`,
             );
           }
+||||||| parent of f5060307 (update)
+          return placeMarkers(params);
+=======
+          addToast({
+            type: "info",
+            title: "Placing markers",
+            description: `Adding ${params.markers?.length || 1} marker(s)`,
+            autoHide: false,
+          });
+          const result = placeMarkers(params);
+          addToast({
+            type: "success",
+            title: "Markers placed",
+            description: `Successfully added markers to map`,
+            autoHide: false,
+          });
+>>>>>>> f5060307 (update)
           return result;
         } catch (error) {
+<<<<<<< HEAD
           toast.error("Failed to place markers");
+||||||| parent of f5060307 (update)
+=======
+          addToast({
+            type: "error",
+            title: "Failed to place markers",
+            description: `Error: ${error}`,
+            autoHide: false,
+          });
+>>>>>>> f5060307 (update)
           return { success: false, message: `error: ${error}` };
         }
       },
       removeMarker: (params) => {
         try {
           const { markerId } = params;
+<<<<<<< HEAD
           const result = removeMarker(markerId);
           if (result.success !== false) {
             toast.info(`Removed marker: ${markerId}`);
           }
+||||||| parent of f5060307 (update)
+          return removeMarker(markerId);
+=======
+          addToast({
+            type: "info",
+            title: "Removing marker",
+            description: `Removing marker ${markerId}`,
+            autoHide: false,
+          });
+          const result = removeMarker(markerId);
+          addToast({
+            type: "success",
+            title: "Marker removed",
+            description: `Successfully removed marker`,
+            autoHide: false,
+          });
+>>>>>>> f5060307 (update)
           return result;
         } catch (error) {
+<<<<<<< HEAD
           toast.error("Failed to remove marker");
+||||||| parent of f5060307 (update)
+=======
+          addToast({
+            type: "error",
+            title: "Failed to remove marker",
+            description: `Error: ${error}`,
+            autoHide: false,
+          });
+>>>>>>> f5060307 (update)
           return { success: false, message: `error: ${error}` };
         }
       },
       clearMarkers: () => {
         try {
+<<<<<<< HEAD
           const result = clearMarkers();
           if (result.success !== false) {
             toast.info("Cleared all markers from the map");
           }
+||||||| parent of f5060307 (update)
+          return clearMarkers();
+=======
+          addToast({
+            type: "info",
+            title: "Clearing markers",
+            description: "Removing all markers from map",
+            autoHide: false,
+          });
+          const result = clearMarkers();
+          addToast({
+            type: "success",
+            title: "Markers cleared",
+            description: "Successfully removed all markers",
+            autoHide: false,
+          });
+>>>>>>> f5060307 (update)
           return result;
         } catch (error) {
+<<<<<<< HEAD
           toast.error("Failed to clear markers");
+||||||| parent of f5060307 (update)
+=======
+          addToast({
+            type: "error",
+            title: "Failed to clear markers",
+            description: `Error: ${error}`,
+            autoHide: false,
+          });
+>>>>>>> f5060307 (update)
           return { success: false, message: `error: ${error}` };
         }
       },
-      getCurrentView: async () => {
+      getCurrentView: () => {
         try {
-          const result = await getCurrentView();
-          toast.info("Retrieved current map view");
+          const result = getCurrentView();
+          addToast({
+            type: "success",
+            title: "Retrieved current view",
+            description: "Got current map position",
+            autoHide: false,
+          });
           return result;
         } catch (error) {
-          toast.error("Failed to get current view");
-          throw error;
+          addToast({
+            type: "error",
+            title: "Failed to get current view",
+            description: `Error: ${error}`,
+            autoHide: false,
+          });
+          return { latitude: 0, longitude: 0, zoom: 1 };
         }
       },
       listMarkers: () => {
         try {
           const result = listMarkers();
-          toast.info("Retrieved list of markers");
+          addToast({
+            type: "success",
+            title: "Listed markers",
+            description: `Found ${Array.isArray(result) ? result.length : 0} markers`,
+            autoHide: false,
+          });
           return result;
         } catch (error) {
-          toast.error("Failed to list markers");
+          addToast({
+            type: "error",
+            title: "Failed to list markers",
+            description: `Error: ${error}`,
+            autoHide: false,
+          });
           return { success: false, message: `error: ${error}` };
         }
       },
-      getUserLocation: async (params) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getUserLocation: async (params: any) => {
         try {
           const {
             enableHighAccuracy = false,
@@ -129,9 +298,21 @@ export default function ChatPage() {
             maximumAge = 60000,
           } = params;
 
+          addToast({
+            type: "info",
+            title: "Getting location",
+            description: "Requesting your current location...",
+            autoHide: false,
+          });
+
           return new Promise((resolve) => {
             if (!navigator.geolocation) {
-              toast.error("Geolocation not supported");
+              addToast({
+                type: "error",
+                title: "Location not supported",
+                description: "Geolocation is not supported by this browser",
+                autoHide: false,
+              });
               resolve({
                 success: false,
                 message: "Geolocation is not supported by this browser",
@@ -147,7 +328,12 @@ export default function ChatPage() {
 
             navigator.geolocation.getCurrentPosition(
               (position) => {
-                toast.success("Location retrieved successfully");
+                addToast({
+                  type: "success",
+                  title: "Location found",
+                  description: "Successfully retrieved your location",
+                  autoHide: false,
+                });
                 resolve({
                   success: true,
                   latitude: position.coords.latitude,
@@ -169,8 +355,13 @@ export default function ChatPage() {
                     errorMessage = "Location request timed out";
                     break;
                 }
+                addToast({
+                  type: "error",
+                  title: "Location failed",
+                  description: errorMessage,
+                  autoHide: false,
+                });
                 console.error("Error retrieving location", error);
-                toast.error(errorMessage);
                 resolve({
                   success: false,
                   message: errorMessage,
@@ -180,7 +371,12 @@ export default function ChatPage() {
             );
           });
         } catch (error) {
-          toast.error("Failed to get user location");
+          addToast({
+            type: "error",
+            title: "Location error",
+            description: `Error: ${error}`,
+            autoHide: false,
+          });
           return { success: false, message: `error: ${error}` };
         }
       },
@@ -208,16 +404,58 @@ export default function ChatPage() {
     listMarkers,
     calculateAndShowRoute,
     clearDirections,
+    addToast,
   ]);
-  const {
-    sendMessage,
-    messages,
-    status,
-    error,
-    clear,
-    loadHistory,
-    execution,
-  } = useChat(toolImplementations);
+
+  // Handle server-side tool calls and show toasts
+  const handleToolCall = useCallback(
+    (toolName: string, args: unknown) => {
+      switch (toolName) {
+        case "webSearch":
+          const searchArgs = args as { query: string; country?: string };
+          addToast({
+            type: "info",
+            title: "Searching web",
+            description: `Searching for: ${searchArgs.query}`,
+            autoHide: false,
+          });
+          break;
+        case "geocode":
+          const geocodeArgs = args as {
+            query?: string;
+            street?: string;
+            city?: string;
+          };
+          const location =
+            geocodeArgs.query ||
+            geocodeArgs.city ||
+            geocodeArgs.street ||
+            "location";
+          addToast({
+            type: "info",
+            title: "Geocoding location",
+            description: `Looking up: ${location}`,
+            autoHide: false,
+          });
+          break;
+        case "reverseGeocode":
+          const reverseArgs = args as { latitude: number; longitude: number };
+          addToast({
+            type: "info",
+            title: "Reverse geocoding",
+            description: `Looking up coordinates: ${reverseArgs.latitude}, ${reverseArgs.longitude}`,
+            autoHide: false,
+          });
+          break;
+      }
+    },
+    [addToast],
+  );
+
+  const { sendMessage, status, error, clear, messages } = useChat(
+    toolImplementations,
+    handleToolCall,
+  );
 
   const Map = useMemo(
     () =>
@@ -247,301 +485,115 @@ export default function ChatPage() {
     }
   }, [viewports]);
 
-  // Listen for summary-generated events
-  useEvents(execution, "summary-generated", (event: { summary: string }) => {
-    setThreadTitle(event.summary);
-  });
-
-  // Handle thread switching - clear messages and load new thread's history
+  // Handle thread switching
   useEffect(() => {
-    if (!userId) return; // Wait for userId to be initialized
+    if (!userId) return;
 
     if (threadId !== currentThreadId) {
-      const previousThreadId = currentThreadId;
       setCurrentThreadId(threadId);
-
-      if (threadId) {
-        // Load history if:
-        // 1. We're switching FROM an existing thread (previousThreadId !== null), OR
-        // 2. We're loading a thread on page refresh/initial load and have no messages
-        if (previousThreadId !== null || messages.length === 0) {
-          clear(); // Clear current messages first
-          loadHistory(threadId, userId);
-        }
-      } else {
-        // No thread selected, clear messages
+      if (!threadId) {
         clear();
-        setThreadTitle(null);
       }
     }
-  }, [threadId, currentThreadId, userId, clear, loadHistory, messages.length]);
-
-  // Auto-scroll to bottom when messages change or status changes (only if user is near bottom)
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      const messagesContainer =
-        messagesEndRef.current.closest(".overflow-y-auto");
-      if (messagesContainer) {
-        const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
-        const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
-
-        if (isNearBottom) {
-          // Use container's scrollTop instead of scrollIntoView to avoid page-level scrolling
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-      }
-    }
-  }, [messages, status]);
-
-  // Scroll to bottom when thread loads (after history is loaded)
-  useEffect(() => {
-    if (threadId && messages.length > 0) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        if (messagesEndRef.current) {
-          const messagesContainer =
-            messagesEndRef.current.closest(".overflow-y-auto");
-          if (messagesContainer) {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-          }
-        }
-      }, 100);
-    }
-  }, [threadId, messages.length]);
-
-  // Load thread title when thread changes
-  useEffect(() => {
-    if (!userId || !threadId) {
-      setThreadTitle(null);
-      return;
-    }
-
-    const loadThreadTitle = async () => {
-      try {
-        const title = await getThreadSummary(userId, threadId);
-        setThreadTitle(title);
-      } catch (error) {
-        console.error("Error loading thread title:", error);
-        setThreadTitle(null);
-      }
-    };
-
-    loadThreadTitle();
-  }, [userId, threadId]);
-
-  // New Chat: clear messages and remove thread ID from URL
-  const handleNewChat = () => {
-    clear();
-    clearMarkers();
-    router.push("?", { scroll: false });
-  };
-
-  // Toggle sidebar open/closed
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  }, [threadId, currentThreadId, userId, clear]);
 
   // Send message: create thread ID if needed, update URL, then send
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || !userId) return;
+  const handleSendMessage = useCallback(
+    async (content: string) => {
+      if (!content.trim() || !userId) return;
 
-    let currentThreadId = threadId;
-    if (!currentThreadId) {
-      currentThreadId = Date.now().toString();
-      router.push(`?thread=${currentThreadId}`);
+      let currentThreadId = threadId;
+      if (!currentThreadId) {
+        currentThreadId = Date.now().toString();
+        router.push(`?thread=${currentThreadId}`);
+      }
+
+      // Show chat history automatically after sending a message
+      if (!showChatHistory) {
+        setShowChatHistory(true);
+      }
+
+      await sendMessage(content.trim(), currentThreadId, userId);
+    },
+    [threadId, userId, router, sendMessage, showChatHistory],
+  );
+
+  // Show error toast when there's an error
+  useEffect(() => {
+    if (error) {
+      addToast({
+        type: "error",
+        title: "Request failed",
+        description: error,
+        autoHide: false,
+      });
     }
-    await sendMessage(content.trim(), currentThreadId, userId);
-  };
+  }, [error, addToast]);
 
   return (
-    <div className="flex viewport-height bg-gradient-to-br from-slate-50 to-white overflow-hidden">
+    <div className="flex viewport-height bg-slate-50 overflow-hidden">
+      {/* App Logo */}
+      <AppLogo
+        onHelpClick={handleShowInstructions}
+        onChatToggle={handleToggleChatHistory}
+        showChatHistory={showChatHistory}
+      />
+
+      {/* Instructions Modal */}
+      <InstructionsModal
+        isOpen={showInstructions}
+        onClose={handleCloseInstructions}
+      />
+
+      {/* Floating Chat History */}
+      <FloatingChatHistory
+        messages={messages}
+        isVisible={showChatHistory}
+        onClose={handleCloseChatHistory}
+      />
+
       {/* Show loading state until userId is initialized */}
       {!userId ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-slate-500">Loading...</div>
         </div>
       ) : (
-        <>
-          {/* Chat History Sidebar */}
-          <ChatHistory
-            isOpen={sidebarOpen}
-            onToggle={toggleSidebar}
-            collapsed={false}
-            onCollapseToggle={() => {}}
-            activeThreadId={threadId}
-            onNewChat={handleNewChat}
-            userId={userId}
-            isStreaming={status !== "completed"}
-          />
+        <div className="relative w-full h-full">
+          {/* Full-screen Map */}
+          <div className="absolute inset-0 w-full h-full">
+            <Map ref={mapRef} markers={markers} view={currentView} />
+          </div>
 
-          {/* Main Content Area */}
-          <div className="flex flex-col flex-1 min-h-0">
-            {/* Chat Header - Pinned to top */}
-            <div className="border-b border-slate-200/60 px-2 py-2 h-12 flex items-center gap-2 justify-between flex-shrink-0 sticky top-0 bg-white z-20">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={toggleSidebar}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
-                  title="Toggle sidebar"
-                >
-                  <Menu className="w-5 h-5 text-slate-600" />
-                </button>
-                <button
-                  onClick={handleNewChat}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
-                  title="New chat"
-                >
-                  <Plus className="w-5 h-5 text-slate-600" />
-                </button>
-                {threadTitle && (
-                  <div className="hidden sm:flex items-center gap-2 min-w-0 flex-1">
-                    <div className="h-6 border-l border-slate-300 flex-shrink-0" />
-                    <h1 className="text-sm font-medium text-slate-700 truncate min-w-0">
-                      {threadTitle}
-                    </h1>
-                  </div>
-                )}
-              </div>
-              {/* Right-aligned links */}
-              <div className="flex items-center gap-2 ml-auto mr-2 sm:mr-4 flex-shrink-0">
-                <Link
-                  href="https://github.com/gensx-inc/gensx"
-                  passHref
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-shrink-0"
-                >
-                  <Image
-                    src="/github-mark.svg"
-                    alt="GitHub"
-                    className="w-6 h-6 flex-shrink-0"
-                    width={24}
-                    height={24}
-                  />
-                </Link>
-                <div className="h-6 border-l border-slate-300 mx-1 sm:mx-2 flex-shrink-0" />
-                <Link
-                  href="https://gensx.com/docs"
-                  passHref
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-shrink-0"
-                >
-                  <Image
-                    src="/logo.svg"
-                    alt="Docs"
-                    width={87}
-                    height={35}
-                    className="flex-shrink-0"
-                  />
-                </Link>
-              </div>
-            </div>
+          {/* Full-screen Map */}
+          <div className="absolute inset-0 w-full h-full">
+            <Map ref={mapRef} markers={markers} view={currentView} route={route} />
+            <DirectionsPanel route={route} onClose={clearDirections} />
+          </div>
 
-            {/* Content Area with Map and Chat */}
-            <div className="flex flex-col md:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-hidden">
-              {/* Single Map Component - positioned responsively */}
-              <div
-                className={`
-                md:flex md:w-1/2 md:h-full md:border-r md:border-b-0
-                ${isKeyboardOpen ? "max-md:hidden" : "flex border-b max-md:h-[40%] max-md:min-h-[250px] max-md:max-h-[350px]"}
-                border-slate-200 flex-shrink-0 w-full
-              `}
-              >
-                <div className="w-full h-full relative">
-                  <Map
-                    ref={mapRef}
-                    markers={markers}
-                    view={currentView}
-                    route={route}
-                  />
-                  <DirectionsPanel route={route} onClose={clearDirections} />
-                </div>
-              </div>
-
-              {/* Mobile and Desktop Chat Section */}
-              <div className="flex flex-col flex-1 min-h-0 overflow-hidden max-w-full md:w-1/2">
-                {messages.length === 0 && !threadId ? (
-                  /* Empty state - Center the input in the entire remaining area */
-                  <div
-                    className={`flex-1 flex ${isKeyboardOpen ? "items-start pt-8" : "items-center"} justify-center px-2 sm:px-4`}
-                  >
-                    <div className="max-w-4xl mx-auto w-full">
-                      <ChatInput
-                        onSendMessage={handleSendMessage}
-                        disabled={status !== "completed"}
-                        isCentered={true}
-                        isKeyboardOpen={isKeyboardOpen}
-                        autoFocus={!isMobile}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  /* Messages exist - Separate scrollable chat and fixed input */
-                  <div className="flex flex-col h-full min-h-0">
-                    {/* Messages Container - Independent scrollable area */}
-                    <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-6 min-h-0">
-                      <div className="max-w-4xl mx-auto space-y-0 w-full">
-                        {/* Thread Title - Show only on mobile */}
-                        {threadTitle && (
-                          <div className="block sm:hidden mb-6">
-                            <h1 className="text-lg font-semibold text-slate-800 text-center">
-                              {threadTitle}
-                            </h1>
-                          </div>
-                        )}
-                        {messages.map((message, index) => (
-                          <ChatMessage
-                            key={`${threadId || "new"}-${index}`}
-                            message={message}
-                            messages={messages}
-                            status={
-                              index === messages.length - 1
-                                ? status
-                                : "completed"
-                            }
-                          />
-                        ))}
-
-                        {status === "waiting" &&
-                          !messages.some((m) => m.role === "assistant") && (
-                            <div className="flex justify-start px-2 py-2">
-                              <div className="text-slate-500 text-sm font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]">
-                                Working on it...
-                              </div>
-                            </div>
-                          )}
-
-                        {error && (
-                          <div className="flex justify-start">
-                            <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 shadow-sm max-w-xs">
-                              <p className="text-red-600 text-sm">{error}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        <div ref={messagesEndRef} />
-                      </div>
-                    </div>
-
-                    {/* Input Area - Fixed at bottom, never scrolls */}
-                    <div className="px-2 sm:px-4 pb-4 bg-gradient-to-t from-slate-50 to-transparent pt-2 flex-shrink-0 keyboard-safe-input">
-                      <div className="max-w-4xl mx-auto w-full">
-                        <ChatInput
-                          onSendMessage={handleSendMessage}
-                          disabled={status !== "completed"}
-                          isCentered={false}
-                          autoFocus={!isMobile}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+          {/* Floating Chat Bar - Glass Morphism */}
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[9999] w-full max-w-md px-4 pointer-events-none">
+            <div className="relative rounded-2xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/25 border border-white/40 pointer-events-auto">
+              <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)]" />
+              <div className="relative z-[2] p-2">
+                <ChatInput
+                  onSendMessage={handleSendMessage}
+                  disabled={status !== "completed"}
+                  isCentered={false}
+                  autoFocus={!isMobile}
+                />
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <ToastProvider>
+      <ChatPageContent />
+    </ToastProvider>
   );
 }

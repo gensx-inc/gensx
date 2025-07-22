@@ -88,6 +88,100 @@ html {
   border: none !important;
 }
 
+/* Marker animations */
+@keyframes markerBounce {
+  0% {
+    transform: scale(0) translateY(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.3) translateY(-10px);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(0.9) translateY(-3px);
+    opacity: 1;
+  }
+  85% {
+    transform: scale(1.1) translateY(-1px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes markerPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+.marker-bounce-in {
+  animation: markerBounce 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.marker-pulse {
+  animation: markerPulse 0.6s ease-out forwards;
+}
+
+.new-marker {
+  animation:
+    markerBounce 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
+    markerPulse 0.6s ease-out 0.4s forwards;
+}
+
+/* Marker with label styles */
+.marker-with-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120px;
+}
+
+.marker-label {
+  margin-top: 2px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1f2937;
+  text-align: center;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.photo-marker-label {
+  margin-top: 4px;
+}
+
+/* Ensure marker labels are readable at all zoom levels */
+.custom-marker .marker-label,
+.custom-photo-marker .marker-label {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  line-height: 1.2;
+  user-select: none;
+  pointer-events: none;
+}
+
 .photo-marker {
   position: relative;
   width: 80px;
