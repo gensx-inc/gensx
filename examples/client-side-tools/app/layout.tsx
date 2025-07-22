@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,8 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GenSX AI Map",
+  title: "GenSX Map Explorer",
   description: "GenSX Frontend Tool Calling Example",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -28,6 +33,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
       >
+        <Analytics />
         <Suspense
           fallback={
             <div className="flex h-screen items-center justify-center">
@@ -37,6 +43,7 @@ export default function RootLayout({
         >
           {children}
         </Suspense>
+        <Toaster />
       </body>
     </html>
   );

@@ -130,7 +130,7 @@ export function JsonDisplay({ data, label }: JsonDisplayProps) {
         </div>
       </div>
       <div className="relative bg-slate-100 rounded-md p-2 max-h-64 overflow-auto">
-        <pre className="text-xs text-slate-500 rounded-none p-0 overflow-x-auto font-mono leading-relaxed border-0 bg-transparent">
+        <pre className="text-xs text-slate-500 rounded-none p-0 overflow-x-hidden font-mono leading-relaxed border-0 bg-transparent whitespace-pre-wrap break-words">
           <code>{formattedData}</code>
         </pre>
       </div>

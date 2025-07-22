@@ -14,7 +14,6 @@ const limit = pRateLimit({
 });
 
 const schema = z.object({
-  amenity: z.string().optional().describe("name and/or type of POI"),
   street: z.string().optional().describe("housenumber and streetname"),
   city: z.string().optional().describe("city"),
   county: z.string().optional().describe("county"),
@@ -25,27 +24,17 @@ const schema = z.object({
 
 export const geocodeTool = tool({
   description:
-    "Geocode a location from an address to a specific latitude and longitude. Try to provide as much information as possible, but if you don't have all the information, you can still geocode the location.",
+    "Geocode a location from an address to a specific latitude and longitude.",
   parameters: schema,
   execute: async (params: z.infer<typeof schema>) => {
-    const { amenity, street, city, county, state, country, postalcode } =
-      params;
+    const { street, city, county, state, country, postalcode } = params;
 
-    if (
-      !amenity &&
-      !street &&
-      !city &&
-      !county &&
-      !state &&
-      !country &&
-      !postalcode
-    ) {
+    if (!street && !city && !county && !state && !country && !postalcode) {
       return "No parameters provided";
     }
 
     const hashParams = crypto
       .createHash("sha256")
-      .update(amenity ?? "")
       .update(street ?? "")
       .update(city ?? "")
       .update(county ?? "")
@@ -67,7 +56,6 @@ export const geocodeTool = tool({
     const data = await limit(async () => {
       try {
         const queryParams = new URLSearchParams();
-        if (amenity) queryParams.set("amenity", amenity);
         if (street) queryParams.set("street", street);
         if (city) queryParams.set("city", city);
         if (county) queryParams.set("county", county);

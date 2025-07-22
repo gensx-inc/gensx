@@ -1,0 +1,246 @@
+---
+title: Human-in-the-Loop
+description: Pause workflows and wait for human input
+---
+
+# Human-in-the-Loop
+
+Some decisions require a human. GenSX lets you pause a workflow mid-execution and wait for input—approval, edits, review, anything—before continuing. No polling, no weird state machines, no extra infra.
+
+## Basic usage
+
+Use `requestInput` when you need to pause execution and resume later with human input. It generates a callback URL and passes it to your trigger function. You decide how to collect the input—email, Slack, custom UI, whatever.
+
+```tsx
+import { requestInput } from "@gensx/core";
+
+const ApprovalWorkflow = gensx.Component(
+  "ApprovalWorkflow",
+  async ({ requestDetails }: { requestDetails: string }) => {
+    const userInput = await requestInput<{ approved: boolean; comment?: string }>(
+      async (callbackUrl) => {
+        // Your custom trigger logic here
+        console.log("Please provide input at:", callbackUrl);
+
+        // Example: Send to your approval system
+        await fetch("/api/approval-request", {
+          method: "POST",
+          body: JSON.stringify({ callbackUrl, requestDetails }),
+        });
+      }
+    );
+
+    if (userInput.approved) {
+      return `Approved! ${userInput.comment || ""}`;
+    } else {
+      return "Request was rejected";
+    }
+  }
+);
+```
+
+## Slack integration
+
+You can wire this into Slack with interactive buttons. Here's an example using `@slack/web-api`:
+
+```tsx
+import { requestInput } from "@gensx/core";
+import { WebClient } from "@slack/web-api";
+
+const slack = new WebClient(process.env.SLACK_TOKEN);
+
+const SlackApprovalWorkflow = gensx.Component(
+  "SlackApprovalWorkflow",
+  async ({ requestDetails }: { requestDetails: string }) => {
+    const decision = await requestInput<{ approved: boolean; reason?: string }>(
+      async (callbackUrl) => {
+        await slack.chat.postMessage({
+          channel: "#approvals",
+          text: `New approval request: ${requestDetails}`,
+          blocks: [
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: `*Approval Request*\n${requestDetails}`
+              }
+            },
+            {
+              type: "actions",
+              elements: [
+                {
+                  type: "button",
+                  text: { type: "plain_text", text: "Approve" },
+                  style: "primary",
+                  url: `${callbackUrl}?approved=true`
+                },
+                {
+                  type: "button",
+                  text: { type: "plain_text", text: "Reject" },
+                  style: "danger",
+                  url: `${callbackUrl}?approved=false`
+                }
+              ]
+            }
+          ]
+        });
+      }
+    );
+
+    return decision;
+  }
+);
+```
+
+## Web interface integration
+
+For apps with a UI, just store the callback and surface it wherever makes sense:
+
+```tsx
+import { requestInput } from "@gensx/core";
+
+const WebApprovalWorkflow = gensx.Component(
+  "WebApprovalWorkflow",
+  async ({ taskId }: { taskId: string }) => {
+    const approval = await requestInput<{ approved: boolean; notes: string }>(
+      async (callbackUrl) => {
+        // Store in database for web interface to display
+        await db.pendingApprovals.create({
+          data: {
+            taskId,
+            callbackUrl,
+            status: "pending",
+            createdAt: new Date(),
+          }
+        });
+
+        // Send notification
+        await sendNotification({
+          type: "approval_needed",
+          taskId,
+          message: `Task ${taskId} requires approval`
+        });
+      }
+    );
+
+    return approval;
+  }
+);
+```
+
+### Performing callback from your system
+
+Here’s what calling back into GenSX looks like from your API:
+
+```tsx
+// app/api/approval/[taskId]/route.ts
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { taskId: string } }
+) {
+  const { approved, notes } = await request.json();
+
+  // Get the stored callback URL
+  const approval = await db.pendingApprovals.findUnique({
+    where: { taskId: params.taskId }
+  });
+
+  if (!approval) {
+    return NextResponse.json({ error: "Approval not found" }, { status: 404 });
+  }
+
+  // Call the GenSX callback URL
+  const response = await fetch(approval.callbackUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ approved, notes })
+  });
+
+  if (response.ok) {
+    await db.pendingApprovals.update({
+      where: { taskId: params.taskId },
+      data: { status: "completed" }
+    });
+
+    return NextResponse.json({ success: true });
+  } else {
+    return NextResponse.json({ error: "Failed to submit approval" }, { status: 500 });
+  }
+}
+```
+
+## Error handling
+
+If your trigger fails (e.g. Slack down, webhook times out), you’re still in control:
+
+```tsx
+const RobustApprovalWorkflow = gensx.Component(
+  "RobustApprovalWorkflow",
+  async ({ request }: { request: string }) => {
+    try {
+      const result = await requestInput<{ approved: boolean }>(
+        async (callbackUrl) => {
+          // Handle errors in sending the approval request
+          try {
+            await sendApprovalRequest(callbackUrl, request);
+          } catch (error) {
+            console.error("Failed to send approval request:", error);
+            // You might want to store this for retry logic
+            throw error;
+          }
+        }
+      );
+
+      return result;
+    } catch (error) {
+      return { approved: false, error: "Failed to send approval request" };
+    }
+  }
+);
+```
+
+## Type safety
+
+Use Zod (or your favorite schema lib) to validate input:
+
+```tsx
+import { z } from "zod";
+
+const ApprovalInputSchema = z.object({
+  approved: z.boolean(),
+  comment: z.string().optional(),
+  approver: z.string(),
+  timestamp: z.date()
+});
+
+type ApprovalInput = z.infer<typeof ApprovalInputSchema>;
+
+const TypedApprovalWorkflow = gensx.Component(
+  "TypedApprovalWorkflow",
+  async () => {
+    const input = await requestInput<ApprovalInput>(
+      async (callbackUrl) => {
+        await sendTypedApprovalRequest(callbackUrl);
+      }
+    );
+
+    return `Approved by ${input.approver} at ${input.timestamp}`;
+  }
+);
+```
+
+## How it works
+
+Behind the scenes, `requestInput`:
+
+1. Generates a callback URL tied to the current execution node
+2. Passes it to your trigger function
+3. Pauses the workflow
+4. Resumes once the callback receives input
+
+The callback URL format is:
+```
+${process.env.GENSX_API_BASE_URL}/org/${process.env.GENSX_ORG}/workflowExecutions/${process.env.GENSX_EXECUTION_ID}/fulfill/${nodeId}
+```

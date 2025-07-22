@@ -10,12 +10,16 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
   isCentered?: boolean;
+  isKeyboardOpen?: boolean;
+  autoFocus?: boolean;
 }
 
 export function ChatInput({
   onSendMessage,
   disabled,
   isCentered,
+  isKeyboardOpen,
+  autoFocus = true,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -29,10 +33,10 @@ export function ChatInput({
   }, [message]);
 
   useEffect(() => {
-    if (!disabled) {
+    if (!disabled && autoFocus) {
       textareaRef.current?.focus();
     }
-  }, [disabled]);
+  }, [disabled, autoFocus]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,23 +55,31 @@ export function ChatInput({
 
   if (isCentered) {
     return (
-      <div className="w-full flex flex-col items-center -mt-36">
+      <div
+        className={`w-full flex flex-col items-center ${isKeyboardOpen ? "mt-0 pt-4" : "mt-8 pt-safe"}`}
+      >
         {/* Caption */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-2">
+        <div className={`text-center ${isKeyboardOpen ? "mb-4" : "mb-8"}`}>
+          <h1
+            className={`font-extrabold text-slate-900 mb-2 px-4 ${isKeyboardOpen ? "text-xl sm:text-2xl md:text-3xl" : "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"}`}
+          >
             Explore the World with GenSX
           </h1>
-          <h2 className="text-xl sm:text-2xl font-semibold text-slate-800 mt-4 mb-2">
-            Your AI-Powered Map Chat Demo
-          </h2>
-          <p className="text-slate-600 text-base sm:text-lg mt-2 max-w-md sm:max-w-2xl mx-auto">
-            See the power of GenSX in action—chat with the map, get instant
-            answers, and discover new places.
-          </p>
-          <p className="text-slate-500 text-sm sm:text-base mt-2 max-w-md sm:max-w-2xl mx-auto">
-            Ask about locations, directions, or landmarks. GenSX moves the map,
-            places markers, and helps you explore—all in real time.
-          </p>
+          {!isKeyboardOpen && (
+            <>
+              <h2 className="text-xl sm:text-2xl font-semibold text-slate-800 mt-4 mb-2">
+                Your AI-Powered Map Chat Demo
+              </h2>
+              <p className="text-slate-600 text-base sm:text-lg mt-2 max-w-md sm:max-w-2xl mx-auto">
+                See the power of GenSX in action—chat with the map, get instant
+                answers, and discover new places.
+              </p>
+              <p className="text-slate-500 text-sm sm:text-base mt-2 max-w-md sm:max-w-2xl mx-auto">
+                Ask about locations, directions, or landmarks. GenSX moves the
+                map, places markers, and helps you explore—all in real time.
+              </p>
+            </>
+          )}
         </div>
 
         {/* Centered Chat Input */}

@@ -36,6 +36,16 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for mobile */
+  /* Handle virtual keyboard */
+  padding-bottom: env(keyboard-inset-height, 0);
+}
+
+html {
+  overflow: hidden;
+  height: 100%;
 }
 
 @keyframes shimmer {
@@ -71,6 +81,109 @@ body {
 .custom-marker {
   background: transparent !important;
   border: none !important;
+}
+
+.custom-photo-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.photo-marker {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.marker-photo {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  top: 0;
+  left: 5px;
+}
+
+.photo-marker-pointer {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 12px solid white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.custom-cluster-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.marker-cluster {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.marker-cluster-inner {
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.marker-cluster-inner:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.marker-cluster-count {
+  color: white;
+  font-weight: bold;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.marker-cluster-pointer {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 12px solid white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Virtual keyboard support */
+:root {
+  --viewport-height: 100vh;
+}
+
+.viewport-height {
+  height: var(--viewport-height);
+}
+
+/* Input area that adjusts for keyboard */
+.keyboard-safe-input {
+  margin-bottom: env(keyboard-inset-height, 0);
+}
+
+/* Safe area padding for mobile devices */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 1rem);
 }
 
 /* Ensure map controls are visible */

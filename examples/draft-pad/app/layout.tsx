@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 
+import { Analytics } from "@vercel/analytics/next";
 import { Atma, Figtree, Meow_Script } from "next/font/google";
 
 const figtree = Figtree({
@@ -62,6 +63,7 @@ export default function RootLayout({
       <body
         className={`${figtree.variable} ${atma.variable} ${meow.variable} antialiased`}
       >
+        <Analytics />
         <div className="fixed inset-0 z-0">
           <DynamicBackground />
           <div className="absolute inset-0" />

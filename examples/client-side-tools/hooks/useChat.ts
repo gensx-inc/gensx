@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { useWorkflow, useObject } from "@gensx/react";
-import { JsonValue, ToolImplementations } from "@gensx/core";
+import { JsonValue, ToolImplementations, WorkflowMessage } from "@gensx/core";
 import { CoreMessage, TextPart, ToolCallPart } from "ai";
+import { getChatHistory } from "@/lib/actions/chat-history";
 
 // Workflow input/output types
 export interface ChatWorkflowInput {
@@ -31,6 +32,7 @@ interface UseChatReturn {
   error: string | null;
   clear: () => void;
   loadHistory: (threadId: string, userId: string) => Promise<void>;
+  execution: WorkflowMessage[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,12 +112,7 @@ export function useChat(tools?: ToolImplementations<any>): UseChatReturn {
     if (!threadId || !userId) return;
 
     try {
-      const response = await fetch(`/api/chats/${userId}/${threadId}`);
-      if (!response.ok) {
-        throw new Error("Failed to load conversation history");
-      }
-
-      const history: CoreMessage[] = await response.json();
+      const history = await getChatHistory(userId, threadId);
       setMessages(history);
     } catch (err) {
       console.error("Error loading conversation history:", err);
@@ -155,5 +152,6 @@ export function useChat(tools?: ToolImplementations<any>): UseChatReturn {
     error: workflowError,
     clear,
     loadHistory,
+    execution,
   };
 }

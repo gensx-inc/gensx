@@ -3,16 +3,21 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
+import { ChatHistory } from "@/components/ChatHistory";
 import { useChat } from "@/hooks/useChat";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Menu } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getUserId } from "@/lib/userId";
 import { useMapTools } from "@/hooks/useMapTools";
+import { useKeyboardState } from "@/hooks/useVisualViewport";
 import dynamic from "next/dynamic";
-import { createToolImplementations } from "@gensx/react";
-import { toolbox } from "@/gensx/tools/frontendTools";
+import { createToolImplementations, useEvents } from "@gensx/react";
+import { toolbox } from "@/gensx/tools/toolbox";
+import { getThreadSummary } from "@/lib/actions/chat-history";
+import { toast } from "sonner";
+import { DirectionsPanel } from "@/components/DirectionsPanel";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -20,16 +25,23 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [threadTitle, setThreadTitle] = useState<string | null>(null);
+  const { isKeyboardOpen, viewports } = useKeyboardState();
+  const [isMobile, setIsMobile] = useState(false);
   const {
     mapRef,
     currentView,
     markers,
+    route,
     removeMarker,
     clearMarkers,
     moveMap,
     placeMarkers,
     getCurrentView,
     listMarkers,
+    calculateAndShowRoute,
+    clearDirections,
   } = useMapTools(userId, currentThreadId);
 
   const toolImplementations = useMemo(() => {
@@ -37,40 +49,75 @@ export default function ChatPage() {
       moveMap: (params) => {
         try {
           const { latitude, longitude, zoom } = params;
-          return moveMap(latitude, longitude, zoom);
+          const result = moveMap(latitude, longitude, zoom);
+          if (result.success !== false) {
+            toast.info(
+              `Moved map to ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (zoom: ${zoom})`,
+            );
+          }
+          return result;
         } catch (error) {
+          toast.error("Failed to move map");
           return { success: false, message: `error: ${error}` };
         }
       },
       placeMarkers: (params) => {
         try {
-          return placeMarkers(params);
+          const result = placeMarkers(params);
+          if (result.success !== false && params.markers) {
+            const markers = params.markers;
+            toast.success(
+              `Placed ${markers.length} marker${markers.length !== 1 ? "s" : ""} on the map`,
+            );
+          }
+          return result;
         } catch (error) {
+          toast.error("Failed to place markers");
           return { success: false, message: `error: ${error}` };
         }
       },
       removeMarker: (params) => {
         try {
           const { markerId } = params;
-          return removeMarker(markerId);
+          const result = removeMarker(markerId);
+          if (result.success !== false) {
+            toast.info(`Removed marker: ${markerId}`);
+          }
+          return result;
         } catch (error) {
+          toast.error("Failed to remove marker");
           return { success: false, message: `error: ${error}` };
         }
       },
       clearMarkers: () => {
         try {
-          return clearMarkers();
+          const result = clearMarkers();
+          if (result.success !== false) {
+            toast.info("Cleared all markers from the map");
+          }
+          return result;
         } catch (error) {
+          toast.error("Failed to clear markers");
           return { success: false, message: `error: ${error}` };
         }
       },
       getCurrentView: async () => {
-        return getCurrentView();
+        try {
+          const result = await getCurrentView();
+          toast.info("Retrieved current map view");
+          return result;
+        } catch (error) {
+          toast.error("Failed to get current view");
+          throw error;
+        }
       },
       listMarkers: () => {
         try {
-          return listMarkers();
+          const result = listMarkers();
+          toast.info("Retrieved list of markers");
+          return result;
         } catch (error) {
+          toast.error("Failed to list markers");
           return { success: false, message: `error: ${error}` };
         }
       },
@@ -84,6 +131,7 @@ export default function ChatPage() {
 
           return new Promise((resolve) => {
             if (!navigator.geolocation) {
+              toast.error("Geolocation not supported");
               resolve({
                 success: false,
                 message: "Geolocation is not supported by this browser",
@@ -99,7 +147,7 @@ export default function ChatPage() {
 
             navigator.geolocation.getCurrentPosition(
               (position) => {
-                console.log("Location retrieved successfully", position);
+                toast.success("Location retrieved successfully");
                 resolve({
                   success: true,
                   latitude: position.coords.latitude,
@@ -122,6 +170,7 @@ export default function ChatPage() {
                     break;
                 }
                 console.error("Error retrieving location", error);
+                toast.error(errorMessage);
                 resolve({
                   success: false,
                   message: errorMessage,
@@ -130,6 +179,21 @@ export default function ChatPage() {
               options,
             );
           });
+        } catch (error) {
+          toast.error("Failed to get user location");
+          return { success: false, message: `error: ${error}` };
+        }
+      },
+      calculateAndShowRoute: async (params) => {
+        try {
+          return await calculateAndShowRoute(params);
+        } catch (error) {
+          return { success: false, message: `error: ${error}` };
+        }
+      },
+      clearDirections: () => {
+        try {
+          return clearDirections();
         } catch (error) {
           return { success: false, message: `error: ${error}` };
         }
@@ -142,9 +206,18 @@ export default function ChatPage() {
     clearMarkers,
     getCurrentView,
     listMarkers,
+    calculateAndShowRoute,
+    clearDirections,
   ]);
-  const { sendMessage, messages, status, error, clear, loadHistory } =
-    useChat(toolImplementations);
+  const {
+    sendMessage,
+    messages,
+    status,
+    error,
+    clear,
+    loadHistory,
+    execution,
+  } = useChat(toolImplementations);
 
   const Map = useMemo(
     () =>
@@ -158,10 +231,26 @@ export default function ChatPage() {
   // Get thread ID from URL
   const threadId = searchParams.get("thread");
 
-  // Initialize user ID on client side
+  // Initialize user ID and detect mobile on client side
   useEffect(() => {
     setUserId(getUserId());
+    setIsMobile(window.innerWidth < 768); // md breakpoint
   }, []);
+
+  // Update CSS custom property when viewport changes
+  useEffect(() => {
+    if (viewports) {
+      document.documentElement.style.setProperty(
+        "--viewport-height",
+        `${viewports.visualViewport.height}px`,
+      );
+    }
+  }, [viewports]);
+
+  // Listen for summary-generated events
+  useEvents(execution, "summary-generated", (event: { summary: string }) => {
+    setThreadTitle(event.summary);
+  });
 
   // Handle thread switching - clear messages and load new thread's history
   useEffect(() => {
@@ -182,15 +271,74 @@ export default function ChatPage() {
       } else {
         // No thread selected, clear messages
         clear();
+        setThreadTitle(null);
       }
     }
   }, [threadId, currentThreadId, userId, clear, loadHistory, messages.length]);
+
+  // Auto-scroll to bottom when messages change or status changes (only if user is near bottom)
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      const messagesContainer =
+        messagesEndRef.current.closest(".overflow-y-auto");
+      if (messagesContainer) {
+        const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
+        const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
+
+        if (isNearBottom) {
+          // Use container's scrollTop instead of scrollIntoView to avoid page-level scrolling
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      }
+    }
+  }, [messages, status]);
+
+  // Scroll to bottom when thread loads (after history is loaded)
+  useEffect(() => {
+    if (threadId && messages.length > 0) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          const messagesContainer =
+            messagesEndRef.current.closest(".overflow-y-auto");
+          if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+        }
+      }, 100);
+    }
+  }, [threadId, messages.length]);
+
+  // Load thread title when thread changes
+  useEffect(() => {
+    if (!userId || !threadId) {
+      setThreadTitle(null);
+      return;
+    }
+
+    const loadThreadTitle = async () => {
+      try {
+        const title = await getThreadSummary(userId, threadId);
+        setThreadTitle(title);
+      } catch (error) {
+        console.error("Error loading thread title:", error);
+        setThreadTitle(null);
+      }
+    };
+
+    loadThreadTitle();
+  }, [userId, threadId]);
 
   // New Chat: clear messages and remove thread ID from URL
   const handleNewChat = () => {
     clear();
     clearMarkers();
     router.push("?", { scroll: false });
+  };
+
+  // Toggle sidebar open/closed
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
   // Send message: create thread ID if needed, update URL, then send
@@ -206,7 +354,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-white">
+    <div className="flex viewport-height bg-gradient-to-br from-slate-50 to-white overflow-hidden">
       {/* Show loading state until userId is initialized */}
       {!userId ? (
         <div className="flex-1 flex items-center justify-center">
@@ -214,120 +362,182 @@ export default function ChatPage() {
         </div>
       ) : (
         <>
-          {/* Chat Header - now always at the top */}
-          <div className="border-b border-slate-200/60 px-2 py-2 h-12 flex items-center gap-2 justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleNewChat}
-                className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
-                title="New chat"
-              >
-                <Plus className="w-5 h-5 text-slate-600" />
-              </button>
-            </div>
-            {/* Right-aligned links */}
-            <div className="flex items-center gap-2 ml-auto mr-4">
-              <Link
-                href="https://github.com/gensx-inc/gensx"
-                passHref
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Image
-                  src="/github-mark.svg"
-                  alt="GitHub"
-                  className="w-6 h-6"
-                  width={24}
-                  height={24}
-                />
-              </Link>
-              <div className="h-6 border-l border-slate-300 mx-2" />
-              <Link
-                href="https://gensx.com/docs"
-                passHref
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Image src="/logo.svg" alt="Docs" width={87} height={35} />
-              </Link>
-            </div>
-          </div>
+          {/* Chat History Sidebar */}
+          <ChatHistory
+            isOpen={sidebarOpen}
+            onToggle={toggleSidebar}
+            collapsed={false}
+            onCollapseToggle={() => {}}
+            activeThreadId={threadId}
+            onNewChat={handleNewChat}
+            userId={userId}
+            isStreaming={status !== "completed"}
+          />
 
           {/* Main Content Area */}
-          <div
-            className={
-              // Responsive: stack vertically on mobile, side-by-side on desktop
-              `flex flex-col lg:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out`
-            }
-          >
-            {/* Map Section */}
-            <div className="w-full lg:w-1/2 min-h-[250px] lg:min-h-0 h-72 lg:h-auto border-b lg:border-b-0 lg:border-r border-slate-200 flex-shrink-0">
-              <Map ref={mapRef} markers={markers} view={currentView} />
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* Chat Header - Pinned to top */}
+            <div className="border-b border-slate-200/60 px-2 py-2 h-12 flex items-center gap-2 justify-between flex-shrink-0 sticky top-0 bg-white z-20">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleSidebar}
+                  className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
+                  title="Toggle sidebar"
+                >
+                  <Menu className="w-5 h-5 text-slate-600" />
+                </button>
+                <button
+                  onClick={handleNewChat}
+                  className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-md transition-colors"
+                  title="New chat"
+                >
+                  <Plus className="w-5 h-5 text-slate-600" />
+                </button>
+                {threadTitle && (
+                  <div className="hidden sm:flex items-center gap-2 min-w-0 flex-1">
+                    <div className="h-6 border-l border-slate-300 flex-shrink-0" />
+                    <h1 className="text-sm font-medium text-slate-700 truncate min-w-0">
+                      {threadTitle}
+                    </h1>
+                  </div>
+                )}
+              </div>
+              {/* Right-aligned links */}
+              <div className="flex items-center gap-2 ml-auto mr-2 sm:mr-4 flex-shrink-0">
+                <Link
+                  href="https://github.com/gensx-inc/gensx"
+                  passHref
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0"
+                >
+                  <Image
+                    src="/github-mark.svg"
+                    alt="GitHub"
+                    className="w-6 h-6 flex-shrink-0"
+                    width={24}
+                    height={24}
+                  />
+                </Link>
+                <div className="h-6 border-l border-slate-300 mx-1 sm:mx-2 flex-shrink-0" />
+                <Link
+                  href="https://gensx.com/docs"
+                  passHref
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0"
+                >
+                  <Image
+                    src="/logo.svg"
+                    alt="Docs"
+                    width={87}
+                    height={35}
+                    className="flex-shrink-0"
+                  />
+                </Link>
+              </div>
             </div>
 
-            {/* Chat Section */}
-            <div className="flex flex-col flex-1 w-full lg:w-1/2 min-h-0">
-              {messages.length === 0 && !threadId ? (
-                /* Empty state - Center the input in the entire remaining area */
-                <div className="flex-1 flex items-center justify-center px-4">
-                  <div className="max-w-4xl mx-auto w-full">
-                    <ChatInput
-                      onSendMessage={handleSendMessage}
-                      disabled={status !== "completed"}
-                      isCentered={true}
-                    />
-                  </div>
+            {/* Content Area with Map and Chat */}
+            <div className="flex flex-col md:flex-row flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-hidden">
+              {/* Single Map Component - positioned responsively */}
+              <div
+                className={`
+                md:flex md:w-1/2 md:h-full md:border-r md:border-b-0
+                ${isKeyboardOpen ? "max-md:hidden" : "flex border-b max-md:h-[40%] max-md:min-h-[250px] max-md:max-h-[350px]"}
+                border-slate-200 flex-shrink-0 w-full
+              `}
+              >
+                <div className="w-full h-full relative">
+                  <Map
+                    ref={mapRef}
+                    markers={markers}
+                    view={currentView}
+                    route={route}
+                  />
+                  <DirectionsPanel route={route} onClose={clearDirections} />
                 </div>
-              ) : (
-                /* Messages exist - Use normal layout with messages and bottom input */
-                <>
-                  {/* Messages Container */}
-                  <div className="flex-1 overflow-y-auto px-4 py-6 min-h-0">
-                    <div className="max-w-4xl mx-auto space-y-0">
-                      {messages.map((message, index) => (
-                        <ChatMessage
-                          key={`${threadId || "new"}-${index}`}
-                          message={message}
-                          messages={messages}
-                          status={
-                            index === messages.length - 1 ? status : "completed"
-                          }
-                        />
-                      ))}
+              </div>
 
-                      {status === "waiting" &&
-                        !messages.some((m) => m.role === "assistant") && (
-                          <div className="flex justify-start px-2 py-2">
-                            <div className="text-slate-500 text-sm font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]">
-                              Working on it...
+              {/* Mobile and Desktop Chat Section */}
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden max-w-full md:w-1/2">
+                {messages.length === 0 && !threadId ? (
+                  /* Empty state - Center the input in the entire remaining area */
+                  <div
+                    className={`flex-1 flex ${isKeyboardOpen ? "items-start pt-8" : "items-center"} justify-center px-2 sm:px-4`}
+                  >
+                    <div className="max-w-4xl mx-auto w-full">
+                      <ChatInput
+                        onSendMessage={handleSendMessage}
+                        disabled={status !== "completed"}
+                        isCentered={true}
+                        isKeyboardOpen={isKeyboardOpen}
+                        autoFocus={!isMobile}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* Messages exist - Separate scrollable chat and fixed input */
+                  <div className="flex flex-col h-full min-h-0">
+                    {/* Messages Container - Independent scrollable area */}
+                    <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-6 min-h-0">
+                      <div className="max-w-4xl mx-auto space-y-0 w-full">
+                        {/* Thread Title - Show only on mobile */}
+                        {threadTitle && (
+                          <div className="block sm:hidden mb-6">
+                            <h1 className="text-lg font-semibold text-slate-800 text-center">
+                              {threadTitle}
+                            </h1>
+                          </div>
+                        )}
+                        {messages.map((message, index) => (
+                          <ChatMessage
+                            key={`${threadId || "new"}-${index}`}
+                            message={message}
+                            messages={messages}
+                            status={
+                              index === messages.length - 1
+                                ? status
+                                : "completed"
+                            }
+                          />
+                        ))}
+
+                        {status === "waiting" &&
+                          !messages.some((m) => m.role === "assistant") && (
+                            <div className="flex justify-start px-2 py-2">
+                              <div className="text-slate-500 text-sm font-medium bg-gradient-to-r from-slate-500 via-slate-600 to-slate-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite]">
+                                Working on it...
+                              </div>
+                            </div>
+                          )}
+
+                        {error && (
+                          <div className="flex justify-start">
+                            <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 shadow-sm max-w-xs">
+                              <p className="text-red-600 text-sm">{error}</p>
                             </div>
                           </div>
                         )}
 
-                      {error && (
-                        <div className="flex justify-start">
-                          <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 shadow-sm max-w-xs">
-                            <p className="text-red-600 text-sm">{error}</p>
-                          </div>
-                        </div>
-                      )}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    </div>
 
-                      <div ref={messagesEndRef} />
+                    {/* Input Area - Fixed at bottom, never scrolls */}
+                    <div className="px-2 sm:px-4 pb-4 bg-gradient-to-t from-slate-50 to-transparent pt-2 flex-shrink-0 keyboard-safe-input">
+                      <div className="max-w-4xl mx-auto w-full">
+                        <ChatInput
+                          onSendMessage={handleSendMessage}
+                          disabled={status !== "completed"}
+                          isCentered={false}
+                          autoFocus={!isMobile}
+                        />
+                      </div>
                     </div>
                   </div>
-
-                  {/* Input Area */}
-                  <div className="px-4 pb-4">
-                    <div className="max-w-4xl mx-auto">
-                      <ChatInput
-                        onSendMessage={handleSendMessage}
-                        disabled={status !== "completed"}
-                        isCentered={false}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </>

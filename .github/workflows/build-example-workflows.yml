@@ -1,0 +1,82 @@
+name: Build GenSX Example Workflows
+
+on:
+  pull_request:
+    paths:
+      - "examples/client-side-tools/gensx/**"
+      - "examples/chat-ux/gensx/**"
+      - "examples/draft-pad/gensx/**"
+      - "examples/deep-research/gensx/**"
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.changes.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed examples
+        id: changes
+        run: |
+          # For pull requests, compare against the base branch
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          CURRENT_SHA="${{ github.sha }}"
+
+          echo "Comparing $BASE_SHA..$CURRENT_SHA"
+
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$CURRENT_SHA")
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Initialize matrix array
+          MATRIX='[]'
+
+          # Check each example directory
+          if echo "$CHANGED_FILES" | grep -q "examples/client-side-tools/gensx/"; then
+            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/client-side-tools"]')
+            echo "Detected changes in client-side-tools"
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "examples/chat-ux/gensx/"; then
+            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/chat-ux"]')
+            echo "Detected changes in chat-ux"
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "examples/draft-pad/gensx/"; then
+            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/draft-pad"]')
+            echo "Detected changes in draft-pad"
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "examples/deep-research/gensx/"; then
+            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/deep-research"]')
+            echo "Detected changes in deep-research"
+          fi
+
+          echo "Final matrix: $MATRIX"
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  build-workflows:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.matrix != '[]'
+    strategy:
+      matrix:
+        workflow: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node ⚙️
+        uses: ./.github/actions/setup-node
+        with:
+          version: 22.x
+
+      - name: Build Workflow
+        run: |
+          npx gensx@latest build ${{ matrix.workflow }}/gensx/workflows.ts
