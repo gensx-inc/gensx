@@ -365,7 +365,7 @@ function ChatPageContent() {
     }
   }, []);
 
-  const { sendMessage, status, error, clear, messages } = useChat(
+  const { sendMessage, status, error, clear, messages, loadHistory } = useChat(
     toolImplementations,
     handleToolCall,
   );
@@ -424,9 +424,12 @@ function ChatPageContent() {
       setCurrentThreadId(threadId);
       if (!threadId) {
         clear();
+      } else {
+        // Load chat history for existing thread
+        loadHistory(threadId, userId);
       }
     }
-  }, [threadId, currentThreadId, userId, clear]);
+  }, [threadId, currentThreadId, userId, clear, loadHistory]);
 
   // Send message: create thread ID if needed, update URL, then send
   const handleSendMessage = useCallback(
