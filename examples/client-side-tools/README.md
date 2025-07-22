@@ -13,7 +13,7 @@ This example demonstrates how to build an interactive chat application with fron
   - Remove individual markers or clear all markers
   - Search for locations by name
   - Get current map view information
-  - Calculate and display turn-by-turn directions between locations
+  - Calculate and display turn-by-turn directions with multiple stops
   - Clear displayed routes from the map
 - **Real-time Chat**: Powered by GenSX with Claude Sonnet 4
 - **Web Search Integration**: AI can search the web for current information
@@ -88,30 +88,24 @@ Get the current map view information.
 } // No parameters required
 ```
 
-### `showDirections`
+### `calculateAndShowRoute`
 
-Display a route on the map with turn-by-turn directions.
+Calculate a route with multiple stops and display it on the map with turn-by-turn directions. Supports start, end, and optional waypoints.
 
 ```typescript
 {
-  startLat: number,              // Starting point latitude
-  startLon: number,              // Starting point longitude
-  endLat: number,                // Ending point latitude
-  endLon: number,                // Ending point longitude
-  profile?: string,              // Transportation mode (driving-car, foot-walking, cycling-regular)
-  routeGeometry: object,         // GeoJSON LineString geometry for the route
-  directions: Array<{            // Turn-by-turn directions
-    instruction: string,
-    distance: number,
-    duration: number,
-    type?: number,
-    name?: string
+  startLat: number,                    // Starting point latitude
+  startLon: number,                    // Starting point longitude
+  endLat: number,                      // Ending point latitude
+  endLon: number,                      // Ending point longitude
+  startLabel?: string,                 // Optional label for the starting point (for display purposes)
+  endLabel?: string,                   // Optional label for the ending point (for display purposes)
+  waypoints?: Array<{                  // Optional intermediate stops between start and end points
+    lat: number,                       // Waypoint latitude
+    lon: number,                       // Waypoint longitude
+    label?: string                     // Optional label for the waypoint
   }>,
-  summary: {                     // Route summary information
-    distanceText: string,
-    durationText: string,
-    profile: string
-  }
+  profile?: string                     // Transportation mode (driving-car, foot-walking, cycling-regular)
 }
 ```
 
@@ -160,6 +154,7 @@ Try asking the AI questions like:
 - "Find restaurants near me and give me directions to the closest one"
 - "How do I get to the nearest hospital?"
 - "Show me directions to Central Park from my location"
+- "Plan a route from my hotel to the museum, then to the restaurant, and finally to the theater"
 
 The AI will automatically use the appropriate map tools to enhance your experience by showing locations, placing markers, and providing geographic context.
 
@@ -176,7 +171,7 @@ The AI will automatically use the appropriate map tools to enhance your experien
 
 - `Map.tsx`: Interactive map component with marker management
 - `useMapTools.ts`: Hook for map state and tool implementations
-- `frontendTools.ts`: Tool definitions with Zod schemas
+- `toolbox.ts`: Tool definitions with Zod schemas
 - `agent.ts`: AI agent with geographic focus system prompt
 - `workflows.ts`: GenSX workflow with map tools integration
 
@@ -184,7 +179,7 @@ The AI will automatically use the appropriate map tools to enhance your experien
 
 You can easily extend this example by:
 
-1. **Adding new map tools**: Define new tools in `frontendTools.ts`
+1. **Adding new map tools**: Define new tools in `toolbox.ts`
 2. **Customizing the map**: Modify the Map component to use different tile providers or add new map features
 3. **Enhancing the AI**: Update the system prompt in `agent.ts` to focus on different domains
 4. **Adding more data sources**: Integrate additional APIs for weather, traffic, or other geographic data
