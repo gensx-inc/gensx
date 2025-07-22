@@ -335,53 +335,49 @@ function ChatPageContent() {
     listMarkers,
     calculateAndShowRoute,
     clearDirections,
-    addToast,
   ]);
 
   // Handle server-side tool calls and show toasts
-  const handleToolCall = useCallback(
-    (toolName: string, args: unknown) => {
-      switch (toolName) {
-        case "webSearch":
-          const searchArgs = args as { query: string; country?: string };
-          addToast({
-            type: "info",
-            title: "Searching web",
-            description: `Searching for: ${searchArgs.query}`,
-            autoHide: false,
-          });
-          break;
-        case "geocode":
-          const geocodeArgs = args as {
-            query?: string;
-            street?: string;
-            city?: string;
-          };
-          const location =
-            geocodeArgs.query ||
-            geocodeArgs.city ||
-            geocodeArgs.street ||
-            "location";
-          addToast({
-            type: "info",
-            title: "Geocoding location",
-            description: `Looking up: ${location}`,
-            autoHide: false,
-          });
-          break;
-        case "reverseGeocode":
-          const reverseArgs = args as { latitude: number; longitude: number };
-          addToast({
-            type: "info",
-            title: "Reverse geocoding",
-            description: `Looking up coordinates: ${reverseArgs.latitude}, ${reverseArgs.longitude}`,
-            autoHide: false,
-          });
-          break;
-      }
-    },
-    [addToast],
-  );
+  const handleToolCall = useCallback((toolName: string, args: unknown) => {
+    switch (toolName) {
+      case "webSearch":
+        const searchArgs = args as { query: string; country?: string };
+        addToast({
+          type: "info",
+          title: "Searching web",
+          description: `Searching for: ${searchArgs.query}`,
+          autoHide: false,
+        });
+        break;
+      case "geocode":
+        const geocodeArgs = args as {
+          query?: string;
+          street?: string;
+          city?: string;
+        };
+        const location =
+          geocodeArgs.query ||
+          geocodeArgs.city ||
+          geocodeArgs.street ||
+          "location";
+        addToast({
+          type: "info",
+          title: "Geocoding location",
+          description: `Looking up: ${location}`,
+          autoHide: false,
+        });
+        break;
+      case "reverseGeocode":
+        const reverseArgs = args as { latitude: number; longitude: number };
+        addToast({
+          type: "info",
+          title: "Reverse geocoding",
+          description: `Looking up coordinates: ${reverseArgs.latitude}, ${reverseArgs.longitude}`,
+          autoHide: false,
+        });
+        break;
+    }
+  }, []);
 
   const { sendMessage, status, error, clear, messages } = useChat(
     toolImplementations,
