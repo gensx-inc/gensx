@@ -8,23 +8,16 @@ import { getUserId } from "@/lib/userId";
 import { useMapTools } from "@/hooks/useMapTools";
 import { useKeyboardState } from "@/hooks/useVisualViewport";
 import dynamic from "next/dynamic";
-<<<<<<< HEAD
-import { createToolImplementations, useEvents } from "@gensx/react";
-import { toolbox } from "@/gensx/tools/toolbox";
-import { getThreadSummary } from "@/lib/actions/chat-history";
-import { toast } from "sonner";
-import { DirectionsPanel } from "@/components/DirectionsPanel";
-||||||| parent of f5060307 (update)
-import { createToolImplementations, useEvents } from "@gensx/react";
-import { toolbox } from "@/gensx/tools/toolbox";
-import { getThreadSummary } from "@/lib/actions/chat-history";
-=======
 import { createToolImplementations } from "@gensx/react";
-import { ToastProvider, useToast } from "@/components/ui/toast";
 import { AppLogo } from "@/components/AppLogo";
 import { InstructionsModal } from "@/components/InstructionsModal";
 import { FloatingChatHistory } from "@/components/FloatingChatHistory";
->>>>>>> f5060307 (update)
+import { DirectionsPanel } from "@/components/DirectionsPanel";
+import {
+  addToast,
+  clearAllToasts,
+  ToastContainer,
+} from "@/components/ui/toast";
 
 function ChatPageContent() {
   const searchParams = useSearchParams();
@@ -35,7 +28,6 @@ function ChatPageContent() {
   const [isMobile, setIsMobile] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
-  const { addToast } = useToast();
 
   // Show instructions on first visit
   useEffect(() => {
@@ -500,6 +492,9 @@ function ChatPageContent() {
   // Send message: create thread ID if needed, update URL, then send
   const handleSendMessage = useCallback(
     async (content: string) => {
+      // Clear previous toasts when sending a new message
+      clearAllToasts();
+
       if (!content.trim() || !userId) return;
 
       let currentThreadId = threadId;
@@ -586,14 +581,11 @@ function ChatPageContent() {
           </div>
         </div>
       )}
+      <ToastContainer />
     </div>
   );
 }
 
 export default function ChatPage() {
-  return (
-    <ToastProvider>
-      <ChatPageContent />
-    </ToastProvider>
-  );
+  return <ChatPageContent />;
 }

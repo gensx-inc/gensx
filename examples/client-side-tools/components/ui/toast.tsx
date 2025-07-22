@@ -1,120 +1,35 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  ReactNode,
-} from "react";
-import { X, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Toaster, toast } from "sonner";
+import { CheckCircle, AlertCircle, Info, X } from "lucide-react";
+import { useState } from "react";
 
-export interface Toast {
-  id: string;
-  type: "info" | "success" | "warning" | "error";
+export type ToastType = "success" | "error" | "info";
+
+export interface ToastData {
+  type: ToastType;
   title: string;
   description?: string;
-  duration?: number;
   autoHide?: boolean;
 }
 
-interface ToastContextType {
-  toasts: Toast[];
-  addToast: (toast: Omit<Toast, "id">) => string;
-  removeToast: (id: string) => void;
-  updateToast: (id: string, updates: Partial<Toast>) => void;
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
-
-export function useToast() {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
-  return context;
-}
-
-let toastCounter = 0;
-
-export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
-
-  const addToast = useCallback((toast: Omit<Toast, "id">) => {
-    const id = `toast-${Date.now()}-${++toastCounter}`;
-    const newToast: Toast = {
-      id,
-      autoHide: true,
-      duration: 4000,
-      ...toast,
-    };
-
-    setToasts((prev) => [...prev, newToast]);
-
-    if (newToast.autoHide && newToast.duration) {
-      setTimeout(() => {
-        removeToast(id);
-      }, newToast.duration);
-    }
-
-    return id;
-  }, []);
-
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  }, []);
-
-  const updateToast = useCallback((id: string, updates: Partial<Toast>) => {
-    setToasts((prev) =>
-      prev.map((toast) => (toast.id === id ? { ...toast, ...updates } : toast)),
-    );
-  }, []);
-
-  return (
-    <ToastContext.Provider
-      value={{ toasts, addToast, removeToast, updateToast }}
-    >
-      {children}
-      <ToastContainer />
-    </ToastContext.Provider>
-  );
-}
-
-function ToastContainer() {
-  const { toasts, removeToast } = useToast();
-
-  if (toasts.length === 0) return null;
-
-  return (
-    <div className="fixed bottom-2 right-6 z-[9997] space-y-2 w-full max-w-sm">
-      {toasts.map((toast) => (
-        <ToastComponent
-          key={toast.id}
-          toast={toast}
-          onClose={() => removeToast(toast.id)}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ToastComponent({
-  toast,
+// Custom toast component with glass morphism styling
+function CustomToast({
+  type,
+  title,
+  description,
   onClose,
-}: {
-  toast: Toast;
-  onClose: () => void;
-}) {
+}: ToastData & { onClose: () => void }) {
   const getIcon = () => {
-    switch (toast.type) {
+    switch (type) {
       case "success":
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
       case "error":
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
-      case "warning":
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+        return <AlertCircle className="w-5 h-5 text-red-600" />;
+      case "info":
+        return <Info className="w-5 h-5 text-blue-600" />;
       default:
-        return <Clock className="w-5 h-5 text-blue-500" />;
+        return <Info className="w-5 h-5 text-blue-600" />;
     }
   };
 
@@ -125,13 +40,9 @@ function ToastComponent({
         <div className="flex items-start gap-3">
           {getIcon()}
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-slate-900">
-              {toast.title}
-            </div>
-            {toast.description && (
-              <div className="text-sm text-slate-600 mt-1">
-                {toast.description}
-              </div>
+            <div className="text-sm font-medium text-slate-900">{title}</div>
+            {description && (
+              <div className="text-sm text-slate-600 mt-1">{description}</div>
             )}
           </div>
           <button
@@ -142,6 +53,52 @@ function ToastComponent({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Toast functions
+export const addToast = (data: ToastData) => {
+  const toastId = toast.custom(
+    (t) => <CustomToast {...data} onClose={() => toast.dismiss(t)} />,
+    {
+      duration: data.autoHide === false ? Infinity : 4000,
+    },
+  );
+  return toastId;
+};
+
+// Clear all toasts
+export const clearAllToasts = () => {
+  toast.dismiss();
+};
+
+// Toaster component with hover-to-expand functionality
+export function ToastContainer() {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      className="fixed bottom-2 right-6 z-[9997]"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Toaster
+        position="bottom-right"
+        offset="0px" // We're handling positioning with the wrapper div
+        visibleToasts={isHovered ? 15 : 3} // Show 3 normally, 15 on hover
+        toastOptions={{
+          unstyled: true,
+          classNames: {
+            toast: "w-80",
+          },
+        }}
+        style={{
+          position: "relative",
+          bottom: "auto",
+          right: "auto",
+        }}
+      />
     </div>
   );
 }
