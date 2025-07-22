@@ -29,6 +29,7 @@ export class ExecutionContext {
       onRequestInput,
       onRestoreCheckpoint,
       checkpoint,
+      executionScope,
     }: {
       messageListener?: WorkflowMessageListener;
       onRequestInput?: (inputRequest: InputRequest) => Promise<void>;
@@ -37,6 +38,7 @@ export class ExecutionContext {
         feedback: unknown,
       ) => Promise<void>;
       checkpoint?: ExecutionNode;
+      executionScope?: Record<string, any>;
     } = {},
   ) {
     this.context[WORKFLOW_CONTEXT_SYMBOL] ??= createWorkflowContext({
@@ -49,6 +51,7 @@ export class ExecutionContext {
         onRestoreCheckpoint ??
         this.parent?.getWorkflowContext().onRestoreCheckpoint,
       checkpoint,
+      executionScope: executionScope ?? this.parent?.getWorkflowContext().executionScope ?? {},
     });
   }
 
