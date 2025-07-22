@@ -95,6 +95,7 @@ export const Agent = gensx.Component(
       tools,
       providerOptions,
       toolCallStreaming: true,
+      temperature: 0,
       experimental_transform: smoothStream(),
       onChunk: ({ chunk: streamChunk }) => {
         const chunk = streamChunk as typeof streamChunk | ToolResultPart;

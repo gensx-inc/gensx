@@ -33,6 +33,12 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
     try {
       setState((prev) => ({ ...prev, error: null, transcription: null }));
 
+      // Check if MediaDevices API is available
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        console.error("MediaDevices API is not supported in this environment");
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
