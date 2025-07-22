@@ -77,16 +77,6 @@ function ChatPageContent() {
       moveMap: (params: any) => {
         try {
           const { latitude, longitude, zoom } = params;
-<<<<<<< HEAD
-          const result = moveMap(latitude, longitude, zoom);
-          if (result.success !== false) {
-            toast.info(
-              `Moved map to ${latitude.toFixed(4)}, ${longitude.toFixed(4)} (zoom: ${zoom})`,
-            );
-          }
-||||||| parent of f5060307 (update)
-          return moveMap(latitude, longitude, zoom);
-=======
           addToast({
             type: "info",
             title: "Moving map",
@@ -100,36 +90,19 @@ function ChatPageContent() {
             description: `Successfully moved to location`,
             autoHide: false,
           });
->>>>>>> f5060307 (update)
           return result;
         } catch (error) {
-<<<<<<< HEAD
-          toast.error("Failed to move map");
-||||||| parent of f5060307 (update)
-=======
           addToast({
             type: "error",
             title: "Failed to move map",
             description: `Error: ${error}`,
             autoHide: false,
           });
->>>>>>> f5060307 (update)
           return { success: false, message: `error: ${error}` };
         }
       },
       placeMarkers: (params) => {
         try {
-<<<<<<< HEAD
-          const result = placeMarkers(params);
-          if (result.success !== false && params.markers) {
-            const markers = params.markers;
-            toast.success(
-              `Placed ${markers.length} marker${markers.length !== 1 ? "s" : ""} on the map`,
-            );
-          }
-||||||| parent of f5060307 (update)
-          return placeMarkers(params);
-=======
           addToast({
             type: "info",
             title: "Placing markers",
@@ -143,34 +116,20 @@ function ChatPageContent() {
             description: `Successfully added markers to map`,
             autoHide: false,
           });
->>>>>>> f5060307 (update)
           return result;
         } catch (error) {
-<<<<<<< HEAD
-          toast.error("Failed to place markers");
-||||||| parent of f5060307 (update)
-=======
           addToast({
             type: "error",
             title: "Failed to place markers",
             description: `Error: ${error}`,
             autoHide: false,
           });
->>>>>>> f5060307 (update)
           return { success: false, message: `error: ${error}` };
         }
       },
       removeMarker: (params) => {
         try {
           const { markerId } = params;
-<<<<<<< HEAD
-          const result = removeMarker(markerId);
-          if (result.success !== false) {
-            toast.info(`Removed marker: ${markerId}`);
-          }
-||||||| parent of f5060307 (update)
-          return removeMarker(markerId);
-=======
           addToast({
             type: "info",
             title: "Removing marker",
@@ -184,33 +143,19 @@ function ChatPageContent() {
             description: `Successfully removed marker`,
             autoHide: false,
           });
->>>>>>> f5060307 (update)
           return result;
         } catch (error) {
-<<<<<<< HEAD
-          toast.error("Failed to remove marker");
-||||||| parent of f5060307 (update)
-=======
           addToast({
             type: "error",
             title: "Failed to remove marker",
             description: `Error: ${error}`,
             autoHide: false,
           });
->>>>>>> f5060307 (update)
           return { success: false, message: `error: ${error}` };
         }
       },
       clearMarkers: () => {
         try {
-<<<<<<< HEAD
-          const result = clearMarkers();
-          if (result.success !== false) {
-            toast.info("Cleared all markers from the map");
-          }
-||||||| parent of f5060307 (update)
-          return clearMarkers();
-=======
           addToast({
             type: "info",
             title: "Clearing markers",
@@ -224,20 +169,14 @@ function ChatPageContent() {
             description: "Successfully removed all markers",
             autoHide: false,
           });
->>>>>>> f5060307 (update)
           return result;
         } catch (error) {
-<<<<<<< HEAD
-          toast.error("Failed to clear markers");
-||||||| parent of f5060307 (update)
-=======
           addToast({
             type: "error",
             title: "Failed to clear markers",
             description: `Error: ${error}`,
             autoHide: false,
           });
->>>>>>> f5060307 (update)
           return { success: false, message: `error: ${error}` };
         }
       },
@@ -513,6 +452,14 @@ function ChatPageContent() {
     [threadId, userId, router, sendMessage, showChatHistory],
   );
 
+  const handleExampleClick = useCallback(
+    (example: string) => {
+      // Trigger the chat input with the selected example
+      handleSendMessage(example);
+    },
+    [handleSendMessage],
+  );
+
   // Show error toast when there's an error
   useEffect(() => {
     if (error) {
@@ -523,7 +470,7 @@ function ChatPageContent() {
         autoHide: false,
       });
     }
-  }, [error, addToast]);
+  }, [error]);
 
   return (
     <div className="flex viewport-height bg-slate-50 overflow-hidden">
@@ -538,6 +485,7 @@ function ChatPageContent() {
       <InstructionsModal
         isOpen={showInstructions}
         onClose={handleCloseInstructions}
+        onExampleClick={handleExampleClick}
       />
 
       {/* Floating Chat History */}
@@ -556,12 +504,12 @@ function ChatPageContent() {
         <div className="relative w-full h-full">
           {/* Full-screen Map */}
           <div className="absolute inset-0 w-full h-full">
-            <Map ref={mapRef} markers={markers} view={currentView} />
-          </div>
-
-          {/* Full-screen Map */}
-          <div className="absolute inset-0 w-full h-full">
-            <Map ref={mapRef} markers={markers} view={currentView} route={route} />
+            <Map
+              ref={mapRef}
+              markers={markers}
+              view={currentView}
+              route={route}
+            />
             <DirectionsPanel route={route} onClose={clearDirections} />
           </div>
 
