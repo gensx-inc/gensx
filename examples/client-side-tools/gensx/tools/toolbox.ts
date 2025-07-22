@@ -124,24 +124,45 @@ export const toolbox = createToolBox({
     ]),
   },
   calculateAndShowRoute: {
-    description: "Calculate a route with multiple stops and display it on the map with turn-by-turn directions. You must provide coordinates for start and end points. Optionally include waypoints between them and labels for better display.",
+    description:
+      "Calculate a route with multiple stops and display it on the map with turn-by-turn directions. You must provide coordinates for start and end points. Optionally include waypoints between them and labels for better display.",
     params: z.object({
       startLat: z.number().describe("Starting point latitude"),
       startLon: z.number().describe("Starting point longitude"),
       endLat: z.number().describe("Ending point latitude"),
       endLon: z.number().describe("Ending point longitude"),
-      startLabel: z.string().optional().describe("Optional label/address for the starting point (for display purposes)"),
-      endLabel: z.string().optional().describe("Optional label/address for the ending point (for display purposes)"),
-      waypoints: z.array(z.object({
-        lat: z.number().describe("Waypoint latitude"),
-        lon: z.number().describe("Waypoint longitude"),
-        label: z.string().optional().describe("Optional label for the waypoint"),
-      })).optional().describe("Optional intermediate stops between start and end points"),
+      startLabel: z
+        .string()
+        .optional()
+        .describe(
+          "Optional label/address for the starting point (for display purposes)",
+        ),
+      endLabel: z
+        .string()
+        .optional()
+        .describe(
+          "Optional label/address for the ending point (for display purposes)",
+        ),
+      waypoints: z
+        .array(
+          z.object({
+            lat: z.number().describe("Waypoint latitude"),
+            lon: z.number().describe("Waypoint longitude"),
+            label: z
+              .string()
+              .optional()
+              .describe("Optional label for the waypoint"),
+          }),
+        )
+        .optional()
+        .describe("Optional intermediate stops between start and end points"),
       profile: z
         .enum(["driving-car", "foot-walking", "cycling-regular"])
         .optional()
         .default("driving-car")
-        .describe("Transportation mode: driving-car, foot-walking, or cycling-regular"),
+        .describe(
+          "Transportation mode: driving-car, foot-walking, or cycling-regular",
+        ),
     }),
     result: z.union([
       z.object({
@@ -156,13 +177,15 @@ export const toolbox = createToolBox({
           duration: z.number().describe("Duration in seconds"),
           distanceText: z.string(),
           durationText: z.string(),
-          directions: z.array(z.object({
-            instruction: z.string(),
-            distance: z.number(),
-            duration: z.number(),
-            type: z.number().optional(),
-            name: z.string().optional(),
-          })),
+          directions: z.array(
+            z.object({
+              instruction: z.string(),
+              distance: z.number(),
+              duration: z.number(),
+              type: z.number().optional(),
+              name: z.string().optional(),
+            }),
+          ),
         }),
       }),
       z.object({

@@ -1,6 +1,12 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+} from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import Image from "next/image";
 import { useRef, useEffect, useMemo } from "react";
@@ -285,7 +291,7 @@ const Map = (MapProps: MapProps) => {
         key={route.id}
         positions={positions}
         pathOptions={{
-          color: '#3B82F6',
+          color: "#3B82F6",
           weight: 5,
           opacity: 0.8,
         }}
@@ -319,7 +325,7 @@ const Map = (MapProps: MapProps) => {
             <br />
             {route.distanceText} • {route.durationText}
             <br />
-            <small>Mode: {route.profile.replace('-', ' ')}</small>
+            <small>Mode: {route.profile.replace("-", " ")}</small>
           </div>
         </Popup>
       </Marker>,
@@ -338,10 +344,11 @@ const Map = (MapProps: MapProps) => {
               </>
             )}
             <br />
-            {route.directions.length} turn{route.directions.length !== 1 ? 's' : ''}
+            {route.directions.length} turn
+            {route.directions.length !== 1 ? "s" : ""}
           </div>
         </Popup>
-      </Marker>
+      </Marker>,
     ];
 
     // Add waypoint markers
@@ -364,7 +371,7 @@ const Map = (MapProps: MapProps) => {
                 )}
               </div>
             </Popup>
-          </Marker>
+          </Marker>,
         );
       });
     }

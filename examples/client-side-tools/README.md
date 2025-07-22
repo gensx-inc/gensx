@@ -198,6 +198,7 @@ The directions functionality uses the OSRM Demo Server (https://router.project-o
 - **Coverage**: Global coverage but may lack some detailed local routing
 
 For production use, consider:
+
 - Setting up your own OSRM server
 - Using a commercial routing service (Google Directions API, Mapbox Directions API, etc.)
 - Using other free alternatives like OpenRouteService with your own API key

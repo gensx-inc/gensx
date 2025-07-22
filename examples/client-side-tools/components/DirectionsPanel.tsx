@@ -63,7 +63,9 @@ export function DirectionsPanel({ route, onClose }: DirectionsPanelProps) {
           <Navigation className="w-5 h-5 text-blue-600" />
           <div>
             <h3 className="font-semibold text-sm">Directions</h3>
-            <p className="text-xs text-gray-600">{formatTransportMode(route.profile)}</p>
+            <p className="text-xs text-gray-600">
+              {formatTransportMode(route.profile)}
+            </p>
           </div>
         </div>
         <button
@@ -89,7 +91,10 @@ export function DirectionsPanel({ route, onClose }: DirectionsPanelProps) {
       {/* Directions List */}
       <div className="overflow-y-auto max-h-64">
         {route.directions.map((direction, index) => (
-          <div key={index} className="flex items-start gap-3 p-3 border-b last:border-b-0 hover:bg-gray-50">
+          <div
+            key={index}
+            className="flex items-start gap-3 p-3 border-b last:border-b-0 hover:bg-gray-50"
+          >
             <div className="text-lg mt-1 flex-shrink-0">
               {getInstructionIcon(direction.type || 0)}
             </div>
