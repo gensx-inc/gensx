@@ -124,7 +124,6 @@ export function useChat(
 
   const loadHistory = useCallback(async (threadId: string, userId: string) => {
     if (!threadId || !userId) return;
-    console.log("loadHistory", { threadId, userId });
 
     try {
       const history = await getChatHistory(userId, threadId);
