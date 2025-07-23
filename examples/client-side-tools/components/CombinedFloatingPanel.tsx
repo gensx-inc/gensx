@@ -260,85 +260,85 @@ export function CombinedFloatingPanel({
         <div className="relative rounded-3xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/25 border border-white/40">
           <div className="absolute inset-0 z-[1] overflow-hidden rounded-3xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)]" />
 
-        {/* Header */}
-        <div className="relative z-[2] p-4 border-b border-white/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                {activeTab === "chat" ? (
-                  <MessageCircle className="w-4 h-4 text-white" />
-                ) : (
-                  <Navigation className="w-4 h-4 text-white" />
-                )}
+          {/* Header */}
+          <div className="relative z-[2] p-4 border-b border-white/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                  {activeTab === "chat" ? (
+                    <MessageCircle className="w-4 h-4 text-white" />
+                  ) : (
+                    <Navigation className="w-4 h-4 text-white" />
+                  )}
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {activeTab === "chat" ? "Chat History" : "Directions"}
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    {activeTab === "chat"
+                      ? `${visibleMessages.length} messages`
+                      : route
+                        ? formatTransportMode(route.profile)
+                        : "No route"}
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-900">
-                  {activeTab === "chat" ? "Chat History" : "Directions"}
-                </div>
-                <div className="text-xs text-slate-600">
-                  {activeTab === "chat"
-                    ? `${visibleMessages.length} messages`
-                    : route
-                      ? formatTransportMode(route.profile)
-                      : "No route"}
-                </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="p-2 rounded-lg hover:bg-white/20 transition-colors duration-200"
+                >
+                  {isExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-slate-700" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-700" />
+                  )}
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-lg hover:bg-white/20 transition-colors duration-200"
+                >
+                  <X className="w-4 h-4 text-slate-700" />
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+          </div>
+
+          {/* Tab Navigation */}
+          {!!route && (
+            <div className="relative z-[2] flex border-b border-white/20">
               <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="p-2 rounded-lg hover:bg-white/20 transition-colors duration-200"
-              >
-                {isExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-slate-700" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-slate-700" />
+                onClick={() => setActiveTab("chat")}
+                className={cn(
+                  "flex-1 px-4 py-2 text-sm font-medium transition-colors duration-200",
+                  activeTab === "chat"
+                    ? "text-blue-600 bg-white/20 border-b-2 border-blue-600"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/10",
                 )}
+              >
+                Chat
               </button>
               <button
-                onClick={onClose}
-                className="p-2 rounded-lg hover:bg-white/20 transition-colors duration-200"
+                onClick={() => setActiveTab("directions")}
+                className={cn(
+                  "flex-1 px-4 py-2 text-sm font-medium transition-colors duration-200",
+                  activeTab === "directions"
+                    ? "text-blue-600 bg-white/20 border-b-2 border-blue-600"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/10",
+                )}
               >
-                <X className="w-4 h-4 text-slate-700" />
+                Directions
               </button>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Tab Navigation */}
-        {!!route && (
-          <div className="relative z-[2] flex border-b border-white/20">
-            <button
-              onClick={() => setActiveTab("chat")}
-              className={cn(
-                "flex-1 px-4 py-2 text-sm font-medium transition-colors duration-200",
-                activeTab === "chat"
-                  ? "text-blue-600 bg-white/20 border-b-2 border-blue-600"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/10",
-              )}
-            >
-              Chat
-            </button>
-            <button
-              onClick={() => setActiveTab("directions")}
-              className={cn(
-                "flex-1 px-4 py-2 text-sm font-medium transition-colors duration-200",
-                activeTab === "directions"
-                  ? "text-blue-600 bg-white/20 border-b-2 border-blue-600"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/10",
-              )}
-            >
-              Directions
-            </button>
-          </div>
-        )}
-
-        {/* Content */}
-        {isExpanded && (
-          <>
-            {activeTab === "chat" && renderChatTab()}
-            {activeTab === "directions" && renderDirectionsTab()}
-          </>
+          {/* Content */}
+          {isExpanded && (
+            <>
+              {activeTab === "chat" && renderChatTab()}
+              {activeTab === "directions" && renderDirectionsTab()}
+            </>
           )}
         </div>
       </div>
@@ -426,7 +426,10 @@ export function CombinedFloatingPanel({
           {/* Content - Mobile always shows, no expand/collapse */}
           <div className="flex-1 overflow-hidden">
             {activeTab === "chat" && (
-              <div className="h-full overflow-y-scroll touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div
+                className="h-full overflow-y-scroll touch-pan-y"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
                 {visibleMessages.length === 0 ? (
                   <div className="p-6 text-center">
                     <div className="text-sm text-slate-600">
@@ -450,7 +453,9 @@ export function CombinedFloatingPanel({
                           )}
                         >
                           <div className="flex items-start gap-2">
-                            <div className="flex-1">{renderMessageContent(message)}</div>
+                            <div className="flex-1">
+                              {renderMessageContent(message)}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -483,7 +488,10 @@ export function CombinedFloatingPanel({
                     </div>
 
                     {/* Directions List - Scrollable */}
-                    <div className="flex-1 overflow-y-scroll touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div
+                      className="flex-1 overflow-y-scroll touch-pan-y"
+                      style={{ WebkitOverflowScrolling: "touch" }}
+                    >
                       {route.directions.map((direction, index) => (
                         <div
                           key={index}
@@ -509,17 +517,17 @@ export function CombinedFloatingPanel({
                                 <span className="text-xs text-slate-500">
                                   • {Math.round(direction.duration / 60)}min
                                 </span>
-                                )}
-                              </div>
+                              )}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>

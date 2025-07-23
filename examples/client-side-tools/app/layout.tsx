@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     maximumScale: 1,
     userScalable: false,
     viewportFit: "cover",
-    interactiveWidget: "resizes-content"
+    interactiveWidget: "resizes-content",
   },
 };
 
