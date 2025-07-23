@@ -4,81 +4,113 @@ on:
   push:
     branches: [main]
     paths:
-      - "examples/client-side-tools/gensx/**"
-      - "examples/chat-ux/gensx/**"
-      - "examples/draft-pad/gensx/**"
-      - "examples/deep-research/gensx/**"
+      - "examples/client-side-tools/**"
+      - "examples/chat-ux/**"
+      - "examples/draft-pad/**"
+      - "examples/deep-research/**"
 
 jobs:
-  detect-changes:
+  deploy-client-side-tools:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.changes.outputs.matrix }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect changed examples
-        id: changes
-        run: |
-          # For pushes to main, compare against the previous commit
-          BASE_SHA="HEAD~1"
-          CURRENT_SHA="HEAD"
-
-          echo "Comparing $BASE_SHA..$CURRENT_SHA"
-
-          # Get list of changed files
-          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$CURRENT_SHA")
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
-
-          # Initialize matrix array
-          MATRIX='[]'
-
-          # Check each example directory
-          if echo "$CHANGED_FILES" | grep -q "examples/client-side-tools/gensx/"; then
-            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/client-side-tools"]')
-            echo "Detected changes in client-side-tools"
-          fi
-
-          if echo "$CHANGED_FILES" | grep -q "examples/chat-ux/gensx/"; then
-            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/chat-ux"]')
-            echo "Detected changes in chat-ux"
-          fi
-
-          if echo "$CHANGED_FILES" | grep -q "examples/draft-pad/gensx/"; then
-            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/draft-pad"]')
-            echo "Detected changes in draft-pad"
-          fi
-
-          if echo "$CHANGED_FILES" | grep -q "examples/deep-research/gensx/"; then
-            MATRIX=$(echo "$MATRIX" | jq -c '. += ["examples/deep-research"]')
-            echo "Detected changes in deep-research"
-          fi
-
-          echo "Final matrix: $MATRIX"
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
-
-  deploy-workflows:
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    if: needs.detect-changes.outputs.matrix != '[]'
-    strategy:
-      matrix:
-        workflow: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-
+    if: contains(github.event.head_commit.modified, 'examples/client-side-tools/') || contains(github.event.head_commit.added, 'examples/client-side-tools/')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy Workflow
+      - name: Deploy Client-Side Tools Workflow
         id: deploy
         uses: ./.github/actions/deploy-gensx
         with:
           org: gensx
-          working_directory: ${{ matrix.workflow }}
+          working_directory: examples/client-side-tools
+          environment_name: prod
+          api_key: ${{ secrets.GENSX_API_KEY }}
+          workflow_file: gensx/workflows.ts
+          env: |
+            GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+            TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
+            MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          echo "Deployed client-side-tools to: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
+
+  deploy-chat-ux:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'examples/chat-ux/') || contains(github.event.head_commit.added, 'examples/chat-ux/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Chat UX Workflow
+        id: deploy
+        uses: ./.github/actions/deploy-gensx
+        with:
+          org: gensx
+          working_directory: examples/chat-ux
+          environment_name: prod
+          api_key: ${{ secrets.GENSX_API_KEY }}
+          workflow_file: gensx/workflows.ts
+          env: |
+            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+            TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          echo "Deployed chat-ux to: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
+  # TODO: Add secrets for this
+  # deploy-draft-pad:
+  #   runs-on: ubuntu-latest
+  #   if: contains(github.event.head_commit.modified, 'examples/draft-pad/') || contains(github.event.head_commit.added, 'examples/draft-pad/')
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Deploy Draft Pad Workflow
+  #       id: deploy
+  #       uses: ./.github/actions/deploy-gensx
+  #       with:
+  #         org: gensx
+  #         working_directory: examples/draft-pad
+  #         environment_name: prod
+  #         api_key: ${{ secrets.GENSX_API_KEY }}
+  #         workflow_file: gensx/workflows.ts
+  #         env: |
+  #           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+  #           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+  #           GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+  #           DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
+  #           XAI_API_KEY=${{ secrets.XAI_API_KEY }}
+  #           MISTRAL_API_KEY=${{ secrets.MISTRAL_API_KEY }}
+  #           COHERE_API_KEY=${{ secrets.COHERE_API_KEY }}
+  #           GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
+  #           AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+  #           AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #           AWS_REGION=${{ secrets.AWS_REGION }}
+  #           AZURE_OPENAI_API_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}
+  #           AZURE_OPENAI_ENDPOINT=${{ secrets.AZURE_OPENAI_ENDPOINT }}
+  #           AZURE_OPENAI_API_VERSION=${{ secrets.AZURE_OPENAI_API_VERSION }}
+
+  #     - name: Deployment summary
+  #       shell: bash
+  #       run: |
+  #         echo "Deployed draft-pad to: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
+
+  deploy-deep-research:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'examples/deep-research/') || contains(github.event.head_commit.added, 'examples/deep-research/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Deep Research Workflow
+        id: deploy
+        uses: ./.github/actions/deploy-gensx
+        with:
+          org: gensx
+          working_directory: examples/deep-research
           environment_name: prod
           api_key: ${{ secrets.GENSX_API_KEY }}
           workflow_file: gensx/workflows.ts
@@ -90,4 +122,4 @@ jobs:
       - name: Deployment summary
         shell: bash
         run: |
-          echo "Deployed ${{ matrix.workflow }} to: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed deep-research to: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
