@@ -217,7 +217,6 @@ const NonMemoizedMarkdownContent = ({
   content,
   className = "",
 }: MarkdownContentProps) => {
-  console.log("content", content);
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
       <ReactMarkdown

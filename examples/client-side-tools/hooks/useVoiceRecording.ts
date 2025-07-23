@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { addToast } from "@/components/ui/toast";
 
 interface VoiceRecordingState {
   isRecording: boolean;
@@ -36,6 +37,12 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
       // Check if MediaDevices API is available
       if (!navigator?.mediaDevices?.getUserMedia) {
         console.error("MediaDevices API is not supported in this environment");
+        addToast({
+          type: "error",
+          title: "Voice Recording Not Supported",
+          description:
+            "Your browser doesn't support voice recording. Please try using a modern browser like Chrome, Firefox, or Safari.",
+        });
         return;
       }
 
