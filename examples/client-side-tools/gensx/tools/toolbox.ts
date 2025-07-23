@@ -176,10 +176,6 @@ export const toolbox = createToolBox({
         success: z.literal(true),
         message: z.string(),
         route: z.object({
-          geometry: z.object({
-            type: z.literal("LineString"),
-            coordinates: z.array(z.array(z.number())),
-          }),
           distance: z.number().describe("Distance in meters"),
           duration: z.number().describe("Duration in seconds"),
           distanceText: z.string(),

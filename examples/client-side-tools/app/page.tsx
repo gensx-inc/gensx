@@ -393,10 +393,16 @@ function ChatPageContent() {
   // Get thread ID from URL
   const threadId = searchParams.get("thread");
 
-  // Initialize user ID and detect mobile on client side
+  // Initialize user ID, load chat history, and detect mobile on mount
   useEffect(() => {
-    setUserId(getUserId());
+    const userId = getUserId();
+    const threadId = searchParams.get("thread");
+    setUserId(userId);
     setIsMobile(window.innerWidth < 768); // md breakpoint
+    if (userId && threadId) {
+      loadHistory(threadId, userId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update CSS custom properties when viewport changes
@@ -424,9 +430,6 @@ function ChatPageContent() {
       setCurrentThreadId(threadId);
       if (!threadId) {
         clear();
-      } else {
-        // Load chat history for existing thread
-        loadHistory(threadId, userId);
       }
     }
   }, [threadId, currentThreadId, userId, clear, loadHistory]);

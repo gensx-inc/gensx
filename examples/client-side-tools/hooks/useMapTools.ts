@@ -484,10 +484,6 @@ export function useMapTools(userId: string | null, threadId: string | null) {
           success: true as const,
           message: "Route calculated and displayed on map",
           route: {
-            geometry: route.geometry ?? {
-              type: "LineString",
-              coordinates: [],
-            },
             distance: route.distance ?? 0,
             duration: route.duration ?? 0,
             distanceText: formatDistance(route.distance ?? 0),

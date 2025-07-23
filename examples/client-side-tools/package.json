@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN} concurrently \"npm run dev:next\" \"npm run dev:gensx\"",
-    "dev:next": "next dev -p 3002",
+    "dev:next": "NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN} next dev -p 3002",
     "dev:gensx": "npx gensx@latest start ./gensx/workflows.ts",
     "deploy": "npx gensx@latest deploy -e GROQ_API_KEY -e TAVILY_API_KEY -e MAPBOX_ACCESS_TOKEN ./gensx/workflows.ts",
     "build": "next build",

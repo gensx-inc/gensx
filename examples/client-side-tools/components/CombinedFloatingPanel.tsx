@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useRef } from "react";
 import { Message } from "@/hooks/useChat";
 import { RouteData } from "@/hooks/useMapTools";
@@ -31,17 +29,26 @@ export function CombinedFloatingPanel({
 }: CombinedFloatingPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [activeTab, setActiveTab] = useState<PanelTab>("chat");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const desktopMessagesEndRef = useRef<HTMLDivElement>(null);
+  const mobileMessagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (
-      messagesEndRef.current &&
+      desktopMessagesEndRef.current &&
       isVisible &&
       isExpanded &&
       activeTab === "chat"
     ) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      desktopMessagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+    if (
+      mobileMessagesEndRef.current &&
+      isVisible &&
+      isExpanded &&
+      activeTab === "chat"
+    ) {
+      mobileMessagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isVisible, isExpanded, activeTab]);
 
@@ -184,7 +191,7 @@ export function CombinedFloatingPanel({
               </div>
             </div>
           ))}
-          <div ref={messagesEndRef} />
+          <div ref={desktopMessagesEndRef} />
         </div>
       )}
     </div>
@@ -460,7 +467,7 @@ export function CombinedFloatingPanel({
                         </div>
                       </div>
                     ))}
-                    <div ref={messagesEndRef} />
+                    <div ref={mobileMessagesEndRef} />
                   </div>
                 )}
               </div>

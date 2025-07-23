@@ -9,7 +9,7 @@ import {
 } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import Image from "next/image";
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
@@ -289,22 +289,59 @@ const MapMarkerComponent = ({
   );
 };
 
-const Map = (MapProps: MapProps) => {
-  const { ref, markers, view = defaultView, route } = MapProps;
+const Map = (props: MapProps) => {
+  const { ref, markers, view = defaultView, route } = props;
   const originalPositionRef = useRef<{ center: L.LatLng; zoom: number } | null>(
     null,
   );
   const previousMarkersRef = useRef<Set<string>>(new Set());
   const newMarkersRef = useRef<Set<string>>(new Set());
+  const [lastCenterAndZoom, setLastCenterAndZoom] = useState<{
+    latitude: number;
+    longitude: number;
+    zoom: number;
+  } | null>(null);
 
   useEffect(() => {
-    if (!view || !view.latitude || !view.longitude) {
+    if (!view) {
       return;
     }
-    if (ref?.current) {
-      ref.current.setView([view.latitude, view.longitude], view.zoom);
+    if (!view.fitBounds) {
+      if (
+        lastCenterAndZoom?.latitude !== view.latitude ||
+        lastCenterAndZoom?.longitude !== view.longitude ||
+        lastCenterAndZoom?.zoom !== view.zoom
+      ) {
+        setLastCenterAndZoom({
+          latitude: view.latitude,
+          longitude: view.longitude,
+          zoom: view.zoom,
+        });
+      }
     }
-  }, [view, ref]);
+    if (ref?.current) {
+      // in some hot reload cases, the map will not have the center and zoom set. So we need to set it manually if an error is thrown, then flyToBounds.
+      if (view.fitBounds) {
+        try {
+          ref.current.flyToBounds(view.fitBounds);
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message.includes("Set map center and zoom first.") &&
+            lastCenterAndZoom
+          ) {
+            ref.current.setView(
+              [lastCenterAndZoom.latitude, lastCenterAndZoom.longitude],
+              lastCenterAndZoom.zoom,
+            );
+            ref.current.flyToBounds(view.fitBounds);
+          }
+        }
+      } else {
+        ref.current.setView([view.latitude, view.longitude], view.zoom);
+      }
+    }
+  }, [view, ref, lastCenterAndZoom]);
 
   // Track newly added markers
   useEffect(() => {
@@ -417,12 +454,6 @@ const Map = (MapProps: MapProps) => {
 
     return markers;
   }, [route, ref, originalPositionRef]);
-
-  useEffect(() => {
-    if (view.fitBounds) {
-      ref?.current?.flyToBounds(view.fitBounds);
-    }
-  }, [view.fitBounds, ref]);
 
   return (
     <MapContainer
