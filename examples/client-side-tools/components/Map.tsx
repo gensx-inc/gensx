@@ -327,13 +327,15 @@ const Map = (props: MapProps) => {
         } catch (error) {
           if (
             error instanceof Error &&
-            error.message.includes("Set map center and zoom first.") &&
-            lastCenterAndZoom
+            error.message.includes("Set map center and zoom first.")
           ) {
-            ref.current.setView(
-              [lastCenterAndZoom.latitude, lastCenterAndZoom.longitude],
-              lastCenterAndZoom.zoom,
-            );
+            const { latitude, longitude, zoom } = lastCenterAndZoom ?? {
+              // sf
+              latitude: 37.7749,
+              longitude: -122.4194,
+              zoom: 12,
+            };
+            ref.current.setView([latitude, longitude], zoom);
             ref.current.flyToBounds(view.fitBounds);
           }
         }
