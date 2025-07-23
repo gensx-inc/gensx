@@ -15,7 +15,9 @@ const limit = pRateLimit({
 const schema = z.object({
   query: z
     .string()
-    .describe("Search query for places, businesses, or points of interest"),
+    .describe(
+      "Search query for places, businesses, or points of interest. This is required.",
+    ),
   category: z
     .string()
     .optional()
