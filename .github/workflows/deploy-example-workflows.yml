@@ -12,7 +12,6 @@ on:
 jobs:
   deploy-client-side-tools:
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'examples/client-side-tools/') || contains(github.event.head_commit.added, 'examples/client-side-tools/')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,7 +37,6 @@ jobs:
 
   deploy-chat-ux:
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'examples/chat-ux/') || contains(github.event.head_commit.added, 'examples/chat-ux/')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,7 +61,6 @@ jobs:
   # TODO: Add secrets for this
   # deploy-draft-pad:
   #   runs-on: ubuntu-latest
-  #   if: contains(github.event.head_commit.modified, 'examples/draft-pad/') || contains(github.event.head_commit.added, 'examples/draft-pad/')
   #   steps:
   #     - name: Checkout repository
   #       uses: actions/checkout@v4
@@ -100,7 +97,6 @@ jobs:
 
   deploy-deep-research:
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'examples/deep-research/') || contains(github.event.head_commit.added, 'examples/deep-research/')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
