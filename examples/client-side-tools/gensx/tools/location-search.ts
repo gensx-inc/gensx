@@ -15,8 +15,9 @@ const limit = pRateLimit({
 const schema = z.object({
   query: z
     .string()
+    .min(1)
     .describe(
-      "Search query for places, businesses, or points of interest. This is required.",
+      "Search query for places, businesses, or points of interest. This parameter is REQUIRED and cannot be empty.",
     ),
   category: z
     .string()
@@ -155,6 +156,8 @@ interface MapboxSearchResult {
 export const locationSearchTool = tool({
   description: `Advanced location search using Mapbox APIs. This tool can search for places, businesses, and points of interest with advanced filtering options:
 
+IMPORTANT: The 'query' parameter is REQUIRED - you must always provide a search term.
+
 - Search within specific areas using bounding boxes
 - Search along routes between waypoints for navigation-related queries
 - Filter by categories (restaurants, hotels, gas stations, etc.)
@@ -178,8 +181,8 @@ Use this tool when you need to find specific types of places, businesses, or ame
       types,
     } = params;
 
-    if (!query) {
-      return "No search query provided";
+    if (!query || query.trim().length === 0) {
+      return "Error: Search query is required and cannot be empty. Please provide a search term for places, businesses, or points of interest.";
     }
 
     // Create a hash for caching
