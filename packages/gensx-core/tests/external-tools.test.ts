@@ -153,6 +153,7 @@ describe("External Tools", () => {
         params: { text: "Hello" },
         paramsSchema: expect.any(Object),
         resultSchema: expect.any(Object),
+        timeoutAt: null,
         nodeId: expect.stringMatching(
           /^TestWorkflow-ExternalTool:[a-z0-9-]+:\d+$/,
         ),
@@ -179,6 +180,101 @@ describe("External Tools", () => {
 
       // Should throw validation error for invalid params
       await expect(() => workflow()).rejects.toThrow(); // Missing requiredNumber
+    });
+
+    it("should include timeout information when timeoutMs is provided", async () => {
+      const toolBox = createToolBox({
+        testTool: {
+          params: z3.object({ text: z3.string() }),
+          result: z3.string(),
+        },
+      });
+
+      const onRequestInput = vi.fn();
+      const workflow = Workflow("TestWorkflow", async () => {
+        return await executeExternalTool(
+          toolBox,
+          "testTool",
+          { text: "Hello" },
+          { timeoutMs: 5000 }
+        );
+      });
+
+      let messages: any[] = [];
+
+      await workflow(
+        {
+          text: "Hello",
+        },
+        {
+          onRequestInput,
+          messageListener: (message) => messages.push(message),
+        },
+      );
+
+      const externalToolMessage = messages.find(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (m) => m.type === "external-tool",
+      );
+
+      expect(externalToolMessage).toBeDefined();
+      expect(externalToolMessage).toMatchObject({
+        type: "external-tool",
+        toolName: "testTool",
+        params: { text: "Hello" },
+        paramsSchema: expect.any(Object),
+        resultSchema: expect.any(Object),
+        timeoutAt: expect.any(String),
+        nodeId: expect.stringMatching(
+          /^TestWorkflow-ExternalTool:[a-z0-9-]+:\d+$/,
+        ),
+      });
+
+      // Verify timeoutAt is a valid ISO string representing a future date
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const timeoutAt = new Date(externalToolMessage.timeoutAt as string);
+      expect(timeoutAt.getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it("should include timeout information when timeoutAt is provided", async () => {
+      const futureDate = new Date(Date.now() + 10000);
+      const toolBox = createToolBox({
+        testTool: {
+          params: z3.object({ text: z3.string() }),
+          result: z3.string(),
+        },
+      });
+
+      const onRequestInput = vi.fn();
+      const workflow = Workflow("TestWorkflow", async () => {
+        return await executeExternalTool(
+          toolBox,
+          "testTool",
+          { text: "Hello" },
+          { timeoutAt: futureDate }
+        );
+      });
+
+      let messages: any[] = [];
+
+      await workflow(
+        {
+          text: "Hello",
+        },
+        {
+          onRequestInput,
+          messageListener: (message) => messages.push(message),
+        },
+      );
+
+      const externalToolMessage = messages.find(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (m) => m.type === "external-tool",
+      );
+
+      expect(externalToolMessage).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(externalToolMessage.timeoutAt).toBe(futureDate.toISOString());
     });
   });
 
