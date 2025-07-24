@@ -8,7 +8,7 @@ function getCallbackUrl(nodeId: string) {
 
 export async function requestInput<T extends ZodTypeAny>(
   trigger: (callbackUrl: string) => Promise<void>,
-  resultSchema: InferZodType<T>,
+  resultSchema: T,
   {
     timeoutAt,
     timeoutMs,
