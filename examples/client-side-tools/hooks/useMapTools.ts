@@ -113,7 +113,6 @@ export interface MapMarker {
   title?: string;
   description?: string;
   color?: string;
-  photoUrl?: string;
 }
 
 export type Waypoint = Omit<MapMarker, "id">;
@@ -136,6 +135,22 @@ export interface RouteData {
   duration: number;
   distanceText: string;
   durationText: string;
+  // Add support for multiple routes
+  alternativeRoutes?: Array<{
+    profile: string;
+    geometry: GeoJSON.LineString;
+    distance: number;
+    duration: number;
+    distanceText: string;
+    durationText: string;
+    directions: Array<{
+      instruction: string;
+      distance: number;
+      duration: number;
+      type?: number;
+      name?: string;
+    }>;
+  }>;
 }
 
 const getDefaultLocation = async (): Promise<MapView> => {
@@ -273,7 +288,6 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         title?: string;
         description?: string;
         color?: string;
-        photoUrl?: string;
       }[];
     }) => {
       const newMarkers: MapMarker[] = [];
@@ -425,108 +439,122 @@ export function useMapTools(userId: string | null, threadId: string | null) {
           };
         }
 
-        // Call Mapbox Directions API for routing
-        const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?access_token=${mapboxToken}&overview=full&geometries=geojson&steps=true`;
+        console.log("Calculating routes for coordinates:", coordinates);
 
-        const response = await fetch(url, {
-          headers: {
-            Accept: "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          console.error("Error calculating route:", response.statusText);
-          return {
-            success: false as const,
-            message: `Error calculating route: ${response.statusText}`,
-          };
-        }
-
-        const routeData: MapboxDirectionsResponse = await response.json();
-
-        if (!routeData.routes || routeData.routes.length === 0) {
-          console.error("No route found between the specified points");
-          return {
-            success: false as const,
-            message: "No route found between the specified points",
-          };
-        }
-
-        const route = routeData.routes[0];
-        const legs = route.legs || [];
-
-        // Extract turn-by-turn directions from steps
-        const directions = legs.flatMap(
-          (leg: MapboxLeg) =>
-            leg.steps?.map((step: MapboxStep) => ({
-              instruction: step.maneuver?.instruction || "Continue",
-              distance: step.distance || 0,
-              duration: step.duration || 0,
-              type: getManeuverType(step.maneuver?.type),
-              name: step.name || "",
-            })) || [],
+        // Calculate primary route
+        const primaryRoute = await calculateSingleRoute(
+          coordinates,
+          profile,
+          mapboxToken,
         );
 
+        if (!primaryRoute.success) {
+          return {
+            success: false as const,
+            message: primaryRoute.message || "Failed to calculate route",
+          };
+        }
+
+        // Calculate alternative routes for comparison
+        const alternativeProfiles = ["driving", "walking"].filter(
+          (p) => p !== profile,
+        );
+        const alternativeRoutes = [];
+
+        for (const altProfile of alternativeProfiles) {
+          const altRoute = await calculateSingleRoute(
+            coordinates,
+            altProfile as "driving" | "walking" | "cycling",
+            mapboxToken,
+          );
+          if (altRoute.success && altRoute.routeInfo) {
+            alternativeRoutes.push({
+              profile: altProfile,
+              geometry: altRoute.routeInfo.geometry,
+              distance: altRoute.routeInfo.distance,
+              duration: altRoute.routeInfo.duration,
+              distanceText: formatDistance(altRoute.routeInfo.distance),
+              durationText: formatDuration(altRoute.routeInfo.duration),
+              directions: altRoute.routeInfo.directions,
+            });
+          }
+        }
+
         const routeInfo: RouteData = {
-          id: `route-${Date.now()}`,
-          geometry: route.geometry ?? {
-            type: "LineString",
-            coordinates: [],
-          },
+          ...primaryRoute.routeInfo!,
           start: {
             ...start,
-            id: `start-${Date.now()}`,
+            id: `route-start-${Date.now()}`,
           },
           end: {
             ...end,
-            id: `end-${Date.now()}`,
+            id: `route-end-${Date.now()}`,
           },
           waypoints,
-          profile,
-          directions,
-          distance: route.distance ?? 0,
-          duration: route.duration ?? 0,
-          distanceText: formatDistance(route.distance ?? 0),
-          durationText: formatDuration(route.duration ?? 0),
+          alternativeRoutes,
         };
+
+        console.log("Setting route data:", {
+          id: routeInfo.id,
+          geometryCoords: routeInfo.geometry.coordinates?.length,
+          distance: routeInfo.distance,
+          duration: routeInfo.duration,
+          alternativeRoutes: routeInfo.alternativeRoutes?.length,
+        });
 
         setRoute(routeInfo);
 
         // Fit map to route bounds
-        if (route.geometry && route.geometry.coordinates) {
-          const coordinates = route.geometry.coordinates;
-          if (coordinates.length > 0) {
-            // Calculate rough center and zoom to fit the route
-            const lats = coordinates.map((coord: number[]) => coord[1]);
-            const lngs = coordinates.map((coord: number[]) => coord[0]);
+        if (
+          routeInfo.geometry &&
+          routeInfo.geometry.coordinates &&
+          routeInfo.geometry.coordinates.length > 0
+        ) {
+          const coordinates = routeInfo.geometry.coordinates;
+          console.log(
+            "Fitting map to route with",
+            coordinates.length,
+            "coordinate points",
+          );
 
-            const minLat = Math.min(...lats);
-            const maxLat = Math.max(...lats);
-            const minLng = Math.min(...lngs);
-            const maxLng = Math.max(...lngs);
+          // Calculate rough center and zoom to fit the route
+          const lats = coordinates.map((coord: number[]) => coord[1]);
+          const lngs = coordinates.map((coord: number[]) => coord[0]);
 
-            setCurrentView({
-              fitBounds: [
-                [minLat, minLng],
-                [maxLat, maxLng],
-              ] as const,
-            });
-          }
+          const minLat = Math.min(...lats);
+          const maxLat = Math.max(...lats);
+          const minLng = Math.min(...lngs);
+          const maxLng = Math.max(...lngs);
+
+          setCurrentView({
+            fitBounds: [
+              [minLat, minLng],
+              [maxLat, maxLng],
+            ] as const,
+          });
         }
 
         const result = {
           success: true as const,
           message: "Route calculated and displayed on map",
           route: {
-            distance: route.distance ?? 0,
-            duration: route.duration ?? 0,
-            distanceText: formatDistance(route.distance ?? 0),
-            durationText: formatDuration(route.duration ?? 0),
-            directions: directions,
+            distance: routeInfo.distance,
+            duration: routeInfo.duration,
+            distanceText: routeInfo.distanceText,
+            durationText: routeInfo.durationText,
+            directions: routeInfo.directions,
+            alternativeRoutes: routeInfo.alternativeRoutes?.map((alt) => ({
+              profile: alt.profile,
+              distance: alt.distance,
+              duration: alt.duration,
+              distanceText: alt.distanceText,
+              durationText: alt.durationText,
+            })),
           },
         };
         return result;
       } catch (error) {
+        console.error("Route calculation error:", error);
         return {
           success: false as const,
           message: `Failed to calculate route: ${error instanceof Error ? error.message : String(error)}`,
@@ -535,6 +563,115 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     },
     [],
   );
+
+  // Helper function to calculate a single route
+  const calculateSingleRoute = async (
+    coordinates: string,
+    profile: "driving" | "walking" | "cycling",
+    mapboxToken: string,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    routeInfo?: Omit<
+      RouteData,
+      "start" | "end" | "waypoints" | "alternativeRoutes"
+    >;
+  }> => {
+    try {
+      // Call Mapbox Directions API for routing
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?access_token=${mapboxToken}&overview=full&geometries=geojson&steps=true`;
+
+      console.log(
+        `Fetching ${profile} route from:`,
+        url.replace(mapboxToken, "TOKEN"),
+      );
+
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        console.error(
+          `Error calculating ${profile} route:`,
+          response.statusText,
+        );
+        return {
+          success: false,
+          message: `Error calculating ${profile} route: ${response.statusText}`,
+        };
+      }
+
+      const routeData: MapboxDirectionsResponse = await response.json();
+      console.log(`${profile} route response:`, {
+        code: routeData.code,
+        routesCount: routeData.routes?.length,
+        firstRouteDistance: routeData.routes?.[0]?.distance,
+        firstRouteDuration: routeData.routes?.[0]?.duration,
+        firstRouteGeometry:
+          routeData.routes?.[0]?.geometry?.coordinates?.length,
+      });
+
+      if (!routeData.routes || routeData.routes.length === 0) {
+        console.error(`No ${profile} route found between the specified points`);
+        return {
+          success: false,
+          message: `No ${profile} route found between the specified points`,
+        };
+      }
+
+      const route = routeData.routes[0];
+      const legs = route.legs || [];
+
+      // Extract turn-by-turn directions from steps
+      const directions = legs.flatMap(
+        (leg: MapboxLeg) =>
+          leg.steps?.map((step: MapboxStep) => ({
+            instruction: step.maneuver?.instruction || "Continue",
+            distance: step.distance || 0,
+            duration: step.duration || 0,
+            type: getManeuverType(step.maneuver?.type),
+            name: step.name || "",
+          })) || [],
+      );
+
+      // Ensure geometry exists and has coordinates
+      if (
+        !route.geometry ||
+        !route.geometry.coordinates ||
+        route.geometry.coordinates.length === 0
+      ) {
+        console.error(`No geometry found for ${profile} route`);
+        return {
+          success: false,
+          message: `No geometry found for ${profile} route`,
+        };
+      }
+
+      const routeInfo = {
+        id: `route-${profile}-${Date.now()}`,
+        geometry: route.geometry,
+        profile,
+        directions,
+        distance: route.distance ?? 0,
+        duration: route.duration ?? 0,
+        distanceText: formatDistance(route.distance ?? 0),
+        durationText: formatDuration(route.duration ?? 0),
+      };
+
+      return {
+        success: true,
+        routeInfo,
+      };
+    } catch (error) {
+      console.error(`Error calculating ${profile} route:`, error);
+      return {
+        success: false,
+        message: `Failed to calculate ${profile} route: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  };
 
   const clearDirections = useCallback(() => {
     setRoute(null);

@@ -583,7 +583,12 @@ function ChatPageContent() {
         <div className="relative w-full h-full">
           {/* Full-screen Map */}
           <div className="absolute inset-0 w-full h-full">
-            <Map ref={mapRef} markers={markers} view={currentView} />
+            <Map
+              ref={mapRef}
+              markers={markers}
+              view={currentView}
+              route={route}
+            />
           </div>
 
           {/* Floating Chat Bar - Glass Morphism */}

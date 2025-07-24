@@ -40,9 +40,9 @@ function CustomToast({
         <div className="flex items-start gap-3">
           {getIcon()}
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-slate-900">{title}</div>
+            <div className="text-xs font-medium text-slate-900">{title}</div>
             {description && (
-              <div className="text-sm text-slate-600 mt-1">{description}</div>
+              <div className="text-xs text-slate-600 mt-1">{description}</div>
             )}
           </div>
           <button
@@ -90,12 +90,12 @@ export function ToastContainer() {
 
   return (
     <div
-      className="fixed bottom-2 left-6 z-[9997]"
+      className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-[9998]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <Toaster
-        position="bottom-right"
+        position="bottom-center"
         offset="0px" // We're handling positioning with the wrapper div
         visibleToasts={isHovered ? 15 : 3} // Show 3 normally, 15 on hover
         toastOptions={{
