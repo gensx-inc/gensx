@@ -21,7 +21,7 @@ export async function requestInput<T extends ZodTypeAny>(
         timeoutMs?: number;
         timeoutAt?: never;
       } = {},
-): Promise<T | { error: string; type: "timeout" | "error" }> {
+): Promise<InferZodType<T> | { error: string; type: "timeout" | "error" }> {
   const resultJsonSchema = toJsonSchema(resultSchema);
 
   // TODO: We should do some locking here to prevent multiple simultaneous requestInput calls.
@@ -46,7 +46,7 @@ export async function requestInput<T extends ZodTypeAny>(
     // Ensure that the we have flushed all pending updates to the server.
     await workflowContext.checkpointManager.waitForPendingUpdates();
 
-    if (timeoutMs) {
+    if (timeoutMs !== undefined) {
       timeoutAt = new Date(Date.now() + timeoutMs);
     }
 
@@ -59,5 +59,8 @@ export async function requestInput<T extends ZodTypeAny>(
     });
   });
 
-  return (await RequestInputComponent()) as T;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return (await RequestInputComponent()) as
+    | InferZodType<T>
+    | { error: string; type: "timeout" | "error" };
 }
