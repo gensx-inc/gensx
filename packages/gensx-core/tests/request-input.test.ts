@@ -43,7 +43,10 @@ suite("request input", () => {
           "waitForPendingUpdates",
         ).mockResolvedValue();
 
-        return await requestInput(mockTrigger, z.object({ message: z.string() }));
+        return await requestInput(
+          mockTrigger,
+          z.object({ message: z.string() }),
+        );
       });
 
       await withContext(contextWithWorkflow, async () => {
@@ -109,7 +112,10 @@ suite("request input", () => {
     // The error might be caught and handled differently in the execution flow
     await withContext(contextWithWorkflow, async () => {
       try {
-        const result = await requestInput(mockTrigger, z.object({ message: z.string() }));
+        const result = await requestInput(
+          mockTrigger,
+          z.object({ message: z.string() }),
+        );
         // If it doesn't throw, it should return empty object
         expect(result).toEqual(undefined);
       } catch (error) {
@@ -142,7 +148,10 @@ suite("request input", () => {
           "waitForPendingUpdates",
         ).mockResolvedValue();
 
-        return await requestInput(mockTrigger, z.object({ message: z.string() }));
+        return await requestInput(
+          mockTrigger,
+          z.object({ message: z.string() }),
+        );
       });
 
       await withContext(contextWithWorkflow, async () => {
@@ -194,7 +203,7 @@ suite("request input", () => {
       return await requestInput(
         mockTrigger,
         z.object({ message: z.string() }),
-        { timeoutMs: 5000 }
+        { timeoutMs: 5000 },
       );
     });
 
@@ -234,7 +243,7 @@ suite("request input", () => {
       return await requestInput(
         mockTrigger,
         z.object({ message: z.string() }),
-        { timeoutAt: futureDate }
+        { timeoutAt: futureDate },
       );
     });
 

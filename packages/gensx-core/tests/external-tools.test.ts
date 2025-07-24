@@ -196,7 +196,7 @@ describe("External Tools", () => {
           toolBox,
           "testTool",
           { text: "Hello" },
-          { timeoutMs: 5000 }
+          { timeoutMs: 5000 },
         );
       });
 
@@ -251,7 +251,7 @@ describe("External Tools", () => {
           toolBox,
           "testTool",
           { text: "Hello" },
-          { timeoutAt: futureDate }
+          { timeoutAt: futureDate },
         );
       });
 
