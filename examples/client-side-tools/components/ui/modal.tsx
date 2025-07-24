@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,24 @@ export function Modal({
   children,
   className,
 }: ModalProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Handle modal opening
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+      // Small delay to ensure the modal is rendered before animation starts
+      const timer = setTimeout(() => setIsAnimating(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setIsAnimating(false);
+      // Keep modal visible during exit animation
+      const timer = setTimeout(() => setIsVisible(false), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   // Close modal on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -39,20 +57,26 @@ export function Modal({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isVisible) return null;
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className={cn(
+          "absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200",
+          isAnimating ? "opacity-100" : "opacity-0",
+        )}
         onClick={onClose}
       />
 
       {/* Modal Content */}
       <div
         className={cn(
-          "relative w-full max-w-lg max-h-[90vh] overflow-hidden",
+          "relative w-full max-w-lg max-h-[90vh] overflow-hidden transition-all duration-200",
+          isAnimating
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-95 translate-y-4",
           className,
         )}
       >
@@ -64,9 +88,14 @@ export function Modal({
           <div className="relative z-[2] p-6">
             {/* Header */}
             <div className="relative flex items-center justify-center mb-6">
-              <h2 className="text-2xl font-bold text-slate-800 font-fascinate-inline">
-                {title}
-              </h2>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <img src="/gensx-map.svg" alt="ZapMap" className="w-8 h-8" />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-800 font-gugi">
+                  {title}
+                </h2>
+              </div>
               <button
                 onClick={onClose}
                 className="absolute right-0 p-2 rounded-full hover:bg-white/30 transition-colors duration-200"
