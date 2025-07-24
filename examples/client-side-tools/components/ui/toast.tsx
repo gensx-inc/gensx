@@ -34,7 +34,7 @@ function CustomToast({
   };
 
   return (
-    <div className="relative rounded-2xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-300 animate-in slide-in-from-bottom-2 backdrop-blur-[6px] bg-white/25 border border-white/40">
+    <div className="relative rounded-2xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-300 animate-in slide-in-from-bottom-2 backdrop-blur-[6px] bg-white/50 border border-white/70">
       <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)]" />
       <div className="relative z-[2] p-4">
         <div className="flex items-start gap-3">
@@ -68,6 +68,17 @@ export const addToast = (data: ToastData) => {
   return toastId;
 };
 
+// Update an existing toast
+export const updateToast = (toastId: string | number, data: ToastData) => {
+  toast.custom(
+    (t) => <CustomToast {...data} onClose={() => toast.dismiss(t)} />,
+    {
+      id: toastId,
+      duration: data.autoHide === false ? Infinity : 4000,
+    },
+  );
+};
+
 // Clear all toasts
 export const clearAllToasts = () => {
   toast.dismiss();
@@ -79,7 +90,7 @@ export function ToastContainer() {
 
   return (
     <div
-      className="fixed bottom-2 right-6 z-[9997]"
+      className="fixed bottom-2 left-6 z-[9997]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

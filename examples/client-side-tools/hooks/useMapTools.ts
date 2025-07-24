@@ -276,19 +276,53 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         photoUrl?: string;
       }[];
     }) => {
+      const newMarkers: MapMarker[] = [];
+
       markers.forEach((marker) => {
         const markerId = `marker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newMarker: MapMarker = {
           id: markerId,
           ...marker,
         };
-
-        setMarkers((prev) => [...prev, newMarker]);
+        newMarkers.push(newMarker);
       });
+
+      setMarkers((prev) => [...prev, ...newMarkers]);
+
+      // Automatically navigate map to show the new markers
+      if (newMarkers.length === 1) {
+        // For a single marker, center on it with appropriate zoom
+        const marker = newMarkers[0];
+        setCurrentView({
+          latitude: marker.latitude,
+          longitude: marker.longitude,
+          zoom: 15, // Good zoom level to see the marker clearly
+        });
+      } else if (newMarkers.length > 1) {
+        // For multiple markers, fit bounds to show all of them
+        const lats = newMarkers.map((m) => m.latitude);
+        const lngs = newMarkers.map((m) => m.longitude);
+
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
+
+        // Add some padding around the bounds
+        const latPadding = (maxLat - minLat) * 0.1;
+        const lngPadding = (maxLng - minLng) * 0.1;
+
+        setCurrentView({
+          fitBounds: [
+            [minLat - latPadding, minLng - lngPadding],
+            [maxLat + latPadding, maxLng + lngPadding],
+          ] as const,
+        });
+      }
 
       return {
         success: true,
-        message: `Markers placed`,
+        message: `Markers placed and map navigated to show them`,
       };
     },
     [],

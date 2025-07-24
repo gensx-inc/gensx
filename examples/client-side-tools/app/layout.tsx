@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Gugi } from "next/font/google";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
-import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,8 +14,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const gugi = Gugi({
+  variable: "--font-gugi",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 export const metadata: Metadata = {
-  title: "GenSX Map Explorer",
+  title: "ZapMap",
   description: "GenSX Frontend Tool Calling Example",
   icons: {
     icon: "/favicon.svg",
@@ -39,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
+        className={`${geistSans.variable} ${geistMono.variable} ${gugi.variable} antialiased bg-gray-50`}
       >
         <Analytics />
         <Suspense
@@ -51,7 +56,6 @@ export default function RootLayout({
         >
           {children}
         </Suspense>
-        <Toaster />
       </body>
     </html>
   );

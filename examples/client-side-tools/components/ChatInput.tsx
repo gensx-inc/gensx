@@ -102,9 +102,9 @@ export function ChatInput({
         {/* Caption */}
         <div className={`text-center ${isKeyboardOpen ? "mb-4" : "mb-8"}`}>
           <h1
-            className={`font-extrabold text-slate-900 mb-2 px-4 ${isKeyboardOpen ? "text-xl sm:text-2xl md:text-3xl" : "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"}`}
+            className={`font-extrabold text-slate-900 mb-2 px-4 font-gugi ${isKeyboardOpen ? "text-3xl sm:text-4xl md:text-5xl" : "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"}`}
           >
-            Explore the World with GenSX
+            Explore the World with ZapMap
           </h1>
           {!isKeyboardOpen && (
             <>
@@ -112,11 +112,11 @@ export function ChatInput({
                 Your AI-Powered Map Chat Demo
               </h2>
               <p className="text-slate-600 text-base sm:text-lg mt-2 max-w-md sm:max-w-2xl mx-auto">
-                See the power of GenSX in action—chat with the map, get instant
+                See the power of ZapMap in action—chat with the map, get instant
                 answers, and discover new places.
               </p>
               <p className="text-slate-500 text-sm sm:text-base mt-2 max-w-md sm:max-w-2xl mx-auto">
-                Ask about locations, directions, or landmarks. GenSX moves the
+                Ask about locations, directions, or landmarks. ZapMap moves the
                 map, places markers, and helps you explore—all in real time.
               </p>
             </>

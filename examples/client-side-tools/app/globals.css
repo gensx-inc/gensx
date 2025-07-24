@@ -63,19 +63,96 @@ html {
   height: 100%;
 }
 
+/* Leaflet popup glass morphism styling */
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 8px 8px rgba(0, 0, 0, 0.25),
+    0 0 25px rgba(0, 0, 0, 0.15) !important;
+  color: #1e293b !important;
+}
+
 .leaflet-popup-content {
-  margin: 8px 12px;
-  line-height: 1.4;
+  margin: 12px 16px !important;
+  line-height: 1.4 !important;
+  font-family:
+    var(--font-geist-sans),
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    system-ui,
+    sans-serif !important;
 }
 
 .leaflet-popup-content h3 {
-  margin: 0 0 4px 0;
-  font-weight: 600;
+  margin: 0 0 8px 0 !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  font-size: 16px !important;
 }
 
 .leaflet-popup-content p {
-  margin: 0 0 8px 0;
-  color: #666;
+  margin: 0 0 8px 0 !important;
+  color: #475569 !important;
+  font-size: 14px !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+.leaflet-popup-close-button {
+  color: #64748b !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  padding: 4px 8px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.leaflet-popup-close-button:hover {
+  background: rgba(255, 255, 255, 0.5) !important;
+  color: #334155 !important;
+}
+
+/* Marker label glass morphism styling */
+.marker-label {
+  margin-top: 4px !important;
+  padding: 6px 12px !important;
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  text-align: center !important;
+  max-width: 200px !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.15),
+    0 0 20px rgba(0, 0, 0, 0.1) !important;
+  font-family:
+    var(--font-geist-sans),
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    system-ui,
+    sans-serif !important;
+  text-shadow: none !important;
+}
+
+.photo-marker-label {
+  margin-top: 6px !important;
 }
 
 .custom-marker {
@@ -147,29 +224,6 @@ html {
   flex-direction: column;
   align-items: center;
   width: 120px;
-}
-
-.marker-label {
-  margin-top: 2px;
-  padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #1f2937;
-  text-align: center;
-  max-width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-.photo-marker-label {
-  margin-top: 4px;
 }
 
 /* Ensure marker labels are readable at all zoom levels */
@@ -276,15 +330,22 @@ html {
   /* Enhanced keyboard support for iOS */
   padding-bottom: env(keyboard-inset-height, 0);
   /* Ensure the input stays visible above virtual keyboard */
-  transform: translateY(calc(-1 * max(var(--keyboard-height), env(keyboard-inset-height, 0px))));
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(
+    calc(-1 * max(var(--keyboard-height), env(keyboard-inset-height, 0px)))
+  );
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Better mobile viewport handling for iOS Safari */
 @supports (-webkit-touch-callout: none) {
   .keyboard-safe-input {
     /* iOS-specific keyboard handling */
-    margin-bottom: max(env(keyboard-inset-height, 0), env(safe-area-inset-bottom, 0));
+    margin-bottom: max(
+      env(keyboard-inset-height, 0),
+      env(safe-area-inset-bottom, 0)
+    );
     padding-bottom: env(keyboard-inset-height, 0);
   }
 }
@@ -324,4 +385,9 @@ html {
 
 .leaflet-control-zoom a:hover {
   background: #f4f4f4 !important;
+}
+
+/* Font utilities */
+.font-gugi {
+  font-family: var(--font-gugi), sans-serif;
 }

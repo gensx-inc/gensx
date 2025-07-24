@@ -162,7 +162,7 @@ export function CombinedFloatingPanel({
   });
 
   const renderChatTab = () => (
-    <div className="relative z-[2] max-h-96 overflow-y-auto">
+    <div className="relative z-[2] flex-1 overflow-y-auto">
       {visibleMessages.length === 0 ? (
         <div className="p-6 text-center">
           <div className="text-sm text-slate-600">
@@ -209,7 +209,7 @@ export function CombinedFloatingPanel({
     }
 
     return (
-      <div className="relative z-[2] max-h-96 overflow-y-auto">
+      <div className="relative z-[2] flex-1 overflow-y-auto">
         {/* Route Summary */}
         <div className="p-4 border-b border-white/20 bg-white/10">
           <div className="flex justify-between items-center">
@@ -262,10 +262,10 @@ export function CombinedFloatingPanel({
   return (
     <>
       {/* Desktop Layout */}
-      <div className="hidden md:block fixed top-6 right-6 z-[9995] w-80 max-h-[calc(100vh-12rem)]">
+      <div className="hidden md:block fixed top-6 right-6 z-[9995] w-80 h-[calc(100vh-3rem)]">
         {/* Glass morphism container */}
-        <div className="relative rounded-3xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/25 border border-white/40">
-          <div className="absolute inset-0 z-[1] overflow-hidden rounded-3xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)]" />
+        <div className="relative rounded-2xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/60 border border-white/70 h-full flex flex-col">
+          <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)]" />
 
           {/* Header */}
           <div className="relative z-[2] p-4 border-b border-white/20">
@@ -351,9 +351,9 @@ export function CombinedFloatingPanel({
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden fixed inset-x-0 top-[60px] bottom-[100px] z-[9995] mx-4">
+      <div className="md:hidden fixed inset-x-0 top-[10vh] bottom-[10vh] z-[9995] mx-4">
         {/* Mobile container with glass morphism */}
-        <div className="relative rounded-2xl shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/25 border border-white/40 h-full flex flex-col">
+        <div className="relative rounded-2xl shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/60 border border-white/70 h-full flex flex-col">
           {/* Glass morphism effects */}
           <div className="absolute inset-0 z-[1] rounded-2xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)] pointer-events-none" />
           {/* Header */}

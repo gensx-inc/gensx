@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { ChatInput } from "@/components/ChatInput";
 import { useChat } from "@/hooks/useChat";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getUserId } from "@/lib/userId";
@@ -15,29 +16,27 @@ import {
   addToast,
   clearAllToasts,
   ToastContainer,
+  updateToast,
 } from "@/components/ui/toast";
-import { toolbox } from "@/gensx/tools/toolbox";
-import { ChatInput } from "@/components/ChatInput";
 
 function ChatPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const { viewports, isKeyboardOpen } = useKeyboardState();
+  const { viewports } = useKeyboardState();
   const [isMobile, setIsMobile] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
-  const [lastSeenMessageCount, setLastSeenMessageCount] = useState(0);
 
   // Show instructions on first visit
   useEffect(() => {
     const hasSeenInstructions = localStorage.getItem(
-      "gensx-map-explorer-seen-instructions",
+      "zapmap-seen-instructions",
     );
     if (!hasSeenInstructions) {
       setShowInstructions(true);
-      localStorage.setItem("gensx-map-explorer-seen-instructions", "true");
+      localStorage.setItem("zapmap-seen-instructions", "true");
     }
   }, []);
 
@@ -73,20 +72,23 @@ function ChatPageContent() {
   } = useMapTools(userId, currentThreadId);
 
   const toolImplementations = useMemo(() => {
-    return createToolImplementations<typeof toolbox>({
-      moveMap: (params) => {
+    return createToolImplementations({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      moveMap: (params: any) => {
         try {
           const { latitude, longitude, zoom } = params;
-          addToast({
+          const toastId = addToast({
             type: "info",
             title: "Moving map",
             description: `Moving to ${latitude}, ${longitude}`,
+            autoHide: false,
           });
           const result = moveMap(latitude, longitude, zoom);
-          addToast({
+          updateToast(toastId, {
             type: "success",
             title: "Map moved",
             description: `Successfully moved to location`,
+            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -94,22 +96,25 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to move map",
             description: `Error: ${error}`,
+            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
       },
       placeMarkers: (params) => {
         try {
-          addToast({
+          const toastId = addToast({
             type: "info",
             title: "Placing markers",
             description: `Adding ${params.markers?.length || 1} marker(s)`,
+            autoHide: false,
           });
           const result = placeMarkers(params);
-          addToast({
+          updateToast(toastId, {
             type: "success",
             title: "Markers placed",
             description: `Successfully added markers to map`,
+            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -117,6 +122,7 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to place markers",
             description: `Error: ${error}`,
+            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
@@ -124,16 +130,18 @@ function ChatPageContent() {
       removeMarker: (params) => {
         try {
           const { markerId } = params;
-          addToast({
+          const toastId = addToast({
             type: "info",
             title: "Removing marker",
             description: `Removing marker ${markerId}`,
+            autoHide: false,
           });
           const result = removeMarker(markerId);
-          addToast({
+          updateToast(toastId, {
             type: "success",
             title: "Marker removed",
             description: `Successfully removed marker`,
+            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -141,22 +149,25 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to remove marker",
             description: `Error: ${error}`,
+            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
       },
       clearMarkers: () => {
         try {
-          addToast({
+          const toastId = addToast({
             type: "info",
             title: "Clearing markers",
             description: "Removing all markers from map",
+            autoHide: false,
           });
           const result = clearMarkers();
-          addToast({
+          updateToast(toastId, {
             type: "success",
             title: "Markers cleared",
             description: "Successfully removed all markers",
+            autoHide: false,
           });
           return result;
         } catch (error) {
@@ -164,6 +175,7 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to clear markers",
             description: `Error: ${error}`,
+            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
@@ -175,6 +187,7 @@ function ChatPageContent() {
             type: "success",
             title: "Retrieved current view",
             description: "Got current map position",
+            autoHide: true,
           });
           return result;
         } catch (error) {
@@ -182,6 +195,7 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to get current view",
             description: `Error: ${error}`,
+            autoHide: false,
           });
           return { latitude: 0, longitude: 0, zoom: 1 };
         }
@@ -193,6 +207,7 @@ function ChatPageContent() {
             type: "success",
             title: "Listed markers",
             description: `Found ${Array.isArray(result) ? result.length : 0} markers`,
+            autoHide: true,
           });
           return result;
         } catch (error) {
@@ -200,11 +215,74 @@ function ChatPageContent() {
             type: "error",
             title: "Failed to list markers",
             description: `Error: ${error}`,
+            autoHide: false,
           });
           return { success: false, message: `error: ${error}` };
         }
       },
-      getUserLocation: async (params) => {
+      calculateAndShowRoute: async (params) => {
+        try {
+          const toastId = addToast({
+            type: "info",
+            title: "Calculating route",
+            description: "Finding the best route with directions...",
+            autoHide: false,
+          });
+          const result = await calculateAndShowRoute(params);
+          if (result.success) {
+            updateToast(toastId, {
+              type: "success",
+              title: "Route calculated",
+              description: `Route found: ${result.route?.distanceText}, ${result.route?.durationText}`,
+              autoHide: false,
+            });
+          } else {
+            updateToast(toastId, {
+              type: "error",
+              title: "Route calculation failed",
+              description: result.message,
+              autoHide: false,
+            });
+          }
+          return result;
+        } catch (error) {
+          addToast({
+            type: "error",
+            title: "Route calculation error",
+            description: `Error: ${error}`,
+            autoHide: false,
+          });
+          return { success: false, message: `error: ${error}` };
+        }
+      },
+      clearDirections: () => {
+        try {
+          const toastId = addToast({
+            type: "info",
+            title: "Clearing directions",
+            description: "Removing route from map",
+            autoHide: false,
+          });
+          const result = clearDirections();
+          updateToast(toastId, {
+            type: "success",
+            title: "Directions cleared",
+            description: "Route removed from map",
+            autoHide: false,
+          });
+          return result;
+        } catch (error) {
+          addToast({
+            type: "error",
+            title: "Failed to clear directions",
+            description: `Error: ${error}`,
+            autoHide: false,
+          });
+          return { success: false, message: `error: ${error}` };
+        }
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getUserLocation: async (params: any) => {
         try {
           const {
             enableHighAccuracy = false,
@@ -212,18 +290,20 @@ function ChatPageContent() {
             maximumAge = 60000,
           } = params;
 
-          addToast({
+          const toastId = addToast({
             type: "info",
             title: "Getting location",
             description: "Requesting your current location...",
+            autoHide: false,
           });
 
           return new Promise((resolve) => {
             if (!navigator.geolocation) {
-              addToast({
+              updateToast(toastId, {
                 type: "error",
                 title: "Location not supported",
                 description: "Geolocation is not supported by this browser",
+                autoHide: false,
               });
               resolve({
                 success: false,
@@ -240,17 +320,26 @@ function ChatPageContent() {
 
             navigator.geolocation.getCurrentPosition(
               (position) => {
-                addToast({
+                // Automatically move map to user's location
+                moveMap(
+                  position.coords.latitude,
+                  position.coords.longitude,
+                  15,
+                );
+
+                updateToast(toastId, {
                   type: "success",
                   title: "Location found",
-                  description: "Successfully retrieved your location",
+                  description:
+                    "Successfully retrieved your location and moved map",
+                  autoHide: false,
                 });
                 resolve({
                   success: true,
                   latitude: position.coords.latitude,
                   longitude: position.coords.longitude,
                   accuracy: position.coords.accuracy,
-                  message: "Location retrieved successfully",
+                  message: "Location retrieved successfully and map moved",
                 });
               },
               (error) => {
@@ -266,10 +355,11 @@ function ChatPageContent() {
                     errorMessage = "Location request timed out";
                     break;
                 }
-                addToast({
+                updateToast(toastId, {
                   type: "error",
                   title: "Location failed",
                   description: errorMessage,
+                  autoHide: false,
                 });
                 console.error("Error retrieving location", error);
                 resolve({
@@ -285,21 +375,8 @@ function ChatPageContent() {
             type: "error",
             title: "Location error",
             description: `Error: ${error}`,
+            autoHide: false,
           });
-          return { success: false, message: `error: ${error}` };
-        }
-      },
-      calculateAndShowRoute: async (params) => {
-        try {
-          return await calculateAndShowRoute(params);
-        } catch (error) {
-          return { success: false, message: `error: ${error}` };
-        }
-      },
-      clearDirections: () => {
-        try {
-          return clearDirections();
-        } catch (error) {
           return { success: false, message: `error: ${error}` };
         }
       },
@@ -313,73 +390,59 @@ function ChatPageContent() {
     listMarkers,
     calculateAndShowRoute,
     clearDirections,
+    addToast,
+    updateToast,
   ]);
 
   // Handle server-side tool calls and show toasts
-  const handleToolCall = useCallback((toolName: string, args: unknown) => {
-    switch (toolName) {
-      case "locationSearch":
-        const locationSearchArgs = args as {
-          query: string;
-          country?: string;
-        };
-        addToast({
-          type: "info",
-          title: "Searching locations",
-          description: `Searching for: ${locationSearchArgs.query}`,
-        });
-        break;
-      case "webSearch":
-        const searchArgs = args as { query: string; country?: string };
-        addToast({
-          type: "info",
-          title: "Searching web",
-          description: `Searching for: ${searchArgs.query}`,
-        });
-        break;
-      case "geocode":
-        const geocodeArgs = args as {
-          query?: string;
-          street?: string;
-          city?: string;
-        };
-        const location =
-          geocodeArgs.query ||
-          geocodeArgs.city ||
-          geocodeArgs.street ||
-          "location";
-        addToast({
-          type: "info",
-          title: "Geocoding location",
-          description: `Looking up: ${location}`,
-        });
-        break;
-      case "reverseGeocode":
-        const reverseArgs = args as { latitude: number; longitude: number };
-        addToast({
-          type: "info",
-          title: "Reverse geocoding",
-          description: `Looking up coordinates: ${reverseArgs.latitude}, ${reverseArgs.longitude}`,
-        });
-        break;
-    }
-  }, []);
+  const handleToolCall = useCallback(
+    (toolName: string, args: unknown) => {
+      switch (toolName) {
+        case "webSearch":
+          const searchArgs = args as { query: string; country?: string };
+          addToast({
+            type: "info",
+            title: "Searching web",
+            description: `Searching for: ${searchArgs.query}`,
+            autoHide: false,
+          });
+          break;
+        case "geocode":
+          const geocodeArgs = args as {
+            query?: string;
+            street?: string;
+            city?: string;
+          };
+          const location =
+            geocodeArgs.query ||
+            geocodeArgs.city ||
+            geocodeArgs.street ||
+            "location";
+          addToast({
+            type: "info",
+            title: "Geocoding location",
+            description: `Looking up: ${location}`,
+            autoHide: false,
+          });
+          break;
+        case "reverseGeocode":
+          const reverseArgs = args as { latitude: number; longitude: number };
+          addToast({
+            type: "info",
+            title: "Reverse geocoding",
+            description: `Looking up coordinates: ${reverseArgs.latitude}, ${reverseArgs.longitude}`,
+            autoHide: false,
+          });
+          break;
+      }
+    },
+    [addToast],
+  );
 
-  const { sendMessage, status, error, clear, messages, loadHistory } = useChat(
+  const { sendMessage, status, error, clear, messages } = useChat(
     toolImplementations,
     handleToolCall,
   );
-
-  // Mark messages as seen when chat history is opened
-  useEffect(() => {
-    if (showChatHistory) {
-      setLastSeenMessageCount(messages.length);
-    }
-  }, [showChatHistory, messages.length]);
-
-  // Calculate if there are unread messages
-  const hasUnreadMessages =
-    !showChatHistory && messages.length > lastSeenMessageCount;
 
   const Map = useMemo(
     () =>
@@ -393,31 +456,18 @@ function ChatPageContent() {
   // Get thread ID from URL
   const threadId = searchParams.get("thread");
 
-  // Initialize user ID, load chat history, and detect mobile on mount
+  // Initialize user ID and detect mobile on client side
   useEffect(() => {
-    const userId = getUserId();
-    const threadId = searchParams.get("thread");
-    setUserId(userId);
+    setUserId(getUserId());
     setIsMobile(window.innerWidth < 768); // md breakpoint
-    if (userId && threadId) {
-      loadHistory(threadId, userId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update CSS custom properties when viewport changes
+  // Update CSS custom property when viewport changes
   useEffect(() => {
     if (viewports) {
       document.documentElement.style.setProperty(
         "--viewport-height",
         `${viewports.visualViewport.height}px`,
-      );
-      // Set keyboard height for CSS usage
-      const keyboardHeight =
-        viewports.viewport.height - viewports.visualViewport.height;
-      document.documentElement.style.setProperty(
-        "--keyboard-height",
-        `${Math.max(0, keyboardHeight)}px`,
       );
     }
   }, [viewports]);
@@ -432,7 +482,7 @@ function ChatPageContent() {
         clear();
       }
     }
-  }, [threadId, currentThreadId, userId, clear, loadHistory]);
+  }, [threadId, currentThreadId, userId, clear]);
 
   // Send message: create thread ID if needed, update URL, then send
   const handleSendMessage = useCallback(
@@ -448,22 +498,14 @@ function ChatPageContent() {
         router.push(`?thread=${currentThreadId}`);
       }
 
-      // Show chat history automatically after sending a message (desktop only)
-      if (!showChatHistory && !isMobile) {
+      // Show chat history automatically after sending a message
+      if (!showChatHistory) {
         setShowChatHistory(true);
       }
 
       await sendMessage(content.trim(), currentThreadId, userId);
     },
-    [threadId, userId, router, sendMessage, showChatHistory, isMobile],
-  );
-
-  const handleExampleClick = useCallback(
-    (example: string) => {
-      // Trigger the chat input with the selected example
-      handleSendMessage(example);
-    },
-    [handleSendMessage],
+    [threadId, userId, router, sendMessage, showChatHistory],
   );
 
   // Show error toast when there's an error
@@ -473,28 +515,58 @@ function ChatPageContent() {
         type: "error",
         title: "Request failed",
         description: error,
+        autoHide: false,
       });
     }
-  }, [error]);
+  }, [error, addToast]);
 
   return (
     <div className="flex viewport-height bg-slate-50 overflow-hidden">
+      {/* Powered By Section - Top Left */}
+      <div className="fixed top-4 left-20 z-[9999] flex flex-row items-center gap-3">
+        {/* GenSX Logo */}
+        <a
+          href="https://gensx.dev"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <div className="bg-white/70 backdrop-blur-3xl rounded-2xl p-1 shadow-lg border border-white/50 hover:bg-white/85 transition-all duration-300 cursor-pointer">
+            <img src="/gensx-logo.svg" alt="GenSX Logo" className="h-12" />
+          </div>
+        </a>
+
+        {/* Groq Logo */}
+        <a
+          href="https://groq.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <div className="bg-white/70 backdrop-blur-3xl rounded-2xl p-2 shadow-lg border border-white/50 hover:bg-white/85 transition-all duration-300 cursor-pointer">
+            <img
+              src="https://console.groq.com/powered-by-groq.svg"
+              alt="Powered by Groq for fast inference."
+              className="h-10"
+            />
+          </div>
+        </a>
+      </div>
+
       {/* App Logo */}
       <AppLogo
         onHelpClick={handleShowInstructions}
         onChatToggle={handleToggleChatHistory}
         showChatHistory={showChatHistory}
-        hasUnreadMessages={hasUnreadMessages}
       />
 
       {/* Instructions Modal */}
       <InstructionsModal
         isOpen={showInstructions}
         onClose={handleCloseInstructions}
-        onExampleClick={handleExampleClick}
       />
 
-      {/* Combined Floating Panel */}
+      {/* Floating Chat History */}
       <CombinedFloatingPanel
         messages={messages}
         route={route}
@@ -510,30 +582,20 @@ function ChatPageContent() {
       ) : (
         <div className="relative w-full h-full">
           {/* Full-screen Map */}
-          <div className="absolute inset-0 w-full h-full md:top-0 top-[60px]">
-            <Map
-              ref={mapRef}
-              markers={markers}
-              view={currentView}
-              route={route}
-            />
+          <div className="absolute inset-0 w-full h-full">
+            <Map ref={mapRef} markers={markers} view={currentView} />
           </div>
 
-          {/* Floating Chat Bar */}
-          <div
-            className={`fixed bottom-0 left-0 right-0 z-[9999] md:bottom-6 md:left-1/2 md:right-auto md:transform md:-translate-x-1/2 md:w-full md:max-w-md px-4 pb-safe-area keyboard-safe-input pointer-events-none transition-all duration-300 ${!isKeyboardOpen ? "mb-6 md:mb-0" : ""}`}
-          >
-            <div className="relative rounded-2xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/25 border border-white/40 pointer-events-auto">
-              {/* Glass morphism effects for both desktop and mobile */}
+          {/* Floating Chat Bar - Glass Morphism */}
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[9999] w-full max-w-md px-4 pointer-events-none">
+            <div className="relative rounded-2xl overflow-hidden shadow-[0_8px_8px_rgba(0,0,0,0.25),0_0_25px_rgba(0,0,0,0.15)] transition-all duration-400 ease-out backdrop-blur-[6px] bg-white/60 border border-white/70 pointer-events-auto">
               <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl shadow-[inset_2px_2px_3px_0_rgba(255,255,255,0.6),inset_-2px_-2px_3px_1px_rgba(255,255,255,0.3),inset_0_0_0_1px_rgba(255,255,255,0.2)]" />
-
               <div className="relative z-[2] p-2">
                 <ChatInput
                   onSendMessage={handleSendMessage}
                   disabled={status !== "completed"}
                   isCentered={false}
                   autoFocus={!isMobile}
-                  isKeyboardOpen={isKeyboardOpen}
                 />
               </div>
             </div>
