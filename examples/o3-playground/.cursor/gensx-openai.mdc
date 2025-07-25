@@ -1,0 +1,234 @@
+---
+description: How to use the openai gensx package
+globs:
+alwaysApply: true
+---
+
+## OpenAI Package Syntax
+
+The `@gensx/openai` package provides a pre-wrapped version of the OpenAI SDK for GenSX, making it easy to use OpenAI's API with GenSX functionality.
+
+### Installation
+
+To install the package, run the following command:
+
+```bash
+npm install @gensx/openai
+```
+
+### Usage
+
+You can use this package in two ways:
+
+#### 1. Drop-in Replacement (Recommended)
+
+Simply replace your OpenAI import with the GenSX version:
+
+```ts
+import { OpenAI } from "@gensx/openai";
+
+// Create a client as usual
+const openai = new OpenAI({
+  apiKey: "your-api-key",
+});
+
+// All methods are automatically wrapped with GenSX functionality
+const completion = await openai.chat.completions.create({
+  model: "gpt-4.1-mini",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+
+// Use embeddings
+const embedding = await openai.embeddings.create({
+  model: "text-embedding-ada-003",
+  input: "Hello world!",
+});
+
+// Use responses
+const response = await openai.responses.create({
+  model: "gpt-4.1-mini",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+```
+
+#### 2. Wrap an Existing Instance
+
+If you already have an OpenAI instance, you can wrap it with GenSX functionality:
+
+```ts
+import { OpenAI } from "openai";
+import { wrapOpenAI } from "@gensx/openai";
+
+// Create your OpenAI instance as usual
+const client = wrapOpenAI(
+  new OpenAI({
+    apiKey: "your-api-key",
+  }),
+);
+
+// Now all methods are wrapped with GenSX functionality
+const completion = await client.chat.completions.create({
+  model: "gpt-4.1-mini",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+```
+
+### Examples
+
+#### Basic Chat Completion
+
+```ts
+import * as gensx from "@gensx/core";
+import { OpenAI } from "@gensx/openai";
+
+const openai = new OpenAI();
+
+export const BasicCompletion = gensx.Component(
+  "BasicCompletion",
+  async ({ prompt }: { prompt: string }) => {
+    const result = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+    return result.choices[0].message.content;
+  },
+);
+```
+
+#### Streaming Completion
+
+```ts
+export const StreamingCompletion = gensx.Component(
+  "StreamingCompletion",
+  async ({ prompt }: { prompt: string }) => {
+    const result = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      stream: true,
+    });
+    return result;
+  },
+);
+```
+
+#### Tools Integration
+
+```ts
+import { z } from "zod";
+
+const tools = [
+  {
+    type: "function" as const,
+    function: {
+      name: "get_weather",
+      description: "get the weather for a given location",
+      parameters: {
+        type: "object",
+        properties: {
+          location: {
+            type: "string",
+            description: "The location to get the weather for",
+          },
+        },
+        required: ["location"],
+      },
+      parse: JSON.parse,
+      function: (args: { location: string }) => {
+        console.log("getting weather for", args.location);
+        const weather = ["sunny", "cloudy", "rainy", "snowy"];
+        return {
+          weather: weather[Math.floor(Math.random() * weather.length)],
+        };
+      },
+    },
+  },
+];
+
+export const Tools = gensx.Workflow(
+  "Tools",
+  async ({ prompt }: { prompt: string }) => {
+    const result = await openai.beta.chat.completions.runTools({
+      model: "gpt-4.1-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful weather assistant.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      tools,
+    });
+    return await result.finalContent();
+  },
+);
+```
+
+#### Structured Output
+
+```ts
+import { zodResponseFormat } from "openai/helpers/zod.mjs";
+
+const trashRatingSchema = z.object({
+  bins: z.array(
+    z.object({
+      location: z.string().describe("Location of the trash bin"),
+      rating: z.number().describe("Rating from 1-10"),
+      review: z.string().describe("A sassy review of the trash bin"),
+      bestFinds: z
+        .array(z.string())
+        .describe("List of the best items found in this bin"),
+    }),
+  ),
+  overallVerdict: z
+    .string()
+    .describe("Overall verdict on the neighborhood's trash quality"),
+});
+
+export const StructuredOutput = gensx.Component(
+  "StructuredOutput",
+  async ({ prompt }: { prompt: string }) => {
+    const result = await openai.beta.chat.completions.parse({
+      model: "gpt-4.1-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: zodResponseFormat(trashRatingSchema, "trashRating"),
+    });
+    return result.choices[0].message.parsed!;
+  },
+);
+```
+
+---
