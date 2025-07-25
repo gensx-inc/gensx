@@ -352,6 +352,7 @@ type WorkflowRuntimeOpts = WorkflowOpts & {
   messageListener?: WorkflowMessageListener;
   checkpoint?: ExecutionNode;
   printUrl?: boolean;
+  executionScope?: Record<string, unknown>;
   onRequestInput?: (request: InputRequest) => Promise<void>;
   onRestoreCheckpoint?: (
     node: ExecutionNode,
@@ -388,6 +389,7 @@ export function Workflow<P extends object = {}, R = unknown>(
       onRequestInput: runtimeOpts?.onRequestInput,
       onRestoreCheckpoint: runtimeOpts?.onRestoreCheckpoint,
       checkpoint: runtimeOpts?.checkpoint,
+      executionScope: runtimeOpts?.executionScope,
     });
     await context.init();
 
