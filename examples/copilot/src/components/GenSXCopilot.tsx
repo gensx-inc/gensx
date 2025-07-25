@@ -7,6 +7,8 @@ import { CoreAssistantMessage, CoreMessage, CoreUserMessage } from "ai";
 
 import { useChat } from "../hooks/useChat";
 import type { ToolBox } from "../../gensx/tools/toolbox";
+import { useSearchParams } from "next/navigation";
+import { getUserId } from "@/lib/get-user-id";
 
 declare global {
   interface Window {
@@ -18,7 +20,11 @@ declare global {
 export default function GenSXCopilot() {
   const [input, setInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
 
   // Load jQuery dynamically
   useEffect(() => {
@@ -151,20 +157,26 @@ export default function GenSXCopilot() {
           }
 
           const element = elements.eq(index);
-          
+
           // Check if it's a link that might cause navigation
-          if (element.is("a") && element.attr("href") && !element.attr("href").startsWith("#")) {
+          if (
+            element.is("a") &&
+            element.attr("href") &&
+            !element.attr("href").startsWith("#")
+          ) {
             // For links, prevent default to avoid navigation
             const clickEvent = $.Event("click");
             element.trigger(clickEvent);
             if (!clickEvent.isDefaultPrevented()) {
-              console.warn(`Clicking link with href: ${element.attr("href")} - navigation prevented`);
+              console.warn(
+                `Clicking link with href: ${element.attr("href")} - navigation prevented`,
+              );
             }
           } else {
             // For other elements, trigger click normally
             element.trigger("click");
           }
-          
+
           return {
             success: true,
             message: `Clicked element at index ${index}`,
@@ -201,9 +213,30 @@ export default function GenSXCopilot() {
                 };
               }
 
-              $el.val(input.value);
+              // Get the native DOM element
+              const element = $el[0] as HTMLInputElement;
+
+              // Use native value setter to bypass React's controlled component
+              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype,
+                "value",
+              )?.set;
+
+              if (nativeInputValueSetter) {
+                nativeInputValueSetter.call(element, input.value);
+              } else {
+                element.value = input.value;
+              }
+
+              // Trigger React's synthetic events
               if (input.triggerEvents !== false) {
-                $el.trigger("change").trigger("input");
+                // Create and dispatch input event for React
+                const inputEvent = new Event("input", { bubbles: true });
+                element.dispatchEvent(inputEvent);
+
+                // Also trigger change event
+                const changeEvent = new Event("change", { bubbles: true });
+                element.dispatchEvent(changeEvent);
               }
 
               return {
@@ -264,9 +297,13 @@ export default function GenSXCopilot() {
           }
 
           const form = forms.eq(index);
-          
+
           // For the todo form, we'll click the submit button which already has proper handlers
-          const submitButton = form.find('button[type="submit"], input[type="submit"], button:not([type])').first();
+          const submitButton = form
+            .find(
+              'button[type="submit"], input[type="submit"], button:not([type])',
+            )
+            .first();
           if (submitButton.length > 0) {
             // Simply click the button - let React handle the state update
             submitButton.trigger("click");
@@ -276,7 +313,7 @@ export default function GenSXCopilot() {
               submitted: true,
             };
           }
-          
+
           return {
             success: false,
             message: `No submit button found in form at index ${index}`,
@@ -473,10 +510,383 @@ export default function GenSXCopilot() {
           };
         }
       },
+
+      getPageOverview: (params) => {
+        try {
+          const $ = window.$;
+          if (!$) {
+            return {
+              success: false,
+              title: undefined,
+              sections: [],
+              globalElements: { forms: [] },
+            };
+          }
+
+          // Helper to check if element is visible
+          const isVisible = (el: HTMLElement) => {
+            if (!params.visibleOnly) return true;
+            const rect = el.getBoundingClientRect();
+            return rect.height > 0 && rect.width > 0 && 
+                   rect.top < window.innerHeight && 
+                   rect.bottom > 0;
+          };
+
+          // Helper to get unique selector
+          const getUniqueSelector = (el: HTMLElement): string => {
+            if (el.id) return `#${el.id}`;
+            
+            let selector = el.tagName.toLowerCase();
+            if (el.className) {
+              const classes = el.className.split(' ').filter(c => c.trim());
+              if (classes.length > 0) {
+                selector += '.' + classes.join('.');
+              }
+            }
+            
+            // Make it unique by adding index if needed
+            const siblings = $(el.parentElement).children(selector);
+            if (siblings.length > 1) {
+              const index = siblings.index(el);
+              selector += `:eq(${index})`;
+            }
+            
+            // Add parent context if still not unique
+            if ($(selector).length > 1 && el.parentElement) {
+              const parentSelector = getUniqueSelector(el.parentElement as HTMLElement);
+              selector = `${parentSelector} > ${selector}`;
+            }
+            
+            return selector;
+          };
+
+          // Helper to truncate text
+          const truncateText = (text: string, maxLength: number) => {
+            if (!text || text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+          };
+
+          // Get page title
+          const title = $('title').text() || $('h1').first().text() || '';
+
+          // Determine which headings to include
+          const headingSelector = 
+            params.includeHeadings === 'h1' ? 'h1' :
+            params.includeHeadings === 'h1-h2' ? 'h1, h2' :
+            params.includeHeadings === 'h1-h3' ? 'h1, h2, h3' :
+            'h1, h2, h3, h4, h5, h6';
+
+          // Build sections based on headings and major containers
+          const sections: any[] = [];
+          const processedElements = new Set<HTMLElement>();
+
+          // Process headings and their associated content
+          $(headingSelector).each(function(this: any) {
+            const heading = this as HTMLElement;
+            if (!isVisible(heading) || processedElements.has(heading)) return;
+            
+            const $heading = $(heading);
+            const level = parseInt(heading.tagName.substring(1));
+            const headingText = $heading.text().trim();
+            const selector = getUniqueSelector(heading);
+            
+            // Find the section container (parent that contains content)
+            let $section = $heading.parent();
+            while ($section.length > 0 && $section[0].tagName.toLowerCase() === 'span') {
+              $section = $section.parent();
+            }
+            
+            const sectionEl = $section[0] as HTMLElement;
+            const bounds = sectionEl.getBoundingClientRect();
+            
+            // Get metrics for this section
+            const metrics = params.includeMetrics ? {
+              forms: $section.find('form').length,
+              buttons: $section.find('button, input[type="button"], input[type="submit"]').length,
+              links: $section.find('a').length,
+              inputs: $section.find('input, textarea, select').length,
+              images: $section.find('img').length,
+              lists: $section.find('ul, ol').length,
+            } : undefined;
+            
+            // Get text preview
+            const textPreview = params.includeText ? 
+              truncateText($section.text().trim(), params.maxTextLength || 100) : 
+              undefined;
+            
+            // Get interactive elements
+            const interactiveElements: any[] = [];
+            if (params.includeMetrics) {
+              $section.find('button, input, select, textarea, a').each(function(this: any) {
+                const el = this as HTMLElement;
+                if (!isVisible(el)) return;
+                
+                const $el = $(el);
+                const type = el.tagName.toLowerCase();
+                const elemSelector = getUniqueSelector(el);
+                
+                interactiveElements.push({
+                  type,
+                  selector: elemSelector,
+                  text: truncateText($el.text().trim() || $el.val() as string || '', 50),
+                  label: $el.attr('aria-label') || $el.attr('placeholder') || 
+                         $(`label[for="${$el.attr('id')}"]`).text() || undefined,
+                });
+              });
+            }
+            
+            sections.push({
+              heading: headingText,
+              level,
+              selector,
+              bounds: {
+                top: Math.round(bounds.top),
+                left: Math.round(bounds.left),
+                width: Math.round(bounds.width),
+                height: Math.round(bounds.height),
+              },
+              metrics,
+              textPreview,
+              interactiveElements: interactiveElements.slice(0, 10), // Limit to 10
+            });
+            
+            processedElements.add(sectionEl);
+          });
+
+          // Add major containers without headings
+          $('main, article, section, [role="main"], .container, .content').each(function(this: any) {
+            const container = this as HTMLElement;
+            if (!isVisible(container) || processedElements.has(container)) return;
+            
+            const $container = $(container);
+            if ($container.find(headingSelector).length > 0) return; // Skip if has headings
+            
+            const selector = getUniqueSelector(container);
+            const bounds = container.getBoundingClientRect();
+            
+            const metrics = params.includeMetrics ? {
+              forms: $container.find('form').length,
+              buttons: $container.find('button, input[type="button"], input[type="submit"]').length,
+              links: $container.find('a').length,
+              inputs: $container.find('input, textarea, select').length,
+              images: $container.find('img').length,
+              lists: $container.find('ul, ol').length,
+            } : undefined;
+            
+            if (metrics && Object.values(metrics).some(v => v > 0)) {
+              sections.push({
+                heading: container.getAttribute('aria-label') || container.className || container.tagName,
+                level: 0,
+                selector,
+                bounds: {
+                  top: Math.round(bounds.top),
+                  left: Math.round(bounds.left),
+                  width: Math.round(bounds.width),
+                  height: Math.round(bounds.height),
+                },
+                metrics,
+                textPreview: params.includeText ? 
+                  truncateText($container.text().trim(), params.maxTextLength || 100) : 
+                  undefined,
+              });
+            }
+          });
+
+          // Get global elements
+          const globalElements = {
+            navigation: (() => {
+              const $nav = $('nav, [role="navigation"]').first();
+              if ($nav.length > 0) {
+                return {
+                  present: true,
+                  selector: getUniqueSelector($nav[0] as HTMLElement),
+                  itemCount: $nav.find('a').length,
+                };
+              }
+              return undefined;
+            })(),
+            forms: $('form').map(function(this: any) {
+              const form = this as HTMLElement;
+              const $form = $(form);
+              const purpose = 
+                $form.attr('aria-label') || 
+                $form.find('h1, h2, h3').first().text() ||
+                ($form.find('input[type="search"]').length > 0 ? 'search' : 'input');
+              
+              return {
+                selector: getUniqueSelector(form),
+                purpose: purpose || undefined,
+              };
+            }).get(),
+            modals: (() => {
+              const $modal = $('[role="dialog"], .modal:visible, .dialog:visible').first();
+              if ($modal.length > 0) {
+                return {
+                  open: true,
+                  selector: getUniqueSelector($modal[0] as HTMLElement),
+                };
+              }
+              return undefined;
+            })(),
+          };
+
+          return {
+            success: true,
+            title: title || undefined,
+            sections,
+            globalElements,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            title: undefined,
+            sections: [],
+            globalElements: { forms: [] },
+          };
+        }
+      },
+
+      inspectSection: (params) => {
+        try {
+          const $ = window.$;
+          if (!$) {
+            return {
+              success: false,
+              element: undefined,
+              error: "jQuery not loaded",
+            };
+          }
+
+          const $element = $(params.selector);
+          if ($element.length === 0) {
+            return {
+              success: false,
+              element: undefined,
+              error: `No element found with selector: ${params.selector}`,
+            };
+          }
+
+          const element = $element[0] as HTMLElement;
+          const bounds = element.getBoundingClientRect();
+
+          // Helper to get text content based on setting
+          const getText = (el: HTMLElement) => {
+            const fullText = $(el).text().trim();
+            if (params.textLength === 'full') return fullText;
+            if (params.textLength === 'summary') return fullText.substring(0, 50) + (fullText.length > 50 ? '...' : '');
+            return fullText.substring(0, 200) + (fullText.length > 200 ? '...' : '');
+          };
+
+          // Helper to process children
+          const processChildren = (el: HTMLElement, depth: number): any[] => {
+            if (!params.includeChildren || depth >= (params.maxDepth || 3)) return [];
+            
+            const children: any[] = [];
+            $(el).children().each(function(this: any) {
+              const child = this as HTMLElement;
+              const $child = $(child);
+              
+              children.push({
+                tag: child.tagName.toLowerCase(),
+                id: child.id || undefined,
+                classes: child.className.split(' ').filter(c => c.trim()),
+                text: getText(child),
+                children: params.depth === 'deep' ? processChildren(child, depth + 1) : undefined,
+              });
+            });
+            
+            return children;
+          };
+
+          // Get interactive elements within
+          const interactiveElements: any[] = [];
+          $element.find('button, input, select, textarea, a').each(function(this: any) {
+            const el = this as HTMLElement;
+            const $el = $(el);
+            
+            const state: any = {};
+            if (el.tagName.toLowerCase() === 'input') {
+              state.value = $el.val();
+              state.checked = $el.prop('checked');
+              state.disabled = $el.prop('disabled');
+            }
+            
+            interactiveElements.push({
+              type: el.tagName.toLowerCase(),
+              selector: `${params.selector} ${el.tagName.toLowerCase()}:eq(${$element.find(el.tagName).index(el)})`,
+              label: $el.attr('aria-label') || $el.attr('placeholder') || 
+                     $(`label[for="${$el.attr('id')}"]`).text() || undefined,
+              text: $el.text().trim() || undefined,
+              state: Object.keys(state).length > 0 ? state : undefined,
+            });
+          });
+
+          return {
+            success: true,
+            element: {
+              tag: element.tagName.toLowerCase(),
+              selector: params.selector,
+              id: element.id || undefined,
+              classes: element.className.split(' ').filter(c => c.trim()),
+              text: getText(element),
+              attributes: (() => {
+                const attrs: Record<string, string> = {};
+                for (let i = 0; i < element.attributes.length; i++) {
+                  const attr = element.attributes[i];
+                  if (attr.name !== 'class' && attr.name !== 'id') {
+                    attrs[attr.name] = attr.value;
+                  }
+                }
+                return Object.keys(attrs).length > 0 ? attrs : undefined;
+              })(),
+              bounds: {
+                top: Math.round(bounds.top),
+                left: Math.round(bounds.left),
+                width: Math.round(bounds.width),
+                height: Math.round(bounds.height),
+                visible: bounds.height > 0 && bounds.width > 0,
+              },
+              children: processChildren(element, 0),
+              interactiveElements,
+            },
+            error: undefined,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            element: undefined,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
     });
   }, []);
 
-  const { messages, sendMessage, status, error } = useChat(toolImplementations);
+  const { messages, sendMessage, status, error, loadHistory, clear } =
+    useChat(toolImplementations);
+
+  // Get thread ID from URL
+  const threadId = searchParams.get("copilotThreadId");
+
+  // Initialize user ID, and load chat history on mount
+  useEffect(() => {
+    const userId = getUserId();
+    const threadId = searchParams.get("copilotThreadId");
+    setUserId(userId);
+    if (userId && threadId) {
+      loadHistory(threadId, userId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (threadId && threadId !== currentThreadId) {
+      setCurrentThreadId(threadId);
+      if (!threadId) {
+        clear();
+      }
+    }
+  }, [threadId, currentThreadId, clear]);
 
   useEffect(() => {
     scrollToBottom();
@@ -488,7 +898,11 @@ export default function GenSXCopilot() {
 
     const userMessage = input;
     setInput("");
-    await sendMessage(userMessage);
+    await sendMessage(
+      userMessage,
+      currentThreadId ?? undefined,
+      userId ?? undefined,
+    );
   };
 
   return (
@@ -542,7 +956,13 @@ export default function GenSXCopilot() {
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message, index) =>
-              formatMessageContent(index, message, messages),
+              formatMessageContent(
+                index,
+                message,
+                messages,
+                expandedTools,
+                setExpandedTools,
+              ),
             )}
             {error && (
               <div className="bg-red-100 text-red-700 p-3 rounded-lg">
@@ -581,6 +1001,8 @@ function formatMessageContent(
   index: number,
   message: CoreMessage,
   messages: CoreMessage[],
+  expandedTools: Set<string>,
+  setExpandedTools: React.Dispatch<React.SetStateAction<Set<string>>>,
 ) {
   if (message.role === "system" || message.role === "tool") {
     return null;
@@ -589,26 +1011,36 @@ function formatMessageContent(
   if (message.role === "user") {
     return formatUserContent(index, message);
   }
-  return formatAssistantContent(index, message, messages);
+  return formatAssistantContent(
+    index,
+    message,
+    messages,
+    expandedTools,
+    setExpandedTools,
+  );
 }
 
 function formatUserContent(index: number, message: CoreUserMessage) {
-  if (typeof message.content === "string") {
-    return <div key={index}>{message.content}</div>;
-  }
+  const content =
+    typeof message.content === "string"
+      ? message.content
+      : message.content
+          .map((part) => {
+            if ("text" in part) {
+              return part.text;
+            }
+            if (typeof part === "string") {
+              return part;
+            }
+            return "";
+          })
+          .join("");
+
   return (
-    <div key={index}>
-      {message.content
-        .map((part) => {
-          if ("text" in part) {
-            return part.text;
-          }
-          if (typeof part === "string") {
-            return part;
-          }
-          return "";
-        })
-        .join("")}
+    <div key={index} className="flex justify-end">
+      <div className="max-w-[80%] p-3 rounded-lg bg-blue-600 text-white">
+        <p className="whitespace-pre-wrap">{content}</p>
+      </div>
     </div>
   );
 }
@@ -617,6 +1049,8 @@ function formatAssistantContent(
   index: number,
   message: CoreAssistantMessage,
   messages: CoreMessage[],
+  expandedTools: Set<string>,
+  setExpandedTools: React.Dispatch<React.SetStateAction<Set<string>>>,
 ) {
   if (typeof message.content === "string") {
     return <div key={index}>{message.content}</div>;
@@ -651,14 +1085,83 @@ function formatAssistantContent(
       });
     }
   }
+  const toggleTool = (toolCallId: string) => {
+    setExpandedTools((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(toolCallId)) {
+        newSet.delete(toolCallId);
+      } else {
+        newSet.add(toolCallId);
+      }
+      return newSet;
+    });
+  };
+
   return (
-    <div key={index}>
-      <p>{textContent}</p>
-      <div>
-        {/** todo: expandable to show args and result */}
-        {toolCalls.map((call) => (
-          <div key={call.toolCallId}>{call.toolName}</div>
-        ))}
+    <div key={index} className="flex justify-start">
+      <div className="max-w-[80%] p-3 rounded-lg bg-gray-100 text-gray-800">
+        {textContent && (
+          <p className="whitespace-pre-wrap mb-2">{textContent}</p>
+        )}
+        {toolCalls.length > 0 && (
+          <div className="space-y-2">
+            {toolCalls.map((call) => {
+              const isExpanded = expandedTools.has(call.toolCallId);
+              return (
+                <div
+                  key={call.toolCallId}
+                  className="border border-gray-300 rounded-md overflow-hidden"
+                >
+                  <button
+                    onClick={() => toggleTool(call.toolCallId)}
+                    className="w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-sm"
+                  >
+                    <span className="font-medium">{call.toolName}</span>
+                    <svg
+                      className={`w-4 h-4 transition-transform ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {isExpanded && (
+                    <div className="p-3 bg-white border-t border-gray-300">
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-600 mb-1">
+                            Input:
+                          </p>
+                          <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                            {JSON.stringify(call.args, null, 2)}
+                          </pre>
+                        </div>
+                        {call.result !== undefined && (
+                          <div>
+                            <p className="text-xs font-semibold text-gray-600 mb-1">
+                              Output:
+                            </p>
+                            <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                              {JSON.stringify(call.result, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

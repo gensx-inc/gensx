@@ -2,12 +2,14 @@ import { useState, useCallback, useEffect } from "react";
 import { useWorkflow, useObject } from "@gensx/react";
 import { JsonValue, ToolImplementations, WorkflowMessage } from "@gensx/core";
 import { CoreMessage, TextPart, ToolCallPart } from "ai";
+import { getChatHistory } from "@/actions/chat-history";
 
 // Workflow input/output types
 export interface ChatWorkflowInput {
   prompt: string;
-  // threadId: string;
-  // userId: string;
+  existingMessages?: { role: string; content: unknown }[];
+  threadId?: string;
+  userId?: string;
 }
 
 export interface ChatWorkflowOutput {
@@ -23,14 +25,14 @@ export type Message = CoreMessage;
 interface UseChatReturn {
   sendMessage: (
     prompt: string,
-    // threadId: string,
-    // userId: string,
+    threadId?: string,
+    userId?: string,
   ) => Promise<void>;
   messages: Message[];
   status: ChatStatus;
   error: string | null;
   clear: () => void;
-  // loadHistory: (threadId: string, userId: string) => Promise<void>;
+  loadHistory: (threadId?: string, userId?: string) => Promise<void>;
   execution: WorkflowMessage[];
 }
 
@@ -121,24 +123,24 @@ export function useChat(
     setStatus("completed");
   }, []);
 
-  // const loadHistory = useCallback(async (threadId: string, userId: string) => {
-  //   if (!threadId || !userId) return;
+  const loadHistory = useCallback(
+    async (threadId?: string, userId?: string) => {
+      threadId = threadId ?? "default";
+      userId = userId ?? "default";
 
-  //   try {
-  //     const history = await getChatHistory(userId, threadId);
-  //     setMessages(history);
-  //   } catch (err) {
-  //     console.error("Error loading conversation history:", err);
-  //   }
-  // }, []);
+      try {
+        const history = await getChatHistory(userId, threadId);
+        setMessages(history);
+      } catch (err) {
+        console.error("Error loading conversation history:", err);
+      }
+    },
+    [],
+  );
 
   const sendMessage = useCallback(
-    async (
-      prompt: string,
-      // threadId: string,
-      // userId: string,
-    ) => {
-      // if (!prompt || !threadId || !userId) return;
+    async (prompt: string, threadId?: string, userId?: string) => {
+      if (!prompt) return;
 
       setStatus("waiting");
 
@@ -153,13 +155,14 @@ export function useChat(
       await start({
         inputs: {
           prompt: prompt,
-          // threadId: threadId,
-          // userId: userId,
+          existingMessages: messages,
+          threadId: threadId,
+          userId: userId,
         },
       });
       setStatus("completed");
     },
-    [start],
+    [start, messages],
   );
 
   return {
@@ -168,7 +171,7 @@ export function useChat(
     status,
     error: workflowError,
     clear,
-    // loadHistory,
+    loadHistory,
     execution,
   };
 }
