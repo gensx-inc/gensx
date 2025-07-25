@@ -4,8 +4,9 @@ import { CoreMessage } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 
 import { Agent } from "./agent";
-import { asToolSet } from "@gensx/vercel-ai";
+import { asToolSet, generateText } from "@gensx/vercel-ai";
 import { toolbox } from "./tools/toolbox";
+import { z } from "zod";
 
 type ThreadData = {
   messages: CoreMessage[];
@@ -21,42 +22,43 @@ export const copilotWorkflow = gensx.Workflow(
     prompt: string;
     threadId?: string;
     userId?: string;
-  }) => {
-    threadId = threadId ?? "default";
-    userId = userId ?? "default";
+    }) => {
+    try {
+      threadId = threadId ?? "default";
+      userId = userId ?? "default";
 
-    // Get blob instance for chat history storage
-    const chatHistoryBlob = useBlob<ThreadData>(
-      `chat-history/${userId}/${threadId}.json`,
-    );
+      // Get blob instance for chat history storage
+      const chatHistoryBlob = useBlob<ThreadData>(
+        `chat-history/${userId}/${threadId}.json`,
+      );
 
-    // Function to load thread data
-    const loadThreadData = async (): Promise<ThreadData> => {
-      const data = await chatHistoryBlob.getJSON();
+      // Function to load thread data
+      const loadThreadData = async (): Promise<ThreadData> => {
+        const data = await chatHistoryBlob.getJSON();
 
-      // Handle old format (array of messages) - convert to new format
-      if (Array.isArray(data)) {
-        return { messages: data };
-      }
+        // Handle old format (array of messages) - convert to new format
+        if (Array.isArray(data)) {
+          return { messages: data };
+        }
 
-      return data ?? { messages: [] };
-    };
+        return data ?? { messages: [] };
+      };
 
-    // Function to save thread data
-    const saveThreadData = async (threadData: ThreadData): Promise<void> => {
-      await chatHistoryBlob.putJSON(threadData);
-    };
+      // Function to save thread data
+      const saveThreadData = async (threadData: ThreadData): Promise<void> => {
+        await chatHistoryBlob.putJSON(threadData);
+      };
 
-    const threadData = await loadThreadData();
-    const existingMessages = threadData.messages;
+      const threadData = await loadThreadData();
+      const existingMessages = threadData.messages;
 
-    // Check if this is a new thread (no messages yet)
-    const isNewThread = existingMessages.length === 0;
+      // Check if this is a new thread (no messages yet)
+      const isNewThread = existingMessages.length === 0;
 
-    if (isNewThread) {
-      const systemMessage: CoreMessage = {
-        role: "system",
-        content: `You are a helpful AI assistant with the ability to interact with web pages using jQuery-based tools.
+      if (isNewThread) {
+        const systemMessage: CoreMessage = {
+          role: "system",
+          content: `You are a helpful AI assistant with the ability to interact with web pages using jQuery-based tools.
 You can inspect elements, click buttons, fill forms, and help users navigate and interact with web applications.
 
 When helping users:
@@ -82,52 +84,96 @@ The page overview tools (getPageOverview and inspectSection) provide stable sele
 Be helpful, clear, and explain what you're doing as you interact with the page.
 
 <date>The current date and time is ${new Date().toLocaleString()}.</date>`,
+        };
+
+        existingMessages.push(systemMessage);
+      } else if (
+        existingMessages[0].role === "system" &&
+        typeof existingMessages[0].content === "string"
+      ) {
+        // update the system message with the current date and time
+        existingMessages[0].content = existingMessages[0].content.replace(
+          /<date>.*<\/date>/,
+          `<date>The current date and time is ${new Date().toLocaleString()}.</date>`,
+        );
+      }
+
+      // Add the new user message
+      const messages: CoreMessage[] = [
+        ...(existingMessages as CoreMessage[]),
+        {
+          role: "user",
+          content: prompt,
+        },
+      ];
+
+      const tools = {
+        ...Object.fromEntries(
+          Object.entries(asToolSet(toolbox)).filter(
+            ([key]) => key !== "fetchPageContent",
+          ),
+        ),
+        getPageSummary: {
+          execute: async () => {
+          const pageContent = await gensx.executeExternalTool(toolbox, "fetchPageContent", {});
+
+          const summary = await SummarizePageContent(pageContent.content);
+          return {
+            success: true,
+            summary,
+          };
+        },
+          parameters: z.object({}),
+          description: "Get a summary of the page, useful for getting a complete overview of the page and details necessary to select specific elements on the page using classes or ids for a deeper inspection.",
+        },
       };
 
-      existingMessages.push(systemMessage);
-    } else if (
-      existingMessages[0].role === "system" &&
-      typeof existingMessages[0].content === "string"
-    ) {
-      // update the system message with the current date and time
-      existingMessages[0].content = existingMessages[0].content.replace(
-        /<date>.*<\/date>/,
-        `<date>The current date and time is ${new Date().toLocaleString()}.</date>`,
-      );
+      const groqClient = createOpenAI({
+        apiKey: process.env.GROQ_API_KEY!,
+        baseURL: "https://api.groq.com/openai/v1",
+      });
+
+      const model = groqClient("moonshotai/kimi-k2-instruct");
+      const result = await Agent({
+        messages,
+        tools,
+        model,
+        // providerOptions: thinking
+        //   ? {
+        //       anthropic: {
+        //         thinking: { type: "enabled", budgetTokens: 12000 },
+        //       } satisfies AnthropicProviderOptions,
+        //     }
+        //   : undefined,
+      });
+
+      await saveThreadData({ messages: result.messages });
+
+      return result;
+    } catch (error) {
+      console.error("Error in copilot workflow", error);
+      throw error;
     }
-
-    // Add the new user message
-    const messages: CoreMessage[] = [
-      ...(existingMessages as CoreMessage[]),
-      {
-        role: "user",
-        content: prompt,
-      },
-    ];
-
-    const tools = asToolSet(toolbox);
-
-    const groqClient = createOpenAI({
-      apiKey: process.env.GROQ_API_KEY!,
-      baseURL: "https://api.groq.com/openai/v1",
-    });
-
-    const model = groqClient("moonshotai/kimi-k2-instruct");
-    const result = await Agent({
-      messages,
-      tools,
-      model,
-      // providerOptions: thinking
-      //   ? {
-      //       anthropic: {
-      //         thinking: { type: "enabled", budgetTokens: 12000 },
-      //       } satisfies AnthropicProviderOptions,
-      //     }
-      //   : undefined,
-    });
-
-    await saveThreadData({ messages: result.messages });
-
-    return result;
   },
 );
+
+const SummarizePageContent = async (pageContent: string) => {
+  // use a fast light model to summarize the page content
+  const groqClient = createOpenAI({
+    apiKey: process.env.GROQ_API_KEY!,
+    baseURL: "https://api.groq.com/openai/v1",
+  });
+
+  // Keep the content under the 131,000 token limit (assume 4 characters per token)
+  if (pageContent.length > 131000 * 4) {
+    console.warn("Page content is too long, truncating to 131,000 tokens");
+    pageContent = pageContent.slice(0, 131000 * 4);
+  }
+
+  const model = groqClient("moonshotai/kimi-k2-instruct");
+  const result = await generateText({
+    model,
+    prompt: `Summarize the following HTML content. Include a description of the layout, and important details about the page, the information it contains and details necessary to select specific elements on the page using classes or ids:\n\n${pageContent}`,
+  });
+  return result.text;
+};
