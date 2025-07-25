@@ -2,6 +2,14 @@ import { createToolBox } from "@gensx/core";
 import { z } from "zod";
 
 export const toolbox = createToolBox({
+  fetchPageContent: {
+    description: "Fetch the html content of the current page",
+    params: z.object({}),
+    result: z.object({
+      success: z.boolean(),
+      content: z.string().describe("The html content of the current page"),
+    }),
+  },
   inspectElements: {
     description:
       "Inspect multiple elements on the page using jQuery selectors and get their properties",
@@ -13,7 +21,7 @@ export const toolbox = createToolBox({
             properties: z
               .array(z.enum(["text", "value", "html", "attr", "css", "data"]))
               .optional()
-              .describe("Properties to retrieve from the element"),
+              .describe("Properties to retrieve from the element. Valid values are: text, value, html, attr, css, data"),
             attributeName: z
               .string()
               .optional()
@@ -424,6 +432,35 @@ export const toolbox = createToolBox({
           ),
         })
         .optional(),
+      error: z.string().optional(),
+    }),
+  },
+
+  navigate: {
+    description:
+      "Navigate the browser using browser navigation (back, forward)",
+    params: z.object({
+      action: z
+        .enum(["back", "forward"])
+        .describe("Navigation action to perform"),
+      waitForLoad: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe("Whether to wait for the page to load after navigation"),
+      timeout: z
+        .number()
+        .optional()
+        .default(5000)
+        .describe("Maximum time to wait for page load in milliseconds"),
+    }),
+    result: z.object({
+      success: z.boolean(),
+      action: z.string(),
+      currentUrl: z.string().optional().describe("Current URL after navigation"),
+      previousUrl: z.string().optional().describe("URL before navigation"),
+      loadTime: z.number().optional().describe("Time taken for navigation in milliseconds"),
+      message: z.string(),
       error: z.string().optional(),
     }),
   },

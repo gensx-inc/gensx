@@ -25,6 +25,7 @@ export default function GenSXCopilot() {
   const searchParams = useSearchParams();
   const [userId, setUserId] = useState<string | null>(null);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   // Load jQuery dynamically
@@ -59,6 +60,14 @@ export default function GenSXCopilot() {
 
   const toolImplementations = useMemo(() => {
     return createToolImplementations<ToolBox>({
+      fetchPageContent: async () => {
+        // Fetch the current page HTML using window.document.documentElement.outerHTML
+        const pageContent = window.document.documentElement.outerHTML;
+        return {
+          success: true,
+          content: pageContent,
+        };
+      },
       inspectElements: (params) => {
         try {
           const $ = window.$;
@@ -90,19 +99,30 @@ export default function GenSXCopilot() {
                   const $el = $(this);
                   const data: any = { index };
 
-                  if (!elementParams.properties || elementParams.properties.includes("text")) {
+                  if (
+                    !elementParams.properties ||
+                    elementParams.properties.includes("text")
+                  ) {
                     data.text = $el.text();
                   }
-                  if (!elementParams.properties || elementParams.properties.includes("value")) {
+                  if (
+                    !elementParams.properties ||
+                    elementParams.properties.includes("value")
+                  ) {
                     data.value = $el.val();
                   }
-                  if (!elementParams.properties || elementParams.properties.includes("html")) {
+                  if (
+                    !elementParams.properties ||
+                    elementParams.properties.includes("html")
+                  ) {
                     data.html = $el.html();
                   }
                   if (elementParams.properties?.includes("attr")) {
                     if (elementParams.attributeName) {
                       data.attributes = {
-                        [elementParams.attributeName]: $el.attr(elementParams.attributeName),
+                        [elementParams.attributeName]: $el.attr(
+                          elementParams.attributeName,
+                        ),
                       };
                     } else {
                       const attrs: Record<string, string> = {};
@@ -117,7 +137,9 @@ export default function GenSXCopilot() {
                   if (elementParams.properties?.includes("css")) {
                     if (elementParams.cssProperty) {
                       data.css = {
-                        [elementParams.cssProperty]: $el.css(elementParams.cssProperty),
+                        [elementParams.cssProperty]: $el.css(
+                          elementParams.cssProperty,
+                        ),
                       };
                     } else {
                       data.css = {};
@@ -148,7 +170,7 @@ export default function GenSXCopilot() {
             }
           });
 
-          const successCount = inspections.filter(i => i.success).length;
+          const successCount = inspections.filter((i) => i.success).length;
           return {
             success: successCount > 0,
             inspections,
@@ -175,18 +197,20 @@ export default function GenSXCopilot() {
           }
 
           const results = [];
-          
+
           for (let i = 0; i < params.elements.length; i++) {
             const elementParams = params.elements[i];
             try {
               // Apply automatic delay between operations for React state (except first)
               if (i > 0) {
-                await new Promise(resolve => setTimeout(resolve, 150));
+                await new Promise((resolve) => setTimeout(resolve, 150));
               }
-              
+
               // Apply additional delay if specified
               if (elementParams.delay && elementParams.delay > 0) {
-                await new Promise(resolve => setTimeout(resolve, elementParams.delay));
+                await new Promise((resolve) =>
+                  setTimeout(resolve, elementParams.delay),
+                );
               }
 
               const elements = $(elementParams.selector);
@@ -249,7 +273,7 @@ export default function GenSXCopilot() {
             }
           }
 
-          const clickedCount = results.filter(r => r.clicked).length;
+          const clickedCount = results.filter((r) => r.clicked).length;
           return {
             success: clickedCount > 0,
             clicks: results,
@@ -276,13 +300,13 @@ export default function GenSXCopilot() {
           }
 
           const results = [];
-          
+
           for (let i = 0; i < params.inputs.length; i++) {
             const input = params.inputs[i];
-            
+
             // Apply automatic delay between operations for React state (except first)
             if (i > 0) {
-              await new Promise(resolve => setTimeout(resolve, 150));
+              await new Promise((resolve) => setTimeout(resolve, 150));
             }
             try {
               const $el = $(input.selector);
@@ -300,11 +324,15 @@ export default function GenSXCopilot() {
               const tagName = element.tagName.toLowerCase();
 
               // Only handle text inputs and textareas
-              if (element instanceof HTMLInputElement && (element.type === "checkbox" || element.type === "radio")) {
+              if (
+                element instanceof HTMLInputElement &&
+                (element.type === "checkbox" || element.type === "radio")
+              ) {
                 results.push({
                   selector: input.selector,
                   filled: false,
-                  error: "Use toggleCheckboxes for checkboxes and radio buttons",
+                  error:
+                    "Use toggleCheckboxes for checkboxes and radio buttons",
                 });
                 continue;
               } else if (tagName === "select") {
@@ -316,14 +344,17 @@ export default function GenSXCopilot() {
                 continue;
               } else {
                 // For text inputs and textareas only
-                const inputElement = element as HTMLInputElement | HTMLTextAreaElement;
-                
+                const inputElement = element as
+                  | HTMLInputElement
+                  | HTMLTextAreaElement;
+
                 // Use native value setter to bypass React's controlled component
                 if (inputElement instanceof HTMLInputElement) {
-                  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                    window.HTMLInputElement.prototype,
-                    "value",
-                  )?.set;
+                  const nativeInputValueSetter =
+                    Object.getOwnPropertyDescriptor(
+                      window.HTMLInputElement.prototype,
+                      "value",
+                    )?.set;
 
                   if (nativeInputValueSetter) {
                     nativeInputValueSetter.call(inputElement, input.value);
@@ -331,10 +362,11 @@ export default function GenSXCopilot() {
                     inputElement.value = input.value;
                   }
                 } else if (inputElement instanceof HTMLTextAreaElement) {
-                  const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
-                    window.HTMLTextAreaElement.prototype,
-                    "value",
-                  )?.set;
+                  const nativeTextAreaValueSetter =
+                    Object.getOwnPropertyDescriptor(
+                      window.HTMLTextAreaElement.prototype,
+                      "value",
+                    )?.set;
 
                   if (nativeTextAreaValueSetter) {
                     nativeTextAreaValueSetter.call(inputElement, input.value);
@@ -396,13 +428,13 @@ export default function GenSXCopilot() {
           }
 
           const results = [];
-          
+
           for (let i = 0; i < params.selects.length; i++) {
             const select = params.selects[i];
-            
+
             // Apply automatic delay between operations for React state (except first)
             if (i > 0) {
-              await new Promise(resolve => setTimeout(resolve, 150));
+              await new Promise((resolve) => setTimeout(resolve, 150));
             }
             try {
               const $el = $(select.selector);
@@ -432,7 +464,7 @@ export default function GenSXCopilot() {
               if (select.triggerEvents !== false) {
                 const changeEvent = new Event("change", { bubbles: true });
                 selectElement.dispatchEvent(changeEvent);
-                
+
                 const inputEvent = new Event("input", { bubbles: true });
                 selectElement.dispatchEvent(inputEvent);
               }
@@ -477,13 +509,13 @@ export default function GenSXCopilot() {
           }
 
           const results = [];
-          
+
           for (let i = 0; i < params.checkboxes.length; i++) {
             const checkbox = params.checkboxes[i];
-            
+
             // Apply automatic delay between operations for React state (except first)
             if (i > 0) {
-              await new Promise(resolve => setTimeout(resolve, 150));
+              await new Promise((resolve) => setTimeout(resolve, 150));
             }
             try {
               const $el = $(checkbox.selector);
@@ -497,8 +529,10 @@ export default function GenSXCopilot() {
               }
 
               const element = $el[0];
-              if (!(element instanceof HTMLInputElement) || 
-                  (element.type !== "checkbox" && element.type !== "radio")) {
+              if (
+                !(element instanceof HTMLInputElement) ||
+                (element.type !== "checkbox" && element.type !== "radio")
+              ) {
                 results.push({
                   selector: checkbox.selector,
                   toggled: false,
@@ -508,7 +542,7 @@ export default function GenSXCopilot() {
               }
 
               const currentChecked = element.checked;
-              
+
               // Only click if we need to change the state
               if (currentChecked !== checkbox.checked) {
                 // Use native click to trigger React event handlers
@@ -556,12 +590,14 @@ export default function GenSXCopilot() {
           }
 
           const results = [];
-          
+
           for (const formParams of params.forms) {
             try {
               // Apply delay if specified
               if (formParams.delay && formParams.delay > 0) {
-                await new Promise(resolve => setTimeout(resolve, formParams.delay));
+                await new Promise((resolve) =>
+                  setTimeout(resolve, formParams.delay),
+                );
               }
 
               const forms = $(formParams.selector);
@@ -615,7 +651,7 @@ export default function GenSXCopilot() {
             }
           }
 
-          const submittedCount = results.filter(r => r.submitted).length;
+          const submittedCount = results.filter((r) => r.submitted).length;
           return {
             success: submittedCount > 0,
             submissions: results,
@@ -684,7 +720,10 @@ export default function GenSXCopilot() {
             }
           });
 
-          const totalHighlighted = results.reduce((sum, r) => sum + r.highlighted, 0);
+          const totalHighlighted = results.reduce(
+            (sum, r) => sum + r.highlighted,
+            0,
+          );
           return {
             success: totalHighlighted > 0,
             highlights: results,
@@ -704,7 +743,7 @@ export default function GenSXCopilot() {
           const $ = await ensureJQuery();
 
           const results = [];
-          
+
           for (const elementParams of params.elements) {
             try {
               const timeout = elementParams.timeout || 5000;
@@ -722,7 +761,9 @@ export default function GenSXCopilot() {
               results.push({
                 selector: elementParams.selector,
                 found,
-                error: found ? undefined : `Timeout waiting for element: ${elementParams.selector}`,
+                error: found
+                  ? undefined
+                  : `Timeout waiting for element: ${elementParams.selector}`,
               });
             } catch (error) {
               results.push({
@@ -733,7 +774,7 @@ export default function GenSXCopilot() {
             }
           }
 
-          const foundCount = results.filter(r => r.found).length;
+          const foundCount = results.filter((r) => r.found).length;
           return {
             success: foundCount > 0,
             waits: results,
@@ -1162,8 +1203,87 @@ export default function GenSXCopilot() {
           };
         }
       },
+
+      navigate: async (params) => {
+        try {
+          const startTime = Date.now();
+          const previousUrl = window.location.href;
+
+          switch (params.action) {
+            case "back":
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                return {
+                  success: false,
+                  action: params.action,
+                  currentUrl: previousUrl,
+                  previousUrl,
+                  message: "No previous page in history",
+                  error: "Cannot go back - no previous page available",
+                };
+              }
+              break;
+
+            case "forward":
+              // Next.js router doesn't have a forward method, use browser history
+              window.history.forward();
+              break;
+
+            default:
+              return {
+                success: false,
+                action: params.action,
+                currentUrl: previousUrl,
+                previousUrl,
+                message: `Unknown navigation action: ${params.action}`,
+                error: `Invalid action: ${params.action}`,
+              };
+          }
+
+          // Wait for navigation to complete if requested
+          if (params.waitForLoad) {
+            const timeout = params.timeout || 5000;
+            const pollInterval = 100;
+            let elapsed = 0;
+
+            // For client-side routing, wait a bit for the route change
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            // Poll for URL change or timeout
+            while (elapsed < timeout) {
+              if (window.location.href !== previousUrl) {
+                break;
+              }
+              await new Promise((resolve) => setTimeout(resolve, pollInterval));
+              elapsed += pollInterval;
+            }
+          }
+
+          const loadTime = Date.now() - startTime;
+          const currentUrl = window.location.href;
+
+          return {
+            success: true,
+            action: params.action,
+            currentUrl,
+            previousUrl,
+            loadTime,
+            message: `Successfully navigated using ${params.action}`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            action: params.action,
+            currentUrl: window.location.href,
+            previousUrl: window.location.href,
+            message: `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
     });
-  }, []);
+  }, [router]);
 
   const { messages, sendMessage, status, error, loadHistory, clear } =
     useChat(toolImplementations);
@@ -1181,6 +1301,12 @@ export default function GenSXCopilot() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (status !== "streaming") {
+      inputRef.current?.focus();
+    }
+  }, [status]);
 
   useEffect(() => {
     if (threadId && threadId !== currentThreadId) {
@@ -1290,6 +1416,7 @@ export default function GenSXCopilot() {
                 placeholder="Ask me to interact with the page..."
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={status === "streaming"}
+                ref={inputRef}
               />
               <button
                 type="submit"
