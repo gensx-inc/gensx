@@ -1,8 +1,7 @@
 import * as gensx from "@gensx/core";
 import { useBlob } from "@gensx/storage";
 import { CoreMessage } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 
 import { Agent } from "./agent";
 import { asToolSet } from "@gensx/vercel-ai";
@@ -108,12 +107,12 @@ Be helpful, clear, and explain what you're doing as you interact with the page.
 
     const tools = asToolSet(toolbox);
 
-    // Default to Claude, but allow OpenAI as an option
-    const modelProvider = process.env.AI_MODEL_PROVIDER || "anthropic";
-    const model =
-      modelProvider === "openai"
-        ? openai("gpt-4o-mini")
-        : anthropic("claude-3-5-sonnet-latest");
+    const groqClient = createOpenAI({
+      apiKey: process.env.GROQ_API_KEY!,
+      baseURL: "https://api.groq.com/openai/v1",
+    });
+
+    const model = groqClient("moonshotai/kimi-k2-instruct");
     const result = await Agent({
       messages,
       tools,
