@@ -7,7 +7,7 @@ import { CoreAssistantMessage, CoreMessage, CoreUserMessage } from "ai";
 
 import { useChat } from "../hooks/useChat";
 import type { ToolBox } from "../../gensx/tools/toolbox";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getUserId } from "@/lib/get-user-id";
 
 declare global {
@@ -25,6 +25,7 @@ export default function GenSXCopilot() {
   const searchParams = useSearchParams();
   const [userId, setUserId] = useState<string | null>(null);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
+  const router = useRouter();
 
   // Load jQuery dynamically
   useEffect(() => {
@@ -32,6 +33,9 @@ export default function GenSXCopilot() {
       const script = document.createElement("script");
       script.src = "https://code.jquery.com/jquery-3.7.1.min.js";
       script.async = true;
+      script.onload = () => {
+        window.$ = window.jQuery;
+      };
       document.body.appendChild(script);
     }
   }, []);
@@ -40,158 +44,227 @@ export default function GenSXCopilot() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Helper to ensure jQuery is loaded
+  const ensureJQuery = async (): Promise<any> => {
+    if (window.$) return window.$;
+
+    // Wait for jQuery to load (max 5 seconds)
+    for (let i = 0; i < 50; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      if (window.$) return window.$;
+    }
+
+    throw new Error("jQuery failed to load");
+  };
+
   const toolImplementations = useMemo(() => {
     return createToolImplementations<ToolBox>({
-      inspectElement: (params) => {
+      inspectElements: (params) => {
         try {
           const $ = window.$;
           if (!$) {
             return {
               success: false,
-              count: 0,
-              elements: [],
-              error: "jQuery not loaded",
-            };
-          }
-
-          const elements = $(params.selector);
-          const count = elements.length;
-
-          if (count === 0) {
-            return {
-              success: false,
-              count: 0,
-              elements: [],
-              error: `No elements found with selector: ${params.selector}`,
-            };
-          }
-
-          const elementData = elements
-            .map(function (this: any, index: number) {
-              const $el = $(this);
-              const data: any = { index };
-
-              if (!params.properties || params.properties.includes("text")) {
-                data.text = $el.text();
-              }
-              if (!params.properties || params.properties.includes("value")) {
-                data.value = $el.val();
-              }
-              if (!params.properties || params.properties.includes("html")) {
-                data.html = $el.html();
-              }
-              if (params.properties?.includes("attr")) {
-                if (params.attributeName) {
-                  data.attributes = {
-                    [params.attributeName]: $el.attr(params.attributeName),
-                  };
-                } else {
-                  const attrs: Record<string, string> = {};
-                  $.each(this.attributes, function (this: any) {
-                    if (this.specified) {
-                      attrs[this.name] = this.value;
-                    }
-                  });
-                  data.attributes = attrs;
-                }
-              }
-              if (params.properties?.includes("css")) {
-                if (params.cssProperty) {
-                  data.css = {
-                    [params.cssProperty]: $el.css(params.cssProperty),
-                  };
-                } else {
-                  data.css = {};
-                }
-              }
-              if (params.properties?.includes("data")) {
-                data.data = $el.data();
-              }
-
-              return data;
-            })
-            .get();
-
-          return {
-            success: true,
-            count,
-            elements: elementData,
-          };
-        } catch (error) {
-          return {
-            success: false,
-            count: 0,
-            elements: [],
-            error: error instanceof Error ? error.message : String(error),
-          };
-        }
-      },
-
-      clickElement: (params) => {
-        try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
+              inspections: [],
               message: "jQuery not loaded",
-              clicked: false,
             };
           }
 
-          const elements = $(params.selector);
-          if (elements.length === 0) {
-            return {
-              success: false,
-              message: `No elements found with selector: ${params.selector}`,
-              clicked: false,
-            };
-          }
+          const inspections = params.elements.map((elementParams) => {
+            try {
+              const elements = $(elementParams.selector);
+              const count = elements.length;
 
-          const index = params.index || 0;
-          if (index >= elements.length) {
-            return {
-              success: false,
-              message: `Index ${index} out of bounds (found ${elements.length} elements)`,
-              clicked: false,
-            };
-          }
+              if (count === 0) {
+                return {
+                  selector: elementParams.selector,
+                  success: false,
+                  count: 0,
+                  elements: [],
+                  error: `No elements found with selector: ${elementParams.selector}`,
+                };
+              }
 
-          const element = elements.eq(index);
+              const elementData = elements
+                .map(function (this: any, index: number) {
+                  const $el = $(this);
+                  const data: any = { index };
 
-          // Check if it's a link that might cause navigation
-          if (
-            element.is("a") &&
-            element.attr("href") &&
-            !element.attr("href").startsWith("#")
-          ) {
-            // For links, prevent default to avoid navigation
-            const clickEvent = $.Event("click");
-            element.trigger(clickEvent);
-            if (!clickEvent.isDefaultPrevented()) {
-              console.warn(
-                `Clicking link with href: ${element.attr("href")} - navigation prevented`,
-              );
+                  if (!elementParams.properties || elementParams.properties.includes("text")) {
+                    data.text = $el.text();
+                  }
+                  if (!elementParams.properties || elementParams.properties.includes("value")) {
+                    data.value = $el.val();
+                  }
+                  if (!elementParams.properties || elementParams.properties.includes("html")) {
+                    data.html = $el.html();
+                  }
+                  if (elementParams.properties?.includes("attr")) {
+                    if (elementParams.attributeName) {
+                      data.attributes = {
+                        [elementParams.attributeName]: $el.attr(elementParams.attributeName),
+                      };
+                    } else {
+                      const attrs: Record<string, string> = {};
+                      $.each(this.attributes, function (this: any) {
+                        if (this.specified) {
+                          attrs[this.name] = this.value;
+                        }
+                      });
+                      data.attributes = attrs;
+                    }
+                  }
+                  if (elementParams.properties?.includes("css")) {
+                    if (elementParams.cssProperty) {
+                      data.css = {
+                        [elementParams.cssProperty]: $el.css(elementParams.cssProperty),
+                      };
+                    } else {
+                      data.css = {};
+                    }
+                  }
+                  if (elementParams.properties?.includes("data")) {
+                    data.data = $el.data();
+                  }
+
+                  return data;
+                })
+                .get();
+
+              return {
+                selector: elementParams.selector,
+                success: true,
+                count,
+                elements: elementData,
+              };
+            } catch (error) {
+              return {
+                selector: elementParams.selector,
+                success: false,
+                count: 0,
+                elements: [],
+                error: error instanceof Error ? error.message : String(error),
+              };
             }
-          } else {
-            // For other elements, trigger click normally
-            element.trigger("click");
-          }
+          });
 
+          const successCount = inspections.filter(i => i.success).length;
           return {
-            success: true,
-            message: `Clicked element at index ${index}`,
-            clicked: true,
+            success: successCount > 0,
+            inspections,
+            message: `Inspected ${successCount} of ${params.elements.length} element groups`,
           };
         } catch (error) {
           return {
             success: false,
+            inspections: [],
             message: error instanceof Error ? error.message : String(error),
-            clicked: false,
           };
         }
       },
 
-      fillForm: (params) => {
+      clickElements: async (params) => {
+        try {
+          const $ = window.$;
+          if (!$) {
+            return {
+              success: false,
+              clicks: [],
+              message: "jQuery not loaded",
+            };
+          }
+
+          const results = [];
+          
+          for (let i = 0; i < params.elements.length; i++) {
+            const elementParams = params.elements[i];
+            try {
+              // Apply automatic delay between operations for React state (except first)
+              if (i > 0) {
+                await new Promise(resolve => setTimeout(resolve, 150));
+              }
+              
+              // Apply additional delay if specified
+              if (elementParams.delay && elementParams.delay > 0) {
+                await new Promise(resolve => setTimeout(resolve, elementParams.delay));
+              }
+
+              const elements = $(elementParams.selector);
+              if (elements.length === 0) {
+                results.push({
+                  selector: elementParams.selector,
+                  clicked: false,
+                  error: `No elements found with selector: ${elementParams.selector}`,
+                });
+                continue;
+              }
+
+              const index = elementParams.index || 0;
+              if (index >= elements.length) {
+                results.push({
+                  selector: elementParams.selector,
+                  clicked: false,
+                  error: `Index ${index} out of bounds (found ${elements.length} elements)`,
+                });
+                continue;
+              }
+
+              const element = elements.eq(index);
+
+              // Check if it's a link that might cause navigation
+              if (
+                element.is("a") &&
+                element.attr("href") &&
+                !element.attr("href").startsWith("#")
+              ) {
+                // For links, prevent default to avoid navigation
+                const clickEvent = $.Event("click");
+                element.trigger(clickEvent);
+                if (!clickEvent.isDefaultPrevented()) {
+                  console.warn(
+                    `Clicking link with href: ${element.attr("href")} - navigation prevented`,
+                  );
+                }
+              } else {
+                // For other elements, trigger click normally
+                // For React components, use native click to ensure proper event propagation
+                const nativeElement = element[0];
+                if (nativeElement) {
+                  nativeElement.click();
+                } else {
+                  element.trigger("click");
+                }
+              }
+
+              results.push({
+                selector: elementParams.selector,
+                clicked: true,
+              });
+            } catch (error) {
+              results.push({
+                selector: elementParams.selector,
+                clicked: false,
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
+          }
+
+          const clickedCount = results.filter(r => r.clicked).length;
+          return {
+            success: clickedCount > 0,
+            clicks: results,
+            message: `Clicked ${clickedCount} of ${params.elements.length} elements`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            clicks: [],
+            message: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+
+      fillTextInputs: async (params) => {
         try {
           const $ = window.$;
           if (!$) {
@@ -202,55 +275,99 @@ export default function GenSXCopilot() {
             };
           }
 
-          const results = params.inputs.map((input) => {
+          const results = [];
+          
+          for (let i = 0; i < params.inputs.length; i++) {
+            const input = params.inputs[i];
+            
+            // Apply automatic delay between operations for React state (except first)
+            if (i > 0) {
+              await new Promise(resolve => setTimeout(resolve, 150));
+            }
             try {
               const $el = $(input.selector);
               if ($el.length === 0) {
-                return {
+                results.push({
                   selector: input.selector,
                   filled: false,
                   error: "Element not found",
-                };
+                });
+                continue;
               }
 
               // Get the native DOM element
-              const element = $el[0] as HTMLInputElement;
+              const element = $el[0] as HTMLInputElement | HTMLSelectElement;
+              const tagName = element.tagName.toLowerCase();
 
-              // Use native value setter to bypass React's controlled component
-              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                window.HTMLInputElement.prototype,
-                "value",
-              )?.set;
-
-              if (nativeInputValueSetter) {
-                nativeInputValueSetter.call(element, input.value);
+              // Only handle text inputs and textareas
+              if (element instanceof HTMLInputElement && (element.type === "checkbox" || element.type === "radio")) {
+                results.push({
+                  selector: input.selector,
+                  filled: false,
+                  error: "Use toggleCheckboxes for checkboxes and radio buttons",
+                });
+                continue;
+              } else if (tagName === "select") {
+                results.push({
+                  selector: input.selector,
+                  filled: false,
+                  error: "Use selectOptions for dropdown/select elements",
+                });
+                continue;
               } else {
-                element.value = input.value;
+                // For text inputs and textareas only
+                const inputElement = element as HTMLInputElement | HTMLTextAreaElement;
+                
+                // Use native value setter to bypass React's controlled component
+                if (inputElement instanceof HTMLInputElement) {
+                  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                    window.HTMLInputElement.prototype,
+                    "value",
+                  )?.set;
+
+                  if (nativeInputValueSetter) {
+                    nativeInputValueSetter.call(inputElement, input.value);
+                  } else {
+                    inputElement.value = input.value;
+                  }
+                } else if (inputElement instanceof HTMLTextAreaElement) {
+                  const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
+                    window.HTMLTextAreaElement.prototype,
+                    "value",
+                  )?.set;
+
+                  if (nativeTextAreaValueSetter) {
+                    nativeTextAreaValueSetter.call(inputElement, input.value);
+                  } else {
+                    inputElement.value = input.value;
+                  }
+                } else {
+                  // Fallback for other elements
+                  (inputElement as any).value = input.value;
+                }
+
+                // Trigger React's synthetic events
+                if (input.triggerEvents !== false) {
+                  const inputEvent = new Event("input", { bubbles: true });
+                  inputElement.dispatchEvent(inputEvent);
+
+                  const changeEvent = new Event("change", { bubbles: true });
+                  inputElement.dispatchEvent(changeEvent);
+                }
               }
 
-              // Trigger React's synthetic events
-              if (input.triggerEvents !== false) {
-                // Create and dispatch input event for React
-                const inputEvent = new Event("input", { bubbles: true });
-                element.dispatchEvent(inputEvent);
-
-                // Also trigger change event
-                const changeEvent = new Event("change", { bubbles: true });
-                element.dispatchEvent(changeEvent);
-              }
-
-              return {
+              results.push({
                 selector: input.selector,
                 filled: true,
-              };
+              });
             } catch (err) {
-              return {
+              results.push({
                 selector: input.selector,
                 filled: false,
                 error: err instanceof Error ? err.message : String(err),
-              };
+              });
             }
-          });
+          }
 
           const filledCount = results.filter((r) => r.filled).length;
           return {
@@ -267,374 +384,531 @@ export default function GenSXCopilot() {
         }
       },
 
-      submitForm: (params) => {
+      selectOptions: async (params) => {
         try {
           const $ = window.$;
           if (!$) {
             return {
               success: false,
+              selected: [],
               message: "jQuery not loaded",
-              submitted: false,
             };
           }
 
-          const forms = $(params.selector);
-          if (forms.length === 0) {
-            return {
-              success: false,
-              message: `No forms found with selector: ${params.selector}`,
-              submitted: false,
-            };
+          const results = [];
+          
+          for (let i = 0; i < params.selects.length; i++) {
+            const select = params.selects[i];
+            
+            // Apply automatic delay between operations for React state (except first)
+            if (i > 0) {
+              await new Promise(resolve => setTimeout(resolve, 150));
+            }
+            try {
+              const $el = $(select.selector);
+              if ($el.length === 0) {
+                results.push({
+                  selector: select.selector,
+                  selected: false,
+                  error: "Element not found",
+                });
+                continue;
+              }
+
+              const element = $el[0];
+              if (element.tagName.toLowerCase() !== "select") {
+                results.push({
+                  selector: select.selector,
+                  selected: false,
+                  error: "Element is not a select element",
+                });
+                continue;
+              }
+
+              const selectElement = element as HTMLSelectElement;
+              selectElement.value = select.value;
+
+              // Trigger React's synthetic events
+              if (select.triggerEvents !== false) {
+                const changeEvent = new Event("change", { bubbles: true });
+                selectElement.dispatchEvent(changeEvent);
+                
+                const inputEvent = new Event("input", { bubbles: true });
+                selectElement.dispatchEvent(inputEvent);
+              }
+
+              results.push({
+                selector: select.selector,
+                selected: true,
+              });
+            } catch (err) {
+              results.push({
+                selector: select.selector,
+                selected: false,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            }
           }
 
-          const index = params.index || 0;
-          if (index >= forms.length) {
-            return {
-              success: false,
-              message: `Index ${index} out of bounds (found ${forms.length} forms)`,
-              submitted: false,
-            };
-          }
-
-          const form = forms.eq(index);
-
-          // For the todo form, we'll click the submit button which already has proper handlers
-          const submitButton = form
-            .find(
-              'button[type="submit"], input[type="submit"], button:not([type])',
-            )
-            .first();
-          if (submitButton.length > 0) {
-            // Simply click the button - let React handle the state update
-            submitButton.trigger("click");
-            return {
-              success: true,
-              message: `Clicked submit button to submit form at index ${index}`,
-              submitted: true,
-            };
-          }
-
+          const selectedCount = results.filter((r) => r.selected).length;
           return {
-            success: false,
-            message: `No submit button found in form at index ${index}`,
-            submitted: false,
+            success: selectedCount > 0,
+            selected: results,
+            message: `Selected ${selectedCount} of ${params.selects.length} options`,
           };
         } catch (error) {
           return {
             success: false,
+            selected: [],
             message: error instanceof Error ? error.message : String(error),
-            submitted: false,
           };
         }
       },
 
-      getPageStructure: (params) => {
+      toggleCheckboxes: async (params) => {
         try {
           const $ = window.$;
           if (!$) {
             return {
               success: false,
-              structure: { forms: [], buttons: [], links: [] },
-            };
-          }
-
-          // Get forms
-          const forms = $("form")
-            .map(function (this: any, index: number) {
-              const $form = $(this);
-              const formSelector = `form:eq(${index})`;
-
-              const fields = $form
-                .find("input, textarea, select")
-                .map(function (this: any) {
-                  const $field = $(this);
-                  return {
-                    type:
-                      $field.attr("type") ||
-                      $field.prop("tagName").toLowerCase(),
-                    name: $field.attr("name"),
-                    id: $field.attr("id"),
-                    placeholder: $field.attr("placeholder"),
-                    value: params.includeText ? $field.val() : undefined,
-                  };
-                })
-                .get();
-
-              const buttons = $form
-                .find('button, input[type="submit"], input[type="button"]')
-                .map(function (this: any, idx: number) {
-                  const $btn = $(this);
-                  return {
-                    type: $btn.attr("type") || "button",
-                    text: params.includeText
-                      ? $btn.text() || $btn.val()
-                      : undefined,
-                    selector: `${formSelector} button:eq(${idx})`,
-                  };
-                })
-                .get();
-
-              return {
-                selector: formSelector,
-                fields,
-                buttons,
-              };
-            })
-            .get();
-
-          // Get standalone buttons
-          const buttons = $(
-            'button:not(form button), input[type="button"]:not(form input), input[type="submit"]:not(form input)',
-          )
-            .map(function (this: any, index: number) {
-              const $btn = $(this);
-              return {
-                selector: `button:eq(${index})`,
-                text: params.includeText
-                  ? $btn.text() || $btn.val()
-                  : undefined,
-                type: $btn.attr("type") || "button",
-              };
-            })
-            .get();
-
-          // Get links
-          const links = $("a")
-            .map(function (this: any, index: number) {
-              const $link = $(this);
-              return {
-                selector: `a:eq(${index})`,
-                text: params.includeText ? $link.text() : undefined,
-                href: $link.attr("href"),
-              };
-            })
-            .get();
-
-          return {
-            success: true,
-            structure: { forms, buttons, links },
-          };
-        } catch {
-          return {
-            success: false,
-            structure: { forms: [], buttons: [], links: [] },
-          };
-        }
-      },
-
-      highlightElement: (params) => {
-        try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
+              toggled: [],
               message: "jQuery not loaded",
-              highlighted: 0,
             };
           }
 
-          const elements = $(params.selector);
-          if (elements.length === 0) {
-            return {
-              success: false,
-              message: `No elements found with selector: ${params.selector}`,
-              highlighted: 0,
-            };
+          const results = [];
+          
+          for (let i = 0; i < params.checkboxes.length; i++) {
+            const checkbox = params.checkboxes[i];
+            
+            // Apply automatic delay between operations for React state (except first)
+            if (i > 0) {
+              await new Promise(resolve => setTimeout(resolve, 150));
+            }
+            try {
+              const $el = $(checkbox.selector);
+              if ($el.length === 0) {
+                results.push({
+                  selector: checkbox.selector,
+                  toggled: false,
+                  error: "Element not found",
+                });
+                continue;
+              }
+
+              const element = $el[0];
+              if (!(element instanceof HTMLInputElement) || 
+                  (element.type !== "checkbox" && element.type !== "radio")) {
+                results.push({
+                  selector: checkbox.selector,
+                  toggled: false,
+                  error: "Element is not a checkbox or radio button",
+                });
+                continue;
+              }
+
+              const currentChecked = element.checked;
+              
+              // Only click if we need to change the state
+              if (currentChecked !== checkbox.checked) {
+                // Use native click to trigger React event handlers
+                element.click();
+              }
+
+              results.push({
+                selector: checkbox.selector,
+                toggled: true,
+                finalState: element.checked,
+              });
+            } catch (err) {
+              results.push({
+                selector: checkbox.selector,
+                toggled: false,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            }
           }
 
-          // Store original styles
-          elements.each(function (this: any) {
-            const $el = $(this);
-            $el.data("original-outline", $el.css("outline"));
-            $el.css("outline", `3px solid ${params.color || "#ff0000"}`);
-          });
-
-          // Remove highlight after duration
-          setTimeout(() => {
-            elements.each(function (this: any) {
-              const $el = $(this);
-              const originalOutline = $el.data("original-outline");
-              $el.css("outline", originalOutline || "");
-            });
-          }, params.duration || 3000);
-
+          const toggledCount = results.filter((r) => r.toggled).length;
           return {
-            success: true,
-            message: `Highlighted ${elements.length} element(s)`,
-            highlighted: elements.length,
+            success: toggledCount > 0,
+            toggled: results,
+            message: `Toggled ${toggledCount} of ${params.checkboxes.length} checkboxes`,
           };
         } catch (error) {
           return {
             success: false,
+            toggled: [],
             message: error instanceof Error ? error.message : String(error),
-            highlighted: 0,
           };
         }
       },
 
-      waitForElement: async (params) => {
+      submitForms: async (params) => {
         try {
           const $ = window.$;
           if (!$) {
             return {
               success: false,
-              found: false,
+              submissions: [],
               message: "jQuery not loaded",
             };
           }
 
-          const timeout = params.timeout || 5000;
-          const startTime = Date.now();
+          const results = [];
+          
+          for (const formParams of params.forms) {
+            try {
+              // Apply delay if specified
+              if (formParams.delay && formParams.delay > 0) {
+                await new Promise(resolve => setTimeout(resolve, formParams.delay));
+              }
 
-          while (Date.now() - startTime < timeout) {
-            if ($(params.selector).length > 0) {
+              const forms = $(formParams.selector);
+              if (forms.length === 0) {
+                results.push({
+                  selector: formParams.selector,
+                  submitted: false,
+                  error: `No forms found with selector: ${formParams.selector}`,
+                });
+                continue;
+              }
+
+              const index = formParams.index || 0;
+              if (index >= forms.length) {
+                results.push({
+                  selector: formParams.selector,
+                  submitted: false,
+                  error: `Index ${index} out of bounds (found ${forms.length} forms)`,
+                });
+                continue;
+              }
+
+              const form = forms.eq(index);
+
+              // For the todo form, we'll click the submit button which already has proper handlers
+              const submitButton = form
+                .find(
+                  'button[type="submit"], input[type="submit"], button:not([type])',
+                )
+                .first();
+              if (submitButton.length > 0) {
+                // Simply click the button - let React handle the state update
+                submitButton.trigger("click");
+                results.push({
+                  selector: formParams.selector,
+                  submitted: true,
+                });
+              } else {
+                results.push({
+                  selector: formParams.selector,
+                  submitted: false,
+                  error: `No submit button found in form at index ${index}`,
+                });
+              }
+            } catch (error) {
+              results.push({
+                selector: formParams.selector,
+                submitted: false,
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
+          }
+
+          const submittedCount = results.filter(r => r.submitted).length;
+          return {
+            success: submittedCount > 0,
+            submissions: results,
+            message: `Submitted ${submittedCount} of ${params.forms.length} forms`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            submissions: [],
+            message: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+
+      highlightElements: (params) => {
+        try {
+          const $ = window.$;
+          if (!$) {
+            return {
+              success: false,
+              highlights: [],
+              message: "jQuery not loaded",
+            };
+          }
+
+          const results = params.elements.map((elementParams) => {
+            try {
+              const elements = $(elementParams.selector);
+              if (elements.length === 0) {
+                return {
+                  selector: elementParams.selector,
+                  highlighted: 0,
+                  error: `No elements found with selector: ${elementParams.selector}`,
+                };
+              }
+
+              const color = elementParams.color || "#ff0000";
+              const duration = elementParams.duration || 3000;
+
+              // Store original styles
+              elements.each(function (this: any) {
+                const $el = $(this);
+                $el.data("original-outline", $el.css("outline"));
+                $el.css("outline", `3px solid ${color}`);
+              });
+
+              // Remove highlight after duration
+              setTimeout(() => {
+                elements.each(function (this: any) {
+                  const $el = $(this);
+                  const originalOutline = $el.data("original-outline");
+                  $el.css("outline", originalOutline || "");
+                });
+              }, duration);
+
               return {
-                success: true,
-                found: true,
-                message: `Element found: ${params.selector}`,
+                selector: elementParams.selector,
+                highlighted: elements.length,
+              };
+            } catch (error) {
+              return {
+                selector: elementParams.selector,
+                highlighted: 0,
+                error: error instanceof Error ? error.message : String(error),
               };
             }
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          }
+          });
 
+          const totalHighlighted = results.reduce((sum, r) => sum + r.highlighted, 0);
           return {
-            success: false,
-            found: false,
-            message: `Timeout waiting for element: ${params.selector}`,
+            success: totalHighlighted > 0,
+            highlights: results,
+            message: `Highlighted ${totalHighlighted} elements across ${params.elements.length} selectors`,
           };
         } catch (error) {
           return {
             success: false,
-            found: false,
+            highlights: [],
             message: error instanceof Error ? error.message : String(error),
           };
         }
       },
 
-      getPageOverview: (params) => {
+      waitForElements: async (params) => {
         try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
-              title: undefined,
-              sections: [],
-              globalElements: { forms: [] },
-            };
+          const $ = await ensureJQuery();
+
+          const results = [];
+          
+          for (const elementParams of params.elements) {
+            try {
+              const timeout = elementParams.timeout || 5000;
+              const startTime = Date.now();
+              let found = false;
+
+              while (Date.now() - startTime < timeout) {
+                if ($(elementParams.selector).length > 0) {
+                  found = true;
+                  break;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 100));
+              }
+
+              results.push({
+                selector: elementParams.selector,
+                found,
+                error: found ? undefined : `Timeout waiting for element: ${elementParams.selector}`,
+              });
+            } catch (error) {
+              results.push({
+                selector: elementParams.selector,
+                found: false,
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
           }
+
+          const foundCount = results.filter(r => r.found).length;
+          return {
+            success: foundCount > 0,
+            waits: results,
+            message: `Found ${foundCount} of ${params.elements.length} elements`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            waits: [],
+            message: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+
+      getPageOverview: async (params) => {
+        try {
+          const $ = await ensureJQuery();
 
           // Helper to check if element is visible
           const isVisible = (el: HTMLElement) => {
             if (!params.visibleOnly) return true;
             const rect = el.getBoundingClientRect();
-            return rect.height > 0 && rect.width > 0 && 
-                   rect.top < window.innerHeight && 
-                   rect.bottom > 0;
+            return (
+              rect.height > 0 &&
+              rect.width > 0 &&
+              rect.top < window.innerHeight &&
+              rect.bottom > 0
+            );
+          };
+
+          // Helper to escape CSS class names for jQuery selectors
+          const escapeCSSClass = (className: string): string => {
+            // Escape characters that have special meaning in CSS selectors
+            return className.replace(
+              /([!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~])/g,
+              "\\$1",
+            );
           };
 
           // Helper to get unique selector
           const getUniqueSelector = (el: HTMLElement): string => {
-            if (el.id) return `#${el.id}`;
-            
+            if (el.id) return `#${CSS.escape(el.id)}`;
+
             let selector = el.tagName.toLowerCase();
             if (el.className) {
-              const classes = el.className.split(' ').filter(c => c.trim());
+              const classes = el.className.split(" ").filter((c) => c.trim());
               if (classes.length > 0) {
-                selector += '.' + classes.join('.');
+                selector += "." + classes.map(escapeCSSClass).join(".");
               }
             }
-            
+
             // Make it unique by adding index if needed
-            const siblings = $(el.parentElement).children(selector);
-            if (siblings.length > 1) {
-              const index = siblings.index(el);
-              selector += `:eq(${index})`;
+            try {
+              const siblings = $(el.parentElement).children(selector);
+              if (siblings.length > 1) {
+                const index = siblings.index(el);
+                selector += `:eq(${index})`;
+              }
+
+              // Add parent context if still not unique
+              if ($(selector).length > 1 && el.parentElement) {
+                const parentSelector = getUniqueSelector(
+                  el.parentElement as HTMLElement,
+                );
+                selector = `${parentSelector} > ${selector}`;
+              }
+            } catch (error) {
+              console.error("Error getting unique selector", error);
+              // If selector parsing fails, fall back to tag name with index
+              const allSiblings = $(el.parentElement).children(
+                el.tagName.toLowerCase(),
+              );
+              const index = allSiblings.index(el);
+              selector = `${el.tagName.toLowerCase()}:eq(${index})`;
             }
-            
-            // Add parent context if still not unique
-            if ($(selector).length > 1 && el.parentElement) {
-              const parentSelector = getUniqueSelector(el.parentElement as HTMLElement);
-              selector = `${parentSelector} > ${selector}`;
-            }
-            
+
             return selector;
           };
 
           // Helper to truncate text
           const truncateText = (text: string, maxLength: number) => {
             if (!text || text.length <= maxLength) return text;
-            return text.substring(0, maxLength) + '...';
+            return text.substring(0, maxLength) + "...";
           };
 
           // Get page title
-          const title = $('title').text() || $('h1').first().text() || '';
+          const title = $("title").text() || $("h1").first().text() || "";
 
           // Determine which headings to include
-          const headingSelector = 
-            params.includeHeadings === 'h1' ? 'h1' :
-            params.includeHeadings === 'h1-h2' ? 'h1, h2' :
-            params.includeHeadings === 'h1-h3' ? 'h1, h2, h3' :
-            'h1, h2, h3, h4, h5, h6';
+          const headingSelector =
+            params.includeHeadings === "h1"
+              ? "h1"
+              : params.includeHeadings === "h1-h2"
+                ? "h1, h2"
+                : params.includeHeadings === "h1-h3"
+                  ? "h1, h2, h3"
+                  : "h1, h2, h3, h4, h5, h6";
 
           // Build sections based on headings and major containers
           const sections: any[] = [];
           const processedElements = new Set<HTMLElement>();
 
           // Process headings and their associated content
-          $(headingSelector).each(function(this: any) {
+          $(headingSelector).each(function (this: any) {
             const heading = this as HTMLElement;
             if (!isVisible(heading) || processedElements.has(heading)) return;
-            
+
             const $heading = $(heading);
             const level = parseInt(heading.tagName.substring(1));
             const headingText = $heading.text().trim();
             const selector = getUniqueSelector(heading);
-            
+
             // Find the section container (parent that contains content)
             let $section = $heading.parent();
-            while ($section.length > 0 && $section[0].tagName.toLowerCase() === 'span') {
+            while (
+              $section.length > 0 &&
+              $section[0].tagName.toLowerCase() === "span"
+            ) {
               $section = $section.parent();
             }
-            
+
             const sectionEl = $section[0] as HTMLElement;
             const bounds = sectionEl.getBoundingClientRect();
-            
+
             // Get metrics for this section
-            const metrics = params.includeMetrics ? {
-              forms: $section.find('form').length,
-              buttons: $section.find('button, input[type="button"], input[type="submit"]').length,
-              links: $section.find('a').length,
-              inputs: $section.find('input, textarea, select').length,
-              images: $section.find('img').length,
-              lists: $section.find('ul, ol').length,
-            } : undefined;
-            
+            const metrics = params.includeMetrics
+              ? {
+                  forms: $section.find("form").length,
+                  buttons: $section.find(
+                    'button, input[type="button"], input[type="submit"]',
+                  ).length,
+                  links: $section.find("a").length,
+                  inputs: $section.find("input, textarea, select").length,
+                  images: $section.find("img").length,
+                  lists: $section.find("ul, ol").length,
+                }
+              : undefined;
+
             // Get text preview
-            const textPreview = params.includeText ? 
-              truncateText($section.text().trim(), params.maxTextLength || 100) : 
-              undefined;
-            
+            const textPreview = params.includeText
+              ? truncateText(
+                  $section.text().trim(),
+                  params.maxTextLength || 100,
+                )
+              : undefined;
+
             // Get interactive elements
             const interactiveElements: any[] = [];
             if (params.includeMetrics) {
-              $section.find('button, input, select, textarea, a').each(function(this: any) {
-                const el = this as HTMLElement;
-                if (!isVisible(el)) return;
-                
-                const $el = $(el);
-                const type = el.tagName.toLowerCase();
-                const elemSelector = getUniqueSelector(el);
-                
-                interactiveElements.push({
-                  type,
-                  selector: elemSelector,
-                  text: truncateText($el.text().trim() || $el.val() as string || '', 50),
-                  label: $el.attr('aria-label') || $el.attr('placeholder') || 
-                         $(`label[for="${$el.attr('id')}"]`).text() || undefined,
+              $section
+                .find("button, input, select, textarea, a")
+                .each(function (this: any) {
+                  const el = this as HTMLElement;
+                  if (!isVisible(el)) return;
+
+                  const $el = $(el);
+                  const type = el.tagName.toLowerCase();
+                  const elemSelector = getUniqueSelector(el);
+
+                  interactiveElements.push({
+                    type,
+                    selector: elemSelector,
+                    text: truncateText(
+                      $el.text().trim() || ($el.val() as string) || "",
+                      50,
+                    ),
+                    label:
+                      $el.attr("aria-label") ||
+                      $el.attr("placeholder") ||
+                      $(`label[for="${$el.attr("id")}"]`).text() ||
+                      undefined,
+                  });
                 });
-              });
             }
-            
+
             sections.push({
               heading: headingText,
               level,
@@ -649,48 +923,61 @@ export default function GenSXCopilot() {
               textPreview,
               interactiveElements: interactiveElements.slice(0, 10), // Limit to 10
             });
-            
+
             processedElements.add(sectionEl);
           });
 
           // Add major containers without headings
-          $('main, article, section, [role="main"], .container, .content').each(function(this: any) {
-            const container = this as HTMLElement;
-            if (!isVisible(container) || processedElements.has(container)) return;
-            
-            const $container = $(container);
-            if ($container.find(headingSelector).length > 0) return; // Skip if has headings
-            
-            const selector = getUniqueSelector(container);
-            const bounds = container.getBoundingClientRect();
-            
-            const metrics = params.includeMetrics ? {
-              forms: $container.find('form').length,
-              buttons: $container.find('button, input[type="button"], input[type="submit"]').length,
-              links: $container.find('a').length,
-              inputs: $container.find('input, textarea, select').length,
-              images: $container.find('img').length,
-              lists: $container.find('ul, ol').length,
-            } : undefined;
-            
-            if (metrics && Object.values(metrics).some(v => v > 0)) {
-              sections.push({
-                heading: container.getAttribute('aria-label') || container.className || container.tagName,
-                level: 0,
-                selector,
-                bounds: {
-                  top: Math.round(bounds.top),
-                  left: Math.round(bounds.left),
-                  width: Math.round(bounds.width),
-                  height: Math.round(bounds.height),
-                },
-                metrics,
-                textPreview: params.includeText ? 
-                  truncateText($container.text().trim(), params.maxTextLength || 100) : 
-                  undefined,
-              });
-            }
-          });
+          $('main, article, section, [role="main"], .container, .content').each(
+            function (this: any) {
+              const container = this as HTMLElement;
+              if (!isVisible(container) || processedElements.has(container))
+                return;
+
+              const $container = $(container);
+              if ($container.find(headingSelector).length > 0) return; // Skip if has headings
+
+              const selector = getUniqueSelector(container);
+              const bounds = container.getBoundingClientRect();
+
+              const metrics = params.includeMetrics
+                ? {
+                    forms: $container.find("form").length,
+                    buttons: $container.find(
+                      'button, input[type="button"], input[type="submit"]',
+                    ).length,
+                    links: $container.find("a").length,
+                    inputs: $container.find("input, textarea, select").length,
+                    images: $container.find("img").length,
+                    lists: $container.find("ul, ol").length,
+                  }
+                : undefined;
+
+              if (metrics && Object.values(metrics).some((v) => v > 0)) {
+                sections.push({
+                  heading:
+                    container.getAttribute("aria-label") ||
+                    container.className ||
+                    container.tagName,
+                  level: 0,
+                  selector,
+                  bounds: {
+                    top: Math.round(bounds.top),
+                    left: Math.round(bounds.left),
+                    width: Math.round(bounds.width),
+                    height: Math.round(bounds.height),
+                  },
+                  metrics,
+                  textPreview: params.includeText
+                    ? truncateText(
+                        $container.text().trim(),
+                        params.maxTextLength || 100,
+                      )
+                    : undefined,
+                });
+              }
+            },
+          );
 
           // Get global elements
           const globalElements = {
@@ -700,26 +987,32 @@ export default function GenSXCopilot() {
                 return {
                   present: true,
                   selector: getUniqueSelector($nav[0] as HTMLElement),
-                  itemCount: $nav.find('a').length,
+                  itemCount: $nav.find("a").length,
                 };
               }
               return undefined;
             })(),
-            forms: $('form').map(function(this: any) {
-              const form = this as HTMLElement;
-              const $form = $(form);
-              const purpose = 
-                $form.attr('aria-label') || 
-                $form.find('h1, h2, h3').first().text() ||
-                ($form.find('input[type="search"]').length > 0 ? 'search' : 'input');
-              
-              return {
-                selector: getUniqueSelector(form),
-                purpose: purpose || undefined,
-              };
-            }).get(),
+            forms: $("form")
+              .map(function (this: any) {
+                const form = this as HTMLElement;
+                const $form = $(form);
+                const purpose =
+                  $form.attr("aria-label") ||
+                  $form.find("h1, h2, h3").first().text() ||
+                  ($form.find('input[type="search"]').length > 0
+                    ? "search"
+                    : "input");
+
+                return {
+                  selector: getUniqueSelector(form),
+                  purpose: purpose || undefined,
+                };
+              })
+              .get(),
             modals: (() => {
-              const $modal = $('[role="dialog"], .modal:visible, .dialog:visible').first();
+              const $modal = $(
+                '[role="dialog"], .modal:visible, .dialog:visible',
+              ).first();
               if ($modal.length > 0) {
                 return {
                   open: true,
@@ -737,6 +1030,7 @@ export default function GenSXCopilot() {
             globalElements,
           };
         } catch (error) {
+          console.error("Error getting page overview", error);
           return {
             success: false,
             title: undefined,
@@ -746,16 +1040,9 @@ export default function GenSXCopilot() {
         }
       },
 
-      inspectSection: (params) => {
+      inspectSection: async (params) => {
         try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
-              element: undefined,
-              error: "jQuery not loaded",
-            };
-          }
+          const $ = await ensureJQuery();
 
           const $element = $(params.selector);
           if ($element.length === 0) {
@@ -772,50 +1059,66 @@ export default function GenSXCopilot() {
           // Helper to get text content based on setting
           const getText = (el: HTMLElement) => {
             const fullText = $(el).text().trim();
-            if (params.textLength === 'full') return fullText;
-            if (params.textLength === 'summary') return fullText.substring(0, 50) + (fullText.length > 50 ? '...' : '');
-            return fullText.substring(0, 200) + (fullText.length > 200 ? '...' : '');
+            if (params.textLength === "full") return fullText;
+            if (params.textLength === "summary")
+              return (
+                fullText.substring(0, 50) + (fullText.length > 50 ? "..." : "")
+              );
+            return (
+              fullText.substring(0, 200) + (fullText.length > 200 ? "..." : "")
+            );
           };
 
           // Helper to process children
           const processChildren = (el: HTMLElement, depth: number): any[] => {
-            if (!params.includeChildren || depth >= (params.maxDepth || 3)) return [];
-            
+            if (!params.includeChildren || depth >= (params.maxDepth || 3))
+              return [];
+
             const children: any[] = [];
-            $(el).children().each(function(this: any) {
-              const child = this as HTMLElement;
-              const $child = $(child);
-              
-              children.push({
-                tag: child.tagName.toLowerCase(),
-                id: child.id || undefined,
-                classes: child.className.split(' ').filter(c => c.trim()),
-                text: getText(child),
-                children: params.depth === 'deep' ? processChildren(child, depth + 1) : undefined,
+            $(el)
+              .children()
+              .each(function (this: any) {
+                const child = this as HTMLElement;
+                // const $child = $(child);
+
+                children.push({
+                  tag: child.tagName.toLowerCase(),
+                  id: child.id || undefined,
+                  classes: child.className.split(" ").filter((c) => c.trim()),
+                  text: getText(child),
+                  children:
+                    params.depth === "deep"
+                      ? processChildren(child, depth + 1)
+                      : undefined,
+                });
               });
-            });
-            
+
             return children;
           };
 
           // Get interactive elements within
           const interactiveElements: any[] = [];
-          $element.find('button, input, select, textarea, a').each(function(this: any) {
+          $element.find("button, input, select, textarea, a").each(function (
+            this: any,
+          ) {
             const el = this as HTMLElement;
             const $el = $(el);
-            
+
             const state: any = {};
-            if (el.tagName.toLowerCase() === 'input') {
+            if (el.tagName.toLowerCase() === "input") {
               state.value = $el.val();
-              state.checked = $el.prop('checked');
-              state.disabled = $el.prop('disabled');
+              state.checked = $el.prop("checked");
+              state.disabled = $el.prop("disabled");
             }
-            
+
             interactiveElements.push({
               type: el.tagName.toLowerCase(),
               selector: `${params.selector} ${el.tagName.toLowerCase()}:eq(${$element.find(el.tagName).index(el)})`,
-              label: $el.attr('aria-label') || $el.attr('placeholder') || 
-                     $(`label[for="${$el.attr('id')}"]`).text() || undefined,
+              label:
+                $el.attr("aria-label") ||
+                $el.attr("placeholder") ||
+                $(`label[for="${$el.attr("id")}"]`).text() ||
+                undefined,
               text: $el.text().trim() || undefined,
               state: Object.keys(state).length > 0 ? state : undefined,
             });
@@ -827,13 +1130,13 @@ export default function GenSXCopilot() {
               tag: element.tagName.toLowerCase(),
               selector: params.selector,
               id: element.id || undefined,
-              classes: element.className.split(' ').filter(c => c.trim()),
+              classes: element.className.split(" ").filter((c) => c.trim()),
               text: getText(element),
               attributes: (() => {
                 const attrs: Record<string, string> = {};
                 for (let i = 0; i < element.attributes.length; i++) {
                   const attr = element.attributes[i];
-                  if (attr.name !== 'class' && attr.name !== 'id') {
+                  if (attr.name !== "class" && attr.name !== "id") {
                     attrs[attr.name] = attr.value;
                   }
                 }
@@ -895,6 +1198,12 @@ export default function GenSXCopilot() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || status === "streaming") return;
+
+    let currentThreadId = threadId;
+    if (!currentThreadId) {
+      currentThreadId = Date.now().toString();
+      router.push(`?copilotThreadId=${currentThreadId}`);
+    }
 
     const userMessage = input;
     setInput("");
