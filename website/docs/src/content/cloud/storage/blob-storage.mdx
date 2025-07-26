@@ -17,7 +17,29 @@ To use blob storage in your GenSX application:
    npm install @gensx/storage
    ```
 
-2. Access blobs within your components using the `useBlob` hook:
+2. **Next.js Configuration** (if using Next.js): Add the following webpack configuration to your `next.config.ts` or `next.config.js` file:
+
+   ```typescript
+   /** @type {import('next').NextConfig} */
+   const nextConfig = {
+     // ... other config options
+     webpack: (config: any) => {
+       // Ignore @libsql/client package for client-side builds
+       config.resolve.alias = {
+         ...config.resolve.alias,
+         "@libsql/client": false,
+       };
+       return config;
+     },
+     // ... other config options
+   };
+
+   module.exports = nextConfig;
+   ```
+
+   This configuration prevents bundling issues while allowing the storage hooks to work properly in server components and API routes. See the [client-side-tools example](https://github.com/gensx-inc/gensx/tree/main/examples/client-side-tools) for a complete implementation.
+
+3. Access blobs within your components using the `useBlob` hook:
 
    ```ts
    import { useBlob } from "@gensx/storage";
