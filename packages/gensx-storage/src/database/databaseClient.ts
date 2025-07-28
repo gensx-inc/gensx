@@ -29,7 +29,7 @@ export class DatabaseClient {
 
     if (kind === "filesystem") {
       const { FileSystemDatabaseStorage } = this.require(
-        "./filesystem.ts",
+        "./filesystem.js",
       ) as typeof import("./filesystem.js");
 
       const rootDir =
@@ -40,7 +40,7 @@ export class DatabaseClient {
       this.storage = new FileSystemDatabaseStorage(rootDir);
     } else {
       const { RemoteDatabaseStorage } = this.require(
-        "./remote.ts",
+        "./remote.js",
       ) as typeof import("./remote.js");
 
       const { project, environment } = getProjectAndEnvironment({
