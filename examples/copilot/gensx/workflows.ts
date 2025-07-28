@@ -388,9 +388,9 @@ ${importantApplicationDetails.map((detail) => `<detail>${detail.content}</detail
           parameters: z.object({
             path: z.string().describe("The path of the page you are looking at. This attaches the information to the specific path."),
             keyInformation: z.string().describe("The information you would like to store in the application memory"),
-            important: z.boolean().optional().describe("Whether the information is important. Important information will be provided to you for any future tasks proactively."),
+            important: z.boolean().optional().describe("Whether the information is important. Important information will be provided to you for any future tasks proactively, so use it only for details that are generally relevant, such as application structure, location of key features, or other details that are generally useful to know."),
           }),
-          description: "Add information to the application details. Use this to store important information about a specific path, actions that are available on that page, or details that may be relevant for future tasks.",
+          description: "Use this to store information about a specific path, actions that are available on that page, or details that may be relevant for future tasks.",
         },
         getPageSummary: {
           execute: async () => {
