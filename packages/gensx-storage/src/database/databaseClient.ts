@@ -1,8 +1,8 @@
 import { join } from "path";
 
+import { createRequire } from "node:module";
+
 import { getProjectAndEnvironment } from "../utils/config.js";
-import { FileSystemDatabaseStorage } from "./filesystem.js";
-import { RemoteDatabaseStorage } from "./remote.js";
 import {
   Database,
   DatabaseStorage,
@@ -16,6 +16,7 @@ import {
  */
 export class DatabaseClient {
   private storage: DatabaseStorage;
+  private require = createRequire(import.meta.url);
 
   /**
    * Create a new DatabaseClient
@@ -27,6 +28,10 @@ export class DatabaseClient {
       (process.env.GENSX_RUNTIME === "cloud" ? "cloud" : "filesystem");
 
     if (kind === "filesystem") {
+      const { FileSystemDatabaseStorage } = this.require(
+        "./filesystem.ts",
+      ) as typeof import("./filesystem.js");
+
       const rootDir =
         options.kind === "filesystem" && options.rootDir
           ? options.rootDir
@@ -34,6 +39,10 @@ export class DatabaseClient {
 
       this.storage = new FileSystemDatabaseStorage(rootDir);
     } else {
+      const { RemoteDatabaseStorage } = this.require(
+        "./remote.ts",
+      ) as typeof import("./remote.js");
+
       const { project, environment } = getProjectAndEnvironment({
         project: options.project,
         environment: options.environment,

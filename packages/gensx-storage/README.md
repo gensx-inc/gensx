@@ -8,9 +8,15 @@
 npm install @gensx/storage
 ```
 
+If you plan to use local filesystem databases, install `@libsql/client` as well:
+
+```bash
+npm install @libsql/client
+```
+
 ## Next.js Configuration
 
-When using `@gensx/storage` with Next.js, you need to configure webpack to ignore the `@libsql/client` package, as it's not compatible with client-side bundling. Add the following to your `next.config.ts` or `next.config.js` file:
+When using local filesystem databases in a Next.js project you should exclude `@libsql/client` from client bundles. Add the following to your `next.config.ts` or `next.config.js` file:
 
 ```typescript
 /** @type {import('next').NextConfig} */
@@ -30,7 +36,7 @@ const nextConfig = {
 module.exports = nextConfig;
 ```
 
-This configuration prevents bundling issues while allowing the storage hooks to work properly in server components and API routes. See the [client-side-tools example](https://github.com/gensx-inc/gensx/tree/main/examples/client-side-tools) for a complete implementation.
+This configuration prevents bundling issues when `@libsql/client` is installed. If you only use cloud databases you can skip installing `@libsql/client` and omit this webpack rule. See the [client-side-tools example](https://github.com/gensx-inc/gensx/tree/main/examples/client-side-tools) for a complete implementation.
 
 ## Features
 

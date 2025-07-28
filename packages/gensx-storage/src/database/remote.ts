@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
+import type { InArgs } from "@libsql/client";
+
 import { readConfig } from "@gensx/core";
-import { InArgs } from "@libsql/client";
 
 import { parseErrorResponse } from "../utils/parse-error.js";
 import { USER_AGENT } from "../utils/user-agent.js";
