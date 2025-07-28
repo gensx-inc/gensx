@@ -2,7 +2,6 @@ import * as gensx from "@gensx/core";
 import { useBlob } from "@gensx/storage";
 import { CoreMessage } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
 import { serializeError } from "serialize-error";
 
 import { Agent } from "./agent";
@@ -380,15 +379,15 @@ ${userPreferencesWorkingMemory}
         },
       };
 
-      // const groqClient = createOpenAI({
-      //   apiKey: process.env.GROQ_API_KEY!,
-      //   baseURL: "https://api.groq.com/openai/v1",
-      // });
+      const groqClient = createOpenAI({
+        apiKey: process.env.GROQ_API_KEY!,
+        baseURL: "https://api.groq.com/openai/v1",
+      });
 
-      const model = anthropic("claude-3-7-sonnet-latest");
+      // const model = anthropic("claude-3-7-sonnet-latest");
 
       console.log("messages", JSON.stringify(messages, null, 2));
-      // const model = groqClient("moonshotai/kimi-k2-instruct");
+      const model = groqClient("moonshotai/kimi-k2-instruct");
       const result = await Agent({
         messages,
         tools,
