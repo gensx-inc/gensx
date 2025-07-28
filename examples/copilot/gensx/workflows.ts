@@ -1,5 +1,5 @@
 import * as gensx from "@gensx/core";
-import { useBlob, useSearch } from "@gensx/storage";
+import { useBlob } from "@gensx/storage";
 import { CoreMessage } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -23,14 +23,11 @@ export const copilotWorkflow = gensx.Workflow(
     url,
   }: {
     prompt: string;
-    threadId?: string;
-    userId?: string;
+    threadId: string;
+    userId: string;
     url: string;
     }) => {
     try {
-      threadId = threadId ?? "default";
-      userId = userId ?? "default";
-
       // Get blob instance for chat history storage
       const chatHistoryBlob = useBlob<ThreadData>(
         `chat-history/${userId}/${threadId}.json`,
@@ -38,26 +35,8 @@ export const copilotWorkflow = gensx.Workflow(
 
       const domain = new URL(url).hostname;
       const path = new URL(url).pathname;
-      const applicationMemory = await useSearch(`application-memory/${userId}/${domain}`);
-      const userPreferences = await useSearch(`user-preferences/${userId}`);
-
-      let importantApplicationDetails: { content: string; path: string }[] = [];
-
-      try {
-        const importantApplicationDetailsQuery = await applicationMemory.query({
-          filters: ['important', 'Eq', true],
-          includeAttributes: ["content", "path"],
-        });
-
-        if (importantApplicationDetailsQuery.rows) {
-          importantApplicationDetails = importantApplicationDetailsQuery.rows.map((row) => ({
-            content: row.content as string,
-            path: row.path as string,
-          }));
-        }
-      } catch (error) {
-        console.error("Error in importantApplicationDetails", error);
-      }
+      const applicationMemory =  useBlob(`application-memory/${userId}/${domain}`);
+      const userPreferences = useBlob(`user-preferences/${userId}`);
 
       // Function to load thread data
       const loadThreadData = async (): Promise<ThreadData> => {
@@ -78,6 +57,26 @@ export const copilotWorkflow = gensx.Workflow(
 
       const threadData = await loadThreadData();
       const existingMessages = threadData.messages;
+
+      // Load working memory scratchpads
+      let applicationWorkingMemory = "";
+      let userPreferencesWorkingMemory = "";
+
+      try {
+        // Load application working memory scratchpad
+        const appMemoryExists = await applicationMemory.exists();
+        if (appMemoryExists) {
+          applicationWorkingMemory = await applicationMemory.getString() ?? "";
+        }
+
+        // Load user preferences working memory scratchpad
+        const userPrefsExists = await userPreferences.exists();
+        if (userPrefsExists) {
+          userPreferencesWorkingMemory = await userPreferences.getString() ?? "";
+        }
+      } catch (error) {
+        console.error("Error loading working memory", error);
+      }
 
       // Check if this is a new thread (no messages yet)
       const isNewThread = existingMessages.length === 0;
@@ -189,6 +188,28 @@ User preferences are orthogonal to application details - they focus on the user'
 - Use preferences to adapt your tone, level of detail, and assistance style
 - Use preferences to understand the user's comfort level with automation and technical complexity
 
+## WORKING MEMORY SYSTEM
+You have two working memory scratchpads that persist across conversations:
+
+### Application Working Memory
+- Contains your knowledge about THIS specific application/website
+- Includes page structures, navigation patterns, UI components, feature locations
+- Updated using 'updateApplicationWorkingMemory' tool
+- Read what you currently know in the '<applicationWorkingMemory>' section below
+
+### User Preferences Working Memory
+- Contains personal information about THIS specific user
+- Includes their name, communication preferences, interaction style, constraints
+- Updated using 'updateUserPreferencesWorkingMemory' tool
+- Read what you currently know in the '<userPreferencesWorkingMemory>' section below
+
+**How to use working memory:**
+1. **Read** your current working memory from the sections below before starting tasks
+2. **Update** working memory whenever you discover new information
+3. **Write** working memory as readable text blocks
+4. **Replace** the entire scratchpad content when updating (it's not appended)
+5. **Keep** application knowledge separate from user preferences
+
 ## AVAILABLE TOOLS
 - fetchPageContent: Fetch the html content of the current page
 - findInteractiveElements: Show interactive elements on the page (buttons, links, inputs, etc.)
@@ -203,19 +224,16 @@ User preferences are orthogonal to application details - they focus on the user'
 - getPageOverview: Get a hierarchical overview of the page structure with reliable selectors for each section
 - inspectSection: Get detailed information about a specific section or element on the page
 - navigate: Navigate the browser using browser navigation (back, forward) or to a specific path
-- searchUserPreferences: Searches the stored user preferences for information
-- updateUserPreferences: Writes information to the user preferences
-- searchApplicationDetails: Searches the application details for information about the given path and query
-- updateApplicationDetails: Writes information to the application details
+- updateApplicationWorkingMemory: Update your persistent memory about this application
+- updateUserPreferencesWorkingMemory: Update your persistent memory about this user's preferences
 
 ## CRITICAL REMINDERS
 - The page overview tools (getPageOverview and inspectSection) provide stable selectors that you can use with other tools to reliably interact with elements
-- ALWAYS search application details FIRST when starting any task to find existing knowledge about where actions can be performed
-- ALWAYS update application details with every new discovery to build your knowledge base
-- Use application details to identify which pages contain the features needed for user requests
-- Use application details to find the most efficient navigation path to reach required functionality
-- Proactively suggest the best pages to navigate to based on application details
-- Use user preferences to personalize your communication style and approach (orthogonal to application functionality)
+- ALWAYS read your working memory FIRST when starting any task to find existing knowledge
+- ALWAYS update your working memory with new discoveries to build your persistent knowledge
+- Use application working memory to identify which pages contain features and how to navigate efficiently
+- Use user preferences working memory to personalize your communication style and approach
+- Write working memory as clear, readable text that you can easily reference later
 - Be helpful, clear, and explain what you're doing as you interact with the page
 - Use the appropriate tools for different types of interactions: clickElements for clicking, fillTextInputs for text inputs, selectOptions for dropdowns, toggleCheckboxes for checkboxes/radio buttons, and submitForms for form submission
 
@@ -223,9 +241,13 @@ User preferences are orthogonal to application details - they focus on the user'
 
 <path>The current path is ${path}. However, this may change as you interact with the page.</path>
 
-<importantApplicationDetails>
-${importantApplicationDetails.map((detail) => `<detail>${detail.content}</detail>`).join("\n")}
-</importantApplicationDetails>`,
+<applicationWorkingMemory>
+${applicationWorkingMemory || "No application knowledge stored yet."}
+</applicationWorkingMemory>
+
+<userPreferencesWorkingMemory>
+${userPreferencesWorkingMemory || "No user preferences stored yet."}
+</userPreferencesWorkingMemory>`,
         };
 
         existingMessages.unshift(systemMessage);
@@ -242,9 +264,20 @@ ${importantApplicationDetails.map((detail) => `<detail>${detail.content}</detail
           /<path>.*<\/path>/,
           `<path>The current path is ${path}. However, this may change as you interact with the page.</path>`,
         );
+        // Update application working memory
         existingMessages[0].content = existingMessages[0].content.replace(
-          /<importantApplicationDetails>.*<\/importantApplicationDetails>/,
-          `<importantApplicationDetails>${importantApplicationDetails.map((detail) => `<detail>${detail.content}</detail>`).join("\n")}</importantApplicationDetails>`,
+          /<applicationWorkingMemory>.*<\/applicationWorkingMemory>/,
+          `<applicationWorkingMemory>
+${applicationWorkingMemory || "No application knowledge stored yet."}
+</applicationWorkingMemory>`,
+        );
+
+        // Update user preferences working memory
+        existingMessages[0].content = existingMessages[0].content.replace(
+          /<userPreferencesWorkingMemory>.*<\/userPreferencesWorkingMemory>/,
+          `<userPreferencesWorkingMemory>
+${userPreferencesWorkingMemory || "No user preferences stored yet."}
+</userPreferencesWorkingMemory>`,
         );
       }
 
@@ -263,134 +296,49 @@ ${importantApplicationDetails.map((detail) => `<detail>${detail.content}</detail
             ([key]) => key !== "fetchPageContent",
           ),
         ),
-        searchUserPreferences: {
-          execute: async (params: { preference?: string; query: string; }) => {
-            const { preference, query } = params;
+        updateApplicationWorkingMemory: {
+          execute: async (params: { content: string }) => {
+            const { content } = params;
 
             try {
-              const result = await userPreferences.query({
-                filters: preference ? ['Or', [['preference', 'Eq', preference], ['preference', 'Glob', preference], ['preference', 'Contains', preference]]] : undefined,
-                rankBy: ['content', 'BM25', query],
-                topK: 10,
-                includeAttributes: ["content", "preference"],
-              });
-
+              await applicationMemory.putString(content);
               return {
                 success: true,
-                results: result,
               };
             } catch (error) {
-              console.error("Error in searchUserPreferences", error);
+              console.error("Error in updateApplicationWorkingMemory", error);
               return {
                 success: false,
-                error: "Error in searchUserPreferences",
+                error: "Error in updateApplicationWorkingMemory",
               };
             }
           },
           parameters: z.object({
-            preference: z.string().optional().describe("The preference you are looking for. This is a partial name or glob pattern."),
-            query: z.string().describe("The information you are looking for."),
+            content: z.string().describe("The complete working memory content for application knowledge. This replaces the entire scratchpad."),
           }),
-          description: "Search the stored user preferences for information.",
+          description: "Update your working memory scratchpad for application knowledge. This is your persistent memory about the application's structure, features, and how to navigate it. Write it as a readable block of text that you can reference later.",
         },
-        updateUserPreferences: {
-          execute: async (params: { preference: string; value: string; }) => {
-            const { preference, value } = params;
+        updateUserPreferencesWorkingMemory: {
+          execute: async (params: { content: string }) => {
+            const { content } = params;
 
             try {
-              await userPreferences.write({
-                upsertRows: [{
-                  id: `${preference}-${Date.now()}`,
-                  preference: preference,
-                  content: value,
-                }],
-                schema: {
-                  preference: { type: "string", filterable: true },
-                  content: { type: "string", fullTextSearch: true },
-                }
-              });
-            } catch (error) {
-              console.error("Error in updateUserPreferences", error);
-              return {
-                success: false,
-                error: "Error in updateUserPreferences",
-              };
-            }
-            return {
-              success: true,
-            };
-          },
-          parameters: z.object({
-            preference: z.string().describe("A name for the user's preference. This is used later when looking up preferences."),
-            value: z.string().describe("The information you would like to store in the user preferences"),
-          }),
-          description: "Add information to the user preferences. Use this to store important information about the user's preferences, such as their name, or how they would like you to interact with them and take actions.",
-        },
-        searchApplicationDetails: {
-          execute: async (params: { query: string; path?: string; }) => {
-            const { query, path } = params
-
-            try {
-              const result = await applicationMemory.query({
-                filters: path ? ['Or', [['path', 'Eq', path], ['path', 'Glob', path]]] : undefined,
-                rankBy: ['content', 'BM25', query],
-                topK: 10,
-                includeAttributes: ["content", "path"],
-              });
-
+              await userPreferences.putString(content);
               return {
                 success: true,
-                results: result,
               };
             } catch (error) {
-              console.error("Error in searchApplicationDetails", error);
+              console.error("Error in updateUserPreferencesWorkingMemory", error);
               return {
                 success: false,
-                error: "Error in searchApplicationDetails",
+                error: "Error in updateUserPreferencesWorkingMemory",
               };
             }
           },
           parameters: z.object({
-            query: z.string().describe("The information you are looking for"),
-            path: z.string().optional().describe("The path of the page you are looking for. Can be a glob pattern."),
+            content: z.string().describe("The complete working memory content for user preferences. This replaces the entire scratchpad."),
           }),
-          description: "Search the application details for information about the given path and query. This should be used to find information, abilities, or details that were previously discovered.",
-        },
-        updateApplicationDetails: {
-          execute: async (params: { path: string; keyInformation: string; important?: boolean }) => {
-            const { path, keyInformation, important } = params;
-
-            try {
-              await applicationMemory.write({
-                  upsertRows: [{
-                  id: `${path}-${Date.now()}`,
-                  path: path,
-                    content: keyInformation,
-                    important: important,
-                }],
-                schema: {
-                  path: { type: "string", filterable: true },
-                  content: { type: "string", fullTextSearch: true },
-                  important: { type: "bool" },
-                }
-              });
-            } catch (error) {
-              console.error("Error in updateApplicationDetails", error);
-              return {
-                success: false,
-                error: "Error in updateApplicationDetails",
-              };
-            }
-            return {
-              success: true,
-            };
-          },
-          parameters: z.object({
-            path: z.string().describe("The path of the page you are looking at. This attaches the information to the specific path."),
-            keyInformation: z.string().describe("The information you would like to store in the application memory"),
-            important: z.boolean().optional().describe("Whether the information is important. Important information will be provided to you for any future tasks proactively, so use it only for details that are generally relevant, such as application structure, location of key features, or other details that are generally useful to know."),
-          }),
-          description: "Use this to store information about a specific path, actions that are available on that page, or details that may be relevant for future tasks.",
+          description: "Update your working memory scratchpad for user preferences. This is your persistent memory about how the user likes to interact, their preferences, constraints, and personal context. Write it as a readable block of text that you can reference later.",
         },
         getPageSummary: {
           execute: async () => {
@@ -413,8 +361,6 @@ ${importantApplicationDetails.map((detail) => `<detail>${detail.content}</detail
       //   apiKey: process.env.GROQ_API_KEY!,
       //   baseURL: "https://api.groq.com/openai/v1",
       // });
-
-      console.log('messages', messages);
 
       const model = anthropic("claude-3-7-sonnet-latest");
 

@@ -4,12 +4,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { CoreAssistantMessage, CoreMessage, CoreUserMessage } from "ai";
 
 import { useChat } from "../../hooks/useChat";
-import { useRouter } from "next/navigation";
 import { useToolImplementations } from "./tool-implementations";
 import { useCopilotThreadId, useCopilotUserId } from "./hooks";
 import ApplicationDetailsTab from "./ApplicationDetailsTab";
+import UserPreferencesTab from "./UserPreferencesTab";
 
-type TabType = "chat" | "details";
+type TabType = "chat" | "details" | "preferences";
 
 export default function GenSXCopilot() {
   const [input, setInput] = useState("");
@@ -22,12 +22,13 @@ export default function GenSXCopilot() {
   const [userId, setUserId] = useCopilotUserId();
   const [threadId, setThreadId] = useCopilotThreadId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
 
   const toolImplementations = useToolImplementations();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (instant: boolean = false) => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: instant ? "instant" : "smooth",
+    });
   };
 
   const { messages, sendMessage, status, error, loadHistory, clear } =
@@ -35,9 +36,9 @@ export default function GenSXCopilot() {
 
   // Initialize user ID, and load chat history on mount
   useEffect(() => {
-    loadHistory(threadId, userId);
     setUserId(userId);
     setThreadId(threadId);
+    loadHistory(threadId, userId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -59,6 +60,12 @@ export default function GenSXCopilot() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (activeTab === "chat") {
+      scrollToBottom(true);
+    }
+  }, [activeTab]);
 
   // Handle mouse events for resizing
   useEffect(() => {
@@ -107,19 +114,9 @@ export default function GenSXCopilot() {
     e.preventDefault();
     if (!input.trim() || (status === "streaming" && !error)) return;
 
-    let currentThreadId = threadId;
-    if (!currentThreadId) {
-      currentThreadId = Date.now().toString();
-      router.push(`?copilotThreadId=${currentThreadId}`);
-    }
-
     const userMessage = input;
     setInput("");
-    await sendMessage(
-      userMessage,
-      currentThreadId ?? undefined,
-      userId ?? undefined,
-    );
+    await sendMessage(userMessage, threadId, userId);
   };
 
   return (
@@ -234,6 +231,16 @@ export default function GenSXCopilot() {
               >
                 App Details
               </button>
+              <button
+                onClick={() => setActiveTab("preferences")}
+                className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === "preferences"
+                    ? "bg-blue-500 text-white"
+                    : "text-blue-100 hover:bg-blue-500 hover:text-white"
+                }`}
+              >
+                Preferences
+              </button>
             </div>
           </div>
 
@@ -281,8 +288,10 @@ export default function GenSXCopilot() {
                 </div>
               </form>
             </>
-          ) : (
+          ) : activeTab === "details" ? (
             <ApplicationDetailsTab userId={userId || "default"} />
+          ) : (
+            <UserPreferencesTab userId={userId || "default"} />
           )}
         </div>
       )}

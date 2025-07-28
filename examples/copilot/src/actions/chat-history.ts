@@ -35,14 +35,9 @@ function extractTextContent(content: CoreMessage["content"]): string {
 }
 
 export async function getChatHistory(
-  userId?: string,
-  threadId?: string,
+  userId: string,
+  threadId: string,
 ): Promise<CoreMessage[]> {
-  userId = userId ?? "default";
-  threadId = threadId ?? "default";
-
-  console.log("getChatHistory", { userId, threadId });
-
   try {
     const blobClient = new BlobClient({
       kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
@@ -57,13 +52,6 @@ export async function getChatHistory(
     }
 
     const threadData = await blob.getJSON();
-
-    console.log("threadData", threadData);
-
-    // Handle old format (array of messages) - convert to new format
-    if (Array.isArray(threadData)) {
-      return threadData;
-    }
 
     return threadData?.messages ?? [];
   } catch (error) {

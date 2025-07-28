@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getApplicationWorkingMemory, updateApplicationWorkingMemory } from "@/actions/application-details";
+import { getUserPreferencesWorkingMemory, updateUserPreferencesWorkingMemory } from "@/actions/user-preferences";
 
-interface ApplicationDetailsTabProps {
+interface UserPreferencesTabProps {
   userId: string;
 }
 
-export default function ApplicationDetailsTab({ userId }: ApplicationDetailsTabProps) {
+export default function UserPreferencesTab({ userId }: UserPreferencesTabProps) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -17,11 +17,11 @@ export default function ApplicationDetailsTab({ userId }: ApplicationDetailsTabP
   const loadContent = async () => {
     setLoading(true);
     try {
-      const workingMemory = await getApplicationWorkingMemory(userId);
+      const workingMemory = await getUserPreferencesWorkingMemory(userId);
       setContent(workingMemory);
       setEditContent(workingMemory);
     } catch (error) {
-      console.error("Error loading application working memory:", error);
+      console.error("Error loading user preferences working memory:", error);
     }
     setLoading(false);
   };
@@ -29,16 +29,16 @@ export default function ApplicationDetailsTab({ userId }: ApplicationDetailsTabP
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const result = await updateApplicationWorkingMemory(userId, editContent);
+      const result = await updateUserPreferencesWorkingMemory(userId, editContent);
       if (result.success) {
         setContent(editContent);
         setIsEditing(false);
       } else {
-        alert(result.error || "Failed to save application working memory");
+        alert(result.error || "Failed to save user preferences working memory");
       }
     } catch (error) {
-      console.error("Error saving application working memory:", error);
-      alert("Failed to save application working memory");
+      console.error("Error saving user preferences working memory:", error);
+      alert("Failed to save user preferences working memory");
     }
     setIsSaving(false);
   };
@@ -58,9 +58,9 @@ export default function ApplicationDetailsTab({ userId }: ApplicationDetailsTabP
       <div className="flex-shrink-0 p-4 border-b bg-gray-50">
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Application Working Memory</h3>
+            <h3 className="text-lg font-semibold text-gray-900">User Preferences Working Memory</h3>
             <p className="text-sm text-gray-600">
-              The AI's persistent knowledge about this application's structure and features
+              The AI's persistent knowledge about your preferences and how you like to interact
             </p>
           </div>
           <div className="flex gap-2">
@@ -100,17 +100,18 @@ export default function ApplicationDetailsTab({ userId }: ApplicationDetailsTabP
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            placeholder="Enter application knowledge here...
+            placeholder="Enter your preferences here...
 
-This is your working memory scratchpad for application knowledge. You can organize it however you like:
+This is the AI's working memory scratchpad for your personal preferences. You can include:
 
-- Page structures and navigation
-- Feature locations and how to access them
-- UI patterns and components
-- Common workflows and tasks
-- Important elements and their selectors
+- Your name and personal information
+- How you prefer to communicate
+- Your technical skill level
+- Accessibility needs or constraints
+- Preferred interaction style
+- Any specific requirements or constraints
 
-Write it as readable text that you can easily reference later."
+Write it as readable text that the AI can easily reference when helping you."
             className="w-full h-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono text-sm"
           />
         ) : (
@@ -124,17 +125,17 @@ Write it as readable text that you can easily reference later."
             ) : (
               <div className="h-full flex items-center justify-center">
                 <div className="max-w-md mx-auto text-center text-gray-500">
-                  <p className="mb-4">No application knowledge stored yet.</p>
+                  <p className="mb-4">No user preferences stored yet.</p>
                   <p className="text-sm">
-                    This is where the AI stores its persistent knowledge about this application.
-                    As the AI discovers features, navigation patterns, and useful information,
-                    it will be stored here for future reference.
+                    This is where the AI stores information about your preferences,
+                    communication style, and personal context. This helps the AI
+                    provide more personalized assistance.
                   </p>
                   <button
                     onClick={() => setIsEditing(true)}
                     className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
-                    Add Knowledge
+                    Add Preferences
                   </button>
                 </div>
               </div>
