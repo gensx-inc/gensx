@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import TodoListView from "@/components/TodoListView";
-import { getUserId } from "@/lib/get-user-id";
 import { findBySlugOrId, slugify } from "@/lib/slugify";
 import {
   getTodoData,
@@ -13,9 +12,10 @@ import {
   type TodoList,
   type AppData,
 } from "@/actions/todo-data";
+import { useCopilotUserId } from "@/components/copilot/hooks";
 
 export default function ProjectDetailPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId] = useCopilotUserId();
   const [appData, setAppData] = useState<AppData>({
     projects: [],
     todoLists: [],
@@ -29,20 +29,17 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     const initializeData = async () => {
-      const currentUserId = getUserId();
-      setUserId(currentUserId);
-      
-      if (currentUserId) {
-        const data = await getTodoData(currentUserId);
+      if (userId) {
+        const data = await getTodoData(userId);
         setAppData(data);
-        
+
         // Find the project by slug or ID
         const foundProject = findBySlugOrId(data.projects, projectSlug);
         if (foundProject) {
           setProject(foundProject);
         } else {
           // Project not found, redirect to projects
-          router.push('/projects');
+          router.push("/projects");
           return;
         }
       }
@@ -50,13 +47,13 @@ export default function ProjectDetailPage() {
     };
 
     initializeData();
-  }, [projectSlug, router]);
+  }, [projectSlug, router, userId]);
 
   const refreshData = async () => {
     if (userId) {
       const data = await getTodoData(userId);
       setAppData(data);
-      
+
       // Update project reference
       const foundProject = findBySlugOrId(data.projects, projectSlug);
       if (foundProject) {
@@ -65,7 +62,11 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleCreateTodoList = async (projectId: string, name: string, description?: string) => {
+  const handleCreateTodoList = async (
+    projectId: string,
+    name: string,
+    description?: string,
+  ) => {
     if (!userId) return;
     await createTodoList(userId, projectId, name, description);
     await refreshData();
@@ -86,7 +87,7 @@ export default function ProjectDetailPage() {
   };
 
   const handleBack = () => {
-    router.push('/projects');
+    router.push("/projects");
   };
 
   if (loading) {
@@ -115,7 +116,9 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const projectTodoLists = project ? appData.todoLists.filter(list => list.projectId === project.id) : [];
+  const projectTodoLists = project
+    ? appData.todoLists.filter((list) => list.projectId === project.id)
+    : [];
 
   return (
     <TodoListView

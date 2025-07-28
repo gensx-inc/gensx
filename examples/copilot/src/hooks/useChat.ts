@@ -10,6 +10,7 @@ export interface ChatWorkflowInput {
   existingMessages?: { role: string; content: unknown }[];
   threadId?: string;
   userId?: string;
+  url: string;
 }
 
 export interface ChatWorkflowOutput {
@@ -158,6 +159,7 @@ export function useChat(
           existingMessages: messages,
           threadId: threadId,
           userId: userId,
+          url: window.location.href,
         },
       });
       setStatus("completed");

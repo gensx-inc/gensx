@@ -41,13 +41,15 @@ export async function getChatHistory(
   userId = userId ?? "default";
   threadId = threadId ?? "default";
 
+  console.log("getChatHistory", { userId, threadId });
+
   try {
     const blobClient = new BlobClient({
       kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
     });
 
     const blobPath = `chat-history/${userId}/${threadId}.json`;
-    const blob = await blobClient.getBlob<ThreadData>(blobPath);
+    const blob = blobClient.getBlob<ThreadData>(blobPath);
 
     const exists = await blob.exists();
     if (!exists) {
@@ -55,6 +57,8 @@ export async function getChatHistory(
     }
 
     const threadData = await blob.getJSON();
+
+    console.log("threadData", threadData);
 
     // Handle old format (array of messages) - convert to new format
     if (Array.isArray(threadData)) {

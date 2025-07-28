@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import SingleTodoList from "@/components/SingleTodoList";
-import { getUserId } from "@/lib/get-user-id";
 import { findBySlugOrId, slugify } from "@/lib/slugify";
 import {
   getTodoData,
@@ -15,9 +14,10 @@ import {
   type Todo,
   type AppData,
 } from "@/actions/todo-data";
+import { useCopilotUserId } from "@/components/copilot/hooks";
 
 export default function TodoListDetailPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId] = useCopilotUserId();
   const [appData, setAppData] = useState<AppData>({
     projects: [],
     todoLists: [],
@@ -33,20 +33,19 @@ export default function TodoListDetailPage() {
 
   useEffect(() => {
     const initializeData = async () => {
-      const currentUserId = getUserId();
-      setUserId(currentUserId);
-      
-      if (currentUserId) {
-        const data = await getTodoData(currentUserId);
+      if (userId) {
+        const data = await getTodoData(userId);
         setAppData(data);
-        
+
         // Find the project and todo list by slug or ID
         const foundProject = findBySlugOrId(data.projects, projectSlug);
-        const foundTodoList = foundProject ? findBySlugOrId(
-          data.todoLists.filter(l => l.projectId === foundProject.id), 
-          listSlug
-        ) : null;
-        
+        const foundTodoList = foundProject
+          ? findBySlugOrId(
+              data.todoLists.filter((l) => l.projectId === foundProject.id),
+              listSlug,
+            )
+          : null;
+
         if (foundProject && foundTodoList) {
           setProject(foundProject);
           setTodoList(foundTodoList);
@@ -56,7 +55,7 @@ export default function TodoListDetailPage() {
             const projectSlugForRedirect = slugify(foundProject.name);
             router.push(`/projects/${projectSlugForRedirect}`);
           } else {
-            router.push('/projects');
+            router.push("/projects");
           }
           return;
         }
@@ -65,20 +64,22 @@ export default function TodoListDetailPage() {
     };
 
     initializeData();
-  }, [projectSlug, listSlug, router]);
+  }, [projectSlug, listSlug, router, userId]);
 
   const refreshData = async () => {
     if (userId) {
       const data = await getTodoData(userId);
       setAppData(data);
-      
+
       // Update references
       const foundProject = findBySlugOrId(data.projects, projectSlug);
-      const foundTodoList = foundProject ? findBySlugOrId(
-        data.todoLists.filter(l => l.projectId === foundProject.id), 
-        listSlug
-      ) : null;
-      
+      const foundTodoList = foundProject
+        ? findBySlugOrId(
+            data.todoLists.filter((l) => l.projectId === foundProject.id),
+            listSlug,
+          )
+        : null;
+
       if (foundProject) setProject(foundProject);
       if (foundTodoList) setTodoList(foundTodoList);
     }
@@ -90,7 +91,10 @@ export default function TodoListDetailPage() {
     await refreshData();
   };
 
-  const handleUpdateTodo = async (todoId: string, updates: Partial<Pick<Todo, "text" | "completed">>) => {
+  const handleUpdateTodo = async (
+    todoId: string,
+    updates: Partial<Pick<Todo, "text" | "completed">>,
+  ) => {
     if (!userId) return;
     await updateTodo(userId, todoId, updates);
     await refreshData();
@@ -107,7 +111,7 @@ export default function TodoListDetailPage() {
       const projectSlugForRedirect = slugify(project.name);
       router.push(`/projects/${projectSlugForRedirect}`);
     } else {
-      router.push('/projects');
+      router.push("/projects");
     }
   };
 
@@ -137,7 +141,9 @@ export default function TodoListDetailPage() {
     );
   }
 
-  const todoListTodos = todoList ? appData.todos.filter(todo => todo.listId === todoList.id) : [];
+  const todoListTodos = todoList
+    ? appData.todos.filter((todo) => todo.listId === todoList.id)
+    : [];
 
   return (
     <SingleTodoList
