@@ -1,7 +1,5 @@
 import { join } from "path";
 
-import { createRequire } from "node:module";
-
 import { getProjectAndEnvironment } from "../utils/config.js";
 import {
   Database,
@@ -15,39 +13,57 @@ import {
  * Client for interacting with database functionality outside of JSX context
  */
 export class DatabaseClient {
-  private storage: DatabaseStorage;
-  private require = createRequire(import.meta.url);
+  private storage: DatabaseStorage | null = null;
+  private storagePromise: Promise<DatabaseStorage> | null = null;
+  private options: DatabaseStorageOptions;
 
   /**
    * Create a new DatabaseClient
    * @param options Optional configuration properties for the database storage
    */
   constructor(options: DatabaseStorageOptions = {}) {
+    this.options = options;
+  }
+
+  /**
+   * Lazy initialization of storage
+   */
+  private async getStorage(): Promise<DatabaseStorage> {
+    if (this.storage) {
+      return this.storage;
+    }
+
+    if (this.storagePromise) {
+      return this.storagePromise;
+    }
+
+    this.storagePromise = this.initializeStorage();
+    this.storage = await this.storagePromise;
+    return this.storage;
+  }
+
+  private async initializeStorage(): Promise<DatabaseStorage> {
     const kind =
-      options.kind ??
+      this.options.kind ??
       (process.env.GENSX_RUNTIME === "cloud" ? "cloud" : "filesystem");
 
     if (kind === "filesystem") {
-      const { FileSystemDatabaseStorage } = this.require(
-        "./filesystem.js",
-      ) as typeof import("./filesystem.js");
+      const { FileSystemDatabaseStorage } = await import("./filesystem.js");
 
       const rootDir =
-        options.kind === "filesystem" && options.rootDir
-          ? options.rootDir
+        this.options.kind === "filesystem" && this.options.rootDir
+          ? this.options.rootDir
           : join(process.cwd(), ".gensx", "databases");
 
-      this.storage = new FileSystemDatabaseStorage(rootDir);
+      return new FileSystemDatabaseStorage(rootDir);
     } else {
-      const { RemoteDatabaseStorage } = this.require(
-        "./remote.js",
-      ) as typeof import("./remote.js");
+      const { RemoteDatabaseStorage } = await import("./remote.js");
 
       const { project, environment } = getProjectAndEnvironment({
-        project: options.project,
-        environment: options.environment,
+        project: this.options.project,
+        environment: this.options.environment,
       });
-      this.storage = new RemoteDatabaseStorage(project, environment);
+      return new RemoteDatabaseStorage(project, environment);
     }
   }
 
@@ -57,10 +73,11 @@ export class DatabaseClient {
    * @returns A Promise resolving to a Database
    */
   async getDatabase(name: string): Promise<Database> {
-    if (!this.storage.hasEnsuredDatabase(name)) {
-      await this.storage.ensureDatabase(name);
+    const storage = await this.getStorage();
+    if (!storage.hasEnsuredDatabase(name)) {
+      await storage.ensureDatabase(name);
     }
-    return this.storage.getDatabase(name);
+    return storage.getDatabase(name);
   }
 
   /**
@@ -69,7 +86,8 @@ export class DatabaseClient {
    * @returns A Promise resolving to the ensure result
    */
   async ensureDatabase(name: string): Promise<EnsureDatabaseResult> {
-    return this.storage.ensureDatabase(name);
+    const storage = await this.getStorage();
+    return storage.ensureDatabase(name);
   }
 
   /**
@@ -81,7 +99,8 @@ export class DatabaseClient {
     databases: { name: string; createdAt: Date }[];
     nextCursor?: string;
   }> {
-    return this.storage.listDatabases(options);
+    const storage = await this.getStorage();
+    return storage.listDatabases(options);
   }
 
   /**
@@ -90,7 +109,8 @@ export class DatabaseClient {
    * @returns A Promise resolving to the deletion result
    */
   async deleteDatabase(name: string): Promise<DeleteDatabaseResult> {
-    return this.storage.deleteDatabase(name);
+    const storage = await this.getStorage();
+    return storage.deleteDatabase(name);
   }
 
   /**
@@ -99,7 +119,8 @@ export class DatabaseClient {
    * @returns A Promise resolving to a boolean indicating if the database exists
    */
   async databaseExists(name: string): Promise<boolean> {
-    const result = await this.storage.listDatabases();
+    const storage = await this.getStorage();
+    const result = await storage.listDatabases();
     return result.databases.some((db) => db.name === name);
   }
 }
