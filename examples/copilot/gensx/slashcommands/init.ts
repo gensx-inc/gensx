@@ -40,6 +40,7 @@ For each page/feature you discover, document:
 - Document everything you discover in working memory
 - Use 'highlightElements' to show what you're examining
 - Take note of URL patterns and routing structure
+- Be curious and explore the application thoroughly
 
 **DON'T:**
 - Submit forms or make POST requests
