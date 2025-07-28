@@ -9,6 +9,7 @@ import { Agent } from "./agent";
 import { asToolSet, generateText } from "@gensx/vercel-ai";
 import { toolbox } from "./tools/toolbox";
 import { z } from "zod";
+import { initPrompt } from "./slashcommands/init";
 
 type ThreadData = {
   messages: CoreMessage[];
@@ -78,6 +79,16 @@ export const copilotWorkflow = gensx.Workflow(
         console.error("Error loading working memory", error);
       }
 
+      let needInit = false;
+      if (!applicationWorkingMemory.trim()) {
+        applicationWorkingMemory = "No application knowledge stored yet. It is imperative that you ask the user to use the '/init' slash command to initialize the application knowledge.";
+        needInit = true;
+      }
+
+      if (!userPreferencesWorkingMemory.trim()) {
+        userPreferencesWorkingMemory = "No user preferences stored yet.";
+      }
+
       // Check if this is a new thread (no messages yet)
       const isNewThread = existingMessages.length === 0;
 
@@ -86,6 +97,8 @@ export const copilotWorkflow = gensx.Workflow(
           role: "system",
           content: `You are a helpful AI assistant with the ability to interact with web pages using jQuery-based tools.
 You can inspect elements, click buttons, fill forms, and help users navigate and interact with web applications.
+
+${needInit ? "## IMPORTANT: The user has not initialized the application knowledge. You must ask the user to use the '/init' slash command to initialize the application knowledge." : ""}
 
 ## CORE WORKFLOW
 When helping users:
@@ -242,11 +255,11 @@ You have two working memory scratchpads that persist across conversations:
 <path>The current path is ${path}. However, this may change as you interact with the page.</path>
 
 <applicationWorkingMemory>
-${applicationWorkingMemory || "No application knowledge stored yet."}
+${applicationWorkingMemory}
 </applicationWorkingMemory>
 
 <userPreferencesWorkingMemory>
-${userPreferencesWorkingMemory || "No user preferences stored yet."}
+${userPreferencesWorkingMemory}
 </userPreferencesWorkingMemory>`,
         };
 
@@ -268,7 +281,7 @@ ${userPreferencesWorkingMemory || "No user preferences stored yet."}
         existingMessages[0].content = existingMessages[0].content.replace(
           /<applicationWorkingMemory>.*<\/applicationWorkingMemory>/,
           `<applicationWorkingMemory>
-${applicationWorkingMemory || "No application knowledge stored yet."}
+${applicationWorkingMemory}
 </applicationWorkingMemory>`,
         );
 
@@ -276,9 +289,19 @@ ${applicationWorkingMemory || "No application knowledge stored yet."}
         existingMessages[0].content = existingMessages[0].content.replace(
           /<userPreferencesWorkingMemory>.*<\/userPreferencesWorkingMemory>/,
           `<userPreferencesWorkingMemory>
-${userPreferencesWorkingMemory || "No user preferences stored yet."}
+${userPreferencesWorkingMemory}
 </userPreferencesWorkingMemory>`,
         );
+      }
+
+      // Handle slash commands
+      let userPrompt = prompt;
+      if (prompt.startsWith('/')) {
+        const command = prompt.split(' ')[0].substring(1); // Remove the '/'
+
+        if (command === 'init') {
+          userPrompt = initPrompt;
+        }
       }
 
       // Add the new user message
@@ -286,7 +309,7 @@ ${userPreferencesWorkingMemory || "No user preferences stored yet."}
         ...(existingMessages as CoreMessage[]),
         {
           role: "user",
-          content: prompt,
+          content: userPrompt,
         },
       ];
 
@@ -364,6 +387,7 @@ ${userPreferencesWorkingMemory || "No user preferences stored yet."}
 
       const model = anthropic("claude-3-7-sonnet-latest");
 
+      console.log("messages", JSON.stringify(messages, null, 2));
       // const model = groqClient("moonshotai/kimi-k2-instruct");
       const result = await Agent({
         messages,
