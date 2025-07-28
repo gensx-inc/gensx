@@ -1135,8 +1135,7 @@ export const useToolImplementations = () => {
               break;
 
             case "forward":
-              // Next.js router doesn't have a forward method, use browser history
-              window.history.forward();
+              router.forward();
               break;
 
             case "path":
