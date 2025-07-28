@@ -26,7 +26,7 @@ export const copilotWorkflow = gensx.Workflow(
     threadId: string;
     userId: string;
     url: string;
-    }) => {
+  }): Promise<{ result: string; messages: CoreMessage[] }> => {
     try {
       // Get blob instance for chat history storage
       const chatHistoryBlob = useBlob<ThreadData>(
@@ -35,7 +35,9 @@ export const copilotWorkflow = gensx.Workflow(
 
       const domain = new URL(url).hostname;
       const path = new URL(url).pathname;
-      const applicationMemory =  useBlob(`application-memory/${userId}/${domain}`);
+      const applicationMemory = useBlob(
+        `application-memory/${userId}/${domain}`,
+      );
       const userPreferences = useBlob(`user-preferences/${userId}`);
 
       // Function to load thread data
@@ -66,13 +68,15 @@ export const copilotWorkflow = gensx.Workflow(
         // Load application working memory scratchpad
         const appMemoryExists = await applicationMemory.exists();
         if (appMemoryExists) {
-          applicationWorkingMemory = await applicationMemory.getString() ?? "";
+          applicationWorkingMemory =
+            (await applicationMemory.getString()) ?? "";
         }
 
         // Load user preferences working memory scratchpad
         const userPrefsExists = await userPreferences.exists();
         if (userPrefsExists) {
-          userPreferencesWorkingMemory = await userPreferences.getString() ?? "";
+          userPreferencesWorkingMemory =
+            (await userPreferences.getString()) ?? "";
         }
       } catch (error) {
         console.error("Error loading working memory", error);
@@ -80,7 +84,8 @@ export const copilotWorkflow = gensx.Workflow(
 
       let needInit = false;
       if (!applicationWorkingMemory.trim()) {
-        applicationWorkingMemory = "No application knowledge stored yet. It is imperative that you ask the user to use the '/init' slash command to initialize the application knowledge.";
+        applicationWorkingMemory =
+          "No application knowledge stored yet. It is imperative that you ask the user to use the '/init' slash command to initialize the application knowledge.";
         needInit = true;
       }
 
@@ -348,10 +353,10 @@ ${userPreferencesWorkingMemory}
 
       // Handle slash commands
       let userPrompt = prompt;
-      if (prompt.startsWith('/')) {
-        const command = prompt.split(' ')[0].substring(1); // Remove the '/'
+      if (prompt.startsWith("/")) {
+        const command = prompt.split(" ")[0].substring(1); // Remove the '/'
 
-        if (command === 'init') {
+        if (command === "init") {
           userPrompt = initPrompt;
         }
       }
@@ -389,9 +394,14 @@ ${userPreferencesWorkingMemory}
             }
           },
           parameters: z.object({
-            content: z.string().describe("The complete working memory content for application knowledge. This replaces the entire scratchpad."),
+            content: z
+              .string()
+              .describe(
+                "The complete working memory content for application knowledge. This replaces the entire scratchpad.",
+              ),
           }),
-          description: "Update your working memory scratchpad for application knowledge. This is your persistent memory about the application's structure, features, and how to navigate it. Write it as a readable block of text that you can reference later.",
+          description:
+            "Update your working memory scratchpad for application knowledge. This is your persistent memory about the application's structure, features, and how to navigate it. Write it as a readable block of text that you can reference later.",
         },
         updateUserPreferencesWorkingMemory: {
           execute: async (params: { content: string }) => {
@@ -403,7 +413,10 @@ ${userPreferencesWorkingMemory}
                 success: true,
               };
             } catch (error) {
-              console.error("Error in updateUserPreferencesWorkingMemory", error);
+              console.error(
+                "Error in updateUserPreferencesWorkingMemory",
+                error,
+              );
               return {
                 success: false,
                 error: "Error in updateUserPreferencesWorkingMemory",
@@ -411,13 +424,22 @@ ${userPreferencesWorkingMemory}
             }
           },
           parameters: z.object({
-            content: z.string().describe("The complete working memory content for user preferences. This replaces the entire scratchpad."),
+            content: z
+              .string()
+              .describe(
+                "The complete working memory content for user preferences. This replaces the entire scratchpad.",
+              ),
           }),
-          description: "Update your working memory scratchpad for user preferences. This is your persistent memory about how the user likes to interact, their preferences, constraints, and personal context. Write it as a readable block of text that you can reference later.",
+          description:
+            "Update your working memory scratchpad for user preferences. This is your persistent memory about how the user likes to interact, their preferences, constraints, and personal context. Write it as a readable block of text that you can reference later.",
         },
         getPageSummary: {
           execute: async () => {
-            const pageContent = await gensx.executeExternalTool(toolbox, "fetchPageContent", {});
+            const pageContent = await gensx.executeExternalTool(
+              toolbox,
+              "fetchPageContent",
+              {},
+            );
 
             const summary = await SummarizePageContent(pageContent.content);
             return {
@@ -426,9 +448,15 @@ ${userPreferencesWorkingMemory}
             };
           },
           parameters: z.object({
-            dummy: z.string().optional().describe("This is a dummy parameter to pass through to the tool."),
+            dummy: z
+              .string()
+              .optional()
+              .describe(
+                "This is a dummy parameter to pass through to the tool.",
+              ),
           }),
-          description: "Get a summary of the page, useful for getting a complete overview of the page and details necessary to select specific elements on the page using classes or ids for a deeper inspection.",
+          description:
+            "Get a summary of the page, useful for getting a complete overview of the page and details necessary to select specific elements on the page using classes or ids for a deeper inspection.",
         },
       };
 
@@ -453,11 +481,42 @@ ${userPreferencesWorkingMemory}
         //   : undefined,
       });
 
+      let recurse = false;
+      const lastMessage = result.messages[result.messages.length - 1];
+      if (
+        typeof lastMessage.content === "string" &&
+        lastMessage.content.trim().endsWith("<|tool_calls_section_end|>")
+      ) {
+        // sometimes the k2 model will end the message with a tool call section end marker, remove it.
+        lastMessage.content = lastMessage.content.replace(
+          "<|tool_calls_section_end|>",
+          "",
+        );
+        lastMessage.content = lastMessage.content.replace(
+          "<|tool_calls_section_begin|>",
+          "",
+        );
+
+        recurse = true;
+      }
+
       await saveThreadData({ messages: result.messages });
+
+      if (recurse) {
+        return await copilotWorkflow({
+          prompt: "continue",
+          threadId,
+          userId,
+          url,
+        });
+      }
 
       return result;
     } catch (error) {
-      console.error("Error in copilot workflow", JSON.stringify(serializeError(error), null, 2));
+      console.error(
+        "Error in copilot workflow",
+        JSON.stringify(serializeError(error), null, 2),
+      );
       throw error;
     }
   },

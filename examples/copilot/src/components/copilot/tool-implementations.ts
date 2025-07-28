@@ -1,4 +1,3 @@
-import { useRouter } from "next/navigation";
 import $ from 'jquery';
 import { useMemo } from "react";
 import { createToolImplementations } from "@gensx/react";
@@ -6,7 +5,6 @@ import { createToolImplementations } from "@gensx/react";
 import { ToolBox } from "../../../gensx/tools/toolbox";
 
 export const useToolImplementations = () => {
-  const router = useRouter();
 
   const toolImplementations = useMemo(() => {
     return createToolImplementations<ToolBox>({
@@ -1121,7 +1119,8 @@ export const useToolImplementations = () => {
           switch (params.action) {
             case "back":
               if (window.history.length > 1) {
-                router.back();
+                // Use browser History API instead of Next.js router to preserve state
+                window.history.back();
               } else {
                 return {
                   success: false,
@@ -1135,7 +1134,8 @@ export const useToolImplementations = () => {
               break;
 
             case "forward":
-              router.forward();
+              // Use browser History API instead of Next.js router to preserve state
+              window.history.forward();
               break;
 
             case "path":
@@ -1149,7 +1149,12 @@ export const useToolImplementations = () => {
                   error: "No path provided",
                 };
               }
-              router.push(params.path);
+              // Use browser History API to change URL without full page reload
+              // This preserves React component state unlike Next.js router
+              window.history.pushState(null, '', params.path);
+
+              // Trigger a popstate event to notify React of the URL change
+              window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
               break;
 
             default:
@@ -1169,8 +1174,8 @@ export const useToolImplementations = () => {
             const pollInterval = 100;
             let elapsed = 0;
 
-            // For client-side routing, wait a bit for the route change
-            await new Promise((resolve) => setTimeout(resolve, 200));
+            // For History API navigation, wait for URL change
+            await new Promise((resolve) => setTimeout(resolve, 100));
 
             // Poll for URL change or timeout
             while (elapsed < timeout) {
@@ -1205,7 +1210,7 @@ export const useToolImplementations = () => {
         }
       },
     });
-  }, [router]);
+  }, []);
 
   return toolImplementations;
 }
