@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProjectList from "@/components/ProjectList";
-import { getUserId } from "@/lib/get-user-id";
 import { slugify } from "@/lib/slugify";
 import {
   getTodoData,
@@ -12,9 +11,10 @@ import {
   type Project,
   type AppData,
 } from "@/actions/todo-data";
+import { useCopilotUserId } from "@/components/copilot/hooks";
 
 export default function ProjectsPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId] = useCopilotUserId();
   const [appData, setAppData] = useState<AppData>({
     projects: [],
     todoLists: [],
@@ -25,18 +25,15 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     const initializeData = async () => {
-      const currentUserId = getUserId();
-      setUserId(currentUserId);
-      
-      if (currentUserId) {
-        const data = await getTodoData(currentUserId);
+      if (userId) {
+        const data = await getTodoData(userId);
         setAppData(data);
       }
       setLoading(false);
     };
 
     initializeData();
-  }, []);
+  }, [userId]);
 
   const refreshData = async () => {
     if (userId) {

@@ -1,62 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import $ from 'jquery';
+import { useMemo } from "react";
 import { createToolImplementations } from "@gensx/react";
-import { CoreAssistantMessage, CoreMessage, CoreUserMessage } from "ai";
 
-import { useChat } from "../hooks/useChat";
-import type { ToolBox } from "../../gensx/tools/toolbox";
-import { useRouter, useSearchParams } from "next/navigation";
-import { getUserId } from "@/lib/get-user-id";
+import { ToolBox } from "../../../gensx/tools/toolbox";
 
-declare global {
-  interface Window {
-    jQuery: any;
-    $: any;
-  }
-}
-
-export default function GenSXCopilot() {
-  const [input, setInput] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const searchParams = useSearchParams();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+export const useToolImplementations = () => {
   const router = useRouter();
-
-  // Load jQuery dynamically
-  useEffect(() => {
-    if (!window.jQuery) {
-      const script = document.createElement("script");
-      script.src = "https://code.jquery.com/jquery-3.7.1.min.js";
-      script.async = true;
-      script.onload = () => {
-        window.$ = window.jQuery;
-      };
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Helper to ensure jQuery is loaded
-  const ensureJQuery = async (): Promise<any> => {
-    if (window.$) return window.$;
-
-    // Wait for jQuery to load (max 5 seconds)
-    for (let i = 0; i < 50; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      if (window.$) return window.$;
-    }
-
-    throw new Error("jQuery failed to load");
-  };
 
   const toolImplementations = useMemo(() => {
     return createToolImplementations<ToolBox>({
@@ -65,20 +15,12 @@ export default function GenSXCopilot() {
         const pageContent = window.document.documentElement.outerHTML;
         return {
           success: true,
+          url: window.location.href ?? "unknown",
           content: pageContent,
         };
       },
       inspectElements: (params) => {
         try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
-              inspections: [],
-              message: "jQuery not loaded",
-            };
-          }
-
           const inspections = params.elements.map((elementParams) => {
             try {
               const elements = $(elementParams.selector);
@@ -95,9 +37,17 @@ export default function GenSXCopilot() {
               }
 
               const elementData = elements
-                .map(function (this: any, index: number) {
+                .map(function (this: HTMLElement, index: number) {
                   const $el = $(this);
-                  const data: any = { index };
+                  const data: {
+                    text?: string;
+                    value?: string;
+                    html?: string;
+                    attributes?: Record<string, string>;
+                    css?: Record<string, string>;
+                    data?: Record<string, unknown>;
+                    index: number;
+                  } = { index };
 
                   if (
                     !elementParams.properties ||
@@ -109,7 +59,7 @@ export default function GenSXCopilot() {
                     !elementParams.properties ||
                     elementParams.properties.includes("value")
                   ) {
-                    data.value = $el.val();
+                    data.value = $el.val() as string | undefined;
                   }
                   if (
                     !elementParams.properties ||
@@ -122,11 +72,11 @@ export default function GenSXCopilot() {
                       data.attributes = {
                         [elementParams.attributeName]: $el.attr(
                           elementParams.attributeName,
-                        ),
+                        ) ?? "",
                       };
                     } else {
                       const attrs: Record<string, string> = {};
-                      $.each(this.attributes, function (this: any) {
+                      $.each(this.attributes, function (this: Attr) {
                         if (this.specified) {
                           attrs[this.name] = this.value;
                         }
@@ -187,15 +137,6 @@ export default function GenSXCopilot() {
 
       clickElements: async (params) => {
         try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
-              clicks: [],
-              message: "jQuery not loaded",
-            };
-          }
-
           const results = [];
 
           for (let i = 0; i < params.elements.length; i++) {
@@ -239,7 +180,7 @@ export default function GenSXCopilot() {
               if (
                 element.is("a") &&
                 element.attr("href") &&
-                !element.attr("href").startsWith("#")
+                !element.attr("href")?.startsWith("#")
               ) {
                 // For links, prevent default to avoid navigation
                 const clickEvent = $.Event("click");
@@ -290,15 +231,6 @@ export default function GenSXCopilot() {
 
       fillTextInputs: async (params) => {
         try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
-              filled: [],
-              message: "jQuery not loaded",
-            };
-          }
-
           const results = [];
 
           for (let i = 0; i < params.inputs.length; i++) {
@@ -375,7 +307,7 @@ export default function GenSXCopilot() {
                   }
                 } else {
                   // Fallback for other elements
-                  (inputElement as any).value = input.value;
+                  (inputElement as HTMLInputElement).value = input.value;
                 }
 
                 // Trigger React's synthetic events
@@ -418,15 +350,6 @@ export default function GenSXCopilot() {
 
       selectOptions: async (params) => {
         try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
-              selected: [],
-              message: "jQuery not loaded",
-            };
-          }
-
           const results = [];
 
           for (let i = 0; i < params.selects.length; i++) {
@@ -499,15 +422,6 @@ export default function GenSXCopilot() {
 
       toggleCheckboxes: async (params) => {
         try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
-              toggled: [],
-              message: "jQuery not loaded",
-            };
-          }
-
           const results = [];
 
           for (let i = 0; i < params.checkboxes.length; i++) {
@@ -580,15 +494,6 @@ export default function GenSXCopilot() {
 
       submitForms: async (params) => {
         try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
-              submissions: [],
-              message: "jQuery not loaded",
-            };
-          }
-
           const results = [];
 
           for (const formParams of params.forms) {
@@ -668,15 +573,6 @@ export default function GenSXCopilot() {
 
       highlightElements: (params) => {
         try {
-          const $ = window.$;
-          if (!$) {
-            return {
-              success: false,
-              highlights: [],
-              message: "jQuery not loaded",
-            };
-          }
-
           const results = params.elements.map((elementParams) => {
             try {
               const elements = $(elementParams.selector);
@@ -692,7 +588,7 @@ export default function GenSXCopilot() {
               const duration = elementParams.duration || 3000;
 
               // Store original styles
-              elements.each(function (this: any) {
+              elements.each(function (this: HTMLElement) {
                 const $el = $(this);
                 $el.data("original-outline", $el.css("outline"));
                 $el.css("outline", `3px solid ${color}`);
@@ -700,7 +596,7 @@ export default function GenSXCopilot() {
 
               // Remove highlight after duration
               setTimeout(() => {
-                elements.each(function (this: any) {
+                elements.each(function (this: HTMLElement) {
                   const $el = $(this);
                   const originalOutline = $el.data("original-outline");
                   $el.css("outline", originalOutline || "");
@@ -740,8 +636,6 @@ export default function GenSXCopilot() {
 
       waitForElements: async (params) => {
         try {
-          const $ = await ensureJQuery();
-
           const results = [];
 
           for (const elementParams of params.elements) {
@@ -789,10 +683,38 @@ export default function GenSXCopilot() {
         }
       },
 
+      findInteractiveElements: async () => {
+        try {
+          const interactiveElements = $("button, input, select, textarea, a, option, datalist");
+
+          // Find all elements that are clickable. This is a hack since React manages its own click handlers.
+          const clickableElements = $("*").filter(function() {
+            const $el = $(this);
+            return $el.css("cursor") === "pointer";
+          });
+
+          return {
+            success: true,
+            elements: [...interactiveElements, ...clickableElements]
+              .map((el) => ({
+                type: el.tagName.toLowerCase(),
+                selector: getUniqueSelector(el),
+                text: el.textContent?.trim() ?? "",
+                value: (el as HTMLInputElement).value?.trim(),
+                href: (el as HTMLAnchorElement).href,
+              }))
+          };
+        } catch (error) {
+          return {
+            success: false,
+            elements: [],
+            message: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+
       getPageOverview: async (params) => {
         try {
-          const $ = await ensureJQuery();
-
           // Helper to check if element is visible
           const isVisible = (el: HTMLElement) => {
             if (!params.visibleOnly) return true;
@@ -803,55 +725,6 @@ export default function GenSXCopilot() {
               rect.top < window.innerHeight &&
               rect.bottom > 0
             );
-          };
-
-          // Helper to escape CSS class names for jQuery selectors
-          const escapeCSSClass = (className: string): string => {
-            // Escape characters that have special meaning in CSS selectors
-            return className.replace(
-              /([!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~])/g,
-              "\\$1",
-            );
-          };
-
-          // Helper to get unique selector
-          const getUniqueSelector = (el: HTMLElement): string => {
-            if (el.id) return `#${CSS.escape(el.id)}`;
-
-            let selector = el.tagName.toLowerCase();
-            if (el.className) {
-              const classes = el.className.split(" ").filter((c) => c.trim());
-              if (classes.length > 0) {
-                selector += "." + classes.map(escapeCSSClass).join(".");
-              }
-            }
-
-            // Make it unique by adding index if needed
-            try {
-              const siblings = $(el.parentElement).children(selector);
-              if (siblings.length > 1) {
-                const index = siblings.index(el);
-                selector += `:eq(${index})`;
-              }
-
-              // Add parent context if still not unique
-              if ($(selector).length > 1 && el.parentElement) {
-                const parentSelector = getUniqueSelector(
-                  el.parentElement as HTMLElement,
-                );
-                selector = `${parentSelector} > ${selector}`;
-              }
-            } catch (error) {
-              console.error("Error getting unique selector", error);
-              // If selector parsing fails, fall back to tag name with index
-              const allSiblings = $(el.parentElement).children(
-                el.tagName.toLowerCase(),
-              );
-              const index = allSiblings.index(el);
-              selector = `${el.tagName.toLowerCase()}:eq(${index})`;
-            }
-
-            return selector;
           };
 
           // Helper to truncate text
@@ -874,11 +747,36 @@ export default function GenSXCopilot() {
                   : "h1, h2, h3, h4, h5, h6";
 
           // Build sections based on headings and major containers
-          const sections: any[] = [];
+          const sections: {
+            heading: string;
+            level: number;
+            selector: string;
+            bounds: {
+              top: number;
+              left: number;
+              width: number;
+              height: number;
+            };
+            metrics?: {
+              forms: number;
+              buttons: number;
+              links: number;
+              inputs: number;
+              images: number;
+              lists: number;
+            };
+            textPreview?: string;
+            interactiveElements?: {
+              type: string;
+              selector: string;
+              label?: string;
+              text?: string;
+            }[];
+          }[] = [];
           const processedElements = new Set<HTMLElement>();
 
           // Process headings and their associated content
-          $(headingSelector).each(function (this: any) {
+          $(headingSelector).each(function (this: HTMLElement) {
             const heading = this as HTMLElement;
             if (!isVisible(heading) || processedElements.has(heading)) return;
 
@@ -922,11 +820,16 @@ export default function GenSXCopilot() {
               : undefined;
 
             // Get interactive elements
-            const interactiveElements: any[] = [];
+            const interactiveElements: {
+              type: string;
+              selector: string;
+              label?: string;
+              text?: string;
+            }[] = [];
             if (params.includeMetrics) {
               $section
                 .find("button, input, select, textarea, a")
-                .each(function (this: any) {
+                .each(function (this: HTMLElement) {
                   const el = this as HTMLElement;
                   if (!isVisible(el)) return;
 
@@ -970,7 +873,7 @@ export default function GenSXCopilot() {
 
           // Add major containers without headings
           $('main, article, section, [role="main"], .container, .content').each(
-            function (this: any) {
+            function (this: HTMLElement) {
               const container = this as HTMLElement;
               if (!isVisible(container) || processedElements.has(container))
                 return;
@@ -1034,7 +937,7 @@ export default function GenSXCopilot() {
               return undefined;
             })(),
             forms: $("form")
-              .map(function (this: any) {
+              .map(function (this: HTMLElement) {
                 const form = this as HTMLElement;
                 const $form = $(form);
                 const purpose =
@@ -1066,6 +969,7 @@ export default function GenSXCopilot() {
 
           return {
             success: true,
+            url: window.location.href ?? "unknown",
             title: title || undefined,
             sections,
             globalElements,
@@ -1074,6 +978,7 @@ export default function GenSXCopilot() {
           console.error("Error getting page overview", error);
           return {
             success: false,
+            url: window.location.href ?? "unknown",
             title: undefined,
             sections: [],
             globalElements: { forms: [] },
@@ -1083,8 +988,6 @@ export default function GenSXCopilot() {
 
       inspectSection: async (params) => {
         try {
-          const $ = await ensureJQuery();
-
           const $element = $(params.selector);
           if ($element.length === 0) {
             return {
@@ -1111,14 +1014,14 @@ export default function GenSXCopilot() {
           };
 
           // Helper to process children
-          const processChildren = (el: HTMLElement, depth: number): any[] => {
+          const processChildren = (el: HTMLElement, depth: number): Record<string, unknown>[] => {
             if (!params.includeChildren || depth >= (params.maxDepth || 3))
               return [];
 
-            const children: any[] = [];
+            const children: Record<string, unknown>[] = [];
             $(el)
               .children()
-              .each(function (this: any) {
+              .each(function (this: HTMLElement) {
                 const child = this as HTMLElement;
                 // const $child = $(child);
 
@@ -1138,16 +1041,22 @@ export default function GenSXCopilot() {
           };
 
           // Get interactive elements within
-          const interactiveElements: any[] = [];
+          const interactiveElements: {
+            type: string;
+            selector: string;
+            label?: string;
+            text?: string;
+            state?: Record<string, unknown>;
+          }[] = [];
           $element.find("button, input, select, textarea, a").each(function (
-            this: any,
+            this: HTMLElement,
           ) {
             const el = this as HTMLElement;
             const $el = $(el);
 
-            const state: any = {};
+            const state: Record<string, string | boolean | number | undefined> = {};
             if (el.tagName.toLowerCase() === "input") {
-              state.value = $el.val();
+              state.value = $el.val() as string | number | boolean | undefined;
               state.checked = $el.prop("checked");
               state.disabled = $el.prop("disabled");
             }
@@ -1230,6 +1139,20 @@ export default function GenSXCopilot() {
               window.history.forward();
               break;
 
+            case "path":
+              if (!params.path) {
+                return {
+                  success: false,
+                  action: params.action,
+                  currentUrl: previousUrl,
+                  previousUrl,
+                  message: "No path provided",
+                  error: "No path provided",
+                };
+              }
+              router.push(params.path);
+              break;
+
             default:
               return {
                 success: false,
@@ -1285,320 +1208,53 @@ export default function GenSXCopilot() {
     });
   }, [router]);
 
-  const { messages, sendMessage, status, error, loadHistory, clear } =
-    useChat(toolImplementations);
-
-  // Get thread ID from URL
-  const threadId = searchParams.get("copilotThreadId");
-
-  // Initialize user ID, and load chat history on mount
-  useEffect(() => {
-    const userId = getUserId();
-    const threadId = searchParams.get("copilotThreadId");
-    setUserId(userId);
-    if (userId && threadId) {
-      loadHistory(threadId, userId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (status !== "streaming") {
-      inputRef.current?.focus();
-    }
-  }, [status]);
-
-  useEffect(() => {
-    if (threadId && threadId !== currentThreadId) {
-      setCurrentThreadId(threadId);
-      if (!threadId) {
-        clear();
-      }
-    }
-  }, [threadId, currentThreadId, clear]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || status === "streaming") return;
-
-    let currentThreadId = threadId;
-    if (!currentThreadId) {
-      currentThreadId = Date.now().toString();
-      router.push(`?copilotThreadId=${currentThreadId}`);
-    }
-
-    const userMessage = input;
-    setInput("");
-    await sendMessage(
-      userMessage,
-      currentThreadId ?? undefined,
-      userId ?? undefined,
-    );
-  };
-
-  return (
-    <>
-      {/* Floating button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 z-50 flex items-center justify-center"
-        aria-label="Toggle Copilot"
-      >
-        {isOpen ? (
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        ) : (
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-            />
-          </svg>
-        )}
-      </button>
-
-      {/* Chat window */}
-      {isOpen && (
-        <div className="fixed bottom-20 right-4 w-96 h-[600px] bg-white rounded-lg shadow-2xl z-50 flex flex-col">
-          <div className="bg-blue-600 text-white p-4 rounded-t-lg">
-            <h3 className="font-semibold">GenSX Copilot</h3>
-            <p className="text-sm opacity-90">
-              I can help you interact with this page
-            </p>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message, index) =>
-              formatMessageContent(
-                index,
-                message,
-                messages,
-                expandedTools,
-                setExpandedTools,
-              ),
-            )}
-            {error && (
-              <div className="bg-red-100 text-red-700 p-3 rounded-lg">
-                {error}
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <form onSubmit={handleSubmit} className="p-4 border-t">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me to interact with the page..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={status === "streaming"}
-                ref={inputRef}
-              />
-              <button
-                type="submit"
-                disabled={status === "streaming"}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {status === "streaming" ? "..." : "Send"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-    </>
-  );
+  return toolImplementations;
 }
 
-function formatMessageContent(
-  index: number,
-  message: CoreMessage,
-  messages: CoreMessage[],
-  expandedTools: Set<string>,
-  setExpandedTools: React.Dispatch<React.SetStateAction<Set<string>>>,
-) {
-  if (message.role === "system" || message.role === "tool") {
-    return null;
-  }
 
-  if (message.role === "user") {
-    return formatUserContent(index, message);
-  }
-  return formatAssistantContent(
-    index,
-    message,
-    messages,
-    expandedTools,
-    setExpandedTools,
-  );
-}
 
-function formatUserContent(index: number, message: CoreUserMessage) {
-  const content =
-    typeof message.content === "string"
-      ? message.content
-      : message.content
-          .map((part) => {
-            if ("text" in part) {
-              return part.text;
-            }
-            if (typeof part === "string") {
-              return part;
-            }
-            return "";
-          })
-          .join("");
+// Helper to escape CSS class names for jQuery selectors
+const escapeCSSClass = (className: string): string => {
+  // Escape characters that have special meaning in CSS selectors
+  return className.replace(/([!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~])/g, "\\$1");
+};
 
-  return (
-    <div key={index} className="flex justify-end">
-      <div className="max-w-[80%] p-3 rounded-lg bg-blue-600 text-white">
-        <p className="whitespace-pre-wrap">{content}</p>
-      </div>
-    </div>
-  );
-}
+// Helper to get unique selector
+const getUniqueSelector = (el: HTMLElement): string => {
+  if (el.id) return `#${CSS.escape(el.id)}`;
 
-function formatAssistantContent(
-  index: number,
-  message: CoreAssistantMessage,
-  messages: CoreMessage[],
-  expandedTools: Set<string>,
-  setExpandedTools: React.Dispatch<React.SetStateAction<Set<string>>>,
-) {
-  if (typeof message.content === "string") {
-    return <div key={index}>{message.content}</div>;
-  }
-  const toolResults = messages.flatMap((m) => {
-    if (m.role === "tool") {
-      return m.content;
-    }
-    return [];
-  });
-
-  let textContent = "";
-  const toolCalls: {
-    toolCallId: string;
-    toolName: string;
-    args: unknown;
-    result?: unknown;
-  }[] = [];
-  for (const part of message.content) {
-    if ("text" in part) {
-      textContent += part.text;
-    } else if (typeof part === "string") {
-      textContent += part;
-    } else if (part.type === "tool-call") {
-      const result = toolResults.find((r) => r.toolCallId === part.toolCallId);
-
-      toolCalls.push({
-        toolCallId: part.toolCallId,
-        toolName: part.toolName,
-        args: part.args,
-        result: result?.result,
-      });
+  let selector = el.tagName.toLowerCase();
+  if (el.className) {
+    const classes = el.className.split(" ").filter((c) => c.trim());
+    if (classes.length > 0) {
+      selector += "." + classes.map(escapeCSSClass).join(".");
     }
   }
-  const toggleTool = (toolCallId: string) => {
-    setExpandedTools((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(toolCallId)) {
-        newSet.delete(toolCallId);
-      } else {
-        newSet.add(toolCallId);
-      }
-      return newSet;
-    });
-  };
 
-  return (
-    <div key={index} className="flex justify-start">
-      <div className="max-w-[80%] p-3 rounded-lg bg-gray-100 text-gray-800">
-        {textContent && (
-          <p className="whitespace-pre-wrap mb-2">{textContent}</p>
-        )}
-        {toolCalls.length > 0 && (
-          <div className="space-y-2">
-            {toolCalls.map((call) => {
-              const isExpanded = expandedTools.has(call.toolCallId);
-              return (
-                <div
-                  key={call.toolCallId}
-                  className="border border-gray-300 rounded-md overflow-hidden"
-                >
-                  <button
-                    onClick={() => toggleTool(call.toolCallId)}
-                    className="w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-sm"
-                  >
-                    <span className="font-medium">{call.toolName}</span>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${
-                        isExpanded ? "rotate-180" : ""
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  {isExpanded && (
-                    <div className="p-3 bg-white border-t border-gray-300">
-                      <div className="space-y-2">
-                        <div>
-                          <p className="text-xs font-semibold text-gray-600 mb-1">
-                            Input:
-                          </p>
-                          <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-                            {JSON.stringify(call.args, null, 2)}
-                          </pre>
-                        </div>
-                        {call.result !== undefined && (
-                          <div>
-                            <p className="text-xs font-semibold text-gray-600 mb-1">
-                              Output:
-                            </p>
-                            <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
-                              {JSON.stringify(call.result, null, 2)}
-                            </pre>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+  if (!el.parentElement) {
+    return selector;
+  }
+
+  // Make it unique by adding index if needed
+  try {
+    const siblings = $(el.parentElement).children(selector);
+    if (siblings.length > 1) {
+      const index = siblings.index(el);
+      selector += `:eq(${index})`;
+    }
+
+    // Add parent context if still not unique
+    if ($(selector).length > 1 && el.parentElement) {
+      const parentSelector = getUniqueSelector(el.parentElement);
+      selector = `${parentSelector} > ${selector}`;
+    }
+  } catch (error) {
+    console.error("Error getting unique selector", error);
+    // If selector parsing fails, fall back to tag name with index
+    const allSiblings = $(el.parentElement).children(el.tagName.toLowerCase());
+    const index = allSiblings.index(el);
+    selector = `${el.tagName.toLowerCase()}:eq(${index})`;
+  }
+
+  return selector;
+};

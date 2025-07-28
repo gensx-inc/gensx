@@ -4,12 +4,33 @@ import { z } from "zod";
 export const toolbox = createToolBox({
   fetchPageContent: {
     description: "Fetch the html content of the current page",
-    params: z.object({}),
+    params: z.object({
+      dummy: z.string().optional().describe("This is a dummy parameter to pass through to the tool."),
+    }).passthrough().optional(),
     result: z.object({
       success: z.boolean(),
+      url: z.string().describe("The url of the current page"),
       content: z.string().describe("The html content of the current page"),
     }),
   },
+
+  findInteractiveElements: {
+    description: "Show interactive elements on the page (buttons, links, inputs, etc.)",
+    params: z.object({
+      dummy: z.string().optional().describe("This is a dummy parameter to pass through to the tool."),
+    }),
+    result: z.object({
+      success: z.boolean(),
+      elements: z.array(z.object({
+        selector: z.string(),
+        type: z.string(),
+        text: z.string(),
+        href: z.string().optional(),
+        value: z.string().optional(),
+      })).describe("The interactive elements on the page"),
+    }),
+  },
+
   inspectElements: {
     description:
       "Inspect multiple elements on the page using jQuery selectors and get their properties",
@@ -19,9 +40,9 @@ export const toolbox = createToolBox({
           z.object({
             selector: z.string().describe("jQuery selector to find elements"),
             properties: z
-              .array(z.enum(["text", "value", "html", "attr", "css", "data"]))
+              .array(z.string())
               .optional()
-              .describe("Properties to retrieve from the element. Valid values are: text, value, html, attr, css, data"),
+              .describe("List of properties to retrieve from the element. Valid values are: text, value, html, attr, css, data."),
             attributeName: z
               .string()
               .optional()
@@ -310,9 +331,10 @@ export const toolbox = createToolBox({
         .optional()
         .default(100)
         .describe("Maximum length of text snippets"),
-    }),
+    }).passthrough(),
     result: z.object({
       success: z.boolean(),
+      url: z.string(),
       title: z.string().optional(),
       sections: z.array(
         z.object({
@@ -438,21 +460,25 @@ export const toolbox = createToolBox({
 
   navigate: {
     description:
-      "Navigate the browser using browser navigation (back, forward)",
+      "Navigate the browser using browser navigation (back, forward) or to a specific path",
     params: z.object({
       action: z
-        .enum(["back", "forward"])
-        .describe("Navigation action to perform"),
+        .enum(["back", "forward", "path"])
+        .describe("Navigation action to perform. 'path' is used to navigate to a specific path."),
+      path: z
+        .string()
+        .optional()
+        .describe("The path to navigate to. This is used when action is 'path'."),
       waitForLoad: z
         .boolean()
         .optional()
         .default(true)
-        .describe("Whether to wait for the page to load after navigation"),
+        .describe("Whether to wait for the page to load after navigation. Default is true."),
       timeout: z
         .number()
         .optional()
         .default(5000)
-        .describe("Maximum time to wait for page load in milliseconds"),
+        .describe("Maximum time to wait for page load in milliseconds. Default is 5000."),
     }),
     result: z.object({
       success: z.boolean(),

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
-import GenSXCopilot from "@/components/GenSXCopilot";
+import GenSXCopilot from "@/components/copilot/GenSXCopilot";
 import "./globals.css";
 
 const geistSans = Geist({
