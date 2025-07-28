@@ -4,9 +4,15 @@ import { z } from "zod";
 export const toolbox = createToolBox({
   fetchPageContent: {
     description: "Fetch the html content of the current page",
-    params: z.object({
-      dummy: z.string().optional().describe("This is a dummy parameter to pass through to the tool."),
-    }).passthrough().optional(),
+    params: z
+      .object({
+        dummy: z
+          .string()
+          .optional()
+          .describe("This is a dummy parameter to pass through to the tool."),
+      })
+      .passthrough()
+      .optional(),
     result: z.object({
       success: z.boolean(),
       url: z.string().describe("The url of the current page"),
@@ -15,19 +21,27 @@ export const toolbox = createToolBox({
   },
 
   findInteractiveElements: {
-    description: "Show interactive elements on the page (buttons, links, inputs, etc.)",
+    description:
+      "Show interactive elements on the page (buttons, links, inputs, etc.)",
     params: z.object({
-      dummy: z.string().optional().describe("This is a dummy parameter to pass through to the tool."),
+      dummy: z
+        .string()
+        .optional()
+        .describe("This is a dummy parameter to pass through to the tool."),
     }),
     result: z.object({
       success: z.boolean(),
-      elements: z.array(z.object({
-        selector: z.string(),
-        type: z.string(),
-        text: z.string(),
-        href: z.string().optional(),
-        value: z.string().optional(),
-      })).describe("The interactive elements on the page"),
+      elements: z
+        .array(
+          z.object({
+            selector: z.string(),
+            type: z.string(),
+            text: z.string(),
+            href: z.string().optional(),
+            value: z.string().optional(),
+          }),
+        )
+        .describe("The interactive elements on the page"),
     }),
   },
 
@@ -42,11 +56,15 @@ export const toolbox = createToolBox({
             properties: z
               .array(z.string())
               .optional()
-              .describe("List of properties to retrieve from the element. Valid values are: text, value, html, attr, css, data."),
+              .describe(
+                "List of properties to retrieve from the element. Valid values are: text, value, html, attr, css, data.",
+              ),
             attributeName: z
               .string()
               .optional()
-              .describe("Specific attribute name when properties includes 'attr'"),
+              .describe(
+                "Specific attribute name when properties includes 'attr'",
+              ),
             cssProperty: z
               .string()
               .optional()
@@ -85,12 +103,15 @@ export const toolbox = createToolBox({
   },
 
   clickElements: {
-    description: "Click on multiple elements using jQuery selectors in sequence with automatic delays for React state updates",
+    description:
+      "Click on multiple elements using jQuery selectors in sequence with automatic delays for React state updates",
     params: z.object({
       elements: z
         .array(
           z.object({
-            selector: z.string().describe("jQuery selector to find the element"),
+            selector: z
+              .string()
+              .describe("jQuery selector to find the element"),
             index: z
               .number()
               .optional()
@@ -119,12 +140,15 @@ export const toolbox = createToolBox({
   },
 
   fillTextInputs: {
-    description: "Fill multiple text inputs and textareas with values, with automatic delays for React state updates",
+    description:
+      "Fill multiple text inputs and textareas with values, with automatic delays for React state updates",
     params: z.object({
       inputs: z
         .array(
           z.object({
-            selector: z.string().describe("jQuery selector for the text input or textarea"),
+            selector: z
+              .string()
+              .describe("jQuery selector for the text input or textarea"),
             value: z.string().describe("Text value to enter"),
             triggerEvents: z
               .boolean()
@@ -149,13 +173,18 @@ export const toolbox = createToolBox({
   },
 
   selectOptions: {
-    description: "Select options from multiple dropdown/select elements, with automatic delays for React state updates",
+    description:
+      "Select options from multiple dropdown/select elements, with automatic delays for React state updates",
     params: z.object({
       selects: z
         .array(
           z.object({
-            selector: z.string().describe("jQuery selector for the select element"),
-            value: z.string().describe("Option value to select (not display text)"),
+            selector: z
+              .string()
+              .describe("jQuery selector for the select element"),
+            value: z
+              .string()
+              .describe("Option value to select (not display text)"),
             triggerEvents: z
               .boolean()
               .optional()
@@ -179,13 +208,18 @@ export const toolbox = createToolBox({
   },
 
   toggleCheckboxes: {
-    description: "Check or uncheck multiple checkbox and radio button elements, with automatic delays for React state updates",
+    description:
+      "Check or uncheck multiple checkbox and radio button elements, with automatic delays for React state updates",
     params: z.object({
       checkboxes: z
         .array(
           z.object({
-            selector: z.string().describe("jQuery selector for the checkbox/radio"),
-            checked: z.boolean().describe("Whether to check (true) or uncheck (false)"),
+            selector: z
+              .string()
+              .describe("jQuery selector for the checkbox/radio"),
+            checked: z
+              .boolean()
+              .describe("Whether to check (true) or uncheck (false)"),
           }),
         )
         .describe("Array of checkboxes to toggle"),
@@ -205,7 +239,8 @@ export const toolbox = createToolBox({
   },
 
   submitForms: {
-    description: "Submit multiple forms using jQuery selectors with optional delays",
+    description:
+      "Submit multiple forms using jQuery selectors with optional delays",
     params: z.object({
       forms: z
         .array(
@@ -305,33 +340,35 @@ export const toolbox = createToolBox({
   getPageOverview: {
     description:
       "Get a hierarchical overview of the page structure with reliable selectors for each section",
-    params: z.object({
-      includeHeadings: z
-        .enum(["h1", "h1-h2", "h1-h3", "all"])
-        .optional()
-        .default("h1-h2")
-        .describe("Which heading levels to include in the overview"),
-      includeText: z
-        .boolean()
-        .optional()
-        .default(true)
-        .describe("Include text snippets from elements"),
-      includeMetrics: z
-        .boolean()
-        .optional()
-        .default(true)
-        .describe("Include counts of interactive elements"),
-      visibleOnly: z
-        .boolean()
-        .optional()
-        .default(true)
-        .describe("Only include visible elements"),
-      maxTextLength: z
-        .number()
-        .optional()
-        .default(100)
-        .describe("Maximum length of text snippets"),
-    }).passthrough(),
+    params: z
+      .object({
+        includeHeadings: z
+          .enum(["h1", "h1-h2", "h1-h3", "all"])
+          .optional()
+          .default("h1-h2")
+          .describe("Which heading levels to include in the overview"),
+        includeText: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe("Include text snippets from elements"),
+        includeMetrics: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe("Include counts of interactive elements"),
+        visibleOnly: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe("Only include visible elements"),
+        maxTextLength: z
+          .number()
+          .optional()
+          .default(100)
+          .describe("Maximum length of text snippets"),
+      })
+      .passthrough(),
     result: z.object({
       success: z.boolean(),
       url: z.string(),
@@ -464,28 +501,42 @@ export const toolbox = createToolBox({
     params: z.object({
       action: z
         .enum(["back", "forward", "path"])
-        .describe("Navigation action to perform. 'path' is used to navigate to a specific path."),
+        .describe(
+          "Navigation action to perform. 'path' is used to navigate to a specific path.",
+        ),
       path: z
         .string()
         .optional()
-        .describe("The path to navigate to. This is used when action is 'path'."),
+        .describe(
+          "The path to navigate to. This is used when action is 'path'.",
+        ),
       waitForLoad: z
         .boolean()
         .optional()
         .default(true)
-        .describe("Whether to wait for the page to load after navigation. Default is true."),
+        .describe(
+          "Whether to wait for the page to load after navigation. Default is true.",
+        ),
       timeout: z
         .number()
         .optional()
         .default(5000)
-        .describe("Maximum time to wait for page load in milliseconds. Default is 5000."),
+        .describe(
+          "Maximum time to wait for page load in milliseconds. Default is 5000.",
+        ),
     }),
     result: z.object({
       success: z.boolean(),
       action: z.string(),
-      currentUrl: z.string().optional().describe("Current URL after navigation"),
+      currentUrl: z
+        .string()
+        .optional()
+        .describe("Current URL after navigation"),
       previousUrl: z.string().optional().describe("URL before navigation"),
-      loadTime: z.number().optional().describe("Time taken for navigation in milliseconds"),
+      loadTime: z
+        .number()
+        .optional()
+        .describe("Time taken for navigation in milliseconds"),
       message: z.string(),
       error: z.string().optional(),
     }),

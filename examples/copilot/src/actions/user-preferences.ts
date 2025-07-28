@@ -3,12 +3,12 @@
 import { BlobClient } from "@gensx/storage";
 
 export async function getUserPreferencesWorkingMemory(
-  userId: string
+  userId: string,
 ): Promise<string> {
   try {
     const blobClient = new BlobClient();
     const blob = blobClient.getBlob(`user-preferences/${userId}`);
-    
+
     const exists = await blob.exists();
     if (!exists) {
       return "";
@@ -24,20 +24,20 @@ export async function getUserPreferencesWorkingMemory(
 
 export async function updateUserPreferencesWorkingMemory(
   userId: string,
-  content: string
+  content: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const blobClient = new BlobClient();
     const blob = blobClient.getBlob(`user-preferences/${userId}`);
-    
+
     await blob.putString(content);
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error updating user preferences working memory:", error);
     return {
       success: false,
-      error: "Failed to update user preferences working memory"
+      error: "Failed to update user preferences working memory",
     };
   }
 }

@@ -42,7 +42,11 @@ export default function ProjectList({
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (confirm("Are you sure you want to delete this project? This will also delete all its todo lists and todos.")) {
+    if (
+      confirm(
+        "Are you sure you want to delete this project? This will also delete all its todo lists and todos.",
+      )
+    ) {
       await onDeleteProject(projectId);
     }
   };
@@ -61,10 +65,16 @@ export default function ProjectList({
       </div>
 
       {showCreateForm && (
-        <form onSubmit={handleCreateProject} className="mb-6 p-4 bg-gray-50 rounded-lg">
+        <form
+          onSubmit={handleCreateProject}
+          className="mb-6 p-4 bg-gray-50 rounded-lg"
+        >
           <div className="space-y-4">
             <div>
-              <label htmlFor="project-name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Project Name
               </label>
               <input
@@ -78,7 +88,10 @@ export default function ProjectList({
               />
             </div>
             <div>
-              <label htmlFor="project-description" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-description"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Description (optional)
               </label>
               <textarea
@@ -113,7 +126,9 @@ export default function ProjectList({
       {projects.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">No projects yet.</p>
-          <p className="text-sm text-gray-400">Create your first project to get started!</p>
+          <p className="text-sm text-gray-400">
+            Create your first project to get started!
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -121,7 +136,9 @@ export default function ProjectList({
             <div
               key={project.id}
               className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
-                selectedProjectId === project.id ? "border-blue-500 bg-blue-50" : "border-gray-200"
+                selectedProjectId === project.id
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200"
               } project-card`}
               data-project-id={project.id}
               onClick={() => onSelectProject(project)}

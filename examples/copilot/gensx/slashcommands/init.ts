@@ -86,4 +86,4 @@ Frequently update your application working memory with structured information li
 - [Pattern name]: [description and where it's used, along with the CSS selector]
 \`\`\`
 
-Begin your exploration now. Start by getting a page overview, then systematically explore the application while building comprehensive working memory about its capabilities.`
+Begin your exploration now. Start by getting a page overview, then systematically explore the application while building comprehensive working memory about its capabilities.`;

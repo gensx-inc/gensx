@@ -7,7 +7,11 @@ interface TodoListViewProps {
   project: Project;
   todoLists: TodoList[];
   todos: Todo[];
-  onCreateTodoList: (projectId: string, name: string, description?: string) => Promise<void>;
+  onCreateTodoList: (
+    projectId: string,
+    name: string,
+    description?: string,
+  ) => Promise<void>;
   onDeleteTodoList: (listId: string) => Promise<void>;
   onSelectTodoList: (todoList: TodoList) => void;
   onBack: () => void;
@@ -47,18 +51,22 @@ export default function TodoListView({
   };
 
   const handleDeleteList = async (listId: string) => {
-    if (confirm("Are you sure you want to delete this todo list? This will also delete all its todos.")) {
+    if (
+      confirm(
+        "Are you sure you want to delete this todo list? This will also delete all its todos.",
+      )
+    ) {
       await onDeleteTodoList(listId);
     }
   };
 
   const getTodosForList = (listId: string) => {
-    return todos.filter(todo => todo.listId === listId);
+    return todos.filter((todo) => todo.listId === listId);
   };
 
   const getListStats = (listId: string) => {
     const listTodos = getTodosForList(listId);
-    const completed = listTodos.filter(t => t.completed).length;
+    const completed = listTodos.filter((t) => t.completed).length;
     return { total: listTodos.length, completed };
   };
 
@@ -90,10 +98,16 @@ export default function TodoListView({
       </div>
 
       {showCreateForm && (
-        <form onSubmit={handleCreateTodoList} className="mb-6 p-4 bg-gray-50 rounded-lg">
+        <form
+          onSubmit={handleCreateTodoList}
+          className="mb-6 p-4 bg-gray-50 rounded-lg"
+        >
           <div className="space-y-4">
             <div>
-              <label htmlFor="todolist-name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="todolist-name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Todo List Name
               </label>
               <input
@@ -107,7 +121,10 @@ export default function TodoListView({
               />
             </div>
             <div>
-              <label htmlFor="todolist-description" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="todolist-description"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Description (optional)
               </label>
               <textarea
@@ -142,7 +159,9 @@ export default function TodoListView({
       {todoLists.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">No todo lists yet.</p>
-          <p className="text-sm text-gray-400">Create your first todo list to get started!</p>
+          <p className="text-sm text-gray-400">
+            Create your first todo list to get started!
+          </p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -170,7 +189,7 @@ export default function TodoListView({
                     ✕
                   </button>
                 </div>
-                
+
                 {todoList.description && (
                   <p className="text-gray-600 text-sm mb-3 todolist-description">
                     {todoList.description}
@@ -180,31 +199,40 @@ export default function TodoListView({
                 <div className="mb-4">
                   <div className="flex justify-between text-sm text-gray-600 mb-1">
                     <span>Progress</span>
-                    <span>{stats.completed}/{stats.total}</span>
+                    <span>
+                      {stats.completed}/{stats.total}
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: stats.total > 0 ? `${(stats.completed / stats.total) * 100}%` : '0%' 
+                      style={{
+                        width:
+                          stats.total > 0
+                            ? `${(stats.completed / stats.total) * 100}%`
+                            : "0%",
                       }}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {getTodosForList(todoList.id).slice(0, 5).map((todo) => (
-                    <div
-                      key={todo.id}
-                      className={`text-sm p-2 rounded ${
-                        todo.completed ? "bg-green-50 text-green-700" : "bg-gray-50 text-gray-700"
-                      }`}
-                    >
-                      <span className={todo.completed ? "line-through" : ""}>
-                        {todo.text}
-                      </span>
-                    </div>
-                  ))}
+                  {getTodosForList(todoList.id)
+                    .slice(0, 5)
+                    .map((todo) => (
+                      <div
+                        key={todo.id}
+                        className={`text-sm p-2 rounded ${
+                          todo.completed
+                            ? "bg-green-50 text-green-700"
+                            : "bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        <span className={todo.completed ? "line-through" : ""}>
+                          {todo.text}
+                        </span>
+                      </div>
+                    ))}
                   {getTodosForList(todoList.id).length > 5 && (
                     <div className="text-xs text-gray-500 text-center">
                       +{getTodosForList(todoList.id).length - 5} more...
