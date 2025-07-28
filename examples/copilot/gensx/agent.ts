@@ -83,11 +83,14 @@ export const Agent = gensx.Component(
 
     // keep the message list under 131,000 tokens
     if (JSON.stringify(filteredMessages).length > 131000 * 4) {
+      gensx.publishObject("longMessages", true);
       // Remove messages from the middle (keep system message and recent messages)
       while (JSON.stringify(filteredMessages).length > 131000 * 4 && filteredMessages.length > 2) {
         // Remove the second message (first non-system message) to preserve system message
         filteredMessages.splice(1, 1);
       }
+    } else {
+      gensx.publishObject("longMessages", false);
     }
 
     // State for streaming

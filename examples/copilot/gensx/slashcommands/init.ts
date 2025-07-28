@@ -73,7 +73,7 @@ Frequently update your application working memory with structured information li
 - Purpose: [what this page does]
 - Key features: [list of main functionality]
 - Navigation: [how to get here]
-- Elements: [important buttons/forms with selectors]
+- Elements: [important buttons/forms with CSS selectors]
 
 ## Common Workflows
 ### [Workflow Name]
@@ -82,7 +82,7 @@ Frequently update your application working memory with structured information li
 ...
 
 ## UI Patterns
-- [Pattern name]: [description and where it's used]
+- [Pattern name]: [description and where it's used, along with the CSS selector]
 \`\`\`
 
 Begin your exploration now. Start by getting a page overview, then systematically explore the application while building comprehensive working memory about its capabilities.`
