@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getUserPreferencesWorkingMemory, updateUserPreferencesWorkingMemory } from "@/actions/user-preferences";
+import {
+  getUserPreferencesWorkingMemory,
+  updateUserPreferencesWorkingMemory,
+} from "@/actions/user-preferences";
 
 interface UserPreferencesTabProps {
   userId: string;
 }
 
-export default function UserPreferencesTab({ userId }: UserPreferencesTabProps) {
+export default function UserPreferencesTab({
+  userId,
+}: UserPreferencesTabProps) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -29,7 +34,10 @@ export default function UserPreferencesTab({ userId }: UserPreferencesTabProps) 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const result = await updateUserPreferencesWorkingMemory(userId, editContent);
+      const result = await updateUserPreferencesWorkingMemory(
+        userId,
+        editContent,
+      );
       if (result.success) {
         setContent(editContent);
         setIsEditing(false);
@@ -58,9 +66,12 @@ export default function UserPreferencesTab({ userId }: UserPreferencesTabProps) 
       <div className="flex-shrink-0 p-4 border-b bg-gray-50">
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">User Preferences Working Memory</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              User Preferences Working Memory
+            </h3>
             <p className="text-sm text-gray-600">
-              The AI's persistent knowledge about your preferences and how you like to interact
+              The AI's persistent knowledge about your preferences and how you
+              like to interact
             </p>
           </div>
           <div className="flex gap-2">
@@ -127,9 +138,9 @@ Write it as readable text that the AI can easily reference when helping you."
                 <div className="max-w-md mx-auto text-center text-gray-500">
                   <p className="mb-4">No user preferences stored yet.</p>
                   <p className="text-sm">
-                    This is where the AI stores information about your preferences,
-                    communication style, and personal context. This helps the AI
-                    provide more personalized assistance.
+                    This is where the AI stores information about your
+                    preferences, communication style, and personal context. This
+                    helps the AI provide more personalized assistance.
                   </p>
                   <button
                     onClick={() => setIsEditing(true)}

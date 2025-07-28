@@ -8,7 +8,10 @@ interface SingleTodoListProps {
   todoList: TodoList;
   todos: Todo[];
   onCreateTodo: (listId: string, text: string) => Promise<void>;
-  onUpdateTodo: (todoId: string, updates: Partial<Pick<Todo, "text" | "completed">>) => Promise<void>;
+  onUpdateTodo: (
+    todoId: string,
+    updates: Partial<Pick<Todo, "text" | "completed">>,
+  ) => Promise<void>;
   onDeleteTodo: (todoId: string) => Promise<void>;
   onBack: () => void;
 }
@@ -68,8 +71,8 @@ export default function SingleTodoList({
     }
   };
 
-  const completedTodos = todos.filter(t => t.completed);
-  const incompleteTodos = todos.filter(t => !t.completed);
+  const completedTodos = todos.filter((t) => t.completed);
+  const incompleteTodos = todos.filter((t) => !t.completed);
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
@@ -83,7 +86,9 @@ export default function SingleTodoList({
             ← Back to {project.name}
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">{todoList.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              {todoList.name}
+            </h1>
             {todoList.description && (
               <p className="text-gray-600">{todoList.description}</p>
             )}
@@ -95,13 +100,18 @@ export default function SingleTodoList({
       <div className="mb-6">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
           <span>Progress</span>
-          <span>{completedTodos.length}/{todos.length} completed</span>
+          <span>
+            {completedTodos.length}/{todos.length} completed
+          </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div
             className="bg-blue-500 h-3 rounded-full transition-all duration-300"
-            style={{ 
-              width: todos.length > 0 ? `${(completedTodos.length / todos.length) * 100}%` : '0%' 
+            style={{
+              width:
+                todos.length > 0
+                  ? `${(completedTodos.length / todos.length) * 100}%`
+                  : "0%",
             }}
           />
         </div>
@@ -152,7 +162,7 @@ export default function SingleTodoList({
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 todo-checkbox"
                     id={`todo-checkbox-${todo.id}`}
                   />
-                  
+
                   {editingTodo === todo.id ? (
                     <div className="flex-1 flex gap-2">
                       <input
@@ -234,7 +244,7 @@ export default function SingleTodoList({
                     className="w-4 h-4 text-green-600 rounded focus:ring-green-500 todo-checkbox"
                     id={`todo-checkbox-${todo.id}`}
                   />
-                  
+
                   {editingTodo === todo.id ? (
                     <div className="flex-1 flex gap-2">
                       <input
@@ -308,7 +318,8 @@ export default function SingleTodoList({
       {todos.length > 0 && (
         <div className="mt-6 pt-6 border-t border-gray-200">
           <p className="text-sm text-gray-600 text-center">
-            Total: {todos.length} | Completed: {completedTodos.length} | Remaining: {incompleteTodos.length}
+            Total: {todos.length} | Completed: {completedTodos.length} |
+            Remaining: {incompleteTodos.length}
           </p>
         </div>
       )}

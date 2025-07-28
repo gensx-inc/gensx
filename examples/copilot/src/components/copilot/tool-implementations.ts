@@ -1,11 +1,10 @@
-import $ from 'jquery';
+import $ from "jquery";
 import { useMemo } from "react";
 import { createToolImplementations } from "@gensx/react";
 
 import { ToolBox } from "../../../gensx/tools/toolbox";
 
 export const useToolImplementations = () => {
-
   const toolImplementations = useMemo(() => {
     return createToolImplementations<ToolBox>({
       fetchPageContent: async () => {
@@ -68,9 +67,8 @@ export const useToolImplementations = () => {
                   if (elementParams.properties?.includes("attr")) {
                     if (elementParams.attributeName) {
                       data.attributes = {
-                        [elementParams.attributeName]: $el.attr(
-                          elementParams.attributeName,
-                        ) ?? "",
+                        [elementParams.attributeName]:
+                          $el.attr(elementParams.attributeName) ?? "",
                       };
                     } else {
                       const attrs: Record<string, string> = {};
@@ -683,24 +681,27 @@ export const useToolImplementations = () => {
 
       findInteractiveElements: async () => {
         try {
-          const interactiveElements = $("button, input, select, textarea, a, option, datalist");
+          const interactiveElements = $(
+            "button, input, select, textarea, a, option, datalist",
+          );
 
           // Find all elements that are clickable. This is a hack since React manages its own click handlers.
-          const clickableElements = $("*").filter(function() {
+          const clickableElements = $("*").filter(function () {
             const $el = $(this);
             return $el.css("cursor") === "pointer";
           });
 
           return {
             success: true,
-            elements: [...interactiveElements, ...clickableElements]
-              .map((el) => ({
+            elements: [...interactiveElements, ...clickableElements].map(
+              (el) => ({
                 type: el.tagName.toLowerCase(),
                 selector: getUniqueSelector(el),
                 text: el.textContent?.trim() ?? "",
                 value: (el as HTMLInputElement).value?.trim(),
                 href: (el as HTMLAnchorElement).href,
-              }))
+              }),
+            ),
           };
         } catch (error) {
           return {
@@ -1012,7 +1013,10 @@ export const useToolImplementations = () => {
           };
 
           // Helper to process children
-          const processChildren = (el: HTMLElement, depth: number): Record<string, unknown>[] => {
+          const processChildren = (
+            el: HTMLElement,
+            depth: number,
+          ): Record<string, unknown>[] => {
             if (!params.includeChildren || depth >= (params.maxDepth || 3))
               return [];
 
@@ -1052,7 +1056,8 @@ export const useToolImplementations = () => {
             const el = this as HTMLElement;
             const $el = $(el);
 
-            const state: Record<string, string | boolean | number | undefined> = {};
+            const state: Record<string, string | boolean | number | undefined> =
+              {};
             if (el.tagName.toLowerCase() === "input") {
               state.value = $el.val() as string | number | boolean | undefined;
               state.checked = $el.prop("checked");
@@ -1151,10 +1156,12 @@ export const useToolImplementations = () => {
               }
               // Use browser History API to change URL without full page reload
               // This preserves React component state unlike Next.js router
-              window.history.pushState(null, '', params.path);
+              window.history.pushState(null, "", params.path);
 
               // Trigger a popstate event to notify React of the URL change
-              window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+              window.dispatchEvent(
+                new PopStateEvent("popstate", { state: null }),
+              );
               break;
 
             default:
@@ -1213,9 +1220,7 @@ export const useToolImplementations = () => {
   }, []);
 
   return toolImplementations;
-}
-
-
+};
 
 // Helper to escape CSS class names for jQuery selectors
 const escapeCSSClass = (className: string): string => {

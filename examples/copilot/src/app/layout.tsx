@@ -29,7 +29,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div id="main-content" className="min-h-screen bg-gray-50 py-12 px-4 transition-all duration-300">
+        <div
+          id="main-content"
+          className="min-h-screen bg-gray-50 py-12 px-4 transition-all duration-300"
+        >
           <div className="max-w-6xl mx-auto">
             <header className="text-center mb-12">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">

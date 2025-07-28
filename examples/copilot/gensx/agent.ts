@@ -85,7 +85,10 @@ export const Agent = gensx.Component(
     if (JSON.stringify(filteredMessages).length > 131000 * 4) {
       gensx.publishObject("longMessages", true);
       // Remove messages from the middle (keep system message and recent messages)
-      while (JSON.stringify(filteredMessages).length > 131000 * 4 && filteredMessages.length > 2) {
+      while (
+        JSON.stringify(filteredMessages).length > 131000 * 4 &&
+        filteredMessages.length > 2
+      ) {
         // Remove the second message (first non-system message) to preserve system message
         filteredMessages.splice(1, 1);
       }

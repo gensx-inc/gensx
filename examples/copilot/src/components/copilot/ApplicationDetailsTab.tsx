@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getApplicationWorkingMemory, updateApplicationWorkingMemory } from "@/actions/application-details";
+import {
+  getApplicationWorkingMemory,
+  updateApplicationWorkingMemory,
+} from "@/actions/application-details";
 
 interface ApplicationDetailsTabProps {
   userId: string;
 }
 
-export default function ApplicationDetailsTab({ userId }: ApplicationDetailsTabProps) {
+export default function ApplicationDetailsTab({
+  userId,
+}: ApplicationDetailsTabProps) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -58,9 +63,12 @@ export default function ApplicationDetailsTab({ userId }: ApplicationDetailsTabP
       <div className="flex-shrink-0 p-4 border-b bg-gray-50">
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Application Working Memory</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Application Working Memory
+            </h3>
             <p className="text-sm text-gray-600">
-              The AI's persistent knowledge about this application's structure and features
+              The AI's persistent knowledge about this application's structure
+              and features
             </p>
           </div>
           <div className="flex gap-2">
@@ -126,9 +134,10 @@ Write it as readable text that you can easily reference later."
                 <div className="max-w-md mx-auto text-center text-gray-500">
                   <p className="mb-4">No application knowledge stored yet.</p>
                   <p className="text-sm">
-                    This is where the AI stores its persistent knowledge about this application.
-                    As the AI discovers features, navigation patterns, and useful information,
-                    it will be stored here for future reference.
+                    This is where the AI stores its persistent knowledge about
+                    this application. As the AI discovers features, navigation
+                    patterns, and useful information, it will be stored here for
+                    future reference.
                   </p>
                   <button
                     onClick={() => setIsEditing(true)}

@@ -43,6 +43,7 @@ pnpm dev
 ```
 
 This will start:
+
 - Next.js app on http://localhost:3003
 - GenSX dev server on http://localhost:1337
 

@@ -60,7 +60,7 @@ export async function getTodoData(userId: string): Promise<AppData> {
             updatedAt: new Date().toISOString(),
           },
           {
-            id: "2", 
+            id: "2",
             name: "Personal Tasks",
             description: "Daily personal todo items",
             createdAt: new Date().toISOString(),
@@ -78,7 +78,7 @@ export async function getTodoData(userId: string): Promise<AppData> {
           },
           {
             id: "2",
-            projectId: "1", 
+            projectId: "1",
             name: "Advanced Features",
             description: "Exploring more complex GenSX capabilities",
             createdAt: new Date().toISOString(),
@@ -152,7 +152,7 @@ export async function getTodoData(userId: string): Promise<AppData> {
           },
         ],
       };
-      
+
       // Save the sample data
       await blob.putJSON(sampleData);
       return sampleData;
@@ -166,7 +166,10 @@ export async function getTodoData(userId: string): Promise<AppData> {
   }
 }
 
-export async function saveTodoData(userId: string, data: AppData): Promise<void> {
+export async function saveTodoData(
+  userId: string,
+  data: AppData,
+): Promise<void> {
   try {
     const blobClient = new BlobClient({
       kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
@@ -188,7 +191,7 @@ export async function createProject(
   description?: string,
 ): Promise<Project> {
   const data = await getTodoData(userId);
-  
+
   const newProject: Project = {
     id: Date.now().toString(),
     name,
@@ -199,7 +202,7 @@ export async function createProject(
 
   data.projects.push(newProject);
   await saveTodoData(userId, data);
-  
+
   return newProject;
 }
 
@@ -209,8 +212,8 @@ export async function updateProject(
   updates: Partial<Pick<Project, "name" | "description">>,
 ): Promise<Project | null> {
   const data = await getTodoData(userId);
-  
-  const projectIndex = data.projects.findIndex(p => p.id === projectId);
+
+  const projectIndex = data.projects.findIndex((p) => p.id === projectId);
   if (projectIndex === -1) {
     return null;
   }
@@ -223,24 +226,27 @@ export async function updateProject(
 
   data.projects[projectIndex] = updatedProject;
   await saveTodoData(userId, data);
-  
+
   return updatedProject;
 }
 
-export async function deleteProject(userId: string, projectId: string): Promise<void> {
+export async function deleteProject(
+  userId: string,
+  projectId: string,
+): Promise<void> {
   const data = await getTodoData(userId);
-  
+
   // Remove project
-  data.projects = data.projects.filter(p => p.id !== projectId);
-  
+  data.projects = data.projects.filter((p) => p.id !== projectId);
+
   // Remove associated todo lists
-  const listsToRemove = data.todoLists.filter(l => l.projectId === projectId);
-  data.todoLists = data.todoLists.filter(l => l.projectId !== projectId);
-  
+  const listsToRemove = data.todoLists.filter((l) => l.projectId === projectId);
+  data.todoLists = data.todoLists.filter((l) => l.projectId !== projectId);
+
   // Remove todos from deleted lists
-  const listIdsToRemove = listsToRemove.map(l => l.id);
-  data.todos = data.todos.filter(t => !listIdsToRemove.includes(t.listId));
-  
+  const listIdsToRemove = listsToRemove.map((l) => l.id);
+  data.todos = data.todos.filter((t) => !listIdsToRemove.includes(t.listId));
+
   await saveTodoData(userId, data);
 }
 
@@ -251,7 +257,7 @@ export async function createTodoList(
   description?: string,
 ): Promise<TodoList> {
   const data = await getTodoData(userId);
-  
+
   const newTodoList: TodoList = {
     id: Date.now().toString(),
     projectId,
@@ -263,7 +269,7 @@ export async function createTodoList(
 
   data.todoLists.push(newTodoList);
   await saveTodoData(userId, data);
-  
+
   return newTodoList;
 }
 
@@ -273,8 +279,8 @@ export async function updateTodoList(
   updates: Partial<Pick<TodoList, "name" | "description">>,
 ): Promise<TodoList | null> {
   const data = await getTodoData(userId);
-  
-  const listIndex = data.todoLists.findIndex(l => l.id === listId);
+
+  const listIndex = data.todoLists.findIndex((l) => l.id === listId);
   if (listIndex === -1) {
     return null;
   }
@@ -287,19 +293,22 @@ export async function updateTodoList(
 
   data.todoLists[listIndex] = updatedList;
   await saveTodoData(userId, data);
-  
+
   return updatedList;
 }
 
-export async function deleteTodoList(userId: string, listId: string): Promise<void> {
+export async function deleteTodoList(
+  userId: string,
+  listId: string,
+): Promise<void> {
   const data = await getTodoData(userId);
-  
+
   // Remove todo list
-  data.todoLists = data.todoLists.filter(l => l.id !== listId);
-  
+  data.todoLists = data.todoLists.filter((l) => l.id !== listId);
+
   // Remove associated todos
-  data.todos = data.todos.filter(t => t.listId !== listId);
-  
+  data.todos = data.todos.filter((t) => t.listId !== listId);
+
   await saveTodoData(userId, data);
 }
 
@@ -309,7 +318,7 @@ export async function createTodo(
   text: string,
 ): Promise<Todo> {
   const data = await getTodoData(userId);
-  
+
   const newTodo: Todo = {
     id: Date.now().toString(),
     listId,
@@ -321,7 +330,7 @@ export async function createTodo(
 
   data.todos.push(newTodo);
   await saveTodoData(userId, data);
-  
+
   return newTodo;
 }
 
@@ -331,8 +340,8 @@ export async function updateTodo(
   updates: Partial<Pick<Todo, "text" | "completed">>,
 ): Promise<Todo | null> {
   const data = await getTodoData(userId);
-  
-  const todoIndex = data.todos.findIndex(t => t.id === todoId);
+
+  const todoIndex = data.todos.findIndex((t) => t.id === todoId);
   if (todoIndex === -1) {
     return null;
   }
@@ -345,14 +354,17 @@ export async function updateTodo(
 
   data.todos[todoIndex] = updatedTodo;
   await saveTodoData(userId, data);
-  
+
   return updatedTodo;
 }
 
-export async function deleteTodo(userId: string, todoId: string): Promise<void> {
+export async function deleteTodo(
+  userId: string,
+  todoId: string,
+): Promise<void> {
   const data = await getTodoData(userId);
-  
-  data.todos = data.todos.filter(t => t.id !== todoId);
-  
+
+  data.todos = data.todos.filter((t) => t.id !== todoId);
+
   await saveTodoData(userId, data);
 }

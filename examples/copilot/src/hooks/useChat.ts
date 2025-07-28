@@ -124,17 +124,14 @@ export function useChat(
     setStatus("completed");
   }, []);
 
-  const loadHistory = useCallback(
-    async (threadId: string, userId: string) => {
-      try {
-        const history = await getChatHistory(userId, threadId);
-        setMessages(history);
-      } catch (err) {
-        console.error("Error loading conversation history:", err);
-      }
-    },
-    [],
-  );
+  const loadHistory = useCallback(async (threadId: string, userId: string) => {
+    try {
+      const history = await getChatHistory(userId, threadId);
+      setMessages(history);
+    } catch (err) {
+      console.error("Error loading conversation history:", err);
+    }
+  }, []);
 
   const sendMessage = useCallback(
     async (prompt: string, threadId: string, userId: string) => {
