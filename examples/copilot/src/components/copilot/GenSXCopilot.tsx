@@ -8,6 +8,7 @@ import { useToolImplementations } from "./tool-implementations";
 import { useCopilotThreadId, useCopilotUserId } from "./hooks";
 import ApplicationDetailsTab from "./ApplicationDetailsTab";
 import UserPreferencesTab from "./UserPreferencesTab";
+import { getApplicationWorkingMemory } from "@/actions/application-details";
 
 type TabType = "chat" | "details" | "preferences";
 
@@ -18,6 +19,7 @@ export default function GenSXCopilot() {
   const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
   const [paneWidth, setPaneWidth] = useState(30); // 30% default width
   const [isResizing, setIsResizing] = useState(false);
+  const [showInitHint, setShowInitHint] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userId, setUserId] = useCopilotUserId();
   const [threadId, setThreadId] = useCopilotThreadId();
@@ -41,6 +43,25 @@ export default function GenSXCopilot() {
     loadHistory(threadId, userId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Check if we should show the /init hint
+  useEffect(() => {
+    const checkInitHint = async () => {
+      try {
+        const appMemory = await getApplicationWorkingMemory(userId);
+        const hasNoAppMemory = !appMemory.trim();
+        const hasNoChatHistory = messages.length === 0;
+        const isOnChatTab = activeTab === "chat";
+        
+        setShowInitHint(hasNoAppMemory && hasNoChatHistory && isOnChatTab);
+      } catch (error) {
+        console.error("Error checking init hint status:", error);
+        setShowInitHint(false);
+      }
+    };
+
+    checkInitHint();
+  }, [userId, messages, activeTab]);
 
   useEffect(() => {
     if (status !== "streaming") {
@@ -265,6 +286,53 @@ export default function GenSXCopilot() {
                 )}
                 <div ref={messagesEndRef} />
               </div>
+
+              {/* Init hint bubble */}
+              {showInitHint && (
+                <div className="mx-4 mb-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-blue-800">
+                          Get started with AI exploration
+                        </h3>
+                        <div className="mt-2 text-sm text-blue-700">
+                          <p>
+                            Try typing{" "}
+                            <code className="bg-blue-100 px-2 py-1 rounded text-blue-800 font-mono text-xs">
+                              /init
+                            </code>{" "}
+                            to have the AI systematically explore this application and discover its features automatically.
+                          </p>
+                        </div>
+                        <div className="mt-3">
+                          <button
+                            onClick={async () => {
+                              inputRef.current?.focus();
+                              // Submit the form with /init
+                              await sendMessage("/init", threadId, userId);
+                            }}
+                            className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                          >
+                            Try /init now
+                          </button>
+                          <button
+                            onClick={() => setShowInitHint(false)}
+                            className="ml-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Input form */}
               <form onSubmit={handleSubmit} className="p-4 border-t">
