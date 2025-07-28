@@ -8,8 +8,8 @@ import { getChatHistory } from "@/actions/chat-history";
 export interface ChatWorkflowInput {
   prompt: string;
   existingMessages?: { role: string; content: unknown }[];
-  threadId?: string;
-  userId?: string;
+  threadId: string;
+  userId: string;
   url: string;
 }
 
@@ -26,14 +26,14 @@ export type Message = CoreMessage;
 interface UseChatReturn {
   sendMessage: (
     prompt: string,
-    threadId?: string,
-    userId?: string,
+    threadId: string,
+    userId: string,
   ) => Promise<void>;
   messages: Message[];
   status: ChatStatus;
   error: string | null;
   clear: () => void;
-  loadHistory: (threadId?: string, userId?: string) => Promise<void>;
+  loadHistory: (threadId: string, userId: string) => Promise<void>;
   execution: WorkflowMessage[];
 }
 
@@ -125,10 +125,7 @@ export function useChat(
   }, []);
 
   const loadHistory = useCallback(
-    async (threadId?: string, userId?: string) => {
-      threadId = threadId ?? "default";
-      userId = userId ?? "default";
-
+    async (threadId: string, userId: string) => {
       try {
         const history = await getChatHistory(userId, threadId);
         setMessages(history);
@@ -140,7 +137,7 @@ export function useChat(
   );
 
   const sendMessage = useCallback(
-    async (prompt: string, threadId?: string, userId?: string) => {
+    async (prompt: string, threadId: string, userId: string) => {
       if (!prompt) return;
 
       setStatus("waiting");
@@ -157,8 +154,8 @@ export function useChat(
         inputs: {
           prompt: prompt,
           existingMessages: messages,
-          threadId: threadId,
-          userId: userId,
+          threadId,
+          userId,
           url: window.location.href,
         },
       });
