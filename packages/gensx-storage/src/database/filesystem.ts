@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
-import type { Client, InArgs,ResultSet } from "@libsql/client";
+import type { Client, InArgs, ResultSet } from "@libsql/client";
 
 import * as fs from "node:fs/promises";
 import { createRequire } from "node:module";
