@@ -1,6 +1,6 @@
 {
   "name": "@gensx/storage",
-  "version": "0.2.3-alpha.1",
+  "version": "0.2.3-alpha.2",
   "description": "Cloud storage, blobs, sqlite, and vector database providers/hooks for GenSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
@@ -51,7 +51,8 @@
   "devDependencies": {
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "@libsql/client": "^0.15.9"
   },
   "publishConfig": {
     "access": "public"

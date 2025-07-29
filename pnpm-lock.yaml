@@ -1028,8 +1028,8 @@ importers:
         specifier: ^0.5.1
         version: 0.5.2
       '@gensx/storage':
-        specifier: ^0.2.1
-        version: 0.2.2
+        specifier: 0.2.3-alpha.1
+        version: 0.2.3-alpha.1(@libsql/client@0.15.10)
       '@gensx/vercel-ai':
         specifier: ^0.3.1
         version: 0.3.2(react@19.1.0)(zod@3.25.56)
@@ -1449,13 +1449,13 @@ importers:
       '@gensx/core':
         specifier: workspace:*
         version: link:../gensx-core
-      '@libsql/client':
-        specifier: ^0.15.9
-        version: 0.15.10
       '@turbopuffer/turbopuffer':
         specifier: ^0.10.4
         version: 0.10.8
     devDependencies:
+      '@libsql/client':
+        specifier: ^0.15.9
+        version: 0.15.10
       '@types/node':
         specifier: catalog:packages
         version: 18.19.86
@@ -2563,6 +2563,15 @@ packages:
   '@gensx/storage@0.2.2':
     resolution: {integrity: sha512-84n9iiiCxVQu3sbFSW/Ph4O0Zgf9/6yY/opqdorFSYCubk8+qX+rXcnzlJtYGFTl03EVNVbfLrTNTFAqriiXqA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
+  '@gensx/storage@0.2.3-alpha.1':
+    resolution: {integrity: sha512-rmxVHelGygtirP5DwNdBLpG91NnQQWowTzyPyJDzaKtncYqV3GdsSyDlSxFMpQOOrl5kQ1Ic6RacGcXqAcMxaA==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+    peerDependencies:
+      '@libsql/client': ^0.15.9
+    peerDependenciesMeta:
+      '@libsql/client':
+        optional: true
 
   '@gensx/vercel-ai-sdk@0.1.17':
     resolution: {integrity: sha512-LasIxzHf0b2+FE8nXvFHFLUTaZOqVwsoH83dsbGJY1ZMEMlA10pghGWArvF9LNGY9HmahjK858EeiHPDFXFivA==}
@@ -10097,6 +10106,13 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  '@gensx/storage@0.2.3-alpha.1(@libsql/client@0.15.10)':
+    dependencies:
+      '@gensx/core': 0.5.2
+      '@turbopuffer/turbopuffer': 0.10.8
+    optionalDependencies:
+      '@libsql/client': 0.15.10
 
   '@gensx/vercel-ai-sdk@0.1.17(react@19.1.0)(zod@4.0.5)':
     dependencies:
