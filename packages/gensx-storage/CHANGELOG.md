@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.3](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.2.2...gensx-storage-v0.2.3) (2025-07-29)
+
+
+### 🐛 Bug Fixes
+
+* Update gensx-storage docs for nextjs config ([#906](https://github.com/gensx-inc/gensx/issues/906)) ([14d3738](https://github.com/gensx-inc/gensx/commit/14d3738c16b307e9fa653d95f3c27911a899150d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.3
+
 ## [0.2.2](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.2.1...gensx-storage-v0.2.2) (2025-07-17)
 
 

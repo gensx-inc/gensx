@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.2...gensx-core-v0.5.3) (2025-07-29)
+
+
+### ✨ New Features
+
+* Support timeout for human-in-the-loop. ([#905](https://github.com/gensx-inc/gensx/issues/905)) ([7a03266](https://github.com/gensx-inc/gensx/commit/7a03266d4e202d5a301e455a5b827cf1e1aa6fbe))
+
 ## [0.5.2](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.1...gensx-core-v0.5.2) (2025-07-17)
 
 

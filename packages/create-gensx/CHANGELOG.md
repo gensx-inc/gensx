@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.58](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.57...create-gensx-v0.1.58) (2025-07-29)
+
+
+### ✨ New Features
+
+* adding next.js template to `gensx new` ([#859](https://github.com/gensx-inc/gensx/issues/859)) ([ede1217](https://github.com/gensx-inc/gensx/commit/ede121711b3a6b38a6d1f3bd06b7bec736ab3c97))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * gensx bumped to 0.4.4
+
 ## [0.1.57](https://github.com/gensx-inc/gensx/compare/create-gensx-v0.1.56...create-gensx-v0.1.57) (2025-07-17)
 
 
