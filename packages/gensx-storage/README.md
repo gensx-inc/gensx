@@ -8,35 +8,11 @@
 npm install @gensx/storage
 ```
 
-If you plan to use local databases when developing, install `@libsql/client` as well:
+If you plan to use local databases when developing, install `@libsql/client` as a dev dependency:
 
 ```bash
 npm install -d @libsql/client
 ```
-
-## Next.js Configuration
-
-When using local databases in a Next.js project you should exclude `@libsql/client` from client bundles. Add the following to your `next.config.ts` or `next.config.js` file:
-
-```typescript
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  // ... other config options
-  webpack: (config: any) => {
-    // Ignore @libsql/client package for client-side builds
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@libsql/client": false,
-    };
-    return config;
-  },
-  // ... other config options
-};
-
-module.exports = nextConfig;
-```
-
-This configuration prevents bundling issues when `@libsql/client` is installed. If you only use cloud databases you can skip installing `@libsql/client` and omit this webpack rule. See the [client-side-tools example](https://github.com/gensx-inc/gensx/tree/main/examples/client-side-tools) for a complete implementation.
 
 ## Features
 
@@ -251,3 +227,29 @@ const results = await namespace.query({
   topK: 3,
 });
 ```
+
+## Troubleshooting
+
+If you have `@libsql/client` installed as a dependency, it may cause issues for bundlers. You should always install it as a dev dependency as local databases can only be used during development.
+
+If for some reason you need to use `@libsql/client` as a standard dependency, you can exclude it from client bundles. Add the following to your `next.config.ts` or `next.config.js` file:
+
+```typescript
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // ... other config options
+  webpack: (config: any) => {
+    // Ignore @libsql/client package for client-side builds
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@libsql/client": false,
+    };
+    return config;
+  },
+  // ... other config options
+};
+
+module.exports = nextConfig;
+```
+
+This configuration prevents bundling issues when `@libsql/client` is installed. If you only use cloud databases you can skip installing `@libsql/client` and omit this webpack rule. See the [client-side-tools example](https://github.com/gensx-inc/gensx/tree/main/examples/client-side-tools) for a complete implementation.
