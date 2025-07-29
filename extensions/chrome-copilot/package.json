@@ -1,0 +1,55 @@
+{
+  "name": "gensx-copilot-chrome-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for GenSX Copilot - AI-powered web page interaction assistant",
+  "main": "dist/background.js",
+  "scripts": {
+    "dev": "npx gensx start gensx/workflows.ts",
+    "build": "npm run generate-icons && webpack --mode=production",
+    "build:dev": "npm run generate-icons && webpack --mode=development",
+    "watch": "webpack --mode=development --watch",
+    "package": "npm run build && cd dist && zip -r ../gensx-copilot-extension.zip . -x '*.DS_Store'",
+    "clean": "rm -rf dist",
+    "generate-icons": "node generate-icons.js",
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'Linting not configured yet'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "gensx",
+    "ai",
+    "copilot",
+    "web-automation",
+    "browser-assistant"
+  ],
+  "author": "GenSX Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gensx-inc/gensx"
+  },
+  "homepage": "https://gensx.dev",
+  "devDependencies": {
+    "@types/chrome": "^0.0.254",
+    "@types/node": "^20.0.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.3.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^0.0.66",
+    "@ai-sdk/provider": "^1.1.3",
+    "@gensx/client": "^0.1.7",
+    "@gensx/core": "^0.5.3",
+    "@gensx/storage": "^0.2.3",
+    "@gensx/vercel-ai": "^0.3.3",
+    "ai": "^4.0.0",
+    "serialize-error": "^11.0.3",
+    "zod": "^3.22.4"
+  }
+}
