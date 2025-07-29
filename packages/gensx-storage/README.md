@@ -8,15 +8,15 @@
 npm install @gensx/storage
 ```
 
-If you plan to use local filesystem databases, install `@libsql/client` as well:
+If you plan to use local databases when developing, install `@libsql/client` as well:
 
 ```bash
-npm install @libsql/client
+npm install -d @libsql/client
 ```
 
 ## Next.js Configuration
 
-When using local filesystem databases in a Next.js project you should exclude `@libsql/client` from client bundles. Add the following to your `next.config.ts` or `next.config.js` file:
+When using local databases in a Next.js project you should exclude `@libsql/client` from client bundles. Add the following to your `next.config.ts` or `next.config.js` file:
 
 ```typescript
 /** @type {import('next').NextConfig} */
