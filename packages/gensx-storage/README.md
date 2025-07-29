@@ -230,7 +230,7 @@ const results = await namespace.query({
 
 ## Troubleshooting
 
-If you have `@libsql/client` installed as a dependency, it may cause issues for bundlers. You should always install it as a dev dependency as local databases can only be used during development.
+If you have `@libsql/client` installed as a standard dependency, it may cause issues for bundlers. You should typically install the package as a dev dependency as local databases are designed to be used during development.
 
 If for some reason you need to use `@libsql/client` as a standard dependency, you can exclude it from client bundles. Add the following to your `next.config.ts` or `next.config.js` file:
 
@@ -252,4 +252,4 @@ const nextConfig = {
 module.exports = nextConfig;
 ```
 
-This configuration prevents bundling issues when `@libsql/client` is installed. If you only use cloud databases you can skip installing `@libsql/client` and omit this webpack rule. See the [client-side-tools example](https://github.com/gensx-inc/gensx/tree/main/examples/client-side-tools) for a complete implementation.
+This configuration prevents bundling issues when `@libsql/client` is installed. If you only use cloud databases you can skip installing `@libsql/client` and omit this webpack rule.
