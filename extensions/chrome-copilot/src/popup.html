@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 300px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: #2563eb;
+      border-radius: 8px;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    
+    p {
+      margin: 8px 0 0 0;
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+    
+    .action-button {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: background-color 0.2s ease;
+    }
+    
+    .action-button:hover {
+      background: #1d4ed8;
+    }
+    
+    .action-button.secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    
+    .action-button.secondary:hover {
+      background: #e5e7eb;
+    }
+    
+    .status {
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .status.active {
+      color: #059669;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" 
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+    <h1>GenSX Copilot</h1>
+    <p>AI-powered web page interaction assistant</p>
+  </div>
+  
+  <button id="toggleCopilot" class="action-button">
+    Open Copilot
+  </button>
+  
+  <button id="openOptions" class="action-button secondary">
+    Settings
+  </button>
+  
+  <div id="status" class="status">
+    Click "Open Copilot" to start interacting with the current page
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

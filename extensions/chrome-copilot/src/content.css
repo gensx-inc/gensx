@@ -1,0 +1,457 @@
+/* GenSX Copilot Chrome Extension Styles */
+
+#gensx-copilot-root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: light;
+  z-index: 2147483647; /* Maximum z-index to ensure it's always on top */
+}
+
+#gensx-copilot-root * {
+  box-sizing: border-box;
+}
+
+/* Toggle button styles */
+.gensx-toggle-button {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  width: 48px !important;
+  height: 48px !important;
+  background: #2563eb !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  cursor: pointer !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.gensx-toggle-button:hover {
+  background: #1d4ed8 !important;
+  transform: scale(1.05) !important;
+}
+
+.gensx-toggle-button svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Right-hand pane styles */
+.gensx-copilot-pane {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  height: 100vh !important;
+  background: white !important;
+  border-left: 1px solid #e5e7eb !important;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1) !important;
+  z-index: 2147483646 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transition: transform 0.3s ease !important;
+}
+
+.gensx-copilot-pane.closed {
+  transform: translateX(100%) !important;
+}
+
+/* Resize handle */
+.gensx-resize-handle {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 4px !important;
+  height: 100% !important;
+  background: #d1d5db !important;
+  cursor: col-resize !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.gensx-resize-handle:hover {
+  background: #2563eb !important;
+}
+
+/* Header styles */
+.gensx-header {
+  background: #2563eb !important;
+  color: white !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.gensx-header-content {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 16px !important;
+}
+
+.gensx-header-info {
+  flex: 1 !important;
+  padding-right: 16px !important;
+}
+
+.gensx-header h3 {
+  margin: 0 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+.gensx-header p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  opacity: 0.9 !important;
+}
+
+.gensx-header-buttons {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.gensx-header-button {
+  padding: 8px !important;
+  background: transparent !important;
+  border: none !important;
+  color: white !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.gensx-header-button:hover {
+  background: #1d4ed8 !important;
+}
+
+.gensx-header-button svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Tab styles */
+.gensx-tabs {
+  display: flex !important;
+  border-top: 1px solid #3b82f6 !important;
+}
+
+.gensx-tab {
+  flex: 1 !important;
+  padding: 8px 16px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #bfdbfe !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.gensx-tab:hover {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+.gensx-tab.active {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+/* Chat content styles */
+.gensx-chat-content {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.gensx-messages {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+/* Message styles */
+.gensx-message {
+  display: flex !important;
+  max-width: none !important;
+}
+
+.gensx-message.user {
+  justify-content: flex-end !important;
+}
+
+.gensx-message.assistant {
+  justify-content: flex-start !important;
+}
+
+.gensx-message-content {
+  max-width: 80% !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  word-wrap: break-word !important;
+  white-space: pre-wrap !important;
+}
+
+.gensx-message.user .gensx-message-content {
+  background: #2563eb !important;
+  color: white !important;
+}
+
+.gensx-message.assistant .gensx-message-content {
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+}
+
+/* Tool call styles */
+.gensx-tool-calls {
+  margin-top: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.gensx-tool-call {
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+}
+
+.gensx-tool-call-header {
+  background: #f9fafb !important;
+  padding: 8px 12px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.gensx-tool-call-header:hover {
+  background: #f3f4f6 !important;
+}
+
+.gensx-tool-call-content {
+  padding: 12px !important;
+  background: white !important;
+  border-top: 1px solid #d1d5db !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.gensx-tool-call-section {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.gensx-tool-call-label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important;
+  margin-bottom: 4px !important;
+}
+
+.gensx-tool-call-code {
+  font-size: 12px !important;
+  background: #f9fafb !important;
+  padding: 8px !important;
+  border-radius: 4px !important;
+  overflow-x: auto !important;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+}
+
+/* Input form styles */
+.gensx-input-form {
+  padding: 16px !important;
+  border-top: 1px solid #e5e7eb !important;
+  flex-shrink: 0 !important;
+}
+
+.gensx-input-container {
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.gensx-input {
+  flex: 1 !important;
+  padding: 8px 12px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  outline: none !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.gensx-input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+
+.gensx-input:disabled {
+  background: #f9fafb !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+}
+
+.gensx-send-button {
+  padding: 8px 16px !important;
+  background: #2563eb !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.gensx-send-button:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+}
+
+.gensx-send-button:disabled {
+  background: #9ca3af !important;
+  cursor: not-allowed !important;
+}
+
+/* Error styles */
+.gensx-error {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+  padding: 12px !important;
+  border-radius: 6px !important;
+  margin: 8px 0 !important;
+  font-size: 14px !important;
+}
+
+/* Loading styles */
+.gensx-loading {
+  display: inline-block !important;
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid #d1d5db !important;
+  border-top: 2px solid #2563eb !important;
+  border-radius: 50% !important;
+  animation: gensx-spin 1s linear infinite !important;
+}
+
+@keyframes gensx-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Hint bubble styles */
+.gensx-hint-bubble {
+  margin: 16px !important;
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.gensx-hint-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+}
+
+.gensx-hint-icon {
+  flex-shrink: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  color: #3b82f6 !important;
+}
+
+.gensx-hint-content h3 {
+  margin: 0 0 8px 0 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #1e40af !important;
+}
+
+.gensx-hint-content p {
+  margin: 0 0 12px 0 !important;
+  font-size: 14px !important;
+  color: #1e40af !important;
+  line-height: 1.4 !important;
+}
+
+.gensx-hint-code {
+  background: #dbeafe !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  color: #1e40af !important;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+  font-size: 12px !important;
+}
+
+.gensx-hint-actions {
+  display: flex !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
+}
+
+.gensx-hint-button {
+  padding: 6px 12px !important;
+  font-size: 14px !important;
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.gensx-hint-button.primary {
+  background: #2563eb !important;
+  color: white !important;
+}
+
+.gensx-hint-button.primary:hover {
+  background: #1d4ed8 !important;
+}
+
+.gensx-hint-button.secondary {
+  background: transparent !important;
+  color: #2563eb !important;
+}
+
+.gensx-hint-button.secondary:hover {
+  color: #1d4ed8 !important;
+}
+
+/* Tab content styles */
+.gensx-tab-content {
+  flex: 1 !important;
+  padding: 16px !important;
+  overflow-y: auto !important;
+}
+
+/* Scrollbar styles */
+.gensx-messages::-webkit-scrollbar,
+.gensx-tab-content::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.gensx-messages::-webkit-scrollbar-track,
+.gensx-tab-content::-webkit-scrollbar-track {
+  background: #f3f4f6 !important;
+}
+
+.gensx-messages::-webkit-scrollbar-thumb,
+.gensx-tab-content::-webkit-scrollbar-thumb {
+  background: #d1d5db !important;
+  border-radius: 3px !important;
+}
+
+.gensx-messages::-webkit-scrollbar-thumb:hover,
+.gensx-tab-content::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af !important;
+}
