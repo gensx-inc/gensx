@@ -1449,13 +1449,12 @@ importers:
       '@gensx/core':
         specifier: workspace:*
         version: link:../gensx-core
-      '@turbopuffer/turbopuffer':
-        specifier: ^0.10.4
-        version: 0.10.8
-    optionalDependencies:
       '@libsql/client':
         specifier: ^0.15.9
         version: 0.15.10
+      '@turbopuffer/turbopuffer':
+        specifier: ^0.10.4
+        version: 0.10.8
     devDependencies:
       '@types/node':
         specifier: catalog:packages

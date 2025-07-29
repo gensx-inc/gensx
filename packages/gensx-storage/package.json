@@ -1,6 +1,6 @@
 {
   "name": "@gensx/storage",
-  "version": "0.2.2",
+  "version": "0.2.3-alpha.1",
   "description": "Cloud storage, blobs, sqlite, and vector database providers/hooks for GenSX.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
@@ -63,7 +63,9 @@
   "peerDependencies": {
     "@libsql/client": "^0.15.9"
   },
-  "optionalDependencies": {
-    "@libsql/client": "^0.15.9"
+  "peerDependenciesMeta": {
+    "@libsql/client": {
+      "optional": true
+    }
   }
 }

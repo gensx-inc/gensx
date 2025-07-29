@@ -38,8 +38,15 @@ export class DatabaseClient {
     }
 
     this.storagePromise = this.initializeStorage();
-    this.storage = await this.storagePromise;
-    return this.storage;
+
+    try {
+      this.storage = await this.storagePromise;
+      return this.storage;
+    } catch (error) {
+      // Clear the failed promise to allow retry on next call
+      this.storagePromise = null;
+      throw error;
+    }
   }
 
   private async initializeStorage(): Promise<DatabaseStorage> {
