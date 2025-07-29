@@ -1028,8 +1028,8 @@ importers:
         specifier: ^0.5.1
         version: 0.5.2
       '@gensx/storage':
-        specifier: 0.2.3-alpha.1
-        version: 0.2.3-alpha.1(@libsql/client@0.15.10)
+        specifier: 0.2.3
+        version: 0.2.3
       '@gensx/vercel-ai':
         specifier: ^0.3.1
         version: 0.3.2(react@19.1.0)(zod@3.25.56)
@@ -1043,6 +1043,9 @@ importers:
         specifier: 3.25.56
         version: 3.25.56
     devDependencies:
+      '@libsql/client':
+        specifier: ^0.15.9
+        version: 0.15.10
       '@types/node':
         specifier: ^20
         version: 20.19.8
@@ -2538,6 +2541,10 @@ packages:
     resolution: {integrity: sha512-qcKmSO1qQbPuMYkUAgkIOzkr2NdFNtu23DbjeFXeeQkdem1eg0qRBy/wj1PFk8FPXo/VBV4wDEPV6PY25p4+Sw==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
+  '@gensx/core@0.5.3':
+    resolution: {integrity: sha512-RPoSmJBZEdDs1oAD7jGZ8xBbAxmbHlZ5pXmPgVncSMt73JVt8g8FA21l9K7sQaT/q5cS8xpDCYI6e8GvC+AhSw==}
+    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+
   '@gensx/openai@0.1.28':
     resolution: {integrity: sha512-iSZ+4vGNp3IyALW7ONopvUU4U4rfkk8T0IzjnfTyaPUrP6AazxSzyRrUmBLm8Mk1Kxq0YCYZIq5YhfguEVNOlQ==}
     peerDependencies:
@@ -2564,14 +2571,9 @@ packages:
     resolution: {integrity: sha512-84n9iiiCxVQu3sbFSW/Ph4O0Zgf9/6yY/opqdorFSYCubk8+qX+rXcnzlJtYGFTl03EVNVbfLrTNTFAqriiXqA==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
-  '@gensx/storage@0.2.3-alpha.1':
-    resolution: {integrity: sha512-rmxVHelGygtirP5DwNdBLpG91NnQQWowTzyPyJDzaKtncYqV3GdsSyDlSxFMpQOOrl5kQ1Ic6RacGcXqAcMxaA==}
+  '@gensx/storage@0.2.3':
+    resolution: {integrity: sha512-TYoLCvJACfXvLGlbJwMOt6y1tXpJ9gt6/mhSnwgQFi1Utqi6Dm1CeBAGgTeVkw8YapnkdY19jyUoYLBpc4qE+w==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
-    peerDependencies:
-      '@libsql/client': ^0.15.9
-    peerDependenciesMeta:
-      '@libsql/client':
-        optional: true
 
   '@gensx/vercel-ai-sdk@0.1.17':
     resolution: {integrity: sha512-LasIxzHf0b2+FE8nXvFHFLUTaZOqVwsoH83dsbGJY1ZMEMlA10pghGWArvF9LNGY9HmahjK858EeiHPDFXFivA==}
@@ -10039,6 +10041,14 @@ snapshots:
       zod: 3.25.56
       zod-to-json-schema: 3.24.6(zod@3.25.56)
 
+  '@gensx/core@0.5.3':
+    dependencies:
+      '@common.js/serialize-error': 11.0.3
+      deterministic-object-hash: 2.0.2
+      ini: 5.0.0
+      zod: 3.25.56
+      zod-to-json-schema: 3.24.6(zod@3.25.56)
+
   '@gensx/openai@0.1.28(openai@4.104.0(ws@8.18.2)(zod@3.25.56))':
     dependencies:
       '@gensx/core': 0.3.13
@@ -10107,12 +10117,14 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@gensx/storage@0.2.3-alpha.1(@libsql/client@0.15.10)':
+  '@gensx/storage@0.2.3':
     dependencies:
-      '@gensx/core': 0.5.2
-      '@turbopuffer/turbopuffer': 0.10.8
-    optionalDependencies:
+      '@gensx/core': 0.5.3
       '@libsql/client': 0.15.10
+      '@turbopuffer/turbopuffer': 0.10.8
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   '@gensx/vercel-ai-sdk@0.1.17(react@19.1.0)(zod@4.0.5)':
     dependencies:

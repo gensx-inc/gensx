@@ -14,7 +14,7 @@ function getLibsql() {
     return requireLibsql(LIBSQL_CLIENT) as typeof import("@libsql/client");
   } catch {
     throw new Error(
-      "@libsql/client is required for filesystem databases. Install it as a dependency.",
+      '@libsql/client is required to use local databases in @gensx/storage but is not installed. Install it by running: npm install @libsql/client\n\nAlternatively, you can use cloud databases instead by setting the storage kind to "cloud" in your configuration.',
     );
   }
 }
