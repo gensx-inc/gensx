@@ -13,7 +13,6 @@ import {
  * Client for interacting with database functionality outside of JSX context
  */
 export class DatabaseClient {
-  private storage: DatabaseStorage | null = null;
   private storagePromise: Promise<DatabaseStorage> | null = null;
   private options: DatabaseStorageOptions;
 
@@ -29,24 +28,12 @@ export class DatabaseClient {
    * Lazy initialization of storage
    */
   private async getStorage(): Promise<DatabaseStorage> {
-    if (this.storage) {
-      return this.storage;
-    }
-
-    if (this.storagePromise) {
-      return this.storagePromise;
-    }
-
-    this.storagePromise = this.initializeStorage();
-
-    try {
-      this.storage = await this.storagePromise;
-      return this.storage;
-    } catch (error) {
+    this.storagePromise ??= this.initializeStorage().catch((error: unknown) => {
       // Clear the failed promise to allow retry on next call
       this.storagePromise = null;
       throw error;
-    }
+    });
+    return this.storagePromise;
   }
 
   private async initializeStorage(): Promise<DatabaseStorage> {
