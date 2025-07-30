@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.3](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.3.2...gensx-vercel-ai-v0.3.3) (2025-07-29)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.3
+
 ## [0.3.2](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.3.1...gensx-vercel-ai-v0.3.2) (2025-07-17)
 
 

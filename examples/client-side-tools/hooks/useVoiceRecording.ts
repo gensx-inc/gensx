@@ -1,5 +1,5 @@
-import { getApiUrl } from "@/lib/config";
 import { useCallback, useRef, useState } from "react";
+import { addToast } from "@/components/ui/toast";
 
 interface VoiceRecordingState {
   isRecording: boolean;
@@ -35,13 +35,15 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
       setState((prev) => ({ ...prev, error: null, transcription: null }));
 
       // Check if MediaDevices API is available
-      if (
-        typeof navigator === "undefined" ||
-        !navigator.mediaDevices?.getUserMedia
-      ) {
-        throw new Error(
-          "MediaDevices API is not supported in this environment",
-        );
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        console.error("MediaDevices API is not supported in this environment");
+        addToast({
+          type: "error",
+          title: "Voice Recording Not Supported",
+          description:
+            "Your browser doesn't support voice recording. Please try using a modern browser like Chrome, Firefox, or Safari.",
+        });
+        return;
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -60,42 +62,40 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
       let previousLevels = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
       let lastFrameTime = Date.now();
 
-      // Start random animation for visual feedback
-      const animateRandomLevels = () => {
+      const animate = () => {
         if (!isRecordingRef.current) return;
 
         const currentTime = Date.now();
         const deltaTime = currentTime - lastFrameTime;
-        lastFrameTime = currentTime;
 
-        // Generate smooth random levels for each bar
-        const levels: number[] = [];
-        for (let i = 0; i < 7; i++) {
-          // Target level with some randomness
-          const targetLevel = 0.2 + Math.random() * 0.6;
+        if (deltaTime >= 16) {
+          // Smooth transitions at 60fps
+          const newLevels = previousLevels.map((prev) => {
+            const random = Math.random() * 0.8 + 0.2; // Between 0.2 and 1.0
+            const lerp = prev + (random - prev) * 0.15; // Smooth interpolation
+            return Math.max(0.1, Math.min(1.0, lerp));
+          });
 
-          // Smooth transition from previous level
-          const smoothingFactor = Math.min(deltaTime / 100, 1); // Smoother transitions
-          const currentLevel =
-            previousLevels[i] +
-            (targetLevel - previousLevels[i]) * smoothingFactor * 0.3;
+          setState((prev) => ({
+            ...prev,
+            audioLevels: newLevels,
+          }));
 
-          // Add slight wave effect based on index and time
-          const wave = Math.sin(currentTime / 200 + i * 0.5) * 0.1;
-
-          levels.push(Math.max(0.1, Math.min(0.9, currentLevel + wave)));
+          previousLevels = newLevels;
+          lastFrameTime = currentTime;
         }
 
-        previousLevels = levels;
-
-        // Update state with levels
-        setState((prev) => ({ ...prev, audioLevels: levels }));
-
-        // Continue animation
-        animationFrameRef.current = requestAnimationFrame(animateRandomLevels);
+        animationFrameRef.current = requestAnimationFrame(animate);
       };
 
-      const mediaRecorder = new MediaRecorder(stream);
+      animate();
+
+      // Set up MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "audio/webm",
+      });
+
+      mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
@@ -104,21 +104,14 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
         }
       };
 
-      mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.start();
-
       setState((prev) => ({ ...prev, isRecording: true }));
-
-      // Start animation after a short delay
-      setTimeout(() => {
-        animateRandomLevels();
-      }, 100);
+      mediaRecorder.start(100); // Collect data every 100ms
     } catch (error) {
+      console.error("Failed to start recording:", error);
       setState((prev) => ({
         ...prev,
         error:
           error instanceof Error ? error.message : "Failed to start recording",
-        isRecording: false,
       }));
     }
   }, []);
@@ -174,7 +167,7 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
           const formData = new FormData();
           formData.append("audio", audioBlob, "recording.webm");
 
-          const response = await fetch(getApiUrl("/api/transcribe"), {
+          const response = await fetch("/api/transcribe", {
             method: "POST",
             body: formData,
           });
@@ -185,29 +178,27 @@ export function useVoiceRecording(): UseVoiceRecordingReturn {
 
           const result = await response.json();
 
-          if (result.success && result.text) {
-            setState((prev) => ({
-              ...prev,
-              transcription: result.text.trim(),
-              isTranscribing: false,
-            }));
-          } else {
-            setState((prev) => ({
-              ...prev,
-              error: result.error ?? "Transcription failed",
-              isTranscribing: false,
-            }));
+          if (!result.success || !result.text) {
+            throw new Error("Invalid transcription response");
           }
-        } catch (error) {
+
           setState((prev) => ({
             ...prev,
+            isTranscribing: false,
+            transcription: result.text.trim(),
+          }));
+
+          resolve();
+        } catch (error) {
+          console.error("Transcription error:", error);
+          setState((prev) => ({
+            ...prev,
+            isTranscribing: false,
             error:
               error instanceof Error ? error.message : "Transcription failed",
-            isTranscribing: false,
           }));
+          resolve();
         }
-
-        resolve();
       };
 
       mediaRecorder.stop();

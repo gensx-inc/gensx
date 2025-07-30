@@ -8,6 +8,12 @@
 npm install @gensx/storage
 ```
 
+If you plan to use local databases when developing, install `@libsql/client` as a dev dependency:
+
+```bash
+npm install -d @libsql/client
+```
+
 ## Features
 
 - **Blob Storage**: Store and retrieve unstructured data like JSON, text, or binary data
@@ -221,3 +227,29 @@ const results = await namespace.query({
   topK: 3,
 });
 ```
+
+## Troubleshooting
+
+If you have `@libsql/client` installed as a standard dependency, it may cause issues for bundlers. You should typically install the package as a dev dependency as local databases are designed to be used during development.
+
+If for some reason you need to use `@libsql/client` as a standard dependency, you can exclude it from client bundles. Add the following to your `next.config.ts` or `next.config.js` file:
+
+```typescript
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // ... other config options
+  webpack: (config: any) => {
+    // Ignore @libsql/client package for client-side builds
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@libsql/client": false,
+    };
+    return config;
+  },
+  // ... other config options
+};
+
+module.exports = nextConfig;
+```
+
+This configuration prevents bundling issues when `@libsql/client` is installed. If you only use cloud databases you can skip installing `@libsql/client` and omit this webpack rule.

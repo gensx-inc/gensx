@@ -6,10 +6,10 @@ import {
   Marker,
   Popup,
   Polyline,
+  Tooltip,
 } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
-import Image from "next/image";
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
@@ -64,111 +64,72 @@ interface MapProps {
   route?: RouteData | null;
 }
 
-const defaultView = {
+const defaultView: MapView = {
   zoom: 12,
   latitude: 37.7749, // San Francisco
   longitude: -122.4194,
 };
 
-const escapeHtml = (text: string): string => {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-};
-
+// Basic color sanitization
 const sanitizeColor = (color: string): string => {
-  // Only allow valid hex colors (3 or 6 digit) or basic CSS color names
-  const hexPattern = /^#([0-9A-F]{3}|[0-9A-F]{6})$/i;
-  const basicColors = [
+  // Only allow valid hex colors and some basic named colors
+  const validColorPattern = /^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$/;
+  const namedColors = [
     "red",
     "blue",
     "green",
     "yellow",
     "orange",
     "purple",
-    "black",
-    "white",
-    "gray",
     "pink",
+    "gray",
   ];
 
-  if (hexPattern.test(color) || basicColors.includes(color.toLowerCase())) {
+  if (
+    validColorPattern.test(color) ||
+    namedColors.includes(color.toLowerCase())
+  ) {
     return color;
   }
 
-  // Default to safe color if invalid
-  return "#3B82F6";
+  return "#3B82F6"; // Default blue
 };
 
-const sanitizeUrl = (url: string): string => {
-  try {
-    const urlObj = new URL(url);
-    // Only allow http/https protocols
-    if (urlObj.protocol === "http:" || urlObj.protocol === "https:") {
-      return urlObj.toString();
-    }
-  } catch {
-    // Invalid URL
-  }
-
-  // Return empty string for invalid URLs
-  return "";
+// Basic HTML escaping
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 };
 
-const createMarkerIcon = (color: string = "#3B82F6", photoUrl?: string) => {
+const createMarkerIcon = (
+  color: string = "#3B82F6",
+  isNew: boolean = false,
+  title?: string,
+) => {
   const sanitizedColor = sanitizeColor(color);
-
-  if (photoUrl) {
-    const sanitizedPhotoUrl = sanitizeUrl(photoUrl);
-
-    // Don't create photo marker if URL is invalid
-    if (!sanitizedPhotoUrl) {
-      // Fall back to regular marker
-      const svgIcon = `
-        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${sanitizedColor}" stroke="#ffffff" stroke-width="2"/>
-          <circle cx="16" cy="10" r="3" fill="#ffffff"/>
-        </svg>
-      `;
-
-      return L.divIcon({
-        html: svgIcon,
-        className: "custom-marker",
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32],
-      });
-    }
-
-    const photoIcon = `
-      <div class="photo-marker">
-        <img src="${escapeHtml(sanitizedPhotoUrl)}" alt="Marker photo" class="marker-photo" style="border-color: ${sanitizedColor};" />
-        <div class="photo-marker-pointer" style="border-top-color: ${sanitizedColor};"></div>
-      </div>
-    `;
-
-    return L.divIcon({
-      html: photoIcon,
-      className: "custom-photo-marker",
-      iconSize: [80, 80],
-      iconAnchor: [40, 70],
-      popupAnchor: [0, -70],
-    });
-  }
+  const animationClass = isNew ? " new-marker" : "";
+  const displayTitle = title ? escapeHtml(title) : "";
 
   const svgIcon = `
-    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${sanitizedColor}" stroke="#ffffff" stroke-width="2"/>
-      <circle cx="16" cy="10" r="3" fill="#ffffff"/>
-    </svg>
+    <div class="marker-with-label">
+      <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 2C11.589 2 8 5.589 8 10c0 7.5 8 18 8 18s8-10.5 8-18c0-4.411-3.589-8-8-8z" fill="${sanitizedColor}" stroke="#ffffff" stroke-width="2"/>
+        <circle cx="16" cy="10" r="3" fill="#ffffff"/>
+      </svg>
+      ${displayTitle ? `<div class="marker-label">${displayTitle}</div>` : ""}
+    </div>
   `;
 
   return L.divIcon({
     html: svgIcon,
-    className: "custom-marker",
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
+    className: `custom-marker${animationClass}`,
+    iconSize: [120, displayTitle ? 55 : 32],
+    iconAnchor: [60, displayTitle ? 55 : 32],
+    popupAnchor: [0, displayTitle ? -55 : -32],
   });
 };
 
@@ -177,50 +138,159 @@ interface MarkerPopupProps {
 }
 
 const MarkerPopup = ({ marker }: MarkerPopupProps) => {
-  const hasPhoto = marker.photoUrl && marker.photoUrl.length > 0;
-
   return (
     <div className="max-w-xs">
       {marker.title && <h3 className="font-semibold mb-2">{marker.title}</h3>}
       {marker.description && (
         <p className="text-sm text-gray-600 mb-2">{marker.description}</p>
       )}
-      {hasPhoto && (
-        <div className="border-t pt-2">
-          <div className="max-h-64 overflow-y-auto">
-            <Image
-              src={marker.photoUrl!}
-              alt="Marker photo"
-              width={320}
-              height={240}
-              className="w-full h-auto rounded-md"
-              sizes="(max-width: 320px) 100vw, 320px"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-              }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-const Map = (MapProps: MapProps) => {
-  const { ref, markers, view = defaultView, route } = MapProps;
+const MapMarkerComponent = ({
+  marker,
+  isNew,
+  ref,
+  originalPositionRef,
+}: {
+  marker: MapMarker;
+  isNew: boolean;
+  ref: React.RefObject<L.Map | null>;
+  originalPositionRef: React.RefObject<{
+    center: L.LatLng;
+    zoom: number;
+  } | null>;
+}) => {
+  return (
+    <Marker
+      key={marker.id}
+      position={[marker.latitude, marker.longitude]}
+      draggable={false}
+      icon={createMarkerIcon(marker.color, isNew, marker.title)}
+      eventHandlers={{
+        click: (e) => {
+          if (ref?.current) {
+            originalPositionRef.current = {
+              center: ref.current.getCenter(),
+              zoom: ref.current.getZoom(),
+            };
+          }
+          // Prevent event from bubbling to map
+          e.originalEvent?.stopPropagation();
+        },
+      }}
+    >
+      <Popup
+        closeOnEscapeKey={false}
+        closeOnClick={false}
+        eventHandlers={{
+          remove: () => {
+            if (originalPositionRef.current) {
+              // Capture the original position to avoid race condition
+              const originalPosition = originalPositionRef.current;
+              originalPositionRef.current = null;
+
+              setTimeout(() => {
+                if (ref?.current && originalPosition) {
+                  ref.current.setView(
+                    originalPosition.center,
+                    originalPosition.zoom,
+                  );
+                }
+              }, 100);
+            }
+          },
+        }}
+      >
+        <MarkerPopup marker={marker} />
+      </Popup>
+    </Marker>
+  );
+};
+
+const Map = (props: MapProps) => {
+  const { ref, markers, view = defaultView, route } = props;
   const originalPositionRef = useRef<{ center: L.LatLng; zoom: number } | null>(
     null,
   );
+  const previousMarkersRef = useRef<Set<string>>(new Set());
+  const newMarkersRef = useRef<Set<string>>(new Set());
+  const [lastCenterAndZoom, setLastCenterAndZoom] = useState<{
+    latitude: number;
+    longitude: number;
+    zoom: number;
+  } | null>(null);
 
   useEffect(() => {
-    if (!view || !view.latitude || !view.longitude) {
+    if (!view) {
       return;
     }
-    if (ref?.current) {
-      ref.current.setView([view.latitude, view.longitude], view.zoom);
+    if (!view.fitBounds) {
+      if (
+        lastCenterAndZoom?.latitude !== view.latitude ||
+        lastCenterAndZoom?.longitude !== view.longitude ||
+        lastCenterAndZoom?.zoom !== view.zoom
+      ) {
+        setLastCenterAndZoom({
+          latitude: view.latitude,
+          longitude: view.longitude,
+          zoom: view.zoom,
+        });
+      }
     }
-  }, [view, ref]);
+    if (ref?.current) {
+      // in some hot reload cases, the map will not have the center and zoom set. So we need to set it manually if an error is thrown, then flyToBounds.
+      if (view.fitBounds) {
+        try {
+          ref.current.flyToBounds(view.fitBounds);
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message.includes("Set map center and zoom first.")
+          ) {
+            const { latitude, longitude, zoom } = lastCenterAndZoom ?? {
+              // sf
+              latitude: 37.7749,
+              longitude: -122.4194,
+              zoom: 12,
+            };
+            ref.current.setView([latitude, longitude], zoom);
+            ref.current.flyToBounds(view.fitBounds);
+          }
+        }
+      } else {
+        ref.current.setView([view.latitude, view.longitude], view.zoom);
+      }
+    }
+  }, [view, ref, lastCenterAndZoom]);
+
+  // Track newly added markers
+  useEffect(() => {
+    if (!markers) return;
+
+    const currentMarkerIds = new Set(markers.map((m) => m.id));
+    const previousMarkerIds = previousMarkersRef.current;
+
+    // Find new markers (those in current but not in previous)
+    const newMarkerIds = new Set<string>();
+    for (const id of currentMarkerIds) {
+      if (!previousMarkerIds.has(id)) {
+        newMarkerIds.add(id);
+      }
+    }
+
+    // Update refs
+    newMarkersRef.current = newMarkerIds;
+    previousMarkersRef.current = currentMarkerIds;
+
+    // Clear new marker animations after animation duration
+    if (newMarkerIds.size > 0) {
+      setTimeout(() => {
+        newMarkersRef.current.clear();
+      }, 1400); // Duration of both animations combined
+    }
+  }, [markers]);
 
   // Memoize markers with clustering to prevent flickering during streaming
   const memoizedMarkers = useMemo(() => {
@@ -229,167 +299,272 @@ const Map = (MapProps: MapProps) => {
     return markers.map((item) => {
       // Render single marker
       const marker = item as MapMarker;
-      return (
-        <Marker
-          key={marker.id}
-          position={[marker.latitude, marker.longitude]}
-          draggable={false}
-          icon={createMarkerIcon(marker.color, marker.photoUrl)}
-          eventHandlers={{
-            click: (e) => {
-              if (ref?.current) {
-                originalPositionRef.current = {
-                  center: ref.current.getCenter(),
-                  zoom: ref.current.getZoom(),
-                };
-              }
-              // Prevent event from bubbling to map
-              e.originalEvent?.stopPropagation();
-            },
-          }}
-        >
-          <Popup
-            closeOnEscapeKey={false}
-            closeOnClick={false}
-            eventHandlers={{
-              remove: () => {
-                if (originalPositionRef.current) {
-                  // Capture the original position to avoid race condition
-                  const originalPosition = originalPositionRef.current;
-                  originalPositionRef.current = null;
+      const isNew = newMarkersRef.current.has(marker.id);
 
-                  setTimeout(() => {
-                    if (ref?.current && originalPosition) {
-                      ref.current.setView(
-                        originalPosition.center,
-                        originalPosition.zoom,
-                      );
-                    }
-                  }, 100);
-                }
-              },
-            }}
-          >
-            <MarkerPopup marker={marker} />
-          </Popup>
-        </Marker>
+      return (
+        <MapMarkerComponent
+          key={marker.id}
+          marker={marker}
+          isNew={isNew}
+          ref={ref as React.RefObject<L.Map | null>}
+          originalPositionRef={originalPositionRef}
+        />
       );
     });
   }, [markers, ref]);
 
   // Memoize route polyline
   const memoizedRoute = useMemo(() => {
-    if (!route || !route.geometry || !route.geometry.coordinates) return null;
+    if (!route || !route.geometry || !route.geometry.coordinates) {
+      console.log("No route data available for rendering");
+      return null;
+    }
+
+    console.log("Rendering route with geometry:", {
+      routeId: route.id,
+      coordinatesLength: route.geometry.coordinates.length,
+      profile: route.profile,
+      alternativeRoutes: route.alternativeRoutes?.length || 0,
+    });
 
     // Convert GeoJSON coordinates to Leaflet format [lat, lng]
     const positions = route.geometry.coordinates
       .filter((coord: number[]) => coord.length >= 2)
       .map((coord: number[]): [number, number] => [coord[1], coord[0]]);
 
-    return (
+    console.log("Primary route positions:", {
+      totalPositions: positions.length,
+      firstPosition: positions[0],
+      lastPosition: positions[positions.length - 1],
+    });
+
+    const getRouteColor = (profile: string) => {
+      switch (profile) {
+        case "driving":
+          return "#3B82F6";
+        case "walking":
+          return "#10B981";
+        case "cycling":
+          return "#F59E0B";
+        default:
+          return "#6B7280";
+      }
+    };
+
+    // Create combined label with both driving and walking times
+    const getCombinedLabel = () => {
+      const drivingRoute =
+        route.profile === "driving"
+          ? route
+          : route.alternativeRoutes?.find((r) => r.profile === "driving");
+      const walkingRoute =
+        route.profile === "walking"
+          ? route
+          : route.alternativeRoutes?.find((r) => r.profile === "walking");
+
+      const parts = [];
+      if (drivingRoute) {
+        parts.push(`🚗 ${drivingRoute.durationText}`);
+      }
+      if (walkingRoute) {
+        parts.push(`🚶 ${walkingRoute.durationText}`);
+      }
+
+      return parts.join(" • ");
+    };
+
+    const routes = [
+      // Primary route with combined label
       <Polyline
-        key={route.id}
+        key={`${route.id}-primary`}
         positions={positions}
         pathOptions={{
-          color: "#3B82F6",
-          weight: 5,
-          opacity: 0.8,
+          color: getRouteColor(route.profile),
+          weight: 6,
+          opacity: 0.9,
+          dashArray: undefined,
         }}
-      />
-    );
+      >
+        <Tooltip permanent direction="center" className="route-tooltip">
+          <div className="flex items-center gap-1 text-sm font-semibold">
+            <span>{getCombinedLabel()}</span>
+          </div>
+        </Tooltip>
+      </Polyline>,
+    ];
+
+    // Add alternative routes without labels (since the label is now combined on the primary route)
+    if (route.alternativeRoutes && route.alternativeRoutes.length > 0) {
+      route.alternativeRoutes.forEach((altRoute, index) => {
+        if (altRoute.geometry && altRoute.geometry.coordinates) {
+          const altPositions = altRoute.geometry.coordinates
+            .filter((coord: number[]) => coord.length >= 2)
+            .map((coord: number[]): [number, number] => [coord[1], coord[0]]);
+
+          console.log(`Alternative route ${altRoute.profile}:`, {
+            totalPositions: altPositions.length,
+            profile: altRoute.profile,
+          });
+
+          routes.push(
+            <Polyline
+              key={`${route.id}-alt-${index}`}
+              positions={altPositions}
+              pathOptions={{
+                color: getRouteColor(altRoute.profile),
+                weight: 4,
+                opacity: 0.6,
+                dashArray: "10,5",
+              }}
+            />,
+          );
+        }
+      });
+    }
+
+    return <>{routes}</>;
   }, [route]);
 
   // Create start, waypoint, and end markers for the route
   const routeMarkers = useMemo(() => {
     if (!route) return [];
 
-    const startIcon = createMarkerIcon("#10B981");
-    const endIcon = createMarkerIcon("#EF4444");
-    const waypointIcon = createMarkerIcon("#F59E0B");
+    const routeMarkerComponents = [];
 
-    const markers = [
-      <Marker
-        key={`${route.id}-start`}
-        position={[route.startLat, route.startLon]}
-        icon={startIcon}
-      >
-        <Popup>
-          <div>
-            <strong>Start</strong>
-            {route.startLabel && (
-              <>
-                <br />
-                <small>{route.startLabel}</small>
-              </>
-            )}
-            <br />
-            {route.distanceText} • {route.durationText}
-            <br />
-            <small>Mode: {route.profile.replace("-", " ")}</small>
-          </div>
-        </Popup>
-      </Marker>,
-      <Marker
-        key={`${route.id}-end`}
-        position={[route.endLat, route.endLon]}
-        icon={endIcon}
-      >
-        <Popup>
-          <div>
-            <strong>Destination</strong>
-            {route.endLabel && (
-              <>
-                <br />
-                <small>{route.endLabel}</small>
-              </>
-            )}
-            <br />
-            {route.directions.length} turn
-            {route.directions.length !== 1 ? "s" : ""}
-          </div>
-        </Popup>
-      </Marker>,
-    ];
+    // Helper function to check if a marker already exists at a position
+    const hasExistingMarker = (
+      lat: number,
+      lng: number,
+      tolerance = 0.0001,
+    ) => {
+      return (
+        markers?.some(
+          (marker) =>
+            Math.abs(marker.latitude - lat) < tolerance &&
+            Math.abs(marker.longitude - lng) < tolerance,
+        ) || false
+      );
+    };
 
-    // Add waypoint markers
+    // Only add start marker if no existing marker is close to the start position
+    if (!hasExistingMarker(route.start.latitude, route.start.longitude)) {
+      routeMarkerComponents.push(
+        <MapMarkerComponent
+          key={`${route.id}-start`}
+          marker={{
+            ...route.start,
+            title: route.start.title || "Starting Point",
+            description: route.start.description || "Route starting point",
+            color: "#22C55E",
+          }}
+          isNew={false}
+          ref={ref as React.RefObject<L.Map | null>}
+          originalPositionRef={originalPositionRef}
+        />,
+      );
+    }
+
+    // Only add end marker if no existing marker is close to the end position
+    if (!hasExistingMarker(route.end.latitude, route.end.longitude)) {
+      routeMarkerComponents.push(
+        <MapMarkerComponent
+          key={`${route.id}-end`}
+          marker={{
+            ...route.end,
+            title: route.end.title || "Destination",
+            description: route.end.description || "Route destination",
+            color: "#EF4444",
+          }}
+          isNew={false}
+          ref={ref as React.RefObject<L.Map | null>}
+          originalPositionRef={originalPositionRef}
+        />,
+      );
+    }
+
+    // Add waypoint markers (only if they don't overlap with existing markers)
     if (route.waypoints && route.waypoints.length > 0) {
       route.waypoints.forEach((waypoint, index) => {
-        markers.push(
-          <Marker
-            key={`${route.id}-waypoint-${index}`}
-            position={[waypoint.lat, waypoint.lon]}
-            icon={waypointIcon}
-          >
-            <Popup>
-              <div>
-                <strong>Stop {index + 1}</strong>
-                {waypoint.label && (
-                  <>
-                    <br />
-                    <small>{waypoint.label}</small>
-                  </>
-                )}
-              </div>
-            </Popup>
-          </Marker>,
-        );
+        if (!hasExistingMarker(waypoint.latitude, waypoint.longitude)) {
+          routeMarkerComponents.push(
+            <MapMarkerComponent
+              key={`${route.id}-waypoint-${index}`}
+              marker={{
+                ...waypoint,
+                id: `${route.id}-waypoint-${index}`,
+                title: waypoint.title || `Waypoint ${index + 1}`,
+                description: waypoint.description || "Route waypoint",
+                color: "#F59E0B",
+              }}
+              isNew={false}
+              ref={ref as React.RefObject<L.Map | null>}
+              originalPositionRef={originalPositionRef}
+            />,
+          );
+        }
       });
     }
 
-    return markers;
-  }, [route]);
+    return routeMarkerComponents;
+  }, [route, markers, ref, originalPositionRef]);
 
   return (
     <MapContainer
-      center={[view.latitude, view.longitude]}
-      zoom={view.zoom}
-      scrollWheelZoom={false}
+      center={
+        view.latitude !== undefined && view.longitude !== undefined
+          ? [view.latitude, view.longitude]
+          : undefined
+      }
+      zoom={view.zoom !== undefined ? view.zoom : undefined}
+      scrollWheelZoom={true}
       style={{ height: "100%", width: "100%" }}
       ref={ref}
     >
+      <style jsx global>{`
+        .route-tooltip {
+          background: rgba(255, 255, 255, 0.6) !important;
+          backdrop-filter: blur(6px) !important;
+          -webkit-backdrop-filter: blur(6px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.5) !important;
+          border-radius: 12px !important;
+          box-shadow:
+            0 4px 8px rgba(0, 0, 0, 0.15),
+            0 0 20px rgba(0, 0, 0, 0.1) !important;
+          font-weight: 600 !important;
+          padding: 6px 12px !important;
+          white-space: nowrap !important;
+          font-family:
+            var(--font-geist-sans),
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            system-ui,
+            sans-serif !important;
+          text-shadow: none !important;
+          color: #1e293b !important;
+        }
+        .route-tooltip::before {
+          display: none !important;
+        }
+        .leaflet-tooltip-pane .route-tooltip {
+          pointer-events: none !important;
+        }
+        .route-tooltip .flex {
+          display: flex !important;
+          align-items: center !important;
+          gap: 4px !important;
+        }
+      `}</style>
+      {/* Satellite imagery base layer */}
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.esri.com/">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+      />
+      {/* Roads and labels overlay */}
+      <TileLayer
+        attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}"
+        opacity={0.8}
       />
       {memoizedRoute}
       {routeMarkers}

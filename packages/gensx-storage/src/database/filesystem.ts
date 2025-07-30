@@ -1,10 +1,23 @@
 /* eslint-disable @typescript-eslint/only-throw-error */
 
+import type { Client, InArgs, ResultSet } from "@libsql/client";
+
 import * as fs from "node:fs/promises";
+import { createRequire } from "node:module";
 import * as path from "node:path";
 
-import { createClient, InArgs } from "@libsql/client";
-import { Client, ResultSet } from "@libsql/client";
+const LIBSQL_CLIENT = "@libsql/client";
+const requireLibsql = createRequire(import.meta.url);
+
+function getLibsql() {
+  try {
+    return requireLibsql(LIBSQL_CLIENT) as typeof import("@libsql/client");
+  } catch {
+    throw new Error(
+      '@libsql/client is required to use local databases in @gensx/storage but is not installed. Install it as a dev dependency by running: npm install -d @libsql/client\n\nAlternatively, you can use cloud databases instead by setting the storage kind to "cloud" in your configuration.',
+    );
+  }
+}
 
 import { fromBase64UrlSafe, toBase64UrlSafe } from "../utils/base64.js";
 import {
@@ -102,6 +115,7 @@ export class FileSystemDatabase implements Database {
   constructor(rootPath: string, dbName: string) {
     this.dbName = dbName;
     this.dbPath = path.join(rootPath, `${dbName}.db`);
+    const { createClient } = getLibsql();
     this.client = createClient({ url: `file:${this.dbPath}` });
   }
 

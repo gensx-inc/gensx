@@ -1,4 +1,5 @@
 import { expect, suite, test, vi } from "vitest";
+import z from "zod";
 
 import { CheckpointManager, ExecutionNode } from "../src/checkpoint.js";
 import { ExecutionContext, withContext } from "../src/context.js";
@@ -50,6 +51,8 @@ suite("workflow context", () => {
     await context.onRequestInput({
       type: "input-request",
       nodeId: "test-node-id",
+      resultSchema: z.object({}),
+      timeoutAt: null,
     });
     expect(consoleSpy).toHaveBeenCalledWith(
       "[GenSX] Requesting input not supported in this environment",

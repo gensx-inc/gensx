@@ -1,4 +1,5 @@
 import { expect, suite, test, vi } from "vitest";
+import * as z from "zod";
 
 import { ExecutionContext, withContext } from "../src/context.js";
 import * as gensx from "../src/index.js";
@@ -42,7 +43,10 @@ suite("request input", () => {
           "waitForPendingUpdates",
         ).mockResolvedValue();
 
-        return await requestInput(mockTrigger);
+        return await requestInput(
+          mockTrigger,
+          z.object({ message: z.string() }),
+        );
       });
 
       await withContext(contextWithWorkflow, async () => {
@@ -57,8 +61,13 @@ suite("request input", () => {
           ),
         );
 
-        // Verify onRequestInput was called
-        expect(mockOnRequestInput).toHaveBeenCalled();
+        // Verify onRequestInput was called with schema and timeout info
+        expect(mockOnRequestInput).toHaveBeenCalledWith({
+          type: "input-request",
+          nodeId: expect.any(String),
+          resultSchema: expect.any(Object),
+          timeoutAt: null,
+        });
       });
     } finally {
       process.env = originalEnv;
@@ -79,7 +88,7 @@ suite("request input", () => {
         "waitForPendingUpdates",
       ).mockImplementation(mockWaitForPendingUpdates);
 
-      return await requestInput(mockTrigger);
+      return await requestInput(mockTrigger, z.object({ message: z.string() }));
     });
 
     await withContext(contextWithWorkflow, async () => {
@@ -103,7 +112,10 @@ suite("request input", () => {
     // The error might be caught and handled differently in the execution flow
     await withContext(contextWithWorkflow, async () => {
       try {
-        const result = await requestInput(mockTrigger);
+        const result = await requestInput(
+          mockTrigger,
+          z.object({ message: z.string() }),
+        );
         // If it doesn't throw, it should return empty object
         expect(result).toEqual(undefined);
       } catch (error) {
@@ -136,7 +148,10 @@ suite("request input", () => {
           "waitForPendingUpdates",
         ).mockResolvedValue();
 
-        return await requestInput(mockTrigger);
+        return await requestInput(
+          mockTrigger,
+          z.object({ message: z.string() }),
+        );
       });
 
       await withContext(contextWithWorkflow, async () => {
@@ -164,12 +179,85 @@ suite("request input", () => {
         "waitForPendingUpdates",
       ).mockResolvedValue();
 
-      return await requestInput<{ message: string }>(mockTrigger);
+      return await requestInput(mockTrigger, z.object({ message: z.string() }));
     });
 
     await withContext(contextWithWorkflow, async () => {
       const result = await TestComponent();
       expect(result).toEqual({ message: "test" });
+    });
+  });
+
+  test("requestInput includes timeout when timeoutMs is provided", async () => {
+    const mockTrigger = vi.fn().mockResolvedValue(undefined);
+    const mockOnRequestInput = vi.fn().mockResolvedValue({ message: "test" });
+    const { workflowContext, contextWithWorkflow } = createTestContext();
+    workflowContext.onRequestInput = mockOnRequestInput;
+
+    const TestComponent = gensx.Component("TestComponent", async () => {
+      vi.spyOn(
+        workflowContext.checkpointManager,
+        "waitForPendingUpdates",
+      ).mockResolvedValue();
+
+      return await requestInput(
+        mockTrigger,
+        z.object({ message: z.string() }),
+        { timeoutMs: 5000 },
+      );
+    });
+
+    await withContext(contextWithWorkflow, async () => {
+      const result = await TestComponent();
+      expect(result).toEqual({ message: "test" });
+
+      // Verify onRequestInput was called with timeout
+      expect(mockOnRequestInput).toHaveBeenCalledWith({
+        type: "input-request",
+        nodeId: expect.any(String),
+        resultSchema: expect.any(Object),
+        timeoutAt: expect.any(String),
+      });
+
+      // Verify timeoutAt is a valid ISO string representing a future date
+      const call = mockOnRequestInput.mock.calls[0]?.[0];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const timeoutAt = new Date(call.timeoutAt as string);
+      expect(timeoutAt.getTime()).toBeGreaterThan(Date.now());
+    });
+  });
+
+  test("requestInput includes timeout when timeoutAt is provided", async () => {
+    const futureDate = new Date(Date.now() + 10000);
+    const mockTrigger = vi.fn().mockResolvedValue(undefined);
+    const mockOnRequestInput = vi.fn().mockResolvedValue({ message: "test" });
+    const { workflowContext, contextWithWorkflow } = createTestContext();
+    workflowContext.onRequestInput = mockOnRequestInput;
+
+    const TestComponent = gensx.Component("TestComponent", async () => {
+      vi.spyOn(
+        workflowContext.checkpointManager,
+        "waitForPendingUpdates",
+      ).mockResolvedValue();
+
+      return await requestInput(
+        mockTrigger,
+        z.object({ message: z.string() }),
+        { timeoutAt: futureDate },
+      );
+    });
+
+    await withContext(contextWithWorkflow, async () => {
+      const result = await TestComponent();
+      expect(result).toEqual({ message: "test" });
+
+      // Verify onRequestInput was called with the exact timeout
+      expect(mockOnRequestInput).toHaveBeenCalledWith({
+        type: "input-request",
+        nodeId: expect.any(String),
+        resultSchema: expect.any(Object),
+        timeoutAt: futureDate.toISOString(),
+      });
     });
   });
 });

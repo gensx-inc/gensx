@@ -26,13 +26,12 @@ export const webSearchTool = tool({
       const searchResult = await tvly.search(query, {
         limit,
         country,
-        includeImages: true,
-        includeImageDescriptions: true,
+        includeImages: false,
+        includeImageDescriptions: false,
         includeAnswer: false,
       });
 
       const results = {
-        images: searchResult.images,
         results: searchResult.results,
       };
 

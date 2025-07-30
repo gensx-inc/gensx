@@ -9,10 +9,14 @@ import {
 // Static symbol for workflow context
 export const WORKFLOW_CONTEXT_SYMBOL = Symbol.for("gensx.workflow");
 
+type JsonSchema = unknown;
+
 export type InputRequest =
   | {
       type: "input-request";
       nodeId: string;
+      resultSchema: JsonSchema;
+      timeoutAt: string | null;
     }
   | {
       type: "external-tool";
@@ -20,8 +24,8 @@ export type InputRequest =
       nodeId: string;
       params: unknown;
       // TODO: Types
-      paramsSchema: unknown;
-      resultSchema: unknown;
+      paramsSchema: JsonSchema;
+      resultSchema: JsonSchema;
     };
 
 export interface WorkflowExecutionContext {

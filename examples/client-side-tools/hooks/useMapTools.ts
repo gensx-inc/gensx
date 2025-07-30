@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import L from "leaflet";
+import type L from "leaflet";
 import { getMapState, updateMapState } from "@/lib/actions/map-state";
 
-// OSRM API interfaces
-interface OSRMManeuver {
+// Mapbox Directions API interfaces
+interface MapboxManeuver {
   instruction?: string;
   type?: string;
   bearing_before?: number;
@@ -11,35 +11,35 @@ interface OSRMManeuver {
   location?: [number, number];
 }
 
-interface OSRMStep {
+interface MapboxStep {
   distance?: number;
   duration?: number;
   geometry?: GeoJSON.LineString;
   name?: string;
-  maneuver?: OSRMManeuver;
+  maneuver?: MapboxManeuver;
   mode?: string;
   ref?: string;
 }
 
-interface OSRMLeg {
+interface MapboxLeg {
   distance?: number;
   duration?: number;
-  steps?: OSRMStep[];
+  steps?: MapboxStep[];
   summary?: string;
 }
 
-interface OSRMRoute {
+interface MapboxRoute {
   distance?: number;
   duration?: number;
   geometry?: GeoJSON.LineString;
-  legs?: OSRMLeg[];
+  legs?: MapboxLeg[];
   weight_name?: string;
   weight?: number;
 }
 
-interface OSRMResponse {
+interface MapboxDirectionsResponse {
   code: string;
-  routes?: OSRMRoute[];
+  routes?: MapboxRoute[];
   waypoints?: Array<{
     hint?: string;
     distance?: number;
@@ -92,11 +92,19 @@ const getManeuverType = (osrmType: string | undefined): number => {
   }
 };
 
-export interface MapView {
-  latitude: number;
-  longitude: number;
-  zoom: number;
-}
+export type MapView =
+  | {
+      latitude?: never;
+      longitude?: never;
+      zoom?: never;
+      fitBounds: L.LatLngBoundsExpression;
+    }
+  | {
+      latitude: number;
+      longitude: number;
+      zoom: number;
+      fitBounds?: never;
+    };
 
 export interface MapMarker {
   id: string;
@@ -105,24 +113,15 @@ export interface MapMarker {
   title?: string;
   description?: string;
   color?: string;
-  photoUrl?: string;
 }
 
-export interface Waypoint {
-  lat: number;
-  lon: number;
-  label?: string;
-}
+export type Waypoint = Omit<MapMarker, "id">;
 
 export interface RouteData {
   id: string;
   geometry: GeoJSON.LineString;
-  startLat: number;
-  startLon: number;
-  endLat: number;
-  endLon: number;
-  startLabel?: string;
-  endLabel?: string;
+  start: MapMarker;
+  end: MapMarker;
   waypoints?: Waypoint[];
   profile: string;
   directions: Array<{
@@ -136,6 +135,22 @@ export interface RouteData {
   duration: number;
   distanceText: string;
   durationText: string;
+  // Add support for multiple routes
+  alternativeRoutes?: Array<{
+    profile: string;
+    geometry: GeoJSON.LineString;
+    distance: number;
+    duration: number;
+    distanceText: string;
+    durationText: string;
+    directions: Array<{
+      instruction: string;
+      distance: number;
+      duration: number;
+      type?: number;
+      name?: string;
+    }>;
+  }>;
 }
 
 const getDefaultLocation = async (): Promise<MapView> => {
@@ -209,7 +224,8 @@ export function useMapTools(userId: string | null, threadId: string | null) {
             latitude: data.latitude,
             longitude: data.longitude,
             zoom: data.zoom,
-          });
+            fitBounds: data.fitBounds,
+          } as MapView);
           setMarkers(data.markers ?? []);
           setRoute(data.route ?? null);
         }
@@ -272,22 +288,55 @@ export function useMapTools(userId: string | null, threadId: string | null) {
         title?: string;
         description?: string;
         color?: string;
-        photoUrl?: string;
       }[];
     }) => {
+      const newMarkers: MapMarker[] = [];
+
       markers.forEach((marker) => {
         const markerId = `marker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newMarker: MapMarker = {
           id: markerId,
           ...marker,
         };
-
-        setMarkers((prev) => [...prev, newMarker]);
+        newMarkers.push(newMarker);
       });
+
+      setMarkers((prev) => [...prev, ...newMarkers]);
+
+      // Automatically navigate map to show the new markers
+      if (newMarkers.length === 1) {
+        // For a single marker, center on it with appropriate zoom
+        const marker = newMarkers[0];
+        setCurrentView({
+          latitude: marker.latitude,
+          longitude: marker.longitude,
+          zoom: 15, // Good zoom level to see the marker clearly
+        });
+      } else if (newMarkers.length > 1) {
+        // For multiple markers, fit bounds to show all of them
+        const lats = newMarkers.map((m) => m.latitude);
+        const lngs = newMarkers.map((m) => m.longitude);
+
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
+
+        // Add some padding around the bounds
+        const latPadding = (maxLat - minLat) * 0.1;
+        const lngPadding = (maxLng - minLng) * 0.1;
+
+        setCurrentView({
+          fitBounds: [
+            [minLat - latPadding, minLng - lngPadding],
+            [maxLat + latPadding, maxLng + lngPadding],
+          ] as const,
+        });
+      }
 
       return {
         success: true,
-        message: `Markers placed`,
+        message: `Markers placed and map navigated to show them`,
       };
     },
     [],
@@ -360,150 +409,152 @@ export function useMapTools(userId: string | null, threadId: string | null) {
 
   const calculateAndShowRoute = useCallback(
     async (params: {
-      startLat: number;
-      startLon: number;
-      endLat: number;
-      endLon: number;
-      startLabel?: string;
-      endLabel?: string;
+      start: Omit<MapMarker, "id">;
+      end: Omit<MapMarker, "id">;
       waypoints?: Waypoint[];
-      profile?: "driving-car" | "foot-walking" | "cycling-regular";
+      profile?: "driving" | "walking" | "cycling";
     }) => {
-      const {
-        startLat,
-        startLon,
-        endLat,
-        endLon,
-        startLabel,
-        endLabel,
-        waypoints = [],
-        profile = "driving-car",
-      } = params;
+      const { start, end, waypoints = [], profile = "driving" } = params;
 
       try {
-        // Map profile to OSRM profile
-        let osrmProfile = "driving";
-        if (profile === "foot-walking") {
-          osrmProfile = "foot";
-        } else if (profile === "cycling-regular") {
-          osrmProfile = "cycling";
-        }
-
-        // Build coordinates string for OSRM API (start, waypoints, end)
-        let coordinates = `${startLon},${startLat}`;
+        // Build coordinates string for Mapbox API (start, waypoints, end)
+        let coordinates = `${start.longitude},${start.latitude}`;
 
         // Add waypoints if provided
         if (waypoints && waypoints.length > 0) {
           for (const waypoint of waypoints) {
-            coordinates += `;${waypoint.lon},${waypoint.lat}`;
+            coordinates += `;${waypoint.longitude},${waypoint.latitude}`;
           }
         }
 
-        coordinates += `;${endLon},${endLat}`;
+        coordinates += `;${end.longitude},${end.latitude}`;
 
-        // Call OSRM API for routing
-        const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordinates}?overview=full&geometries=geojson&steps=true`;
-
-        const response = await fetch(url, {
-          headers: {
-            Accept: "application/json",
-          },
-        });
-
-        if (!response.ok) {
+        // Get Mapbox access token
+        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+        if (!mapboxToken) {
+          console.error("Mapbox access token not configured");
           return {
             success: false as const,
-            message: `Error calculating route: ${response.statusText}`,
+            message: "Mapbox access token not configured",
           };
         }
 
-        const routeData: OSRMResponse = await response.json();
+        console.log("Calculating routes for coordinates:", coordinates);
 
-        if (!routeData.routes || routeData.routes.length === 0) {
-          return {
-            success: false as const,
-            message: "No route found between the specified points",
-          };
-        }
-
-        const route = routeData.routes[0];
-        const legs = route.legs || [];
-
-        // Extract turn-by-turn directions from steps
-        const directions = legs.flatMap(
-          (leg: OSRMLeg) =>
-            leg.steps?.map((step: OSRMStep) => ({
-              instruction: step.maneuver?.instruction || "Continue",
-              distance: step.distance || 0,
-              duration: step.duration || 0,
-              type: getManeuverType(step.maneuver?.type),
-              name: step.name || "",
-            })) || [],
+        // Calculate primary route
+        const primaryRoute = await calculateSingleRoute(
+          coordinates,
+          profile,
+          mapboxToken,
         );
 
-        const routeInfo: RouteData = {
-          id: `route-${Date.now()}`,
-          geometry: route.geometry ?? {
-            type: "LineString",
-            coordinates: [],
-          },
-          startLat: startLat,
-          startLon: startLon,
-          endLat: endLat,
-          endLon: endLon,
-          startLabel: startLabel,
-          endLabel: endLabel,
-          waypoints: waypoints,
-          profile: params.profile ?? "driving-car",
-          directions: directions,
-          distance: route.distance ?? 0,
-          duration: route.duration ?? 0,
-          distanceText: formatDistance(route.distance ?? 0),
-          durationText: formatDuration(route.duration ?? 0),
-        };
+        if (!primaryRoute.success) {
+          return {
+            success: false as const,
+            message: primaryRoute.message || "Failed to calculate route",
+          };
+        }
 
-        setRoute(routeInfo);
+        // Calculate alternative routes for comparison
+        const alternativeProfiles = ["driving", "walking"].filter(
+          (p) => p !== profile,
+        );
+        const alternativeRoutes = [];
 
-        // Fit map to route bounds
-        if (route.geometry && route.geometry.coordinates) {
-          const coordinates = route.geometry.coordinates;
-          if (coordinates.length > 0) {
-            // Calculate rough center and zoom to fit the route
-            const lats = coordinates.map((coord: number[]) => coord[1]);
-            const lngs = coordinates.map((coord: number[]) => coord[0]);
-
-            const minLat = Math.min(...lats);
-            const maxLat = Math.max(...lats);
-            const minLng = Math.min(...lngs);
-            const maxLng = Math.max(...lngs);
-
-            const centerLat = (minLat + maxLat) / 2;
-            const centerLng = (minLng + maxLng) / 2;
-
-            setCurrentView({
-              latitude: centerLat,
-              longitude: centerLng,
-              zoom: 13,
+        for (const altProfile of alternativeProfiles) {
+          const altRoute = await calculateSingleRoute(
+            coordinates,
+            altProfile as "driving" | "walking" | "cycling",
+            mapboxToken,
+          );
+          if (altRoute.success && altRoute.routeInfo) {
+            alternativeRoutes.push({
+              profile: altProfile,
+              geometry: altRoute.routeInfo.geometry,
+              distance: altRoute.routeInfo.distance,
+              duration: altRoute.routeInfo.duration,
+              distanceText: formatDistance(altRoute.routeInfo.distance),
+              durationText: formatDuration(altRoute.routeInfo.duration),
+              directions: altRoute.routeInfo.directions,
             });
           }
         }
 
-        return {
+        const routeInfo: RouteData = {
+          ...primaryRoute.routeInfo!,
+          start: {
+            ...start,
+            id: `route-start-${Date.now()}`,
+          },
+          end: {
+            ...end,
+            id: `route-end-${Date.now()}`,
+          },
+          waypoints,
+          alternativeRoutes,
+        };
+
+        console.log("Setting route data:", {
+          id: routeInfo.id,
+          geometryCoords: routeInfo.geometry.coordinates?.length,
+          distance: routeInfo.distance,
+          duration: routeInfo.duration,
+          alternativeRoutes: routeInfo.alternativeRoutes?.length,
+        });
+
+        setRoute(routeInfo);
+
+        // Fit map to route bounds
+        if (
+          routeInfo.geometry &&
+          routeInfo.geometry.coordinates &&
+          routeInfo.geometry.coordinates.length > 0
+        ) {
+          const coordinates = routeInfo.geometry.coordinates;
+          console.log(
+            "Fitting map to route with",
+            coordinates.length,
+            "coordinate points",
+          );
+
+          // Calculate rough center and zoom to fit the route
+          const lats = coordinates.map((coord: number[]) => coord[1]);
+          const lngs = coordinates.map((coord: number[]) => coord[0]);
+
+          const minLat = Math.min(...lats);
+          const maxLat = Math.max(...lats);
+          const minLng = Math.min(...lngs);
+          const maxLng = Math.max(...lngs);
+
+          setCurrentView({
+            fitBounds: [
+              [minLat, minLng],
+              [maxLat, maxLng],
+            ] as const,
+          });
+        }
+
+        const result = {
           success: true as const,
           message: "Route calculated and displayed on map",
           route: {
-            geometry: route.geometry ?? {
-              type: "LineString",
-              coordinates: [],
-            },
-            distance: route.distance ?? 0,
-            duration: route.duration ?? 0,
-            distanceText: formatDistance(route.distance ?? 0),
-            durationText: formatDuration(route.duration ?? 0),
-            directions: directions,
+            distance: routeInfo.distance,
+            duration: routeInfo.duration,
+            distanceText: routeInfo.distanceText,
+            durationText: routeInfo.durationText,
+            directions: routeInfo.directions,
+            alternativeRoutes: routeInfo.alternativeRoutes?.map((alt) => ({
+              profile: alt.profile,
+              distance: alt.distance,
+              duration: alt.duration,
+              distanceText: alt.distanceText,
+              durationText: alt.durationText,
+            })),
           },
         };
+        return result;
       } catch (error) {
+        console.error("Route calculation error:", error);
         return {
           success: false as const,
           message: `Failed to calculate route: ${error instanceof Error ? error.message : String(error)}`,
@@ -512,6 +563,115 @@ export function useMapTools(userId: string | null, threadId: string | null) {
     },
     [],
   );
+
+  // Helper function to calculate a single route
+  const calculateSingleRoute = async (
+    coordinates: string,
+    profile: "driving" | "walking" | "cycling",
+    mapboxToken: string,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    routeInfo?: Omit<
+      RouteData,
+      "start" | "end" | "waypoints" | "alternativeRoutes"
+    >;
+  }> => {
+    try {
+      // Call Mapbox Directions API for routing
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?access_token=${mapboxToken}&overview=full&geometries=geojson&steps=true`;
+
+      console.log(
+        `Fetching ${profile} route from:`,
+        url.replace(mapboxToken, "TOKEN"),
+      );
+
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        console.error(
+          `Error calculating ${profile} route:`,
+          response.statusText,
+        );
+        return {
+          success: false,
+          message: `Error calculating ${profile} route: ${response.statusText}`,
+        };
+      }
+
+      const routeData: MapboxDirectionsResponse = await response.json();
+      console.log(`${profile} route response:`, {
+        code: routeData.code,
+        routesCount: routeData.routes?.length,
+        firstRouteDistance: routeData.routes?.[0]?.distance,
+        firstRouteDuration: routeData.routes?.[0]?.duration,
+        firstRouteGeometry:
+          routeData.routes?.[0]?.geometry?.coordinates?.length,
+      });
+
+      if (!routeData.routes || routeData.routes.length === 0) {
+        console.error(`No ${profile} route found between the specified points`);
+        return {
+          success: false,
+          message: `No ${profile} route found between the specified points`,
+        };
+      }
+
+      const route = routeData.routes[0];
+      const legs = route.legs || [];
+
+      // Extract turn-by-turn directions from steps
+      const directions = legs.flatMap(
+        (leg: MapboxLeg) =>
+          leg.steps?.map((step: MapboxStep) => ({
+            instruction: step.maneuver?.instruction || "Continue",
+            distance: step.distance || 0,
+            duration: step.duration || 0,
+            type: getManeuverType(step.maneuver?.type),
+            name: step.name || "",
+          })) || [],
+      );
+
+      // Ensure geometry exists and has coordinates
+      if (
+        !route.geometry ||
+        !route.geometry.coordinates ||
+        route.geometry.coordinates.length === 0
+      ) {
+        console.error(`No geometry found for ${profile} route`);
+        return {
+          success: false,
+          message: `No geometry found for ${profile} route`,
+        };
+      }
+
+      const routeInfo = {
+        id: `route-${profile}-${Date.now()}`,
+        geometry: route.geometry,
+        profile,
+        directions,
+        distance: route.distance ?? 0,
+        duration: route.duration ?? 0,
+        distanceText: formatDistance(route.distance ?? 0),
+        durationText: formatDuration(route.duration ?? 0),
+      };
+
+      return {
+        success: true,
+        routeInfo,
+      };
+    } catch (error) {
+      console.error(`Error calculating ${profile} route:`, error);
+      return {
+        success: false,
+        message: `Failed to calculate ${profile} route: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  };
 
   const clearDirections = useCallback(() => {
     setRoute(null);

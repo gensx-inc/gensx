@@ -1,4 +1,4 @@
-import { InArgs } from "@libsql/client";
+import type { InArgs } from "@libsql/client";
 
 /**
  * Error types for database operations

@@ -14,6 +14,12 @@ const limit = pRateLimit({
 });
 
 const schema = z.object({
+  query: z
+    .string()
+    .optional()
+    .describe(
+      "A general location query (e.g., 'Paris, France', 'Empire State Building', '123 Main St, New York')",
+    ),
   street: z.string().optional().describe("housenumber and streetname"),
   city: z.string().optional().describe("city"),
   county: z.string().optional().describe("county"),
@@ -24,17 +30,28 @@ const schema = z.object({
 
 export const geocodeTool = tool({
   description:
-    "Geocode a location from an address to a specific latitude and longitude.",
+    "Geocode a location from an address or location query to get latitude and longitude coordinates. You can use either a general query (like 'Paris, France') or specific address components.",
   parameters: schema,
   execute: async (params: z.infer<typeof schema>) => {
-    const { street, city, county, state, country, postalcode } = params;
+    const { query, street, city, county, state, country, postalcode } = params;
 
-    if (!street && !city && !county && !state && !country && !postalcode) {
+    // Check if any parameters are provided
+    if (
+      !query &&
+      !street &&
+      !city &&
+      !county &&
+      !state &&
+      !country &&
+      !postalcode
+    ) {
       return "No parameters provided";
     }
 
+    // Create a hash for caching - include query in the hash
     const hashParams = crypto
       .createHash("sha256")
+      .update(query ?? "")
       .update(street ?? "")
       .update(city ?? "")
       .update(county ?? "")
@@ -56,17 +73,24 @@ export const geocodeTool = tool({
     const data = await limit(async () => {
       try {
         const queryParams = new URLSearchParams();
-        if (street) queryParams.set("street", street);
-        if (city) queryParams.set("city", city);
-        if (county) queryParams.set("county", county);
-        if (state) queryParams.set("state", state);
-        if (country) queryParams.set("country", country);
-        if (postalcode) queryParams.set("postalcode", postalcode);
+
+        // If query is provided, use it as the main search parameter
+        if (query) {
+          queryParams.set("q", query);
+        } else {
+          // Otherwise, use the structured address components
+          if (street) queryParams.set("street", street);
+          if (city) queryParams.set("city", city);
+          if (county) queryParams.set("county", county);
+          if (state) queryParams.set("state", state);
+          if (country) queryParams.set("country", country);
+          if (postalcode) queryParams.set("postalcode", postalcode);
+        }
 
         // use the nominatim API to geocode the query
         // rate limits: https://operations.osmfoundation.org/policies/nominatim/
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?${queryParams.toString()}&format=json`,
+          `https://nominatim.openstreetmap.org/search?${queryParams.toString()}&format=json&limit=5`,
           {
             headers: {
               "User-Agent": "GenSX Map Demo",
