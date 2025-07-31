@@ -1,7 +1,7 @@
 const meta = {
   index: "Overview",
   quickstart: "Quickstart",
-  templates: "Start with a template",
+  template: "Start with a template",
   "basic-concepts": "Basic concepts",
   "client-side-tools": "Client-Side Tools",
   "human-in-the-loop": "Human-in-the-Loop",

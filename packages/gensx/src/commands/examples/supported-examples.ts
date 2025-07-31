@@ -10,28 +10,28 @@ export const SUPPORTED_EXAMPLES: Example[] = [
     name: "chat-ux",
     description:
       "A complete chat interface with modern UX patterns, including message history, typing indicators, and responsive design.",
-    path: "examples/chat-ux",
+    path: "gensx-inc/chat-ux-template",
     category: "Next.js",
   },
   {
     name: "deep-research",
     description:
       "AI-powered research tool that can search the web, analyze documents, and compile comprehensive research reports.",
-    path: "examples/deep-research",
+    path: "gensx-inc/deep-research-template",
     category: "Next.js",
   },
   {
     name: "draft-pad",
     description:
       "Collaborative writing and editing platform with real-time collaboration, version control, and AI assistance.",
-    path: "examples/draft-pad",
+    path: "gensx-inc/draft-pad-template",
     category: "Next.js",
   },
   {
     name: "client-side-tools",
     description:
       "Collection of client-side AI tools and utilities for various tasks like text processing, data analysis, and more.",
-    path: "examples/client-side-tools",
+    path: "gensx-inc/client-side-tools-template",
     category: "Next.js",
   },
 ];

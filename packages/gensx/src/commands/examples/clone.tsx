@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingSpinner } from "../../components/LoadingSpinner.js";
-import { getExampleNames } from "./supported-examples.js";
+import { getExampleByName } from "./supported-examples.js";
 
 const execAsync = promisify(exec);
 
@@ -45,10 +45,10 @@ export function CloneExampleUI({
 
     async function cloneExample() {
       try {
-        // Validate example exists using shared examples
-        const knownExamples = getExampleNames();
+        // Validate example exists and get example object
+        const example = getExampleByName(exampleName);
 
-        if (!knownExamples.includes(exampleName)) {
+        if (!example) {
           throw new Error(
             `Unknown example: ${exampleName}. Run 'gensx examples list' to see available examples.`,
           );
@@ -68,8 +68,7 @@ export function CloneExampleUI({
         setStep("Cloning example...");
 
         // Use degit to clone the example
-        const repoUrl = `gensx-inc/gensx/examples/${exampleName}`;
-        const degitCommand = `npx degit ${repoUrl} ${targetDir}`;
+        const degitCommand = `npx degit ${example.path} ${targetDir}`;
 
         await execAsync(degitCommand);
 

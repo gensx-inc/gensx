@@ -5,10 +5,182 @@ description: Start with a template
 
 # Start with a template
 
-GenSX provides a number of templates to help you get started.
+GenSX provides several production-ready templates to help you build complex LLM applications quickly. Choose a template above to get started.
+
+## Select a template
+
+To get started, select one of the templates below:
+
+<Tabs
+  defaultTab="chat-ux"
+  tabs={[
+    {
+      id: `chat-ux`,
+      name: `Chat UX`,
+      description: ``
+    },
+    {
+      id: `deep-research`,
+      name: `Deep Research`,
+      description: ``
+    },
+    {
+      id: `draft-pad`,
+      name: `Draft Pad`,
+      description: ``
+    },
+    {
+      id: `client-side-tools`,
+      name: `Client Side Tools`,
+      description: ``
+    }
+  ]}
+>
+
+<TabSection tab="chat-ux">
+The [Chat UX template](https://github.com/gensx-inc/chat-ux-template) is a full-featured chat application with streaming, tools, and thread history.
+
+TODO: add a link to play with the template
+
+TODO: Add image
+
+</TabSection>
+
+<TabSection tab="deep-research">
+The [Deep Research template](https://github.com/gensx-inc/deep-research-template) is a research assistant that can help you with your research.
+
+TODO: add a link to play with the template
+
+TODO: Add image
+
+</TabSection>
+
+<TabSection tab="draft-pad">
+The [Draft Pad template](https://github.com/gensx-inc/draft-pad-template) is a collaborative writing and editing tool.
+
+TODO: add a link to play with the template
+
+TODO: Add image
+
+</TabSection>
+
+<TabSection tab="client-side-tools">
+The [Client Side Tools template](https://github.com/gensx-inc/client-side-tools-template) is a collection of AI-powered utilities that can be used in your application.
+
+TODO: add a link to play with the template
+
+TODO: Add image
+
+</TabSection>
+
+## Log in to GenSX Cloud (optional)
+
+If you haven't already, download the GenSX CLI and log in to GenSX Cloud using the following commands:
 
 ```bash
-npx degit https://github.com/gensx-inc/gensx/tree/main/examples/deep-research my-deep-research
+# Install the CLI
+npm i -g gensx
+
+# Log in to GenSX Cloud
+gensx login
 ```
 
-## Notes
+You’ll be redirected to the GenSX website and will need to create an account if you don’t have one already.
+
+## Download the template
+
+To download the template, run the following command:
+
+<TabSection tab="chat-ux">
+```bash
+gensx template clone chat-ux
+```
+
+</TabSection>
+
+<TabSection tab="deep-research">
+```bash
+gensx template clone deep-research
+```
+
+</TabSection>
+
+<TabSection tab="draft-pad">
+```bash
+gensx template clone draft-pad
+```
+
+</TabSection>
+
+<TabSection tab="client-side-tools">
+```bash
+gensx template clone client-side-tools
+```
+
+</TabSection>
+
+This will create a new directory with the template code.
+
+## Run the template
+
+Now that you've cloned the template, navigate to the template directory:
+
+<TabSection tab="chat-ux">
+```bash
+# Navigate to the template directory
+cd chat-ux
+
+# Export environment variables
+export TAVILY_API_KEY=your-api-key
+export ANTHROPIC_API_KEY=your-api-key
+
+# Start the next.js app and gensx dev server
+pnpm run dev
+```
+</TabSection>
+
+<TabSection tab="deep-research">
+```bash
+# Navigate to the template directory
+cd deep-research
+
+# Export environment variables
+export TAVILY_API_KEY=your-api-key
+export ANTHROPIC_API_KEY=your-api-key
+export OPENAI_API_KEY=your-api-key
+
+# Start the next.js app and gensx dev server
+npm run dev
+```
+
+</TabSection>
+
+<TabSection tab="draft-pad">
+```bash
+# Navigate to the template directory
+cd draft-pad
+
+# Export environment variables
+export TAVILY_API_KEY=your-api-key
+export ANTHROPIC_API_KEY=your-api-key
+
+# Start the Next.js app and GenSX dev server
+npm run dev
+```
+</TabSection>
+
+<TabSection tab="client-side-tools">
+```bash
+# Navigate to the template directory
+cd client-side-tools
+
+# Export environment variables
+export TAVILY_API_KEY=your-api-key
+export ANTHROPIC_API_KEY=your-api-key
+
+# Start the Next.js app and GenSX dev server
+npm run dev
+```
+</TabSection>
+
+</Tabs>
