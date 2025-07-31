@@ -11,7 +11,6 @@ export const toolbox = createToolBox({
           .optional()
           .describe("This is a dummy parameter to pass through to the tool."),
       })
-      .passthrough()
       .optional(),
     result: z.object({
       success: z.boolean(),
@@ -57,7 +56,7 @@ export const toolbox = createToolBox({
               .array(z.string())
               .optional()
               .describe(
-                "List of properties to retrieve from the element. Valid values are: text, value, html, attr, css, data.",
+                "List of properties to retrieve from the element. Valid values are: text, value, attr, css, data.",
               ),
             attributeName: z
               .string()
@@ -495,20 +494,75 @@ export const toolbox = createToolBox({
     }),
   },
 
+  getPageText: {
+    description:
+      "Extract text content from page elements with intelligent token limiting and element identification info for later use with inspectElements",
+    params: z
+      .object({
+        maxTokensPerElement: z
+          .number()
+          .min(1)
+          .max(500)
+          .optional()
+          .default(50)
+          .describe("Maximum tokens per element (estimated at ~4 chars per token). Min: 1, Max: 500"),
+        includeHidden: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe("Include hidden elements in results"),
+        skipEmptyElements: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe("Skip elements with no text content"),
+      }),
+    result: z.object({
+      success: z.boolean(),
+      url: z.string(),
+      title: z.string().optional(),
+      elementCount: z.number().describe("Total number of text elements found"),
+      totalEstimatedTokens: z.number().describe("Estimated total token count"),
+      elements: z.array(
+        z.object({
+          selector: z.string().describe("Unique jQuery selector for this element"),
+          tag: z.string().describe("HTML tag name"),
+          text: z.string().describe("Text content (truncated if needed)"),
+          tokenCount: z.number().describe("Estimated token count for this element"),
+          id: z.string().optional().describe("Element ID if present"),
+          classes: z.array(z.string()).optional().describe("CSS classes"),
+          attributes: z.record(z.string()).optional().describe("Key attributes for identification"),
+        })
+      ),
+      parameters: z.object({
+        maxTokensPerElement: z.number(),
+        includeHidden: z.boolean(),
+        skipEmptyElements: z.boolean(),
+      }),
+      error: z.string().optional(),
+    }),
+  },
+
   navigate: {
     description:
-      "Navigate the browser using browser navigation (back, forward) or to a specific path",
+      "Navigate the browser using browser navigation (back, forward), to a relative path on the same domain (/foo/bar), or to a different domain (app.gensx.com)",
     params: z.object({
       action: z
-        .enum(["back", "forward", "path"])
+        .enum(["back", "forward", "path", "url"])
         .describe(
-          "Navigation action to perform. 'path' is used to navigate to a specific path.",
+          "Navigation action: 'back' for browser back, 'forward' for browser forward, 'path' for relative path on same domain (/foo/bar), 'url' for absolute URL including different domains",
         ),
       path: z
         .string()
         .optional()
         .describe(
-          "The path to navigate to. This is used when action is 'path'.",
+          "Relative path for 'path' action (e.g., '/dashboard', '/users/123'). Must start with '/'.",
+        ),
+      url: z
+        .string()
+        .optional()
+        .describe(
+          "Full URL for 'url' action (e.g., 'https://app.gensx.com', 'https://example.com/page'). Must include protocol.",
         ),
       waitForLoad: z
         .boolean()

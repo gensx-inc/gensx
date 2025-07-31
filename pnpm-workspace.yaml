@@ -1,6 +1,7 @@
 packages:
   - "packages/*"
   - "examples/*"
+  - "extensions/*"
   - "docs"
   - "website/docs"
   - "website/home"

@@ -5,12 +5,11 @@
   "main": "dist/background.js",
   "scripts": {
     "dev": "npx gensx start gensx/workflows.ts",
-    "build": "npm run generate-icons && webpack --mode=production",
-    "build:dev": "npm run generate-icons && webpack --mode=development",
+    "build": "webpack --mode=production",
+    "build:dev": "webpack --mode=development",
     "watch": "webpack --mode=development --watch",
     "package": "npm run build && cd dist && zip -r ../gensx-copilot-extension.zip . -x '*.DS_Store'",
     "clean": "rm -rf dist",
-    "generate-icons": "node generate-icons.js",
     "type-check": "tsc --noEmit",
     "lint": "echo 'Linting not configured yet'"
   },
@@ -31,6 +30,8 @@
   "homepage": "https://gensx.dev",
   "devDependencies": {
     "@types/chrome": "^0.0.254",
+    "@types/html-to-text": "^9.0.4",
+    "@types/jquery": "^3.5.32",
     "@types/node": "^20.0.0",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^11.0.0",
@@ -42,14 +43,17 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^0.0.66",
+    "@ai-sdk/anthropic": "^1.2.12",
+    "@ai-sdk/openai": "^1.3.23",
     "@ai-sdk/provider": "^1.1.3",
-    "@gensx/client": "^0.1.7",
+    "@gensx/client": "workspace:",
     "@gensx/core": "^0.5.3",
     "@gensx/storage": "^0.2.3",
     "@gensx/vercel-ai": "^0.3.3",
-    "ai": "^4.0.0",
+    "ai": "^4.3.19",
+    "html-to-text": "^9.0.5",
+    "jquery": "^3.7.1",
     "serialize-error": "^11.0.3",
-    "zod": "^3.22.4"
+    "zod": "3.25.56"
   }
 }

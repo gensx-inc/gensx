@@ -7,6 +7,8 @@ import {
   SettingsManager,
 } from "./types/copilot";
 import { GenSX } from "@gensx/client";
+import { applyObjectPatches } from "./utils/workflow-state";
+import { type CoreMessage } from "ai";
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("GenSX Copilot extension installed");
@@ -15,10 +17,23 @@ chrome.runtime.onInstalled.addListener(() => {
 // Store for managing ongoing workflow requests
 const pendingRequests = new Map<string, (response: any) => void>();
 
+const getClient = async () => {
+  const settings = await SettingsManager.get();
+  return new GenSX({
+    apiKey: settings.apiKey,
+    baseUrl: settings.apiEndpoint,
+  });
+}
+
 // Handle messages from content script
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, sender, sendResponse) => {
     console.log("Background received message:", message);
+
+    if (message.type === "CONTENT_SCRIPT_READY") {
+      console.log('✅ Content script ready on tab:', sender.tab?.id, message.url);
+      return false; // Not handling this message async
+    }
 
     if (message.type === "GET_TAB_INFO") {
       // Get current tab information
@@ -42,6 +57,26 @@ chrome.runtime.onMessage.addListener(
       return true; // Indicates we will send a response asynchronously
     }
 
+    if (message.type === "WORKFLOW_RECONNECT") {
+      handleWorkflowReconnect(message, sender, sendResponse);
+      return true; // Indicates we will send a response asynchronously
+    }
+
+    if (message.type === "GET_THREAD_HISTORY") {
+      handleGetThreadHistory(message, sender, sendResponse);
+      return true; // Indicates we will send a response asynchronously
+    }
+
+    if (message.type === "GET_WEBSITE_KNOWLEDGE") {
+      handleGetWebsiteKnowledge(message, sender, sendResponse);
+      return true; // Indicates we will send a response asynchronously
+    }
+
+    if (message.type === "DELETE_WEBSITE_KNOWLEDGE") {
+      handleDeleteWebsiteKnowledge(message, sender, sendResponse);
+      return true; // Indicates we will send a response asynchronously
+    }
+
     return false; // Not handling this message
   },
 );
@@ -57,27 +92,11 @@ async function handleWorkflowRequest(
   try {
     console.log("Executing workflow for request:", requestId);
 
-    // Get current settings
-    const settings = await SettingsManager.get();
-    console.log("Using settings:", {
-      endpoint: settings.apiEndpoint,
-      hasApiKey: !!settings.apiKey,
-      org: settings.org,
-      project: settings.project,
-      environment: settings.environment,
-    });
-
     // Create GenSX client
-    const gensx = new GenSX({
-      apiKey: settings.apiKey,
-      baseUrl: settings.apiEndpoint,
-    });
+    const gensx = await getClient();
 
     // Execute the copilot workflow
     const response = await gensx.runRaw("copilot", {
-      org: settings.org,
-      project: settings.project,
-      environment: settings.environment,
       inputs: {
         prompt: data.prompt,
         threadId: data.threadId,
@@ -96,11 +115,182 @@ async function handleWorkflowRequest(
   } catch (error) {
     console.error("Workflow execution failed for request:", requestId, error);
 
-    // Send error response back to content script
-    sendResponse({
+    // Send error response to popup
+    chrome.runtime.sendMessage({
       type: "WORKFLOW_ERROR",
       requestId,
       error: error instanceof Error ? error.message : "Unknown error occurred",
+    }).catch(() => {
+      // Ignore errors if popup is not open
+    });
+  }
+}
+
+// Handle thread history retrieval
+async function handleGetThreadHistory(
+  message: any,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response: any) => void,
+) {
+  const { data } = message;
+  const { userId, threadId } = data;
+
+  try {
+    console.log("Getting thread history for:", userId, threadId);
+
+    const gensx = await getClient();
+    
+    console.log("Running fetchChatHistory workflow...");
+    const { output: threadData } = await gensx.run<{ messages: CoreMessage[] }>("fetchChatHistory", {
+      inputs: { userId, threadId }
+    });
+    
+    console.log("fetchChatHistory workflow output:", threadData);
+
+    let messages: CoreMessage[] = [];
+    if (threadData?.messages && Array.isArray(threadData.messages)) {
+      messages = threadData.messages;
+    }
+
+    console.log("Retrieved thread history:", messages.length, "messages");
+
+    // Convert GenSX messages to popup-compatible format
+    const convertedMessages = messages
+      .filter((msg: any) => msg.role !== 'system') // Filter out system messages for UI
+      .map((msg: any) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        toolCalls: msg.toolCalls
+      }));
+
+    console.log("Converted messages for popup:", convertedMessages.length, "messages");
+
+    sendResponse({
+      success: true,
+      messages: convertedMessages
+    });
+
+  } catch (error) {
+    console.error("Failed to get thread history:", error);
+    sendResponse({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to retrieve thread history",
+      messages: []
+    });
+  }
+}
+
+// Handle website knowledge base retrieval
+async function handleGetWebsiteKnowledge(
+  message: any,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response: any) => void,
+) {
+  const { data } = message;
+  const { userId, domain } = data;
+
+  try {
+    console.log("Getting website knowledge for:", userId, domain);
+
+    const gensx = await getClient();
+    
+    console.log("Running getWebsiteKnowledgeBase workflow...");
+    const { output: knowledgeData } = await gensx.run<{ content: string; exists: boolean }>("getWebsiteKnowledgeBase", {
+      inputs: { userId, domain }
+    });
+    
+    console.log("getWebsiteKnowledgeBase workflow output:", knowledgeData);
+
+    sendResponse({
+      success: true,
+      content: knowledgeData?.content || "",
+      exists: knowledgeData?.exists || false
+    });
+
+  } catch (error) {
+    console.error("Failed to get website knowledge:", error);
+    sendResponse({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to retrieve website knowledge",
+      content: "",
+      exists: false
+    });
+  }
+}
+
+// Handle website knowledge base deletion
+async function handleDeleteWebsiteKnowledge(
+  message: any,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response: any) => void,
+) {
+  const { data } = message;
+  const { userId, domain } = data;
+
+  try {
+    console.log("Deleting website knowledge for:", userId, domain);
+
+    const gensx = await getClient();
+    
+    console.log("Running deleteWebsiteKnowledgeBase workflow...");
+    const { output: deleteResult } = await gensx.run<{ success: boolean; message: string }>("deleteWebsiteKnowledgeBase", {
+      inputs: { userId, domain }
+    });
+    
+    console.log("deleteWebsiteKnowledgeBase workflow output:", deleteResult);
+
+    sendResponse({
+      success: deleteResult?.success || false,
+      message: deleteResult?.message || "Unknown result"
+    });
+
+  } catch (error) {
+    console.error("Failed to delete website knowledge:", error);
+    sendResponse({
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to delete website knowledge"
+    });
+  }
+}
+
+// Handle workflow reconnection
+async function handleWorkflowReconnect(
+  message: any,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response: any) => void,
+) {
+  const { requestId, data } = message;
+  const { executionId } = data;
+
+  try {
+    console.log("Reconnecting to workflow execution:", executionId);
+
+    const gensx = await getClient();
+
+    // Use GenSX getProgress API to reconnect to the execution
+    const stream = await gensx.getProgress({ executionId });
+
+    console.log("Reconnection successful, processing progress stream:", executionId);
+
+    // Create a Response-like object with the stream for compatibility
+    const response = new Response(stream, {
+      headers: { 'content-type': 'application/x-ndjson' }
+    });
+
+    // Process the streaming response from the reconnection
+    await processStreamingResponse(response, requestId, sender);
+
+  } catch (error) {
+    console.error("Workflow reconnection failed for execution:", executionId, error);
+
+    // Send error response to popup
+    chrome.runtime.sendMessage({
+      type: "WORKFLOW_ERROR",
+      requestId,
+      error: error instanceof Error ? error.message : "Reconnection failed",
+    }).catch(() => {
+      // Ignore errors if popup is not open
     });
   }
 }
@@ -118,8 +308,10 @@ async function processStreamingResponse(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  let currentMessage = "";
   let isComplete = false;
+
+  let executionId: string | undefined;
+  let messagesState: any = {}; // Track the full messages object state
 
   try {
     while (!isComplete) {
@@ -140,25 +332,32 @@ async function processStreamingResponse(
 
       for (const line of lines) {
         if (line.trim()) {
-          console.log("Processing streaming event:", line);
           try {
             const event = JSON.parse(line);
-            await processStreamingEvent(event, requestId, sender, currentMessage);
+            console.log("Processing streaming event:", event, executionId);
 
-            // Update current message if this is a text append
-            if (event.type === "object" &&
-                event.label === "messages" &&
-                event.patches?.[0]?.op === "string-append") {
-              currentMessage += event.patches[0].value;
-            } else if (event.type === "object" &&
-                      event.label === "messages" &&
-                      event.patches?.[0]?.op === "add") {
-              // Reset message for new assistant message
-              const messageContent = event.patches[0].value?.messages?.[0]?.content?.[0]?.text;
-              if (messageContent) {
-                currentMessage = messageContent;
-              }
+            if (event.type === "start") {
+              executionId = event.workflowExecutionId;
+
+              // Send execution ID to popup for state tracking
+              chrome.runtime.sendMessage({
+                type: "WORKFLOW_EXECUTION_STARTED",
+                requestId,
+                data: {
+                  executionId
+                }
+              }).catch(() => {
+                // Ignore errors if popup is not open
+              });
             }
+
+            // Update messages state if this is a messages object update
+            if (event.type === "object" && event.label === "messages") {
+              messagesState = applyObjectPatches(event.patches, messagesState);
+              console.log("Updated messages state:", messagesState);
+            }
+
+            await processStreamingEvent(executionId, event, requestId, sender, messagesState);
           } catch (parseError) {
             console.warn("Failed to parse streaming event:", line, parseError);
           }
@@ -166,30 +365,30 @@ async function processStreamingResponse(
       }
     }
 
-    // Send final completion message
-    if (sender.tab?.id) {
-      chrome.tabs.sendMessage(sender.tab.id, {
-        type: "WORKFLOW_STREAM_COMPLETE",
-        requestId,
-        data: {
-          finalMessage: currentMessage
-        }
-      });
-    }
+    // Send final completion message to popup
+    chrome.runtime.sendMessage({
+      type: "WORKFLOW_STREAM_COMPLETE",
+      requestId,
+      data: {
+        finalMessage: ""
+      }
+    }).catch(() => {
+      // Ignore errors if popup is not open
+    });
 
     console.log("Streaming completed for request:", requestId);
 
   } catch (streamError) {
     console.error("Error processing stream:", streamError);
 
-    // Send error to content script
-    if (sender.tab?.id) {
-      chrome.tabs.sendMessage(sender.tab.id, {
-        type: "WORKFLOW_ERROR",
-        requestId,
-        error: streamError instanceof Error ? streamError.message : "Streaming error occurred"
-      });
-    }
+    // Send error to popup
+    chrome.runtime.sendMessage({
+      type: "WORKFLOW_ERROR",
+      requestId,
+      error: streamError instanceof Error ? streamError.message : "Streaming error occurred"
+    }).catch(() => {
+      // Ignore errors if popup is not open
+    });
   } finally {
     reader.releaseLock();
   }
@@ -197,57 +396,111 @@ async function processStreamingResponse(
 
 // Process individual streaming events
 async function processStreamingEvent(
+  executionId: string | undefined,
   event: any,
   requestId: string,
   sender: chrome.runtime.MessageSender,
-  currentMessage: string,
+  messagesState: any,
 ) {
-  // Only process text streaming events for the UI
-  if (event.type === "object" &&
-      event.label === "messages" &&
-      event.patches?.[0]?.op === "string-append") {
-
-    const appendText = event.patches[0].value;
-    const updatedMessage = currentMessage + appendText;
-
-    // Send incremental update to content script
-    if (sender.tab?.id) {
-      chrome.tabs.sendMessage(sender.tab.id, {
-        type: "WORKFLOW_STREAM_UPDATE",
-        requestId,
-        data: {
-          text: updatedMessage,
-          isIncremental: true
-        }
-      });
+  // Handle external tool calls
+  if (event.type === "external-tool") {
+    if (!executionId) {
+      console.error("Execution ID is not set");
+      return;
     }
-  } else if (event.type === "object" &&
-            event.label === "messages" &&
-            event.patches?.[0]?.op === "add") {
 
-    // Initial message content
-    const messageContent = event.patches[0].value?.messages?.[0]?.content?.[0]?.text;
-    if (messageContent && sender.tab?.id) {
-      chrome.tabs.sendMessage(sender.tab.id, {
-        type: "WORKFLOW_STREAM_UPDATE",
-        requestId,
-        data: {
-          text: messageContent,
-          isIncremental: false
+    console.log("External tool call detected:", event);
+
+    // Send tool call to content script for execution
+    // Get the active tab since the sender might be from popup
+    try {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!activeTab || !activeTab.id) {
+        throw new Error("No active tab found for tool execution");
+      }
+
+      console.log("Sending tool call to active tab:", activeTab.id, activeTab.url);
+
+      // Try to send message to content script, with fallback to inject if needed
+      let toolResponse;
+      try {
+        toolResponse = await chrome.tabs.sendMessage(activeTab.id, {
+          type: "EXTERNAL_TOOL_CALL",
+          requestId,
+          data: {
+            toolName: event.toolName,
+            params: event.params,
+            nodeId: event.nodeId,
+            paramsSchema: event.paramsSchema,
+            resultSchema: event.resultSchema
+          }
+        });
+      } catch (connectionError) {
+        console.warn("Content script connection failed, attempting to inject:", connectionError);
+        
+        // Try to inject the content script manually
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: activeTab.id },
+            files: ['content.js']
+          });
+          
+          // Wait a bit for the script to initialize
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Retry the message
+          toolResponse = await chrome.tabs.sendMessage(activeTab.id, {
+            type: "EXTERNAL_TOOL_CALL",
+            requestId,
+            data: {
+              toolName: event.toolName,
+              params: event.params,
+              nodeId: event.nodeId,
+              paramsSchema: event.paramsSchema,
+              resultSchema: event.resultSchema
+            }
+          });
+        } catch (injectionError) {
+          console.error("Failed to inject content script:", injectionError);
+          throw new Error(`Content script injection failed: ${injectionError instanceof Error ? injectionError.message : String(injectionError)}`);
         }
+      }
+
+      console.log("Tool execution response:", toolResponse);
+
+      const gensx = await getClient();
+
+      await gensx.resume({
+        executionId,
+        nodeId: event.nodeId,
+        data: toolResponse.data.result
       });
+    } catch (error) {
+      console.error("Tool execution failed:", error);
     }
+    return;
+  }
+
+  // Send structured messages for UI updates to popup
+  if (event.type === "object" && event.label === "messages") {
+    // Send the full structured messages to popup (all extension contexts)
+    const messageData = {
+      type: "WORKFLOW_MESSAGES_UPDATE",
+      requestId,
+      data: {
+        messages: messagesState.messages || [],
+        isIncremental: event.patches?.some((p: any) => p.op === "string-append")
+      }
+    };
+
+    // Send to popup and other extension contexts
+    chrome.runtime.sendMessage(messageData).catch(() => {
+      // Ignore errors if popup is not open
+    });
   }
 }
 
-// Handle browser action click (extension icon)
-chrome.action.onClicked.addListener((tab) => {
-  if (tab.id) {
-    // Send message to content script to toggle the copilot
-    const message: ExtensionMessage = { type: "TOGGLE_COPILOT" };
-    chrome.tabs.sendMessage(tab.id, message);
-  }
-});
+// Browser action now opens popup by default (configured in manifest.json)
 
 // Content script is automatically injected via manifest.json content_scripts
 // No need for manual injection since we have matches: ["<all_urls>"]

@@ -2,48 +2,258 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GenSX Copilot</title>
   <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      width: 300px;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      width: 400px;
+      height: 600px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: #2563eb;
+      color: white;
+      padding: 16px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-info h3 {
+      font-size: 16px;
+      font-weight: 600;
       margin: 0;
     }
-    
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
+
+    .header-info p {
+      font-size: 12px;
+      opacity: 0.9;
+      margin: 2px 0 0 0;
     }
-    
-    .logo {
-      width: 48px;
-      height: 48px;
-      background: #2563eb;
-      border-radius: 8px;
-      margin: 0 auto 12px;
+
+    .header-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .header-button {
+      padding: 6px;
+      background: transparent;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
     }
-    
-    h1 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: #1f2937;
+
+    .header-button:hover {
+      background: #1d4ed8;
     }
-    
-    p {
-      margin: 8px 0 0 0;
+
+    .header-button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e5e7eb;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px 16px;
+      background: transparent;
+      border: none;
       font-size: 14px;
+      font-weight: 500;
       color: #6b7280;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .tab:hover {
+      color: #2563eb;
+      background: #f9fafb;
+    }
+
+    .tab.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+      background: white;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .tab-content.hidden {
+      display: none;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Messages */
+    .message {
+      display: flex;
+      max-width: none;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.assistant {
+      justify-content: flex-start;
+    }
+
+    .message-content {
+      max-width: 85%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      font-size: 14px;
       line-height: 1.4;
     }
-    
-    .action-button {
-      width: 100%;
+
+    .message.user .message-content {
+      background: #2563eb;
+      color: white;
+    }
+
+    .message.assistant .message-content {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    /* Tool Calls */
+    .tool-calls {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tool-call {
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    .tool-call-header {
+      background: #f9fafb;
+      padding: 8px 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 500;
+    }
+
+    .tool-call-header:hover {
+      background: #f3f4f6;
+    }
+
+    .tool-call-content {
+      padding: 10px;
+      background: white;
+      border-top: 1px solid #d1d5db;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tool-call-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tool-call-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .tool-call-code {
+      font-size: 11px;
+      background: #f9fafb;
+      padding: 6px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    /* Input Form */
+    .input-form {
       padding: 12px;
+      border-top: 1px solid #e5e7eb;
+      flex-shrink: 0;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+    }
+
+    .input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+    .input:disabled {
+      background: #f9fafb;
+      color: #6b7280;
+      cursor: not-allowed;
+    }
+
+    .send-button {
+      padding: 8px 12px;
       background: #2563eb;
       color: white;
       border: none;
@@ -51,59 +261,288 @@
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      margin-bottom: 12px;
       transition: background-color 0.2s ease;
+      white-space: nowrap;
     }
-    
-    .action-button:hover {
+
+    .send-button:hover:not(:disabled) {
       background: #1d4ed8;
     }
-    
-    .action-button.secondary {
+
+    .send-button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    /* Loading spinner */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #d1d5db;
+      border-top: 2px solid #2563eb;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Hint bubble */
+    .hint-bubble {
+      margin: 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .hint-content h4 {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1e40af;
+      margin: 0 0 6px 0;
+    }
+
+    .hint-content p {
+      font-size: 12px;
+      color: #1e40af;
+      line-height: 1.4;
+      margin: 0 0 8px 0;
+    }
+
+    .hint-code {
+      background: #dbeafe;
+      padding: 2px 4px;
+      border-radius: 3px;
+      color: #1e40af;
+      font-family: monospace;
+      font-size: 11px;
+    }
+
+    .hint-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .hint-button {
+      padding: 4px 8px;
+      font-size: 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .hint-button.primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .hint-button.secondary {
+      background: transparent;
+      color: #2563eb;
+    }
+
+    /* Scrollbar */
+    .messages::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .messages::-webkit-scrollbar-track {
       background: #f3f4f6;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+
+    .messages::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    /* Error styles */
+    .error {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 8px;
+      border-radius: 6px;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+
+    /* Knowledge Tab */
+    .knowledge-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .knowledge-header {
+      padding: 16px;
+      border-bottom: 1px solid #e5e7eb;
+      flex-shrink: 0;
+    }
+
+    .knowledge-header h4 {
+      font-size: 16px;
+      font-weight: 600;
       color: #374151;
+      margin: 0 0 4px 0;
     }
-    
-    .action-button.secondary:hover {
-      background: #e5e7eb;
-    }
-    
-    .status {
+
+    .knowledge-header p {
       font-size: 12px;
       color: #6b7280;
-      text-align: center;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid #e5e7eb;
+      margin: 0;
     }
-    
-    .status.active {
-      color: #059669;
+
+    .knowledge-body {
+      flex: 1;
+      padding: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .knowledge-textarea {
+      width: 100%;
+      height: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 13px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      line-height: 1.5;
+      background: #f9fafb;
+      color: #374151;
+      resize: none;
+      outline: none;
+    }
+
+    .knowledge-textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+    .knowledge-actions {
+      padding: 16px;
+      border-top: 1px solid #e5e7eb;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .delete-button {
+      padding: 8px 16px;
+      background: #dc2626;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .delete-button:hover {
+      background: #b91c1c;
+    }
+
+    .delete-button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    /* Reconnection status */
+    .reconnection-status {
+      padding: 12px 16px;
+      background: #eff6ff;
+      border-bottom: 1px solid #bfdbfe;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #1e40af;
+    }
+
+    .reconnection-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo">
-      <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" 
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      </svg>
+    <div class="header-info">
+      <h3>GenSX Copilot</h3>
+      <p id="currentPage">Ready to help</p>
     </div>
-    <h1>GenSX Copilot</h1>
-    <p>AI-powered web page interaction assistant</p>
+    <div class="header-buttons">
+      <button class="header-button" id="clearThread" title="Start new chat">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      </button>
+      <button class="header-button" id="openOptions" title="Settings">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+    </div>
   </div>
-  
-  <button id="toggleCopilot" class="action-button">
-    Open Copilot
-  </button>
-  
-  <button id="openOptions" class="action-button secondary">
-    Settings
-  </button>
-  
-  <div id="status" class="status">
-    Click "Open Copilot" to start interacting with the current page
+
+  <div class="tabs">
+    <button class="tab active" data-tab="chat">Chat</button>
+    <button class="tab" data-tab="knowledge">Knowledge</button>
+  </div>
+
+  <div class="tab-content" id="chatTab">
+    <div class="messages" id="messages">
+      <!-- Messages will be dynamically inserted here -->
+    </div>
+
+    <form class="input-form" id="inputForm">
+      <div class="input-container">
+        <textarea 
+          class="input" 
+          id="messageInput" 
+          placeholder="Ask me to interact with the current page..."
+          rows="1"
+          style="resize: none; height: auto; min-height: 36px; max-height: 100px;"
+        ></textarea>
+        <button type="submit" class="send-button" id="sendButton">
+          Send
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="tab-content hidden" id="knowledgeTab">
+    <div class="knowledge-content">
+      <div class="knowledge-header">
+        <h4>Website Knowledge Base</h4>
+        <p id="knowledgeDomain">No domain selected</p>
+      </div>
+      <div class="knowledge-body">
+        <textarea 
+          id="knowledgeText" 
+          class="knowledge-textarea" 
+          readonly
+          placeholder="No website knowledge available yet. The AI will build knowledge as you interact with this website."
+        ></textarea>
+      </div>
+      <div class="knowledge-actions">
+        <button id="deleteKnowledge" class="delete-button">Delete Knowledge</button>
+      </div>
+    </div>
   </div>
 
   <script src="popup.js"></script>

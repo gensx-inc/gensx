@@ -2,7 +2,9 @@ import * as gensx from "@gensx/core";
 import { useBlob } from "@gensx/storage";
 import { CoreMessage } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
 import { serializeError } from "serialize-error";
+import { convert } from "html-to-text";
 
 import { Agent } from "./agent";
 import { asToolSet, generateText } from "@gensx/vercel-ai";
@@ -30,17 +32,17 @@ export const copilotWorkflow = gensx.Workflow(
     url: string;
     userName?: string;
     userContext?: string;
-  }): Promise<{ result: string; messages: CoreMessage[] }> => {
+  }): Promise<{ response: string; messages: CoreMessage[] }> => {
     try {
       // Get blob instance for chat history storage
       const chatHistoryBlob = useBlob<ThreadData>(
-        `chat-history/${userId}/${threadId}.json`,
+        chatHistoryBlobPath(userId, threadId),
       );
 
       const domain = new URL(url).hostname;
       const path = new URL(url).pathname;
-      const applicationMemory = useBlob(
-        `application-memory/${userId}/${domain}`,
+      const websiteKnowledgeBase = useBlob(
+        websiteKnowledgeBaseBlobPath(userId, domain),
       );
       const userPreferences = useBlob(`user-preferences/${userId}`);
 
@@ -65,15 +67,15 @@ export const copilotWorkflow = gensx.Workflow(
       const existingMessages = threadData.messages;
 
       // Load working memory scratchpads
-      let applicationWorkingMemory = "";
+      let websiteKnowledgeBaseContent = "";
       let userPreferencesWorkingMemory = "";
 
       try {
-        // Load application working memory scratchpad
-        const appMemoryExists = await applicationMemory.exists();
-        if (appMemoryExists) {
-          applicationWorkingMemory =
-            (await applicationMemory.getString()) ?? "";
+        // Load website knowledge base
+        const knowledgeExists = await websiteKnowledgeBase.exists();
+        if (knowledgeExists) {
+          websiteKnowledgeBaseContent =
+            (await websiteKnowledgeBase.getString()) ?? "";
         }
 
         // Load user preferences working memory scratchpad
@@ -87,9 +89,9 @@ export const copilotWorkflow = gensx.Workflow(
       }
 
       let needInit = false;
-      if (!applicationWorkingMemory.trim()) {
-        applicationWorkingMemory =
-          "No application knowledge stored yet. It is imperative that you ask the user to use the '/init' slash command to initialize the application knowledge.";
+      if (!websiteKnowledgeBaseContent.trim() && !prompt.startsWith("/init")) {
+        websiteKnowledgeBaseContent =
+          "No website knowledge stored yet. It is imperative that you ask the user to use the '/init' slash command to initialize the website knowledge base.";
         needInit = true;
       }
 
@@ -106,30 +108,34 @@ export const copilotWorkflow = gensx.Workflow(
           content: `You are a helpful AI assistant with the ability to interact with web pages using jQuery-based tools.
 You can inspect elements, click buttons, fill forms, and help users navigate and interact with web applications.
 
-${userName ? `## User Information
+${
+  userName
+    ? `## User Information
 The user's name is: ${userName}
-${userContext ? `Additional context about the user: ${userContext}` : ''}
+${userContext ? `Additional context about the user: ${userContext}` : ""}
 
-` : ''}${needInit ? "## IMPORTANT: The user has not initialized the application knowledge. You must ask the user to use the '/init' slash command to initialize the application knowledge." : ""}
+`
+    : ""
+}${needInit ? "## IMPORTANT: The user has not initialized the website knowledge base. You must ask the user to use the '/init' slash command to initialize the website knowledge base." : ""}
 
 ## CORE WORKFLOW
 When helping users:
-1. ALWAYS start by searching application details to find existing knowledge about where actions can be performed and which pages contain the features you need
+1. ALWAYS start by searching website knowledge base to find existing knowledge about where actions can be performed and which pages contain the features you need
 2. Use getPageOverview to get a hierarchical understanding of the current page structure
 3. Search user preferences to understand the user's personal context, preferences, and how they like to be assisted
-4. Use the information from application details to identify the best pages to navigate to for completing the user's request
+4. Use the information from website knowledge base to identify the best pages to navigate to for completing the user's request
 5. Use inspectSection to drill down into specific sections for detailed analysis
 6. Use inspectElements to get details about individual elements
 7. Use highlightElements to show users what you're looking at
 8. Perform actions like clicking (clickElements), filling forms (fillTextInputs), or submitting forms (submitForms) as requested
 9. Always verify the results of your actions
-10. ALWAYS update application details with what you discover
+10. ALWAYS update website knowledge base with what you discover
 
-## APPLICATION DETAILS MANAGEMENT
-You MUST be extremely proactive about maintaining application details. This is your primary knowledge base for navigating and understanding the application.
+## WEBSITE KNOWLEDGE BASE MANAGEMENT
+You MUST be extremely proactive about maintaining the website knowledge base. This is your primary knowledge base for navigating and understanding the website.
 
-### When to Update Application Details:
-- ALWAYS update application details when you discover new pages, features, or functionality
+### When to Update Website Knowledge Base:
+- ALWAYS update website knowledge base when you discover new pages, features, or functionality
 - Store information about buttons, forms, links, and interactive elements you find
 - Record the location and purpose of important UI elements
 - Document navigation patterns and page structures
@@ -139,7 +145,7 @@ You MUST be extremely proactive about maintaining application details. This is y
 - Store information about which pages contain specific features or actions
 - Document the relationship between user requests and the pages/features needed to fulfill them
 
-### What to Store in Application Details:
+### What to Store in Website Knowledge Base:
 - Page paths and their purposes
 - Button locations and their functions
 - Form field names, types, and validation rules
@@ -153,35 +159,35 @@ You MUST be extremely proactive about maintaining application details. This is y
 - Navigation paths to reach specific functionality
 - Common user requests and the pages/actions needed to fulfill them
 
-### How to Use Application Details:
-- ALWAYS search application details before starting any task to find existing knowledge about where actions can be performed
-- Use application details to identify which pages contain the features needed for the user's request
-- Use application details to find the most efficient navigation path to reach the required functionality
+### How to Use Website Knowledge Base:
+- ALWAYS search website knowledge base before starting any task to find existing knowledge about where actions can be performed
+- Use website knowledge base to identify which pages contain the features needed for the user's request
+- Use website knowledge base to find the most efficient navigation path to reach the required functionality
 - Reference stored information to avoid rediscovering known features and workflows
-- Use application details to understand the application's structure and capabilities
+- Use website knowledge base to understand the website's structure and capabilities
 - Leverage stored workflows to complete similar tasks efficiently
-- Use application details to proactively suggest the best pages to navigate to for completing user requests
+- Use website knowledge base to proactively suggest the best pages to navigate to for completing user requests
 - Search for patterns in how similar requests were handled in the past
 
 ## PROACTIVE ACTION IDENTIFICATION
-You should actively use application details to identify the best ways to take action and which pages you need to be on.
+You should actively use website knowledge base to identify the best ways to take action and which pages you need to be on.
 
-### How to Use Application Details for Action Planning:
-- Search application details to find which pages contain the features needed for the user's request
-- Use application details to identify the most efficient navigation path to reach required functionality
+### How to Use Website Knowledge Base for Action Planning:
+- Search website knowledge base to find which pages contain the features needed for the user's request
+- Use website knowledge base to identify the most efficient navigation path to reach required functionality
 - Reference stored workflows to understand how similar requests were handled in the past
-- Use application details to proactively suggest the best pages to navigate to
+- Use website knowledge base to proactively suggest the best pages to navigate to
 - Search for patterns in how similar user requests were fulfilled
-- Use application details to avoid rediscovering known features and workflows
+- Use website knowledge base to avoid rediscovering known features and workflows
 
-### When to Navigate Based on Application Details:
-- When application details indicate that a specific page contains the feature needed
+### When to Navigate Based on Website Knowledge Base:
+- When website knowledge base indicates that a specific page contains the feature needed
 - When stored workflows show that a particular page is required for the user's request
-- When application details show that the current page doesn't have the required functionality
+- When website knowledge base shows that the current page doesn't have the required functionality
 - When you need to follow a specific navigation path to reach the target functionality
-- When application details suggest a more efficient way to complete the user's request
+- When website knowledge base suggests a more efficient way to complete the user's request
 
-### How to Update Application Details for Action Planning:
+### How to Update Website Knowledge Base for Action Planning:
 - Store information about which pages contain specific features or actions
 - Document the relationship between user requests and the pages/features needed to fulfill them
 - Record successful navigation paths and workflows
@@ -269,11 +275,11 @@ You MUST actively listen for and identify user preferences throughout conversati
 ## WORKING MEMORY SYSTEM
 You have two working memory scratchpads that persist across conversations:
 
-### Application Working Memory
-- Contains your knowledge about THIS specific application/website
+### Website Knowledge Base
+- Contains your knowledge about THIS specific website
 - Includes page structures, navigation patterns, UI components, feature locations
-- Updated using 'updateApplicationWorkingMemory' tool
-- Read what you currently know in the '<applicationWorkingMemory>' section below
+- Updated using 'updateWebsiteKnowledgeBase' tool
+- Read what you currently know in the '<websiteKnowledgeBase>' section below
 
 ### User Preferences Working Memory
 - Contains personal information about THIS specific user
@@ -286,7 +292,7 @@ You have two working memory scratchpads that persist across conversations:
 2. **Update** working memory whenever you discover new information
 3. **Write** working memory as readable text blocks
 4. **Replace** the entire scratchpad content when updating (it's not appended)
-5. **Keep** application knowledge separate from user preferences
+5. **Keep** website knowledge separate from user preferences
 
 ## AVAILABLE TOOLS
 - fetchPageContent: Fetch the html content of the current page
@@ -302,14 +308,14 @@ You have two working memory scratchpads that persist across conversations:
 - getPageOverview: Get a hierarchical overview of the page structure with reliable selectors for each section
 - inspectSection: Get detailed information about a specific section or element on the page
 - navigate: Navigate the browser using browser navigation (back, forward) or to a specific path
-- updateApplicationWorkingMemory: Update your persistent memory about this application
+- updateWebsiteKnowledgeBase: Update your persistent memory about this website
 - updateUserPreferencesWorkingMemory: Update your persistent memory about this user's preferences
 
 ## CRITICAL REMINDERS
 - The page overview tools (getPageOverview and inspectSection) provide stable selectors that you can use with other tools to reliably interact with elements
 - ALWAYS read your working memory FIRST when starting any task to find existing knowledge
 - ALWAYS update your working memory with new discoveries to build your persistent knowledge
-- Use application working memory to identify which pages contain features and how to navigate efficiently
+- Use website knowledge base to identify which pages contain features and how to navigate efficiently
 - Use user preferences working memory to personalize your communication style and approach
 - Write working memory as clear, readable text that you can easily reference later
 - Be helpful, clear, and explain what you're doing as you interact with the page
@@ -319,9 +325,9 @@ You have two working memory scratchpads that persist across conversations:
 
 <path>The current path is ${path}. However, this may change as you interact with the page.</path>
 
-<applicationWorkingMemory>
-${applicationWorkingMemory}
-</applicationWorkingMemory>
+<websiteKnowledgeBase>
+${websiteKnowledgeBaseContent}
+</websiteKnowledgeBase>
 
 <userPreferencesWorkingMemory>
 ${userPreferencesWorkingMemory}
@@ -345,9 +351,9 @@ ${userPreferencesWorkingMemory}
         // Update application working memory
         existingMessages[0].content = existingMessages[0].content.replace(
           /<applicationWorkingMemory>.*<\/applicationWorkingMemory>/,
-          `<applicationWorkingMemory>
-${applicationWorkingMemory}
-</applicationWorkingMemory>`,
+          `<websiteKnowledgeBase>
+${websiteKnowledgeBaseContent}
+</websiteKnowledgeBase>`,
         );
 
         // Update user preferences working memory
@@ -384,20 +390,20 @@ ${userPreferencesWorkingMemory}
             ([key]) => key !== "fetchPageContent",
           ),
         ),
-        updateApplicationWorkingMemory: {
+        updateWebsiteKnowledgeBase: {
           execute: async (params: { content: string }) => {
             const { content } = params;
 
             try {
-              await applicationMemory.putString(content);
+              await websiteKnowledgeBase.putString(content);
               return {
                 success: true,
               };
             } catch (error) {
-              console.error("Error in updateApplicationWorkingMemory", error);
+              console.error("Error in updateWebsiteKnowledgeBase", error);
               return {
                 success: false,
-                error: "Error in updateApplicationWorkingMemory",
+                error: "Error in updateWebsiteKnowledgeBase",
               };
             }
           },
@@ -405,11 +411,11 @@ ${userPreferencesWorkingMemory}
             content: z
               .string()
               .describe(
-                "The complete working memory content for application knowledge. This replaces the entire scratchpad.",
+                "The complete website knowledge base content. This replaces the entire knowledge base.",
               ),
           }),
           description:
-            "Update your working memory scratchpad for application knowledge. This is your persistent memory about the application's structure, features, and how to navigate it. Write it as a readable block of text that you can reference later.",
+            "Update your website knowledge base. This is your persistent memory about the website's structure, features, and how to navigate it. Write it as a readable block of text that you can reference later.",
         },
         updateUserPreferencesWorkingMemory: {
           execute: async (params: { content: string }) => {
@@ -473,9 +479,9 @@ ${userPreferencesWorkingMemory}
         baseURL: "https://api.groq.com/openai/v1",
       });
 
-      // const model = anthropic("claude-3-7-sonnet-latest");
+      const model = anthropic("claude-3-7-sonnet-latest");
 
-      const model = groqClient("moonshotai/kimi-k2-instruct");
+      // const model = groqClient("moonshotai/kimi-k2-instruct");
       const result = await Agent({
         messages,
         tools,
@@ -530,7 +536,60 @@ ${userPreferencesWorkingMemory}
   },
 );
 
+const extractMeaningfulContent = (html: string): string => {
+  // Extract title separately
+  const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
+  const title = titleMatch ? titleMatch[1].trim() : '';
+
+  // Use html-to-text with optimized configuration
+  const textContent = convert(html, {
+    // Word wrapping options
+    wordwrap: false,
+
+    selectors: [
+      // Skip these elements entirely
+      { selector: 'script', format: 'skip' },
+      { selector: 'style', format: 'skip' },
+      { selector: 'noscript', format: 'skip' },
+      { selector: 'svg', format: 'skip' },
+      { selector: 'head', format: 'skip' },
+    ],
+
+    // Base elements to preserve
+    baseElements: {
+      selectors: ['body', 'main', 'article', 'section'],
+    },
+
+    // Remove excessive whitespace
+    preserveNewlines: false,
+
+    // Character limits and formatting
+    limits: {
+      maxInputLength: 1000000, // 1MB limit
+      ellipsis: '...'
+    }
+  });
+
+  // Clean up the extracted text
+  const cleanedContent = textContent
+    // Remove excessive line breaks
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    // Remove leading/trailing whitespace from lines
+    .replace(/^[ \t]+|[ \t]+$/gm, '')
+    // Remove excessive spaces
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+
+  // Combine title and content
+  const result = title ? `Page Title: ${title}\n\nPage Content:\n${cleanedContent}` : cleanedContent;
+
+  return result;
+};
+
 const SummarizePageContent = async (pageContent: string) => {
+  // Extract only meaningful content before sending to model
+  const meaningfulContent = extractMeaningfulContent(pageContent);
+
   // use a fast light model to summarize the page content
   const groqClient = createOpenAI({
     apiKey: process.env.GROQ_API_KEY!,
@@ -538,15 +597,103 @@ const SummarizePageContent = async (pageContent: string) => {
   });
 
   // Keep the content under the 131,000 token limit (assume 4 characters per token)
-  if (pageContent.length > 131000 * 4) {
-    console.warn("Page content is too long, truncating to 131,000 tokens");
-    pageContent = pageContent.slice(0, 131000 * 4);
+  let processedContent = meaningfulContent;
+  if (processedContent.length > 131000 * 4) {
+    console.warn("Extracted content is still too long, truncating to 131,000 tokens");
+    processedContent = processedContent.slice(0, 131000 * 4);
   }
 
   const model = groqClient("moonshotai/kimi-k2-instruct");
   const result = await generateText({
     model,
-    prompt: `Summarize the following HTML content. Include a description of the layout, and important details about the page, the information it contains and details necessary to select specific elements on the page using classes or ids:\n\n${pageContent}`,
+    prompt: `Analyze the following webpage content and provide a comprehensive summary. Focus on:
+1. The main purpose and type of the page
+2. Key sections and their layout structure
+3. Important interactive elements (forms, buttons, links)
+4. Navigation structure
+5. Main content areas and their organization
+6. Any notable IDs, classes, or selectors that would be useful for automation
+
+Content to analyze:
+${processedContent}`,
   });
   return result.text;
 };
+
+function chatHistoryBlobPath(userId: string, threadId: string): string {
+  return `chat-history/${userId}/${threadId}.json`;
+}
+
+export const getChatHistoryWorkflow = gensx.Workflow(
+  "fetchChatHistory",
+  async ({ userId, threadId }: { userId: string; threadId: string }) => {
+    // Get blob instance for chat history storage
+    const chatHistoryBlob = useBlob<ThreadData>(
+      chatHistoryBlobPath(userId, threadId),
+    );
+
+    // Function to load thread data
+    const loadThreadData = async (): Promise<ThreadData> => {
+      const data = await chatHistoryBlob.getJSON();
+
+      // Handle old format (array of messages) - convert to new format
+      if (Array.isArray(data)) {
+        return { messages: data };
+      }
+
+      return data ?? { messages: [] };
+    };
+
+    return await loadThreadData();
+  },
+);
+
+function websiteKnowledgeBaseBlobPath(userId: string, domain: string): string {
+  return `website-knowledge-base/${userId}/${domain}`;
+}
+
+export const getWebsiteKnowledgeBaseWorkflow = gensx.Workflow(
+  "getWebsiteKnowledgeBase",
+  async ({ userId, domain }: { userId: string; domain: string }) => {
+    // Get blob instance for website knowledge base storage
+    const knowledgeBaseBlob = useBlob<string>(
+      websiteKnowledgeBaseBlobPath(userId, domain),
+    );
+
+    try {
+      const knowledgeBase = await knowledgeBaseBlob.getString();
+      return {
+        content: knowledgeBase || "",
+        exists: !!knowledgeBase,
+      };
+    } catch (error) {
+      return {
+        content: "",
+        exists: false,
+      };
+    }
+  },
+);
+
+export const deleteWebsiteKnowledgeBaseWorkflow = gensx.Workflow(
+  "deleteWebsiteKnowledgeBase",
+  async ({ userId, domain }: { userId: string; domain: string }) => {
+    // Get blob instance for website knowledge base storage
+    const knowledgeBaseBlob = useBlob<string>(
+      websiteKnowledgeBaseBlobPath(userId, domain),
+    );
+
+    try {
+      await knowledgeBaseBlob.delete();
+      return {
+        success: true,
+        message: `Website knowledge base deleted for ${domain}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to delete website knowledge base: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+  },
+);
