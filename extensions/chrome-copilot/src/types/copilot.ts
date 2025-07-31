@@ -22,7 +22,7 @@ export interface CopilotState {
   isOpen: boolean;
   paneWidth: number;
   isResizing: boolean;
-  activeTab: 'chat' | 'tools' | 'history' | 'details' | 'preferences';
+  activeTab: 'chat' | 'tools' | 'history' | 'details' | 'preferences' | 'knowledge';
   messages: CopilotMessage[];
   expandedTools: Set<string>;
   isStreaming: boolean;
@@ -70,10 +70,12 @@ export interface ToolCall {
 }
 
 export interface ExtensionMessage {
-  type: 'GET_TAB_INFO' | 'EXECUTE_TOOL' | 'SEND_MESSAGE' | 'TOGGLE_COPILOT' | 'WORKFLOW_REQUEST' | 'WORKFLOW_RESPONSE' | 'WORKFLOW_ERROR' | 'WORKFLOW_STREAM_UPDATE' | 'WORKFLOW_STREAM_COMPLETE';
+  type: 'GET_TAB_INFO' | 'EXECUTE_TOOL' | 'SEND_MESSAGE' | 'TOGGLE_COPILOT' | 'WORKFLOW_REQUEST' | 'WORKFLOW_RESPONSE' | 'WORKFLOW_ERROR' | 'WORKFLOW_STREAM_UPDATE' | 'WORKFLOW_STREAM_COMPLETE' | 'WORKFLOW_MESSAGES_UPDATE' | 'WORKFLOW_RECONNECT' | 'WORKFLOW_EXECUTION_STARTED' | 'EXTERNAL_TOOL_CALL' | 'EXTERNAL_TOOL_RESPONSE' | 'GET_THREAD_HISTORY' | 'GET_WEBSITE_KNOWLEDGE' | 'DELETE_WEBSITE_KNOWLEDGE' | 'CONTENT_SCRIPT_READY';
   data?: any;
   tabId?: number;
   requestId?: string;
+  url?: string;
+  timestamp?: number;
 }
 
 export interface WorkflowMessage {
@@ -118,6 +120,38 @@ export interface WorkflowStreamCompleteMessage {
   requestId: string;
   data: {
     finalMessage: string;
+  };
+}
+
+export interface ExternalToolCallMessage {
+  type: 'EXTERNAL_TOOL_CALL';
+  requestId: string;
+  data: {
+    toolName: string;
+    params: any;
+    nodeId: string;
+    paramsSchema: any;
+    resultSchema: any;
+  };
+}
+
+export interface ExternalToolResponseMessage {
+  type: 'EXTERNAL_TOOL_RESPONSE';
+  requestId: string;
+  data: {
+    toolName: string;
+    nodeId: string;
+    result: any;
+    error?: string;
+  };
+}
+
+export interface WorkflowMessagesUpdateMessage {
+  type: 'WORKFLOW_MESSAGES_UPDATE';
+  requestId: string;
+  data: {
+    messages: CopilotMessage[];
+    isIncremental: boolean;
   };
 }
 
