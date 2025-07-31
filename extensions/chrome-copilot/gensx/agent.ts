@@ -35,14 +35,17 @@ export const Agent = gensx.Component(
     maxSteps = 50,
     providerOptions,
   }: AgentProps) => {
-    // Track all messages including responses
-    const allMessages: CoreMessage[] = [];
+    // Track all messages including responses - start with the input messages
+    const allMessages: CoreMessage[] = [...messages];
 
     const publishMessages = () => {
       gensx.publishObject("messages", {
         messages: JSON.parse(JSON.stringify(allMessages)),
       });
     };
+
+    // Publish the initial messages (including user message) immediately
+    publishMessages();
 
     const wrappedLanguageModel = wrapLanguageModel({
       model: wrapVercelAIModel(model),
@@ -51,11 +54,18 @@ export const Agent = gensx.Component(
           wrapGenerate: async ({ doGenerate }) => {
             const result = await doGenerate();
 
-            // Add assistant response to messages
-            allMessages.push({
-              role: "assistant",
-              content: result.text ?? "",
-            });
+            // Find the last assistant message or add a new one
+            const lastMessage = allMessages[allMessages.length - 1];
+            if (lastMessage && lastMessage.role === "assistant") {
+              // Update the existing assistant message
+              lastMessage.content = result.text ?? "";
+            } else {
+              // Add new assistant response to messages
+              allMessages.push({
+                role: "assistant",
+                content: result.text ?? "",
+              });
+            }
 
             publishMessages();
 
@@ -115,12 +125,22 @@ export const Agent = gensx.Component(
       onChunk: ({ chunk: streamChunk }) => {
         const chunk = streamChunk as typeof streamChunk | ToolResultPart;
         if (assistantMessageIndex === null) {
-          // Add initial assistant message
-          assistantMessageIndex = allMessages.length;
-          allMessages.push({
-            role: "assistant",
-            content: [],
-          });
+          // Check if we already have an assistant message at the end
+          const lastMessage = allMessages[allMessages.length - 1];
+          if (lastMessage && lastMessage.role === "assistant") {
+            assistantMessageIndex = allMessages.length - 1;
+            // Initialize content as array if it's not already
+            if (!Array.isArray(lastMessage.content)) {
+              lastMessage.content = [];
+            }
+          } else {
+            // Add initial assistant message
+            assistantMessageIndex = allMessages.length;
+            allMessages.push({
+              role: "assistant",
+              content: [],
+            });
+          }
         }
         switch (chunk.type) {
           case "text-delta":

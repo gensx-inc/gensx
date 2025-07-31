@@ -781,9 +781,18 @@ export const toolImplementations = {
         return $el.css("cursor") === "pointer";
       });
 
+      // Combine and deduplicate elements
+      const allElements = [...interactiveElements, ...clickableElements];
+      const uniqueElements = allElements.filter((element, index, array) => {
+        // Find the first occurrence of this element in the array
+        const firstIndex = array.findIndex(el => el === element);
+        // Keep only if this is the first occurrence
+        return firstIndex === index;
+      });
+
       return {
         success: true,
-        elements: [...interactiveElements, ...clickableElements].map(
+        elements: uniqueElements.map(
           (el) => ({
             type: el.tagName.toLowerCase(),
             selector: getUniqueSelector(el),
@@ -1458,12 +1467,7 @@ export const toolImplementations = {
       
       const elements: {
         selector: string;
-        tag: string;
         text: string;
-        tokenCount: number;
-        id?: string;
-        classes?: string[];
-        attributes?: Record<string, string>;
       }[] = [];
       
       // Get all text-containing elements, focusing on semantic and interactive elements
@@ -1499,15 +1503,10 @@ export const toolImplementations = {
           if (element.tagName.toLowerCase() === 'input' || element.tagName.toLowerCase() === 'textarea') {
             text = ($el.val() as string) || $el.attr('placeholder') || '';
           } else {
-            // Get direct text content (not including children to avoid duplication)
+            // Get only direct text content (not including children to avoid duplication)
             text = $el.contents().filter(function() {
               return this.nodeType === Node.TEXT_NODE;
             }).text().trim();
-            
-            // If no direct text, get all text but limit it
-            if (!text) {
-              text = $el.text().trim();
-            }
           }
           
           // Skip empty elements if requested
@@ -1518,33 +1517,12 @@ export const toolImplementations = {
           const minLength = ['button', 'a', 'input', 'textarea'].includes(tagName) ? 1 : 3;
           if (text.length < minLength) return;
           
-          // Estimate tokens and truncate if needed
-          const estimatedTokens = estimateTokens(text);
+          // Truncate text if needed
           const truncatedText = truncateToTokens(text, maxTokensPerElement);
-          
-          // Get element attributes for identification
-          const id = element.id || undefined;
-          const classes = element.className ? 
-            (typeof element.className === 'string' ? 
-              element.className.split(' ').filter(c => c.trim()) : 
-              []) : 
-            undefined;
-          
-          // Get key attributes that help with element identification
-          const attributes: Record<string, string> = {};
-          ['aria-label', 'title', 'placeholder', 'alt', 'name', 'type', 'role'].forEach(attr => {
-            const value = element.getAttribute(attr);
-            if (value) attributes[attr] = value;
-          });
           
           elements.push({
             selector: getUniqueSelector(element),
-            tag: tagName,
-            text: truncatedText,
-            tokenCount: estimatedTokens,
-            id,
-            classes: classes && classes.length > 0 ? classes : undefined,
-            attributes: Object.keys(attributes).length > 0 ? attributes : undefined
+            text: truncatedText
           });
         });
       });
@@ -1554,30 +1532,14 @@ export const toolImplementations = {
         array.findIndex(e => e.selector === element.selector) === index
       );
       
-      // Sort by tag importance and text length
-      const tagPriority: Record<string, number> = {
-        'h1': 1, 'h2': 2, 'h3': 3, 'h4': 4, 'h5': 5, 'h6': 6,
-        'button': 7, 'a': 8, 'input': 9, 'textarea': 10,
-        'p': 11, 'span': 12, 'div': 13, 'label': 14,
-        'td': 15, 'th': 15, 'li': 16
-      };
-      
-      uniqueElements.sort((a, b) => {
-        const aPriority = tagPriority[a.tag] || 100;
-        const bPriority = tagPriority[b.tag] || 100;
-        if (aPriority !== bPriority) return aPriority - bPriority;
-        return b.text.length - a.text.length; // Longer text first within same tag priority
-      });
-      
-      // Calculate total estimated tokens
-      const totalTokens = uniqueElements.reduce((sum, el) => sum + el.tokenCount, 0);
+      // Sort by text length (longer text first)
+      uniqueElements.sort((a, b) => b.text.length - a.text.length);
       
       return {
         success: true,
         url: window.location.href,
         title: document.title || undefined,
         elementCount: uniqueElements.length,
-        totalEstimatedTokens: totalTokens,
         elements: uniqueElements,
         parameters: {
           maxTokensPerElement,
@@ -1591,7 +1553,6 @@ export const toolImplementations = {
         url: window.location.href,
         title: document.title || undefined,
         elementCount: 0,
-        totalEstimatedTokens: 0,
         elements: [],
         error: error instanceof Error ? error.message : String(error)
       };
@@ -1816,13 +1777,27 @@ const escapeCSSClass = (className: string): string => {
   return className.replace(/([!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~])/g, "\\$1");
 };
 
-// Helper to get unique selector
+// Helper to get unique selector with optimized approach
 const getUniqueSelector = (el: HTMLElement): string => {
+  // If element has ID, use it (most reliable)
   if (el.id) return `#${CSS.escape(el.id)}`;
 
   let selector = el.tagName.toLowerCase();
   
-  // Safely handle className which can be different types (string for HTML, SVGAnimatedString for SVG)
+  // Try to use meaningful attributes before classes
+  const meaningfulAttrs = ['data-testid', 'data-cy', 'data-id', 'name', 'role', 'aria-label'];
+  for (const attr of meaningfulAttrs) {
+    const value = el.getAttribute(attr);
+    if (value) {
+      selector += `[${attr}="${CSS.escape(value)}"]`;
+      // Check if this makes it unique
+      if ($(selector).length === 1) {
+        return selector;
+      }
+    }
+  }
+
+  // Get class names and filter for meaningful ones
   let classNameStr = '';
   try {
     if (typeof el.className === 'string') {
@@ -1839,8 +1814,32 @@ const getUniqueSelector = (el: HTMLElement): string => {
   
   if (classNameStr && typeof classNameStr === 'string' && classNameStr.trim()) {
     const classes = classNameStr.split(" ").filter((c) => c.trim());
-    if (classes.length > 0) {
-      selector += "." + classes.map(escapeCSSClass).join(".");
+    
+    // Filter to meaningful classes and limit to first 2-3 most distinctive ones
+    const meaningfulClasses = classes.filter(cls => {
+      // Skip utility/framework classes that are too common or too specific
+      return !cls.match(/^(p|m|w|h|bg|text|border|rounded|shadow|hover|focus|transition|duration|ease|transform|scale|translate|rotate|skew|opacity|z-|top-|left-|right-|bottom-|absolute|relative|fixed|flex|grid|items-|justify-|content-|self-|order-|gap-|space-|min-|max-|overflow-|whitespace-|break-|font-|leading-|tracking-|decoration-|align-|cursor-|select-|pointer-events|user-select|resize|outline-|ring-|inset-|sr-only|not-sr-only|visible|invisible|collapse|block|inline|hidden|table|flow-root|contents|list-item)\d*$/) &&
+             !cls.match(/^[A-Z][a-z]*\d+$/) && // Skip single word with numbers like Button1, Text123
+             cls.length > 2 && // Skip very short classes
+             cls.length < 50; // Skip very long utility classes
+    }).slice(0, 3); // Limit to first 3 meaningful classes
+    
+    if (meaningfulClasses.length > 0) {
+      const baseSelector = selector;
+      selector += "." + meaningfulClasses.map(escapeCSSClass).join(".");
+      
+      // Check if this is unique enough
+      if ($(selector).length === 1) {
+        return selector;
+      }
+      
+      // If too many matches, try with just the first class
+      if (meaningfulClasses.length > 1) {
+        const singleClassSelector = baseSelector + "." + escapeCSSClass(meaningfulClasses[0]);
+        if ($(singleClassSelector).length <= 3) { // Allow small number of matches
+          selector = singleClassSelector;
+        }
+      }
     }
   }
 
@@ -1856,9 +1855,27 @@ const getUniqueSelector = (el: HTMLElement): string => {
       selector += `:eq(${index})`;
     }
 
-    // Add parent context if still not unique
+    // Add parent context only if absolutely necessary and keep it minimal
     if ($(selector).length > 1 && el.parentElement) {
-      const parentSelector = getUniqueSelector(el.parentElement);
+      // Try to get a minimal parent selector
+      const parent = el.parentElement;
+      let parentSelector = parent.tagName.toLowerCase();
+      
+      if (parent.id) {
+        parentSelector = `#${CSS.escape(parent.id)}`;
+      } else if (parent.className) {
+        // Get first meaningful class of parent
+        const parentClasses = parent.className.split(' ').filter(c => 
+          c.trim() && 
+          !c.match(/^(p|m|w|h|bg|text|border|rounded|shadow|hover|focus|transition|duration|ease|transform|scale|translate|rotate|skew|opacity|z-|top-|left-|right-|bottom-|absolute|relative|fixed|flex|grid|items-|justify-|content-|self-|order-|gap-|space-|min-|max-|overflow-|whitespace-|break-|font-|leading-|tracking-|decoration-|align-|cursor-|select-|pointer-events|user-select|resize|outline-|ring-|inset-|sr-only|not-sr-only|visible|invisible|collapse|block|inline|hidden|table|flow-root|contents|list-item)\d*$/) &&
+          c.length > 2 && c.length < 30
+        ).slice(0, 1); // Just first meaningful parent class
+        
+        if (parentClasses.length > 0) {
+          parentSelector += "." + escapeCSSClass(parentClasses[0]);
+        }
+      }
+      
       selector = `${parentSelector} > ${selector}`;
     }
   } catch (error) {
