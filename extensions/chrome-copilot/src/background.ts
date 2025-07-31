@@ -10,6 +10,9 @@ import { GenSX } from "@gensx/client";
 import { applyObjectPatches } from "./utils/workflow-state";
 import { type CoreMessage } from "ai";
 
+// Store the current workflow's tab ID to avoid "no active tab" issues when browser is not focused
+let currentWorkflowTabId: number | null = null;
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log("GenSX Copilot extension installed");
 });
@@ -77,6 +80,26 @@ chrome.runtime.onMessage.addListener(
       return true; // Indicates we will send a response asynchronously
     }
 
+    if (message.type === "UPDATE_CURRENT_TAB") {
+      // Update the current workflow tab ID (called when popup opens)
+      (async () => {
+        try {
+          const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (activeTab && activeTab.id) {
+            currentWorkflowTabId = activeTab.id;
+            console.log("Updated current workflow tab ID:", currentWorkflowTabId);
+            sendResponse({ success: true, tabId: currentWorkflowTabId });
+          } else {
+            sendResponse({ success: false, error: "No active tab found" });
+          }
+        } catch (error) {
+          console.warn("Failed to update current tab:", error);
+          sendResponse({ success: false, error: error instanceof Error ? error.message : String(error) });
+        }
+      })();
+      return true; // Indicates we will send a response asynchronously
+    }
+
     return false; // Not handling this message
   },
 );
@@ -91,6 +114,23 @@ async function handleWorkflowRequest(
 
   try {
     console.log("Executing workflow for request:", requestId);
+    
+    // Store the tab ID for this workflow to avoid "no active tab" issues
+    if (data.tabId) {
+      currentWorkflowTabId = data.tabId;
+      console.log("Stored workflow tab ID:", currentWorkflowTabId);
+    } else {
+      // Fallback to trying to get active tab if no tab ID provided
+      try {
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (activeTab && activeTab.id) {
+          currentWorkflowTabId = activeTab.id;
+          console.log("Fallback: stored active tab ID:", currentWorkflowTabId);
+        }
+      } catch (error) {
+        console.warn("Could not determine tab ID for workflow:", error);
+      }
+    }
 
     // Create GenSX client
     const gensx = await getClient();
@@ -412,19 +452,21 @@ async function processStreamingEvent(
     console.log("External tool call detected:", event);
 
     // Send tool call to content script for execution
-    // Get the active tab since the sender might be from popup
+    // Use the stored workflow tab ID instead of querying for active tab
     try {
-      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!activeTab || !activeTab.id) {
-        throw new Error("No active tab found for tool execution");
+      const tabId = currentWorkflowTabId;
+      if (!tabId) {
+        throw new Error("No workflow tab ID available for tool execution");
       }
 
-      console.log("Sending tool call to active tab:", activeTab.id, activeTab.url);
+      // Get tab info for logging
+      const tab = await chrome.tabs.get(tabId);
+      console.log("Sending tool call to workflow tab:", tabId, tab.url);
 
       // Try to send message to content script, with fallback to inject if needed
       let toolResponse;
       try {
-        toolResponse = await chrome.tabs.sendMessage(activeTab.id, {
+        toolResponse = await chrome.tabs.sendMessage(tabId, {
           type: "EXTERNAL_TOOL_CALL",
           requestId,
           data: {
@@ -441,7 +483,7 @@ async function processStreamingEvent(
         // Try to inject the content script manually
         try {
           await chrome.scripting.executeScript({
-            target: { tabId: activeTab.id },
+            target: { tabId: tabId },
             files: ['content.js']
           });
           
@@ -449,7 +491,7 @@ async function processStreamingEvent(
           await new Promise(resolve => setTimeout(resolve, 500));
           
           // Retry the message
-          toolResponse = await chrome.tabs.sendMessage(activeTab.id, {
+          toolResponse = await chrome.tabs.sendMessage(tabId, {
             type: "EXTERNAL_TOOL_CALL",
             requestId,
             data: {

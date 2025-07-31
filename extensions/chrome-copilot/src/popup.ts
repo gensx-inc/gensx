@@ -82,6 +82,7 @@ class PopupChatInterface {
     this.initializeEventListeners();
     this.loadPersistedState();
     this.updateCurrentPageInfo();
+    this.updateBackgroundCurrentTab();
   }
 
   private generateUserId(): string {
@@ -325,6 +326,17 @@ class PopupChatInterface {
     
     // Render after all initialization is complete
     this.render();
+  }
+
+  private async updateBackgroundCurrentTab(): Promise<void> {
+    try {
+      // Tell the background script about the current tab ID
+      await chrome.runtime.sendMessage({
+        type: 'UPDATE_CURRENT_TAB'
+      });
+    } catch (error) {
+      console.warn('Failed to update background current tab:', error);
+    }
   }
 
   private async switchTab(tab: 'chat' | 'knowledge'): Promise<void> {
@@ -595,7 +607,8 @@ class PopupChatInterface {
           userId: this.state.userId,
           url: this.state.currentUrl || '',
           userName: settings.userName,
-          userContext: settings.userContext
+          userContext: settings.userContext,
+          tabId: this.state.currentTabId
         }
       };
 

@@ -522,16 +522,10 @@ export const toolbox = createToolBox({
       url: z.string(),
       title: z.string().optional(),
       elementCount: z.number().describe("Total number of text elements found"),
-      totalEstimatedTokens: z.number().describe("Estimated total token count"),
       elements: z.array(
         z.object({
           selector: z.string().describe("Unique jQuery selector for this element"),
-          tag: z.string().describe("HTML tag name"),
           text: z.string().describe("Text content (truncated if needed)"),
-          tokenCount: z.number().describe("Estimated token count for this element"),
-          id: z.string().optional().describe("Element ID if present"),
-          classes: z.array(z.string()).optional().describe("CSS classes"),
-          attributes: z.record(z.string()).optional().describe("Key attributes for identification"),
         })
       ),
       parameters: z.object({
