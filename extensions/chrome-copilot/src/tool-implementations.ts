@@ -252,29 +252,8 @@ export const toolImplementations = {
             warnings.push(`Element may not be interactive: ${interactivityCheck.reason}`);
           }
 
-          // Check if it's a link that might cause navigation
-          if (
-            element.is("a") &&
-            element.attr("href") &&
-            !element.attr("href")?.startsWith("#")
-          ) {
-            // For links, prevent default to avoid navigation
-            const clickEvent = $.Event("click");
-            element.trigger(clickEvent);
-            if (!clickEvent.isDefaultPrevented()) {
-              console.warn(
-                `Clicking link with href: ${element.attr("href")} - navigation prevented`,
-              );
-            }
-          } else {
-            // For other elements, trigger click normally
-            // For React components, use native click to ensure proper event propagation
-            if (nativeElement) {
-              nativeElement.click();
-            } else {
-              element.trigger("click");
-            }
-          }
+          // Simple click implementation - native click() works for React and most cases
+          nativeElement.click();
 
           results.push({
             selector: elementParams.selector,
@@ -790,17 +769,62 @@ export const toolImplementations = {
         return firstIndex === index;
       });
 
+      // Helper function to check if an element has meaningful content
+      const hasContent = (el: HTMLElement): boolean => {
+        const $el = $(el);
+        const tagName = el.tagName.toLowerCase();
+        
+        // For input elements, check value, placeholder, or aria-label
+        if (['input', 'textarea', 'select'].includes(tagName)) {
+          const value = $el.val() as string;
+          const placeholder = $el.attr('placeholder');
+          const ariaLabel = $el.attr('aria-label');
+          const label = $(`label[for="${$el.attr('id')}"]`).text().trim();
+          
+          return !!(value?.trim() || placeholder?.trim() || ariaLabel?.trim() || label);
+        }
+        
+        // Check for text content, aria-label, title, or alt attributes
+        const text = el.textContent?.trim() || '';
+        const ariaLabel = $el.attr('aria-label')?.trim() || '';
+        const title = $el.attr('title')?.trim() || '';
+        const alt = $el.attr('alt')?.trim() || '';
+        
+        // Check if element contains images, icons, or SVGs (visual content)
+        const hasVisualContent = $el.find('img, svg, i[class*="icon"], span[class*="icon"]').length > 0;
+        
+        // Check if element itself is an image with alt text
+        const isImageWithAlt = tagName === 'img' && alt;
+        
+        // Check for common icon/visual indicator classes
+        const hasIconClasses = $el.attr('class')?.match(/icon|fa-|material-|mdi-|glyphicon/) || false;
+        
+        // Check for data attributes that might indicate functionality
+        const hasDataAttributes = $el.attr('data-testid') || $el.attr('data-cy') || $el.attr('data-action');
+        
+        // Consider element as having content if it has:
+        // - Text content, labels, or titles
+        // - Visual content (images, icons, SVGs)
+        // - Is an image with alt text
+        // - Has icon classes
+        // - Has test/action data attributes
+        return !!(text || ariaLabel || title || alt || hasVisualContent || isImageWithAlt || hasIconClasses || hasDataAttributes);
+      };
+
+      // Filter out empty elements and map to result format
+      const meaningfulElements = uniqueElements
+        .filter(hasContent)
+        .map((el) => ({
+          type: el.tagName.toLowerCase(),
+          selector: getUniqueSelector(el),
+          text: el.textContent?.trim() ?? "",
+          value: (el as HTMLInputElement).value?.trim(),
+          href: (el as HTMLAnchorElement).href,
+        }));
+
       return {
         success: true,
-        elements: uniqueElements.map(
-          (el) => ({
-            type: el.tagName.toLowerCase(),
-            selector: getUniqueSelector(el),
-            text: el.textContent?.trim() ?? "",
-            value: (el as HTMLInputElement).value?.trim(),
-            href: (el as HTMLAnchorElement).href,
-          }),
-        ),
+        elements: meaningfulElements,
       };
     } catch (error) {
       return {
@@ -823,6 +847,48 @@ export const toolImplementations = {
           rect.top < window.innerHeight &&
           rect.bottom > 0
         );
+      };
+
+      // Helper function to check if an element has meaningful content (global for reuse)
+      const hasContent = (el: HTMLElement): boolean => {
+        const $el = $(el);
+        const tagName = el.tagName.toLowerCase();
+        
+        // For input elements, check value, placeholder, or aria-label
+        if (['input', 'textarea', 'select'].includes(tagName)) {
+          const value = $el.val() as string;
+          const placeholder = $el.attr('placeholder');
+          const ariaLabel = $el.attr('aria-label');
+          const label = $(`label[for="${$el.attr('id')}"]`).text().trim();
+          
+          return !!(value?.trim() || placeholder?.trim() || ariaLabel?.trim() || label);
+        }
+        
+        // Check for text content, aria-label, title, or alt attributes
+        const text = el.textContent?.trim() || '';
+        const ariaLabel = $el.attr('aria-label')?.trim() || '';
+        const title = $el.attr('title')?.trim() || '';
+        const alt = $el.attr('alt')?.trim() || '';
+        
+        // Check if element contains images, icons, or SVGs (visual content)
+        const hasVisualContent = $el.find('img, svg, i[class*="icon"], span[class*="icon"]').length > 0;
+        
+        // Check if element itself is an image with alt text
+        const isImageWithAlt = tagName === 'img' && alt;
+        
+        // Check for common icon/visual indicator classes
+        const hasIconClasses = $el.attr('class')?.match(/icon|fa-|material-|mdi-|glyphicon/) || false;
+        
+        // Check for data attributes that might indicate functionality
+        const hasDataAttributes = $el.attr('data-testid') || $el.attr('data-cy') || $el.attr('data-action');
+        
+        // Consider element as having content if it has:
+        // - Text content, labels, or titles
+        // - Visual content (images, icons, SVGs)
+        // - Is an image with alt text
+        // - Has icon classes
+        // - Has test/action data attributes
+        return !!(text || ariaLabel || title || alt || hasVisualContent || isImageWithAlt || hasIconClasses || hasDataAttributes);
       };
 
       // Helper to truncate text
@@ -930,7 +996,7 @@ export const toolImplementations = {
           .find("button, input, select, textarea, a")
           .each(function (this: HTMLElement) {
             const el = this as HTMLElement;
-            if (!isVisible(el)) return;
+            if (!isVisible(el) || !hasContent(el)) return;
 
             const $el = $(el);
             const type = el.tagName.toLowerCase();
@@ -954,7 +1020,7 @@ export const toolImplementations = {
         // Also find clickable elements (cursor: pointer, role="button", etc.)
         $section.find("*").each(function (this: HTMLElement) {
           const el = this as HTMLElement;
-          if (!isVisible(el)) return;
+          if (!isVisible(el) || !hasContent(el)) return;
           
           // Skip if we already have this element
           if (el.tagName.toLowerCase() === 'button' || 
@@ -1061,7 +1127,7 @@ export const toolImplementations = {
             .find("button, input, select, textarea, a")
             .each(function (this: HTMLElement) {
               const el = this as HTMLElement;
-              if (!isVisible(el)) return;
+              if (!isVisible(el) || !hasContent(el)) return;
 
               const $el = $(el);
               const type = el.tagName.toLowerCase();
@@ -1085,7 +1151,7 @@ export const toolImplementations = {
           // Also find clickable elements (cursor: pointer, role="button", etc.)
           $container.find("*").each(function (this: HTMLElement) {
             const el = this as HTMLElement;
-            if (!isVisible(el)) return;
+            if (!isVisible(el) || !hasContent(el)) return;
             
             // Skip if we already have this element
             if (el.tagName.toLowerCase() === 'button' || 
@@ -1771,10 +1837,12 @@ const checkElementInteractivity = (element: HTMLElement): { isInteractive: boole
   return { isInteractive: true };
 };
 
+
 // Helper to escape CSS class names for jQuery selectors
 const escapeCSSClass = (className: string): string => {
-  // Escape characters that have special meaning in CSS selectors
-  return className.replace(/([!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~])/g, "\\$1");
+  // Use browser's built-in CSS.escape() for proper escaping
+  // This handles all edge cases correctly without over-escaping
+  return CSS.escape(className);
 };
 
 // Helper to get unique selector with optimized approach
