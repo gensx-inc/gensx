@@ -2,6 +2,7 @@
 // Based on examples/copilot/src/components/copilot/tool-implementations.ts
 
 import $ from 'jquery';
+import { finder } from '@medv/finder';
 
 // Tool implementations for Chrome extension context
 export const toolImplementations = {
@@ -56,7 +57,7 @@ export const toolImplementations = {
                 const text = $el.text().trim();
                 const tagName = this.tagName.toLowerCase();
                 const value = $el.val() as string;
-                
+
                 // Create a concise summary
                 let summary = `${tagName}`;
                 if (value && ['input', 'textarea', 'select'].includes(tagName)) {
@@ -64,13 +65,13 @@ export const toolImplementations = {
                 } else if (text) {
                   summary += `: "${text.length > 100 ? text.substring(0, 97) + '...' : text}"`;
                 }
-                
+
                 // Add key attributes for context
                 const id = $el.attr('id');
                 const className = $el.attr('class');
                 const role = $el.attr('role');
                 const ariaLabel = $el.attr('aria-label');
-                
+
                 if (id) summary += ` #${id}`;
                 if (className) {
                   const classes = className.split(' ').slice(0, 3).join(' '); // First 3 classes
@@ -78,9 +79,9 @@ export const toolImplementations = {
                 }
                 if (role) summary += ` [role=${role}]`;
                 if (ariaLabel) summary += ` [aria-label="${ariaLabel.substring(0, 30)}${ariaLabel.length > 30 ? '...' : ''}"]`;
-                
+
                 data.summary = summary;
-                
+
                 // Add children summary
                 const childrenSummary: Array<{
                   tag: string;
@@ -88,14 +89,14 @@ export const toolImplementations = {
                   text?: string;
                   count?: number;
                 }> = [];
-                
+
                 const childCounts = new Map<string, number>();
-                
+
                 $el.children().each(function(this: HTMLElement) {
                   const childTag = this.tagName.toLowerCase();
                   const currentCount = childCounts.get(childTag) || 0;
                   childCounts.set(childTag, currentCount + 1);
-                  
+
                   // Only include first few of each type to avoid overwhelming output
                   if (currentCount < 3) {
                     const $child = $(this);
@@ -107,7 +108,7 @@ export const toolImplementations = {
                     });
                   }
                 });
-                
+
                 // Add count summaries for elements with many children
                 childCounts.forEach((count, tag) => {
                   if (count > 3) {
@@ -123,9 +124,9 @@ export const toolImplementations = {
                     }
                   }
                 });
-                
+
                 data.children = childrenSummary.length > 0 ? childrenSummary : undefined;
-                
+
               } else {
                 // Specific properties requested (HTML option removed)
                 if (elementParams.properties.includes("text")) {
@@ -247,7 +248,7 @@ export const toolImplementations = {
           // Check if element might not be interactive and add warnings
           const warnings: string[] = [];
           const interactivityCheck = checkElementInteractivity(nativeElement);
-          
+
           if (!interactivityCheck.isInteractive) {
             warnings.push(`Element may not be interactive: ${interactivityCheck.reason}`);
           }
@@ -271,15 +272,15 @@ export const toolImplementations = {
 
       const clickedCount = results.filter((r) => r.clicked).length;
       const elementsNotFound = results.filter((r) => !r.clicked && r.error?.includes("No elements found")).length;
-      
+
       // Success only if we clicked at least one element AND no elements were missing
       const success = clickedCount > 0 && elementsNotFound === 0;
-      
+
       let message = `Clicked ${clickedCount} of ${params.elements.length} elements`;
       if (elementsNotFound > 0) {
         message += `, ${elementsNotFound} elements not found`;
       }
-      
+
       return {
         success,
         clicks: results,
@@ -773,35 +774,35 @@ export const toolImplementations = {
       const hasContent = (el: HTMLElement): boolean => {
         const $el = $(el);
         const tagName = el.tagName.toLowerCase();
-        
+
         // For input elements, check value, placeholder, or aria-label
         if (['input', 'textarea', 'select'].includes(tagName)) {
           const value = $el.val() as string;
           const placeholder = $el.attr('placeholder');
           const ariaLabel = $el.attr('aria-label');
           const label = $(`label[for="${$el.attr('id')}"]`).text().trim();
-          
+
           return !!(value?.trim() || placeholder?.trim() || ariaLabel?.trim() || label);
         }
-        
+
         // Check for text content, aria-label, title, or alt attributes
         const text = el.textContent?.trim() || '';
         const ariaLabel = $el.attr('aria-label')?.trim() || '';
         const title = $el.attr('title')?.trim() || '';
         const alt = $el.attr('alt')?.trim() || '';
-        
+
         // Check if element contains images, icons, or SVGs (visual content)
         const hasVisualContent = $el.find('img, svg, i[class*="icon"], span[class*="icon"]').length > 0;
-        
+
         // Check if element itself is an image with alt text
         const isImageWithAlt = tagName === 'img' && alt;
-        
+
         // Check for common icon/visual indicator classes
         const hasIconClasses = $el.attr('class')?.match(/icon|fa-|material-|mdi-|glyphicon/) || false;
-        
+
         // Check for data attributes that might indicate functionality
         const hasDataAttributes = $el.attr('data-testid') || $el.attr('data-cy') || $el.attr('data-action');
-        
+
         // Consider element as having content if it has:
         // - Text content, labels, or titles
         // - Visual content (images, icons, SVGs)
@@ -853,35 +854,35 @@ export const toolImplementations = {
       const hasContent = (el: HTMLElement): boolean => {
         const $el = $(el);
         const tagName = el.tagName.toLowerCase();
-        
+
         // For input elements, check value, placeholder, or aria-label
         if (['input', 'textarea', 'select'].includes(tagName)) {
           const value = $el.val() as string;
           const placeholder = $el.attr('placeholder');
           const ariaLabel = $el.attr('aria-label');
           const label = $(`label[for="${$el.attr('id')}"]`).text().trim();
-          
+
           return !!(value?.trim() || placeholder?.trim() || ariaLabel?.trim() || label);
         }
-        
+
         // Check for text content, aria-label, title, or alt attributes
         const text = el.textContent?.trim() || '';
         const ariaLabel = $el.attr('aria-label')?.trim() || '';
         const title = $el.attr('title')?.trim() || '';
         const alt = $el.attr('alt')?.trim() || '';
-        
+
         // Check if element contains images, icons, or SVGs (visual content)
         const hasVisualContent = $el.find('img, svg, i[class*="icon"], span[class*="icon"]').length > 0;
-        
+
         // Check if element itself is an image with alt text
         const isImageWithAlt = tagName === 'img' && alt;
-        
+
         // Check for common icon/visual indicator classes
         const hasIconClasses = $el.attr('class')?.match(/icon|fa-|material-|mdi-|glyphicon/) || false;
-        
+
         // Check for data attributes that might indicate functionality
         const hasDataAttributes = $el.attr('data-testid') || $el.attr('data-cy') || $el.attr('data-action');
-        
+
         // Consider element as having content if it has:
         // - Text content, labels, or titles
         // - Visual content (images, icons, SVGs)
@@ -990,7 +991,7 @@ export const toolImplementations = {
           label?: string;
           text?: string;
         }[] = [];
-        
+
         // Find standard interactive elements
         $section
           .find("button, input, select, textarea, a")
@@ -1021,10 +1022,10 @@ export const toolImplementations = {
         $section.find("*").each(function (this: HTMLElement) {
           const el = this as HTMLElement;
           if (!isVisible(el) || !hasContent(el)) return;
-          
+
           // Skip if we already have this element
-          if (el.tagName.toLowerCase() === 'button' || 
-              el.tagName.toLowerCase() === 'a' || 
+          if (el.tagName.toLowerCase() === 'button' ||
+              el.tagName.toLowerCase() === 'a' ||
               el.tagName.toLowerCase() === 'input' ||
               el.tagName.toLowerCase() === 'select' ||
               el.tagName.toLowerCase() === 'textarea') {
@@ -1035,24 +1036,24 @@ export const toolImplementations = {
           const cursor = $el.css("cursor");
           const role = el.getAttribute("role");
           const hasClickHandler = el.onclick || el.getAttribute('onclick');
-          
+
           // Check if element is clickable
-          if (cursor === "pointer" || 
-              role === "button" || 
-              role === "link" || 
+          if (cursor === "pointer" ||
+              role === "button" ||
+              role === "link" ||
               role === "tab" ||
               role === "menuitem" ||
               hasClickHandler ||
               el.hasAttribute('data-testid') ||
               el.hasAttribute('data-cy')) {
-            
+
             const elemSelector = getUniqueSelector(el);
-            
+
             // Avoid duplicates
-            const isDuplicate = interactiveElements.some(existing => 
+            const isDuplicate = interactiveElements.some(existing =>
               existing.selector === elemSelector
             );
-            
+
             if (!isDuplicate) {
               interactiveElements.push({
                 type: role || (cursor === "pointer" ? "clickable" : el.tagName.toLowerCase()),
@@ -1121,7 +1122,7 @@ export const toolImplementations = {
             label?: string;
             text?: string;
           }[] = [];
-          
+
           // Find standard interactive elements
           $container
             .find("button, input, select, textarea, a")
@@ -1152,10 +1153,10 @@ export const toolImplementations = {
           $container.find("*").each(function (this: HTMLElement) {
             const el = this as HTMLElement;
             if (!isVisible(el) || !hasContent(el)) return;
-            
+
             // Skip if we already have this element
-            if (el.tagName.toLowerCase() === 'button' || 
-                el.tagName.toLowerCase() === 'a' || 
+            if (el.tagName.toLowerCase() === 'button' ||
+                el.tagName.toLowerCase() === 'a' ||
                 el.tagName.toLowerCase() === 'input' ||
                 el.tagName.toLowerCase() === 'select' ||
                 el.tagName.toLowerCase() === 'textarea') {
@@ -1166,24 +1167,24 @@ export const toolImplementations = {
             const cursor = $el.css("cursor");
             const role = el.getAttribute("role");
             const hasClickHandler = el.onclick || el.getAttribute('onclick');
-            
+
             // Check if element is clickable
-            if (cursor === "pointer" || 
-                role === "button" || 
-                role === "link" || 
+            if (cursor === "pointer" ||
+                role === "button" ||
+                role === "link" ||
                 role === "tab" ||
                 role === "menuitem" ||
                 hasClickHandler ||
                 el.hasAttribute('data-testid') ||
                 el.hasAttribute('data-cy')) {
-              
+
               const elemSelector = getUniqueSelector(el);
-              
+
               // Avoid duplicates
-              const isDuplicate = containerInteractiveElements.some(existing => 
+              const isDuplicate = containerInteractiveElements.some(existing =>
                 existing.selector === elemSelector
               );
-              
+
               if (!isDuplicate) {
                 containerInteractiveElements.push({
                   type: role || (cursor === "pointer" ? "clickable" : el.tagName.toLowerCase()),
@@ -1246,7 +1247,7 @@ export const toolImplementations = {
           .map(function (this: HTMLElement) {
             const form = this as HTMLElement;
             if (!isVisible(form)) return null; // Filter out invisible forms
-            
+
             const $form = $(form);
             const purpose =
               $form.attr("aria-label") ||
@@ -1264,7 +1265,7 @@ export const toolImplementations = {
           })
           .get()
           .filter(form => form !== null), // Remove null entries from invisible forms
-        
+
         // Add global interactive elements summary
         interactiveElements: (() => {
           const allInteractive: {
@@ -1292,7 +1293,7 @@ export const toolImplementations = {
           $("*").each(function (this: HTMLElement) {
             const el = this as HTMLElement;
             if (!isVisible(el)) return;
-            
+
             // Skip standard form elements (already captured above)
             if (['button', 'a', 'input', 'select', 'textarea'].includes(el.tagName.toLowerCase())) {
               return;
@@ -1302,21 +1303,21 @@ export const toolImplementations = {
             const cursor = $el.css("cursor");
             const role = el.getAttribute("role");
             const hasClickHandler = el.onclick || el.getAttribute('onclick');
-            
-            if (cursor === "pointer" || 
-                role === "button" || 
-                role === "link" || 
+
+            if (cursor === "pointer" ||
+                role === "button" ||
+                role === "link" ||
                 role === "tab" ||
                 role === "menuitem" ||
                 hasClickHandler) {
-              
+
               const selector = getUniqueSelector(el);
-              
+
               // Avoid duplicates
-              const isDuplicate = allInteractive.some(existing => 
+              const isDuplicate = allInteractive.some(existing =>
                 existing.selector === selector
               );
-              
+
               if (!isDuplicate) {
                 allInteractive.push({
                   type: role || "clickable",
@@ -1336,7 +1337,7 @@ export const toolImplementations = {
             sample: allInteractive.slice(0, 10), // Show first 10 as examples
           };
         })(),
-        
+
         modals: (() => {
           const $modal = $(
             '[role="dialog"], .modal:visible, .dialog:visible',
@@ -1505,19 +1506,19 @@ export const toolImplementations = {
       const maxTokensPerElement = Math.min(Math.max(params.maxTokensPerElement || 50, 1), 500);
       const includeHidden = params.includeHidden || false;
       const skipEmptyElements = params.skipEmptyElements !== false; // Default true
-      
+
       // Helper to estimate token count (rough approximation: ~4 chars per token)
       const estimateTokens = (text: string): number => {
         return Math.ceil(text.length / 4);
       };
-      
+
       // Helper to truncate text to token limit
       const truncateToTokens = (text: string, maxTokens: number): string => {
         const maxChars = maxTokens * 4;
         if (text.length <= maxChars) return text;
         return text.substring(0, maxChars - 3) + '...';
       };
-      
+
       // Helper to check if element is visible
       const isVisible = (el: HTMLElement): boolean => {
         if (!includeHidden) {
@@ -1530,12 +1531,12 @@ export const toolImplementations = {
         }
         return true;
       };
-      
+
       const elements: {
         selector: string;
         text: string;
       }[] = [];
-      
+
       // Get all text-containing elements, focusing on semantic and interactive elements
       const textSelectors = [
         'h1, h2, h3, h4, h5, h6', // Headings
@@ -1553,18 +1554,18 @@ export const toolImplementations = {
         'input[type="text"], input[type="email"], input[type="search"], textarea', // Text inputs
         '[role="button"], [role="link"], [role="tab"], [role="menuitem"]' // ARIA roles
       ];
-      
+
       textSelectors.forEach(selector => {
         $(selector).each(function(this: HTMLElement) {
           const element = this as HTMLElement;
-          
+
           // Skip if not visible and we're not including hidden elements
           if (!isVisible(element)) return;
-          
+
           // Get text content
           const $el = $(element);
           let text = '';
-          
+
           // For input elements, get value instead of text
           if (element.tagName.toLowerCase() === 'input' || element.tagName.toLowerCase() === 'textarea') {
             text = ($el.val() as string) || $el.attr('placeholder') || '';
@@ -1574,33 +1575,33 @@ export const toolImplementations = {
               return this.nodeType === Node.TEXT_NODE;
             }).text().trim();
           }
-          
+
           // Skip empty elements if requested
           if (skipEmptyElements && !text) return;
-          
+
           // Skip if text is too short to be useful (unless it's a button or link)
           const tagName = element.tagName.toLowerCase();
           const minLength = ['button', 'a', 'input', 'textarea'].includes(tagName) ? 1 : 3;
           if (text.length < minLength) return;
-          
+
           // Truncate text if needed
           const truncatedText = truncateToTokens(text, maxTokensPerElement);
-          
+
           elements.push({
             selector: getUniqueSelector(element),
             text: truncatedText
           });
         });
       });
-      
+
       // Remove duplicates based on selector
-      const uniqueElements = elements.filter((element, index, array) => 
+      const uniqueElements = elements.filter((element, index, array) =>
         array.findIndex(e => e.selector === element.selector) === index
       );
-      
+
       // Sort by text length (longer text first)
       uniqueElements.sort((a, b) => b.text.length - a.text.length);
-      
+
       return {
         success: true,
         url: window.location.href,
@@ -1780,7 +1781,7 @@ const checkElementInteractivity = (element: HTMLElement): { isInteractive: boole
 
   const tagName = element.tagName.toLowerCase();
   const $element = $(element);
-  
+
   // Obviously interactive elements
   const interactiveTags = ['button', 'a', 'input', 'select', 'textarea', 'option'];
   if (interactiveTags.includes(tagName)) {
@@ -1838,121 +1839,37 @@ const checkElementInteractivity = (element: HTMLElement): { isInteractive: boole
 };
 
 
-// Helper to escape CSS class names for jQuery selectors
-const escapeCSSClass = (className: string): string => {
-  // Use browser's built-in CSS.escape() for proper escaping
-  // This handles all edge cases correctly without over-escaping
-  return CSS.escape(className);
-};
-
-// Helper to get unique selector with optimized approach
+// Helper to get unique selector using the finder library
 const getUniqueSelector = (el: HTMLElement): string => {
-  // If element has ID, use it (most reliable)
-  if (el.id) return `#${CSS.escape(el.id)}`;
-
-  let selector = el.tagName.toLowerCase();
-  
-  // Try to use meaningful attributes before classes
-  const meaningfulAttrs = ['data-testid', 'data-cy', 'data-id', 'name', 'role', 'aria-label'];
-  for (const attr of meaningfulAttrs) {
-    const value = el.getAttribute(attr);
-    if (value) {
-      selector += `[${attr}="${CSS.escape(value)}"]`;
-      // Check if this makes it unique
-      if ($(selector).length === 1) {
-        return selector;
-      }
-    }
-  }
-
-  // Get class names and filter for meaningful ones
-  let classNameStr = '';
   try {
-    if (typeof el.className === 'string') {
-      classNameStr = el.className;
-    } else if (el.className && typeof el.className === 'object' && 'baseVal' in el.className) {
-      classNameStr = (el.className as any).baseVal || '';
-    } else if (el.className) {
-      classNameStr = String(el.className);
-    }
+    return finder(el, {
+      timeoutMs: 500,
+    });
   } catch (error) {
-    console.warn('Error processing className in getUniqueSelector:', error);
-    classNameStr = '';
-  }
-  
-  if (classNameStr && typeof classNameStr === 'string' && classNameStr.trim()) {
-    const classes = classNameStr.split(" ").filter((c) => c.trim());
-    
-    // Filter to meaningful classes and limit to first 2-3 most distinctive ones
-    const meaningfulClasses = classes.filter(cls => {
-      // Skip utility/framework classes that are too common or too specific
-      return !cls.match(/^(p|m|w|h|bg|text|border|rounded|shadow|hover|focus|transition|duration|ease|transform|scale|translate|rotate|skew|opacity|z-|top-|left-|right-|bottom-|absolute|relative|fixed|flex|grid|items-|justify-|content-|self-|order-|gap-|space-|min-|max-|overflow-|whitespace-|break-|font-|leading-|tracking-|decoration-|align-|cursor-|select-|pointer-events|user-select|resize|outline-|ring-|inset-|sr-only|not-sr-only|visible|invisible|collapse|block|inline|hidden|table|flow-root|contents|list-item)\d*$/) &&
-             !cls.match(/^[A-Z][a-z]*\d+$/) && // Skip single word with numbers like Button1, Text123
-             cls.length > 2 && // Skip very short classes
-             cls.length < 50; // Skip very long utility classes
-    }).slice(0, 3); // Limit to first 3 meaningful classes
-    
-    if (meaningfulClasses.length > 0) {
-      const baseSelector = selector;
-      selector += "." + meaningfulClasses.map(escapeCSSClass).join(".");
-      
-      // Check if this is unique enough
-      if ($(selector).length === 1) {
-        return selector;
-      }
-      
-      // If too many matches, try with just the first class
-      if (meaningfulClasses.length > 1) {
-        const singleClassSelector = baseSelector + "." + escapeCSSClass(meaningfulClasses[0]);
-        if ($(singleClassSelector).length <= 3) { // Allow small number of matches
-          selector = singleClassSelector;
-        }
-      }
-    }
-  }
-
-  if (!el.parentElement) {
-    return selector;
-  }
-
-  // Make it unique by adding index if needed
-  try {
-    const siblings = $(el.parentElement).children(selector);
-    if (siblings.length > 1) {
-      const index = siblings.index(el);
-      selector += `:eq(${index})`;
+    console.warn('Finder library failed, using fallback selector:', error);
+    // Fallback to simple selector if finder fails
+    if (el.id) {
+      return `#${CSS.escape(el.id)}`;
     }
 
-    // Add parent context only if absolutely necessary and keep it minimal
-    if ($(selector).length > 1 && el.parentElement) {
-      // Try to get a minimal parent selector
-      const parent = el.parentElement;
-      let parentSelector = parent.tagName.toLowerCase();
-      
-      if (parent.id) {
-        parentSelector = `#${CSS.escape(parent.id)}`;
-      } else if (parent.className) {
-        // Get first meaningful class of parent
-        const parentClasses = parent.className.split(' ').filter(c => 
-          c.trim() && 
-          !c.match(/^(p|m|w|h|bg|text|border|rounded|shadow|hover|focus|transition|duration|ease|transform|scale|translate|rotate|skew|opacity|z-|top-|left-|right-|bottom-|absolute|relative|fixed|flex|grid|items-|justify-|content-|self-|order-|gap-|space-|min-|max-|overflow-|whitespace-|break-|font-|leading-|tracking-|decoration-|align-|cursor-|select-|pointer-events|user-select|resize|outline-|ring-|inset-|sr-only|not-sr-only|visible|invisible|collapse|block|inline|hidden|table|flow-root|contents|list-item)\d*$/) &&
-          c.length > 2 && c.length < 30
-        ).slice(0, 1); // Just first meaningful parent class
-        
-        if (parentClasses.length > 0) {
-          parentSelector += "." + escapeCSSClass(parentClasses[0]);
-        }
-      }
-      
-      selector = `${parentSelector} > ${selector}`;
+    // Try data-testid first
+    const testId = el.getAttribute('data-testid');
+    if (testId) {
+      return `[data-testid="${CSS.escape(testId)}"]`;
     }
-  } catch (error) {
-    console.error("Error getting unique selector", error);
-    // If selector parsing fails, fall back to tag name with index
-    const allSiblings = $(el.parentElement).children(el.tagName.toLowerCase());
-    const index = allSiblings.index(el);
-    selector = `${el.tagName.toLowerCase()}:eq(${index})`;
-  }
 
-  return selector;
+    // Fall back to tag + nth-child
+    const tagName = el.tagName.toLowerCase();
+    if (el.parentElement) {
+      const siblings = Array.from(el.parentElement.children).filter(child =>
+        child.tagName.toLowerCase() === tagName
+      );
+      if (siblings.length > 1) {
+        const index = siblings.indexOf(el) + 1;
+        return `${tagName}:nth-child(${index})`;
+      }
+    }
+
+    return tagName;
+  }
 };

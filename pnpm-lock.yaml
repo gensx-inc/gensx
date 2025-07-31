@@ -1223,6 +1223,9 @@ importers:
       '@gensx/vercel-ai':
         specifier: ^0.3.3
         version: 0.3.3(react@19.1.0)(zod@3.25.56)
+      '@medv/finder':
+        specifier: ^4.0.2
+        version: 4.0.2
       ai:
         specifier: ^4.3.19
         version: 4.3.19(react@19.1.0)(zod@3.25.56)
@@ -3052,6 +3055,9 @@ packages:
 
   '@mdx-js/mdx@3.1.0':
     resolution: {integrity: sha512-/QxEhPAvGwbQmy1Px8F899L5Uc2KZ6JtXwlCgJmjSTBedwOZkByYcBG4GceIGPXRDsmfxhHazuS+hlOShRLeDw==}
+
+  '@medv/finder@4.0.2':
+    resolution: {integrity: sha512-RraNY9SCcx4KZV0Dh6BEW6XEW2swkqYca74pkFFRw6hHItSHiy+O/xMnpbofjYbzXj0tSpBGthUF1hHTsr3vIQ==}
 
   '@mendable/firecrawl-js@1.21.1':
     resolution: {integrity: sha512-k+ju7P6/tpvj8EHQrKZBbBcPxV1dF3z7PzXQIFsn7Dpp7pWlU/LlAbai+b9hxzDkTlY05ec3NJG0V68VjyoJcA==}
@@ -10890,6 +10896,8 @@ snapshots:
     transitivePeerDependencies:
       - acorn
       - supports-color
+
+  '@medv/finder@4.0.2': {}
 
   '@mendable/firecrawl-js@1.21.1(ws@8.18.2)':
     dependencies:
