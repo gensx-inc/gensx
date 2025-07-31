@@ -46,3 +46,5 @@ export type {
   InferToolParams,
   InferToolResult,
 } from "./external-tools.js";
+
+export { getExecutionScope } from "./scope.js";

@@ -38,6 +38,7 @@ export interface WorkflowExecutionContext {
     feedback: unknown,
   ) => Promise<void>;
   checkpointLabelMap: Map<string, ExecutionNode>;
+  executionScope: Record<string, unknown>;
   // Future: Add more workflow-level utilities here
 }
 
@@ -46,6 +47,7 @@ export function createWorkflowContext({
   onRequestInput,
   onRestoreCheckpoint,
   checkpoint,
+  executionScope = {},
 }: {
   onMessage?: WorkflowMessageListener;
   onRequestInput?: (request: InputRequest) => Promise<unknown>;
@@ -54,6 +56,7 @@ export function createWorkflowContext({
     feedback: unknown,
   ) => Promise<void>;
   checkpoint?: ExecutionNode;
+  executionScope?: Record<string, unknown>;
 } = {}): WorkflowExecutionContext {
   return {
     checkpointManager: new CheckpointManager({ checkpoint }),
@@ -83,6 +86,7 @@ export function createWorkflowContext({
       }),
     checkpointLabelMap: new Map(),
     objectStateMap: new Map(),
+    executionScope,
   };
 }
 
