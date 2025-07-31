@@ -135,3 +135,12 @@ body {
 .dark .x\:bg-primary-100 {
   background-color: rgba(255, 222, 89, 0.2) !important;
 }
+
+/* Custom tabs styling */
+.tabs-list-light {
+  background-color: white !important;
+}
+
+.dark .tabs-list-light {
+  background-color: rgba(10, 10, 11, 295) !important;
+}

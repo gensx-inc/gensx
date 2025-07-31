@@ -2,6 +2,31 @@
 
 import React, { useState, useEffect, createContext, useContext } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+import { cn } from "@/lib/utils";
+
+// Hook to get the current theme
+function useTheme() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return { isDark };
+}
 
 interface TabsContextType {
   activeTab: string;
@@ -27,9 +52,55 @@ interface TabSectionProps {
   children: React.ReactNode;
 }
 
+function TabsList({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.List>) {
+  return (
+    <TabsPrimitive.List
+      className={cn(
+        "inline-flex min-h-15 py-2 px-1.5 space-x-1 items-center justify-center rounded-md text-muted-foreground",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function TabsTrigger({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+  return (
+    <TabsPrimitive.Trigger
+      className={cn(
+        "border border-neutral-600/40 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-3 text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:font-semibold dark:data-[state=active]:bg-neutral-600/15 data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:shadow-neutral-500/20 data-[state=active]:scale-[0.98] dark:hover:bg-neutral-600/10 hover:cursor-pointer hover:shadow-sm hover:shadow-neutral-400/30 dark:hover:shadow-neutral-600/30 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.96] shadow-xs shadow-neutral-700/20 dark:shadow-neutral-700/10",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function TabsContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+  return (
+    <TabsPrimitive.Content
+      className={cn(
+        "mt-6 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 export function Tabs({ children, defaultTab, tabs }: TabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isDark } = useTheme();
 
   const firstTab = tabs[0]?.id || "";
   const defaultTabName = defaultTab || firstTab;
@@ -63,70 +134,25 @@ export function Tabs({ children, defaultTab, tabs }: TabsProps) {
 
   return (
     <TabsContext.Provider value={{ activeTab, setActiveTab }}>
-      <div className="tabs">
-        {/* Tab Navigation - Clean Minimal Style */}
-        <div className="my-4">
-          <nav
-            className="flex flex-col sm:grid sm:grid-cols-2 lg:flex lg:flex-row gap-2"
-            aria-label="Tab selection"
-          >
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  group relative w-full px-6 py-2 text-left transition-all duration-200 ease-in-out
-                  border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring
-                  hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.02] cursor-pointer
-                  ${
-                    activeTab === tab.id
-                      ? "bg-primary/15 border-primary border-2 shadow-lg ring-2 ring-primary/20"
-                      : "bg-card hover:bg-accent/50 hover:border-primary/20"
-                  }
-                `}
-                aria-selected={activeTab === tab.id}
-                role="tab"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`font-medium text-base leading-snug transition-colors duration-200 ${
-                        activeTab === tab.id
-                          ? "text-primary"
-                          : "text-foreground group-hover:text-primary/80"
-                      }`}
-                    >
-                      {tab.name}
-                    </span>
-                    {activeTab === tab.id && (
-                      <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 ml-3 transition-transform duration-200 group-hover:scale-125"></div>
-                    )}
-                  </div>
-                  {tab.description && (
-                    <p
-                      className={`text-sm leading-relaxed transition-colors duration-200 ${
-                        activeTab === tab.id
-                          ? "text-primary/70"
-                          : "text-muted-foreground group-hover:text-foreground/80"
-                      }`}
-                    >
-                      {tab.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Bottom border indicator for active tab */}
-                {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-full transition-all duration-200 group-hover:h-1 group-hover:bg-primary/90"></div>
-                )}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Content */}
-        <div className="tab-content">{children}</div>
-      </div>
+      <TabsPrimitive.Root
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <TabsList
+          className="grid w-full grid-cols-2 lg:grid-cols-4 gap-y-2 tabs-list-light"
+          style={{
+            backgroundColor: isDark ? "rgba(82, 82, 91, 0.1)" : "white",
+          }}
+        >
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.name}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {children}
+      </TabsPrimitive.Root>
     </TabsContext.Provider>
   );
 }
@@ -139,19 +165,10 @@ export function TabSection({ tab, children }: TabSectionProps) {
     return <div data-tab={tab}>{children}</div>;
   }
 
-  const { activeTab } = context;
-  const isActive = activeTab === tab;
-
   return (
-    <div
-      data-tab={tab}
-      className={`tab-section transition-opacity duration-200 ease-in-out ${
-        isActive ? "opacity-100" : "opacity-0 absolute invisible"
-      }`}
-      aria-hidden={!isActive}
-    >
+    <TabsContent value={tab} data-tab={tab}>
       {children}
-    </div>
+    </TabsContent>
   );
 }
 
