@@ -7,10 +7,11 @@ module.exports = {
   devtool: process.env.NODE_ENV === "production" ? false : "cheap-module-source-map",
 
   entry: {
-    content: "./src/content.ts",
+    content: "./src/content/index.ts",
     background: "./src/background.ts",
     popup: "./src/popup.ts",
     options: "./src/options.ts",
+    "worker.scoring": "./src/content/worker.scoring.ts",
   },
 
   output: {

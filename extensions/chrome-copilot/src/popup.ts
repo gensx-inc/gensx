@@ -24,10 +24,6 @@ interface PopupState {
   currentUrl?: string;
   activeExecutionId?: string;
   activeRequestId?: string;
-  activeTab: 'chat' | 'knowledge';
-  websiteKnowledge: string;
-  domain: string;
-  knowledgeBaseLoaded: boolean;
 }
 
 class PopupChatInterface {
@@ -40,11 +36,6 @@ class PopupChatInterface {
     clearButton: HTMLButtonElement;
     optionsButton: HTMLButtonElement;
     currentPageElement: HTMLElement;
-    chatTab: HTMLElement;
-    knowledgeTab: HTMLElement;
-    knowledgeDomain: HTMLElement;
-    knowledgeText: HTMLTextAreaElement;
-    deleteKnowledgeButton: HTMLButtonElement;
   };
   private currentStreamingRequestId: string | null = null;
   private currentStreamingMessageIndex: number = -1;
@@ -57,10 +48,6 @@ class PopupChatInterface {
       isReconnecting: false,
       userId: this.generateUserId(),
       threadId: this.generateThreadId(),
-      activeTab: 'chat',
-      websiteKnowledge: '',
-      domain: '',
-      knowledgeBaseLoaded: false,
     };
 
     // Get DOM elements
@@ -72,11 +59,6 @@ class PopupChatInterface {
       clearButton: document.getElementById('clearThread') as HTMLButtonElement,
       optionsButton: document.getElementById('openOptions') as HTMLButtonElement,
       currentPageElement: document.getElementById('currentPage')!,
-      chatTab: document.getElementById('chatTab')!,
-      knowledgeTab: document.getElementById('knowledgeTab')!,
-      knowledgeDomain: document.getElementById('knowledgeDomain')!,
-      knowledgeText: document.getElementById('knowledgeText') as HTMLTextAreaElement,
-      deleteKnowledgeButton: document.getElementById('deleteKnowledge') as HTMLButtonElement,
     };
 
     this.initializeEventListeners();
@@ -123,18 +105,6 @@ class PopupChatInterface {
       chrome.runtime.openOptionsPage();
     });
 
-    // Tab navigation
-    document.querySelectorAll('.tab').forEach(tabButton => {
-      tabButton.addEventListener('click', (e) => {
-        const tab = (e.target as HTMLElement).getAttribute('data-tab') as 'chat' | 'knowledge';
-        this.switchTab(tab);
-      });
-    });
-
-    // Delete knowledge button
-    this.elements.deleteKnowledgeButton.addEventListener('click', () => {
-      this.deleteWebsiteKnowledge();
-    });
 
     // Message listener for background script responses
     chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
@@ -309,19 +279,13 @@ class PopupChatInterface {
         this.state.currentUrl = tab.url;
         
         const domain = new URL(tab.url).hostname;
-        this.state.domain = domain;
         this.elements.currentPageElement.textContent = domain;
-        
-        // Load website knowledge when page info updates
-        await this.loadWebsiteKnowledge();
       } else {
         this.elements.currentPageElement.textContent = 'No active page';
-        this.state.domain = '';
       }
     } catch (error) {
       console.warn('Failed to get current page info:', error);
       this.elements.currentPageElement.textContent = 'Unknown page';
-      this.state.domain = '';
     }
     
     // Render after all initialization is complete
@@ -339,118 +303,6 @@ class PopupChatInterface {
     }
   }
 
-  private async switchTab(tab: 'chat' | 'knowledge'): Promise<void> {
-    this.state.activeTab = tab;
-    
-    // Update tab buttons
-    document.querySelectorAll('.tab').forEach(tabButton => {
-      tabButton.classList.remove('active');
-      if (tabButton.getAttribute('data-tab') === tab) {
-        tabButton.classList.add('active');
-      }
-    });
-    
-    // Update tab content
-    this.elements.chatTab.classList.toggle('hidden', tab !== 'chat');
-    this.elements.knowledgeTab.classList.toggle('hidden', tab !== 'knowledge');
-    
-    // If switching to knowledge tab, refetch and update the display
-    if (tab === 'knowledge') {
-      await this.loadWebsiteKnowledge();
-      this.updateKnowledgeDisplay();
-    }
-  }
-
-  private updateKnowledgeDisplay(): void {
-    this.elements.knowledgeDomain.textContent = this.state.domain || 'No domain selected';
-    this.elements.knowledgeText.value = this.state.websiteKnowledge;
-    
-    // Enable/disable delete button based on whether knowledge exists
-    const hasKnowledge = this.state.websiteKnowledge.trim().length > 0;
-    this.elements.deleteKnowledgeButton.disabled = !hasKnowledge;
-  }
-
-  private async loadWebsiteKnowledge(): Promise<void> {
-    if (!this.state.domain) {
-      this.state.knowledgeBaseLoaded = true;
-      return;
-    }
-
-    try {
-      console.log('Loading website knowledge for domain:', this.state.domain);
-      
-      const response = await chrome.runtime.sendMessage({
-        type: 'GET_WEBSITE_KNOWLEDGE',
-        data: {
-          userId: this.state.userId,
-          domain: this.state.domain
-        }
-      });
-      
-      console.log('Website knowledge response:', response);
-      
-      if (response && response.success) {
-        this.state.websiteKnowledge = response.content || '';
-        console.log('Loaded website knowledge:', this.state.websiteKnowledge.length, 'characters');
-        
-        // Update knowledge display if we're on the knowledge tab
-        if (this.state.activeTab === 'knowledge') {
-          this.updateKnowledgeDisplay();
-        }
-      } else if (response && !response.success) {
-        console.warn('Failed to load website knowledge:', response.error);
-        this.state.websiteKnowledge = '';
-      } else {
-        console.log('No website knowledge found for domain:', this.state.domain);
-        this.state.websiteKnowledge = '';
-      }
-    } catch (error) {
-      console.warn('Failed to load website knowledge:', error);
-      this.state.websiteKnowledge = '';
-    } finally {
-      // Mark knowledge base as loaded regardless of success/failure
-      this.state.knowledgeBaseLoaded = true;
-      // Re-render to potentially show the init hint
-      this.render();
-    }
-  }
-
-  private async deleteWebsiteKnowledge(): Promise<void> {
-    if (!this.state.domain) {
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete all website knowledge for ${this.state.domain}?`)) {
-      return;
-    }
-
-    try {
-      console.log('Deleting website knowledge for domain:', this.state.domain);
-      
-      const response = await chrome.runtime.sendMessage({
-        type: 'DELETE_WEBSITE_KNOWLEDGE',
-        data: {
-          userId: this.state.userId,
-          domain: this.state.domain
-        }
-      });
-      
-      console.log('Delete website knowledge response:', response);
-      
-      if (response && response.success) {
-        this.state.websiteKnowledge = '';
-        console.log('Successfully deleted website knowledge');
-        alert(response.message || 'Website knowledge deleted successfully');
-        this.updateKnowledgeDisplay();
-      } else {
-        console.error('Failed to delete website knowledge:', response?.message);
-        alert('Failed to delete website knowledge: ' + (response?.message || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Failed to delete website knowledge:', error);
-      alert('Failed to delete website knowledge: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    }
-  }
 
   private handleBackgroundMessage(message: ExtensionMessage): void {
     switch (message.type) {
@@ -670,9 +522,9 @@ class PopupChatInterface {
       this.elements.messagesContainer.appendChild(messageElement);
     });
     
-    // Render hint if no messages and knowledge base is empty
-    if (this.state.messages.length === 0 && this.shouldShowInitHint()) {
-      const hintElement = this.renderInitHint();
+    // Show getting started hint if no messages
+    if (this.state.messages.length === 0) {
+      const hintElement = this.renderGettingStartedHint();
       this.elements.messagesContainer.appendChild(hintElement);
     }
     
@@ -842,27 +694,26 @@ class PopupChatInterface {
     return toolCallsDiv;
   }
 
-  private renderInitHint(): HTMLElement {
+  private renderGettingStartedHint(): HTMLElement {
     const hintDiv = document.createElement('div');
     hintDiv.className = 'hint-bubble';
     hintDiv.innerHTML = `
       <div class="hint-content">
-        <h4>Get started with AI exploration</h4>
-        <p>Try typing <code class="hint-code">/init</code> to have the AI systematically explore the current page and discover its features automatically.</p>
+        <h4>Welcome to GenSX Copilot</h4>
+        <p>I can help you interact with any website using natural language. Try asking me to:</p>
+        <ul style="margin: 8px 0; padding-left: 16px; font-size: 12px; color: #1e40af;">
+          <li>Click buttons or links</li>
+          <li>Fill out forms</li>
+          <li>Search for content</li>
+          <li>Navigate to different pages</li>
+        </ul>
         <div class="hint-actions">
-          <button class="hint-button primary" id="tryInit">Try /init now</button>
-          <button class="hint-button secondary" id="dismissHint">Dismiss</button>
+          <button class="hint-button secondary" id="dismissHint">Got it</button>
         </div>
       </div>
     `;
     
-    const tryInitButton = hintDiv.querySelector('#tryInit') as HTMLButtonElement;
     const dismissButton = hintDiv.querySelector('#dismissHint') as HTMLButtonElement;
-    
-    tryInitButton.addEventListener('click', () => {
-      this.elements.messageInput.value = '/init';
-      this.sendMessage();
-    });
     
     dismissButton.addEventListener('click', () => {
       this.state.messages.push({ role: 'system', content: 'hint_dismissed' });
@@ -870,11 +721,6 @@ class PopupChatInterface {
     });
     
     return hintDiv;
-  }
-
-  private shouldShowInitHint(): boolean {
-    // Only show init hint if knowledge base is loaded and empty
-    return this.state.knowledgeBaseLoaded && (!this.state.websiteKnowledge || this.state.websiteKnowledge.trim().length === 0);
   }
 
   private renderReconnectionStatus(): HTMLElement {

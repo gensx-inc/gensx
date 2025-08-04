@@ -70,48 +70,13 @@
       height: 16px;
     }
 
-    /* Tabs */
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid #e5e7eb;
-      background: white;
-      flex-shrink: 0;
-    }
 
-    .tab {
-      flex: 1;
-      padding: 12px 16px;
-      background: transparent;
-      border: none;
-      font-size: 14px;
-      font-weight: 500;
-      color: #6b7280;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s ease;
-    }
-
-    .tab:hover {
-      color: #2563eb;
-      background: #f9fafb;
-    }
-
-    .tab.active {
-      color: #2563eb;
-      border-bottom-color: #2563eb;
-      background: white;
-    }
-
-    /* Tab Content */
+    /* Chat Content */
     .tab-content {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-    }
-
-    .tab-content.hidden {
-      display: none;
     }
 
     .messages {
@@ -373,89 +338,6 @@
       font-size: 13px;
     }
 
-    /* Knowledge Tab */
-    .knowledge-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .knowledge-header {
-      padding: 16px;
-      border-bottom: 1px solid #e5e7eb;
-      flex-shrink: 0;
-    }
-
-    .knowledge-header h4 {
-      font-size: 16px;
-      font-weight: 600;
-      color: #374151;
-      margin: 0 0 4px 0;
-    }
-
-    .knowledge-header p {
-      font-size: 12px;
-      color: #6b7280;
-      margin: 0;
-    }
-
-    .knowledge-body {
-      flex: 1;
-      padding: 16px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .knowledge-textarea {
-      width: 100%;
-      height: 100%;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      padding: 12px;
-      font-size: 13px;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      line-height: 1.5;
-      background: #f9fafb;
-      color: #374151;
-      resize: none;
-      outline: none;
-    }
-
-    .knowledge-textarea:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-    }
-
-    .knowledge-actions {
-      padding: 16px;
-      border-top: 1px solid #e5e7eb;
-      flex-shrink: 0;
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .delete-button {
-      padding: 8px 16px;
-      background: #dc2626;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    .delete-button:hover {
-      background: #b91c1c;
-    }
-
-    .delete-button:disabled {
-      background: #9ca3af;
-      cursor: not-allowed;
-    }
 
     /* Reconnection status */
     .reconnection-status {
@@ -499,12 +381,8 @@
     </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" data-tab="chat">Chat</button>
-    <button class="tab" data-tab="knowledge">Knowledge</button>
-  </div>
 
-  <div class="tab-content" id="chatTab">
+  <div class="tab-content" id="chatTab" style="display: flex;">
     <div class="messages" id="messages">
       <!-- Messages will be dynamically inserted here -->
     </div>
@@ -525,25 +403,6 @@
     </form>
   </div>
 
-  <div class="tab-content hidden" id="knowledgeTab">
-    <div class="knowledge-content">
-      <div class="knowledge-header">
-        <h4>Website Knowledge Base</h4>
-        <p id="knowledgeDomain">No domain selected</p>
-      </div>
-      <div class="knowledge-body">
-        <textarea 
-          id="knowledgeText" 
-          class="knowledge-textarea" 
-          readonly
-          placeholder="No website knowledge available yet. The AI will build knowledge as you interact with this website."
-        ></textarea>
-      </div>
-      <div class="knowledge-actions">
-        <button id="deleteKnowledge" class="delete-button">Delete Knowledge</button>
-      </div>
-    </div>
-  </div>
 
   <script src="popup.js"></script>
 </body>
