@@ -13,27 +13,16 @@ import { getExampleByName } from "./supported-examples.js";
 const execAsync = promisify(exec);
 
 export interface CloneExampleOptions {
-  project?: string;
-  description?: string;
-  env?: string;
-  yes?: boolean;
-}
-
-interface CloneExampleUIProps {
   exampleName: string;
   projectName?: string;
-  description?: string;
-  environmentName?: string;
   yes?: boolean;
 }
 
 export function CloneExampleUI({
   exampleName,
   projectName,
-  description: _description,
-  environmentName: _environmentName,
   yes,
-}: CloneExampleUIProps) {
+}: CloneExampleOptions) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [success, setSuccess] = useState(false);
@@ -50,7 +39,7 @@ export function CloneExampleUI({
 
         if (!example) {
           throw new Error(
-            `Unknown example: ${exampleName}. Run 'gensx examples list' to see available examples.`,
+            `Unknown example: ${exampleName}. Run 'gensx examples' to see available examples.`,
           );
         }
 

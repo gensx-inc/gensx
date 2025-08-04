@@ -359,23 +359,27 @@ export async function runCLI() {
     .description("Clone an example project")
     .argument("<example-name>", "Name of the example to clone")
     .option("-p, --project <name>", "Project name to clone to")
-    .option("-d, --description <desc>", "Optional project description")
-    .option("--env <name>", "Initial environment name")
     .option("-y, --yes", "Automatically answer yes to all prompts", false)
-    .action(async (exampleName: string, options: { yes?: boolean }) => {
-      return new Promise<void>((resolve, reject) => {
-        const { waitUntilExit } = render(
-          React.createElement(CloneExampleUI, {
-            exampleName,
-            projectName: undefined,
-            description: undefined,
-            environmentName: undefined,
-            yes: options.yes,
-          }),
-        );
-        waitUntilExit().then(resolve).catch(reject);
-      });
-    });
+    .action(
+      async (
+        exampleName: string,
+        options: {
+          project?: string;
+          yes?: boolean;
+        },
+      ) => {
+        return new Promise<void>((resolve, reject) => {
+          const { waitUntilExit } = render(
+            React.createElement(CloneExampleUI, {
+              exampleName,
+              projectName: options.project,
+              yes: options.yes,
+            }),
+          );
+          waitUntilExit().then(resolve).catch(reject);
+        });
+      },
+    );
 
   await program.parseAsync();
 }
