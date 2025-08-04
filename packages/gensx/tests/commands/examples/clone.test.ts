@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 
 import { render } from "ink-testing-library";
@@ -5,19 +6,12 @@ import React from "react";
 import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 
 import { CloneExampleUI } from "../../../src/commands/examples/clone.js";
+import { tempDir } from "../../setup.js";
 import { waitForText } from "../../test-helpers.js";
 
 // Mock node:child_process
 vi.mock("node:child_process", () => ({
   exec: vi.fn(),
-}));
-
-// Mock node:fs
-vi.mock("node:fs", () => ({
-  default: {
-    existsSync: vi.fn(),
-  },
-  existsSync: vi.fn(),
 }));
 
 // Mock the supported examples module
@@ -40,7 +34,6 @@ vi.mock("../../../src/commands/examples/supported-examples.js", () => ({
 }));
 
 import { exec } from "node:child_process";
-import fs from "node:fs";
 
 import { getExampleByName } from "../../../src/commands/examples/supported-examples.js";
 
@@ -53,7 +46,6 @@ suite("examples clone Ink UI", () => {
       process.nextTick(() => callback?.(null, "", ""));
       return {} as never;
     });
-    vi.mocked(fs.existsSync).mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -147,22 +139,25 @@ suite("examples clone Ink UI", () => {
 
   it("should show error when target directory already exists", async () => {
     vi.mocked(getExampleByName).mockReturnValue({
-      name: "chat-ux",
+      name: "existing-dir-test",
       description: "A complete chat interface",
-      path: "gensx-inc/chat-ux-template",
+      path: "gensx-inc/existing-dir-template",
       category: "Next.js",
     });
 
-    vi.mocked(fs.existsSync).mockReturnValue(true);
+    // Create a real directory to test against
+    const projectDir = path.join(tempDir, "project");
+    const targetDir = path.join(projectDir, "existing-dir-test");
+    await fs.promises.mkdir(targetDir, { recursive: true });
 
     const { lastFrame } = render(
       React.createElement(CloneExampleUI, {
-        exampleName: "chat-ux",
+        exampleName: "existing-dir-test",
         yes: true,
       }),
     );
 
-    await waitForText(lastFrame, /Directory chat-ux already exists/);
+    await waitForText(lastFrame, /Directory existing-dir-test already exists/);
     await waitForText(
       lastFrame,
       /Please choose a different name or remove the existing directory/,
