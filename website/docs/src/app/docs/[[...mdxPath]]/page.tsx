@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks -- false positive, useMDXComponents isn't react hooks */
 
+import { Suspense } from "react";
 import { generateStaticParamsFor, importPage } from "nextra/pages";
 import { useMDXComponents } from "../../../../mdx-components";
 
@@ -19,7 +20,9 @@ export default async function Page(props) {
   const { default: MDXContent, toc, metadata } = result;
   return (
     <Wrapper toc={toc} metadata={metadata}>
-      <MDXContent {...props} params={params} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <MDXContent {...props} params={params} />
+      </Suspense>
     </Wrapper>
   );
 }
