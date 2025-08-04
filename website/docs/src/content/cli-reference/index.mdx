@@ -56,9 +56,20 @@ npm install -g gensx
 | [`gensx project create`](./cli-reference/project/create) | Create a new project |
 | [`gensx project ls`](./cli-reference/project/ls)         | List all projects    |
 
+### Examples
+
+| Command                                                  | Description                 |
+| -------------------------------------------------------- | --------------------------- |
+| [`gensx examples`](./cli-reference/examples)             | List all available examples |
+| [`gensx examples clone`](./cli-reference/examples/clone) | Clone an example project    |
+
 ## Common Workflows
 
 ### Starting a New Project
+
+You can start a new project either from scratch or by cloning an example:
+
+#### Option 1: Use a starter project
 
 ```bash
 # Log in to GenSX Cloud
@@ -70,6 +81,22 @@ cd my-project
 
 # Start local development
 gensx start src/workflows.ts
+```
+
+#### Option 2: Clone an example
+
+```bash
+# Log in to GenSX Cloud
+gensx login
+
+# See available examples
+gensx examples
+
+# Clone an example project
+gensx examples clone chat-ux my-chat-app
+cd my-chat-app
+
+# Follow the README for setup instructions
 ```
 
 ### Managing Environments

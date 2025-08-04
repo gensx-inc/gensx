@@ -8,6 +8,7 @@ const meta = {
   login: "gensx login",
   env: "gensx env",
   project: "gensx project",
+  examples: "gensx examples",
 };
 
 export default meta;

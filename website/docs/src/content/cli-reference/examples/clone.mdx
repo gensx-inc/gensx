@@ -1,0 +1,49 @@
+---
+title: gensx examples clone
+description: Clone a GenSX example project to get started quickly
+---
+
+# gensx examples clone
+
+The `gensx examples clone` command clones an existing GenSX example project to your local machine, providing a ready-to-use starting point for building AI applications.
+
+## Usage
+
+```bash
+gensx examples clone <example-name> [options]
+```
+
+## Arguments
+
+| Argument         | Description                                                                   |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `<example-name>` | Name of the example to clone. Use `gensx examples` to see available examples. |
+
+## Options
+
+| Option                     | Description                                                        |
+| -------------------------- | ------------------------------------------------------------------ |
+| `-p, --project <name>`     | Project name to clone to. If not specified, uses the example name. |
+| `-d, --description <desc>` | Optional project description.                                      |
+| `--env <name>`             | Initial environment name.                                          |
+| `-y, --yes`                | Automatically answer yes to all prompts.                           |
+| `-h, --help`               | Display help for the command.                                      |
+
+## Examples
+
+```bash
+# Clone the chat-ux example
+gensx examples clone chat-ux
+
+# Clone to a custom directory name
+gensx examples clone chat-ux --project my-chat-app
+
+# Clone with description and skip prompts
+gensx examples clone deep-research --project research-tool --description "AI research assistant" --yes
+```
+
+## Notes
+
+- Use `gensx examples` to see all available examples
+- Dependencies are automatically installed after cloning
+- Follow the README.md in the cloned project for setup instructions
