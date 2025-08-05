@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
+import { checkProjectExists, createProject } from "../models/projects.js";
+import { readProjectConfig } from "../utils/project-config.js";
 import { BadRequestError, NotFoundError } from "./errors.js";
 import { ExecutionManager } from "./execution-handler.js";
 import { generateOpenApiSpec, generateSwaggerUI } from "./openapi.js";
@@ -8,6 +10,61 @@ import { CustomEvent, JsonValue, WorkflowMessage } from "./types.js";
 import { generateWorkflowId } from "./utils.js";
 import { ValidationManager } from "./validation.js";
 import { WorkflowManager } from "./workflow-manager.js";
+
+/**
+ * Ensures the project exists for local workflow execution.
+ * If a gensx.yaml file exists with a project name, and the project doesn't exist,
+ * automatically creates it with a "default" environment.
+ */
+async function ensureProjectExists(logger: {
+  info: (msg: string, ...args: unknown[]) => void;
+  warn: (msg: string) => void;
+}): Promise<{ projectName?: string; environment?: string }> {
+  try {
+    // Try to read project config from gensx.yaml
+    const projectConfig = readProjectConfig(process.cwd());
+    
+    if (!projectConfig?.projectName) {
+      // No gensx.yaml or no project name - traces will go to default/default
+      logger.info("ℹ No gensx.yaml found or no projectName specified. Traces will go to default/default");
+      return {};
+    }
+
+    const projectName = projectConfig.projectName;
+    
+    // Check if project exists
+    const projectExists = await checkProjectExists(projectName);
+    
+    if (!projectExists) {
+      logger.info(`ℹ Project '${projectName}' from gensx.yaml doesn't exist. Creating it automatically...`);
+      
+      try {
+        await createProject(projectName, "default", projectConfig.description);
+        logger.info(`✅ Successfully created project '${projectName}' with default environment`);
+      } catch (error) {
+        // If creation fails due to project already existing (race condition), that's fine
+        if (error instanceof Error && error.message.includes("already exists")) {
+          logger.info(`ℹ Project '${projectName}' was created by another process`);
+        } else {
+          logger.warn(`⚠️ Failed to create project '${projectName}': ${error instanceof Error ? error.message : String(error)}`);
+          logger.warn("ℹ Traces will go to default/default instead");
+          return {};
+        }
+      }
+    } else {
+      logger.info(`ℹ Using project name from gensx.yaml: ${projectName}`);
+    }
+
+    return { 
+      projectName, 
+      environment: projectConfig.environmentName || "default" 
+    };
+  } catch (error) {
+    logger.warn(`⚠️ Error checking project configuration: ${error instanceof Error ? error.message : String(error)}`);
+    logger.warn("ℹ Traces will go to default/default");
+    return {};
+  }
+}
 
 /**
  * Set up all routes for the GenSX dev server
@@ -71,6 +128,9 @@ export function setupRoutes(
     const workflow = workflowManager.getWorkflowOrThrow(workflowName);
 
     try {
+      // Ensure project exists before execution and get project info
+      const projectInfo = await ensureProjectExists(logger);
+
       // Get request body for workflow parameters
       const body = await validationManager.parseJsonBody(c);
 
@@ -81,13 +141,14 @@ export function setupRoutes(
       // Create execution record
       const execution = executionHandler.createExecution(workflowName, body);
 
-      // Execute the workflow asynchronously
+      // Execute the workflow asynchronously with project context
       void executionHandler.executeWorkflowAsync(
         workflowName,
         workflow,
         execution.id,
         body,
         logger,
+        projectInfo,
       );
 
       // Return immediately with executionId
@@ -337,6 +398,9 @@ export function setupRoutes(
     let body: Record<string, unknown> = {};
 
     try {
+      // Ensure project exists before execution and get project info
+      const projectInfo = await ensureProjectExists(logger);
+
       // Get request body for workflow parameters
       body = await validationManager.parseJsonBody(c);
 
@@ -404,13 +468,24 @@ export function setupRoutes(
                   }
                 };
 
-                // Execute workflow with progress listener
+                // Set project environment for local execution
+                const originalEnv = {
+                  GENSX_PROJECT: process.env.GENSX_PROJECT,
+                  GENSX_ENV: process.env.GENSX_ENV,
+                };
+                
+                try {
+                  if (projectInfo?.projectName) {
+                    process.env.GENSX_PROJECT = projectInfo.projectName;
+                    process.env.GENSX_ENV = projectInfo.environment || "default";
+                  }
 
-                const result = await runMethod.call(workflow, body, {
-                  messageListener,
-                  workflowExecutionId: execution.id,
-                  onRequestInput,
-                });
+                  // Execute workflow with progress listener
+                  const result = await runMethod.call(workflow, body, {
+                    messageListener,
+                    workflowExecutionId: execution.id,
+                    onRequestInput,
+                  });
 
                 if (
                   result &&
@@ -466,13 +541,26 @@ export function setupRoutes(
                   }
                 }
 
-                // Update execution with result
-                execution.executionStatus = "completed";
-                execution.output = result;
-                execution.finishedAt = new Date().toISOString();
-                workflowManager.setExecution(execution.id, execution);
+                  // Update execution with result
+                  execution.executionStatus = "completed";
+                  execution.output = result;
+                  execution.finishedAt = new Date().toISOString();
+                  workflowManager.setExecution(execution.id, execution);
 
-                controller.close();
+                  controller.close();
+                } finally {
+                  // Restore original environment
+                  if (originalEnv.GENSX_PROJECT !== undefined) {
+                    process.env.GENSX_PROJECT = originalEnv.GENSX_PROJECT;
+                  } else {
+                    delete process.env.GENSX_PROJECT;
+                  }
+                  if (originalEnv.GENSX_ENV !== undefined) {
+                    process.env.GENSX_ENV = originalEnv.GENSX_ENV;
+                  } else {
+                    delete process.env.GENSX_ENV;
+                  }
+                }
               } catch (error) {
                 // Update execution with error
                 execution.executionStatus = "failed";
@@ -521,45 +609,71 @@ export function setupRoutes(
         }
 
         // Handle regular non-streaming execution
+        
+        // Set up environment for tracing and storage
+        const originalEnv = {
+          GENSX_PROJECT: process.env.GENSX_PROJECT,
+          GENSX_ENV: process.env.GENSX_ENV,
+        };
+        
+        try {
+          // Set project environment for local execution
+          if (projectInfo?.projectName) {
+            process.env.GENSX_PROJECT = projectInfo.projectName;
+            process.env.GENSX_ENV = projectInfo.environment || "default";
+          }
 
-        const result = await runMethod.call(workflow, body, {
-          messageListener: (event: WorkflowMessage) => {
-            const message = {
-              ...event,
-              id: Date.now().toString(),
-              timestamp: new Date().toISOString(),
-            } as WorkflowMessage;
-            execution.workflowMessages.push(message);
-          },
-          workflowExecutionId: execution.id,
-          onRequestInput,
-        });
+          const result = await runMethod.call(workflow, body, {
+            messageListener: (event: WorkflowMessage) => {
+              const message = {
+                ...event,
+                id: Date.now().toString(),
+                timestamp: new Date().toISOString(),
+              } as WorkflowMessage;
+              execution.workflowMessages.push(message);
+            },
+            workflowExecutionId: execution.id,
+            onRequestInput,
+          });
 
-        // Update execution with result
-        execution.executionStatus = "completed";
-        execution.output = result;
-        execution.finishedAt = new Date().toISOString();
-        workflowManager.setExecution(execution.id, execution);
+          // Update execution with result
+          execution.executionStatus = "completed";
+          execution.output = result;
+          execution.finishedAt = new Date().toISOString();
+          workflowManager.setExecution(execution.id, execution);
 
-        // Handle different response types
-        if (
-          result &&
-          typeof result === "object" &&
-          Symbol.asyncIterator in result
-        ) {
-          // Handle streaming responses
-          return executionHandler.handleStreamingResponse(
-            result as AsyncIterable<unknown>,
-            logger,
-          );
-        }
+          // Handle different response types
+          if (
+            result &&
+            typeof result === "object" &&
+            Symbol.asyncIterator in result
+          ) {
+            // Handle streaming responses
+            return executionHandler.handleStreamingResponse(
+              result as AsyncIterable<unknown>,
+              logger,
+            );
+          }
 
-        // Handle regular JSON response
-        return c.json({
-          executionId: execution.id,
-          executionStatus: "completed",
-          output: result,
-        });
+          // Handle regular JSON response
+          return c.json({
+            executionId: execution.id,
+            executionStatus: "completed",
+            output: result,
+          });
+        } finally {
+          // Restore original environment
+          if (originalEnv.GENSX_PROJECT !== undefined) {
+            process.env.GENSX_PROJECT = originalEnv.GENSX_PROJECT;
+          } else {
+            delete process.env.GENSX_PROJECT;
+          }
+          if (originalEnv.GENSX_ENV !== undefined) {
+            process.env.GENSX_ENV = originalEnv.GENSX_ENV;
+          } else {
+            delete process.env.GENSX_ENV;
+          }
+                 }
       } catch (error) {
         logger.error(
           `❌ Error executing workflow '${workflowName}':`,

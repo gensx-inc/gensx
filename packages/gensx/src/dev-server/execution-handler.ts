@@ -57,6 +57,7 @@ export class ExecutionManager {
       info: (msg: string, ...args: unknown[]) => void;
       error: (msg: string, error?: unknown) => void;
     },
+    projectInfo?: { projectName?: string; environment?: string },
   ): Promise<void> {
     // Get the current execution record
     const execution = this.workflowManager.getExecution(executionId);
@@ -88,30 +89,56 @@ export class ExecutionManager {
         `⚡️ Executing async workflow '${workflowName}' with execution ID ${executionId}`,
       );
 
-      // Set up progress listener
-      const messageListener = (event: WorkflowMessage) => {
-        const workflowMessage: WorkflowMessage = {
-          ...event,
-        };
-        execution.workflowMessages.push(workflowMessage);
-        this.workflowManager.setExecution(executionId, execution);
+      // Set up environment for tracing and storage
+      const originalEnv = {
+        GENSX_PROJECT: process.env.GENSX_PROJECT,
+        GENSX_ENV: process.env.GENSX_ENV,
       };
+      
+      try {
+        // Set project environment for local execution
+        if (projectInfo?.projectName) {
+          process.env.GENSX_PROJECT = projectInfo.projectName;
+          process.env.GENSX_ENV = projectInfo.environment || "default";
+        }
 
-      const result = await runMethod.call(workflow, input, {
-        messageListener,
-        onRequestInput: this.createInputRequestCallback(executionId),
-        workflowExecutionId: executionId,
-      });
+        // Set up progress listener
+        const messageListener = (event: WorkflowMessage) => {
+          const workflowMessage: WorkflowMessage = {
+            ...event,
+          };
+          execution.workflowMessages.push(workflowMessage);
+          this.workflowManager.setExecution(executionId, execution);
+        };
 
-      // Update execution with result
-      execution.executionStatus = "completed";
-      execution.output = result;
-      execution.finishedAt = new Date().toISOString();
-      this.workflowManager.setExecution(executionId, execution);
+        const result = await runMethod.call(workflow, input, {
+          messageListener,
+          onRequestInput: this.createInputRequestCallback(executionId),
+          workflowExecutionId: executionId,
+        });
 
-      logger.info(
-        `✅ Completed async workflow '${workflowName}' execution ${executionId}`,
-      );
+        // Update execution with result
+        execution.executionStatus = "completed";
+        execution.output = result;
+        execution.finishedAt = new Date().toISOString();
+        this.workflowManager.setExecution(executionId, execution);
+
+        logger.info(
+          `✅ Completed async workflow '${workflowName}' execution ${executionId}`,
+        );
+      } finally {
+        // Restore original environment
+        if (originalEnv.GENSX_PROJECT !== undefined) {
+          process.env.GENSX_PROJECT = originalEnv.GENSX_PROJECT;
+        } else {
+          delete process.env.GENSX_PROJECT;
+        }
+        if (originalEnv.GENSX_ENV !== undefined) {
+          process.env.GENSX_ENV = originalEnv.GENSX_ENV;
+        } else {
+          delete process.env.GENSX_ENV;
+                 }
+       }
     } catch (error) {
       // Update execution with error
       execution.executionStatus = "failed";
