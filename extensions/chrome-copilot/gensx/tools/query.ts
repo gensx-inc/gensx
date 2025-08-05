@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { asToolSet, generateText } from "@gensx/vercel-ai";
-import { toolbox } from "../shared/toolbox";
+import { toolbox } from "../../shared/toolbox";
 import { tool } from "ai";
 import z from "zod";
 

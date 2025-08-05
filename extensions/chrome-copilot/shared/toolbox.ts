@@ -26,10 +26,7 @@ export const toolbox = createToolBox({
     description:
       "Show interactive elements on the page (buttons, links, inputs, etc.)",
     params: z.object({
-      dummy: z
-        .string()
-        .optional()
-        .describe("This is a dummy parameter to pass through to the tool."),
+      textToFilter: z.string().describe("The text to filter the elements by").optional(),
     }),
     result: z.object({
       success: z.boolean(),
@@ -275,41 +272,6 @@ export const toolbox = createToolBox({
     }),
   },
 
-  highlightElements: {
-    description:
-      "Highlight multiple elements on the page to show the user what you're looking at",
-    params: z.object({
-      elements: z
-        .array(
-          z.object({
-            selector: z.string().describe("jQuery selector for the element"),
-            color: z
-              .string()
-              .optional()
-              .default("#ff0000")
-              .describe("Highlight color (hex or color name)"),
-            duration: z
-              .number()
-              .optional()
-              .default(3000)
-              .describe("Duration in milliseconds to show highlight"),
-          }),
-        )
-        .describe("Array of elements to highlight"),
-    }),
-    result: z.object({
-      success: z.boolean(),
-      highlights: z.array(
-        z.object({
-          selector: z.string(),
-          highlighted: z.number().describe("Number of elements highlighted"),
-          error: z.string().optional(),
-        }),
-      ),
-      message: z.string(),
-    }),
-  },
-
   waitForElements: {
     description: "Wait for multiple elements to appear on the page",
     params: z.object({
@@ -339,161 +301,16 @@ export const toolbox = createToolBox({
     }),
   },
 
-  getPageOverview: {
-    description:
-      "Get a hierarchical overview of the page structure with reliable selectors for each section",
-    params: z
-      .object({
-        includeHeadings: z
-          .enum(["h1", "h1-h2", "h1-h3", "all"])
-          .optional()
-          .default("h1-h2")
-          .describe("Which heading levels to include in the overview"),
-        includeText: z
-          .boolean()
-          .optional()
-          .default(true)
-          .describe("Include text snippets from elements"),
-        includeMetrics: z
-          .boolean()
-          .optional()
-          .default(true)
-          .describe("Include counts of interactive elements"),
-        visibleOnly: z
-          .boolean()
-          .optional()
-          .default(true)
-          .describe("Only include visible elements"),
-        maxTextLength: z
-          .number()
-          .optional()
-          .default(100)
-          .describe("Maximum length of text snippets"),
-      })
-      .passthrough(),
-    result: z.object({
-      success: z.boolean(),
-      url: z.string(),
-      title: z.string().optional(),
-      sections: z.array(
-        z.object({
-          heading: z.string().optional(),
-          level: z.number().optional(),
-          selector: z.string().describe("Unique selector for this section"),
-          bounds: z
-            .object({
-              top: z.number(),
-              left: z.number(),
-              width: z.number(),
-              height: z.number(),
-            })
-            .optional(),
-          metrics: z
-            .object({
-              forms: z.number(),
-              buttons: z.number(),
-              links: z.number(),
-              inputs: z.number(),
-              images: z.number(),
-              lists: z.number(),
-            })
-            .optional(),
-          textPreview: z.string().optional(),
-          subsections: z.array(z.any()).optional(),
-          interactiveElements: z
-            .array(
-              z.object({
-                type: z.string(),
-                selector: z.string(),
-                text: z.string().optional(),
-                label: z.string().optional(),
-              }),
-            )
-            .optional(),
-        }),
-      ),
-      globalElements: z.object({
-        navigation: z
-          .object({
-            present: z.boolean(),
-            selector: z.string().optional(),
-            itemCount: z.number(),
-          })
-          .optional(),
-        forms: z.array(
-          z.object({
-            selector: z.string(),
-            purpose: z.string().optional(),
-          }),
-        ),
-        modals: z
-          .object({
-            open: z.boolean(),
-            selector: z.string().optional(),
-          })
-          .optional(),
-      }),
-    }),
-  },
-
-  inspectSection: {
-    description:
-      "Get detailed information about a specific section or element on the page",
+  findElementsByText: {
+    description: "Find multiple elements on the page by text content",
     params: z.object({
-      selector: z
-        .string()
-        .describe("jQuery selector from getPageOverview or custom"),
-      depth: z
-        .enum(["shallow", "deep"])
-        .optional()
-        .default("shallow")
-        .describe("How deep to traverse child elements"),
-      includeChildren: z
-        .boolean()
-        .optional()
-        .default(true)
-        .describe("Include information about child elements"),
-      textLength: z
-        .enum(["full", "truncated", "summary"])
-        .optional()
-        .default("truncated")
-        .describe("How much text content to include"),
-      maxDepth: z
-        .number()
-        .optional()
-        .default(3)
-        .describe("Maximum depth to traverse"),
+      content: z.array(z.string()).describe("The content of the element to find"),
     }),
     result: z.object({
       success: z.boolean(),
-      element: z
-        .object({
-          tag: z.string(),
-          selector: z.string(),
-          id: z.string().optional(),
-          classes: z.array(z.string()),
-          text: z.string().optional(),
-          attributes: z.record(z.string()).optional(),
-          bounds: z.object({
-            top: z.number(),
-            left: z.number(),
-            width: z.number(),
-            height: z.number(),
-            visible: z.boolean(),
-          }),
-          children: z.array(z.any()).optional(),
-          interactiveElements: z.array(
-            z.object({
-              type: z.string(),
-              selector: z.string(),
-              label: z.string().optional(),
-              text: z.string().optional(),
-              state: z.record(z.any()).optional(),
-            }),
-          ),
-        })
-        .optional(),
-      error: z.string().optional(),
+      elements: z.array(z.object({
+        selector: z.string(),
+      })),
     }),
   },
 

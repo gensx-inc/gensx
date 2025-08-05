@@ -1226,6 +1226,9 @@ importers:
       '@medv/finder':
         specifier: ^4.0.2
         version: 4.0.2
+      '@tavily/core':
+        specifier: ^0.5.9
+        version: 0.5.9
       ai:
         specifier: ^4.3.19
         version: 4.3.19(react@19.1.0)(zod@3.25.56)

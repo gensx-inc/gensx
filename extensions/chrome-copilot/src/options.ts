@@ -3,14 +3,14 @@
 import { CopilotSettings } from './types/copilot';
 
 const DEFAULT_SETTINGS: CopilotSettings = {
-  apiEndpoint: 'http://localhost:3000/api/gensx',
+  apiEndpoint: 'http://localhost:1337',
   apiKey: '',
   autoOpen: false,
   enableShortcuts: true,
   defaultWidth: 30,
   userName: '',
   userContext: '',
-  org: 'gensx',
+  org: '',
   project: 'chrome-copilot',
   environment: 'default'
 };
