@@ -1,4 +1,4 @@
-// GenSX Copilot Chrome Extension Background Script
+// Genie Chrome Extension Background Script
 
 import {
   ExtensionMessage,
@@ -19,7 +19,7 @@ const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
 let creating: Promise<void> | null = null; // A global promise to avoid concurrency issues
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('✅ GenSX Copilot extension installed');
+  console.log('✅ Genie extension installed');
 });
 
 // Handle extension icon click to open side panel
@@ -475,16 +475,34 @@ async function processStreamingEvent(
     console.log("External tool call detected:", event);
 
     // Send tool call to content script for execution
-    // Use the stored workflow tab ID instead of querying for active tab
+    // Use the stored workflow tab ID with fallback to active tab
     try {
-      const tabId = currentWorkflowTabId;
-      if (!tabId) {
-        throw new Error("No workflow tab ID available for tool execution");
+      let tabId = currentWorkflowTabId;
+      let tab: chrome.tabs.Tab | null = null;
+
+      // Try to get the stored workflow tab first
+      if (tabId) {
+        try {
+          tab = await chrome.tabs.get(tabId);
+          console.log("Using stored workflow tab:", tabId, tab.url);
+        } catch (error) {
+          console.warn("Stored workflow tab no longer exists:", tabId, error);
+          tabId = null; // Clear invalid tab ID
+        }
       }
 
-      // Get tab info for logging
-      const tab = await chrome.tabs.get(tabId);
-      console.log("Sending tool call to workflow tab:", tabId, tab.url);
+      // Fallback to current active tab if stored tab is unavailable
+      if (!tabId || !tab) {
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (activeTab && activeTab.id) {
+          tabId = activeTab.id;
+          tab = activeTab;
+          currentWorkflowTabId = tabId; // Update stored tab ID
+          console.log("Falling back to active tab:", tabId, tab.url);
+        } else {
+          throw new Error("No available tab for tool execution");
+        }
+      }
 
       // Try to send message to content script, with fallback to inject if needed
       let toolResponse;

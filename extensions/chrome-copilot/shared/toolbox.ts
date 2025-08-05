@@ -316,7 +316,7 @@ export const toolbox = createToolBox({
 
   navigate: {
     description:
-      "Navigate the browser using browser navigation (back, forward), to a relative path on the same domain (/foo/bar), or to a different domain (app.gensx.com)",
+      "Navigate the browser to a specific page using a url or a relative path.",
     params: z.object({
       action: z
         .enum(["back", "forward", "path", "url"])
@@ -402,3 +402,13 @@ export const toolbox = createToolBox({
 });
 
 export type ToolBox = typeof toolbox;
+
+const readonlyTools: (keyof ToolBox)[] = ["fetchPageText", "getCurrentUrl", "getGeolocation", "inspectElements", "findInteractiveElements", "findElementsByText"];
+
+export function getReadonlyTools() {
+  return Object.fromEntries(Object.entries(toolbox).filter(([key]) => readonlyTools.includes(key as keyof ToolBox)));
+}
+
+export function getFilteredTools(toolsToRemove: (keyof ToolBox)[]) {
+  return Object.fromEntries(Object.entries(toolbox).filter(([key]) => !toolsToRemove.includes(key as keyof ToolBox)));
+}

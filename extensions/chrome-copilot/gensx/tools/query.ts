@@ -1,11 +1,9 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { asToolSet, generateText } from "@gensx/vercel-ai";
-import { toolbox } from "../../shared/toolbox";
+import { getReadonlyTools } from "../../shared/toolbox";
 import { tool } from "ai";
 import z from "zod";
-
-const readonlyTools: (keyof typeof toolbox)[] = ["fetchPageText", "findElementsByText", "getCurrentUrl", "inspectElements", "findInteractiveElements", "getGeolocation"];
 
 const queryPage = gensx.Component("queryPage", async ({ query }: { query: string }) => {
   const groqClient = createOpenAI({
@@ -18,38 +16,32 @@ const queryPage = gensx.Component("queryPage", async ({ query }: { query: string
   const model = groqClient("moonshotai/kimi-k2-instruct");
 
   const result = await generateText({
-    tools: {
-      // Give the readonly tools to the model so it can use them to answer the question
-      ...asToolSet(Object.fromEntries(Object.entries(toolbox).filter(([key]) => readonlyTools.includes(key as keyof typeof toolbox)))),
-    },
+    tools: asToolSet(getReadonlyTools()),
     model,
     maxSteps: 10,
-    prompt: `You are a web page analysis assistant. Your task is to quickly and effectively answer questions about the current page by providing structured, actionable information.
+    prompt: `You are a web page analysis assistant. Answer questions about the current page by providing actionable information with CSS selectors.
 
 USER QUERY: ${query}
 
-INSTRUCTIONS:
-1. First, fetch the page content to understand the current page structure
-2. Use the available tools to inspect elements and find relevant information
-3. Provide a concise, direct answer to the user's question
-4. If applicable, identify specific elements that are relevant to the query
-5. Always include CSS selectors for any elements you mention so they can be programmatically accessed
+WORKFLOW:
+1. Fetch page content to understand structure
+2. Use inspection tools to find relevant elements
+3. Provide structured response with actionable details
 
 RESPONSE FORMAT:
-Answer: [Direct answer to the user's question based on page content]
+Answer: [Direct answer based on page content]
 
-Relevant Elements: [List of elements with CSS selectors that are useful for the query, if any]
-- Element description: [CSS selector]
-- Element description: [CSS selector]
+Relevant Elements:
+- [Element description]: [CSS selector]
+- [Element description]: [CSS selector]
 
-Additional Context: [Any additional relevant information from the page]
+Additional Context: [Any other relevant information]
 
-GUIDELINES:
-- Be concise but thorough
-- Focus on the most relevant information for the user's specific query
-- Always provide CSS selectors for elements you identify
-- If no specific elements are relevant, state "No specific elements identified"
-- Use the tools efficiently to gather necessary information`,
+REQUIREMENTS:
+- Always include CSS selectors for mentioned elements
+- Be concise but complete
+- Focus on information directly relevant to the query
+- State "No specific elements identified" if none are relevant`,
   });
 
   return result.text;

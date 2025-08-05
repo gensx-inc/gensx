@@ -1,16 +1,18 @@
 import * as gensx from "@gensx/core";
 import { useBlob } from "@gensx/storage";
 import { CoreMessage } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
 import { serializeError } from "serialize-error";
 
 import { Agent } from "./agent";
-import { asToolSet } from "@gensx/vercel-ai";
-import { toolbox } from "../shared/toolbox";
+import { getFilteredTools, toolbox } from "../shared/toolbox";
 import { z } from "zod";
 import { queryPageTool } from "./tools/query";
 import { webSearchTool } from "./tools/search";
 import { createTodoList } from "./tools/todolist";
+import { anthropic } from "@ai-sdk/anthropic";
+import { asToolSet } from "@gensx/vercel-ai";
+
+const toolsToRemove: (keyof typeof toolbox)[] = ["fetchPageText"];
 
 type ThreadData = {
   messages: CoreMessage[];
@@ -83,6 +85,8 @@ export const copilotWorkflow = gensx.Workflow(
 
       const initialTodoList = threadData.todoList;
 
+      const toolsForModel = getFilteredTools(toolsToRemove);
+
       if (isNewThread || existingMessages[0].role !== "system") {
         const systemMessage: CoreMessage = {
           role: "system",
@@ -111,8 +115,9 @@ You MUST use the todo list as your primary task management system for all tasks.
 
 ## PAGE INTERACTION
 1. Use queryPage to find information, content, or available actions
-2. Always verify the results of your actions
-3. Add new todo items if you encounter errors or unexpected results
+2. As you complete steps you can navigate to the next page or tab as needed.
+3. Always verify the results of your actions
+4. Add new todo items if you encounter errors or unexpected results
 
 ## USER PREFERENCES
 Proactively detect and store user preferences to personalize your interactions.
@@ -135,10 +140,15 @@ Proactively detect and store user preferences to personalize your interactions.
 - addTodoItem, completeTodoItem, removeTodoItem, getTodoList
 
 ### Page Interaction Tools:
-- queryPage: Query the current page with natural language
+- queryPage: Query the current page with natural language. This is the best tool for finding information, content, or available actions on the current page.
 - search: Web search for relevant information
-${(Object.keys(toolbox) as (keyof typeof toolbox)[]).map((tool) => `- ${tool}: ${toolbox[tool].description}`).join("\n")}
+${(Object.keys(toolsForModel) as (keyof typeof toolbox)[]).map((tool) => `- ${tool}: ${toolbox[tool].description}`).join("\n")}
 - updateUserPreference: Update persistent memory about user preferences
+
+### Searching vs Navigating
+- Use search when you need to find information that is not on the current page.
+- Use navigate when you need to go to a different page or tab.
+- Prefer navigating when you are looking for specific singular information from a page, and search when you are looking for multiple results.
 
 ## Key Reminders:
 - Create and maintain todo lists for every task
@@ -203,7 +213,7 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
       const { tools: todoListTools, getFinalTodoList } = createTodoList(initialTodoList);
 
       const tools = {
-        ...asToolSet(toolbox),
+        ...asToolSet(toolsForModel),
         search: webSearchTool,
         ...todoListTools,
         queryPage: queryPageTool,
@@ -239,14 +249,14 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
         },
       };
 
-      const groqClient = createOpenAI({
-        apiKey: process.env.GROQ_API_KEY!,
-        baseURL: "https://api.groq.com/openai/v1",
-      });
+      // const groqClient = createOpenAI({
+      //   apiKey: process.env.GROQ_API_KEY!,
+      //   baseURL: "https://api.groq.com/openai/v1",
+      // });
 
-      // const model = anthropic("claude-3-7-sonnet-latest");
+      const model = anthropic("claude-3-7-sonnet-latest");
 
-      const model = groqClient("moonshotai/kimi-k2-instruct");
+      // const model = groqClient("moonshotai/kimi-k2-instruct");
       const result = await Agent({
         messages,
         tools,

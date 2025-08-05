@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "GenSX Copilot",
+  "name": "Genie",
   "version": "1.0.0",
   "description": "AI-powered web page interaction assistant using GenSX workflows",
   "permissions": [
@@ -27,7 +27,7 @@
     }
   ],
   "action": {
-    "default_title": "GenSX Copilot"
+    "default_title": "Genie"
   },
   "side_panel": {
     "default_path": "popup.html"

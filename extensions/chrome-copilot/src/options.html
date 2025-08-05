@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>GenSX Copilot Settings</title>
+  <title>Genie Settings</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -12,14 +12,14 @@
       line-height: 1.6;
       color: #374151;
     }
-    
+
     .header {
       text-align: center;
       margin-bottom: 40px;
       padding-bottom: 20px;
       border-bottom: 1px solid #e5e7eb;
     }
-    
+
     .logo {
       width: 64px;
       height: 64px;
@@ -31,42 +31,42 @@
       justify-content: center;
       color: white;
     }
-    
+
     h1 {
       margin: 0;
       font-size: 28px;
       font-weight: 700;
       color: #1f2937;
     }
-    
+
     .subtitle {
       margin: 8px 0 0 0;
       font-size: 16px;
       color: #6b7280;
     }
-    
+
     .section {
       margin-bottom: 32px;
     }
-    
+
     .section h2 {
       font-size: 20px;
       font-weight: 600;
       margin: 0 0 16px 0;
       color: #1f2937;
     }
-    
+
     .form-group {
       margin-bottom: 20px;
     }
-    
+
     label {
       display: block;
       font-weight: 500;
       margin-bottom: 6px;
       color: #374151;
     }
-    
+
     input[type="text"], input[type="url"], textarea {
       width: 100%;
       padding: 10px 12px;
@@ -75,35 +75,35 @@
       font-size: 14px;
       transition: border-color 0.2s ease;
     }
-    
+
     input[type="text"]:focus, input[type="url"]:focus, textarea:focus {
       outline: none;
       border-color: #2563eb;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
-    
+
     textarea {
       resize: vertical;
       min-height: 80px;
     }
-    
+
     .checkbox-group {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    
+
     input[type="checkbox"] {
       width: 16px;
       height: 16px;
     }
-    
+
     .help-text {
       font-size: 13px;
       color: #6b7280;
       margin-top: 4px;
     }
-    
+
     .button-group {
       display: flex;
       gap: 12px;
@@ -111,7 +111,7 @@
       padding-top: 24px;
       border-top: 1px solid #e5e7eb;
     }
-    
+
     button {
       padding: 10px 20px;
       border: none;
@@ -121,38 +121,38 @@
       cursor: pointer;
       transition: background-color 0.2s ease;
     }
-    
+
     .btn-primary {
       background: #2563eb;
       color: white;
     }
-    
+
     .btn-primary:hover {
       background: #1d4ed8;
     }
-    
+
     .btn-secondary {
       background: #f3f4f6;
       color: #374151;
     }
-    
+
     .btn-secondary:hover {
       background: #e5e7eb;
     }
-    
+
     .alert {
       padding: 12px 16px;
       border-radius: 6px;
       margin-bottom: 20px;
       font-size: 14px;
     }
-    
+
     .alert-success {
       background: #d1fae5;
       color: #065f46;
       border: 1px solid #a7f3d0;
     }
-    
+
     .alert-info {
       background: #dbeafe;
       color: #1e40af;
@@ -164,11 +164,11 @@
   <div class="header">
     <div class="logo">
       <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" 
+        <path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       </svg>
     </div>
-    <h1>GenSX Copilot</h1>
+    <h1>Genie</h1>
     <p class="subtitle">Configure your AI web assistant</p>
   </div>
 
@@ -177,14 +177,14 @@
   </div>
 
   <div class="alert alert-info">
-    <strong>Note:</strong> This extension requires a running GenSX workflow server to function. 
+    <strong>Note:</strong> This extension requires a running GenSX workflow server to function.
     Make sure you have the GenSX copilot example running locally or configure a custom API endpoint below.
   </div>
 
   <form id="settings-form">
     <div class="section">
       <h2>API Configuration</h2>
-      
+
       <div class="form-group">
         <label for="apiEndpoint">GenSX API Endpoint</label>
         <input type="url" id="apiEndpoint" placeholder="http://localhost:3000">
@@ -192,7 +192,7 @@
           The base URL where your GenSX server is running (the client will handle the API path)
         </div>
       </div>
-      
+
       <div class="form-group">
         <label for="apiKey">API Key (Optional)</label>
         <input type="text" id="apiKey" placeholder="Enter API key if required">
@@ -200,7 +200,7 @@
           Some GenSX deployments may require an API key for authentication
         </div>
       </div>
-      
+
       <div class="form-group">
         <label for="org">Organization</label>
         <input type="text" id="org" placeholder="gensx">
@@ -208,7 +208,7 @@
           The GenSX organization identifier for your workflows
         </div>
       </div>
-      
+
       <div class="form-group">
         <label for="project">Project</label>
         <input type="text" id="project" placeholder="chrome-copilot">
@@ -216,7 +216,7 @@
           The GenSX project name where your copilot workflow is deployed
         </div>
       </div>
-      
+
       <div class="form-group">
         <label for="environment">Environment</label>
         <input type="text" id="environment" placeholder="default">
@@ -228,14 +228,14 @@
 
     <div class="section">
       <h2>Copilot Behavior</h2>
-      
+
       <div class="form-group">
         <div class="checkbox-group">
           <input type="checkbox" id="autoOpen">
           <label for="autoOpen">Automatically open copilot on page load</label>
         </div>
       </div>
-      
+
       <div class="form-group">
         <div class="checkbox-group">
           <input type="checkbox" id="enableShortcuts">
@@ -245,7 +245,7 @@
           Use Ctrl+Shift+G (Cmd+Shift+G on Mac) to toggle the copilot
         </div>
       </div>
-      
+
       <div class="form-group">
         <label for="defaultWidth">Default Pane Width (%)</label>
         <input type="range" id="defaultWidth" min="20" max="60" value="30">
@@ -257,7 +257,7 @@
 
     <div class="section">
       <h2>User Preferences</h2>
-      
+
       <div class="form-group">
         <label for="userName">Your Name (Optional)</label>
         <input type="text" id="userName" placeholder="Enter your name">
@@ -265,7 +265,7 @@
           The copilot will use this to personalize interactions
         </div>
       </div>
-      
+
       <div class="form-group">
         <label for="userContext">Additional Context (Optional)</label>
         <textarea id="userContext" placeholder="Tell the copilot about your role, preferences, or any other context that might help it assist you better..."></textarea>

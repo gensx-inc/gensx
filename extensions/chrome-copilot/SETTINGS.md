@@ -1,6 +1,6 @@
 # Chrome Extension Settings
 
-This document describes the settings system implemented for the GenSX Copilot Chrome Extension.
+This document describes the settings system implemented for the Genie Chrome Extension.
 
 ## Settings Interface
 
@@ -10,19 +10,19 @@ The extension now supports the following configurable settings:
 - **GenSX API Endpoint**: The base URL for your GenSX workflow server (default: `http://localhost:3000/api/gensx`)
 - **API Key**: Optional authentication key for secured GenSX deployments
 
-### Copilot Behavior  
+### Copilot Behavior
 - **Auto-open on page load**: Automatically opens the copilot pane when visiting pages
 - **Enable keyboard shortcuts**: Allow Ctrl+Shift+G (Cmd+Shift+G on Mac) to toggle the copilot
 - **Default pane width**: Percentage of screen width (20-60%, default: 30%)
 
 ### User Preferences
-- **Your Name**: Personalizes AI interactions  
+- **Your Name**: Personalizes AI interactions
 - **Additional Context**: Helps the AI provide better assistance based on your role/preferences
 
 ## Accessing Settings
 
 1. **Extension Options Page**: Right-click the extension icon → "Options"
-2. **Extension Management**: Chrome Extensions page → GenSX Copilot → "Extension options"
+2. **Extension Management**: Chrome Extensions page → Genie → "Extension options"
 
 ## Technical Implementation
 
@@ -52,7 +52,7 @@ The extension now supports the following configurable settings:
 
 **Options Page (`src/options.ts` + `src/options.html`):**
 - Full settings interface with real-time validation
-- Success/error feedback for save operations  
+- Success/error feedback for save operations
 - Reset to defaults functionality
 
 ## Validation Rules
