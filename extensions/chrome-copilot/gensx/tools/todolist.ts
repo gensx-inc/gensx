@@ -20,18 +20,19 @@ export function createTodoList(initialTodoList: {
           todoList.items.splice(index ?? todoList.items.length, 0, { title, completed: false });
 
           gensx.publishObject("todoList", todoList);
-          return { success: true };
+          return { success: true, items: todoList.items.map((item, index) => ({ ...item, index })) };
         },
       }),
       completeTodoItem: tool({
         description: "Mark a todo item as completed",
         parameters: z.object({
-          index: z.number().describe("The index of the todo item to complete"),
+          index: z.number().describe("The index of the todo item to complete. If omitted, the top-most non-completed item will be completed.").optional(),
         }),
-        execute: async (params: { index: number }) => {
-          todoList.items[params.index].completed = true;
+        execute: async (params: { index?: number }) => {
+          const index = params.index ?? todoList.items.findIndex(item => !item.completed);
+          todoList.items[index].completed = true;
           gensx.publishObject("todoList", todoList);
-          return { success: true };
+          return { success: true, items: todoList.items.map((item, index) => ({ ...item, index })) };
         },
       }),
       removeTodoItem: tool({
@@ -42,14 +43,14 @@ export function createTodoList(initialTodoList: {
         execute: async (params: { index: number }) => {
           todoList.items.splice(params.index, 1);
           gensx.publishObject("todoList", todoList);
-          return { success: true };
+          return { success: true, items: todoList.items.map((item, index) => ({ ...item, index })) };
         },
       }),
       getTodoList: tool({
         description: "Get the current todo list",
         parameters: z.object({}),
         execute: async () => {
-          return { items: todoList.items };
+          return { items: todoList.items.map((item, index) => ({ ...item, index })) };
         },
       }),
     },

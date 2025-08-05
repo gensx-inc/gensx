@@ -719,81 +719,267 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
   findInteractiveElements: async (params) => {
     try {
-      const interactiveElements = $(
-        "button, input, select, textarea, a, option, datalist",
-      );
+      const batchSize = 50; // Process elements in batches to avoid blocking
+      const yieldInterval = 10; // Yield every 10 batches
+      const startTime = performance.now();
 
-      // Find all elements that are clickable. This is a hack since React manages its own click handlers.
-      const clickableElements = $("*").filter(function () {
-        const $el = $(this);
-        return $el.css("cursor") === "pointer";
-      });
+      const processedElements = new Set<HTMLElement>(); // Track processed elements to avoid duplicates
+      const elementScores = new Map<HTMLElement, number>(); // Track element "importance" scores
 
-      // Combine and deduplicate elements
-      const allElements = [...interactiveElements, ...clickableElements];
-      const uniqueElements = allElements.filter((element, index, array) => {
-        // Find the first occurrence of this element in the array
-        const firstIndex = array.findIndex(el => el === element);
-        // Keep only if this is the first occurrence
-        return firstIndex === index;
-      });
-
-      // Helper function to check if an element has meaningful content
+      // Helper function to check if an element has meaningful content (optimized)
       const hasContent = (el: HTMLElement): boolean => {
-        const $el = $(el);
         const tagName = el.tagName.toLowerCase();
 
-        // For input elements, check value, placeholder, or aria-label
-        if (['input', 'textarea', 'select'].includes(tagName)) {
-          const value = $el.val() as string;
-          const placeholder = $el.attr('placeholder');
-          const ariaLabel = $el.attr('aria-label');
-          const label = $(`label[for="${$el.attr('id')}"]`).text().trim();
+        // Quick checks first
+        const text = el.textContent?.trim() || '';
+        const ariaLabel = el.getAttribute('aria-label')?.trim() || '';
+        const title = el.getAttribute('title')?.trim() || '';
+        const alt = el.getAttribute('alt')?.trim() || '';
 
-          return !!(value?.trim() || placeholder?.trim() || ariaLabel?.trim() || label);
+                // For input elements, check value, placeholder, or aria-label
+        if (['input', 'textarea', 'select'].includes(tagName)) {
+          const inputEl = el as HTMLInputElement;
+          const value = inputEl.value ? String(inputEl.value).trim() : '';
+          const placeholder = el.getAttribute('placeholder')?.trim() || '';
+          const label = document.querySelector(`label[for="${el.getAttribute('id')}"]`)?.textContent?.trim() || '';
+
+          return !!(value || placeholder || ariaLabel || label);
         }
 
-        // Check for text content, aria-label, title, or alt attributes
-        const text = el.textContent?.trim() || '';
-        const ariaLabel = $el.attr('aria-label')?.trim() || '';
-        const title = $el.attr('title')?.trim() || '';
-        const alt = $el.attr('alt')?.trim() || '';
+        // Check for data attributes that might indicate functionality
+        const hasDataAttributes = el.getAttribute('data-testid') || el.getAttribute('data-cy') || el.getAttribute('data-action');
 
-        // Check if element contains images, icons, or SVGs (visual content)
-        const hasVisualContent = $el.find('img, svg, i[class*="icon"], span[class*="icon"]').length > 0;
+        // Check for common icon/visual indicator classes (regex-free check)
+        const className = el.getAttribute('class') || '';
+        const hasIconClasses = className.includes('icon') || className.includes('fa-') ||
+                              className.includes('material-') || className.includes('mdi-') ||
+                              className.includes('glyphicon');
 
         // Check if element itself is an image with alt text
         const isImageWithAlt = tagName === 'img' && alt;
 
-        // Check for common icon/visual indicator classes
-        const hasIconClasses = $el.attr('class')?.match(/icon|fa-|material-|mdi-|glyphicon/) || false;
-
-        // Check for data attributes that might indicate functionality
-        const hasDataAttributes = $el.attr('data-testid') || $el.attr('data-cy') || $el.attr('data-action');
-
         // Consider element as having content if it has:
         // - Text content, labels, or titles
-        // - Visual content (images, icons, SVGs)
         // - Is an image with alt text
         // - Has icon classes
         // - Has test/action data attributes
-        return !!(text || ariaLabel || title || alt || hasVisualContent || isImageWithAlt || hasIconClasses || hasDataAttributes);
+        return !!(text || ariaLabel || title || alt || isImageWithAlt || hasIconClasses || hasDataAttributes);
       };
 
-      // Filter out empty elements and map to result format
-      const meaningfulElements = uniqueElements
-        .filter(hasContent)
-        .map((el) => ({
+            // Helper function to calculate element "importance" score
+      const calculateScore = (el: HTMLElement): number => {
+        let score = 0;
+        const tagName = el.tagName.toLowerCase();
+
+        // Higher scores for more interactive elements
+        if (['button', 'a', 'input', 'select'].includes(tagName)) score += 10;
+        else if (['textarea', 'option'].includes(tagName)) score += 5;
+        else score += 1;
+
+        // Bonus for React-style clickable elements
+        const className = el.getAttribute('class') || '';
+        const hasClickableClasses = className.includes('button') || className.includes('click') ||
+                                   className.includes('link') || className.includes('card') ||
+                                   className.includes('tile') || className.includes('item');
+
+        if (hasClickableClasses) score += 8;
+
+        // Bonus for elements with click handlers
+        if (el.hasAttribute('onclick') || el.hasAttribute('onClick') || el.hasAttribute('data-onclick')) {
+          score += 7;
+        }
+
+        // Bonus for elements with tabindex (keyboard accessible)
+        if (el.hasAttribute('tabindex')) score += 6;
+
+        // Bonus for elements with pointer cursor
+        const style = window.getComputedStyle(el);
+        if (style.cursor === 'pointer') score += 5;
+
+        // Bonus for visible elements
+        if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+          score += 2;
+        }
+
+        // Bonus for elements with text content
+        if (el.textContent?.trim()) score += 3;
+
+        // Bonus for elements with aria-label or title
+        if (el.getAttribute('aria-label') || el.getAttribute('title')) score += 2;
+
+        // Bonus for elements with data attributes
+        if (el.getAttribute('data-testid') || el.getAttribute('data-cy')) score += 2;
+
+        return score;
+      };
+
+      // Helper function to check if element is a descendant of already processed element
+      const isDescendantOfProcessed = (el: HTMLElement): boolean => {
+        let parent = el.parentElement;
+        while (parent) {
+          if (processedElements.has(parent)) {
+            return true;
+          }
+          parent = parent.parentElement;
+        }
+        return false;
+      };
+
+      // Process elements in batches with yielding
+      const processElementBatch = async (elements: HTMLElement[], startIndex: number): Promise<void> => {
+        const endIndex = Math.min(startIndex + batchSize, elements.length);
+
+        for (let i = startIndex; i < endIndex; i++) {
+          const el = elements[i];
+
+          // Skip if already processed or is descendant of processed element
+          if (processedElements.has(el) || isDescendantOfProcessed(el)) {
+            continue;
+          }
+
+          // Quick visibility check
+          const style = window.getComputedStyle(el);
+          if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+            continue;
+          }
+
+          // Check if element is interactive
+          const isInteractive = checkElementInteractivity(el);
+          if (!isInteractive.isInteractive) {
+            continue;
+          }
+
+          // Check if element has content
+          if (!hasContent(el)) {
+            continue;
+          }
+
+          // Calculate score and store element
+          const score = calculateScore(el);
+          elementScores.set(el, score);
+          processedElements.add(el);
+        }
+
+        // Yield every few batches to prevent blocking
+        if ((startIndex / batchSize) % yieldInterval === 0) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+      };
+
+      // Get interactive elements more efficiently
+      const interactiveSelectors = "button, input, select, textarea, a, option, datalist, [role='button'], [role='link'], [role='tab'], [role='menuitem'], [role='checkbox'], [role='radio'], [role='option']";
+      const interactiveElements = Array.from(document.querySelectorAll(interactiveSelectors)) as HTMLElement[];
+
+            // Get elements with pointer cursor (more targeted approach)
+      const clickableElements: HTMLElement[] = [];
+
+      // More efficient approach: target common React patterns
+      // Look for divs, spans, and other elements that might be clickable
+      const potentialClickableSelectors = [
+        'div[onclick]', 'div[onClick]', 'div[data-onclick]',
+        'span[onclick]', 'span[onClick]', 'span[data-onclick]',
+        'section[onclick]', 'section[onClick]', 'section[data-onclick]',
+        'article[onclick]', 'article[onClick]', 'article[data-onclick]',
+        'main[onclick]', 'main[onClick]', 'main[data-onclick]',
+        'aside[onclick]', 'aside[onClick]', 'aside[data-onclick]',
+        // Common React patterns
+        '[data-testid*="button"]', '[data-testid*="click"]', '[data-testid*="link"]',
+        '[data-cy*="button"]', '[data-cy*="click"]', '[data-cy*="link"]',
+        '[class*="button"]', '[class*="clickable"]', '[class*="link"]',
+        '[class*="card"]', '[class*="tile"]', '[class*="item"]',
+        // Common interactive patterns
+        '[tabindex]', '[role="button"]', '[role="link"]', '[role="tab"]',
+        '[aria-label*="button"]', '[aria-label*="click"]', '[aria-label*="link"]',
+        '[title*="button"]', '[title*="click"]', '[title*="link"]'
+      ];
+
+      // Get elements with explicit click handlers or interactive attributes
+      for (const selector of potentialClickableSelectors) {
+        try {
+          const elements = document.querySelectorAll(selector);
+          for (const el of elements) {
+            clickableElements.push(el as HTMLElement);
+          }
+        } catch (e) {
+          // Skip invalid selectors
+          continue;
+        }
+      }
+
+      // For cursor: pointer detection, use a more efficient approach
+      // Only check elements that are likely to be interactive based on their context
+      const cursorCheckSelectors = [
+        'div', 'span', 'section', 'article', 'main', 'aside', 'header', 'footer',
+        'li', 'td', 'th', 'figure', 'figcaption'
+      ];
+
+      for (const selector of cursorCheckSelectors) {
+        const elements = document.querySelectorAll(selector);
+
+        // Process in batches to avoid blocking
+        for (let i = 0; i < elements.length; i += batchSize) {
+          const batch = Array.from(elements).slice(i, i + batchSize) as HTMLElement[];
+
+          for (const el of batch) {
+            // Quick checks before expensive getComputedStyle
+            const tagName = el.tagName.toLowerCase();
+            const className = el.getAttribute('class') || '';
+
+            // Skip elements that are clearly not interactive
+            if (tagName === 'div' && !className.includes('button') &&
+                !className.includes('click') && !className.includes('link') &&
+                !className.includes('card') && !className.includes('tile') &&
+                !className.includes('item') && !el.hasAttribute('onclick') &&
+                !el.hasAttribute('onClick') && !el.hasAttribute('tabindex') &&
+                !el.hasAttribute('role') && !el.hasAttribute('data-testid') &&
+                !el.hasAttribute('data-cy')) {
+              continue;
+            }
+
+            const style = window.getComputedStyle(el);
+            if (style.cursor === 'pointer') {
+              clickableElements.push(el);
+            }
+          }
+
+          // Yield every few batches
+          if ((i / batchSize) % yieldInterval === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
+        }
+      }
+
+      // Combine and deduplicate elements efficiently
+      const allCandidates = [...interactiveElements, ...clickableElements];
+      const uniqueCandidates = new Set<HTMLElement>();
+
+      for (const el of allCandidates) {
+        uniqueCandidates.add(el);
+      }
+
+      // Process unique candidates in batches
+      const candidatesArray = Array.from(uniqueCandidates);
+      for (let i = 0; i < candidatesArray.length; i += batchSize) {
+        await processElementBatch(candidatesArray, i);
+      }
+
+      // Convert to result format, sorted by score (most important first)
+      const sortedElements = Array.from(elementScores.entries())
+        .sort((a, b) => b[1] - a[1]) // Sort by score descending
+        .map(([el]) => ({
           type: el.tagName.toLowerCase(),
           selector: getUniqueSelector(el),
           text: el.textContent?.trim() ?? "",
-          value: (el as HTMLInputElement).value?.trim(),
+          value: (el as HTMLInputElement).value ? String((el as HTMLInputElement).value).trim() : undefined,
           href: (el as HTMLAnchorElement).href,
         }));
 
+      const endTime = performance.now();
+      console.log(`findInteractiveElements took ${endTime - startTime}ms to find ${sortedElements.length} elements`);
+
       return {
         success: true,
-        elements: meaningfulElements,
+        elements: sortedElements,
       };
     } catch (error) {
       return {

@@ -534,6 +534,7 @@ class PopupChatInterface {
     // Generate new thread ID
     this.state.threadId = this.generateThreadId();
     this.state.messages = [];
+    this.state.todoList = { items: [] }; // Clear todo list state
 
     // Clear any active execution
     this.clearExecutionState();
@@ -541,7 +542,7 @@ class PopupChatInterface {
     // Persist new thread ID
     await this.persistUserState();
 
-    // Re-render with empty messages
+    // Re-render with empty messages and todo list
     this.render();
 
     console.log('Started new thread:', this.state.threadId);
@@ -824,9 +825,7 @@ class PopupChatInterface {
 
       const checkboxDiv = document.createElement('div');
       checkboxDiv.className = `todo-checkbox ${item.completed ? 'checked' : ''}`;
-      checkboxDiv.addEventListener('click', () => {
-        this.toggleTodoItem(index);
-      });
+      // Removed click event listener - checkboxes are display-only
 
       const titleDiv = document.createElement('div');
       titleDiv.className = 'todo-item-title';
@@ -836,15 +835,6 @@ class PopupChatInterface {
       todoItemDiv.appendChild(titleDiv);
       todoListItems.appendChild(todoItemDiv);
     });
-  }
-
-  private toggleTodoItem(index: number): void {
-    // This would typically send a message to the workflow to update the todo item
-    // For now, we'll just update the local state
-    if (index >= 0 && index < this.state.todoList.items.length) {
-      this.state.todoList.items[index].completed = !this.state.todoList.items[index].completed;
-      this.renderTodoList();
-    }
   }
 
   private scrollToBottom(): void {
