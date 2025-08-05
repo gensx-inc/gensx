@@ -4,13 +4,15 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = {
   mode: process.env.NODE_ENV === "production" ? "production" : "development",
-  devtool: process.env.NODE_ENV === "production" ? false : "cheap-module-source-map",
+  devtool:
+    process.env.NODE_ENV === "production" ? false : "cheap-module-source-map",
 
   entry: {
     content: "./src/content.ts",
     background: "./src/background.ts",
     popup: "./src/popup.ts",
     options: "./src/options.ts",
+    offscreen: "./src/offscreen.ts",
   },
 
   output: {
@@ -66,6 +68,10 @@ module.exports = {
         {
           from: "src/content.css",
           to: "content.css",
+        },
+        {
+          from: "src/offscreen.html",
+          to: "offscreen.html",
         },
         {
           from: "icons",

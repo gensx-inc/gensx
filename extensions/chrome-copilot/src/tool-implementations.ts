@@ -1135,6 +1135,30 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       };
     }
   },
+
+  getGeolocation: async (params) => {
+    try {
+      // Send geolocation request to background script which will use offscreen document
+      const response = await chrome.runtime.sendMessage({
+        type: 'GET_GEOLOCATION',
+        data: params
+      });
+
+      if (response.success) {
+        return response.data;
+      } else {
+        return {
+          success: false,
+          error: response.error || 'Geolocation request failed'
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  },
 };
 
 // Helper to check if an element is likely to be interactive
