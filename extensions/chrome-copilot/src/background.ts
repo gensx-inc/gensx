@@ -47,6 +47,14 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('✅ GenSX Copilot extension installed');
 });
 
+// Handle extension icon click to open side panel
+chrome.action.onClicked.addListener(async (tab) => {
+  if (tab.id) {
+    console.log('📋 Opening side panel for tab:', tab.id);
+    await chrome.sidePanel.open({ tabId: tab.id });
+  }
+});
+
 // GenSX client helper (original)
 const getClient = async () => {
   const settings = await SettingsManager.get();

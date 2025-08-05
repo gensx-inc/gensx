@@ -963,6 +963,36 @@ export const domToolImplementations = {
         code: 'EXTRACT_ERROR'
       };
     }
+  },
+
+  /**
+   * Navigate to a URL in the current tab
+   */
+  navigate: async (args: { url: string }): Promise<ToolResult<{ url: string; title: string }>> => {
+    try {
+      console.log(`🧭 Navigating to: ${args.url}`);
+      
+      // Navigate to the URL in the current tab
+      window.location.href = args.url;
+      
+      // Wait a moment for navigation to start
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return {
+        ok: true,
+        data: {
+          url: window.location.href,
+          title: document.title
+        }
+      };
+    } catch (error) {
+      console.error('Navigate tool failed:', error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Navigation failed',
+        retryable: true
+      };
+    }
   }
 };
 
@@ -1194,6 +1224,10 @@ function extractTextWithSpacing(element: Element): string {
   // Clone the element to avoid modifying the original
   const clone = element.cloneNode(true) as Element;
   
+  // Remove script, style, and other non-content elements that can contain code
+  const unwantedElements = clone.querySelectorAll('script, style, noscript, meta, link, head');
+  unwantedElements.forEach(el => el.remove());
+  
   // Add spaces around block elements to prevent text concatenation
   const blockElements = clone.querySelectorAll('div, p, li, tr, td, th, h1, h2, h3, h4, h5, h6, section, article, nav, header, footer, main, aside');
   blockElements.forEach(el => {
@@ -1210,9 +1244,23 @@ function extractTextWithSpacing(element: Element): string {
     }
   });
   
-  // Get text content and clean up excessive whitespace
-  const text = clone.textContent || '';
-  return text.replace(/\s+/g, ' ').trim();
+  // Get text content and clean up
+  let text = clone.textContent || '';
+  
+  // Clean up the text more aggressively
+  text = text
+    .replace(/\s+/g, ' ')  // Normalize all whitespace to single spaces
+    .replace(/[^\x20-\x7E]/g, ' ')  // Replace non-printable characters with spaces
+    .replace(/\s+/g, ' ')  // Normalize whitespace again after replacements
+    .trim();
+  
+  // Prevent extremely long text that can cause issues
+  if (text.length > 5000) {
+    console.warn('⚠️ Text content too long, truncating:', text.length);
+    text = text.substring(0, 5000) + '... [content truncated for safety]';
+  }
+  
+  return text;
 }
 
 /**

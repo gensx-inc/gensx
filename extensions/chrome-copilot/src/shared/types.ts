@@ -87,6 +87,7 @@ export type ToolCall =
   | { name:'dom_extract'; args:{ tabId:number; collectionId:string; fields:string[] } }
   | { name:'dom_findByText'; args:{ tabId:number; searchText:string; elementType?:'any'|'clickable'|'button'|'link'|'input'; exactMatch?:boolean } }
   | { name:'dom_getPageContent'; args:{ tabId:number; includeLinks?:boolean; includeClickables?:boolean } }
+  | { name:'navigate'; args:{ url:string } }
   | { name:'tabs_open'; args:{ url:string } }
   | { name:'tabs_switch'; args:{ tabId:number } }
   | { name:'tabs_close'; args:{ tabId:number } }

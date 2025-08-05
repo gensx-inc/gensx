@@ -348,6 +348,24 @@ export const toolbox = createToolBox({
     })
   },
 
+  // Navigation Tools
+  navigate: {
+    description: "Navigate to a URL in the current tab - perfect for 'go to' requests",
+    params: z.object({
+      url: z.string().url().describe("URL to navigate to in current tab")
+    }),
+    result: z.object({
+      ok: z.boolean(),
+      data: z.object({
+        url: z.string(),
+        title: z.string()
+      }).optional(),
+      error: z.string().optional(),
+      retryable: z.boolean().optional(),
+      code: z.string().optional()
+    })
+  },
+
   // Tab Management Tools (handled by background)
   tabs_open: {
     description: "Open a new tab with the specified URL",

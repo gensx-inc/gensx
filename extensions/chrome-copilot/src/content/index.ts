@@ -175,8 +175,8 @@ declare global {
       // Map legacy tool names to new implementations
       const legacyToolMap: Record<string, string> = {
         'fetchPage': 'getMiniPCD',
-        'interact': 'dom.click', // Simplified mapping
-        'navigate': 'dom.click'   // Simplified mapping
+        'interact': 'dom_click', // Simplified mapping
+        // navigate tool is now natively supported, no mapping needed
       };
 
       const mappedToolName = legacyToolMap[data.toolName] || data.toolName;

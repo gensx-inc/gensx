@@ -320,16 +320,16 @@ ${relevantContent.patterns.map(pattern =>
 ).join('\n')}
 
 MAIN CONTENT:
-${pageContent.mainContent}
+${cleanText(pageContent.mainContent)}
 
 CLICKABLE ELEMENTS:
 ${pageContent.clickableElements.slice(0, 15).map((el, i) =>
-  `${i + 1}. [${el.tag}] "${el.text}"${el.href ? ` -> ${el.href}` : ''}${el.isButton ? ' (button)' : ''}`
+  `${i + 1}. [${el.tag}] "${cleanText(el.text)}"${el.href ? ` -> ${el.href}` : ''}${el.isButton ? ' (button)' : ''}`
 ).join('\n')}
 
 SEARCH RESULTS (elements found by targeted search):
 ${relevantContent.searchResults.slice(0, 12).map((result, i) =>
-  `${i + 1}. [${result.tagName}] "${result.text}"${result.clickable ? ' (clickable)' : ''}${result.href ? ` -> ${result.href}` : ''} @(${result.position.x},${result.position.y})`
+  `${i + 1}. [${result.tagName}] "${cleanText(result.text)}"${result.clickable ? ' (clickable)' : ''}${result.href ? ` -> ${result.href}` : ''} @(${result.position.x},${result.position.y})`
 ).join('\n')}
 `;
 
@@ -372,6 +372,9 @@ SELECTOR STRATEGY:
 - Use role selectors for interactive elements (buttons, links)
 - Prefer exact matches from SEARCH RESULTS and DETECTED PATTERNS
 - Include alternative selectors when possible
+- CRITICAL: Keep selector text short (under 50 words) and specific
+- NEVER use entire paragraphs or large text blocks as selectors
+- Focus on unique, identifying text snippets
 
 QUALITY GUIDELINES:
 - **Confidence**: High (0.8+) for exact matches, Medium (0.5-0.8) for partial matches, Low (0.3-0.5) for inferred
@@ -382,11 +385,30 @@ QUALITY GUIDELINES:
 Focus on helping the user achieve their specific goal rather than just finding generic page elements.`
     });
 
-    return result.object.actionBundles.map(bundle => ({
-      ...bundle,
-      selector: bundle.selector as RoleSelector,
-      altSelectors: (bundle.altSelectors || []) as RoleSelector[]
-    }));
+    // Clean and validate selectors before returning
+    const cleanedBundles = result.object.actionBundles
+      .map(bundle => {
+        const cleanedSelector = cleanSelector(bundle.selector as RoleSelector);
+        const cleanedAltSelectors = (bundle.altSelectors || [])
+          .map(sel => cleanSelector(sel as RoleSelector))
+          .filter(sel => sel !== null) as RoleSelector[];
+        
+        return {
+          ...bundle,
+          selector: cleanedSelector,
+          altSelectors: cleanedAltSelectors,
+          label: cleanText(bundle.label),
+          why: cleanText(bundle.why)
+        };
+      })
+      .filter(bundle => bundle.selector !== null) // Remove bundles with invalid selectors
+      .map(bundle => ({
+        ...bundle,
+        selector: bundle.selector as RoleSelector // Safe cast since we filtered out nulls
+      }))
+      .slice(0, maxCandidates); // Ensure we don't exceed max candidates
+    
+    return cleanedBundles;
 
   } catch (error) {
     console.error('Goal-oriented LLM analysis failed:', error);
@@ -410,7 +432,8 @@ function inferQueryIntent(query: string): string {
 
   // Navigation patterns
   if (queryLower.includes('go to') || queryLower.includes('navigate') || queryLower.includes('find page') ||
-      queryLower.includes('open') || queryLower.includes('visit')) {
+      queryLower.includes('open') || queryLower.includes('visit') || queryLower.includes('amazon') ||
+      queryLower.includes('.com') || queryLower.includes('http') || queryLower.includes('www')) {
     return 'navigation/routing';
   }
 
@@ -688,4 +711,78 @@ function scoreFormRelevance(form: any, query: string): number {
   }
 
   return 0;
+}
+
+/**
+ * Clean and validate selector objects
+ */
+function cleanSelector(selector: RoleSelector): RoleSelector | null {
+  if (!selector || typeof selector !== 'object') {
+    return null;
+  }
+  
+  const cleaned = { ...selector };
+  
+  // Clean text-based selectors
+  if (cleaned.kind === 'text' && cleaned.text) {
+    const cleanedText = cleanText(cleaned.text);
+    
+    // Reject selectors with extremely long or invalid text
+    if (cleanedText.length > 200) {
+      console.warn('🚫 Rejecting text selector - too long:', cleanedText.length);
+      return null;
+    }
+    
+    // Reject selectors that look like JavaScript or HTML
+    if (cleanedText.includes('self.__next_f') || 
+        cleanedText.includes('<script') || 
+        cleanedText.includes('function(') ||
+        cleanedText.includes('.push([') ||
+        cleanedText.includes('static/chunks/')) {
+      console.warn('🚫 Rejecting text selector - contains code:', cleanedText.substring(0, 100));
+      return null;
+    }
+    
+    cleaned.text = cleanedText;
+  }
+  
+  // Clean role-based selectors
+  if (cleaned.kind === 'role' && cleaned.name) {
+    cleaned.name = cleanText(cleaned.name);
+    
+    // Reject role selectors with extremely long names
+    if (cleaned.name.length > 100) {
+      console.warn('🚫 Rejecting role selector - name too long:', cleaned.name.length);
+      return null;
+    }
+  }
+  
+  // Clean CSS selectors
+  if (cleaned.kind === 'css' && cleaned.css) {
+    cleaned.css = cleaned.css.trim();
+    
+    // Basic CSS selector validation
+    if (cleaned.css.length > 500 || cleaned.css.includes('javascript:')) {
+      console.warn('🚫 Rejecting CSS selector - too long or unsafe:', cleaned.css.length);
+      return null;
+    }
+  }
+  
+  return cleaned;
+}
+
+/**
+ * Clean text content
+ */
+function cleanText(text: string): string {
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+  
+  return text
+    .replace(/\s+/g, ' ')  // Normalize whitespace
+    .replace(/[^\x20-\x7E]/g, ' ')  // Remove non-printable characters
+    .replace(/\s+/g, ' ')  // Normalize again
+    .trim()
+    .substring(0, 500);  // Hard limit on text length
 }

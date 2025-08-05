@@ -94,6 +94,7 @@ FLEXIBLE SCOUT APPROACH - Goal-Oriented Analysis:
 
 You have access to tools that let you:
 - Use scout tool (PRIMARY - flexible, goal-oriented content analysis with natural language queries)
+- Navigate to URLs with navigate (for "go to" requests - navigates in current tab)
 - Click elements with dom_click  
 - Type text with dom_type
 - Submit forms with dom_submit
