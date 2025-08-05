@@ -366,6 +366,39 @@ export const toolbox = createToolBox({
       error: z.string().optional(),
     }),
   },
+
+  getGeolocation: {
+    description: "Get the user's current geolocation (latitude and longitude)",
+    params: z.object({
+      enableHighAccuracy: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Whether to use high accuracy mode for geolocation"),
+      timeout: z
+        .number()
+        .optional()
+        .default(10000)
+        .describe("Maximum time to wait for geolocation in milliseconds"),
+      maximumAge: z
+        .number()
+        .optional()
+        .default(300000)
+        .describe("Maximum age of cached position in milliseconds (5 minutes default)"),
+    }),
+    result: z.object({
+      success: z.boolean(),
+      latitude: z.number().optional().describe("Latitude in decimal degrees"),
+      longitude: z.number().optional().describe("Longitude in decimal degrees"),
+      accuracy: z.number().optional().describe("Accuracy in meters"),
+      altitude: z.number().optional().describe("Altitude in meters above sea level"),
+      altitudeAccuracy: z.number().optional().describe("Altitude accuracy in meters"),
+      heading: z.number().optional().describe("Heading in degrees from true north"),
+      speed: z.number().optional().describe("Speed in meters per second"),
+      timestamp: z.number().optional().describe("Timestamp when position was obtained"),
+      error: z.string().optional().describe("Error message if geolocation failed"),
+    }),
+  },
 });
 
 export type ToolBox = typeof toolbox;

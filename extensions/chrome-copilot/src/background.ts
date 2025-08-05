@@ -14,6 +14,10 @@ import { type CoreMessage } from "ai";
 // Store the current workflow's tab ID to avoid "no active tab" issues when browser is not focused
 let currentWorkflowTabId: number | null = null;
 
+// Offscreen document management for geolocation
+const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
+let creating: Promise<void> | null = null; // A global promise to avoid concurrency issues
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log('✅ GenSX Copilot extension installed');
 });
@@ -103,6 +107,11 @@ chrome.runtime.onMessage.addListener(
           sendResponse({ success: false, error: error instanceof Error ? error.message : String(error) });
         }
       })();
+      return true; // Indicates we will send a response asynchronously
+    }
+
+    if (message.type === "GET_GEOLOCATION") {
+      handleGeolocationRequest(message, sender, sendResponse);
       return true; // Indicates we will send a response asynchronously
     }
 
@@ -576,3 +585,70 @@ async function processStreamingEvent(
 
 // Content script is automatically injected via manifest.json content_scripts
 // No need for manual injection since we have matches: ["<all_urls>"]
+
+// Geolocation handling functions
+async function hasOffscreenDocument() {
+  // For now, we'll assume we need to create the document
+  // In a real implementation, you might want to track this state
+  return false;
+}
+
+async function setupOffscreenDocument() {
+  // If we do not have a document, we are already setup and can skip
+  if (!(await hasOffscreenDocument())) {
+    // Create offscreen document
+    if (creating) {
+      await creating;
+    } else {
+      creating = chrome.offscreen.createDocument({
+        url: OFFSCREEN_DOCUMENT_PATH,
+        reasons: [chrome.offscreen.Reason.GEOLOCATION || chrome.offscreen.Reason.DOM_SCRAPING],
+        justification: 'Geolocation access for extension tools',
+      });
+
+      await creating;
+      creating = null;
+    }
+  }
+}
+
+async function closeOffscreenDocument() {
+  if (!(await hasOffscreenDocument())) {
+    return;
+  }
+  await chrome.offscreen.closeDocument();
+}
+
+async function getGeolocation(params: any) {
+  await setupOffscreenDocument();
+  const geolocation = await chrome.runtime.sendMessage({
+    type: 'get-geolocation',
+    target: 'offscreen',
+    params
+  });
+  await closeOffscreenDocument();
+  return geolocation;
+}
+
+async function handleGeolocationRequest(
+  message: any,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response: any) => void,
+) {
+  try {
+    console.log("Handling geolocation request:", message);
+
+    const geolocation = await getGeolocation(message.data);
+
+    sendResponse({
+      success: true,
+      data: geolocation
+    });
+  } catch (error) {
+    console.error("Geolocation request failed:", error);
+    sendResponse({
+      success: false,
+      error: error instanceof Error ? error.message : "Geolocation request failed"
+    });
+  }
+}

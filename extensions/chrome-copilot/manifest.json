@@ -8,7 +8,9 @@
     "storage",
     "tabs",
     "scripting",
-    "sidePanel"
+    "sidePanel",
+    "geolocation",
+    "offscreen"
   ],
   "host_permissions": [
     "http://*/*",

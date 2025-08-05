@@ -5,7 +5,7 @@ import { toolbox } from "../../shared/toolbox";
 import { tool } from "ai";
 import z from "zod";
 
-const readonlyTools: (keyof typeof toolbox)[] = ["fetchPageText", "findElementsByText", "getCurrentUrl", "inspectElements", "findInteractiveElements"];
+const readonlyTools: (keyof typeof toolbox)[] = ["fetchPageText", "findElementsByText", "getCurrentUrl", "inspectElements", "findInteractiveElements", "getGeolocation"];
 
 const queryPage = gensx.Component("queryPage", async ({ query }: { query: string }) => {
   const groqClient = createOpenAI({
